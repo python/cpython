@@ -45,9 +45,9 @@ class LargeFileTest:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
 
-    @bigmemtest(size=_2G, memuse=1)
-    def test_large_reads_writes(self, _size):
+    def test_large_reads_writes(self):
         # see issue #24658
+        size = size / 10
         requires('largefile',
                  'test requires %s bytes and a long time to run' % size)
         self.addCleanup(unlink, TESTFN)
