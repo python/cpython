@@ -524,6 +524,10 @@ Build and C API Changes
 Deprecated
 ==========
 
+* The parameter ``name`` in :class:`importlib.machinery.ExtensionFileLoader` is
+  now deprecated, use ``fullname`` instead.
+  (Contributed by Sayan Chowdhury in :issue:`30274`.)
+
 * The distutils ``bdist_msi`` command is now deprecated, use
   ``bdist_wheel`` (wheel packages) instead.
   (Contributed by Hugo van Kemenade in :issue:`39586`.)
