@@ -540,7 +540,7 @@ more closely to the RFCs relevant to their domains.
 
    The same as ``SMTP`` except that :attr:`~EmailPolicy.utf8` is ``True``.
    Useful for serializing messages to a message store without using encoded
-   words in the headers.  Should only be used for SMTP trasmission if the
+   words in the headers.  Should only be used for SMTP transmission if the
    sender or recipient addresses have non-ASCII characters (the
    :meth:`smtplib.SMTP.send_message` method handles this automatically).
 
