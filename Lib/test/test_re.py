@@ -3,7 +3,7 @@ from test.test_support import (
     verbose, run_unittest, import_module,
     precisionbigmemtest, _2G, cpython_only,
     captured_stdout, have_unicode, requires_unicode, u,
-    check_warnings)
+    check_warnings, check_py3k_warnings)
 import locale
 import re
 from re import Scanner
@@ -66,11 +66,13 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('(?P<unk>x)', '\g<unk>\g<unk>', 'xx'), 'xxxx')
         self.assertEqual(re.sub('(?P<unk>x)', '\g<1>\g<1>', 'xx'), 'xxxx')
 
-        self.assertEqual(re.sub('a',r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D','a'),
-                         '\t\n\v\r\f\a\b\\B\\Z\a\\A\\w\\W\\s\\S\\d\\D')
-        self.assertEqual(re.sub('a', '\t\n\v\r\f\a', 'a'), '\t\n\v\r\f\a')
-        self.assertEqual(re.sub('a', '\t\n\v\r\f\a', 'a'),
-                         (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)))
+        self.assertEqual(re.sub('a', r'\t\n\v\r\f\a\b', 'a'), '\t\n\v\r\f\a\b')
+        self.assertEqual(re.sub('a', '\t\n\v\r\f\a\b', 'a'), '\t\n\v\r\f\a\b')
+        self.assertEqual(re.sub('a', '\t\n\v\r\f\a\b', 'a'),
+                         (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)+chr(8)))
+        for c in 'cdehijklmopqsuwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            with check_py3k_warnings():
+                self.assertEqual(re.sub('a', '\\' + c, 'a'), '\\' + c)
 
         self.assertEqual(re.sub('^\s*', 'X', 'test'), 'Xtest')
 
@@ -223,11 +225,11 @@ class ReTests(unittest.TestCase):
 
     def test_re_split(self):
         self.assertEqual(re.split(":", ":a:b::c"), ['', 'a', 'b', '', 'c'])
-        self.assertEqual(re.split(":*", ":a:b::c"), ['', 'a', 'b', 'c'])
-        self.assertEqual(re.split("(:*)", ":a:b::c"),
+        self.assertEqual(re.split(":+", ":a:b::c"), ['', 'a', 'b', 'c'])
+        self.assertEqual(re.split("(:+)", ":a:b::c"),
                          ['', ':', 'a', ':', 'b', '::', 'c'])
-        self.assertEqual(re.split("(?::*)", ":a:b::c"), ['', 'a', 'b', 'c'])
-        self.assertEqual(re.split("(:)*", ":a:b::c"),
+        self.assertEqual(re.split("(?::+)", ":a:b::c"), ['', 'a', 'b', 'c'])
+        self.assertEqual(re.split("(:)+", ":a:b::c"),
                          ['', ':', 'a', ':', 'b', ':', 'c'])
         self.assertEqual(re.split("([b:]+)", ":a:b::c"),
                          ['', ':', 'a', ':b::', 'c'])
@@ -237,13 +239,34 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.split("(?:b)|(?::+)", ":a:b::c"),
                          ['', 'a', '', '', 'c'])
 
+        for sep, expected in [
+            (':*', ['', 'a', 'b', 'c']),
+            ('(?::*)', ['', 'a', 'b', 'c']),
+            ('(:*)', ['', ':', 'a', ':', 'b', '::', 'c']),
+            ('(:)*', ['', ':', 'a', ':', 'b', ':', 'c']),
+        ]:
+            with check_py3k_warnings(('', FutureWarning)):
+                self.assertEqual(re.split(sep, ':a:b::c'), expected)
+
+        for sep, expected in [
+            ('', [':a:b::c']),
+            (r'\b', [':a:b::c']),
+            (r'(?=:)', [':a:b::c']),
+            (r'(?<=:)', [':a:b::c']),
+        ]:
+            with check_py3k_warnings():
+                self.assertEqual(re.split(sep, ':a:b::c'), expected)
+
     def test_qualified_re_split(self):
         self.assertEqual(re.split(":", ":a:b::c", 2), ['', 'a', 'b::c'])
         self.assertEqual(re.split(':', 'a:b:c:d', 2), ['a', 'b', 'c:d'])
         self.assertEqual(re.split("(:)", ":a:b::c", 2),
                          ['', ':', 'a', ':', 'b::c'])
-        self.assertEqual(re.split("(:*)", ":a:b::c", 2),
+        self.assertEqual(re.split("(:+)", ":a:b::c", 2),
                          ['', ':', 'a', ':', 'b::c'])
+        with check_py3k_warnings(('', FutureWarning)):
+            self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
+                             ['', ':', 'a', ':', 'b::c'])
 
     def test_re_findall(self):
         self.assertEqual(re.findall(":+", "abc"), [])
@@ -403,6 +426,29 @@ class ReTests(unittest.TestCase):
         if have_unicode:
             self.assertEqual(re.search(r"\d\D\w\W\s\S",
                                        "1aa! a", re.UNICODE).group(0), "1aa! a")
+
+    def test_other_escapes(self):
+        self.assertRaises(re.error, re.compile, "\\")
+        self.assertEqual(re.match(r"\(", '(').group(), '(')
+        self.assertIsNone(re.match(r"\(", ')'))
+        self.assertEqual(re.match(r"\\", '\\').group(), '\\')
+        self.assertEqual(re.match(r"[\]]", ']').group(), ']')
+        self.assertIsNone(re.match(r"[\]]", '['))
+        self.assertEqual(re.match(r"[a\-c]", '-').group(), '-')
+        self.assertIsNone(re.match(r"[a\-c]", 'b'))
+        self.assertEqual(re.match(r"[\^a]+", 'a^').group(), 'a^')
+        self.assertIsNone(re.match(r"[\^a]+", 'b'))
+        re.purge()  # for warnings
+        for c in 'ceghijklmopquyzCEFGHIJKLMNOPQRTUVXY':
+            warn = FutureWarning if c in 'Uu' else DeprecationWarning
+            with check_py3k_warnings(('', warn)):
+                self.assertEqual(re.match('\\%c$' % c, c).group(), c)
+                self.assertIsNone(re.match('\\%c' % c, 'a'))
+        for c in 'ceghijklmopquyzABCEFGHIJKLMNOPQRTUVXYZ':
+            warn = FutureWarning if c in 'Uu' else DeprecationWarning
+            with check_py3k_warnings(('', warn)):
+                self.assertEqual(re.match('[\\%c]$' % c, c).group(), c)
+                self.assertIsNone(re.match('[\\%c]' % c, 'a'))
 
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713
@@ -931,6 +977,19 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match('(?ixu) ' + upper_char, lower_char))
         self.assertTrue(re.match('(?ixu) ' + lower_char, upper_char))
 
+        # Incompatibilities
+        re.purge()
+        with check_py3k_warnings():
+            re.compile('', re.LOCALE|re.UNICODE)
+        with check_py3k_warnings():
+            re.compile('(?L)', re.UNICODE)
+        with check_py3k_warnings():
+            re.compile('(?u)', re.LOCALE)
+        with check_py3k_warnings():
+            re.compile('(?Lu)')
+        with check_py3k_warnings():
+            re.compile('(?uL)')
+
     def test_dollar_matches_twice(self):
         "$ matches the end of string, and just before the terminating \n"
         pattern = re.compile('$')
@@ -967,8 +1026,9 @@ class ReTests(unittest.TestCase):
     def test_bug_13899(self):
         # Issue #13899: re pattern r"[\A]" should work like "A" but matches
         # nothing. Ditto B and Z.
-        self.assertEqual(re.findall(r'[\A\B\b\C\Z]', 'AB\bCZ'),
-                         ['A', 'B', '\b', 'C', 'Z'])
+        with check_py3k_warnings():
+            self.assertEqual(re.findall(r'[\A\B\b\C\Z]', 'AB\bCZ'),
+                             ['A', 'B', '\b', 'C', 'Z'])
 
     @precisionbigmemtest(size=_2G, memuse=1)
     def test_large_search(self, size):
@@ -1261,7 +1321,11 @@ def run_re_tests():
 
 def test_main():
     run_unittest(ReTests)
-    run_re_tests()
+    deprecations = [
+        ('bad escape', DeprecationWarning),
+    ]
+    with check_py3k_warnings(*deprecations):
+        run_re_tests()
 
 if __name__ == "__main__":
     test_main()

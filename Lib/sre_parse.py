@@ -23,6 +23,7 @@ DIGITS = set("0123456789")
 
 OCTDIGITS = set("01234567")
 HEXDIGITS = set("0123456789abcdefABCDEF")
+ASCIILETTERS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 WHITESPACE = set(" \t\n\r\v\f")
 
@@ -233,7 +234,7 @@ def isname(name):
             return False
     return True
 
-def _class_escape(source, escape):
+def _class_escape(source, escape, nested):
     # handle escape code inside character class
     code = ESCAPES.get(escape)
     if code:
@@ -260,12 +261,21 @@ def _class_escape(source, escape):
         elif c in DIGITS:
             raise error, "bogus escape: %s" % repr(escape)
         if len(escape) == 2:
+            if sys.py3kwarning and c in ASCIILETTERS:
+                import warnings
+                if c in 'Uu':
+                    warnings.warn('bad escape %s; Unicode escapes are '
+                                  'supported only since Python 3.3' % escape,
+                                  FutureWarning, stacklevel=nested + 6)
+                else:
+                    warnings.warnpy3k('bad escape %s' % escape,
+                                      DeprecationWarning, stacklevel=nested + 6)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
     raise error, "bogus escape: %s" % repr(escape)
 
-def _escape(source, escape, state):
+def _escape(source, escape, state, nested):
     # handle escape code in expression
     code = CATEGORIES.get(escape)
     if code:
@@ -305,23 +315,32 @@ def _escape(source, escape, state):
                     import warnings
                     warnings.warn('group references in lookbehind '
                                   'assertions are not supported',
-                                  RuntimeWarning)
+                                  RuntimeWarning, stacklevel=nested + 6)
                 return GROUPREF, group
             raise ValueError
         if len(escape) == 2:
+            if sys.py3kwarning and c in ASCIILETTERS:
+                import warnings
+                if c in 'Uu':
+                    warnings.warn('bad escape %s; Unicode escapes are '
+                                  'supported only since Python 3.3' % escape,
+                                  FutureWarning, stacklevel=nested + 6)
+                else:
+                    warnings.warnpy3k('bad escape %s' % escape,
+                                      DeprecationWarning, stacklevel=nested + 6)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
     raise error, "bogus escape: %s" % repr(escape)
 
-def _parse_sub(source, state, nested=1):
+def _parse_sub(source, state, nested):
     # parse an alternation: a|b|c
 
     items = []
     itemsappend = items.append
     sourcematch = source.match
     while 1:
-        itemsappend(_parse(source, state))
+        itemsappend(_parse(source, state, nested + 1))
         if sourcematch("|"):
             continue
         if not nested:
@@ -373,10 +392,10 @@ def _parse_sub(source, state, nested=1):
     subpattern.append((BRANCH, (None, items)))
     return subpattern
 
-def _parse_sub_cond(source, state, condgroup):
-    item_yes = _parse(source, state)
+def _parse_sub_cond(source, state, condgroup, nested):
+    item_yes = _parse(source, state, nested + 1)
     if source.match("|"):
-        item_no = _parse(source, state)
+        item_no = _parse(source, state, nested + 1)
         if source.match("|"):
             raise error, "conditional backref with more than two branches"
     else:
@@ -392,7 +411,7 @@ _ASSERTCHARS = set("=!<")
 _LOOKBEHINDASSERTCHARS = set("=!")
 _REPEATCODES = set([MIN_REPEAT, MAX_REPEAT])
 
-def _parse(source, state):
+def _parse(source, state, nested):
     # parse a simple pattern
     subpattern = SubPattern(state)
 
@@ -443,7 +462,7 @@ def _parse(source, state):
                 if this == "]" and set != start:
                     break
                 elif this and this[0] == "\\":
-                    code1 = _class_escape(source, this)
+                    code1 = _class_escape(source, this, nested + 1)
                 elif this:
                     code1 = LITERAL, ord(this)
                 else:
@@ -459,7 +478,7 @@ def _parse(source, state):
                         break
                     elif this:
                         if this[0] == "\\":
-                            code2 = _class_escape(source, this)
+                            code2 = _class_escape(source, this, nested + 1)
                         else:
                             code2 = LITERAL, ord(this)
                         if code1[0] != LITERAL or code2[0] != LITERAL:
@@ -589,7 +608,7 @@ def _parse(source, state):
                             import warnings
                             warnings.warn('group references in lookbehind '
                                           'assertions are not supported',
-                                          RuntimeWarning)
+                                          RuntimeWarning, stacklevel=nested + 6)
                         subpatternappend((GROUPREF, gid))
                         continue
                     else:
@@ -619,7 +638,7 @@ def _parse(source, state):
                         dir = -1 # lookbehind
                         char = sourceget()
                         state.lookbehind += 1
-                    p = _parse_sub(source, state)
+                    p = _parse_sub(source, state, nested + 1)
                     if dir < 0:
                         state.lookbehind -= 1
                     if not sourcematch(")"):
@@ -656,7 +675,7 @@ def _parse(source, state):
                         import warnings
                         warnings.warn('group references in lookbehind '
                                       'assertions are not supported',
-                                      RuntimeWarning)
+                                      RuntimeWarning, stacklevel=nested + 6)
                 else:
                     # flags
                     if not source.next in FLAGS:
@@ -671,9 +690,9 @@ def _parse(source, state):
                 else:
                     group = state.opengroup(name)
                 if condgroup:
-                    p = _parse_sub_cond(source, state, condgroup)
+                    p = _parse_sub_cond(source, state, condgroup, nested + 1)
                 else:
-                    p = _parse_sub(source, state)
+                    p = _parse_sub(source, state, nested + 1)
                 if not sourcematch(")"):
                     raise error, "unbalanced parenthesis"
                 if group is not None:
@@ -695,7 +714,7 @@ def _parse(source, state):
             subpattern.append((AT, AT_END))
 
         elif this and this[0] == "\\":
-            code = _escape(source, this, state)
+            code = _escape(source, this, state, nested + 1)
             subpatternappend(code)
 
         else:
@@ -714,6 +733,12 @@ def parse(str, flags=0, pattern=None):
     pattern.str = str
 
     p = _parse_sub(source, pattern, 0)
+    if (sys.py3kwarning and
+        (p.pattern.flags & SRE_FLAG_LOCALE) and
+        (p.pattern.flags & SRE_FLAG_UNICODE)):
+        import warnings
+        warnings.warnpy3k("LOCALE and UNICODE flags are incompatible",
+                          DeprecationWarning, stacklevel=5)
 
     tail = source.get()
     if tail == ")":
@@ -801,7 +826,10 @@ def parse_template(source, pattern):
                 try:
                     this = makechar(ESCAPES[this][1])
                 except KeyError:
-                    pass
+                    if sys.py3kwarning and c in ASCIILETTERS:
+                        import warnings
+                        warnings.warnpy3k('bad escape %s' % this,
+                                          DeprecationWarning, stacklevel=4)
                 literal(this)
         else:
             literal(this)
