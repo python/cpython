@@ -33,6 +33,18 @@ typedef struct {
 
 #define _PyCoreConfig_INIT {0, -1, 0, 0}
 
+/* Placeholders while working on the new configuration API
+ *
+ * See PEP 432 for final anticipated contents
+ *
+ * For the moment, just handle the args to _Py_InitializeEx
+ */
+typedef struct {
+    int install_signal_handlers;
+} _PyMainInterpreterConfig;
+
+#define _PyMainInterpreterConfig_INIT {-1}
+
 typedef struct _is {
 
     struct _is *next;
@@ -53,6 +65,7 @@ typedef struct _is {
     int fscodec_initialized;
 
     _PyCoreConfig core_config;
+    _PyMainInterpreterConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif

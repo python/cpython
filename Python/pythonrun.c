@@ -1,5 +1,12 @@
 
-/* Python interpreter top-level routines, including init/exit */
+/* Top level execution of Python code (including in __main__) */
+
+/* To help control the interfaces between the startup, execution and
+ * shutdown code, the phases are split across separate modules (boostrap,
+ * pythonrun, shutdown)
+ */
+
+/* TODO: Cull includes following phase split */
 
 #include "Python.h"
 
@@ -28,6 +35,7 @@
 #ifdef MS_WINDOWS
 #undef BYTE
 #include "windows.h"
+/* TODO: This is duped in shutdown.c Find a way to merge them */
 #endif
 
 _Py_IDENTIFIER(builtins);
@@ -59,7 +67,6 @@ static void err_input(perrdetail *);
 static void err_free(perrdetail *);
 
 /* Parse input from a file and execute it */
-
 int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
