@@ -1674,7 +1674,6 @@ funny:
 		-o -name Makefile \
 		-o -name ChangeLog \
 		-o -name .hgignore \
-		-o -name .bzrignore \
 		-o -name MANIFEST \
 		-o -print
 
