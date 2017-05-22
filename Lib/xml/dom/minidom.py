@@ -340,6 +340,9 @@ class DocumentFragment(Node):
     def __init__(self):
         self.childNodes = NodeList()
 
+    def writexml(self, writer, indent="", addindent="", newl=""):
+        for node in self.childNodes:
+            node.writexml(writer, indent, addindent, newl)
 
 class Attr(Node):
     __slots__=('_name', '_value', 'namespaceURI',

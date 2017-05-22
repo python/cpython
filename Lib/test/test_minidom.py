@@ -2,6 +2,7 @@
 
 import copy
 import pickle
+from io import StringIO
 from test.support import findfile
 import unittest
 
@@ -188,6 +189,14 @@ class MinidomTest(unittest.TestCase):
         frag.unlink()
         dom.unlink()
 
+    def testWriteXMLChildFragment(self):
+        dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
+        written = StringIO()
+        frag.writexml(writer=written, indent=' ', addindent='-', newl=':')
+        self.assertEquals(written.getvalue(), ' foo: bar: bat:')
+        frag.unlink()
+        dom.unlink()
+
     def testLegalChildren(self):
         dom = Document()
         elem = dom.createElement('element')
@@ -235,8 +244,10 @@ class MinidomTest(unittest.TestCase):
 
     def testUnlink(self):
         dom = parse(tstfile)
+        self.confirm(isinstance(dom, Document))
         self.assertTrue(dom.childNodes)
         dom.unlink()
+        self.confirm(isinstance(dom, Document))
         self.assertFalse(dom.childNodes)
 
     def testContext(self):
