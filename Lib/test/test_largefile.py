@@ -49,19 +49,9 @@ class LargeFileTest:
         # see issue #24658
         requires('largefile',
                  'test requires %s bytes and a long time to run' % size)
-        # self.addCleanup(unlink, TESTFN)
-        # with self.open(TESTFN, "wb") as f:
-        #     b = b'x' * size
-        #     self.assertEqual(f.write(b), size)
-        #     self.assertEqual(f.tell(), size)
-        with self.open(TESTFN, "wb") as f:
-            f.seek(size)
-            f.write(b'a')
-            f.flush()
-            self.assertEqual(f.tell(), size + 1)
 
         with self.open(TESTFN, "rb") as f:
-            f.read()
+            self.assertEqual(len(f.read()), size + 1)
             self.assertEqual(f.tell(), size + 1)
 
     def test_osstat(self):
