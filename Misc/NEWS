@@ -1100,6 +1100,10 @@ Documentation
 Build
 -----
 
+- bpo-29941: Add ``--with-assertions`` configure flag to explicitly enable
+  C ``assert()`` checks. Defaults to off. ``--with-pydebug`` implies
+  ``--with-assertions``.
+
 - bpo-28787: Fix out-of-tree builds of Python when configured with
   ``--with--dtrace``.
 
