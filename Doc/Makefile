@@ -17,7 +17,7 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PA
 
 .PHONY: help build html htmlhelp latex text changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
-	autobuild-dev autobuild-stable venv
+	autobuild-dev autobuild-stable
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
