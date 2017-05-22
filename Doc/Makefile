@@ -5,7 +5,7 @@
 
 # You can set these variables from the command line.
 PYTHON       = python3
-SPHINXBUILD  = sphinx-build
+SPHINXBUILD  = ./venv/bin/sphinx-build
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
@@ -37,7 +37,7 @@ help:
 	@echo "  check      to run a check for frequent markup errors"
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
-build:
+build: venv
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
