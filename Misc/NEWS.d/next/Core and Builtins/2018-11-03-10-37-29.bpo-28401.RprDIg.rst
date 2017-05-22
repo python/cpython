@@ -1,0 +1,2 @@
+Stable ABI extensions will no longer be found by the import machinery on
+debug builds of Python.  Importing them never worked, anyway.
