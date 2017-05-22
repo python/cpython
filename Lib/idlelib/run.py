@@ -144,6 +144,7 @@ def main(del_exitfunc=False):
         except KeyboardInterrupt:
             if quitting:
                 exit_now = True
+            rpc.response_queue.put((seq, None))
             continue
         except SystemExit:
             capture_warnings(False)
