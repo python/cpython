@@ -82,8 +82,8 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
 #if defined(MS_WINDOWS) || defined(__APPLE__)
-/* On Windows, the count parameter of read() is an int
-   Add the support of MacOS with the issue #24658
+/* On Windows, the count parameter of read() is an int.
+   macOS fails when reading or writing more than 2GB, see #24658
 */
 #define _PY_READ_MAX  INT_MAX
 #define _PY_WRITE_MAX INT_MAX
