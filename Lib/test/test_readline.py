@@ -127,6 +127,13 @@ readline.set_auto_history({})
 input()
 print("History length:", readline.get_current_history_length())
 """
+    auto_history_script_with_null = """\
+import readline
+readline.set_auto_history({})
+input("Hello \\x00 World: ")
+print("History length:", readline.get_current_history_length())
+"""
+
 
     def test_auto_history_enabled(self):
         output = run_pty(self.auto_history_script.format(True))
@@ -135,6 +142,10 @@ print("History length:", readline.get_current_history_length())
     def test_auto_history_disabled(self):
         output = run_pty(self.auto_history_script.format(False))
         self.assertIn(b"History length: 0\r\n", output)
+
+    def test_prompt_contains_null(self):
+        output = run_pty(self.auto_history_script_with_null.format(False))
+        self.assertIn(b"ValueError: input: prompt string cannot contain null characters", output)
 
     def test_nonascii(self):
         try:
