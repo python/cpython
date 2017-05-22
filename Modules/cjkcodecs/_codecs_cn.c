@@ -335,14 +335,16 @@ ENCODER(hz)
         DBCHAR code;
 
         if (c < 0x80) {
-            if (state->i == 0) {
-                WRITE1((unsigned char)c)
-                NEXT(1, 1)
-            }
-            else {
-                WRITE3('~', '}', (unsigned char)c)
-                NEXT(1, 3)
+            if (state->i) {
+                WRITE2('~', '}')
+                NEXT_OUT(2)
                 state->i = 0;
+            }
+            WRITE1((unsigned char)c)
+            NEXT(1, 1)
+            if (c == '~') {
+                WRITE1('~')
+                NEXT_OUT(1)
             }
             continue;
         }
@@ -390,20 +392,19 @@ DECODER(hz)
             unsigned char c2 = IN2;
 
             REQUIRE_INBUF(2)
-            if (c2 == '~') {
+            if (c2 == '~' && state->i == 0) {
                 WRITE1('~')
-                NEXT(2, 1)
-                continue;
+                NEXT_OUT(1)
             }
             else if (c2 == '{' && state->i == 0)
                 state->i = 1; /* set GB */
+            else if (c2 == '\n' && state->i == 0)
+                ; /* line-continuation */
             else if (c2 == '}' && state->i == 1)
                 state->i = 0; /* set ASCII */
-            else if (c2 == '\n')
-                ; /* line-continuation */
             else
                 return 2;
-            NEXT(2, 0);
+            NEXT_IN(2)
             continue;
         }
 
