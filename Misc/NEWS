@@ -1225,15 +1225,15 @@ Library
 
 - Issue #24091: Fixed various crashes in corner cases in cElementTree.
 
-- Issue #15267: HTTPConnection.request() now is compatibile with old-style
+- Issue #15267: HTTPConnection.request() now is compatible with old-style
   classes (such as TemporaryFile).  Original patch by Atsuo Ishimoto.
 
 - Issue #20014: array.array() now accepts unicode typecodes.  Based on patch by
   Vajrasky Kok.
 
-- Issue #23637: Showing a warning no longer fails with UnicodeErrror.
+- Issue #23637: Showing a warning no longer fails with UnicodeError.
   Formatting unicode warning in the file with the path containing non-ascii
-  characters no longer fails with UnicodeErrror.
+  characters no longer fails with UnicodeError.
 
 - Issue #24134: Reverted issue #24134 changes.
 
@@ -1974,7 +1974,7 @@ Library
   sequence is used on some terminal (ex: TERM=xterm-256color") to enable
   support of 8 bit characters.
 
-- Issue #22017: Correct reference counting errror in the initialization of the
+- Issue #22017: Correct reference counting error in the initialization of the
   _warnings module.
 
 - Issue #21868: Prevent turtle crash when undo buffer set to a value less
@@ -2907,7 +2907,7 @@ Library
 - Issue #11973: Fix a problem in kevent. The flags and fflags fields are now
   properly handled as unsigned.
 
-- Issue #16809: Fixed some tkinter incompabilities with Tcl/Tk 8.6.
+- Issue #16809: Fixed some tkinter incompatibilities with Tcl/Tk 8.6.
 
 - Issue #16809: Tkinter's splitlist() and split() methods now accept Tcl_Obj
   argument.
