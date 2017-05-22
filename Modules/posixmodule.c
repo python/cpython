@@ -25,6 +25,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
@@ -393,6 +394,87 @@ static int win32_can_symlink = 0;
 #define INITFUNC PyInit_posix
 #define MODNAME "posix"
 #endif
+
+
+#ifdef HAVE_FORK
+static void
+run_at_forkers(PyObject *lst)
+{
+    if (lst != NULL) {
+        Py_ssize_t i;
+        assert(PyList_CheckExact(lst));
+        for (i = 0; i < PyList_GET_SIZE(lst); i++) {
+            PyObject *func, *res;
+            func = PyList_GET_ITEM(lst, i);
+            res = PyObject_CallObject(func, NULL);
+            if (res == NULL)
+                PyErr_WriteUnraisable(func);
+            else
+                Py_DECREF(res);
+        }
+    }
+}
+
+void
+PyOS_BeforeFork(void)
+{
+    /* NOTE callbacks are prepended in register_at_fork(), which is
+     * analogous to running them in reverse order.
+     */
+    run_at_forkers(PyThreadState_Get()->interp->before_forkers);
+
+    _PyImport_AcquireLock();
+}
+
+void
+PyOS_AfterFork_Parent(void)
+{
+    if (_PyImport_ReleaseLock() <= 0)
+        Py_FatalError("failed releasing import lock after fork");
+
+    run_at_forkers(PyThreadState_Get()->interp->after_forkers_parent);
+}
+
+void
+PyOS_AfterFork_Child(void)
+{
+#ifdef WITH_THREAD
+    /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
+     * can be called safely. */
+    PyThread_ReInitTLS();
+    _PyGILState_Reinit();
+    PyEval_ReInitThreads();
+    _PyImport_ReInitLock();
+#endif
+    _PySignal_AfterFork();
+
+    run_at_forkers(PyThreadState_Get()->interp->after_forkers_child);
+}
+
+static int
+register_at_forker(PyObject **lst, PyObject *func, int prepend)
+{
+    if (*lst == NULL) {
+        *lst = PyList_New(0);
+        if (*lst == NULL)
+            return -1;
+    }
+    if (prepend)
+        return PyList_Insert(*lst, 0, func);
+    else
+        return PyList_Append(*lst, func);
+}
+#endif
+
+/* Legacy wrapper */
+void
+PyOS_AfterFork(void)
+{
+#ifdef HAVE_FORK
+    PyOS_AfterFork_Child();
+#endif
+}
+
 
 #ifdef MS_WINDOWS
 /* defined in fileutils.c */
@@ -5228,6 +5310,59 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
 #endif /* HAVE_SPAWNV */
 
 
+#ifdef HAVE_FORK
+/*[clinic input]
+os.register_at_fork
+
+    func: object
+        Function or callable
+    when: str
+        'before', 'child' or 'parent'
+
+Register a callable object to be called when forking.
+
+'before' callbacks are called in reverse order before forking.
+'child' callbacks are called in order after forking, in the child process.
+'parent' callbacks are called in order after forking, in the parent process.
+
+[clinic start generated code]*/
+
+static PyObject *
+os_register_at_fork_impl(PyObject *module, PyObject *func, const char *when)
+/*[clinic end generated code: output=8943be81a644750c input=8c71bc84a53b8466]*/
+{
+    PyInterpreterState *interp;
+    PyObject **lst;
+    int prepend = 0;
+
+    if (!PyCallable_Check(func)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected callable object, got %R", Py_TYPE(func));
+        return NULL;
+    }
+    interp = PyThreadState_Get()->interp;
+
+    if (!strcmp(when, "before")) {
+        lst = &interp->before_forkers;
+        prepend = 1;
+    }
+    else if (!strcmp(when, "child"))
+        lst = &interp->after_forkers_child;
+    else if (!strcmp(when, "parent"))
+        lst = &interp->after_forkers_parent;
+    else {
+        PyErr_Format(PyExc_ValueError, "unexpected value for *when*: %R",
+                     when);
+        return NULL;
+    }
+    if (register_at_forker(lst, func, prepend))
+        return NULL;
+    else
+        Py_RETURN_NONE;
+}
+#endif /* HAVE_FORK */
+
+
 #ifdef HAVE_FORK1
 /*[clinic input]
 os.fork1
@@ -5242,24 +5377,18 @@ os_fork1_impl(PyObject *module)
 /*[clinic end generated code: output=0de8e67ce2a310bc input=12db02167893926e]*/
 {
     pid_t pid;
-    int result = 0;
-    _PyImport_AcquireLock();
+
+    PyOS_BeforeFork();
     pid = fork1();
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
-        PyOS_AfterFork();
+        PyOS_AfterFork_Child();
     } else {
         /* parent: release the import lock. */
-        result = _PyImport_ReleaseLock();
+        PyOS_AfterFork_Parent();
     }
     if (pid == -1)
         return posix_error();
-    if (result < 0) {
-        /* Don't clobber the OSError if the fork failed. */
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        return NULL;
-    }
     return PyLong_FromPid(pid);
 }
 #endif /* HAVE_FORK1 */
@@ -5279,24 +5408,18 @@ os_fork_impl(PyObject *module)
 /*[clinic end generated code: output=3626c81f98985d49 input=13c956413110eeaa]*/
 {
     pid_t pid;
-    int result = 0;
-    _PyImport_AcquireLock();
+
+    PyOS_BeforeFork();
     pid = fork();
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
-        PyOS_AfterFork();
+        PyOS_AfterFork_Child();
     } else {
         /* parent: release the import lock. */
-        result = _PyImport_ReleaseLock();
+        PyOS_AfterFork_Parent();
     }
     if (pid == -1)
         return posix_error();
-    if (result < 0) {
-        /* Don't clobber the OSError if the fork failed. */
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        return NULL;
-    }
     return PyLong_FromPid(pid);
 }
 #endif /* HAVE_FORK */
@@ -5878,26 +6001,20 @@ static PyObject *
 os_forkpty_impl(PyObject *module)
 /*[clinic end generated code: output=60d0a5c7512e4087 input=f1f7f4bae3966010]*/
 {
-    int master_fd = -1, result = 0;
+    int master_fd = -1;
     pid_t pid;
 
-    _PyImport_AcquireLock();
+    PyOS_BeforeFork();
     pid = forkpty(&master_fd, NULL, NULL, NULL);
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
-        PyOS_AfterFork();
+        PyOS_AfterFork_Child();
     } else {
         /* parent: release the import lock. */
-        result = _PyImport_ReleaseLock();
+        PyOS_AfterFork_Parent();
     }
     if (pid == -1)
         return posix_error();
-    if (result < 0) {
-        /* Don't clobber the OSError if the fork failed. */
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        return NULL;
-    }
     return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
 }
 #endif /* HAVE_FORKPTY */
@@ -12278,6 +12395,7 @@ static PyMethodDef posix_methods[] = {
     OS_SPAWNVE_METHODDEF
     OS_FORK1_METHODDEF
     OS_FORK_METHODDEF
+    OS_REGISTER_AT_FORK_METHODDEF
     OS_SCHED_GET_PRIORITY_MAX_METHODDEF
     OS_SCHED_GET_PRIORITY_MIN_METHODDEF
     OS_SCHED_GETPARAM_METHODDEF
