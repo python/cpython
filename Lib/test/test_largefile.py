@@ -46,10 +46,7 @@ class LargeFileTest:
                                        'with mode "wb"')
 
     def test_large_reads_writes(self):
-        # see issue #24658
-        requires('largefile',
-                 'test requires %s bytes and a long time to run' % size)
-
+        # bpo-24658: Test that a read greater than 2GB does not fail.
         with self.open(TESTFN, "rb") as f:
             self.assertEqual(len(f.read()), size + 1)
             self.assertEqual(f.tell(), size + 1)
