@@ -237,6 +237,8 @@ calliter_iternext(calliterobject *it)
     return NULL;
 }
 
+/* A shrubbery */
+
 static PyObject *
 calliter_reduce(calliterobject *it)
 {
