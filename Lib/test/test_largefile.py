@@ -49,6 +49,7 @@ class LargeFileTest:
         # see issue #24658
         requires('largefile',
                  'test requires %s bytes and a long time to run' % size)
+        self.addCleanup(unlink, TESTFN)
         with self.open(TESTFN, "wb") as f:
             b = b'x' * size
             self.assertEqual(f.write(b), size)
