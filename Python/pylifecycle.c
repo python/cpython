@@ -413,6 +413,10 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         Py_FatalError("Py_Initialize: can't initialize sys dict");
     Py_INCREF(interp->sysdict);
 
+    /* GetPath may initialize state that _PySys_EndInit locks
+       in, and so has to be called first.
+       
+       Hopefully one day Eric Snow will fix this. */
     PySys_SetPath(Py_GetPath());
     if (_PySys_EndInit(interp->sysdict) < 0)
         Py_FatalError("Py_Initialize: can't initialize sys");
