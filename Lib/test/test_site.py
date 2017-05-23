@@ -547,12 +547,16 @@ class _pthFileTests(unittest.TestCase):
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'
         env['PATH'] = '{};{}'.format(exe_prefix, os.getenv('PATH'))
-        rc = subprocess.call([exe_file, '-c',
-            'import sys; sys.exit(sys.flags.no_site and '
-            'len(sys.path) > 200 and '
-            'sys.path == %r)' % sys_path,
-            ], env=env)
-        self.assertTrue(rc, "sys.path is incorrect")
+        output = subprocess.check_output([exe_file, '-c',
+            'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
+        ], env=env, encoding='ansi')
+        actual_sys_path = output.rstrip().split('\n')
+        self.assert_(actual_sys_path, "sys.flags.no_site was False")
+        self.assertEqual(
+            actual_sys_path,
+            sys_path,
+            "sys.path is incorrect"
+        )
 
     def test_underpth_file(self):
         libpath = os.path.dirname(os.path.dirname(encodings.__file__))
