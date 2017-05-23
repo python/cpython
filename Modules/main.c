@@ -379,7 +379,7 @@ read_command_line(int argc, wchar_t **argv, _Py_CommandLineDetails *cmdline)
     PyObject *warning_option = NULL;
     wchar_t *command = NULL;
     wchar_t *module = NULL;
-    char c;
+    int c;
     char *opt;
 
     opt = Py_GETENV("PYTHONMALLOC");
