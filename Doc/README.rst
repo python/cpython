@@ -28,14 +28,7 @@ install the tools into there.
 Using make
 ----------
 
-To get started on UNIX, you can create a virtual environment with the command ::
-
-  make venv
-
-That will install all the tools necessary to build the documentation. Assuming
-the virtual environment was created in the ``env`` directory (the default;
-configurable with the VENVDIR variable), you can run the following command to
-build the HTML output files::
+A Makefile has been prepared so that (on Unix) you can just run ::
 
   make html
 
@@ -104,11 +97,14 @@ Available make targets are:
 Without make
 ------------
 
-First, install the tool dependencies from PyPI.
+Install the Sphinx package and its dependencies from PyPI. In this situation,
+you'll have to create a virtualenv manually, and install Sphinx into it.
+Change into the ``Doc`` directory and run ::
 
-Then, from the ``Doc`` directory, run ::
-
-   sphinx-build -b<builder> . build/<builder>
+   $ python3 -m venv venv
+   $ source venv/bin/activate
+   (venv) $ pip install Sphinx
+   (venv) $ sphinx-build -b<builder> . build/<builder>
 
 where ``<builder>`` is one of html, text, latex, or htmlhelp (for explanations
 see the make targets above).
