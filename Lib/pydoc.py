@@ -1441,9 +1441,11 @@ class _PlainTextDoc(TextDoc):
 
 # --------------------------------------------------------- user interfaces
 
-def pager(text):
+def pager(text, more_text = '-- more --'):
     """The first time this is called, determine what kind of pager to use."""
     global pager
+    global pager_more_text
+    pager_more_text = more_text
     pager = getpager()
     pager(text)
 
@@ -1527,6 +1529,7 @@ def _escape_stdout(text):
 def ttypager(text):
     """Page through text on a text terminal."""
     lines = plain(_escape_stdout(text)).split('\n')
+    global pager_more_text
     try:
         import tty
         fd = sys.stdin.fileno()
@@ -1547,7 +1550,7 @@ def ttypager(text):
         r = inc = h - 1
         sys.stdout.write('\n'.join(lines[:inc]) + '\n')
         while lines[r:]:
-            sys.stdout.write('-- more --')
+            sys.stdout.write(pager_more_text)
             sys.stdout.flush()
             c = getchar()
 
