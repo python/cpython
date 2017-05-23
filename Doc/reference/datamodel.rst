@@ -1614,14 +1614,29 @@ instances cannot override the behavior of a property.
 __slots__
 ^^^^^^^^^
 
-By default, instances of classes have a dictionary for attribute storage.  This
-wastes space for objects having very few instance variables.  The space
-consumption can become acute when creating large numbers of instances.
+By default, instances of classes have a dictionary for attribute storage.
 
 The default can be overridden by defining *__slots__* in a class definition.
+
 The *__slots__* declaration takes a sequence of instance variables and reserves
-just enough space in each instance to hold a value for each variable.  Space is
-saved because *__dict__* is not created for each instance.
+just enough space in each instance to hold a reference to a value for each
+variable.
+
+Space is saved because *__dict__* is not used for these variables.
+
+One can prevent *__dict__* and *__weakref__* from being created by
+inheriting solely from slotted classes or builtin types.
+
+*__dict__* and *__weakref__* can be allowed by adding them to *__slots__*.
+
+Since slots implicitly create *member_descriptors* (data descriptors), the
+optimizations still apply for attributes named in *__slots__*.
+
+Child classes using *__slots__* should only name the additional slots,
+else the slots created by the parents will be inaccessable.
+
+One can use multiple inheritance with slots, but only one parent can have
+non-empty *__slots__*.
 
 
 .. data:: object.__slots__
@@ -1634,10 +1649,6 @@ saved because *__dict__* is not created for each instance.
 
 Notes on using *__slots__*
 """"""""""""""""""""""""""
-
-* When inheriting from a class without *__slots__*, the *__dict__* attribute of
-  that class will always be accessible, so a *__slots__* definition in the
-  subclass is meaningless.
 
 * Without a *__dict__* variable, instances cannot be assigned new variables not
   listed in the *__slots__* definition.  Attempts to assign to an unlisted
@@ -1656,9 +1667,9 @@ Notes on using *__slots__*
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
-* The action of a *__slots__* declaration is limited to the class where it is
-  defined.  As a result, subclasses will have a *__dict__* unless they also define
-  *__slots__* (which must only contain names of any *additional* slots).
+* For classes in an inheritance tree that defines *__slots__*, subclasses
+  will have a *__dict__* unless they also define *__slots__* (which must only
+  contain names of any additional slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
