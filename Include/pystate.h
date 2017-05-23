@@ -28,6 +28,8 @@ typedef struct _is {
     struct _is *next;
     struct _ts *tstate_head;
 
+    int64_t id;
+
     PyObject *modules;
     PyObject *modules_by_index;
     PyObject *sysdict;
@@ -108,7 +110,7 @@ typedef struct _ts {
     int gilstate_counter;
 
     PyObject *async_exc; /* Asynchronous exception to raise */
-    long thread_id; /* Thread id where this tstate was created */
+    unsigned long thread_id; /* Thread id where this tstate was created */
 
     int trash_delete_nesting;
     PyObject *trash_delete_later;
@@ -154,9 +156,16 @@ typedef struct _ts {
 #endif
 
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _PyInterpreterState_Init(void);
+#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+/* New in 3.7 */
+PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
+#endif
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
 #endif /* !Py_LIMITED_API */
@@ -200,7 +209,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
-PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject *);
+PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
 
 /* Variable and macro for in-line access to current thread state */
@@ -293,6 +302,7 @@ PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
 #ifndef Py_LIMITED_API
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);

@@ -374,7 +374,7 @@ read_bytes(bytesio *self, Py_ssize_t size)
 
 /*[clinic input]
 _io.BytesIO.read
-    size as arg: object = None
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read at most size bytes, returned as a bytes object.
@@ -384,27 +384,12 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_read_impl(bytesio *self, PyObject *arg)
-/*[clinic end generated code: output=85dacb535c1e1781 input=cc7ba4a797bb1555]*/
+_io_BytesIO_read_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=9cc025f21c75bdd2 input=74344a39f431c3d7]*/
 {
-    Py_ssize_t size, n;
+    Py_ssize_t n;
 
     CHECK_CLOSED(self);
-
-    if (PyLong_Check(arg)) {
-        size = PyLong_AsSsize_t(arg);
-        if (size == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg == Py_None) {
-        /* Read until EOF is reached, by default. */
-        size = -1;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
 
     /* adjust invalid sizes */
     n = self->string_size - self->pos;
@@ -420,7 +405,7 @@ _io_BytesIO_read_impl(bytesio *self, PyObject *arg)
 
 /*[clinic input]
 _io.BytesIO.read1
-    size: object(c_default="Py_None") = -1
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read at most size bytes, returned as a bytes object.
@@ -430,15 +415,15 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_read1_impl(bytesio *self, PyObject *size)
-/*[clinic end generated code: output=a60d80c84c81a6b8 input=0951874bafee8e80]*/
+_io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=d0f843285aa95f1c input=440a395bf9129ef5]*/
 {
     return _io_BytesIO_read_impl(self, size);
 }
 
 /*[clinic input]
 _io.BytesIO.readline
-    size as arg: object = None
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Next line from the file, as a bytes object.
@@ -449,27 +434,12 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_readline_impl(bytesio *self, PyObject *arg)
-/*[clinic end generated code: output=1c2115534a4f9276 input=ca31f06de6eab257]*/
+_io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=4bff3c251df8ffcd input=e7c3fbd1744e2783]*/
 {
-    Py_ssize_t size, n;
+    Py_ssize_t n;
 
     CHECK_CLOSED(self);
-
-    if (PyLong_Check(arg)) {
-        size = PyLong_AsSsize_t(arg);
-        if (size == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg == Py_None) {
-        /* No size limit, by default. */
-        size = -1;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
 
     n = scan_eol(self, size);
 
@@ -579,7 +549,7 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
 
 /*[clinic input]
 _io.BytesIO.truncate
-    size as arg: object = None
+    size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
     /
 
 Truncate the file to at most size bytes.
@@ -589,28 +559,11 @@ The current file position is unchanged.  Returns the new size.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_truncate_impl(bytesio *self, PyObject *arg)
-/*[clinic end generated code: output=81e6be60e67ddd66 input=11ed1966835462ba]*/
+_io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=9ad17650c15fa09b input=423759dd42d2f7c1]*/
 {
-    Py_ssize_t size;
-
     CHECK_CLOSED(self);
     CHECK_EXPORTS(self);
-
-    if (PyLong_Check(arg)) {
-        size = PyLong_AsSsize_t(arg);
-        if (size == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg == Py_None) {
-        /* Truncate to current position if no argument is passed. */
-        size = self->pos;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
 
     if (size < 0) {
         PyErr_Format(PyExc_ValueError,
@@ -843,7 +796,7 @@ bytesio_setstate(bytesio *self, PyObject *state)
     /* We allow the state tuple to be longer than 3, because we may need
        someday to extend the object's state without breaking
        backward-compatibility. */
-    if (!PyTuple_Check(state) || Py_SIZE(state) < 3) {
+    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) < 3) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s.__setstate__ argument should be 3-tuple, got %.200s",
                      Py_TYPE(self)->tp_name, Py_TYPE(state)->tp_name);

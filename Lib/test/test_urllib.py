@@ -206,6 +206,7 @@ class urlopen_FileTests(unittest.TestCase):
     def test_relativelocalfile(self):
         self.assertRaises(ValueError,urllib.request.urlopen,'./' + self.pathname)
 
+
 class ProxyTests(unittest.TestCase):
 
     def setUp(self):
@@ -259,6 +260,7 @@ class ProxyTests(unittest.TestCase):
         self.assertFalse(bypass('newdomain.com'))            # no port
         self.assertFalse(bypass('newdomain.com:1235'))       # wrong port
 
+
 class ProxyTests_withOrderedEnv(unittest.TestCase):
 
     def setUp(self):
@@ -293,6 +295,7 @@ class ProxyTests_withOrderedEnv(unittest.TestCase):
         os.environ['Http_Proxy'] = 'http://somewhereelse:3128'
         proxies = urllib.request.getproxies_environment()
         self.assertEqual('http://somewhere:3128', proxies['http'])
+
 
 class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
     """Test urlopen() opening a fake http connection."""
@@ -432,7 +435,6 @@ Connection: close
         finally:
             self.unfakeftp()
 
-
     def test_userpass_inurl(self):
         self.fakehttp(b"HTTP/1.0 200 OK\r\n\r\nHello!")
         try:
@@ -475,6 +477,7 @@ Connection: close
                 urllib.request.urlopen(
                     "https://localhost", cafile="/nonexistent/path", context=context
                 )
+
 
 class urlopen_DataTests(unittest.TestCase):
     """Test urlopen() opening a data URL."""
@@ -548,6 +551,7 @@ class urlopen_DataTests(unittest.TestCase):
     def test_invalid_base64_data(self):
         # missing padding character
         self.assertRaises(ValueError,urllib.request.urlopen,'data:;base64,Cg=')
+
 
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""

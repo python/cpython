@@ -766,7 +766,7 @@ class _BufferedIOMixin(BufferedIOBase):
 
     def flush(self):
         if self.closed:
-            raise ValueError("flush of closed file")
+            raise ValueError("flush on closed file")
         self.raw.flush()
 
     def close(self):
@@ -1214,7 +1214,7 @@ class BufferedWriter(_BufferedIOMixin):
 
     def _flush_unlocked(self):
         if self.closed:
-            raise ValueError("flush of closed file")
+            raise ValueError("flush on closed file")
         while self._write_buf:
             try:
                 n = self.raw.write(self._write_buf)

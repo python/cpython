@@ -3633,7 +3633,8 @@ PyUnicode_AsEncodedString(PyObject *unicode,
             return NULL;
         }
 
-        b = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
+        b = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v),
+                                      PyByteArray_GET_SIZE(v));
         Py_DECREF(v);
         return b;
     }
@@ -3906,6 +3907,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
     PyObject *output = NULL;
     if (arg == NULL) {
         Py_DECREF(*(PyObject**)addr);
+        *(PyObject**)addr = NULL;
         return 1;
     }
 
@@ -11282,7 +11284,16 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
     Py_UCS4 maxchar, maxchar2;
     Py_ssize_t left_len, right_len, new_len;
 
-    if (ensure_unicode(left) < 0 || ensure_unicode(right) < 0)
+    if (ensure_unicode(left) < 0)
+        return NULL;
+
+    if (!PyUnicode_Check(right)) {
+        PyErr_Format(PyExc_TypeError,
+                     "can only concatenate str (not \"%.200s\") to str",
+                     right->ob_type->tp_name);
+        return NULL;
+    }
+    if (PyUnicode_READY(right) < 0)
         return NULL;
 
     /* Shortcuts */
@@ -11687,7 +11698,11 @@ unicode_hash(PyObject *self)
 PyDoc_STRVAR(index__doc__,
              "S.index(sub[, start[, end]]) -> int\n\
 \n\
-Like S.find() but raise ValueError when the substring is not found.");
+Return the lowest index in S where substring sub is found, \n\
+such that sub is contained within S[start:end].  Optional\n\
+arguments start and end are interpreted as in slice notation.\n\
+\n\
+Raises ValueError when the substring is not found.");
 
 static PyObject *
 unicode_index(PyObject *self, PyObject *args)
@@ -12803,7 +12818,11 @@ unicode_rfind(PyObject *self, PyObject *args)
 PyDoc_STRVAR(rindex__doc__,
              "S.rindex(sub[, start[, end]]) -> int\n\
 \n\
-Like S.rfind() but raise ValueError when the substring is not found.");
+Return the highest index in S where substring sub is found,\n\
+such that sub is contained within S[start:end].  Optional\n\
+arguments start and end are interpreted as in slice notation.\n\
+\n\
+Raises ValueError when the substring is not found.");
 
 static PyObject *
 unicode_rindex(PyObject *self, PyObject *args)
@@ -13089,7 +13108,7 @@ unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
 /*[clinic input]
 str.splitlines as unicode_splitlines
 
-    keepends: int(c_default="0") = False
+    keepends: bool(accept={int}) = False
 
 Return a list of the lines in the string, breaking at line boundaries.
 
@@ -13099,7 +13118,7 @@ true.
 
 static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends)
-/*[clinic end generated code: output=f664dcdad153ec40 input=d6ff99fe43465b0f]*/
+/*[clinic end generated code: output=f664dcdad153ec40 input=b508e180459bdd8b]*/
 {
     return PyUnicode_Splitlines(self, keepends);
 }
@@ -13978,10 +13997,11 @@ unicode_subscript(PyObject* self, PyObject* item)
         int src_kind, dest_kind;
         Py_UCS4 ch, max_char, kind_limit;
 
-        if (PySlice_GetIndicesEx(item, PyUnicode_GET_LENGTH(self),
-                                 &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyUnicode_GET_LENGTH(self),
+                                            &start, &stop, step);
 
         if (slicelength <= 0) {
             _Py_RETURN_UNICODE_EMPTY();

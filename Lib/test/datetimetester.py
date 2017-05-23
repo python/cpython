@@ -4313,6 +4313,11 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         dt = dt.replace(fold=1, tzinfo=Eastern)
         self.assertEqual(t.replace(tzinfo=None).fold, 1)
         self.assertEqual(dt.replace(tzinfo=None).fold, 1)
+        # Out of bounds.
+        with self.assertRaises(ValueError):
+            t.replace(fold=2)
+        with self.assertRaises(ValueError):
+            dt.replace(fold=2)
         # Check that fold is a keyword-only argument
         with self.assertRaises(TypeError):
             t.replace(1, 1, 1, None, 1)

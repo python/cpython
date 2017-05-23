@@ -188,7 +188,7 @@ read_init_file(PyObject *self, PyObject *args)
     } else
         errno = rl_read_init_file(NULL);
     if (errno)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 
@@ -214,7 +214,7 @@ read_history_file(PyObject *self, PyObject *args)
     } else
         errno = read_history(NULL);
     if (errno)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 
@@ -249,7 +249,7 @@ write_history_file(PyObject *self, PyObject *args)
     Py_XDECREF(filename_bytes);
     errno = err;
     if (errno)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 
@@ -285,7 +285,7 @@ append_history_file(PyObject *self, PyObject *args)
     Py_XDECREF(filename_bytes);
     errno = err;
     if (errno)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 

@@ -140,13 +140,6 @@ class _io._WindowsConsoleIO "winconsoleio *" "&PyWindowsConsoleIO_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e897fdc1fba4e131]*/
 
-/*[python input]
-class io_ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = '_PyIO_ConvertSsize_t'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
-
 typedef struct {
     PyObject_HEAD
     HANDLE handle;
@@ -252,7 +245,7 @@ winconsoleio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 _io._WindowsConsoleIO.__init__
     file as nameobj: object
     mode: str = "r"
-    closefd: int(c_default="1") = True
+    closefd: bool(accept={int}) = True
     opener: object = None
 
 Open a console buffer by file descriptor.
@@ -266,7 +259,7 @@ static int
 _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
                                     const char *mode, int closefd,
                                     PyObject *opener)
-/*[clinic end generated code: output=3fd9cbcdd8d95429 input=61be39633a86f5d7]*/
+/*[clinic end generated code: output=3fd9cbcdd8d95429 input=06ae4b863c63244b]*/
 {
     const char *s;
     wchar_t *name = NULL;
@@ -906,7 +899,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
 
 /*[clinic input]
 _io._WindowsConsoleIO.read
-    size: io_ssize_t = -1
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read at most size bytes, returned as bytes.
@@ -918,7 +911,7 @@ Return an empty bytes object at EOF.
 
 static PyObject *
 _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
-/*[clinic end generated code: output=57df68af9f4b22d0 input=6c56fceec460f1dd]*/
+/*[clinic end generated code: output=57df68af9f4b22d0 input=8bc73bc15d0fa072]*/
 {
     PyObject *bytes;
     Py_ssize_t bytes_size;

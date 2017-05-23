@@ -6,7 +6,7 @@ from idlelib import config_key
 from test.support import requires
 requires('gui')
 import unittest
-from tkinter import Tk, Text
+from tkinter import Tk
 
 
 class GetKeysTest(unittest.TestCase):

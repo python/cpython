@@ -88,7 +88,7 @@ int Py_BytesWarningFlag; /* Warn on str(bytes) and str(buffer) */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
-int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.py[co]) */
+int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.pyc) */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
@@ -291,6 +291,9 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
 
     /* Install importlib as the implementation of import */
     value = PyObject_CallMethod(importlib, "_install", "OO", sysmod, impmod);
+    if (value != NULL)
+        value = PyObject_CallMethod(importlib,
+                                    "_install_external_importers", "");
     if (value == NULL) {
         PyErr_Print();
         Py_FatalError("Py_Initialize: importlib install failed");
@@ -331,8 +334,8 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
     if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
         Py_DontWriteBytecodeFlag = add_flag(Py_DontWriteBytecodeFlag, p);
-    /* The variable is only tested for existence here; _PyRandom_Init will
-       check its value further. */
+    /* The variable is only tested for existence here;
+       _Py_HashRandomization_Init will check its value further. */
     if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
         Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
 #ifdef MS_WINDOWS
@@ -342,8 +345,9 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         Py_LegacyWindowsStdioFlag = add_flag(Py_LegacyWindowsStdioFlag, p);
 #endif
 
-    _PyRandom_Init();
+    _Py_HashRandomization_Init();
 
+    _PyInterpreterState_Init();
     interp = PyInterpreterState_New();
     if (interp == NULL)
         Py_FatalError("Py_Initialize: can't make first interpreter");
@@ -401,13 +405,15 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);
 
-    sysmod = _PySys_Init();
+    sysmod = _PySys_BeginInit();
     if (sysmod == NULL)
         Py_FatalError("Py_Initialize: can't initialize sys");
     interp->sysdict = PyModule_GetDict(sysmod);
     if (interp->sysdict == NULL)
         Py_FatalError("Py_Initialize: can't initialize sys dict");
     Py_INCREF(interp->sysdict);
+    if (_PySys_EndInit(interp->sysdict) < 0)
+        Py_FatalError("Py_Initialize: can't initialize sys");
     _PyImport_FixupBuiltin(sysmod, "sys");
     PySys_SetPath(Py_GetPath());
     PyDict_SetItemString(interp->sysdict, "modules",
@@ -693,7 +699,7 @@ Py_FinalizeEx(void)
     PyDict_Fini();
     PySlice_Fini();
     _PyGC_Fini();
-    _PyRandom_Fini();
+    _Py_HashRandomization_Fini();
     _PyArg_Fini();
     PyAsyncGen_Fini();
 
@@ -1045,6 +1051,14 @@ initsite(void)
 static int
 is_valid_fd(int fd)
 {
+#ifdef __APPLE__
+    /* bpo-30225: On macOS Tiger, when stdout is redirected to a pipe
+       and the other side of the pipe is closed, dup(1) succeed, whereas
+       fstat(1, &st) fails with EBADF. Prefer fstat() over dup() to detect
+       such error. */
+    struct stat st;
+    return (fstat(fd, &st) == 0);
+#else
     int fd2;
     if (fd < 0)
         return 0;
@@ -1057,6 +1071,7 @@ is_valid_fd(int fd)
         close(fd2);
     _Py_END_SUPPRESS_IPH
     return fd2 >= 0;
+#endif
 }
 
 /* returns Py_None if the fd is not valid */

@@ -7,7 +7,6 @@
 
 import abc
 import ast
-import atexit
 import collections
 import contextlib
 import copy
@@ -27,7 +26,6 @@ import tempfile
 import textwrap
 import traceback
 import types
-import uuid
 
 from types import *
 NoneType = type(None)
@@ -2042,7 +2040,6 @@ __rmatmul__
 __rmod__
 __rmul__
 __ror__
-__round__
 __rpow__
 __rrshift__
 __rshift__
@@ -2547,7 +2544,11 @@ class bool_converter(CConverter):
     format_unit = 'p'
     c_ignored_default = '0'
 
-    def converter_init(self):
+    def converter_init(self, *, accept={object}):
+        if accept == {int}:
+            self.format_unit = 'i'
+        elif accept != {object}:
+            fail("bool_converter: illegal 'accept' argument " + repr(accept))
         if self.default is not unspecified:
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
@@ -2649,11 +2650,31 @@ class unsigned_long_long_converter(CConverter):
         if not bitwise:
             fail("Unsigned long long must be bitwise (for now).")
 
+
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
-    default_type = int
-    format_unit = 'n'
     c_ignored_default = "0"
+
+    def converter_init(self, *, accept={int}):
+        if accept == {int}:
+            self.format_unit = 'n'
+            self.default_type = int
+        elif accept == {int, NoneType}:
+            self.converter = '_Py_convert_optional_to_ssize_t'
+        else:
+            fail("Py_ssize_t_converter: illegal 'accept' argument " + repr(accept))
+
+
+class slice_index_converter(CConverter):
+    type = 'Py_ssize_t'
+
+    def converter_init(self, *, accept={int, NoneType}):
+        if accept == {int}:
+            self.converter = '_PyEval_SliceIndexNotNone'
+        elif accept == {int, NoneType}:
+            self.converter = '_PyEval_SliceIndex'
+        else:
+            fail("slice_index_converter: illegal 'accept' argument " + repr(accept))
 
 
 class float_converter(CConverter):

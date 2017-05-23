@@ -3559,10 +3559,10 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         PyObject *args;
         PyObject *kwargs;
 
-        if (Py_SIZE(argtup) != 3) {
+        if (PyTuple_GET_SIZE(argtup) != 3) {
             PyErr_Format(st->PicklingError,
                          "length of the NEWOBJ_EX argument tuple must be "
-                         "exactly 3, not %zd", Py_SIZE(argtup));
+                         "exactly 3, not %zd", PyTuple_GET_SIZE(argtup));
             return -1;
         }
 
@@ -3602,7 +3602,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             Py_ssize_t i;
             _Py_IDENTIFIER(__new__);
 
-            newargs = PyTuple_New(Py_SIZE(args) + 2);
+            newargs = PyTuple_New(PyTuple_GET_SIZE(args) + 2);
             if (newargs == NULL)
                 return -1;
 
@@ -3614,7 +3614,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             PyTuple_SET_ITEM(newargs, 0, cls_new);
             Py_INCREF(cls);
             PyTuple_SET_ITEM(newargs, 1, cls);
-            for (i = 0; i < Py_SIZE(args); i++) {
+            for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
                 PyObject *item = PyTuple_GET_ITEM(args, i);
                 Py_INCREF(item);
                 PyTuple_SET_ITEM(newargs, i + 2, item);
@@ -3649,7 +3649,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         int p;
 
         /* Sanity checks. */
-        if (Py_SIZE(argtup) < 1) {
+        if (PyTuple_GET_SIZE(argtup) < 1) {
             PyErr_SetString(st->PicklingError, "__newobj__ arglist is empty");
             return -1;
         }
@@ -3702,7 +3702,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         if (save(self, cls, 0) < 0)
             return -1;
 
-        newargtup = PyTuple_GetSlice(argtup, 1, Py_SIZE(argtup));
+        newargtup = PyTuple_GetSlice(argtup, 1, PyTuple_GET_SIZE(argtup));
         if (newargtup == NULL)
             return -1;
 
@@ -4431,7 +4431,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
             Py_ssize_t memo_id;
             PyObject *memo_obj;
 
-            if (!PyTuple_Check(value) || Py_SIZE(value) != 2) {
+            if (!PyTuple_Check(value) || PyTuple_GET_SIZE(value) != 2) {
                 PyErr_SetString(PyExc_TypeError,
                                 "'memo' values must be 2-item tuples");
                 goto error;
@@ -5168,7 +5168,7 @@ instantiate(PyObject *cls, PyObject *args)
        Pdata_poptuple which packs objects from the top of the stack
        into a newly created tuple. */
     assert(PyTuple_Check(args));
-    if (Py_SIZE(args) > 0 || !PyType_Check(cls) ||
+    if (PyTuple_GET_SIZE(args) > 0 || !PyType_Check(cls) ||
         _PyObject_HasAttrId(cls, &PyId___getinitargs__)) {
         result = PyObject_CallObject(cls, args);
     }
@@ -6048,7 +6048,7 @@ load_build(UnpicklerObject *self)
     /* A default __setstate__.  First see whether state embeds a
      * slot state dict too (a proto 2 addition).
      */
-    if (PyTuple_Check(state) && Py_SIZE(state) == 2) {
+    if (PyTuple_Check(state) && PyTuple_GET_SIZE(state) == 2) {
         PyObject *tmp = state;
 
         state = PyTuple_GET_ITEM(tmp, 0);
