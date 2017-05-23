@@ -11,8 +11,8 @@
 --------------
 
 The :mod:`glob` module finds all the pathnames matching a specified pattern
-according to the rules used by the Unix shell, although results are returned in
-arbitrary order.  No tilde expansion is done, but ``*``, ``?``, and character
+according to the rules used by the Unix shell, and results are returned in
+sorted order.  No tilde expansion is done, but ``*``, ``?``, and character
 ranges expressed with ``[]`` will be correctly matched.  This is done by using
 the :func:`os.scandir` and :func:`fnmatch.fnmatch` functions in concert, and
 not by actually invoking a subshell.  Note that unlike :func:`fnmatch.fnmatch`,

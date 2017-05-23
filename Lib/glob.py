@@ -17,7 +17,7 @@ def glob(pathname, *, recursive=False):
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
-    return list(iglob(pathname, recursive=recursive))
+    return sorted(iglob(pathname, recursive=recursive))
 
 def iglob(pathname, *, recursive=False):
     """Return an iterator which yields the paths matching a pathname pattern.
