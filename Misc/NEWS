@@ -995,6 +995,10 @@ Library
 - Issue #29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
   classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
 
+- Issue #25532: inspect.unwrap() will now only try to unwrap an object
+  sys.getrecursionlimit() times, to protect against objects which create a new
+  object on every attribute access.
+
 Windows
 -------
 
