@@ -341,7 +341,7 @@ The available slot types are:
 
    When an extension module is executed as a script using Python's
    :ref:`-m option <m option>`, the function(s) specified by its
-   ```Py_mod_exec`` slots are executed on the ``__main__`` module.
+   ``Py_mod_exec`` slots are executed on the ``__main__`` module.
    To handle this case, the function can check if the module's ``__name__``
    is ``"__main__"``, and react accordingly. For example:
 
