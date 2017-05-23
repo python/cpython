@@ -46,6 +46,7 @@ static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
 /* The single PyInterpreterState used by this process'
    GILState implementation
 */
+/* TODO: Given interp_main, it may be possible to kill this ref */
 static PyInterpreterState *autoInterpreterState = NULL;
 static int autoTLSkey = -1;
 #else
@@ -55,6 +56,7 @@ static int autoTLSkey = -1;
 #endif
 
 static PyInterpreterState *interp_head = NULL;
+static PyInterpreterState *interp_main = NULL;
 
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
@@ -119,6 +121,9 @@ PyInterpreterState_New(void)
 
         HEAD_LOCK();
         interp->next = interp_head;
+        if (interp_main == NULL) {
+            interp_main = interp;
+        }
         interp_head = interp;
         if (_next_interp_id < 0) {
             /* overflow or Py_Initialize() not called! */
@@ -185,6 +190,11 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     if (interp->tstate_head != NULL)
         Py_FatalError("PyInterpreterState_Delete: remaining threads");
     *p = interp->next;
+    if (interp_main == interp) {
+        interp_main = NULL;
+        if (interp_head != NULL)
+            Py_FatalError("PyInterpreterState_Delete: remaining subinterpreters");
+    }
     HEAD_UNLOCK();
     PyMem_RawFree(interp);
 #ifdef WITH_THREAD
@@ -659,6 +669,12 @@ PyInterpreterState *
 PyInterpreterState_Head(void)
 {
     return interp_head;
+}
+
+PyInterpreterState *
+PyInterpreterState_Main(void)
+{
+    return interp_main;
 }
 
 PyInterpreterState *
