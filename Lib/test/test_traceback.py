@@ -339,12 +339,12 @@ class TracebackFormatTests(unittest.TestCase):
 
         expected = result_f.splitlines()
         actual = stderr_f.getvalue().splitlines()
-
         # Check the output text matches expectations
         # 2nd last line contains the repetition count
         self.assertEqual(actual[:-2], expected[:-2])
         self.assertRegex(actual[-2], expected[-2])
-        self.assertEqual(actual[-1], expected[-1])
+        # last line can have additional text appended
+        self.assertIn(expected[-1], actual[-1])
 
         # Check the recursion count is roughly as expected
         rec_limit = sys.getrecursionlimit()
