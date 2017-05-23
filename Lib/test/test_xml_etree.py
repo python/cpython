@@ -1538,6 +1538,7 @@ class BugsTest(unittest.TestCase):
         self.assertEqual(t.find('.//paragraph').text,
             'A new cultivar of Begonia plant named \u2018BCT9801BEG\u2019.')
 
+    @unittest.skipIf(sys.gettrace(), "Skips under coverage.")
     def test_bug_xmltoolkit63(self):
         # Check reference leak.
         def xmltoolkit63():
