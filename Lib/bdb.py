@@ -335,55 +335,54 @@ class Bdb:
         # Check all watchpoint
         hits = False
         for bp in Breakpoint.bpbynumber:
-            if not bp:
+            if not bp or not bp.bptype.endswith('watchpoint'):
                 continue
-            if bp.bptype.endswith('watchpoint'):
-                try:
-                    if frame == bp.var_frame.f_back:
-                        # Variable out of scope
-                        raise ValueError
-                    cur_value = eval(bp.var_name, frame.f_locals)
-                except (NameError, ValueError):
-                    self.error('Watchpoint %d deleted because the program has'
-                               ' left the scope in which its'
-                               ' expression is valid.' % (bp.number)
-                               )
-                    bp.deleteMe()
-                    continue
+            try:
+                if frame == bp.var_frame.f_back:
+                    # Variable out of scope
+                    raise ValueError
+                cur_value = eval(bp.var_name, frame.f_locals)
+            except (NameError, ValueError):
+                self.error('Watchpoint %d deleted because the program has'
+                           ' left the scope in which its'
+                           ' expression is valid.' % (bp.number)
+                           )
+                bp.deleteMe()
+                continue
 
-                hit = False
-                if ((bp.bptype == 'watchpoint' or
-                        bp.bptype == 'read/write watchpoint') and
-                        bp.var_value != cur_value):
-                    # Varialbe value has changed
-                    self.message('\n{}\n\nOld value = {}\nNew value = {}'.format(
-                        bp,
-                        bp.var_value,
-                        cur_value
-                    ))
+            hit = False
+            if ((bp.bptype == 'watchpoint' or
+                    bp.bptype == 'read/write watchpoint') and
+                    bp.var_value != cur_value):
+                # Varialbe value has changed
+                self.message('\n{}\n\nOld value = {}\nNew value = {}'.format(
+                    bp,
+                    bp.var_value,
+                    cur_value
+                ))
 
-                    # Update value to latest value
-                    bp.var_value = copy.copy(cur_value)
-                    hit = True
-                elif (bp.bptype == 'read watchpoint' or
-                        bp.bptype == 'read/write watchpoint'):
-                    # Cache file's bytecode instruction by line
-                    filename = frame.f_code.co_filename
-                    if filename not in self.file_instructions:
-                        self.file_instructions[filename] = _get_line_instructions(frame)
+                # Update value to latest value
+                bp.var_value = copy.copy(cur_value)
+                hit = True
+            elif (bp.bptype == 'read watchpoint' or
+                    bp.bptype == 'read/write watchpoint'):
+                # Cache file's bytecode instruction by line
+                filename = frame.f_code.co_filename
+                if filename not in self.file_instructions:
+                    self.file_instructions[filename] = _get_line_instructions(frame)
 
-                    # Check bytecode if variable has been read or write
-                    # the same value
-                    lineno = frame.f_lineno
-                    instrs = self.file_instructions[filename][lineno]
-                    hit = _check_load(bp.var_name, instrs) or _check_store(bp.var_name, instrs)
-                    if hit:
-                        self.message('\n{}\n\nValue = {}'.format(bp, cur_value))
-
+                # Check bytecode if variable has been read or write
+                # the same value
+                lineno = frame.f_lineno
+                instrs = self.file_instructions[filename][lineno]
+                hit = _check_load(bp.var_name, instrs) or _check_store(bp.var_name, instrs)
                 if hit:
-                    hits = True
-                    bp.hits += 1
-                    self.currentbp = bp.number
+                    self.message('\n{}\n\nValue = {}'.format(bp, cur_value))
+
+            if hit:
+                hits = True
+                bp.hits += 1
+                self.currentbp = bp.number
 
         return hits
 
