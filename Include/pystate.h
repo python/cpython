@@ -162,7 +162,10 @@ PyAPI_FUNC(void) _PyInterpreterState_Init(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+/* New in 3.7 */
 PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
+#endif
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
 #endif /* !Py_LIMITED_API */
