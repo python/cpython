@@ -302,6 +302,7 @@ PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
 #ifndef Py_LIMITED_API
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
