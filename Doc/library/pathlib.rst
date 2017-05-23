@@ -1078,6 +1078,16 @@ Correspondence to tools in the os package
 If you're more familiar with :mod:`os.path` module, here's a correspondence
 table on how the same things may be accomplished with pathlib.
 
+.. note::
+   Although :func:`os.path.relpath` and :meth:`PurePath.relative_to` have some
+   overlapping use cases, :meth:`PurePath.relative_to` is more oriented towards
+   answering the question "Relative to a given parent directory, how do I reach
+   this descendant path?" whereas :func:`os.path.relpath` is implemented to
+   answer the "How do I get to path A from path B?".
+
+   If the parameter passed to :meth:`PurePath.relative_to` is not a parent
+   node of the object, :exc:`ValueError` exception is raised.
+
 ============================   ==============================
 os and os.path                 pathlib
 ============================   ==============================
