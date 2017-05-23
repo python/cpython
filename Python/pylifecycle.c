@@ -405,17 +405,18 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);
 
-    sysmod = _PySys_BeginInit();
-    if (sysmod == NULL)
+	sysmod = _PySys_BeginInit();
+	if (sysmod == NULL)
         Py_FatalError("Py_Initialize: can't initialize sys");
-    interp->sysdict = PyModule_GetDict(sysmod);
-    if (interp->sysdict == NULL)
+	interp->sysdict = PyModule_GetDict(sysmod);
+	if (interp->sysdict == NULL)
         Py_FatalError("Py_Initialize: can't initialize sys dict");
     Py_INCREF(interp->sysdict);
-    if (_PySys_EndInit(interp->sysdict) < 0)
+	
+	PySys_SetPath(Py_GetPath());
+	if (_PySys_EndInit(interp->sysdict) < 0)
         Py_FatalError("Py_Initialize: can't initialize sys");
-    _PyImport_FixupBuiltin(sysmod, "sys");
-    PySys_SetPath(Py_GetPath());
+	_PyImport_FixupBuiltin(sysmod, "sys");
     PyDict_SetItemString(interp->sysdict, "modules",
                          interp->modules);
 
