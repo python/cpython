@@ -14,16 +14,17 @@ developers guide.
 Building the docs
 =================
 
-You need to have `Sphinx <http://sphinx-doc.org/>`_ installed; it is the toolset
-used to build the docs.  It is not included in this tree, but maintained
-separately and `available from PyPI <https://pypi.python.org/pypi/Sphinx>`_.
+The documentation can be built using the ``make`` tool.
+
+The process itself requires Python and `Sphinx <http://sphinx-doc.org/>`_. As
+long as you have a working Python interpreter available, the rest is handled
+automatically, so you don't have to install Sphinx yourself.
 
 
 Using make
 ----------
 
-A Makefile has been prepared so that on Unix, provided you have installed
-Sphinx, you can just run ::
+A Makefile has been prepared so that (on Unix) you can just run ::
 
    make html
 
@@ -96,11 +97,14 @@ Available make targets are:
 Without make
 ------------
 
-Install the Sphinx package and its dependencies from PyPI.
+Install the Sphinx package and its dependencies from PyPI. In this situation,
+you'll have to create a virtualenv manually, and install Sphinx into it.
+Change into the ``Doc`` directory and run ::
 
-Then, from the ``Doc`` directory, run ::
-
-   sphinx-build -b<builder> . build/<builder>
+   $ python3 -m venv venv
+   $ source venv/bin/activate
+   (venv) $ pip install Sphinx
+   (venv) $ sphinx-build -b<builder> . build/<builder>
 
 where ``<builder>`` is one of html, text, latex, or htmlhelp (for explanations
 see the make targets above).
