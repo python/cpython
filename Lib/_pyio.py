@@ -1638,7 +1638,7 @@ class TextIOWrapper(TextIOBase):
         self._decoder = decoder
         return decoder
 
-    # The following three methods implement an ADsT for _decoded_chars.
+    # The following three methods implement an ADT for _decoded_chars.
     # Text returned from the decoder is buffered here until the client
     # requests it by calling our read() or readline() method.
     def _set_decoded_chars(self, chars):
