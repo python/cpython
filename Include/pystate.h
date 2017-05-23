@@ -123,6 +123,20 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
 #else
+
+typedef struct _excstate {
+    /* In a generator, we need to be able to swap between the exception
+       state inside the generator and the exception state of the calling
+       frame (which shouldn't be impacted when the generator "yields"
+       from an except handler).
+       These three fields exist exactly for that. */
+    PyObject *exc_type, *exc_value, *exc_traceback;
+
+    struct _excstate *exc_previous;
+
+} PyExcState;
+
+
 typedef struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -151,9 +165,7 @@ typedef struct _ts {
     PyObject *curexc_value;
     PyObject *curexc_traceback;
 
-    PyObject *exc_type;
-    PyObject *exc_value;
-    PyObject *exc_traceback;
+    PyExcState exc_state;
 
     PyObject *dict;  /* Stores per-thread state */
 
@@ -196,6 +208,8 @@ typedef struct _ts {
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
+
+    PyExcState *exc_info;
 
     /* XXX signal handlers should also be here */
 

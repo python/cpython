@@ -53,6 +53,14 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
     Py_XDECREF(oldtraceback);
 }
 
+PyExcState *_PyErr_GetExcInfo(PyThreadState *tstate) {
+    PyExcState *exc_info = tstate->exc_info;
+    while ((exc_info->exc_type == NULL || exc_info->exc_type == Py_None) &&
+           exc_info->exc_previous != NULL && exc_info != &tstate->exc_state)
+        exc_info = exc_info->exc_previous;
+    return exc_info;
+}
+
 static PyObject*
 _PyErr_CreateException(PyObject *exception, PyObject *value)
 {
@@ -83,7 +91,7 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     }
 
     Py_XINCREF(value);
-    exc_value = tstate->exc_value;
+    exc_value = _PyErr_GetExcInfo(tstate)->exc_value;
     if (exc_value != NULL && exc_value != Py_None) {
         /* Implicit exception chaining */
         Py_INCREF(exc_value);
@@ -335,9 +343,11 @@ PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
     PyThreadState *tstate = PyThreadState_GET();
 
-    *p_type = tstate->exc_type;
-    *p_value = tstate->exc_value;
-    *p_traceback = tstate->exc_traceback;
+    PyExcState *exc_info = _PyErr_GetExcInfo(tstate);
+    *p_type = exc_info->exc_type;
+    *p_value = exc_info->exc_value;
+    *p_traceback = exc_info->exc_traceback;
+
 
     Py_XINCREF(*p_type);
     Py_XINCREF(*p_value);
@@ -350,13 +360,13 @@ PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
     PyObject *oldtype, *oldvalue, *oldtraceback;
     PyThreadState *tstate = PyThreadState_GET();
 
-    oldtype = tstate->exc_type;
-    oldvalue = tstate->exc_value;
-    oldtraceback = tstate->exc_traceback;
+    oldtype = tstate->exc_info->exc_type;
+    oldvalue = tstate->exc_info->exc_value;
+    oldtraceback = tstate->exc_info->exc_traceback;
 
-    tstate->exc_type = p_type;
-    tstate->exc_value = p_value;
-    tstate->exc_traceback = p_traceback;
+    tstate->exc_info->exc_type = p_type;
+    tstate->exc_info->exc_value = p_value;
+    tstate->exc_info->exc_traceback = p_traceback;
 
     Py_XDECREF(oldtype);
     Py_XDECREF(oldvalue);

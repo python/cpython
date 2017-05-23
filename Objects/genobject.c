@@ -23,6 +23,9 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
+    Py_VISIT(gen->gi_exc_state.exc_type);
+    Py_VISIT(gen->gi_exc_state.exc_value);
+    Py_VISIT(gen->gi_exc_state.exc_traceback);
     return 0;
 }
 
@@ -116,6 +119,9 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
+    Py_CLEAR(gen->gi_exc_state.exc_type);
+    Py_CLEAR(gen->gi_exc_state.exc_value);
+    Py_CLEAR(gen->gi_exc_state.exc_traceback);
     PyObject_GC_Del(gen);
 }
 
@@ -187,7 +193,11 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     f->f_back = tstate->frame;
 
     gen->gi_running = 1;
+    gen->gi_exc_state.exc_previous = tstate->exc_info;
+    tstate->exc_info = &gen->gi_exc_state;
     result = PyEval_EvalFrameEx(f, exc);
+    tstate->exc_info = gen->gi_exc_state.exc_previous;
+    gen->gi_exc_state.exc_previous = NULL;
     gen->gi_running = 0;
 
     /* Don't keep the reference to f_back any longer than necessary.  It
@@ -282,12 +292,12 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
         /* generator can't be rerun, so release the frame */
         /* first clean reference cycle through stored exception traceback */
         PyObject *t, *v, *tb;
-        t = f->f_exc_type;
-        v = f->f_exc_value;
-        tb = f->f_exc_traceback;
-        f->f_exc_type = NULL;
-        f->f_exc_value = NULL;
-        f->f_exc_traceback = NULL;
+        t = gen->gi_exc_state.exc_type;
+        v = gen->gi_exc_state.exc_value;
+        tb = gen->gi_exc_state.exc_traceback;
+        gen->gi_exc_state.exc_type = NULL;
+        gen->gi_exc_state.exc_value = NULL;
+        gen->gi_exc_state.exc_traceback = NULL;
         Py_XDECREF(t);
         Py_XDECREF(v);
         Py_XDECREF(tb);
@@ -810,6 +820,10 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     gen->gi_code = (PyObject *)(f->f_code);
     gen->gi_running = 0;
     gen->gi_weakreflist = NULL;
+    gen->gi_exc_state.exc_type = NULL;
+    gen->gi_exc_state.exc_value = NULL;
+    gen->gi_exc_state.exc_traceback = NULL;
+    gen->gi_exc_state.exc_previous = NULL;
     if (name != NULL)
         gen->gi_name = name;
     else

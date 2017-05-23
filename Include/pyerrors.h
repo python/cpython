@@ -78,6 +78,7 @@ PyAPI_FUNC(void) PyErr_SetNone(PyObject *);
 PyAPI_FUNC(void) PyErr_SetObject(PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
+PyExcState *_PyErr_GetExcInfo(PyThreadState *tstate);
 #endif
 PyAPI_FUNC(void) PyErr_SetString(
     PyObject *exception,
