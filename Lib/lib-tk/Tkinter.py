@@ -855,7 +855,7 @@ class Misc:
         return getint(
             self.tk.call('winfo', 'ismapped', self._w))
     def winfo_manager(self):
-        """Return the window mananger name for this widget."""
+        """Return the window manager name for this widget."""
         return self.tk.call('winfo', 'manager', self._w)
     def winfo_name(self):
         """Return the name of this widget."""
@@ -1522,7 +1522,7 @@ class Misc:
         return self.tk.splitlist(self.tk.call('image', 'names'))
 
     def image_types(self):
-        """Return a list of all available image types (e.g. phote bitmap)."""
+        """Return a list of all available image types (e.g. photo bitmap)."""
         return self.tk.splitlist(self.tk.call('image', 'types'))
 
 
@@ -2364,7 +2364,7 @@ class Canvas(Widget, XView, YView):
         """Return item which is closest to pixel at X, Y.
         If several match take the top-most.
         All items closer than HALO are considered overlapping (all are
-        closests). If START is specified the next below this tag is taken."""
+        closest). If START is specified the next below this tag is taken."""
         return self.find('closest', x, y, halo, start)
     def find_enclosed(self, x1, y1, x2, y2):
         """Return all items in rectangle defined
@@ -2424,7 +2424,7 @@ class Canvas(Widget, XView, YView):
         """Print the contents of the canvas to a postscript
         file. Valid options: colormap, colormode, file, fontmap,
         height, pageanchor, pageheight, pagewidth, pagex, pagey,
-        rotate, witdh, x, y."""
+        rotate, width, x, y."""
         return self.tk.call((self._w, 'postscript') +
                     self._options(cnf, kw))
     def tag_raise(self, *args):
@@ -3355,7 +3355,7 @@ class Image:
         return getint(
             self.tk.call('image', 'height', self.name))
     def type(self):
-        """Return the type of the imgage, e.g. "photo" or "bitmap"."""
+        """Return the type of the image, e.g. "photo" or "bitmap"."""
         return self.tk.call('image', 'type', self.name)
     def width(self):
         """Return the width of the image."""
