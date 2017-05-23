@@ -636,6 +636,22 @@ Concrete paths provide the following methods in addition to pure paths
 methods.  Many of these methods can raise an :exc:`OSError` if a system
 call fails (for example because the path doesn't exist):
 
+.. method:: Path.absolute()
+
+   Return an absolute version of this path.  This function works
+   even if the path doesn't point to anything.
+
+   No normalization is done, i.e. all '.' and '..' will be kept along.
+   Use resolve() to get the canonical path to a file.
+
+   Usage example::
+
+      >>> Path.cwd()
+      PosixPath('/dev')
+      >>> Path('null').absolute()
+      PosixPath('/dev/null')
+
+
 .. classmethod:: Path.cwd()
 
    Return a new path object representing the current directory (as returned
@@ -1055,3 +1071,31 @@ call fails (for example because the path doesn't exist):
       'Text file contents'
 
    .. versionadded:: 3.5
+
+Correspondence to tools in the os package
+-----------------------------------------
+
+If you're more familiar with :mod:`os.path` module, here's a correspondence
+table on how the same things may be accomplished with pathlib.
+
+============================   ==============================
+os and os.path                 pathlib
+============================   ==============================
+:func:`os.path.abspath`        :func:`Path.absolute`
+:func:`os.getcwd`              :func:`Path.cwd`
+:func:`os.path.abspath`        :meth:`Path.absolute`
+:func:`os.path.exists`         :meth:`Path.exists`
+:func:`os.path.expanduser`     :meth:`Path.expanduser` and
+                               :meth:`Path.home`
+:func:`os.stat`                :meth:`Path.group`
+:func:`os.path.isdir`          :meth:`Path.is_dir`
+:func:`os.path.isfile`         :meth:`Path.is_file`
+:func:`os.path.islink`         :meth:`Path.is_symlink`
+:func:`os.stat`                :meth:`Path.owner`
+:func:`os.stat`                :meth:`Path.stat`
+:func:`os.path.isabs`          :meth:`PurePath.is_absolute`
+:func:`os.path.join`           :func:`PurePath.joinpath`
+:func:`os.path.basename`       :data:`PurePath.name`
+:func:`os.path.dirname`        :data:`PurePath.parent`
+:func:`os.path.splitext`       :data:`PurePath.suffix`
+============================   ==============================
