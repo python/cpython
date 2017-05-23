@@ -378,18 +378,21 @@ _PyImport_SetModuleString(const char *name, PyObject *m) {
 PyObject *
 PyImport_GetModule(PyObject *name)
 {
-    _Py_IDENTIFIER(modules);
-    PyObject *modules = _PySys_GetObjectId(&PyId_modules);
+    PyObject *m;
+    PyObject *modules = PyImport_GetModuleDict();
     if (modules == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
     }
-    if (PyDict_Check(modules))
-        return PyDict_GetItemWithError(modules, name);
-
-    PyObject *m = PyObject_GetItem(modules, name);
-    if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
-        PyErr_Clear();
+    Py_INCREF(modules);
+    if (PyDict_Check(modules)) {
+        m = PyDict_GetItemWithError(modules, name);
+    } else {
+        m = PyObject_GetItem(modules, name);
+        if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
+            PyErr_Clear();
+    }
+    Py_DECREF(modules);
     return m;
 }
 
