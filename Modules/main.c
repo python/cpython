@@ -380,14 +380,6 @@ read_command_line(int argc, wchar_t **argv, _Py_CommandLineDetails *cmdline)
     wchar_t *command = NULL;
     wchar_t *module = NULL;
     int c;
-    char *opt;
-
-    opt = Py_GETENV("PYTHONMALLOC");
-    if (_PyMem_SetupAllocators(opt) < 0) {
-        fprintf(stderr,
-                "Error in PYTHONMALLOC: unknown allocator \"%s\"!\n", opt);
-        exit(1);
-    }
 
     _PyOS_ResetGetOpt();
 
@@ -601,6 +593,13 @@ Py_Main(int argc, wchar_t **argv)
             core_config.ignore_environment++;
             break;
         }
+    }
+
+    char *pymalloc = Py_GETENV("PYTHONMALLOC");
+    if (_PyMem_SetupAllocators(pymalloc) < 0) {
+        fprintf(stderr,
+            "Error in PYTHONMALLOC: unknown allocator \"%s\"!\n", pymalloc);
+        exit(1);
     }
 
     /* Initialize the core language runtime */
