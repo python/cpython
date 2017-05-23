@@ -1,8 +1,10 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
+from collections import namedtuple
 import os
 import pickle
+import platform
 import random
 import re
 import subprocess
@@ -384,12 +386,91 @@ class EmbeddingTests(unittest.TestCase):
         return out, err
 
     def test_subinterps(self):
-        # This is just a "don't crash" test
         out, err = self.run_embedded_interpreter("repeated_init_and_subinterpreters")
-        if support.verbose:
-            print()
-            print(out)
-            print(err)
+        self.assertEqual(err, "")
+
+        # The output from _testembed looks like this:
+        # --- Pass 0 ---
+        # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
+        # interp 1 <0x1d4f690>, thread state <0x1d35350>: id(modules) = 139650431165784
+        # interp 2 <0x1d5a690>, thread state <0x1d99ed0>: id(modules) = 139650413140368
+        # interp 3 <0x1d4f690>, thread state <0x1dc3340>: id(modules) = 139650412862200
+        # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
+        # --- Pass 1 ---
+        # ...
+
+        interp_pat = (r"^interp (\d+) <(0x[\dA-F]+)>, "
+                      r"thread state <(0x[\dA-F]+)>: "
+                      r"id\(modules\) = ([\d]+)$")
+        Interp = namedtuple("Interp", "id interp tstate modules")
+
+        main = None
+        lastmain = None
+        numinner = None
+        numloops = 0
+        for line in out.splitlines():
+            if line == "--- Pass {} ---".format(numloops):
+                if numinner is not None:
+                    self.assertEqual(numinner, 5)
+                if support.verbose:
+                    print(line)
+                lastmain = main
+                main = None
+                mainid = 0
+                numloops += 1
+                numinner = 0
+                continue
+            numinner += 1
+
+            self.assertLessEqual(numinner, 5)
+            match = re.match(interp_pat, line)
+            if match is None:
+                self.assertRegex(line, interp_pat)
+
+            # The last line in the loop should be the same as the first.
+            if numinner == 5:
+                self.assertEqual(match.groups(), main)
+                continue
+
+            # Parse the line from the loop.  The first line is the main
+            # interpreter and the 3 afterward are subinterpreters.
+            interp = Interp(*match.groups())
+            if support.verbose:
+                print(interp)
+            if numinner == 1:
+                main = interp
+                id = str(mainid)
+            else:
+                subid = mainid + numinner - 1
+                id = str(subid)
+
+            # Validate the loop line for each interpreter.
+            self.assertEqual(interp.id, id)
+            self.assertTrue(interp.interp)
+            self.assertTrue(interp.tstate)
+            self.assertTrue(interp.modules)
+            if platform.system() == 'Windows':
+                # XXX Fix on Windows: something is going on with the
+                # pointers in Programs/_testembed.c.  interp.interp
+                # is 0x0 and # interp.modules is the same between
+                # interpreters.
+                continue
+            if interp is main:
+                if lastmain is not None:
+                    # A new main interpreter may have the same interp
+                    # and/or tstate pointer as an earlier finalized/
+                    # destroyed one.  So we do not check interp or
+                    # tstate here.
+                    self.assertNotEqual(interp.modules, lastmain.modules)
+            else:
+                # A new subinterpreter may have the same
+                # PyInterpreterState pointer as a previous one if
+                # the earlier one has already been destroyed.  So
+                # we compare with the main interpreter.  The same
+                # applies to tstate.
+                self.assertNotEqual(interp.interp, main.interp)
+                self.assertNotEqual(interp.tstate, main.tstate)
+                self.assertNotEqual(interp.modules, main.modules)
 
     @staticmethod
     def _get_default_pipe_encoding():
