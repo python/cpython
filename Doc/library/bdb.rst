@@ -77,7 +77,7 @@ The :mod:`bdb` module also defines two classes:
 
       .. versionadded:: 3.2
 
-      .. versionchanged:: 3.7::
+      .. versionchanged:: 3.7
          Breakpoint type will now changed by corresponding type.
 
    .. method:: bpprint(out=None)
