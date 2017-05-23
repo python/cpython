@@ -363,9 +363,11 @@ class ReloadTests:
         #Test that reload() throws ModuleNotFounderror when reloading
         # a module who's missing a spec. (bpo-29851)
         name = 'spam'
-        with test_util.temp_module(name):
+        with test_util.uncache(name):
+            module = sys.modules[name] = types.ModuleType(name)
+            # Sanity check by attempting an import.
             module = self.init.import_module(name)
-            module.__spec__ = None
+            self.assertIsNone(module.__spec__)
             with self.assertRaises(ModuleNotFoundError):
                 self.init.reload(module)
 
