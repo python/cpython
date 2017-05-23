@@ -593,6 +593,46 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_commands = _complete_bpnumber
 
+    def _do_watch(self, arg, type):
+        if not arg:
+            # Print out all breakpoint
+            self.do_break(None)
+            return None
+        try:
+            eval(arg, self.curframe.f_locals)
+        except NameError:
+            self.error('No symbol "%s" in current context' % arg)
+            return None
+        self.set_watch(arg, self.curframe, type)
+
+    def do_watch(self, arg):
+        """wa(tch) expr
+        Without argument, list all breaks.
+
+        Set a watchpoint for an expression. It will break when expression is
+        written into by program and the values changes.
+        """
+        self._do_watch(arg, 'watchpoint')
+    do_wa = do_watch
+
+    def do_rwatch(self, arg):
+        """rwa(tch) expr
+
+        Set a watchpoint for an expression. It will break when expression is
+        readed by program.
+        """
+        self._do_watch(arg, 'read watchpoint')
+    do_rwa = do_rwatch
+
+    def do_awatch(self, arg):
+        """aw(atch) expr
+
+        Set a watchpoint for an expression. It will break when expression is
+        readed or written into by program.
+        """
+        self._do_watch(arg, 'read/write watchpoint')
+    do_aw = do_awatch
+
     def do_break(self, arg, temporary = 0):
         """b(reak) [ ([filename:]lineno | function) [, condition] ]
         Without argument, list all breaks.
@@ -610,7 +650,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         if not arg:
             if self.breaks:  # There's at least one
-                self.message("Num Type         Disp Enb   Where")
+                self.message("Num Type                     Disp Enb   Where")
                 for bp in bdb.Breakpoint.bpbynumber:
                     if bp:
                         self.message(bp.bpformat())
@@ -1556,7 +1596,8 @@ if __doc__ is not None:
         'enable', 'ignore', 'condition', 'commands', 'step', 'next', 'until',
         'jump', 'return', 'retval', 'run', 'continue', 'list', 'longlist',
         'args', 'p', 'pp', 'whatis', 'source', 'display', 'undisplay',
-        'interact', 'alias', 'unalias', 'debug', 'quit',
+        'interact', 'alias', 'unalias', 'debug', 'quit', 'watch', 'rwatch',
+        'awatch',
     ]
 
     for _command in _help_order:

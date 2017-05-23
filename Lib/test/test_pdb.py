@@ -233,20 +233,20 @@ def test_pdb_breakpoint_commands():
     (Pdb) break 4
     Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) break
-    Num Type         Disp Enb   Where
-    1   breakpoint   keep no    at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    Num Type                     Disp Enb   Where
+    1   breakpoint               keep no    at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
             stop only if 1 < 2
             ignore next 10 hits
-    2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
-    3   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    2   breakpoint               keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    3   breakpoint               keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) clear 3
     Deleted breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) break
-    Num Type         Disp Enb   Where
-    1   breakpoint   keep no    at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    Num Type                     Disp Enb   Where
+    1   breakpoint               keep no    at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
             stop only if 1 < 2
             ignore next 10 hits
-    2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    2   breakpoint               keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) condition 1
     Breakpoint 1 is now unconditional.
     (Pdb) enable 1
@@ -934,6 +934,427 @@ def test_pdb_issue_20766():
     (Pdb) continue
     pdb 2: <built-in function default_int_handler>
     """
+
+def test_pdb_watch_command():
+    """Test for watch command
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     x = 10
+    ...     y = 20
+    ...     x += y
+    ...     x = 20
+
+    >>> with PdbTestInput(['next',
+    ...                    'watch x',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_watch_command[0]>(3)test_function()
+    -> x = 10
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_watch_command[0]>(4)test_function()
+    -> y = 20
+    (Pdb) watch x
+    (Pdb) continue
+    <BLANKLINE>
+    watchpoint 7:x
+    <BLANKLINE>
+    Old value = 10
+    New value = 30
+    > <doctest test.test_pdb.test_pdb_watch_command[0]>(6)test_function()
+    -> x = 20
+    (Pdb) continue
+    <BLANKLINE>
+    watchpoint 7:x
+    <BLANKLINE>
+    Old value = 30
+    New value = 20
+    > <doctest test.test_pdb.test_pdb_watch_command[0]>(6)test_function()
+    -> x = 20
+    (Pdb) continue
+    *** Watchpoint 7 deleted because the program has left the scope in which its expression is valid.
+    """
+
+def test_pdb_watch_command_in_class_instnace():
+    """Test for watch command in class instance
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     class Bar():
+    ...         x = [1, 2, 3]
+    ...     class Foo():
+    ...         x = 10
+    ...         y = Bar()
+    ...     f = Foo()
+    ...     z = [7, 8, 9]
+    ...     f.y.x += [4, 5, 6]
+    ...     f.y.x += z
+    ...     len(f.y.x)
+    ...     f.y.x += f.y.x
+    ...     f.y.x = 120
+    ...     foo = 10
+    ...     bar = 20
+    ...     f.x = 20
+    ...     f.x = 30
+    ...     str(f.x)
+
+    >>> with PdbTestInput(['next',
+    ...                    'next',
+    ...                    'next',
+    ...                    'watch f.y.x',
+    ...                    'watch f.x',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(3)test_function()
+    -> class Bar():
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(5)test_function()
+    -> class Foo():
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(8)test_function()
+    -> f = Foo()
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(9)test_function()
+    -> z = [7, 8, 9]
+    (Pdb) watch f.y.x
+    (Pdb) watch f.x
+    (Pdb) continue
+    <BLANKLINE>
+    watchpoint 8:f.y.x
+    <BLANKLINE>
+    Old value = [1, 2, 3]
+    New value = [1, 2, 3, 4, 5, 6]
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(11)test_function()
+    -> f.y.x += z
+    (Pdb) continue
+    <BLANKLINE>
+    watchpoint 8:f.y.x
+    <BLANKLINE>
+    Old value = [1, 2, 3, 4, 5, 6]
+    New value = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(12)test_function()
+    -> len(f.y.x)
+    (Pdb) continue
+    <BLANKLINE>
+    watchpoint 8:f.y.x
+    <BLANKLINE>
+    Old value = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    New value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(14)test_function()
+    -> f.y.x = 120
+    (Pdb) continue
+    <BLANKLINE>
+    watchpoint 8:f.y.x
+    <BLANKLINE>
+    Old value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    New value = 120
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(15)test_function()
+    -> foo = 10
+    (Pdb) continue
+    <BLANKLINE>
+    watchpoint 9:f.x
+    <BLANKLINE>
+    Old value = 10
+    New value = 20
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(18)test_function()
+    -> f.x = 30
+    (Pdb) continue
+    <BLANKLINE>
+    watchpoint 9:f.x
+    <BLANKLINE>
+    Old value = 20
+    New value = 30
+    > <doctest test.test_pdb.test_pdb_watch_command_in_class_instnace[0]>(19)test_function()
+    -> str(f.x)
+    (Pdb) continue
+    *** Watchpoint 8 deleted because the program has left the scope in which its expression is valid.
+    *** Watchpoint 9 deleted because the program has left the scope in which its expression is valid.
+    """
+
+def test_rwatch_command():
+    """Test for rwatch command
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     foo = 10
+    ...     type(foo)
+    ...     x = 10
+    ...     y = x + foo
+    ...     z = x + y
+    ...     z += foo
+    ...     foo = 100
+    ...     str(foo)
+
+    >>> with PdbTestInput(['next',
+    ...                    'rwatch foo',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_rwatch_command[0]>(3)test_function()
+    -> foo = 10
+    (Pdb) next
+    > <doctest test.test_pdb.test_rwatch_command[0]>(4)test_function()
+    -> type(foo)
+    (Pdb) rwatch foo
+    (Pdb) continue
+    <BLANKLINE>
+    read watchpoint 10:foo
+    <BLANKLINE>
+    Value = 10
+    > <doctest test.test_pdb.test_rwatch_command[0]>(6)test_function()
+    -> y = x + foo
+    (Pdb) continue
+    <BLANKLINE>
+    read watchpoint 10:foo
+    <BLANKLINE>
+    Value = 10
+    > <doctest test.test_pdb.test_rwatch_command[0]>(8)test_function()
+    -> z += foo
+    (Pdb) continue
+    <BLANKLINE>
+    read watchpoint 10:foo
+    <BLANKLINE>
+    Value = 10
+    > <doctest test.test_pdb.test_rwatch_command[0]>(9)test_function()
+    -> foo = 100
+    (Pdb) continue
+    <BLANKLINE>
+    read watchpoint 10:foo
+    <BLANKLINE>
+    Value = 100
+    > <doctest test.test_pdb.test_rwatch_command[0]>(10)test_function()
+    -> str(foo)
+    (Pdb) continue
+    <BLANKLINE>
+    read watchpoint 10:foo
+    <BLANKLINE>
+    Value = 100
+    > <doctest test.test_pdb.test_rwatch_command[0]>(10)test_function()
+    -> str(foo)
+    (Pdb) continue
+    *** Watchpoint 10 deleted because the program has left the scope in which its expression is valid.
+    """
+
+def test_awatch_command():
+    """Test for awatch command
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     foo = 10
+    ...     type(foo)
+    ...     foo = 100
+    ...     str(foo)
+    ...     foo = 10
+    ...     foo = 10
+    ...     bar = foo
+
+    >>> with PdbTestInput(['next',
+    ...                    'awatch foo',
+    ...                    'break',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_awatch_command[0]>(3)test_function()
+    -> foo = 10
+    (Pdb) next
+    > <doctest test.test_pdb.test_awatch_command[0]>(4)test_function()
+    -> type(foo)
+    (Pdb) awatch foo
+    (Pdb) break
+    Num Type                     Disp Enb   Where
+    1   read/write watchpoint    keep yes   foo
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 1:foo
+    <BLANKLINE>
+    Value = 10
+    > <doctest test.test_pdb.test_awatch_command[0]>(5)test_function()
+    -> foo = 100
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 1:foo
+    <BLANKLINE>
+    Old value = 10
+    New value = 100
+    > <doctest test.test_pdb.test_awatch_command[0]>(6)test_function()
+    -> str(foo)
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 1:foo
+    <BLANKLINE>
+    Value = 100
+    > <doctest test.test_pdb.test_awatch_command[0]>(7)test_function()
+    -> foo = 10
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 1:foo
+    <BLANKLINE>
+    Old value = 100
+    New value = 10
+    > <doctest test.test_pdb.test_awatch_command[0]>(8)test_function()
+    -> foo = 10
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 1:foo
+    <BLANKLINE>
+    Value = 10
+    > <doctest test.test_pdb.test_awatch_command[0]>(9)test_function()
+    -> bar = foo
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 1:foo
+    <BLANKLINE>
+    Value = 10
+    > <doctest test.test_pdb.test_awatch_command[0]>(9)test_function()
+    -> bar = foo
+    (Pdb) continue
+    *** Watchpoint 1 deleted because the program has left the scope in which its expression is valid.
+    """
+
+def test_multiple_watch_command():
+    """Test for multiple watch command combined
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     foo = 10
+    ...     type(foo)
+    ...     foo = 100
+    ...     str(foo)
+    ...     foo = 10
+    ...     foo = 10
+    ...     bar = foo
+
+    >>> with PdbTestInput(['next',
+    ...                    'awatch foo',
+    ...                    'rwatch foo',
+    ...                    'watch foo',
+    ...                    'break',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_multiple_watch_command[0]>(3)test_function()
+    -> foo = 10
+    (Pdb) next
+    > <doctest test.test_pdb.test_multiple_watch_command[0]>(4)test_function()
+    -> type(foo)
+    (Pdb) awatch foo
+    (Pdb) rwatch foo
+    (Pdb) watch foo
+    (Pdb) break
+    Num Type                     Disp Enb   Where
+    2   read/write watchpoint    keep yes   foo
+    3   read watchpoint          keep yes   foo
+    4   watchpoint               keep yes   foo
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 2:foo
+    <BLANKLINE>
+    Value = 10
+    <BLANKLINE>
+    read watchpoint 3:foo
+    <BLANKLINE>
+    Value = 10
+    > <doctest test.test_pdb.test_multiple_watch_command[0]>(5)test_function()
+    -> foo = 100
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 2:foo
+    <BLANKLINE>
+    Old value = 10
+    New value = 100
+    <BLANKLINE>
+    read watchpoint 3:foo
+    <BLANKLINE>
+    Value = 100
+    <BLANKLINE>
+    watchpoint 4:foo
+    <BLANKLINE>
+    Old value = 10
+    New value = 100
+    > <doctest test.test_pdb.test_multiple_watch_command[0]>(6)test_function()
+    -> str(foo)
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 2:foo
+    <BLANKLINE>
+    Value = 100
+    <BLANKLINE>
+    read watchpoint 3:foo
+    <BLANKLINE>
+    Value = 100
+    > <doctest test.test_pdb.test_multiple_watch_command[0]>(7)test_function()
+    -> foo = 10
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 2:foo
+    <BLANKLINE>
+    Old value = 100
+    New value = 10
+    <BLANKLINE>
+    read watchpoint 3:foo
+    <BLANKLINE>
+    Value = 10
+    <BLANKLINE>
+    watchpoint 4:foo
+    <BLANKLINE>
+    Old value = 100
+    New value = 10
+    > <doctest test.test_pdb.test_multiple_watch_command[0]>(8)test_function()
+    -> foo = 10
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 2:foo
+    <BLANKLINE>
+    Value = 10
+    <BLANKLINE>
+    read watchpoint 3:foo
+    <BLANKLINE>
+    Value = 10
+    > <doctest test.test_pdb.test_multiple_watch_command[0]>(9)test_function()
+    -> bar = foo
+    (Pdb) continue
+    <BLANKLINE>
+    read/write watchpoint 2:foo
+    <BLANKLINE>
+    Value = 10
+    <BLANKLINE>
+    read watchpoint 3:foo
+    <BLANKLINE>
+    Value = 10
+    > <doctest test.test_pdb.test_multiple_watch_command[0]>(9)test_function()
+    -> bar = foo
+    (Pdb) continue
+    *** Watchpoint 2 deleted because the program has left the scope in which its expression is valid.
+    *** Watchpoint 3 deleted because the program has left the scope in which its expression is valid.
+    *** Watchpoint 4 deleted because the program has left the scope in which its expression is valid.
+    """
+
 
 class PdbTestCase(unittest.TestCase):
 

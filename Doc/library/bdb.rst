@@ -20,10 +20,12 @@ The following exception is defined:
 
 The :mod:`bdb` module also defines two classes:
 
-.. class:: Breakpoint(self, file, line, temporary=0, cond=None, funcname=None)
+.. class:: Breakpoint(self, file, line, temporary=0, cond=None, funcname=None, \
+                      var_name=None, var_value=None, var_frame=None, \
+                      bptype='breakpoint')
 
-   This class implements temporary breakpoints, ignore counts, disabling and
-   (re-)enabling, and conditionals.
+   This class implements temporary breakpoints, watchpoints, ignore counts,
+   disabling and (re-)enabling, and conditionals.
 
    Breakpoints are indexed by number through a list called :attr:`bpbynumber`
    and by ``(file, line)`` pairs through :attr:`bplist`.  The former points to a
@@ -34,6 +36,12 @@ The :mod:`bdb` module also defines two classes:
    form.  If a *funcname* is defined, a breakpoint hit will be counted when the
    first line of that function is executed.  A conditional breakpoint always
    counts a hit.
+
+   When creating a watchpoint, *file* and *line* should be ``None``, and *cond*
+   , *funcname* are not used. *bptype* should be set to corresponding
+   watchpoiont type: ``watchpoint``, ``read watchpoint`` or
+   ``read/write watchpoint``.
+
 
    :class:`Breakpoint` instances have the following methods:
 
@@ -60,6 +68,7 @@ The :mod:`bdb` module also defines two classes:
       formatted:
 
       * The breakpoint number.
+      * The breakpoint type.
       * If it is temporary or not.
       * Its file,line position.
       * The condition that causes a break.
@@ -67,6 +76,9 @@ The :mod:`bdb` module also defines two classes:
       * The breakpoint hit count.
 
       .. versionadded:: 3.2
+
+      .. versionchanged:: 3.7::
+         Breakpoint type will now changed by corresponding type.
 
    .. method:: bpprint(out=None)
 
@@ -182,6 +194,11 @@ The :mod:`bdb` module also defines two classes:
       This method checks if there is a breakpoint in the filename of the current
       frame.
 
+   .. method:: watch_here(frame)
+
+      This method checks if there is a watchpoint in the filename and line
+      belonging to *frame* or, at least, in the current function.
+
    Derived classes should override these methods to gain control over debugger
    operation.
 
@@ -250,14 +267,20 @@ The :mod:`bdb` module also defines two classes:
 
 
    Derived classes and clients can call the following methods to manipulate
-   breakpoints.  These methods return a string containing an error message if
-   something went wrong, or ``None`` if all is well.
+   breakpoints and watchpoints.  These methods return a string containing an
+   error message if something went wrong, or ``None`` if all is well.
 
    .. method:: set_break(filename, lineno, temporary=0, cond, funcname)
 
       Set a new breakpoint.  If the *lineno* line doesn't exist for the
       *filename* passed as argument, return an error message.  The *filename*
       should be in canonical form, as described in the :meth:`canonic` method.
+
+   .. method:: set_watch(var_name, var_frame, bptype)
+
+      Set a new watchpoint. If the *var_name* does not exist in *var_frame*,
+      return a error message. bptype should be *watchpoint*, *read watchpoint*
+      or *read/write watchpoint*.
 
    .. method:: clear_break(filename, lineno)
 

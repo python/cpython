@@ -1,9 +1,13 @@
 """Debugger basics"""
 
+import copy
+import dis
 import fnmatch
 import sys
 import os
+from collections import defaultdict
 from inspect import CO_GENERATOR
+
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 
@@ -31,6 +35,7 @@ class Bdb:
         self.breaks = {}
         self.fncache = {}
         self.frame_returning = None
+        self.file_instructions = {}
 
     def canonic(self, filename):
         """Return canonical form of filename.
@@ -106,7 +111,7 @@ class Bdb:
         self.user_line(). Raise BdbQuit if self.quitting is set.
         Return self.trace_dispatch to continue tracing in this scope.
         """
-        if self.stop_here(frame) or self.break_here(frame):
+        if self.watch_here(frame) or self.stop_here(frame) or self.break_here(frame):
             self.user_line(frame)
             if self.quitting: raise BdbQuit
         return self.trace_dispatch
@@ -140,6 +145,10 @@ class Bdb:
         self.user_return(). Raise BdbQuit if self.quitting is set.
         Return self.trace_dispatch to continue tracing in this scope.
         """
+        if self.watch_here(frame):
+            self.user_line(frame)
+            if self.quitting: raise BdbQuit
+
         if self.stop_here(frame) or frame == self.returnframe:
             # Ignore return events in generator except when stepping.
             if self.stopframe and frame.f_code.co_flags & CO_GENERATOR:
@@ -234,6 +243,149 @@ class Bdb:
             return True
         else:
             return False
+
+    def watch_here(self, frame):
+        """Return True if there is any effective watchpoint for this line
+        """
+        def _get_line_instructions(frame):
+            d = defaultdict(list)
+            instructions = dis.get_instructions(frame.f_code)
+
+            lineno = 0
+            for instr in instructions:
+                if instr.starts_line:
+                    lineno = instr.starts_line
+                if instr.opname in ('LOAD_NAME', 'LOAD_ATTR', 'LOAD_FAST',
+                                    'STORE_NAME', 'STORE_ATTR', 'STORE_FAST'):
+                    d[lineno].append(instr)
+            return dict(d)
+
+        def _split_name_and_attrs(name):
+            """Return name and attrs, attrs is a list of string
+            """
+            if '.' in name:
+                names = name.split('.')
+                name = names[0]
+                attrs = names[1:]
+                return (name, attrs)
+            return (name, None)
+
+        def _check_load(variable, instrs):
+            """Check if instruction bytecodes were loading variable
+            """
+            name, attrs = _split_name_and_attrs(variable)
+
+            # Fast path for name only
+            if attrs is None:
+                for i in instrs:
+                    if ((i.opname == 'LOAD_NAME' or i.opname == 'LOAD_FAST') and
+                            i.argrepr == name):
+                        return True
+                return False
+
+            # With attr
+            for index, instr in enumerate(instrs):
+                if instr.opname == 'LOAD_NAME' and instr.argrepr == name:
+                    load_instrs = instrs[index + 1: index + len(attrs) + 1]
+                    if len(load_instrs) != len(attrs):
+                        return False
+                    skip = False
+                    for attr, i in zip(attrs, load_instrs):
+                        if i.opname != 'LOAD_ATTR' or i.argrepr != attr:
+                            skip = True
+                            break
+                    if not skip:
+                        last = index + len(attrs) + 2
+                        if (last < len(instrs) and instrs[last].opname != 'LOAD_ATTR'):
+                            return True
+                        elif last >= len(instrs):
+                            return True
+            return False
+
+        def _check_store(variable, instrs):
+            """Check if instruction bytecodes were storing variable
+            """
+            name, attrs = _split_name_and_attrs(variable)
+
+            # Fast path for name only
+            if attrs is None:
+                for i in instrs:
+                    if ((i.opname == 'STORE_NAME' or i.opname == 'STORE_FAST') and
+                            i.argrepr == name):
+                        return True
+                    return False
+
+            # With attr
+            for index, instr in enumerate(instrs):
+                if instr.opname == 'LOAD_NAME' and instr.argrepr == name:
+                    store_instrs = instrs[index + 1: index + len(attrs) + 1]
+                    if len(store_instrs) != len(attrs):
+                        return False
+                    skip = False
+                    for attr, i in zip(attrs[:-1], store_instrs[:-1]):
+                        if i.opname != 'LOAD_ATTR' or i.argrepr != attr:
+                            skip = True
+                            break
+                    if not skip:
+                        if (store_instrs[-1].opname == 'STORE_ATTR' and
+                                store_instrs[-1].argrepr == attrs[-1]):
+                            return True
+            return False
+
+        # Check all watchpoint
+        hits = False
+        for bp in Breakpoint.bpbynumber:
+            if not bp:
+                continue
+            if bp.bptype.endswith('watchpoint'):
+                try:
+                    if frame == bp.var_frame.f_back:
+                        # Variable out of scope
+                        raise ValueError
+                    cur_value = eval(bp.var_name, frame.f_locals)
+                except (NameError, ValueError):
+                    self.error('Watchpoint %d deleted because the program has'
+                               ' left the scope in which its'
+                               ' expression is valid.' % (bp.number)
+                               )
+                    bp.deleteMe()
+                    continue
+
+                hit = False
+                if ((bp.bptype == 'watchpoint' or
+                        bp.bptype == 'read/write watchpoint') and
+                        bp.var_value != cur_value):
+                    # Varialbe value has changed
+                    self.message('\n{}\n\nOld value = {}\nNew value = {}'.format(
+                        bp,
+                        bp.var_value,
+                        cur_value
+                    ))
+
+                    # Update value to latest value
+                    bp.var_value = copy.copy(cur_value)
+                    hit = True
+                elif (bp.bptype == 'read watchpoint' or
+                        bp.bptype == 'read/write watchpoint'):
+                    # Cache file's bytecode instruction by line
+                    filename = frame.f_code.co_filename
+                    if filename not in self.file_instructions:
+                        self.file_instructions[filename] = _get_line_instructions(frame)
+
+                    # Check bytecode if variable has been read or write
+                    # the same value
+                    lineno = frame.f_lineno
+                    instrs = self.file_instructions[filename][lineno]
+                    hit = _check_load(bp.var_name, instrs) or _check_store(bp.var_name, instrs)
+                    if hit:
+                        self.message('\n{}\n\nValue = {}'.format(bp, cur_value))
+
+                if hit:
+                    hits = True
+                    bp.hits += 1
+                    self.currentbp = bp.number
+
+        return hits
 
     def do_clear(self, arg):
         """Remove temporary breakpoint.
@@ -377,6 +529,18 @@ class Bdb:
         if lineno not in list:
             list.append(lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
+        return None
+
+    def set_watch(self, var_name, var_frame, bptype):
+        try:
+            var_value = copy.copy(eval(var_name, var_frame.f_locals))
+        except NameError:
+            return 'Variable %s does not exist' % var_name
+        list = self.breaks.setdefault(bptype, [])
+        if var_name not in list:
+            list.append(var_name)
+        Breakpoint(None, None, var_name=var_name, var_value=var_value,
+                   var_frame=var_frame, bptype=bptype)
         return None
 
     def _prune_breaks(self, filename, lineno):
@@ -640,7 +804,7 @@ def set_trace():
 class Breakpoint:
     """Breakpoint class.
 
-    Implements temporary breakpoints, ignore counts, disabling and
+    Implements temporary breakpoints, watchpoints, ignore counts, disabling and
     (re)-enabling, and conditionals.
 
     Breakpoints are indexed by number through bpbynumber and by
@@ -653,6 +817,10 @@ class Breakpoint:
     in canonical form.  If funcname is defined, a breakpoint hit will be
     counted when the first line of that function is executed.  A
     conditional breakpoint always counts a hit.
+
+    When creating a watchpoint, file and line should be None, and cond and
+    funcname are not used. bptype should be set to corresponding watchpoiont
+    type: watchpoint, read watchpoint or read/write watchpoint.
     """
 
     # XXX Keeping state in the class is a mistake -- this means
@@ -664,7 +832,8 @@ class Breakpoint:
                 # index 0 is unused, except for marking an
                 # effective break .... see effective()
 
-    def __init__(self, file, line, temporary=False, cond=None, funcname=None):
+    def __init__(self, file, line, temporary=False, cond=None, funcname=None,
+                 var_name=None, var_value=None, var_frame=None, bptype='breakpoint'):
         self.funcname = funcname
         # Needed if funcname is not None.
         self.func_first_executable_line = None
@@ -675,6 +844,10 @@ class Breakpoint:
         self.enabled = True
         self.ignore = 0
         self.hits = 0
+        self.var_name = var_name
+        self.var_value = var_value
+        self.var_frame = var_frame
+        self.bptype = bptype
         self.number = Breakpoint.next
         Breakpoint.next += 1
         # Build the two lists
@@ -732,8 +905,13 @@ class Breakpoint:
             disp = disp + 'yes  '
         else:
             disp = disp + 'no   '
-        ret = '%-4dbreakpoint   %s at %s:%d' % (self.number, disp,
-                                                self.file, self.line)
+
+        if self.bptype == 'breakpoint':
+            ret = '%-4d%-22s   %s at %s:%d' % (self.number, self.bptype, disp,
+                                               self.file, self.line)
+        elif self.bptype.endswith('watchpoint'):
+            ret = '%-4d%-22s   %s %s' % (self.number, self.bptype, disp, self.var_name)
+
         if self.cond:
             ret += '\n\tstop only if %s' % (self.cond,)
         if self.ignore:
@@ -748,7 +926,10 @@ class Breakpoint:
 
     def __str__(self):
         "Return a condensed description of the breakpoint."
-        return 'breakpoint %s at %s:%s' % (self.number, self.file, self.line)
+        if self.bptype == 'breakpoint':
+            return 'breakpoint %s at %s:%s' % (self.number, self.file, self.line)
+        elif self.bptype.endswith('watchpoint'):
+            return '%s %s:%s' % (self.bptype, self.number, self.var_name)
 
 # -----------end of Breakpoint class----------
 

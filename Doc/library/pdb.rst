@@ -271,14 +271,47 @@ by the local file.
    If a second argument is present, it is an expression which must evaluate to
    true before the breakpoint is honored.
 
-   Without argument, list all breaks, including for each breakpoint, the number
-   of times that breakpoint has been hit, the current ignore count, and the
-   associated condition if any.
+   Without argument, list all breaks, including for each breakpoint or
+   watchpoint, the number of times that breakpoint has been hit, the current
+   ignore count, and the associated condition if any.
 
 .. pdbcommand:: tbreak [([filename:]lineno | function) [, condition]]
 
    Temporary breakpoint, which is removed automatically when it is first hit.
    The arguments are the same as for :pdbcmd:`break`.
+
+.. pdbcommand:: wa(tch) [expr]
+
+   Set a watchpoint for an expression. It will break when expression is written
+   into by program and the values changes.
+
+   Without argument, list all breaks, including for each breakpoint or
+   watchpoint, the number of times that breakpoint has been hit, the current
+   ignore count, and the associated condition if any.
+
+   .. versionadded:: 3.7
+
+.. pdbcommand:: rwa(tch) [expr]
+
+   Set a watchpoint for an expression. It will break when expression is
+   readed by program.
+
+   Without argument, list all breaks, including for each breakpoint or
+   watchpoint, the number of times that breakpoint has been hit, the current
+   ignore count, and the associated condition if any.
+
+   .. versionadded:: 3.7
+
+.. pdbcommand:: aw(atch) [expr]
+
+   Set a watchpoint for an expression. It will break when expression is
+   readed or written into by program.
+
+   Without argument, list all breaks, including for each breakpoint or
+   watchpoint, the number of times that breakpoint has been hit, the current
+   ignore count, and the associated condition if any.
+
+   .. versionadded:: 3.7
 
 .. pdbcommand:: cl(ear) [filename:lineno | bpnumber [bpnumber ...]]
 
