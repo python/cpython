@@ -37,8 +37,27 @@ look for instances of sphinxbuild and blurb installed on your process PATH
 (configurable with the SPHINXBUILD and BLURB variables).
 
 On Windows, we try to emulate the Makefile as closely as possible with a
+<<<<<<< HEAD
 ``make.bat`` file. If you need to specify the Python interpreter to use,
 set the PYTHON environment variable instead.
+||||||| parent of cc08b6969c... Remove invalid comment, since Makefile already specifies "python3"
+``make.bat`` file.
+
+To use a Python interpreter that's not called ``python``, use the standard
+way to set Makefile variables, using e.g. ::
+
+   make html PYTHON=python3
+
+On Windows, set the PYTHON environment variable instead.
+
+To use a specific sphinx-build (something other than ``sphinx-build``), set
+the SPHINXBUILD variable.
+=======
+``make.bat`` file.
+
+To use a specific sphinx-build (something other than ``sphinx-build``), set
+the SPHINXBUILD variable.
+>>>>>>> cc08b6969c... Remove invalid comment, since Makefile already specifies "python3"
 
 Available make targets are:
 
