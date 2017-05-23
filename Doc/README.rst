@@ -19,6 +19,7 @@ tree but are maintained separately and are available from
 `PyPI <https://pypi.org/>`_.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
 
@@ -29,7 +30,14 @@ The process itself requires Python and `Sphinx <http://sphinx-doc.org/>`_. As
 long as you have a working Python interpreter available, the rest is handled
 automatically, so you don't have to install Sphinx yourself.
 =======
+||||||| parent of e6fd190296... Update docs to mention that Sphinx dependency handling is automatic
+=======
+<<<<<<< HEAD
+>>>>>>> e6fd190296... Update docs to mention that Sphinx dependency handling is automatic
 The process itself requires Python 3 and `Sphinx <http://sphinx-doc.org/>`_. As
+=======
+The process itself requires Python and `Sphinx <http://sphinx-doc.org/>`_. As
+>>>>>>> 96380e2c40... Update docs to mention that Sphinx dependency handling is automatic
 long as you have a working Python interpreter available, the rest is handled
 automatically, so you don't have to install Sphinx yourself.
 >>>>>>> 8b3066777a... Updated PR from review comments.
@@ -38,8 +46,12 @@ automatically, so you don't have to install Sphinx yourself.
 Using make
 ----------
 
+<<<<<<< HEAD
 A Makefile has been prepared so that (on Unix), after you change into the
 ```Doc/`` directory you can simply run ::
+=======
+A Makefile has been prepared so that (on Unix) you can just run ::
+>>>>>>> 96380e2c40... Update docs to mention that Sphinx dependency handling is automatic
 
   make html
 
