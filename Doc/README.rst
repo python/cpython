@@ -33,13 +33,6 @@ to build the HTML output files.
 On Windows, we try to emulate the Makefile as closely as possible with a
 ``make.bat`` file.
 
-To use a Python interpreter that's not called ``python``, use the standard
-way to set Makefile variables, using e.g. ::
-
-   make html PYTHON=python3
-
-On Windows, set the PYTHON environment variable instead.
-
 To use a specific sphinx-build (something other than ``sphinx-build``), set
 the SPHINXBUILD variable.
 
