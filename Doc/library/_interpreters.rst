@@ -10,11 +10,9 @@
 
 This module provides low-level primitives for working with multiple
 Python interpreters in the same runtime in the current process.
-.. XXX The :mod:`interpreters` module provides an easier to use and
-   higher-level API built on top of this module.
 
 More information about (sub)interpreters is found at
-:ref:`_sub-interpreter-support`, including what data is shared between
+:ref:`sub-interpreter-support`, including what data is shared between
 interpreters and what is unique.  Note particularly that interpreters
 aren't inherently threaded, even though they track and manage Python
 threads.  To run code in an interpreter in a different OS thread, call
@@ -30,9 +28,6 @@ For example::
 
 This module is optional.  It is provided by Python implementations which
 support multiple interpreters.
-.. XXX For systems lacking the :mod:`_interpreters` module, the
-   :mod:`_dummy_interpreters` module is available.  It duplicates this
-   module's interface and can be used as a drop-in replacement.
 
 It defines the following functions:
 

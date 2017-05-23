@@ -29,3 +29,4 @@ The following are support modules for some of the above services:
    _thread.rst
    _dummy_thread.rst
    dummy_threading.rst
+   _interpreters.rst
