@@ -451,7 +451,6 @@ class EmbeddingTests(unittest.TestCase):
                 self.assertEqual(sub.id, str(mainid + i + 1))
 
     def test_subinterps_distinct_state(self):
-        lastmain = None
         for run in self.run_repeated_init_and_subinterpreters():
             main, *subs, _ = run
 
@@ -461,14 +460,6 @@ class EmbeddingTests(unittest.TestCase):
                 # interp.interp is 0x0 and interp.modules is the same
                 # between interpreters.
                 raise unittest.SkipTest('platform prints pointers as 0x0')
-
-            if lastmain is not None:
-                # A new main interpreter may have the same interp
-                # and/or tstate pointer as an earlier finalized/
-                # destroyed one.  So we do not check interp or
-                # tstate here.
-                self.assertNotEqual(main.modules, lastmain.modules)
-            lastmain = main
 
             for sub in subs:
                 # A new subinterpreter may have the same
