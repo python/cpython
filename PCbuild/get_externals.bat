@@ -31,7 +31,6 @@ if exist "%EXTERNALS_DIR%" (
 if %DO_FETCH%==false goto end
 :fetch
 
-if not exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
 
 if "%ORG%"=="" (set ORG=python)
 
@@ -40,6 +39,7 @@ if "%PYTHON_FOR_BUILD%"=="" (
     py -3.6 -V >nul 2>&1 && (set PYTHON_FOR_BUILD=py -3.6)
 )
 if "%PYTHON_FOR_BUILD%"=="" (
+    if not exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
     if NOT exist %NUGET% (
         echo Downloading nuget...
         powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile %NUGET%
