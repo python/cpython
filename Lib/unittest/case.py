@@ -342,13 +342,11 @@ class _AssertLogsContext(_BaseTestCaseContext):
 def _get_short_description(doc):
     # Return the summary line from a docstring.
     # If there is no summary line, return None.
-    if doc:
-        (synopsis, long_description) = pydoc.splitdoc(doc)
-        synopsis = synopsis.strip()
-    else:
-        # The text is either an empty string, or some other false value.
-        synopsis = None
+    if not doc:
+        return None
 
+    (synopsis, long_description) = pydoc.splitdoc(doc)
+    synopsis = synopsis.strip()
     return synopsis
 
 
