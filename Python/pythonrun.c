@@ -35,7 +35,6 @@
 #ifdef MS_WINDOWS
 #undef BYTE
 #include "windows.h"
-/* TODO: This is duped in shutdown.c Find a way to merge them */
 #endif
 
 _Py_IDENTIFIER(builtins);
