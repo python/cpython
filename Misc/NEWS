@@ -604,6 +604,9 @@ Library
 - bpo-10379: locale.format_string now supports the 'monetary' keyword argument,
   and locale.format is deprecated.
 
+- bpo-29851: importlib.reload() now raises ModuleNotFoundError if the
+  module lacks a spec.
+
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
   Manuel Krebber, and Łukasz Langa.
