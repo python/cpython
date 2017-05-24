@@ -1616,7 +1616,11 @@ __slots__
 
 By default, instances of classes have a dictionary for attribute storage.
 
-The default can be overridden by defining *__slots__* in a class definition.
+However, we could use a data structure that takes up less space than a
+dictionary if we know the attributes to expect on class creation.
+
+Thus, we can override this default by defining *__slots__* in a class
+definition.
 
 The *__slots__* declaration takes a sequence of instance variables and reserves
 just enough space in each instance to hold a reference to a value for each
@@ -1625,18 +1629,33 @@ variable.
 Space is saved because *__dict__* is not used for these variables.
 
 One can prevent *__dict__* and *__weakref__* from being created by
-inheriting solely from slotted classes or builtin types.
+inheriting solely from slotted classes or builtin types and declaring
+slots that doesn't include ``'__dict__'`` and ``'__weakref__'``.
 
-*__dict__* and *__weakref__* can be allowed by adding them to *__slots__*.
+Slotted classes (aside from variable-length built-in types
+such as :class:`int`, :class:`bytes` and :class:`tuple`)
+can allow *__dict__* and *__weakref__* by adding # XXX is weakref true?
+``'__dict__'`` and ``'__weakref__'`` to *__slots__*, respectively.
 
-Since slots implicitly create *member_descriptors* (data descriptors), the
-optimizations still apply for attributes named in *__slots__*.
+If *__dict__* is not allowed, attempts to assign to an unslotted
+variable raises :exc:`AttributeError`.
+
+Since *__slots__* implicitly creates *member_descriptors* (data
+descriptors, like *property*, in the class), the
+optimizations still apply for attributes named in *__slots__* in spite of
+the *__dict__*.
 
 Child classes using *__slots__* should only name the additional slots,
-else the slots created by the parents will be inaccessable.
+else the slots created by the parents will be inaccessable slots in
+the instance (wasting some space).
+
+Otherwise, attributes available in the parent will be accessible,
+including *__dict__* and *__weakref__*.
 
 One can use multiple inheritance with slots, but only one parent can have
-non-empty *__slots__*.
+non-empty *__slots__*. To maximize reusability with abstract base
+classes and mixins, or any non-instantiable class, declare slots to
+be empty.
 
 
 .. data:: object.__slots__
@@ -1650,11 +1669,8 @@ non-empty *__slots__*.
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 
-* Without a *__dict__* variable, instances cannot be assigned new variables not
-  listed in the *__slots__* definition.  Attempts to assign to an unlisted
-  variable name raises :exc:`AttributeError`. If dynamic assignment of new
-  variables is desired, then add ``'__dict__'`` to the sequence of strings in
-  the *__slots__* declaration.
+* When inheriting from a class without *__slots__*, the *__dict__* attribute
+  of that class will always be accessible.
 
 * Without a *__weakref__* variable for each instance, classes defining
   *__slots__* do not support weak references to its instances. If weak reference
@@ -1684,7 +1700,7 @@ Notes on using *__slots__*
   corresponding to each key.
 
 * *__class__* assignment works only if both classes have the same *__slots__*.
-
+  
 
 .. _class-customization:
 
