@@ -1402,8 +1402,8 @@ Launcher arguments:\n\n\
 -X.Y-64: Launch the specified 64bit Python version\n\
 -X-64  : Launch the latest 64bit Python X version", stdout);
     }
-    fputws(L"\n-0     : List the available pythons", stdout);
-    fputws(L"\n-0p    : List with paths", stdout);
+    fputws(L"\n-0  --list       : List the available pythons", stdout);
+    fputws(L"\n-0p --list-paths : List with paths", stdout);
     fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
     fflush(stdout);
 }
@@ -1428,7 +1428,7 @@ show_python_list(wchar_t ** argv)
     */
     fwprintf(stderr,
              L"Installed Pythons found by %s Launcher for Windows", argv[0]);
-    if (!_wcsicmp(p, L"-0p")) /* Show path? */
+    if (!_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")) /* Show path? */
         fmt = L"\n -%ls-%d\t%ls"; /* print VER-BITS path */
 
     if (num_installed_pythons == 0)
@@ -1601,6 +1601,9 @@ process(int argc, wchar_t ** argv)
         if (argc == 2) {
             slen = wcslen(L"-0");
             if(!wcsncmp(p, L"-0", slen)) /* Starts with -0 */
+                show_python_list(argv); /* Check for -0 FIRST */
+            slen = wcslen(L"-list");
+            if(!wcsncmp(p, L"-list", slen)) /* Starts with -0 */
                 show_python_list(argv); /* Check for -0 FIRST */
         }
         valid = (*p == L'-') && validate_version(&p[1]);
