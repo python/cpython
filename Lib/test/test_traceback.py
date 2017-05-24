@@ -339,6 +339,7 @@ class TracebackFormatTests(unittest.TestCase):
 
         expected = result_f.splitlines()
         actual = stderr_f.getvalue().splitlines()
+
         # Check the output text matches expectations
         # 2nd last line contains the repetition count
         self.assertEqual(actual[:-2], expected[:-2])
