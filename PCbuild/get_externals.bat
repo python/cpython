@@ -45,8 +45,8 @@ if "%PYTHON_FOR_BUILD%"=="" (
         powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile %NUGET%
     )
     echo Installing Python via nuget...
-    %NUGET% install python -OutputDirectory %EXTERNALS_DIR%python
-    set PYTHON_FOR_BUILD=%EXTERNALS_DIR%python\python.3.6.1\tools\python.exe
+    %NUGET% install pythonx86 -OutputDirectory %EXTERNALS_DIR% -ExcludeVersion
+    set PYTHON_FOR_BUILD=%EXTERNALS_DIR%pythonx86\tools\python.exe
 )
 
 echo.Fetching external libraries...
