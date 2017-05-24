@@ -23,6 +23,16 @@ typedef struct _is PyInterpreterState;
 #else
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
+
+typedef struct {
+    int ignore_environment;
+    int use_hash_seed;
+    unsigned long hash_seed;
+    int _disable_importlib; /* Needed by freeze_importlib */
+} _PyCoreConfig;
+
+#define _PyCoreConfig_INIT {0, -1, 0, 0}
+
 typedef struct _is {
 
     struct _is *next;
@@ -42,6 +52,7 @@ typedef struct _is {
     int codecs_initialized;
     int fscodec_initialized;
 
+    _PyCoreConfig core_config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
