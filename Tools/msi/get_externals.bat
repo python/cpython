@@ -4,8 +4,8 @@ rem Simple script to fetch source for external libraries
 
 set HERE=%~dp0
 set PCBUILD=%HERE%..\..\PCbuild\
-set EXTERNALS_DIR=%HERE%..\..\externals\
-set NUGET=%EXTERNALS_DIR%nuget.exe
+set EXTERNALS_DIR=%HERE%..\..\externals\windows-installer\
+set NUGET=%EXTERNALS_DIR%..\nuget.exe
 set NUGET_URL=https://aka.ms/nugetclidl
 
 set DO_FETCH=true
@@ -44,8 +44,8 @@ if "%PYTHON_FOR_BUILD%"=="" (
         powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile %NUGET%
     )
     echo Installing Python via nuget...
-    %NUGET% install pythonx86 -OutputDirectory %EXTERNALS_DIR% -ExcludeVersion
-    set PYTHON_FOR_BUILD=%EXTERNALS_DIR%pythonx86\tools\python.exe
+    %NUGET% install pythonx86 -OutputDirectory %EXTERNALS_DIR%..\ -ExcludeVersion
+    set PYTHON_FOR_BUILD=%EXTERNALS_DIR%..\pythonx86\tools\python.exe
 )
 
 echo.Fetching external libraries...
@@ -57,7 +57,7 @@ for %%e in (%libraries%) do (
         echo.%%e already exists, skipping.
     ) else (
         echo.Fetching %%e...
-        %PYTHON_FOR_BUILD% %PCBUILD%get_external.py -O %ORG% %%e
+        %PYTHON_FOR_BUILD% %PCBUILD%get_external.py -e %EXTERNALS_DIR% -O %ORG% %%e
     )
 )
 
@@ -76,7 +76,7 @@ for %%b in (%binaries%) do (
         echo.%%b already exists, skipping.
     ) else (
         echo.Fetching %%b...
-        %PYTHON_FOR_BUILD% %PCBUILD%get_external.py -b -O %ORG% %%b
+        %PYTHON_FOR_BUILD% %PCBUILD%get_external.py -e %EXTERNALS_DIR% -b -O %ORG% %%b
     )
 )
 
