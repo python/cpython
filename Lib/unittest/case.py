@@ -339,11 +339,11 @@ class _AssertLogsContext(_BaseTestCaseContext):
                 .format(logging.getLevelName(self.level), self.logger.name))
 
 
-def _get_short_description(text):
+def _get_short_description(doc):
     # Return the summary line from a docstring.
     # If there is no summary line, return None.
-    if text:
-        (synopsis, long_description) = pydoc.splitdoc(text)
+    if doc:
+        (synopsis, long_description) = pydoc.splitdoc(doc)
         synopsis = synopsis.strip()
     else:
         # The text is either an empty string, or some other false value.
