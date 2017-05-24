@@ -1625,12 +1625,11 @@ more space
 
 One can also prevent *__dict__* and *__weakref__* from being created by
 inheriting solely from slotted classes or builtin types and declaring
-slots that do not include ``'__dict__'`` and ``'__weakref__'``. The
-following example explicitly allows *__dict__*::
+slots that do not include ``'__dict__'`` and ``'__weakref__'``. For example::
 
    class Slotted:
        """This class only has foo and bar attributes,
-       __dict__ (and thus flexible attributes) is disallowed.
+       and disallows __dict__ (and thus flexible attributes)
        """
        __slots__ = 'foo', 'bar'
 
@@ -1638,27 +1637,18 @@ Slotted classes (aside from variable-length built-in types
 such as :class:`int`, :class:`bytes` and :class:`tuple`)
 can allow *__dict__* and *__weakref__* by adding 
 ``'__dict__'`` and ``'__weakref__'`` to *__slots__*, respectively.
-For example::
+The following example explicitly allows *__dict__*::
 
    class FlexibleSlotted(Slotted):
        """This class optimizes foo and bar, but allows other attributes"""
-       __slots__ = '__dict__', # instance will have parent's slots too.
-
+       __slots__ = '__dict__', # instances will have parent's slots too.
 
 If *__dict__* is not allowed, any attempts to assign to an unslotted
 variable raises :exc:`AttributeError`.
 
-Since *__slots__* implicitly creates *member_descriptors* (data
-descriptors, like *property*, in the class), the
-optimizations still apply for attributes named in *__slots__* in spite of
-the *__dict__*.
-
 Child classes using *__slots__* should only name the additional slots,
 else the slots created by the parents will be inaccessable slots in
 the instance (wasting some space).
-
-Otherwise, attributes available in the parent will be accessible,
-including *__dict__* and *__weakref__*.
 
 One can use multiple inheritance with slots, but only one parent can have
 non-empty *__slots__*. To maximize reusability with abstract base
@@ -1679,6 +1669,12 @@ Notes on using *__slots__*
 
 * When inheriting from a class without *__slots__*, the *__dict__* attribute
   of that class will always be accessible.
+
+* Without a *__dict__* variable, instances cannot be assigned new
+  variables not listed in the *__slots__* definition. Attempts to assign
+  to an unlisted variable name raises :exc:`AttributeError`. If dynamic
+  assignment of new variables is desired, then add ``'__dict__'`` to the
+  sequence of strings in the *__slots__* declaration.
 
 * Without a *__weakref__* variable for each instance, classes defining
   *__slots__* do not support weak references to its instances. If weak reference
