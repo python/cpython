@@ -436,7 +436,11 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
 
 #ifdef WITH_THREAD
     /* We can't call _PyEval_FiniThreads() in Py_FinalizeEx because
+       destroying the GIL might fail when it is being referenced from
+       another running thread (see issue #9901).
+       Instead we destroy the previously created GIL here, which ensures
        that we can call Py_Initialize / Py_FinalizeEx multiple times. */
+    _PyEval_FiniThreads();
     /* Auto-thread-state API */
     _PyGILState_Init(interp, tstate);
 #endif /* WITH_THREAD */
