@@ -16,6 +16,13 @@ static char *NON_INIT_CORO_MSG = "can't send non-None value to a "
 static char *ASYNC_GEN_IGNORED_EXIT_MSG =
                                  "async generator ignored GeneratorExit";
 
+static inline int PyExcState_traverse(PyExcState *exc_state, visitproc visit, void *arg) {
+    Py_VISIT(exc_state->exc_type);
+    Py_VISIT(exc_state->exc_value);
+    Py_VISIT(exc_state->exc_traceback);
+    return 0;
+}
+
 static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
 {
@@ -23,10 +30,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
-    Py_VISIT(gen->gi_exc_state.exc_type);
-    Py_VISIT(gen->gi_exc_state.exc_value);
-    Py_VISIT(gen->gi_exc_state.exc_traceback);
-    return 0;
+    return PyExcState_traverse(&gen->gi_exc_state, visit, arg);
 }
 
 void
@@ -90,6 +94,19 @@ _PyGen_Finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+static inline void PyExcState_clear(PyExcState *exc_state) {
+    PyObject *t, *v, *tb;
+    t = exc_state->exc_type;
+    v = exc_state->exc_value;
+    tb = exc_state->exc_traceback;
+    exc_state->exc_type = NULL;
+    exc_state->exc_value = NULL;
+    exc_state->exc_traceback = NULL;
+    Py_XDECREF(t);
+    Py_XDECREF(v);
+    Py_XDECREF(tb);
+}
+
 static void
 gen_dealloc(PyGenObject *gen)
 {
@@ -119,9 +136,7 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
-    Py_CLEAR(gen->gi_exc_state.exc_type);
-    Py_CLEAR(gen->gi_exc_state.exc_value);
-    Py_CLEAR(gen->gi_exc_state.exc_traceback);
+    PyExcState_clear(&gen->gi_exc_state);
     PyObject_GC_Del(gen);
 }
 
@@ -291,16 +306,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     if (!result || f->f_stacktop == NULL) {
         /* generator can't be rerun, so release the frame */
         /* first clean reference cycle through stored exception traceback */
-        PyObject *t, *v, *tb;
-        t = gen->gi_exc_state.exc_type;
-        v = gen->gi_exc_state.exc_value;
-        tb = gen->gi_exc_state.exc_traceback;
-        gen->gi_exc_state.exc_type = NULL;
-        gen->gi_exc_state.exc_value = NULL;
-        gen->gi_exc_state.exc_traceback = NULL;
-        Py_XDECREF(t);
-        Py_XDECREF(v);
-        Py_XDECREF(tb);
+        PyExcState_clear(&gen->gi_exc_state);
         gen->gi_frame->f_gen = NULL;
         gen->gi_frame = NULL;
         Py_DECREF(f);

@@ -161,11 +161,17 @@ typedef struct _ts {
     PyObject *c_profileobj;
     PyObject *c_traceobj;
 
+    /* The exception currently being raised */
     PyObject *curexc_type;
     PyObject *curexc_value;
     PyObject *curexc_traceback;
 
+    /* The exception currently being handled, if no coroutines/generators are present.
+     Always last element on the stack referred to be exc_info. */
     PyExcState exc_state;
+
+    /* Pointer to the top of the stack of the exceptions currently being handled */
+    PyExcState *exc_info;
 
     PyObject *dict;  /* Stores per-thread state */
 
@@ -208,8 +214,6 @@ typedef struct _ts {
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
-
-    PyExcState *exc_info;
 
     /* XXX signal handlers should also be here */
 
