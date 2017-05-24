@@ -525,7 +525,7 @@ _Py_InitializeMainInterpreter(int install_sigs)
     if (!tstate)
         Py_FatalError("Py_Initialize: failed to read thread state");
     interp = tstate->interp;
-    if (!tstate)
+    if (!interp)
         Py_FatalError("Py_Initialize: failed to get interpreter");
 
     /* Now finish configuring the main interpreter */
