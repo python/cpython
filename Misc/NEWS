@@ -715,6 +715,10 @@ Documentation
 Build
 -----
 
+- bpo-20210: Support the *disabled* marker in Setup files. Extension modules
+  listed after this marker are not built at all, neither by the Makefile nor by
+  setup.py.
+
 - Issue #27659: Prohibit implicit C function declarations: use
   -Werror=implicit-function-declaration when possible (GCC and Clang, but it
   depends on the compiler version). Patch written by Chi Hsuan Yen.
