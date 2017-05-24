@@ -1864,33 +1864,37 @@ chain_next(chainobject *lz)
 {
     PyObject *item;
 
-    if (lz->source == NULL)
-        return NULL;                    /* already stopped */
-
-    if (lz->active == NULL) {
-        PyObject *iterable = PyIter_Next(lz->source);
-        if (iterable == NULL) {
-            Py_CLEAR(lz->source);
-            return NULL;                /* no more input sources */
-        }
-        lz->active = PyObject_GetIter(iterable);
-        Py_DECREF(iterable);
+    /* lz->source is the iterator of iterables. If it's NULL, we've already
+     * consumed them all. lz->active is the current iterator. If it's NULL,
+     * we should grab a new one from lz->source. */
+    while (lz->source != NULL) {
         if (lz->active == NULL) {
-            Py_CLEAR(lz->source);
-            return NULL;                /* input not iterable */
+            PyObject *iterable = PyIter_Next(lz->source);
+            if (iterable == NULL) {
+                Py_CLEAR(lz->source);
+                return NULL;            /* no more input sources */
+            }
+            lz->active = PyObject_GetIter(iterable);
+            Py_DECREF(iterable);
+            if (lz->active == NULL) {
+                Py_CLEAR(lz->source);
+                return NULL;            /* input not iterable */
+            }
         }
+        item = (*Py_TYPE(lz->active)->tp_iternext)(lz->active);
+        if (item != NULL)
+            return item;
+        if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_StopIteration))
+                PyErr_Clear();
+            else
+                return NULL;            /* input raised an exception */
+        }
+        /* lz->active is consumed, try with the next iterable. */
+        Py_CLEAR(lz->active);
     }
-    item = (*Py_TYPE(lz->active)->tp_iternext)(lz->active);
-    if (item != NULL)
-        return item;
-    if (PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_StopIteration))
-            PyErr_Clear();
-        else
-            return NULL;                /* input raised an exception */
-    }
-    Py_CLEAR(lz->active);
-    return chain_next(lz);              /* recurse and use next active */
+    /* Everything had been consumed already. */
+    return NULL;
 }
 
 static PyObject *
@@ -3965,24 +3969,16 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 fast_mode = 0;
             }
         }
-        Py_INCREF(long_cnt);
     } else {
         cnt = 0;
-        long_cnt = PyLong_FromLong(0);
-        if (long_cnt == NULL) {
-            return NULL;
-        }
+        long_cnt = _PyLong_Zero;
     }
+    Py_INCREF(long_cnt);
 
     /* If not specified, step defaults to 1 */
-    if (long_step == NULL) {
-        long_step = PyLong_FromLong(1);
-        if (long_step == NULL) {
-            Py_DECREF(long_cnt);
-            return NULL;
-        }
-    } else
-        Py_INCREF(long_step);
+    if (long_step == NULL)
+        long_step = _PyLong_One;
+    Py_INCREF(long_step);
 
     assert(long_cnt != NULL && long_step != NULL);
 
@@ -4329,7 +4325,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
     PyObject *fillvalue = Py_None;
-    Py_ssize_t tuplesize = PySequence_Length(args);
+    Py_ssize_t tuplesize;
 
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
         fillvalue = PyDict_GetItemString(kwds, "fillvalue");
@@ -4342,6 +4338,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* args must be a tuple */
     assert(PyTuple_Check(args));
+    tuplesize = PyTuple_GET_SIZE(args);
 
     /* obtain iterators */
     ittuple = PyTuple_New(tuplesize);

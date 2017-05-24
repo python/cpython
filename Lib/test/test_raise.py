@@ -40,7 +40,7 @@ class TestRaise(unittest.TestCase):
                 exc1 = e
                 raise
         except IndexError as exc2:
-            self.assertTrue(exc1 is exc2)
+            self.assertIs(exc1, exc2)
         else:
             self.fail("No exception raised")
 
@@ -84,7 +84,7 @@ class TestRaise(unittest.TestCase):
             except:
                 raise ValueError() from None
         except ValueError as e:
-            self.assertTrue(isinstance(e.__context__, TypeError))
+            self.assertIsInstance(e.__context__, TypeError)
             self.assertIsNone(e.__cause__)
 
     def test_with_reraise1(self):
@@ -190,7 +190,7 @@ class TestCause(unittest.TestCase):
         try:
             raise IndexError from cause
         except IndexError as e:
-            self.assertTrue(e.__cause__ is cause)
+            self.assertIs(e.__cause__, cause)
         else:
             self.fail("No exception raised")
 
@@ -296,7 +296,7 @@ class TestContext(unittest.TestCase):
             finally:
                 raise OSError
         except OSError as e:
-            self.assertTrue(e.__context__ is None)
+            self.assertIsNone(e.__context__)
         else:
             self.fail("No exception raised")
 
@@ -333,7 +333,7 @@ class TestContext(unittest.TestCase):
             except ZeroDivisionError as e:
                 raise e
         except ZeroDivisionError as e:
-            self.assertTrue(e.__context__ is None, e.__context__)
+            self.assertIsNone(e.__context__)
 
     def test_reraise_cycle_broken(self):
         # Non-trivial context cycles (through re-raising a previous exception)
@@ -347,7 +347,7 @@ class TestContext(unittest.TestCase):
                 except ZeroDivisionError:
                     raise a
         except NameError as e:
-            self.assertTrue(e.__context__.__context__ is None)
+            self.assertIsNone(e.__context__.__context__)
 
     def test_3118(self):
         # deleting the generator caused the __context__ to be cleared

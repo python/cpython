@@ -128,7 +128,7 @@ skip_signature(const char *doc)
     return NULL;
 }
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
 static int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
@@ -3138,10 +3138,35 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             type->tp_name);
         return -1;
     }
-    if (_PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL) < 0)
-        return -1;
-    res = update_slot(type, name);
-    assert(_PyType_CheckConsistency(type));
+    if (PyUnicode_Check(name)) {
+        if (PyUnicode_CheckExact(name)) {
+            if (PyUnicode_READY(name) == -1)
+                return -1;
+            Py_INCREF(name);
+        }
+        else {
+            name = _PyUnicode_Copy(name);
+            if (name == NULL)
+                return -1;
+        }
+        PyUnicode_InternInPlace(&name);
+        if (!PyUnicode_CHECK_INTERNED(name)) {
+            PyErr_SetString(PyExc_MemoryError,
+                            "Out of memory interning an attribute name");
+            Py_DECREF(name);
+            return -1;
+        }
+    }
+    else {
+        /* Will fail in _PyObject_GenericSetAttrWithDict. */
+        Py_INCREF(name);
+    }
+    res = _PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL);
+    if (res == 0) {
+        res = update_slot(type, name);
+        assert(_PyType_CheckConsistency(type));
+    }
+    Py_DECREF(name);
     return res;
 }
 
@@ -4393,23 +4418,20 @@ _common_reduce(PyObject *self, int proto)
 /*[clinic input]
 object.__reduce__
 
-  protocol: int = 0
-  /
-
 Helper for pickle.
 [clinic start generated code]*/
 
 static PyObject *
-object___reduce___impl(PyObject *self, int protocol)
-/*[clinic end generated code: output=5572e699c467dd5b input=227f37ed68bd938a]*/
+object___reduce___impl(PyObject *self)
+/*[clinic end generated code: output=d4ca691f891c6e2f input=11562e663947e18b]*/
 {
-    return _common_reduce(self, protocol);
+    return _common_reduce(self, 0);
 }
 
 /*[clinic input]
 object.__reduce_ex__
 
-  protocol: int = 0
+  protocol: int
   /
 
 Helper for pickle.
@@ -4417,7 +4439,7 @@ Helper for pickle.
 
 static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
-/*[clinic end generated code: output=2e157766f6b50094 input=8dd6a9602a12749e]*/
+/*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
     static PyObject *objreduce;
     PyObject *reduce, *res;
@@ -4496,9 +4518,6 @@ static PyObject *
 object___format___impl(PyObject *self, PyObject *format_spec)
 /*[clinic end generated code: output=34897efb543a974b input=7c3b3bc53a6fb7fa]*/
 {
-    PyObject *self_as_str = NULL;
-    PyObject *result = NULL;
-
     /* Issue 7994: If we're converting to a string, we
        should reject format specifications */
     if (PyUnicode_GET_LENGTH(format_spec) > 0) {
@@ -4507,12 +4526,7 @@ object___format___impl(PyObject *self, PyObject *format_spec)
                      self->ob_type->tp_name);
         return NULL;
     }
-    self_as_str = PyObject_Str(self);
-    if (self_as_str != NULL) {
-        result = PyObject_Format(self_as_str, format_spec);
-        Py_DECREF(self_as_str);
-    }
-    return result;
+    return PyObject_Str(self);
 }
 
 /*[clinic input]
@@ -5430,8 +5444,10 @@ getindex(PyObject *self, PyObject *arg)
         PySequenceMethods *sq = Py_TYPE(self)->tp_as_sequence;
         if (sq && sq->sq_length) {
             Py_ssize_t n = (*sq->sq_length)(self);
-            if (n < 0)
+            if (n < 0) {
+                assert(PyErr_Occurred());
                 return -1;
+            }
             i += n;
         }
     }
@@ -5925,14 +5941,22 @@ slot_sq_length(PyObject *self)
 
     if (res == NULL)
         return -1;
-    len = PyNumber_AsSsize_t(res, PyExc_OverflowError);
-    Py_DECREF(res);
-    if (len < 0) {
-        if (!PyErr_Occurred())
-            PyErr_SetString(PyExc_ValueError,
-                            "__len__() should return >= 0");
+
+    Py_SETREF(res, PyNumber_Index(res));
+    if (res == NULL)
+        return -1;
+
+    assert(PyLong_Check(res));
+    if (Py_SIZE(res) < 0) {
+        Py_DECREF(res);
+        PyErr_SetString(PyExc_ValueError,
+                        "__len__() should return >= 0");
         return -1;
     }
+
+    len = PyNumber_AsSsize_t(res, PyExc_OverflowError);
+    assert(len >= 0 || PyErr_ExceptionMatches(PyExc_OverflowError));
+    Py_DECREF(res);
     return len;
 }
 
@@ -7066,7 +7090,7 @@ init_slotdefs(void)
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
         assert(!p[1].name || p->offset <= p[1].offset);
         p->name_strobj = PyUnicode_InternFromString(p->name);
-        if (!p->name_strobj)
+        if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj))
             Py_FatalError("Out of memory interning slotdef names");
     }
     slotdefs_initialized = 1;
@@ -7091,6 +7115,9 @@ update_slot(PyTypeObject *type, PyObject *name)
     slotdef **pp;
     int offset;
 
+    assert(PyUnicode_CheckExact(name));
+    assert(PyUnicode_CHECK_INTERNED(name));
+
     /* Clear the VALID_VERSION flag of 'type' and all its
        subclasses.  This could possibly be unified with the
        update_subclasses() recursion below, but carefully:
@@ -7101,7 +7128,6 @@ update_slot(PyTypeObject *type, PyObject *name)
     init_slotdefs();
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
-        /* XXX assume name is interned! */
         if (p->name_strobj == name)
             *pp++ = p;
     }

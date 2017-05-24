@@ -15,11 +15,11 @@ os:
   - linux
   # macOS builds are disabled as the machines are under-provisioned on Travis,
   # adding up to an extra hour completing a full CI run.
-  #- osx
 
 compiler:
   - clang
-  - gcc
+  # gcc also works, but to keep the # of concurrent builds down, we use one C
+  # compiler here and the other to run the coverage build.
 
 env:
   - TESTING=cpython
@@ -32,17 +32,20 @@ matrix:
   include:
     - os: linux
       language: python
-      python: 3.5
+      # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
+      python: 3.6
       env:
         - TESTING=docs
       before_script:
         - cd Doc
-        - make venv
+        # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
+        # (Updating the version is fine as long as no warnings are raised by doing so.)
+        - python -m pip install sphinx~=1.6.1
       script:
-        - make check suspicious html PYTHON="./venv/bin/python" SPHINXBUILD="./venv/bin/python -m sphinx" SPHINXOPTS="-q"
+        - make check suspicious html SPHINXOPTS="-q -W"
     - os: linux
       language: c
-      compiler: clang
+      compiler: gcc
       env:
         - TESTING=coverage
       before_script:

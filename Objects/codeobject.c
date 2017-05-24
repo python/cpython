@@ -451,11 +451,15 @@ code_dealloc(PyCodeObject *co)
 static PyObject *
 code_sizeof(PyCodeObject *co, void *unused)
 {
-    Py_ssize_t res;
+    Py_ssize_t res = _PyObject_SIZE(Py_TYPE(co));
+    _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
 
-    res = _PyObject_SIZE(Py_TYPE(co));
     if (co->co_cell2arg != NULL && co->co_cellvars != NULL)
         res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(Py_ssize_t);
+
+    if (co_extra != NULL)
+        res += co_extra->ce_size * sizeof(co_extra->ce_extras[0]);
+
     return PyLong_FromSsize_t(res);
 }
 

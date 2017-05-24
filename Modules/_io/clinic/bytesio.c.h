@@ -170,7 +170,7 @@ _io_BytesIO_read(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     Py_ssize_t size = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _PyIO_ConvertSsize_t, &size)) {
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
 
@@ -205,7 +205,7 @@ _io_BytesIO_read1(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kw
     Py_ssize_t size = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read1",
-        _PyIO_ConvertSsize_t, &size)) {
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
 
@@ -241,7 +241,7 @@ _io_BytesIO_readline(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject 
     Py_ssize_t size = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
-        _PyIO_ConvertSsize_t, &size)) {
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
 
@@ -339,24 +339,23 @@ PyDoc_STRVAR(_io_BytesIO_truncate__doc__,
     {"truncate", (PyCFunction)_io_BytesIO_truncate, METH_FASTCALL, _io_BytesIO_truncate__doc__},
 
 static PyObject *
-_io_BytesIO_truncate_impl(bytesio *self, PyObject *arg);
+_io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
 _io_BytesIO_truncate(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    PyObject *arg = Py_None;
+    Py_ssize_t size = self->pos;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truncate",
-        0, 1,
-        &arg)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:truncate",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
 
     if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
         goto exit;
     }
-    return_value = _io_BytesIO_truncate_impl(self, arg);
+    return_value = _io_BytesIO_truncate_impl(self, size);
 
 exit:
     return return_value;
@@ -469,4 +468,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=74a856733a5d55b0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=733795434f838b71 input=a9049054013a1b77]*/
