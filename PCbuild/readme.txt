@@ -2,9 +2,11 @@ Quick Start Guide
 -----------------
 
 1.  Install Microsoft Visual Studio 2015, any edition.
-2.  Install Subversion, and make sure 'svn.exe' is on your PATH.
-3.  Run "build.bat -e" to build Python in 32-bit Release configuration.
-4.  (Optional, but recommended) Run the test suite with "rt.bat -q".
+1a. Optionally install Python 3.6 or later.  If not installed,
+    get_externals.bat (build.bat -e) will download and use Python via
+    nuget.
+2.  Run "build.bat -e" to build Python in 32-bit Release configuration.
+3.  (Optional, but recommended) Run the test suite with "rt.bat -q".
 
 
 Building Python using Microsoft Visual C++
