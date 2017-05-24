@@ -1064,19 +1064,14 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
-                _Py_OPCODE(*next_instr) == YIELD_FROM) {
-                /* Two cases where we skip running signal handlers and other
-                   pending calls:
-                   - If we're about to enter the try: of a try/finally (not
-                     *very* useful, but might help in some cases and it's
-                     traditional)
-                   - If we're resuming a chain of nested 'yield from' or
-                     'await' calls, then each frame is parked with YIELD_FROM
-                     as its next opcode. If the user hit control-C we want to
-                     wait until we've reached the innermost frame before
-                     running the signal handler and raising KeyboardInterrupt
-                     (see bpo-30039).
+            if (_Py_OPCODE(*next_instr) == YIELD_FROM) {
+                /* We skip running signal handlers and other
+                   pending calls if we're resuming a chain of nested 'yield from' or
+                   'await' calls, then each frame is parked with YIELD_FROM
+                   as its next opcode. If the user hit control-C we want to
+                   wait until we've reached the innermost frame before
+                   running the signal handler and raising KeyboardInterrupt
+                   (see bpo-30039).
                 */
                 goto fast_next_opcode;
             }
@@ -2049,7 +2044,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(POP_BLOCK) {
             PyTryBlock *b = PyFrame_BlockPop(f);
             UNWIND_BLOCK(b);
-            DISPATCH();
+            /* Don't allow interrupts here as we want to enter
+             * END_WITH/END_FINALLY before exceptions are allowed */
+            FAST_DISPATCH();
         }
 
         PREDICTED(END_FINALLY);
