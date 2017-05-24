@@ -486,7 +486,9 @@ form.
           IGNORECASE
 
    Perform case-insensitive matching; expressions like ``[A-Z]`` will match
-   lowercase letters, too.  This is not affected by the current locale.
+   lowercase letters, too.  This is not affected by the current locale.  To
+   get this effect on non-ASCII Unicode characters such as ``ü`` and ``Ü``,
+   add the :const:`UNICODE` flag.
 
 
 .. data:: L
@@ -517,8 +519,9 @@ form.
 .. data:: U
           UNICODE
 
-   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S`` dependent
-   on the Unicode character properties database.
+   Make the ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S``
+   sequences dependent on the Unicode character properties database. Also
+   enables non-ASCII matching for :const:`IGNORECASE`.
 
    .. versionadded:: 2.0
 
