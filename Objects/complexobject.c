@@ -8,6 +8,13 @@
 #include "Python.h"
 #include "structmember.h"
 
+/*[clinic input]
+class complex "PyComplexObject *" "&PyComplex_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=819e057d2d10f5ec]*/
+
+#include "clinic/complexobject.c.h"
+
 /* elementary operations on complex numbers */
 
 static Py_complex c_1 = {1., 0.};
@@ -267,7 +274,8 @@ PyComplex_ImagAsDouble(PyObject *op)
 }
 
 static PyObject *
-try_complex_special_method(PyObject *op) {
+try_complex_special_method(PyObject *op)
+{
     PyObject *f;
     _Py_IDENTIFIER(__complex__);
 
@@ -275,9 +283,22 @@ try_complex_special_method(PyObject *op) {
     if (f) {
         PyObject *res = _PyObject_CallNoArg(f);
         Py_DECREF(f);
-        if (res != NULL && !PyComplex_Check(res)) {
-            PyErr_SetString(PyExc_TypeError,
-                "__complex__ should return a complex object");
+        if (!res || PyComplex_CheckExact(res)) {
+            return res;
+        }
+        if (!PyComplex_Check(res)) {
+            PyErr_Format(PyExc_TypeError,
+                "__complex__ returned non-complex (type %.200s)",
+                res->ob_type->tp_name);
+            Py_DECREF(res);
+            return NULL;
+        }
+        /* Issue #29894: warn if 'res' not of exact type complex. */
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "__complex__ returned non-complex (type %.200s).  "
+                "The ability to return an instance of a strict subclass of complex "
+                "is deprecated, and may be removed in a future version of Python.",
+                res->ob_type->tp_name)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -912,22 +933,27 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     return result;
 }
 
+/*[clinic input]
+@classmethod
+complex.__new__ as complex_new
+    real as r: object(c_default="_PyLong_Zero") = 0
+    imag as i: object(c_default="NULL") = 0
+
+Create a complex number from a real part and an optional imaginary part.
+
+This is equivalent to (real + imag*1j) where imag defaults to 0.
+[clinic start generated code]*/
+
 static PyObject *
-complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
+/*[clinic end generated code: output=b6c7dd577b537dc1 input=6f6b0bedba29bcb5]*/
 {
-    PyObject *r, *i, *tmp;
+    PyObject *tmp;
     PyNumberMethods *nbr, *nbi = NULL;
     Py_complex cr, ci;
     int own_r = 0;
     int cr_is_complex = 0;
     int ci_is_complex = 0;
-    static char *kwlist[] = {"real", "imag", 0};
-
-    r = Py_False;
-    i = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:complex", kwlist,
-                                     &r, &i))
-        return NULL;
 
     /* Special-case for a single argument when type(arg) is complex. */
     if (PyComplex_CheckExact(r) && i == NULL &&
@@ -1018,18 +1044,13 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         if (tmp == NULL)
             return NULL;
-        if (!PyFloat_Check(tmp)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "float(r) didn't return a float");
-            Py_DECREF(tmp);
-            return NULL;
-        }
+        assert(PyFloat_Check(tmp));
         cr.real = PyFloat_AsDouble(tmp);
-        cr.imag = 0.0; /* Shut up compiler warning */
+        cr.imag = 0.0;
         Py_DECREF(tmp);
     }
     if (i == NULL) {
-        ci.real = 0.0;
+        ci.real = cr.imag;
     }
     else if (PyComplex_Check(i)) {
         ci = ((PyComplexObject*)i)->cval;
@@ -1051,17 +1072,11 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (ci_is_complex) {
         cr.real -= ci.imag;
     }
-    if (cr_is_complex) {
+    if (cr_is_complex && i != NULL) {
         ci.real += cr.imag;
     }
     return complex_subtype_from_doubles(type, cr.real, ci.real);
 }
-
-PyDoc_STRVAR(complex_doc,
-"complex(real[, imag]) -> complex number\n"
-"\n"
-"Create a complex number from a real part and an optional imaginary part.\n"
-"This is equivalent to (real + imag*1j) where imag defaults to 0.");
 
 static PyNumberMethods complex_as_number = {
     (binaryfunc)complex_add,                    /* nb_add */
@@ -1119,8 +1134,8 @@ PyTypeObject PyComplex_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    complex_doc,                                /* tp_doc */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    complex_new__doc__,                         /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     complex_richcompare,                        /* tp_richcompare */

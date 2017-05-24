@@ -26,7 +26,6 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
-from . import compat
 from . import events
 from . import futures
 from . import selectors
@@ -449,28 +448,21 @@ class TestCase(unittest.TestCase):
         self.set_event_loop(loop)
         return loop
 
+    def unpatch_get_running_loop(self):
+        events._get_running_loop = self._get_running_loop
+
     def setUp(self):
         self._get_running_loop = events._get_running_loop
         events._get_running_loop = lambda: None
 
     def tearDown(self):
-        events._get_running_loop = self._get_running_loop
+        self.unpatch_get_running_loop()
 
         events.set_event_loop(None)
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
         self.assertEqual(sys.exc_info(), (None, None, None))
-
-    if not compat.PY34:
-        # Python 3.3 compatibility
-        def subTest(self, *args, **kwargs):
-            class EmptyCM:
-                def __enter__(self):
-                    pass
-                def __exit__(self, *exc):
-                    pass
-            return EmptyCM()
 
 
 @contextlib.contextmanager

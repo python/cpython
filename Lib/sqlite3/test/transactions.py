@@ -179,6 +179,15 @@ class TransactionalDDL(unittest.TestCase):
         result = self.con.execute("select * from test").fetchall()
         self.assertEqual(result, [])
 
+    def CheckImmediateTransactionalDDL(self):
+        # You can achieve transactional DDL by issuing a BEGIN
+        # statement manually.
+        self.con.execute("begin immediate")
+        self.con.execute("create table test(i)")
+        self.con.rollback()
+        with self.assertRaises(sqlite.OperationalError):
+            self.con.execute("select * from test")
+
     def CheckTransactionalDDL(self):
         # You can achieve transactional DDL by issuing a BEGIN
         # statement manually.

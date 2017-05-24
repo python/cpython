@@ -148,7 +148,7 @@ static long dxp[256];
 #include "pythread.h"
 
 static PyThread_type_lock pending_lock = 0; /* for pending calls */
-static long main_thread = 0;
+static unsigned long main_thread = 0;
 /* This single variable consolidates all requests to break out of the fast path
    in the eval loop. */
 static _Py_atomic_int eval_breaker = {0};
@@ -1064,9 +1064,20 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY) {
-                /* Make the last opcode before
-                   a try: finally: block uninterruptible. */
+            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
+                _Py_OPCODE(*next_instr) == YIELD_FROM) {
+                /* Two cases where we skip running signal handlers and other
+                   pending calls:
+                   - If we're about to enter the try: of a try/finally (not
+                     *very* useful, but might help in some cases and it's
+                     traditional)
+                   - If we're resuming a chain of nested 'yield from' or
+                     'await' calls, then each frame is parked with YIELD_FROM
+                     as its next opcode. If the user hit control-C we want to
+                     wait until we've reached the innermost frame before
+                     running the signal handler and raising KeyboardInterrupt
+                     (see bpo-30039).
+                */
                 goto fast_next_opcode;
             }
             if (_Py_atomic_load_relaxed(&pendingcalls_to_do)) {
@@ -1354,9 +1365,15 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(BINARY_MODULO) {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
-            PyObject *res = PyUnicode_CheckExact(dividend) ?
-                PyUnicode_Format(dividend, divisor) :
-                PyNumber_Remainder(dividend, divisor);
+            PyObject *res;
+            if (PyUnicode_CheckExact(dividend) && (
+                  !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
+              // fast path; string formatting, but not if the RHS is a str subclass
+              // (see issue28598)
+              res = PyUnicode_Format(dividend, divisor);
+            } else {
+              res = PyNumber_Remainder(dividend, divisor);
+            }
             Py_DECREF(divisor);
             Py_DECREF(dividend);
             SET_TOP(res);
@@ -1849,13 +1866,13 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
             awaitable = _PyCoro_GetAwaitableIter(iter);
             if (awaitable == NULL) {
-                SET_TOP(NULL);
-                PyErr_Format(
+                _PyErr_FormatFromCause(
                     PyExc_TypeError,
                     "'async for' received an invalid object "
                     "from __aiter__: %.100s",
                     Py_TYPE(iter)->tp_name);
 
+                SET_TOP(NULL);
                 Py_DECREF(iter);
                 goto error;
             } else {
@@ -1914,7 +1931,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
                 awaitable = _PyCoro_GetAwaitableIter(next_iter);
                 if (awaitable == NULL) {
-                    PyErr_Format(
+                    _PyErr_FormatFromCause(
                         PyExc_TypeError,
                         "'async for' received an invalid object "
                         "from __anext__: %.100s",
@@ -2804,13 +2821,16 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(IMPORT_STAR) {
             PyObject *from = POP(), *locals;
             int err;
-            if (PyFrame_FastToLocalsWithError(f) < 0)
+            if (PyFrame_FastToLocalsWithError(f) < 0) {
+                Py_DECREF(from);
                 goto error;
+            }
 
             locals = f->f_locals;
             if (locals == NULL) {
                 PyErr_SetString(PyExc_SystemError,
                     "no locals found during 'import *'");
+                Py_DECREF(from);
                 goto error;
             }
             err = import_all_from(locals, from);
@@ -4809,7 +4829,20 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
         PyThreadState *tstate = PyThreadState_GET();
-        C_TRACE(x, _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames));
+        if (tstate->use_tracing && tstate->c_profilefunc) {
+            // We need to create PyCFunctionObject for tracing.
+            PyMethodDescrObject *descr = (PyMethodDescrObject*)func;
+            func = PyCFunction_NewEx(descr->d_method, stack[0], NULL);
+            if (func == NULL) {
+                return NULL;
+            }
+            C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack+1, nargs-1,
+                                                     kwnames));
+            Py_DECREF(func);
+        }
+        else {
+            x = _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames);
+        }
     }
     else {
         if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
@@ -4867,17 +4900,13 @@ do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
 /* Extract a slice index from a PyLong or an object with the
    nb_index slot defined, and store in *pi.
    Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
-   and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.
+   and silently boost values less than PY_SSIZE_T_MIN to PY_SSIZE_T_MIN.
    Return 0 on error, 1 on success.
-*/
-/* Note:  If v is NULL, return success without storing into *pi.  This
-   is because_PyEval_SliceIndex() is called by apply_slice(), which can be
-   called by the SLICE opcode with v and/or w equal to NULL.
 */
 int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
-    if (v != NULL) {
+    if (v != Py_None) {
         Py_ssize_t x;
         if (PyIndex_Check(v)) {
             x = PyNumber_AsSsize_t(v, NULL);
@@ -4894,6 +4923,26 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
     }
     return 1;
 }
+
+int
+_PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
+{
+    Py_ssize_t x;
+    if (PyIndex_Check(v)) {
+        x = PyNumber_AsSsize_t(v, NULL);
+        if (x == -1 && PyErr_Occurred())
+            return 0;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "slice indices must be integers or "
+                        "have an __index__ method");
+        return 0;
+    }
+    *pi = x;
+    return 1;
+}
+
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
                          "BaseException is not allowed"
@@ -4995,7 +5044,7 @@ import_from(PyObject *v, PyObject *name)
 {
     PyObject *x;
     _Py_IDENTIFIER(__name__);
-    PyObject *fullmodname, *pkgname, *pkgpath;
+    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
     x = PyObject_GetAttr(v, name);
     if (x != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -5009,8 +5058,8 @@ import_from(PyObject *v, PyObject *name)
         goto error;
     }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
-    Py_DECREF(pkgname);
     if (fullmodname == NULL) {
+        Py_DECREF(pkgname);
         return NULL;
     }
     x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
@@ -5018,18 +5067,42 @@ import_from(PyObject *v, PyObject *name)
     if (x == NULL) {
         goto error;
     }
+    Py_DECREF(pkgname);
     Py_INCREF(x);
     return x;
  error:
     pkgpath = PyModule_GetFilenameObject(v);
+    if (pkgname == NULL) {
+        pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
+        if (pkgname_or_unknown == NULL) {
+            Py_XDECREF(pkgpath);
+            return NULL;
+        }
+    } else {
+        pkgname_or_unknown = pkgname;
+    }
 
     if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
         PyErr_Clear();
-        PyErr_SetImportError(PyUnicode_FromFormat("cannot import name %R", name), pkgname, NULL);
-    } else {
-        PyErr_SetImportError(PyUnicode_FromFormat("cannot import name %R", name), pkgname, pkgpath);
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R (unknown location)",
+            name, pkgname_or_unknown
+        );
+        /* NULL check for errmsg done by PyErr_SetImportError. */
+        PyErr_SetImportError(errmsg, pkgname, NULL);
+    }
+    else {
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R (%S)",
+            name, pkgname_or_unknown, pkgpath
+        );
+        /* NULL check for errmsg done by PyErr_SetImportError. */
+        PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
 
+    Py_XDECREF(errmsg);
+    Py_XDECREF(pkgname_or_unknown);
+    Py_XDECREF(pkgpath);
     return NULL;
 }
 

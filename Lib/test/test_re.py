@@ -1,5 +1,5 @@
-from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
-        cpython_only, captured_stdout
+from test.support import (gc_collect, bigmemtest, _2G,
+                          cpython_only, captured_stdout)
 import locale
 import re
 import sre_compile
@@ -883,17 +883,32 @@ class ReTests(unittest.TestCase):
     def test_category(self):
         self.assertEqual(re.match(r"(\s)", " ").group(1), " ")
 
-    def test_getlower(self):
+    @cpython_only
+    def test_case_helpers(self):
         import _sre
-        self.assertEqual(_sre.getlower(ord('A'), 0), ord('a'))
-        self.assertEqual(_sre.getlower(ord('A'), re.LOCALE), ord('a'))
-        self.assertEqual(_sre.getlower(ord('A'), re.UNICODE), ord('a'))
-        self.assertEqual(_sre.getlower(ord('A'), re.ASCII), ord('a'))
+        for i in range(128):
+            c = chr(i)
+            lo = ord(c.lower())
+            self.assertEqual(_sre.ascii_tolower(i), lo)
+            self.assertEqual(_sre.unicode_tolower(i), lo)
+            iscased = c in string.ascii_letters
+            self.assertEqual(_sre.ascii_iscased(i), iscased)
+            self.assertEqual(_sre.unicode_iscased(i), iscased)
 
-        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
-        self.assertEqual(re.match(b"abc", b"ABC", re.I).group(0), b"ABC")
-        self.assertEqual(re.match("abc", "ABC", re.I|re.A).group(0), "ABC")
-        self.assertEqual(re.match(b"abc", b"ABC", re.I|re.L).group(0), b"ABC")
+        for i in list(range(128, 0x1000)) + [0x10400, 0x10428]:
+            c = chr(i)
+            self.assertEqual(_sre.ascii_tolower(i), i)
+            if i != 0x0130:
+                self.assertEqual(_sre.unicode_tolower(i), ord(c.lower()))
+            iscased = c != c.lower() or c != c.upper()
+            self.assertFalse(_sre.ascii_iscased(i))
+            self.assertEqual(_sre.unicode_iscased(i),
+                             c != c.lower() or c != c.upper())
+
+        self.assertEqual(_sre.ascii_tolower(0x0130), 0x0130)
+        self.assertEqual(_sre.unicode_tolower(0x0130), ord('i'))
+        self.assertFalse(_sre.ascii_iscased(0x0130))
+        self.assertTrue(_sre.unicode_iscased(0x0130))
 
     def test_not_literal(self):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
@@ -904,7 +919,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"a\s", "a ").group(0), "a ")
 
     def assertMatch(self, pattern, text, match=None, span=None,
-                    matcher=re.match):
+                    matcher=re.fullmatch):
         if match is None and span is None:
             # the pattern matches the whole text
             match = text
@@ -917,37 +932,38 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m.group(), match)
         self.assertEqual(m.span(), span)
 
+    LITERAL_CHARS = string.ascii_letters + string.digits + '!"%&\',/:;<=>@_`~'
+
     def test_re_escape(self):
-        alnum_chars = string.ascii_letters + string.digits + '_'
         p = ''.join(chr(i) for i in range(256))
         for c in p:
-            if c in alnum_chars:
-                self.assertEqual(re.escape(c), c)
-            elif c == '\x00':
-                self.assertEqual(re.escape(c), '\\000')
-            else:
-                self.assertEqual(re.escape(c), '\\' + c)
             self.assertMatch(re.escape(c), c)
+            self.assertMatch('[' + re.escape(c) + ']', c)
+            self.assertMatch('(?x)' + re.escape(c), c)
         self.assertMatch(re.escape(p), p)
+        for c in '-.]{}':
+            self.assertEqual(re.escape(c)[:1], '\\')
+        literal_chars = self.LITERAL_CHARS
+        self.assertEqual(re.escape(literal_chars), literal_chars)
 
-    def test_re_escape_byte(self):
-        alnum_chars = (string.ascii_letters + string.digits + '_').encode('ascii')
+    def test_re_escape_bytes(self):
         p = bytes(range(256))
         for i in p:
             b = bytes([i])
-            if b in alnum_chars:
-                self.assertEqual(re.escape(b), b)
-            elif i == 0:
-                self.assertEqual(re.escape(b), b'\\000')
-            else:
-                self.assertEqual(re.escape(b), b'\\' + b)
             self.assertMatch(re.escape(b), b)
+            self.assertMatch(b'[' + re.escape(b) + b']', b)
+            self.assertMatch(b'(?x)' + re.escape(b), b)
         self.assertMatch(re.escape(p), p)
+        for i in b'-.]{}':
+            b = bytes([i])
+            self.assertEqual(re.escape(b)[:1], b'\\')
+        literal_chars = self.LITERAL_CHARS.encode('ascii')
+        self.assertEqual(re.escape(literal_chars), literal_chars)
 
     def test_re_escape_non_ascii(self):
         s = 'xxx\u2620\u2620\u2620xxx'
         s_escaped = re.escape(s)
-        self.assertEqual(s_escaped, 'xxx\\\u2620\\\u2620\\\u2620xxx')
+        self.assertEqual(s_escaped, s)
         self.assertMatch(s_escaped, s)
         self.assertMatch('.%s+.' % re.escape('\u2620'), s,
                          'x\u2620\u2620\u2620x', (2, 7), re.search)
@@ -955,7 +971,7 @@ class ReTests(unittest.TestCase):
     def test_re_escape_non_ascii_bytes(self):
         b = 'y\u2620y\u2620y'.encode('utf-8')
         b_escaped = re.escape(b)
-        self.assertEqual(b_escaped, b'y\\\xe2\\\x98\\\xa0y\\\xe2\\\x98\\\xa0y')
+        self.assertEqual(b_escaped, b)
         self.assertMatch(b_escaped, b)
         res = re.findall(re.escape('\u2620'.encode('utf-8')), b)
         self.assertEqual(len(res), 2)
@@ -969,6 +985,15 @@ class ReTests(unittest.TestCase):
             self.assertEqual(newpat, oldpat)
         # current pickle expects the _compile() reconstructor in re module
         from re import _compile
+
+    def test_copying(self):
+        import copy
+        p = re.compile(r'(?P<int>\d+)(?:\.(?P<frac>\d*))?')
+        self.assertIs(copy.copy(p), p)
+        self.assertIs(copy.deepcopy(p), p)
+        m = p.match('12.34')
+        self.assertIs(copy.copy(m), m)
+        self.assertIs(copy.deepcopy(m), m)
 
     def test_constants(self):
         self.assertEqual(re.I, re.IGNORECASE)
@@ -1300,32 +1325,43 @@ class ReTests(unittest.TestCase):
         upper_char = '\u1ea0' # Latin Capital Letter A with Dot Below
         lower_char = '\u1ea1' # Latin Small Letter A with Dot Below
 
-        p = re.compile(upper_char, re.I | re.U)
-        q = p.match(lower_char)
+        p = re.compile('.' + upper_char, re.I | re.S)
+        q = p.match('\n' + lower_char)
         self.assertTrue(q)
 
-        p = re.compile(lower_char, re.I | re.U)
-        q = p.match(upper_char)
+        p = re.compile('.' + lower_char, re.I | re.S)
+        q = p.match('\n' + upper_char)
         self.assertTrue(q)
 
-        p = re.compile('(?i)' + upper_char, re.U)
-        q = p.match(lower_char)
+        p = re.compile('(?i).' + upper_char, re.S)
+        q = p.match('\n' + lower_char)
         self.assertTrue(q)
 
-        p = re.compile('(?i)' + lower_char, re.U)
-        q = p.match(upper_char)
+        p = re.compile('(?i).' + lower_char, re.S)
+        q = p.match('\n' + upper_char)
         self.assertTrue(q)
 
-        p = re.compile('(?iu)' + upper_char)
-        q = p.match(lower_char)
+        p = re.compile('(?is).' + upper_char)
+        q = p.match('\n' + lower_char)
         self.assertTrue(q)
 
-        p = re.compile('(?iu)' + lower_char)
-        q = p.match(upper_char)
+        p = re.compile('(?is).' + lower_char)
+        q = p.match('\n' + upper_char)
         self.assertTrue(q)
 
-        self.assertTrue(re.match('(?ixu) ' + upper_char, lower_char))
-        self.assertTrue(re.match('(?ixu) ' + lower_char, upper_char))
+        p = re.compile('(?s)(?i).' + upper_char)
+        q = p.match('\n' + lower_char)
+        self.assertTrue(q)
+
+        p = re.compile('(?s)(?i).' + lower_char)
+        q = p.match('\n' + upper_char)
+        self.assertTrue(q)
+
+        self.assertTrue(re.match('(?ix) ' + upper_char, lower_char))
+        self.assertTrue(re.match('(?ix) ' + lower_char, upper_char))
+        self.assertTrue(re.match(' (?i) ' + upper_char, lower_char, re.X))
+        self.assertTrue(re.match('(?x) (?i) ' + upper_char, lower_char))
+        self.assertTrue(re.match(' (?x) (?i) ' + upper_char, lower_char, re.X))
 
         p = upper_char + '(?i)'
         with self.assertWarns(DeprecationWarning) as warns:
@@ -1334,6 +1370,7 @@ class ReTests(unittest.TestCase):
             str(warns.warnings[0].message),
             'Flags not at the start of the expression %s' % p
         )
+        self.assertEqual(warns.warnings[0].filename, __file__)
 
         p = upper_char + '(?i)%s' % ('.?' * 100)
         with self.assertWarns(DeprecationWarning) as warns:
@@ -1342,6 +1379,36 @@ class ReTests(unittest.TestCase):
             str(warns.warnings[0].message),
             'Flags not at the start of the expression %s (truncated)' % p[:20]
         )
+        self.assertEqual(warns.warnings[0].filename, __file__)
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('(?s).(?i)' + upper_char, '\n' + lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('(?i) ' + upper_char + ' (?x)', lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match(' (?x) (?i) ' + upper_char, lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('^(?i)' + upper_char, lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('$|(?i)' + upper_char, lower_char))
+        with self.assertWarns(DeprecationWarning) as warns:
+            self.assertTrue(re.match('(?:(?i)' + upper_char + ')', lower_char))
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as warns:
+            self.assertTrue(re.fullmatch('(^)?(?(1)(?i)' + upper_char + ')',
+                                         lower_char))
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as warns:
+            self.assertTrue(re.fullmatch('($)?(?(1)|(?i)' + upper_char + ')',
+                                         lower_char))
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+
 
     def test_dollar_matches_twice(self):
         "$ matches the end of string, and just before the terminating \n"
@@ -1632,27 +1699,52 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(m.group(1), "")
                 self.assertEqual(m.group(2), "y")
 
+    @cpython_only
     def test_debug_flag(self):
         pat = r'(\.)(?:[ch]|py)(?(1)$|: )'
         with captured_stdout() as out:
             re.compile(pat, re.DEBUG)
+        self.maxDiff = None
         dump = '''\
 SUBPATTERN 1 0 0
   LITERAL 46
-SUBPATTERN None 0 0
-  BRANCH
-    IN
-      LITERAL 99
-      LITERAL 104
-  OR
-    LITERAL 112
-    LITERAL 121
-SUBPATTERN None 0 0
-  GROUPREF_EXISTS 1
-    AT AT_END
-  ELSE
-    LITERAL 58
-    LITERAL 32
+BRANCH
+  IN
+    LITERAL 99
+    LITERAL 104
+OR
+  LITERAL 112
+  LITERAL 121
+GROUPREF_EXISTS 1
+  AT AT_END
+ELSE
+  LITERAL 58
+  LITERAL 32
+
+ 0. INFO 8 0b1 2 5 (to 9)
+      prefix_skip 0
+      prefix [0x2e] ('.')
+      overlap [0]
+ 9: MARK 0
+11. LITERAL 0x2e ('.')
+13. MARK 1
+15. BRANCH 10 (to 26)
+17.   IN 6 (to 24)
+19.     LITERAL 0x63 ('c')
+21.     LITERAL 0x68 ('h')
+23.     FAILURE
+24:   JUMP 9 (to 34)
+26: branch 7 (to 33)
+27.   LITERAL 0x70 ('p')
+29.   LITERAL 0x79 ('y')
+31.   JUMP 2 (to 34)
+33: FAILURE
+34: GROUPREF_EXISTS 0 6 (to 41)
+37. AT END
+39. JUMP 5 (to 45)
+41: LITERAL 0x3a (':')
+43. LITERAL 0x20 (' ')
+45: SUCCESS
 '''
         self.assertEqual(out.getvalue(), dump)
         # Debug output is output again even a second time (bypassing
@@ -1719,6 +1811,38 @@ SUBPATTERN None 0 0
         self.assertTrue(re.match(b'(?Li)\xc5\xe5', b'\xc5\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
+
+    def test_locale_compiled(self):
+        oldlocale = locale.setlocale(locale.LC_CTYPE)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
+        for loc in 'en_US.iso88591', 'en_US.utf8':
+            try:
+                locale.setlocale(locale.LC_CTYPE, loc)
+            except locale.Error:
+                # Unsupported locale on this system
+                self.skipTest('test needs %s locale' % loc)
+
+        locale.setlocale(locale.LC_CTYPE, 'en_US.iso88591')
+        p1 = re.compile(b'\xc5\xe5', re.L|re.I)
+        p2 = re.compile(b'[a\xc5][a\xe5]', re.L|re.I)
+        p3 = re.compile(b'[az\xc5][az\xe5]', re.L|re.I)
+        p4 = re.compile(b'[^\xc5][^\xe5]', re.L|re.I)
+        for p in p1, p2, p3:
+            self.assertTrue(p.match(b'\xc5\xe5'))
+            self.assertTrue(p.match(b'\xe5\xe5'))
+            self.assertTrue(p.match(b'\xc5\xc5'))
+        self.assertIsNone(p4.match(b'\xe5\xc5'))
+        self.assertIsNone(p4.match(b'\xe5\xe5'))
+        self.assertIsNone(p4.match(b'\xc5\xc5'))
+
+        locale.setlocale(locale.LC_CTYPE, 'en_US.utf8')
+        for p in p1, p2, p3:
+            self.assertTrue(p.match(b'\xc5\xe5'))
+            self.assertIsNone(p.match(b'\xe5\xe5'))
+            self.assertIsNone(p.match(b'\xc5\xc5'))
+        self.assertTrue(p4.match(b'\xe5\xc5'))
+        self.assertIsNone(p4.match(b'\xe5\xe5'))
+        self.assertIsNone(p4.match(b'\xc5\xc5'))
 
     def test_error(self):
         with self.assertRaises(re.error) as cm:

@@ -8,7 +8,8 @@ import unittest
 cET = import_fresh_module('xml.etree.ElementTree',
                           fresh=['_elementtree'])
 cET_alias = import_fresh_module('xml.etree.cElementTree',
-                                fresh=['_elementtree', 'xml.etree'])
+                                fresh=['_elementtree', 'xml.etree'],
+                                deprecated=True)
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')

@@ -371,59 +371,55 @@ class TimeEINTRTest(EINTRBaseTest):
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
+# bpo-30320: Need pthread_sigmask() to block the signal, otherwise the test
+# is vulnerable to a race condition between the child and the parent processes.
+@unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                     'need signal.pthread_sigmask()')
 class SignalEINTRTest(EINTRBaseTest):
     """ EINTR tests for the signal module. """
 
-    @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
-                         'need signal.sigtimedwait()')
-    def test_sigtimedwait(self):
-        t0 = time.monotonic()
-        signal.sigtimedwait([signal.SIGUSR1], self.sleep_time)
-        dt = time.monotonic() - t0
-        self.assertGreaterEqual(dt, self.sleep_time)
-
-    @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
-                         'need signal.sigwaitinfo()')
-    def test_sigwaitinfo(self):
-        # Issue #25277, #25868: give a few milliseconds to the parent process
-        # between os.write() and signal.sigwaitinfo() to works around a race
-        # condition
-        self.sleep_time = 0.100
-
+    def check_sigwait(self, wait_func):
         signum = signal.SIGUSR1
         pid = os.getpid()
 
         old_handler = signal.signal(signum, lambda *args: None)
         self.addCleanup(signal.signal, signum, old_handler)
 
-        rpipe, wpipe = os.pipe()
-
         code = '\n'.join((
             'import os, time',
             'pid = %s' % os.getpid(),
             'signum = %s' % int(signum),
             'sleep_time = %r' % self.sleep_time,
-            'rpipe = %r' % rpipe,
-            'os.read(rpipe, 1)',
-            'os.close(rpipe)',
             'time.sleep(sleep_time)',
             'os.kill(pid, signum)',
         ))
 
+        old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
+        self.addCleanup(signal.pthread_sigmask, signal.SIG_UNBLOCK, [signum])
+
         t0 = time.monotonic()
-        proc = self.subprocess(code, pass_fds=(rpipe,))
-        os.close(rpipe)
+        proc = self.subprocess(code)
         with kill_on_error(proc):
-            # sync child-parent
-            os.write(wpipe, b'x')
-            os.close(wpipe)
-
-            # parent
-            signal.sigwaitinfo([signum])
+            wait_func(signum)
             dt = time.monotonic() - t0
-            self.assertEqual(proc.wait(), 0)
 
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.assertEqual(proc.wait(), 0)
+
+    @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
+                         'need signal.sigwaitinfo()')
+    def test_sigwaitinfo(self):
+        def wait_func(signum):
+            signal.sigwaitinfo([signum])
+
+        self.check_sigwait(wait_func)
+
+    @unittest.skipUnless(hasattr(signal, 'sigtimedwait'),
+                         'need signal.sigwaitinfo()')
+    def test_sigtimedwait(self):
+        def wait_func(signum):
+            signal.sigtimedwait([signum], 120.0)
+
+        self.check_sigwait(wait_func)
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
@@ -437,6 +433,8 @@ class SelectEINTRTest(EINTRBaseTest):
         self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
 
+    @unittest.skipIf(sys.platform == "darwin",
+                     "poll may fail on macOS; see issue #28087")
     @unittest.skipUnless(hasattr(select, 'poll'), 'need select.poll')
     def test_poll(self):
         poller = select.poll()

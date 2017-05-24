@@ -11,10 +11,6 @@
 
 #include <ctype.h>
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>   /* CODESET */
-#endif
-
 /* The default encoding used by the platform file system APIs
    Can remain NULL for all platforms that don't have such a concept
 
@@ -665,7 +661,7 @@ compile as builtin_compile
     filename: object(converter="PyUnicode_FSDecoder")
     mode: str
     flags: int = 0
-    dont_inherit: int(c_default="0") = False
+    dont_inherit: bool(accept={int}) = False
     optimize: int = -1
 
 Compile source into a code object that can be executed by exec() or eval().
@@ -686,7 +682,7 @@ static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
                      int optimize)
-/*[clinic end generated code: output=1fa176e33452bb63 input=9d53e8cfb3c86414]*/
+/*[clinic end generated code: output=1fa176e33452bb63 input=0ff726f595eb9fcd]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -1483,8 +1479,10 @@ builtin_len(PyObject *module, PyObject *obj)
     Py_ssize_t res;
 
     res = PyObject_Size(obj);
-    if (res < 0 && PyErr_Occurred())
+    if (res < 0) {
+        assert(PyErr_Occurred());
         return NULL;
+    }
     return PyLong_FromSsize_t(res);
 }
 
@@ -1930,12 +1928,15 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         PyObject *result;
         size_t len;
 
+        /* stdin is a text stream, so it must have an encoding. */
         stdin_encoding = _PyObject_GetAttrId(fin, &PyId_encoding);
         stdin_errors = _PyObject_GetAttrId(fin, &PyId_errors);
-        if (!stdin_encoding || !stdin_errors)
-            /* stdin is a text stream, so it must have an
-               encoding. */
+        if (!stdin_encoding || !stdin_errors ||
+                !PyUnicode_Check(stdin_encoding) ||
+                !PyUnicode_Check(stdin_errors)) {
+            tty = 0;
             goto _readline_errors;
+        }
         stdin_encoding_str = PyUnicode_AsUTF8(stdin_encoding);
         stdin_errors_str = PyUnicode_AsUTF8(stdin_errors);
         if (!stdin_encoding_str || !stdin_errors_str)
@@ -1951,8 +1952,12 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             PyObject *stringpo;
             stdout_encoding = _PyObject_GetAttrId(fout, &PyId_encoding);
             stdout_errors = _PyObject_GetAttrId(fout, &PyId_errors);
-            if (!stdout_encoding || !stdout_errors)
+            if (!stdout_encoding || !stdout_errors ||
+                    !PyUnicode_Check(stdout_encoding) ||
+                    !PyUnicode_Check(stdout_errors)) {
+                tty = 0;
                 goto _readline_errors;
+            }
             stdout_encoding_str = PyUnicode_AsUTF8(stdout_encoding);
             stdout_errors_str = PyUnicode_AsUTF8(stdout_errors);
             if (!stdout_encoding_str || !stdout_errors_str)
@@ -2006,13 +2011,17 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         Py_XDECREF(po);
         PyMem_FREE(s);
         return result;
+
     _readline_errors:
         Py_XDECREF(stdin_encoding);
         Py_XDECREF(stdout_encoding);
         Py_XDECREF(stdin_errors);
         Py_XDECREF(stdout_errors);
         Py_XDECREF(po);
-        return NULL;
+        if (tty)
+            return NULL;
+
+        PyErr_Clear();
     }
 
     /* Fallback if we're not interactive */
@@ -2433,13 +2442,14 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
-    Py_ssize_t tuplesize = PySequence_Length(args);
+    Py_ssize_t tuplesize;
 
     if (type == &PyZip_Type && !_PyArg_NoKeywords("zip()", kwds))
         return NULL;
 
     /* args must be a tuple */
     assert(PyTuple_Check(args));
+    tuplesize = PyTuple_GET_SIZE(args);
 
     /* obtain iterators */
     ittuple = PyTuple_New(tuplesize);

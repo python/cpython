@@ -299,7 +299,7 @@ of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
 
    This class serves files from the current directory and below, directly
    mapping the directory structure to HTTP requests.
@@ -323,6 +323,10 @@ of which this module provides three different variants:
       ``application/octet-stream``. The mapping is used case-insensitively,
       and so should contain only lower-cased keys.
 
+   .. attribute:: directory
+
+      If not specified, the directory to serve is the current working directory.
+
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
    .. method:: do_HEAD()
@@ -343,11 +347,13 @@ of which this module provides three different variants:
       :func:`os.listdir` to scan the directory, and returns a ``404`` error
       response if the :func:`~os.listdir` fails.
 
-      If the request was mapped to a file, it is opened and the contents are
-      returned.  Any :exc:`OSError` exception in opening the requested file is
-      mapped to a ``404``, ``'File not found'`` error. Otherwise, the content
+      If the request was mapped to a file, it is opened. Any :exc:`OSError`
+      exception in opening the requested file is mapped to a ``404``,
+      ``'File not found'`` error. If there was a ``'If-Modified-Since'``
+      header in the request, and the file was not modified after this time,
+      a ``304``, ``'Not Modified'`` response is sent. Otherwise, the content
       type is guessed by calling the :meth:`guess_type` method, which in turn
-      uses the *extensions_map* variable.
+      uses the *extensions_map* variable, and the file contents are returned.
 
       A ``'Content-type:'`` header with the guessed content type is output,
       followed by a ``'Content-Length:'`` header with the file's size and a
@@ -360,6 +366,8 @@ of which this module provides three different variants:
       For example usage, see the implementation of the :func:`test` function
       invocation in the :mod:`http.server` module.
 
+      .. versionchanged:: 3.7
+         Support of the ``'If-Modified-Since'`` header.
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
@@ -393,6 +401,14 @@ following command causes the server to bind to localhost only::
 .. versionadded:: 3.4
     ``--bind`` argument was introduced.
 
+By default, server uses the current directory. The option ``-d/--directory``
+specifies a directory to which it should serve the files. For example,
+the following command uses a specific directory::
+
+        python -m http.server --directory /tmp/
+
+.. versionadded:: 3.7
+    ``--directory`` specify alternate directory
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
@@ -438,4 +454,3 @@ following command causes the server to bind to localhost only::
 the ``--cgi`` option::
 
         python -m http.server --cgi 8000
-

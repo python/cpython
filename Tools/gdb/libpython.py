@@ -715,7 +715,7 @@ class PyDictObjectPtr(PyObjectPtr):
         try:
             # <= Python 3.5
             return keys['dk_entries'], dk_size
-        except gdb.error:
+        except RuntimeError:
             # >= Python 3.6
             pass
 
@@ -1097,8 +1097,8 @@ class PyTupleObjectPtr(PyObjectPtr):
             return ProxyAlreadyVisited('(...)')
         visited.add(self.as_address())
 
-        result = tuple([PyObjectPtr.from_pyobject_ptr(self[i]).proxyval(visited)
-                        for i in safe_range(int_from_int(self.field('ob_size')))])
+        result = tuple(PyObjectPtr.from_pyobject_ptr(self[i]).proxyval(visited)
+                       for i in safe_range(int_from_int(self.field('ob_size'))))
         return result
 
     def write_repr(self, out, visited):

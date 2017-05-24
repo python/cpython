@@ -8,6 +8,7 @@
 
 import sys, os, time
 sys.path.append(os.path.abspath('tools/extensions'))
+sys.path.append(os.path.abspath('includes'))
 
 # General configuration
 # ---------------------
@@ -37,7 +38,7 @@ highlight_language = 'python3'
 needs_sphinx = '1.2'
 
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*']
+exclude_patterns = ['venv/*', 'README.rst']
 
 
 # Options for HTML output

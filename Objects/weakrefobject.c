@@ -24,6 +24,8 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
 {
     self->hash = -1;
     self->wr_object = ob;
+    self->wr_prev = NULL;
+    self->wr_next = NULL;
     Py_XINCREF(callback);
     self->wr_callback = callback;
 }
@@ -461,7 +463,7 @@ proxy_checkref(PyWeakReference *proxy)
 
 WRAP_BINARY(proxy_getattr, PyObject_GetAttr)
 WRAP_UNARY(proxy_str, PyObject_Str)
-WRAP_TERNARY(proxy_call, PyEval_CallObjectWithKeywords)
+WRAP_TERNARY(proxy_call, PyObject_Call)
 
 static PyObject *
 proxy_repr(PyWeakReference *proxy)

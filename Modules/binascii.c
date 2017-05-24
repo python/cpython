@@ -335,13 +335,15 @@ binascii.b2a_uu
 
     data: Py_buffer
     /
+    *
+    backtick: bool(accept={int}) = False
 
 Uuencode line of data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=0070670e52e4aa6b input=00fdf458ce8b465b]*/
+binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
+/*[clinic end generated code: output=b1b99de62d9bbeb8 input=b26bc8d32b6ed2f6]*/
 {
     unsigned char *ascii_data;
     const unsigned char *bin_data;
@@ -367,7 +369,10 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
         return NULL;
 
     /* Store the length */
-    *ascii_data++ = ' ' + (bin_len & 077);
+    if (backtick && !bin_len)
+        *ascii_data++ = '`';
+    else
+        *ascii_data++ = ' ' + bin_len;
 
     for( ; bin_len > 0 || leftbits != 0 ; bin_len--, bin_data++ ) {
         /* Shift the data (or padding) into our buffer */
@@ -381,7 +386,10 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
         while ( leftbits >= 6 ) {
             this_ch = (leftchar >> (leftbits-6)) & 0x3f;
             leftbits -= 6;
-            *ascii_data++ = this_ch + ' ';
+            if (backtick && !this_ch)
+                *ascii_data++ = '`';
+            else
+                *ascii_data++ = this_ch + ' ';
         }
     }
     *ascii_data++ = '\n';       /* Append a courtesy newline */
@@ -515,15 +523,16 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
 binascii.b2a_base64
 
     data: Py_buffer
+    /
     *
-    newline: int(c_default="1") = True
+    newline: bool(accept={int}) = True
 
 Base64-code line of data.
 [clinic start generated code]*/
 
 static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
-/*[clinic end generated code: output=4ad62c8e8485d3b3 input=7b2ea6fa38d8924c]*/
+/*[clinic end generated code: output=4ad62c8e8485d3b3 input=6083dac5777fa45d]*/
 {
     unsigned char *ascii_data;
     const unsigned char *bin_data;
@@ -1229,14 +1238,14 @@ static const int table_hex[128] = {
 binascii.a2b_qp
 
     data: ascii_buffer
-    header: int(c_default="0") = False
+    header: bool(accept={int}) = False
 
 Decode a string of qp-encoded data.
 [clinic start generated code]*/
 
 static PyObject *
 binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
-/*[clinic end generated code: output=e99f7846cfb9bc53 input=5187a0d3d8e54f3b]*/
+/*[clinic end generated code: output=e99f7846cfb9bc53 input=bf6766fea76cce8f]*/
 {
     Py_ssize_t in, out;
     char ch;
@@ -1331,9 +1340,9 @@ to_hex (unsigned char ch, unsigned char *s)
 binascii.b2a_qp
 
     data: Py_buffer
-    quotetabs: int(c_default="0") = False
-    istext: int(c_default="1") = True
-    header: int(c_default="0") = False
+    quotetabs: bool(accept={int}) = False
+    istext: bool(accept={int}) = True
+    header: bool(accept={int}) = False
 
 Encode a string using quoted-printable encoding.
 
@@ -1345,7 +1354,7 @@ are both encoded.  When quotetabs is set, space and tabs are encoded.
 static PyObject *
 binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
                      int istext, int header)
-/*[clinic end generated code: output=e9884472ebb1a94c input=7f2a9aaa008e92b2]*/
+/*[clinic end generated code: output=e9884472ebb1a94c input=21fb7eea4a184ba6]*/
 {
     Py_ssize_t in, out;
     const unsigned char *databuf;

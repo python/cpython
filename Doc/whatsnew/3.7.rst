@@ -76,12 +76,22 @@ Other Language Changes
 ======================
 
 * More than 255 arguments can now be passed to a function, and a function can
-  now have more than 255 parameters.
-  (Contributed by Serhiy Storchaka in :issue:`12844` and :issue:`18896`.)
+  now have more than 255 parameters. (Contributed by Serhiy Storchaka in
+  :issue:`12844` and :issue:`18896`.)
 
 * :meth:`bytes.fromhex` and :meth:`bytearray.fromhex` now ignore all ASCII
-  whitespace, not only spaces.
-  (Contributed by Robert Xiao in :issue:`28927`.)
+  whitespace, not only spaces. (Contributed by Robert Xiao in :issue:`28927`.)
+
+* :exc:`ImportError` now displays module name and module ``__file__`` path when
+  ``from ... import ...`` fails. (Contributed by Matthias Bussonnier in :issue:`29546`.)
+
+* Circular imports involving absolute imports with binding a submodule to
+  a name are now supported.
+  (Contributed by Serhiy Storchaka in :issue:`30024`.)
+
+* ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather than
+  ``format(str(self), '')``.
+  (Contributed by Serhiy Storchaka in :issue:`28974`.)
 
 
 New Modules
@@ -93,12 +103,96 @@ New Modules
 Improved Modules
 ================
 
+cgi
+---
+
+:func:`~cgi.parse_multipart` returns the same results as
+:class:`~FieldStorage` : for non-file fields, the value associated to a key
+is a list of strings, not bytes.
+(Contributed by Pierre Quentel in :issue:`29979`.)
+
+binascii
+--------
+
+The :func:`~binascii.b2a_uu` function now accepts an optional *backtick*
+keyword argument.  When it's true, zeros are represented by ``'`'``
+instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+contextlib
+----------
+
+:func:`contextlib.asynccontextmanager` has been added. (Contributed by
+Jelle Zijlstra in :issue:`29679`.)
+
+distutils
+---------
+
+README.rst is now included in the list of distutils standard READMEs and
+therefore included in source distributions.
+(Contributed by Ryan Gonzalez in :issue:`11913`.)
+
+http.server
+-----------
+
+:class:`~http.server.SimpleHTTPRequestHandler` supports the HTTP
+If-Modified-Since header. The server returns the 304 response status if the
+target file was not modified after the time specified in the header.
+(Contributed by Pierre Quentel in :issue:`29654`.)
+
+Add the parameter ``directory`` to the :class:`~http.server.SimpleHTTPRequestHandler`
+and the ``--directory`` to the command line of the module :mod:`~http.server`.
+With this parameter, the server serves the specified directory, by default it uses the current working directory.
+(Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
+
+locale
+------
+
+Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
+If *monetary* is true, the conversion uses monetary thousands separator and
+grouping strings. (Contributed by Garvit in :issue:`10379`.)
+
+math
+----
+
+New :func:`~math.remainder` function, implementing the IEEE 754-style remainder
+operation. (Contributed by Mark Dickinson in :issue:`29962`.)
+
+os
+--
+
+Added support for :class:`bytes` paths in :func:`~os.fwalk`. (Contributed by
+Serhiy Storchaka in :issue:`28682`.)
+
+Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
+on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
+
 unittest.mock
 -------------
 
 The :const:`~unittest.mock.sentinel` attributes now preserve their identity
-when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`.
-(Contributed by Serhiy Storchaka in :issue:`20804`.)
+when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`. (Contributed by
+Serhiy Storchaka in :issue:`20804`.)
+
+xmlrpc.server
+-------------
+
+:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
+its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
+:issue:`7769`.)
+
+urllib.parse
+------------
+
+:func:`urllib.parse.quote` has been updated to from RFC 2396 to RFC 3986,
+adding `~` to the set of characters that is never quoted by default.
+(Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
+
+uu
+--
+
+Function :func:`~uu.encode` now accepts an optional *backtick*
+keyword argument.  When it's true, zeros are represented by ``'`'``
+instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
 
 Optimizations
@@ -106,8 +200,26 @@ Optimizations
 
 * Added two new opcodes: ``LOAD_METHOD`` and ``CALL_METHOD`` to avoid
   instantiation of bound method objects for method calls, which results
-  in method calls being faster up to 20%.
-  (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
+  in method calls being faster up to 20%. (Contributed by Yury Selivanov and
+  INADA Naoki in :issue:`26110`.)
+
+* Searching some unlucky Unicode characters (like Ukrainian capital "Є")
+  in a string was to 25 times slower than searching other characters.
+  Now it is slower only by 3 times in worst case.
+  (Contributed by Serhiy Storchaka in :issue:`24821`.)
+
+* Fast implementation from standard C library is now used for functions
+  :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
+  :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
+  Storchaka in :issue:`26121`.)
+
+* The :func:`os.fwalk` function has been sped up by 2 times.  This was done
+  using the :func:`os.scandir` function.
+  (Contributed by Serhiy Storchaka in :issue:`25996`.)
+
+* Optimized case-insensitive matching and searching of :mod:`regular
+  expressions <re>`.  Searching some patterns can now be up to 20 times faster.
+  (Contributed by Serhiy Storchaka in :issue:`30285`.)
 
 
 Build and C API Changes
@@ -125,8 +237,8 @@ Build and C API Changes
   ``char *``.  (Contributed by Serhiy Storchaka in :issue:`28761`.)
 
 * The result of :c:func:`PyUnicode_AsUTF8AndSize` and :c:func:`PyUnicode_AsUTF8`
-  is now of type ``const char *`` rather of ``char *``.
-  (Contributed by Serhiy Storchaka in :issue:`28769`.)
+  is now of type ``const char *`` rather of ``char *``. (Contributed by Serhiy
+  Storchaka in :issue:`28769`.)
 
 * Added functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`.
   (Contributed by Serhiy Storchaka in :issue:`27867`.)
@@ -139,6 +251,36 @@ Deprecated
   a macro if ``Py_LIMITED_API`` is not set or set to the value between
   ``0x03050400`` and ``0x03060000`` (not including) or ``0x03060100`` or
   higher.  (Contributed by Serhiy Storchaka in :issue:`27867`.)
+
+- Deprecated :meth:`format` from :mod:`locale`, use the :meth:`format_string`
+  instead. (Contributed by Garvit in :issue:`10379`.)
+
+- Methods
+  :meth:`MetaPathFinder.find_module() <importlib.abc.MetaPathFinder.find_module>`
+  (replaced by
+  :meth:`MetaPathFinder.find_spec() <importlib.abc.MetaPathFinder.find_spec>`
+  ) and
+  :meth:`PathEntryFinder.find_loader() <importlib.abc.PathEntryFinder.find_loader>`
+  (replaced by
+  :meth:`PathEntryFinder.find_spec() <importlib.abc.PathEntryFinder.find_spec>`)
+  both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`. (Contributed
+  by Matthias Bussonnier in :issue:`29576`)
+
+- Using non-integer value for selecting a plural form in :mod:`gettext` is
+  now deprecated.  It never correctly worked. (Contributed by Serhiy Storchaka
+  in :issue:`28692`.)
+
+- The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
+
+
+Changes in the C API
+--------------------
+
+- The type of results of :c:func:`PyThread_start_new_thread` and
+  :c:func:`PyThread_get_thread_ident`, and the *id* parameter of
+  :c:func:`PyThreadState_SetAsyncExc` changed from :c:type:`long` to
+  :c:type:`unsigned long`.
+  (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
 
 Removed
@@ -158,6 +300,16 @@ API and Feature Removals
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
 
+* Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
+  longer take keyword arguments.  The first argument of :func:`int` can now
+  be passes only as positional argument.
+
+* Removed previously deprecated in Python 2.4 classes ``Plist``, ``Dict`` and
+  ``_InternalDict`` in the :mod:`plistlib` module.  Dict values in the result
+  of functions :func:`~plistlib.readPlist` and
+  :func:`~plistlib.readPlistFromBytes` are now normal dicts.  You no longer
+  can use attribute access to access items of these dictionaries.
+
 
 Porting to Python 3.7
 =====================
@@ -171,8 +323,8 @@ Changes in the Python API
 
 * A format string argument for :meth:`string.Formatter.format`
   is now :ref:`positional-only <positional-only_parameter>`.
-  Passing it as a keyword argument was deprecated in Python 3.5.
-  (Contributed by Serhiy Storchaka in :issue:`29193`.)
+  Passing it as a keyword argument was deprecated in Python 3.5. (Contributed
+  by Serhiy Storchaka in :issue:`29193`.)
 
 * Attributes :attr:`~http.cookies.Morsel.key`,
   :attr:`~http.cookies.Morsel.value` and
@@ -181,6 +333,19 @@ Changes in the Python API
   Assigning to them was deprecated in Python 3.5.
   Use the :meth:`~http.cookies.Morsel.set` method for setting them.
   (Contributed by Serhiy Storchaka in :issue:`29192`.)
+
+* ``Module``, ``FunctionDef``, ``AsyncFunctionDef``, and
+  ``ClassDef`` AST nodes now have a new ``docstring`` field.
+  The first statement in their body is not considered as a docstring
+  anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
+  and module are affected by this change. (Contributed by INADA Naoki and
+  Eugene Toder in :issue:`29463`.)
+
+* The *mode* argument of :func:`os.makedirs` no longer affects the file
+  permission bits of newly-created intermediate-level directories.
+  To set their file permission bits you can set the umask before invoking
+  ``makedirs()``.
+  (Contributed by Serhiy Storchaka in :issue:`19930`.)
 
 
 CPython bytecode changes

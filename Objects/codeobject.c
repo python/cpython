@@ -451,11 +451,15 @@ code_dealloc(PyCodeObject *co)
 static PyObject *
 code_sizeof(PyCodeObject *co, void *unused)
 {
-    Py_ssize_t res;
+    Py_ssize_t res = _PyObject_SIZE(Py_TYPE(co));
+    _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
 
-    res = _PyObject_SIZE(Py_TYPE(co));
     if (co->co_cell2arg != NULL && co->co_cellvars != NULL)
         res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(Py_ssize_t);
+
+    if (co_extra != NULL)
+        res += co_extra->ce_size * sizeof(co_extra->ce_extras[0]);
+
     return PyLong_FromSsize_t(res);
 }
 
@@ -861,16 +865,15 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra *) o->co_extra;
 
     if (co_extra == NULL) {
-        o->co_extra = (_PyCodeObjectExtra*) PyMem_Malloc(
-            sizeof(_PyCodeObjectExtra));
-        if (o->co_extra == NULL) {
+        co_extra = PyMem_Malloc(sizeof(_PyCodeObjectExtra));
+        if (co_extra == NULL) {
             return -1;
         }
-        co_extra = (_PyCodeObjectExtra *) o->co_extra;
 
         co_extra->ce_extras = PyMem_Malloc(
             tstate->co_extra_user_count * sizeof(void*));
         if (co_extra->ce_extras == NULL) {
+            PyMem_Free(co_extra);
             return -1;
         }
 
@@ -879,20 +882,25 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
             co_extra->ce_extras[i] = NULL;
         }
+
+        o->co_extra = co_extra;
     }
     else if (co_extra->ce_size <= index) {
-        co_extra->ce_extras = PyMem_Realloc(
+        void** ce_extras = PyMem_Realloc(
             co_extra->ce_extras, tstate->co_extra_user_count * sizeof(void*));
 
-        if (co_extra->ce_extras == NULL) {
+        if (ce_extras == NULL) {
             return -1;
         }
 
-        co_extra->ce_size = tstate->co_extra_user_count;
-
-        for (Py_ssize_t i = co_extra->ce_size; i < co_extra->ce_size; i++) {
-            co_extra->ce_extras[i] = NULL;
+        for (Py_ssize_t i = co_extra->ce_size;
+             i < tstate->co_extra_user_count;
+             i++) {
+            ce_extras[i] = NULL;
         }
+
+        co_extra->ce_extras = ce_extras;
+        co_extra->ce_size = tstate->co_extra_user_count;
     }
 
     co_extra->ce_extras[index] = extra;

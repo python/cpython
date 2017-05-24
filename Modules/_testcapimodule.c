@@ -1167,7 +1167,7 @@ getargs_K(PyObject *self, PyObject *args)
 }
 
 /* This function not only tests the 'k' getargs code, but also the
-   PyLong_AsUnsignedLongMask() and PyLong_AsUnsignedLongMask() functions. */
+   PyLong_AsUnsignedLongMask() function. */
 static PyObject *
 test_k_code(PyObject *self)
 {
@@ -1205,7 +1205,8 @@ test_k_code(PyObject *self)
     value = PyLong_AsUnsignedLongMask(num);
     if (value != (unsigned long)-0x42)
         return raiseTestError("test_k_code",
-            "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
+                              "PyLong_AsUnsignedLongMask() returned wrong "
+                              "value for long -0xFFF..000042");
 
     PyTuple_SET_ITEM(tuple, 0, num);
 
@@ -1559,7 +1560,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
 {
     PyObject *sub_args;
     PyObject *sub_kwargs;
-    char *sub_format;
+    const char *sub_format;
     PyObject *sub_keywords;
 
     Py_ssize_t i, size;
@@ -1572,7 +1573,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
 
     double buffers[8][4]; /* double ensures alignment where necessary */
 
-    if (!PyArg_ParseTuple(args, "OOyO:parse_tuple_and_keywords",
+    if (!PyArg_ParseTuple(args, "OOsO:parse_tuple_and_keywords",
         &sub_args, &sub_kwargs,
         &sub_format, &sub_keywords))
         return NULL;
@@ -3070,7 +3071,7 @@ slot_tp_del(PyObject *self)
     /* Execute __del__ method, if any. */
     del = _PyObject_LookupSpecial(self, &PyId___tp_del__);
     if (del != NULL) {
-        res = PyEval_CallObject(del, NULL);
+        res = _PyObject_CallNoArg(del);
         if (res == NULL)
             PyErr_WriteUnraisable(del);
         else
@@ -3812,7 +3813,7 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
     if (_PyTime_AsTimeval(t, &tv, round) < 0)
         return NULL;
 
-    seconds = PyLong_FromLong((long long)tv.tv_sec);
+    seconds = PyLong_FromLongLong(tv.tv_sec);
     if (seconds == NULL)
         return NULL;
     return Py_BuildValue("Nl", seconds, tv.tv_usec);
@@ -4027,6 +4028,29 @@ dict_get_version(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
+{
+    PyGenObject *gen;
+
+    if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
+        return NULL;
+
+    /* This is used in a test to check what happens if a signal arrives just
+       as we're in the process of entering a yield from chain (see
+       bpo-30039).
+
+       Needs to be done in C, because:
+       - we don't have a Python wrapper for raise()
+       - we need to make sure that the Python-level signal handler doesn't run
+         *before* we enter the generator frame, which is impossible in Python
+         because we check for signals before every bytecode operation.
+     */
+    raise(SIGINT);
+    return _PyGen_Send(gen, Py_None);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4231,6 +4255,7 @@ static PyMethodDef TestMethods[] = {
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
     {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
     {"dict_get_version", dict_get_version, METH_VARARGS},
+    {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

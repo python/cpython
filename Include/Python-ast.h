@@ -46,6 +46,7 @@ struct _mod {
     union {
         struct {
             asdl_seq *body;
+            string docstring;
         } Module;
         
         struct {
@@ -80,6 +81,7 @@ struct _stmt {
             asdl_seq *body;
             asdl_seq *decorator_list;
             expr_ty returns;
+            string docstring;
         } FunctionDef;
         
         struct {
@@ -88,6 +90,7 @@ struct _stmt {
             asdl_seq *body;
             asdl_seq *decorator_list;
             expr_ty returns;
+            string docstring;
         } AsyncFunctionDef;
         
         struct {
@@ -96,6 +99,7 @@ struct _stmt {
             asdl_seq *keywords;
             asdl_seq *body;
             asdl_seq *decorator_list;
+            string docstring;
         } ClassDef;
         
         struct {
@@ -439,26 +443,27 @@ struct _withitem {
 };
 
 
-#define Module(a0, a1) _Py_Module(a0, a1)
-mod_ty _Py_Module(asdl_seq * body, PyArena *arena);
+#define Module(a0, a1, a2) _Py_Module(a0, a1, a2)
+mod_ty _Py_Module(asdl_seq * body, string docstring, PyArena *arena);
 #define Interactive(a0, a1) _Py_Interactive(a0, a1)
 mod_ty _Py_Interactive(asdl_seq * body, PyArena *arena);
 #define Expression(a0, a1) _Py_Expression(a0, a1)
 mod_ty _Py_Expression(expr_ty body, PyArena *arena);
 #define Suite(a0, a1) _Py_Suite(a0, a1)
 mod_ty _Py_Suite(asdl_seq * body, PyArena *arena);
-#define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7)
+#define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8)
 stmt_ty _Py_FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
-                        asdl_seq * decorator_list, expr_ty returns, int lineno,
-                        int col_offset, PyArena *arena);
-#define AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7) _Py_AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7)
+                        asdl_seq * decorator_list, expr_ty returns, string
+                        docstring, int lineno, int col_offset, PyArena *arena);
+#define AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8)
 stmt_ty _Py_AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq *
                              body, asdl_seq * decorator_list, expr_ty returns,
-                             int lineno, int col_offset, PyArena *arena);
-#define ClassDef(a0, a1, a2, a3, a4, a5, a6, a7) _Py_ClassDef(a0, a1, a2, a3, a4, a5, a6, a7)
+                             string docstring, int lineno, int col_offset,
+                             PyArena *arena);
+#define ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8)
 stmt_ty _Py_ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords,
-                     asdl_seq * body, asdl_seq * decorator_list, int lineno,
-                     int col_offset, PyArena *arena);
+                     asdl_seq * body, asdl_seq * decorator_list, string
+                     docstring, int lineno, int col_offset, PyArena *arena);
 #define Return(a0, a1, a2, a3) _Py_Return(a0, a1, a2, a3)
 stmt_ty _Py_Return(expr_ty value, int lineno, int col_offset, PyArena *arena);
 #define Delete(a0, a1, a2, a3) _Py_Delete(a0, a1, a2, a3)

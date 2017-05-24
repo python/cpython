@@ -9,7 +9,6 @@ import operator
 import codecs
 import gc
 import sysconfig
-import platform
 import locale
 
 # count the number of test runs, used to create unique
@@ -393,6 +392,9 @@ class SysModuleTest(unittest.TestCase):
         thread_id = thread_info[0]
 
         d = sys._current_frames()
+        for tid in d:
+            self.assertIsInstance(tid, int)
+            self.assertGreater(tid, 0)
 
         main_id = threading.get_ident()
         self.assertIn(main_id, d)
@@ -920,13 +922,15 @@ class SizeofTest(unittest.TestCase):
             return inner
         check(get_cell().__closure__[0], size('P'))
         # code
-        check(get_cell().__code__, size('6i13P'))
-        check(get_cell.__code__, size('6i13P'))
+        def check_code_size(a, expected_size):
+            self.assertGreaterEqual(sys.getsizeof(a), expected_size)
+        check_code_size(get_cell().__code__, size('6i13P'))
+        check_code_size(get_cell.__code__, size('6i13P'))
         def get_cell2(x):
             def inner():
                 return x
             return inner
-        check(get_cell2.__code__, size('6i13P') + calcsize('n'))
+        check_code_size(get_cell2.__code__, size('6i13P') + calcsize('n'))
         # complex
         check(complex(0,1), size('2d'))
         # method_descriptor (descriptor object)

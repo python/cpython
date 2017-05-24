@@ -209,6 +209,11 @@ PyAPI_FUNC(long) PyOS_strtol(const char *, char **, int);
 PyAPI_FUNC(PyObject *) _PyLong_GCD(PyObject *, PyObject *);
 #endif /* !Py_LIMITED_API */
 
+#ifndef Py_LIMITED_API
+PyAPI_DATA(PyObject *) _PyLong_Zero;
+PyAPI_DATA(PyObject *) _PyLong_One;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

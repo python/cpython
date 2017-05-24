@@ -431,7 +431,7 @@ on the module object.  If the method returns ``None``, the
 import machinery will create the new module itself.
 
 .. versionadded:: 3.4
-   The create_module() method of loaders.
+   The :meth:`~importlib.abc.Loader.create_module` method of loaders.
 
 .. versionchanged:: 3.4
    The :meth:`~importlib.abc.Loader.load_module` method was replaced by
@@ -464,8 +464,11 @@ import machinery will create the new module itself.
 
 .. versionchanged:: 3.5
    A :exc:`DeprecationWarning` is raised when ``exec_module()`` is defined but
-   ``create_module()`` is not. Starting in Python 3.6 it will be an error to not
-   define ``create_module()`` on a loader attached to a ModuleSpec.
+   ``create_module()`` is not.
+
+.. versionchanged:: 3.6
+   An :exc:`ImportError` is raised when ``exec_module()`` is defined but
+   ``create_module()`` is not.
 
 Submodules
 ----------
@@ -887,7 +890,7 @@ import statements within that module.
 
 To selectively prevent import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),
-it is sufficient to raise :exc:`ModuleNoFoundError` directly from
+it is sufficient to raise :exc:`ModuleNotFoundError` directly from
 :meth:`~importlib.abc.MetaPathFinder.find_spec` instead of returning
 ``None``. The latter indicates that the meta path search should continue,
 while raising an exception terminates it immediately.

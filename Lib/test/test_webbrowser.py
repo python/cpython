@@ -213,5 +213,83 @@ class ELinksCommandTest(CommandTestMixin, unittest.TestCase):
                    arguments=['openURL({},new-tab)'.format(URL)])
 
 
+class BrowserRegistrationTest(unittest.TestCase):
+
+    def setUp(self):
+        # Ensure we don't alter the real registered browser details
+        self._saved_tryorder = webbrowser._tryorder
+        webbrowser._tryorder = []
+        self._saved_browsers = webbrowser._browsers
+        webbrowser._browsers = {}
+
+    def tearDown(self):
+        webbrowser._tryorder = self._saved_tryorder
+        webbrowser._browsers = self._saved_browsers
+
+    def _check_registration(self, preferred):
+        class ExampleBrowser:
+            pass
+
+        expected_tryorder = []
+        expected_browsers = {}
+
+        self.assertEqual(webbrowser._tryorder, expected_tryorder)
+        self.assertEqual(webbrowser._browsers, expected_browsers)
+
+        webbrowser.register('Example1', ExampleBrowser)
+        expected_tryorder = ['Example1']
+        expected_browsers['example1'] = [ExampleBrowser, None]
+        self.assertEqual(webbrowser._tryorder, expected_tryorder)
+        self.assertEqual(webbrowser._browsers, expected_browsers)
+
+        instance = ExampleBrowser()
+        if preferred is not None:
+            webbrowser.register('example2', ExampleBrowser, instance,
+                                preferred=preferred)
+        else:
+            webbrowser.register('example2', ExampleBrowser, instance)
+        if preferred:
+            expected_tryorder = ['example2', 'Example1']
+        else:
+            expected_tryorder = ['Example1', 'example2']
+        expected_browsers['example2'] = [ExampleBrowser, instance]
+        self.assertEqual(webbrowser._tryorder, expected_tryorder)
+        self.assertEqual(webbrowser._browsers, expected_browsers)
+
+    def test_register(self):
+        self._check_registration(preferred=False)
+
+    def test_register_default(self):
+        self._check_registration(preferred=None)
+
+    def test_register_preferred(self):
+        self._check_registration(preferred=True)
+
+
+class ImportTest(unittest.TestCase):
+    def test_register(self):
+        webbrowser = support.import_fresh_module('webbrowser')
+        self.assertIsNone(webbrowser._tryorder)
+        self.assertFalse(webbrowser._browsers)
+
+        class ExampleBrowser:
+            pass
+        webbrowser.register('Example1', ExampleBrowser)
+        self.assertTrue(webbrowser._tryorder)
+        self.assertEqual(webbrowser._tryorder[-1], 'Example1')
+        self.assertTrue(webbrowser._browsers)
+        self.assertIn('example1', webbrowser._browsers)
+        self.assertEqual(webbrowser._browsers['example1'], [ExampleBrowser, None])
+
+    def test_get(self):
+        webbrowser = support.import_fresh_module('webbrowser')
+        self.assertIsNone(webbrowser._tryorder)
+        self.assertFalse(webbrowser._browsers)
+
+        with self.assertRaises(webbrowser.Error):
+            webbrowser.get('fakebrowser')
+        self.assertIsNotNone(webbrowser._tryorder)
+
+
 if __name__=='__main__':
     unittest.main()

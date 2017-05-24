@@ -209,6 +209,10 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
    40 bytes on the stack. */
 #define _PY_FASTCALL_SMALL_STACK 5
 
+/* Return 1 if callable supports FASTCALL calling convention for positional
+   arguments: see _PyObject_FastCallDict() and _PyObject_FastCallKeywords() */
+PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
+
 /* Call the callable object 'callable' with the "fast call" calling convention:
    args is a C array for positional arguments (nargs is the number of
    positional arguments), kwargs is a dictionary for keyword arguments.
@@ -1093,6 +1097,9 @@ PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
 PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
+
+/* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
+PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 #endif /* !Py_LIMITED_API */
 
 

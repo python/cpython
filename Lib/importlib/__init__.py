@@ -79,7 +79,8 @@ def find_loader(name, path=None):
     This function is deprecated in favor of importlib.util.find_spec().
 
     """
-    warnings.warn('Use importlib.util.find_spec() instead.',
+    warnings.warn('Deprecated since Python 3.4. '
+                  'Use importlib.util.find_spec() instead.',
                   DeprecationWarning, stacklevel=2)
     try:
         loader = sys.modules[name].__loader__
@@ -136,7 +137,7 @@ def reload(module):
 
     """
     if not module or not isinstance(module, types.ModuleType):
-        raise TypeError("reload() argument must be module")
+        raise TypeError("reload() argument must be a module")
     try:
         name = module.__spec__.name
     except AttributeError:

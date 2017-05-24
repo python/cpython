@@ -157,7 +157,9 @@ class MetaPathFinderDefaultsTests(ABCTestHarness):
 
     def test_find_module(self):
         # Default should return None.
-        self.assertIsNone(self.ins.find_module('something', None))
+        with self.assertWarns(DeprecationWarning):
+            found = self.ins.find_module('something', None)
+        self.assertIsNone(found)
 
     def test_invalidate_caches(self):
         # Calling the method is a no-op.
@@ -180,7 +182,9 @@ class PathEntryFinderDefaultsTests(ABCTestHarness):
     SPLIT = make_abc_subclasses(PathEntryFinder)
 
     def test_find_loader(self):
-        self.assertEqual((None, []), self.ins.find_loader('something'))
+        with self.assertWarns(DeprecationWarning):
+            found = self.ins.find_loader('something')
+        self.assertEqual(found, (None, []))
 
     def find_module(self):
         self.assertEqual(None, self.ins.find_module('something'))
@@ -318,7 +322,8 @@ class MetaPathFinderFindModuleTests:
         finder = self.finder(None)
         path = ['a', 'b', 'c']
         name = 'blah'
-        found = finder.find_module(name, path)
+        with self.assertWarns(DeprecationWarning):
+            found = finder.find_module(name, path)
         self.assertIsNone(found)
         self.assertEqual(name, finder.called_for[0])
         self.assertEqual(path, finder.called_for[1])
@@ -327,7 +332,8 @@ class MetaPathFinderFindModuleTests:
         loader = object()
         spec = self.util.spec_from_loader('blah', loader)
         finder = self.finder(spec)
-        found = finder.find_module('blah', None)
+        with self.assertWarns(DeprecationWarning):
+            found = finder.find_module('blah', None)
         self.assertIs(found, spec.loader)
 
 
@@ -352,7 +358,8 @@ class PathEntryFinderFindLoaderTests:
     def test_no_spec(self):
         finder = self.finder(None)
         name = 'blah'
-        found = finder.find_loader(name)
+        with self.assertWarns(DeprecationWarning):
+            found = finder.find_loader(name)
         self.assertIsNone(found[0])
         self.assertEqual([], found[1])
         self.assertEqual(name, finder.called_for)
@@ -361,7 +368,8 @@ class PathEntryFinderFindLoaderTests:
         loader = object()
         spec = self.util.spec_from_loader('blah', loader)
         finder = self.finder(spec)
-        found = finder.find_loader('blah')
+        with self.assertWarns(DeprecationWarning):
+            found = finder.find_loader('blah')
         self.assertIs(found[0], spec.loader)
 
     def test_spec_with_portions(self):
@@ -369,7 +377,8 @@ class PathEntryFinderFindLoaderTests:
         paths = ['a', 'b', 'c']
         spec.submodule_search_locations = paths
         finder = self.finder(spec)
-        found = finder.find_loader('blah')
+        with self.assertWarns(DeprecationWarning):
+            found = finder.find_loader('blah')
         self.assertIsNone(found[0])
         self.assertEqual(paths, found[1])
 

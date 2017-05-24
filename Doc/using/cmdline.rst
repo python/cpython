@@ -532,8 +532,8 @@ conflict.
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
 
-   If this is set to a non-empty string, Python won't try to write ``.pyc`` or
-   ``.pyo`` files on the import of source modules.  This is equivalent to
+   If this is set to a non-empty string, Python won't try to write ``.pyc``
+   files on the import of source modules.  This is equivalent to
    specifying the :option:`-B` option.
 
 
@@ -571,7 +571,7 @@ conflict.
 
    .. versionchanged:: 3.6
       On Windows, the encoding specified by this variable is ignored for interactive
-      console buffers unless :envvar:`PYTHONLEGACYWINDOWSIOENCODING` is also specified.
+      console buffers unless :envvar:`PYTHONLEGACYWINDOWSSTDIO` is also specified.
       Files and pipes redirected through the standard streams are not affected.
 
 .. envvar:: PYTHONNOUSERSITE
@@ -700,7 +700,7 @@ conflict.
    .. versionadded:: 3.6
       See :pep:`529` for more details.
 
-.. envvar:: PYTHONLEGACYWINDOWSIOENCODING
+.. envvar:: PYTHONLEGACYWINDOWSSTDIO
 
    If set to a non-empty string, does not use the new console reader and
    writer. This means that Unicode characters will be encoded according to

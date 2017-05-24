@@ -6,6 +6,13 @@
 
 #include <ctype.h>
 
+/*[clinic input]
+class type "PyTypeObject *" "&PyType_Type"
+class object "PyObject *" "&PyBaseObject_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b94608d231c434b]*/
+
+#include "clinic/typeobject.c.h"
 
 /* Support type attribute cache */
 
@@ -121,7 +128,7 @@ skip_signature(const char *doc)
     return NULL;
 }
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
 static int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
@@ -579,7 +586,6 @@ static int update_subclasses(PyTypeObject *type, PyObject *name,
                              update_callback callback, void *data);
 static int recurse_down_subclasses(PyTypeObject *type, PyObject *name,
                                    update_callback callback, void *data);
-static PyObject *type_subclasses(PyTypeObject *type, PyObject *ignored);
 
 static int
 mro_hierarchy(PyTypeObject *type, PyObject *temp)
@@ -624,7 +630,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
        Finally, this makes things simple avoiding the need to deal
        with dictionary iterators and weak references.
     */
-    subclasses = type_subclasses(type, NULL);
+    subclasses = type___subclasses___impl(type);
     if (subclasses == NULL)
         return -1;
     n = PyList_GET_SIZE(subclasses);
@@ -819,31 +825,36 @@ type_set_doc(PyTypeObject *type, PyObject *value, void *context)
     return _PyDict_SetItemId(type->tp_dict, &PyId___doc__, value);
 }
 
-static PyObject *
-type___instancecheck__(PyObject *type, PyObject *inst)
+/*[clinic input]
+type.__instancecheck__ -> bool
+
+    instance: object
+    /
+
+Check if an object is an instance.
+[clinic start generated code]*/
+
+static int
+type___instancecheck___impl(PyTypeObject *self, PyObject *instance)
+/*[clinic end generated code: output=08b6bf5f591c3618 input=cdbfeaee82c01a0f]*/
 {
-    switch (_PyObject_RealIsInstance(inst, type)) {
-    case -1:
-        return NULL;
-    case 0:
-        Py_RETURN_FALSE;
-    default:
-        Py_RETURN_TRUE;
-    }
+    return _PyObject_RealIsInstance(instance, (PyObject *)self);
 }
 
+/*[clinic input]
+type.__subclasscheck__ -> bool
 
-static PyObject *
-type___subclasscheck__(PyObject *type, PyObject *inst)
+    subclass: object
+    /
+
+Check if a class is a subclass.
+[clinic start generated code]*/
+
+static int
+type___subclasscheck___impl(PyTypeObject *self, PyObject *subclass)
+/*[clinic end generated code: output=97a4e51694500941 input=071b2ca9e03355f4]*/
 {
-    switch (_PyObject_RealIsSubclass(inst, type)) {
-    case -1:
-        return NULL;
-    case 0:
-        Py_RETURN_FALSE;
-    default:
-        Py_RETURN_TRUE;
-    }
+    return _PyObject_RealIsSubclass(subclass, (PyObject *)self);
 }
 
 
@@ -1818,12 +1829,17 @@ mro_implementation(PyTypeObject *type)
     return result;
 }
 
-static PyObject *
-mro_external(PyObject *self)
-{
-    PyTypeObject *type = (PyTypeObject *)self;
+/*[clinic input]
+type.mro
 
-    return mro_implementation(type);
+Return a type's method resolution order.
+[clinic start generated code]*/
+
+static PyObject *
+type_mro_impl(PyTypeObject *self)
+/*[clinic end generated code: output=bffc4a39b5b57027 input=28414f4e156db28d]*/
+{
+    return mro_implementation(self);
 }
 
 static int
@@ -2478,11 +2494,17 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             }
             PyList_SET_ITEM(newslots, j, tmp);
             if (PyDict_GetItem(dict, tmp)) {
-                PyErr_Format(PyExc_ValueError,
-                             "%R in __slots__ conflicts with class variable",
-                             tmp);
-                Py_DECREF(newslots);
-                goto error;
+                /* CPython inserts __qualname__ and __classcell__ (when needed)
+                   into the namespace when creating a class.  They will be deleted
+                   below so won't act as class variables. */
+                if (!_PyUnicode_EqualToASCIIId(tmp, &PyId___qualname__) &&
+                    !_PyUnicode_EqualToASCIIId(tmp, &PyId___classcell__)) {
+                    PyErr_Format(PyExc_ValueError,
+                                 "%R in __slots__ conflicts with class variable",
+                                 tmp);
+                    Py_DECREF(newslots);
+                    goto error;
+                }
             }
             j++;
         }
@@ -3116,10 +3138,35 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             type->tp_name);
         return -1;
     }
-    if (_PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL) < 0)
-        return -1;
-    res = update_slot(type, name);
-    assert(_PyType_CheckConsistency(type));
+    if (PyUnicode_Check(name)) {
+        if (PyUnicode_CheckExact(name)) {
+            if (PyUnicode_READY(name) == -1)
+                return -1;
+            Py_INCREF(name);
+        }
+        else {
+            name = _PyUnicode_Copy(name);
+            if (name == NULL)
+                return -1;
+        }
+        PyUnicode_InternInPlace(&name);
+        if (!PyUnicode_CHECK_INTERNED(name)) {
+            PyErr_SetString(PyExc_MemoryError,
+                            "Out of memory interning an attribute name");
+            Py_DECREF(name);
+            return -1;
+        }
+    }
+    else {
+        /* Will fail in _PyObject_GenericSetAttrWithDict. */
+        Py_INCREF(name);
+    }
+    res = _PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL);
+    if (res == 0) {
+        res = update_slot(type, name);
+        assert(_PyType_CheckConsistency(type));
+    }
+    Py_DECREF(name);
     return res;
 }
 
@@ -3158,8 +3205,15 @@ type_dealloc(PyTypeObject *type)
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
+/*[clinic input]
+type.__subclasses__
+
+Return a list of immediate subclasses.
+[clinic start generated code]*/
+
 static PyObject *
-type_subclasses(PyTypeObject *type, PyObject *args_ignored)
+type___subclasses___impl(PyTypeObject *self)
+/*[clinic end generated code: output=eb5eb54485942819 input=5af66132436f9a7b]*/
 {
     PyObject *list, *raw, *ref;
     Py_ssize_t i;
@@ -3167,7 +3221,7 @@ type_subclasses(PyTypeObject *type, PyObject *args_ignored)
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    raw = type->tp_subclasses;
+    raw = self->tp_subclasses;
     if (raw == NULL)
         return list;
     assert(PyDict_CheckExact(raw));
@@ -3256,26 +3310,39 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
    We deliberately don't suck up its __class__, as methods belonging to the
    metaclass would probably be more confusing than helpful.
 */
+/*[clinic input]
+type.__dir__
+
+Specialized __dir__ implementation for types.
+[clinic start generated code]*/
+
 static PyObject *
-type_dir(PyObject *self, PyObject *args)
+type___dir___impl(PyTypeObject *self)
+/*[clinic end generated code: output=69d02fe92c0f15fa input=7733befbec645968]*/
 {
     PyObject *result = NULL;
     PyObject *dict = PyDict_New();
 
-    if (dict != NULL && merge_class_dict(dict, self) == 0)
+    if (dict != NULL && merge_class_dict(dict, (PyObject *)self) == 0)
         result = PyDict_Keys(dict);
 
     Py_XDECREF(dict);
     return result;
 }
 
-static PyObject*
-type_sizeof(PyObject *self, PyObject *args_unused)
+/*[clinic input]
+type.__sizeof__
+
+Return memory consumption of the type object.
+[clinic start generated code]*/
+
+static PyObject *
+type___sizeof___impl(PyTypeObject *self)
+/*[clinic end generated code: output=766f4f16cd3b1854 input=99398f24b9cf45d6]*/
 {
     Py_ssize_t size;
-    PyTypeObject *type = (PyTypeObject*)self;
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+    if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        PyHeapTypeObject* et = (PyHeapTypeObject*)self;
         size = sizeof(PyHeapTypeObject);
         if (et->ht_cached_keys)
             size += _PyDict_KeysSize(et->ht_cached_keys);
@@ -3286,22 +3353,16 @@ type_sizeof(PyObject *self, PyObject *args_unused)
 }
 
 static PyMethodDef type_methods[] = {
-    {"mro", (PyCFunction)mro_external, METH_NOARGS,
-     PyDoc_STR("mro() -> list\nreturn a type's method resolution order")},
-    {"__subclasses__", (PyCFunction)type_subclasses, METH_NOARGS,
-     PyDoc_STR("__subclasses__() -> list of immediate subclasses")},
+    TYPE_MRO_METHODDEF
+    TYPE___SUBCLASSES___METHODDEF
     {"__prepare__", (PyCFunction)type_prepare,
      METH_FASTCALL | METH_CLASS,
      PyDoc_STR("__prepare__() -> dict\n"
                "used to create the namespace for the class statement")},
-    {"__instancecheck__", type___instancecheck__, METH_O,
-     PyDoc_STR("__instancecheck__() -> bool\ncheck if an object is an instance")},
-    {"__subclasscheck__", type___subclasscheck__, METH_O,
-     PyDoc_STR("__subclasscheck__() -> bool\ncheck if a class is a subclass")},
-    {"__dir__", type_dir, METH_NOARGS,
-     PyDoc_STR("__dir__() -> list\nspecialized __dir__ implementation for types")},
-    {"__sizeof__",      type_sizeof,       METH_NOARGS,
-     "__sizeof__() -> int\nreturn memory consumption of the type object"},
+    TYPE___INSTANCECHECK___METHODDEF
+    TYPE___SUBCLASSCHECK___METHODDEF
+    TYPE___DIR___METHODDEF
+    TYPE___SIZEOF___METHODDEF
     {0}
 };
 
@@ -3986,7 +4047,7 @@ _PyObject_GetState(PyObject *obj, int required)
             if (obj->ob_type->tp_weaklistoffset)
                 basicsize += sizeof(PyObject *);
             if (slotnames != Py_None)
-                basicsize += sizeof(PyObject *) * Py_SIZE(slotnames);
+                basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
             if (obj->ob_type->tp_basicsize > basicsize) {
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
@@ -3997,7 +4058,7 @@ _PyObject_GetState(PyObject *obj, int required)
             }
         }
 
-        if (slotnames != Py_None && Py_SIZE(slotnames) > 0) {
+        if (slotnames != Py_None && PyList_GET_SIZE(slotnames) > 0) {
             PyObject *slots;
             Py_ssize_t slotnames_size, i;
 
@@ -4008,7 +4069,7 @@ _PyObject_GetState(PyObject *obj, int required)
                 return NULL;
             }
 
-            slotnames_size = Py_SIZE(slotnames);
+            slotnames_size = PyList_GET_SIZE(slotnames);
             for (i = 0; i < slotnames_size; i++) {
                 PyObject *name, *value;
 
@@ -4034,7 +4095,7 @@ _PyObject_GetState(PyObject *obj, int required)
 
                 /* The list is stored on the class so it may mutate while we
                    iterate over it */
-                if (slotnames_size != Py_SIZE(slotnames)) {
+                if (slotnames_size != PyList_GET_SIZE(slotnames)) {
                     PyErr_Format(PyExc_RuntimeError,
                                  "__slotsname__ changed size during iteration");
                     goto error;
@@ -4106,10 +4167,10 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
             Py_DECREF(newargs);
             return -1;
         }
-        if (Py_SIZE(newargs) != 2) {
+        if (PyTuple_GET_SIZE(newargs) != 2) {
             PyErr_Format(PyExc_ValueError,
                          "__getnewargs_ex__ should return a tuple of "
-                         "length 2, not %zd", Py_SIZE(newargs));
+                         "length 2, not %zd", PyTuple_GET_SIZE(newargs));
             Py_DECREF(newargs);
             return -1;
         }
@@ -4348,33 +4409,41 @@ _common_reduce(PyObject *self, int proto)
     if (!copyreg)
         return NULL;
 
-    res = PyEval_CallMethod(copyreg, "_reduce_ex", "(Oi)", self, proto);
+    res = PyObject_CallMethod(copyreg, "_reduce_ex", "Oi", self, proto);
     Py_DECREF(copyreg);
 
     return res;
 }
 
+/*[clinic input]
+object.__reduce__
+
+Helper for pickle.
+[clinic start generated code]*/
+
 static PyObject *
-object_reduce(PyObject *self, PyObject *args)
+object___reduce___impl(PyObject *self)
+/*[clinic end generated code: output=d4ca691f891c6e2f input=11562e663947e18b]*/
 {
-    int proto = 0;
-
-    if (!PyArg_ParseTuple(args, "|i:__reduce__", &proto))
-        return NULL;
-
-    return _common_reduce(self, proto);
+    return _common_reduce(self, 0);
 }
 
+/*[clinic input]
+object.__reduce_ex__
+
+  protocol: int
+  /
+
+Helper for pickle.
+[clinic start generated code]*/
+
 static PyObject *
-object_reduce_ex(PyObject *self, PyObject *args)
+object___reduce_ex___impl(PyObject *self, int protocol)
+/*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
     static PyObject *objreduce;
     PyObject *reduce, *res;
-    int proto = 0;
     _Py_IDENTIFIER(__reduce__);
-
-    if (!PyArg_ParseTuple(args, "|i:__reduce_ex__", &proto))
-        return NULL;
 
     if (objreduce == NULL) {
         objreduce = _PyDict_GetItemId(PyBaseObject_Type.tp_dict,
@@ -4407,7 +4476,7 @@ object_reduce_ex(PyObject *self, PyObject *args)
             Py_DECREF(reduce);
     }
 
-    return _common_reduce(self, proto);
+    return _common_reduce(self, protocol);
 }
 
 static PyObject *
@@ -4436,16 +4505,19 @@ PyDoc_STRVAR(object_init_subclass_doc,
 "The default implementation does nothing. It may be\n"
 "overridden to extend subclasses.\n");
 
+/*[clinic input]
+object.__format__
+
+  format_spec: unicode
+  /
+
+Default object formatter.
+[clinic start generated code]*/
+
 static PyObject *
-object_format(PyObject *self, PyObject *args)
+object___format___impl(PyObject *self, PyObject *format_spec)
+/*[clinic end generated code: output=34897efb543a974b input=7c3b3bc53a6fb7fa]*/
 {
-    PyObject *format_spec;
-    PyObject *self_as_str = NULL;
-    PyObject *result = NULL;
-
-    if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
-        return NULL;
-
     /* Issue 7994: If we're converting to a string, we
        should reject format specifications */
     if (PyUnicode_GET_LENGTH(format_spec) > 0) {
@@ -4454,16 +4526,18 @@ object_format(PyObject *self, PyObject *args)
                      self->ob_type->tp_name);
         return NULL;
     }
-    self_as_str = PyObject_Str(self);
-    if (self_as_str != NULL) {
-        result = PyObject_Format(self_as_str, format_spec);
-        Py_DECREF(self_as_str);
-    }
-    return result;
+    return PyObject_Str(self);
 }
 
+/*[clinic input]
+object.__sizeof__
+
+Size of object in memory, in bytes.
+[clinic start generated code]*/
+
 static PyObject *
-object_sizeof(PyObject *self, PyObject *args)
+object___sizeof___impl(PyObject *self)
+/*[clinic end generated code: output=73edab332f97d550 input=1200ff3dfe485306]*/
 {
     Py_ssize_t res, isize;
 
@@ -4479,8 +4553,15 @@ object_sizeof(PyObject *self, PyObject *args)
 /* __dir__ for generic objects: returns __dict__, __class__,
    and recursively up the __class__.__bases__ chain.
 */
+/*[clinic input]
+object.__dir__
+
+Default dir() implementation.
+[clinic start generated code]*/
+
 static PyObject *
-object_dir(PyObject *self, PyObject *args)
+object___dir___impl(PyObject *self)
+/*[clinic end generated code: output=66dd48ea62f26c90 input=0a89305bec669b10]*/
 {
     PyObject *result = NULL;
     PyObject *dict = NULL;
@@ -4524,20 +4605,15 @@ error:
 }
 
 static PyMethodDef object_methods[] = {
-    {"__reduce_ex__", object_reduce_ex, METH_VARARGS,
-     PyDoc_STR("helper for pickle")},
-    {"__reduce__", object_reduce, METH_VARARGS,
-     PyDoc_STR("helper for pickle")},
+    OBJECT___REDUCE_EX___METHODDEF
+    OBJECT___REDUCE___METHODDEF
     {"__subclasshook__", object_subclasshook, METH_CLASS | METH_VARARGS,
      object_subclasshook_doc},
     {"__init_subclass__", object_init_subclass, METH_CLASS | METH_NOARGS,
      object_init_subclass_doc},
-    {"__format__", object_format, METH_VARARGS,
-     PyDoc_STR("default object formatter")},
-    {"__sizeof__", object_sizeof, METH_NOARGS,
-     PyDoc_STR("__sizeof__() -> int\nsize of object in memory, in bytes")},
-    {"__dir__", object_dir, METH_NOARGS,
-     PyDoc_STR("__dir__() -> list\ndefault dir() implementation")},
+    OBJECT___FORMAT___METHODDEF
+    OBJECT___SIZEOF___METHODDEF
+    OBJECT___DIR___METHODDEF
     {0}
 };
 
@@ -5368,8 +5444,10 @@ getindex(PyObject *self, PyObject *arg)
         PySequenceMethods *sq = Py_TYPE(self)->tp_as_sequence;
         if (sq && sq->sq_length) {
             Py_ssize_t n = (*sq->sq_length)(self);
-            if (n < 0)
+            if (n < 0) {
+                assert(PyErr_Occurred());
                 return -1;
+            }
             i += n;
         }
     }
@@ -5863,14 +5941,22 @@ slot_sq_length(PyObject *self)
 
     if (res == NULL)
         return -1;
-    len = PyNumber_AsSsize_t(res, PyExc_OverflowError);
-    Py_DECREF(res);
-    if (len < 0) {
-        if (!PyErr_Occurred())
-            PyErr_SetString(PyExc_ValueError,
-                            "__len__() should return >= 0");
+
+    Py_SETREF(res, PyNumber_Index(res));
+    if (res == NULL)
+        return -1;
+
+    assert(PyLong_Check(res));
+    if (Py_SIZE(res) < 0) {
+        Py_DECREF(res);
+        PyErr_SetString(PyExc_ValueError,
+                        "__len__() should return >= 0");
         return -1;
     }
+
+    len = PyNumber_AsSsize_t(res, PyExc_OverflowError);
+    assert(len >= 0 || PyErr_ExceptionMatches(PyExc_OverflowError));
+    Py_DECREF(res);
     return len;
 }
 
@@ -7004,7 +7090,7 @@ init_slotdefs(void)
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
         assert(!p[1].name || p->offset <= p[1].offset);
         p->name_strobj = PyUnicode_InternFromString(p->name);
-        if (!p->name_strobj)
+        if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj))
             Py_FatalError("Out of memory interning slotdef names");
     }
     slotdefs_initialized = 1;
@@ -7029,6 +7115,9 @@ update_slot(PyTypeObject *type, PyObject *name)
     slotdef **pp;
     int offset;
 
+    assert(PyUnicode_CheckExact(name));
+    assert(PyUnicode_CHECK_INTERNED(name));
+
     /* Clear the VALID_VERSION flag of 'type' and all its
        subclasses.  This could possibly be unified with the
        update_subclasses() recursion below, but carefully:
@@ -7039,7 +7128,6 @@ update_slot(PyTypeObject *type, PyObject *name)
     init_slotdefs();
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
-        /* XXX assume name is interned! */
         if (p->name_strobj == name)
             *pp++ = p;
     }
