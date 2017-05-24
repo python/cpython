@@ -380,19 +380,6 @@ read_command_line(int argc, wchar_t **argv, _Py_CommandLineDetails *cmdline)
     wchar_t *command = NULL;
     wchar_t *module = NULL;
     int c;
-    char *opt;
-
-    opt = Py_GETENV("PYTHONMALLOC");
-    if (_PyMem_SetupAllocators(opt) < 0) {
-        fprintf(stderr,
-                "Error in PYTHONMALLOC: unknown allocator \"%s\"!\n", opt);
-        exit(1);
-    }
-
-	// TODO: Move these to core runtime init.
-    Py_HashRandomizationFlag = 1;
-    _Py_HashRandomization_Init();
-    PySys_ResetWarnOptions();
 
     _PyOS_ResetGetOpt();
 
@@ -584,6 +571,7 @@ Py_Main(int argc, wchar_t **argv)
 #endif
     int stdin_is_interactive = 0;
     _Py_CommandLineDetails cmdline = _Py_CommandLineDetails_INIT;
+    _PyCoreConfig core_config = _PyCoreConfig_INIT;
     PyCompilerFlags cf;
     PyObject *main_importer_path = NULL;
 
@@ -602,10 +590,22 @@ Py_Main(int argc, wchar_t **argv)
             break;
         }
         if (c == 'E' || c == 'I') {
-            Py_IgnoreEnvironmentFlag++;
+            core_config.ignore_environment++;
             break;
         }
     }
+
+    char *pymalloc = Py_GETENV("PYTHONMALLOC");
+    if (_PyMem_SetupAllocators(pymalloc) < 0) {
+        fprintf(stderr,
+            "Error in PYTHONMALLOC: unknown allocator \"%s\"!\n", pymalloc);
+        exit(1);
+    }
+
+    /* Initialize the core language runtime */
+    Py_IgnoreEnvironmentFlag = core_config.ignore_environment;
+    core_config._disable_importlib = 0;
+    _Py_InitializeCore(&core_config);
 
     /* Reprocess the command line with the language runtime available */
     if (read_command_line(argc, argv, &cmdline)) {
@@ -680,6 +680,7 @@ Py_Main(int argc, wchar_t **argv)
         for (i = 0; i < PyList_GET_SIZE(cmdline.warning_options); i++) {
             PySys_AddWarnOptionUnicode(PyList_GET_ITEM(cmdline.warning_options, i));
         }
+        Py_DECREF(cmdline.warning_options);
     }
 
     stdin_is_interactive = Py_FdIsInteractive(stdin, (char *)0);
@@ -767,9 +768,10 @@ Py_Main(int argc, wchar_t **argv)
 #else
     Py_SetProgramName(argv[0]);
 #endif
-    Py_Initialize();
-    Py_XDECREF(cmdline.warning_options);
+    if (_Py_InitializeMainInterpreter(1))
+        Py_FatalError("Py_Main: Py_InitializeMainInterpreter failed");
 
+    /* TODO: Move this to _PyRun_PrepareMain */
     if (!Py_QuietFlag && (Py_VerboseFlag ||
                         (cmdline.command == NULL && cmdline.filename == NULL &&
                          cmdline.module == NULL && stdin_is_interactive))) {
@@ -779,6 +781,7 @@ Py_Main(int argc, wchar_t **argv)
             fprintf(stderr, "%s\n", COPYRIGHT);
     }
 
+    /* TODO: Move this to _Py_InitializeMainInterpreter */
     if (cmdline.command != NULL) {
         /* Backup _PyOS_optind and force sys.argv[0] = '-c' */
         _PyOS_optind--;
