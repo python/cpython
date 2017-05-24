@@ -1615,29 +1615,37 @@ __slots__
 ^^^^^^^^^
 
 By default, instances of classes have a dictionary for attribute storage.
+Dictionaries allows for flexibility in creation of attributes for
+instances.
 
-However, we could use a data structure that takes up less space than a
-dictionary if we know the attributes to expect on class creation.
+If we know what attributes we will use, we can, by defining *__slots__*,
+use a data structure that only uses space that is minimally required for
+those attribute values. Dictionary flexibility usually requires much
+more space
 
-Thus, we can override this default by defining *__slots__* in a class
-definition.
-
-The *__slots__* declaration takes a sequence of instance variables and reserves
-just enough space in each instance to hold a reference to a value for each
-variable.
-
-Space is saved because *__dict__* is not used for these variables.
-
-One can prevent *__dict__* and *__weakref__* from being created by
+One can also prevent *__dict__* and *__weakref__* from being created by
 inheriting solely from slotted classes or builtin types and declaring
-slots that doesn't include ``'__dict__'`` and ``'__weakref__'``.
+slots that do not include ``'__dict__'`` and ``'__weakref__'``. The
+following example explicitly allows *__dict__*::
+
+   class Slotted:
+       """This class only has foo and bar attributes,
+       __dict__ (and thus flexible attributes) is disallowed.
+       """
+       __slots__ = 'foo', 'bar'
 
 Slotted classes (aside from variable-length built-in types
 such as :class:`int`, :class:`bytes` and :class:`tuple`)
-can allow *__dict__* and *__weakref__* by adding # XXX is weakref true?
+can allow *__dict__* and *__weakref__* by adding 
 ``'__dict__'`` and ``'__weakref__'`` to *__slots__*, respectively.
+For example::
 
-If *__dict__* is not allowed, attempts to assign to an unslotted
+   class FlexibleSlotted(Slotted):
+       """This class optimizes foo and bar, but allows other attributes"""
+       __slots__ = '__dict__', # instance will have parent's slots too.
+
+
+If *__dict__* is not allowed, any attempts to assign to an unslotted
 variable raises :exc:`AttributeError`.
 
 Since *__slots__* implicitly creates *member_descriptors* (data
