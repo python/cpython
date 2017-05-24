@@ -232,6 +232,23 @@ class LockTests(test_utils.TestCase):
 
         self.assertFalse(lock.locked())
 
+    def test_pending(self):
+        lock = asyncio.Lock(loop=self.loop)
+        self.loop.run_until_complete(lock.acquire())
+        self.assertEqual(0, lock.pending())
+
+        @asyncio.coroutine
+        def c1():
+            yield from lock.acquire()
+
+        asyncio.Task(c1(), loop=self.loop)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, lock.pending())
+
+        lock.release()
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(0, lock.pending())
+
 
 class EventTests(test_utils.TestCase):
 
@@ -361,6 +378,22 @@ class EventTests(test_utils.TestCase):
 
         self.assertTrue(t.done())
         self.assertTrue(t.result())
+
+    def test_pending(self):
+        ev = asyncio.Event(loop=self.loop)
+        self.assertEqual(0, ev.pending())
+
+        @asyncio.coroutine
+        def c1():
+            yield from ev.wait()
+
+        asyncio.Task(c1(), loop=self.loop)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, ev.pending())
+
+        ev.set()
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(0, ev.pending())
 
 
 class ConditionTests(test_utils.TestCase):
@@ -698,6 +731,25 @@ class ConditionTests(test_utils.TestCase):
         with self.assertRaises(ValueError):
             asyncio.Condition(lock, loop=loop)
 
+    def test_pending(self):
+        cond = asyncio.Condition(loop=self.loop)
+
+        @asyncio.coroutine
+        def c1():
+            yield from cond.acquire()
+            yield from cond.wait()
+
+        asyncio.Task(c1(), loop=self.loop)
+
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, cond.pending())
+
+        self.loop.run_until_complete(cond.acquire())
+        cond.notify()
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(0, cond.pending())
+        cond.release()
+
 
 class SemaphoreTests(test_utils.TestCase):
 
@@ -915,6 +967,22 @@ class SemaphoreTests(test_utils.TestCase):
                 '"yield from" should be used as context manager expression')
 
         self.assertEqual(2, sem._value)
+
+    def test_pending(self):
+        sem = asyncio.Semaphore(0, loop=self.loop)
+
+        @asyncio.coroutine
+        def c1():
+            yield from sem.acquire()
+
+        asyncio.Task(c1(), loop=self.loop)
+
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, sem.pending())
+
+        sem.release()
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(0, sem.pending())
 
 
 if __name__ == '__main__':
