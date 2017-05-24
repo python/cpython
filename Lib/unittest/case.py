@@ -340,8 +340,11 @@ class _AssertLogsContext(_BaseTestCaseContext):
 
 
 def _get_short_description(doc):
-    # Return the summary line from a docstring.
-    # If there is no summary line, return None.
+    """
+    Return the summary line from a docstring.
+
+    If there is no summary line, return None.
+    """
     if not doc:
         return None
 
