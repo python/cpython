@@ -339,7 +339,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
                 .format(logging.getLevelName(self.level), self.logger.name))
 
 
-def _short_description_from_docstring(text):
+def _get_short_description(text):
     # Return the summary line from a docstring.
     # If there is no summary line, return None.
     if text:
@@ -483,7 +483,7 @@ class TestCase(object):
         This method returns the summary line of
         the specified test method's docstring, as per PEP-257.
         """
-        return _short_description_from_docstring(self._testMethodDoc)
+        return _get_short_description(self._testMethodDoc)
 
     def id(self):
         return "%s.%s" % (strclass(self.__class__), self._testMethodName)
@@ -1407,7 +1407,7 @@ class FunctionTestCase(TestCase):
     def shortDescription(self):
         if self._description is not None:
             return self._description
-        return _short_description_from_docstring(self._testFunc.__doc__)
+        return _get_short_description(self._testFunc.__doc__)
 
 
 class _SubTest(TestCase):
