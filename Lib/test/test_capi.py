@@ -449,11 +449,12 @@ class EmbeddingTests(unittest.TestCase):
             self.assertTrue(interp.interp)
             self.assertTrue(interp.tstate)
             self.assertTrue(interp.modules)
-            if platform.system() == 'Windows':
-                # XXX Fix on Windows: something is going on with the
-                # pointers in Programs/_testembed.c.  interp.interp
-                # is 0x0 and # interp.modules is the same between
-                # interpreters.
+            if '0x0' in interp:
+                # XXX Fix on Windows (and other platforms): something
+                # is going on with the pointers in Programs/_testembed.c.
+                # interp.interp is 0x0 and interp.modules is the same
+                # between interpreters.
+                warnings.warn('platform prints pointers as 0x0; skipping...')
                 continue
             if interp is main:
                 if lastmain is not None:
