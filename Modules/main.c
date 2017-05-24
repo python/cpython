@@ -768,8 +768,21 @@ Py_Main(int argc, wchar_t **argv)
 #else
     Py_SetProgramName(argv[0]);
 #endif
-    if (_Py_InitializeMainInterpreter(1))
-        Py_FatalError("Py_Main: Py_InitializeMainInterpreter failed");
+    /* Replaces previous call to Py_Initialize()
+     *
+     * TODO: Move environment queries (etc) into Py_ReadConfig
+     */
+    {
+        _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
+
+        /* TODO: Moar config options! */
+        config.install_signal_handlers = 1;
+        /* TODO: Print any exceptions raised by these operations */
+        if (_Py_ReadMainInterpreterConfig(&config))
+            Py_FatalError("Py_Main: Py_ReadMainInterpreterConfig failed");
+        if (_Py_InitializeMainInterpreter(&config))
+            Py_FatalError("Py_Main: Py_InitializeMainInterpreter failed");
+    }
 
     /* TODO: Move this to _PyRun_PrepareMain */
     if (!Py_QuietFlag && (Py_VerboseFlag ||

@@ -23,7 +23,8 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 PyAPI_FUNC(void) _Py_InitializeCore(const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
-PyAPI_FUNC(int) _Py_InitializeMainInterpreter(int install_sigs);
+PyAPI_FUNC(int) _Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *);
+PyAPI_FUNC(int) _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *);
 #endif
 
 /* Initialization and finalization */
