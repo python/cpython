@@ -20,7 +20,7 @@ if "%~1"=="--clean" (set DO_CLEAN=true) & shift & goto CheckOpts
 if "%~1"=="--clean-only" (set DO_FETCH=false) & goto clean
 if "x%~1" NEQ "x" goto usage
 
-if %DO_CLEAN%==false goto fetch
+if "%DO_CLEAN%"=="false" goto fetch
 :clean
 echo.Cleaning up external libraries.
 if exist "%EXTERNALS_DIR%" (
