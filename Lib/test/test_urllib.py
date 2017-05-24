@@ -228,10 +228,11 @@ class ProxyTests(unittest.TestCase):
         # getproxies_environment use lowered case truncated (no '_proxy') keys
         self.assertEqual('localhost', proxies['no'])
         # List of no_proxies with space.
-        self.env.set('NO_PROXY', 'localhost, anotherdomain.com, newdomain.com:1234')
+        self.env.set('NO_PROXY', 'localhost, anotherdomain.com, newdomain.com:1234, *.foo.com')
         self.assertTrue(urllib.request.proxy_bypass_environment('anotherdomain.com'))
         self.assertTrue(urllib.request.proxy_bypass_environment('anotherdomain.com:8888'))
         self.assertTrue(urllib.request.proxy_bypass_environment('newdomain.com:1234'))
+        self.assertTrue(urllib.request.proxy_bypass_environment('bar.foo.com'))
 
     def test_proxy_cgi_ignore(self):
         try:
@@ -248,7 +249,7 @@ class ProxyTests(unittest.TestCase):
     def test_proxy_bypass_environment_host_match(self):
         bypass = urllib.request.proxy_bypass_environment
         self.env.set('NO_PROXY',
-                     'localhost, anotherdomain.com, newdomain.com:1234, .d.o.t')
+                     'localhost, anotherdomain.com, newdomain.com:1234, .d.o.t, *.example.com')
         self.assertTrue(bypass('localhost'))
         self.assertTrue(bypass('LocalHost'))                 # MixedCase
         self.assertTrue(bypass('LOCALHOST'))                 # UPPERCASE
@@ -256,9 +257,21 @@ class ProxyTests(unittest.TestCase):
         self.assertTrue(bypass('foo.d.o.t'))                 # issue 29142
         self.assertTrue(bypass('anotherdomain.com:8888'))
         self.assertTrue(bypass('www.newdomain.com:1234'))
+        self.assertTrue(bypass('foo.example.com'))
         self.assertFalse(bypass('prelocalhost'))
         self.assertFalse(bypass('newdomain.com'))            # no port
         self.assertFalse(bypass('newdomain.com:1235'))       # wrong port
+
+    def test_proxy_bypass_envirnoment_one_asterisk(self):
+        bypass = urllib.request.proxy_bypass_environment
+        self.env.set('NO_PROXY', '*')
+        self.assertTrue(bypass('localhost'))
+        self.assertTrue(bypass('LocalHost'))                 # MixedCase
+        self.assertTrue(bypass('LOCALHOST'))
+        self.assertTrue(bypass('newdomain.com:1234'))
+        self.assertTrue(bypass('foo.d.o.t'))
+        self.assertTrue(bypass('anotherdomain.com:8888'))
+        self.assertTrue(bypass('www.newdomain.com:1234'))
 
 
 class ProxyTests_withOrderedEnv(unittest.TestCase):
@@ -282,12 +295,14 @@ class ProxyTests_withOrderedEnv(unittest.TestCase):
         os.environ['HTTP_PROXY'] = 'http://somewhere:3128'
         proxies = urllib.request.getproxies_environment()
         self.assertEqual({}, proxies)
-        # Test lowercase preference of proxy bypass and correct matching including ports
-        os.environ['no_proxy'] = 'localhost, noproxy.com, my.proxy:1234'
+        # Test lowercase preference of proxy bypass, correct matching including ports
+        # and asterisk at begining
+        os.environ['no_proxy'] = 'localhost, noproxy.com, my.proxy:1234, *.foo.com'
         os.environ['No_Proxy'] = 'xyz.com'
         self.assertTrue(urllib.request.proxy_bypass_environment('localhost'))
         self.assertTrue(urllib.request.proxy_bypass_environment('noproxy.com:5678'))
         self.assertTrue(urllib.request.proxy_bypass_environment('my.proxy:1234'))
+        self.assertTrue(urllib.request.proxy_bypass_environment('bar.foo.com'))
         self.assertFalse(urllib.request.proxy_bypass_environment('my.proxy'))
         self.assertFalse(urllib.request.proxy_bypass_environment('arbitrary'))
         # Test lowercase preference with replacement
