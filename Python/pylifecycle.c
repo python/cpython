@@ -360,9 +360,6 @@ initexternalimport(PyInterpreterState *interp)
  * Py_ReadConfig and Py_EndInitialization
  */
 
-/* #define _INIT_DEBUG_PRINT(msg) printf(msg) */
-#define _INIT_DEBUG_PRINT(msg)
-
 void _Py_InitializeCore(const _PyCoreConfig *config)
 {
     PyInterpreterState *interp;
@@ -420,27 +417,23 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
         Py_LegacyWindowsStdioFlag = add_flag(Py_LegacyWindowsStdioFlag, p);
 #endif
 
-    _INIT_DEBUG_PRINT("INITIALISING HASH RANDOMISATION\n");
     _Py_HashRandomization_Init(&core_config);
     if (!core_config.use_hash_seed || core_config.hash_seed) {
         /* Random or non-zero hash seed */
         Py_HashRandomizationFlag = 1;
     }
 
-    _INIT_DEBUG_PRINT("MAKING FIRST INTERPRETER\n");
     _PyInterpreterState_Init();
     interp = PyInterpreterState_New();
     if (interp == NULL)
         Py_FatalError("Py_InitializeCore: can't make main interpreter");
     interp->core_config = core_config;
 
-    _INIT_DEBUG_PRINT("MAKING FIRST THREAD STATE\n");
     tstate = PyThreadState_New(interp);
     if (tstate == NULL)
         Py_FatalError("Py_InitializeCore: can't make first thread");
     (void) PyThreadState_Swap(tstate);
 
-    _INIT_DEBUG_PRINT("INITIALISING GIL STATE API\n");
 #ifdef WITH_THREAD
     /* We can't call _PyEval_FiniThreads() in Py_FinalizeEx because
        that we can call Py_Initialize / Py_FinalizeEx multiple times. */
@@ -448,7 +441,6 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     _PyGILState_Init(interp, tstate);
 #endif /* WITH_THREAD */
 
-    _INIT_DEBUG_PRINT("PREPARING BUILTIN TYPES\n");
     _Py_ReadyTypes();
 
     if (!_PyFrame_Init())
@@ -463,21 +455,17 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     if (!_PyFloat_Init())
         Py_FatalError("Py_InitializeCore: can't init float");
 
-    _INIT_DEBUG_PRINT("CREATING MODULES CACHE\n");
     interp->modules = PyDict_New();
     if (interp->modules == NULL)
         Py_FatalError("Py_InitializeCore: can't make modules dictionary");
 
-    _INIT_DEBUG_PRINT("INITIALISING UNICODE SUPPORT\n");
     /* Init Unicode implementation; relies on the codec registry */
     if (_PyUnicode_Init() < 0)
         Py_FatalError("Py_InitializeCore: can't initialize unicode");
 
-    _INIT_DEBUG_PRINT("INITIALISING STRUCTSEQ\n");
     if (_PyStructSequence_Init() < 0)
         Py_FatalError("Py_InitializeCore: can't initialize structseq");
 
-    _INIT_DEBUG_PRINT("INITIALISING BUILTINS MODULE\n");
     bimod = _PyBuiltin_Init();
     if (bimod == NULL)
         Py_FatalError("Py_InitializeCore: can't initialize builtins modules");
@@ -487,26 +475,20 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
         Py_FatalError("Py_InitializeCore: can't initialize builtins dict");
     Py_INCREF(interp->builtins);
 
-    _INIT_DEBUG_PRINT("INITIALISING BUILTIN EXCEPTIONS\n");
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);
 
-    _INIT_DEBUG_PRINT("CREATING SYS MODULE\n");
     sysmod = _PySys_BeginInit();
     if (sysmod == NULL)
         Py_FatalError("Py_InitializeCore: can't initialize sys");
-    _INIT_DEBUG_PRINT("CACHING REFERENCE TO SYS NAMESPACE\n");
     interp->sysdict = PyModule_GetDict(sysmod);
     if (interp->sysdict == NULL)
         Py_FatalError("Py_InitializeCore: can't initialize sys dict");
     Py_INCREF(interp->sysdict);
-    _INIT_DEBUG_PRINT("FIX UP SYS MODULE IMPORT METADATA\n");
     _PyImport_FixupBuiltin(sysmod, "sys");
-    _INIT_DEBUG_PRINT("PUBLISHING REFERENCE TO MODULES CACHE\n");
     PyDict_SetItemString(interp->sysdict, "modules",
                          interp->modules);
 
-    _INIT_DEBUG_PRINT("INITIALISING PRELIMINARY STDERR\n");
     /* Set up a preliminary stderr printer until we have enough
        infrastructure for the io module in place. */
     pstderr = PyFile_NewStdPrinter(fileno(stderr));
@@ -516,17 +498,13 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     PySys_SetObject("__stderr__", pstderr);
     Py_DECREF(pstderr);
 
-    _INIT_DEBUG_PRINT("INITIALISING CORE IMPORT SYSTEM\n");
     _PyImport_Init();
 
-    _INIT_DEBUG_PRINT("INITIALISING IMPORT HOOK SYSTEM\n");
     _PyImportHooks_Init();
 
-    _INIT_DEBUG_PRINT("INITIALISING WARNINGS MODULE\n");
     /* Initialize _warnings. */
     _PyWarnings_Init();
 
-    _INIT_DEBUG_PRINT("INITIALISING BUILTIN AND FROZEN IMPORTS\n");
     /* This call sets up builtin and frozen import support */
     if (!interp->core_config._disable_importlib) {
         initimport(interp, sysmod);
@@ -623,7 +601,6 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     _Py_InitializeMainInterpreter(install_sigs);
 }
 
-#undef _INIT_DEBUG_PRINT
 
 void
 Py_InitializeEx(int install_sigs)
