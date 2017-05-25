@@ -153,6 +153,13 @@ Library
   exception) to exception(s) raised in the dispatched methods.
   Patch by Petr Motejlek.
 
+C API
+-----
+
+- Issue #27867: Function PySlice_GetIndicesEx() no longer replaced with a macro
+  if Py_LIMITED_API is not set.
+
+
 Build
 -----
 
@@ -451,8 +458,8 @@ C API
 -----
 
 - Issue #27867: Function PySlice_GetIndicesEx() is replaced with a macro if
-  Py_LIMITED_API is set to the value between 0x03050400 and 0x03060000 (not
-  including) or 0x03060100 or higher.
+  Py_LIMITED_API is not set or set to the value between 0x03050400
+  and 0x03060000 (not including) or 0x03060100 or higher.
 
 - Issue #29083: Fixed the declaration of some public API functions.
   PyArg_VaParse() and PyArg_VaParseTupleAndKeywords() were not available in
