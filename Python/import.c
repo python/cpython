@@ -386,7 +386,8 @@ PyImport_GetModule(PyObject *name)
     }
     Py_INCREF(modules);
     if (PyDict_Check(modules)) {
-        m = PyDict_GetItemWithError(modules, name);
+        m = PyDict_GetItemWithError(modules, name);  /* borrowed */
+        Py_XINCREF(m);
     } else {
         m = PyObject_GetItem(modules, name);
         if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
