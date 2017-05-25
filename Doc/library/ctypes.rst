@@ -147,6 +147,12 @@ functions can be accessed by indexing the dll object with the ordinal number::
 Calling functions
 ^^^^^^^^^^^^^^^^^
 
+.. deprecated-removed:: 3.6.2 3.7
+
+   Calling :mod:`ctypes` functions is deprecated. Calling a native function
+   with incorrect arguments is unsupported and can easily cause
+   information leakage or code execution vulnerabilities.
+
 You can call these functions like any other Python callable. This example uses
 the ``time()`` function, which returns system time in seconds since the Unix
 epoch, and the ``GetModuleHandleA()`` function, which returns a win32 module
