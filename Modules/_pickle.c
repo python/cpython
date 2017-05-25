@@ -6490,11 +6490,11 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
         if (module == NULL)
             return NULL;
         global = getattribute(module, global_name, self->proto >= 4);
-        Py_DECREF(module);
     }
     else {
         global = getattribute(module, global_name, self->proto >= 4);
     }
+    Py_DECREF(module);
     return global;
 }
 
