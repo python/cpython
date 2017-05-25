@@ -117,6 +117,9 @@ class IdbAdapter:
         msg = self.idb.clear_all_file_breaks(filename)
         return msg
 
+    def user_interrupt(self, value):
+        return self.idb.user_interrupt(value)
+
     #----------called by a FrameProxy----------
 
     def frame_attr(self, fid, name):
@@ -190,7 +193,7 @@ def start_debugger(rpchandler, gui_adap_oid):
     idb = debugger.Idb(gui_proxy)
     idb_adap = IdbAdapter(idb)
     rpchandler.register(idb_adap_oid, idb_adap)
-    return idb_adap_oid
+    return idb_adap_oid, idb
 
 
 #=======================================
@@ -342,6 +345,10 @@ class IdbProxy:
     def clear_all_file_breaks(self, filename):
         msg = self.call("clear_all_file_breaks", filename)
         return msg
+
+    def user_interrupt(self, value):
+        return self.call("user_interrupt", value)
+
 
 def start_remote_debugger(rpcclt, pyshell):
     """Start the subprocess debugger, initialize the debugger GUI and RPC link

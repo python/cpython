@@ -1087,10 +1087,7 @@ class PyShell(OutputWindow):
         self.endoffile = 0
         self.canceled = 1
         if (self.executing and self.interp.rpcclt):
-            if self.interp.getdebugger():
-                self.interp.restart_subprocess()
-            else:
-                self.interp.interrupt_subprocess()
+            self.interp.interrupt_subprocess()
         if self.reading:
             self.top.quit()  # exit the nested mainloop() in readline()
         return "break"
