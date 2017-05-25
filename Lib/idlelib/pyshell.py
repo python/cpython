@@ -1087,6 +1087,7 @@ class PyShell(OutputWindow):
         self.endoffile = 0
         self.canceled = 1
         if (self.executing and self.interp.rpcclt):
+            self.interp.write("\nKeyboardInterrupt\n")
             self.interp.interrupt_subprocess()
         if self.reading:
             self.top.quit()  # exit the nested mainloop() in readline()
