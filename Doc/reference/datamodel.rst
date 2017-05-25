@@ -1615,13 +1615,13 @@ __slots__
 ^^^^^^^^^
 
 By default, instances of classes have a dictionary for attribute storage.
-Dictionaries allows for flexibility in creation of attributes for
+Dictionaries allow for flexibility in creation of attributes for
 instances.
 
 If we know what attributes we will use, we can, by defining *__slots__*,
 use a data structure that only uses space that is minimally required for
 those attribute values. Dictionary flexibility usually requires much
-more space
+more space.
 
 One can also prevent *__dict__* and *__weakref__* from being created by
 inheriting solely from slotted classes or builtin types and declaring
