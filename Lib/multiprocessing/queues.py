@@ -244,8 +244,8 @@ class Queue(object):
         else:
             wacquire = None
 
-        try:
-            while 1:
+        while 1:
+            try:
                 nacquire()
                 try:
                     if not buffer:
@@ -270,19 +270,17 @@ class Queue(object):
                                 wrelease()
                 except IndexError:
                     pass
-        except Exception, e:
-            # Since this runs in a daemon thread the resources it uses
-            # may be become unusable while the process is cleaning up.
-            # We ignore errors which happen after the process has
-            # started to cleanup.
-            try:
+            except Exception as e:
+                # Since this runs in a daemon thread the resources it uses
+                # may be become unusable while the process is cleaning up.
+                # We ignore errors which happen after the process has
+                # started to cleanup.
                 if is_exiting():
                     info('error in queue thread: %s', e)
+                    return
                 else:
                     import traceback
                     traceback.print_exc()
-            except Exception:
-                pass
 
 _sentinel = object()
 

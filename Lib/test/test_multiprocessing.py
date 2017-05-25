@@ -641,6 +641,21 @@ class _TestQueue(BaseTestCase):
                     self.fail("Probable regression on import lock contention;"
                               " see Issue #22853")
 
+    def test_queue_feeder_donot_stop_onexc(self):
+        # bpo-30414: verify feeder handles exceptions correctly
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        class NotSerializable(object):
+            def __reduce__(self):
+                raise AttributeError
+        with test.support.captured_stderr():
+            q = self.Queue()
+            q.put(NotSerializable())
+            q.put(True)
+            self.assertTrue(q.get(timeout=0.1))
+
+
 #
 #
 #
