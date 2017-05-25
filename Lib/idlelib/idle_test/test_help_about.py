@@ -6,7 +6,11 @@ from idlelib import help_about
 from idlelib import textview
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
+from test.support import requires, findfile
+requires('gui')
+from tkinter import Tk
 import unittest
+
 
 About = help_about.AboutDialog
 class Dummy_about_dialog():
@@ -16,6 +20,65 @@ class Dummy_about_dialog():
     idle_news = About.ShowIDLENEWS
     # Called by the above
     display_file_text = About.display_file_text
+    _utest = True
+
+
+class AboutDialogTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.dialog = About(cls.root, 'About IDLE', _utest=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.dialog
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def tearDown(self):
+        if self.dialog._current_textview:
+            self.dialog._current_textview.destroy()
+
+    def test_dialog_title(self):
+        """This will test about dialog title"""
+        self.assertEqual(self.dialog.title(), 'About IDLE')
+
+    def test_printer_dialog(self):
+        """This will test dialog which using printer"""
+        buttons = [(license, self.dialog.buttonLicense),
+                   (copyright, self.dialog.buttonCopyright),
+                   (credits, self.dialog.buttonCredits)]
+
+        for printer, button in buttons:
+            dialog = self.dialog
+            printer._Printer__setup()
+            button.invoke()
+            self.assertEqual(printer._Printer__lines[0],
+                             dialog._current_textview.textView.get('1.0', '1.end'))
+            self.assertEqual(printer._Printer__lines[1],
+                             dialog._current_textview.textView.get('2.0', '2.end'))
+
+            dialog._current_textview.destroy()
+
+    def test_file_dialog(self):
+        """This will test dialog which using file"""
+        buttons = [('README.txt', self.dialog.idle_about_b),
+                   ('NEWS.txt', self.dialog.idle_news_b),
+                   ('CREDITS.txt', self.dialog.idle_credits_b)]
+
+        for filename, button in buttons:
+            dialog = self.dialog
+            button.invoke()
+            fn = findfile(filename, subdir='idlelib')
+            with open(fn) as f:
+                self.assertEqual(f.readline().strip(),
+                                 dialog._current_textview.textView.get('1.0', '1.end'))
+                f.readline()
+                self.assertEqual(f.readline().strip(),
+                                 dialog._current_textview.textView.get('3.0', '3.end'))
+            dialog._current_textview.destroy()
 
 
 class DisplayFileTest(unittest.TestCase):
