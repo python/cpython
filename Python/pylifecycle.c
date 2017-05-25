@@ -594,11 +594,10 @@ int _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     /* Finish setting up the sys module and import system */
     /* GetPath may initialize state that _PySys_EndInit locks
        in, and so has to be called first. */
+    /* TODO: Call Py_GetPath() in Py_ReadConfig, rather than here */
     PySys_SetPath(Py_GetPath());
     if (_PySys_EndInit(interp->sysdict) < 0)
         Py_FatalError("Py_InitializeMainInterpreter: can't finish initializing sys");
-    /* TODO: Call Py_GetPath() in Py_ReadConfig, rather than here */
-    PySys_SetPath(Py_GetPath());
     initexternalimport(interp);
 
     /* initialize the faulthandler module */
