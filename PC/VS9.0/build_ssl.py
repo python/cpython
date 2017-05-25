@@ -41,7 +41,7 @@ MK1MF_FMT = 'ms\\nt{}.mak'
 
 # The header files output directory name template
 # !!! This must match what is used in prepare_ssl.py
-INCO_FMT = 'include{}\\openssl'
+INCLUDE_FMT = 'include{}'
 
 # Fetch all the directory definitions from VC properties
 def get_project_properties(propfile):
@@ -68,8 +68,8 @@ def fix_makefile(makefile, platform_makefile, suffix):
         'MKDIR': 'mkdir',
         'OUT_D': 'out' + suffix,
         'TMP_D': 'tmp' + suffix,
-        'INC_D': 'inc' + suffix,
-        'INCO_D': 'inc' + suffix + '\\openssl',
+        'INC_D': INCLUDE_FMT.format(suffix),
+        'INCO_D': '$(INC_D)\\openssl',
         }
     with open(platform_makefile) as fin, open(makefile, 'w') as fout:
         for line in fin:
@@ -85,11 +85,14 @@ _copy_rx = re.compile(r'\t\$\(PERL\) '
                       r'\$\(SRC_D\)\\util\\copy-if-different.pl '
                       r'"([^"]+)"\s+"([^"]+)"')
 def copy_files(makefile, makevars):
-    # create the destination directories
+    # Create the destination directories (see 'init' rule in nt.dll)
     for varname in ('TMP_D', 'LIB_D', 'INC_D', 'INCO_D'):
-        dirname = expand_makefile_vars(makevars[varname], makevars)
+        dirname = makevars[varname]
         if not os.path.isdir(dirname):
             os.mkdir(dirname)
+    # Process the just local library headers (HEADER) as installed headers
+    # (EXHEADER) are handled by prepare_ssl.py (see 'headers' rule in nt.dll)
+    headers = set(makevars['HEADER'].split())
     with open(makefile) as fin:
         for line in fin:
             m = _copy_rx.match(line)
@@ -97,7 +100,8 @@ def copy_files(makefile, makevars):
                 src, dst = m.groups()
                 src = expand_makefile_vars(src, makevars)
                 dst = expand_makefile_vars(dst, makevars)
-                copy_file(src, dst, preserve_times=False, update=True)
+                if dst in headers:
+                    copy_file(src, dst, preserve_times=False, update=True)
 
 
 # Update buildinf.h for the build platform.
@@ -212,11 +216,6 @@ def main():
             # XXX: This isn't needed for a properly "prepared" SSL, but
             # it fixes the current checked-in external (as of 2017-05).
             fix_buildinf(makevars)
-            # Copy the "prepared" configuration to the expected directory
-            # XXX: Maybe the _ssl project properties should be adjusted
-            # to the different include directory?
-            copy_file(os.path.join(INCO_FMT.format(suffix), 'opensslconf.h'),
-                      makevars['INCO_D'], preserve_times=False, update=True)
 
             # Finally, move the temporary file to its real destination.
             if os.path.exists(makefile):
