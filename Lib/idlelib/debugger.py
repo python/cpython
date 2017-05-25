@@ -34,6 +34,9 @@ class Idb(bdb.Bdb):
         self.gui.interaction(message, frame, info)
 
     def user_interrupt(self, value):
+        # Clear sys.settrace to prevent debugger trace in Idb
+        sys.settrace(None)
+
         old_value = self._interrupt
         self._interrupt = value
         return old_value
