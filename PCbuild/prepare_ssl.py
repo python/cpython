@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# -*- coding: utf8 -*-      for <2.7>/PC/VS9.0/build_ssl.py
 # Script for preparing OpenSSL for building on Windows.
 # Uses Perl to create nmake makefiles and otherwise prepare the way
 # for building on 32 or 64 bit platforms.
