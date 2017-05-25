@@ -641,8 +641,8 @@ call fails (for example because the path doesn't exist):
    Return an absolute version of this path.  This function works
    even if the path doesn't point to anything.
 
-   No normalization is done, i.e. all '.' and '..' will be kept along.
-   Use resolve() to get the canonical path to a file.
+   No normalization is done, i.e. all ``.`` and ``..`` will be kept along.
+   Use :meth:`Path.resolve` to get the canonical path to a file.
 
    Usage example::
 
@@ -1072,13 +1072,14 @@ call fails (for example because the path doesn't exist):
 
    .. versionadded:: 3.5
 
-Correspondence to tools in the os package
------------------------------------------
+Correspondence to tools in the :mod:`os` package
+------------------------------------------------
 
 If you're more familiar with :mod:`os.path` module, here's a correspondence
-table on how the same things may be accomplished with pathlib.
+table on how the same things may be accomplished with :mod:`pathlib`.
 
 .. note::
+
    Although :func:`os.path.relpath` and :meth:`PurePath.relative_to` have some
    overlapping use cases, :meth:`PurePath.relative_to` is more oriented towards
    answering the question "Relative to a given parent directory, how do I reach
