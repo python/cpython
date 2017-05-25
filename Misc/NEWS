@@ -153,6 +153,13 @@ Library
   exception) to exception(s) raised in the dispatched methods.
   Patch by Petr Motejlek.
 
+C API
+-----
+
+- Issue #27867: Function PySlice_GetIndicesEx() no longer replaced with a macro
+  if Py_LIMITED_API is not set.
+
+
 Build
 -----
 
