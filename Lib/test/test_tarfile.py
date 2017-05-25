@@ -2594,27 +2594,25 @@ class NumericOwnerTest(unittest.TestCase):
 
 
 # Enable this test when Issue 30438 is fixed
-@unittest.skip
-class ExtractTarredReadonlyDirectoryTest(unittest.TestCase):
+# @unittest.skip
+class ExtractDoublyAddedReadonlyFile(unittest.TestCase):
 
-    def test_extract_tarred_readonly_directory(self):
-        "Issue 30438: tarring, then extracting, a read-only directory with a file should succeed"
+    def test_extract_doubly_added_file(self):
+        "Issue 30438: tarring a readonly file twice, then extracting, should succeed"
 
-        read_only_dir_name = os.path.join(TEMPDIR, 'read_only_dir')
-        file_name = os.path.join(read_only_dir_name, 'sample.txt')
-        tarfile_name = os.path.join(TEMPDIR, 'sample.tar')
+        file_name = os.path.join(TEMPDIR, 'read_only_file.txt')
+        tarfile_name = os.path.join(TEMPDIR, 'tarred_read_only_file.tar')
 
-        os.makedirs(read_only_dir_name)
         with open(file_name, 'w') as outfile:
             outfile.write('')
+        os.chmod(file_name, 0o444)
 
-        os.chmod(read_only_dir_name, 0o555)  # Read and Execute permissions
-        os.chmod(file_name, 0o444)           # Read Only permission
         with tarfile.open(tarfile_name, "w") as tarfl:
-            tarfl.add(read_only_dir_name)
+            tarfl.add(file_name)
             tarfl.add(file_name)
 
-        tarfile.open(tarfile_name).extractall()
+        with tarfile.open(tarfile_name) as tarfl:
+            tarfl.extractall()
 
 
 def setUpModule():
