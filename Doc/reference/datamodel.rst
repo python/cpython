@@ -1635,7 +1635,7 @@ slots that do not include ``'__dict__'`` and ``'__weakref__'``. For example::
 
 Slotted classes (aside from variable-length built-in types
 such as :class:`int`, :class:`bytes` and :class:`tuple`)
-can allow *__dict__* and *__weakref__* by adding 
+can allow *__dict__* and *__weakref__* by adding
 ``'__dict__'`` and ``'__weakref__'`` to *__slots__*, respectively.
 The following example explicitly allows *__dict__*::
 
@@ -1704,7 +1704,7 @@ Notes on using *__slots__*
   corresponding to each key.
 
 * *__class__* assignment works only if both classes have the same *__slots__*.
-  
+
 
 .. _class-customization:
 
