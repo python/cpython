@@ -127,8 +127,7 @@ PyAPI_FUNC(int) PyModule_AddFunctions(PyObject *, PyMethodDef *);
 PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
-/* New in 3.7 */
+#if !defined(Py_LIMITED_API)
 PyAPI_FUNC(int) PyModule_ExecInModule(PyObject *module, PyModuleDef *def);
 #endif
 
