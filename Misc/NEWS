@@ -334,6 +334,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30414: multiprocessing.Queue._feed background running
+  thread do not break from main loop on exception.
+
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
