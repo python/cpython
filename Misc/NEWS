@@ -51,6 +51,9 @@ Library
 
 - bpo-30310: tkFont now supports unicode options (e.g. font family).
 
+- bpo-30414: multiprocessing.Queue._feed background running
+  thread do not break from main loop on exception.
+
 - bpo-30003: Fix handling escape characters in HZ codec.  Based on patch
   by Ma Lin.
 
