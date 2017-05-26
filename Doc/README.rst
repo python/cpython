@@ -16,7 +16,7 @@ Building the docs
 
 The documentation can be built using the ``make`` tool.
 
-The process itself requires Python and `Sphinx <http://sphinx-doc.org/>`_. As
+The process itself requires Python 3 and `Sphinx <http://sphinx-doc.org/>`_. As
 long as you have a working Python interpreter available, the rest is handled
 automatically, so you don't have to install Sphinx yourself.
 
@@ -24,7 +24,8 @@ automatically, so you don't have to install Sphinx yourself.
 Using make
 ----------
 
-A Makefile has been prepared so that (on Unix) you can just run ::
+A Makefile has been prepared so that (on Unix), after you change into the
+```Doc/`` directory you can simply run ::
 
    make html
 
@@ -91,7 +92,7 @@ Without make
 ------------
 
 Install the Sphinx package and its dependencies from PyPI. In this situation,
-you'll have to create a virtualenv manually, and install Sphinx into it.
+you'll have to create a virtual environment manually, and install Sphinx into it.
 Change into the ``Doc`` directory and run ::
 
    $ python3 -m venv venv
@@ -106,10 +107,10 @@ see the make targets above).
 Contributing
 ============
 
-Bugs in the content should be reported to the 
+Bugs in the content should be reported to the
 `Python bug tracker <https://bugs.python.org>`_.
 
-Bugs in the toolset should be reported in the 
+Bugs in the toolset should be reported in the
 `Sphinx bug tracker <https://github.com/sphinx-doc/sphinx/issues>`_.
 
 You can also send a mail to the Python Documentation Team at docs@python.org,
