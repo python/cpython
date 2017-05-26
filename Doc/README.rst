@@ -18,40 +18,22 @@ The documentation is built with several tools which are not included in this
 tree but are maintained separately and are available from
 `PyPI <https://pypi.org/>`_.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
 
 The easiest way to install these tools is to create a virtual environment and
 install the tools into there.
-||||||| parent of 8b3066777a... Updated PR from review comments.
-The process itself requires Python and `Sphinx <http://sphinx-doc.org/>`_. As
-long as you have a working Python interpreter available, the rest is handled
-automatically, so you don't have to install Sphinx yourself.
-=======
-||||||| parent of e6fd190296... Update docs to mention that Sphinx dependency handling is automatic
-=======
-<<<<<<< HEAD
->>>>>>> e6fd190296... Update docs to mention that Sphinx dependency handling is automatic
+
 The process itself requires Python 3 and `Sphinx <http://sphinx-doc.org/>`_. As
-=======
-The process itself requires Python and `Sphinx <http://sphinx-doc.org/>`_. As
->>>>>>> 96380e2c40... Update docs to mention that Sphinx dependency handling is automatic
 long as you have a working Python interpreter available, the rest is handled
 automatically, so you don't have to install Sphinx yourself.
->>>>>>> 8b3066777a... Updated PR from review comments.
 
 
 Using make
 ----------
 
-<<<<<<< HEAD
 A Makefile has been prepared so that (on Unix), after you change into the
 ```Doc/`` directory you can simply run ::
-=======
-A Makefile has been prepared so that (on Unix) you can just run ::
->>>>>>> 96380e2c40... Update docs to mention that Sphinx dependency handling is automatic
 
   make html
 
@@ -60,10 +42,6 @@ look for instances of sphinxbuild and blurb installed on your process PATH
 (configurable with the SPHINXBUILD and BLURB variables).
 
 On Windows, we try to emulate the Makefile as closely as possible with a
-<<<<<<< HEAD
-``make.bat`` file. If you need to specify the Python interpreter to use,
-set the PYTHON environment variable instead.
-||||||| parent of cc08b6969c... Remove invalid comment, since Makefile already specifies "python3"
 ``make.bat`` file.
 
 To use a Python interpreter that's not called ``python``, use the standard
@@ -75,12 +53,6 @@ On Windows, set the PYTHON environment variable instead.
 
 To use a specific sphinx-build (something other than ``sphinx-build``), set
 the SPHINXBUILD variable.
-=======
-``make.bat`` file.
-
-To use a specific sphinx-build (something other than ``sphinx-build``), set
-the SPHINXBUILD variable.
->>>>>>> cc08b6969c... Remove invalid comment, since Makefile already specifies "python3"
 
 Available make targets are:
 
