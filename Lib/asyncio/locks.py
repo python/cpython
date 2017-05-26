@@ -229,17 +229,22 @@ class Event:
         """Return True if and only if the internal flag is true."""
         return self._value
 
-    def set(self):
+    def set(self, exc=None):
         """Set the internal flag to true. All coroutines waiting for it to
         become true are awakened. Coroutine that call wait() once the flag is
         true will not block at all.
+
+        If `exc` is set waiters are awakened using a `set_exception`.
         """
         if not self._value:
             self._value = True
 
             for fut in self._waiters:
                 if not fut.done():
-                    fut.set_result(True)
+                    if not exc:
+                        fut.set_result(True)
+                    else:
+                        fut.set_exception(exc)
 
     def clear(self):
         """Reset the internal flag to false. Subsequently, coroutines calling

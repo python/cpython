@@ -362,6 +362,25 @@ class EventTests(test_utils.TestCase):
         self.assertTrue(t.done())
         self.assertTrue(t.result())
 
+    def test_set_exc(self):
+        ev = asyncio.Event(loop=self.loop)
+        result = []
+
+        @asyncio.coroutine
+        def c(result):
+            try:
+                yield from ev.wait()
+            except Exception as e:
+                result.append(e)
+
+        t = asyncio.Task(c(result), loop=self.loop)
+
+        test_utils.run_briefly(self.loop)
+        e = Exception()
+        ev.set(exc=e)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual([e], result)
+
 
 class ConditionTests(test_utils.TestCase):
 
