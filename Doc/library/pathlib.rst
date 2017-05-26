@@ -1072,38 +1072,32 @@ call fails (for example because the path doesn't exist):
 
    .. versionadded:: 3.5
 
-Correspondence to tools in the :mod:`os` package
-------------------------------------------------
+Correspondence to tools in the :mod:`os` module
+-----------------------------------------------
 
-If you're more familiar with :mod:`os.path` module, here's a correspondence
-table on how the same things may be accomplished with :mod:`pathlib`.
+Below is a table mapping various :mod:`os` functions to their corresponding
+:class:`PurePath`/:class:`Path` equivalent.
 
 .. note::
 
    Although :func:`os.path.relpath` and :meth:`PurePath.relative_to` have some
-   overlapping use cases, :meth:`PurePath.relative_to` is more oriented towards
-   answering the question "Relative to a given parent directory, how do I reach
-   this descendant path?" whereas :func:`os.path.relpath` is implemented to
-   answer the "How do I get to path A from path B?".
-
-   If the parameter passed to :meth:`PurePath.relative_to` is not a parent
-   node of the object, :exc:`ValueError` exception is raised.
+   overlapping use-cases, their semantics differ enough to warrant not
+   considering them equivalent.
 
 ============================   ==============================
 os and os.path                 pathlib
 ============================   ==============================
-:func:`os.path.abspath`        :func:`Path.absolute`
+:func:`os.path.abspath`        :meth:`Path.resolve`
 :func:`os.getcwd`              :func:`Path.cwd`
-:func:`os.path.abspath`        :meth:`Path.absolute`
 :func:`os.path.exists`         :meth:`Path.exists`
 :func:`os.path.expanduser`     :meth:`Path.expanduser` and
                                :meth:`Path.home`
-:func:`os.stat`                :meth:`Path.group`
 :func:`os.path.isdir`          :meth:`Path.is_dir`
 :func:`os.path.isfile`         :meth:`Path.is_file`
 :func:`os.path.islink`         :meth:`Path.is_symlink`
-:func:`os.stat`                :meth:`Path.owner`
-:func:`os.stat`                :meth:`Path.stat`
+:func:`os.stat`                :meth:`Path.stat`,
+                               :meth:`Path.owner`,
+                               :meth:`Path.group`
 :func:`os.path.isabs`          :meth:`PurePath.is_absolute`
 :func:`os.path.join`           :func:`PurePath.joinpath`
 :func:`os.path.basename`       :data:`PurePath.name`
