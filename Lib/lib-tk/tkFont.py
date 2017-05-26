@@ -47,8 +47,10 @@ class Font:
     def _set(self, kw):
         options = []
         for k, v in kw.items():
+            if not isinstance(v, basestring):
+                v = str(v)
             options.append("-"+k)
-            options.append(str(v))
+            options.append(v)
         return tuple(options)
 
     def _get(self, args):
