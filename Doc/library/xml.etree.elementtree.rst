@@ -755,7 +755,8 @@ Element Objects
       Finds the first subelement matching *match*.  *match* may be a tag name
       or a :ref:`path <elementtree-xpath>`.  Returns an element instance
       or ``None``.  *namespaces* is an optional mapping from namespace prefix
-      to full name.
+      to full name.  Pass ``None`` as prefix to move all unprefixed tag names
+      in the expression into the given namespace.
 
 
    .. method:: findall(match, namespaces=None)
@@ -763,7 +764,8 @@ Element Objects
       Finds all matching subelements, by tag name or
       :ref:`path <elementtree-xpath>`.  Returns a list containing all matching
       elements in document order.  *namespaces* is an optional mapping from
-      namespace prefix to full name.
+      namespace prefix to full name.  Pass ``None`` as prefix to move all
+      unprefixed tag names in the expression into the given namespace.
 
 
    .. method:: findtext(match, default=None, namespaces=None)
@@ -773,7 +775,8 @@ Element Objects
       of the first matching element, or *default* if no element was found.
       Note that if the matching element has no text content an empty string
       is returned. *namespaces* is an optional mapping from namespace prefix
-      to full name.
+      to full name.  Pass ``None`` as prefix to move all unprefixed tag names
+      in the expression into the given namespace.
 
 
    .. method:: getchildren()
