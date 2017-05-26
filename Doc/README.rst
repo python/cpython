@@ -18,17 +18,28 @@ The documentation is built with several tools which are not included in this
 tree but are maintained separately and are available from
 `PyPI <https://pypi.org/>`_.
 
+<<<<<<< HEAD
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
 
 The easiest way to install these tools is to create a virtual environment and
 install the tools into there.
+||||||| parent of 8b3066777a... Updated PR from review comments.
+The process itself requires Python and `Sphinx <http://sphinx-doc.org/>`_. As
+long as you have a working Python interpreter available, the rest is handled
+automatically, so you don't have to install Sphinx yourself.
+=======
+The process itself requires Python 3 and `Sphinx <http://sphinx-doc.org/>`_. As
+long as you have a working Python interpreter available, the rest is handled
+automatically, so you don't have to install Sphinx yourself.
+>>>>>>> 8b3066777a... Updated PR from review comments.
 
 
 Using make
 ----------
 
-A Makefile has been prepared so that (on Unix) you can just run ::
+A Makefile has been prepared so that (on Unix), after you change into the
+```Doc/`` directory you can simply run ::
 
   make html
 
@@ -117,7 +128,7 @@ Without make
 ------------
 
 Install the Sphinx package and its dependencies from PyPI. In this situation,
-you'll have to create a virtualenv manually, and install Sphinx into it.
+you'll have to create a virtual environment manually, and install Sphinx into it.
 Change into the ``Doc`` directory and run ::
 
    $ python3 -m venv venv
