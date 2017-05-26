@@ -636,22 +636,6 @@ Concrete paths provide the following methods in addition to pure paths
 methods.  Many of these methods can raise an :exc:`OSError` if a system
 call fails (for example because the path doesn't exist):
 
-.. method:: Path.absolute()
-
-   Return an absolute version of this path.  This function works
-   even if the path doesn't point to anything.
-
-   No normalization is done, i.e. all ``.`` and ``..`` will be kept along.
-   Use :meth:`Path.resolve` to get the canonical path to a file.
-
-   Usage example::
-
-      >>> Path.cwd()
-      PosixPath('/dev')
-      >>> Path('null').absolute()
-      PosixPath('/dev/null')
-
-
 .. classmethod:: Path.cwd()
 
    Return a new path object representing the current directory (as returned
