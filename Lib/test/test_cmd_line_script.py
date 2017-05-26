@@ -364,12 +364,11 @@ class CmdLineTest(unittest.TestCase):
             runpy._run_module_as_main('_testmultiphase')
             store_int(123)
             _testmultiphase.store_int(456)
-            print(load_int(), file=sys.stderr)
-            print(_testmultiphase.load_int(), file=sys.stderr)
+            print(load_int(), _testmultiphase.load_int(), file=sys.stderr)
         """)
         rc, out, err = assert_python_ok('-c', code, *example_args, __isolated=False)
         self.assertEqual(b'This is a test module named __main__.\n', out)
-        self.assertEqual(b'123\n456', err)
+        self.assertEqual(b'123 456', err)
 
 
     def test_issue8202(self):
