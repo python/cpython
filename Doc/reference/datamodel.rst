@@ -1622,10 +1622,10 @@ The space saved over using *__dict__* can be significant.
 
 .. data:: object.__slots__
 
-   This class variable can be assigned a string, iterable, sequence of
-   strings, or mapping with variable names used by instances.
-   *__slots__* reserves space for the declared variables and prevents
-   the automatic creation of *__dict__* and *__weakref__* for each instance.
+   This class variable can be assigned a string, iterable, or sequence of
+   strings with variable names used by instances.  *__slots__* reserves space
+   for the declared variables and prevents the automatic creation of *__dict__*
+   and *__weakref__* for each instance.
 
 
 Notes on using *__slots__*
