@@ -15,9 +15,9 @@ import unittest
 About = help_about.AboutDialog
 class Dummy_about_dialog():
     # Dummy class for testing file display functions.
-    idle_credits = About.ShowIDLECredits
-    idle_readme = About.ShowIDLEAbout
-    idle_news = About.ShowIDLENEWS
+    idle_credits = About.show_idle_credits
+    idle_readme = About.show_readme
+    idle_news = About.show_idle_news
     # Called by the above
     display_file_text = About.display_file_text
     _utest = True
@@ -47,9 +47,9 @@ class AboutDialogTest(unittest.TestCase):
 
     def test_printer_dialog(self):
         """This will test dialog which using printer"""
-        buttons = [(license, self.dialog.buttonLicense),
-                   (copyright, self.dialog.buttonCopyright),
-                   (credits, self.dialog.buttonCredits)]
+        buttons = [(license, self.dialog.py_license),
+                   (copyright, self.dialog.py_copyright),
+                   (credits, self.dialog.py_credits)]
 
         for printer, button in buttons:
             dialog = self.dialog
@@ -64,9 +64,9 @@ class AboutDialogTest(unittest.TestCase):
 
     def test_file_dialog(self):
         """This will test dialog which using file"""
-        buttons = [('README.txt', self.dialog.idle_about_b),
-                   ('NEWS.txt', self.dialog.idle_news_b),
-                   ('CREDITS.txt', self.dialog.idle_credits_b)]
+        buttons = [('README.txt', self.dialog.readme),
+                   ('NEWS.txt', self.dialog.idle_news),
+                   ('CREDITS.txt', self.dialog.idle_credits)]
 
         for filename, button in buttons:
             dialog = self.dialog
