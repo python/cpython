@@ -1,6 +1,7 @@
 "Test posix functions"
 
 from test import support
+from test.support.script_helper import assert_python_ok
 android_not_root = support.android_not_root
 
 # Skip these tests if there is no posix module.
@@ -186,6 +187,45 @@ class PosixTester(unittest.TestCase):
         else:
             res = posix.waitid(posix.P_PID, pid, posix.WEXITED)
             self.assertEqual(pid, res.si_pid)
+
+    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    def test_register_after_fork(self):
+        code = """if 1:
+            import os
+
+            r, w = os.pipe()
+            fin_r, fin_w = os.pipe()
+
+            os.register_at_fork(lambda: os.write(w, b'A'), when='before')
+            os.register_at_fork(lambda: os.write(w, b'B'), when='before')
+            os.register_at_fork(lambda: os.write(w, b'C'), when='parent')
+            os.register_at_fork(lambda: os.write(w, b'D'), when='parent')
+            os.register_at_fork(lambda: os.write(w, b'E'), when='child')
+            os.register_at_fork(lambda: os.write(w, b'F'), when='child')
+
+            pid = os.fork()
+            if pid == 0:
+                # At this point, after-forkers have already been executed
+                os.close(w)
+                # Wait for parent to tell us to exit
+                os.read(fin_r, 1)
+                os._exit(0)
+            else:
+                try:
+                    os.close(w)
+                    with open(r, "rb") as f:
+                        data = f.read()
+                        assert len(data) == 6, data
+                        # Check before-fork callbacks
+                        assert data[:2] == b'BA', data
+                        # Check after-fork callbacks
+                        assert sorted(data[2:]) == list(b'CDEF'), data
+                        assert data.index(b'C') < data.index(b'D'), data
+                        assert data.index(b'E') < data.index(b'F'), data
+                finally:
+                    os.write(fin_w, b'!')
+            """
+        assert_python_ok('-c', code)
 
     @unittest.skipUnless(hasattr(posix, 'lockf'), "test needs posix.lockf()")
     def test_lockf(self):
