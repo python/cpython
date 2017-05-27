@@ -46,6 +46,7 @@ from _collections_abc import Set as _Set, Sequence as _Sequence
 from hashlib import sha512 as _sha512
 import itertools as _itertools
 import bisect as _bisect
+import os as _os
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -762,6 +763,10 @@ weibullvariate = _inst.weibullvariate
 getstate = _inst.getstate
 setstate = _inst.setstate
 getrandbits = _inst.getrandbits
+
+if hasattr(_os, "fork"):
+    _os.register_at_fork(_inst.seed, when='child')
+
 
 if __name__ == '__main__':
     _test()
