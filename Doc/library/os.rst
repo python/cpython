@@ -3291,9 +3291,9 @@ written in Python, such as a mail server's external command delivery program.
      forking a child process;
    * *"child"* means the function is called from the child process.
 
-   Functions registered for execution before forking are executed in
+   Functions registered for execution before forking are called in
    reverse registration order.  Functions registered for execution
-   after forking (either in the parent or in the child) are executed
+   after forking (either in the parent or in the child) are called
    in registration order.
 
    Note that :c:func:`fork` calls made by third-party C code may not
