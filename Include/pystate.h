@@ -74,6 +74,11 @@ typedef struct _is {
     PyObject *import_func;
     /* Initialized to PyEval_EvalFrameDefault(). */
     _PyFrameEvalFunction eval_frame;
+#ifdef HAVE_FORK
+    PyObject *before_forkers;
+    PyObject *after_forkers_parent;
+    PyObject *after_forkers_child;
+#endif
 } PyInterpreterState;
 #endif
 
