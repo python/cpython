@@ -485,7 +485,7 @@ Encoders and Decoders
 Exceptions
 ----------
 
-.. exception:: JSONDecodeError(msg, doc, pos, end=None)
+.. exception:: JSONDecodeError(msg, doc, pos)
 
    Subclass of :exc:`ValueError` with the following additional attributes:
 
