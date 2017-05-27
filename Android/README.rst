@@ -108,7 +108,7 @@ Makefile targets
 ^^^^^^^^^^^^^^^^
 *build*
     Compile the native Python interpreter. Cross-compile the external libraries
-    and Python.
+    and Python. This is the default target.
 
 *dist*
     Make a distribution consisting of:
@@ -155,17 +155,9 @@ Makefile targets
 
         Do you wish to create a custom hardware profile? [no]
 
-    To kill an emulator that cannot be closed using its GUI, follow these steps:
-
-    - Create once and for all the following empty file in the user's home
-      directory::
-
-        $ > ~/.emulator_console_auth_token
-
-    - Start a telnet session on port 5554 and run the kill command::
-
-        $ telnet localhost 5554
-            kill
+*kill_emulator*
+    Kill the emulator. Useful when the emulator refuses to be shutdown from its
+    GUI.
 
 *adb_shell*
     Create an adb_ shell on the emulator.

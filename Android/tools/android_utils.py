@@ -112,9 +112,9 @@ def adb_push_to_dir(src, dest):
 
 def run_script(script_path):
     """Push a script to the emulator and run it."""
-    sys_prefix = os.environ['SYS_PREFIX']
-    adb_push_to_dir(script_path, sys_prefix)
-    script_path = os.path.join(sys_prefix, os.path.basename(script_path))
+    bin_dir = os.path.join(os.environ['SYS_EXEC_PREFIX'], 'bin')
+    adb_push_to_dir(script_path, bin_dir)
+    script_path = os.path.join(bin_dir, os.path.basename(script_path))
     print()
     print('Running %s' % script_path, flush=True)
     subprocess.run([os.environ['ADB'], 'shell', 'sh %s' % script_path])

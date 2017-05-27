@@ -13,23 +13,35 @@ endif
 # Rules.
 emulator: emulator_checks _emulator adb_shell
 
+emulator_install: emulator_checks dist sdclean _emulator
+	@echo "---> Install Python on the avd and start the emulator."
+	$(native_python_exe) $(py_srcdir)/Android/tools/install.py
+
 adb_shell:
 	@echo "---> Run an adb shell."
 	$(native_python_exe) $(py_srcdir)/Android/tools/python_shell.py
 	@$(ADB) shell
 
-install: emulator_checks dist sdclean _emulator
-	@echo "---> Install Python on the avd, start the emulator and run an adb shell."
-	$(native_python_exe) $(py_srcdir)/Android/tools/install.py
+install: emulator_install
+	@echo "---> Run an adb shell."
 	$(native_python_exe) $(py_srcdir)/Android/tools/python_shell.py
 	@$(ADB) shell
 
 ifneq ($(PYTHON_ARGS), )
-python: emulator_checks dist sdclean _emulator
-	@echo "---> Install Python on the avd, start the emulator and run <python $(PYTHON_ARGS)>."
-	$(native_python_exe) $(py_srcdir)/Android/tools/install.py
-	$(native_python_exe) $(py_srcdir)/Android/tools/python_shell.py "$(PYTHON_ARGS)"
+python: emulator_install
+	@echo "---> Run <python $(PYTHON_ARGS)>."
+	-$(native_python_exe) $(py_srcdir)/Android/tools/python_shell.py "$(PYTHON_ARGS)"
+	$(MAKE) kill_emulator
 endif
+
+buildbottest: TESTRUNNER := $(native_python_exe) $(py_srcdir)/Android/tools/python_shell.py
+buildbottest: TESTRUNNER += $(TESTPYTHONOPTS) $(SYS_EXEC_PREFIX)/bin/run_tests.py
+buildbottest: export PY_SRCDIR := $(py_srcdir)
+buildbottest: export PATH := $(native_build_dir):$(PATH)
+buildbottest: emulator_install
+	@echo "---> Run buildbottest."
+	-$(MAKE) -C $(py_host_dir) TESTRUNNER="$(TESTRUNNER)" buildbottest
+	$(MAKE) kill_emulator
 
 gdb: export APP_ABI := $(APP_ABI)
 gdb: export PY_HOST_DIR := $(py_host_dir)
@@ -52,6 +64,10 @@ $(avd_dir)/sdcard.img:
 	@echo "---> Create the sdcard image."
 	mkdir -p $(avd_dir)
 	$(ANDROID_SDK_ROOT)/tools/mksdcard -l sl4a 512M $(avd_dir)/sdcard.img
+
+kill_emulator:
+	@echo "---> Kill the emulator."
+	$(native_python_exe) $(py_srcdir)/Android/tools/kill_emulator.py
 
 emulator_checks:
 	@echo "---> Check that an emulator is not currently running."
@@ -81,4 +97,5 @@ avdclean: sdclean
 	fi
 	-rmdir $(avd_dir)
 
-.PHONY: emulator adb_shell install python gdb sdclean avdclean _emulator emulator_checks
+.PHONY: emulator adb_shell install python buildbottest gdb \
+        sdclean avdclean _emulator kill_emulator emulator_checks emulator_install

@@ -41,6 +41,12 @@ def install():
                    os.environ['ZIPBASE_DIR'],
                    os.environ['ANDROID_APP_DIR'])
 
+    srcdir = os.environ.get('PY_SRCDIR')
+    if srcdir:
+        # Push the script run by buildbottest.
+        bin_dir = join(os.environ['SYS_EXEC_PREFIX'], 'bin')
+        adb_push_to_dir(join(srcdir, 'Tools/scripts/run_tests.py'), bin_dir)
+
 if __name__ == "__main__":
     try:
         install()

@@ -17,11 +17,13 @@ import subprocess
 
 from android_utils import (adb_push_to_dir, run_script, AndroidError)
 
+# Maximum file name size on nearly all current file systems.
+MAX_FNAME_SIZE = 255
 USAGE = """
 ===========================================================================
 
 Set the environment by sourcing python_shell.sh with the following command:
-    '. ${SYS_PREFIX}/python_shell.sh'
+    '. ${SYS_EXEC_PREFIX}/bin/python_shell.sh'
 
 ===========================================================================
 
@@ -30,16 +32,14 @@ Set the environment by sourcing python_shell.sh with the following command:
 def build_script():
     script = """
         # Set the environment variables and change the current directory to
-        # ANDROID_APP_DIR.
+        # SYS_EXEC_PREFIX.
         export HOME=$ANDROID_APP_DIR
-        sys_exec_prefix=$$HOME/$ZIPBASE_DIR
-        export PATH=$$sys_exec_prefix/bin:$$PATH
-        export LD_LIBRARY_PATH=$$sys_exec_prefix/lib
+        export PATH=$SYS_EXEC_PREFIX/bin:$$PATH
+        export LD_LIBRARY_PATH=$SYS_EXEC_PREFIX/lib
         export TERM=linux
-        export TERMINFO=$$sys_exec_prefix/share/terminfo
-        export INPUTRC=$$sys_exec_prefix/etc/inputrc
-        unset sys_exec_prefix
-        cd $ANDROID_APP_DIR
+        export TERMINFO=$SYS_EXEC_PREFIX/share/terminfo
+        export INPUTRC=$SYS_EXEC_PREFIX/etc/inputrc
+        cd $SYS_EXEC_PREFIX
 
     """
     script = textwrap.dedent(script)
@@ -54,7 +54,12 @@ def build_script():
     else:
         args = ''.join(map(lambda c: c if c.isalnum() else '_',
                            '_'.join(sys.argv[1:])))
-        script_name = 'python_%s.sh' % args
+        s = 'python_%s.sh' % args
+        l = len(s)
+        if l > MAX_FNAME_SIZE:
+            slice = MAX_FNAME_SIZE // 2 - 2
+            s = s[:slice] + '____' + s[l - slice:]
+        script_name = s
         script += 'python %s\n' % ' '.join(sys.argv[1:])
 
     script_path = os.path.join(os.environ['DIST_DIR'], script_name)
@@ -65,7 +70,6 @@ def build_script():
 
 def main():
     script_path = build_script()
-    sys_prefix = os.environ['SYS_PREFIX']
 
     # The adb shell is mksh (The MirBSD Korn Shell) and it would be possible
     # to update its configuration file at /system/etc/mkshrc on Android to add
@@ -75,7 +79,8 @@ def main():
     # See
     # http://stackoverflow.com/questions/11950131/android-adb-shell-ash-or-ksh.
     if len(sys.argv) == 1:
-        adb_push_to_dir(script_path, sys_prefix)
+        bin_dir = os.path.join(os.environ['SYS_EXEC_PREFIX'], 'bin')
+        adb_push_to_dir(script_path, bin_dir)
         print(string.Template(USAGE).substitute(os.environ))
     else:
         run_script(script_path)

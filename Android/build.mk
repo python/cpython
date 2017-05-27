@@ -17,7 +17,7 @@ py_fullname = python$(py_version)$(abiflags)
 export STDLIB_DIR := lib/python$(py_version)
 
 
-# Target names.
+# Target variables names.
 python := $(py_host_dir)/python
 config_status := $(py_host_dir)/config.status
 export PYTHON_ZIP := $(DIST_DIR)/$(py_name)-$(BUILD_TYPE).zip
@@ -37,12 +37,13 @@ $(native_build_dir)/config.status: $(py_srcdir)/configure
 
 native_python: $(native_build_dir)/config.status
 	@echo "---> Build the native interpreter."
-	cd $(native_build_dir); $(MAKE)
+	$(MAKE) -C $(native_build_dir)
 
 # Target-specific exported variables.
 $(config_status):           export CPPFLAGS := -I$(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/include
 $(config_status):           export LDFLAGS := -L$(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib
-$(python) python_dist:      export PATH := $(native_build_dir):$(PATH)
+build configure host python_dist: \
+                            export PATH := $(native_build_dir):$(PATH)
 external_libraries:         export CC := $(CC)
 external_libraries openssl: export AR := $(AR)
 external_libraries openssl: export LD := $(LD)
@@ -80,13 +81,24 @@ $(config_status): $(makefile) $(py_srcdir)/configure
 	    $(config_args)
 
 $(python): native_python external_libraries openssl $(config_status)
+	$(MAKE) host
+
+configure: native_python external_libraries openssl
+	@rm -f $(config_status)
+	$(MAKE) $(config_status)
+
+host:
 	@echo "---> Build Python for $(BUILD_TYPE)."
-	cd $(py_host_dir); $(MAKE)
+	@if test -f $(config_status); then \
+	    $(MAKE) -C $(py_host_dir) all; \
+	else \
+	    echo "Error: please run 'make config', missing $(config_status)"; \
+	    false; \
+	fi
 
 python_dist: $(python)
 	@echo "---> Install Python for $(BUILD_TYPE)."
-	cd $(py_host_dir); \
-	    $(MAKE) DESTDIR=$(PY_DESTDIR) install
+	$(MAKE) DESTDIR=$(PY_DESTDIR) -C $(py_host_dir) install
 
 $(PYTHON_ZIP): python_dist
 	@echo "---> Zip the machine-specific Python library."
@@ -140,6 +152,9 @@ distclean:
 	rm -f $(BUILD_DIR)/python
 	rm -rf $(PY_DESTDIR)
 
+hostclean:
+	$(MAKE) -C $(py_host_dir) distclean
+
 # Remove everything for the given ANDROID_API and ANDROID_ARCH except the avd.
 clean: distclean
 	rm -rf $(BUILD_DIR)/python-native
@@ -167,5 +182,5 @@ else
       directory.)
 endif
 
-.PHONY: dist native_python external_libraries openssl python_dist \
-        distclean clean
+.PHONY: build configure host native_python external_libraries openssl \
+        dist python_dist distclean hostclean clean
