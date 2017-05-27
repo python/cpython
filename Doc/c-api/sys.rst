@@ -56,6 +56,11 @@ Operating System Utilities
 
    .. versionadded:: 3.7
 
+   .. seealso::
+      :func:`os.register_at_fork` allows registering custom Python functions
+      to be called by :c:func:`PyOS_BeforeFork()`,
+      :c:func:`PyOS_AfterFork_Parent` and  :c:func:`PyOS_AfterFork_Child`.
+
 
 .. c:function:: void PyOS_AfterFork()
 
