@@ -839,15 +839,15 @@ form.
 
    .. attribute:: pos
 
-      The index of *pattern* where compilation failed.
+      The index in *pattern* where compilation failed (may be ``None``).
 
    .. attribute:: lineno
 
-      The line corresponding to *pos*.
+      The line corresponding to *pos* (may be ``None``).
 
    .. attribute:: colno
 
-      The column corresponding to *pos*.
+      The column corresponding to *pos* (may be ``None``).
 
    .. versionchanged:: 3.5
       Added additional attributes.
