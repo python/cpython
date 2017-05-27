@@ -4337,7 +4337,7 @@ def main(argv):
     cmdline.add_argument("--converters", action='store_true')
     cmdline.add_argument("--make", action='store_true',
                          help="Walk --srcdir to run over all relevant files.")
-    cmdline.add_argument("--srcdir", type=str, default=".",
+    cmdline.add_argument("--srcdir", type=str, default=os.curdir,
                          help="The directory tree to walk in --make mode.")
     cmdline.add_argument("filename", type=str, nargs="*")
     ns = cmdline.parse_args(argv)
