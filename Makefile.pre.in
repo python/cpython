@@ -349,7 +349,7 @@ PYTHON_OBJS=	\
 		Python/pystate.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
-		Python/random.o \
+		Python/bootstrap_hash.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
@@ -872,6 +872,7 @@ Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_externa
 # follow our naming conventions. dtrace(1) uses the output filename to generate
 # an include guard, so we can't use a pipeline to transform its output.
 Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
+	$(MKDIR_P) Include
 	$(DTRACE) $(DFLAGS) -o $@ -h -s $<
 	: sed in-place edit with POSIX-only tools
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
@@ -1627,7 +1628,8 @@ distclean: clobber
 	done
 	-rm -f core Makefile Makefile.pre config.status \
 		Modules/Setup Modules/Setup.local Modules/Setup.config \
-		Modules/ld_so_aix Modules/python.exp Misc/python.pc
+		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
+		Misc/python-config.sh
 	-rm -f python*-gdb.py
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before
@@ -1672,7 +1674,6 @@ funny:
 		-o -name Makefile \
 		-o -name ChangeLog \
 		-o -name .hgignore \
-		-o -name .bzrignore \
 		-o -name MANIFEST \
 		-o -print
 

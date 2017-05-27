@@ -541,9 +541,11 @@ form.
 .. data:: I
           IGNORECASE
 
-   Perform case-insensitive matching; expressions like ``[A-Z]`` will match
-   lowercase letters, too.  This is not affected by the current locale
-   and works for Unicode characters as expected.
+   Perform case-insensitive matching; expressions like ``[A-Z]`` will also
+   match lowercase letters.  The current locale does not change the effect of
+   this flag.  Full Unicode matching (such as ``Ü`` matching ``ü``) also
+   works unless the :const:`re.ASCII` flag is also used to disable non-ASCII
+   matches.
 
 
 .. data:: L
