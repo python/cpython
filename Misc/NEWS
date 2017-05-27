@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29104: Fixed parsing backslashes in f-strings.
+
 - bpo-27945: Fixed various segfaults with dict when input collections are
   mutated during searching, inserting or comparing.  Based on patches by
   Duane Griffin and Tim Mitchell.
@@ -339,6 +341,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30414: multiprocessing.Queue._feed background running
+  thread do not break from main loop on exception.
+
 - bpo-30003: Fix handling escape characters in HZ codec.  Based on patch
   by Ma Lin.
 
@@ -603,6 +608,9 @@ Library
 
 - bpo-10379: locale.format_string now supports the 'monetary' keyword argument,
   and locale.format is deprecated.
+
+- bpo-29851: importlib.reload() now raises ModuleNotFoundError if the
+  module lacks a spec.
 
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
