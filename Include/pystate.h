@@ -166,11 +166,13 @@ typedef struct _ts {
     PyObject *curexc_value;
     PyObject *curexc_traceback;
 
-    /* The exception currently being handled, if no coroutines/generators are present.
-     Always last element on the stack referred to be exc_info. */
+    /* The exception currently being handled, if no coroutines/generators
+     * are present. Always last element on the stack referred to be exc_info.
+     */
     PyExcState exc_state;
 
-    /* Pointer to the top of the stack of the exceptions currently being handled */
+    /* Pointer to the top of the stack of the exceptions currently
+     * being handled */
     PyExcState *exc_info;
 
     PyObject *dict;  /* Stores per-thread state */

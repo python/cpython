@@ -16,7 +16,8 @@ static char *NON_INIT_CORO_MSG = "can't send non-None value to a "
 static char *ASYNC_GEN_IGNORED_EXIT_MSG =
                                  "async generator ignored GeneratorExit";
 
-static inline int PyExcState_traverse(PyExcState *exc_state, visitproc visit, void *arg) {
+static inline int
+PyExcState_traverse(PyExcState *exc_state, visitproc visit, void *arg) {
     Py_VISIT(exc_state->exc_type);
     Py_VISIT(exc_state->exc_value);
     Py_VISIT(exc_state->exc_traceback);
@@ -94,7 +95,7 @@ _PyGen_Finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-static inline void PyExcState_clear(PyExcState *exc_state) {
+static inline void PyExcState_Clear(PyExcState *exc_state) {
     PyObject *t, *v, *tb;
     t = exc_state->exc_type;
     v = exc_state->exc_value;
@@ -136,7 +137,7 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
-    PyExcState_clear(&gen->gi_exc_state);
+    PyExcState_Clear(&gen->gi_exc_state);
     PyObject_GC_Del(gen);
 }
 
@@ -306,7 +307,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     if (!result || f->f_stacktop == NULL) {
         /* generator can't be rerun, so release the frame */
         /* first clean reference cycle through stored exception traceback */
-        PyExcState_clear(&gen->gi_exc_state);
+        PyExcState_Clear(&gen->gi_exc_state);
         gen->gi_frame->f_gen = NULL;
         gen->gi_frame = NULL;
         Py_DECREF(f);

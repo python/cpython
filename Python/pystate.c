@@ -450,10 +450,10 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->exc_state.exc_value);
     Py_CLEAR(tstate->exc_state.exc_traceback);
     assert(tstate->exc_info->exc_previous == NULL);
-    if (Py_VerboseFlag && tstate->exc_info != &tstate->exc_state)
+    if (Py_VerboseFlag && tstate->exc_info != &tstate->exc_state) {
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a generator\n");
-
+    }
 
     tstate->c_profilefunc = NULL;
     tstate->c_tracefunc = NULL;

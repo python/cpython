@@ -56,8 +56,9 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 PyExcState *_PyErr_GetExcInfo(PyThreadState *tstate) {
     PyExcState *exc_info = tstate->exc_info;
     while ((exc_info->exc_type == NULL || exc_info->exc_type == Py_None) &&
-           exc_info->exc_previous != NULL)
+           exc_info->exc_previous != NULL) {
         exc_info = exc_info->exc_previous;
+    }
     return exc_info;
 }
 
