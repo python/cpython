@@ -1832,7 +1832,7 @@ PyDoc_STRVAR(os_register_at_fork__doc__,
 "                 after_in_parent=None)\n"
 "--\n"
 "\n"
-"Register a code to be called when forking a new process via os.fork().\n"
+"Register a callable to be called when forking a new process via os.fork().\n"
 "\n"
 "  before\n"
 "    Zero arg callable to be called in the parent before the fork() syscall.\n"
@@ -6546,4 +6546,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=27bab718edec64c6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19831e9abadaac28 input=a9049054013a1b77]*/
