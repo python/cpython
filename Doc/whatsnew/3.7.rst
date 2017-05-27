@@ -139,6 +139,11 @@ If-Modified-Since header. The server returns the 304 response status if the
 target file was not modified after the time specified in the header.
 (Contributed by Pierre Quentel in :issue:`29654`.)
 
+Add the parameter ``directory`` to the :class:`~http.server.SimpleHTTPRequestHandler`
+and the ``--directory`` to the command line of the module :mod:`~http.server`.
+With this parameter, the server serves the specified directory, by default it uses the current working directory.
+(Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
+
 locale
 ------
 

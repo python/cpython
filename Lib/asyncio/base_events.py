@@ -458,7 +458,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 # local task.
                 future.exception()
             raise
-        future.remove_done_callback(_run_until_complete_cb)
+        finally:
+            future.remove_done_callback(_run_until_complete_cb)
         if not future.done():
             raise RuntimeError('Event loop stopped before Future completed.')
 

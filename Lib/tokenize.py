@@ -560,13 +560,11 @@ def _tokenize(readline, encoding):
             if line[pos] in '#\r\n':           # skip comments or blank lines
                 if line[pos] == '#':
                     comment_token = line[pos:].rstrip('\r\n')
-                    nl_pos = pos + len(comment_token)
                     yield TokenInfo(COMMENT, comment_token,
                            (lnum, pos), (lnum, pos + len(comment_token)), line)
-                    yield TokenInfo(NL, line[nl_pos:],
-                           (lnum, nl_pos), (lnum, len(line)), line)
-                else:
-                    yield TokenInfo((NL, COMMENT)[line[pos] == '#'], line[pos:],
+                    pos += len(comment_token)
+
+                yield TokenInfo(NL, line[pos:],
                            (lnum, pos), (lnum, len(line)), line)
                 continue
 
