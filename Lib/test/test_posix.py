@@ -190,18 +190,28 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
     def test_register_at_fork(self):
+        with self.assertRaises(TypeError, msg="Positional args not allowed"):
+            os.register_at_fork(lambda: None)
+        with self.assertRaises(TypeError, msg="Args must be callable"):
+            os.register_at_fork(before=2, after_in_child="three",
+                                after_in_parent=b"Five")
+        with self.assertRaises(TypeError, msg="Args must not be None"):
+            os.register_at_fork(before=None, after_in_child=None,
+                                after_in_parent=None)
+        # We test actual registrations in their own process so as not to
+        # pollute this one.  There is no way to unregister for cleanup.
         code = """if 1:
             import os
 
             r, w = os.pipe()
             fin_r, fin_w = os.pipe()
 
-            os.register_at_fork(lambda: os.write(w, b'A'), when=os.BEFORE_FORK)
-            os.register_at_fork(lambda: os.write(w, b'B'), when=os.BEFORE_FORK)
-            os.register_at_fork(lambda: os.write(w, b'C'), when=os.AFTER_FORK_PARENT)
-            os.register_at_fork(lambda: os.write(w, b'D'), when=os.AFTER_FORK_PARENT)
-            os.register_at_fork(lambda: os.write(w, b'E'), when=os.AFTER_FORK_CHILD)
-            os.register_at_fork(lambda: os.write(w, b'F'), when=os.AFTER_FORK_CHILD)
+            os.register_at_fork(before=lambda: os.write(w, b'A'))
+            os.register_at_fork(after_in_parent=lambda: os.write(w, b'C'))
+            os.register_at_fork(after_in_child=lambda: os.write(w, b'E'))
+            os.register_at_fork(before=lambda: os.write(w, b'B'),
+                                after_in_parent=lambda: os.write(w, b'D'),
+                                after_in_child=lambda: os.write(w, b'F'))
 
             pid = os.fork()
             if pid == 0:

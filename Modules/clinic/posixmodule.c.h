@@ -1828,40 +1828,45 @@ exit:
 #if defined(HAVE_FORK)
 
 PyDoc_STRVAR(os_register_at_fork__doc__,
-"register_at_fork($module, func, /, when)\n"
+"register_at_fork($module, /, *, before=None, after_in_child=None,\n"
+"                 after_in_parent=None)\n"
 "--\n"
 "\n"
-"Register a callable object to be called when forking.\n"
+"Register a code to be called when forking a new process via os.fork().\n"
 "\n"
-"  func\n"
-"    Function or callable\n"
-"  when\n"
-"    os.BEFORE_FORK, os.AFTER_FORK_CHILD, os.AFTER_FORK_PARENT\n"
+"  before\n"
+"    Zero arg callable to be called in the parent before the fork() syscall.\n"
+"  after_in_child\n"
+"    Zero arg callable to be called in the child before os.fork() returns.\n"
+"  after_in_parent\n"
+"    Zero arg callable to be called in the parent before os.fork() returns.\n"
 "\n"
-"os.BEFORE_FORK callbacks are called in reverse order before forking.\n"
-"os.AFTER_FORK_CHILD callbacks are called in order after forking, in the child process.\n"
-"os.AFTER_FORK_PARENT callbacks are called in order after forking, in the parent process.");
+"``before`` callbacks are called in reverse order before forking.\n"
+"``after_in_child`` callbacks are called in order after forking in the child.\n"
+"``after_in_parent`` callbacks are called in order after forking in the parent.");
 
 #define OS_REGISTER_AT_FORK_METHODDEF    \
     {"register_at_fork", (PyCFunction)os_register_at_fork, METH_FASTCALL, os_register_at_fork__doc__},
 
 static PyObject *
-os_register_at_fork_impl(PyObject *module, PyObject *func, const char *when);
+os_register_at_fork_impl(PyObject *module, PyObject *before,
+                         PyObject *after_in_child, PyObject *after_in_parent);
 
 static PyObject *
 os_register_at_fork(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "when", NULL};
-    static _PyArg_Parser _parser = {"Os:register_at_fork", _keywords, 0};
-    PyObject *func;
-    const char *when;
+    static const char * const _keywords[] = {"before", "after_in_child", "after_in_parent", NULL};
+    static _PyArg_Parser _parser = {"|$OOO:register_at_fork", _keywords, 0};
+    PyObject *before = NULL;
+    PyObject *after_in_child = NULL;
+    PyObject *after_in_parent = NULL;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &func, &when)) {
+        &before, &after_in_child, &after_in_parent)) {
         goto exit;
     }
-    return_value = os_register_at_fork_impl(module, func, when);
+    return_value = os_register_at_fork_impl(module, before, after_in_child, after_in_parent);
 
 exit:
     return return_value;
@@ -6541,4 +6546,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=30f4881161078e93 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27bab718edec64c6 input=a9049054013a1b77]*/

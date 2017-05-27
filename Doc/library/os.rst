@@ -3280,18 +3280,20 @@ written in Python, such as a mail server's external command delivery program.
    subprocesses.
 
 
-.. function:: register_at_fork(func, when)
+.. function:: register_at_fork(*, before=None, after_in_parent=None, \
+                               after_in_child=None)
 
-   Register *func* as a function to be executed when a new child process
-   is forked.  *when* is a constant specifying at which point the function is
-   called and can take the following values:
+   Register callables to be executed when a new child process is forked
+   using :func:`os.fork`.  The parameters are optional and keyword-only.
+   Each specifies a different call point.
 
-   * ``os.BEFORE_FORK`` means the function is called before forking a child
-     process.
-   * ``os.AFTER_FORK_PARENT`` means the function is called from the parent
-     process after forking a child process.
-   * ``os.AFTER_FORK_CHILD`` means the function is called from the child
-     process if control is expected to return to the Python interpreter.
+   * *before* is a function called before forking a child process.
+   * *after_in_parent* is a function called from the parent process
+     after forking a child process.
+   * *after_in_child* is a function called from the child process
+     if control is expected to return to the Python interpreter.  A
+     typical :mod:`subprocess` launch will not trigger this as the
+     child is not going to return to the interpreter.
 
    Functions registered for execution before forking are called in
    reverse registration order.  Functions registered for execution
@@ -3301,6 +3303,8 @@ written in Python, such as a mail server's external command delivery program.
    Note that :c:func:`fork` calls made by third-party C code may not
    call those functions, unless it explicitly calls :c:func:`PyOS_BeforeFork`,
    :c:func:`PyOS_AfterFork_Parent` and :c:func:`PyOS_AfterFork_Child`.
+
+   There is no way to unregister a function.
 
    Availability: Unix.
 
