@@ -94,6 +94,7 @@ from os.path import (curdir, pardir, sep, pathsep, defpath, extsep, altsep,
 
 del _names
 
+
 if _exists("_have_functions"):
     _globals = globals()
     def _add(str, fn):
