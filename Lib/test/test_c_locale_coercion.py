@@ -16,12 +16,7 @@ from test.support.script_helper import (
 
 # In order to get the warning messages to match up as expected, the candidate
 # order here must much the target locale order in Python/pylifecycle.c
-_C_UTF8_LOCALES = (
-    # Entries: (Target locale, expected env var updates)
-    ("C.UTF-8", "LC_CTYPE & LANG"),
-    ("C.utf8", "LC_CTYPE & LANG"),
-    ("UTF-8", "LC_CTYPE"),
-)
+_C_UTF8_LOCALES = ("C.UTF-8", "C.utf8", "UTF-8")
 
 # There's no reliable cross-platform way of checking locale alias
 # lists, so the only way of knowing which of these locales will work
@@ -144,7 +139,7 @@ class LocaleWarningTests(_ChildProcessEncodingTestCase):
 
 # Details of the CLI locale coercion warning emitted at runtime
 CLI_COERCION_WARNING_FMT = (
-    "Python detected LC_CTYPE=C: {} coerced to {} (set another locale "
+    "Python detected LC_CTYPE=C: LC_CTYPE coerced to {} (set another locale "
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior)."
 )
 
@@ -156,21 +151,19 @@ class _LocaleCoercionTargetsTestCase(_ChildProcessEncodingTestCase):
 
     @classmethod
     def setUpClass(cls):
-        first_target_locale = first_env_updates = None
+        first_target_locale = None
         available_targets = cls.available_targets
         # Find the target locales available in the current system
-        for target_locale, env_updates in _C_UTF8_LOCALES:
+        for target_locale in _C_UTF8_LOCALES:
             if _set_locale_in_subprocess(target_locale):
                 available_targets.append(target_locale)
                 if first_target_locale is None:
                     first_target_locale = target_locale
-                    first_env_updates = env_updates
         if cls.targets_required and not available_targets:
             raise unittest.SkipTest("No C-with-UTF-8 locale available")
         # Expect coercion to use the first available locale
-        cls.EXPECTED_COERCION_WARNING = CLI_COERCION_WARNING_FMT.format(
-            first_env_updates, first_target_locale
-        )
+        warning_msg = CLI_COERCION_WARNING_FMT.format(first_target_locale)
+        cls.EXPECTED_COERCION_WARNING = warning_msg
 
 
 class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
