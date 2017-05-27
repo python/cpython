@@ -553,7 +553,10 @@ class HelpFormatter(object):
                 default = self._get_default_metavar_for_optional(action)
                 args_string = self._format_args(action, default)
                 for option_string in action.option_strings:
-                    parts.append('%s %s' % (option_string, args_string))
+                    if args_string:
+                        parts.append('%s %s' % (option_string, args_string))
+                    else:
+                        parts.append('%s' % (option_string))
 
             return ', '.join(parts)
 

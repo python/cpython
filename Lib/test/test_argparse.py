@@ -3893,6 +3893,26 @@ class TestHelpNone(HelpTestCase):
     version = ''
 
 
+class TestHelpEmptyStringMetavar(HelpTestCase):
+    """Test specifying metavar as an empty string."""
+
+    parser_signature = Sig(prog='PROG')
+    argument_signatures = [
+        Sig('-f', '--foo', metavar=''),
+    ]
+    argument_group_signatures = []
+    usage = '''\
+        usage: PROG [-h] [-f]
+        '''
+    help = usage + '''\
+
+        optional arguments:
+          -h, --help  show this help message and exit
+          -f, --foo
+        '''
+    version = ''
+
+
 class TestHelpTupleMetavar(HelpTestCase):
     """Test specifying metavar as a tuple"""
 
