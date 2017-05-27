@@ -313,7 +313,7 @@ random_setstate(RandomObject *self, PyObject *state)
     int i;
     unsigned long element;
     long index;
-    uint32_t new_state[N];
+    PY_UINT32_T new_state[N];
 
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError,
@@ -330,7 +330,7 @@ random_setstate(RandomObject *self, PyObject *state)
         element = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(state, i));
         if (element == (unsigned long)-1 && PyErr_Occurred())
             return NULL;
-        new_state[i] = (uint32_t)element;
+        new_state[i] = (PY_UINT32_T)element;
     }
 
     index = PyLong_AsLong(PyTuple_GET_ITEM(state, i));
