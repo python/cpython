@@ -20,9 +20,10 @@
 
 # === Variables set by makesetup ===
 
-MODNAMES=       _MODNAMES_
-MODOBJS=        _MODOBJS_
-MODLIBS=        _MODLIBS_
+MODBUILT_NAMES=    _MODBUILT_NAMES_
+MODDISABLED_NAMES= _MODDISABLED_NAMES_
+MODOBJS=           _MODOBJS_
+MODLIBS=           _MODLIBS_
 
 # === Variables set by configure
 VERSION=	@VERSION@
