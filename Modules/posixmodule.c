@@ -5316,19 +5316,19 @@ os.register_at_fork
         Function or callable
     /
     when: str
-        'before', 'child' or 'parent'
+        os.BEFORE_FORK, os.AFTER_FORK_CHILD, os.AFTER_FORK_PARENT
 
 Register a callable object to be called when forking.
 
-'before' callbacks are called in reverse order before forking.
-'child' callbacks are called in order after forking, in the child process.
-'parent' callbacks are called in order after forking, in the parent process.
+os.BEFORE_FORK callbacks are called in reverse order before forking.
+os.AFTER_FORK_CHILD callbacks are called in order after forking, in the child process.
+os.AFTER_FORK_PARENT callbacks are called in order after forking, in the parent process.
 
 [clinic start generated code]*/
 
 static PyObject *
 os_register_at_fork_impl(PyObject *module, PyObject *func, const char *when)
-/*[clinic end generated code: output=8943be81a644750c input=5fc05efa4d42eb84]*/
+/*[clinic end generated code: output=8943be81a644750c input=fde1c6bde63beb91]*/
 {
     PyInterpreterState *interp;
     PyObject **lst;

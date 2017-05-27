@@ -94,6 +94,11 @@ from os.path import (curdir, pardir, sep, pathsep, defpath, extsep, altsep,
 
 del _names
 
+if _exists("register_at_fork"):
+    # Constants for use with os.register_at_fork()'s when parameter.
+    BEFORE_FORK = "before"
+    AFTER_FORK_CHILD = "child"
+    AFTER_FORK_PARENT = "parent"
 
 if _exists("_have_functions"):
     _globals = globals()

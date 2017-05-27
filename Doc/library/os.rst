@@ -3283,13 +3283,15 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: register_at_fork(func, when)
 
    Register *func* as a function to be executed when a new child process
-   is forked.  *when* is a string specifying at which point the function is
+   is forked.  *when* is a constant specifying at which point the function is
    called and can take the following values:
 
-   * *"before"* means the function is called before forking a child process;
-   * *"parent"* means the function is called from the parent process after
-     forking a child process;
-   * *"child"* means the function is called from the child process.
+   * ``os.BEFORE_FORK`` means the function is called before forking a child
+     process.
+   * ``os.AFTER_FORK_PARENT`` means the function is called from the parent
+     process after forking a child process.
+   * ``os.AFTER_FORK_CHILD`` means the function is called from the child
+     process if control is expected to return to the Python interpreter.
 
    Functions registered for execution before forking are called in
    reverse registration order.  Functions registered for execution

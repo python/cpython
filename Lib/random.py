@@ -765,7 +765,7 @@ setstate = _inst.setstate
 getrandbits = _inst.getrandbits
 
 if hasattr(_os, "fork"):
-    _os.register_at_fork(_inst.seed, when='child')
+    _os.register_at_fork(_inst.seed, when=_os.AFTER_FORK_CHILD)
 
 
 if __name__ == '__main__':

@@ -1836,11 +1836,11 @@ PyDoc_STRVAR(os_register_at_fork__doc__,
 "  func\n"
 "    Function or callable\n"
 "  when\n"
-"    \'before\', \'child\' or \'parent\'\n"
+"    os.BEFORE_FORK, os.AFTER_FORK_CHILD, os.AFTER_FORK_PARENT\n"
 "\n"
-"\'before\' callbacks are called in reverse order before forking.\n"
-"\'child\' callbacks are called in order after forking, in the child process.\n"
-"\'parent\' callbacks are called in order after forking, in the parent process.");
+"os.BEFORE_FORK callbacks are called in reverse order before forking.\n"
+"os.AFTER_FORK_CHILD callbacks are called in order after forking, in the child process.\n"
+"os.AFTER_FORK_PARENT callbacks are called in order after forking, in the parent process.");
 
 #define OS_REGISTER_AT_FORK_METHODDEF    \
     {"register_at_fork", (PyCFunction)os_register_at_fork, METH_FASTCALL, os_register_at_fork__doc__},
@@ -6541,4 +6541,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=699e11c5579a104e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=30f4881161078e93 input=a9049054013a1b77]*/

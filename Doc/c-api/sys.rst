@@ -49,10 +49,12 @@ Operating System Utilities
 
 .. c:function:: void PyOS_AfterFork_Child()
 
-   Function to update some internal state after a process fork.  This
-   should be called from the child process after calling :c:func:`fork`
-   or any similar function that clones the current process.
-   Only available on systems where :c:func:`fork` is defined.
+   Function to update internal interpreter state after a process fork.
+   This must be called from the child process after calling :c:func:`fork`,
+   or any similar function that clones the current process, if there is
+   any chance the process will call back into the Python interpreter.
+   Only available on systems where :c:func:`fork` is defined as determined
+   by the ``HAVE_FORK`` C preprocessor define.
 
    .. versionadded:: 3.7
 
