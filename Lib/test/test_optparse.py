@@ -371,10 +371,10 @@ class TestOptionParser(BaseTest):
         self.assertTrue(self.parser.has_option("--verbose"))
 
     def assertTrueremoved(self):
-        self.assertTrue(self.parser.get_option("-v") is None)
-        self.assertTrue(self.parser.get_option("--verbose") is None)
-        self.assertTrue(self.parser.get_option("-n") is None)
-        self.assertTrue(self.parser.get_option("--noisy") is None)
+        self.assertIsNone(self.parser.get_option("-v"))
+        self.assertIsNone(self.parser.get_option("--verbose"))
+        self.assertIsNone(self.parser.get_option("-n"))
+        self.assertIsNone(self.parser.get_option("--noisy"))
 
         self.assertFalse(self.parser.has_option("-v"))
         self.assertFalse(self.parser.has_option("--verbose"))
@@ -799,13 +799,13 @@ class TestBool(BaseTest):
         (options, args) = self.assertParseOK(["-q"],
                                              {'verbose': 0},
                                              [])
-        self.assertTrue(options.verbose is False)
+        self.assertIs(options.verbose, False)
 
     def test_bool_true(self):
         (options, args) = self.assertParseOK(["-v"],
                                              {'verbose': 1},
                                              [])
-        self.assertTrue(options.verbose is True)
+        self.assertIs(options.verbose, True)
 
     def test_bool_flicker_on_and_off(self):
         self.assertParseOK(["-qvq", "-q", "-v"],
@@ -1107,15 +1107,15 @@ class TestCallback(BaseTest):
         if opt == "-x":
             self.assertEqual(option._short_opts, ["-x"])
             self.assertEqual(option._long_opts, [])
-            self.assertTrue(parser_ is self.parser)
-            self.assertTrue(value is None)
+            self.assertIs(parser_, self.parser)
+            self.assertIsNone(value)
             self.assertEqual(vars(parser_.values), {'filename': None})
 
             parser_.values.x = 42
         elif opt == "--file":
             self.assertEqual(option._short_opts, ["-f"])
             self.assertEqual(option._long_opts, ["--file"])
-            self.assertTrue(parser_ is self.parser)
+            self.assertIs(parser_, self.parser)
             self.assertEqual(value, "foo")
             self.assertEqual(vars(parser_.values), {'filename': None, 'x': 42})
 
@@ -1153,7 +1153,7 @@ class TestCallbackExtraArgs(BaseTest):
 
     def process_tuple(self, option, opt, value, parser_, len, type):
         self.assertEqual(len, 3)
-        self.assertTrue(type is int)
+        self.assertIs(type, int)
 
         if opt == "-p":
             self.assertEqual(value, "1,2,3")
@@ -1244,7 +1244,7 @@ class TestCallbackVarArgs(BaseTest):
                                                option_list=options)
 
     def variable_args(self, option, opt, value, parser):
-        self.assertTrue(value is None)
+        self.assertIsNone(value)
         value = []
         rargs = parser.rargs
         while rargs:
@@ -1335,8 +1335,8 @@ class TestConflictResolve(ConflictBase):
         verbose_opt = self.parser.get_option("--verbose")
         version_opt = self.parser.get_option("--version")
 
-        self.assertTrue(v_opt is version_opt)
-        self.assertTrue(v_opt is not verbose_opt)
+        self.assertIs(v_opt, version_opt)
+        self.assertIsNot(v_opt, verbose_opt)
         self.assertEqual(v_opt._long_opts, ["--version"])
         self.assertEqual(version_opt._short_opts, ["-v"])
         self.assertEqual(version_opt._long_opts, ["--version"])
