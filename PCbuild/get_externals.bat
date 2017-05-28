@@ -3,8 +3,8 @@ setlocal
 rem Simple script to fetch source for external libraries
 
 if "%PCBUILD%"=="" (set PCBUILD=%~dp0)
-if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%PCBUILD%..\externals\)
-if "%NUGET%"=="" (set NUGET=%EXTERNALS_DIR%nuget.exe)
+if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%PCBUILD%\..\externals)
+if "%NUGET%"=="" (set NUGET=%EXTERNALS_DIR%\nuget.exe)
 if "%NUGET_URL%"=="" (set NUGET_URL=https://aka.ms/nugetclidl)
 
 set DO_FETCH=true
@@ -46,9 +46,9 @@ if "%PYTHON_FOR_BUILD%"=="" (
         powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile '%NUGET%'
     )
     echo Installing Python via nuget...
-    "%NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%EXTERNALS_DIR%\"
+    "%NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%EXTERNALS_DIR%"
     rem Quote it here; it's not quoted later because "py -3.6" wouldn't work
-    set PYTHON_FOR_BUILD="%EXTERNALS_DIR%pythonx86\tools\python.exe"
+    set PYTHON_FOR_BUILD="%EXTERNALS_DIR%\pythonx86\tools\python.exe"
 )
 
 echo.Fetching external libraries...
@@ -63,7 +63,7 @@ if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tix-8.4.3.6
 set libraries=%libraries%                                    xz-5.2.2
 
 for %%e in (%libraries%) do (
-    if exist "%EXTERNALS_DIR%%%e" (
+    if exist "%EXTERNALS_DIR%\%%e" (
         echo.%%e already exists, skipping.
     ) else (
         echo.Fetching %%e...
@@ -78,7 +78,7 @@ set binaries=%binaries%
 if NOT "%IncludeSSL%"=="false" set binaries=%binaries%     nasm-2.11.06
 
 for %%b in (%binaries%) do (
-    if exist "%EXTERNALS_DIR%%%b" (
+    if exist "%EXTERNALS_DIR%\%%b" (
         echo.%%b already exists, skipping.
     ) else (
         echo.Fetching %%b...
