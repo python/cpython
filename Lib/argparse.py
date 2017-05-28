@@ -556,7 +556,7 @@ class HelpFormatter(object):
                     if args_string:
                         parts.append('%s %s' % (option_string, args_string))
                     else:
-                        parts.append('%s' % (option_string))
+                        parts.append('%s' % (option_string,))
 
             return ', '.join(parts)
 
