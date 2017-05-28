@@ -1,5 +1,6 @@
 """Thread module emulating a subset of Java's threading model."""
 
+import os as _os
 import sys as _sys
 import _thread
 
@@ -943,6 +944,7 @@ class Thread:
                                     exc_tb.tb_frame.f_code.co_name)), file=self._stderr)
                             exc_tb = exc_tb.tb_next
                         print(("%s: %s" % (exc_type, exc_value)), file=self._stderr)
+                        self._stderr.flush()
                     # Make sure that exc_tb gets deleted since it is a memory
                     # hog; deleting everything else is just for thoroughness
                     finally:
@@ -1356,3 +1358,7 @@ def _after_fork():
         _active.clear()
         _active.update(new_active)
         assert len(_active) == 1
+
+
+if hasattr(_os, "fork"):
+    _os.register_at_fork(_after_fork, when="child")
