@@ -48,7 +48,7 @@ class LiveDialogTest(unittest.TestCase):
                     dialog._current_textview.text.get('1.0', '1.end'))
             self.assertEqual(
                     printer._Printer__lines[1],
-                    dialog._current_textview.text.get('2.0', '2.end')
+                    dialog._current_textview.text.get('2.0', '2.end'))
             dialog._current_textview.destroy()
 
     def test_file_buttons(self):
@@ -66,8 +66,9 @@ class LiveDialogTest(unittest.TestCase):
                         f.readline().strip(),
                         dialog._current_textview.text.get('1.0', '1.end'))
                 f.readline()
-                self.assertEqual(f.readline().strip(),
-                                 dialog._current_textview.text.get('3.0', '3.end'))
+                self.assertEqual(
+                    f.readline().strip(),
+                    dialog._current_textview.text.get('3.0', '3.end'))
             dialog._current_textview.destroy()
 
 
