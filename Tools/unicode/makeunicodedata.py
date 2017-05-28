@@ -609,7 +609,7 @@ def makeunicodename(unicode, trace):
             if name and name[0] != "<":
                 names[char] = name + chr(0)
 
-    print(len(list(n for n in names if n is not None)), "distinct names")
+    print(len([n for n in names if n is not None]), "distinct names")
 
     # collect unique words from names (note that we differ between
     # words inside a sentence, and words ending a sentence.  the

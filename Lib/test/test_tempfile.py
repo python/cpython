@@ -1,5 +1,4 @@
 # tempfile.py unit tests.
-import collections.abc
 import tempfile
 import errno
 import io
@@ -274,13 +273,12 @@ class TestGetDefaultTempdir(BaseTestCase):
                         tempfile._get_default_tempdir()
                     self.assertEqual(os.listdir(our_temp_directory), [])
 
-                open = io.open
                 def bad_writer(*args, **kwargs):
-                    fp = open(*args, **kwargs)
+                    fp = orig_open(*args, **kwargs)
                     fp.write = raise_OSError
                     return fp
 
-                with support.swap_attr(io, "open", bad_writer):
+                with support.swap_attr(io, "open", bad_writer) as orig_open:
                     # test again with failing write()
                     with self.assertRaises(FileNotFoundError):
                         tempfile._get_default_tempdir()
@@ -291,9 +289,9 @@ class TestGetCandidateNames(BaseTestCase):
     """Test the internal function _get_candidate_names."""
 
     def test_retval(self):
-        # _get_candidate_names returns an iterator
+        # _get_candidate_names returns a _RandomNameSequence object
         obj = tempfile._get_candidate_names()
-        self.assertIsInstance(obj, collections.abc.Iterator)
+        self.assertIsInstance(obj, tempfile._RandomNameSequence)
 
     def test_same_thing(self):
         # _get_candidate_names always returns the same object

@@ -21,6 +21,8 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+else:
+    import ctypes.util
 
 try:
     import threading
@@ -2418,7 +2420,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 with self.assertRaises(TypeError):
                     _posixsubprocess.fork_exec(
                         args, exe_list,
-                        True, [], cwd, env_list,
+                        True, (), cwd, env_list,
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
                         True, True, func)
@@ -2430,6 +2432,16 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_fork_exec_sorted_fd_sanity_check(self):
         # Issue #23564: sanity check the fork_exec() fds_to_keep sanity check.
         import _posixsubprocess
+        class BadInt:
+            first = True
+            def __init__(self, value):
+                self.value = value
+            def __int__(self):
+                if self.first:
+                    self.first = False
+                    return self.value
+                raise ValueError
+
         gc_enabled = gc.isenabled()
         try:
             gc.enable()
@@ -2440,6 +2452,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 (18, 23, 42, 2**63),  # Out of range.
                 (5, 4),  # Not sorted.
                 (6, 7, 7, 8),  # Duplicate.
+                (BadInt(1), BadInt(2)),
             ):
                 with self.assertRaises(
                         ValueError,
@@ -2501,18 +2514,12 @@ class POSIXProcessTestCase(BaseTestCase):
             proc.communicate(timeout=999)
             mock_proc_stdin.close.assert_called_once_with()
 
-    _libc_file_extensions = {
-      'Linux': 'so.6',
-      'Darwin': 'dylib',
-    }
     @unittest.skipIf(not ctypes, 'ctypes module required.')
-    @unittest.skipIf(platform.uname()[0] not in _libc_file_extensions,
-                     'Test requires a libc this code can load with ctypes.')
     @unittest.skipIf(not sys.executable, 'Test requires sys.executable.')
     def test_child_terminated_in_stopped_state(self):
         """Test wait() behavior when waitpid returns WIFSTOPPED; issue29335."""
         PTRACE_TRACEME = 0  # From glibc and MacOS (PT_TRACE_ME).
-        libc_name = 'libc.' + self._libc_file_extensions[platform.uname()[0]]
+        libc_name = ctypes.util.find_library('c')
         libc = ctypes.CDLL(libc_name)
         if not hasattr(libc, 'ptrace'):
             raise unittest.SkipTest('ptrace() required.')
@@ -2527,10 +2534,10 @@ class POSIXProcessTestCase(BaseTestCase):
             raise unittest.SkipTest('ptrace() failed - unable to test.')
         child = subprocess.Popen(
             [sys.executable, '-c', """if True:
-             import ctypes
+             import ctypes, faulthandler
              libc = ctypes.CDLL({libc_name!r})
              libc.ptrace({PTRACE_TRACEME}, 0, 0)
-             libc.printf(ctypes.c_char_p(0xdeadbeef))  # Crash the process.
+             faulthandler._sigsegv()  # Crash the process.
              """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
             ])
         try:
