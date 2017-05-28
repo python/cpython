@@ -143,12 +143,10 @@ cell_get_contents(PyCellObject *op, void *closure)
 int
 cell_set_contents(PyCellObject *op, PyCellObject *obj)
 {
-    if (!PyCell_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
     Py_INCREF(obj);
-    Py_SETREF(op->ob_ref, obj);
+    PyCellObject *tmp_op = (PyCellObject *)(op->ob_ref);
+    (op->ob_ref) = obj;
+    Py_DECREF(tmp_op);
     return 0;
 }
 
