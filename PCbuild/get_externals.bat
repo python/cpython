@@ -44,7 +44,7 @@ if "%PYTHON_FOR_BUILD%"=="" (
         powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile "%NUGET%"
     )
     echo Installing Python via nuget...
-    "%NUGET%" install pythonx86 -OutputDirectory "%EXTERNALS_DIR%" -ExcludeVersion
+    "%NUGET%" install pythonx86 -OutputDirectory %EXTERNALS_DIR% -ExcludeVersion
     rem Quote it here; it's not quoted later because it's usually a command and arg
     set PYTHON_FOR_BUILD="%EXTERNALS_DIR%pythonx86\tools\python.exe"
 )
