@@ -140,8 +140,21 @@ cell_get_contents(PyCellObject *op, void *closure)
     return op->ob_ref;
 }
 
+int
+cell_set_contents(PyCellObject *op, PyCellObject *obj)
+{
+    if (!PyCell_Check(op)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    Py_INCREF(obj);
+    Py_SETREF(op->ob_ref, obj);
+    return 0;
+}
+
 static PyGetSetDef cell_getsetlist[] = {
-    {"cell_contents", (getter)cell_get_contents, NULL},
+    {"cell_contents", (getter)cell_get_contents, 
+                      (setter)cell_set_contents, NULL},
     {NULL} /* sentinel */
 };
 
