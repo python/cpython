@@ -53,8 +53,7 @@ Operating System Utilities
    This must be called from the child process after calling :c:func:`fork`,
    or any similar function that clones the current process, if there is
    any chance the process will call back into the Python interpreter.
-   Only available on systems where :c:func:`fork` is defined as determined
-   by the ``HAVE_FORK`` C preprocessor define.
+   Only available on systems where :c:func:`fork` is defined.
 
    .. versionadded:: 3.7
 
