@@ -1320,8 +1320,8 @@ except ImportError:
 
 def _after_fork():
     # This function is called by Python/ceval.c:PyEval_ReInitThreads which
-    # is called from PyOS_AfterFork.  Here we cleanup threading module state
-    # that should not exist after a fork.
+    # is called from PyOS_AfterFork_Child.  Here we cleanup threading module
+    # state that should not exist after a fork.
 
     # Reset _active_limbo_lock, in case we forked while the lock was held
     # by another (non-forked) thread.  http://bugs.python.org/issue874900
