@@ -3280,6 +3280,31 @@ written in Python, such as a mail server's external command delivery program.
    subprocesses.
 
 
+.. function:: register_at_fork(func, when)
+
+   Register *func* as a function to be executed when a new child process
+   is forked.  *when* is a string specifying at which point the function is
+   called and can take the following values:
+
+   * *"before"* means the function is called before forking a child process;
+   * *"parent"* means the function is called from the parent process after
+     forking a child process;
+   * *"child"* means the function is called from the child process.
+
+   Functions registered for execution before forking are called in
+   reverse registration order.  Functions registered for execution
+   after forking (either in the parent or in the child) are called
+   in registration order.
+
+   Note that :c:func:`fork` calls made by third-party C code may not
+   call those functions, unless it explicitly calls :c:func:`PyOS_BeforeFork`,
+   :c:func:`PyOS_AfterFork_Parent` and :c:func:`PyOS_AfterFork_Child`.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
+
+
 .. function:: spawnl(mode, path, ...)
               spawnle(mode, path, ..., env)
               spawnlp(mode, file, ...)
