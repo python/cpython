@@ -5319,8 +5319,8 @@ static int
 check_null_or_callable(PyObject *obj, const char* obj_name)
 {
     if (obj && !PyCallable_Check(obj)) {
-        PyErr_Format(PyExc_TypeError, "'%s' must be callable, not %R",
-                     obj_name, Py_TYPE(obj));
+        PyErr_Format(PyExc_TypeError, "'%s' must be callable, not %s",
+                     obj_name, Py_TYPE(obj)->tp_name);
         return -1;
     }
     return 0;
