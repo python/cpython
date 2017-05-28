@@ -465,6 +465,8 @@ PyOS_AfterFork_Child(void)
 static int
 register_at_forker(PyObject **lst, PyObject *func)
 {
+    if (func == NULL)  /* nothing to register? do nothing. */
+        return 0;
     if (*lst == NULL) {
         *lst = PyList_New(0);
         if (*lst == NULL)
@@ -5309,6 +5311,21 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
 
 
 #ifdef HAVE_FORK
+
+/* Helper function to validate arguments.
+   Returns 0 on success.  1 on failure with a TypeError raised.
+   If obj is non-NULL it must be callable.  */
+static int
+check_null_or_callable(PyObject *obj, const char* obj_name)
+{
+    if (obj && !PyCallable_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "'%s' must be callable, not %R",
+                     obj_name, Py_TYPE(obj));
+        return 1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 os.register_at_fork
 
@@ -5335,24 +5352,24 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 {
     PyInterpreterState *interp;
 
-    if (!(PyCallable_Check(before) || PyCallable_Check(after_in_child) ||
-          PyCallable_Check(after_in_parent))) {
-        PyErr_SetString(PyExc_TypeError,
-                        "At least one callable argument must be supplied.");
+    if (!before && !after_in_child && !after_in_parent) {
+        PyErr_SetString(PyExc_TypeError, "At least one argument is required.");
+        return NULL;
+    }
+    if (check_null_or_callable(before, "before") ||
+        check_null_or_callable(after_in_child, "after_in_child") ||
+        check_null_or_callable(after_in_parent, "after_in_parent")) {
         return NULL;
     }
     interp = PyThreadState_Get()->interp;
 
-    if (before &&
-        register_at_forker(&interp->before_forkers, before)) {
+    if (register_at_forker(&interp->before_forkers, before)) {
         return NULL;
     }
-    if (after_in_child &&
-        register_at_forker(&interp->after_forkers_child, after_in_child)) {
+    if (register_at_forker(&interp->after_forkers_child, after_in_child)) {
         return NULL;
     }
-    if (after_in_parent &&
-        register_at_forker(&interp->after_forkers_parent, after_in_parent)) {
+    if (register_at_forker(&interp->after_forkers_parent, after_in_parent)) {
         return NULL;
     }
     Py_RETURN_NONE;
