@@ -27,7 +27,7 @@ if exist "%EXTERNALS_DIR%" (
     rmdir /s /q "%EXTERNALS_DIR%" || rmdir /s /q "%EXTERNALS_DIR%"
 )
 
-if %DO_FETCH%==false goto end
+if "%DO_FETCH%"=="false" goto end
 :fetch
 
 
@@ -38,14 +38,15 @@ if "%PYTHON_FOR_BUILD%"=="" (
     py -3.6 -V >nul 2>&1 && (set PYTHON_FOR_BUILD=py -3.6)
 )
 if "%PYTHON_FOR_BUILD%"=="" (
-    if not exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
-    if NOT exist %NUGET% (
+    if NOT exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
+    if NOT exist "%NUGET%" (
         echo Downloading nuget...
-        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile %NUGET%
+        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile "%NUGET%"
     )
     echo Installing Python via nuget...
-    %NUGET% install pythonx86 -OutputDirectory %EXTERNALS_DIR%..\ -ExcludeVersion
-    set PYTHON_FOR_BUILD=%EXTERNALS_DIR%..\pythonx86\tools\python.exe
+    "%NUGET%" install pythonx86 -OutputDirectory "%EXTERNALS_DIR%..\" -ExcludeVersion
+    rem Quote it here; it's not quoted later because it's usually a command and arg
+    set PYTHON_FOR_BUILD="%EXTERNALS_DIR%..\pythonx86\tools\python.exe"
 )
 
 echo.Fetching external libraries...
@@ -53,11 +54,11 @@ echo.Fetching external libraries...
 set libraries=
 
 for %%e in (%libraries%) do (
-    if exist %EXTERNALS_DIR%%%e (
+    if exist "%EXTERNALS_DIR%%%e" (
         echo.%%e already exists, skipping.
     ) else (
         echo.Fetching %%e...
-        %PYTHON_FOR_BUILD% %PCBUILD%get_external.py -e %EXTERNALS_DIR% -O %ORG% %%e
+        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -e "%EXTERNALS_DIR%" -O %ORG% %%e
     )
 )
 
@@ -72,11 +73,11 @@ set binaries=%binaries%     redist
 set binaries=%binaries%     wix
 
 for %%b in (%binaries%) do (
-    if exist %EXTERNALS_DIR%%%b (
+    if exist "%EXTERNALS_DIR%%%b" (
         echo.%%b already exists, skipping.
     ) else (
         echo.Fetching %%b...
-        %PYTHON_FOR_BUILD% %PCBUILD%get_external.py -e %EXTERNALS_DIR% -b -O %ORG% %%b
+        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -e "%EXTERNALS_DIR%" -b -O %ORG% %%b
     )
 )
 
