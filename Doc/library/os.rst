@@ -3284,7 +3284,8 @@ written in Python, such as a mail server's external command delivery program.
                                after_in_child=None)
 
    Register callables to be executed when a new child process is forked
-   using :func:`os.fork`.  The parameters are optional and keyword-only.
+   using :func:`os.fork` or similar process cloning APIs.
+   The parameters are optional and keyword-only.
    Each specifies a different call point.
 
    * *before* is a function called before forking a child process.

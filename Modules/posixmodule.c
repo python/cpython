@@ -5313,7 +5313,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
 #ifdef HAVE_FORK
 
 /* Helper function to validate arguments.
-   Returns 0 on success.  1 on failure with a TypeError raised.
+   Returns 0 on success.  non-zero on failure with a TypeError raised.
    If obj is non-NULL it must be callable.  */
 static int
 check_null_or_callable(PyObject *obj, const char* obj_name)
@@ -5321,7 +5321,7 @@ check_null_or_callable(PyObject *obj, const char* obj_name)
     if (obj && !PyCallable_Check(obj)) {
         PyErr_Format(PyExc_TypeError, "'%s' must be callable, not %R",
                      obj_name, Py_TYPE(obj));
-        return 1;
+        return -1;
     }
     return 0;
 }
@@ -5331,24 +5331,23 @@ os.register_at_fork
 
     *
     before: object=NULL
-        Zero arg callable to be called in the parent before the fork() syscall.
+        A callable to be called in the parent before the fork() syscall.
     after_in_child: object=NULL
-        Zero arg callable to be called in the child before os.fork() returns.
+        A callable to be called in the child after fork().
     after_in_parent: object=NULL
-        Zero arg callable to be called in the parent before os.fork() returns.
+        A callable to be called in the parent after fork().
 
-Register a callable to be called when forking a new process via os.fork().
+Registers callables to be called when forking a new process.
 
-'before' callbacks are called in reverse order before forking.
-'after_in_child' callbacks are called in order after forking in the child.
-'after_in_parent' callbacks are called in order after forking in the parent.
+'before' callbacks are called in reverse order.
+'after_in_child' and 'after_in_parent' callbacks are called in order.
 
 [clinic start generated code]*/
 
 static PyObject *
 os_register_at_fork_impl(PyObject *module, PyObject *before,
                          PyObject *after_in_child, PyObject *after_in_parent)
-/*[clinic end generated code: output=5398ac75e8e97625 input=44962e2b3bb9ce2e]*/
+/*[clinic end generated code: output=5398ac75e8e97625 input=78bc3d28ba7bf117]*/
 {
     PyInterpreterState *interp;
 
