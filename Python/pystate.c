@@ -800,7 +800,7 @@ _PyGILState_Fini(void)
     autoInterpreterState = NULL;
 }
 
-/* Reset the TLS key - called by PyOS_AfterFork().
+/* Reset the TLS key - called by PyOS_AfterFork_Child().
  * This should not be necessary, but some - buggy - pthread implementations
  * don't reset TLS upon fork(), see issue #10517.
  */

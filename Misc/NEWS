@@ -1052,6 +1052,9 @@ Windows
 C API
 -----
 
+- bpo-16500: Deprecate PyOS_AfterFork() and add PyOS_BeforeFork(),
+  PyOS_AfterFork_Parent() and PyOS_AfterFork_Child().
+
 - bpo-6532: The type of results of PyThread_start_new_thread() and
   PyThread_get_thread_ident(), and the id parameter of
   PyThreadState_SetAsyncExc() changed from "long" to "unsigned long".
