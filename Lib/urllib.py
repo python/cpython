@@ -30,7 +30,7 @@ import sys
 import base64
 import re
 
-from urlparse import urljoin as basejoin
+from urlparse import urljoin as basejoin, urlparse, urlunparse
 
 __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
            "urlcleanup", "quote", "quote_plus", "unquote", "unquote_plus",
@@ -1088,22 +1088,15 @@ def splittype(url):
         return scheme.lower(), url[len(scheme) + 1:]
     return None, url
 
-_hostprog = None
 def splithost(url):
     """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
-    global _hostprog
-    if _hostprog is None:
-        import re
-        _hostprog = re.compile('^//([^/?]*)(.*)$')
-
-    match = _hostprog.match(url)
-    if match:
-        host_port = match.group(1)
-        path = match.group(2)
-        if path and not path.startswith('/'):
-            path = '/' + path
-        return host_port, path
-    return None, url
+    fields = urlparse(url)
+    path = fields.path
+    rest = [fields.params, fields.query, fields.fragment]
+    if not path and any(rest):
+        path = '/'
+    return (None if fields.netloc == '' else fields.netloc,
+            urlunparse(['', '', path] + rest))
 
 _userprog = None
 def splituser(host):

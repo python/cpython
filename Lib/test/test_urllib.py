@@ -878,6 +878,8 @@ class Utility_Tests(unittest.TestCase):
                          ('www.example.org:80', ''))
         self.assertEqual(splithost('/foo/bar/baz.html'),
                          (None, '/foo/bar/baz.html'))
+        self.assertEqual(splithost('//127.0.0.1#@host.com'),
+                         ('127.0.0.1', '/#@host.com'))
 
     def test_splituser(self):
         splituser = urllib.splituser
