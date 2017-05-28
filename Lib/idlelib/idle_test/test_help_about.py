@@ -1,31 +1,23 @@
 '''Test idlelib.help_about.
 
-Coverage:
+Coverage: 100%
 '''
-from idlelib import help_about
-from idlelib import textview
+from test.support import requires, findfile
+from tkinter import Tk, TclError
+import unittest
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
-from test.support import requires, findfile
-requires('gui')
-from tkinter import Tk
-import unittest
+from idlelib.help_about import AboutDialog as About
+from idlelib import textview
 
+class LiveDialogTest(unittest.TestCase):
+    """Simulate user clicking buttons other than [Close].
 
-About = help_about.AboutDialog
-class Dummy_about_dialog():
-    # Dummy class for testing file display functions.
-    idle_credits = About.show_idle_credits
-    idle_readme = About.show_readme
-    idle_news = About.show_idle_news
-    # Called by the above
-    display_file_text = About.display_file_text
-    _utest = True
-
-
-class AboutDialogTest(unittest.TestCase):
+    Test that invoked textview has text from source.
+    """
     @classmethod
     def setUpClass(cls):
+        requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
         cls.dialog = About(cls.root, 'About IDLE', _utest=True)
@@ -37,51 +29,88 @@ class AboutDialogTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
-    def tearDown(self):
-        if self.dialog._current_textview:
-            self.dialog._current_textview.destroy()
-
     def test_dialog_title(self):
-        """This will test about dialog title"""
+        """Test about dialog title"""
         self.assertEqual(self.dialog.title(), 'About IDLE')
 
-    def test_printer_dialog(self):
-        """This will test dialog which using printer"""
-        buttons = [(license, self.dialog.py_license),
-                   (copyright, self.dialog.py_copyright),
-                   (credits, self.dialog.py_credits)]
+    def test_printer_buttons(self):
+        """Test buttons whose commands use printer function."""
+        dialog = self.dialog
+        button_sources = [(self.dialog.py_license, license),
+                          (self.dialog.py_copyright, copyright),
+                          (self.dialog.py_credits, credits)]
 
-        for printer, button in buttons:
-            dialog = self.dialog
+        for button, printer in button_sources:
             printer._Printer__setup()
             button.invoke()
-            self.assertEqual(printer._Printer__lines[0],
-                             dialog._current_textview.textView.get('1.0', '1.end'))
-            self.assertEqual(printer._Printer__lines[1],
-                             dialog._current_textview.textView.get('2.0', '2.end'))
-
+            self.assertEqual(
+                    printer._Printer__lines[0],
+                    dialog._current_textview.textView.get('1.0', '1.end'))
+            self.assertEqual(
+                    printer._Printer__lines[1],
+                    dialog._current_textview.textView.get('2.0', '2.end'))
             dialog._current_textview.destroy()
 
-    def test_file_dialog(self):
-        """This will test dialog which using file"""
-        buttons = [('README.txt', self.dialog.readme),
-                   ('NEWS.txt', self.dialog.idle_news),
-                   ('CREDITS.txt', self.dialog.idle_credits)]
+    def test_file_buttons(self):
+        """Test buttons that display files."""
+        dialog = self.dialog
+        button_sources = [(self.dialog.readme, 'README.txt'),
+                          (self.dialog.idle_news, 'NEWS.txt'),
+                          (self.dialog.idle_credits, 'CREDITS.txt')]
 
-        for filename, button in buttons:
-            dialog = self.dialog
+        for button, filename in button_sources:
             button.invoke()
             fn = findfile(filename, subdir='idlelib')
             with open(fn) as f:
-                self.assertEqual(f.readline().strip(),
-                                 dialog._current_textview.textView.get('1.0', '1.end'))
+                self.assertEqual(
+                        f.readline().strip(),
+                        dialog._current_textview.textView.get('1.0', '1.end'))
                 f.readline()
                 self.assertEqual(f.readline().strip(),
                                  dialog._current_textview.textView.get('3.0', '3.end'))
             dialog._current_textview.destroy()
 
 
+class CloseTest(unittest.TestCase):
+    """Simulate user clicking [Close] button"""
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.dialog = About(cls.root, 'About IDLE', _utest=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.dialog
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def test_close(self):
+        self.assertEqual(self.dialog.winfo_class(), 'Toplevel')
+        self.dialog.button_ok.invoke()
+        with self.assertRaises(TclError):
+            self.dialog.winfo_class()
+
+
+class Dummy_about_dialog():
+    # Dummy class for testing file display functions.
+    idle_credits = About.show_idle_credits
+    idle_readme = About.show_readme
+    idle_news = About.show_idle_news
+    # Called by the above
+    display_file_text = About.display_file_text
+    _utest = True
+
+
 class DisplayFileTest(unittest.TestCase):
+    """Test functions that display files.
+
+    While somewhat redundant with gui-based test_file_dialog,
+    these unit tests run on all buildbots, not just a few.
+    """
     dialog = Dummy_about_dialog()
 
     @classmethod
@@ -92,14 +121,13 @@ class DisplayFileTest(unittest.TestCase):
         cls.view = Func()
         textview.showerror = cls.error
         textview.view_text = cls.view
-        cls.About = Dummy_about_dialog()
 
     @classmethod
     def tearDownClass(cls):
         textview.showerror = cls.orig_error
         textview.view_text = cls.orig_view
 
-    def test_file_isplay(self):
+    def test_file_display(self):
         for handler in (self.dialog.idle_credits,
                         self.dialog.idle_readme,
                         self.dialog.idle_news):
