@@ -138,7 +138,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None, recursive=False)
+.. function:: dis(x=None, *, file=None, depth=0)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, a code object, a string of source code or
@@ -152,15 +152,16 @@ operation is being performed, so the intermediate analysis object isn't useful:
    The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
-   If *recursive* is true, also recursively disassemble internal code objects
-   (the code of comprehensions, generator expressions and local functions, and
-   the code used for building local classes).
+   If *depth* is ``None`` or larger than zero, also recursively disassemble
+   internal code objects (the code of comprehensions, generator expressions
+   and local functions, and the code used for building local classes).
+   The maximal depth of recursion is limited by *depth* unless it is ``None``.
 
    .. versionchanged:: 3.4
       Added *file* parameter.
 
    .. versionchanged:: 3.7
-      Added *recursive* parameter.
+      Added *depth* parameter.
 
 
 .. function:: distb(tb=None, *, file=None)
@@ -176,8 +177,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: disassemble(code, lasti=-1, *, file=None, recursive=False)
-              disco(code, lasti=-1, *, file=None, recursive=False)
+.. function:: disassemble(code, lasti=-1, *, file=None, depth=0)
+              disco(code, lasti=-1, *, file=None, depth=0)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
@@ -196,15 +197,16 @@ operation is being performed, so the intermediate analysis object isn't useful:
    The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
-   If *recursive* is true, also recursively disassemble internal code objects
-   (the code of comprehensions, generator expressions and local functions, and
-   the code used for building local classes).
+   If *depth* is ``None`` or larger than zero, also recursively disassemble
+   internal code objects (the code of comprehensions, generator expressions
+   and local functions, and the code used for building local classes).
+   The maximal depth of recursion is limited by *depth* unless it is ``None``.
 
    .. versionchanged:: 3.4
       Added *file* parameter.
 
    .. versionchanged:: 3.7
-      Added *recursive* parameter.
+      Added *depth* parameter.
 
 
 .. function:: get_instructions(x, *, first_line=None)

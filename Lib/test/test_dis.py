@@ -334,10 +334,10 @@ def _g(x):
 def _h(y):
     def foo(x):
         '''funcdoc'''
-        return x+y
+        return [x + z for z in y]
     return foo
 
-dis_nested = """\
+dis_nested_0 = """\
 %3d           0 LOAD_CLOSURE             0 (y)
               2 BUILD_TUPLE              1
               4 LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %d>)
@@ -347,18 +347,46 @@ dis_nested = """\
 
 %3d          12 LOAD_FAST                1 (foo)
              14 RETURN_VALUE
-
-Disassembly of <code object foo at 0x..., file "%s", line %d>:
-%3d           0 LOAD_FAST                0 (x)
-              2 LOAD_DEREF               0 (y)
-              4 BINARY_ADD
-              6 RETURN_VALUE
 """ % (_h.__code__.co_firstlineno + 1,
        __file__,
        _h.__code__.co_firstlineno + 1,
        _h.__code__.co_firstlineno + 4,
+)
+
+dis_nested_1 = """%s
+Disassembly of <code object foo at 0x..., file "%s", line %d>:
+%3d           0 LOAD_CLOSURE             0 (x)
+              2 BUILD_TUPLE              1
+              4 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+              6 LOAD_CONST               2 ('_h.<locals>.foo.<locals>.<listcomp>')
+              8 MAKE_FUNCTION            8
+             10 LOAD_DEREF               1 (y)
+             12 GET_ITER
+             14 CALL_FUNCTION            1
+             16 RETURN_VALUE
+""" % (dis_nested_0,
        __file__,
        _h.__code__.co_firstlineno + 1,
+       _h.__code__.co_firstlineno + 3,
+       __file__,
+       _h.__code__.co_firstlineno + 3,
+)
+
+dis_nested_2 = """%s
+Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
+%3d           0 BUILD_LIST               0
+              2 LOAD_FAST                0 (.0)
+        >>    4 FOR_ITER                12 (to 18)
+              6 STORE_FAST               1 (z)
+              8 LOAD_DEREF               0 (x)
+             10 LOAD_FAST                1 (z)
+             12 BINARY_ADD
+             14 LIST_APPEND              2
+             16 JUMP_ABSOLUTE            4
+        >>   18 RETURN_VALUE
+""" % (dis_nested_1,
+       __file__,
+       _h.__code__.co_firstlineno + 3,
        _h.__code__.co_firstlineno + 3,
 )
 
@@ -534,13 +562,21 @@ class DisTests(unittest.TestCase):
         self.assertRaises(TypeError, dis.dis, object())
 
     def test_disassemble_recursive(self):
-        dis = self.get_disassembly(_h, recursive=True)
-        dis = self.strip_addresses(dis)
-        self.assertEqual(dis, dis_nested)
+        def check(expected, **kwargs):
+            dis = self.get_disassembly(_h, **kwargs)
+            dis = self.strip_addresses(dis)
+            self.assertEqual(dis, expected)
 
-        dis = self.get_disassembly(_h.__code__, wrapper=False, recursive=True)
-        dis = self.strip_addresses(dis)
-        self.assertEqual(dis, dis_nested)
+            dis = self.get_disassembly(_h.__code__, wrapper=False, **kwargs)
+            dis = self.strip_addresses(dis)
+            self.assertEqual(dis, expected)
+
+        check(dis_nested_0)
+        check(dis_nested_0, depth=0)
+        check(dis_nested_1, depth=1)
+        check(dis_nested_2, depth=2)
+        check(dis_nested_2, depth=3)
+        check(dis_nested_2, depth=None)
 
 
 class DisWithFileTests(DisTests):

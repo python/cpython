@@ -31,7 +31,7 @@ def _try_compile(source, name):
         c = compile(source, name, 'exec')
     return c
 
-def dis(x=None, *, file=None, recursive=False):
+def dis(x=None, *, file=None, depth=0):
     """Disassemble classes, methods, functions, generators, or code.
 
     With no argument, disassemble the last traceback.
@@ -52,16 +52,16 @@ def dis(x=None, *, file=None, recursive=False):
             if isinstance(x1, _have_code):
                 print("Disassembly of %s:" % name, file=file)
                 try:
-                    dis(x1, file=file, recursive=recursive)
+                    dis(x1, file=file, depth=depth)
                 except TypeError as msg:
                     print("Sorry:", msg, file=file)
                 print(file=file)
     elif hasattr(x, 'co_code'): # Code object
-        disassemble(x, file=file, recursive=recursive)
+        disassemble(x, file=file, depth=depth)
     elif isinstance(x, (bytes, bytearray)): # Raw bytecode
         _disassemble_bytes(x, file=file)
     elif isinstance(x, str):    # Source code
-        _disassemble_str(x, file=file, recursive=recursive)
+        _disassemble_str(x, file=file, depth=depth)
     else:
         raise TypeError("don't know how to disassemble %s objects" %
                         type(x).__name__)
@@ -331,18 +331,19 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target)
 
-def disassemble(co, lasti=-1, *, file=None, recursive=False):
+def disassemble(co, lasti=-1, *, file=None, depth=0):
     """Disassemble a code object."""
     cell_names = co.co_cellvars + co.co_freevars
     linestarts = dict(findlinestarts(co))
     _disassemble_bytes(co.co_code, lasti, co.co_varnames, co.co_names,
                        co.co_consts, cell_names, linestarts, file=file)
-    if recursive:
+    if depth is None or depth > 0:
         for x in co.co_consts:
             if hasattr(x, 'co_code'):
                 print(file=file)
                 print("Disassembly of %r:" % (x,), file=file)
-                disassemble(x, file=file, recursive=True)
+                disassemble(x, file=file,
+                            depth=depth - 1 if depth is not None else None)
 
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None, cells=None, linestarts=None,
@@ -507,7 +508,7 @@ def _test():
     with args.infile as infile:
         source = infile.read()
     code = compile(source, args.infile.name, "exec")
-    dis(code, recursive=args.recursive)
+    dis(code, depth=None if args.recursive else 0)
 
 if __name__ == "__main__":
     _test()
