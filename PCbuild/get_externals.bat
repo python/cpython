@@ -3,7 +3,7 @@ setlocal
 rem Simple script to fetch source for external libraries
 
 set PCBUILD=%~dp0
-set EXTERNALS_DIR=%PCBUILD%..\externals\
+set EXTERNALS_DIR=%PCBUILD%..\exter nals\
 set NUGET=%EXTERNALS_DIR%nuget.exe
 set NUGET_URL=https://aka.ms/nugetclidl
 
