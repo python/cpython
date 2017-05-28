@@ -193,11 +193,23 @@ class PosixTester(unittest.TestCase):
         with self.assertRaises(TypeError, msg="Positional args not allowed"):
             os.register_at_fork(lambda: None)
         with self.assertRaises(TypeError, msg="Args must be callable"):
-            os.register_at_fork(before=2, after_in_child="three",
-                                after_in_parent=b"Five")
+            os.register_at_fork(before=2)
+        with self.assertRaises(TypeError, msg="Args must be callable"):
+            os.register_at_fork(after_in_child="three")
+        with self.assertRaises(TypeError, msg="Args must be callable"):
+            os.register_at_fork(after_in_parent=b"Five")
         with self.assertRaises(TypeError, msg="Args must not be None"):
-            os.register_at_fork(before=None, after_in_child=None,
-                                after_in_parent=None)
+            os.register_at_fork(before=None)
+        with self.assertRaises(TypeError, msg="Args must not be None"):
+            os.register_at_fork(after_in_child=None)
+        with self.assertRaises(TypeError, msg="Args must not be None"):
+            os.register_at_fork(after_in_parent=None)
+        with self.assertRaises(TypeError, msg="Invalid arg was allowed"):
+            # Ensure a combination of valid and invalid is an error.
+            os.register_at_fork(before=None, after_in_parent=lambda: 3)
+        with self.assertRaises(TypeError, msg="Invalid arg was allowed"):
+            # Ensure a combination of valid and invalid is an error.
+            os.register_at_fork(before=lambda: None, after_in_child='')
         # We test actual registrations in their own process so as not to
         # pollute this one.  There is no way to unregister for cleanup.
         code = """if 1:
