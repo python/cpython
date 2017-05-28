@@ -56,9 +56,9 @@ class AboutDialogTest(unittest.TestCase):
             printer._Printer__setup()
             button.invoke()
             self.assertEqual(printer._Printer__lines[0],
-                             dialog._current_textview.textView.get('1.0', '1.end'))
+                             dialog._current_textview.text.get('1.0', '1.end'))
             self.assertEqual(printer._Printer__lines[1],
-                             dialog._current_textview.textView.get('2.0', '2.end'))
+                             dialog._current_textview.text.get('2.0', '2.end'))
 
             dialog._current_textview.destroy()
 
@@ -74,10 +74,10 @@ class AboutDialogTest(unittest.TestCase):
             fn = findfile(filename, subdir='idlelib')
             with open(fn) as f:
                 self.assertEqual(f.readline().strip(),
-                                 dialog._current_textview.textView.get('1.0', '1.end'))
+                                 dialog._current_textview.text.get('1.0', '1.end'))
                 f.readline()
                 self.assertEqual(f.readline().strip(),
-                                 dialog._current_textview.textView.get('3.0', '3.end'))
+                                 dialog._current_textview.text.get('3.0', '3.end'))
             dialog._current_textview.destroy()
 
 

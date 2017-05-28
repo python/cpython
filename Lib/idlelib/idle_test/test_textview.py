@@ -91,7 +91,7 @@ class ViewFunctionTest(unittest.TestCase):
     def test_view_file(self):
         view = tv.view_file(root, 'Title', __file__, modal=False)
         self.assertIsInstance(view, tv.TextViewer)
-        self.assertIn('Test', view.textview.get('1.0', '1.end'))
+        self.assertIn('Test', view.text.get('1.0', '1.end'))
         view.ok()
 
     def test_bad_file(self):
@@ -131,7 +131,7 @@ class ButtonClickTest(unittest.TestCase):
 
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_TEXT')
-        self.assertEqual(self.view.textview.get('1.0', '1.end'), 'COMMAND')
+        self.assertEqual(self.view.text.get('1.0', '1.end'), 'COMMAND')
 
     def test_view_file_bind_with_button(self):
         def _command():
@@ -144,10 +144,10 @@ class ButtonClickTest(unittest.TestCase):
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_FILE')
         with open(__file__) as f:
-            self.assertEqual(self.view.textview.get('1.0', '1.end'),
+            self.assertEqual(self.view.text.get('1.0', '1.end'),
                              f.readline().strip())
             f.readline()
-            self.assertEqual(self.view.textview.get('3.0', '3.end'),
+            self.assertEqual(self.view.text.get('3.0', '3.end'),
                              f.readline().strip())
 
 

@@ -38,12 +38,12 @@ class TextViewer(Toplevel):
         self.title(title)
         self.protocol("WM_DELETE_WINDOW", self.ok)
         self.parent = parent
-        self.textview.focus_set()
+        self.text.focus_set()
         # Bind keys for closing this dialog.
         self.bind('<Return>', self.ok)
         self.bind('<Escape>', self.ok)
-        self.textview.insert(0.0, text)
-        self.textview.config(state=DISABLED)
+        self.text.insert(0.0, text)
+        self.text.config(state=DISABLED)
 
         if modal:
             self.transient(parent)
@@ -58,13 +58,14 @@ class TextViewer(Toplevel):
         self.button_ok = Button(frame_buttons, text='Close',
                                 command=self.ok, takefocus=False)
         self.scrollbar = Scrollbar(frame, orient=VERTICAL, takefocus=False)
-        self.textview = Text(frame, wrap=WORD, highlightthickness=0,
+        self.text = Text(frame, wrap=WORD, highlightthickness=0,
                              fg=self.fg, bg=self.bg)
-        self.scrollbar.config(command=self.textview.yview)
-        self.textview.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.text.yview)
+        self.text.config(yscrollcommand=self.scrollbar.set)
+        
         self.button_ok.pack()
         self.scrollbar.pack(side=RIGHT, fill=Y)
-        self.textview.pack(side=LEFT, expand=True, fill=BOTH)
+        self.text.pack(side=LEFT, expand=True, fill=BOTH)
         frame_buttons.pack(side=BOTTOM, fill=X)
         frame.pack(side=TOP, expand=True, fill=BOTH)
 
