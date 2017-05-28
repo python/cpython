@@ -98,8 +98,7 @@ class ForkServer(object):
             if self._preload_modules:
                 desired_keys = {'main_path', 'sys_path'}
                 data = spawn.get_preparation_data('ignore')
-                data = dict((x,y) for (x,y) in data.items()
-                            if x in desired_keys)
+                data = {x: y for x, y in data.items() if x in desired_keys}
             else:
                 data = {}
 
@@ -210,11 +209,6 @@ def _serve_one(s, listener, alive_r, handlers):
 
     # send pid to client processes
     write_unsigned(child_w, os.getpid())
-
-    # reseed random number generator
-    if 'random' in sys.modules:
-        import random
-        random.seed()
 
     # run process object received over pipe
     code = spawn._main(child_r)

@@ -21,6 +21,8 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+else:
+    import ctypes.util
 
 try:
     import threading
@@ -2512,18 +2514,12 @@ class POSIXProcessTestCase(BaseTestCase):
             proc.communicate(timeout=999)
             mock_proc_stdin.close.assert_called_once_with()
 
-    _libc_file_extensions = {
-      'Linux': 'so.6',
-      'Darwin': 'dylib',
-    }
     @unittest.skipIf(not ctypes, 'ctypes module required.')
-    @unittest.skipIf(platform.uname()[0] not in _libc_file_extensions,
-                     'Test requires a libc this code can load with ctypes.')
     @unittest.skipIf(not sys.executable, 'Test requires sys.executable.')
     def test_child_terminated_in_stopped_state(self):
         """Test wait() behavior when waitpid returns WIFSTOPPED; issue29335."""
         PTRACE_TRACEME = 0  # From glibc and MacOS (PT_TRACE_ME).
-        libc_name = 'libc.' + self._libc_file_extensions[platform.uname()[0]]
+        libc_name = ctypes.util.find_library('c')
         libc = ctypes.CDLL(libc_name)
         if not hasattr(libc, 'ptrace'):
             raise unittest.SkipTest('ptrace() required.')
@@ -2538,10 +2534,10 @@ class POSIXProcessTestCase(BaseTestCase):
             raise unittest.SkipTest('ptrace() failed - unable to test.')
         child = subprocess.Popen(
             [sys.executable, '-c', """if True:
-             import ctypes
+             import ctypes, faulthandler
              libc = ctypes.CDLL({libc_name!r})
              libc.ptrace({PTRACE_TRACEME}, 0, 0)
-             libc.printf(ctypes.c_char_p(0xdeadbeef))  # Crash the process.
+             faulthandler._sigsegv()  # Crash the process.
              """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
             ])
         try:

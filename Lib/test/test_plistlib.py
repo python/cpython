@@ -173,7 +173,6 @@ class TestPlistlib(unittest.TestCase):
         pl = self._create()
         data = plistlib.dumps(pl)
         pl2 = plistlib.loads(data)
-        self.assertNotIsInstance(pl, plistlib._InternalDict)
         self.assertEqual(dict(pl), dict(pl2))
         data2 = plistlib.dumps(pl2)
         self.assertEqual(data, data2)
@@ -454,14 +453,14 @@ class TestPlistlibDeprecated(unittest.TestCase):
                 'data': b'buffer',
             }
         }
-        pl_out = plistlib._InternalDict({
+        pl_out = {
             'key': 42,
-            'sub': plistlib._InternalDict({
+            'sub': {
                 'key': 9,
                 'alt': 'value',
                 'data': plistlib.Data(b'buffer'),
-            })
-        })
+            }
+        }
 
         self.addCleanup(support.unlink, support.TESTFN)
         with self.assertWarns(DeprecationWarning):
@@ -499,10 +498,10 @@ class TestPlistlibDeprecated(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             pl2 = plistlib.readPlistFromBytes(data)
 
-        self.assertIsInstance(pl2, plistlib._InternalDict)
-        self.assertEqual(pl2, plistlib._InternalDict(
+        self.assertIsInstance(pl2, dict)
+        self.assertEqual(pl2, dict(
             key=42,
-            sub=plistlib._InternalDict(
+            sub=dict(
                 key=9,
                 alt='value',
                 data=plistlib.Data(b'buffer'),

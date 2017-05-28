@@ -10,6 +10,19 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29104: Fixed parsing backslashes in f-strings.
+
+- bpo-27945: Fixed various segfaults with dict when input collections are
+  mutated during searching, inserting or comparing.  Based on patches by
+  Duane Griffin and Tim Mitchell.
+
+- bpo-25794: Fixed type.__setattr__() and type.__delattr__() for
+  non-interned attribute names.  Based on patch by Eryk Sun.
+
+- bpo-30039: If a KeyboardInterrupt happens when the interpreter is in
+  the middle of resuming a chain of nested 'yield from' or 'await'
+  calls, it's now correctly delivered to the innermost frame.
+
 - bpo-28974: ``object.__format__(x, '')`` is now equivalent to ``str(x)``
   rather than ``format(str(self), '')``.
 
@@ -41,6 +54,9 @@ Core and Builtins
 
 - bpo-24821: Fixed the slowing down to 25 times in the searching of some
   unlucky Unicode characters.
+
+- bpo-29102: Add a unique ID to PyInterpreterState.  This makes it easier
+  to identify each subinterpreter.
 
 - bpo-29894: The deprecation warning is emitted if __complex__ returns an
   instance of a strict subclass of complex.  In a future versions of Python
@@ -139,6 +155,8 @@ Core and Builtins
 
 - Issue #28596: The preferred encoding is UTF-8 on Android. Patch written by
   Chi Hsuan Yen.
+
+- bpo-22257: Clean up interpreter startup (see PEP 432).
 
 - Issue #26919: On Android, operating system data is now always encoded/decoded
   to/from UTF-8, instead of the locale encoding to avoid inconsistencies with
@@ -324,6 +342,40 @@ Library
 -------
 
 - bpo-30080: Added the --duplicate option for CLI of timeit.
+
+- bpo-16500: Allow registering at-fork handlers.
+
+- bpo-30470: Deprecate invalid ctypes call protection on Windows.  Patch by
+  Mariatta Wijaya.
+
+- bpo-30414: multiprocessing.Queue._feed background running
+  thread do not break from main loop on exception.
+
+- bpo-30003: Fix handling escape characters in HZ codec.  Based on patch
+  by Ma Lin.
+
+- bpo-30149: inspect.signature() now supports callables with
+  variable-argument parameters wrapped with partialmethod.
+  Patch by Dong-hee Na.
+
+- bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
+  *spawn* and *forkserver* start methods.
+
+- bpo-30375: Warnings emitted when compile a regular expression now always
+  point to the line in the user code.  Previously they could point into inners
+  of the re module if emitted from inside of groups or conditionals.
+
+- bpo-30329: imaplib and poplib now catch the Windows socket WSAEINVAL error
+  (code 10022) on shutdown(SHUT_RDWR): An invalid operation was attempted.
+  This error occurs sometimes on SSL connections.
+
+- bpo-29196: Removed previously deprecated in Python 2.4 classes Plist, Dict
+  and _InternalDict in the plistlib module.  Dict values in the result of
+  functions readPlist() and readPlistFromBytes() are now normal dicts.  You
+  no longer can use attribute access to access items of these dictionaries.
+
+- bpo-9850: The :mod:`macpath` is now deprecated and will be removed
+  in Python 3.8.
 
 - bpo-30299: Compiling regular expression in debug mode on CPython now displays
   the compiled bytecode in human readable form.
@@ -564,6 +616,9 @@ Library
 - bpo-10379: locale.format_string now supports the 'monetary' keyword argument,
   and locale.format is deprecated.
 
+- bpo-29851: importlib.reload() now raises ModuleNotFoundError if the
+  module lacks a spec.
+
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
   Manuel Krebber, and Łukasz Langa.
@@ -755,7 +810,7 @@ Library
   non-None value is passed to it.send(val).
 
 - Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
-  for readability (was "`").
+  for readability.
 
 - Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
   a workaround to Tix library bug.
@@ -957,6 +1012,10 @@ Library
 - Issue #29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
   classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
 
+- Issue #25532: inspect.unwrap() will now only try to unwrap an object
+  sys.getrecursionlimit() times, to protect against objects which create a new
+  object on every attribute access.
+
 Windows
 -------
 
@@ -994,6 +1053,9 @@ Windows
 
 C API
 -----
+
+- bpo-16500: Deprecate PyOS_AfterFork() and add PyOS_BeforeFork(),
+  PyOS_AfterFork_Parent() and PyOS_AfterFork_Child().
 
 - bpo-6532: The type of results of PyThread_start_new_thread() and
   PyThread_get_thread_ident(), and the id parameter of
@@ -1064,6 +1126,14 @@ Documentation
 
 Build
 -----
+
+- bpo-20210: Support the *disabled* marker in Setup files. Extension modules
+  listed after this marker are not built at all, neither by the Makefile nor by
+  setup.py.
+
+- bpo-29941: Add ``--with-assertions`` configure flag to explicitly enable
+  C ``assert()`` checks. Defaults to off. ``--with-pydebug`` implies
+  ``--with-assertions``.
 
 - bpo-28787: Fix out-of-tree builds of Python when configured with
   ``--with--dtrace``.
@@ -1172,6 +1242,11 @@ Tools/Demos
 
 Tests
 -----
+
+* bpo-30357: test_thread: setUp() now uses support.threading_setup() and
+  support.threading_cleanup() to wait until threads complete to avoid
+  random side effects on following tests. Initial patch written by Grzegorz
+  Grzywacz.
 
 - bpo-30197: Enhanced functions swap_attr() and swap_item() in the
   test.support module.  They now work when delete replaced attribute or item
@@ -1605,7 +1680,7 @@ Library
   non-None value is passed to it.send(val).
 
 - Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
-  for readability (was "`").
+  for readability.
 
 - Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
   a workaround to Tix library bug.

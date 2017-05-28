@@ -232,16 +232,14 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     drop_gil(tstate);
 }
 
-/* This function is called from PyOS_AfterFork to destroy all threads which are
- * not running in the child process, and clear internal locks which might be
- * held by those threads. (This could also be done using pthread_atfork
- * mechanism, at least for the pthreads implementation.) */
+/* This function is called from PyOS_AfterFork_Child to destroy all threads
+ * which are not running in the child process, and clear internal locks
+ * which might be held by those threads.
+ */
 
 void
 PyEval_ReInitThreads(void)
 {
-    _Py_IDENTIFIER(_after_fork);
-    PyObject *threading, *result;
     PyThreadState *current_tstate = PyThreadState_GET();
 
     if (!gil_created())
@@ -250,22 +248,6 @@ PyEval_ReInitThreads(void)
     pending_lock = PyThread_allocate_lock();
     take_gil(current_tstate);
     main_thread = PyThread_get_thread_ident();
-
-    /* Update the threading module with the new state.
-     */
-    threading = PyMapping_GetItemString(current_tstate->interp->modules,
-                                        "threading");
-    if (threading == NULL) {
-        /* threading not imported */
-        PyErr_Clear();
-        return;
-    }
-    result = _PyObject_CallMethodId(threading, &PyId__after_fork, NULL);
-    if (result == NULL)
-        PyErr_WriteUnraisable(threading);
-    else
-        Py_DECREF(result);
-    Py_DECREF(threading);
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);
@@ -1064,9 +1046,20 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY) {
-                /* Make the last opcode before
-                   a try: finally: block uninterruptible. */
+            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
+                _Py_OPCODE(*next_instr) == YIELD_FROM) {
+                /* Two cases where we skip running signal handlers and other
+                   pending calls:
+                   - If we're about to enter the try: of a try/finally (not
+                     *very* useful, but might help in some cases and it's
+                     traditional)
+                   - If we're resuming a chain of nested 'yield from' or
+                     'await' calls, then each frame is parked with YIELD_FROM
+                     as its next opcode. If the user hit control-C we want to
+                     wait until we've reached the innermost frame before
+                     running the signal handler and raising KeyboardInterrupt
+                     (see bpo-30039).
+                */
                 goto fast_next_opcode;
             }
             if (_Py_atomic_load_relaxed(&pendingcalls_to_do)) {

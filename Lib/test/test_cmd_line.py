@@ -485,8 +485,29 @@ class CmdLineTest(unittest.TestCase):
                                           cwd=tmpdir)
             self.assertEqual(out.strip(), b"ok")
 
+
+class IgnoreEnvironmentTest(unittest.TestCase):
+
+    def run_ignoring_vars(self, predicate, **env_vars):
+        # Runs a subprocess with -E set, even though we're passing
+        # specific environment variables
+        # Logical inversion to match predicate check to a zero return
+        # code indicating success
+        code = "import sys; sys.stderr.write(str(sys.flags)); sys.exit(not ({}))".format(predicate)
+        return assert_python_ok('-E', '-c', code, **env_vars)
+
+    def test_ignore_PYTHONPATH(self):
+        path = "should_be_ignored"
+        self.run_ignoring_vars("'{}' not in sys.path".format(path),
+                               PYTHONPATH=path)
+
+    def test_ignore_PYTHONHASHSEED(self):
+        self.run_ignoring_vars("sys.flags.hash_randomization == 1",
+                               PYTHONHASHSEED="0")
+
+
 def test_main():
-    test.support.run_unittest(CmdLineTest)
+    test.support.run_unittest(CmdLineTest, IgnoreEnvironmentTest)
     test.support.reap_children()
 
 if __name__ == "__main__":
