@@ -3290,10 +3290,11 @@ written in Python, such as a mail server's external command delivery program.
    * *before* is a function called before forking a child process.
    * *after_in_parent* is a function called from the parent process
      after forking a child process.
-   * *after_in_child* is a function called from the child process
-     if control is expected to return to the Python interpreter.  A
-     typical :mod:`subprocess` launch will not trigger this as the
-     child is not going to return to the interpreter.
+   * *after_in_child* is a function called from the child process.
+
+   These calls are only made if control is expected to return to the
+   Python interpreter.  A typical :mod:`subprocess` launch will not
+   trigger them as the child is not going to re-enter the interpreter.
 
    Functions registered for execution before forking are called in
    reverse registration order.  Functions registered for execution
