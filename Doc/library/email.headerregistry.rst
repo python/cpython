@@ -451,5 +451,5 @@ construct structured values to assign to specific headers.
 
 .. rubric:: Footnotes
 
-.. [1] Oringally added in 3.3 as a :term:`provisional module <provisional
+.. [1] Originally added in 3.3 as a :term:`provisional module <provisional
        package>`

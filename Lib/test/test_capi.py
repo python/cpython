@@ -1,8 +1,10 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
+from collections import namedtuple
 import os
 import pickle
+import platform
 import random
 import re
 import subprocess
@@ -383,13 +385,91 @@ class EmbeddingTests(unittest.TestCase):
                          (p.returncode, err))
         return out, err
 
-    def test_subinterps(self):
-        # This is just a "don't crash" test
+    def run_repeated_init_and_subinterpreters(self):
         out, err = self.run_embedded_interpreter("repeated_init_and_subinterpreters")
-        if support.verbose:
-            print()
-            print(out)
-            print(err)
+        self.assertEqual(err, "")
+
+        # The output from _testembed looks like this:
+        # --- Pass 0 ---
+        # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
+        # interp 1 <0x1d4f690>, thread state <0x1d35350>: id(modules) = 139650431165784
+        # interp 2 <0x1d5a690>, thread state <0x1d99ed0>: id(modules) = 139650413140368
+        # interp 3 <0x1d4f690>, thread state <0x1dc3340>: id(modules) = 139650412862200
+        # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
+        # --- Pass 1 ---
+        # ...
+
+        interp_pat = (r"^interp (\d+) <(0x[\dA-F]+)>, "
+                      r"thread state <(0x[\dA-F]+)>: "
+                      r"id\(modules\) = ([\d]+)$")
+        Interp = namedtuple("Interp", "id interp tstate modules")
+
+        numloops = 0
+        current_run = []
+        for line in out.splitlines():
+            if line == "--- Pass {} ---".format(numloops):
+                self.assertEqual(len(current_run), 0)
+                if support.verbose:
+                    print(line)
+                numloops += 1
+                continue
+
+            self.assertLess(len(current_run), 5)
+            match = re.match(interp_pat, line)
+            if match is None:
+                self.assertRegex(line, interp_pat)
+
+            # Parse the line from the loop.  The first line is the main
+            # interpreter and the 3 afterward are subinterpreters.
+            interp = Interp(*match.groups())
+            if support.verbose:
+                print(interp)
+            self.assertTrue(interp.interp)
+            self.assertTrue(interp.tstate)
+            self.assertTrue(interp.modules)
+            current_run.append(interp)
+
+            # The last line in the loop should be the same as the first.
+            if len(current_run) == 5:
+                main = current_run[0]
+                self.assertEqual(interp, main)
+                yield current_run
+                current_run = []
+
+    def test_subinterps_main(self):
+        for run in self.run_repeated_init_and_subinterpreters():
+            main = run[0]
+
+            self.assertEqual(main.id, '0')
+
+    def test_subinterps_different_ids(self):
+        for run in self.run_repeated_init_and_subinterpreters():
+            main, *subs, _ = run
+
+            mainid = int(main.id)
+            for i, sub in enumerate(subs):
+                self.assertEqual(sub.id, str(mainid + i + 1))
+
+    def test_subinterps_distinct_state(self):
+        for run in self.run_repeated_init_and_subinterpreters():
+            main, *subs, _ = run
+
+            if '0x0' in main:
+                # XXX Fix on Windows (and other platforms): something
+                # is going on with the pointers in Programs/_testembed.c.
+                # interp.interp is 0x0 and interp.modules is the same
+                # between interpreters.
+                raise unittest.SkipTest('platform prints pointers as 0x0')
+
+            for sub in subs:
+                # A new subinterpreter may have the same
+                # PyInterpreterState pointer as a previous one if
+                # the earlier one has already been destroyed.  So
+                # we compare with the main interpreter.  The same
+                # applies to tstate.
+                self.assertNotEqual(sub.interp, main.interp)
+                self.assertNotEqual(sub.tstate, main.tstate)
+                self.assertNotEqual(sub.modules, main.modules)
 
     @staticmethod
     def _get_default_pipe_encoding():
@@ -490,9 +570,8 @@ class SkipitemTest(unittest.TestCase):
             # test the format unit when not skipped
             format = c + "i"
             try:
-                # (note: the format string must be bytes!)
                 _testcapi.parse_tuple_and_keywords(tuple_1, dict_b,
-                    format.encode("ascii"), keywords)
+                    format, keywords)
                 when_not_skipped = False
             except SystemError as e:
                 s = "argument 1 (impossible<bad format char>)"
@@ -504,7 +583,7 @@ class SkipitemTest(unittest.TestCase):
             optional_format = "|" + format
             try:
                 _testcapi.parse_tuple_and_keywords(empty_tuple, dict_b,
-                    optional_format.encode("ascii"), keywords)
+                    optional_format, keywords)
                 when_skipped = False
             except SystemError as e:
                 s = "impossible<bad format char>: '{}'".format(format)
@@ -517,40 +596,64 @@ class SkipitemTest(unittest.TestCase):
             self.assertIs(when_skipped, when_not_skipped, message)
 
     def test_parse_tuple_and_keywords(self):
-        # parse_tuple_and_keywords error handling tests
+        # Test handling errors in the parse_tuple_and_keywords helper itself
         self.assertRaises(TypeError, _testcapi.parse_tuple_and_keywords,
                           (), {}, 42, [])
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, b'', 42)
+                          (), {}, '', 42)
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, b'', [''] * 42)
+                          (), {}, '', [''] * 42)
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, b'', [42])
+                          (), {}, '', [42])
+
+    def test_bad_use(self):
+        # Test handling invalid format and keywords in
+        # PyArg_ParseTupleAndKeywords()
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '||O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1, 2), {}, '|O|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1}, '$$O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1, 'b': 2}, '$O$O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1}, '$|O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1, 'b': 2}, '$O|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '|OO', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '|$O', [''])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '|OO', ['a', ''])
 
     def test_positional_only(self):
         parse = _testcapi.parse_tuple_and_keywords
 
-        parse((1, 2, 3), {}, b'OOO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, b'OOO', ['', '', 'a'])
+        parse((1, 2, 3), {}, 'OOO', ['', '', 'a'])
+        parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
                r'function takes at least 2 positional arguments \(1 given\)'):
-            parse((1,), {'a': 3}, b'OOO', ['', '', 'a'])
-        parse((1,), {}, b'O|OO', ['', '', 'a'])
+            parse((1,), {'a': 3}, 'OOO', ['', '', 'a'])
+        parse((1,), {}, 'O|OO', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
                r'function takes at least 1 positional arguments \(0 given\)'):
-            parse((), {}, b'O|OO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, b'OO$O', ['', '', 'a'])
+            parse((), {}, 'O|OO', ['', '', 'a'])
+        parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
                r'function takes exactly 2 positional arguments \(1 given\)'):
-            parse((1,), {'a': 3}, b'OO$O', ['', '', 'a'])
-        parse((1,), {}, b'O|O$O', ['', '', 'a'])
+            parse((1,), {'a': 3}, 'OO$O', ['', '', 'a'])
+        parse((1,), {}, 'O|O$O', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
                r'function takes at least 1 positional arguments \(0 given\)'):
-            parse((), {}, b'O|O$O', ['', '', 'a'])
+            parse((), {}, 'O|O$O', ['', '', 'a'])
         with self.assertRaisesRegex(SystemError, r'Empty parameter name after \$'):
-            parse((1,), {}, b'O|$OO', ['', '', 'a'])
+            parse((1,), {}, 'O|$OO', ['', '', 'a'])
         with self.assertRaisesRegex(SystemError, 'Empty keyword'):
-            parse((1,), {}, b'O|OO', ['', 'a', ''])
+            parse((1,), {}, 'O|OO', ['', 'a', ''])
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
