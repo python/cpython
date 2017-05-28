@@ -28,9 +28,8 @@ if exist "%EXTERNALS_DIR%" (
     rmdir /s /q "%EXTERNALS_DIR%" || rmdir /s /q "%EXTERNALS_DIR%"
 )
 
-if %DO_FETCH%==false goto end
+if "%DO_FETCH%"=="false" goto end
 :fetch
-
 
 if "%ORG%"=="" (set ORG=python)
 
@@ -39,14 +38,15 @@ if "%PYTHON_FOR_BUILD%"=="" (
     py -3.6 -V >nul 2>&1 && (set PYTHON_FOR_BUILD=py -3.6)
 )
 if "%PYTHON_FOR_BUILD%"=="" (
-    if not exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
-    if NOT exist %NUGET% (
+    if NOT exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
+    if NOT exist "%NUGET%" (
         echo Downloading nuget...
-        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile %NUGET%
+        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile "%NUGET%"
     )
     echo Installing Python via nuget...
-    %NUGET% install pythonx86 -OutputDirectory %EXTERNALS_DIR% -ExcludeVersion
-    set PYTHON_FOR_BUILD=%EXTERNALS_DIR%pythonx86\tools\python.exe
+    "%NUGET%" install pythonx86 -OutputDirectory "%EXTERNALS_DIR%" -ExcludeVersion
+    rem Quote it here; it's not quoted later because it's usually a command and arg
+    set PYTHON_FOR_BUILD="%EXTERNALS_DIR%pythonx86\tools\python.exe"
 )
 
 echo.Fetching external libraries...
@@ -61,11 +61,11 @@ if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tix-8.4.3.6
 set libraries=%libraries%                                    xz-5.2.2
 
 for %%e in (%libraries%) do (
-    if exist %EXTERNALS_DIR%%%e (
+    if exist "%EXTERNALS_DIR%%%e" (
         echo.%%e already exists, skipping.
     ) else (
         echo.Fetching %%e...
-        %PYTHON_FOR_BUILD% %PCBUILD%get_external.py -O %ORG% %%e
+        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -O %ORG% %%e
     )
 )
 
@@ -76,11 +76,11 @@ set binaries=%binaries%
 if NOT "%IncludeSSL%"=="false" set binaries=%binaries%     nasm-2.11.06
 
 for %%b in (%binaries%) do (
-    if exist %EXTERNALS_DIR%%%b (
+    if exist "%EXTERNALS_DIR%%%b" (
         echo.%%b already exists, skipping.
     ) else (
         echo.Fetching %%b...
-        %PYTHON_FOR_BUILD% %PCBUILD%get_external.py -b -O %ORG% %%b
+        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -b -O %ORG% %%b
     )
 )
 
