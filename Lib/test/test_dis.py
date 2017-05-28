@@ -340,7 +340,7 @@ def _h(y):
 dis_nested = """\
 %3d           0 LOAD_CLOSURE             0 (y)
               2 BUILD_TUPLE              1
-              4 LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %3d>)
+              4 LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %d>)
               6 LOAD_CONST               2 ('_h.<locals>.foo')
               8 MAKE_FUNCTION            8
              10 STORE_FAST               1 (foo)
@@ -348,7 +348,7 @@ dis_nested = """\
 %3d          12 LOAD_FAST                1 (foo)
              14 RETURN_VALUE
 
-Disassembly of <code object foo at 0x..., file "%s", line %3d>:
+Disassembly of <code object foo at 0x..., file "%s", line %d>:
 %3d           0 LOAD_FAST                0 (x)
               2 LOAD_DEREF               0 (y)
               4 BINARY_ADD

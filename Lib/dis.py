@@ -374,9 +374,9 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
 
-def _disassemble_str(source, *, file=None, recursive=False):
+def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
-    disassemble(_try_compile(source, '<dis>'), file=file, recursive=recursive)
+    disassemble(_try_compile(source, '<dis>'), **kwargs)
 
 disco = disassemble                     # XXX For backwards compatibility
 
