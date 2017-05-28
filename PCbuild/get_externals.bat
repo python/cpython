@@ -41,11 +41,13 @@ if "%PYTHON_FOR_BUILD%"=="" (
     if NOT exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
     if NOT exist "%NUGET%" (
         echo Downloading nuget...
-        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile "%NUGET%"
+        rem NB: Must use single quotes around NUGET here, NOT double!
+        rem Otherwise, a space in the path would break things
+        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile '%NUGET%'
     )
     echo Installing Python via nuget...
-    "%NUGET%" install pythonx86 -OutputDirectory %EXTERNALS_DIR% -ExcludeVersion
-    rem Quote it here; it's not quoted later because it's usually a command and arg
+    "%NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%EXTERNALS_DIR%\"
+    rem Quote it here; it's not quoted later because "py -3.6" wouldn't work
     set PYTHON_FOR_BUILD="%EXTERNALS_DIR%pythonx86\tools\python.exe"
 )
 
