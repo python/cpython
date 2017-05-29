@@ -8,11 +8,6 @@ import os
 import socket
 import threading
 
-try:
-    from socket import socketpair
-except ImportError:
-    from asyncio.windows_utils import socketpair
-
 
 class Controller:
     def __init__(self, hostname, port, ready_timeout=1.0, loop=None):
@@ -25,7 +20,7 @@ class Controller:
         envar = os.getenv('PYTHONASYNCIOCONTROLLERTIMEOUT')
         self.ready_timeout = ready_timeout if envar is None else float(envar)
         # For exiting the loop.
-        self._rsock, self._wsock = socketpair()
+        self._rsock, self._wsock = socket.socketpair()
         self.loop.add_reader(self._rsock, self._reader)
 
     def _reader(self):
