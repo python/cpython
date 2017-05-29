@@ -753,18 +753,34 @@ error:
 
 static PyObject *
 _create_tuple_for_attribute (ASN1_OBJECT *name, ASN1_STRING *value) {
-
-    char namebuf[X509_NAME_MAXLEN];
+    char buf[X509_NAME_MAXLEN];
+    char *namebuf = buf;
     int buflen;
     PyObject *name_obj;
     PyObject *value_obj;
-    PyObject *attr;
+    PyObject *attr = NULL;
     unsigned char *valuebuf = NULL;
 
-    buflen = OBJ_obj2txt(namebuf, sizeof(namebuf), name, 0);
+    buflen = OBJ_obj2txt(namebuf, X509_NAME_MAXLEN, name, 0);
     if (buflen < 0) {
         _setSSLError(NULL, 0, __FILE__, __LINE__);
         goto fail;
+    }
+    /* initial buffer is too small for oid + terminating NULL byte */
+    if (buflen > X509_NAME_MAXLEN - 1) {
+        /* make OBJ_obj2txt() calculate the required buflen */
+        buflen = OBJ_obj2txt(NULL, 0, name, 0);
+        /* allocate len + 1 for terminating NULL byte */
+        namebuf = PyMem_Malloc(buflen + 1);
+        if (namebuf == NULL) {
+            PyErr_NoMemory();
+            goto fail;
+        }
+        buflen = OBJ_obj2txt(namebuf, buflen + 1, name, 0);
+        if (buflen < 0) {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+            goto fail;
+        }
     }
     name_obj = PyUnicode_FromStringAndSize(namebuf, buflen);
     if (name_obj == NULL)
@@ -791,10 +807,11 @@ _create_tuple_for_attribute (ASN1_OBJECT *name, ASN1_STRING *value) {
     }
     PyTuple_SET_ITEM(attr, 0, name_obj);
     PyTuple_SET_ITEM(attr, 1, value_obj);
-    return attr;
 
   fail:
-    return NULL;
+    if (buf != namebuf)
+        PyMem_Free(namebuf);
+    return attr;
 }
 
 static PyObject *
@@ -4655,26 +4672,46 @@ asn1obj2py(ASN1_OBJECT *obj)
 {
     int nid;
     const char *ln, *sn;
-    char buf[100];
+    char buf[X509_NAME_MAXLEN];
+    char *namebuf = buf;
     Py_ssize_t buflen;
+    PyObject *result = NULL;
 
     nid = OBJ_obj2nid(obj);
     if (nid == NID_undef) {
         PyErr_Format(PyExc_ValueError, "Unknown object");
-        return NULL;
+        goto fail;
     }
     sn = OBJ_nid2sn(nid);
     ln = OBJ_nid2ln(nid);
-    buflen = OBJ_obj2txt(buf, sizeof(buf), obj, 1);
+    buflen = OBJ_obj2txt(namebuf, X509_NAME_MAXLEN, obj, 1);
     if (buflen < 0) {
         _setSSLError(NULL, 0, __FILE__, __LINE__);
-        return NULL;
+        goto fail;
+    }
+    /* initial buffer is too small for oid + terminating NULL byte */
+    if (buflen > X509_NAME_MAXLEN - 1) {
+        /* make OBJ_obj2txt() calculate the required buflen */
+        buflen = OBJ_obj2txt(NULL, 0, obj, 1);
+        /* allocate len + 1 for terminating NULL byte */
+        namebuf = PyMem_Malloc(buflen + 1);
+        if (namebuf == NULL)
+            return PyErr_NoMemory();
+        buflen = OBJ_obj2txt(namebuf, buflen + 1, obj, 1);
+        if (buflen < 0) {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+            goto fail;
+        }
     }
     if (buflen) {
-        return Py_BuildValue("isss#", nid, sn, ln, buf, buflen);
+        result = Py_BuildValue("isss#", nid, sn, ln, namebuf, buflen);
     } else {
-        return Py_BuildValue("issO", nid, sn, ln, Py_None);
+        result = Py_BuildValue("issO", nid, sn, ln, Py_None);
     }
+  fail:
+    if (buf != namebuf)
+        PyMem_Free(namebuf);
+    return result;
 }
 
 /*[clinic input]
