@@ -465,6 +465,8 @@ PyOS_AfterFork_Child(void)
 static int
 register_at_forker(PyObject **lst, PyObject *func)
 {
+    if (func == NULL)  /* nothing to register? do nothing. */
+        return 0;
     if (*lst == NULL) {
         *lst = PyList_New(0);
         if (*lst == NULL)
@@ -5309,52 +5311,67 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
 
 
 #ifdef HAVE_FORK
+
+/* Helper function to validate arguments.
+   Returns 0 on success.  non-zero on failure with a TypeError raised.
+   If obj is non-NULL it must be callable.  */
+static int
+check_null_or_callable(PyObject *obj, const char* obj_name)
+{
+    if (obj && !PyCallable_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "'%s' must be callable, not %s",
+                     obj_name, Py_TYPE(obj)->tp_name);
+        return -1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 os.register_at_fork
 
-    func: object
-        Function or callable
-    /
-    when: str
-        'before', 'child' or 'parent'
+    *
+    before: object=NULL
+        A callable to be called in the parent before the fork() syscall.
+    after_in_child: object=NULL
+        A callable to be called in the child after fork().
+    after_in_parent: object=NULL
+        A callable to be called in the parent after fork().
 
-Register a callable object to be called when forking.
+Register callables to be called when forking a new process.
 
-'before' callbacks are called in reverse order before forking.
-'child' callbacks are called in order after forking, in the child process.
-'parent' callbacks are called in order after forking, in the parent process.
+'before' callbacks are called in reverse order.
+'after_in_child' and 'after_in_parent' callbacks are called in order.
 
 [clinic start generated code]*/
 
 static PyObject *
-os_register_at_fork_impl(PyObject *module, PyObject *func, const char *when)
-/*[clinic end generated code: output=8943be81a644750c input=5fc05efa4d42eb84]*/
+os_register_at_fork_impl(PyObject *module, PyObject *before,
+                         PyObject *after_in_child, PyObject *after_in_parent)
+/*[clinic end generated code: output=5398ac75e8e97625 input=cd1187aa85d2312e]*/
 {
     PyInterpreterState *interp;
-    PyObject **lst;
 
-    if (!PyCallable_Check(func)) {
-        PyErr_Format(PyExc_TypeError,
-                     "expected callable object, got %R", Py_TYPE(func));
+    if (!before && !after_in_child && !after_in_parent) {
+        PyErr_SetString(PyExc_TypeError, "At least one argument is required.");
+        return NULL;
+    }
+    if (check_null_or_callable(before, "before") ||
+        check_null_or_callable(after_in_child, "after_in_child") ||
+        check_null_or_callable(after_in_parent, "after_in_parent")) {
         return NULL;
     }
     interp = PyThreadState_Get()->interp;
 
-    if (!strcmp(when, "before"))
-        lst = &interp->before_forkers;
-    else if (!strcmp(when, "child"))
-        lst = &interp->after_forkers_child;
-    else if (!strcmp(when, "parent"))
-        lst = &interp->after_forkers_parent;
-    else {
-        PyErr_Format(PyExc_ValueError, "unexpected value for `when`: '%s'",
-                     when);
+    if (register_at_forker(&interp->before_forkers, before)) {
         return NULL;
     }
-    if (register_at_forker(lst, func))
+    if (register_at_forker(&interp->after_forkers_child, after_in_child)) {
         return NULL;
-    else
-        Py_RETURN_NONE;
+    }
+    if (register_at_forker(&interp->after_forkers_parent, after_in_parent)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 #endif /* HAVE_FORK */
 
