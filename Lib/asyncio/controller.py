@@ -5,7 +5,6 @@ __all__ = ['Controller']
 
 import asyncio
 import os
-import socket
 import threading
 
 
@@ -19,17 +18,6 @@ class Controller:
         self._thread_exception = None
         envar = os.getenv('PYTHONASYNCIOCONTROLLERTIMEOUT')
         self.ready_timeout = ready_timeout if envar is None else float(envar)
-        # For exiting the loop.
-        self._rsock, self._wsock = socket.socketpair()
-        self.loop.add_reader(self._rsock, self._reader)
-
-    def _reader(self):
-        self.loop.remove_reader(self._rsock)
-        self.loop.stop()
-        for task in asyncio.Task.all_tasks(self.loop):
-            task.cancel()
-        self._rsock.close()
-        self._wsock.close()
 
     def factory(self):
         """Allow subclasses to customize the handler/server creation."""
@@ -64,10 +52,15 @@ class Controller:
         if self._thread_exception is not None:
             raise self._thread_exception
 
+    def _stop(self):
+        self.loop.stop()
+        for task in asyncio.Task.all_tasks(self.loop):
+            task.cancel()
+
     def stop(self):
         if self._thread is None:
             # Already stopped.
             return
-        self._wsock.send(b'x')
+        self.loop.call_soon_threadsafe(self._stop)
         self._thread.join()
         self._thread = None
