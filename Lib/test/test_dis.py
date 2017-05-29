@@ -392,6 +392,8 @@ Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
 
 class DisTests(unittest.TestCase):
 
+    maxDiff = None
+
     def get_disassembly(self, func, lasti=-1, wrapper=True, **kwargs):
         # We want to test the default printing behaviour, not the file arg
         output = io.StringIO()
@@ -409,7 +411,7 @@ class DisTests(unittest.TestCase):
         return re.sub(r'\b0x[0-9A-Fa-f]+\b', '0x...', text)
 
     def do_disassembly_test(self, func, expected):
-        got = self.get_disassembly(func)
+        got = self.get_disassembly(func, depth=0)
         if got != expected:
             got = self.strip_addresses(got)
         self.assertEqual(got, expected)
@@ -571,12 +573,12 @@ class DisTests(unittest.TestCase):
             dis = self.strip_addresses(dis)
             self.assertEqual(dis, expected)
 
-        check(dis_nested_0)
         check(dis_nested_0, depth=0)
         check(dis_nested_1, depth=1)
         check(dis_nested_2, depth=2)
         check(dis_nested_2, depth=3)
         check(dis_nested_2, depth=None)
+        check(dis_nested_2)
 
 
 class DisWithFileTests(DisTests):

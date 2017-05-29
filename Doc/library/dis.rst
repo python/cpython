@@ -138,30 +138,31 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None, depth=0)
+.. function:: dis(x=None, *, file=None, depth=None)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, a code object, a string of source code or
    a byte sequence of raw bytecode.  For a module, it disassembles all functions.
    For a class, it disassembles all methods (including class and static methods).
    For a code object or sequence of raw bytecode, it prints one line per bytecode
-   instruction.  Strings are first compiled to code objects with the :func:`compile`
+   instruction.  It also recursively disassembles nested code objects (the code
+   of comprehensions, generator expressions and nested functions, and the code
+   used for building nested classes).
+   Strings are first compiled to code objects with the :func:`compile`
    built-in function before being disassembled.  If no object is provided, this
    function disassembles the last traceback.
 
    The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
-   If *depth* is ``None`` or larger than zero, also recursively disassemble
-   internal code objects (the code of comprehensions, generator expressions
-   and local functions, and the code used for building local classes).
    The maximal depth of recursion is limited by *depth* unless it is ``None``.
+   ``depth=0`` means no recursion.
 
    .. versionchanged:: 3.4
       Added *file* parameter.
 
    .. versionchanged:: 3.7
-      Added *depth* parameter.
+      Implemented recursive disassembling and added *depth* parameter.
 
 
 .. function:: distb(tb=None, *, file=None)
@@ -177,8 +178,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: disassemble(code, lasti=-1, *, file=None, depth=0)
-              disco(code, lasti=-1, *, file=None, depth=0)
+.. function:: disassemble(code, lasti=-1, *, file=None, depth=None)
+              disco(code, lasti=-1, *, file=None, depth=None)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
@@ -197,16 +198,15 @@ operation is being performed, so the intermediate analysis object isn't useful:
    The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
-   If *depth* is ``None`` or larger than zero, also recursively disassemble
-   internal code objects (the code of comprehensions, generator expressions
-   and local functions, and the code used for building local classes).
-   The maximal depth of recursion is limited by *depth* unless it is ``None``.
+   Nested code objects are disassembled recursively.  The maximal depth of
+   recursion is limited by *depth* unless it is ``None``.  ``depth=0`` means
+   no recursion.
 
    .. versionchanged:: 3.4
       Added *file* parameter.
 
    .. versionchanged:: 3.7
-      Added *depth* parameter.
+      Implemented recursive disassembling and added *depth* parameter.
 
 
 .. function:: get_instructions(x, *, first_line=None)

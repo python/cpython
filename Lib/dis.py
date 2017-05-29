@@ -31,7 +31,7 @@ def _try_compile(source, name):
         c = compile(source, name, 'exec')
     return c
 
-def dis(x=None, *, file=None, depth=0):
+def dis(x=None, *, file=None, depth=None):
     """Disassemble classes, methods, functions, generators, or code.
 
     With no argument, disassemble the last traceback.
@@ -331,7 +331,7 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target)
 
-def disassemble(co, lasti=-1, *, file=None, depth=0):
+def disassemble(co, lasti=-1, *, file=None, depth=None):
     """Disassemble a code object."""
     cell_names = co.co_cellvars + co.co_freevars
     linestarts = dict(findlinestarts(co))
@@ -502,13 +502,12 @@ def _test():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-r', '--recursive', action='store_true')
     parser.add_argument('infile', type=argparse.FileType(), nargs='?', default='-')
     args = parser.parse_args()
     with args.infile as infile:
         source = infile.read()
     code = compile(source, args.infile.name, "exec")
-    dis(code, depth=None if args.recursive else 0)
+    dis(code)
 
 if __name__ == "__main__":
     _test()
