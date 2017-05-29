@@ -651,14 +651,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             goto cleanup;
     }
 
-    if (preexec_fn != Py_None) {
-        preexec_fn_args_tuple = PyTuple_New(0);
-        if (!preexec_fn_args_tuple)
-            goto cleanup;
-        PyOS_BeforeFork();
-        need_after_fork = 1;
-    }
-
     if (cwd_obj != Py_None) {
         if (PyUnicode_FSConverter(cwd_obj, &cwd_obj2) == 0)
             goto cleanup;
@@ -666,6 +658,17 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     } else {
         cwd = NULL;
         cwd_obj2 = NULL;
+    }
+
+    /* This must be the last thing done before fork() because we do not
+     * want to call PyOS_BeforeFork() if there is any chance of another
+     * error leading to the cleanup: code without calling fork(). */
+    if (preexec_fn != Py_None) {
+        preexec_fn_args_tuple = PyTuple_New(0);
+        if (!preexec_fn_args_tuple)
+            goto cleanup;
+        PyOS_BeforeFork();
+        need_after_fork = 1;
     }
 
     pid = fork();
@@ -722,8 +725,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     return PyLong_FromPid(pid);
 
 cleanup:
-    if (need_after_fork)
-        PyOS_AfterFork_Parent();
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)

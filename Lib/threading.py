@@ -1359,5 +1359,5 @@ def _after_fork():
         assert len(_active) == 1
 
 
-if hasattr(_os, "fork"):
-    _os.register_at_fork(_after_fork, when="child")
+if hasattr(_os, "register_at_fork"):
+    _os.register_at_fork(after_in_child=_after_fork)
