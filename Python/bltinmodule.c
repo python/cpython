@@ -374,7 +374,9 @@ PyDoc_STRVAR(format_doc,
 "format(value[, format_spec]) -> string\n\
 \n\
 Returns value.__format__(format_spec)\n\
-format_spec defaults to \"\"");
+format_spec defaults to the empty string.\n\
+See the Format Specification Mini-Language section of help('FORMATTING') for\n\
+details.");
 
 static PyObject *
 builtin_chr(PyObject *self, PyObject *args)
