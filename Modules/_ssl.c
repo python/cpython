@@ -936,25 +936,7 @@ _get_peer_alt_names (X509 *certificate) {
 
         /* now decode the altName */
         ext = X509_get_ext(certificate, i);
-        if(!(method = X509V3_EXT_get(ext))) {
-            PyErr_SetString
-              (PySSLErrorObject,
-               ERRSTR("No method for internalizing subjectAltName!"));
-            goto fail;
-        }
-
-        p = X509_EXTENSION_get_data(ext)->data;
-        if (method->it)
-            names = (GENERAL_NAMES*)
-              (ASN1_item_d2i(NULL,
-                             &p,
-                             X509_EXTENSION_get_data(ext)->length,
-                             ASN1_ITEM_ptr(method->it)));
-        else
-            names = (GENERAL_NAMES*)
-              (method->d2i(NULL,
-                           &p,
-                           X509_EXTENSION_get_data(ext)->length));
+        names = (GENERAL_NAMES *)X509V3_EXT_d2i(ext);
 
         for(j = 0; j < sk_GENERAL_NAME_num(names); j++) {
             /* get a rendering of each name in the set of names */
