@@ -492,16 +492,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         in_consts = 0;
 
         switch (opcode) {
-            /* Replace UNARY_NOT POP_JUMP_IF_FALSE
-               with    POP_JUMP_IF_TRUE */
-            case UNARY_NOT:
-                if (nextop != POP_JUMP_IF_FALSE
-                    || !ISBASICBLOCK(blocks, op_start, i + 1))
-                    break;
-                fill_nops(codestr, op_start, i + 1);
-                codestr[nexti] = PACKOPARG(POP_JUMP_IF_TRUE, _Py_OPARG(codestr[nexti]));
-                break;
-
                 /* not a is b -->  a is not b
                    not a in b -->  a not in b
                    not a is not b -->  a is b
