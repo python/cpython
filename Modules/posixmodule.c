@@ -5337,7 +5337,7 @@ os.register_at_fork
     after_in_parent: object=NULL
         A callable to be called in the parent after fork().
 
-Registers callables to be called when forking a new process.
+Register callables to be called when forking a new process.
 
 'before' callbacks are called in reverse order.
 'after_in_child' and 'after_in_parent' callbacks are called in order.
@@ -5347,7 +5347,7 @@ Registers callables to be called when forking a new process.
 static PyObject *
 os_register_at_fork_impl(PyObject *module, PyObject *before,
                          PyObject *after_in_child, PyObject *after_in_parent)
-/*[clinic end generated code: output=5398ac75e8e97625 input=78bc3d28ba7bf117]*/
+/*[clinic end generated code: output=5398ac75e8e97625 input=cd1187aa85d2312e]*/
 {
     PyInterpreterState *interp;
 
