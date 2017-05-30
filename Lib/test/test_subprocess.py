@@ -630,21 +630,29 @@ class ProcessTestCase(BaseTestCase):
     # Python
     @unittest.skipIf(sys.platform == 'win32',
                      'cannot test an empty env on Windows')
-    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') is not None,
-                     'the python library cannot be loaded '
-                     'with an empty environment')
+    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+                     'The Python shared library cannot be loaded '
+                     'with an empty environment.')
     def test_empty_env(self):
+        """Verify that env={} is as empty as possible."""
+
+        def is_env_var_to_ignore(var_name):
+            """Determine if an environment variable is under our control."""
+            # This excludes some __CF_* and VERSIONER_* keys MacOS insists
+            # on adding even when the environment in exec is empty.
+            # Gentoo sandboxes also force LD_PRELOAD and SANDBOX_* to exist.
+            return ('VERSIONER' in k or '__CF' in k or  # MacOS
+                    k == 'LD_PRELOAD' or k.startswith('SANDBOX'))  # Gentoo
+
         with subprocess.Popen([sys.executable, "-c",
-                               'import os; '
-                               'print(list(os.environ.keys()))'],
-                              stdout=subprocess.PIPE,
-                              env={}) as p:
+                               'import os; print(list(os.environ.keys()))'],
+                              stdout=subprocess.PIPE, env={}) as p:
             stdout, stderr = p.communicate()
-            self.assertIn(stdout.strip(),
-                (b"[]",
-                 # Mac OS X adds __CF_USER_TEXT_ENCODING variable to an empty
-                 # environment
-                 b"['__CF_USER_TEXT_ENCODING']"))
+            child_env_names = eval(stdout.strip())
+            self.assertIsInstance(child_env_names, list)
+            child_env_names = [k for k in child_env_names
+                               if not is_env_var_to_ignore(k)]
+            self.assertEqual(child_env_names, [])
 
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
