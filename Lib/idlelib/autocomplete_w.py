@@ -252,18 +252,24 @@ class AutoCompleteWindow:
             acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
             self.winconfigid = None
 
+    def _hide_event_check(self):
+        try:
+            if not self.autocompletewindow.focus_get():
+                self.hide_window()
+        except KeyError:
+            # See issue 734176, when user click on menu, acw.focus_get()
+            # will get KeyError.
+            self.hide_window()
+
     def hide_event(self, event):
         # Hide autocomplete list if it exists and does not have focus or
         # mouse click on widget / text area.
         if self.is_active():
             if event.type == EventType.FocusOut:
-                try:
-                    if not self.autocompletewindow.focus_get():
-                        self.hide_window()
-                except KeyError:
-                    # See issue 734176, when user click on menu, acw.focus_get()
-                    # will get KeyError.
-                    self.hide_window()
+                # On windows platform, it will need to delay the check for
+                # acw.focus_get() when click on acw, otherwise it will return
+                # None and close the window
+                self.widget.after(1, self._hide_event_check)
             elif event.type == EventType.ButtonPress:
                 # ButtonPress event only bind to self.widget
                 self.hide_window()
