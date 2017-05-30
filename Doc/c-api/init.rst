@@ -564,7 +564,7 @@ Additionally, when extending or embedding Python, calling :c:func:`fork`
 directly rather than through :func:`os.fork` (and returning to or calling
 into Python) may result in a deadlock by one of Python's internal locks
 being held by a thread that is defunct after the fork.
-:c:func:`PyOS_AfterFork` tries to reset the necessary locks, but is not
+:c:func:`PyOS_AfterFork_Child` tries to reset the necessary locks, but is not
 always able to.
 
 
@@ -675,9 +675,9 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: void PyEval_ReInitThreads()
 
-   This function is called from :c:func:`PyOS_AfterFork` to ensure that newly
-   created child processes don't hold locks referring to threads which
-   are not running in the child process.
+   This function is called from :c:func:`PyOS_AfterFork_Child` to ensure
+   that newly created child processes don't hold locks referring to threads
+   which are not running in the child process.
 
 
 The following functions use thread-local storage, and are not compatible
@@ -819,6 +819,14 @@ been created.
    Destroy a thread state object.  The global interpreter lock need not be held.
    The thread state must have been reset with a previous call to
    :c:func:`PyThreadState_Clear`.
+
+
+.. c:function:: PY_INT64_T PyInterpreterState_GetID(PyInterpreterState *interp)
+
+   Return the interpreter's unique ID.  If there was any error in doing
+   so then -1 is returned and an error is set.
+
+   .. versionadded:: 3.7
 
 
 .. c:function:: PyObject* PyThreadState_GetDict()

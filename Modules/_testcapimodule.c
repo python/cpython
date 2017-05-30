@@ -4028,6 +4028,29 @@ dict_get_version(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
+{
+    PyGenObject *gen;
+
+    if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
+        return NULL;
+
+    /* This is used in a test to check what happens if a signal arrives just
+       as we're in the process of entering a yield from chain (see
+       bpo-30039).
+
+       Needs to be done in C, because:
+       - we don't have a Python wrapper for raise()
+       - we need to make sure that the Python-level signal handler doesn't run
+         *before* we enter the generator frame, which is impossible in Python
+         because we check for signals before every bytecode operation.
+     */
+    raise(SIGINT);
+    return _PyGen_Send(gen, Py_None);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4232,6 +4255,7 @@ static PyMethodDef TestMethods[] = {
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
     {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
     {"dict_get_version", dict_get_version, METH_VARARGS},
+    {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

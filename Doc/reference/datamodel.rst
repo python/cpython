@@ -1119,9 +1119,9 @@ Basic customization
    (usually an instance of *cls*).
 
    Typical implementations create a new instance of the class by invoking the
-   superclass's :meth:`__new__` method using ``super(currentclass,
-   cls).__new__(cls[, ...])`` with appropriate arguments and then modifying the
-   newly-created instance as necessary before returning it.
+   superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
+   with appropriate arguments and then modifying the newly-created instance
+   as necessary before returning it.
 
    If :meth:`__new__` returns an instance of *cls*, then the new instance's
    :meth:`__init__` method will be invoked like ``__init__(self[, ...])``, where
@@ -1145,7 +1145,7 @@ Basic customization
    class constructor expression.  If a base class has an :meth:`__init__`
    method, the derived class's :meth:`__init__` method, if any, must explicitly
    call it to ensure proper initialization of the base class part of the
-   instance; for example: ``BaseClass.__init__(self, [args...])``.
+   instance; for example: ``super().__init__([args...])``.
 
    Because :meth:`__new__` and :meth:`__init__` work together in constructing
    objects (:meth:`__new__` to create it, and :meth:`__init__` to customize it),
@@ -1281,6 +1281,10 @@ Basic customization
    .. versionchanged:: 3.4
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
       if passed any non-empty string.
+
+   .. versionchanged:: 3.7
+      ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
+      than ``format(str(self), '')``.
 
 
 .. _richcmpfuncs:
@@ -1578,8 +1582,8 @@ Class Binding
    ``A.__dict__['x'].__get__(None, A)``.
 
 Super Binding
-   If ``a`` is an instance of :class:`super`, then the binding ``super(B,
-   obj).m()`` searches ``obj.__class__.__mro__`` for the base class ``A``
+   If ``a`` is an instance of :class:`super`, then the binding ``super(B, obj).m()``
+   searches ``obj.__class__.__mro__`` for the base class ``A``
    immediately preceding ``B`` and then invokes the descriptor with the call:
    ``A.__dict__['m'].__get__(obj, obj.__class__)``.
 
@@ -1610,15 +1614,11 @@ instances cannot override the behavior of a property.
 __slots__
 ^^^^^^^^^
 
-By default, instances of classes have a dictionary for attribute storage.  This
-wastes space for objects having very few instance variables.  The space
-consumption can become acute when creating large numbers of instances.
+*__slots__* allow us to explicitly declare data members (like
+properties) and deny the creation of *__dict__* and *__weakref__*
+(unless explicitly declared in *__slots__* or available in a parent.)
 
-The default can be overridden by defining *__slots__* in a class definition.
-The *__slots__* declaration takes a sequence of instance variables and reserves
-just enough space in each instance to hold a value for each variable.  Space is
-saved because *__dict__* is not created for each instance.
-
+The space saved over using *__dict__* can be significant.
 
 .. data:: object.__slots__
 
@@ -1631,9 +1631,8 @@ saved because *__dict__* is not created for each instance.
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 
-* When inheriting from a class without *__slots__*, the *__dict__* attribute of
-  that class will always be accessible, so a *__slots__* definition in the
-  subclass is meaningless.
+* When inheriting from a class without *__slots__*, the *__dict__* and
+  *__weakref__* attribute of the instances will always be accessible.
 
 * Without a *__dict__* variable, instances cannot be assigned new variables not
   listed in the *__slots__* definition.  Attempts to assign to an unlisted
@@ -1652,9 +1651,11 @@ Notes on using *__slots__*
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
-* The action of a *__slots__* declaration is limited to the class where it is
-  defined.  As a result, subclasses will have a *__dict__* unless they also define
-  *__slots__* (which must only contain names of any *additional* slots).
+* The action of a *__slots__* declaration is not limited to the class
+  where it is defined.  *__slots__* declared in parents are available in
+  child classes. However, child subclasses will get a *__dict__*  and
+  *__weakref__* unless they also define *__slots__* (which should only
+  contain names of any *additional* slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
@@ -1670,6 +1671,10 @@ Notes on using *__slots__*
 
 * *__class__* assignment works only if both classes have the same *__slots__*.
 
+* Multiple inheritance with multiple slotted parent classes can be used,
+  but only one parent is allowed to have attributes created by slots
+  (the other bases must have empty slot layouts) - violations raise
+  :exc:`TypeError`.
 
 .. _class-customization:
 

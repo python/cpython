@@ -106,7 +106,7 @@ howto/pyporting,,::,Programming Language :: Python :: 2
 howto/pyporting,,::,Programming Language :: Python :: 3
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
-howto/urllib2,,:password,"for example ""joe:password@example.com"""
+howto/urllib2,,:password,"""joe:password@example.com"""
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
 library/bisect,32,:hi,all(val >= x for val in a[i:hi])
 library/bisect,42,:hi,all(val > x for val in a[i:hi])
@@ -316,8 +316,8 @@ library/xml.etree.elementtree,,:actor,"for actor in root.findall('real_person:ac
 library/xml.etree.elementtree,,:name,"name = actor.find('real_person:name', ns)"
 library/xml.etree.elementtree,,:character,"for char in actor.findall('role:character', ns):"
 library/zipapp,,:main,"$ python -m zipapp myapp -m ""myapp:main"""
-library/zipapp,,:fn,"argument should have the form ""pkg.mod:fn"", where ""pkg.mod"" is a"
-library/zipapp,,:callable,"""pkg.module:callable"" and the archive will be run by importing"
+library/zipapp,,:fn,"pkg.mod:fn"
+library/zipapp,,:callable,"pkg.module:callable"
 library/stdtypes,,::,>>> m[::2].tolist()
 library/sys,,`,# ``wrapper`` creates a ``wrap(coro)`` coroutine:
 whatsnew/3.5,,:root,'WARNING:root:warning\n'
@@ -326,7 +326,6 @@ whatsnew/3.5,,::,>>> addr6 = ipaddress.IPv6Address('::1')
 whatsnew/3.5,,:root,ERROR:root:exception
 whatsnew/3.5,,:exception,ERROR:root:exception
 whatsnew/changelog,,:version,import sys; I = version[:version.index(' ')]
-whatsnew/changelog,,`,"for readability (was ""`"")."
 whatsnew/changelog,,:end,str[start:end]
 library/binascii,,`,'`'
 library/uu,,`,'`'

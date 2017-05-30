@@ -11,8 +11,17 @@
 # directory.)
 
 # Each line in this file describes one or more optional modules.
-# Modules enabled here will not be compiled by the setup.py script,
+# Modules configured here will not be compiled by the setup.py script,
 # so the file can be used to override setup.py's behavior.
+# Tag lines containing just the word "*static*", "*shared*" or "*disabled*"
+# (without the quotes but with the stars) are used to tag the following module
+# descriptions. Tag lines may alternate throughout this file.  Modules are
+# built statically when they are preceded by a "*static*" tag line or when
+# there is no tag line between the start of the file and the module
+# description.  Modules are built as a shared library when they are preceded by
+# a "*shared*" tag line.  Modules are not built at all, not by the Makefile,
+# nor by the setup.py script, when they are preceded by a "*disabled*" tag
+# line.
 
 # Lines have the following structure:
 #
@@ -34,9 +43,7 @@
 #
 # which defines a Make variable definition inserted into Makefile.in
 #
-# Finally, if a line contains just the word "*shared*" (without the
-# quotes but with the stars), then the following modules will not be
-# built statically.  The build process works like this:
+# The build process works like this:
 #
 # 1. Build all modules that are declared as static in Modules/Setup,
 #    combine them into libpythonxy.a, combine that into python.
@@ -57,10 +64,6 @@
 # toplevel "make install" target.)  (For compatibility,
 # *noconfig* has the same effect as *shared*.)
 #
-# In addition, *static* explicitly declares the following modules to
-# be static.  Lines containing "*static*" and "*shared*" may thus
-# alternate throughout this file.
-
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
 # enabled that are supported by most platforms and don't require you
@@ -152,7 +155,7 @@ _symtable symtablemodule.c
 
 # Uncommenting the following line tells makesetup that all following
 # modules are to be built as shared libraries (see above for more
-# detail; also note that *static* reverses this effect):
+# detail; also note that *static* or *disabled* cancels this effect):
 
 #*shared*
 
@@ -394,3 +397,11 @@ _symtable symtablemodule.c
 
 # Another example -- the 'xxsubtype' module shows C-level subtyping in action
 xxsubtype xxsubtype.c
+
+# Uncommenting the following line tells makesetup that all following modules
+# are not built (see above for more detail).
+#
+#*disabled*
+#
+#_sqlite3 _tkinter _curses pyexpat
+#_codecs_jp _codecs_kr _codecs_tw unicodedata
