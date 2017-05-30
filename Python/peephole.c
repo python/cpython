@@ -616,10 +616,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                    result of the first test implies the success of a similar
                    test or the failure of the opposite test.
                    Arises in code like:
-                   "if a and b:"
-                   "if a or b:"
                    "a and b or c"
                    "(a and b) and c"
+                   "(a or b) or c"
+                   "(a or b) and c"
                    x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_FALSE_OR_POP z
                       -->  x:JUMP_IF_FALSE_OR_POP z
                    x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_TRUE_OR_POP z
