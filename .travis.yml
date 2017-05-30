@@ -72,6 +72,13 @@ matrix:
       after_script:
         # During testing some coverage files end up in odd places.
         - mv Lib/unittest/test/.coverage.* .
+        # DEBUG
+        - echo $COVERAGE_PROCESS_START
+        - ls -a
+        - coverage combine
+        - coverage report
+        - coverage xml
+        - ls -a
         # Make sure the `coverage` command is available to Codecov w/ a version
         # of Python that can parse all source files.
         - bash <(curl -s https://codecov.io/bash)
