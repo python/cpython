@@ -89,15 +89,12 @@ Or, more often::
 
 Other modules that provide Tk support include:
 
-:mod:`tkinter.scrolledtext`
-   Text widget with a vertical scroll bar built in.
-
 :mod:`tkinter.colorchooser`
    Dialog to let the user choose a color.
 
 :mod:`tkinter.commondialog`
    Base class for the dialogs defined in the other modules listed here.
-
+   
 :mod:`tkinter.filedialog`
    Common dialogs to allow the user to specify a file to open or save.
 
@@ -106,10 +103,13 @@ Other modules that provide Tk support include:
 
 :mod:`tkinter.messagebox`
    Access to standard Tk dialog boxes.
+   
+:mod:`tkinter.scrolledtext`
+   Text widget with a vertical scroll bar built in.
 
 :mod:`tkinter.simpledialog`
    Basic dialogs and convenience functions.
-
+   
 :mod:`tkinter.dnd`
    Drag-and-drop support for :mod:`tkinter`. This is experimental and should
    become deprecated when it is replaced  with the Tk DND.

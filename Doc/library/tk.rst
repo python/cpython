@@ -33,9 +33,16 @@ alternatives, see the :ref:`other-gui-packages` section.
 .. toctree::
 
    tkinter.rst
+   tkinter.colorchooser.rst
+   tkinter.commondialog.rst   
+   tkinter.filedialog.rst
+   tkinter.font.rst
+   tkinter.messagebox.rst
+   tkinter.simpledialog.rst
+   tkinter.scrolledtext.rst
+   tkinter.dnd.rst
    tkinter.ttk.rst
    tkinter.tix.rst
-   tkinter.scrolledtext.rst
    idle.rst
    othergui.rst
 
