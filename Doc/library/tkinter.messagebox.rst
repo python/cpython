@@ -10,7 +10,7 @@
 --------------
 
 The :mod:`tkinter.messagebox` module provides a set of commonly used native
-message box dialogs. 
+message box dialogs.
 
 .. FIXME add graphic representation of message boxes for disambiguation
 
@@ -21,7 +21,7 @@ message box dialogs.
 .. function:: askokcancel(title=None, message=None, **options)
 
    Displays a confirmation prompt
-   
+
 .. function:: askquestion(title=None, message=None, **options)
 
    Displays a question prompt
@@ -35,17 +35,17 @@ message box dialogs.
    Displays a consent prompt
 
 .. function:: askyesnocancel(title=None, message=None, **options)
-   
+
    Displays a confirmation prompt (returns None if cancelled)
 
 .. function:: showinfo(title=None, message=None, **options)
 
    Displays an information-style messagebox
-   
+
 .. function:: showerror(title=None, message=None, **options)
 
-   Displays an error message  
-   
+   Displays an error message
+
 .. function:: showwarning(title=None, message=None, **options)
 
    Displays a warning message

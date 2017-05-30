@@ -9,7 +9,7 @@
 
 --------------
 
-The :mod:`tkinter.simpledialog` module contains the standard classes and 
+The :mod:`tkinter.simpledialog` module contains the standard classes and
 methods for handling dialogs, including custom dialog windows.
 
 .. class:: Dialog(self, parent, title = None)
@@ -18,14 +18,14 @@ methods for handling dialogs, including custom dialog windows.
 
     .. function:: body(self, master)
 
-       Override to construct the dialog's interface and return widget that 
+       Override to construct the dialog's interface and return widget that
 	   should have initial focus
-   
+
     .. function:: buttonbox(self)
 
        Default behaviour adds OK and Cancel buttons. Override for custom button
-	   layouts.
-   
+       layouts.
+
 
 .. Static factory methods
 
@@ -36,7 +36,7 @@ methods for handling dialogs, including custom dialog windows.
 .. method:: askinteger(title, prompt, **kw)
 
    Creates dialog prompt that asks user for an integer value
-   
+
 .. method:: askstring(title, prompt, **kw)
 
    Creates dialog prompt that asks user for a string value

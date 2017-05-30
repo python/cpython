@@ -30,16 +30,16 @@ and using named fonts.
 
 .. class:: Font(self, root=None, font=None, name=None, exists=False, **options)
 
-   The `Font` class represents a named font.
+   The :class:`Font` class represents a named font.
  
     options:
 
        | *font* - font specifier tuple (family, size, style))
        | *name* - unique font name
        | *exists* - self points to existing named font if true
- 
-    additional options (redundant if `font` is specified):
-   
+
+    additional options (redundant if *font* is specified):
+
        | *family* - font family i.e. Courier, Times
        | *size* - font size (pt)
        | *weight* - font emphasis {NORMAL, BOLD}
@@ -66,21 +66,21 @@ and using named fonts.
     .. function:: measure(self, text, displayof=None)
  
        Returns width of the text
-	
+
     .. function:: metrics(self, *options, **kw)
 
        Returns the metrics of the font
-   
 
-   
+
+
 .. method:: families(root=None, displayof=None)
 
    Returns the different font families
-   
+
 .. method:: names(root=None)
 
    Returns the names of defined fonts
-   
+
 .. method:: nametofont(name)
 
    Returns a Font representation of a tk named font

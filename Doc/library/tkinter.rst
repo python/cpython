@@ -103,13 +103,13 @@ Other modules that provide Tk support include:
 
 :mod:`tkinter.messagebox`
    Access to standard Tk dialog boxes.
-   
+
 :mod:`tkinter.scrolledtext`
    Text widget with a vertical scroll bar built in.
 
 :mod:`tkinter.simpledialog`
    Basic dialogs and convenience functions.
-   
+
 :mod:`tkinter.dnd`
    Drag-and-drop support for :mod:`tkinter`. This is experimental and should
    become deprecated when it is replaced  with the Tk DND.

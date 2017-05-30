@@ -34,7 +34,7 @@ alternatives, see the :ref:`other-gui-packages` section.
 
    tkinter.rst
    tkinter.colorchooser.rst
-   tkinter.commondialog.rst   
+   tkinter.commondialog.rst
    tkinter.filedialog.rst
    tkinter.font.rst
    tkinter.messagebox.rst
@@ -49,5 +49,3 @@ alternatives, see the :ref:`other-gui-packages` section.
 .. Other sections I have in mind are
    Tkinter internals
    Freezing Tkinter applications
-
-
