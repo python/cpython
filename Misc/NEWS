@@ -9329,6 +9329,9 @@ Documentation
 Tests
 -----
 
+- Issue #30514: test_poplib replace deprecated asyncore/asynchat
+  server with asyncio.
+
 - Issue #18982: Add tests for CLI of the calendar module.
 
 - Issue #19548: Added some additional checks to test_codecs to ensure that
