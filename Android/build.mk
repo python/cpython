@@ -30,12 +30,27 @@ dist: $(PYTHON_ZIP) $(PY_STDLIB_ZIP)
 
 include $(py_srcdir)/Android/emulator.mk
 
+$(native_build_dir)/Modules/Setup: $(py_srcdir)/Modules/Setup.dist
+	cp $(py_srcdir)/Modules/Setup.dist $(native_build_dir)/Modules/Setup
+
 $(native_build_dir)/config.status: $(py_srcdir)/configure
+	@# Run distclean upon the switch to a new Python release.
+	@# 'Touch' the 'Makefile' target first to prevent a useless run of configure.
+	@cur=$$(cat $(py_srcdir)/configure | sed -e "s/^VERSION=\([0-9]\+\.[0-9]\+\)$$\|^.*$$/\1/" -e "/^$$/d"); \
+	prev=$$cur; \
+	if test -f "$(native_build_dir)/python"; then \
+	    prev=$$($(native_build_dir)/python -c "from sys import version_info; print('.'.join(str(i) for i in version_info[:2]))"); \
+	fi; \
+	if test "$$prev" != "$$cur"; then \
+	    echo "---> Cleanup before the switch from Python version $$prev to $$cur"; \
+	    $(MAKE) -C $(native_build_dir) -t Makefile; \
+	    $(MAKE) -C $(native_build_dir) distclean; \
+	fi
 	@echo "---> Run the native configure script."
 	mkdir -p $(native_build_dir)
 	cd $(native_build_dir); $(py_srcdir)/configure
 
-native_python: $(native_build_dir)/config.status
+native_python: $(native_build_dir)/config.status $(native_build_dir)/Modules/Setup
 	@echo "---> Build the native interpreter."
 	$(MAKE) -C $(native_build_dir)
 
