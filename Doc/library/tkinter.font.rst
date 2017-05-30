@@ -21,8 +21,8 @@ and using named fonts.
        added font emphasis
 
 .. data:: ITALIC
-       
-	   italiced text
+
+       italiced text
 
 .. data:: ROMAN
 
@@ -31,7 +31,7 @@ and using named fonts.
 .. class:: Font(self, root=None, font=None, name=None, exists=False, **options)
 
    The :class:`Font` class represents a named font.
- 
+
     options:
 
        | *font* - font specifier tuple (family, size, style))
@@ -50,7 +50,7 @@ and using named fonts.
     .. function:: actual(self, option=None, displayof=None)
 
        Returns the attributes of the font
-   
+
     .. function:: cget(self, option)
 
        Retrieves an attribute of the font
@@ -58,13 +58,13 @@ and using named fonts.
     .. function:: config(self, **options)
 
        Modify attributes of the font
-   
+
     .. function:: copy(self)
-   
+
        Returns new instance of the current font
 
     .. function:: measure(self, text, displayof=None)
- 
+
        Returns width of the text
 
     .. function:: metrics(self, *options, **kw)

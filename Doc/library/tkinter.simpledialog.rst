@@ -19,7 +19,7 @@ methods for handling dialogs, including custom dialog windows.
     .. function:: body(self, master)
 
        Override to construct the dialog's interface and return widget that
-	   should have initial focus
+       should have initial focus
 
     .. function:: buttonbox(self)
 

@@ -32,7 +32,7 @@ Selection of a target object occurs as follows:
 
 
  .. class:: DndHandler(self, source, event)
- 
+
     The *DndHandler* class handles drag-and-drop events tracking Motions and
     ButtonReleases on the root widget of the event
 
@@ -42,7 +42,7 @@ Selection of a target object occurs as follows:
 
      .. function:: finish(self, event, commit=0)
 
-	    Executes end of drag-and-drop functions
+        Executes end of drag-and-drop functions
 
      .. function:: on_motion(self, event)
 

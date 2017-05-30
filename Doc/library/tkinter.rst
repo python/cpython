@@ -94,7 +94,7 @@ Other modules that provide Tk support include:
 
 :mod:`tkinter.commondialog`
    Base class for the dialogs defined in the other modules listed here.
-   
+
 :mod:`tkinter.filedialog`
    Common dialogs to allow the user to specify a file to open or save.
 
