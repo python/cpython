@@ -105,10 +105,10 @@ const char *_PyParser_TokenNames[] = {
     "OP",
     "AWAIT",
     "ASYNC",
+    "<ERRORTOKEN>",
     "COMMENT",
     "NL",
     "ENCODING"
-    "<ERRORTOKEN>",
     "<N_TOKENS>"
 };
 
