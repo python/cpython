@@ -175,7 +175,7 @@ it's the base calendar for all computations.
 
    .. attribute:: cssclasses
 
-      A list of CSS classes used for each weekday. The default style list is::
+      A list of CSS classes used for each weekday. The default class list is::
 
          cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
@@ -185,39 +185,36 @@ it's the base calendar for all computations.
 
       Note that the length of this list must be seven items.
 
-   .. attribute:: noday_class
+   .. attribute:: cssclass_noday
 
       The CSS class for a weekday occurring in the previous or coming month.
 
-   .. attribute:: weekday_head_classes
+   .. attribute:: cssclass_weekday_head
 
       A list of CSS classes used for weekday names in the header row.
-      The default the same as :attr:`cssclasses`.
+      The default is the same as :attr:`cssclasses`.
 
-   .. attribute:: month_head_class
+   .. attribute:: cssclass_month_head
 
-      The month's head CSS class.
-      The default value is ``"month"``.
+      The month's head CSS class. The default value is ``"month"``.
 
 
-   .. attribute:: month_class
+   .. attribute:: cssclass_month
 
-      The CSS class for the whole month's table.
+      The CSS class for the whole month's table. The default value is ``"month"``.
 
-      The default value is ``"month"``.
-
-   .. attribute:: year_class
+   .. attribute:: cssclass_year
 
       The CSS class for the whole year's table of tables (see: :meth:`formatyear`).
       The default value is ``"year"``.
 
-   .. attribute:: year_head_class
+   .. attribute:: cssclass_year_head
 
-      The CSS class for the whole year's table of tables (see: :meth:`formatyear`).
+      The CSS class for the table head for the whole year (see: :meth:`formatyear`).
       The default value is ``"year"``.
 
-Note that although the the naming for the above described class attributes is
-singular (e.g. ``month_class`` ``noday_class``, one can replace the single CSS
+Note that although the naming for the above described class attributes is
+singular (e.g. ``cssclass_month`` ``cssclass_noday``), one can replace the single CSS
 class with a space separated list of CSS classes, for example::
 
       "text-bold text-red"
@@ -227,9 +224,9 @@ Here is an example how one can customize ``HTMLCalendar``::
     class CustomHTMLCal(calendar.HTMLCalendar):
         cssclasses = [style + " text-nowrap" for style in
                       calendar.HTMLCalendar.cssclasses]
-        month_head_class = "text-center month-head"
-        month_class = "text-center month"
-        year_class = "text-italic lead"
+        cssclass_month_head = "text-center month-head"
+        cssclass_month = "text-center month"
+        cssclass_year = "text-italic lead"
 
 
 .. class:: LocaleTextCalendar(firstweekday=0, locale=None)
