@@ -636,13 +636,13 @@ class ProcessTestCase(BaseTestCase):
     def test_empty_env(self):
         """Verify that env={} is as empty as possible."""
 
-        def is_env_var_to_ignore(var_name):
+        def is_env_var_to_ignore(n):
             """Determine if an environment variable is under our control."""
             # This excludes some __CF_* and VERSIONER_* keys MacOS insists
             # on adding even when the environment in exec is empty.
             # Gentoo sandboxes also force LD_PRELOAD and SANDBOX_* to exist.
-            return ('VERSIONER' in k or '__CF' in k or  # MacOS
-                    k == 'LD_PRELOAD' or k.startswith('SANDBOX'))  # Gentoo
+            return ('VERSIONER' in n or '__CF' in n or  # MacOS
+                    n == 'LD_PRELOAD' or n.startswith('SANDBOX'))  # Gentoo
 
         with subprocess.Popen([sys.executable, "-c",
                                'import os; print(list(os.environ.keys()))'],
