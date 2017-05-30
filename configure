@@ -6399,7 +6399,6 @@ if test "$Py_OPT" = 'true' ; then
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do managed to get a toolchain that works with it.  People
   # who want LTO need to use --with-lto themselves.
-  Py_LTO='true'
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
