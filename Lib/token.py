@@ -63,17 +63,17 @@ AT = 49
 ATEQUAL = 50
 RARROW = 51
 ELLIPSIS = 52
-# Don't forget to update the table _PyParser_TokenNames in tokenizer.c! 
+# Don't forget to update the table _PyParser_TokenNames in tokenizer.c!
 OP = 53
 AWAIT = 54
 ASYNC = 55
 ERRORTOKEN = 56
-# These aren't used by the C tokenizer but are needed for tokenize.py 
+# These aren't used by the C tokenizer but are needed for tokenize.py
 COMMENT = 57
 NL = 58
 ENCODING = 59
 N_TOKENS = 60
-# Special definitions for cooperation with parser 
+# Special definitions for cooperation with parser
 NT_OFFSET = 256
 #--end constants--
 
@@ -108,10 +108,10 @@ def _main():
     with fp:
         lines = fp.read().split("\n")
     prog = re.compile(
-        "#define[ \t][ \t]*([A-Z0-9][A-Z0-9_]*)[ \t][ \t]*([0-9][0-9]*)",
+        r"#define[ \t][ \t]*([A-Z0-9][A-Z0-9_]*)[ \t][ \t]*([0-9][0-9]*)",
         re.IGNORECASE)
-    comment = re.compile(
-        "^\s*/\*\s*(.+)\s*\*/\s*$",
+    comment_regex = re.compile(
+        r"^\s*/\*\s*(.+?)\s*\*/\s*$",
         re.IGNORECASE)
 
     tokens = {}
@@ -120,13 +120,14 @@ def _main():
         match = prog.match(line)
         if match:
             name, val = match.group(1, 2)
-            prev_val = int(val)
-            tokens[prev_val] = {'token': name}          # reverse so we can sort them...
+            val = int(val)
+            tokens[val] = {'token': name}          # reverse so we can sort them...
+            prev_val = val
         else:
-            comment_match = comment.match(line)
-            if comment_match and prev_val:
-                val = comment_match.group(1)
-                tokens[prev_val]['comment'] = val
+            comment_match = comment_regex.match(line)
+            if comment_match and prev_val is not None:
+                comment = comment_match.group(1)
+                tokens[prev_val]['comment'] = comment
     keys = sorted(tokens.keys())
     # load the output skeleton from the target:
     try:
@@ -143,10 +144,10 @@ def _main():
         sys.stderr.write("target does not contain format markers")
         sys.exit(3)
     lines = []
-    for val in keys:
-        lines.append("%s = %d" % (tokens[val]["token"], val))
-        if "comment" in tokens[val]:
-            lines.append("# %s" % tokens[val]["comment"])
+    for key in keys:
+        lines.append("%s = %d" % (tokens[key]["token"], key))
+        if "comment" in tokens[key]:
+            lines.append("# %s" % tokens[key]["comment"])
     format[start:end] = lines
     try:
         fp = open(outFileName, 'w')

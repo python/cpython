@@ -1419,6 +1419,7 @@ class TestTokenize(TestCase):
         # See http://bugs.python.org/issue16152
         self.assertExactTypeEqual('@          ', token.AT)
 
+
 class UntokenizeTest(TestCase):
 
     def test_bad_input_order(self):
