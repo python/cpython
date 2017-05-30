@@ -63,17 +63,17 @@ AT = 49
 ATEQUAL = 50
 RARROW = 51
 ELLIPSIS = 52
-#  Don't forget to update the table _PyParser_TokenNames in tokenizer.c! 
+# Don't forget to update the table _PyParser_TokenNames in tokenizer.c! 
 OP = 53
 AWAIT = 54
 ASYNC = 55
 ERRORTOKEN = 56
-#  These aren't used by the C tokenizer but are needed for tokenize.py 
+# These aren't used by the C tokenizer but are needed for tokenize.py 
 COMMENT = 57
 NL = 58
 ENCODING = 59
 N_TOKENS = 60
-#  Special definitions for cooperation with parser 
+# Special definitions for cooperation with parser 
 NT_OFFSET = 256
 #--end constants--
 
@@ -111,11 +111,11 @@ def _main():
         "#define[ \t][ \t]*([A-Z0-9][A-Z0-9_]*)[ \t][ \t]*([0-9][0-9]*)",
         re.IGNORECASE)
     comment = re.compile(
-        "^\s*/\*(.+)\*/\s*$",
+        "^\s*/\*\s*(.+)\s*\*/\s*$",
         re.IGNORECASE)
 
     tokens = {}
-    prev_val = -1
+    prev_val = None
     for line in lines:
         match = prog.match(line)
         if match:
@@ -124,7 +124,7 @@ def _main():
             tokens[prev_val] = {'token': name}          # reverse so we can sort them...
         else:
             comment_match = comment.match(line)
-            if comment_match and prev_val >= 0:
+            if comment_match and prev_val:
                 val = comment_match.group(1)
                 tokens[prev_val]['comment'] = val
     keys = sorted(tokens.keys())
