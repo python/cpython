@@ -73,6 +73,10 @@ class DummyPOP3Handler(asyncio.StreamReaderProtocol):
         else:
             super(DummyPOP3Handler, self).connection_made(transport)
 
+    def connection_lost(self, exc):
+        super(DummyPOP3Handler, self).connection_lost(exc)
+        self._transport.close()
+
     def _client_connected_cb(self, *_):
         self.push('+OK dummy pop3 server ready. <timestamp>')
         self._handle_task = self.loop.create_task(
@@ -239,7 +243,8 @@ class TestPOP3Class(TestCase):
         self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
 
     def tearDown(self):
-        self.client.close()
+        if self.client.file is not None and self.client.sock is not None:
+            self.client.quit()
         self.server.stop()
 
     def test_getwelcome(self):
@@ -400,12 +405,6 @@ class TestPOP3_TLSClass(TestPOP3Class):
         self.server.start()
         self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
         self.client.stls()
-
-    def tearDown(self):
-        if self.client.file is not None and self.client.sock is not None:
-            self.client.quit()
-            self.client.close()
-        self.server.stop()
 
     def test_stls(self):
         self.assertRaises(poplib.error_proto, self.client.stls)
