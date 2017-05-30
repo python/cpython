@@ -293,7 +293,7 @@ POBJS=		\
 		Parser/grammar.o \
 		Parser/pgen.o
 
-PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
+PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/parsetok.o Parser/token.o Parser/tokenizer.o
 
 PGOBJS=		\
 		Objects/obmalloc.o \
@@ -516,7 +516,7 @@ coverage-lcov:
 	@echo
 
 # Force regeneration of parser and importlib
-coverage-report: regen-grammar regen-importlib
+coverage-report: regen-grammar regen-token regen-importlib
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
@@ -705,7 +705,7 @@ regen-importlib: Programs/_freeze_importlib
 ############################################################################
 # Regenerate all generated files
 
-regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen-ast regen-importlib
+regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen-token regen-ast regen-importlib
 
 ############################################################################
 # Special rules for object files
@@ -807,6 +807,24 @@ regen-opcode:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
 		$(srcdir)/Include/opcode.h
+
+.PHONY: regen-token
+regen-token:
+	# Regenerate Include/token.h from Lib/token.py
+	# using Tools/scripts/generate_token_h.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token_h.py \
+		$(srcdir)/Lib/token.py \
+		$(srcdir)/Include/token.h
+	# Regenerate Parser/token.c from Lib/token.py
+	# using Tools/scripts/generate_token_c.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token_c.py \
+		$(srcdir)/Lib/token.py \
+		$(srcdir)/Parser/token_names.h
+	# Regenerate Doc/library/token.rst from Lib/token.py
+	# using Tools/scripts/generate_token_rst.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token_rst.py \
+		$(srcdir)/Lib/token.py \
+		$(srcdir)/Doc/library/token.rst
 
 Python/compile.o Python/symtable.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
 

@@ -1125,6 +1125,9 @@ Documentation
 Build
 -----
 
+- bpo-30455: C code and documentation related to tokens now are generated
+  from token.py.
+
 - bpo-20210: Support the *disabled* marker in Setup files. Extension modules
   listed after this marker are not built at all, neither by the Makefile nor by
   setup.py.

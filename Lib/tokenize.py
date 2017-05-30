@@ -33,70 +33,15 @@ import itertools as _itertools
 import re
 import sys
 from token import *
+from token import EXACT_TOKEN_TYPES
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
-__all__ = token.__all__ + ["COMMENT", "tokenize", "detect_encoding",
-                           "NL", "untokenize", "ENCODING", "TokenInfo"]
+__all__ = token.__all__ + ["tokenize", "detect_encoding", "untokenize",
+                           "TokenInfo"]
 del token
-
-COMMENT = N_TOKENS
-tok_name[COMMENT] = 'COMMENT'
-NL = N_TOKENS + 1
-tok_name[NL] = 'NL'
-ENCODING = N_TOKENS + 2
-tok_name[ENCODING] = 'ENCODING'
-N_TOKENS += 3
-EXACT_TOKEN_TYPES = {
-    '(':   LPAR,
-    ')':   RPAR,
-    '[':   LSQB,
-    ']':   RSQB,
-    ':':   COLON,
-    ',':   COMMA,
-    ';':   SEMI,
-    '+':   PLUS,
-    '-':   MINUS,
-    '*':   STAR,
-    '/':   SLASH,
-    '|':   VBAR,
-    '&':   AMPER,
-    '<':   LESS,
-    '>':   GREATER,
-    '=':   EQUAL,
-    '.':   DOT,
-    '%':   PERCENT,
-    '{':   LBRACE,
-    '}':   RBRACE,
-    '==':  EQEQUAL,
-    '!=':  NOTEQUAL,
-    '<=':  LESSEQUAL,
-    '>=':  GREATEREQUAL,
-    '~':   TILDE,
-    '^':   CIRCUMFLEX,
-    '<<':  LEFTSHIFT,
-    '>>':  RIGHTSHIFT,
-    '**':  DOUBLESTAR,
-    '+=':  PLUSEQUAL,
-    '-=':  MINEQUAL,
-    '*=':  STAREQUAL,
-    '/=':  SLASHEQUAL,
-    '%=':  PERCENTEQUAL,
-    '&=':  AMPEREQUAL,
-    '|=':  VBAREQUAL,
-    '^=':  CIRCUMFLEXEQUAL,
-    '<<=': LEFTSHIFTEQUAL,
-    '>>=': RIGHTSHIFTEQUAL,
-    '**=': DOUBLESTAREQUAL,
-    '//':  DOUBLESLASH,
-    '//=': DOUBLESLASHEQUAL,
-    '...': ELLIPSIS,
-    '->':  RARROW,
-    '@':   AT,
-    '@=':  ATEQUAL,
-}
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
     def __repr__(self):

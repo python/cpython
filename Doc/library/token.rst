@@ -44,67 +44,9 @@ functions.  The functions mirror definitions in the Python C header files.
 
 The token constants are:
 
-.. data:: ENDMARKER
-          NAME
-          NUMBER
-          STRING
-          NEWLINE
-          INDENT
-          DEDENT
-          LPAR
-          RPAR
-          LSQB
-          RSQB
-          COLON
-          COMMA
-          SEMI
-          PLUS
-          MINUS
-          STAR
-          SLASH
-          VBAR
-          AMPER
-          LESS
-          GREATER
-          EQUAL
-          DOT
-          PERCENT
-          LBRACE
-          RBRACE
-          EQEQUAL
-          NOTEQUAL
-          LESSEQUAL
-          GREATEREQUAL
-          TILDE
-          CIRCUMFLEX
-          LEFTSHIFT
-          RIGHTSHIFT
-          DOUBLESTAR
-          PLUSEQUAL
-          MINEQUAL
-          STAREQUAL
-          SLASHEQUAL
-          PERCENTEQUAL
-          AMPEREQUAL
-          VBAREQUAL
-          CIRCUMFLEXEQUAL
-          LEFTSHIFTEQUAL
-          RIGHTSHIFTEQUAL
-          DOUBLESTAREQUAL
-          DOUBLESLASH
-          DOUBLESLASHEQUAL
-          AT
-          ATEQUAL
-          RARROW
-          ELLIPSIS
-          OP
-          AWAIT
-          ASYNC
-          ERRORTOKEN
-          N_TOKENS
-          NT_OFFSET
+.. include:: /library/token-list.inc
 
-   .. versionchanged:: 3.5
-      Added :data:`AWAIT` and :data:`ASYNC` tokens. Starting with
-      Python 3.7, "async" and "await" will be tokenized as :data:`NAME`
-      tokens, and :data:`AWAIT` and :data:`ASYNC` will be removed.
+.. versionchanged:: 3.5
+   Added :data:`AWAIT` and :data:`ASYNC` tokens. Starting with
+   Python 3.7, "async" and "await" will be tokenized as :data:`NAME`
+   tokens, and :data:`AWAIT` and :data:`ASYNC` will be removed.
