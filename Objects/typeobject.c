@@ -1499,9 +1499,9 @@ call_method(PyObject *obj, _Py_Identifier *name,
     PyObject *func, *retval;
 
     func = lookup_method(obj, name, &unbound);
-    if (func == NULL)
+    if (func == NULL) {
         return NULL;
-
+    }
     retval = call_unbound(unbound, func, obj, args, nargs);
     Py_DECREF(func);
     return retval;
@@ -5948,10 +5948,13 @@ static PyObject *
 slot_sq_item(PyObject *self, Py_ssize_t i)
 {
     PyObject *retval;
+    PyObject *args[1];
     PyObject *ival = PyLong_FromSsize_t(i);
-    if (ival == NULL)
+    if (ival == NULL) {
         return NULL;
-    retval = call_method(self, &PyId___getitem__, &ival, 1);
+    }
+    args[0] = ival;
+    retval = call_method(self, &PyId___getitem__, args, 1);
     Py_DECREF(ival);
     return retval;
 }
