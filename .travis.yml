@@ -6,21 +6,20 @@ group: beta
 # To cache doc-building dependencies.
 cache: pip
 
-os:
-  - linux
-  # macOS builds are disabled as the machines are under-provisioned on Travis,
-  # adding up to an extra hour completing a full CI run.
-
-compiler:
-  - clang
-  # gcc also works, but to keep the # of concurrent builds down, we use one C
-  # compiler here and the other to run the coverage build.
-
-env:
-  - TESTING=cpython
+branches:
+  only:
+    - master
+    - /^\d\.\d$/
 
 matrix:
   include:
+    - os: linux
+      language: c
+      compiler: clang
+      # gcc also works, but to keep the # of concurrent builds down, we use one C
+      # compiler here and the other to run the coverage build.
+      env:
+        - TESTING=cpython
     - os: linux
       language: python
       python: 2.7
