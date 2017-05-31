@@ -140,6 +140,7 @@ class InitialisableProgram(unittest.TestProgram):
     module = '__main__'
     progName = 'test'
     test = 'test'
+    list_tests = False
     def __init__(self, *args):
         pass
 

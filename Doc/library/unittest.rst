@@ -219,6 +219,10 @@ Command-line options
 
    Stop the test run on the first error or failure.
 
+.. cmdoption:: --list-tests
+
+   Only display the list of test names, don't run tests.
+
 .. cmdoption:: --locals
 
    Show local variables in tracebacks.
@@ -228,6 +232,9 @@ Command-line options
 
 .. versionadded:: 3.5
    The command-line option ``--locals``.
+
+.. versionadded:: 3.7
+   The command-line option ``--list-tests``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.

@@ -5,6 +5,8 @@ import time
 import warnings
 
 from . import result
+from .case import TestCase
+from .suite import TestSuite
 from .signals import registerResult
 
 __unittest = True
@@ -219,3 +221,31 @@ class TextTestRunner(object):
         else:
             self.stream.write("\n")
         return result
+
+
+class TextListTestRunner(TextTestRunner):
+    """A test runner class that only displays test names, don't run them."""
+    resultclass = TextTestResult
+
+    def list_tests(self, test_list, test):
+        if isinstance(test, TestSuite):
+            for subtest in test:
+                self.list_tests(test_list, subtest)
+        elif isinstance(test, TestCase):
+            name = []
+            cls = test.__class__
+            if cls.__module__ != "__main__":
+                name.append(cls.__module__)
+            name.append(cls.__name__)
+            name.append(test._testMethodName)
+            test_list.append('.'.join(name))
+        else:
+            raise ValueError("unknown test object: %s" % type(test))
+
+    def run(self, test):
+        test_list = []
+        self.list_tests(test_list, test)
+        test_list.sort()
+        for name in test_list:
+            self.stream.writeln(name)
+        return self._makeResult()

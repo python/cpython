@@ -215,6 +215,7 @@ class TestBreak(unittest.TestCase):
                 self.testRunner = FakeRunner
                 self.test = test
                 self.result = None
+                self.list_tests = False
 
         p = Program(False)
         p.runTests()
