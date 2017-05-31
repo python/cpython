@@ -850,12 +850,14 @@ For example::
    t.start()  # after 30 seconds, "hello, world" will be printed
 
 
-.. class:: Timer(interval, function, args=None, kwargs=None)
+.. class:: Timer(interval, function, args=None, kwargs=None, daemon=None)
 
    Create a timer that will run *function* with arguments *args* and  keyword
    arguments *kwargs*, after *interval* seconds have passed.
    If *args* is ``None`` (the default) then an empty list will be used.
    If *kwargs* is ``None`` (the default) then an empty dict will be used.
+   The *daemon* argument behaves identically to that of the same name in the
+   :class:`Thread` constructor.
 
    .. versionchanged:: 3.3
       changed from a factory function to a class.
