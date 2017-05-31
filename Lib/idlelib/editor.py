@@ -271,6 +271,9 @@ class EditorWindow(object):
         self.askinteger = tkSimpleDialog.askinteger
         self.showerror = tkMessageBox.showerror
 
+        # Navigate bar
+        self.navigatebar = None
+
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
         # Decode bytes to unicode.
@@ -565,16 +568,10 @@ class EditorWindow(object):
         return "break"
 
     def goto_line_event(self, event):
-        text = self.text
-        lineno = tkSimpleDialog.askinteger("Goto",
-                "Go to line number:",parent=text)
-        if lineno is None:
-            return "break"
-        if lineno <= 0:
-            text.bell()
-            return "break"
-        text.mark_set("insert", "%d.0" % lineno)
-        text.see("insert")
+        from idlelib.singlebar import NavigateBar
+        if not self.navigatebar:
+            self.navigatebar = NavigateBar(self, self.text)
+            self.navigatebar.set_goto_line_mode()
 
     def open_module(self, event=None):
         """Get module name from user and open it.
