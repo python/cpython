@@ -830,6 +830,11 @@ gethandlelist(PyObject *mapping, const char *name, Py_ssize_t *size)
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(value_fast); i++) {
         ret[i] = PYNUM_TO_HANDLE(PySequence_Fast_GET_ITEM(value_fast, i));
+        if (ret[i] == (HANDLE)-1 && PyErr_Occurred()) {
+            PyMem_Free(ret);
+            ret = NULL;
+            goto cleanup;
+        }
     }
 
 cleanup:
@@ -860,11 +865,12 @@ static int
 getattributelist(PyObject *obj, const char *name, AttributeList *attribute_list)
 {
     int ret = 0;
+    DWORD err;
     BOOL result;
     PyObject *value;
     Py_ssize_t handle_list_size;
     DWORD attribute_count = 0;
-    SIZE_T attribute_list_size;
+    SIZE_T attribute_list_size = 0;
 
     value = PyObject_GetAttrString(obj, name);
     if (!value) {
@@ -912,12 +918,14 @@ getattributelist(PyObject *obj, const char *name, AttributeList *attribute_list)
         0,
         &attribute_list_size);
     if (!result) {
+        err = GetLastError();
+
         /* So that we won't call DeleteProcThreadAttributeList */
         PyMem_Free(attribute_list->attribute_list);
         attribute_list->attribute_list = NULL;
 
         ret = -1;
-        PyErr_SetFromWindowsErr(GetLastError());
+        PyErr_SetFromWindowsErr(err);
         goto cleanup;
     }
 
