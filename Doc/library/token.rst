@@ -113,6 +113,6 @@ The token constants are:
       tokens, and :data:`AWAIT` and :data:`ASYNC` will be removed.
 
    .. versionchanged:: 3.7
-      Added :data:`COMMENT`, :data:`NL` and :data:`ENCODING`. To bring
+      Added :data:`COMMENT`, :data:`NL` and :data:`ENCODING` to bring
       the tokens in the C code in line with the tokens needed in
-      tokenize.py. These tokens aren't used by the C tokenizer.
+      :mod:`tokenize` module. These tokens aren't used by the C tokenizer.
