@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-25324: Tokens needed for parsing in Python moved to C. ``COMMENT``,
+  ``NL`` and ``ENCODING``. This way the tokens and tok_names in the token
+  module don't get changed when you import the tokenize module.
+
 - bpo-29104: Fixed parsing backslashes in f-strings.
 
 - bpo-27945: Fixed various segfaults with dict when input collections are
