@@ -343,7 +343,7 @@ class TokenList(list):
             if ws is not None:
                 # Peel off the leading whitespace and make it sticky, to
                 # avoid infinite recursion.
-                folded.stickyspace = str(part.pop(0))
+                folded.stickyspace = ws
                 if folded.append_if_fits(part):
                     continue
             if part.has_fws:
