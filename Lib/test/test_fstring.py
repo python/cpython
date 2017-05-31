@@ -279,6 +279,7 @@ f'{a * x()}'"""
                              "f'{ !r}'",
                              "f'{10:{ }}'",
                              "f' { } '",
+                             "f'''{\t\x0c\r\n}'''",
 
                              # Catch the empty expression before the
                              #  invalid conversion.
@@ -299,6 +300,9 @@ f'{a * x()}'"""
                              "f'{:'",
                              "f'{:x'",
                              ])
+
+        self.assertAllRaise(SyntaxError, 'invalid character in identifier',
+                            ["f'''{\xa0}'''"])
 
     def test_parens_in_expressions(self):
         self.assertEqual(f'{3,}', '(3,)')
