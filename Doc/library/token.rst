@@ -101,6 +101,9 @@ The token constants are:
           AWAIT
           ASYNC
           ERRORTOKEN
+          COMMENT
+          NL
+          ENCODING
           N_TOKENS
           NT_OFFSET
 
@@ -108,3 +111,8 @@ The token constants are:
       Added :data:`AWAIT` and :data:`ASYNC` tokens. Starting with
       Python 3.7, "async" and "await" will be tokenized as :data:`NAME`
       tokens, and :data:`AWAIT` and :data:`ASYNC` will be removed.
+
+   .. versionchanged:: 3.7
+      Added :data:`COMMENT`, :data:`NL` and :data:`ENCODING` to bring
+      the tokens in the C code in line with the tokens needed in
+      :mod:`tokenize` module. These tokens aren't used by the C tokenizer.
