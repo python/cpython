@@ -1944,6 +1944,7 @@ class TextIOWrapper(TextIOBase):
 
         self._buffer = buffer
         self._line_buffering = line_buffering
+        self._write_through = write_through
         self._encoding = encoding
         self._errors = errors
         self._readuniversal = not newline
@@ -2006,6 +2007,24 @@ class TextIOWrapper(TextIOBase):
     @property
     def line_buffering(self):
         return self._line_buffering
+
+    @line_buffering.setter
+    def line_buffering(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("attribute value type must be bool")
+        self.flush()
+        self._line_buffering = value
+
+    @property
+    def write_through(self):
+        return self._write_through
+
+    @write_through.setter
+    def write_through(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("attribute value type must be bool")
+        self.flush()
+        self._write_through = value
 
     @property
     def buffer(self):

@@ -2440,6 +2440,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(t.encoding, "ascii")
         self.assertEqual(t.errors, "strict")
         self.assertFalse(t.line_buffering)
+        self.assertFalse(t.write_through)
 
     def test_repr(self):
         raw = self.BytesIO("hello".encode("utf-8"))
@@ -2481,6 +2482,23 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(r.getvalue(), b"XY\nZ")  # All got flushed
         t.write("A\rB")
         self.assertEqual(r.getvalue(), b"XY\nZA\rB")
+
+        # The attribute is settable
+        r = self.BytesIO()
+        b = self.BufferedWriter(r, 1000)
+        t = self.TextIOWrapper(b, newline="\n", line_buffering=False)
+        t.write("AB\nC")
+        self.assertEqual(r.getvalue(), b"")
+        t.line_buffering = True   # implicit flush
+        self.assertEqual(r.getvalue(), b"AB\nC")
+        t.write("DEF\nG")
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nG")
+        t.write("H")
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nG")
+        t.line_buffering = False   # implicit flush
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nGH")
+        t.write("IJ")
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nGH")
 
     def test_default_encoding(self):
         old_environ = dict(os.environ)
@@ -3131,6 +3149,18 @@ class TextIOWrapperTest(unittest.TestCase):
         txt.write('23\n4')
         txt.write('5')
         self.assertEqual(b''.join(raw._write_stack), b'123\n45')
+        # The attribute is settable
+        raw = self.MockRawIO([])
+        txt = self.TextIOWrapper(raw, encoding='ascii', newline='\n')
+        txt.write('1')
+        txt.write_through = True  # implied flush
+        self.assertEqual(b''.join(raw._write_stack), b'1')
+        txt.write('23')
+        self.assertEqual(b''.join(raw._write_stack), b'123')
+        txt.write_through = False
+        txt.write('45')
+        txt.flush()
+        self.assertEqual(b''.join(raw._write_stack), b'12345')
 
     def test_bufio_write_through(self):
         # Issue #21396: write_through=True doesn't force a flush()
