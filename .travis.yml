@@ -20,6 +20,8 @@ matrix:
     - os: linux
       language: c
       compiler: clang
+      # gcc also works, but to keep the # of concurrent builds down, we use one C
+      # compiler here and the other to run the coverage build.
       env:
         - TESTING=cpython
     - os: linux
