@@ -253,6 +253,9 @@ class AutoCompleteWindow:
             self.winconfigid = None
 
     def _hide_event_check(self):
+        if not self.autocompletewindow:
+            return
+
         try:
             if not self.autocompletewindow.focus_get():
                 self.hide_window()
