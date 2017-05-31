@@ -1,0 +1,622 @@
+# All variables declared here are shared between all interpreters
+# in a single process.  That means that they must not be changed
+# unless that change should apply to all interpreters.
+#
+# See check_globals.py.
+
+
+#######################################
+# static types
+
+# Include/bltinmodule.h
+PyFilter_Type
+PyMap_Type
+PyZip_Type
+
+# Include/boolobject.h
+PyBool_Type
+
+# Include/bytearrayobject.h
+PyByteArrayIter_Type
+PyByteArray_Type
+
+# Include/bytesobject.h
+PyBytesIter_Type
+PyBytes_Type
+
+# Include/cellobject.h
+PyCell_Type
+
+# Include/classobject.h
+PyInstanceMethod_Type
+PyMethod_Type
+
+# Include/code.h
+PyCode_Type
+
+# Include/complexobject.h
+PyComplex_Type
+
+# Include/descrobject.h
+PyClassMethodDescr_Type
+PyDictProxy_Type
+PyGetSetDescr_Type
+PyMemberDescr_Type
+PyMethodDescr_Type
+PyProperty_Type
+PyWrapperDescr_Type
+_PyMethodWrapper_Type
+
+# Include/dictobject.h
+PyDictItems_Type
+PyDictIterItem_Type
+PyDictIterKey_Type
+PyDictIterValue_Type
+PyDictKeys_Type
+PyDictValues_Type
+PyDict_Type
+
+# Include/enumobject.h
+PyEnum_Type
+PyReversed_Type
+
+# Include/fileobject.h
+PyStdPrinter_Type
+
+# Include/floatobject.h
+PyFloat_Type
+
+# Include/frameobject.h
+PyFrame_Type
+
+# Include/funcobject.h
+PyClassMethod_Type
+PyFunction_Type
+PyStaticMethod_Type
+
+# Include/genobject.h
+PyAsyncGen_Type
+PyCoro_Type
+PyGen_Type
+_PyAIterWrapper_Type
+_PyAsyncGenASend_Type
+_PyAsyncGenAThrow_Type
+_PyAsyncGenWrappedValue_Type
+_PyCoroWrapper_Type
+
+# Include/import.h
+PyNullImporter_Type
+
+# Include/iterobject.h
+PyCallIter_Type
+PyCmpWrapper_Type
+PySeqIter_Type
+
+# Include/listobject.h
+PyListIter_Type
+PyListRevIter_Type
+PyList_Type
+PySortWrapper_Type
+
+# Include/longobject.h
+PyLong_Type
+
+# Include/memoryobject.h
+PyMemoryView_Type
+_PyManagedBuffer_Type
+
+# Include/methodobject.h
+PyCFunction_Type
+
+# Include/moduleobject.h
+PyModuleDef_Type
+PyModule_Type
+
+# Include/namespaceobject.h
+_PyNamespace_Type
+
+# Include/object.h
+PyBaseObject_Type
+PySuper_Type
+PyType_Type
+_PyNone_Type
+_PyNotImplemented_Type
+
+# Include/odictobject.h
+PyODictItems_Type
+PyODictIter_Type
+PyODictKeys_Type
+PyODictValues_Type
+PyODict_Type
+
+# Include/pycapsule.h
+PyCapsule_Type
+
+# Include/rangeobject.h
+PyLongRangeIter_Type
+PyRangeIter_Type
+PyRange_Type
+
+# Include/setobject.h
+PyFrozenSet_Type
+PySetIter_Type
+PySet_Type
+
+# Include/sliceobject.h
+PyEllipsis_Type
+PySlice_Type
+
+# Include/symtable.h
+PySTEntry_Type
+
+# Include/traceback.h
+PyTraceBack_Type
+
+# Include/tupleobject.h
+PyTupleIter_Type
+PyTuple_Type
+
+# Include/unicodeobject.h
+PyUnicodeIter_Type
+PyUnicode_Type
+
+# Include/weakrefobject.h
+_PyWeakref_CallableProxyType
+_PyWeakref_ProxyType
+_PyWeakref_RefType
+
+# Modules/_io/_iomodule.h
+_PyWindowsConsoleIO_Type
+
+
+#######################################
+# static errors (Include/pyerrors.h)
+
+# Base Exceptions
+PyExc_BaseException
+PyExc_GeneratorExit
+PyExc_KeyboardInterrupt
+PyExc_SystemExit
+PyExc_Exception
+
+_PyExc_Exception
+_PyExc_GeneratorExit
+_PyExc_KeyboardInterrupt
+_PyExc_SystemExit
+
+# Exceptions
+PyExc_ArithmeticError
+PyExc_AssertionError
+PyExc_AttributeError
+PyExc_BlockingIOError
+PyExc_BrokenPipeError
+PyExc_BufferError
+PyExc_ChildProcessError
+PyExc_ConnectionAbortedError
+PyExc_ConnectionError
+PyExc_ConnectionRefusedError
+PyExc_ConnectionResetError
+PyExc_EOFError
+PyExc_EnvironmentError
+PyExc_FileExistsError
+PyExc_FileNotFoundError
+PyExc_FloatingPointError
+PyExc_IOError
+PyExc_ImportError
+PyExc_IndentationError
+PyExc_IndexError
+PyExc_InterruptedError
+PyExc_IsADirectoryError
+PyExc_KeyError
+PyExc_LookupError
+PyExc_MemoryError
+PyExc_ModuleNotFoundError
+PyExc_NameError
+PyExc_NotADirectoryError
+PyExc_NotImplementedError
+PyExc_OSError
+PyExc_OverflowError
+PyExc_PermissionError
+PyExc_ProcessLookupError
+PyExc_RecursionError
+PyExc_ReferenceError
+PyExc_RuntimeError
+PyExc_StopAsyncIteration
+PyExc_StopIteration
+PyExc_SyntaxError
+PyExc_SystemError
+PyExc_TabError
+PyExc_TimeoutError
+PyExc_TypeError
+PyExc_UnboundLocalError
+PyExc_UnicodeDecodeError
+PyExc_UnicodeEncodeError
+PyExc_UnicodeError
+PyExc_UnicodeTranslateError
+PyExc_ValueError
+PyExc_WindowsError
+PyExc_ZeroDivisionError
+
+_PyExc_ArithmeticError
+_PyExc_AssertionError
+_PyExc_AttributeError
+_PyExc_BlockingIOError
+_PyExc_BrokenPipeError
+_PyExc_BufferError
+_PyExc_ChildProcessError
+_PyExc_ConnectionAbortedError
+_PyExc_ConnectionError
+_PyExc_ConnectionRefusedError
+_PyExc_ConnectionResetError
+_PyExc_EOFError
+_PyExc_FileExistsError
+_PyExc_FileNotFoundError
+_PyExc_FloatingPointError
+_PyExc_ImportError
+_PyExc_IndentationError
+_PyExc_IndexError
+_PyExc_InterruptedError
+_PyExc_IsADirectoryError
+_PyExc_KeyError
+_PyExc_LookupError
+_PyExc_ModuleNotFoundError
+_PyExc_NameError
+_PyExc_NotADirectoryError
+_PyExc_NotImplementedError
+_PyExc_OSError
+_PyExc_OverflowError
+_PyExc_PermissionError
+_PyExc_ProcessLookupError
+_PyExc_RecursionError
+_PyExc_ReferenceError
+_PyExc_RuntimeError
+_PyExc_StopAsyncIteration
+_PyExc_StopIteration
+_PyExc_SyntaxError
+_PyExc_SystemError
+_PyExc_TabError
+_PyExc_TimeoutError
+_PyExc_TypeError
+_PyExc_UnboundLocalError
+_PyExc_UnicodeError
+_PyExc_ValueError
+_PyExc_ZeroDivisionError
+
+# Warnings
+PyExc_BytesWarning
+PyExc_DeprecationWarning
+PyExc_FutureWarning
+PyExc_ImportWarning
+PyExc_PendingDeprecationWarning
+PyExc_ResourceWarning
+PyExc_RuntimeWarning
+PyExc_SyntaxWarning
+PyExc_UnicodeWarning
+PyExc_UserWarning
+PyExc_Warning
+
+_PyExc_BytesWarning
+_PyExc_DeprecationWarning
+_PyExc_FutureWarning
+_PyExc_ImportWarning
+_PyExc_PendingDeprecationWarning
+_PyExc_ResourceWarning
+_PyExc_RuntimeWarning
+_PyExc_SyntaxWarning
+_PyExc_UnicodeWarning
+_PyExc_UserWarning
+_PyExc_Warning
+
+
+#######################################
+# singletons
+
+# Include/boolobject.h
+_Py_FalseStruct
+_Py_TrueStruct
+
+# Include/object.h
+_Py_NoneStruct
+_Py_NotImplementedStruct
+
+# Include/sliceobject.h
+_Py_EllipsisObject
+
+
+#######################################
+# modules
+
+_astmodule
+atexitmodule
+builtinsmodule
+codecsmodule
+_collectionsmodule
+doc_find_module
+doc_load_module
+errnomodule
+_functoolsmodule
+gcmodule
+impmodule
+itertoolsmodule
+_localemodule
+marshalmodule
+operatormodule
+posixmodule
+pwdmodule
+signalmodule
+sremodule
+statmodule
+_string_module
+symtablemodule
+sysmodule
+threadmodule
+timemodule
+warningsmodule
+weakrefmodule
+xxsubtypemodule
+zipimportmodule
+
+
+#######################################
+# ast
+
+# Python/Python-ast.c
+AST_type
+Add_singleton
+Add_type
+And_singleton
+And_type
+AnnAssign_type
+Assert_type
+Assign_type
+AsyncFor_type
+AsyncFunctionDef_type
+AsyncWith_type
+Attribute_type
+AugAssign_type
+AugLoad_singleton
+AugLoad_type
+AugStore_singleton
+AugStore_type
+Await_type
+BinOp_type
+BitAnd_singleton
+BitAnd_type
+BitOr_singleton
+BitOr_type
+BitXor_singleton
+BitXor_type
+BoolOp_type
+Break_type
+Bytes_type
+Call_type
+ClassDef_type
+Compare_type
+Constant_type
+Continue_type
+Del_singleton
+Del_type
+Delete_type
+DictComp_type
+Dict_type
+Div_singleton
+Div_type
+Ellipsis_type
+Eq_singleton
+Eq_type
+ExceptHandler_type
+Expr_type
+Expression_type
+ExtSlice_type
+FloorDiv_singleton
+FloorDiv_type
+For_type
+FormattedValue_type
+FunctionDef_type
+GeneratorExp_type
+Global_type
+GtE_singleton
+GtE_type
+Gt_singleton
+Gt_type
+IfExp_type
+If_type
+ImportFrom_type
+Import_type
+In_singleton
+In_type
+Index_type
+Interactive_type
+Invert_singleton
+Invert_type
+IsNot_singleton
+IsNot_type
+Is_singleton
+Is_type
+JoinedStr_type
+LShift_singleton
+LShift_type
+Lambda_type
+ListComp_type
+List_type
+Load_singleton
+Load_type
+LtE_singleton
+LtE_type
+Lt_singleton
+Lt_type
+MatMult_singleton
+MatMult_type
+Mod_singleton
+Mod_type
+Module_type
+Mult_singleton
+Mult_type
+NameConstant_type
+Name_type
+Nonlocal_type
+NotEq_singleton
+NotEq_type
+NotIn_singleton
+NotIn_type
+Not_singleton
+Not_type
+Num_type
+Or_singleton
+Or_type
+Param_singleton
+Param_type
+Pass_type
+Pow_singleton
+Pow_type
+RShift_singleton
+RShift_type
+Raise_type
+Return_type
+SetComp_type
+Set_type
+Slice_type
+Starred_type
+Store_singleton
+Store_type
+Str_type
+Sub_singleton
+Sub_type
+Subscript_type
+Suite_type
+Try_type
+Tuple_type
+UAdd_singleton
+UAdd_type
+USub_singleton
+USub_type
+UnaryOp_type
+While_type
+With_type
+YieldFrom_type
+Yield_type
+alias_type
+arg_attributes
+arg_type
+arguments_type
+ast_type_getsets
+boolop_type
+cmpop_type
+comprehension_type
+excepthandler_attributes
+excepthandler_type
+expr_attributes
+expr_context_type
+expr_type
+keyword_type
+mod_type
+operator_type
+slice_type
+stmt_attributes
+stmt_type
+unaryop_type
+withitem_type
+
+
+#######################################
+# others
+
+# Include/bytearrayobject.h
+#_PyByteArray_empty_string
+
+# Include/ceval.h
+#_Py_CheckRecursionLimit
+
+# Include/codecs.h
+#Py_hexdigits
+
+# Include/fileobject.h
+#Py_FileSystemDefaultEncodeErrors
+#Py_FileSystemDefaultEncoding
+#Py_HasFileSystemDefaultEncoding
+
+# Include/import.h
+PyImport_FrozenModules
+PyImport_Inittab
+
+# Include/longobject.h
+#_PyLong_DigitValue
+#_PyLong_One
+#_PyLong_Zero
+
+# Include/modsupport.h
+#_Py_PackageContext
+
+# Include/object.h
+#_PyTrash_delete_later
+#_PyTrash_delete_nesting
+#_Py_RefTotal
+#_Py_SwappedOp
+
+# Include/pyctype.h
+#_Py_ctype_table
+#_Py_ctype_tolower
+#_Py_ctype_toupper
+
+# Include/pydebug.h
+#Py_BytesWarningFlag
+#Py_DebugFlag
+#Py_DontWriteBytecodeFlag
+#Py_FrozenFlag
+#Py_HashRandomizationFlag
+#Py_IgnoreEnvironmentFlag
+#Py_InspectFlag
+#Py_InteractiveFlag
+#Py_IsolatedFlag
+#Py_LegacyWindowsStdioFlag
+#Py_NoSiteFlag
+#Py_NoUserSiteDirectory
+#Py_OptimizeFlag
+#Py_QuietFlag
+#Py_UnbufferedStdioFlag
+#Py_UseClassExceptionsFlag
+#Py_VerboseFlag
+
+# Include/pyerrors.h
+#PyExc_RecursionErrorInst
+
+# Include/pygetopt.h
+_PyOS_optarg
+_PyOS_opterr
+_PyOS_optind
+
+# Include/pyhash.h
+#_Py_HashSecret
+#_Py_HashSecret_Initialized
+
+# Include/pylifecycle.h
+#_Py_Finalizing
+
+# Include/pystate.h
+#_PyGILState_check_enabled
+#_PyThreadState_Current
+#_PyThreadState_GetFrame
+
+# Include/pythonrun.h
+#PyOS_InputHook
+#PyOS_ReadlineFunctionPointer
+#_PyOS_ReadlineTState
+
+# Include/setobject.h
+#_PySet_Dummy
+
+# Include/token.h
+#_PyParser_TokenNames
+
+# Include/unicodeobject.h
+#_Py_ascii_whitespace
+
+# Python/Python-ast.c
+alias_fields
+
+# Python/pylifecycle.c
+_Py_CoreInitialized
+#_Py_Initialized
+
+# Python/sysmodule.c
+_PySys_ImplName
