@@ -966,6 +966,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     BOOL res = TRUE;
     wchar_t *wbuf;
     DWORD len, wlen, n = 0;
+    DWORD err;
 
     if (self->handle == INVALID_HANDLE_VALUE)
         return err_closed();
@@ -1000,6 +1001,9 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, wbuf, wlen);
     if (wlen) {
         res = WriteConsoleW(self->handle, wbuf, wlen, &n, NULL);
+        if (!res)
+            err = GetLastError();
+
         if (n < wlen) {
             /* Wrote fewer characters than expected, which means our
              * len value may be wrong. So recalculate it from the
@@ -1019,7 +1023,6 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     Py_END_ALLOW_THREADS
 
     if (!res) {
-        DWORD err = GetLastError();
         PyMem_Free(wbuf);
         return PyErr_SetFromWindowsErr(err);
     }
