@@ -18,7 +18,7 @@ CAPI_REGEX = re.compile(r'^ *PyAPI_DATA\([^)]*\) \W*(_?Py\w+(?:, \w+)*\w).*;.*$'
 
 # These variables are shared between all interpreters in the process.
 with open('globals-runtime.txt') as file:
-    RUNTIME_VARS = {line.strip()
+    RUNTIME_VARS = {line.partition('#')[0].strip()
                     for line in file
                     if line.strip() and not line.startswith('#')}
 del file
