@@ -1,0 +1,164 @@
+# All variables declared here are unique to each interpreter.
+#
+# See check-c-globals.py.
+
+
+#######################################
+# builtin modules
+
+# Modules/_threadmodule.c
+#nb_threads
+
+# Modules/_tracemalloc.c
+#allocators
+#tables_lock
+#tracemalloc_config
+#tracemalloc_filenames
+#tracemalloc_peak_traced_memory
+#tracemalloc_reentrant_key
+#tracemalloc_traceback
+#tracemalloc_tracebacks
+#tracemalloc_traced_memory
+#tracemalloc_traces
+
+# Modules/faulthandler.c
+#fatal_error
+#old_stack
+#stack
+#thread
+#user_signals
+
+# Modules/gcmodule.c
+#_PyGC_generation0
+#callbacks
+#collecting
+#debug
+#enabled
+#garbage
+#generation_stats
+#generations
+#long_lived_pending
+#long_lived_total
+
+# Modules/signalmodule.c
+#Handlers
+#is_tripped
+main_thread
+#wakeup_fd
+
+
+#######################################
+# builtin types
+
+# Objects/moduleobject.c
+#max_module_number
+
+# Objects/object.c
+#_PyTrash_delete_later
+#_PyTrash_delete_nesting
+
+# Objects/obmalloc.c
+#_PyMem
+#_PyMem_Raw
+#_PyObject
+#_PyObject_Arena
+#_Py_AllocatedBlocks
+#arenas
+#maxarenas
+#narenas_currently_allocated
+#narenas_highwater
+#ntimes_arena_allocated
+#serialno
+#unused_arena_objects
+#usable_arenas
+#usedpools
+
+# Objects/sliceobject.c
+#slice_cache
+
+# Objects/typeobject.c
+#method_cache
+#next_version_tag
+
+
+#######################################
+# exceptions/warnings
+
+# Python/_warnings.c
+#_default_action
+#_filters
+#_filters_version
+#_once_registry
+
+
+#######################################
+# interpreter
+
+# Python/ceval.c
+#_Py_CheckRecursionLimit
+#_Py_TracingPossible
+#eval_breaker
+#gil_drop_request
+#main_thread
+#pending_async_exc
+#pending_lock
+#pendingcalls
+#pendingcalls_to_do
+#pendingfirst
+#pendinglast
+#recursion_limit
+
+# Python/ceval_gil.h
+#gil_cond
+#gil_interval
+#gil_last_holder
+#gil_locked
+#gil_mutex
+#gil_switch_number
+#switch_cond
+#switch_mutex
+
+# Python/pystate.c
+#_PyGILState_check_enabled  # maybe
+#_PyThreadState_Current
+#_PyThreadState_GetFrame
+#autoInterpreterState
+#autoTLSkey
+
+# Python/sysmodule.c
+#_check_interval
+#warnoptions  # maybe
+#xoptions  # maybe
+
+
+#######################################
+# startup
+
+# Python/bootstrap_hash.c
+#urandom_cache
+
+# Python/pylifecycle.c
+#_Py_Initialized
+#Py_BytesWarningFlag
+#Py_DebugFlag
+#Py_DontWriteBytecodeFlag
+#_Py_Finalizing
+#Py_FrozenFlag
+#Py_HashRandomizationFlag
+#Py_IgnoreEnvironmentFlag
+#Py_InspectFlag
+#Py_InteractiveFlag
+#Py_IsolatedFlag
+#Py_NoSiteFlag
+#Py_NoUserSiteDirectory
+#Py_OptimizeFlag
+#Py_QuietFlag
+#_Py_StandardStreamEncoding
+#_Py_StandardStreamErrors
+#Py_UnbufferedStdioFlag
+#Py_UseClassExceptionsFlag
+#Py_VerboseFlag
+#env_home
+#exitfuncs
+#nexitfuncs
+#pyexitfunc

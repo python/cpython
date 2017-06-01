@@ -55,7 +55,6 @@ RLocktype
 ThreadError
 localdummytype
 localtype
-#nb_threads
 str_dict
 
 # Modules/_tracemalloc.c
@@ -71,9 +70,6 @@ tracemalloc_empty_traceback
 #tracemalloc_traced_memory
 #tracemalloc_traces
 unknown_filename
-
-# Modules/config.c
-_PyImport_Inittab
 
 # Modules/faulthandler.c
 #fatal_error
@@ -96,23 +92,13 @@ gc_str
 #long_lived_pending
 #long_lived_total
 
-# Modules/getpath.c
-exec_prefix
-module_search_path
-prefix
-progpath
-
-# Modules/main.c
-orig_argc
-orig_argv
-
 # Modules/posixmodule.c
 billion
 posix_constants_confstr
 posix_constants_pathconf
 posix_constants_sysconf
 #posix_putenv_garbage
-#_stat_float_times
+#_stat_float_times  # almost
 structseq_new
 ticks_per_second
 
@@ -208,9 +194,6 @@ small_ints
 #free_list
 #numfree
 
-# Objects/moduleobject.c
-#max_module_number
-
 # Objects/object.c
 #_PyTrash_delete_later
 #_PyTrash_delete_nesting
@@ -237,7 +220,7 @@ _PyMem_Debug
 # Objects/setobject.c
 _PySet_Dummy
 _dummy_struct
-#emptyfrozenset  # almost
+#emptyfrozenset
 
 # Objects/sliceobject.c
 #slice_cache
@@ -346,38 +329,6 @@ alias_fields
 
 # Python/ceval.c
 #_Py_CheckRecursionLimit
-#_Py_TracingPossible
-#eval_breaker
-#gil_drop_request
-#main_thread
-#pending_async_exc
-#pending_lock
-#pendingcalls
-#pendingcalls_to_do
-#pendingfirst
-#pendinglast
-#recursion_limit
-
-# Python/ceval_gil.h
-#gil_cond
-#gil_interval
-#gil_last_holder
-#gil_locked
-#gil_mutex
-#gil_switch_number
-#switch_cond
-#switch_mutex
-
-# Python/pystate.c
-#_PyGILState_check_enabled  # maybe
-#_PyThreadState_Current
-#_PyThreadState_GetFrame
-#autoInterpreterState
-#autoTLSkey
-#head_mutex
-#interp_head
-#interp_main
-#_next_interp_id
 
 # Python/sysmodule.c
 #_check_interval
@@ -395,6 +346,12 @@ _pythread_stacksize
 
 #######################################
 # import
+
+# Modules/config.c
+_PyImport_Inittab
+
+# Objects/moduleobject.c
+#max_module_number
 
 # Python/dynload_shlib.c
 _PyImport_DynLoadFiletab
@@ -415,8 +372,19 @@ PyImport_Inittab
 # Python/modsupport.c
 #_Py_PackageContext
 
+
 #######################################
 # startup
+
+# Modules/getpath.c
+exec_prefix
+module_search_path
+prefix
+progpath
+
+# Modules/main.c
+orig_argc
+orig_argv
 
 # Python/bootstrap_hash.c
 #urandom_cache
@@ -442,7 +410,6 @@ _Py_CoreInitialized
 #Py_FrozenFlag
 #Py_HashRandomizationFlag
 #Py_IgnoreEnvironmentFlag
-#_Py_Initialized
 #Py_InspectFlag
 #Py_InteractiveFlag
 #Py_IsolatedFlag
