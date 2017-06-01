@@ -1,14 +1,20 @@
 
 from collections import namedtuple
+import glob
 import os.path
+import re
 import shutil
 import sys
 import subprocess
 
 
+VERBOSITY = 2
+
 ROOT_DIR = os.path.dirname(__file__) or '.'
 
-VERBOSITY = 0
+SOURCE_DIRS = ['Include', 'Objects', 'Modules', 'Parser', 'Python']
+
+CAPI_REGEX = re.compile(r'^ *PyAPI_DATA\([^)]*\) \W*(_?Py\w+(?:, \w+)*\w).*;.*$')
 
 # These variables are shared between all interpreters in the process.
 with open('globals-runtime.txt') as file:
@@ -16,6 +22,7 @@ with open('globals-runtime.txt') as file:
                     for line in file
                     if line.strip() and not line.startswith('#')}
 del file
+
 
 IGNORED_VARS = {
         '_DYNAMIC',
@@ -31,58 +38,43 @@ IGNORED_VARS = {
         }
 
 
-class Var(namedtuple('Var', 'name kind filename')):
-
-    @property
-    def is_global(self):
-        return self.kind.isupper()
-
-
-def find_vars(root, *, publiconly=False):
-    python = os.path.join(root, 'python')
-    nm = shutil.which('nm')
-    if nm is None or not os.path.exists(python):
-        raise NotImplementedError
-    else:
-        yield from (var
-                    for var in _find_var_symbols(python, nm, publiconly=publiconly)
-                    if var.name not in IGNORED_VARS)
+def find_capi_vars(root):
+    capi_vars = {}
+    for dirname in SOURCE_DIRS:
+        for filename in glob.glob(os.path.join(ROOT_DIR, dirname, '**/*.[hc]'),
+                                  recursive=True):
+            with open(filename) as file:
+                for name in _find_capi_vars(file):
+                    if name in capi_vars:
+                        assert not filename.endswith('.c')
+                        assert capi_vars[name].endswith('.c')
+                    capi_vars[name] = filename
+    return capi_vars
 
 
-NM_FUNCS = set('Tt')
-NM_PUBLIC_VARS = set('BD')
-NM_PRIVATE_VARS = set('bd')
-NM_VARS = NM_PUBLIC_VARS | NM_PRIVATE_VARS
-NM_DATA = set('Rr')
-NM_OTHER = set('ACGgiINpSsuUVvWw-?')
-NM_IGNORED = NM_FUNCS | NM_DATA | NM_OTHER | NM_PRIVATE_VARS
+def _find_capi_vars(lines):
+    for line in lines:
+        if not line.startswith('PyAPI_DATA'):
+            continue
+        assert '{' not in line
+        match = CAPI_REGEX.match(line)
+        assert match
+        names, = match.groups()
+        for name in names.split(', '):
+            yield name
 
 
-def _find_var_symbols(python, nm, *, publiconly=False):
-    if publiconly:
-        kinds = NM_PUBLIC_VARS
-    else:
-        kinds = NM_VARS
-    args = [nm,
-            '--line-numbers',
-            python]
-    out = subprocess.check_output(args)
-    for line in out.decode('utf-8').splitlines():
-        _, _, line = line.partition(' ')  # strip off the address
-        line = line.strip()
-        kind, _, line = line.partition(' ')
-        name, _, filename = line.partition('\t')
-        if filename:
-            filename = os.path.relpath(filename.partition(':')[0])
-        if kind in kinds:
-            yield Var(name.strip(), kind, filename or '~???~')
-        elif kind not in NM_IGNORED:
-            raise RuntimeError('unsupported NM type {!r}'.format(kind))
+def _is_runtime_var(name):
+    if _is_autogen_var(name):
+        return True
+    if _is_type_var(name):
+        return True
+    return name in RUNTIME_VARS
 
 
-def filter_var(var):
-    name = var.name
-    if (
+def _is_autogen_var(name):
+    return (
+        name.startswith('PyId_') or
         '.' in name or
         # Objects/typeobject.c
         name.startswith('op_id.') or
@@ -90,10 +82,14 @@ def filter_var(var):
         # Python/graminit.c
         name.startswith('arcs_') or
         name.startswith('states_')
-        ):
-        return False
+        )
 
-    if (
+
+def _is_type_var(name):
+    return (
+        name.endswith('_Type') or  # XXX Always a static type?
+        name.endswith('_type') or  # XXX Always a static type?
+        name.endswith('_desc') or
         name.endswith('_doc') or
         name.endswith('__doc__') or
         name.endswith('_docstring') or
@@ -110,138 +106,300 @@ def filter_var(var):
         name.endswith('_as_mapping') or
         name.endswith('_as_number') or
         name.endswith('_as_sequence')
-        ):
-        return False
-
-    if (
-        name.endswith('_Type') or
-        name.endswith('_type') or
-        name.startswith('PyId_')
-        ):
-        return False
-
-    return name not in RUNTIME_VARS
+        )
 
 
-def format_var(var, fmt=None):
-    if fmt is None:
-        fmt = '{:40} {}'
-    if var is None:
-        return fmt.format('  NAME', '  FILE')
-    if var == '-':
-        return fmt.format('-'*40, '-'*20)
-    filename = var.filename if var.is_global else '({})'.format(var.filename)
-    return fmt.format(var.name, filename)
+class Var(namedtuple('Var', 'name kind runtime capi filename')):
+
+    @classmethod
+    def parse_nm(cls, line, expected, ignored, capi_vars):
+        _, _, line = line.partition(' ')  # strip off the address
+        line = line.strip()
+        kind, _, line = line.partition(' ')
+        if kind in ignored or ():
+            return None
+        elif kind not in expected or ():
+            raise RuntimeError('unsupported NM type {!r}'.format(kind))
+
+        name, _, filename = line.partition('\t')
+        name = name.strip()
+        if _is_autogen_var(name):
+            return None
+        runtime = _is_runtime_var(name)
+        capi = (name in capi_vars or ())
+        if filename:
+            filename = os.path.relpath(filename.partition(':')[0])
+        return cls(name, kind, runtime, capi, filename or '~???~')
+
+    @property
+    def external(self):
+        return self.kind.isupper()
+
+
+def find_vars(root):
+    python = os.path.join(root, 'python')
+    if not os.path.exists(python):
+        raise RuntimeError('python binary missing (need to build it first?)')
+    capi_vars = find_capi_vars(root)
+
+    nm = shutil.which('nm')
+    if nm is None:
+        # XXX Use dumpbin.exe /SYMBOLS on Windows.
+        raise NotImplementedError
+    else:
+        yield from (var
+                    for var in _find_var_symbols(python, nm, capi_vars)
+                    if var.name not in IGNORED_VARS)
+
+
+NM_FUNCS = set('Tt')
+NM_PUBLIC_VARS = set('BD')
+NM_PRIVATE_VARS = set('bd')
+NM_VARS = NM_PUBLIC_VARS | NM_PRIVATE_VARS
+NM_DATA = set('Rr')
+NM_OTHER = set('ACGgiINpSsuUVvWw-?')
+NM_IGNORED = NM_FUNCS | NM_DATA | NM_OTHER
+
+
+def _find_var_symbols(python, nm, capi_vars):
+    args = [nm,
+            '--line-numbers',
+            python]
+    out = subprocess.check_output(args)
+    for line in out.decode('utf-8').splitlines():
+        var = Var.parse_nm(line, NM_VARS, NM_IGNORED, capi_vars)
+        if var is None:
+            continue
+        yield var
 
 
 #######################################
+
+class Filter(namedtuple('Filter', 'name op value action')):
+
+    @classmethod
+    def parse(cls, raw):
+        action = '+'
+        if raw.startswith(('+', '-')):
+            action = raw[0]
+            raw = raw[1:]
+        # XXX Support < and >?
+        name, op, value = raw.partition('=')
+        return cls(name, op, value, action)
+
+    def check(self, var):
+        value = getattr(var, self.name, None)
+        if not self.op:
+            matched = bool(value)
+        elif self.op == '=':
+            matched = (value == self.value)
+        else:
+            raise NotImplementedError
+
+        if self.action == '+':
+            return matched
+        elif self.action == '-':
+            return not matched
+        else:
+            raise NotImplementedError
+
+
+def filter_var(var, filters):
+    for filter in filters:
+        if not filter.check(var):
+            return False
+    return True
+
+
+def make_sort_key(spec):
+    columns = [(col.strip('_'), '_' if col.startswith('_') else '')
+               for col in spec]
+    def sort_key(var):
+        return tuple(getattr(var, col).lstrip(prefix)
+                     for col, prefix in columns)
+    return sort_key
+
+
+def make_groups(allvars, spec):
+    group = spec
+    groups = {}
+    for var in allvars:
+        value = getattr(var, group)
+        key = '{}: {}'.format(group, value)
+        try:
+            groupvars = groups[key]
+        except KeyError:
+            groupvars = groups[key] = []
+        groupvars.append(var)
+    return groups
+
+
+def format_groups(groups, columns, fmts, widths):
+    for group in sorted(groups):
+        groupvars = groups[group]
+        yield '', 0
+        yield '  # {}'.format(group), 0
+        yield from format_vars(groupvars, columns, fmts, widths)
+
+
+def format_vars(allvars, columns, fmts, widths):
+    fmt = ' '.join(fmts[col] for col in columns)
+    fmt = ' ' + fmt.replace(' ', '   ') + ' '  # for div margin
+    header = fmt.replace(':', ':^').format(*(col.upper() for col in columns))
+    yield header, 0
+    div = ' '.join('-'*(widths[col]+2) for col in columns)
+    yield div, 0
+    for var in allvars:
+        values = (getattr(var, col) for col in columns)
+        row = fmt.format(*('X' if val is True else val or ''
+                           for val in values))
+        yield row, 1
+    yield div, 0
+
+
+#######################################
+
+COLUMNS = 'name,external,capi,runtime,filename'
+COLUMN_NAMES = COLUMNS.split(',')
+
+COLUMN_WIDTHS = {col: len(col)
+                 for col in COLUMN_NAMES}
+COLUMN_WIDTHS.update({
+        'name': 50,
+        'filename': 40,
+        })
+COLUMN_FORMATS = {col: '{:%s}' % width
+                  for col, width in COLUMN_WIDTHS.items()}
+for col in COLUMN_FORMATS:
+    if COLUMN_WIDTHS[col] == len(col):
+        COLUMN_FORMATS[col] = COLUMN_FORMATS[col].replace(':', ':^')
+
+
+def _parse_filters_arg(raw, error):
+    filters = []
+    for value in raw.split(','):
+        value=value.strip()
+        if not value:
+            continue
+        try:
+            filter = Filter.parse(value)
+            if filter.name not in COLUMN_NAMES:
+                raise Exception('unsupported column {!r}'.format(filter.name))
+        except Exception as e:
+            error('bad filter {!r}: {}'.format(raw, e))
+        filters.append(filter)
+    return filters
+
+
+def _parse_columns_arg(raw, error):
+    columns = raw.split(',')
+    for column in columns:
+        if column not in COLUMN_NAMES:
+            error('unsupported column {!r}'.format(column))
+    return columns
+
+
+def _parse_sort_arg(raw, error):
+    sort = raw.split(',')
+    for column in sort:
+        if column.lstrip('_') not in COLUMN_NAMES:
+            error('unsupported column {!r}'.format(column))
+    return sort
+
+
+def _parse_group_arg(raw, error):
+    if not raw:
+        return raw
+    group = raw
+    if group not in COLUMN_NAMES:
+        error('unsupported column {!r}'.format(group))
+    if group != 'filename':
+        error('unsupported group {!r}'.format(group))
+    return group
+
 
 def parse_args(argv=None):
     if argv is None:
         argv = sys.argv[1:]
 
     import argparse
-    common = argparse.ArgumentParser(add_help=False)
-    common.add_argument('-v', '--verbose', action='count', default=0)
-    common.add_argument('-q', '--quiet', action='count', default=0)
+    parser = argparse.ArgumentParser()
 
-    filtered = argparse.ArgumentParser(add_help=False)
-    filtered.add_argument('--publiconly', action='store_true')
+    parser.add_argument('-v', '--verbose', action='count', default=0)
+    parser.add_argument('-q', '--quiet', action='count', default=0)
 
-    parser = argparse.ArgumentParser(parents=[common])
-    subs = parser.add_subparsers()
+    parser.add_argument('--filters', default='-runtime',
+                        help='[[-]<COLUMN>[=<GLOB>]] ...')
 
-    show = subs.add_parser('show',
-                           description='print out all supported globals',
-                           parents=[common, filtered])
-    show.add_argument('--by-name', dest='sort_by_name', action='store_true')
-    show.set_defaults(cmd='show')
+    parser.add_argument('--columns', default=COLUMNS,
+                        help='a comma-separated list of columns to show')
+    parser.add_argument('--sort', default='filename,_name',
+                        help='a comma-separated list of columns to sort')
+    parser.add_argument('--group',
+                        help='group by the given column name (- to not group)')
 
-    check = subs.add_parser('check',
-                            description='print out all unsupported globals',
-                            parents=[common, filtered])
-    check.set_defaults(cmd='check')
+    parser.add_argument('--rc-on-match', dest='rc', type=int)
 
     args = parser.parse_args(argv)
-
-    try:
-        cmd = vars(args).pop('cmd')
-    except KeyError:
-        # Fall back to the default.
-        cmd = 'check'
-        argv.insert(0, cmd)
-        args = parser.parse_args(argv)
-        del args.cmd
 
     verbose = vars(args).pop('verbose', 0)
     quiet = vars(args).pop('quiet', 0)
     args.verbosity = max(0, VERBOSITY + verbose - quiet)
 
-    return cmd, args
+    if args.sort.startswith('filename') and not args.group:
+        args.group = 'filename'
+
+    if args.rc is None:
+        if '-runtime' in args.filters or 'runtime' not in args.filters:
+            args.rc = 0
+        else:
+            args.rc = 1
+
+    args.filters = _parse_filters_arg(args.filters, parser.error)
+    args.columns = _parse_columns_arg(args.columns, parser.error)
+    args.sort = _parse_sort_arg(args.sort, parser.error)
+    args.group = _parse_group_arg(args.group, parser.error)
+
+    return args
 
 
-def main_show(root=ROOT_DIR, *, sort_by_name=False, publiconly=False):
+def main(root=ROOT_DIR,
+         filters=None, columns=COLUMN_NAMES, sort=None, group=None,
+         verbosity=VERBOSITY, rc=1):
+
+    log = lambda msg: ...
+    if verbosity >= 2:
+        log = lambda msg: print(msg)
+
     allvars = (var
-               for var in find_vars(root, publiconly=publiconly)
-               if not filter_var(var))
+               for var in find_vars(root)
+               if filter_var(var, filters))
+    if sort:
+        allvars = sorted(allvars, key=make_sort_key(sort))
 
-    found = 0
-    if sort_by_name:
-        print(format_var(None))
-        print(format_var('-'))
-        for var in sorted(allvars, key=lambda v: v.name.strip('_')):
-            found += 1
-            print(format_var(var))
-
+    if group:
+        try:
+            columns.remove(group)
+        except ValueError:
+            pass
+        grouped = make_groups(allvars, group)
+        lines = format_groups(grouped, columns, COLUMN_FORMATS, COLUMN_WIDTHS)
     else:
-        current = None
-        for var in sorted(allvars,
-                          key=lambda v: (v.filename, v.name.strip('_'))):
-            found += 1
-            if var.filename != current:
-                if current is None:
-                    print('ERROR: found globals', file=sys.stderr)
-                current = var.filename
-                print('\n  # ' + current, file=sys.stderr)
-            print(var.name if var.is_global else '({})'.format(var.name))
-    print('\ntotal: {}'.format(found))
+        lines = format_vars(allvars, columns, COLUMN_FORMATS, COLUMN_WIDTHS)
 
+    total = 0
+    for line, count in lines:
+        total += count
+        log(line)
+    log('\ntotal: {}'.format(total))
 
-def main_check(root=ROOT_DIR, *, publiconly=False, quiet=False):
-    allvars = (var
-               for var in find_vars(root, publiconly=publiconly)
-               if filter_var(var))
-
-    if quiet:
-        found = sum(1 for _ in allvars)
-    else:
-        found = 0
-        current = None
-        for var in sorted(allvars,
-                          key=lambda v: (v.filename, v.name.strip('_'))):
-            found += 1
-            if var.filename != current:
-                if current is None:
-                    print('ERROR: found globals', file=sys.stderr)
-                current = var.filename
-                print('\n  # ' + current, file=sys.stderr)
-            print(var.name if var.is_global else '({})'.format(var.name),
-                  file=sys.stderr)
-        
-    print('\ntotal: {}'.format(found))
-    rc = 1 if found else 0
-    return rc
+    if total and rc:
+        print('ERROR: found non-runtime globals', file=sys.stderr)
+        return rc
+    return 0
 
 
 if __name__ == '__main__':
-    sub, args = parse_args()
-
-    verbosity = vars(args).pop('verbosity')
-    if verbosity == 0:
-        log = (lambda *args: None)
-
-    main = main_check
-    if sub == 'show':
-        main = main_show
+    args = parse_args()
     sys.exit(
             main(**vars(args)))
