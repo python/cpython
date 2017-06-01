@@ -864,16 +864,20 @@ class TestSubClassingCase(unittest.TestCase):
         self.cal = CustomHTMLCal()
 
     def test_formatmonthname(self):
-        self.assertIn('class="text-center month-head"', self.cal.formatmonthname(2017, 5))
+        self.assertIn('class="text-center month-head"',
+                      self.cal.formatmonthname(2017, 5))
 
     def test_formatmonth(self):
-        self.assertIn('class="text-center month"', self.cal.formatmonth(2017, 5))
+        self.assertIn('class="text-center month"',
+                      self.cal.formatmonth(2017, 5))
 
     def test_formatweek(self):
-        weeks = self.cal.monthdays2calendar(2017,5)
+        weeks = self.cal.monthdays2calendar(2017, 5)
         self.assertIn('class="wed text-nowrap"', self.cal.formatweek(weeks[0]))
+
     def test_format_year(self):
-        self.assertIn('<tr><th colspan="%d" class="%s">%s</th></tr>' % (3, self.cal.cssclass_year_head, 2017), self.cal.formatyear(2017))
+        self.assertIn('<tr><th colspan="%d" class="%s">%s</th></tr>' % (
+            3, self.cal.cssclass_year_head, 2017), self.cal.formatyear(2017))
 
 if __name__ == "__main__":
     unittest.main()
