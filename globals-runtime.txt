@@ -12,7 +12,7 @@
 
 
 #######################################
-# static errors (Include/pyerrors.h)
+# static errors (Objects/exceptions.c)
 
 # Handled via _is_exception() in check-c-globals.py, with some special
 # cases here.
@@ -166,7 +166,6 @@ DefaultHandler
 IgnoreHandler
 IntHandler
 ItimerError
-#SiginfoType  # almost
 #is_tripped
 main_pid
 main_thread
@@ -177,6 +176,134 @@ old_siginthandler
 ZipImportError
 #zip_directory_cache
 zip_searchorder
+
+
+#######################################
+# builtin types
+
+# Objects/boolobject.c
+false_str
+true_str
+
+# Objects/bytearrayobject.c
+_PyByteArray_empty_string
+
+# Objects/bytesobject.c
+characters
+nullstring
+
+# Objects/classobject.c
+#free_list
+#numfree
+
+# Objects/dictobject.c
+empty_keys_struct
+empty_values
+#free_list
+#keys_free_list
+#numfree
+#numfreekeys
+pydict_global_version  # maybe not
+
+# Objects/exceptions.c
+PyExc_RecursionErrorInst
+errnomap
+#memerrors_freelist
+#memerrors_numfree
+
+# Objects/floatobject.c
+detected_double_format
+detected_float_format
+double_format
+float_format
+#free_list
+#numfree
+
+# Objects/frameobject.c
+#free_list
+#numfree
+
+# Objects/genobject.c
+#ag_asend_freelist
+#ag_asend_freelist_free
+#ag_value_freelist
+#ag_value_freelist_free
+
+# Objects/listobject.c
+indexerr
+#free_list
+#numfree
+
+# Objects/longobject.c
+_PyLong_DigitValue
+_PyLong_One
+_PyLong_Zero
+small_ints
+
+# Objects/methodobject.c
+#free_list
+#numfree
+
+# Objects/moduleobject.c
+#max_module_number
+
+# Objects/object.c
+#_PyTrash_delete_later
+#_PyTrash_delete_nesting
+_Py_SwappedOp
+_Py_abstract_hack
+
+# Objects/obmalloc.c
+#_PyMem
+_PyMem_Debug
+#_PyMem_Raw
+#_PyObject
+#_PyObject_Arena
+#_Py_AllocatedBlocks
+#arenas
+#maxarenas
+#narenas_currently_allocated
+#narenas_highwater
+#ntimes_arena_allocated
+#serialno
+#unused_arena_objects
+#usable_arenas
+#usedpools
+
+# Objects/setobject.c
+_PySet_Dummy
+_dummy_struct
+#emptyfrozenset  # almost
+
+# Objects/sliceobject.c
+#slice_cache
+
+# Objects/structseq.c
+PyStructSequence_UnnamedField
+_struct_sequence_template
+
+# Objects/tupleobject.c
+#free_list
+#numfree
+
+# Objects/typeobject.c
+#method_cache
+name_op
+#next_version_tag
+#slotdefs  # almost
+#slotdefs_initialized  # almost
+subtype_getsets_dict_only
+subtype_getsets_full
+subtype_getsets_weakref_only
+tp_new_methoddef
+
+# Objects/unicodeobject.c
+bloom_linebreak
+#interned
+#static_strings  # almost
+#ucnhash_CAPI  # almost
+#unicode_empty  # almost
+#unicode_latin1
 
 
 #######################################
@@ -342,148 +469,6 @@ withitem_type
 
 #######################################
 # others
-
-# Objects/boolobject.c
-#false_str
-#true_str
-
-# Objects/bytearrayobject.c
-#_PyByteArray_empty_string
-#bytearray_as_buffer
-
-# Objects/bytesobject.c
-#bytes_as_buffer
-#characters
-#nullstring
-
-# Objects/classobject.c
-#free_list
-#numfree
-
-# Objects/dictobject.c
-#empty_keys_struct
-#empty_values
-#free_list
-#keys_free_list
-#numfree
-#numfreekeys
-#pydict_global_version
-
-# Objects/exceptions.c
-#_PyExc_BaseException
-#_PyExc_MemoryError
-#PyExc_RecursionErrorInst
-#_PyExc_UnicodeDecodeError
-#_PyExc_UnicodeEncodeError
-#_PyExc_UnicodeTranslateError
-#errnomap
-#memerrors_freelist
-#memerrors_numfree
-
-# Objects/floatobject.c
-#FloatInfoType
-#detected_double_format
-#detected_float_format
-#double_format
-#float_format
-#free_list
-#numfree
-
-# Objects/frameobject.c
-#free_list
-#numfree
-
-# Objects/genobject.c
-#ag_asend_freelist
-#ag_asend_freelist_free
-#ag_value_freelist
-#ag_value_freelist_free
-#aiter_wrapper_as_async
-#async_gen_as_async
-#async_gen_asend_as_async
-#async_gen_athrow_as_async
-#coro_as_async
-
-# Objects/listobject.c
-#free_list
-#indexerr
-#numfree
-
-# Objects/longobject.c
-#Int_InfoType
-#_PyLong_DigitValue
-#_PyLong_One
-#_PyLong_Zero
-#small_ints
-
-# Objects/memoryobject.c
-#memory_as_buffer
-
-# Objects/methodobject.c
-#free_list
-#numfree
-
-# Objects/moduleobject.c
-#max_module_number
-
-# Objects/object.c
-#_PyTrash_delete_later
-#_PyTrash_delete_nesting
-#_Py_SwappedOp
-#_Py_abstract_hack
-
-# Objects/obmalloc.c
-#_PyMem
-#_PyMem_Debug
-#_PyMem_Raw
-#_PyObject
-#_PyObject_Arena
-#_Py_AllocatedBlocks
-#arenas
-#maxarenas
-#narenas_currently_allocated
-#narenas_highwater
-#ntimes_arena_allocated
-#serialno
-#unused_arena_objects
-#usable_arenas
-#usedpools
-
-# Objects/setobject.c
-#_PySet_Dummy
-#_dummy_struct
-#emptyfrozenset
-
-# Objects/sliceobject.c
-#slice_cache
-
-# Objects/structseq.c
-#PyStructSequence_UnnamedField
-#_struct_sequence_template
-
-# Objects/tupleobject.c
-#free_list
-#numfree
-
-# Objects/typeobject.c
-#method_cache
-#name_op
-#next_version_tag
-#slotdefs
-#slotdefs_initialized
-#subtype_getsets_dict_only
-#subtype_getsets_full
-#subtype_getsets_weakref_only
-#tp_new_methoddef
-
-# Objects/unicodeobject.c
-#EncodingMapType
-#bloom_linebreak
-#interned
-#static_strings
-#ucnhash_CAPI
-#unicode_empty
-#unicode_latin1
 
 # Parser/myreadline.c
 #PyOS_InputHook

@@ -105,7 +105,8 @@ def _is_type_var(name):
         name.endswith('_as_mapping') or
         name.endswith('_as_number') or
         name.endswith('_as_sequence') or
-        name.endswith('_as_buffer')
+        name.endswith('_as_buffer') or
+        name.endswith('_as_async')
         )
 
 
