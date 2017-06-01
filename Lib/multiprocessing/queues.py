@@ -221,8 +221,8 @@ class Queue(object):
         else:
             wacquire = None
 
-        try:
-            while 1:
+        while 1:
+            try:
                 nacquire()
                 try:
                     if not buffer:
@@ -249,21 +249,19 @@ class Queue(object):
                                 wrelease()
                 except IndexError:
                     pass
-        except Exception as e:
-            if ignore_epipe and getattr(e, 'errno', 0) == errno.EPIPE:
-                return
-            # Since this runs in a daemon thread the resources it uses
-            # may be become unusable while the process is cleaning up.
-            # We ignore errors which happen after the process has
-            # started to cleanup.
-            try:
+            except Exception as e:
+                if ignore_epipe and getattr(e, 'errno', 0) == errno.EPIPE:
+                    return
+                # Since this runs in a daemon thread the resources it uses
+                # may be become unusable while the process is cleaning up.
+                # We ignore errors which happen after the process has
+                # started to cleanup.
                 if is_exiting():
                     info('error in queue thread: %s', e)
+                    return
                 else:
                     import traceback
                     traceback.print_exc()
-            except Exception:
-                pass
 
 _sentinel = object()
 
@@ -337,6 +335,7 @@ class SimpleQueue(object):
 
     def __setstate__(self, state):
         (self._reader, self._writer, self._rlock, self._wlock) = state
+        self._poll = self._reader.poll
 
     def get(self):
         with self._rlock:

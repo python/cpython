@@ -74,7 +74,7 @@ import http
 import io
 import re
 import socket
-import collections
+import collections.abc
 from urllib.parse import urlsplit
 
 # HTTPMessage, parse_headers(), and the HTTP status code constants are
@@ -371,7 +371,6 @@ class HTTPResponse(io.BufferedIOBase):
         if self.version == 11:
             # An HTTP/1.1 proxy is assumed to stay open unless
             # explicitly closed.
-            conn = self.headers.get("connection")
             if conn and "close" in conn.lower():
                 return True
             return False
@@ -977,7 +976,7 @@ class HTTPConnection:
         try:
             self.sock.sendall(data)
         except TypeError:
-            if isinstance(data, collections.Iterable):
+            if isinstance(data, collections.abc.Iterable):
                 for d in data:
                     self.sock.sendall(d)
             else:

@@ -1090,7 +1090,7 @@ array_array_index(arrayobject *self, PyObject *v)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "array.index(x): x not in list");
+    PyErr_SetString(PyExc_ValueError, "array.index(x): x not in array");
     return NULL;
 }
 
@@ -1142,7 +1142,7 @@ array_array_remove(arrayobject *self, PyObject *v)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in list");
+    PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in array");
     return NULL;
 }
 

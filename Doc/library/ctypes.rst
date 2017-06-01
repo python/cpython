@@ -97,7 +97,7 @@ Functions are accessed as attributes of dll objects::
    <_FuncPtr object at 0x...>
    >>> print(windll.kernel32.MyOwnFunction)     # doctest: +WINDOWS
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
      File "ctypes.py", line 239, in __getattr__
        func = _StdcallFuncPtr(name, self)
    AttributeError: function 'MyOwnFunction' not found
@@ -135,7 +135,7 @@ functions can be accessed by indexing the dll object with the ordinal number::
    <_FuncPtr object at 0x...>
    >>> cdll.kernel32[0]  # doctest: +WINDOWS
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
      File "ctypes.py", line 310, in __getitem__
        func = _StdcallFuncPtr(name, self)
    AttributeError: function ordinal 0 not found
@@ -161,33 +161,25 @@ as the NULL pointer)::
    0x1d000000
    >>>
 
-:mod:`ctypes` tries to protect you from calling functions with the wrong number
-of arguments or the wrong calling convention.  Unfortunately this only works on
-Windows.  It does this by examining the stack after the function returns, so
-although an error is raised the function *has* been called::
+.. note::
 
-   >>> windll.kernel32.GetModuleHandleA()      # doctest: +WINDOWS
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
-   ValueError: Procedure probably called with not enough arguments (4 bytes missing)
-   >>> windll.kernel32.GetModuleHandleA(0, 0)  # doctest: +WINDOWS
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
-   ValueError: Procedure probably called with too many arguments (4 bytes in excess)
-   >>>
+   :mod:`ctypes` may raise a :exc:`ValueError` after calling the function, if
+   it detects that an invalid number of arguments were passed.  This behavior
+   should not be relied upon.  It is deprecated in 3.6.2, and will be removed
+   in 3.7.
 
-The same exception is raised when you call an ``stdcall`` function with the
+:exc:`ValueError` is raised when you call an ``stdcall`` function with the
 ``cdecl`` calling convention, or vice versa::
 
    >>> cdll.kernel32.GetModuleHandleA(None)  # doctest: +WINDOWS
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ValueError: Procedure probably called with not enough arguments (4 bytes missing)
    >>>
 
    >>> windll.msvcrt.printf(b"spam")  # doctest: +WINDOWS
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ValueError: Procedure probably called with too many arguments (4 bytes in excess)
    >>>
 
@@ -200,7 +192,7 @@ argument values::
 
    >>> windll.kernel32.GetModuleHandleA(32)  # doctest: +WINDOWS
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    OSError: exception: access violation reading 0x00000020
    >>>
 
@@ -284,7 +276,7 @@ the correct type and value::
    >>> c_int()
    c_long(0)
    >>> c_wchar_p("Hello, World")
-   c_wchar_p('Hello, World')
+   c_wchar_p(140018365411392)
    >>> c_ushort(-3)
    c_ushort(65533)
    >>>
@@ -309,11 +301,15 @@ bytes objects are immutable)::
    >>> s = "Hello, World"
    >>> c_s = c_wchar_p(s)
    >>> print(c_s)
-   c_wchar_p('Hello, World')
+   c_wchar_p(139966785747344)
+   >>> print(c_s.value)
+   Hello World
    >>> c_s.value = "Hi, there"
-   >>> print(c_s)
-   c_wchar_p('Hi, there')
-   >>> print(s)                 # first object is unchanged
+   >>> print(c_s)              # the memory location has changed
+   c_wchar_p(139966783348904)
+   >>> print(c_s.value)
+   Hi, there
+   >>> print(s)                # first object is unchanged
    Hello, World
    >>>
 
@@ -369,7 +365,7 @@ from within *IDLE* or *PythonWin*::
    19
    >>> printf(b"%f bottles of beer\n", 42.5)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ArgumentError: argument 2: exceptions.TypeError: Don't know how to convert parameter 2
    >>>
 
@@ -432,7 +428,7 @@ prototype for a C function), and tries to convert the arguments to valid types::
 
    >>> printf(b"%d %d %d", 1, 2, 3)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ArgumentError: argument 2: exceptions.TypeError: wrong type
    >>> printf(b"%s %d %f\n", b"X", 2, 3)
    X 2 3.000000
@@ -482,7 +478,7 @@ single character Python bytes object into a C char::
    'def'
    >>> strchr(b"abcdef", b"def")
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ArgumentError: argument 2: exceptions.TypeError: one character string expected
    >>> print(strchr(b"abcdef", b"x"))
    None
@@ -508,7 +504,7 @@ useful to check for error return values and automatically raise an exception::
    486539264
    >>> GetModuleHandle("something silly")  # doctest: +WINDOWS
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
      File "<stdin>", line 3, in ValidHandle
    OSError: [Errno 126] The specified module could not be found.
    >>>
@@ -579,7 +575,7 @@ Here is a simple example of a POINT structure, which contains two integers named
    0 5
    >>> POINT(1, 2, 3)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ValueError: too many initializers
    >>>
 
@@ -782,7 +778,7 @@ new type::
    <class 'ctypes.LP_c_long'>
    >>> PI(42)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: expected c_long instead of int
    >>> PI(c_int(42))
    <ctypes.LP_c_long object at 0x...>
@@ -858,7 +854,7 @@ but not instances of other types::
 
    >>> bar.values = (c_byte * 4)()
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: incompatible types, c_byte_Array_4 instance instead of LP_c_long instance
    >>>
 
@@ -909,7 +905,7 @@ work::
    ...                 ("next", POINTER(cell))]
    ...
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
      File "<stdin>", line 2, in cell
    NameError: name 'cell' is not defined
    >>>

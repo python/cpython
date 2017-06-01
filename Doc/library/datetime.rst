@@ -368,7 +368,7 @@ Example usage:
     >>> nine_years = ten_years - year
     >>> nine_years, nine_years.days // 365
     (datetime.timedelta(3285), 9)
-    >>> three_years = nine_years // 3;
+    >>> three_years = nine_years // 3
     >>> three_years, three_years.days // 365
     (datetime.timedelta(1095), 3)
     >>> abs(three_years - ten_years) == 2 * three_years + year

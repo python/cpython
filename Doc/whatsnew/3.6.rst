@@ -534,7 +534,7 @@ provide correctly read str objects to Python code. ``sys.stdin``,
 
 This change only applies when using an interactive console, and not when
 redirecting files or pipes. To revert to the previous behaviour for interactive
-console use, set :envvar:`PYTHONLEGACYWINDOWSIOENCODING`.
+console use, set :envvar:`PYTHONLEGACYWINDOWSSTDIO`.
 
 .. seealso::
 
@@ -908,7 +908,7 @@ return value.
 cmath
 -----
 
-The new :const:`cmath.tau` (τ) constant has been added.
+The new :const:`cmath.tau` (*τ*) constant has been added.
 (Contributed by Lisa Roach in :issue:`12345`, see :pep:`628` for details.)
 
 New constants: :const:`cmath.inf` and :const:`cmath.nan` to
@@ -1199,7 +1199,7 @@ be reopened.
 math
 ----
 
-The tau (τ) constant has been added to the :mod:`math` and :mod:`cmath`
+The tau (*τ*) constant has been added to the :mod:`math` and :mod:`cmath`
 modules.
 (Contributed by Lisa Roach in :issue:`12345`, see :pep:`628` for details.)
 
