@@ -73,6 +73,8 @@ def _is_runtime_var(name):
         return True
     if _is_exception(name):
         return True
+    if _is_compiler(name):
+        return True
     return name in RUNTIME_VARS
 
 
@@ -125,6 +127,15 @@ def _is_exception(name):
     if not name.startswith(('PyExc_', '_PyExc_')):
         return False
     return name.endswith(('Error', 'Warning'))
+
+
+def _is_compiler(name):
+    return (
+        # Python/Pythyon-ast.c
+        name.endswith('_type') or
+        name.endswith('_singleton') or
+        name.endswith('_attributes')
+        )
 
 
 class Var(namedtuple('Var', 'name kind runtime capi filename')):

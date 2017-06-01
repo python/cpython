@@ -6,50 +6,6 @@
 
 
 #######################################
-# static types
-
-# Handled via _is_type_var() in check-c-globals.py.
-
-
-#######################################
-# static errors (Objects/exceptions.c)
-
-# Handled via _is_exception() in check-c-globals.py, with some special
-# cases here.
-
-PyExc_BaseException
-PyExc_Exception
-PyExc_GeneratorExit
-PyExc_KeyboardInterrupt
-PyExc_StopAsyncIteration
-PyExc_StopIteration
-PyExc_SystemExit
-
-_PyExc_BaseException
-_PyExc_Exception
-_PyExc_GeneratorExit
-_PyExc_KeyboardInterrupt
-_PyExc_StopAsyncIteration
-_PyExc_StopIteration
-_PyExc_SystemExit
-
-
-#######################################
-# singletons
-
-# Include/boolobject.h
-_Py_FalseStruct
-_Py_TrueStruct
-
-# Include/object.h
-_Py_NoneStruct
-_Py_NotImplementedStruct
-
-# Include/sliceobject.h
-_Py_EllipsisObject
-
-
-#######################################
 # builtin modules
 
 # Generic names handled via _is_module() in check-c-globals.py.
@@ -181,6 +137,9 @@ zip_searchorder
 #######################################
 # builtin types
 
+# Generic names for static types handled via _is_type_var()
+# in check-c-globals.py.
+
 # Objects/boolobject.c
 false_str
 true_str
@@ -307,164 +266,68 @@ bloom_linebreak
 
 
 #######################################
-# ast
+# singletons
+
+# Include/boolobject.h
+_Py_FalseStruct
+_Py_TrueStruct
+
+# Include/object.h
+_Py_NoneStruct
+_Py_NotImplementedStruct
+
+# Include/sliceobject.h
+_Py_EllipsisObject
+
+
+#######################################
+# exceptions/warnings
+
+# Handled via _is_exception() in check-c-globals.py, with some special
+# cases here.
+
+# Objects/exceptions.c
+PyExc_BaseException
+PyExc_Exception
+PyExc_GeneratorExit
+PyExc_KeyboardInterrupt
+PyExc_StopAsyncIteration
+PyExc_StopIteration
+PyExc_SystemExit
+_PyExc_BaseException
+_PyExc_Exception
+_PyExc_GeneratorExit
+_PyExc_KeyboardInterrupt
+_PyExc_StopAsyncIteration
+_PyExc_StopIteration
+_PyExc_SystemExit
+
+
+#######################################
+# compiler
+
+# AST vars are handled in _is_compiler().
+
+# Parser/tokenizer.c
+_PyParser_TokenNames
+
+# Python/graminit.c
+_PyParser_Grammar
+dfas
+labels
 
 # Python/Python-ast.c
-AST_type
-Add_singleton
-Add_type
-And_singleton
-And_type
-AnnAssign_type
-Assert_type
-Assign_type
-AsyncFor_type
-AsyncFunctionDef_type
-AsyncWith_type
-Attribute_type
-AugAssign_type
-AugLoad_singleton
-AugLoad_type
-AugStore_singleton
-AugStore_type
-Await_type
-BinOp_type
-BitAnd_singleton
-BitAnd_type
-BitOr_singleton
-BitOr_type
-BitXor_singleton
-BitXor_type
-BoolOp_type
-Break_type
-Bytes_type
-Call_type
-ClassDef_type
-Compare_type
-Constant_type
-Continue_type
-Del_singleton
-Del_type
-Delete_type
-DictComp_type
-Dict_type
-Div_singleton
-Div_type
-Ellipsis_type
-Eq_singleton
-Eq_type
-ExceptHandler_type
-Expr_type
-Expression_type
-ExtSlice_type
-FloorDiv_singleton
-FloorDiv_type
-For_type
-FormattedValue_type
-FunctionDef_type
-GeneratorExp_type
-Global_type
-GtE_singleton
-GtE_type
-Gt_singleton
-Gt_type
-IfExp_type
-If_type
-ImportFrom_type
-Import_type
-In_singleton
-In_type
-Index_type
-Interactive_type
-Invert_singleton
-Invert_type
-IsNot_singleton
-IsNot_type
-Is_singleton
-Is_type
-JoinedStr_type
-LShift_singleton
-LShift_type
-Lambda_type
-ListComp_type
-List_type
-Load_singleton
-Load_type
-LtE_singleton
-LtE_type
-Lt_singleton
-Lt_type
-MatMult_singleton
-MatMult_type
-Mod_singleton
-Mod_type
-Module_type
-Mult_singleton
-Mult_type
-NameConstant_type
-Name_type
-Nonlocal_type
-NotEq_singleton
-NotEq_type
-NotIn_singleton
-NotIn_type
-Not_singleton
-Not_type
-Num_type
-Or_singleton
-Or_type
-Param_singleton
-Param_type
-Pass_type
-Pow_singleton
-Pow_type
-RShift_singleton
-RShift_type
-Raise_type
-Return_type
-SetComp_type
-Set_type
-Slice_type
-Starred_type
-Store_singleton
-Store_type
-Str_type
-Sub_singleton
-Sub_type
-Subscript_type
-Suite_type
-Try_type
-Tuple_type
-UAdd_singleton
-UAdd_type
-USub_singleton
-USub_type
-UnaryOp_type
-While_type
-With_type
-YieldFrom_type
-Yield_type
-alias_type
-arg_attributes
-arg_type
-arguments_type
-ast_type_getsets
-boolop_type
-cmpop_type
-comprehension_type
-excepthandler_attributes
-excepthandler_type
-expr_attributes
-expr_context_type
-expr_type
-keyword_type
-mod_type
-operator_type
-slice_type
-stmt_attributes
-stmt_type
-unaryop_type
-withitem_type
+alias_fields
+
+# Python/symtable.c
+# XXX All okay?
+#__class__
+#dictcomp
+#genexpr
+#lambda
+#listcomp
+#setcomp
+#top
 
 
 #######################################
@@ -475,9 +338,6 @@ withitem_type
 #PyOS_ReadlineFunctionPointer
 #_PyOS_ReadlineLock
 #_PyOS_ReadlineTState
-
-# Parser/tokenizer.c
-#_PyParser_TokenNames
 
 # Python/_warnings.c
 #_default_action
@@ -549,11 +409,6 @@ _PyOS_optarg
 _PyOS_opterr
 _PyOS_optind
 
-# Python/graminit.c
-_PyParser_Grammar
-dfas
-labels
-
 # Python/import.c
 PyImport_Inittab
 #extensions
@@ -565,9 +420,6 @@ PyImport_Inittab
 PyHash_Func
 _Py_HashSecret
 _Py_HashSecret_Initialized
-
-# Python/Python-ast.c
-alias_fields
 
 # Python/modsupport.c
 #_Py_PackageContext
@@ -612,15 +464,6 @@ _Py_CoreInitialized
 #interp_head
 #interp_main
 #_next_interp_id
-
-# Python/symtable.c
-#__class__
-#dictcomp
-#genexpr
-#lambda
-#listcomp
-#setcomp
-#top
 
 # Python/sysmodule.c
 AsyncGenHooksType
