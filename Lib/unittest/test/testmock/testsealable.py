@@ -32,7 +32,15 @@ class TestSealable(unittest.TestCase):
         with self.assertRaises(AttributeError):
             m.test
         with self.assertRaises(AttributeError):
-            m.test()
+            m()
+
+
+    def test_new_attributes_cannot_be_set_on_seal(self):
+        m = mock.Mock()
+
+        mock.seal(m)
+        with self.assertRaises(AttributeError):
+            m.test = 1
 
 
     def test_existing_attributes_allowed_after_seal(self):
