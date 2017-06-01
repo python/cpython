@@ -2422,18 +2422,33 @@ class PropertyMock(Mock):
         self(val)
 
 
-def seal(input_mock):
+def seal(in_mock):
     """Disables the automatic generation of "submocks"
 
     Given an input Mock, seals it to ensure no further mocks will be generated
-    when accessing an attribute that was not already defined
+    when accessing an attribute that was not already defined.
+
+    Submocks are defined as all mocks which were created DIRECTLY from the
+    parent. If a mock is assigned to an attribute of an existing mock,
+    it is not considered a submock.
+
+    :Example:
+
+    >>> mock = Mock()
+    >>> mock.submock.attribute1 = 2
+    >>> mock.not_submock = mock.Mock()
+    >>> seal(mock)
+    >>> mock.submock.attribute2  # This will raise
+    >>> mock.not_submock.attribute2  # This won't raise
+
     """
-    input_mock._is_sealed = True
-    for attr in dir(input_mock):
+    in_mock._is_sealed = True
+    for attr in dir(in_mock):
         try:
-            m = getattr(input_mock, attr)
+            m = getattr(in_mock, attr)
         except AttributeError:
-            pass
-        else:
-            if isinstance(m, NonCallableMock):
-                seal(m)
+            continue
+        if not isinstance(m, NonCallableMock):
+            continue
+        if m._mock_new_parent is in_mock:
+            seal(m)

@@ -85,6 +85,18 @@ class TestSealable(unittest.TestCase):
             m.test1.test2.test4
 
 
+    def test_seals_dont_recurse_on_manual_attributes(self):
+        m = mock.Mock(name="root_mock")
+
+        m.test1.test2 = mock.Mock(name="not_sealed")
+        m.test1.test2.test3= 4
+
+        mock.seal(m)
+        assert m.test1.test2.test3 == 4
+        m.test1.test2.test4  # Does not raise
+        m.test1.test2.test4 = 1  # Does not raise
+
+
     def test_integration_with_spec_att_definition(self):
         """You are not restricted when defining attributes on a mock with spec"""
         m = mock.Mock(SampleObject)
