@@ -2445,7 +2445,7 @@ builtin_sum(PyObject *self, PyObject *args)
 PyDoc_STRVAR(sum_doc,
 "sum(iterable[, start]) -> value\n\
 \n\
-Return the sum of an iterable or sequence of numbers (NOT strings) \n\
+Return the sum of an iterable or sequence of numbers (NOT strings)\n\
 plus the value of 'start' (which defaults to 0).  When the sequence is\n\
 empty, return start.");
 
