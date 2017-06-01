@@ -326,35 +326,7 @@ _Py_EllipsisObject
 #######################################
 # modules
 
-_astmodule
-atexitmodule
-builtinsmodule
-codecsmodule
-_collectionsmodule
-doc_find_module
-doc_load_module
-errnomodule
-_functoolsmodule
-gcmodule
-impmodule
-itertoolsmodule
-_localemodule
-marshalmodule
-operatormodule
-posixmodule
-pwdmodule
-signalmodule
-sremodule
-statmodule
-_string_module
-symtablemodule
-sysmodule
-threadmodule
-timemodule
-warningsmodule
-weakrefmodule
-xxsubtypemodule
-zipimportmodule
+# Handled via _is_runtime_var() in check-c-globals.
 
 
 #######################################

@@ -69,6 +69,8 @@ def _is_runtime_var(name):
         return True
     if _is_type_var(name):
         return True
+    if name.endswith('module'):
+        return True
     return name in RUNTIME_VARS
 
 
