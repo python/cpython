@@ -1499,9 +1499,9 @@ call_method_noarg(PyObject *self, _Py_Identifier *name)
     PyObject *func, *retval;
 
     func = lookup_method(self, name, &unbound);
-    if (func == NULL)
+    if (func == NULL) {
         return NULL;
-
+    }
     retval = call_unbound_noarg(unbound, func, self);
     Py_DECREF(func);
     return retval;
@@ -1514,9 +1514,9 @@ call_method_onearg(PyObject *self, _Py_Identifier *name, PyObject *arg)
     PyObject *func, *retval;
 
     func = lookup_method(self, name, &unbound);
-    if (func == NULL)
+    if (func == NULL) {
         return NULL;
-
+    }
     retval = call_unbound_onearg(unbound, func, self, arg);
     Py_DECREF(func);
     return retval;
@@ -1530,9 +1530,9 @@ call_method_twoargs(PyObject *self, _Py_Identifier *name, PyObject *arg1,
     PyObject *func, *retval;
 
     func = lookup_method(self, name, &unbound);
-    if (func == NULL)
+    if (func == NULL) {
         return NULL;
-
+    }
     if (unbound) {
         PyObject *args[3] = {self, arg1, arg2};
         retval = _PyObject_FastCall(func, args, 3);
@@ -5976,8 +5976,9 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
 {
     PyObject *retval;
     PyObject *ival = PyLong_FromSsize_t(i);
-    if (ival == NULL)
+    if (ival == NULL) {
         return NULL;
+    }
     retval = call_method_onearg(self, &PyId___getitem__, ival);
     Py_DECREF(ival);
     return retval;
