@@ -69,7 +69,9 @@ def _is_runtime_var(name):
         return True
     if _is_type_var(name):
         return True
-    if name.endswith('module'):
+    if _is_module(name):
+        return True
+    if _is_exception(name):
         return True
     return name in RUNTIME_VARS
 
@@ -109,6 +111,17 @@ def _is_type_var(name):
         name.endswith('_as_number') or
         name.endswith('_as_sequence')
         )
+
+
+def _is_module(name):
+    return name.endswith('module')
+
+
+def _is_exception(name):
+    # Other vars are enumerated in globals-runtime.txt.
+    if not name.startswith(('PyExc_', '_PyExc_')):
+        return False
+    return name.endswith(('Error', 'Warning'))
 
 
 class Var(namedtuple('Var', 'name kind runtime capi filename')):
