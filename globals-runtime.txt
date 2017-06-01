@@ -133,6 +133,11 @@ ZipImportError
 #zip_directory_cache
 zip_searchorder
 
+# Python/bltinmodule.c
+Py_FileSystemDefaultEncodeErrors
+Py_FileSystemDefaultEncoding
+Py_HasFileSystemDefaultEncoding
+
 
 #######################################
 # builtin types
@@ -410,40 +415,11 @@ PyImport_Inittab
 # Python/modsupport.c
 #_Py_PackageContext
 
-
 #######################################
-# others
-
-# Parser/myreadline.c
-#PyOS_InputHook
-#PyOS_ReadlineFunctionPointer
-#_PyOS_ReadlineLock
-#_PyOS_ReadlineTState
-
-# Python/bltinmodule.c
-#Py_FileSystemDefaultEncodeErrors
-#Py_FileSystemDefaultEncoding
-#Py_HasFileSystemDefaultEncoding
+# startup
 
 # Python/bootstrap_hash.c
 #urandom_cache
-
-# Python/codecs.c
-#Py_hexdigits
-#ucnhash_CAPI
-
-# Python/dtoa.c
-#freelist
-#p5s
-#pmem_next
-#private_mem
-
-# Python/fileutils.c
-#_Py_open_cloexec_works
-#force_ascii
-
-# Python/getargs.c
-static_arg_parsers
 
 # Python/getopt.c
 opt_ptr
@@ -457,7 +433,7 @@ _Py_HashSecret
 _Py_HashSecret_Initialized
 
 # Python/pylifecycle.c
-#_PyOS_mystrnicmp_hack
+_PyOS_mystrnicmp_hack
 #Py_BytesWarningFlag
 _Py_CoreInitialized
 #Py_DebugFlag
@@ -479,9 +455,36 @@ _Py_CoreInitialized
 #Py_UnbufferedStdioFlag
 #Py_UseClassExceptionsFlag
 #Py_VerboseFlag
-#default_home
-#env_home
+default_home
+env_home
 #exitfuncs
 #nexitfuncs
-#progname
+progname
 #pyexitfunc
+
+
+#######################################
+# others
+
+# Parser/myreadline.c
+#PyOS_InputHook
+#PyOS_ReadlineFunctionPointer
+#_PyOS_ReadlineLock
+#_PyOS_ReadlineTState
+
+# Python/codecs.c
+#Py_hexdigits
+#ucnhash_CAPI
+
+# Python/dtoa.c
+#freelist
+#p5s
+#pmem_next
+#private_mem
+
+# Python/fileutils.c
+#_Py_open_cloexec_works
+#force_ascii
+
+# Python/getargs.c
+static_arg_parsers
