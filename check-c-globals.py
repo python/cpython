@@ -91,22 +91,15 @@ def _is_autogen_var(name):
 
 def _is_type_var(name):
     return (
-        name.endswith('_Type') or  # XXX Always a static type?
-        name.endswith('_type') or  # XXX Always a static type?
-        name.endswith('_desc') or
-        name.endswith('_doc') or
-        name.endswith('__doc__') or
-        name.endswith('_docstring') or
+        name.endswith(('_Type', '_type')) or  # XXX Always a static type?
+        name.endswith('_desc') or  # For structseq types.
         name.startswith('doc_') or
+        name.endswith(('_doc', '__doc__', '_docstring')) or
         name.endswith('_methods') or
-        name.endswith('_functions') or
         name.endswith('_fields') or
-        name.endswith('_memberlist') or
-        name.endswith('_members') or
+        name.endswith(('_memberlist', '_members')) or
         name.endswith('_slots') or
-        name.endswith('_getset') or
-        name.endswith('_getsets') or
-        name.endswith('_getsetlist') or
+        name.endswith(('_getset', '_getsets', '_getsetlist')) or
         name.endswith('_as_mapping') or
         name.endswith('_as_number') or
         name.endswith('_as_sequence')
@@ -114,7 +107,9 @@ def _is_type_var(name):
 
 
 def _is_module(name):
-    return name.endswith('module')
+    if name.endswith('_functions'):
+        return True
+    return name.endswith(('module', '_Module'))
 
 
 def _is_exception(name):
