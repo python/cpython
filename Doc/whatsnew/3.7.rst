@@ -85,6 +85,14 @@ Other Language Changes
 * :exc:`ImportError` now displays module name and module ``__file__`` path when
   ``from ... import ...`` fails. (Contributed by Matthias Bussonnier in :issue:`29546`.)
 
+* Circular imports involving absolute imports with binding a submodule to
+  a name are now supported.
+  (Contributed by Serhiy Storchaka in :issue:`30024`.)
+
+* ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather than
+  ``format(str(self), '')``.
+  (Contributed by Serhiy Storchaka in :issue:`28974`.)
+
 
 New Modules
 ===========
@@ -95,13 +103,34 @@ New Modules
 Improved Modules
 ================
 
+binascii
+--------
+
+The :func:`~binascii.b2a_uu` function now accepts an optional *backtick*
+keyword argument.  When it's true, zeros are represented by ``'`'``
+instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+
 calendar
 --------
+
 The :class:`~calendar.HTMLCalendar` has added new class attribute which ease the
 customisation the CSS classes in the produced HTML calendar.
 (Contributed by Oz Tiram in :issue:`30095`.)
 
+cgi
+---
 
+:func:`~cgi.parse_multipart` returns the same results as
+:class:`~FieldStorage` : for non-file fields, the value associated to a key
+is a list of strings, not bytes.
+(Contributed by Pierre Quentel in :issue:`29979`.)
+
+contextlib
+----------
+
+:func:`contextlib.asynccontextmanager` has been added. (Contributed by
+Jelle Zijlstra in :issue:`29679`.)
 distutils
 ---------
 
@@ -116,6 +145,11 @@ http.server
 If-Modified-Since header. The server returns the 304 response status if the
 target file was not modified after the time specified in the header.
 (Contributed by Pierre Quentel in :issue:`29654`.)
+
+Add the parameter ``directory`` to the :class:`~http.server.SimpleHTTPRequestHandler`
+and the ``--directory`` to the command line of the module :mod:`~http.server`.
+With this parameter, the server serves the specified directory, by default it uses the current working directory.
+(Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
 
 locale
 ------
@@ -139,6 +173,10 @@ Serhiy Storchaka in :issue:`28682`.)
 Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
 on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+New function :func:`os.register_at_fork` allows registering Python callbacks
+to be executed on a process fork.  (Contributed by Antoine Pitrou in
+:issue:`16500`.)
+
 unittest.mock
 -------------
 
@@ -159,6 +197,13 @@ urllib.parse
 :func:`urllib.parse.quote` has been updated to from RFC 2396 to RFC 3986,
 adding `~` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
+
+uu
+--
+
+Function :func:`~uu.encode` now accepts an optional *backtick*
+keyword argument.  When it's true, zeros are represented by ``'`'``
+instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
 
 Optimizations
@@ -183,6 +228,10 @@ Optimizations
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+* Optimized case-insensitive matching and searching of :mod:`regular
+  expressions <re>`.  Searching some patterns can now be up to 20 times faster.
+  (Contributed by Serhiy Storchaka in :issue:`30285`.)
+
 
 Build and C API Changes
 =======================
@@ -204,6 +253,11 @@ Build and C API Changes
 
 * Added functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`.
   (Contributed by Serhiy Storchaka in :issue:`27867`.)
+
+* :c:func:`PyOS_AfterFork` is deprecated in favour of the new functions
+  :c:func:`PyOS_BeforeFork`, :c:func:`PyOS_AfterFork_Parent` and
+  :c:func:`PyOS_AfterFork_Child`.  (Contributed by Antoine Pitrou in
+  :issue:`16500`.)
 
 
 Deprecated
@@ -231,6 +285,8 @@ Deprecated
 - Using non-integer value for selecting a plural form in :mod:`gettext` is
   now deprecated.  It never correctly worked. (Contributed by Serhiy Storchaka
   in :issue:`28692`.)
+
+- The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
 
 
 Changes in the C API
@@ -263,6 +319,12 @@ API and Feature Removals
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now
   be passes only as positional argument.
+
+* Removed previously deprecated in Python 2.4 classes ``Plist``, ``Dict`` and
+  ``_InternalDict`` in the :mod:`plistlib` module.  Dict values in the result
+  of functions :func:`~plistlib.readPlist` and
+  :func:`~plistlib.readPlistFromBytes` are now normal dicts.  You no longer
+  can use attribute access to access items of these dictionaries.
 
 
 Porting to Python 3.7
