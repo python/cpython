@@ -93,6 +93,20 @@ class FunctionPropertiesTest(FuncAttrsTest):
             self.fail("shouldn't be able to read an empty cell")
         a = 12
 
+    def test_set_cell(self):
+        a = 12
+        def f(): print(a)
+        c = f.__closure__
+        c[0].cell_contents = 9
+        self.assertEqual(c[0].cell_contents, 9)
+        c[0].cell_contents = None
+        try:
+            c[0].cell_contents
+        except ValueError:
+            pass
+        else:
+            self.fail("shouldn't be able to read an empty cell")
+
     def test___name__(self):
         self.assertEqual(self.b.__name__, 'b')
         self.b.__name__ = 'c'

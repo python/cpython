@@ -507,7 +507,7 @@ Callable types
       |                         | arbitrary function            |           |
       |                         | attributes.                   |           |
       +-------------------------+-------------------------------+-----------+
-      | :attr:`__closure__`     | ``None`` or a tuple of cells  | Read-only |
+      | :attr:`__closure__`     | ``None`` or a tuple of cells  | Writable  |
       |                         | that contain bindings for the |           |
       |                         | function's free variables.    |           |
       +-------------------------+-------------------------------+-----------+

@@ -141,12 +141,12 @@ cell_get_contents(PyCellObject *op, void *closure)
 }
 
 int
-cell_set_contents(PyCellObject *op, PyCellObject *obj)
+cell_set_contents(PyCellObject *op, PyObject *obj)
 {
-    Py_INCREF(obj);
-    PyCellObject *tmp_op = (PyCellObject *)(op->ob_ref);
-    (op->ob_ref) = obj;
-    Py_DECREF(tmp_op);
+    if (obj == Py_None)
+        obj = NULL;
+    Py_XINCREF(obj);
+    Py_XSETREF(op->ob_ref, obj);
     return 0;
 }
 
