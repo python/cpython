@@ -76,6 +76,7 @@ EXACT_TOKEN_TYPES = {v[1]: i
                      if isinstance(v, tuple)}
 del tokens
 
+# Special definitions for cooperation with parser
 tok_name[256] = 'NT_OFFSET'
 
 __all__.extend(tok_name.values())

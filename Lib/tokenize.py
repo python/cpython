@@ -39,8 +39,8 @@ cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
-__all__ = token.__all__ + ["tokenize", "detect_encoding", "untokenize",
-                           "TokenInfo"]
+__all__ = token.__all__ + ["tokenize", "detect_encoding",
+                           "untokenize", "TokenInfo"]
 del token
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
