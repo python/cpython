@@ -378,7 +378,7 @@ exception and traceback:
        print("*** print_tb:")
        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
        print("*** print_exception:")
-       # exc_type below ignored on 3.5 and later
+       # exc_type below is ignored on 3.5 and later
        traceback.print_exception(exc_type, exc_value, exc_traceback,
                                  limit=2, file=sys.stdout)
        print("*** print_exc:")
@@ -388,7 +388,7 @@ exception and traceback:
        print(formatted_lines[0])
        print(formatted_lines[-1])
        print("*** format_exception:")
-       # exc_type below ignored on 3.5 and later
+       # exc_type below is ignored on 3.5 and later
        print(repr(traceback.format_exception(exc_type, exc_value,
                                              exc_traceback)))
        print("*** extract_tb:")
