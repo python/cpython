@@ -380,7 +380,7 @@ class HTMLCalendar(Calendar):
     """
 
     # CSS classes for the day <td>s
-    cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun
+    cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
     # CSS classes for the day <th>s
     cssclass_weekday_head = cssclasses
     # CSS class for the days before and after current month
