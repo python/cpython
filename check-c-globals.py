@@ -21,6 +21,14 @@ with open('globals-runtime.txt') as file:
     RUNTIME_VARS = {line.partition('#')[0].strip()
                     for line in file
                     if line.strip() and not line.startswith('#')}
+with open('globals-main.txt') as file:
+    MAIN_VARS = {line.partition('#')[0].strip()
+                 for line in file
+                 if line.strip() and not line.startswith('#')}
+with open('globals-interp.txt') as file:
+    INTERP_VARS = {line.partition('#')[0].strip()
+                   for line in file
+                   if line.strip() and not line.startswith('#')}
 del file
 
 
@@ -138,7 +146,15 @@ def _is_compiler(name):
         )
 
 
-class Var(namedtuple('Var', 'name kind runtime capi filename')):
+def _is_main_var(name):
+    return name in MAIN_VARS
+
+
+def _is_interp_var(name):
+    return name in INTERP_VARS
+
+
+class Var(namedtuple('Var', 'name kind scope capi filename')):
 
     @classmethod
     def parse_nm(cls, line, expected, ignored, capi_vars):
@@ -154,11 +170,18 @@ class Var(namedtuple('Var', 'name kind runtime capi filename')):
         name = name.strip()
         if _is_autogen_var(name):
             return None
-        runtime = _is_runtime_var(name)
+        if _is_runtime_var(name):
+            scope = 'runtime'
+        elif _is_main_var(name):
+            scope = 'main'
+        elif _is_interp_var(name):
+            scope = 'interp'
+        else:
+            scope = None
         capi = (name in capi_vars or ())
         if filename:
             filename = os.path.relpath(filename.partition(':')[0])
-        return cls(name, kind, runtime, capi, filename or '~???~')
+        return cls(name, kind, scope, capi, filename or '~???~')
 
     @property
     def external(self):
@@ -288,13 +311,14 @@ def format_vars(allvars, columns, fmts, widths):
 
 #######################################
 
-COLUMNS = 'name,external,capi,runtime,filename'
+COLUMNS = 'name,external,capi,scope,filename'
 COLUMN_NAMES = COLUMNS.split(',')
 
 COLUMN_WIDTHS = {col: len(col)
                  for col in COLUMN_NAMES}
 COLUMN_WIDTHS.update({
         'name': 50,
+        'scope': 7,
         'filename': 40,
         })
 COLUMN_FORMATS = {col: '{:%s}' % width
@@ -357,7 +381,7 @@ def parse_args(argv=None):
     parser.add_argument('-v', '--verbose', action='count', default=0)
     parser.add_argument('-q', '--quiet', action='count', default=0)
 
-    parser.add_argument('--filters', default='-runtime',
+    parser.add_argument('--filters', default='-scope',
                         help='[[-]<COLUMN>[=<GLOB>]] ...')
 
     parser.add_argument('--columns', default=COLUMNS,
@@ -379,7 +403,7 @@ def parse_args(argv=None):
         args.group = 'filename'
 
     if args.rc is None:
-        if '-runtime' in args.filters or 'runtime' not in args.filters:
+        if '-scope=runtime' in args.filters or 'runtime' not in args.filters:
             args.rc = 0
         else:
             args.rc = 1
@@ -423,7 +447,7 @@ def main(root=ROOT_DIR,
     log('\ntotal: {}'.format(total))
 
     if total and rc:
-        print('ERROR: found non-runtime globals', file=sys.stderr)
+        print('ERROR: found unsafe globals', file=sys.stderr)
         return rc
     return 0
 
