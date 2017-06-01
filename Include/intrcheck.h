@@ -7,10 +7,17 @@ extern "C" {
 
 PyAPI_FUNC(int) PyOS_InterruptOccurred(void);
 PyAPI_FUNC(void) PyOS_InitInterrupts(void);
-PyAPI_FUNC(void) PyOS_AfterFork(void);
+#ifdef HAVE_FORK
+PyAPI_FUNC(void) PyOS_BeforeFork(void);
+PyAPI_FUNC(void) PyOS_AfterFork_Parent(void);
+PyAPI_FUNC(void) PyOS_AfterFork_Child(void);
+#endif
+/* Deprecated, please use PyOS_AfterFork_Child() instead */
+PyAPI_FUNC(void) PyOS_AfterFork(void) Py_DEPRECATED(3.7);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyOS_IsMainThread(void);
+PyAPI_FUNC(void) _PySignal_AfterFork(void);
 
 #ifdef MS_WINDOWS
 /* windows.h is not included by Python.h so use void* instead of HANDLE */

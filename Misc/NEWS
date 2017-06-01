@@ -10,6 +10,19 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-25324: Tokens needed for parsing in Python moved to C. ``COMMENT``,
+  ``NL`` and ``ENCODING``. This way the tokens and tok_names in the token
+  module don't get changed when you import the tokenize module.
+
+- bpo-29104: Fixed parsing backslashes in f-strings.
+
+- bpo-27945: Fixed various segfaults with dict when input collections are
+  mutated during searching, inserting or comparing.  Based on patches by
+  Duane Griffin and Tim Mitchell.
+
+- bpo-25794: Fixed type.__setattr__() and type.__delattr__() for
+  non-interned attribute names.  Based on patch by Eryk Sun.
+
 - bpo-30039: If a KeyboardInterrupt happens when the interpreter is in
   the middle of resuming a chain of nested 'yield from' or 'await'
   calls, it's now correctly delivered to the innermost frame.
@@ -45,6 +58,9 @@ Core and Builtins
 
 - bpo-24821: Fixed the slowing down to 25 times in the searching of some
   unlucky Unicode characters.
+
+- bpo-29102: Add a unique ID to PyInterpreterState.  This makes it easier
+  to identify each subinterpreter.
 
 - bpo-29894: The deprecation warning is emitted if __complex__ returns an
   instance of a strict subclass of complex.  In a future versions of Python
@@ -143,6 +159,8 @@ Core and Builtins
 
 - Issue #28596: The preferred encoding is UTF-8 on Android. Patch written by
   Chi Hsuan Yen.
+
+- bpo-22257: Clean up interpreter startup (see PEP 432).
 
 - Issue #26919: On Android, operating system data is now always encoded/decoded
   to/from UTF-8, instead of the locale encoding to avoid inconsistencies with
@@ -329,6 +347,17 @@ Library
 
 - bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
   handle IPv6 addresses.
+
+- bpo-16500: Allow registering at-fork handlers.
+
+- bpo-30470: Deprecate invalid ctypes call protection on Windows.  Patch by
+  Mariatta Wijaya.
+
+- bpo-30414: multiprocessing.Queue._feed background running
+  thread do not break from main loop on exception.
+
+- bpo-30003: Fix handling escape characters in HZ codec.  Based on patch
+  by Ma Lin.
 
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
@@ -591,6 +620,9 @@ Library
 
 - bpo-10379: locale.format_string now supports the 'monetary' keyword argument,
   and locale.format is deprecated.
+
+- bpo-29851: importlib.reload() now raises ModuleNotFoundError if the
+  module lacks a spec.
 
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
@@ -985,6 +1017,10 @@ Library
 - Issue #29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
   classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
 
+- Issue #25532: inspect.unwrap() will now only try to unwrap an object
+  sys.getrecursionlimit() times, to protect against objects which create a new
+  object on every attribute access.
+
 Windows
 -------
 
@@ -1022,6 +1058,9 @@ Windows
 
 C API
 -----
+
+- bpo-16500: Deprecate PyOS_AfterFork() and add PyOS_BeforeFork(),
+  PyOS_AfterFork_Parent() and PyOS_AfterFork_Child().
 
 - bpo-6532: The type of results of PyThread_start_new_thread() and
   PyThread_get_thread_ident(), and the id parameter of
@@ -1092,6 +1131,14 @@ Documentation
 
 Build
 -----
+
+- bpo-20210: Support the *disabled* marker in Setup files. Extension modules
+  listed after this marker are not built at all, neither by the Makefile nor by
+  setup.py.
+
+- bpo-29941: Add ``--with-assertions`` configure flag to explicitly enable
+  C ``assert()`` checks. Defaults to off. ``--with-pydebug`` implies
+  ``--with-assertions``.
 
 - bpo-28787: Fix out-of-tree builds of Python when configured with
   ``--with--dtrace``.

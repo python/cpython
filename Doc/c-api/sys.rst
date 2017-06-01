@@ -26,12 +26,52 @@ Operating System Utilities
    one of the strings ``'<stdin>'`` or ``'???'``.
 
 
+.. c:function:: void PyOS_BeforeFork()
+
+   Function to prepare some internal state before a process fork.  This
+   should be called before calling :c:func:`fork` or any similar function
+   that clones the current process.
+   Only available on systems where :c:func:`fork` is defined.
+
+   .. versionadded:: 3.7
+
+
+.. c:function:: void PyOS_AfterFork_Parent()
+
+   Function to update some internal state after a process fork.  This
+   should be called from the parent process after calling :c:func:`fork`
+   or any similar function that clones the current process, regardless
+   of whether process cloning was successful.
+   Only available on systems where :c:func:`fork` is defined.
+
+   .. versionadded:: 3.7
+
+
+.. c:function:: void PyOS_AfterFork_Child()
+
+   Function to update internal interpreter state after a process fork.
+   This must be called from the child process after calling :c:func:`fork`,
+   or any similar function that clones the current process, if there is
+   any chance the process will call back into the Python interpreter.
+   Only available on systems where :c:func:`fork` is defined.
+
+   .. versionadded:: 3.7
+
+   .. seealso::
+      :func:`os.register_at_fork` allows registering custom Python functions
+      to be called by :c:func:`PyOS_BeforeFork()`,
+      :c:func:`PyOS_AfterFork_Parent` and  :c:func:`PyOS_AfterFork_Child`.
+
+
 .. c:function:: void PyOS_AfterFork()
 
    Function to update some internal state after a process fork; this should be
    called in the new process if the Python interpreter will continue to be used.
    If a new executable is loaded into the new process, this function does not need
    to be called.
+
+   .. deprecated:: 3.7
+      This function is superseded by :c:func:`PyOS_AfterFork_Child()`.
 
 
 .. c:function:: int PyOS_CheckStack()

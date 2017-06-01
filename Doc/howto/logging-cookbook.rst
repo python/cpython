@@ -1683,7 +1683,7 @@ Implementing structured logging
 -------------------------------
 
 Although most logging messages are intended for reading by humans, and thus not
-readily machine-parseable, there might be cirumstances where you want to output
+readily machine-parseable, there might be circumstances where you want to output
 messages in a structured format which *is* capable of being parsed by a program
 (without needing complex regular expressions to parse the log message). This is
 straightforward to achieve using the logging package. There are a number of
