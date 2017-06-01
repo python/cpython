@@ -73,13 +73,25 @@ def _sanitize(string):
 
 # Helpers
 
+def _encode_decode_addr(addr, encode_codec, decode_codec):
+    """Helper function for formataddr() and parseaddr() to encode and
+    decode via IDNA.
+    """
+    parts = addr.split("@")
+    if len(parts) <= 1:
+        return addr
+    parts[-1] = parts[-1].encode(encode_codec).decode(decode_codec)
+    return "@".join(parts)
+
+
 def formataddr(pair, charset='utf-8'):
     """The inverse of parseaddr(), this takes a 2-tuple of the form
     (realname, email_address) and returns the string value suitable
     for an RFC 2822 From, To or Cc header.
 
     If the first element of pair is false, then the second element is
-    returned unmodified.
+    returned without surrounding it with <>.  The hostname portion of the
+    second element (if any) is transformed using the IDNA codec.
 
     Optional charset if given is the character set that is used to encode
     realname in case realname is not ASCII safe.  Can be an instance of str or
@@ -87,7 +99,9 @@ def formataddr(pair, charset='utf-8'):
     'utf-8'.
     """
     name, address = pair
-    # The address MUST (per RFC) be ascii, so raise a UnicodeError if it isn't.
+    address = _encode_decode_addr(address, 'idna', 'ascii')
+    # The address MUST (per RFC) be ASCII, so if there's any non-ASCII left
+    # throw a UnicodeError.
     address.encode('ascii')
     if name:
         try:
@@ -214,11 +228,14 @@ def parsedate_to_datetime(data):
             tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
 
 
-def parseaddr(addr):
+def parseaddr(addr, decode_idna=True):
     addrs = _AddressList(addr).addresslist
     if not addrs:
         return '', ''
-    return addrs[0]
+    name, address = addrs[0]
+    if decode_idna:
+        address = _encode_decode_addr(address, 'ascii', 'idna')
+    return name, address
 
 
 # rfc822.unquote() doesn't properly de-backslash-ify in Python pre-2.3.
