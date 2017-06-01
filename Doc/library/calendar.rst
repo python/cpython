@@ -224,20 +224,20 @@ it's the base calendar for all computations.
 
       .. versionadded:: 3.7
 
-Note that although the naming for the above described class attributes is
-singular (e.g. ``cssclass_month`` ``cssclass_noday``), one can replace the
-single CSS class with a space separated list of CSS classes, for example::
+   Note that although the naming for the above described class attributes is
+   singular (e.g. ``cssclass_month`` ``cssclass_noday``), one can replace the
+   single CSS class with a space separated list of CSS classes, for example::
 
-      "text-bold text-red"
+         "text-bold text-red"
 
-Here is an example how one can customize ``HTMLCalendar``::
+   Here is an example how one can customize ``HTMLCalendar``::
 
-    class CustomHTMLCal(calendar.HTMLCalendar):
-        cssclasses = [style + " text-nowrap" for style in
-                      calendar.HTMLCalendar.cssclasses]
-        cssclass_month_head = "text-center month-head"
-        cssclass_month = "text-center month"
-        cssclass_year = "text-italic lead"
+       class CustomHTMLCal(calendar.HTMLCalendar):
+           cssclasses = [style + " text-nowrap" for style in
+                         calendar.HTMLCalendar.cssclasses]
+           cssclass_month_head = "text-center month-head"
+           cssclass_month = "text-center month"
+           cssclass_year = "text-italic lead"
 
 
 .. class:: LocaleTextCalendar(firstweekday=0, locale=None)
