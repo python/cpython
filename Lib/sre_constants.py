@@ -21,16 +21,16 @@ from _sre import MAXREPEAT, MAXGROUPS
 # should this really be here?
 
 class error(Exception):
-    '''Exception raised for invalid regular expressions.
+    """Exception raised for invalid regular expressions.
 
-    The error instance has the following additional attributes:
+    Attributes:
 
-    msg: The unformatted error message
-    pattern: The regular expression pattern
-    pos: The index of pattern where compilation failed
-    lineno: The line corresponding to pos
-    colno: The column corresponding to pos
-    '''
+        msg: The unformatted error message
+        pattern: The regular expression pattern
+        pos: The index in the pattern where compilation failed (may be None)
+        lineno: The line corresponding to pos (may be None)
+        colno: The column corresponding to pos (may be None)
+    """
 
     __module__ = 're'
 

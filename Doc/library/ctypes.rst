@@ -161,22 +161,14 @@ as the NULL pointer)::
    0x1d000000
    >>>
 
-:mod:`ctypes` tries to protect you from calling functions with the wrong number
-of arguments or the wrong calling convention.  Unfortunately this only works on
-Windows.  It does this by examining the stack after the function returns, so
-although an error is raised the function *has* been called::
+.. note::
 
-   >>> windll.kernel32.GetModuleHandleA()      # doctest: +WINDOWS
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ValueError: Procedure probably called with not enough arguments (4 bytes missing)
-   >>> windll.kernel32.GetModuleHandleA(0, 0)  # doctest: +WINDOWS
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ValueError: Procedure probably called with too many arguments (4 bytes in excess)
-   >>>
+   :mod:`ctypes` may raise a :exc:`ValueError` after calling the function, if
+   it detects that an invalid number of arguments were passed.  This behavior
+   should not be relied upon.  It is deprecated in 3.6.2, and will be removed
+   in 3.7.
 
-The same exception is raised when you call an ``stdcall`` function with the
+:exc:`ValueError` is raised when you call an ``stdcall`` function with the
 ``cdecl`` calling convention, or vice versa::
 
    >>> cdll.kernel32.GetModuleHandleA(None)  # doctest: +WINDOWS

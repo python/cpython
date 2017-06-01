@@ -11,25 +11,19 @@ branches:
     - master
     - /^\d\.\d$/
 
-os:
-  - linux
-  # macOS builds are disabled as the machines are under-provisioned on Travis,
-  # adding up to an extra hour completing a full CI run.
-
-compiler:
-  - clang
-  # gcc also works, but to keep the # of concurrent builds down, we use one C
-  # compiler here and the other to run the coverage build.
-
-env:
-  - TESTING=cpython
-
 matrix:
   fast_finish: true
   allow_failures:
     - env:
        - TESTING=coverage
   include:
+    - os: linux
+      language: c
+      compiler: clang
+      # gcc also works, but to keep the # of concurrent builds down, we use one C
+      # compiler here and the other to run the coverage build.
+      env:
+        - TESTING=cpython
     - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
@@ -42,7 +36,7 @@ matrix:
         # (Updating the version is fine as long as no warnings are raised by doing so.)
         - python -m pip install sphinx~=1.6.1
       script:
-        - make check suspicious html SPHINXOPTS="-q -W"
+        - make check suspicious html SPHINXOPTS="-q -W -j4"
     - os: linux
       language: c
       compiler: gcc
