@@ -389,6 +389,29 @@ _pythread_stacksize
 
 
 #######################################
+# import
+
+# Python/dynload_shlib.c
+_PyImport_DynLoadFiletab
+#handles
+#nhandles
+
+# Python/frozen.c
+M___hello__
+PyImport_FrozenModules
+
+# Python/import.c
+PyImport_Inittab
+#extensions
+#import_lock
+#import_lock_level
+#import_lock_thread
+
+# Python/modsupport.c
+#_Py_PackageContext
+
+
+#######################################
 # others
 
 # Parser/myreadline.c
@@ -415,18 +438,9 @@ _pythread_stacksize
 #pmem_next
 #private_mem
 
-# Python/dynload_shlib.c
-#_PyImport_DynLoadFiletab
-#handles
-#nhandles
-
 # Python/fileutils.c
 #_Py_open_cloexec_works
 #force_ascii
-
-# Python/frozen.c
-M___hello__
-PyImport_FrozenModules
 
 # Python/getargs.c
 static_arg_parsers
@@ -437,20 +451,10 @@ _PyOS_optarg
 _PyOS_opterr
 _PyOS_optind
 
-# Python/import.c
-PyImport_Inittab
-#extensions
-#import_lock
-#import_lock_level
-#import_lock_thread
-
 # Python/pyhash.c
 PyHash_Func
 _Py_HashSecret
 _Py_HashSecret_Initialized
-
-# Python/modsupport.c
-#_Py_PackageContext
 
 # Python/pylifecycle.c
 #_PyOS_mystrnicmp_hack
