@@ -382,6 +382,7 @@ class NonCallableMock(Base):
         __dict__['_mock_name'] = name
         __dict__['_mock_new_name'] = _new_name
         __dict__['_mock_new_parent'] = _new_parent
+        __dict__['_is_sealed'] = False
 
         if spec_set is not None:
             spec = spec_set
@@ -608,7 +609,11 @@ class NonCallableMock(Base):
         return result
 
 
-    def __repr__(self):
+    def _extract_mock_name(self):
+        """Extracts the mock access path as a string
+
+        Returns the whole access chain since the root mock
+        """
         _name_list = [self._mock_new_name]
         _parent = self._mock_new_parent
         last = self
@@ -638,7 +643,10 @@ class NonCallableMock(Base):
             if _name_list[1] not in ('()', '().'):
                 _first += '.'
         _name_list[0] = _first
-        name = ''.join(_name_list)
+        return ''.join(_name_list)
+
+    def __repr__(self):
+        name = self._extract_mock_name()
 
         name_string = ''
         if name not in ('mock', 'mock.'):
@@ -888,6 +896,12 @@ class NonCallableMock(Base):
                 klass = Mock
         else:
             klass = _type.__mro__[1]
+
+        if self._is_sealed:
+            attribute = "." + kw["name"] if "name" in kw else "()"
+            mock_name = self._extract_mock_name() + attribute
+            raise AttributeError(mock_name)
+
         return klass(**kw)
 
 
@@ -2401,3 +2415,20 @@ class PropertyMock(Mock):
         return self()
     def __set__(self, obj, val):
         self(val)
+
+
+def seal(input_mock):
+    """Disables the automatic generation of "submocks"
+
+    Given an input Mock, seals it to ensure no further mocks will be generated
+    when accessing an attribute that was not already defined
+    """
+    input_mock._is_sealed = True
+    for attr in dir(input_mock):
+        try:
+            m = getattr(input_mock, attr)
+        except AttributeError:
+            pass
+        else:
+            if isinstance(m, NonCallableMock):
+                seal(m)
