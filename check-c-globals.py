@@ -90,9 +90,11 @@ def _is_autogen_var(name):
 
 
 def _is_type_var(name):
+    if name.endswith(('Type', '_Type', '_type')):  # XXX Always a static type?
+        return True
+    if name.endswith('_desc'):  # for structseq types
+        return True
     return (
-        name.endswith(('_Type', '_type')) or  # XXX Always a static type?
-        name.endswith('_desc') or  # For structseq types.
         name.startswith('doc_') or
         name.endswith(('_doc', '__doc__', '_docstring')) or
         name.endswith('_methods') or
@@ -102,12 +104,17 @@ def _is_type_var(name):
         name.endswith(('_getset', '_getsets', '_getsetlist')) or
         name.endswith('_as_mapping') or
         name.endswith('_as_number') or
-        name.endswith('_as_sequence')
+        name.endswith('_as_sequence') or
+        name.endswith('_as_buffer')
         )
 
 
 def _is_module(name):
-    if name.endswith('_functions'):
+    if name.endswith(('_functions', 'Methods', '_Methods')):
+        return True
+    if name == 'module_def':
+        return True
+    if name == 'initialized':
         return True
     return name.endswith(('module', '_Module'))
 

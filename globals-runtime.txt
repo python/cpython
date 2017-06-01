@@ -50,9 +50,133 @@ _Py_EllipsisObject
 
 
 #######################################
-# modules
+# builtin modules
 
-# Handled via _is_runtime_var() in check-c-globals.py.
+# Generic names handled via _is_module() in check-c-globals.py.
+
+# Modules/_collectionsmodule.c
+#freeblocks
+#numfreeblocks
+
+# Modules/_functoolsmodule.c
+kwd_mark
+
+# Modules/_io/_iomodule.c
+# interned strings/bytes
+_PyIO_empty_bytes
+_PyIO_empty_str
+_PyIO_str_close
+_PyIO_str_closed
+_PyIO_str_decode
+_PyIO_str_encode
+_PyIO_str_fileno
+_PyIO_str_flush
+_PyIO_str_getstate
+_PyIO_str_isatty
+_PyIO_str_newlines
+_PyIO_str_nl
+_PyIO_str_read
+_PyIO_str_read1
+_PyIO_str_readable
+_PyIO_str_readall
+_PyIO_str_readinto
+_PyIO_str_readline
+_PyIO_str_reset
+_PyIO_str_seek
+_PyIO_str_seekable
+_PyIO_str_setstate
+_PyIO_str_tell
+_PyIO_str_truncate
+_PyIO_str_writable
+_PyIO_str_write
+
+# Modules/_localemodule.c
+Error
+
+# Modules/_threadmodule.c
+Locktype
+RLocktype
+ThreadError
+localdummytype
+localtype
+#nb_threads
+str_dict
+
+# Modules/_tracemalloc.c
+#allocators
+#tables_lock
+#tracemalloc_config
+tracemalloc_empty_traceback
+#tracemalloc_filenames
+#tracemalloc_peak_traced_memory
+#tracemalloc_reentrant_key
+#tracemalloc_traceback
+#tracemalloc_tracebacks
+#tracemalloc_traced_memory
+#tracemalloc_traces
+unknown_filename
+
+# Modules/config.c
+_PyImport_Inittab
+
+# Modules/faulthandler.c
+#fatal_error
+faulthandler_handlers
+#old_stack
+#stack
+#thread
+#user_signals
+
+# Modules/gcmodule.c
+#_PyGC_generation0
+#callbacks
+#collecting
+#debug
+#enabled
+#garbage
+gc_str
+#generation_stats
+#generations
+#long_lived_pending
+#long_lived_total
+
+# Modules/getpath.c
+exec_prefix
+module_search_path
+prefix
+progpath
+
+# Modules/main.c
+orig_argc
+orig_argv
+
+# Modules/posixmodule.c
+billion
+posix_constants_confstr
+posix_constants_pathconf
+posix_constants_sysconf
+#posix_putenv_garbage
+#_stat_float_times
+structseq_new
+ticks_per_second
+
+# Modules/signalmodule.c
+DefaultHandler
+#Handlers
+IgnoreHandler
+IntHandler
+ItimerError
+#SiginfoType  # almost
+#is_tripped
+main_pid
+main_thread
+old_siginthandler
+#wakeup_fd
+
+# Modules/zipimport.c
+ZipImportError
+#zip_directory_cache
+zip_searchorder
 
 
 #######################################
@@ -219,462 +343,226 @@ withitem_type
 #######################################
 # others
 
-# Include/bytearrayobject.h
+# Objects/boolobject.c
+#false_str
+#true_str
+
+# Objects/bytearrayobject.c
 #_PyByteArray_empty_string
+#bytearray_as_buffer
 
-# Include/ceval.h
-#_Py_CheckRecursionLimit
+# Objects/bytesobject.c
+#bytes_as_buffer
+#characters
+#nullstring
 
-# Include/codecs.h
-#Py_hexdigits
+# Objects/classobject.c
+#free_list
+#numfree
 
-# Include/fileobject.h
+# Objects/dictobject.c
+#empty_keys_struct
+#empty_values
+#free_list
+#keys_free_list
+#numfree
+#numfreekeys
+#pydict_global_version
+
+# Objects/exceptions.c
+#_PyExc_BaseException
+#_PyExc_MemoryError
+#PyExc_RecursionErrorInst
+#_PyExc_UnicodeDecodeError
+#_PyExc_UnicodeEncodeError
+#_PyExc_UnicodeTranslateError
+#errnomap
+#memerrors_freelist
+#memerrors_numfree
+
+# Objects/floatobject.c
+#FloatInfoType
+#detected_double_format
+#detected_float_format
+#double_format
+#float_format
+#free_list
+#numfree
+
+# Objects/frameobject.c
+#free_list
+#numfree
+
+# Objects/genobject.c
+#ag_asend_freelist
+#ag_asend_freelist_free
+#ag_value_freelist
+#ag_value_freelist_free
+#aiter_wrapper_as_async
+#async_gen_as_async
+#async_gen_asend_as_async
+#async_gen_athrow_as_async
+#coro_as_async
+
+# Objects/listobject.c
+#free_list
+#indexerr
+#numfree
+
+# Objects/longobject.c
+#Int_InfoType
+#_PyLong_DigitValue
+#_PyLong_One
+#_PyLong_Zero
+#small_ints
+
+# Objects/memoryobject.c
+#memory_as_buffer
+
+# Objects/methodobject.c
+#free_list
+#numfree
+
+# Objects/moduleobject.c
+#max_module_number
+
+# Objects/object.c
+#_PyTrash_delete_later
+#_PyTrash_delete_nesting
+#_Py_SwappedOp
+#_Py_abstract_hack
+
+# Objects/obmalloc.c
+#_PyMem
+#_PyMem_Debug
+#_PyMem_Raw
+#_PyObject
+#_PyObject_Arena
+#_Py_AllocatedBlocks
+#arenas
+#maxarenas
+#narenas_currently_allocated
+#narenas_highwater
+#ntimes_arena_allocated
+#serialno
+#unused_arena_objects
+#usable_arenas
+#usedpools
+
+# Objects/setobject.c
+#_PySet_Dummy
+#_dummy_struct
+#emptyfrozenset
+
+# Objects/sliceobject.c
+#slice_cache
+
+# Objects/structseq.c
+#PyStructSequence_UnnamedField
+#_struct_sequence_template
+
+# Objects/tupleobject.c
+#free_list
+#numfree
+
+# Objects/typeobject.c
+#method_cache
+#name_op
+#next_version_tag
+#slotdefs
+#slotdefs_initialized
+#subtype_getsets_dict_only
+#subtype_getsets_full
+#subtype_getsets_weakref_only
+#tp_new_methoddef
+
+# Objects/unicodeobject.c
+#EncodingMapType
+#bloom_linebreak
+#interned
+#static_strings
+#ucnhash_CAPI
+#unicode_empty
+#unicode_latin1
+
+# Parser/myreadline.c
+#PyOS_InputHook
+#PyOS_ReadlineFunctionPointer
+#_PyOS_ReadlineLock
+#_PyOS_ReadlineTState
+
+# Parser/tokenizer.c
+#_PyParser_TokenNames
+
+# Python/_warnings.c
+#_default_action
+#_filters
+#_filters_version
+#_once_registry
+
+# Python/bltinmodule.c
 #Py_FileSystemDefaultEncodeErrors
 #Py_FileSystemDefaultEncoding
 #Py_HasFileSystemDefaultEncoding
 
-# Include/import.h
-PyImport_FrozenModules
-PyImport_Inittab
-
-# Include/longobject.h
-#_PyLong_DigitValue
-#_PyLong_One
-#_PyLong_Zero
-
-# Include/modsupport.h
-#_Py_PackageContext
-
-# Include/object.h
-#_PyTrash_delete_later
-#_PyTrash_delete_nesting
-#_Py_RefTotal
-#_Py_SwappedOp
-
-# Include/pyctype.h
-#_Py_ctype_table
-#_Py_ctype_tolower
-#_Py_ctype_toupper
-
-# Include/pydebug.h
-#Py_BytesWarningFlag
-#Py_DebugFlag
-#Py_DontWriteBytecodeFlag
-#Py_FrozenFlag
-#Py_HashRandomizationFlag
-#Py_IgnoreEnvironmentFlag
-#Py_InspectFlag
-#Py_InteractiveFlag
-#Py_IsolatedFlag
-#Py_LegacyWindowsStdioFlag
-#Py_NoSiteFlag
-#Py_NoUserSiteDirectory
-#Py_OptimizeFlag
-#Py_QuietFlag
-#Py_UnbufferedStdioFlag
-#Py_UseClassExceptionsFlag
-#Py_VerboseFlag
-
-# Include/pyerrors.h
-#PyExc_RecursionErrorInst
-
-# Include/pygetopt.h
-_PyOS_optarg
-_PyOS_opterr
-_PyOS_optind
-
-# Include/pyhash.h
-_Py_HashSecret
-_Py_HashSecret_Initialized
-
-# Include/pylifecycle.h
-#_Py_Finalizing
-
-# Include/pystate.h
-#_PyGILState_check_enabled
-#_PyThreadState_Current
-#_PyThreadState_GetFrame
-
-# Include/pythonrun.h
-#PyOS_InputHook
-#PyOS_ReadlineFunctionPointer
-#_PyOS_ReadlineTState
-
-# Include/setobject.h
-#_PySet_Dummy
-
-# Include/token.h
-#_PyParser_TokenNames
-
-# Include/unicodeobject.h
-#_Py_ascii_whitespace
-
-# Modules/_collectionsmodule.c
-#freeblocks                                         
-#numfreeblocks                                      
-
-# Modules/_functoolsmodule.c
-#kwd_mark                                           
-
-# Modules/_io/_iomodule.c
-#_PyIO_Module                                       
-#_PyIO_empty_bytes                                  
-#_PyIO_empty_str                                    
-#_PyIO_str_close                                    
-#_PyIO_str_closed                                   
-#_PyIO_str_decode                                   
-#_PyIO_str_encode                                   
-#_PyIO_str_fileno                                   
-#_PyIO_str_flush                                    
-#_PyIO_str_getstate                                 
-#_PyIO_str_isatty                                   
-#_PyIO_str_newlines                                 
-#_PyIO_str_nl                                       
-#_PyIO_str_read                                     
-#_PyIO_str_read1                                    
-#_PyIO_str_readable                                 
-#_PyIO_str_readall                                  
-#_PyIO_str_readinto                                 
-#_PyIO_str_readline                                 
-#_PyIO_str_reset                                    
-#_PyIO_str_seek                                     
-#_PyIO_str_seekable                                 
-#_PyIO_str_setstate                                 
-#_PyIO_str_tell                                     
-#_PyIO_str_truncate                                 
-#_PyIO_str_writable                                 
-#_PyIO_str_write                                    
-
-# Modules/_io/bytesio.c
-#bytesiobuf_as_buffer                               
-
-# Modules/_localemodule.c
-#Error                                              
-#PyLocale_Methods                                   
-
-# Modules/_threadmodule.c
-#Locktype                                           
-#RLocktype                                          
-#ThreadError                                        
-#localdummytype                                     
-#localtype                                          
-#nb_threads                                         
-#str_dict                                           
-
-# Modules/_tracemalloc.c
-#allocators                                         
-#module_def                                         
-#tables_lock                                        
-#tracemalloc_config                                 
-#tracemalloc_empty_traceback                        
-#tracemalloc_filenames                              
-#tracemalloc_peak_traced_memory                     
-#tracemalloc_reentrant_key                          
-#tracemalloc_traceback                              
-#tracemalloc_tracebacks                             
-#tracemalloc_traced_memory                          
-#tracemalloc_traces                                 
-#unknown_filename                                   
-
-# Modules/config.c
-#_PyImport_Inittab                                  
-
-# Modules/faulthandler.c
-#fatal_error                                        
-#faulthandler_handlers                              
-#module_def                                         
-#old_stack                                          
-#stack                                              
-#thread                                             
-#user_signals                                       
-
-# Modules/gcmodule.c
-#GcMethods                                          
-#_PyGC_generation0                                  
-#callbacks                                          
-#collecting                                         
-#debug                                              
-#enabled                                            
-#garbage                                            
-#gc_str                                             
-#generation_stats                                   
-#generations                                        
-#long_lived_pending                                 
-#long_lived_total                                   
-
-# Modules/getpath.c
-#exec_prefix                                        
-#module_search_path                                 
-#prefix                                             
-#progpath                                           
-
-# Modules/main.c
-#orig_argc                                          
-#orig_argv                                          
-
-# Modules/posixmodule.c
-#DirEntryType                                       
-#ScandirIteratorType                                
-#SchedParamType                                     
-#StatResultType                                     
-#StatVFSResultType                                  
-#TerminalSizeType                                   
-#TimesResultType                                    
-#UnameResultType                                    
-#WaitidResultType                                   
-#billion                                            
-#initialized                                        
-#posix_constants_confstr                            
-#posix_constants_pathconf                           
-#posix_constants_sysconf                            
-#posix_putenv_garbage                               
-#_stat_float_times                                  
-#structseq_new                                      
-#ticks_per_second                                   
-
-# Modules/pwdmodule.c
-#StructPwdType                                      
-#initialized                                        
-
-# Modules/signalmodule.c
-#DefaultHandler                                     
-#Handlers                                           
-#IgnoreHandler                                      
-#IntHandler                                         
-#ItimerError                                        
-#SiginfoType                                        
-#initialized                                        
-#is_tripped                                         
-#main_pid                                           
-#main_thread                                        
-#old_siginthandler                                  
-#wakeup_fd                                          
-
-# Modules/timemodule.c
-#StructTimeType                                     
-#initialized                                        
-
-# Modules/zipimport.c
-#ZipImportError                                     
-#zip_directory_cache                                
-#zip_searchorder                                    
-
-# Objects/boolobject.c
-#false_str                                          
-#true_str                                           
-
-# Objects/bytearrayobject.c
-#_PyByteArray_empty_string                          
-#bytearray_as_buffer                                
-
-# Objects/bytesobject.c
-#bytes_as_buffer                                    
-#characters                                         
-#nullstring                                         
-
-# Objects/classobject.c
-#free_list                                          
-#numfree                                            
-
-# Objects/dictobject.c
-#empty_keys_struct                                  
-#empty_values                                       
-#free_list                                          
-#keys_free_list                                     
-#numfree                                            
-#numfreekeys                                        
-#pydict_global_version                              
-
-# Objects/exceptions.c
-#_PyExc_BaseException                               
-#_PyExc_MemoryError                                 
-#PyExc_RecursionErrorInst                           
-#_PyExc_UnicodeDecodeError                          
-#_PyExc_UnicodeEncodeError                          
-#_PyExc_UnicodeTranslateError                       
-#errnomap                                           
-#memerrors_freelist                                 
-#memerrors_numfree                                  
-
-# Objects/floatobject.c
-#FloatInfoType                                      
-#detected_double_format                             
-#detected_float_format                              
-#double_format                                      
-#float_format                                       
-#free_list                                          
-#numfree                                            
-
-# Objects/frameobject.c
-#free_list                                          
-#numfree                                            
-
-# Objects/genobject.c
-#ag_asend_freelist                                  
-#ag_asend_freelist_free                             
-#ag_value_freelist                                  
-#ag_value_freelist_free                             
-#aiter_wrapper_as_async                             
-#async_gen_as_async                                 
-#async_gen_asend_as_async                           
-#async_gen_athrow_as_async                          
-#coro_as_async                                      
-
-# Objects/listobject.c
-#free_list                                          
-#indexerr                                           
-#numfree                                            
-
-# Objects/longobject.c
-#Int_InfoType                                       
-#_PyLong_DigitValue                                 
-#_PyLong_One                                        
-#_PyLong_Zero                                       
-#small_ints                                         
-
-# Objects/memoryobject.c
-#memory_as_buffer                                   
-
-# Objects/methodobject.c
-#free_list                                          
-#numfree                                            
-
-# Objects/moduleobject.c
-#max_module_number                                  
-
-# Objects/object.c
-#_PyTrash_delete_later                              
-#_PyTrash_delete_nesting                            
-#_Py_SwappedOp                                      
-#_Py_abstract_hack                                  
-
-# Objects/obmalloc.c
-#_PyMem                                             
-#_PyMem_Debug                                       
-#_PyMem_Raw                                         
-#_PyObject                                          
-#_PyObject_Arena                                    
-#_Py_AllocatedBlocks                                
-#arenas                                             
-#maxarenas                                          
-#narenas_currently_allocated                        
-#narenas_highwater                                  
-#ntimes_arena_allocated                             
-#serialno                                           
-#unused_arena_objects                               
-#usable_arenas                                      
-#usedpools                                          
-
-# Objects/setobject.c
-#_PySet_Dummy                                       
-#_dummy_struct                                      
-#emptyfrozenset                                     
-
-# Objects/sliceobject.c
-#slice_cache                                        
-
-# Objects/structseq.c
-#PyStructSequence_UnnamedField                      
-#_struct_sequence_template                          
-
-# Objects/tupleobject.c
-#free_list                                          
-#numfree                                            
-
-# Objects/typeobject.c
-#method_cache                                       
-#name_op                                            
-#next_version_tag                                   
-#slotdefs                                           
-#slotdefs_initialized                               
-#subtype_getsets_dict_only                          
-#subtype_getsets_full                               
-#subtype_getsets_weakref_only                       
-#tp_new_methoddef                                   
-
-# Objects/unicodeobject.c
-#EncodingMapType                                    
-#bloom_linebreak                                    
-#interned                                           
-#static_strings                                     
-#ucnhash_CAPI                                       
-#unicode_empty                                      
-#unicode_latin1                                     
-
-# Parser/myreadline.c
-#PyOS_InputHook                                     
-#PyOS_ReadlineFunctionPointer                       
-#_PyOS_ReadlineLock                                 
-#_PyOS_ReadlineTState                               
-
-# Parser/tokenizer.c
-#_PyParser_TokenNames                               
-
-# Python/_warnings.c
-#_default_action                                    
-#_filters                                           
-#_filters_version                                   
-#_once_registry                                     
-
-# Python/bltinmodule.c
-#Py_FileSystemDefaultEncodeErrors                   
-#Py_FileSystemDefaultEncoding                       
-#Py_HasFileSystemDefaultEncoding                    
-
 # Python/bootstrap_hash.c
-#urandom_cache                                      
+#urandom_cache
 
 # Python/ceval.c
-#_Py_CheckRecursionLimit                            
-#_Py_TracingPossible                                
-#eval_breaker                                       
-#gil_drop_request                                   
-#main_thread                                        
-#pending_async_exc                                  
-#pending_lock                                       
-#pendingcalls                                       
-#pendingcalls_to_do                                 
-#pendingfirst                                       
-#pendinglast                                        
-#recursion_limit                                    
+#_Py_CheckRecursionLimit
+#_Py_TracingPossible
+#eval_breaker
+#gil_drop_request
+#main_thread
+#pending_async_exc
+#pending_lock
+#pendingcalls
+#pendingcalls_to_do
+#pendingfirst
+#pendinglast
+#recursion_limit
 
 # Python/ceval_gil.h
-#gil_cond                                           
-#gil_interval                                       
-#gil_last_holder                                    
-#gil_locked                                         
-#gil_mutex                                          
-#gil_switch_number                                  
-#switch_cond                                        
-#switch_mutex                                       
+#gil_cond
+#gil_interval
+#gil_last_holder
+#gil_locked
+#gil_mutex
+#gil_switch_number
+#switch_cond
+#switch_mutex
 
 # Python/codecs.c
-#Py_hexdigits                                       
-#ucnhash_CAPI                                       
+#Py_hexdigits
+#ucnhash_CAPI
 
 # Python/dtoa.c
-#freelist                                           
-#p5s                                                
-#pmem_next                                          
-#private_mem                                        
+#freelist
+#p5s
+#pmem_next
+#private_mem
 
 # Python/dynload_shlib.c
-#_PyImport_DynLoadFiletab                           
-#handles                                            
-#nhandles                                           
+#_PyImport_DynLoadFiletab
+#handles
+#nhandles
 
 # Python/fileutils.c
-#_Py_open_cloexec_works                             
-#force_ascii                                        
+#_Py_open_cloexec_works
+#force_ascii
 
 # Python/frozen.c
 M___hello__
+PyImport_FrozenModules
 
 # Python/getargs.c
 static_arg_parsers
 
 # Python/getopt.c
 opt_ptr
+_PyOS_optarg
+_PyOS_opterr
+_PyOS_optind
 
 # Python/graminit.c
 _PyParser_Grammar
@@ -682,81 +570,84 @@ dfas
 labels
 
 # Python/import.c
-#extensions                                         
-#import_lock                                        
-#import_lock_level                                  
-#import_lock_thread                                 
+PyImport_Inittab
+#extensions
+#import_lock
+#import_lock_level
+#import_lock_thread
 
 # Python/pyhash.c
 PyHash_Func
+_Py_HashSecret
+_Py_HashSecret_Initialized
 
 # Python/Python-ast.c
 alias_fields
 
 # Python/modsupport.c
-#_Py_PackageContext                                 
+#_Py_PackageContext
 
 # Python/pylifecycle.c
-#_PyOS_mystrnicmp_hack                              
-#Py_BytesWarningFlag                                
+#_PyOS_mystrnicmp_hack
+#Py_BytesWarningFlag
 _Py_CoreInitialized
-#Py_DebugFlag                                       
-#Py_DontWriteBytecodeFlag                           
-#_Py_Finalizing                                     
-#Py_FrozenFlag                                      
-#Py_HashRandomizationFlag                           
-#Py_IgnoreEnvironmentFlag                           
-#_Py_Initialized                                    
-#Py_InspectFlag                                     
-#Py_InteractiveFlag                                 
-#Py_IsolatedFlag                                    
-#Py_NoSiteFlag                                      
-#Py_NoUserSiteDirectory                             
-#Py_OptimizeFlag                                    
-#Py_QuietFlag                                       
-#_Py_StandardStreamEncoding                         
-#_Py_StandardStreamErrors                           
-#Py_UnbufferedStdioFlag                             
-#Py_UseClassExceptionsFlag                          
-#Py_VerboseFlag                                     
-#default_home                                       
-#env_home                                           
-#exitfuncs                                          
-#nexitfuncs                                         
-#progname                                           
-#pyexitfunc                                         
+#Py_DebugFlag
+#Py_DontWriteBytecodeFlag
+#_Py_Finalizing
+#Py_FrozenFlag
+#Py_HashRandomizationFlag
+#Py_IgnoreEnvironmentFlag
+#_Py_Initialized
+#Py_InspectFlag
+#Py_InteractiveFlag
+#Py_IsolatedFlag
+#Py_NoSiteFlag
+#Py_NoUserSiteDirectory
+#Py_OptimizeFlag
+#Py_QuietFlag
+#_Py_StandardStreamEncoding
+#_Py_StandardStreamErrors
+#Py_UnbufferedStdioFlag
+#Py_UseClassExceptionsFlag
+#Py_VerboseFlag
+#default_home
+#env_home
+#exitfuncs
+#nexitfuncs
+#progname
+#pyexitfunc
 
 # Python/pystate.c
-#_PyGILState_check_enabled                          
-#_PyThreadState_Current                             
-#_PyThreadState_GetFrame                            
-#autoInterpreterState                               
-#autoTLSkey                                         
-#head_mutex                                         
-#interp_head                                        
-#interp_main                                        
-#_next_interp_id                                    
+#_PyGILState_check_enabled
+#_PyThreadState_Current
+#_PyThreadState_GetFrame
+#autoInterpreterState
+#autoTLSkey
+#head_mutex
+#interp_head
+#interp_main
+#_next_interp_id
 
 # Python/symtable.c
-#__class__                                          
-#dictcomp                                           
-#genexpr                                            
-#lambda                                             
-#listcomp                                           
-#setcomp                                            
-#top                                                
+#__class__
+#dictcomp
+#genexpr
+#lambda
+#listcomp
+#setcomp
+#top
 
 # Python/sysmodule.c
 AsyncGenHooksType
-#_check_interval                                    
+#_check_interval
 FlagsType
 Hash_InfoType
 _PySys_ImplCacheTag
 _PySys_ImplName
 VersionInfoType
-#warnoptions                                        
-#whatstrings                                        
-#xoptions                                           
+#warnoptions
+#whatstrings
+#xoptions
 
 # Python/thread.c
 #ThreadInfoType  # almost
