@@ -302,6 +302,12 @@ _PyExc_StopAsyncIteration
 _PyExc_StopIteration
 _PyExc_SystemExit
 
+# Python/_warnings.c
+#_default_action
+#_filters
+#_filters_version
+#_once_registry
+
 
 #######################################
 # compiler
@@ -331,27 +337,7 @@ alias_fields
 
 
 #######################################
-# others
-
-# Parser/myreadline.c
-#PyOS_InputHook
-#PyOS_ReadlineFunctionPointer
-#_PyOS_ReadlineLock
-#_PyOS_ReadlineTState
-
-# Python/_warnings.c
-#_default_action
-#_filters
-#_filters_version
-#_once_registry
-
-# Python/bltinmodule.c
-#Py_FileSystemDefaultEncodeErrors
-#Py_FileSystemDefaultEncoding
-#Py_HasFileSystemDefaultEncoding
-
-# Python/bootstrap_hash.c
-#urandom_cache
+# interpreter
 
 # Python/ceval.c
 #_Py_CheckRecursionLimit
@@ -376,6 +362,48 @@ alias_fields
 #gil_switch_number
 #switch_cond
 #switch_mutex
+
+# Python/pystate.c
+#_PyGILState_check_enabled  # maybe
+#_PyThreadState_Current
+#_PyThreadState_GetFrame
+#autoInterpreterState
+#autoTLSkey
+#head_mutex
+#interp_head
+#interp_main
+#_next_interp_id
+
+# Python/sysmodule.c
+#_check_interval
+_PySys_ImplCacheTag
+_PySys_ImplName
+#warnoptions  # maybe
+whatstrings
+#xoptions  # maybe
+
+# Python/thread.c
+#ThreadInfoType  # almost
+#initialized  # almost
+_pythread_stacksize
+
+
+#######################################
+# others
+
+# Parser/myreadline.c
+#PyOS_InputHook
+#PyOS_ReadlineFunctionPointer
+#_PyOS_ReadlineLock
+#_PyOS_ReadlineTState
+
+# Python/bltinmodule.c
+#Py_FileSystemDefaultEncodeErrors
+#Py_FileSystemDefaultEncoding
+#Py_HasFileSystemDefaultEncoding
+
+# Python/bootstrap_hash.c
+#urandom_cache
 
 # Python/codecs.c
 #Py_hexdigits
@@ -453,31 +481,3 @@ _Py_CoreInitialized
 #nexitfuncs
 #progname
 #pyexitfunc
-
-# Python/pystate.c
-#_PyGILState_check_enabled
-#_PyThreadState_Current
-#_PyThreadState_GetFrame
-#autoInterpreterState
-#autoTLSkey
-#head_mutex
-#interp_head
-#interp_main
-#_next_interp_id
-
-# Python/sysmodule.c
-AsyncGenHooksType
-#_check_interval
-FlagsType
-Hash_InfoType
-_PySys_ImplCacheTag
-_PySys_ImplName
-VersionInfoType
-#warnoptions
-#whatstrings
-#xoptions
-
-# Python/thread.c
-#ThreadInfoType  # almost
-#initialized  # almost
-_pythread_stacksize
