@@ -220,7 +220,7 @@ _PyMem_Debug
 # Objects/setobject.c
 _PySet_Dummy
 _dummy_struct
-#emptyfrozenset
+emptyfrozenset
 
 # Objects/sliceobject.c
 #slice_cache
