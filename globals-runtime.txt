@@ -467,24 +467,24 @@ progname
 # others
 
 # Parser/myreadline.c
-#PyOS_InputHook
-#PyOS_ReadlineFunctionPointer
-#_PyOS_ReadlineLock
-#_PyOS_ReadlineTState
+PyOS_InputHook
+PyOS_ReadlineFunctionPointer
+_PyOS_ReadlineLock
+_PyOS_ReadlineTState
 
 # Python/codecs.c
-#Py_hexdigits
+Py_hexdigits
 #ucnhash_CAPI
 
 # Python/dtoa.c
 #freelist
-#p5s
+p5s
 #pmem_next
 #private_mem
 
 # Python/fileutils.c
-#_Py_open_cloexec_works
-#force_ascii
+_Py_open_cloexec_works
+force_ascii
 
 # Python/getargs.c
 static_arg_parsers
