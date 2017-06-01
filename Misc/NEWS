@@ -345,6 +345,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
+  handle IPv6 addresses.
+
 - bpo-16500: Allow registering at-fork handlers.
 
 - bpo-30470: Deprecate invalid ctypes call protection on Windows.  Patch by
