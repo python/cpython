@@ -8,146 +8,30 @@
 #######################################
 # static types
 
-# Handled via _is_type_var() in check-c-globals.
+# Handled via _is_type_var() in check-c-globals.py.
 
 
 #######################################
 # static errors (Include/pyerrors.h)
 
-# Base Exceptions
+# Handled via _is_exception() in check-c-globals.py, with some special
+# cases here.
+
 PyExc_BaseException
+PyExc_Exception
 PyExc_GeneratorExit
 PyExc_KeyboardInterrupt
+PyExc_StopAsyncIteration
+PyExc_StopIteration
 PyExc_SystemExit
-PyExc_Exception
 
+_PyExc_BaseException
 _PyExc_Exception
 _PyExc_GeneratorExit
 _PyExc_KeyboardInterrupt
-_PyExc_SystemExit
-
-# Exceptions
-PyExc_ArithmeticError
-PyExc_AssertionError
-PyExc_AttributeError
-PyExc_BlockingIOError
-PyExc_BrokenPipeError
-PyExc_BufferError
-PyExc_ChildProcessError
-PyExc_ConnectionAbortedError
-PyExc_ConnectionError
-PyExc_ConnectionRefusedError
-PyExc_ConnectionResetError
-PyExc_EOFError
-PyExc_EnvironmentError
-PyExc_FileExistsError
-PyExc_FileNotFoundError
-PyExc_FloatingPointError
-PyExc_IOError
-PyExc_ImportError
-PyExc_IndentationError
-PyExc_IndexError
-PyExc_InterruptedError
-PyExc_IsADirectoryError
-PyExc_KeyError
-PyExc_LookupError
-PyExc_MemoryError
-PyExc_ModuleNotFoundError
-PyExc_NameError
-PyExc_NotADirectoryError
-PyExc_NotImplementedError
-PyExc_OSError
-PyExc_OverflowError
-PyExc_PermissionError
-PyExc_ProcessLookupError
-PyExc_RecursionError
-PyExc_ReferenceError
-PyExc_RuntimeError
-PyExc_StopAsyncIteration
-PyExc_StopIteration
-PyExc_SyntaxError
-PyExc_SystemError
-PyExc_TabError
-PyExc_TimeoutError
-PyExc_TypeError
-PyExc_UnboundLocalError
-PyExc_UnicodeDecodeError
-PyExc_UnicodeEncodeError
-PyExc_UnicodeError
-PyExc_UnicodeTranslateError
-PyExc_ValueError
-PyExc_WindowsError
-PyExc_ZeroDivisionError
-
-_PyExc_ArithmeticError
-_PyExc_AssertionError
-_PyExc_AttributeError
-_PyExc_BlockingIOError
-_PyExc_BrokenPipeError
-_PyExc_BufferError
-_PyExc_ChildProcessError
-_PyExc_ConnectionAbortedError
-_PyExc_ConnectionError
-_PyExc_ConnectionRefusedError
-_PyExc_ConnectionResetError
-_PyExc_EOFError
-_PyExc_FileExistsError
-_PyExc_FileNotFoundError
-_PyExc_FloatingPointError
-_PyExc_ImportError
-_PyExc_IndentationError
-_PyExc_IndexError
-_PyExc_InterruptedError
-_PyExc_IsADirectoryError
-_PyExc_KeyError
-_PyExc_LookupError
-_PyExc_ModuleNotFoundError
-_PyExc_NameError
-_PyExc_NotADirectoryError
-_PyExc_NotImplementedError
-_PyExc_OSError
-_PyExc_OverflowError
-_PyExc_PermissionError
-_PyExc_ProcessLookupError
-_PyExc_RecursionError
-_PyExc_ReferenceError
-_PyExc_RuntimeError
 _PyExc_StopAsyncIteration
 _PyExc_StopIteration
-_PyExc_SyntaxError
-_PyExc_SystemError
-_PyExc_TabError
-_PyExc_TimeoutError
-_PyExc_TypeError
-_PyExc_UnboundLocalError
-_PyExc_UnicodeError
-_PyExc_ValueError
-_PyExc_ZeroDivisionError
-
-# Warnings
-PyExc_BytesWarning
-PyExc_DeprecationWarning
-PyExc_FutureWarning
-PyExc_ImportWarning
-PyExc_PendingDeprecationWarning
-PyExc_ResourceWarning
-PyExc_RuntimeWarning
-PyExc_SyntaxWarning
-PyExc_UnicodeWarning
-PyExc_UserWarning
-PyExc_Warning
-
-_PyExc_BytesWarning
-_PyExc_DeprecationWarning
-_PyExc_FutureWarning
-_PyExc_ImportWarning
-_PyExc_PendingDeprecationWarning
-_PyExc_ResourceWarning
-_PyExc_RuntimeWarning
-_PyExc_SyntaxWarning
-_PyExc_UnicodeWarning
-_PyExc_UserWarning
-_PyExc_Warning
+_PyExc_SystemExit
 
 
 #######################################
@@ -168,7 +52,7 @@ _Py_EllipsisObject
 #######################################
 # modules
 
-# Handled via _is_runtime_var() in check-c-globals.
+# Handled via _is_runtime_var() in check-c-globals.py.
 
 
 #######################################
