@@ -458,10 +458,10 @@ class HTMLCalendar(Calendar):
         a = v.append
         width = max(width, 1)
         a('<table border="0" cellpadding="0" cellspacing="0" class="%s">' %
-          self.cssclass_year_head)
+          self.cssclass_year)
         a('\n')
         a('<tr><th colspan="%d" class="%s">%s</th></tr>' % (
-            width, self.cssclass_year, theyear))
+            width, self.cssclass_year_head, theyear))
         for i in range(January, January+12, width):
             # months in this row
             months = range(i, min(i+width, 13))
