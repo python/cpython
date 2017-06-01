@@ -95,6 +95,13 @@ New Modules
 Improved Modules
 ================
 
+calendar
+--------
+The :class:`~calendar.HTMLCalendar` has added new class attribute which ease the
+customisation the CSS classes in the produced HTML calendar.
+(Contributed by Oz Tiram in :issue:`30095`.)
+
+
 distutils
 ---------
 
