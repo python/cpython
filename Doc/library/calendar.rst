@@ -185,38 +185,44 @@ it's the base calendar for all computations.
 
       Note that the length of this list must be seven items.
 
-   .. versionadded:: 3.7
    .. attribute:: cssclass_noday
 
       The CSS class for a weekday occurring in the previous or coming month.
 
-   .. versionadded:: 3.7
+      .. versionadded:: 3.7
+
    .. attribute:: cssclass_weekday_head
 
       A list of CSS classes used for weekday names in the header row.
       The default is the same as :attr:`cssclasses`.
 
-   .. versionadded:: 3.7
+      .. versionadded:: 3.7
+
    .. attribute:: cssclass_month_head
 
       The month's head CSS class. The default value is ``"month"``.
 
-   .. versionadded:: 3.7
+      .. versionadded:: 3.7
+
    .. attribute:: cssclass_month
 
       The CSS class for the whole month's table. The default value is ``"month"``.
 
-   .. versionadded:: 3.7
+      .. versionadded:: 3.7
+
    .. attribute:: cssclass_year
 
       The CSS class for the whole year's table of tables (see: :meth:`formatyear`).
       The default value is ``"year"``.
 
-   .. versionadded:: 3.7
+      .. versionadded:: 3.7
+
    .. attribute:: cssclass_year_head
 
       The CSS class for the table head for the whole year (see: :meth:`formatyear`).
       The default value is ``"year"``.
+
+      .. versionadded:: 3.7
 
 Note that although the naming for the above described class attributes is
 singular (e.g. ``cssclass_month`` ``cssclass_noday``), one can replace the
