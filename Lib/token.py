@@ -71,9 +71,10 @@ tokens = [
 
 tok_name = {i: v[0] if isinstance(v, tuple) else v
             for i, v in enumerate(tokens)}
-EXACT_TOKEN_TYPES = {v[1]: i
+EXACT_TOKEN_TYPES = {x: i
                      for i, v in enumerate(tokens)
-                     if isinstance(v, tuple)}
+                     if isinstance(v, tuple)
+                     for x in v[1:]}
 del tokens
 
 # Special definitions for cooperation with parser

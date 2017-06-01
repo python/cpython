@@ -116,17 +116,11 @@ Triple = group(StringPrefix + "'''", StringPrefix + '"""')
 String = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
                StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
-# Because of leftmost-then-longest match semantics, be sure to put the
-# longest operators first (e.g., if = came before ==, == would get
-# recognized as two instances of =).
-Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"!=",
-                 r"//=?", r"->",
-                 r"[+\-*/%&@|^=<>]=?",
-                 r"~")
-
-Bracket = '[][(){}]'
-Special = group(r'\r?\n', r'\.\.\.', r'[:;.,@]')
-Funny = group(Operator, Bracket, Special)
+# Sorting in reverse order puts the long operators before their prefixes.
+# Otherwise if = came before ==, == would get recognized as two instances
+# of =.
+Special = group(*map(re.escape, sorted(EXACT_TOKEN_TYPES, reverse=True)))
+Funny = group(r'\r?\n', Special)
 
 PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
