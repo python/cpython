@@ -124,6 +124,14 @@ contextlib
 :func:`contextlib.asynccontextmanager` has been added. (Contributed by
 Jelle Zijlstra in :issue:`29679`.)
 
+dis
+---
+
+The :func:`~dis.dis` and :func:`~dis.disassemble` functions now are able to
+disassemble internal code objects (the code of comprehensions, generator
+expressions and local functions, and the code used for building local
+classes).  (Contributed by Serhiy Storchaka in :issue:`11822`.)
+
 distutils
 ---------
 

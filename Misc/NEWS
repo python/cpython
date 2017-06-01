@@ -345,6 +345,9 @@ Extension Modules
 Library
 -------
 
+- bpo-11822: The dis.dis() and dis.disassemble() functions now are able to
+  disassemble internal code objects.
+
 - bpo-16500: Allow registering at-fork handlers.
 
 - bpo-30470: Deprecate invalid ctypes call protection on Windows.  Patch by

@@ -31,7 +31,7 @@ def _try_compile(source, name):
         c = compile(source, name, 'exec')
     return c
 
-def dis(x=None, *, file=None):
+def dis(x=None, *, file=None, recursive=False):
     """Disassemble classes, methods, functions, generators, or code.
 
     With no argument, disassemble the last traceback.
@@ -52,16 +52,16 @@ def dis(x=None, *, file=None):
             if isinstance(x1, _have_code):
                 print("Disassembly of %s:" % name, file=file)
                 try:
-                    dis(x1, file=file)
+                    dis(x1, file=file, recursive=recursive)
                 except TypeError as msg:
                     print("Sorry:", msg, file=file)
                 print(file=file)
     elif hasattr(x, 'co_code'): # Code object
-        disassemble(x, file=file)
+        disassemble(x, file=file, recursive=recursive)
     elif isinstance(x, (bytes, bytearray)): # Raw bytecode
         _disassemble_bytes(x, file=file)
     elif isinstance(x, str):    # Source code
-        _disassemble_str(x, file=file)
+        _disassemble_str(x, file=file, recursive=recursive)
     else:
         raise TypeError("don't know how to disassemble %s objects" %
                         type(x).__name__)
@@ -331,12 +331,18 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target)
 
-def disassemble(co, lasti=-1, *, file=None):
+def disassemble(co, lasti=-1, *, file=None, recursive=False):
     """Disassemble a code object."""
     cell_names = co.co_cellvars + co.co_freevars
     linestarts = dict(findlinestarts(co))
     _disassemble_bytes(co.co_code, lasti, co.co_varnames, co.co_names,
                        co.co_consts, cell_names, linestarts, file=file)
+    if recursive:
+        for x in co.co_consts:
+            if hasattr(x, 'co_code'):
+                print(file=file)
+                print("Disassembly of %r:" % (x,), file=file)
+                disassemble(x, file=file, recursive=True)
 
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None, cells=None, linestarts=None,
@@ -368,9 +374,9 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
 
-def _disassemble_str(source, *, file=None):
+def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
-    disassemble(_try_compile(source, '<dis>'), file=file)
+    disassemble(_try_compile(source, '<dis>'), **kwargs)
 
 disco = disassemble                     # XXX For backwards compatibility
 
@@ -495,12 +501,13 @@ def _test():
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--recursive', action='store_true')
     parser.add_argument('infile', type=argparse.FileType(), nargs='?', default='-')
     args = parser.parse_args()
     with args.infile as infile:
         source = infile.read()
     code = compile(source, args.infile.name, "exec")
-    dis(code)
+    dis(code, recursive=args.recursive)
 
 if __name__ == "__main__":
     _test()
