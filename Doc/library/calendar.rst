@@ -147,7 +147,7 @@ it's the base calendar for all computations.
    This class can be used to generate HTML calendars.
 
 
-   :class:`HTMLCalendar` instances have the following methods:
+   :class:`!HTMLCalendar` instances have the following methods:
 
    .. method:: formatmonth(theyear, themonth, withyear=True)
 
@@ -171,8 +171,8 @@ it's the base calendar for all computations.
       output (defaulting to the system default encoding).
 
 
-   :class:`HTMLCalendar` has the following attributes you can override to
-   customize the style of the calendar:
+   :class:`!HTMLCalendar` has the following attributes you can override to
+   customize the CSS classes used by the calendar:
 
    .. attribute:: cssclasses
 
@@ -238,7 +238,7 @@ it's the base calendar for all computations.
 
          "text-bold text-red"
 
-   Here is an example how one can customize ``HTMLCalendar``::
+   Here is an example how :class:`!HTMLCalendar` can be customized::
 
        class CustomHTMLCal(calendar.HTMLCalendar):
            cssclasses = [style + " text-nowrap" for style in
