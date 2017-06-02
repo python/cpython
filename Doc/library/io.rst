@@ -901,12 +901,25 @@ Text I/O
       locale encoding using :func:`locale.setlocale`, use the current locale
       encoding instead of the user preferred encoding.
 
-   :class:`TextIOWrapper` provides one attribute in addition to those of
+   :class:`TextIOWrapper` provides these members in addition to those of
    :class:`TextIOBase` and its parents:
 
    .. attribute:: line_buffering
 
       Whether line buffering is enabled.
+
+   .. method:: set_encoding(encoding=None, errors=None[, newline])
+
+      Change the encoding, error handler, and newline handler.
+      If *encoding* is None or *newline* is unspecified, the existing
+      setting is retained.  If *errors* is None, the default depends on
+      *encoding*: if *encoding* is also None, the existing error handler
+      is retained, otherwise it is reset to ``'strict'``.
+
+      It is not possible to change the encoding if some data has already
+      been read from the stream.
+
+      .. versionadded:: 3.7
 
 
 .. class:: StringIO(initial_value='', newline='\\n')

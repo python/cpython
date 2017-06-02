@@ -1946,11 +1946,7 @@ class TextIOWrapper(TextIOBase):
         self._line_buffering = line_buffering
         self._encoding = encoding
         self._errors = errors
-        self._readuniversal = not newline
-        self._readtranslate = newline is None
-        self._readnl = newline
-        self._writetranslate = newline != ''
-        self._writenl = newline or os.linesep
+        self._set_newline(newline)
         self._encoder = None
         self._decoder = None
         self._decoded_chars = ''  # buffer for text returned from decoder
@@ -1994,6 +1990,65 @@ class TextIOWrapper(TextIOBase):
         else:
             result += " mode={0!r}".format(mode)
         return result + " encoding={0!r}>".format(self.encoding)
+
+    def set_encoding(self, encoding=None, errors=None, newline=Ellipsis):
+        """Change the encoding of the stream.
+
+        It is not possible to change the encoding if some data has already
+        been read from the stream.
+        """
+        old_encoding = codecs.lookup(self._encoding).name
+        if encoding is None:
+            encoding = old_encoding
+            if errors is None:
+                errors = self._errors
+        else:
+            if not isinstance(encoding, str):
+                raise ValueError("invalid encoding: %r" % encoding)
+
+            if errors is None:
+                errors = 'strict'
+
+            encoding = codecs.lookup(encoding).name
+        if newline is Ellipsis:
+            newline = self._readnl
+        if encoding == old_encoding and errors == self._errors \
+                and newline == self._readnl:
+            # no change
+            return
+
+        if self._decoder is not None:
+            raise UnsupportedOperation(
+                "It is not possible to set the encoding of stream after "
+                "the first read")
+
+        # flush write buffer
+        self.flush()
+
+        # reset attributes
+        self._encoding = encoding
+        self._errors = errors
+        self._encoder = None
+        self._decoder = None
+        self._b2cratio = 0.0
+        self._set_newline(newline)
+
+        # don't write a BOM in the middle of a file
+        if self._seekable and self.writable():
+            position = self.buffer.tell()
+            if position != 0:
+                try:
+                    self._get_encoder().setstate(0)
+                except LookupError:
+                    # Sometimes the encoder doesn't exist
+                    pass
+
+    def _set_newline(self, newline):
+        self._readuniversal = not newline
+        self._readtranslate = newline is None
+        self._readnl = newline
+        self._writetranslate = newline != ''
+        self._writenl = newline or os.linesep
 
     @property
     def encoding(self):
