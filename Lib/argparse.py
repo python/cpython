@@ -1158,13 +1158,17 @@ class FileType(object):
             builtin open() function.
         - errors -- A string indicating how encoding and decoding errors are to
             be handled. Accepts the same value as the builtin open() function.
+        - newline -- controls how universal newlines mode works (it only 
+            applies to text mode). Accepts the same value as the builtin open() 
+            function.
     """
 
-    def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
+    def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None, newline=None):
         self._mode = mode
         self._bufsize = bufsize
         self._encoding = encoding
         self._errors = errors
+        self._newline = newline
 
     def __call__(self, string):
         # the special argument "-" means sys.std{in,out}
@@ -1180,7 +1184,7 @@ class FileType(object):
         # all other arguments are used as file names
         try:
             return open(string, self._mode, self._bufsize, self._encoding,
-                        self._errors)
+                        self._errors, self._newline)
         except OSError as e:
             message = _("can't open '%s': %s")
             raise ArgumentTypeError(message % (string, e))

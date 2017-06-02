@@ -1601,11 +1601,13 @@ class TestFileTypeOpenArgs(TestCase):
     def test_open_args(self):
         FT = argparse.FileType
         cases = [
-            (FT('rb'), ('rb', -1, None, None)),
-            (FT('w', 1), ('w', 1, None, None)),
-            (FT('w', errors='replace'), ('w', -1, None, 'replace')),
-            (FT('wb', encoding='big5'), ('wb', -1, 'big5', None)),
-            (FT('w', 0, 'l1', 'strict'), ('w', 0, 'l1', 'strict')),
+            (FT('rb'), ('rb', -1, None, None, None)),
+            (FT('w', 1), ('w', 1, None, None, None)),
+            (FT('w', errors='replace'), ('w', -1, None, 'replace', None)),
+            (FT('wb', encoding='big5'), ('wb', -1, 'big5', None, None)),
+            (FT('w', 0, 'l1', 'strict'), ('w', 0, 'l1', 'strict', None)),
+            (FT('w', 0, 'l1', 'strict', '\r\n'), ('w', 0, 'l1', 'strict', '\r\n')),
+            (FT('r', newline='\r'), ('r', -1, None, None, '\r')),
         ]
         with mock.patch('builtins.open') as m:
             for type, args in cases:
