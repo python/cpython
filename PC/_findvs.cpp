@@ -1,3 +1,14 @@
+//
+// Helper library for location Visual Studio installations
+// using the COM-based query API.
+//
+// Copyright (c) Microsoft Corporation
+// Licensed to PSF under a contributor agreement
+//
+
+// Version history
+//  2017-05: Initial contribution (Steve Dower)
+
 #include <Windows.h>
 #include <Strsafe.h>
 #include "external\include\Setup.Configuration.h"
@@ -8,7 +19,7 @@
 
 #include <Python.h>
 
-PyObject *error_from_hr(HRESULT hr)
+static PyObject *error_from_hr(HRESULT hr)
 {
     if (FAILED(hr))
         PyErr_Format(PyExc_OSError, "Error %08x", hr);
@@ -16,7 +27,7 @@ PyObject *error_from_hr(HRESULT hr)
     return nullptr;
 }
 
-PyObject *get_install_name(ISetupInstance2 *inst)
+static PyObject *get_install_name(ISetupInstance2 *inst)
 {
     HRESULT hr;
     BSTR name;
@@ -31,7 +42,7 @@ error:
     return error_from_hr(hr);
 }
 
-PyObject *get_install_version(ISetupInstance *inst)
+static PyObject *get_install_version(ISetupInstance *inst)
 {
     HRESULT hr;
     BSTR ver;
@@ -46,7 +57,7 @@ error:
     return error_from_hr(hr);
 }
 
-PyObject *get_install_path(ISetupInstance *inst)
+static PyObject *get_install_path(ISetupInstance *inst)
 {
     HRESULT hr;
     BSTR path;
@@ -61,7 +72,7 @@ error:
     return error_from_hr(hr);
 }
 
-PyObject *get_installed_packages(ISetupInstance2 *inst)
+static PyObject *get_installed_packages(ISetupInstance2 *inst)
 {
     HRESULT hr;
     PyObject *res = nullptr;
@@ -114,7 +125,7 @@ error:
     return error_from_hr(hr);
 }
 
-PyObject *find_all_instances()
+static PyObject *find_all_instances()
 {
     ISetupConfiguration *sc = nullptr;
     ISetupConfiguration2 *sc2 = nullptr;
@@ -137,7 +148,7 @@ PyObject *find_all_instances()
     )) && hr != REGDB_E_CLASSNOTREG)
         goto error;
 
-    /* If the class is not registered, there are no VS instances installed */
+    // If the class is not registered, there are no VS instances installed
     if (hr == REGDB_E_CLASSNOTREG)
         return res;
 
@@ -187,7 +198,8 @@ PyDoc_STRVAR(findvs_findall_doc, "findall()\
 \
 Finds all installed versions of Visual Studio.");
 
-PyObject *findvs_findall(PyObject *self, PyObject *args, PyObject *kwargs) {
+static PyObject *findvs_findall(PyObject *self, PyObject *args, PyObject *kwargs)
+{
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (hr == RPC_E_CHANGED_MODE)
         hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
@@ -202,7 +214,8 @@ PyDoc_STRVAR(findvs_getversion_doc, "getversion(path)\
 \
 Reads the product version from the specified file.");
 
-PyObject *findvs_getversion(PyObject *self, PyObject *args, PyObject *kwargs) {
+static PyObject *findvs_getversion(PyObject *self, PyObject *args, PyObject *kwargs)
+{
     LPVOID verblock;
     DWORD verblock_size;
 
@@ -213,7 +226,8 @@ PyObject *findvs_getversion(PyObject *self, PyObject *args, PyObject *kwargs) {
     Py_ssize_t path_len;
 
     static const char* keywords[] = { "path", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:getversion", (char**)keywords, PyUnicode_FSDecoder, &path_obj))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:getversion",
+            (char**)keywords, PyUnicode_FSDecoder, &path_obj))
         return NULL;
 
     path = PyUnicode_AsWideCharString(path_obj, &path_len);
@@ -229,9 +243,12 @@ PyObject *findvs_getversion(PyObject *self, PyObject *args, PyObject *kwargs) {
         UINT langinfo_size, ver_size;
 
         if (GetFileVersionInfoW(path, 0, verblock_size, verblock) &&
-            VerQueryValueW(verblock, L"\\VarFileInfo\\Translation", (LPVOID*)&langinfo, &langinfo_size)) {
+            VerQueryValueW(verblock, L"\\VarFileInfo\\Translation",
+                           (LPVOID*)&langinfo, &langinfo_size)) {
             wchar_t rsrc_name[256];
-            StringCchPrintfW(rsrc_name, 256, L"\\StringFileInfo\\%04x%04x\\ProductVersion", langinfo[0], langinfo[1]);
+            StringCchPrintfW(rsrc_name, 256,
+                             L"\\StringFileInfo\\%04x%04x\\ProductVersion",
+                             langinfo[0], langinfo[1]);
             if (VerQueryValueW(verblock, rsrc_name, (LPVOID*)&verstr, &ver_size)) {
                 while (ver_size > 0 && !verstr[ver_size]) {
                     ver_size -= 1;
@@ -250,30 +267,23 @@ PyObject *findvs_getversion(PyObject *self, PyObject *args, PyObject *kwargs) {
 }
 
 
-/*
- * List of functions to add to findvs in exec_findvs().
- */
+// List of functions to add to findvs in exec_findvs().
 static PyMethodDef findvs_functions[] = {
     { "findall", (PyCFunction)findvs_findall, METH_VARARGS | METH_KEYWORDS, findvs_findall_doc },
     { "getversion", (PyCFunction)findvs_getversion, METH_VARARGS | METH_KEYWORDS, findvs_getversion_doc },
-    { NULL, NULL, 0, NULL } /* marks end of array */
+    { NULL, NULL, 0, NULL }
 };
 
-/*
- * Initialize findvs. May be called multiple times, so avoid
- * using static state.
- */
-int exec_findvs(PyObject *module) {
+// Initialize findvs. May be called multiple times, so avoid
+// using static state.
+static int exec_findvs(PyObject *module)
+{
     PyModule_AddFunctions(module, findvs_functions);
 
-    return 0; /* success */
+    return 0; // success
 }
 
-/*
- * Documentation for findvs.
- */
 PyDoc_STRVAR(findvs_doc, "The _findvs helper module");
-
 
 static PyModuleDef_Slot findvs_slots[] = {
     { Py_mod_exec, exec_findvs },
@@ -284,16 +294,17 @@ static PyModuleDef findvs_def = {
     PyModuleDef_HEAD_INIT,
     "_findvs",
     findvs_doc,
-    0,              /* m_size */
-    NULL,           /* m_methods */
+    0,              // m_size
+    NULL,           // m_methods
     findvs_slots,
-    NULL,           /* m_traverse */
-    NULL,           /* m_clear */
-    NULL,           /* m_free */
+    NULL,           // m_traverse
+    NULL,           // m_clear
+    NULL,           // m_free
 };
 
 extern "C" {
-	PyMODINIT_FUNC PyInit__findvs(void) {
-		return PyModuleDef_Init(&findvs_def);
-	}
+    PyMODINIT_FUNC PyInit__findvs(void)
+    {
+        return PyModuleDef_Init(&findvs_def);
+    }
 }
