@@ -943,8 +943,8 @@ call fails (for example because the path doesn't exist):
       PosixPath('/home/antoine/pathlib/setup.py')
 
    If the path doesn't exist and *strict* is ``True``, :exc:`FileNotFoundError`
-   is raised.  If *strict* is ``False``, the path is resolved as far as possible
-   and any remainder is appended without checking whether it exists.  If an
+   is raised.  If *strict* is ``False``, the path is resolved as far as possible.
+   The first segment of the remainder is appended and the rest is ignored.  If an
    infinite loop is encountered along the resolution path, :exc:`RuntimeError`
    is raised.
 
