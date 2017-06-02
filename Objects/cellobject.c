@@ -143,8 +143,6 @@ cell_get_contents(PyCellObject *op, void *closure)
 int
 cell_set_contents(PyCellObject *op, PyObject *obj)
 {
-    if (obj == Py_None)
-        obj = NULL;
     Py_XINCREF(obj);
     Py_XSETREF(op->ob_ref, obj);
     return 0;

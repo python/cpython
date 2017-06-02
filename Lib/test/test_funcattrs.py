@@ -99,7 +99,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         c = f.__closure__
         c[0].cell_contents = 9
         self.assertEqual(c[0].cell_contents, 9)
-        c[0].cell_contents = None
+        del c[0].cell_contents
         try:
             c[0].cell_contents
         except ValueError:

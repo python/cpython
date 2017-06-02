@@ -507,9 +507,13 @@ Callable types
       |                         | arbitrary function            |           |
       |                         | attributes.                   |           |
       +-------------------------+-------------------------------+-----------+
-      | :attr:`__closure__`     | ``None`` or a tuple of cells  | Writable  |
+      | :attr:`__closure__`     | ``None`` or a tuple of cells  | Read-only |
       |                         | that contain bindings for the |           |
       |                         | function's free variables.    |           |
+      |                         | The ``cell_contents``         |           |
+      |                         | attribute can be used for     |           |
+      |                         | used for reading and writing  |           |
+      |                         | to the cells.                 |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__annotations__` | A dict containing annotations | Writable  |
       |                         | of parameters.  The keys of   |           |
