@@ -1,4 +1,4 @@
-:mod:`tkinter.dnd` --- Tkinter drag and drop
+:mod:`tkinter.dnd` --- Drag and drop support
 ============================================
 
 .. module:: tkinter.dnd
@@ -9,49 +9,56 @@
 
 --------------
 
-The :mod:`tkinter.dnd` module provides drag-and-drop support for objcts within
+.. note:: This is experimental and due to be deprecated when it is replaced
+   with the Tk DND
+
+The :mod:`tkinter.dnd` module provides drag-and-drop support for objects within
 a single application, within the same window or between windows. To enable an
 object to be dragged, you must create an event binding for it that starts the
-drag-and-drop process. Typically, you bind <ButtonPress> to a callback function
-that you write. The function should call Tkdnd.dnd_start(source, event), where
-'source' is the object to be dragged, and 'event' is the event that invoked
-the call (the argument to your callback function).
+drag-and-drop process. Typically, you bind a ButtonPress event to a callback
+function that you write (see :ref:`Bindings-and-Events`). The function should
+call :func:`dnd_start`, where 'source' is the object to be dragged, and 'event'
+is the event that invoked the call (the argument to your callback function).
 
 Selection of a target object occurs as follows:
 
 #. Bottom-up search of area under mouse for target widget
 
  * Target widget should have a callable *dnd_accept* attribute
- * If *dnd_accept* not present or returns None search moves to parent widget
- * If no target widget is found target object is None
+ * If *dnd_accept* not present or returns None, search moves to parent widget
+ * If no target widget is found, then the target object is None
 
-2. Call to *dnd_leave (source, event)* on old (or initial) target object
-#. Call to *dnd_enter (source, event)* on new target object
-#. Call to *target.dnd_commit(source, event)* to notify of drop
-#. Call to *source.dnd_end(target, event)* to signal end of drag-and-drop
+2. Call to *<old_target>.dnd_leave(source, event)*
+#. Call to *<new_target>.dnd_enter(source, event)*
+#. Call to *<target>.dnd_commit(source, event)* to notify of drop
+#. Call to *<source>.dnd_end(target, event)* to signal end of drag-and-drop
 
 
- .. class:: DndHandler(self, source, event)
+.. class:: DndHandler(source, event)
 
-    The *DndHandler* class handles drag-and-drop events tracking Motions and
-    ButtonReleases on the root widget of the event
+   The *DndHandler* class handles drag-and-drop events tracking Motion and
+   ButtonRelease events on the root of the event widget
 
-     .. function:: cancel(self, event=None)
+   .. method:: cancel(event=None)
 
-        Cancels the drag-and-drop process
+      Cancels the drag-and-drop process
 
-     .. function:: finish(self, event, commit=0)
+   .. method:: finish(event, commit=0)
 
-        Executes end of drag-and-drop functions
+      Executes end of drag-and-drop functions
 
-     .. function:: on_motion(self, event)
+   .. method:: on_motion(event)
 
-        Inspects area below mouse for target objects while drag is performed
+      Inspects area below mouse for target objects while drag is performed
 
-     .. function:: on_release(self, event)
+   .. method:: on_release(event)
 
-        Called when the release pattern is triggered and signals end of drag
+      Called when the release pattern is triggered and signals end of drag
 
- .. method:: dnd_start(source, event)
+.. function:: dnd_start(event)
 
-    Factory method for drag-and-drop process
+   Factory function for drag-and-drop process
+
+.. seealso::
+
+   :ref:`Bindings-and-Events`

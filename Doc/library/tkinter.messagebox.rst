@@ -1,51 +1,37 @@
-:mod:`tkinter.commondialog` --- Tkinter message prompts
-=======================================================
+:mod:`tkinter.messagebox` --- Tkinter message prompts
+=====================================================
 
 .. module:: tkinter.messagebox
    :platform: Tk
-   :synopsis: Tkinter base class for dialogs
+   :synopsis: Various types of message prompts
 
 **Source code:** :source:`Lib/tkinter/messagebox.py`
 
 --------------
 
-The :mod:`tkinter.messagebox` module provides a set of commonly used native
-message box dialogs.
+The :mod:`tkinter.messagebox` module provides a template base class as well as
+a variety of convenience methods for commonly used configurations.
+Common message box styles and layouts include but are not limited to:
 
-.. FIXME add graphic representation of message boxes for disambiguation
+.. figure:: tk_msg.png
 
-.. class:: Message(self, master=None, **options)
+.. class:: Message(master=None, **options)
 
-   Displays a default message box
+   Displays a default message box.
 
-.. function:: askokcancel(title=None, message=None, **options)
+**Information message box**
 
-   Displays a confirmation prompt
+.. method:: showinfo(title=None, message=None, **options)
 
-.. function:: askquestion(title=None, message=None, **options)
+**Warning message boxes**
 
-   Displays a question prompt
+.. method:: showwarning(title=None, message=None, **options)
+            showerror(title=None, message=None, **options)
 
-.. function:: askretrycancel(title=None, message=None, **options)
+**Question message boxes**
 
-   Displays a retry operation prompt
-
-.. function:: askyesno(title=None, message=None, **options)
-
-   Displays a consent prompt
-
-.. function:: askyesnocancel(title=None, message=None, **options)
-
-   Displays a confirmation prompt (returns None if cancelled)
-
-.. function:: showinfo(title=None, message=None, **options)
-
-   Displays an information-style messagebox
-
-.. function:: showerror(title=None, message=None, **options)
-
-   Displays an error message
-
-.. function:: showwarning(title=None, message=None, **options)
-
-   Displays a warning message
+.. method:: askquestion(title=None, message=None, **options)
+            askokcancel(title=None, message=None, **options)
+            askretrycancel(title=None, message=None, **options)
+            askyesno(title=None, message=None, **options)
+            askyesnocancel(title=None, message=None, **options)

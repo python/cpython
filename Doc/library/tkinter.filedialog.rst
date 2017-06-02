@@ -9,134 +9,154 @@
 
 --------------
 
-The :mod:`tkinter.filedialog` module provides classes and factory methods that
-facilitate file/directory selection.
+The :mod:`tkinter.filedialog` module provides classes and factory functions for
+creating file/directory selection windows.
 
 
-.. FIXME Methods that should (or should not) be documented should be added in
-   (or removed) as appropriate
+.. class:: Directory(master=None, **options)
 
-.. class:: Directory(self, master=None, **options)
+   Creates a dialog prompting user to select a directory.
 
-   Open dialog prompting user to select a directory
+.. note::  The *FileDialog* class should be subclassed for custom event
+   handling and behaviour.
 
+.. class:: FileDialog(master, title=None)
 
-.. class:: FileDialog(self, master, title=None)
+   Creates a basic file selection dialog.
 
-   Standard file selection dialog
+   .. method:: cancel_command(event=None)
 
-    .. function:: cancel_command(self, event=None)
+      Triggers the termination of the dialog window.
 
-       Exit the file selection dialog
+   .. method:: dirs_double_event(event)
 
-    .. function:: dirs_double_event(self, event)
+      Event handler for double-click event on directory.
 
-       Event handler for double-click event on directory
+   .. method:: dirs_select_event(event)
 
-    .. function:: dirs_select_event(self, event)
+      Event handler for click event on directory.
 
-       Event handler for click event on directory
+   .. method:: files_double_event(event)
 
-    .. function:: files_double_event(self, event)
+      Event handler for double-click event on file.
 
-       Event handler for double-click event on file
+   .. method:: files_select_event(event)
 
-    .. function:: files_select_event(self, event)
+      Event handler for single-click event on file.
 
-       Event handler for double-click event on file
+   .. method:: filter_command(event=None)
 
-    .. function:: filter_command(self, event=None)
+      Filters the files by directory.
 
-       Filters the files by directory
+   .. method:: get_filter()
 
-    .. function:: get_filter(self)
+      Retrieve the file filter currently in use.
 
-       Retrieve the file filter currently in use
+   .. method:: get_selection()
 
-    .. function:: get_selection(self)
+      Retrieve the currently selected item.
 
-       Retrieve the currently selected item
+   .. method:: go(dir_or_file=os.curdir, pattern="*", default="", key=None)
 
-    .. function:: go(self, dir_or_file=os.curdir, pattern="*", default="", key=None)
+      Displays dialog and starts event loop.
 
-        Displays dialog and starts event loop
+   .. method:: ok_event(event)
 
-    .. function:: ok_event(self, event)
+      Exit dialog returning current selection.
 
-       Exit dialog returning current selection
+   .. method:: quit(how=None)
 
-    .. function:: quit(self, how=None)
+      Exit dialog returning filename, if any.
 
-       Exit dialog returning filename, if any
+   .. method:: set_filter(dir, pat)
 
-    .. function:: set_filter(self, dir, pat)
+      Set the file filter.
 
-        Set the file filter
+   .. method:: set_selection(file)
 
-    .. function:: set_selection(self, file)
+      Updates the current file selection to *file*.
 
 
-.. class:: LoadFileDialog(self, master, title=None)
+.. class:: LoadFileDialog
 
-   File selection dialog that checks that the file exists
+   A subclass of FileDialog that creates a dialog window for selecting an
+   existing file.
 
-    .. function:: ok_command(self)
+   .. method:: ok_command()
 
-       Exit dialog returning current selection
+      Tests that a file is provided and that the selection indicates an
+      already existing file.
 
+.. class:: SaveFileDialog
 
-.. class:: Open(self, master=None, **options)
+   A subclass of FileDialog that creates a dialog window for selecting a
+   destination file.
 
-   Native tk dialog for retrieving filename to open
+    .. method:: ok_command()
 
+      Tests whether or not the selection points to a valid file that is not a
+      directory. Confirmation is required if an already existing file is
+      selected.
 
-.. class:: SaveAs(self, master=None, **options)
 
-   Native tk dialog for retrieving filename for saving
+Native Load/Save Dialogs
+^^^^^^^^^^^^^^^^^^^^^^^^
 
+The following classes and functions provide file dialog windows that combine a
+native look-and-feel with configuration options to customize behaviour.
+The following keyword arguments are applicable to the classes and functions
+listed below:
 
-.. class:: SaveFileDialog(self, master, title=None)
+ | *parent* - the window to place the dialog on top of
 
-   File selection dialog that checks that the file can be created
+ | *title* - the title of the window
 
-    .. function:: ok_command(self)
+ | *initialdir* - the directory that the dialog starts in
 
-       Exit dialog returning current selection, prompting overwrite if existing
+ | *initialfile* - the file selected upon opening of the dialog
 
+ | *filetypes* - a sequence of (label, pattern) tuples, '*' wildcard is allowed
 
+ | *defaultextension* - default extension to append to file (save dialogs)
 
-.. Static factory methods
+ | *multiple* - when True, selection of multiple items is allowed
 
-.. method:: askdirectory (**options)
 
-   Prompt user to select a directory
+.. class:: Open(master=None, **options)
+           SaveAs(master=None, **options)
 
-.. method:: askopenfile(mode = "r", **options)
+   The above two classes provide native dialog windows for saving and loading
+   files.
 
-   Prompt for a filename to open, and returned the opened file
+.. Static factory functions
 
-.. method:: askopenfilename(**options)
+.. function:: askopenfile(mode="r", **options)
+              askopenfiles(mode = "r", **options)
 
-   Static factory method for Open dialog (single selection)
+   The above two functions create an :class:`Open` dialog and return the opened
+   file object(s) in read-only mode.
 
-.. method:: askopenfilenames(**options)
+.. function:: asksaveasfile(mode="w", **options)
 
-   Static factory method for Open dialog (multi-selection)
+   Creates a :class:`SaveAs` dialog and returns a file object opened in write-
+   only mode.
 
-.. method:: askopenfiles(mode = "r", **options)
+.. function:: askopenfilename(**options)
+              askopenfilenames(**options)
 
-   Prompt for filenames (multi-selection) and return opened file object(s)
+   The above two functions create an :class:`Open` dialog and return the
+   selected filename(s) that correspond to existing file(s).
 
-.. method:: asksaveasfile(mode = "w", **options)
+.. function:: asksaveasfilename(**options)
 
-   Prompt for filename to write to and return opened file object
+   Creates a :class:`SaveAs` dialog and returns the selected filename.
 
-.. method:: asksaveasfilename(**options)
+.. function:: askdirectory (**options)
 
-   Static factory method for 'Save As' dialog
-
+ | Prompt user to select a directory.
+ | Additional keyword option:
+ |  *mustexist* - determines if selection must be an existing directory.
 
 .. seealso::
 
-   Module :mod:`tkinter.commondialog`
-      Tkinter standard dialog module
+   :mod:`tkinter.commondialog`, :ref:`tut-files`

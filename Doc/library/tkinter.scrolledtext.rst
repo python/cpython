@@ -25,12 +25,14 @@ be used directly to achieve most normal geometry management behavior.
 Should more specific control be necessary, the following attributes are
 available:
 
-
-.. attribute:: ScrolledText.frame
-
-   The frame which surrounds the text and scroll bar widgets.
+.. class:: ScrolledText
 
 
-.. attribute:: ScrolledText.vbar
+   .. attribute:: frame
 
-   The scroll bar widget.
+      The frame which surrounds the text and scroll bar widgets.
+
+
+   .. attribute:: vbar
+
+      The scroll bar widget.

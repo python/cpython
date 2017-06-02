@@ -675,6 +675,7 @@ scrollcommand
 wrap:
    Must be one of: ``"none"``, ``"char"``, or ``"word"``.
 
+.. _Bindings-and-Events:
 
 Bindings and Events
 ^^^^^^^^^^^^^^^^^^^

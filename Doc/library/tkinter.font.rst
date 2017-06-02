@@ -12,75 +12,80 @@
 The :mod:`tkinter.font` module provides the :class:`Font` class for creating
 and using named fonts.
 
+The different font weights and slants are:
+
 .. data:: NORMAL
+          BOLD
+          ITALIC
+          ROMAN
 
-       no slant or emphasis
+.. class:: Font(root=None, font=None, name=None, exists=False, **options)
 
-.. data:: BOLD
+   The :class:`Font` class represents a named font. *Font* instances are given
+   unique names and can be specified by their family, size, and style
+   configuration.
 
-       added font emphasis
+    keyword arguments:
 
-.. data:: ITALIC
-
-       italiced text
-
-.. data:: ROMAN
-
-       slanted font style
-
-.. class:: Font(self, root=None, font=None, name=None, exists=False, **options)
-
-   The :class:`Font` class represents a named font.
-
-    options:
-
-       | *font* - font specifier tuple (family, size, style))
+       | *font* - font specifier tuple (family, size, \*\*options)
        | *name* - unique font name
        | *exists* - self points to existing named font if true
 
-    additional options (redundant if *font* is specified):
+    allowed keyword options (ignored if *font* is specified):
 
        | *family* - font family i.e. Courier, Times
        | *size* - font size (pt)
        | *weight* - font emphasis {NORMAL, BOLD}
        | *slant* - {ROMAN - oblique text, ITALIC}
-       | *underline* - font underlining {0 - none, 1 - underline}
-       | *overstrike* - font strikeout {0 - none, 1 - strikeout}
+       | *underline* - font underlining (0 - none, 1 - underline)
+       | *overstrike* - font strikeout (0 - none, 1 - strikeout)
 
-    .. function:: actual(self, option=None, displayof=None)
+   .. method:: actual(option=None, displayof=None)
 
-       Returns the attributes of the font
+      Returns the attributes of the font.
 
-    .. function:: cget(self, option)
+   .. method:: cget(option)
 
-       Retrieves an attribute of the font
+      Retrieves an attribute of the font.
 
-    .. function:: config(self, **options)
+   .. method:: config(**options)
 
-       Modify attributes of the font
+      Modify attributes of the font.
 
-    .. function:: copy(self)
+   .. method:: copy()
 
-       Returns new instance of the current font
+      Returns new instance of the current font.
 
-    .. function:: measure(self, text, displayof=None)
+   .. method:: measure(text, displayof=None)
 
-       Returns width of the text
+      Returns amount of space the text would occupy on the specified display
+      when formatted in the current font. If no display is specified then the
+      main application window is assumed.
 
-    .. function:: metrics(self, *options, **kw)
+   .. method:: metrics(*options, **kw)
 
-       Returns the metrics of the font
+      Returns font-specific data.
+      Options include:
 
+      *ascent* - distance between baseline and highest point that a
+         character of the font can occupy
 
+      *descent* - distance between baseline and lowest point that a
+         character of the font can occupy
 
-.. method:: families(root=None, displayof=None)
+      *linespace* - minimum vertical separation necessary between any two
+         characters of the font that ensures no vertical overlap between lines.
 
-   Returns the different font families
+      *fixed* - 1 if font is fixed-width else 0
 
-.. method:: names(root=None)
+.. function:: families(root=None, displayof=None)
 
-   Returns the names of defined fonts
+   Returns the different font families.
 
-.. method:: nametofont(name)
+.. function:: names(root=None)
 
-   Returns a Font representation of a tk named font
+   Returns the names of defined fonts.
+
+.. function:: nametofont(name)
+
+   Returns a :class:`Font` representation of a tk named font.

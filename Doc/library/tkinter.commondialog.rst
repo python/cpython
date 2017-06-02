@@ -1,4 +1,4 @@
-:mod:`tkinter.commondialog` --- Tkinter standard dialog
+:mod:`tkinter.commondialog` --- Standard dialog windows
 =======================================================
 
 .. module:: tkinter.commondialog
@@ -12,11 +12,11 @@
 The :mod:`tkinter.commondialog` module provides the :class:`Dialog` class that
 is the base class for dialogs defined in other supporting modules.
 
-.. class:: Dialog(self, master=None, **options)
+.. class:: Dialog(master=None, **options)
 
-    .. function:: show(color = None, **options)
+   .. method:: show(color=None, **options)
 
-       The *show* function renders the Dialog window
+      The *show* method renders the Dialog window.
 
 
 .. seealso::
