@@ -15,8 +15,7 @@ matrix:
   fast_finish: true
   allow_failures:
     - env:
-       - TESTING=coverage
-       - TESTING=cpython-mac
+       - REQUIRED=false
   include:
     - os: linux
       language: c
@@ -30,7 +29,8 @@ matrix:
       language: c
       compiler: clang
       env:
-        - TESTING=cpython-mac
+        - TESTING=cpython
+        - REQUIRED=false
     - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
@@ -49,6 +49,7 @@ matrix:
       compiler: gcc
       env:
         - TESTING=coverage
+        - REQUIRED=false
       before_script:
         - |
             if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
