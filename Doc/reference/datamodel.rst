@@ -320,9 +320,9 @@ Sequences
 
          A bytes object is an immutable array.  The items are 8-bit bytes,
          represented by integers in the range 0 <= x < 256.  Bytes literals
-         (like ``b'abc'``) and the built-in function :func:`bytes` can be used to
-         construct bytes objects.  Also, bytes objects can be decoded to strings
-         via the :meth:`~bytes.decode` method.
+         (like ``b'abc'``) and the built-in :func:`bytes()` constructor
+         can be used to create bytes objects.  Also, bytes objects can be
+         decoded to strings via the :meth:`~bytes.decode` method.
 
    Mutable sequences
       .. index::
@@ -349,9 +349,9 @@ Sequences
          .. index:: bytearray
 
          A bytearray object is a mutable array. They are created by the built-in
-         :func:`bytearray` constructor.  Aside from being mutable (and hence
-         unhashable), byte arrays otherwise provide the same interface and
-         functionality as immutable bytes objects.
+         :func:`bytearray` constructor.  Aside from being mutable
+         (and hence unhashable), byte arrays otherwise provide the same interface
+         and functionality as immutable :class:`bytes` objects.
 
       .. index:: module: array
 
@@ -1253,8 +1253,8 @@ Basic customization
 
    .. index:: builtin: bytes
 
-   Called by :func:`bytes` to compute a byte-string representation of an
-   object. This should return a ``bytes`` object.
+   Called by :ref:`bytes <func-bytes>` to compute a byte-string representation
+   of an object. This should return a :class:`bytes` object.
 
    .. index::
       single: string; __format__() (object method)
