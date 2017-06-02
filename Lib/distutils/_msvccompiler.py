@@ -57,9 +57,22 @@ def _find_vc2015():
 
 def _find_vc2017():
     import _findvs
+    import threading
+
     best_version = 0,   # tuple for full version comparisons
     best_dir = None
-    for name, version_str, path, packages in _findvs.findall():
+
+    # We need to call findall() on its own thread because it will
+    # initialize COM.
+    all_packages = []
+    def _getall():
+        # DO NOT MERGE - faulthandler triggers on non-fatal exception 0x40010006
+        all_packages.extend(_findvs.findall())
+    t = threading.Thread(target=_getall)
+    t.start()
+    t.join()
+
+    for name, version_str, path, packages in all_packages:
         if 'Microsoft.VisualCpp.Tools.Core' in packages:
             vc_dir = os.path.join(path, 'VC', 'Auxiliary', 'Build')
             if not os.path.isdir(vc_dir):

@@ -196,7 +196,10 @@ error:
 
 PyDoc_STRVAR(findvs_findall_doc, "findall()\
 \
-Finds all installed versions of Visual Studio.");
+Finds all installed versions of Visual Studio.\
+\
+This function will initialize COM temporarily. To avoid impact on other parts\
+of your application, use a new thread to make this call.");
 
 static PyObject *findvs_findall(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -210,67 +213,9 @@ static PyObject *findvs_findall(PyObject *self, PyObject *args, PyObject *kwargs
     return res;
 }
 
-PyDoc_STRVAR(findvs_getversion_doc, "getversion(path)\
-\
-Reads the product version from the specified file.");
-
-static PyObject *findvs_getversion(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    LPVOID verblock;
-    DWORD verblock_size;
-
-    PyObject *res = NULL;
-
-    PyObject *path_obj;
-    const wchar_t *path;
-    Py_ssize_t path_len;
-
-    static const char* keywords[] = { "path", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:getversion",
-            (char**)keywords, PyUnicode_FSDecoder, &path_obj))
-        return NULL;
-
-    path = PyUnicode_AsWideCharString(path_obj, &path_len);
-    Py_DECREF(path_obj);
-    if (!path) {
-        return NULL;
-    }
-
-    if ((verblock_size = GetFileVersionInfoSizeW(path, NULL)) &&
-        (verblock = malloc(verblock_size))) {
-        WORD *langinfo;
-        wchar_t *verstr;
-        UINT langinfo_size, ver_size;
-
-        if (GetFileVersionInfoW(path, 0, verblock_size, verblock) &&
-            VerQueryValueW(verblock, L"\\VarFileInfo\\Translation",
-                           (LPVOID*)&langinfo, &langinfo_size)) {
-            wchar_t rsrc_name[256];
-            StringCchPrintfW(rsrc_name, 256,
-                             L"\\StringFileInfo\\%04x%04x\\ProductVersion",
-                             langinfo[0], langinfo[1]);
-            if (VerQueryValueW(verblock, rsrc_name, (LPVOID*)&verstr, &ver_size)) {
-                while (ver_size > 0 && !verstr[ver_size]) {
-                    ver_size -= 1;
-                }
-                res = PyUnicode_FromWideChar(verstr, ver_size - 1);
-            }
-        }
-        free(verblock);
-    }
-
-    PyMem_Free((void*)path);
-    if (!res) {
-        Py_RETURN_NONE;
-    }
-    return res;
-}
-
-
 // List of functions to add to findvs in exec_findvs().
 static PyMethodDef findvs_functions[] = {
     { "findall", (PyCFunction)findvs_findall, METH_VARARGS | METH_KEYWORDS, findvs_findall_doc },
-    { "getversion", (PyCFunction)findvs_getversion, METH_VARARGS | METH_KEYWORDS, findvs_getversion_doc },
     { NULL, NULL, 0, NULL }
 };
 
