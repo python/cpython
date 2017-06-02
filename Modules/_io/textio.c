@@ -2757,6 +2757,62 @@ textiowrapper_errors_get(textio *self, void *context)
 }
 
 static PyObject *
+textiowrapper_line_buffering_get(textio *self, void *context)
+{
+    CHECK_INITIALIZED(self);
+    return PyBool_FromLong(self->line_buffering);
+}
+
+static int
+textiowrapper_line_buffering_set(textio *self, PyObject *arg, void *context)
+{
+    PyObject *ret;
+    CHECK_ATTACHED_INT(self);
+    if (!PyBool_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "attribute value type must be bool");
+        return -1;
+    }
+    self->line_buffering = (arg == Py_True);
+    ret = PyObject_CallMethodObjArgs((PyObject *) self, _PyIO_str_flush, NULL);
+    if (ret == NULL) {
+        return -1;
+    }
+    else {
+        Py_DECREF(ret);
+        return 0;
+    }
+}
+
+static PyObject *
+textiowrapper_write_through_get(textio *self, void *context)
+{
+    CHECK_INITIALIZED(self);
+    return PyBool_FromLong(self->write_through);
+}
+
+static int
+textiowrapper_write_through_set(textio *self, PyObject *arg, void *context)
+{
+    PyObject *ret;
+    CHECK_ATTACHED_INT(self);
+    if (!PyBool_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "attribute value type must be bool");
+        return -1;
+    }
+    self->write_through = (arg == Py_True);
+    ret = PyObject_CallMethodObjArgs((PyObject *) self, _PyIO_str_flush, NULL);
+    if (ret == NULL) {
+        return -1;
+    }
+    else {
+        Py_DECREF(ret);
+        return 0;
+    }
+}
+
+static PyObject *
 textiowrapper_chunk_size_get(textio *self, void *context)
 {
     CHECK_ATTACHED(self);
@@ -2861,7 +2917,6 @@ static PyMethodDef textiowrapper_methods[] = {
 static PyMemberDef textiowrapper_members[] = {
     {"encoding", T_OBJECT, offsetof(textio, encoding), READONLY},
     {"buffer", T_OBJECT, offsetof(textio, buffer), READONLY},
-    {"line_buffering", T_BOOL, offsetof(textio, line_buffering), READONLY},
     {"_finalizing", T_BOOL, offsetof(textio, finalizing), 0},
     {NULL}
 };
@@ -2873,6 +2928,10 @@ static PyGetSetDef textiowrapper_getset[] = {
 */
     {"newlines", (getter)textiowrapper_newlines_get, NULL, NULL},
     {"errors", (getter)textiowrapper_errors_get, NULL, NULL},
+    {"line_buffering", (getter)textiowrapper_line_buffering_get,
+                       (setter)textiowrapper_line_buffering_set, NULL},
+    {"write_through", (getter)textiowrapper_write_through_get,
+                      (setter)textiowrapper_write_through_set, NULL},
     {"_CHUNK_SIZE", (getter)textiowrapper_chunk_size_get,
                     (setter)textiowrapper_chunk_size_set, NULL},
     {NULL}

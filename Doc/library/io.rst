@@ -908,6 +908,16 @@ Text I/O
 
       Whether line buffering is enabled.
 
+      .. versionchanged:: 3.7
+         This argument is now writable.
+
+   .. attribute:: write_through
+
+      Whether writes are passed immediately to the underlying binary
+      buffer.  This argument is writable.
+
+      .. versionadded:: 3.7
+
 
 .. class:: StringIO(initial_value='', newline='\\n')
 
