@@ -381,16 +381,22 @@ class HTMLCalendar(Calendar):
 
     # CSS classes for the day <td>s
     cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
     # CSS classes for the day <th>s
     cssclass_weekday_head = cssclasses
+
     # CSS class for the days before and after current month
     cssclass_noday = "noday"
+
     # CSS class for the month's head
     cssclass_month_head = "month"
+
     # CSS class for the month
     cssclass_month = "month"
+
     # CSS class for the year's table head
     cssclass_year_head = "year"
+
     # CSS class for the whole year table
     cssclass_year = "year"
 

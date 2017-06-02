@@ -170,6 +170,7 @@ it's the base calendar for all computations.
       sheet should be used. *encoding* specifies the encoding to be used for the
       output (defaulting to the system default encoding).
 
+
    :class:`HTMLCalendar` has the following attributes you can override to
    customize the style of the calendar:
 
@@ -185,11 +186,13 @@ it's the base calendar for all computations.
 
       Note that the length of this list must be seven items.
 
+
    .. attribute:: cssclass_noday
 
       The CSS class for a weekday occurring in the previous or coming month.
 
       .. versionadded:: 3.7
+
 
    .. attribute:: cssclass_weekday_head
 
@@ -198,17 +201,20 @@ it's the base calendar for all computations.
 
       .. versionadded:: 3.7
 
+
    .. attribute:: cssclass_month_head
 
       The month's head CSS class. The default value is ``"month"``.
 
       .. versionadded:: 3.7
 
+
    .. attribute:: cssclass_month
 
       The CSS class for the whole month's table. The default value is ``"month"``.
 
       .. versionadded:: 3.7
+
 
    .. attribute:: cssclass_year
 
@@ -217,12 +223,14 @@ it's the base calendar for all computations.
 
       .. versionadded:: 3.7
 
+
    .. attribute:: cssclass_year_head
 
       The CSS class for the table head for the whole year (see: :meth:`formatyear`).
       The default value is ``"year"``.
 
       .. versionadded:: 3.7
+
 
    Note that although the naming for the above described class attributes is
    singular (e.g. ``cssclass_month`` ``cssclass_noday``), one can replace the
