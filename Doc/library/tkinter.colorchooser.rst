@@ -17,7 +17,7 @@ class.
 
 .. class:: Chooser(master=None, **options)
 
-.. method:: askcolor(color=None, **options)
+.. function:: askcolor(color=None, **options)
 
    The *askcolor* method is a factory method that creates a color choosing
    dialog.

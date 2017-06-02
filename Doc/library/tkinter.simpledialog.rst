@@ -12,16 +12,16 @@
 The :mod:`tkinter.simpledialog` module contains the standard classes and
 functions for handling dialogs, including custom dialog windows.
 
-.. class:: Dialog(self, parent, title = None)
+.. class:: Dialog(parent, title=None)
 
-   The base class for custom dialogs
+   The base class for custom dialogs.
 
-    .. method:: body(self, master)
+    .. method:: body(master)
 
        Override to construct the dialog's interface and return widget that
-       should have initial focus
+       should have initial focus.
 
-    .. method:: buttonbox(self)
+    .. method:: buttonbox()
 
        Default behaviour adds OK and Cancel buttons. Override for custom button
        layouts.
