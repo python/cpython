@@ -8,13 +8,25 @@ import tempfile
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "28.8.0"
+_SETUPTOOLS_VERSION = "34.2.0"
 
 _PIP_VERSION = "9.0.1"
 
+_SIX_VERSION = "1.10.0"
+
+_APPDIRS_VERSION = "1.4.0"
+
+_PACKAGING_VERSION = "16.8"
+
+_PYPARSING_VERSION = "2.1.10"
+
 _PROJECTS = [
-    ("setuptools", _SETUPTOOLS_VERSION),
-    ("pip", _PIP_VERSION),
+     ("setuptools", _SETUPTOOLS_VERSION),
+     ("pip", _PIP_VERSION),
+    ("six", _SIX_VERSION),
+    ("appdirs", _APPDIRS_VERSION),
+    ("packaging", _PACKAGING_VERSION),
+    ("pyparsing", _PYPARSING_VERSION)
 ]
 
 

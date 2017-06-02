@@ -40,13 +40,14 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "setuptools", "pip",
+                unittest.mock.ANY,
+                "setuptools", "pip", "six", "appdirs", "packaging", "pyparsing",
             ],
             unittest.mock.ANY,
         )
 
         additional_paths = self.run_pip.call_args[0][1]
-        self.assertEqual(len(additional_paths), 2)
+        self.assertEqual(len(additional_paths), 6)
 
     def test_bootstrapping_with_root(self):
         ensurepip.bootstrap(root="/foo/bar/")
@@ -55,7 +56,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             [
                 "install", "--no-index", "--find-links",
                 unittest.mock.ANY, "--root", "/foo/bar/",
-                "setuptools", "pip",
+                "setuptools", "pip", "six", "appdirs", "packaging", "pyparsing",
             ],
             unittest.mock.ANY,
         )
@@ -66,7 +67,8 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--user", "setuptools", "pip",
+                unittest.mock.ANY, "--user",
+                "setuptools", "pip", "six", "appdirs", "packaging", "pyparsing",
             ],
             unittest.mock.ANY,
         )
@@ -77,7 +79,8 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--upgrade", "setuptools", "pip",
+                unittest.mock.ANY, "--upgrade",
+                "setuptools", "pip", "six", "appdirs", "packaging", "pyparsing",
             ],
             unittest.mock.ANY,
         )
@@ -88,7 +91,8 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "-v", "setuptools", "pip",
+                unittest.mock.ANY, "-v",
+                "setuptools", "pip", "six", "appdirs", "packaging", "pyparsing",
             ],
             unittest.mock.ANY,
         )
@@ -99,7 +103,8 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "-vv", "setuptools", "pip",
+                unittest.mock.ANY, "-vv",
+                "setuptools", "pip", "six", "appdirs", "packaging", "pyparsing",
             ],
             unittest.mock.ANY,
         )
@@ -110,7 +115,8 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "-vvv", "setuptools", "pip",
+                unittest.mock.ANY, "-vvv",
+                "setuptools", "pip", "six", "appdirs", "packaging", "pyparsing",
             ],
             unittest.mock.ANY,
         )
@@ -186,8 +192,8 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
 
         self.run_pip.assert_called_once_with(
             [
-                "uninstall", "-y", "--disable-pip-version-check", "pip",
-                "setuptools",
+                "uninstall", "-y", "--disable-pip-version-check",
+                "pyparsing", "packaging", "appdirs", "six", "pip", "setuptools",
             ]
         )
 
@@ -197,8 +203,8 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
 
         self.run_pip.assert_called_once_with(
             [
-                "uninstall", "-y", "--disable-pip-version-check", "-v", "pip",
-                "setuptools",
+                "uninstall", "-y", "--disable-pip-version-check", "-v",
+                "pyparsing", "packaging", "appdirs", "six", "pip", "setuptools",
             ]
         )
 
@@ -208,8 +214,8 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
 
         self.run_pip.assert_called_once_with(
             [
-                "uninstall", "-y", "--disable-pip-version-check", "-vv", "pip",
-                "setuptools",
+                "uninstall", "-y", "--disable-pip-version-check", "-vv",
+                "pyparsing", "packaging", "appdirs", "six", "pip", "setuptools",
             ]
         )
 
@@ -220,7 +226,7 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "uninstall", "-y", "--disable-pip-version-check", "-vvv",
-                "pip", "setuptools",
+                "pyparsing", "packaging", "appdirs", "six", "pip", "setuptools",
             ]
         )
 
@@ -260,13 +266,14 @@ class TestBootstrappingMainFunction(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "setuptools", "pip",
+                unittest.mock.ANY,
+                "setuptools", "pip", "six", "appdirs", "packaging", "pyparsing",
             ],
             unittest.mock.ANY,
         )
 
         additional_paths = self.run_pip.call_args[0][1]
-        self.assertEqual(len(additional_paths), 2)
+        self.assertEqual(len(additional_paths), 6)
 
 class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
 
@@ -284,8 +291,8 @@ class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
 
         self.run_pip.assert_called_once_with(
             [
-                "uninstall", "-y", "--disable-pip-version-check", "pip",
-                "setuptools",
+                "uninstall", "-y", "--disable-pip-version-check", "pyparsing", "packaging",
+                "appdirs", "six", "pip", "setuptools",
             ]
         )
 
