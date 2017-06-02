@@ -120,8 +120,8 @@ class CmdLineTest(unittest.TestCase):
         p.stdin.write(b'Timer\n')
         p.stdin.write(b'exit()\n')
         data = kill_python(p)
-        self.assertTrue(data.find(b'1 loop') != -1)
-        self.assertTrue(data.find(b'__main__.Timer') != -1)
+        self.assertNotEqual(data.find(b'1 loop'), -1)
+        self.assertNotEqual(data.find(b'__main__.Timer'), -1)
 
     def test_run_code(self):
         # Test expected operation of the '-c' switch

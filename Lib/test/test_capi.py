@@ -44,7 +44,7 @@ class CAPITest(unittest.TestCase):
     def test_instancemethod(self):
         inst = InstanceMethod()
         self.assertEqual(id(inst), inst.id())
-        self.assertTrue(inst.testfunction() is inst)
+        self.assertIs(inst.testfunction(), inst)
         self.assertEqual(inst.testfunction.__doc__, testfunction.__doc__)
         self.assertEqual(InstanceMethod.testfunction.__doc__, testfunction.__doc__)
 
@@ -276,7 +276,7 @@ class TestPendingCalls(unittest.TestCase):
             if context and not context.event.is_set():
                 continue
             count += 1
-            self.assertTrue(count < 10000,
+            self.assertLess(count, 10000,
                 "timeout waiting for %i callbacks, got %i"%(n, len(l)))
         if False and support.verbose:
             print("(%i)"%(len(l),))

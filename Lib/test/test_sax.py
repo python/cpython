@@ -1003,8 +1003,7 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(attrs.getLength(), 1)
         self.assertEqual(attrs.getNames(), [(ns_uri, "attr")])
-        self.assertTrue((attrs.getQNames() == [] or
-                         attrs.getQNames() == ["ns:attr"]))
+        self.assertIn(attrs.getQNames(), ([], ["ns:attr"]))
         self.assertEqual(len(attrs), 1)
         self.assertIn((ns_uri, "attr"), attrs)
         self.assertEqual(attrs.get((ns_uri, "attr")), "val")

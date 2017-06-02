@@ -239,7 +239,7 @@ class BaseSelectorTestCase(unittest.TestCase):
 
         result = s.select()
         for key, events in result:
-            self.assertTrue(isinstance(key, selectors.SelectorKey))
+            self.assertIsInstance(key, selectors.SelectorKey)
             self.assertTrue(events)
             self.assertFalse(events & ~(selectors.EVENT_READ |
                                         selectors.EVENT_WRITE))
@@ -265,7 +265,7 @@ class BaseSelectorTestCase(unittest.TestCase):
 
         if hasattr(s, 'fileno'):
             fd = s.fileno()
-            self.assertTrue(isinstance(fd, int))
+            self.assertIsInstance(fd, int)
             self.assertGreaterEqual(fd, 0)
 
     def test_selector(self):

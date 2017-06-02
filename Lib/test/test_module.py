@@ -21,7 +21,7 @@ class ModuleTests(unittest.TestCase):
         # An uninitialized module has no __dict__ or __name__,
         # and __doc__ is None
         foo = ModuleType.__new__(ModuleType)
-        self.assertTrue(foo.__dict__ is None)
+        self.assertIsNone(foo.__dict__)
         self.assertRaises(SystemError, dir, foo)
         try:
             s = foo.__name__
@@ -90,7 +90,7 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(foo.__dict__,
               {"__name__": "foo", "__doc__": "foodoc", "bar": 42,
                "__loader__": None, "__package__": None, "__spec__": None})
-        self.assertTrue(foo.__dict__ is d)
+        self.assertIs(foo.__dict__, d)
 
     def test_dont_clear_dict(self):
         # See issue 7140.

@@ -69,8 +69,8 @@ class TestEPoll(unittest.TestCase):
             ep = select.epoll(16)
         except OSError as e:
             raise AssertionError(str(e))
-        self.assertTrue(ep.fileno() > 0, ep.fileno())
-        self.assertTrue(not ep.closed)
+        self.assertGreater(ep.fileno(), 0)
+        self.assertFalse(ep.closed)
         ep.close()
         self.assertTrue(ep.closed)
         self.assertRaises(ValueError, ep.fileno)

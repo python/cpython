@@ -1561,7 +1561,7 @@ class MinidomTest(unittest.TestCase):
         num_children_before = len(doc.childNodes)
         doc.removeChild(doc.childNodes[0])
         num_children_after = len(doc.childNodes)
-        self.assertTrue(num_children_after == num_children_before - 1)
+        self.assertEqual(num_children_after, num_children_before - 1)
 
     def testProcessingInstructionNameError(self):
         # wrong variable in .nodeValue property will

@@ -3197,7 +3197,7 @@ if _have_threads:
             context.options |= ssl.OP_NO_COMPRESSION
             stats = server_params_test(context, context,
                                        chatty=True, connectionchatty=True)
-            self.assertIs(stats['compression'], None)
+            self.assertIsNone(stats['compression'])
 
         def test_dh_params(self):
             # Check we can get a connection with ephemeral Diffie-Hellman
@@ -3279,7 +3279,7 @@ if _have_threads:
             context.load_cert_chain(CERTFILE)
             stats = server_params_test(context, context,
                                        chatty=True, connectionchatty=True)
-            self.assertIs(stats['client_npn_protocol'], None)
+            self.assertIsNone(stats['client_npn_protocol'])
 
         @unittest.skipUnless(ssl.HAS_NPN, "NPN support needed for this test")
         def test_npn_protocols(self):

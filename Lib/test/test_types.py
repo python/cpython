@@ -647,8 +647,8 @@ class MappingProxyTests(unittest.TestCase):
         self.assertEqual(view.get('x'), 1)
         self.assertEqual(view.get('y'), None)
         self.assertEqual(view.get('y', 42), 42)
-        self.assertTrue('x' in view)
-        self.assertFalse('y' in view)
+        self.assertIn('x', view)
+        self.assertNotIn('y', view)
 
     def test_customdict(self):
         class customdict(dict):
@@ -684,9 +684,9 @@ class MappingProxyTests(unittest.TestCase):
 
         custom = customdict({'key': 'value'})
         view = self.mappingproxy(custom)
-        self.assertTrue('key' in view)
-        self.assertTrue('magic' in view)
-        self.assertFalse('xxx' in view)
+        self.assertIn('key', view)
+        self.assertIn('magic', view)
+        self.assertNotIn('xxx', view)
         self.assertEqual(view['key'], 'getitem=value')
         self.assertRaises(KeyError, view.__getitem__, 'xxx')
         self.assertEqual(tuple(view), ('iter',))
@@ -703,9 +703,9 @@ class MappingProxyTests(unittest.TestCase):
         d2 = {'y': 2}
         mapping = collections.ChainMap(d1, d2)
         view = self.mappingproxy(mapping)
-        self.assertTrue('x' in view)
-        self.assertTrue('y' in view)
-        self.assertFalse('z' in view)
+        self.assertIn('x', view)
+        self.assertIn('y', view)
+        self.assertNotIn('z', view)
         self.assertEqual(view['x'], 1)
         self.assertEqual(view['y'], 2)
         self.assertRaises(KeyError, view.__getitem__, 'z')
@@ -724,10 +724,10 @@ class MappingProxyTests(unittest.TestCase):
 
     def test_contains(self):
         view = self.mappingproxy(dict.fromkeys('abc'))
-        self.assertTrue('a' in view)
-        self.assertTrue('b' in view)
-        self.assertTrue('c' in view)
-        self.assertFalse('xxx' in view)
+        self.assertIn('a', view)
+        self.assertIn('b', view)
+        self.assertIn('c', view)
+        self.assertNotIn('xxx', view)
 
     def test_views(self):
         mapping = {}

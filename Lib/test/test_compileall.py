@@ -86,13 +86,13 @@ class CompileallTests(unittest.TestCase):
                 pass
         self.assertTrue(compileall.compile_file(self.source_path,
                                                 force=False, quiet=True))
-        self.assertTrue(os.path.isfile(self.bc_path) and
-                        not os.path.isfile(self.bc_path2))
+        self.assertTrue(os.path.isfile(self.bc_path))
+        self.assertFalse(os.path.isfile(self.bc_path2))
         os.unlink(self.bc_path)
         self.assertTrue(compileall.compile_dir(self.directory, force=False,
                                                quiet=True))
-        self.assertTrue(os.path.isfile(self.bc_path) and
-                        os.path.isfile(self.bc_path2))
+        self.assertTrue(os.path.isfile(self.bc_path))
+        self.assertTrue(os.path.isfile(self.bc_path2))
         os.unlink(self.bc_path)
         os.unlink(self.bc_path2)
         # Test against bad files

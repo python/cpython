@@ -117,13 +117,13 @@ class TimeRETests(unittest.TestCase):
     def test_pattern(self):
         # Test TimeRE.pattern
         pattern_string = self.time_re.pattern(r"%a %A %d")
-        self.assertTrue(pattern_string.find(self.locale_time.a_weekday[2]) != -1,
+        self.assertNotEqual(pattern_string.find(self.locale_time.a_weekday[2]), -1,
                         "did not find abbreviated weekday in pattern string '%s'" %
                          pattern_string)
-        self.assertTrue(pattern_string.find(self.locale_time.f_weekday[4]) != -1,
+        self.assertNotEqual(pattern_string.find(self.locale_time.f_weekday[4]), -1,
                         "did not find full weekday in pattern string '%s'" %
                          pattern_string)
-        self.assertTrue(pattern_string.find(self.time_re['d']) != -1,
+        self.assertNotEqual(pattern_string.find(self.time_re['d']), -1,
                         "did not find 'd' directive pattern string '%s'" %
                          pattern_string)
 
@@ -271,7 +271,7 @@ class StrptimeTests(unittest.TestCase):
             for bound in bounds:
                 strp_output = _strptime._strptime_time(bound, '%y')
                 expected_result = century + int(bound)
-                self.assertTrue(strp_output[0] == expected_result,
+                self.assertEqual(strp_output[0], expected_result,
                                 "'y' test failed; passed in '%s' "
                                 "and returned '%s'" % (bound, strp_output[0]))
 
@@ -289,7 +289,7 @@ class StrptimeTests(unittest.TestCase):
         self.helper('H', 3)
         strf_output = time.strftime("%I %p", self.time_tuple)
         strp_output = _strptime._strptime_time(strf_output, "%I %p")
-        self.assertTrue(strp_output[3] == self.time_tuple[3],
+        self.assertEqual(strp_output[3], self.time_tuple[3],
                         "testing of '%%I %%p' directive failed; '%s' -> %s != %s" %
                          (strf_output, strp_output[3], self.time_tuple[3]))
 
@@ -331,11 +331,11 @@ class StrptimeTests(unittest.TestCase):
         strp_output = _strptime._strptime_time(strf_output, "%Z")
         locale_time = _strptime.LocaleTime()
         if time.tzname[0] != time.tzname[1] or not time.daylight:
-            self.assertTrue(strp_output[8] == time_tuple[8],
+            self.assertEqual(strp_output[8], time_tuple[8],
                             "timezone check failed; '%s' -> %s != %s" %
                              (strf_output, strp_output[8], time_tuple[8]))
         else:
-            self.assertTrue(strp_output[8] == -1,
+            self.assertEqual(strp_output[8], -1,
                             "LocaleTime().timezone has duplicate values and "
                              "time.daylight but timezone value not set to -1")
 
@@ -394,7 +394,7 @@ class StrptimeTests(unittest.TestCase):
         # Default return value should be (1900, 1, 1, 0, 0, 0, 0, 1, 0)
         defaults = (1900, 1, 1, 0, 0, 0, 0, 1, -1)
         strp_output = _strptime._strptime_time('1', '%m')
-        self.assertTrue(strp_output == defaults,
+        self.assertEqual(strp_output, defaults,
                         "Default values for strptime() are incorrect;"
                         " %s != %s" % (strp_output, defaults))
 
@@ -446,7 +446,7 @@ class CalculationTests(unittest.TestCase):
         format_string = "%Y %m %d %H %M %S %w %Z"
         result = _strptime._strptime_time(time.strftime(format_string, self.time_tuple),
                                     format_string)
-        self.assertTrue(result.tm_yday == self.time_tuple.tm_yday,
+        self.assertEqual(result.tm_yday, self.time_tuple.tm_yday,
                         "Calculation of tm_yday failed; %s != %s" %
                          (result.tm_yday, self.time_tuple.tm_yday))
 
@@ -469,7 +469,7 @@ class CalculationTests(unittest.TestCase):
         format_string = "%Y %m %d %H %S %j %Z"
         result = _strptime._strptime_time(time.strftime(format_string, self.time_tuple),
                                     format_string)
-        self.assertTrue(result.tm_wday == self.time_tuple.tm_wday,
+        self.assertEqual(result.tm_wday, self.time_tuple.tm_wday,
                         "Calculation of day of the week failed;"
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
 

@@ -140,9 +140,9 @@ class TestTranforms(BytecodeTestCase):
             return a not in {1, 2, 3}
 
         self.assertTrue(f(3))
-        self.assertTrue(not f(4))
+        self.assertFalse(f(4))
 
-        self.assertTrue(not g(3))
+        self.assertFalse(g(3))
         self.assertTrue(g(4))
 
 

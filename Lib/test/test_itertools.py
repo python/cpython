@@ -347,7 +347,7 @@ class TestBasicOps(unittest.TestCase):
                 if n == 0 or r <= 1:
                     self.assertEqual(result, regular_combs)            # cases that should be identical
                 else:
-                    self.assertTrue(set(result) >= set(regular_combs))     # rest should be supersets of regular combs
+                    self.assertGreaterEqual(set(result), set(regular_combs))  # rest should be supersets of regular combs
 
                 for c in result:
                     self.assertEqual(len(c), r)                         # r-length combinations
@@ -1349,7 +1349,7 @@ class TestBasicOps(unittest.TestCase):
         # tee pass-through to copyable iterator
         a, b = tee('abc')
         c, d = tee(a)
-        self.assertTrue(a is c)
+        self.assertIs(a, c)
 
         # test tee_new
         t1, t2 = tee('abc')
@@ -1357,7 +1357,9 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, tnew)
         self.assertRaises(TypeError, tnew, 10)
         t3 = tnew(t1)
-        self.assertTrue(list(t1) == list(t2) == list(t3) == list('abc'))
+        self.assertEqual(list(t1), list('abc'))
+        self.assertEqual(list(t2), list('abc'))
+        self.assertEqual(list(t3), list('abc'))
 
         # test that tee objects are weak referencable
         a, b = tee(range(10))

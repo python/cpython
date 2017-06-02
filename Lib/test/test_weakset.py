@@ -97,7 +97,7 @@ class TestWeakSet(unittest.TestCase):
 
     def test_isdisjoint(self):
         self.assertTrue(self.s.isdisjoint(WeakSet(self.items2)))
-        self.assertTrue(not self.s.isdisjoint(WeakSet(self.letters)))
+        self.assertFalse(self.s.isdisjoint(WeakSet(self.letters)))
 
     def test_and(self):
         i = self.s.intersection(self.items2)
@@ -214,9 +214,9 @@ class TestWeakSet(unittest.TestCase):
         self.assertEqual(self.s, dup)
         self.assertRaises(TypeError, self.s.add, [])
         self.fs.add(Foo())
-        self.assertTrue(len(self.fs) == 1)
+        self.assertEqual(len(self.fs), 1)
         self.fs.add(self.obj)
-        self.assertTrue(len(self.fs) == 1)
+        self.assertEqual(len(self.fs), 1)
 
     def test_remove(self):
         x = ustr('a')

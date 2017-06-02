@@ -137,7 +137,7 @@ class TestExports(BaseTestCase):
         for key in dict:
             if key[0] != '_' and key not in expected:
                 unexp.append(key)
-        self.assertTrue(len(unexp) == 0,
+        self.assertEqual(len(unexp), 0,
                         "unexpected keys: %s" % unexp)
 
 
@@ -214,7 +214,7 @@ class TestCandidateTempdirList(BaseTestCase):
 
         cand = tempfile._candidate_tempdir_list()
 
-        self.assertFalse(len(cand) == 0)
+        self.assertNotEqual(len(cand), 0)
         for c in cand:
             self.assertIsInstance(c, str)
 
@@ -298,7 +298,7 @@ class TestGetCandidateNames(BaseTestCase):
         a = tempfile._get_candidate_names()
         b = tempfile._get_candidate_names()
 
-        self.assertTrue(a is b)
+        self.assertIs(a, b)
 
 
 @contextlib.contextmanager
@@ -562,8 +562,9 @@ class TestGetTempDir(BaseTestCase):
         # gettempdir returns a directory which exists
 
         for d in (tempfile.gettempdir(), tempfile.gettempdirb()):
-            self.assertTrue(os.path.isabs(d) or d == os.curdir,
-                            "%r is not an absolute path" % d)
+            if dir != os.curdir:
+                self.assertTrue(os.path.isabs(d),
+                                "%r is not an absolute path" % d)
             self.assertTrue(os.path.isdir(d),
                             "%r is not a directory" % d)
 
@@ -583,7 +584,7 @@ class TestGetTempDir(BaseTestCase):
         b = tempfile.gettempdir()
         c = tempfile.gettempdirb()
 
-        self.assertTrue(a is b)
+        self.assertIs(a, b)
         self.assertNotEqual(type(a), type(c))
         self.assertEqual(a, os.fsdecode(c))
 
@@ -1043,7 +1044,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         # A SpooledTemporaryFile should roll over to a real file on fileno()
         f = self.do_create(max_size=30)
         self.assertFalse(f._rolled)
-        self.assertTrue(f.fileno() > 0)
+        self.assertGreater(f.fileno(), 0)
         self.assertTrue(f._rolled)
 
     def test_multiple_close_before_rollover(self):

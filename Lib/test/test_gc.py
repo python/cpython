@@ -814,9 +814,9 @@ class GCCallbackTests(unittest.TestCase):
         # Check that we got the right info dict for all callbacks
         for v in self.visit:
             info = v[2]
-            self.assertTrue("generation" in info)
-            self.assertTrue("collected" in info)
-            self.assertTrue("uncollectable" in info)
+            self.assertIn("generation", info)
+            self.assertIn("collected", info)
+            self.assertIn("uncollectable", info)
 
     def test_collect_generation(self):
         self.preclean()

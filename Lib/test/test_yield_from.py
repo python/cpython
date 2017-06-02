@@ -967,10 +967,11 @@ class TestPEP380Operation(unittest.TestCase):
             yield from g
 
         for stack in spam(gen()):
-            self.assertTrue('spam' in stack)
+            self.assertIn('spam', stack)
 
         for stack in spam(eggs(gen())):
-            self.assertTrue('spam' in stack and 'eggs' in stack)
+            self.assertIn('spam', stack)
+            self.assertIn('eggs', stack)
 
     def test_custom_iterator_return(self):
         # See issue #15568

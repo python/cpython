@@ -1342,7 +1342,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(len(x), 1)
             self.assertEqual(dir(x[0]), dir(i))
             self.assertEqual(list(x[0].attr.keys()), [1])
-            self.assertTrue(x[0].attr[1] is x)
+            self.assertIs(x[0].attr[1], x)
 
     def check_recursive_collection_and_inst(self, factory):
         h = H()
@@ -1632,7 +1632,7 @@ class AbstractPickleTests(unittest.TestCase):
             for x in None, False, True:
                 s = self.dumps(x, proto)
                 y = self.loads(s)
-                self.assertTrue(x is y, (proto, x, s, y))
+                self.assertIs(x, y, (proto, x, s, y))
                 expected = expected_opcode[min(proto, 3), x]
                 self.assertTrue(opcode_in_pickle(expected, s))
 
@@ -1764,7 +1764,7 @@ class AbstractPickleTests(unittest.TestCase):
             if proto == 0:
                 self.assertEqual(num_appends, 0)
             else:
-                self.assertTrue(num_appends >= 2)
+                self.assertGreaterEqual(num_appends, 2)
 
     def test_dict_chunking(self):
         n = 10  # too small to chunk
@@ -1787,7 +1787,7 @@ class AbstractPickleTests(unittest.TestCase):
             if proto == 0:
                 self.assertEqual(num_setitems, 0)
             else:
-                self.assertTrue(num_setitems >= 2)
+                self.assertGreaterEqual(num_setitems, 2)
 
     def test_set_chunking(self):
         n = 10  # too small to chunk
@@ -2737,7 +2737,7 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         primed.memo.clear()
 
         self.assertEqual(unpickled_data2, data)
-        self.assertTrue(unpickled_data2 is unpickled_data1)
+        self.assertIs(unpickled_data2, unpickled_data1)
 
     def test_reusing_unpickler_objects(self):
         data1 = ["abcdefg", "abcdefg", 44]

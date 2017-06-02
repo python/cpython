@@ -330,8 +330,8 @@ class TimeTestCase(unittest.TestCase):
             # on some operating systems (e.g. FreeBSD), which is wrong. See for
             # example this bug:
             # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=93810
-            self.assertIn(time.tzname[0], ('AEST' 'EST'), time.tzname[0])
-            self.assertTrue(time.tzname[1] in ('AEDT', 'EDT'), str(time.tzname[1]))
+            self.assertIn(time.tzname[0], ('AEST' 'EST'))
+            self.assertIn(time.tzname[1], ('AEDT', 'EDT'))
             self.assertEqual(len(time.tzname), 2)
             self.assertEqual(time.daylight, 1)
             self.assertEqual(time.timezone, -36000)
@@ -630,11 +630,11 @@ class TestPytime(unittest.TestCase):
         # See if the offset and zone are similar to the module
         # attributes.
         if lt.tm_gmtoff is None:
-            self.assertTrue(not hasattr(time, "timezone"))
+            self.assertFalse(hasattr(time, "timezone"))
         else:
             self.assertEqual(lt.tm_gmtoff, -[time.timezone, time.altzone][lt.tm_isdst])
         if lt.tm_zone is None:
-            self.assertTrue(not hasattr(time, "tzname"))
+            self.assertFalse(hasattr(time, "tzname"))
         else:
             self.assertEqual(lt.tm_zone, time.tzname[lt.tm_isdst])
 
@@ -669,8 +669,8 @@ class TestPytime(unittest.TestCase):
         # Load a short time structure using pickle.
         st = b"ctime\nstruct_time\np0\n((I2007\nI8\nI11\nI1\nI24\nI49\nI5\nI223\nI1\ntp1\n(dp2\ntp3\nRp4\n."
         lt = pickle.loads(st)
-        self.assertIs(lt.tm_gmtoff, None)
-        self.assertIs(lt.tm_zone, None)
+        self.assertIsNone(lt.tm_gmtoff)
+        self.assertIsNone(lt.tm_zone)
 
 
 @unittest.skipIf(_testcapi is None, 'need the _testcapi module')

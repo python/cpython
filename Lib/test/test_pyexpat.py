@@ -320,7 +320,7 @@ class InterningTest(unittest.TestCase):
         self.assertEqual(len(L), 6)
         for entry in L:
             # L should have the same string repeated over and over.
-            self.assertTrue(tag is entry)
+            self.assertIs(tag, entry)
 
     def test_issue9402(self):
         # create an ExternalEntityParserCreate with buffer text
@@ -482,7 +482,7 @@ class PositionTest(unittest.TestCase):
                self.parser.CurrentByteIndex,
                self.parser.CurrentLineNumber,
                self.parser.CurrentColumnNumber)
-        self.assertTrue(self.upto < len(self.expected_list),
+        self.assertLess(self.upto, len(self.expected_list),
                         'too many parser events')
         expected = self.expected_list[self.upto]
         self.assertEqual(pos, expected,

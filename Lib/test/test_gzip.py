@@ -223,7 +223,7 @@ class TestGzip(BaseTest):
             while 1:
                 L = f.readline(line_length)
                 if not L and line_length != 0: break
-                self.assertTrue(len(L) <= line_length)
+                self.assertLessEqual(len(L), line_length)
                 line_length = (line_length + 1) % 50
 
     def test_readlines(self):

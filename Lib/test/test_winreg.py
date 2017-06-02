@@ -76,7 +76,7 @@ class BaseWinregTests(unittest.TestCase):
         # Set the default value for this key.
         SetValue(root_key, test_key_name, REG_SZ, "Default value")
         key = CreateKey(root_key, test_key_name)
-        self.assertTrue(key.handle != 0)
+        self.assertNotEqual(key.handle, 0)
         # Create a sub-key
         sub_key = CreateKey(key, subkeystr)
         # Give the sub-key some named values
@@ -191,11 +191,11 @@ class BaseWinregTests(unittest.TestCase):
     def _test_named_args(self, key, sub_key):
         with CreateKeyEx(key=key, sub_key=sub_key, reserved=0,
                          access=KEY_ALL_ACCESS) as ckey:
-            self.assertTrue(ckey.handle != 0)
+            self.assertNotEqual(ckey.handle, 0)
 
         with OpenKeyEx(key=key, sub_key=sub_key, reserved=0,
                        access=KEY_ALL_ACCESS) as okey:
-            self.assertTrue(okey.handle != 0)
+            self.assertNotEqual(okey.handle, 0)
 
 
 class LocalWinregTests(BaseWinregTests):

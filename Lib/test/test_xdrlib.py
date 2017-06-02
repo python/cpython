@@ -31,15 +31,15 @@ class XDRTest(unittest.TestCase):
         self.assertEqual(up.unpack_int(), 42)
         self.assertEqual(up.unpack_int(), -17)
         self.assertEqual(up.unpack_uint(), 9)
-        self.assertTrue(up.unpack_bool() is True)
+        self.assertIs(up.unpack_bool(), True)
 
         # remember position
         pos = up.get_position()
-        self.assertTrue(up.unpack_bool() is False)
+        self.assertIs(up.unpack_bool(), False)
 
         # rewind and unpack again
         up.set_position(pos)
-        self.assertTrue(up.unpack_bool() is False)
+        self.assertIs(up.unpack_bool(), False)
 
         self.assertEqual(up.unpack_uhyper(), 45)
         self.assertAlmostEqual(up.unpack_float(), 1.9)

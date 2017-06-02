@@ -359,8 +359,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         while cb:
             #max_length = 1 + len(cb)//10
             chunk = dco.decompress(cb, dcx)
-            self.assertFalse(len(chunk) > dcx,
-                    'chunk too big (%d>%d)' % (len(chunk), dcx))
+            self.assertLessEqual(len(chunk), dcx)
             bufs.append(chunk)
             cb = dco.unconsumed_tail
         bufs.append(dco.flush())
@@ -384,8 +383,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         while cb:
             max_length = 1 + len(cb)//10
             chunk = dco.decompress(cb, max_length)
-            self.assertFalse(len(chunk) > max_length,
-                        'chunk too big (%d>%d)' % (len(chunk),max_length))
+            self.assertLessEqual(len(chunk), max_length)
             bufs.append(chunk)
             cb = dco.unconsumed_tail
         if flush:
@@ -393,8 +391,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         else:
             while chunk:
                 chunk = dco.decompress(b'', max_length)
-                self.assertFalse(len(chunk) > max_length,
-                            'chunk too big (%d>%d)' % (len(chunk),max_length))
+                self.assertLessEqual(len(chunk), max_length)
                 bufs.append(chunk)
         self.assertEqual(data, b''.join(bufs), 'Wrong data retrieved')
 

@@ -2565,7 +2565,7 @@ class TestSendfile(unittest.TestCase):
                 break
             offset += sent
             total_sent += sent
-            self.assertTrue(sent <= nbytes)
+            self.assertLessEqual(sent, nbytes)
             self.assertEqual(offset, total_sent)
 
         self.assertEqual(total_sent, len(self.DATA))
@@ -2588,7 +2588,7 @@ class TestSendfile(unittest.TestCase):
                 break
             offset += sent
             total_sent += sent
-            self.assertTrue(sent <= nbytes)
+            self.assertLessEqual(sent, nbytes)
 
         self.client.shutdown(socket.SHUT_RDWR)
         self.client.close()

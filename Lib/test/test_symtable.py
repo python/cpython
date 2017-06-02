@@ -121,7 +121,7 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(self.top.lookup("namespace_test").is_namespace())
         self.assertFalse(self.spam.lookup("x").is_namespace())
 
-        self.assertTrue(self.top.lookup("spam").get_namespace() is self.spam)
+        self.assertIs(self.top.lookup("spam").get_namespace(), self.spam)
         ns_test = self.top.lookup("namespace_test")
         self.assertEqual(len(ns_test.get_namespaces()), 2)
         self.assertRaises(ValueError, ns_test.get_namespace)

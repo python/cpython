@@ -122,9 +122,9 @@ class TokenTests(unittest.TestCase):
         if maxsize == 2147483647:
             self.assertEqual(-2147483647-1, -0o20000000000)
             # XXX -2147483648
-            self.assertTrue(0o37777777777 > 0)
-            self.assertTrue(0xffffffff > 0)
-            self.assertTrue(0b1111111111111111111111111111111 > 0)
+            self.assertGreater(0o37777777777, 0)
+            self.assertGreater(0xffffffff, 0)
+            self.assertGreater(0b1111111111111111111111111111111, 0)
             for s in ('2147483648', '0o40000000000', '0x100000000',
                       '0b10000000000000000000000000000000'):
                 try:
@@ -133,9 +133,9 @@ class TokenTests(unittest.TestCase):
                     self.fail("OverflowError on huge integer literal %r" % s)
         elif maxsize == 9223372036854775807:
             self.assertEqual(-9223372036854775807-1, -0o1000000000000000000000)
-            self.assertTrue(0o1777777777777777777777 > 0)
-            self.assertTrue(0xffffffffffffffff > 0)
-            self.assertTrue(0b11111111111111111111111111111111111111111111111111111111111111 > 0)
+            self.assertGreater(0o1777777777777777777777, 0)
+            self.assertGreater(0xffffffffffffffff, 0)
+            self.assertGreater(0b11111111111111111111111111111111111111111111111111111111111111, 0)
             for s in '9223372036854775808', '0o2000000000000000000000', \
                      '0x10000000000000000', \
                      '0b100000000000000000000000000000000000000000000000000000000000000':
@@ -226,7 +226,7 @@ the \'lazy\' dog.\n\
 
     def test_ellipsis(self):
         x = ...
-        self.assertTrue(x is Ellipsis)
+        self.assertIs(x, Ellipsis)
         self.assertRaises(SyntaxError, eval, ".. .")
 
     def test_eof_error(self):

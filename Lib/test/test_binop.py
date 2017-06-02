@@ -207,10 +207,10 @@ class RatTestCase(unittest.TestCase):
         self.assertEqual(gcd(-10, -2), -2)
         for i in range(1, 20):
             for j in range(1, 20):
-                self.assertTrue(gcd(i, j) > 0)
-                self.assertTrue(gcd(-i, j) < 0)
-                self.assertTrue(gcd(i, -j) > 0)
-                self.assertTrue(gcd(-i, -j) < 0)
+                self.assertGreater(gcd(i, j), 0)
+                self.assertLess(gcd(-i, j), 0)
+                self.assertGreater(gcd(i, -j), 0)
+                self.assertLess(gcd(-i, -j), 0)
 
     def test_constructor(self):
         a = Rat(10, 15)

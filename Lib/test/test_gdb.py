@@ -264,7 +264,7 @@ class DebuggerTests(unittest.TestCase):
 class PrettyPrintTests(DebuggerTests):
     def test_getting_backtrace(self):
         gdb_output = self.get_stack_trace('id(42)')
-        self.assertTrue(BREAKPOINT_FN in gdb_output)
+        self.assertIn(BREAKPOINT_FN, gdb_output)
 
     def assertGdbRepr(self, val, exp_repr=None):
         # Ensure that gdb's rendering of the value in a debugged process

@@ -239,7 +239,7 @@ class AbstractMemoryTests:
             b = m = o = None
             # The cycle must be broken
             gc.collect()
-            self.assertTrue(wr() is None, wr())
+            self.assertIsNone(wr())
 
             # This exercises memory_clear().
             m = MyView(tp(b'abc'))
@@ -250,7 +250,7 @@ class AbstractMemoryTests:
             m = o = None
             # The cycle must be broken
             gc.collect()
-            self.assertTrue(wr() is None, wr())
+            self.assertIsNone(wr())
 
     def _check_released(self, m, tp):
         check = self.assertRaisesRegex(ValueError, "released")
@@ -351,7 +351,7 @@ class AbstractMemoryTests:
             self.assertIs(wr(), m)
             del m
             test.support.gc_collect()
-            self.assertIs(wr(), None)
+            self.assertIsNone(wr())
             self.assertIs(L[0], b)
 
     def test_reversed(self):

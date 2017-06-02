@@ -734,8 +734,7 @@ class FutureTests(unittest.TestCase):
                           CANCELLED_FUTURE.exception, timeout=0)
         self.assertRaises(futures.CancelledError,
                           CANCELLED_AND_NOTIFIED_FUTURE.exception, timeout=0)
-        self.assertTrue(isinstance(EXCEPTION_FUTURE.exception(timeout=0),
-                                   OSError))
+        self.assertIsInstance(EXCEPTION_FUTURE.exception(timeout=0), OSError)
         self.assertEqual(SUCCESSFUL_FUTURE.exception(timeout=0), None)
 
     def test_exception_with_success(self):
@@ -751,7 +750,7 @@ class FutureTests(unittest.TestCase):
         t = threading.Thread(target=notification)
         t.start()
 
-        self.assertTrue(isinstance(f1.exception(timeout=5), OSError))
+        self.assertIsInstance(f1.exception(timeout=5), OSError)
 
 @test.support.reap_threads
 def test_main():

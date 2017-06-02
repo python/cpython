@@ -47,7 +47,7 @@ class GeneralTests(unittest.TestCase):
         self.assertIsNone(tn.get_socket())
 
     def testTimeoutDefault(self):
-        self.assertTrue(socket.getdefaulttimeout() is None)
+        self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
             telnet = telnetlib.Telnet(HOST, self.port)
@@ -58,13 +58,13 @@ class GeneralTests(unittest.TestCase):
 
     def testTimeoutNone(self):
         # None, having other default
-        self.assertTrue(socket.getdefaulttimeout() is None)
+        self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
             telnet = telnetlib.Telnet(HOST, self.port, timeout=None)
         finally:
             socket.setdefaulttimeout(None)
-        self.assertTrue(telnet.sock.gettimeout() is None)
+        self.assertIsNone(telnet.sock.gettimeout())
         telnet.sock.close()
 
     def testTimeoutValue(self):
@@ -214,7 +214,7 @@ class ReadTests(ExpectAndReadTestCase):
         # test 'at least one byte'
         telnet = test_telnet([b'x' * 500])
         data = telnet.read_some()
-        self.assertTrue(len(data) >= 1)
+        self.assertGreaterEqual(len(data), 1)
         # test EOF
         telnet = test_telnet()
         data = telnet.read_some()
@@ -316,7 +316,7 @@ class OptionTests(unittest.TestCase):
         telnet.set_option_negotiation_callback(nego.do_nego)
         txt = telnet.read_all()
         cmd = nego.seen
-        self.assertTrue(len(cmd) > 0) # we expect at least one command
+        self.assertGreater(len(cmd), 0) # we expect at least one command
         self.assertIn(cmd[:1], self.cmds)
         self.assertEqual(cmd[1:2], tl.NOOPT)
         self.assertEqual(data_len, len(txt + cmd))

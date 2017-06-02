@@ -7,12 +7,12 @@ from test.test_json import PyTest, CTest
 class TestDecode:
     def test_decimal(self):
         rval = self.loads('1.1', parse_float=decimal.Decimal)
-        self.assertTrue(isinstance(rval, decimal.Decimal))
+        self.assertIsInstance(rval, decimal.Decimal)
         self.assertEqual(rval, decimal.Decimal('1.1'))
 
     def test_float(self):
         rval = self.loads('1', parse_int=float)
-        self.assertTrue(isinstance(rval, float))
+        self.assertIsInstance(rval, float)
         self.assertEqual(rval, 1.0)
 
     def test_empty_objects(self):
