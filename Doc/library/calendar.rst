@@ -194,7 +194,7 @@ it's the base calendar for all computations.
       .. versionadded:: 3.7
 
 
-   .. attribute:: cssclass_weekday_head
+   .. attribute:: cssclasses_weekday_head
 
       A list of CSS classes used for weekday names in the header row.
       The default is the same as :attr:`cssclasses`.

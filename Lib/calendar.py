@@ -383,7 +383,7 @@ class HTMLCalendar(Calendar):
     cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
     # CSS classes for the day <th>s
-    cssclass_weekday_head = cssclasses
+    cssclasses_weekday_head = cssclasses
 
     # CSS class for the days before and after current month
     cssclass_noday = "noday"
@@ -422,7 +422,7 @@ class HTMLCalendar(Calendar):
         Return a weekday name as a table header.
         """
         return '<th class="%s">%s</th>' % (
-            self.cssclass_weekday_head[day], day_abbr[day])
+            self.cssclasses_weekday_head[day], day_abbr[day])
 
     def formatweekheader(self):
         """
