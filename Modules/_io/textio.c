@@ -1095,6 +1095,64 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     return -1;
 }
 
+/* Return *default_value* if ob is None, 0 if ob is false, 1 if ob is true,
+ * -1 on error.
+ */
+static int
+convert_optional_bool(PyObject *obj, int default_value)
+{
+    long v;
+    if (obj == Py_None) {
+        v = default_value;
+    }
+    else {
+        v = PyLong_AsLong(obj);
+        if (v == -1 && PyErr_Occurred())
+            return -1;
+    }
+    return v != 0;
+}
+
+
+/*[clinic input]
+_io.TextIOWrapper.reconfigure
+    *
+    line_buffering as line_buffering_obj: object = None
+    write_through as write_through_obj: object = None
+
+Reconfigure the text stream with new parameters.
+
+This also does an implicit stream flush.
+
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_reconfigure_impl(textio *self,
+                                   PyObject *line_buffering_obj,
+                                   PyObject *write_through_obj)
+/*[clinic end generated code: output=7cdf79e7001e2856 input=baade27ecb9db7bc]*/
+{
+    int line_buffering;
+    int write_through;
+    PyObject *res;
+
+    line_buffering = convert_optional_bool(line_buffering_obj,
+                                           self->line_buffering);
+    write_through = convert_optional_bool(write_through_obj,
+                                          self->write_through);
+    if (line_buffering < 0 || write_through < 0) {
+        return NULL;
+    }
+    res = PyObject_CallMethodObjArgs((PyObject *) self, _PyIO_str_flush, NULL);
+    Py_XDECREF(res);
+    if (res == NULL) {
+        return NULL;
+    }
+    self->line_buffering = line_buffering;
+    self->write_through = write_through;
+    Py_RETURN_NONE;
+}
+
 static int
 textiowrapper_clear(textio *self)
 {
@@ -2839,6 +2897,7 @@ PyTypeObject PyIncrementalNewlineDecoder_Type = {
 
 static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_DETACH_METHODDEF
+    _IO_TEXTIOWRAPPER_RECONFIGURE_METHODDEF
     _IO_TEXTIOWRAPPER_WRITE_METHODDEF
     _IO_TEXTIOWRAPPER_READ_METHODDEF
     _IO_TEXTIOWRAPPER_READLINE_METHODDEF
@@ -2862,6 +2921,7 @@ static PyMemberDef textiowrapper_members[] = {
     {"encoding", T_OBJECT, offsetof(textio, encoding), READONLY},
     {"buffer", T_OBJECT, offsetof(textio, buffer), READONLY},
     {"line_buffering", T_BOOL, offsetof(textio, line_buffering), READONLY},
+    {"write_through", T_BOOL, offsetof(textio, write_through), READONLY},
     {"_finalizing", T_BOOL, offsetof(textio, finalizing), 0},
     {NULL}
 };
