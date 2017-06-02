@@ -14,8 +14,7 @@ branches:
 matrix:
   fast_finish: true
   allow_failures:
-    - env:
-       - REQUIRED=false
+    - env: OPTIONAL=true
   include:
     - os: linux
       language: c
@@ -30,7 +29,7 @@ matrix:
       compiler: clang
       env:
         - TESTING=cpython
-        - REQUIRED=false
+        - OPTIONAL=true
     - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
@@ -49,7 +48,7 @@ matrix:
       compiler: gcc
       env:
         - TESTING=coverage
-        - REQUIRED=false
+        - OPTIONAL=true
       before_script:
         - |
             if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
@@ -76,7 +75,7 @@ before_script:
       if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
       then
         echo "Only docs were updated, stopping build process."
-        #exit
+        exit
       fi
       ./configure --with-pydebug
       make -j4
