@@ -345,6 +345,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30245: Fix possible overflow when organize struct.pack_into
+  error message.  Patch by Yuan Liu.
+  
 - bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
   handle IPv6 addresses.
 
