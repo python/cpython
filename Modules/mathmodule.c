@@ -1419,28 +1419,6 @@ _fsum_error:
 #undef NUM_PARTIALS
 
 
-/* Return the smallest integer k such that n < 2**k, or 0 if n == 0.
- * Equivalent to floor(lg(x))+1.  Also equivalent to: bitwidth_of_type -
- * count_leading_zero_bits(x)
- */
-
-/* XXX: This routine does more or less the same thing as
- * bits_in_digit() in Objects/longobject.c.  Someday it would be nice to
- * consolidate them.  On BSD, there's a library function called fls()
- * that we could use, and GCC provides __builtin_clz().
- */
-
-static unsigned long
-bit_length(unsigned long n)
-{
-    unsigned long len = 0;
-    while (n != 0) {
-        ++len;
-        n >>= 1;
-    }
-    return len;
-}
-
 static unsigned long
 count_set_bits(unsigned long n)
 {
@@ -1519,7 +1497,7 @@ count_set_bits(unsigned long n)
 
 /* factorial_partial_product: Compute product(range(start, stop, 2)) using
  * divide and conquer.  Assumes start and stop are odd and stop > start.
- * max_bits must be >= bit_length(stop - 2). */
+ * max_bits must be >= _Py_bit_length(stop - 2). */
 
 static PyObject *
 factorial_partial_product(unsigned long start, unsigned long stop,
@@ -1534,14 +1512,14 @@ factorial_partial_product(unsigned long start, unsigned long stop,
      * the answer.
      *
      * Storing some integer z requires floor(lg(z))+1 bits, which is
-     * conveniently the value returned by bit_length(z).  The
+     * conveniently the value returned by _Py_bit_length(z).  The
      * product x*y will require at most
-     * bit_length(x) + bit_length(y) bits to store, based
+     * _Py_bit_length(x) + _Py_bit_length(y) bits to store, based
      * on the idea that lg product = lg x + lg y.
      *
      * We know that stop - 2 is the largest number to be multiplied.  From
-     * there, we have: bit_length(answer) <= num_operands *
-     * bit_length(stop - 2)
+     * there, we have: _Py_bit_length(answer) <= num_operands *
+     * _Py_bit_length(stop - 2)
      */
 
     num_operands = (stop - start) / 2;
@@ -1558,7 +1536,7 @@ factorial_partial_product(unsigned long start, unsigned long stop,
     /* find midpoint of range(start, stop), rounded up to next odd number. */
     midpoint = (start + num_operands) | 1;
     left = factorial_partial_product(start, midpoint,
-                                     bit_length(midpoint - 2));
+                                     _Py_bit_length(midpoint - 2));
     if (left == NULL)
         goto error;
     right = factorial_partial_product(midpoint, stop, max_bits);
@@ -1588,7 +1566,7 @@ factorial_odd_part(unsigned long n)
     Py_INCREF(outer);
 
     upper = 3;
-    for (i = bit_length(n) - 2; i >= 0; i--) {
+    for (i = _Py_bit_length(n) - 2; i >= 0; i--) {
         v = n >> i;
         if (v <= 2)
             continue;
@@ -1598,7 +1576,7 @@ factorial_odd_part(unsigned long n)
         /* Here inner is the product of all odd integers j in the range (0,
            n/2**(i+1)].  The factorial_partial_product call below gives the
            product of all odd integers j in the range (n/2**(i+1), n/2**i]. */
-        partial = factorial_partial_product(lower, upper, bit_length(upper-2));
+        partial = factorial_partial_product(lower, upper, _Py_bit_length(upper-2));
         /* inner *= partial */
         if (partial == NULL)
             goto error;
