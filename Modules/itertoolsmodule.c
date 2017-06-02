@@ -1417,7 +1417,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     numargs = PyTuple_Size(args);
     if (numargs == 2) {
         if (a1 != Py_None) {
-            stop = PyLong_AsSsize_t(a1);
+            stop = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
@@ -1429,11 +1429,11 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     } else {
         if (a1 != Py_None)
-            start = PyLong_AsSsize_t(a1);
+            start = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
         if (start == -1 && PyErr_Occurred())
             PyErr_Clear();
         if (a2 != Py_None) {
-            stop = PyLong_AsSsize_t(a2);
+            stop = PyNumber_AsSsize_t(a2, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
@@ -1453,7 +1453,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (a3 != NULL) {
         if (a3 != Py_None)
-            step = PyLong_AsSsize_t(a3);
+            step = PyNumber_AsSsize_t(a3, PyExc_OverflowError);
         if (step == -1 && PyErr_Occurred())
             PyErr_Clear();
     }
@@ -1573,7 +1573,7 @@ islice_reduce(isliceobject *lz)
 static PyObject *
 islice_setstate(isliceobject *lz, PyObject *state)
 {
-    Py_ssize_t cnt = PyLong_AsSsize_t(state);
+    Py_ssize_t cnt = PyNumber_AsSsize_t(state, PyExc_OverflowError);
 
     if (cnt == -1 && PyErr_Occurred())
         return NULL;
@@ -2265,7 +2265,7 @@ product_setstate(productobject *lz, PyObject *state)
     for (i=0; i<n; i++)
     {
         PyObject* indexObject = PyTuple_GET_ITEM(state, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
+        Py_ssize_t index = PyNumber_AsSsize_t(indexObject, PyExc_OverflowError);
         PyObject* pool;
         Py_ssize_t poolsize;
         if (index < 0 && PyErr_Occurred())
@@ -2592,7 +2592,7 @@ combinations_setstate(combinationsobject *lz, PyObject *state)
     for (i=0; i<lz->r; i++) {
         Py_ssize_t max;
         PyObject* indexObject = PyTuple_GET_ITEM(state, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
+        Py_ssize_t index = PyNumber_AsSsize_t(indexObject, PyExc_OverflowError);
 
         if (index == -1 && PyErr_Occurred())
             return NULL; /* not an integer */
@@ -2925,7 +2925,7 @@ cwr_setstate(cwrobject *lz, PyObject *state)
     n = PyTuple_GET_SIZE(lz->pool);
     for (i=0; i<lz->r; i++) {
         PyObject* indexObject = PyTuple_GET_ITEM(state, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
+        Py_ssize_t index = PyNumber_AsSsize_t(indexObject, PyExc_OverflowError);
 
         if (index < 0 && PyErr_Occurred())
             return NULL; /* not an integer */
@@ -3072,11 +3072,11 @@ permutations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     r = n;
     if (robj != Py_None) {
-        if (!PyLong_Check(robj)) {
-            PyErr_SetString(PyExc_TypeError, "Expected int as r");
+        if (!PyNumber_Check(robj)) {
+            PyErr_SetString(PyExc_TypeError, "Expected number as r");
             goto error;
         }
-        r = PyLong_AsSsize_t(robj);
+        r = PyNumber_AsSsize_t(robj, PyExc_OverflowError);
         if (r == -1 && PyErr_Occurred())
             goto error;
     }
@@ -3307,7 +3307,7 @@ permutations_setstate(permutationsobject *po, PyObject *state)
 
     for (i=0; i<n; i++) {
         PyObject* indexObject = PyTuple_GET_ITEM(indices, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
+        Py_ssize_t index = PyNumber_AsSsize_t(indexObject, PyExc_OverflowError);
         if (index < 0 && PyErr_Occurred())
             return NULL; /* not an integer */
         /* clamp the index */
@@ -3320,7 +3320,7 @@ permutations_setstate(permutationsobject *po, PyObject *state)
 
     for (i=0; i<po->r; i++) {
         PyObject* indexObject = PyTuple_GET_ITEM(cycles, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
+        Py_ssize_t index = PyNumber_AsSsize_t(indexObject, PyExc_OverflowError);
         if (index < 0 && PyErr_Occurred())
             return NULL; /* not an integer */
         if (index < 1)
