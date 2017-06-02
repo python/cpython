@@ -587,7 +587,7 @@ printed::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
-   ZeroDivisionError: int division or modulo by zero
+   ZeroDivisionError: division by zero
 
    The above exception was the direct cause of the following exception:
 
@@ -606,7 +606,7 @@ attached as the new exception's :attr:`__context__` attribute::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
-   ZeroDivisionError: int division or modulo by zero
+   ZeroDivisionError: division by zero
 
    During handling of the above exception, another exception occurred:
 
@@ -614,9 +614,27 @@ attached as the new exception's :attr:`__context__` attribute::
      File "<stdin>", line 4, in <module>
    RuntimeError: Something bad happened
 
+Exception chaining can be explicitly suppressed by specifying :const:`None` in
+the ``from`` clause::
+
+   >>> try:
+   ...     print(1 / 0)
+   ... except:
+   ...     raise RuntimeError("Something bad happened") from None
+   ...
+   Traceback (most recent call last):
+     File "<stdin>", line 4, in <module>
+   RuntimeError: Something bad happened
+
 Additional information on exceptions can be found in section :ref:`exceptions`,
 and information about handling exceptions is in section :ref:`try`.
 
+.. versionchanged:: 3.3
+    :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
+
+.. versionadded:: 3.3
+    The ``__suppress_context__`` attribute to suppress automatic display of the
+    exception context.
 
 .. _break:
 

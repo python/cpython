@@ -320,6 +320,7 @@ class TestVarAnnotations(GrammarTest):
     def test_6(self):
         self.validate("lst: List[int] = []")
 
+
 class TestExcept(GrammarTest):
     def test_new(self):
         s = """
@@ -336,6 +337,27 @@ class TestExcept(GrammarTest):
             except E, N:
                 y"""
         self.validate(s)
+
+
+class TestStringLiterals(GrammarTest):
+    prefixes = ("'", '"',
+        "r'", 'r"', "R'", 'R"',
+        "u'", 'u"', "U'", 'U"',
+        "b'", 'b"', "B'", 'B"',
+        "f'", 'f"', "F'", 'F"',
+        "ur'", 'ur"', "Ur'", 'Ur"',
+        "uR'", 'uR"', "UR'", 'UR"',
+        "br'", 'br"', "Br'", 'Br"',
+        "bR'", 'bR"', "BR'", 'BR"',
+        "rb'", 'rb"', "Rb'", 'Rb"',
+        "rB'", 'rB"', "RB'", 'RB"',)
+
+    def test_lit(self):
+        for pre in self.prefixes:
+            single = "{p}spamspamspam{s}".format(p=pre, s=pre[-1])
+            self.validate(single)
+            triple = "{p}{s}{s}eggs{s}{s}{s}".format(p=pre, s=pre[-1])
+            self.validate(triple)
 
 
 # Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.testAtoms
