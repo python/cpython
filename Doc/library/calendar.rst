@@ -204,30 +204,32 @@ it's the base calendar for all computations.
 
    .. attribute:: cssclass_month_head
 
-      The month's head CSS class. The default value is ``"month"``.
+      The month's head CSS class (used by :meth:`formatmonthname`).
+      The default value is ``"month"``.
 
       .. versionadded:: 3.7
 
 
    .. attribute:: cssclass_month
 
-      The CSS class for the whole month's table. The default value is ``"month"``.
+      The CSS class for the whole month's table (used by :meth:`formatmonth`).
+      The default value is ``"month"``.
 
       .. versionadded:: 3.7
 
 
    .. attribute:: cssclass_year
 
-      The CSS class for the whole year's table of tables (see: :meth:`formatyear`).
-      The default value is ``"year"``.
+      The CSS class for the whole year's table of tables (used by
+      :meth:`formatyear`). The default value is ``"year"``.
 
       .. versionadded:: 3.7
 
 
    .. attribute:: cssclass_year_head
 
-      The CSS class for the table head for the whole year (see: :meth:`formatyear`).
-      The default value is ``"year"``.
+      The CSS class for the table head for the whole year (used by
+      :meth:`formatyear`). The default value is ``"year"``.
 
       .. versionadded:: 3.7
 
