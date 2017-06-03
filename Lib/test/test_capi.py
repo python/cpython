@@ -375,6 +375,12 @@ class EmbeddingTests(unittest.TestCase):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
+        if env is not None and sys.platform == 'win32':
+            # Windows requires at least the SYSTEMROOT environment variable to
+            # start Python.
+            env = env.copy()
+            env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
+
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
