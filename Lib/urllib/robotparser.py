@@ -61,6 +61,7 @@ class RobotFileParser:
         try:
             f = urllib.request.urlopen(self.url)
         except urllib.error.HTTPError as err:
+            err.close()
             if err.code in (401, 403):
                 self.disallow_all = True
             elif err.code >= 400 and err.code < 500:

@@ -965,6 +965,15 @@ class TestNamedTemporaryFile(BaseTestCase):
             tempfile.NamedTemporaryFile(mode=2, dir=dir)
         self.assertEqual(os.listdir(dir), [])
 
+    def test_resource_warning_on_del(self):
+        def f():
+            tempfile.NamedTemporaryFile()
+        with warnings.catch_warnings(record=True) as w:
+            f()
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[-1].category, ResourceWarning)
+        self.assertIn('unclosed file', str(w[-1].message))
+
     # How to test the mode and bufsize parameters?
 
 class TestSpooledTemporaryFile(BaseTestCase):

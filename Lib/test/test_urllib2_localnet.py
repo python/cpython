@@ -312,7 +312,9 @@ class BasicAuthTests(unittest.TestCase):
         ah = urllib.request.HTTPBasicAuthHandler()
         ah.add_password(self.REALM, self.server_url, self.USER, self.INCORRECT_PASSWD)
         urllib.request.install_opener(urllib.request.build_opener(ah))
-        self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen, self.server_url)
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            urllib.request.urlopen(self.server_url)
+        cm.exception.close()
 
 
 class ProxyAuthTests(unittest.TestCase):
@@ -358,15 +360,15 @@ class ProxyAuthTests(unittest.TestCase):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD+"bad")
         self.digest_auth_handler.set_qop("auth")
-        self.assertRaises(urllib.error.HTTPError,
-                          self.opener.open,
-                          self.URL)
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self.opener.open(self.URL)
+        cm.exception.close()
 
     def test_proxy_with_no_password_raises_httperror(self):
         self.digest_auth_handler.set_qop("auth")
-        self.assertRaises(urllib.error.HTTPError,
-                          self.opener.open,
-                          self.URL)
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self.opener.open(self.URL)
+        cm.exception.close()
 
     def test_proxy_qop_auth_works(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,

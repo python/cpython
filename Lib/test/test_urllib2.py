@@ -746,18 +746,18 @@ class HandlerTests(unittest.TestCase):
             ]:
             req = Request(url)
             req.timeout = None
-            r = h.ftp_open(req)
-            # ftp authentication not yet implemented by FTPHandler
-            self.assertEqual(h.user, user)
-            self.assertEqual(h.passwd, passwd)
-            self.assertEqual(h.host, socket.gethostbyname(host))
-            self.assertEqual(h.port, port)
-            self.assertEqual(h.dirs, dirs)
-            self.assertEqual(h.ftpwrapper.filename, filename)
-            self.assertEqual(h.ftpwrapper.filetype, type_)
-            headers = r.info()
-            self.assertEqual(headers.get("Content-type"), mimetype)
-            self.assertEqual(int(headers["Content-length"]), len(data))
+            with h.ftp_open(req) as r:
+                # ftp authentication not yet implemented by FTPHandler
+                self.assertEqual(h.user, user)
+                self.assertEqual(h.passwd, passwd)
+                self.assertEqual(h.host, socket.gethostbyname(host))
+                self.assertEqual(h.port, port)
+                self.assertEqual(h.dirs, dirs)
+                self.assertEqual(h.ftpwrapper.filename, filename)
+                self.assertEqual(h.ftpwrapper.filetype, type_)
+                headers = r.info()
+                self.assertEqual(headers.get("Content-type"), mimetype)
+                self.assertEqual(int(headers["Content-length"]), len(data))
 
     def test_file(self):
         import email.utils
@@ -1172,7 +1172,8 @@ class HandlerTests(unittest.TestCase):
                 try:
                     method(req, MockFile(), code, "Blah",
                            MockHeaders({"location": to_url}))
-                except urllib.error.HTTPError:
+                except urllib.error.HTTPError as e:
+                    e.close()
                     # 307 in response to POST requires user OK
                     self.assertEqual(code, 307)
                     self.assertIsNotNone(data)
@@ -1211,7 +1212,8 @@ class HandlerTests(unittest.TestCase):
             while 1:
                 redirect(h, req, "http://example.com/")
                 count = count + 1
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as e:
+            e.close()
             # don't stop until max_repeats, because cookies may introduce state
             self.assertEqual(count, urllib.request.HTTPRedirectHandler.max_repeats)
 
@@ -1223,7 +1225,8 @@ class HandlerTests(unittest.TestCase):
             while 1:
                 redirect(h, req, "http://example.com/%d" % count)
                 count = count + 1
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as e:
+            e.close()
             self.assertEqual(count,
                              urllib.request.HTTPRedirectHandler.max_redirections)
 
@@ -1239,9 +1242,11 @@ class HandlerTests(unittest.TestCase):
 
         for scheme in invalid_schemes:
             invalid_url = scheme + '://' + schemeless_url
-            self.assertRaises(urllib.error.HTTPError, h.http_error_302,
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                h.http_error_302(
                     req, MockFile(), 302, "Security Loophole",
                     MockHeaders({"location": invalid_url}))
+            cm.exception.close()
 
         for scheme in valid_schemes:
             valid_url = scheme + '://' + schemeless_url
@@ -1774,14 +1779,17 @@ class MiscTests(unittest.TestCase):
         url = code = fp = None
         hdrs = 'Content-Length: 42'
         err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
-        self.assertTrue(hasattr(err, 'reason'))
-        self.assertEqual(err.reason, 'something bad happened')
-        self.assertTrue(hasattr(err, 'headers'))
-        self.assertEqual(err.headers, 'Content-Length: 42')
-        expected_errmsg = 'HTTP Error %s: %s' % (err.code, err.msg)
-        self.assertEqual(str(err), expected_errmsg)
-        expected_errmsg = '<HTTPError %s: %r>' % (err.code, err.msg)
-        self.assertEqual(repr(err), expected_errmsg)
+        try:
+            self.assertTrue(hasattr(err, 'reason'))
+            self.assertEqual(err.reason, 'something bad happened')
+            self.assertTrue(hasattr(err, 'headers'))
+            self.assertEqual(err.headers, 'Content-Length: 42')
+            expected_errmsg = 'HTTP Error %s: %s' % (err.code, err.msg)
+            self.assertEqual(str(err), expected_errmsg)
+            expected_errmsg = '<HTTPError %s: %r>' % (err.code, err.msg)
+            self.assertEqual(repr(err), expected_errmsg)
+        finally:
+            err.close()
 
     def test_parse_proxy(self):
         parse_proxy_test_cases = [

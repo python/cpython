@@ -40,21 +40,20 @@ class TestResponse(unittest.TestCase):
         self.assertTrue(closehook_called)
 
     def test_addinfo(self):
-        info = urllib.response.addinfo(self.fp, self.test_headers)
-        self.assertEqual(info.info(), self.test_headers)
-        self.assertEqual(info.headers, self.test_headers)
+        with urllib.response.addinfo(self.fp, self.test_headers) as info:
+            self.assertEqual(info.info(), self.test_headers)
+            self.assertEqual(info.headers, self.test_headers)
 
     def test_addinfourl(self):
         url = "http://www.python.org"
         code = 200
-        infourl = urllib.response.addinfourl(self.fp, self.test_headers,
-                                             url, code)
-        self.assertEqual(infourl.info(), self.test_headers)
-        self.assertEqual(infourl.geturl(), url)
-        self.assertEqual(infourl.getcode(), code)
-        self.assertEqual(infourl.headers, self.test_headers)
-        self.assertEqual(infourl.url, url)
-        self.assertEqual(infourl.status, code)
+        with urllib.response.addinfourl(self.fp, self.test_headers, url, code) as infourl:
+            self.assertEqual(infourl.info(), self.test_headers)
+            self.assertEqual(infourl.geturl(), url)
+            self.assertEqual(infourl.getcode(), code)
+            self.assertEqual(infourl.headers, self.test_headers)
+            self.assertEqual(infourl.url, url)
+            self.assertEqual(infourl.status, code)
 
     def tearDown(self):
         self.sock.close()

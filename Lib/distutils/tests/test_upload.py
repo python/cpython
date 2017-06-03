@@ -198,6 +198,8 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
                     results = self.get_logs(ERROR)
                     self.assertIn(expected, results[-1])
                     self.clear_logs()
+                if hasattr(exception, 'close'):
+                    exception.close()
 
 
 def test_suite():

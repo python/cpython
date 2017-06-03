@@ -428,23 +428,29 @@ class _TemporaryFileCloser:
         # __del__ is called.
 
         def close(self, unlink=_os.unlink):
-            if not self.close_called and self.file is not None:
+            if not self.close_called:
                 self.close_called = True
-                try:
-                    self.file.close()
-                finally:
-                    if self.delete:
-                        unlink(self.name)
-
-        # Need to ensure the file is deleted on __del__
-        def __del__(self):
-            self.close()
-
+                if self.file is not None:
+                    try:
+                        self.file.close()
+                    finally:
+                        if self.delete:
+                            unlink(self.name)
     else:
         def close(self):
             if not self.close_called:
                 self.close_called = True
-                self.file.close()
+                if self.file is not None:
+                    self.file.close()
+
+    # Need to ensure the file is deleted on __del__
+    def __del__(self):
+        if not self.close_called:
+            _warnings.warn(
+                'unclosed file %r' % self, ResourceWarning,
+                stacklevel=2,
+                source=self)
+            self.close()
 
 
 class _TemporaryFileWrapper:
