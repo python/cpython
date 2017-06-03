@@ -12,19 +12,26 @@ branches:
     - /^\d\.\d$/
 
 matrix:
+  fast_finish: true
+  allow_failures:
+    - env: OPTIONAL=true
   include:
     - os: linux
       language: c
       compiler: clang
       # gcc also works, but to keep the # of concurrent builds down, we use one C
-      # compiler here and the other to run the coverage build.
-      env:
-        - TESTING=cpython
+      # compiler here and the other to run the coverage build. Clang is preferred
+      # in this instance for its better error messages.
+      env: TESTING=cpython
+    - os: osx
+      language: c
+      compiler: clang
+      # Testing under macOS is optional until testing stability has been demonstrated.
+      env: OPTIONAL=true
     - os: linux
       language: python
       python: 2.7
-      env:
-        - TESTING=docs
+      env: TESTING=docs
       before_script:
         - cd Doc
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
