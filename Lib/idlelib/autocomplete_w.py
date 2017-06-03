@@ -1,6 +1,8 @@
 """
 An auto-completion window for IDLE, used by the autocomplete extension
 """
+import platform
+
 from tkinter import *
 from tkinter.ttk import Scrollbar
 
@@ -201,9 +203,10 @@ class AutoCompleteWindow:
         self._selection_changed()
 
         # bind events
-        self.hideid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME,
-                                       self.hide_event)
+        self.hideaid = acw.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
+        self.hidewid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
         for seq in HIDE_SEQUENCES:
+            acw.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
             self.widget.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
         self.keypressid = self.widget.bind(KEYPRESS_VIRTUAL_EVENT_NAME,
                                            self.keypress_event)
@@ -240,8 +243,18 @@ class AutoCompleteWindow:
             new_y -= acw_height
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
+        if platform.system().startswith('Windows'):
+            # See issue 15786. When on windows platform, Tk will misbehaive
+            # to call winconfig_event multiple times, we need to prevent this,
+            # otherwise mouse button double click will not be able to used.
+            acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            self.winconfigid = None
+
     def hide_event(self, event):
-        if self.is_active():
+        # Hide autocomplete list if it exists and does not have focus
+        if (self.is_active() and
+            (self.widget == self.widget.focus_get() or
+             not self.widget.focus_get())):
             self.hide_window()
 
     def listselect_event(self, event):
@@ -392,9 +405,12 @@ class AutoCompleteWindow:
 
         # unbind events
         for seq in HIDE_SEQUENCES:
+            self.autocompletewindow.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
             self.widget.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
-        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideid)
-        self.hideid = None
+        self.autocompletewindow.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideaid)
+        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hidewid)
+        self.hideaid = None
+        self.hidewid = None
         for seq in KEYPRESS_SEQUENCES:
             self.widget.event_delete(KEYPRESS_VIRTUAL_EVENT_NAME, seq)
         self.widget.unbind(KEYPRESS_VIRTUAL_EVENT_NAME, self.keypressid)
@@ -405,8 +421,12 @@ class AutoCompleteWindow:
         self.keyreleaseid = None
         self.listbox.unbind(LISTUPDATE_SEQUENCE, self.listupdateid)
         self.listupdateid = None
-        self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
-        self.winconfigid = None
+        if self.winconfigid:
+            self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            self.winconfigid = None
+
+        # Re-focusOn frame.text (See issue #15786)
+        self.widget.focus_set()
 
         # destroy widgets
         self.scrollbar.destroy()
