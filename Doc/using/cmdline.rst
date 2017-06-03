@@ -737,7 +737,7 @@ conflict.
    environment before the Python runtime is initialized. This ensures the
    updated setting is seen in subprocesses, as well as in operations that
    query the environment rather than the current C locale (such as Python's
-   own :ref:`locale.getdefaultlocale`).
+   own :func:`locale.getdefaultlocale`).
 
    Configuring one of these locales (either explicitly or via the above
    implicit locale coercion) will automatically set the error handler for
