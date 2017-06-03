@@ -11,14 +11,14 @@
 # Generic names handled via _is_module() in check-c-globals.py.
 
 # Modules/_collectionsmodule.c
-#freeblocks
-#numfreeblocks
+freeblocks
+numfreeblocks
 
 # Modules/_functoolsmodule.c
 kwd_mark
 
 # Modules/_io/_iomodule.c
-# interned strings/bytes
+# (interned strings/bytes)
 _PyIO_empty_bytes
 _PyIO_empty_str
 _PyIO_str_close
@@ -72,12 +72,12 @@ tracemalloc_empty_traceback
 unknown_filename
 
 # Modules/faulthandler.c
-#fatal_error
+fatal_error
 faulthandler_handlers
-#old_stack
-#stack
-#thread
-#user_signals
+old_stack
+stack
+thread
+user_signals
 
 # Modules/gcmodule.c
 #_PyGC_generation0
@@ -97,26 +97,26 @@ billion
 posix_constants_confstr
 posix_constants_pathconf
 posix_constants_sysconf
-#posix_putenv_garbage
-#_stat_float_times  # almost
+posix_putenv_garbage
+_stat_float_times  # deprecated, __main__-only
 structseq_new
 ticks_per_second
 
 # Modules/signalmodule.c
 DefaultHandler
-#Handlers
+Handlers  # main thread only
 IgnoreHandler
 IntHandler
 ItimerError
-#is_tripped
+is_tripped  # main thread only
 main_pid
 main_thread
 old_siginthandler
-#wakeup_fd
+wakeup_fd  # main thread only
 
 # Modules/zipimport.c
 ZipImportError
-#zip_directory_cache
+#zip_directory_cache  # maybe
 zip_searchorder
 
 # Python/bltinmodule.c
@@ -143,46 +143,46 @@ characters
 nullstring
 
 # Objects/classobject.c
-#free_list
-#numfree
+free_list
+numfree
 
 # Objects/dictobject.c
 empty_keys_struct
 empty_values
-#free_list
-#keys_free_list
-#numfree
-#numfreekeys
+free_list
+keys_free_list
+numfree
+numfreekeys
 pydict_global_version  # maybe not
 
 # Objects/exceptions.c
 PyExc_RecursionErrorInst
 errnomap
-#memerrors_freelist
-#memerrors_numfree
+memerrors_freelist
+memerrors_numfree
 
 # Objects/floatobject.c
 detected_double_format
 detected_float_format
 double_format
 float_format
-#free_list
-#numfree
+free_list
+numfree
 
 # Objects/frameobject.c
-#free_list
-#numfree
+free_list
+numfree
 
 # Objects/genobject.c
-#ag_asend_freelist
-#ag_asend_freelist_free
-#ag_value_freelist
-#ag_value_freelist_free
+ag_asend_freelist
+ag_asend_freelist_free
+ag_value_freelist
+ag_value_freelist_free
 
 # Objects/listobject.c
 indexerr
-#free_list
-#numfree
+free_list
+numfree
 
 # Objects/longobject.c
 _PyLong_DigitValue
@@ -191,8 +191,8 @@ _PyLong_Zero
 small_ints
 
 # Objects/methodobject.c
-#free_list
-#numfree
+free_list
+numfree
 
 # Objects/object.c
 #_PyTrash_delete_later
@@ -223,22 +223,22 @@ _dummy_struct
 emptyfrozenset
 
 # Objects/sliceobject.c
-#slice_cache
+#slice_cache  # slight race
 
 # Objects/structseq.c
 PyStructSequence_UnnamedField
 _struct_sequence_template
 
 # Objects/tupleobject.c
-#free_list
-#numfree
+free_list
+numfree
 
 # Objects/typeobject.c
-#method_cache
+#method_cache  # only for static types
+#next_version_tag  # only for static types
 name_op
-#next_version_tag
-#slotdefs  # almost
-#slotdefs_initialized  # almost
+slotdefs  # almost
+slotdefs_initialized  # almost
 subtype_getsets_dict_only
 subtype_getsets_full
 subtype_getsets_weakref_only
@@ -246,11 +246,14 @@ tp_new_methoddef
 
 # Objects/unicodeobject.c
 bloom_linebreak
-#interned
-#static_strings  # almost
-#ucnhash_CAPI  # almost
-#unicode_empty  # almost
-#unicode_latin1
+#interned  # slight race on init in PyUnicode_InternInPlace()
+#static_strings  # slight race
+unicode_empty
+unicode_latin1
+
+# Python/codecs.c
+Py_hexdigits
+ucnhash_CAPI  # slight performance-only race
 
 
 #######################################
@@ -328,20 +331,20 @@ alias_fields
 # interpreter
 
 # Python/ceval.c
-#_Py_CheckRecursionLimit
+#_Py_CheckRecursionLimit  # move to core as global default
 
 # Python/sysmodule.c
-#_check_interval
+#_check_interval  # move to core as global default
 _PySys_ImplCacheTag
 _PySys_ImplName
-#warnoptions  # maybe
 whatstrings
-#xoptions  # maybe
+#warnoptions  # move to core as global default
+#xoptions  # move to core as global default
 
 # Python/thread.c
-#ThreadInfoType  # almost
-#initialized  # almost
-_pythread_stacksize
+#ThreadInfoType  # slight race on init in PyThread_GetInfo()
+#initialized  # very slight race in PyThread_init_thread()
+#_pythread_stacksize  # move to core as global default
 
 
 #######################################
@@ -351,12 +354,12 @@ _pythread_stacksize
 _PyImport_Inittab
 
 # Objects/moduleobject.c
-#max_module_number
+#max_module_number  # slight race during import
 
 # Python/dynload_shlib.c
 _PyImport_DynLoadFiletab
-#handles
-#nhandles
+#handles  # slight race during import
+#nhandles  # slight race during import
 
 # Python/frozen.c
 M___hello__
@@ -364,13 +367,13 @@ PyImport_FrozenModules
 
 # Python/import.c
 PyImport_Inittab
-#extensions
-#import_lock
-#import_lock_level
-#import_lock_thread
+#extensions  # slight race on init during import
+#import_lock  # For extension modules only.
+#import_lock_level  # For extension modules only.
+#import_lock_thread  # For extension modules only.
 
 # Python/modsupport.c
-#_Py_PackageContext
+#_Py_PackageContext  # Slight race during import!  Move to PyThreadState?
 
 
 #######################################
@@ -387,7 +390,7 @@ orig_argc
 orig_argv
 
 # Python/bootstrap_hash.c
-#urandom_cache
+urandom_cache
 
 # Python/getopt.c
 opt_ptr
@@ -402,11 +405,19 @@ _Py_HashSecret_Initialized
 
 # Python/pylifecycle.c
 _PyOS_mystrnicmp_hack
-#Py_BytesWarningFlag
 _Py_CoreInitialized
+#_Py_Finalizing
+#_Py_StandardStreamEncoding
+#_Py_StandardStreamErrors
+default_home
+env_home
+#exitfuncs
+#nexitfuncs
+progname
+#pyexitfunc
+#Py_BytesWarningFlag
 #Py_DebugFlag
 #Py_DontWriteBytecodeFlag
-#_Py_Finalizing
 #Py_FrozenFlag
 #Py_HashRandomizationFlag
 #Py_IgnoreEnvironmentFlag
@@ -417,17 +428,9 @@ _Py_CoreInitialized
 #Py_NoUserSiteDirectory
 #Py_OptimizeFlag
 #Py_QuietFlag
-#_Py_StandardStreamEncoding
-#_Py_StandardStreamErrors
 #Py_UnbufferedStdioFlag
 #Py_UseClassExceptionsFlag
 #Py_VerboseFlag
-default_home
-env_home
-#exitfuncs
-#nexitfuncs
-progname
-#pyexitfunc
 
 
 #######################################
@@ -439,15 +442,11 @@ PyOS_ReadlineFunctionPointer
 _PyOS_ReadlineLock
 _PyOS_ReadlineTState
 
-# Python/codecs.c
-Py_hexdigits
-#ucnhash_CAPI
-
 # Python/dtoa.c
-#freelist
+#freelist  # very slight race
 p5s
-#pmem_next
-#private_mem
+#pmem_next  # very slight race
+#private_mem  # very slight race
 
 # Python/fileutils.c
 _Py_open_cloexec_works

@@ -20,13 +20,6 @@
 #tracemalloc_traced_memory
 #tracemalloc_traces
 
-# Modules/faulthandler.c
-#fatal_error
-#old_stack
-#stack
-#thread
-#user_signals
-
 # Modules/gcmodule.c
 #_PyGC_generation0
 #callbacks
@@ -39,18 +32,9 @@
 #long_lived_pending
 #long_lived_total
 
-# Modules/signalmodule.c
-#Handlers
-#is_tripped
-main_thread
-#wakeup_fd
-
 
 #######################################
 # builtin types
-
-# Objects/moduleobject.c
-#max_module_number
 
 # Objects/object.c
 #_PyTrash_delete_later
@@ -72,13 +56,6 @@ main_thread
 #usable_arenas
 #usedpools
 
-# Objects/sliceobject.c
-#slice_cache
-
-# Objects/typeobject.c
-#method_cache
-#next_version_tag
-
 
 #######################################
 # exceptions/warnings
@@ -94,8 +71,8 @@ main_thread
 # interpreter
 
 # Python/ceval.c
-#_Py_CheckRecursionLimit
-#_Py_TracingPossible
+#_Py_CheckRecursionLimit  # move to main as runtime default
+#_Py_TracingPossible  # move to main as runtime default
 #eval_breaker
 #gil_drop_request
 #main_thread
@@ -105,7 +82,6 @@ main_thread
 #pendingcalls_to_do
 #pendingfirst
 #pendinglast
-#recursion_limit
 
 # Python/ceval_gil.h
 #gil_cond
@@ -129,23 +105,30 @@ main_thread
 #_next_interp_id
 
 # Python/sysmodule.c
-#_check_interval
-#warnoptions  # maybe
-#xoptions  # maybe
+#_check_interval  # move to main as runtime default
+#warnoptions  # move to main as runtime default
+#xoptions  # move_to main as runtime default
+
+# Python/thread.c
+#_pythread_stacksize  # move to main as runtime default
 
 
 #######################################
 # startup
 
-# Python/bootstrap_hash.c
-#urandom_cache
-
 # Python/pylifecycle.c
 #_Py_Initialized
+#_Py_Finalizing
+#_Py_StandardStreamEncoding
+#_Py_StandardStreamErrors
+#default_home
+#env_home
+#exitfuncs
+#nexitfuncs
+#pyexitfunc
 #Py_BytesWarningFlag
 #Py_DebugFlag
 #Py_DontWriteBytecodeFlag
-#_Py_Finalizing
 #Py_FrozenFlag
 #Py_HashRandomizationFlag
 #Py_IgnoreEnvironmentFlag
@@ -156,13 +139,6 @@ main_thread
 #Py_NoUserSiteDirectory
 #Py_OptimizeFlag
 #Py_QuietFlag
-#_Py_StandardStreamEncoding
-#_Py_StandardStreamErrors
 #Py_UnbufferedStdioFlag
 #Py_UseClassExceptionsFlag
 #Py_VerboseFlag
-#default_home
-#env_home
-#exitfuncs
-#nexitfuncs
-#pyexitfunc
