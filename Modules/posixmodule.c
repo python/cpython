@@ -11401,11 +11401,7 @@ static PyObject *
 DirEntry_get_lstat(DirEntry *self)
 {
     if (!self->lstat) {
-#ifdef MS_WINDOWS
-        self->lstat = _pystat_fromstructstat(&self->win32_lstat);
-#else /* POSIX */
         self->lstat = DirEntry_fetch_stat(self, 0);
-#endif
     }
     Py_XINCREF(self->lstat);
     return self->lstat;
@@ -11733,7 +11729,7 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
         if (!entry->path)
             goto error;
     }
-
+    
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
     _Py_attribute_data_to_stat(&file_info, reparse_tag, &entry->win32_lstat);
 
