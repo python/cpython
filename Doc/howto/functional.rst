@@ -653,8 +653,9 @@ This can also be written as a list comprehension:
     [0, 2, 4, 6, 8]
 
 
-:func:`enumerate(iter) <enumerate>` counts off the elements in the iterable,
-returning 2-tuples containing the count and each element. ::
+:func:`enumerate(iter, start=0) <enumerate>` counts off the elements in the
+iterable returning 2-tuples containing the count (from *start*) and
+each element. ::
 
     >>> for item in enumerate(['subject', 'verb', 'object']):
     ...     print(item)
