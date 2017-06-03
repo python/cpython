@@ -17,7 +17,7 @@ SOURCE_DIRS = ['Include', 'Objects', 'Modules', 'Parser', 'Python']
 CAPI_REGEX = re.compile(r'^ *PyAPI_DATA\([^)]*\) \W*(_?Py\w+(?:, \w+)*\w).*;.*$')
 
 # These variables are shared between all interpreters in the process.
-with open('globals-runtime.txt') as file:
+with open('globals-core.txt') as file:
     RUNTIME_VARS = {line.partition('#')[0].strip()
                     for line in file
                     if line.strip() and not line.startswith('#')}
@@ -72,7 +72,7 @@ def _find_capi_vars(lines):
             yield name
 
 
-def _is_runtime_var(name):
+def _is_core_var(name):
     if _is_autogen_var(name):
         return True
     if _is_type_var(name):
@@ -131,7 +131,7 @@ def _is_module(name):
 
 
 def _is_exception(name):
-    # Other vars are enumerated in globals-runtime.txt.
+    # Other vars are enumerated in globals-core.txt.
     if not name.startswith(('PyExc_', '_PyExc_')):
         return False
     return name.endswith(('Error', 'Warning'))
@@ -170,8 +170,8 @@ class Var(namedtuple('Var', 'name kind scope capi filename')):
         name = name.strip()
         if _is_autogen_var(name):
             return None
-        if _is_runtime_var(name):
-            scope = 'runtime'
+        if _is_core_var(name):
+            scope = 'core'
         elif _is_main_var(name):
             scope = 'main'
         elif _is_interp_var(name):
@@ -403,7 +403,7 @@ def parse_args(argv=None):
         args.group = 'filename'
 
     if args.rc is None:
-        if '-scope=runtime' in args.filters or 'runtime' not in args.filters:
+        if '-scope=core' in args.filters or 'core' not in args.filters:
             args.rc = 0
         else:
             args.rc = 1
