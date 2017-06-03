@@ -1617,6 +1617,9 @@ initstdio(void)
         }
         if (!errors && !(pythonioencoding && *pythonioencoding)) {
             /* Choose the default error handler based on the current locale */
+#ifdef MS_WINDOWS
+            printf("Is this code even being reached under Windows?");
+#endif
             errors = get_default_standard_stream_error_handler();
         }
     }
