@@ -38,7 +38,7 @@ this should open a window demonstrating a simple Tk interface.
    `Programming Python <http://learning-python.com/books/about-pp4e.html>`_
       Book by Mark Lutz, has excellent coverage of Tkinter.
 
-   `Modern Tkinter for Busy Python Developers <http://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
+   `Modern Tkinter for Busy Python Developers <https://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
       Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
    `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
@@ -183,7 +183,7 @@ documentation that exists. Here are some hints:
    `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
       The Tk/Tcl development is largely taking place at ActiveState.
 
-   `Tcl and the Tk Toolkit <http://www.amazon.com/exec/obidos/ASIN/020163337X>`_
+   `Tcl and the Tk Toolkit <https://www.amazon.com/exec/obidos/ASIN/020163337X>`_
       The book by John Ousterhout, the inventor of Tcl.
 
    `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_

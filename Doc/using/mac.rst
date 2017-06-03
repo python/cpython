@@ -66,7 +66,7 @@ number of standard Unix command line editors, :program:`vim` and
 :program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
 http://www.barebones.com/products/bbedit/index.html) are good choices, as is
 :program:`TextMate` (see https://macromates.com/). Other editors include
-:program:`Gvim` (http://macvim.org) and :program:`Aquamacs`
+:program:`Gvim` (http://macvim-dev.github.io/macvim/) and :program:`Aquamacs`
 (http://aquamacs.org/).
 
 To run your script from the Terminal window you must make sure that
@@ -131,7 +131,7 @@ There are several methods to install additional Python packages:
   setup.py install``).
 
 * Many packages can also be installed via the :program:`setuptools` extension
-  or :program:`pip` wrapper, see https://pip.pypa.io/.
+  or :program:`pip` wrapper, see https://pip.pypa.io/en/stable/.
 
 
 GUI Programming on the Mac
@@ -149,7 +149,7 @@ X by Apple, and the latest version can be downloaded and installed from
 https://www.activestate.com; it can also be built from source.
 
 *wxPython* is another popular cross-platform GUI toolkit that runs natively on
-Mac OS X. Packages and documentation are available from http://www.wxpython.org.
+Mac OS X. Packages and documentation are available from https://www.wxpython.org.
 
 *PyQt* is another popular cross-platform GUI toolkit that runs natively on Mac
 OS X. More information can be found at

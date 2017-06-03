@@ -53,7 +53,7 @@ with a tool such as `SWIG <http://www.swig.org>`_.  `SIP
 <https://riverbankcomputing.com/software/sip/intro>`__, `CXX
 <http://cxx.sourceforge.net/>`_ `Boost
 <http://www.boost.org/doc/libs/1_64_0/libs/python/doc/html/index.html>`_, or
-`Weave<https://scipy.github.io/devdocs/tutorial/weave.html>`_ are also
+`Weave <https://scipy.github.io/devdocs/tutorial/weave.html>`_ are also
 alternatives for wrapping C++ libraries.
 
 
@@ -440,6 +440,6 @@ Can I create an object class with some methods implemented in C and others in Py
 Yes, you can inherit from built-in classes such as :class:`int`, :class:`list`,
 :class:`dict`, etc.
 
-The Boost Python Library (BPL, http://www.boost.org/libs/python/doc/index.html)
+The Boost Python Library (BPL, http://www.boost.org/doc/libs/1_64_0/libs/python/doc/html/index.html)
 provides a way of doing this from C++ (i.e. you can inherit from an extension
 class written in C++ using the BPL).

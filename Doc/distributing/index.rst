@@ -62,7 +62,7 @@ Key terms
   locally.
 
 .. _setuptools: https://setuptools.readthedocs.io/en/latest/
-.. _wheel: https://wheel.readthedocs.org
+.. _wheel: https://wheel.readthedocs.io/en/latest/
 
 Open source licensing and collaboration
 =======================================
@@ -160,7 +160,7 @@ Python Packaging User Guide for more information and recommendations.
 .. seealso::
 
    `Python Packaging User Guide: Binary Extensions
-   <https://packaging.python.org/en/latest/extensions>`__
+   <https://packaging.python.org/extensions/>`__
 
 .. other topics:
 

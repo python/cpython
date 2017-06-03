@@ -832,7 +832,7 @@ Constants
 
    Whether the OpenSSL library has built-in support for *Next Protocol
    Negotiation* as described in the `NPN draft specification
-   <https://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. When true,
+   <https://tools.ietf.org/html/draft-agl-tls-nextprotoneg-04>`_. When true,
    you can use the :meth:`SSLContext.set_npn_protocols` method to advertise
    which protocols you want to support.
 
@@ -1458,7 +1458,7 @@ to speed up repeated connections from the same clients.
    handshake. It should be a list of strings, like ``['http/1.1', 'spdy/2']``,
    ordered by preference. The selection of a protocol will happen during the
    handshake, and will play out according to the `NPN draft specification
-   <https://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. After a
+   <https://tools.ietf.org/html/draft-agl-tls-nextprotoneg-04>`_. After a
    successful handshake, the :meth:`SSLSocket.selected_npn_protocol` method will
    return the agreed-upon protocol.
 
@@ -1546,7 +1546,7 @@ to speed up repeated connections from the same clients.
    .. versionadded:: 3.3
 
    .. seealso::
-      `SSL/TLS & Perfect Forward Secrecy <http://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy.html>`_
+      `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy>`_
          Vincent Bernat.
 
 .. method:: SSLContext.wrap_socket(sock, server_side=False, \

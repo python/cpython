@@ -48,7 +48,7 @@ More Python resources:
   Particularly notable contributions are collected in a book also titled Python
   Cookbook (O'Reilly & Associates, ISBN 0-596-00797-3.)
 
-* http://www.pyvideo.org collects links to Python-related videos from
+* http://pyvideo.org/ collects links to Python-related videos from
   conferences and user-group meetings.
 
 * https://scipy.org: The Scientific Python project includes modules for fast
