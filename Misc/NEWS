@@ -345,6 +345,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30526: Add TextIOWrapper.reconfigure() and a TextIOWrapper.write_through
+  attribute.
+
 - bpo-30245: Fix possible overflow when organize struct.pack_into
   error message.  Patch by Yuan Liu.
   
