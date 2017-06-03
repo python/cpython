@@ -12,11 +12,56 @@
 #include <windows.h>
 #include <fcntl.h>
 
+/*
+ * Macros to protect CRT calls against instant termination when passed an
+ * invalid parameter (issue23524).
+ *
+ * It does not need to be defined when building using MSVC
+ * earlier than 14.0 (_MSC_VER == 1900).
+ *
+ * Copied here since it's required to call _get_osfhandle safely and we don't
+ * want to export py_get_osfhandle only because this test module needs it.
+ */
+#if defined _MSC_VER && _MSC_VER >= 1900
+
+static void __cdecl _silent_invalid_parameter_handler(
+    wchar_t const* expression,
+    wchar_t const* function,
+    wchar_t const* file,
+    unsigned int line,
+    uintptr_t pReserved) { }
+
+#define _Py_BEGIN_SUPPRESS_IPH { _invalid_parameter_handler _Py_old_handler = \
+    _set_thread_local_invalid_parameter_handler(_silent_invalid_parameter_handler);
+#define _Py_END_SUPPRESS_IPH _set_thread_local_invalid_parameter_handler(_Py_old_handler); }
+
+#else
+
+#define _Py_BEGIN_SUPPRESS_IPH
+#define _Py_END_SUPPRESS_IPH
+
+#endif /* _MSC_VER >= 1900 */
+
+static HANDLE py_get_osfhandle(int fd)
+{
+    HANDLE handle;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    handle = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+    if (handle == INVALID_HANDLE_VALUE) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return INVALID_HANDLE_VALUE;
+    }
+
+    return handle;
+}
+
  /* The full definition is in iomodule. We reproduce
- enough here to get the handle, which is all we want. */
+ enough here to get the fd, which is all we want. */
 typedef struct {
     PyObject_HEAD
-    HANDLE handle;
+    int fd;
 } winconsoleio;
 
 
@@ -68,7 +113,10 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
         prec->Event.KeyEvent.uChar.UnicodeChar = *p;
     }
 
-    HANDLE hInput = ((winconsoleio*)file)->handle;
+    HANDLE hInput = py_get_osfhandle(((winconsoleio*)file)->fd);
+    if (hInput == INVALID_HANDLE_VALUE)
+        goto error;
+
     DWORD total = 0;
     while (total < size) {
         DWORD wrote;
