@@ -375,8 +375,6 @@ static _LocaleCoercionTarget _TARGET_LOCALES[] = {
 static char *
 get_default_standard_stream_error_handler(void)
 {
-#ifndef MS_WINDOWS
-    /* On non-Windows systems, the locale can affect the default error handler */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     if (ctype_loc != NULL) {
         /* "surrogateescape" is the default in the legacy C locale */
@@ -384,6 +382,7 @@ get_default_standard_stream_error_handler(void)
             return "surrogateescape";
         }
 
+#ifdef PY_COERCE_C_LOCALE
         /* "surrogateescape" is the default in locale coercion target locales */
         const _LocaleCoercionTarget *target = NULL;
         for (target = _TARGET_LOCALES; target->locale_name; target++) {
@@ -391,8 +390,8 @@ get_default_standard_stream_error_handler(void)
                 return "surrogateescape";
             }
         }
-   }
 #endif
+   }
 
    /* Otherwise return NULL to request the typical default error handler */
    return NULL;
