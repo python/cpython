@@ -21,13 +21,6 @@
 #tracemalloc_traced_memory
 #tracemalloc_traces
 
-# Modules/faulthandler.c
-#fatal_error
-#old_stack
-#stack
-#thread
-#user_signals
-
 # Modules/gcmodule.c
 #_PyGC_generation0
 #callbacks
@@ -40,18 +33,9 @@
 #long_lived_pending
 #long_lived_total
 
-# Modules/signalmodule.c
-#Handlers
-#is_tripped
-main_thread
-#wakeup_fd
-
 
 #######################################
 # builtin types
-
-# Objects/moduleobject.c
-#max_module_number
 
 # Objects/object.c
 #_PyTrash_delete_later
@@ -72,9 +56,6 @@ main_thread
 #unused_arena_objects
 #usable_arenas
 #usedpools
-
-# Objects/sliceobject.c
-#slice_cache
 
 # Objects/typeobject.c
 #method_cache
@@ -127,22 +108,33 @@ main_thread
 
 # Python/sysmodule.c
 #_check_interval
-#warnoptions  # maybe
-#xoptions  # maybe
+#warnoptions
+#xoptions
+
+# Python/import.c
+#import_lock
+#import_lock_level
+#import_lock_thread
+
+# Python/thread.c
+#_pythread_stacksize
 
 
 #######################################
 # startup
 
-# Python/bootstrap_hash.c
-#urandom_cache
-
 # Python/pylifecycle.c
 #_Py_Initialized
+#_Py_Finalizing
+#_Py_StandardStreamEncoding
+#_Py_StandardStreamErrors
+#env_home
+#exitfuncs
+#nexitfuncs
+#pyexitfunc
 #Py_BytesWarningFlag
 #Py_DebugFlag
 #Py_DontWriteBytecodeFlag
-#_Py_Finalizing
 #Py_FrozenFlag
 #Py_HashRandomizationFlag
 #Py_IgnoreEnvironmentFlag
@@ -153,12 +145,6 @@ main_thread
 #Py_NoUserSiteDirectory
 #Py_OptimizeFlag
 #Py_QuietFlag
-#_Py_StandardStreamEncoding
-#_Py_StandardStreamErrors
 #Py_UnbufferedStdioFlag
 #Py_UseClassExceptionsFlag
 #Py_VerboseFlag
-#env_home
-#exitfuncs
-#nexitfuncs
-#pyexitfunc
