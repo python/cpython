@@ -311,6 +311,34 @@ class TestMessageAPI(TestEmailBase):
         g.flatten(msg)
         self.assertEqual(fullrepr, s.getvalue())
 
+    def test_nonascii_as_string_without_cte(self):
+        m = textwrap.dedent("""\
+            MIME-Version: 1.0
+            Content-Type: multipart/alternative;
+             boundary="----5F0D91A9C8C24D91AF71E1D7F2F7877E"
+
+            ------5F0D91A9C8C24D91AF71E1D7F2F7877E
+            Content-type: text/plain; charset=utf-8
+
+            Test if UTF-8 messages with no Content-Transfer-Encoding set can be as_string'd:
+            Föö bär
+            ------5F0D91A9C8C24D91AF71E1D7F2F7877E--
+
+            """)
+        msg = email.message_from_string(m)
+        msg.as_string()
+
+    def test_nonascii_as_string_without_content_type_and_cte(self):
+        m = textwrap.dedent("""\
+            MIME-Version: 1.0
+
+            Test if UTF-8 messages with no Content-Type nor Content-Transfer-Encoding set can be as_string'd:
+            Föö bär
+
+            """)
+        msg = email.message_from_string(m)
+        msg.as_string()
+
     def test_as_bytes(self):
         msg = self._msgobj('msg_01.txt')
         with openfile('msg_01.txt') as fp:
