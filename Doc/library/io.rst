@@ -917,9 +917,9 @@ Text I/O
 
    .. method:: reconfigure(*, line_buffering=None, write_through=None)
 
-      Reconfigure this text stream using new values for *line_buffering*
-      and *write_through*.  Any ``None`` value will keep the current
-      value.
+      Reconfigure this text stream using new settings for *line_buffering*
+      and *write_through*.  Passing ``None`` as an argument will retain
+      the current setting for that parameter.
 
       This method does an implicit stream flush before setting the
       new parameters.
