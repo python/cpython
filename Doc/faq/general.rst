@@ -53,7 +53,7 @@ commercial use, to sell copies of Python in source or binary form (modified or
 unmodified), or to sell products that incorporate Python in some form.  We would
 still like to know about all commercial use of Python, of course.
 
-See `the PSF license page <https://www.python.org/psf/license/>`_ to find further
+See `the PSF license page <https://docs.python.org/3/license.html>`_ to find further
 explanations and a link to the full text of the license.
 
 The Python logo is trademarked, and in certain cases permission is required to
@@ -181,7 +181,7 @@ at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions 
 also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
-documentation tool <http://sphinx-doc.org/>`__.  The reStructuredText source for
+documentation tool <http://www.sphinx-doc.org/en/stable/>`__.  The reStructuredText source for
 the documentation is part of the Python source distribution.
 
 
@@ -272,7 +272,7 @@ The Python project's infrastructure is located all over the world.
 `www.python.org <https://www.python.org>`_ is graciously hosted by `Rackspace
 <https://www.rackspace.com>`_, with CDN caching provided by `Fastly
 <https://www.fastly.com>`_.  `Upfront Systems
-<http://www.upfrontsystems.co.za/>`_ hosts `bugs.python.org
+<http://www.upfrontsoftware.co.za>`_ hosts `bugs.python.org
 <https://bugs.python.org>`_.  Many other Python services like `the Wiki
 <https://wiki.python.org>`_ are hosted by `Oregon State
 University Open Source Lab <https://osuosl.org>`_.
@@ -343,10 +343,10 @@ different companies and organizations.
 
 High-profile Python projects include `the Mailman mailing list manager
 <http://www.list.org>`_ and `the Zope application server
-<http://www.zope.org>`_.  Several Linux distributions, most notably `Red Hat
-<https://www.redhat.com>`_, have written part or all of their installer and
-system administration software in Python.  Companies that use Python internally
-include Google, Yahoo, and Lucasfilm Ltd.
+<http://www.zope.org/en/latest/>`_.  Several Linux distributions, most
+notably `Red Hat<https://www.redhat.com/en>`_, have written part or all of
+their installer and system administration software in Python.  Companies
+that use Python internally include Google, Yahoo, and Lucasfilm Ltd.
 
 
 What new developments are expected for Python in the future?

@@ -170,8 +170,8 @@ offender.
 How do I make an executable from a Python script?
 -------------------------------------------------
 
-See http://cx-freeze.sourceforge.net/ for a distutils extension that allows you
-to create console and GUI executables from Python code.
+See https://anthony-tuininga.github.io/cx_Freeze/ for a distutils extension
+that allows you to create console and GUI executables from Python code.
 `py2exe <http://www.py2exe.org/>`_, the most popular extension for building
 Python 2.x-based executables, does not yet support Python 3 but a version that
 does is in development.
@@ -341,5 +341,5 @@ This is a mistake; the extension should be .TGZ.
 
 Simply rename the downloaded file to have the .TGZ extension, and WinZip will be
 able to handle it.  (If your copy of WinZip doesn't, get a newer one from
-https://www.winzip.com.)
+http://www.winzip.com/win/en/.)
 

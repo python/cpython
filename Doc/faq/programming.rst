@@ -69,7 +69,8 @@ plug-ins to add a custom feature.  In addition to the bug checking that
 PyChecker performs, Pylint offers some additional features such as checking line
 length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
-https://docs.pylint.org/ provides a full list of Pylint's features.
+https://pylint.readthedocs.io/en/latest/ provides a full list of Pylint's
+features.
 
 
 How can I create a stand-alone binary from a Python script?
@@ -100,7 +101,7 @@ which don't. One is Thomas Heller's py2exe (Windows only) at
 
     http://www.py2exe.org/
 
-Another tool is Anthony Tuininga's `cx_Freeze <http://cx-freeze.sourceforge.net/>`_.
+Another tool is Anthony Tuininga's `cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_.
 
 
 Are there coding standards or a style guide for Python programs?

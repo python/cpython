@@ -182,7 +182,7 @@ How do I create documentation from doc strings?
 The :mod:`pydoc` module can create HTML from the doc strings in your Python
 source code.  An alternative for creating API documentation purely from
 docstrings is `epydoc <http://epydoc.sourceforge.net/>`_.  `Sphinx
-<http://sphinx-doc.org>`_ can also include docstring content.
+<http://www.sphinx-doc.org/en/stable/>`_ can also include docstring content.
 
 
 How do I get a single keypress at a time?
@@ -419,7 +419,7 @@ Python program effectively only uses one CPU, due to the insistence that
 Back in the days of Python 1.5, Greg Stein actually implemented a comprehensive
 patch set (the "free threading" patches) that removed the GIL and replaced it
 with fine-grained locking.  Adam Olsen recently did a similar experiment
-in his `python-safethread <http://code.google.com/p/python-safethread/>`_
+in his `python-safethread <https://code.google.com/archive/p/python-safethread>`_
 project.  Unfortunately, both experiments exhibited a sharp drop in single-thread
 performance (at least 30% slower), due to the amount of fine-grained locking
 necessary to compensate for the removal of the GIL.

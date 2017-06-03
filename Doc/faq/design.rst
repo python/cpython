@@ -343,7 +343,7 @@ each Python stack frame.  Also, extensions can call back into Python at almost
 random moments.  Therefore, a complete threads implementation requires thread
 support for C.
 
-Answer 2: Fortunately, there is `Stackless Python <http://www.stackless.com>`_,
+Answer 2: Fortunately, there is `Stackless Python <https://bitbucket.org/stackless-dev/stackless/wiki/Home>`_,
 which has a completely redesigned interpreter loop that avoids the C stack.
 
 
@@ -370,7 +370,7 @@ Can Python be compiled to machine code, C or some other language?
 optional annotations into C extensions.  `Nuitka <http://www.nuitka.net/>`_ is
 an up-and-coming compiler of Python into C++ code, aiming to support the full
 Python language. For compiling to Java you can consider
-`VOC <https://voc.readthedocs.io>`_.
+`VOC <https://voc.readthedocs.io/en/latest/>`_.
 
 
 How does Python manage memory?

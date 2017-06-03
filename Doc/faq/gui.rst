@@ -43,7 +43,7 @@ number of platforms, with Windows, Mac OS X, GTK, X11, all listed as
 current stable targets.  Language bindings are available for a number
 of languages including Python, Perl, Ruby, etc.
 
-wxPython (http://www.wxpython.org) is the Python binding for
+wxPython (https://www.wxpython.org/) is the Python binding for
 wxwidgets.  While it often lags slightly behind the official wxWidgets
 releases, it also offers a number of features via pure Python
 extensions that are not available in other language bindings.  There
@@ -72,9 +72,9 @@ Gtk+
 
 The `GObject introspection bindings <https://wiki.gnome.org/Projects/PyGObject>`_
 for Python allow you to write GTK+ 3 applications.  There is also a
-`Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.org/en/latest/>`_.
+`Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.io/en/latest/>`_.
 
-The older PyGtk bindings for the `Gtk+ 2 toolkit <http://www.gtk.org>`_ have
+The older PyGtk bindings for the `Gtk+ 2 toolkit <https://www.gtk.org/>`_ have
 been implemented by James Henstridge; see <http://www.pygtk.org>.
 
 Kivy
@@ -90,7 +90,7 @@ Kivy is free and open source software distributed under the MIT license.
 FLTK
 ----
 
-Python bindings for `the FLTK toolkit <http://www.fltk.org>`_, a simple yet
+Python bindings for `the FLTK toolkit <http://www.fltk.org/index.php>`_, a simple yet
 powerful and mature cross-platform windowing system, are available from `the
 PyFLTK project <http://pyfltk.sourceforge.net>`_.
 

@@ -35,7 +35,7 @@ Key terms
   repository of open source licensed packages made available for use by
   other Python users
 * the `Python Packaging Authority
-  <https://www.pypa.io/>`__ are the group of
+  <https://www.pypa.io/en/latest/>`__ are the group of
   developers and documentation authors responsible for the maintenance and
   evolution of the standard packaging tools and the associated metadata and
   file format standards. They maintain a variety of tools, documentation
@@ -111,7 +111,7 @@ by invoking the ``pip`` module at the command line::
 The Python Packaging User Guide includes more details on the `currently
 recommended tools`_.
 
-.. _currently recommended tools: https://packaging.python.org/en/latest/current/#packaging-tool-recommendations
+.. _currently recommended tools: https://packaging.python.org/current/#packaging-tool-recommendations
 
 Reading the guide
 =================
@@ -124,11 +124,11 @@ involved in creating a project:
 * `Uploading the project to the Python Packaging Index`_
 
 .. _Project structure: \
-   https://packaging.python.org/en/latest/distributing/
+   https://packaging.python.org/distributing/
 .. _Building and packaging the project: \
-   https://packaging.python.org/en/latest/distributing/#packaging-your-project
+   https://packaging.python.org/distributing/#packaging-your-project
 .. _Uploading the project to the Python Packaging Index: \
-   https://packaging.python.org/en/latest/distributing/#uploading-your-project-to-pypi
+   https://packaging.python.org/distributing/#uploading-your-project-to-pypi
 
 
 How do I...?

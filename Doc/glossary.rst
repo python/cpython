@@ -126,7 +126,7 @@ Glossary
 
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
-      <https://www.python.org/~guido/>`_, Python's creator.
+      <https://gvanrossum.github.io/>`_, Python's creator.
 
    binary file
       A :term:`file object` able to read and write
