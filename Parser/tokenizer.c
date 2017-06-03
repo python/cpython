@@ -108,7 +108,7 @@ const char *_PyParser_TokenNames[] = {
     "<ERRORTOKEN>",
     "COMMENT",
     "NL",
-    "ENCODING"
+    "ENCODING",
     "<N_TOKENS>"
 };
 

@@ -345,6 +345,15 @@ Extension Modules
 Library
 -------
 
+- bpo-30526: Add TextIOWrapper.reconfigure() and a TextIOWrapper.write_through
+  attribute.
+
+- bpo-30245: Fix possible overflow when organize struct.pack_into
+  error message.  Patch by Yuan Liu.
+  
+- bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
+  handle IPv6 addresses.
+
 - bpo-16500: Allow registering at-fork handlers.
 
 - bpo-30470: Deprecate invalid ctypes call protection on Windows.  Patch by
@@ -1102,6 +1111,15 @@ C API
 
 Documentation
 -------------
+
+- Issue #30052: the link targets for :func:`bytes` and
+  :func:`bytearray` are now their respective type definitions, rather
+  than the corresponding builtin function entries. Use :ref:`bytes <func-bytes>`
+  and :ref:`bytearray <func-bytearray>` to reference the latter.
+
+  In order to ensure this and future cross-reference updates are applied
+  automatically, the daily documentation builds now disable the default
+  output caching features in Sphinx.
 
 - bpo-26985: Add missing info of code object in inspect documentation.
 
