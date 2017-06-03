@@ -351,8 +351,14 @@ initexternalimport(PyInterpreterState *interp)
 int
 _Py_LegacyLocaleDetected(void)
 {
+#ifndef MS_WINDOWS
+    /* On non-Windows systems, the C locale is considered a legacy locale */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     return ctype_loc != NULL && strcmp(ctype_loc, "C") == 0;
+#else
+    /* Windows uses code pages instead of locales, so no locale is legacy */
+    return 0;
+#endif
 }
 
 typedef struct _CandidateLocale {
@@ -369,6 +375,8 @@ static _LocaleCoercionTarget _TARGET_LOCALES[] = {
 static char *
 get_default_standard_stream_error_handler(void)
 {
+#ifndef MS_WINDOWS
+    /* On non-Windows systems, the locale can affect the default error handler */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     if (ctype_loc != NULL) {
         /* "surrogateescape" is the default in the legacy C locale */
@@ -384,6 +392,7 @@ get_default_standard_stream_error_handler(void)
             }
         }
    }
+#endif
 
    /* Otherwise return NULL to request the typical default error handler */
    return NULL;
@@ -413,19 +422,6 @@ _coerce_default_locale_settings(const _LocaleCoercionTarget *target)
     /* Reconfigure with the overridden environment variables */
     setlocale(LC_ALL, "");
 }
-
-static int
-c_locale_coercion_is_expected(void)
-{
-    /* This may be called prior to Py_Initialize, so we don't call any other
-     * Python APIs, and we ignore the -E and -I flags
-     */
-    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
-    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
-        return 1;
-    }
-    return 0;
-}
 #endif
 
 void
@@ -438,9 +434,15 @@ _Py_CoerceLegacyLocale(void)
      * to give end users a way to force even scripts that are otherwise
      * isolated from their environment to use the legacy ASCII-centric C
      * locale.
-    */
-    if (c_locale_coercion_is_expected()) {
-        /* PYTHONCOERCECLOCALE is not set, or is not set to exactly "0" */
+     *
+     * Ignoring -E and -I is safe from a security perspective, as we only use
+     * the setting to turn *off* the implicit locale coercion, and anyone with
+     * access to the process environment already has the ability to set
+     * `LC_ALL=C` to override the C level locale settings anyway.
+     */
+    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
+        /* PYTHONCOERCECLOCALE is not set, or is set to something other than "0" */
         const char *locale_override = getenv("LC_ALL");
         if (locale_override == NULL || *locale_override == '\0') {
             /* LC_ALL is also not set (or is set to an empty string) */
