@@ -724,18 +724,20 @@ conflict.
 
    If this variable is *not* set, or is set to a value other than ``0``, and
    the current locale reported for the ``LC_CTYPE`` category is the default
-   ``C`` locale, then the Python CLI will attempt to configure one of the
-   following locales for the given locale categories before loading the
+   ``C`` locale, then the Python CLI will attempt to configure the following
+   locales for the ``LC_CTYPE`` category in the order listed before loading the
    interpreter runtime:
 
-   * ``C.UTF-8`` (``LC_ALL``)
-   * ``C.utf8`` (``LC_ALL``)
-   * ``UTF-8`` (``LC_CTYPE``)
+   * ``C.UTF-8``
+   * ``C.utf8``
+   * ``UTF-8``
 
-   If setting one of these locale categories succeeds, then the matching
-   environment variables will be set (both ``LC_ALL`` and ``LANG`` for the
-   ``LC_ALL`` category, and ``LC_CTYPE`` for the ``LC_CTYPE`` category) in
-   the current process environment before the Python runtime is initialized.
+   If setting one of these locale categories succeeds, then the ``LC_CTYPE``
+   environment variable will also be set accordingly in the current process
+   environment before the Python runtime is initialized. This ensures the
+   updated setting is seen in subprocesses, as well as in operations that
+   query the environment rather than the current C locale (such as Python's
+   own :ref:`locale.getdefaultlocale`).
 
    Configuring one of these locales (either explicitly or via the above
    implicit locale coercion) will automatically set the error handler for
