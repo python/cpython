@@ -3,10 +3,10 @@ setlocal
 rem Simple script to fetch source for external libraries
 
 set HERE=%~dp0
-set PCBUILD=%HERE%..\..\PCbuild\
-set EXTERNALS_DIR=%HERE%..\..\externals\windows-installer\
-set NUGET=%EXTERNALS_DIR%..\nuget.exe
-set NUGET_URL=https://aka.ms/nugetclidl
+if "%PCBUILD%"=="" (set PCBUILD=%HERE%..\..\PCbuild\)
+if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%HERE%..\..\externals\windows-installer)
+if "%NUGET%"=="" (set NUGET=%EXTERNALS_DIR%\..\nuget.exe)
+if "%NUGET_URL%"=="" (set NUGET_URL=https://aka.ms/nugetclidl)
 
 set DO_FETCH=true
 set DO_CLEAN=false
@@ -30,7 +30,6 @@ if exist "%EXTERNALS_DIR%" (
 if "%DO_FETCH%"=="false" goto end
 :fetch
 
-
 if "%ORG%"=="" (set ORG=python)
 
 if "%PYTHON_FOR_BUILD%"=="" (
@@ -41,12 +40,14 @@ if "%PYTHON_FOR_BUILD%"=="" (
     if NOT exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
     if NOT exist "%NUGET%" (
         echo Downloading nuget...
-        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile "%NUGET%"
+        rem NB: Must use single quotes around NUGET here, NOT double!
+        rem Otherwise, a space in the path would break things
+        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile '%NUGET%'
     )
     echo Installing Python via nuget...
-    "%NUGET%" install pythonx86 -OutputDirectory "%EXTERNALS_DIR%..\" -ExcludeVersion
-    rem Quote it here; it's not quoted later because it's usually a command and arg
-    set PYTHON_FOR_BUILD="%EXTERNALS_DIR%..\pythonx86\tools\python.exe"
+    "%NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%EXTERNALS_DIR%"
+    rem Quote it here; it's not quoted later because "py -3.6" wouldn't work
+    set PYTHON_FOR_BUILD="%EXTERNALS_DIR%\pythonx86\tools\python.exe"
 )
 
 echo.Fetching external libraries...
@@ -54,7 +55,7 @@ echo.Fetching external libraries...
 set libraries=
 
 for %%e in (%libraries%) do (
-    if exist "%EXTERNALS_DIR%%%e" (
+    if exist "%EXTERNALS_DIR%\%%e" (
         echo.%%e already exists, skipping.
     ) else (
         echo.Fetching %%e...
@@ -73,7 +74,7 @@ set binaries=%binaries%     redist
 set binaries=%binaries%     wix
 
 for %%b in (%binaries%) do (
-    if exist "%EXTERNALS_DIR%%%b" (
+    if exist "%EXTERNALS_DIR%\%%b" (
         echo.%%b already exists, skipping.
     ) else (
         echo.Fetching %%b...
