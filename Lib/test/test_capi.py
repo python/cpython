@@ -478,16 +478,6 @@ class EmbeddingTests(unittest.TestCase):
                 self.assertNotEqual(sub.tstate, main.tstate)
                 self.assertNotEqual(sub.modules, main.modules)
 
-    @staticmethod
-    def _get_default_pipe_encoding():
-        rp, wp = os.pipe()
-        try:
-            with os.fdopen(wp, 'w') as w:
-                default_pipe_encoding = w.encoding
-        finally:
-            os.close(rp)
-        return default_pipe_encoding
-
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = {"PYTHONIOENCODING": "UTF-8:surrogateescape"}
@@ -496,9 +486,8 @@ class EmbeddingTests(unittest.TestCase):
             print()
             print(out)
             print(err)
+        expected_stream_encoding = "UTF-8"
         expected_errors = "surrogateescape"
-        expected_stdin_encoding = "UTF-8"
-        expected_pipe_encoding = self._get_default_pipe_encoding()
         expected_output = '\n'.join([
         "--- Use defaults ---",
         "Expected encoding: default",
@@ -525,8 +514,8 @@ class EmbeddingTests(unittest.TestCase):
         "stdout: latin-1:replace",
         "stderr: latin-1:backslashreplace"])
         expected_output = expected_output.format(
-                                in_encoding=expected_stdin_encoding,
-                                out_encoding=expected_pipe_encoding,
+                                in_encoding=expected_stream_encoding,
+                                out_encoding=expected_stream_encoding,
                                 errors=expected_errors)
         # This is useful if we ever trip over odd platform behaviour
         self.maxDiff = None
