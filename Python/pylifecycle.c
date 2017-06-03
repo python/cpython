@@ -553,12 +553,14 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
      */
     setlocale(LC_CTYPE, "C.UTF-8");
 #else
+#ifndef MS_WINDOWS
     /* Set up the LC_CTYPE locale, so we can obtain
        the locale's charset without having to switch
        locales. */
     setlocale(LC_CTYPE, "");
 #ifdef PY_WARN_ON_C_LOCALE
     _emit_stderr_warning_for_c_locale();
+#endif
 #endif
 #endif
 
@@ -1618,9 +1620,6 @@ initstdio(void)
         if (!errors && !(pythonioencoding && *pythonioencoding)) {
             /* Choose the default error handler based on the current locale */
             errors = get_default_standard_stream_error_handler();
-#ifdef MS_WINDOWS
-            printf("Stream error handler: %s\n", errors);
-#endif
         }
     }
 
