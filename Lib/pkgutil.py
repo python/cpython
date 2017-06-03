@@ -119,8 +119,8 @@ def iter_modules(path=None, prefix=''):
     """
     if path is None:
         importers = iter_importers()
-    elif isinstance(path, str):
-        raise TypeError("path must be None or list of paths to look for "
+    elif isinstance(path, str) or isinstance(path, bytes):
+        raise ValueError("path must be None or list of paths to look for "
                         "modules in")
     else:
         importers = map(get_importer, path)

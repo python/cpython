@@ -176,6 +176,21 @@ class PkgutilTests(unittest.TestCase):
                 continue
             del sys.modules[pkg]
 
+    def test_walkpackages_on_bad_input(self):
+        """Test that walk_packages() throws ValueError if path is str or bytes
+        object.
+        """
+        str_input = 'test_dir'
+        with self.assertRaises(ValueError) as context:
+            list(pkgutil.walk_packages(str_input))
+
+        self.assertTrue('path must be None or list of paths' in str(context.exception))
+
+        bytes_input = b'test_dir'
+        with self.assertRaises(ValueError) as context:
+            list(pkgutil.walk_packages(bytes_input))
+
+        self.assertTrue('path must be None or list of paths' in str(context.exception))
 
 
 class PkgutilPEP302Tests(unittest.TestCase):
