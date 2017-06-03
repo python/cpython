@@ -473,7 +473,8 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_c_locale(void)
 {
-    if (c_locale_coercion_is_expected()) {
+    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
         if (_Py_LegacyLocaleDetected()) {
             fprintf(stderr, "%s", _C_LOCALE_WARNING);
         }
