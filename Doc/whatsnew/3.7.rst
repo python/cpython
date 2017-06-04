@@ -70,6 +70,51 @@ Summary -- Release highlights
 New Features
 ============
 
+.. _whatsnew37-pep538:
+
+PEP 538: Legacy C Locale Coercion
+---------------------------------
+
+An ongoing challenge within the Python 3 series has been determining a sensible
+default strategy for handling the "7-bit ASCII" text encoding assumption
+currently implied by the use of the default C locale on non-Windows platforms.
+
+:pep:`538` updates the default interpreter command line interface to
+automatically coerce that locale to an available UTF-8 based locale as
+described in the documentation of the new :envvar:`PYTHONCOERCECLOCALE`
+environment variable. Automatically setting ``LC_CTYPE`` this way means that
+both the core interpreter and locale-aware C extensions (such as
+:mod:`readline`) will assume the use of UTF-8 as the default text encoding,
+rather than ASCII.
+
+The platform support definition in :pep:`11` has also been updated to limit
+full text handling support to suitably configured non-ASCII based locales.
+
+As part of this change, the default error handler for ``stdin`` and ``stdout``
+is now ``surrogateescape`` (rather than ``strict``) when using any of the
+defined coercion target locales (currently ``C.UTF-8``, ``C.utf8``, and
+``UTF-8``). The default error handler for ``stderr`` continues to be
+``backslashreplace``, regardless of locale.
+
+.. note::
+
+   In the current implementation, a warning message is printed directly to
+   ``stderr`` even for successful implicit locale coercion. This gives
+   redistributors and system integrators the opportunity to determine if they
+   should be making an environmental change to avoid the need for implicit
+   coercion at the Python interpreter level.
+
+   However, it's not clear that this is going to be the best approach for
+   the final 3.7.0 release, and we may end up deciding to disable the warning
+   by default and provide some way of opting into it at runtime or build time.
+
+   Concrete examples of use cases where it would be preferrable to disable the
+   warning by default can be noted on :issue:`30565`.
+
+.. seealso::
+
+    :pep:`538` -- Coercing the legacy C locale to a UTF-8 based locale
+       PEP written and implemented by Nick Coghlan.
 
 
 Other Language Changes
