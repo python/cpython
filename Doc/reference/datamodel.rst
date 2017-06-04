@@ -1394,7 +1394,7 @@ Basic customization
 
    .. note::
 
-      By default, the :meth:`__hash__` values of str, bytes and datetime
+      By default, the :meth:`__hash__` values of str, bytes and some datetime
       objects are "salted" with an unpredictable random value.  Although they
       remain constant within an individual Python process, they are not
       predictable between repeated invocations of Python.
