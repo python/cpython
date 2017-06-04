@@ -41,7 +41,7 @@ class TV(tv.TextViewer):  # Used in TextViewTest.
 
 # Call wrapper class with mock wait_window.
 class TextViewTest(unittest.TestCase):
-    
+
     def setUp(self):
         TV.transient.__init__()
         TV.grab_set.__init__()
@@ -52,19 +52,19 @@ class TextViewTest(unittest.TestCase):
         self.assertTrue(TV.transient.called)
         self.assertTrue(TV.grab_set.called)
         self.assertTrue(TV.wait_window.called)
-        view.Ok()
+        view.ok()
 
     def test_init_nonmodal(self):
         view = TV(root, 'Title', 'test text', modal=False)
         self.assertFalse(TV.transient.called)
         self.assertFalse(TV.grab_set.called)
         self.assertFalse(TV.wait_window.called)
-        view.Ok()
+        view.ok()
 
     def test_ok(self):
         view = TV(root, 'Title', 'test text', modal=False)
         view.destroy = Func()
-        view.Ok()
+        view.ok()
         self.assertTrue(view.destroy.called)
         del view.destroy  # Unmask real function.
         view.destroy()
@@ -86,13 +86,13 @@ class ViewFunctionTest(unittest.TestCase):
     def test_view_text(self):
         view = tv.view_text(root, 'Title', 'test text', modal=False)
         self.assertIsInstance(view, tv.TextViewer)
-        view.Ok()
+        view.ok()
 
     def test_view_file(self):
         view = tv.view_file(root, 'Title', __file__, modal=False)
         self.assertIsInstance(view, tv.TextViewer)
-        self.assertIn('Test', view.textView.get('1.0', '1.end'))
-        view.Ok()
+        self.assertIn('Test', view.text.get('1.0', '1.end'))
+        view.ok()
 
     def test_bad_file(self):
         # Mock showerror will be used; view_file will return None.
@@ -131,7 +131,7 @@ class ButtonClickTest(unittest.TestCase):
 
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_TEXT')
-        self.assertEqual(self.view.textView.get('1.0', '1.end'), 'COMMAND')
+        self.assertEqual(self.view.text.get('1.0', '1.end'), 'COMMAND')
 
     def test_view_file_bind_with_button(self):
         def _command():
@@ -144,10 +144,10 @@ class ButtonClickTest(unittest.TestCase):
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_FILE')
         with open(__file__) as f:
-            self.assertEqual(self.view.textView.get('1.0', '1.end'),
+            self.assertEqual(self.view.text.get('1.0', '1.end'),
                              f.readline().strip())
             f.readline()
-            self.assertEqual(self.view.textView.get('3.0', '3.end'),
+            self.assertEqual(self.view.text.get('3.0', '3.end'),
                              f.readline().strip())
 
 
