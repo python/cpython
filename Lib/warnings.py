@@ -309,9 +309,12 @@ class WarningMessage(object):
 
     def __init__(self, message, category, filename, lineno, file=None,
                     line=None):
-        local_values = locals()
-        for attr in self._WARNING_DETAILS:
-            setattr(self, attr, local_values[attr])
+        self.message = message
+        self.category = category
+        self.filename = filename
+        self.lineno = lineno
+        self.file = file
+        self.line = line
         self._category_name = category.__name__ if category else None
 
     def __str__(self):
