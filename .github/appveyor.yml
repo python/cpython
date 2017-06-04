@@ -1,5 +1,10 @@
 version: 2.7.13+.{build}
 clone_depth: 5
+branches:
+  only:
+    - master
+    - /\d\.\d/
+    - buildbot-custom
 build_script:
 - cmd: PCbuild\build.bat -e
 test_script:
