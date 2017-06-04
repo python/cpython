@@ -569,10 +569,6 @@ class DisTests(unittest.TestCase):
             dis = self.strip_addresses(dis)
             self.assertEqual(dis, expected)
 
-            dis = self.get_disassembly(_h.__code__, wrapper=False, **kwargs)
-            dis = self.strip_addresses(dis)
-            self.assertEqual(dis, expected)
-
         check(dis_nested_0, depth=0)
         check(dis_nested_1, depth=1)
         check(dis_nested_2, depth=2)

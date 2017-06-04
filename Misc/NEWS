@@ -345,8 +345,8 @@ Extension Modules
 Library
 -------
 
-- bpo-11822: The dis.dis() and dis.disassemble() functions now are able to
-  disassemble internal code objects.
+- bpo-11822: The dis.dis() function now is able to disassemble nested
+  code objects.
 
 - bpo-30526: Add TextIOWrapper.reconfigure() and a TextIOWrapper.write_through
   attribute.

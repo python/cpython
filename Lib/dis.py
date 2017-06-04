@@ -57,7 +57,7 @@ def dis(x=None, *, file=None, depth=None):
                     print("Sorry:", msg, file=file)
                 print(file=file)
     elif hasattr(x, 'co_code'): # Code object
-        disassemble(x, file=file, depth=depth)
+        _disassemble_recursive(x, file=file, depth=depth)
     elif isinstance(x, (bytes, bytearray)): # Raw bytecode
         _disassemble_bytes(x, file=file)
     elif isinstance(x, str):    # Source code
@@ -331,19 +331,23 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target)
 
-def disassemble(co, lasti=-1, *, file=None, depth=None):
+def disassemble(co, lasti=-1, *, file=None):
     """Disassemble a code object."""
     cell_names = co.co_cellvars + co.co_freevars
     linestarts = dict(findlinestarts(co))
     _disassemble_bytes(co.co_code, lasti, co.co_varnames, co.co_names,
                        co.co_consts, cell_names, linestarts, file=file)
+
+def _disassemble_recursive(co, *, file=None, depth=None):
+    disassemble(co, file=file)
     if depth is None or depth > 0:
+        if depth is not None:
+            depth = depth - 1
         for x in co.co_consts:
             if hasattr(x, 'co_code'):
                 print(file=file)
                 print("Disassembly of %r:" % (x,), file=file)
-                disassemble(x, file=file,
-                            depth=depth - 1 if depth is not None else None)
+                _disassemble_recursive(x, file=file, depth=depth)
 
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None, cells=None, linestarts=None,
@@ -377,7 +381,7 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
 
 def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
-    disassemble(_try_compile(source, '<dis>'), **kwargs)
+    _disassemble_recursive(_try_compile(source, '<dis>'), **kwargs)
 
 disco = disassemble                     # XXX For backwards compatibility
 
