@@ -708,6 +708,19 @@ class TestStackSize(unittest.TestCase):
         code += "   x and x\n" * self.N
         self.check_stack_size(code)
 
+    def test_try_except(self):
+        # See issue #24340.
+        source = "try: x\nexcept E: y\n"
+        code = compile(source, "<foo>", "exec")
+        code2 = compile(source * self.N, "<foo>", "exec")
+        self.assertEqual(code2.co_stacksize, code.co_stacksize)
+
+    def test_try_finally(self):
+        source = "try: x\nfinally: y\n"
+        code = compile(source, "<foo>", "exec")
+        code2 = compile(source * self.N, "<foo>", "exec")
+        self.assertEqual(code2.co_stacksize, code.co_stacksize)
+
 
 if __name__ == "__main__":
     unittest.main()
