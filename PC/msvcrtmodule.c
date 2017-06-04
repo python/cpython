@@ -167,15 +167,7 @@ static long
 msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags)
 /*[clinic end generated code: output=cede871bf939d6e3 input=cb2108bbea84514e]*/
 {
-    int fd;
-
-    _Py_BEGIN_SUPPRESS_IPH
-    fd = _open_osfhandle(handle, flags);
-    _Py_END_SUPPRESS_IPH
-    if (fd == -1)
-        PyErr_SetFromErrno(PyExc_OSError);
-
-    return fd;
+    return _Py_open_osfhandle(handle, flags);
 }
 
 /*[clinic input]
@@ -193,15 +185,7 @@ static intptr_t
 msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=7ce761dd0de2b503 input=305900f4bfab76c7]*/
 {
-    intptr_t handle = -1;
-
-    _Py_BEGIN_SUPPRESS_IPH
-    handle = _get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
-    if (handle == -1)
-        PyErr_SetFromErrno(PyExc_OSError);
-
-    return handle;
+    return _Py_get_osfhandle(fd);
 }
 
 /* Console I/O */

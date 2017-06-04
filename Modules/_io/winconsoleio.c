@@ -63,10 +63,7 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
     int fd = PyLong_AsLong(path_or_fd);
     PyErr_Clear();
     if (fd >= 0) {
-        HANDLE handle;
-        _Py_BEGIN_SUPPRESS_IPH
-        handle = (HANDLE)_get_osfhandle(fd);
-        _Py_END_SUPPRESS_IPH
+        HANDLE handle = (HANDLE)_Py_get_osfhandle_noraise(fd);
         if (handle == INVALID_HANDLE_VALUE)
             return '\0';
         return _get_console_type(handle);
@@ -348,9 +345,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         goto bad_mode;
 
     if (fd >= 0) {
-        _Py_BEGIN_SUPPRESS_IPH
-        handle = (HANDLE)_get_osfhandle(fd);
-        _Py_END_SUPPRESS_IPH
+        handle = (HANDLE)_Py_get_osfhandle_noraise(fd);
         self->closefd = 0;
     } else {
         DWORD access = GENERIC_READ;
@@ -382,12 +377,10 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
             goto error;
         }
 
-        _Py_BEGIN_SUPPRESS_IPH
         if (self->writable)
-            self->fd = _open_osfhandle((intptr_t)handle, _O_WRONLY | _O_BINARY);
+            self->fd = _Py_open_osfhandle_noraise((intptr_t)handle, _O_WRONLY | _O_BINARY);
         else
-            self->fd = _open_osfhandle((intptr_t)handle, _O_RDONLY | _O_BINARY);
-        _Py_END_SUPPRESS_IPH
+            self->fd = _Py_open_osfhandle_noraise((intptr_t)handle, _O_RDONLY | _O_BINARY);
         if (self->fd < 0) {
             CloseHandle(handle);
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
