@@ -1335,6 +1335,11 @@ for i in punycode_testcases:
     if len(i)!=2:
         print(repr(i))
 
+punycode_decode_exceptions = [
+    (b"xn--w&",
+     UnicodeError),
+    ]
+
 
 class PunycodeTest(unittest.TestCase):
     def test_encode(self):
@@ -1355,6 +1360,12 @@ class PunycodeTest(unittest.TestCase):
             puny = puny.decode("ascii").encode("ascii")
             self.assertEqual(uni, puny.decode("punycode"))
 
+    # Make sure punycode codec raises the right kind of exception
+    # when given invalid punycode to decode
+    def test_decode_exceptions(self):
+        for byt, exception in punycode_decode_exceptions:
+            with self.assertRaises(exception):
+                byt.decode('punycode')
 
 class UnicodeInternalTest(unittest.TestCase):
     @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
