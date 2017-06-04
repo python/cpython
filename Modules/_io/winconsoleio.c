@@ -308,8 +308,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     self->fd = fd;
 
     if (fd < 0) {
-        PyObject *decodedname = Py_None;
-        Py_INCREF(decodedname);
+        PyObject *decodedname = NULL;
 
         int d = PyUnicode_FSDecoder(nameobj, (void*)&decodedname);
         if (!d)
