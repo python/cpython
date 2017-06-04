@@ -133,21 +133,6 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
     return m;
 }
 
-static HANDLE py_get_osfhandle(int fd)
-{
-    HANDLE handle;
-
-    _Py_BEGIN_SUPPRESS_IPH
-    handle = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
-    if (handle == INVALID_HANDLE_VALUE) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return INVALID_HANDLE_VALUE;
-    }
-
-    return handle;
-}
-
 
 /*[clinic input]
 module _io
@@ -674,7 +659,7 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
         return -1;
     }
 
-    HANDLE handle = py_get_osfhandle(self->fd);
+    HANDLE handle = (HANDLE)_Py_get_osfhandle(self->fd);
     if (handle == INVALID_HANDLE_VALUE)
         return -1;
 
@@ -810,7 +795,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
     if (self->fd == -1)
         return err_closed();
 
-    handle = py_get_osfhandle(self->fd);
+    handle = (HANDLE)_Py_get_osfhandle(self->fd);
     if (handle == INVALID_HANDLE_VALUE)
         return NULL;
 
@@ -990,7 +975,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     if (!self->writable)
         return err_mode("writing");
 
-    handle = py_get_osfhandle(self->fd);
+    handle = (HANDLE)_Py_get_osfhandle(self->fd);
     if (handle == INVALID_HANDLE_VALUE)
         return NULL;
 

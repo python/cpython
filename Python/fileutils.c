@@ -1585,4 +1585,40 @@ error:
     PyErr_SetFromErrno(PyExc_OSError);
     return -1;
 }
-#endif
+#else   /* MS_WINDOWS */
+intptr_t
+_Py_get_osfhandle_noraise(int fd)
+{
+    _Py_BEGIN_SUPPRESS_IPH
+    return _get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+}
+
+intptr_t
+_Py_get_osfhandle(int fd)
+{
+    intptr_t handle = _Py_get_osfhandle_noraise(fd);
+    if (handle == (intptr_t)INVALID_HANDLE_VALUE)
+        PyErr_SetFromErrno(PyExc_OSError);
+
+    return handle;
+}
+
+int
+_Py_open_osfhandle_noraise(intptr_t handle, int flags)
+{
+    _Py_BEGIN_SUPPRESS_IPH
+    return _open_osfhandle(handle, flags);
+    _Py_END_SUPPRESS_IPH
+}
+
+int
+_Py_open_osfhandle(intptr_t handle, int flags)
+{
+    int fd = _Py_open_osfhandle_noraise(handle, flags);
+    if (fd == -1)
+        PyErr_SetFromErrno(PyExc_OSError);
+
+    return fd;
+}
+#endif  /* MS_WINDOWS */
