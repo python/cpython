@@ -256,7 +256,7 @@ class TclTest(unittest.TestCase):
             try:
                 p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             except WindowsError as e:
-                if e.winerror == 5:
+                if e.winerror == 5 or e.winerror == 2:
                     self.skipTest('Not permitted to start the child process')
                 else:
                     raise
