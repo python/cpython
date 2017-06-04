@@ -33,7 +33,7 @@ Using make
 ----------
 
 A Makefile has been prepared so that (on Unix), after you change into the
-```Doc/`` directory you can simply run ::
+``Doc/`` directory you can simply run ::
 
   make html
 
