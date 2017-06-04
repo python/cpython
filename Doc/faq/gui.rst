@@ -90,7 +90,7 @@ Kivy is free and open source software distributed under the MIT license.
 FLTK
 ----
 
-Python bindings for `the FLTK toolkit <http://www.fltk.org/index.php>`_, a simple yet
+Python bindings for `the FLTK toolkit <http://www.fltk.org/>`_, a simple yet
 powerful and mature cross-platform windowing system, are available from `the
 PyFLTK project <http://pyfltk.sourceforge.net>`_.
 

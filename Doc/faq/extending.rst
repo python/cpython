@@ -52,7 +52,7 @@ currently exists, you can try wrapping the library's data types and functions
 with a tool such as `SWIG <http://www.swig.org>`_.  `SIP
 <https://riverbankcomputing.com/software/sip/intro>`__, `CXX
 <http://cxx.sourceforge.net/>`_ `Boost
-<http://www.boost.org/doc/libs/1_64_0/libs/python/doc/html/index.html>`_, or
+<http://www.boost.org/libs/python/doc/index.html>`_, or
 `Weave <https://scipy.github.io/devdocs/tutorial/weave.html>`_ are also
 alternatives for wrapping C++ libraries.
 
