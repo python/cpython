@@ -105,7 +105,7 @@ The token constants are:
           NT_OFFSET
 
 
-Following token type values aren't used by the C tokenizer but are needed for
+The following token type values aren't used by the C tokenizer but are needed for
 the :mod:`tokenize` module.
 
 .. data:: COMMENT
