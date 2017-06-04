@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-25324: Tokens needed for parsing in Python moved to C. ``COMMENT``,
+  ``NL`` and ``ENCODING``. This way the tokens and tok_names in the token
+  module don't get changed when you import the tokenize module.
+
 - bpo-29104: Fixed parsing backslashes in f-strings.
 
 - bpo-27945: Fixed various segfaults with dict when input collections are
@@ -343,6 +347,15 @@ Library
 
 - bpo-11822: The dis.dis() and dis.disassemble() functions now are able to
   disassemble internal code objects.
+
+- bpo-30526: Add TextIOWrapper.reconfigure() and a TextIOWrapper.write_through
+  attribute.
+
+- bpo-30245: Fix possible overflow when organize struct.pack_into
+  error message.  Patch by Yuan Liu.
+  
+- bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
+  handle IPv6 addresses.
 
 - bpo-16500: Allow registering at-fork handlers.
 
@@ -1101,6 +1114,15 @@ C API
 
 Documentation
 -------------
+
+- Issue #30052: the link targets for :func:`bytes` and
+  :func:`bytearray` are now their respective type definitions, rather
+  than the corresponding builtin function entries. Use :ref:`bytes <func-bytes>`
+  and :ref:`bytearray <func-bytearray>` to reference the latter.
+
+  In order to ensure this and future cross-reference updates are applied
+  automatically, the daily documentation builds now disable the default
+  output caching features in Sphinx.
 
 - bpo-26985: Add missing info of code object in inspect documentation.
 
