@@ -14,22 +14,25 @@ branches:
 matrix:
   fast_finish: true
   allow_failures:
-    - env:
-       - TESTING=coverage
+    - env: OPTIONAL=true
   include:
     - os: linux
       language: c
       compiler: clang
       # gcc also works, but to keep the # of concurrent builds down, we use one C
-      # compiler here and the other to run the coverage build.
-      env:
-        - TESTING=cpython
+      # compiler here and the other to run the coverage build. Clang is preferred
+      # in this instance for its better error messages.
+      env: TESTING=cpython
+    - os: osx
+      language: c
+      compiler: clang
+      # Testing under macOS is optional until testing stability has been demonstrated.
+      env: OPTIONAL=true
     - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
       python: 3.6
-      env:
-        - TESTING=docs
+      env: TESTING=docs
       before_script:
         - cd Doc
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
@@ -40,8 +43,7 @@ matrix:
     - os: linux
       language: c
       compiler: gcc
-      env:
-        - TESTING=coverage
+      env: OPTIONAL=true
       before_script:
         - |
             if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
