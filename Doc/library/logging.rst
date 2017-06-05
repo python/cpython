@@ -323,7 +323,7 @@ is the module's name in the Python package namespace.
 
       .. versionadded:: 3.2
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Loggers can now be picked and unpickled.
 
 .. _levels:
