@@ -42,19 +42,19 @@
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="tcltk.props" />
-
+  
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <OutDir>$(tcltkDir)</OutDir>
     <TargetPath>$(tixDLLPath)</TargetPath>
   </PropertyGroup>
-
+  
   <ItemGroup>
     <ExpectedOutputs Include="$(TargetPath)" />
   </ItemGroup>
-
+  
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-
+  
   <PropertyGroup>
     <TixDirs>BUILDDIRTOP="$(BuildDirTop)" TCL_DIR="$(tclDir.TrimEnd(`\`))" TK_DIR="$(tkDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TixDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUG=1 NODEBUG=0 TCL_DBGX=g TK_DBGX=g</DebugFlags>
@@ -71,7 +71,7 @@ nmake /nologo -f makefile.vc MACHINE=$(TclMachine) cflags="$(CFlags)" $(DebugFla
 </NMakeBuildCommandLine>
     <NMakeCleanCommandLine>rmdir /q/s "$(OutDir.TrimEnd(`\`))"</NMakeCleanCommandLine>
   </PropertyGroup>
-
+  
   <ItemGroup>
     <ProjectReference Include="tcl.vcxproj">
       <Project>{b5fd6f1d-129e-4bff-9340-03606fac7283}</Project>
@@ -90,6 +90,6 @@ nmake /nologo -f makefile.vc MACHINE=$(TclMachine) cflags="$(CFlags)" $(DebugFla
     <RemoveDir Directories="$(OutDir)" />
     <RemoveDir Directories="$(IntDir)" />
   </Target>
-
+  
   <Target Name="ResolveAssemblyReferences" />
 </Project>
