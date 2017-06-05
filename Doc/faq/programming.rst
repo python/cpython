@@ -69,7 +69,7 @@ plug-ins to add a custom feature.  In addition to the bug checking that
 PyChecker performs, Pylint offers some additional features such as checking line
 length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
-https://pylint.readthedocs.io/ provides a full list of Pylint's features.
+https://docs.pylint.org/ provides a full list of Pylint's features.
 
 
 How can I create a stand-alone binary from a Python script?

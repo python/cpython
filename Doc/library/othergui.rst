@@ -35,7 +35,7 @@ available for Python:
       Compared to PyQt, its licensing scheme is friendlier to non-open source
       applications.
 
-   `wxPython <https://www.wxpython.org/>`_
+   `wxPython <https://www.wxpython.org>`_
       wxPython is a cross-platform GUI toolkit for Python that is built around
       the popular `wxWidgets <https://www.wxwidgets.org/>`_ (formerly wxWindows)
       C++ toolkit.  It provides a native look and feel for applications on

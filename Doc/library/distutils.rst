@@ -29,7 +29,7 @@ enhanced alternative to :mod:`distutils` that provides:
   installation time rather than needing to prebuild them
 * consistent behaviour across all supported Python versions
 
-The recommended `pip <https://pip.pypa.io/en/stable/>`__ installer runs all
+The recommended `pip <https://pip.pypa.io/>`__ installer runs all
 ``setup.py`` scripts with ``setuptools``, even if the script itself only
 imports ``distutils``. Refer to the
 `Python Packaging User Guide <https://packaging.python.org>`_ for more

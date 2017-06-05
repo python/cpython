@@ -131,7 +131,7 @@ There are several methods to install additional Python packages:
   setup.py install``).
 
 * Many packages can also be installed via the :program:`setuptools` extension
-  or :program:`pip` wrapper, see https://pip.pypa.io/en/stable/.
+  or :program:`pip` wrapper, see https://pip.pypa.io/.
 
 
 GUI Programming on the Mac
