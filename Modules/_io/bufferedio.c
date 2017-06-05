@@ -196,11 +196,7 @@ bufferediobase_write(PyObject *self, PyObject *args)
 }
 
 
-struct doubly_linked_s {
-    struct doubly_linked_s *prev, *next;
-};
-
-typedef struct {
+typedef struct _buffered {
     PyObject_HEAD
 
     PyObject *raw;
@@ -247,11 +243,14 @@ typedef struct {
 
     /* a doubly-linked chained list of "buffered" objects that need to
        be flushed when the process exits */
-    struct doubly_linked_s buffered_writers_list;
+    struct _buffered *next, *prev;
 } buffered;
 
-static struct doubly_linked_s doubly_linked_end = {
-    &doubly_linked_end, &doubly_linked_end };
+/* the actual list of buffered objects */
+static buffered buffer_list_end = {
+    .next = &buffer_list_end,
+    .prev = &buffer_list_end
+};
 
 /*
     Implementation notes:
@@ -400,10 +399,10 @@ _enter_buffered_busy(buffered *self)
 static void
 remove_from_linked_list(buffered *self)
 {
-    self->buffered_writers_list.next->prev = self->buffered_writers_list.prev;
-    self->buffered_writers_list.prev->next = self->buffered_writers_list.next;
-    self->buffered_writers_list.prev = NULL;
-    self->buffered_writers_list.next = NULL;
+    self->next->prev = self->prev;
+    self->prev->next = self->next;
+    self->prev = NULL;
+    self->next = NULL;
 }
 
 static void
@@ -414,7 +413,7 @@ buffered_dealloc(buffered *self)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
-    if (self->buffered_writers_list.next != NULL)
+    if (self->next != NULL)
         remove_from_linked_list(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
@@ -1839,11 +1838,11 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->fast_closed_checks = (Py_TYPE(self) == &PyBufferedWriter_Type &&
                                 Py_TYPE(raw) == &PyFileIO_Type);
 
-    if (self->buffered_writers_list.next == NULL) {
-        self->buffered_writers_list.prev = &doubly_linked_end;
-        self->buffered_writers_list.next = doubly_linked_end.next;
-        doubly_linked_end.next->prev = &self->buffered_writers_list;
-        doubly_linked_end.next = &self->buffered_writers_list;
+    if (self->next == NULL) {
+        self->prev = &buffer_list_end;
+        self->next = buffer_list_end.next;
+        buffer_list_end.next->prev = self;
+        buffer_list_end.next = self;
     }
 
     self->ok = 1;
@@ -1858,9 +1857,8 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
 */
 void _PyIO_atexit_flush(void)
 {
-    while (doubly_linked_end.next != &doubly_linked_end) {
-        buffered *buf = (buffered *)(((char *)doubly_linked_end.next) -
-                                     offsetof(buffered, buffered_writers_list));
+    while (buffer_list_end.next != &buffer_list_end) {
+        buffered *buf = buffer_list_end.next;
         remove_from_linked_list(buf);
         buffered_flush(buf, NULL);
         PyErr_Clear();
