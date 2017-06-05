@@ -181,16 +181,12 @@ class PkgutilTests(unittest.TestCase):
         object.
         """
         str_input = 'test_dir'
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(ValueError):
             list(pkgutil.walk_packages(str_input))
 
-        self.assertTrue('path must be None or list of paths' in str(context.exception))
-
         bytes_input = b'test_dir'
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(TypeError):
             list(pkgutil.walk_packages(bytes_input))
-
-        self.assertTrue('path must be None or list of paths' in str(context.exception))
 
 
 class PkgutilPEP302Tests(unittest.TestCase):
