@@ -521,9 +521,19 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
 
     case METH_FASTCALL:
     {
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+            goto no_keyword_error;
+        }
+
+        result = (*(_PyCFunctionFast)meth) (self, args, nargs);
+        break;
+    }
+
+    case METH_FASTCALL | METH_KEYWORDS:
+    {
         PyObject **stack;
         PyObject *kwnames;
-        _PyCFunctionFast fastmeth = (_PyCFunctionFast)meth;
+        _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)meth;
 
         if (_PyStack_UnpackDict(args, nargs, kwargs, &stack, &kwnames) < 0) {
             goto exit;
@@ -631,8 +641,15 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
         break;
 
     case METH_FASTCALL:
+        if (nkwargs) {
+            goto no_keyword_error;
+        }
+        result = ((_PyCFunctionFast)meth) (self, args, nargs);
+        break;
+
+    case METH_FASTCALL | METH_KEYWORDS:
         /* Fast-path: avoid temporary dict to pass keyword arguments */
-        result = ((_PyCFunctionFast)meth) (self, args, nargs, kwnames);
+        result = ((_PyCFunctionFastWithKeywords)meth) (self, args, nargs, kwnames);
         break;
 
     case METH_VARARGS:

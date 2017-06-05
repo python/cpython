@@ -991,15 +991,10 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_getattr(PyObject *self, PyObject **args, Py_ssize_t nargs,
-                PyObject *kwnames)
+builtin_getattr(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *v, *result, *dflt = NULL;
     PyObject *name;
-
-    if (!_PyArg_NoStackKeywords("getattr", kwnames)) {
-        return NULL;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "getattr", 2, 3, &v, &name, &dflt))
         return NULL;
@@ -1301,15 +1296,10 @@ PyTypeObject PyMap_Type = {
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_next(PyObject *self, PyObject **args, Py_ssize_t nargs,
-             PyObject *kwnames)
+builtin_next(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *it, *res;
     PyObject *def = NULL;
-
-    if (!_PyArg_NoStackKeywords("next", kwnames)) {
-        return NULL;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "next", 1, 2, &it, &def))
         return NULL;
@@ -2130,7 +2120,7 @@ PyDoc_STRVAR(builtin_sorted__doc__,
 "reverse flag can be set to request the result in descending order.");
 
 #define BUILTIN_SORTED_METHODDEF    \
-    {"sorted", (PyCFunction)builtin_sorted, METH_FASTCALL, builtin_sorted__doc__},
+    {"sorted", (PyCFunction)builtin_sorted, METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},
 
 static PyObject *
 builtin_sorted(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2622,7 +2612,7 @@ PyTypeObject PyZip_Type = {
 
 static PyMethodDef builtin_methods[] = {
     {"__build_class__", (PyCFunction)builtin___build_class__,
-     METH_FASTCALL, build_class_doc},
+     METH_FASTCALL | METH_KEYWORDS, build_class_doc},
     {"__import__",      (PyCFunction)builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
     BUILTIN_ABS_METHODDEF
     BUILTIN_ALL_METHODDEF
@@ -2656,7 +2646,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
-    {"print",           (PyCFunction)builtin_print,      METH_FASTCALL, print_doc},
+    {"print",           (PyCFunction)builtin_print,      METH_FASTCALL | METH_KEYWORDS, print_doc},
     BUILTIN_REPR_METHODDEF
     {"round",           (PyCFunction)builtin_round,      METH_VARARGS | METH_KEYWORDS, round_doc},
     BUILTIN_SETATTR_METHODDEF
