@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(opensslDir)tmp\</Py_IntDir>
   </PropertyGroup>
-  
+
   <Import Project="pyproject.props" />
 
   <PropertyGroup Label="Configuration">
@@ -16,6 +16,7 @@
     <PreprocessorDefinitions Include="L_ENDIAN" />
     <PreprocessorDefinitions Include="_CRT_SECURE_NO_WARNINGS" />
     <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE" />
+    <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
     <PreprocessorDefinitions Include="OPENSSL_THREADS" />
     <!-- <PreprocessorDefinitions Include="OPENSSL_SYSNAME_WIN32" /> -->
     <PreprocessorDefinitions Include="OPENSSL_IA32_SSE2" />
@@ -43,11 +44,11 @@
     <PreprocessorDefinitions Include="OPENSSL_BN_ASM_MONT" />
     <PreprocessorDefinitions Include="RMD160_ASM" />
   </ItemGroup>
-  
+
   <PropertyGroup>
     <_PreprocessorDefinitionList>@(PreprocessorDefinitions)</_PreprocessorDefinitionList>
   </PropertyGroup>
-  
+
   <ItemDefinitionGroup>
     <ClCompile>
       <!-- Suppress 64-bit truncation warnings - they aren't ours to worry about -->
@@ -56,7 +57,7 @@
       <PreprocessorDefinitions>$(_PreprocessorDefinitionList);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-  
+
   <Target Name="FindNasm">
     <PropertyGroup>
       <nasm Condition="$(Platform) == 'Win32'">nasm.exe -f win32</nasm>
