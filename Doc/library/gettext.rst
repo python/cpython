@@ -457,11 +457,11 @@ There are a few tools to extract the strings meant for translation.
 The original GNU :program:`gettext` only supported C or C++ source
 code but its extended version :program:`xgettext` scans code written
 in a number of languages, including Python, to find strings marked as
-translatable.  `Babel <http://babel.pocoo.org/en/latest/>`__ is a Python
+translatable.  `Babel <http://babel.pocoo.org/>`__ is a Python
 internationalization library that includes a :file:`pybabel` script to
-extract and compile message catalogs.  François Pinard's program
-called :program:`xpot` does a similar job and is available as part of
-his `po-utils package <https://github.com/pinard/po-utils>`__.
+extract and compile message catalogs.  François Pinard's program called
+:program:`xpot` does a similar job and is available as part of his `po-utils
+ package <https://github.com/pinard/po-utils>`__.
 
 (Python also includes pure-Python versions of these programs, called
 :program:`pygettext.py` and :program:`msgfmt.py`; some Python distributions

@@ -13,7 +13,7 @@ available for Python:
       `GObject <https://developer.gnome.org/gobject/stable/>`_.  One of
       these libraries is the `GTK+ 3 <https://www.gtk.org/>`_ widget set.
       GTK+ comes with many more widgets than Tkinter provides.  An online
-      `Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.io/en/latest/>`_
+      `Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.io/>`_
       is available.
 
    `PyGTK <http://www.pygtk.org/>`_

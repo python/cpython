@@ -20,8 +20,8 @@ HTTPS protocols.  It is normally not used directly --- the module
 
 .. seealso::
 
-    The `Requests package <http://docs.python-requests.org/en/master/>`_
-    is recommended for a higher-level HTTP client interface.
+    The `Requests package <http://docs.python-requests.org/>`_ is
+    recommended for a higher-level HTTP client interface.
 
 .. note::
 

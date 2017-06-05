@@ -18,8 +18,8 @@ authentication, redirections, cookies and more.
 
 .. seealso::
 
-    The `Requests package <http://docs.python-requests.org/en/master/>`_
-    is recommended for a higher-level HTTP client interface.
+    The `Requests package <http://docs.python-requests.org/>`_ is
+    recommended for a higher-level HTTP client interface.
 
 
 The :mod:`urllib.request` module defines the following functions:

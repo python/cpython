@@ -72,7 +72,7 @@ Gtk+
 
 The `GObject introspection bindings <https://wiki.gnome.org/Projects/PyGObject>`_
 for Python allow you to write GTK+ 3 applications.  There is also a
-`Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.io/en/latest/>`_.
+`Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.io>`_.
 
 The older PyGtk bindings for the `Gtk+ 2 toolkit <https://www.gtk.org/>`_ have
 been implemented by James Henstridge; see <http://www.pygtk.org>.

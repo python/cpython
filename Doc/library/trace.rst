@@ -15,7 +15,7 @@ or from the command line.
 
 .. seealso::
 
-   `Coverage.py <https://coverage.readthedocs.io/en/coverage-4.4.1/>`_
+   `Coverage.py <https://coverage.readthedocs.io/>`_
       A popular third-party coverage tool that provides HTML
       output along with advanced features such as branch coverage.
 

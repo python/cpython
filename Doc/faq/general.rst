@@ -343,10 +343,10 @@ different companies and organizations.
 
 High-profile Python projects include `the Mailman mailing list manager
 <http://www.list.org>`_ and `the Zope application server
-<http://www.zope.org/en/latest/>`_.  Several Linux distributions, most
-notably `Red Hat <https://www.redhat.com/en>`_, have written part or all of
-their installer and system administration software in Python.  Companies
-that use Python internally include Google, Yahoo, and Lucasfilm Ltd.
+<http://www.zope.org/>`_.  Several Linux distributions, most notably `Red
+Hat <https://www.redhat.com/>`_, have written part or all of their installer
+and system administration software in Python.  Companies that use Python
+internally include Google, Yahoo, and Lucasfilm Ltd.
 
 
 What new developments are expected for Python in the future?
@@ -357,6 +357,7 @@ See https://www.python.org/dev/peps/ for the Python Enhancement Proposals
 providing a concise technical specification and a rationale.  Look for a PEP
 titled "Python X.Y Release Schedule", where X.Y is a version that hasn't been
 publicly released yet.
+
 
 New development is discussed on `the python-dev mailing list
 <https://mail.python.org/mailman/listinfo/python-dev/>`_.

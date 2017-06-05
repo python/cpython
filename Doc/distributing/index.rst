@@ -62,7 +62,7 @@ Key terms
   locally.
 
 .. _setuptools: https://setuptools.readthedocs.io/en/latest/
-.. _wheel: https://wheel.readthedocs.io/en/latest/
+.. _wheel: https://wheel.readthedocs.io/
 
 Open source licensing and collaboration
 =======================================
