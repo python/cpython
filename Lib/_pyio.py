@@ -2581,11 +2581,11 @@ class StringIO(TextIOWrapper):
 
 import atexit, weakref
 
-_all_writers = weakref.WeakKeyDictionary()
+_all_writers = weakref.WeakSet()
 
 def _register_writer(w):
     # keep weak-ref to buffered writer
-    _all_writers[w] = True
+    _all_writers.add(w)
 
 def _flush_all_writers():
     # Ensure all buffered writers are flushed before proceeding with
