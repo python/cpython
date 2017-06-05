@@ -218,11 +218,11 @@ queen threatens another) and the Knight's Tour (a route that takes a knight to
 every square of an $NxN$ chessboard without visiting any square twice).
 
 The idea of generators comes from other programming languages, especially Icon
-(https://www.cs.arizona.edu/icon/), where the idea of generators is central.  In
-Icon, every expression and function call behaves like a generator.  One example
-from "An Overview of the Icon Programming Language" at
-https://www.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this looks
-like::
+(https://www2.cs.arizona.edu/icon/), where the idea of generators is central
+.  In Icon, every expression and function call behaves like a generator.
+One example from "An Overview of the Icon Programming Language" at
+https://www2.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this
+looks like::
 
    sentence := "Store it in the neighboring harbor"
    if (i := find("or", sentence)) > 5 then write(i)
@@ -1955,7 +1955,7 @@ The RPM spec files, found in the :file:`Misc/RPM/` directory in the Python
 source distribution, were updated for 2.3.  (Contributed by Sean Reifschneider.)
 
 Other new platforms now supported by Python include AtheOS
-(http://atheos.cx/), GNU/Hurd, and OpenVMS.
+(http://www.atheos.cx/), GNU/Hurd, and OpenVMS.
 
 .. ======================================================================
 
