@@ -47,7 +47,10 @@ def get(using=None):
     for browser in alternatives:
         if '%s' in browser:
             # User gave us a command line, split it into name and args
-            browser = shlex.split(browser)
+            if sys.platform[:3] == 'win':
+                browser = shlex.split(browser, posix=False)
+            else:
+                browser = shlex.split(browser)
             if browser[-1] == '&':
                 return BackgroundBrowser(browser[:-1])
             else:
