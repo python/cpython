@@ -46,6 +46,7 @@ from _collections_abc import Set as _Set, Sequence as _Sequence
 from hashlib import sha512 as _sha512
 import itertools as _itertools
 import bisect as _bisect
+import os as _os
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -539,7 +540,7 @@ class Random(_random.Random):
                     return x * beta
 
         elif alpha == 1.0:
-            # expovariate(1)
+            # expovariate(1/beta)
             u = random()
             while u <= 1e-7:
                 u = random()
@@ -762,6 +763,10 @@ weibullvariate = _inst.weibullvariate
 getstate = _inst.getstate
 setstate = _inst.setstate
 getrandbits = _inst.getrandbits
+
+if hasattr(_os, "fork"):
+    _os.register_at_fork(after_in_child=_inst.seed)
+
 
 if __name__ == '__main__':
     _test()

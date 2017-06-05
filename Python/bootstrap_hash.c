@@ -599,11 +599,11 @@ init_hash_secret(int use_hash_seed,
 }
 
 void
-_Py_HashRandomization_Init(void)
+_Py_HashRandomization_Init(_PyCoreConfig *core_config)
 {
     char *seed_text;
-    int use_hash_seed = -1;
-    unsigned long hash_seed;
+    int use_hash_seed = core_config->use_hash_seed;
+    unsigned long hash_seed = core_config->hash_seed;
 
     if (use_hash_seed < 0) {
         seed_text = Py_GETENV("PYTHONHASHSEED");
@@ -611,6 +611,8 @@ _Py_HashRandomization_Init(void)
             Py_FatalError("PYTHONHASHSEED must be \"random\" or an integer "
                           "in range [0; 4294967295]");
         }
+        core_config->use_hash_seed = use_hash_seed;
+        core_config->hash_seed = hash_seed;
     }
     init_hash_secret(use_hash_seed, hash_seed);
 }
