@@ -66,7 +66,6 @@ def _find_vc2017():
     # initialize COM.
     all_packages = []
     def _getall():
-        # DO NOT MERGE - faulthandler triggers on non-fatal exception 0x40010006
         all_packages.extend(_findvs.findall())
     t = threading.Thread(target=_getall)
     t.start()
@@ -78,7 +77,7 @@ def _find_vc2017():
             if not os.path.isdir(vc_dir):
                 continue
             try:
-                version = tuple(int(i) for i in version_str.partition('.'))
+                version = tuple(int(i) for i in version_str.split('.'))
             except (ValueError, TypeError):
                 continue
             if version > best_version:
