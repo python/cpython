@@ -857,8 +857,11 @@ class TestSubClassingCase(unittest.TestCase):
         class CustomHTMLCal(calendar.HTMLCalendar):
             cssclasses = [style + " text-nowrap" for style in
                           calendar.HTMLCalendar.cssclasses]
+            cssclasses_weekday_head = ["red", "blue", "green", "lilac",
+                                       "yellow", "orange", "pink"]
             cssclass_month_head = "text-center month-head"
             cssclass_month = "text-center month"
+            cssclass_year = "text-italic "
             cssclass_year_head = "lead "
 
         self.cal = CustomHTMLCal()
@@ -875,7 +878,17 @@ class TestSubClassingCase(unittest.TestCase):
         weeks = self.cal.monthdays2calendar(2017, 5)
         self.assertIn('class="wed text-nowrap"', self.cal.formatweek(weeks[0]))
 
+    def test_formatweek_head(self):
+        header = self.cal.formatweekheader()
+        for color in self.cal.cssclasses_weekday_head:
+            self.assertIn('<th class="%s">' % color, header)
+
     def test_format_year(self):
+        self.assertIn(
+            ('<table border="0" cellpadding="0" cellspacing="0" class="%s">' %
+             self.cal.cssclass_year), self.cal.formatyear(2017))
+
+    def test_format_year_head(self):
         self.assertIn('<tr><th colspan="%d" class="%s">%s</th></tr>' % (
             3, self.cal.cssclass_year_head, 2017), self.cal.formatyear(2017))
 
