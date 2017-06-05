@@ -4086,6 +4086,13 @@ class LoggerTest(BaseTest):
         self.assertRaises(TypeError, logging.getLogger, any)
         self.assertRaises(TypeError, logging.getLogger, b'foo')
 
+    def test_pickling(self):
+        for name in ('', 'root', 'foo', 'foo.bar', 'baz.bar'):
+            logger = logging.getLogger(name)
+            s = pickle.dumps(logger)
+            unpickled = pickle.loads(s)
+            self.assertIs(unpickled, logger)
+
 
 class BaseFileTest(BaseTest):
     "Base class for handler tests that write log files"
