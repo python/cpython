@@ -23,7 +23,7 @@ Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, traceback, warnings, weakref, collections.abc, pickle
+import sys, os, time, io, traceback, warnings, weakref, collections.abc
 
 from string import Template
 
@@ -1574,6 +1574,7 @@ class Logger(Filterer):
         # In general, only the root logger will not be accessible via its name.
         # However, the root logger's class has its own __reduce__ method.
         if getLogger(self.name) is not self:
+            import pickle
             raise pickle.PicklingError('logger cannot be pickled')
         return getLogger, (self.name,)
 
@@ -1591,7 +1592,7 @@ class RootLogger(Logger):
         Logger.__init__(self, "root", level)
 
     def __reduce__(self):
-        return getLogger, ('',)
+        return getLogger, ()
 
 _loggerClass = Logger
 
