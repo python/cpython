@@ -373,7 +373,7 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     DWORD code = exc_info->ExceptionRecord->ExceptionCode;
     DWORD flags = exc_info->ExceptionRecord->ExceptionFlags;
 
-    /* only log fatal exceptions */
+    /* bpo-30557: only log fatal exceptions */
     if (!(code & 0x80000000)) {
         /* call the next exception handler */
         return EXCEPTION_CONTINUE_SEARCH;
