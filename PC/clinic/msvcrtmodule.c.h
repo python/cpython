@@ -121,13 +121,13 @@ PyDoc_STRVAR(msvcrt_open_osfhandle__doc__,
     {"open_osfhandle", (PyCFunction)msvcrt_open_osfhandle, METH_FASTCALL, msvcrt_open_osfhandle__doc__},
 
 static long
-msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags);
+msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags);
 
 static PyObject *
 msvcrt_open_osfhandle(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    intptr_t handle;
+    void *handle;
     int flags;
     long _return_value;
 
@@ -160,7 +160,7 @@ PyDoc_STRVAR(msvcrt_get_osfhandle__doc__,
 #define MSVCRT_GET_OSFHANDLE_METHODDEF    \
     {"get_osfhandle", (PyCFunction)msvcrt_get_osfhandle, METH_O, msvcrt_get_osfhandle__doc__},
 
-static intptr_t
+static void *
 msvcrt_get_osfhandle_impl(PyObject *module, int fd);
 
 static PyObject *
@@ -168,16 +168,16 @@ msvcrt_get_osfhandle(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
-    intptr_t _return_value;
+    void *_return_value;
 
     if (!PyArg_Parse(arg, "i:get_osfhandle", &fd)) {
         goto exit;
     }
     _return_value = msvcrt_get_osfhandle_impl(module, fd);
-    if ((_return_value == -1) && PyErr_Occurred()) {
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromVoidPtr((void *)_return_value);
+    return_value = PyLong_FromVoidPtr(_return_value);
 
 exit:
     return return_value;
@@ -589,4 +589,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=be516d0e78532ba3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e00da195932d9190 input=a9049054013a1b77]*/

@@ -33,14 +33,18 @@
 #endif
 
 /*[python input]
-class intptr_t_converter(CConverter):
-    type = 'intptr_t'
+class HANDLE_converter(CConverter):
+    type = 'void *'
     format_unit = '"_Py_PARSE_INTPTR"'
 
-class handle_return_converter(long_return_converter):
-    type = 'intptr_t'
-    cast = '(void *)'
-    conversion_fn = 'PyLong_FromVoidPtr'
+class HANDLE_return_converter(CReturnConverter):
+    type = 'void *'
+
+    def render(self, function, data):
+        self.declare(data)
+        self.err_occurred_if("_return_value == INVALID_HANDLE_VALUE", data)
+        data.return_conversion.append(
+            'return_value = PyLong_FromVoidPtr(_return_value);\n')
 
 class byte_char_return_converter(CReturnConverter):
     type = 'int'
@@ -59,7 +63,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=b59f1663dba11997]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=dab543102cf6345d]*/
 
 /*[clinic input]
 module msvcrt
@@ -152,7 +156,7 @@ msvcrt_setmode_impl(PyObject *module, int fd, int flags)
 /*[clinic input]
 msvcrt.open_osfhandle -> long
 
-    handle: intptr_t
+    handle: HANDLE
     flags: int
     /
 
@@ -164,14 +168,14 @@ to os.fdopen() to create a file object.
 [clinic start generated code]*/
 
 static long
-msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags)
-/*[clinic end generated code: output=cede871bf939d6e3 input=cb2108bbea84514e]*/
+msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags)
+/*[clinic end generated code: output=b2fb97c4b515e4e6 input=d5db190a307cf4bb]*/
 {
-    return _Py_open_osfhandle((void*)handle, flags);
+    return _Py_open_osfhandle(handle, flags);
 }
 
 /*[clinic input]
-msvcrt.get_osfhandle -> handle
+msvcrt.get_osfhandle -> HANDLE
 
     fd: int
     /
@@ -181,11 +185,11 @@ Return the file handle for the file descriptor fd.
 Raises OSError if fd is not recognized.
 [clinic start generated code]*/
 
-static intptr_t
+static void *
 msvcrt_get_osfhandle_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=7ce761dd0de2b503 input=305900f4bfab76c7]*/
+/*[clinic end generated code: output=aca01dfe24637374 input=5fcfde9b17136aa2]*/
 {
-    return (intptr_t)_Py_get_osfhandle(fd);
+    return _Py_get_osfhandle(fd);
 }
 
 /* Console I/O */
