@@ -681,15 +681,15 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       if (LBase <= code && code < (LBase+LCount) &&
           i + 1 < len &&
           VBase <= PyUnicode_READ(kind, data, i+1) &&
-          PyUnicode_READ(kind, data, i+1) <= (VBase+VCount)) {
+          PyUnicode_READ(kind, data, i+1) < (VBase+VCount)) {
           int LIndex, VIndex;
           LIndex = code - LBase;
           VIndex = PyUnicode_READ(kind, data, i+1) - VBase;
           code = SBase + (LIndex*VCount+VIndex)*TCount;
           i+=2;
           if (i < len &&
-              TBase <= PyUnicode_READ(kind, data, i) &&
-              PyUnicode_READ(kind, data, i) <= (TBase+TCount)) {
+              TBase < PyUnicode_READ(kind, data, i) &&
+              PyUnicode_READ(kind, data, i) < (TBase+TCount)) {
               code += PyUnicode_READ(kind, data, i)-TBase;
               i++;
           }
