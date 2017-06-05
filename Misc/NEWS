@@ -345,6 +345,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30557: faulthandler now correctly filters and displays exception codes
+  on Windows
+
 - bpo-30526: Add TextIOWrapper.reconfigure() and a TextIOWrapper.write_through
   attribute.
 
