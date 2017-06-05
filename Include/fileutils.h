@@ -118,13 +118,13 @@ PyAPI_FUNC(int) _Py_get_blocking(int fd);
 
 PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
 #else   /* MS_WINDOWS */
-PyAPI_FUNC(intptr_t) _Py_get_osfhandle_noraise(int fd);
+PyAPI_FUNC(void*) _Py_get_osfhandle_noraise(int fd);
 
-PyAPI_FUNC(intptr_t) _Py_get_osfhandle(int fd);
+PyAPI_FUNC(void*) _Py_get_osfhandle(int fd);
 
-PyAPI_FUNC(int) _Py_open_osfhandle_noraise(intptr_t handle, int flags);
+PyAPI_FUNC(int) _Py_open_osfhandle_noraise(void *handle, int flags);
 
-PyAPI_FUNC(int) _Py_open_osfhandle(intptr_t handle, int flags);
+PyAPI_FUNC(int) _Py_open_osfhandle(void *handle, int flags);
 #endif  /* MS_WINDOWS */
 
 #endif   /* Py_LIMITED_API */

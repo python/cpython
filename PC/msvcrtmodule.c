@@ -167,7 +167,7 @@ static long
 msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags)
 /*[clinic end generated code: output=cede871bf939d6e3 input=cb2108bbea84514e]*/
 {
-    return _Py_open_osfhandle(handle, flags);
+    return _Py_open_osfhandle((void*)handle, flags);
 }
 
 /*[clinic input]
@@ -185,7 +185,7 @@ static intptr_t
 msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=7ce761dd0de2b503 input=305900f4bfab76c7]*/
 {
-    return _Py_get_osfhandle(fd);
+    return (intptr_t)_Py_get_osfhandle(fd);
 }
 
 /* Console I/O */

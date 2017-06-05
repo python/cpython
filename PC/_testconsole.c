@@ -68,7 +68,7 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
         prec->Event.KeyEvent.uChar.UnicodeChar = *p;
     }
 
-    HANDLE hInput = (HANDLE)_Py_get_osfhandle(((winconsoleio*)file)->fd);
+    HANDLE hInput = _Py_get_osfhandle(((winconsoleio*)file)->fd);
     if (hInput == INVALID_HANDLE_VALUE)
         goto error;
 

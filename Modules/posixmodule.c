@@ -8454,8 +8454,8 @@ os_pipe_impl(PyObject *module)
     Py_BEGIN_ALLOW_THREADS
     ok = CreatePipe(&read, &write, &attr, 0);
     if (ok) {
-        fds[0] = _Py_open_osfhandle_noraise((intptr_t)read, _O_RDONLY);
-        fds[1] = _Py_open_osfhandle_noraise((intptr_t)write, _O_WRONLY);
+        fds[0] = _Py_open_osfhandle_noraise(read, _O_RDONLY);
+        fds[1] = _Py_open_osfhandle_noraise(write, _O_WRONLY);
         if (fds[0] == -1 || fds[1] == -1) {
             CloseHandle(read);
             CloseHandle(write);

@@ -1266,8 +1266,8 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
      */
     if (fileno != -1 && fileno != 0) {
         /* Ensure that fileno is within the CRT's valid range */
-        fh = (HANDLE)_Py_get_osfhandle(fileno);
-        if (fh == (HANDLE)INVALID_HANDLE_VALUE)
+        fh = _Py_get_osfhandle(fileno);
+        if (fh == INVALID_HANDLE_VALUE)
             return NULL;
 
         /* Win9x appears to need us seeked to zero */

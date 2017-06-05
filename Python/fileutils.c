@@ -614,7 +614,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     HANDLE h;
     int type;
 
-    h = (HANDLE)_Py_get_osfhandle_noraise(fd);
+    h = _Py_get_osfhandle_noraise(fd);
 
     if (h == INVALID_HANDLE_VALUE) {
         /* errno is already set by _get_osfhandle, but we also set
@@ -737,7 +737,7 @@ get_inheritable(int fd, int raise)
     HANDLE handle;
     DWORD flags;
 
-    handle = (HANDLE)_Py_get_osfhandle_noraise(fd);
+    handle = _Py_get_osfhandle_noraise(fd);
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
             PyErr_SetFromErrno(PyExc_OSError);
@@ -806,7 +806,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     }
 
 #ifdef MS_WINDOWS
-    handle = (HANDLE)_Py_get_osfhandle_noraise(fd);
+    handle = _Py_get_osfhandle_noraise(fd);
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
             PyErr_SetFromErrno(PyExc_OSError);
@@ -1459,7 +1459,7 @@ _Py_dup(int fd)
 #endif
 
 #ifdef MS_WINDOWS
-    handle = (HANDLE)_Py_get_osfhandle(fd);
+    handle = _Py_get_osfhandle(fd);
     if (handle == INVALID_HANDLE_VALUE)
         return -1;
 
@@ -1576,34 +1576,34 @@ error:
     return -1;
 }
 #else   /* MS_WINDOWS */
-intptr_t
+void*
 _Py_get_osfhandle_noraise(int fd)
 {
     _Py_BEGIN_SUPPRESS_IPH
-    return _get_osfhandle(fd);
+    return (void*)_get_osfhandle(fd);
     _Py_END_SUPPRESS_IPH
 }
 
-intptr_t
+void*
 _Py_get_osfhandle(int fd)
 {
-    intptr_t handle = _Py_get_osfhandle_noraise(fd);
-    if (handle == (intptr_t)INVALID_HANDLE_VALUE)
+    void *handle = _Py_get_osfhandle_noraise(fd);
+    if (handle == INVALID_HANDLE_VALUE)
         PyErr_SetFromErrno(PyExc_OSError);
 
     return handle;
 }
 
 int
-_Py_open_osfhandle_noraise(intptr_t handle, int flags)
+_Py_open_osfhandle_noraise(void *handle, int flags)
 {
     _Py_BEGIN_SUPPRESS_IPH
-    return _open_osfhandle(handle, flags);
+    return _open_osfhandle((intptr_t)handle, flags);
     _Py_END_SUPPRESS_IPH
 }
 
 int
-_Py_open_osfhandle(intptr_t handle, int flags)
+_Py_open_osfhandle(void *handle, int flags)
 {
     int fd = _Py_open_osfhandle_noraise(handle, flags);
     if (fd == -1)

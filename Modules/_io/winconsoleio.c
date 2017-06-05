@@ -63,7 +63,7 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
     int fd = PyLong_AsLong(path_or_fd);
     PyErr_Clear();
     if (fd >= 0) {
-        HANDLE handle = (HANDLE)_Py_get_osfhandle_noraise(fd);
+        HANDLE handle = _Py_get_osfhandle_noraise(fd);
         if (handle == INVALID_HANDLE_VALUE)
             return '\0';
         return _get_console_type(handle);
@@ -345,7 +345,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         goto bad_mode;
 
     if (fd >= 0) {
-        handle = (HANDLE)_Py_get_osfhandle_noraise(fd);
+        handle = _Py_get_osfhandle_noraise(fd);
         self->closefd = 0;
     } else {
         DWORD access = GENERIC_READ;
@@ -378,9 +378,9 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         }
 
         if (self->writable)
-            self->fd = _Py_open_osfhandle_noraise((intptr_t)handle, _O_WRONLY | _O_BINARY);
+            self->fd = _Py_open_osfhandle_noraise(handle, _O_WRONLY | _O_BINARY);
         else
-            self->fd = _Py_open_osfhandle_noraise((intptr_t)handle, _O_RDONLY | _O_BINARY);
+            self->fd = _Py_open_osfhandle_noraise(handle, _O_RDONLY | _O_BINARY);
         if (self->fd < 0) {
             CloseHandle(handle);
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
@@ -652,7 +652,7 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
         return -1;
     }
 
-    HANDLE handle = (HANDLE)_Py_get_osfhandle(self->fd);
+    HANDLE handle = _Py_get_osfhandle(self->fd);
     if (handle == INVALID_HANDLE_VALUE)
         return -1;
 
@@ -788,7 +788,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
     if (self->fd == -1)
         return err_closed();
 
-    handle = (HANDLE)_Py_get_osfhandle(self->fd);
+    handle = _Py_get_osfhandle(self->fd);
     if (handle == INVALID_HANDLE_VALUE)
         return NULL;
 
@@ -968,7 +968,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     if (!self->writable)
         return err_mode("writing");
 
-    handle = (HANDLE)_Py_get_osfhandle(self->fd);
+    handle = _Py_get_osfhandle(self->fd);
     if (handle == INVALID_HANDLE_VALUE)
         return NULL;
 
