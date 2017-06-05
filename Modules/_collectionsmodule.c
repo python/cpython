@@ -942,8 +942,7 @@ deque_reverse(dequeobject *deque, PyObject *unused)
     Py_ssize_t n = Py_SIZE(deque) >> 1;
     PyObject *tmp;
 
-    n++;
-    while (--n) {
+    for (; n; --n) {
         /* Validate that pointers haven't met in the middle */
         assert(leftblock != rightblock || leftindex < rightindex);
         CHECK_NOT_END(leftblock);
@@ -985,8 +984,7 @@ deque_count(dequeobject *deque, PyObject *v)
     PyObject *item;
     int cmp;
 
-    n++;
-    while (--n) {
+    for (; n; --n) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
@@ -1023,8 +1021,7 @@ deque_contains(dequeobject *deque, PyObject *v)
     PyObject *item;
     int cmp;
 
-    n++;
-    while (--n) {
+    for (; n; --n) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
@@ -1240,16 +1237,14 @@ deque_item(dequeobject *deque, Py_ssize_t i)
         i = (Py_ssize_t)((size_t) i % BLOCKLEN);
         if (index < (Py_SIZE(deque) >> 1)) {
             b = deque->leftblock;
-            n++;
-            while (--n)
+            for (; n; --n)
                 b = b->rightlink;
         } else {
             n = (Py_ssize_t)(
                     ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
                     / BLOCKLEN - n);
             b = deque->rightblock;
-            n++;
-            while (--n)
+            for (; n; --n)
                 b = b->leftlink;
         }
     }
@@ -1293,16 +1288,14 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
     i = (Py_ssize_t)((size_t) i % BLOCKLEN);
     if (index <= halflen) {
         b = deque->leftblock;
-        n++;
-        while (--n)
+        for (; n; --n)
             b = b->rightlink;
     } else {
         n = (Py_ssize_t)(
                 ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
                 / BLOCKLEN - n);
         b = deque->rightblock;
-        n++;
-        while (--n)
+        for (; n; --n)
             b = b->leftlink;
     }
     Py_INCREF(v);
