@@ -715,6 +715,9 @@ class PyBuildExt(build_ext):
         # syslog daemon interface
         exts.append( Extension('syslog', ['syslogmodule.c']) )
 
+        # Python interface to subinterpreter C-API.
+        exts.append(Extension('_interpreters', ['_interpretersmodule.c']))
+
         #
         # Here ends the simple stuff.  From here on, modules need certain
         # libraries, are platform-specific, or present other surprises.
