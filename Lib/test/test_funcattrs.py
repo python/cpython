@@ -95,10 +95,11 @@ class FunctionPropertiesTest(FuncAttrsTest):
 
     def test_set_cell(self):
         a = 12
-        def f(): print(a)
+        def f(): return a
         c = f.__closure__
         c[0].cell_contents = 9
         self.assertEqual(c[0].cell_contents, 9)
+        self.assertEqual(f(), 9)
         del c[0].cell_contents
         try:
             c[0].cell_contents
@@ -106,6 +107,12 @@ class FunctionPropertiesTest(FuncAttrsTest):
             pass
         else:
             self.fail("shouldn't be able to read an empty cell")
+        try:
+            f()
+        except NameError:
+            pass
+        else:
+            self.fail("variable not deleted")
 
     def test___name__(self):
         self.assertEqual(self.b.__name__, 'b')
