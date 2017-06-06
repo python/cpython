@@ -181,11 +181,11 @@ class PkgutilTests(unittest.TestCase):
         object.
         """
         str_input = 'test_dir'
-        with self.assertRaises(ValueError):
+        with self.assertRaises((TypeError, ValueError)):
             list(pkgutil.walk_packages(str_input))
 
         bytes_input = b'test_dir'
-        with self.assertRaises(TypeError):
+        with self.assertRaises((TypeError, ValueError)):
             list(pkgutil.walk_packages(bytes_input))
 
 
