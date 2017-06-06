@@ -18,6 +18,7 @@ __all__ = (
     'NonCallableMagicMock',
     'mock_open',
     'PropertyMock',
+    'seal',
 )
 
 
@@ -382,7 +383,7 @@ class NonCallableMock(Base):
         __dict__['_mock_name'] = name
         __dict__['_mock_new_name'] = _new_name
         __dict__['_mock_new_parent'] = _new_parent
-        __dict__['_is_sealed'] = False
+        __dict__['_mock_sealed'] = False
 
         if spec_set is not None:
             spec = spec_set
@@ -714,7 +715,7 @@ class NonCallableMock(Base):
             if _check_and_set_parent(self, value, name, name):
                 self._mock_children[name] = value
 
-        if self._is_sealed:
+        if self._mock_sealed:
             mock_name = self._extract_mock_name() + name
             raise AttributeError("Cannot set " + mock_name)
 
@@ -902,7 +903,7 @@ class NonCallableMock(Base):
         else:
             klass = _type.__mro__[1]
 
-        if self._is_sealed:
+        if self._mock_sealed:
             attribute = "." + kw["name"] if "name" in kw else "()"
             mock_name = self._extract_mock_name() + attribute
             raise AttributeError(mock_name)
@@ -2442,7 +2443,7 @@ def seal(in_mock):
     >>> mock.not_submock.attribute2  # This won't raise
 
     """
-    in_mock._is_sealed = True
+    in_mock._mock_sealed = True
     for attr in dir(in_mock):
         try:
             m = getattr(in_mock, attr)
