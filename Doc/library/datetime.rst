@@ -1849,11 +1849,11 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. seealso::
 
-   `datetuil.tz <https://dateutil.readthedocs.io/en/stable/tz.html>`_
+   `dateutil.tz <https://dateutil.readthedocs.io/en/stable/tz.html>`_
       The standard library has :class:`timezone` class for handling arbitrary
       fixed offsets from UTC and :attr:`timezone.utc` as UTC timezone instance.
 
-      *datetuil.tz* library brings the *IANA timezone database* (also known as the
+      *dateutil.tz* library brings the *IANA timezone database* (also known as the
       Olson database) to Python and its usage is recommended.
 
    `IANA timezone database <https://www.iana.org/time-zones>`_
