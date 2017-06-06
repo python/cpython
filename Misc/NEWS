@@ -345,6 +345,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30463: Addded empty __slots__ to abc.ABC.  This allows subclassers
+  to deny __dict__ and __weakref__ creation.  Patch by Aaron Hall.
+
 - bpo-30520: Loggers are now pickleable.
 
 - bpo-30557: faulthandler now correctly filters and displays exception codes
@@ -1027,10 +1030,6 @@ Library
 
 - Issue #29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
   classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
-
-- Issue #30463: Add ``__slots__ = ()`` to ``abc.ABC`` to allow
-  subclassers to deny ``__dict__`` and ``__weakref__`` creation.
-  Patch by Aaron Hall.
 
 - Issue #25532: inspect.unwrap() will now only try to unwrap an object
   sys.getrecursionlimit() times, to protect against objects which create a new
