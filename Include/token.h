@@ -67,7 +67,11 @@ extern "C" {
 #define AWAIT		54
 #define ASYNC		55
 #define ERRORTOKEN	56
-#define N_TOKENS	57
+/* These aren't used by the C tokenizer but are needed for tokenize.py */
+#define COMMENT		57
+#define NL		58
+#define ENCODING		59
+#define N_TOKENS	60
 
 /* Special definitions for cooperation with parser */
 

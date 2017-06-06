@@ -210,11 +210,6 @@ def _serve_one(s, listener, alive_r, handlers):
     # send pid to client processes
     write_unsigned(child_w, os.getpid())
 
-    # reseed random number generator
-    if 'random' in sys.modules:
-        import random
-        random.seed()
-
     # run process object received over pipe
     code = spawn._main(child_r)
 

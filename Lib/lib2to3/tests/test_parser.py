@@ -344,6 +344,7 @@ class TestStringLiterals(GrammarTest):
         "r'", 'r"', "R'", 'R"',
         "u'", 'u"', "U'", 'U"',
         "b'", 'b"', "B'", 'B"',
+        "f'", 'f"', "F'", 'F"',
         "ur'", 'ur"', "Ur'", 'Ur"',
         "uR'", 'uR"', "UR'", 'UR"',
         "br'", 'br"', "Br'", 'Br"',
