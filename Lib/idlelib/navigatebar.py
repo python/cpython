@@ -7,9 +7,6 @@ from tkinter.ttk import Frame, Entry, Label
 
 class NavigateBar(Frame):
     """Navigate bar for IDLE.
-
-    Prefix ":" stand for goto lineno
-    Prefix "@" stand for goto symbol
     """
 
     def __init__(self, editor, parent):
