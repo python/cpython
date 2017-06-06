@@ -85,6 +85,21 @@ class TestSealable(unittest.TestCase):
             m.test1.test2.test4
 
 
+    def test_seals_recurse_on_magic_methods(self):
+        m = mock.MagicMock()
+
+        m.test1.test2["a"].test3 = 4
+        m.test1.test3[2:5].test3 = 4
+
+        mock.seal(m)
+        assert m.test1.test2["a"].test3 == 4
+        assert m.test1.test2[2:5].test3 == 4
+        with self.assertRaises(AttributeError):
+            m.test1.test2["a"].test4
+        with self.assertRaises(AttributeError):
+            m.test1.test3[2:5].test4
+
+
     def test_seals_dont_recurse_on_manual_attributes(self):
         m = mock.Mock(name="root_mock")
 
@@ -159,6 +174,7 @@ class TestSealable(unittest.TestCase):
             m.test1().test2.test3().test4()
         except AttributeError as ex:
             assert "mock.test1().test2.test3().test4" in str(ex)
+
 
 if __name__ == "__main__":
     unittest.main()
