@@ -345,8 +345,8 @@ Extension Modules
 Library
 -------
 
-- bpo-24744: pkgutil.walk_packages function raises ValueError if path is of
-  str object type. Patch by Sanyam Khurana.
+- bpo-24744: pkgutil.walk_packages function now raises ValueError if *path*
+  is a string. Patch by Sanyam Khurana.
 
 - bpo-30245: Fix possible overflow when organize struct.pack_into
   error message.  Patch by Yuan Liu.
