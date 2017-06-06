@@ -777,8 +777,10 @@ class FaultHandlerTests(unittest.TestCase):
                 """
             )
             self.assertEqual(output, [])
-            # Actual exception code has bit 4 cleared
-            self.assertEqual(exitcode, exc & ~0x10000000)
+            # On Windows older than 7 SP1, the actual exception code has
+            # bit 29 cleared.
+            self.assertIn(exitcode,
+                          (exc, exc & ~0x10000000))
 
     @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
     def test_disable_windows_exc_handler(self):
