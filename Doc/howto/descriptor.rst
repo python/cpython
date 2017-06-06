@@ -282,7 +282,7 @@ this::
         . . .
         def __get__(self, obj, objtype=None):
             "Simulate func_descr_get() in Objects/funcobject.c"
-            return types.MethodType(self, obj, objtype)
+            return types.MethodType(self, obj)
 
 Running the interpreter shows how the function descriptor works in practice::
 

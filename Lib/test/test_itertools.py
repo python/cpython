@@ -1996,7 +1996,7 @@ class SubclassWithKwargsTest(unittest.TestCase):
                 Subclass(newarg=1)
             except TypeError as err:
                 # we expect type errors because of wrong argument count
-                self.assertNotIn("does not take keyword arguments", err.args[0])
+                self.assertNotIn("keyword arguments", err.args[0])
 
 @support.cpython_only
 class SizeofTest(unittest.TestCase):

@@ -74,7 +74,7 @@ Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
 Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
 # Tail end of """ string.
 Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
-_litprefix = r"(?:[uUrRbB]|[rR][bB]|[bBuU][rR])?"
+_litprefix = r"(?:[uUrRbBfF]|[rR][bB]|[bBuU][rR])?"
 Triple = group(_litprefix + "'''", _litprefix + '"""')
 # Single-line ' or " string.
 String = group(_litprefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
@@ -110,12 +110,14 @@ endprogs = {"'": re.compile(Single), '"': re.compile(Double),
             "r'''": single3prog, 'r"""': double3prog,
             "u'''": single3prog, 'u"""': double3prog,
             "b'''": single3prog, 'b"""': double3prog,
+            "f'''": single3prog, 'f"""': double3prog,
             "ur'''": single3prog, 'ur"""': double3prog,
             "br'''": single3prog, 'br"""': double3prog,
             "rb'''": single3prog, 'rb"""': double3prog,
             "R'''": single3prog, 'R"""': double3prog,
             "U'''": single3prog, 'U"""': double3prog,
             "B'''": single3prog, 'B"""': double3prog,
+            "F'''": single3prog, 'F"""': double3prog,
             "uR'''": single3prog, 'uR"""': double3prog,
             "Ur'''": single3prog, 'Ur"""': double3prog,
             "UR'''": single3prog, 'UR"""': double3prog,
@@ -127,6 +129,7 @@ endprogs = {"'": re.compile(Single), '"': re.compile(Double),
             "RB'''": single3prog, 'RB"""': double3prog,
             'r': None, 'R': None,
             'u': None, 'U': None,
+            'f': None, 'F': None,
             'b': None, 'B': None}
 
 triple_quoted = {}
@@ -134,6 +137,7 @@ for t in ("'''", '"""',
           "r'''", 'r"""', "R'''", 'R"""',
           "u'''", 'u"""', "U'''", 'U"""',
           "b'''", 'b"""', "B'''", 'B"""',
+          "f'''", 'f"""', "F'''", 'F"""',
           "ur'''", 'ur"""', "Ur'''", 'Ur"""',
           "uR'''", 'uR"""', "UR'''", 'UR"""',
           "br'''", 'br"""', "Br'''", 'Br"""',
@@ -146,6 +150,7 @@ for t in ("'", '"',
           "r'", 'r"', "R'", 'R"',
           "u'", 'u"', "U'", 'U"',
           "b'", 'b"', "B'", 'B"',
+          "f'", 'f"', "F'", 'F"',
           "ur'", 'ur"', "Ur'", 'Ur"',
           "uR'", 'uR"', "UR'", 'UR"',
           "br'", 'br"', "Br'", 'Br"',

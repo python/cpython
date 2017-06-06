@@ -1,4 +1,5 @@
 import unittest
+from test.support import cpython_only
 
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C
@@ -32,9 +33,6 @@ class CFunctionCalls(unittest.TestCase):
             pass
         else:
             raise RuntimeError
-
-    def test_varargs0_kw(self):
-        self.assertRaises(TypeError, {}.__contains__, x=2)
 
     def test_varargs1_kw(self):
         self.assertRaises(TypeError, {}.__contains__, x=2)
@@ -120,6 +118,62 @@ class CFunctionCalls(unittest.TestCase):
 
     def test_oldargs1_2_kw(self):
         self.assertRaises(TypeError, [].count, x=2, y=2)
+
+
+@cpython_only
+class CFunctionCallsErrorMessages(unittest.TestCase):
+
+    def test_varargs0(self):
+        msg = r"__contains__\(\) takes exactly one argument \(0 given\)"
+        self.assertRaisesRegex(TypeError, msg, {}.__contains__)
+
+    def test_varargs2(self):
+        msg = r"__contains__\(\) takes exactly one argument \(2 given\)"
+        self.assertRaisesRegex(TypeError, msg, {}.__contains__, 0, 1)
+
+    def test_varargs1_kw(self):
+        msg = r"__contains__\(\) takes no keyword arguments"
+        self.assertRaisesRegex(TypeError, msg, {}.__contains__, x=2)
+
+    def test_varargs2_kw(self):
+        msg = r"__contains__\(\) takes no keyword arguments"
+        self.assertRaisesRegex(TypeError, msg, {}.__contains__, x=2, y=2)
+
+    def test_oldargs0_1(self):
+        msg = r"keys\(\) takes no arguments \(1 given\)"
+        self.assertRaisesRegex(TypeError, msg, {}.keys, 0)
+
+    def test_oldargs0_2(self):
+        msg = r"keys\(\) takes no arguments \(2 given\)"
+        self.assertRaisesRegex(TypeError, msg, {}.keys, 0, 1)
+
+    def test_oldargs0_1_kw(self):
+        msg = r"keys\(\) takes no keyword arguments"
+        self.assertRaisesRegex(TypeError, msg, {}.keys, x=2)
+
+    def test_oldargs0_2_kw(self):
+        msg = r"keys\(\) takes no keyword arguments"
+        self.assertRaisesRegex(TypeError, msg, {}.keys, x=2, y=2)
+
+    def test_oldargs1_0(self):
+        msg = r"count\(\) takes exactly one argument \(0 given\)"
+        self.assertRaisesRegex(TypeError, msg, [].count)
+
+    def test_oldargs1_2(self):
+        msg = r"count\(\) takes exactly one argument \(2 given\)"
+        self.assertRaisesRegex(TypeError, msg, [].count, 1, 2)
+
+    def test_oldargs1_0_kw(self):
+        msg = r"count\(\) takes no keyword arguments"
+        self.assertRaisesRegex(TypeError, msg, [].count, x=2)
+
+    def test_oldargs1_1_kw(self):
+        msg = r"count\(\) takes no keyword arguments"
+        self.assertRaisesRegex(TypeError, msg, [].count, {}, x=2)
+
+    def test_oldargs1_2_kw(self):
+        msg = r"count\(\) takes no keyword arguments"
+        self.assertRaisesRegex(TypeError, msg, [].count, x=2, y=2)
 
 
 if __name__ == "__main__":
