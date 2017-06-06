@@ -1176,7 +1176,7 @@ wrapper_call(wrapperobject *wp, PyObject *args, PyObject *kwds)
 
     if (kwds != NULL && (!PyDict_Check(kwds) || PyDict_GET_SIZE(kwds) != 0)) {
         PyErr_Format(PyExc_TypeError,
-                     "wrapper %s doesn't take keyword arguments",
+                     "wrapper %s() takes no keyword arguments",
                      wp->descr->d_base->name);
         return NULL;
     }
