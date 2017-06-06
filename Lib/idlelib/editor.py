@@ -568,7 +568,7 @@ class EditorWindow(object):
         return "break"
 
     def goto_line_event(self, event):
-        from idlelib.singlebar import NavigateBar
+        from idlelib.navigatebar import NavigateBar
         if not self.navigatebar:
             self.navigatebar = NavigateBar(self, self.text)
             self.navigatebar.set_goto_line_mode()
