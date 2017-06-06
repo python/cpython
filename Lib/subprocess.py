@@ -128,13 +128,13 @@ if _mswindows:
     import _winapi
     class STARTUPINFO:
         def __init__(self, *, dwFlags=0, hStdInput=None, hStdOutput=None,
-                     hStdError=None, wShowWindow=0):
+                     hStdError=None, wShowWindow=0, lpAttributeList=None):
             self.dwFlags = dwFlags
             self.hStdInput = hStdInput
             self.hStdOutput = hStdOutput
             self.hStdError = hStdError
             self.wShowWindow = wShowWindow
-            self.lpAttributeList = {"handle_list": []}
+            self.lpAttributeList = lpAttributeList or {"handle_list": []}
 else:
     import _posixsubprocess
     import select
@@ -537,9 +537,6 @@ def getoutput(cmd):
     return getstatusoutput(cmd)[1]
 
 
-_PLATFORM_DEFAULT_CLOSE_FDS = object()
-
-
 class Popen(object):
     """ Execute a child program in a new process.
 
@@ -588,7 +585,7 @@ class Popen(object):
 
     def __init__(self, args, bufsize=-1, executable=None,
                  stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=_PLATFORM_DEFAULT_CLOSE_FDS,
+                 preexec_fn=None, close_fds=True,
                  shell=False, cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
@@ -608,9 +605,6 @@ class Popen(object):
             bufsize = -1  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
-
-        if close_fds is _PLATFORM_DEFAULT_CLOSE_FDS:
-            close_fds = True
 
         if _mswindows:
             if preexec_fn is not None:
@@ -945,10 +939,10 @@ class Popen(object):
         def _filter_handle_list(self, handle_list):
             """Filter out console handles that can't be used
             in lpAttributeList["handle_list"] and make sure the list
-            isn't empty"""
+            isn't empty. This also removes duplicate handles."""
             # An handle with it's lowest two bits set might be a special console
             # handle that if passed in lpAttributeList["handle_list"], will
-            # cause it to fail. We use a set comprehension to remove duplicates.
+            # cause it to fail.
             return list({handle for handle in handle_list
                          if handle & 0x3 != 0x3
                          or _winapi.GetFileType(handle) !=
@@ -990,6 +984,7 @@ class Popen(object):
                 if attribute_list is None:
                     attribute_list = startupinfo.lpAttributeList = {}
                 handle_list = attribute_list.setdefault("handle_list", [])
+                handle_list = attribute_list["handle_list"] = list(handle_list)
 
                 if use_std_handles:
                     handle_list += [int(p2cread), int(c2pwrite), int(errwrite)]

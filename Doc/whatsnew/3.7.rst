@@ -132,6 +132,17 @@ Serhiy Storchaka in :issue:`28682`.)
 Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
 on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+subprocess
+----------
+
+On Windows the default for *close_fds* was changed from :const:`False` to
+:const:`True` when redirecting the standard handles. It's now possible to set
+*close_fds* to :const:`True` when redirecting the standard handles. See
+:class:`subprocess.Popen`.
+
+This means that *close_fds* now defaults to :const:`True` on all supported
+platforms.
+
 unittest.mock
 -------------
 
@@ -294,6 +305,13 @@ Changes in the Python API
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
 
+* On Windows the default for the *close_fds* argument of
+  :class:`subprocess.Popen` was changed from :const:`False` to :const:`True`
+  when redirecting the standard handles. If you previously depended on handles
+  being inherited when using :class:`subprocess.Popen` with standard io
+  redirection, you will have to pass ``close_fds=False`` to preserve the
+  previous behaviour, or use
+  :attr:`STARTUPINFO.lpAttributeList <subprocess.STARTUPINFO.lpAttributeList>`.
 
 CPython bytecode changes
 ------------------------

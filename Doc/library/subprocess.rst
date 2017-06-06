@@ -458,8 +458,8 @@ functions.
 
    .. versionchanged:: 3.7
       On Windows the default for *close_fds* was changed from :const:`False` to
-      :const:`True`. It's now possible to set *close_fds* to :const:`True` when
-      redirecting the standard handles.
+      :const:`True` when redirecting the standard handles. It's now possible to
+      set *close_fds* to :const:`True` when redirecting the standard handles.
 
    *pass_fds* is an optional sequence of file descriptors to keep open
    between the parent and child.  Providing any *pass_fds* forces
@@ -809,8 +809,8 @@ on Windows.
       Supported attributes:
 
       **handle_list**
-         When *close_fds* is :const:`True`, supplies a list of
-         handles that will be inherited.
+         Sequence of handles that will be inherited. *close_fds* must be true if
+         non-empty.
 
       .. versionadded:: 3.7
 
