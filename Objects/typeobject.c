@@ -3075,6 +3075,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 static int
 type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 {
+    int res;
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(
             PyExc_TypeError,
@@ -3082,9 +3083,35 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             type->tp_name);
         return -1;
     }
-    if (PyObject_GenericSetAttr((PyObject *)type, name, value) < 0)
-        return -1;
-    return update_slot(type, name);
+    if (PyUnicode_Check(name)) {
+        if (PyUnicode_CheckExact(name)) {
+            if (PyUnicode_READY(name) == -1)
+                return -1;
+            Py_INCREF(name);
+        }
+        else {
+            name = _PyUnicode_Copy(name);
+            if (name == NULL)
+                return -1;
+        }
+        PyUnicode_InternInPlace(&name);
+        if (!PyUnicode_CHECK_INTERNED(name)) {
+            PyErr_SetString(PyExc_MemoryError,
+                            "Out of memory interning an attribute name");
+            Py_DECREF(name);
+            return -1;
+        }
+    }
+    else {
+        /* Will fail in _PyObject_GenericSetAttrWithDict. */
+        Py_INCREF(name);
+    }
+    res = PyObject_GenericSetAttr((PyObject *)type, name, value);
+    if (res == 0) {
+        res = update_slot(type, name);
+    }
+    Py_DECREF(name);
+    return res;
 }
 
 extern void
@@ -6929,7 +6956,7 @@ init_slotdefs(void)
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
         assert(!p[1].name || p->offset <= p[1].offset);
         p->name_strobj = PyUnicode_InternFromString(p->name);
-        if (!p->name_strobj)
+        if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj))
             Py_FatalError("Out of memory interning slotdef names");
     }
     slotdefs_initialized = 1;
@@ -6954,6 +6981,9 @@ update_slot(PyTypeObject *type, PyObject *name)
     slotdef **pp;
     int offset;
 
+    assert(PyUnicode_CheckExact(name));
+    assert(PyUnicode_CHECK_INTERNED(name));
+
     /* Clear the VALID_VERSION flag of 'type' and all its
        subclasses.  This could possibly be unified with the
        update_subclasses() recursion below, but carefully:
@@ -6964,7 +6994,6 @@ update_slot(PyTypeObject *type, PyObject *name)
     init_slotdefs();
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
-        /* XXX assume name is interned! */
         if (p->name_strobj == name)
             *pp++ = p;
     }

@@ -985,10 +985,10 @@ sys_getwindowsversion(PyObject *self)
         }
         PyMem_RawFree(verblock);
     }
-    PyStructSequence_SET_ITEM(version, pos++, PyTuple_Pack(3,
-        PyLong_FromLong(realMajor),
-        PyLong_FromLong(realMinor),
-        PyLong_FromLong(realBuild)
+    PyStructSequence_SET_ITEM(version, pos++, Py_BuildValue("(kkk)",
+        realMajor,
+        realMinor,
+        realBuild
     ));
 
     if (PyErr_Occurred()) {

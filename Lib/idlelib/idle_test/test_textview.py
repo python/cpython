@@ -13,7 +13,7 @@ requires('gui')
 
 import unittest
 import os
-from tkinter import Tk
+from tkinter import Tk, Button
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
 
@@ -94,6 +94,46 @@ class ViewFunctionTest(unittest.TestCase):
         testfile = os.path.join(test_dir, '../notthere.py')
         view = tv.view_file(root, 'Title', testfile, modal=False)
         self.assertIsNone(view)
+
+
+class ButtonClickTextViewTest(unittest.TestCase):
+
+    def setUp(self):
+        self.view = None
+        self.called = False
+
+    def tearDown(self):
+        if self.view:
+            self.view.destroy()
+
+    def test_view_text_bind_with_button(self):
+        def _command():
+            self.called = True
+            self.view = tv.view_text(root, 'TITLE_TEXT', 'COMMAND', _utest=True)
+        button = Button(root, text='BUTTON', command=_command)
+        button.invoke()
+        self.addCleanup(button.destroy)
+
+        self.assertEqual(self.called, True)
+        self.assertEqual(self.view.title(), 'TITLE_TEXT')
+        self.assertEqual(self.view.textView.get('1.0', '1.end'), 'COMMAND')
+
+    def test_view_file_bind_with_button(self):
+        def _command():
+            self.called = True
+            self.view = tv.view_file(root, 'TITLE_FILE', __file__, _utest=True)
+        button = Button(root, text='BUTTON', command=_command)
+        button.invoke()
+        self.addCleanup(button.destroy)
+
+        self.assertEqual(self.called, True)
+        self.assertEqual(self.view.title(), 'TITLE_FILE')
+        with open(__file__) as f:
+            self.assertEqual(self.view.textView.get('1.0', '1.end'),
+                             f.readline().strip())
+            f.readline()
+            self.assertEqual(self.view.textView.get('3.0', '3.end'),
+                             f.readline().strip())
 
 
 if __name__ == '__main__':
