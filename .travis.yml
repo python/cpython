@@ -28,6 +28,10 @@ matrix:
       compiler: clang
       # Testing under macOS is optional until testing stability has been demonstrated.
       env: OPTIONAL=true
+      before_install:
+        - brew install openssl xz
+        - export CPPFLAGS="-I$(brew --prefix openssl)/include"
+        - export LDFLAGS="-L$(brew --prefix openssl)/lib"
     - os: linux
       language: python
       python: 2.7
