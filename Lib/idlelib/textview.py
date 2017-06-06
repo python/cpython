@@ -82,6 +82,8 @@ def view_file(parent, title, filename, encoding=None, modal=True):
                   parent=parent)
     else:
         return view_text(parent, title, contents, modal)
+    return None
+
 
 if __name__ == '__main__':
     import unittest
