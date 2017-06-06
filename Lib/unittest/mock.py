@@ -715,8 +715,8 @@ class NonCallableMock(Base):
             if _check_and_set_parent(self, value, name, name):
                 self._mock_children[name] = value
 
-        if self._mock_sealed:
-            mock_name = self._extract_mock_name() + name
+        if self._mock_sealed and not getattr(self, name):
+            mock_name = self._extract_mock_name() + "." + name
             raise AttributeError("Cannot set " + mock_name)
 
         return object.__setattr__(self, name, value)

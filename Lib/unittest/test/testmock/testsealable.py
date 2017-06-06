@@ -43,6 +43,24 @@ class TestSealable(unittest.TestCase):
             m.test = 1
 
 
+    def test_existing_attributes_can_be_set_on_seal(self):
+        m = mock.Mock()
+        m.test.test2 = 1
+
+        mock.seal(m)
+        m.test.test2 = 2
+        assert m.test.test2 == 2
+
+
+    def test_new_attributes_cannot_be_set_on_child_of_seal(self):
+        m = mock.Mock()
+        m.test.test2 = 1
+
+        mock.seal(m)
+        with self.assertRaises(AttributeError):
+            m.test.test3 = 1
+
+
     def test_existing_attributes_allowed_after_seal(self):
         m = mock.Mock()
 
@@ -82,7 +100,9 @@ class TestSealable(unittest.TestCase):
         mock.seal(m)
         assert m.test1.test2().test3 == 4
         with self.assertRaises(AttributeError):
-            m.test1.test2.test4
+            m.test1.test2().test4
+        with self.assertRaises(AttributeError):
+            m.test1.test3
 
 
     def test_seals_recurse_on_magic_methods(self):
