@@ -40,10 +40,10 @@ matrix:
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
 
-# Travis provides only 2 cores, so don't overdue the parallelism and waste memory.
+# Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
   - |
-      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)/'
+      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.rst$)|(^Doc)'
       then
         echo "Only docs were updated, stopping build process."
         exit
@@ -53,7 +53,7 @@ before_script:
 
 script:
   # `-r -w` implicitly provided through `make buildbottest`.
-  - make buildbottest TESTOPTS="-j4"
+  - make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
 notifications:
   email: false
