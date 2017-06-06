@@ -1,8 +1,8 @@
 """Navigate bar
 """
 
-from tkinter import Listbox, Scrollbar, X, Y, END, VERTICAL, RIGHT
-from tkinter.ttk import Frame, Entry
+from tkinter import Listbox, Scrollbar, X, Y, END, VERTICAL, LEFT, RIGHT
+from tkinter.ttk import Frame, Entry, Label
 
 
 class NavigateBar(Frame):
@@ -21,9 +21,12 @@ class NavigateBar(Frame):
         self.place(x=parent.winfo_width() / 2 - self.winfo_reqwidth() / 2, y=-2)
         self.selection = 0
         self.symbol_line = {}
+        self.mode = ''
 
     def create_widgets(self):
         self.parent.bind('<Configure>', self.winconfig_event)
+        self.label = Label(self, text='navigatebar')
+        self.label.pack(side=LEFT)
         self.entry = Entry(self, width=50)
         self.entry.bind('<KeyRelease-Up>', self.key_up_event)
         self.entry.bind('<KeyRelease-Down>', self.key_down_event)
@@ -88,10 +91,12 @@ class NavigateBar(Frame):
             self.goto_selection()
 
     def set_goto_line_mode(self):
-        self.entry.insert(0, ':')
+        self.mode = 'goto'
+        self.label.config(text='Goto line: ')
 
     def set_goto_symbol_mode(self):
-        self.entry.insert(0, '@')
+        self.mode = 'symbol'
+        self.label.config(text='Find symbol: ')
 
     def goto_selection(self, event=None):
         if self.listbox.size():
@@ -112,14 +117,14 @@ class NavigateBar(Frame):
         self.clear_highlight()
 
         entry = self.get_entry()
-        if entry.startswith(':'):
+        if self.mode == 'goto':
             try:
-                lineno = int(entry[1:])
+                lineno = int(entry)
             except ValueError:
                 return
             self.goto_lineno(lineno)
-        elif entry.startswith('@'):
-            self.update_symbol(entry[1:])
+        elif self.mode == 'symbol':
+            self.update_symbol(entry)
 
     def clear_listbox(self):
         """Show off listbox and clear listbox items
