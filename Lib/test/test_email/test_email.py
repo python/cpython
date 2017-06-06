@@ -3381,6 +3381,25 @@ multipart/report
                 m = cls(*constructor, policy=email.policy.default)
                 self.assertIs(m.policy, email.policy.default)
 
+    def test_formataddr_encodes_idnas(self):
+        # issue 11783.  email parseaddr and formataddr should be IDNA aware
+        addr = "foo@d\u00f6m.ain"
+        puny = "foo@xn--dm-fka.ain"
+        self.assertEqual(utils.formataddr((None, addr)), puny)
+
+    def test_parseaddr_decodes_idnas(self):
+        # issue 11783.  email parseaddr and formataddr should be IDNA aware
+        puny = "Foo <bar@xn--dm-fka.ain>"
+        self.assertEqual(utils.parseaddr(puny), ("Foo", "bar@d\u00f6m.ain"))
+
+    def test_parseaddr_formataddr_ignore_idn_in_local_part_only(self):
+        # issue 11783.  email parseaddr and formataddr should be IDNA aware
+        addr = "xn--dm-fka"
+        name = "Foo"
+        pair = "%s <%s>" % (name, addr)
+        self.assertEqual(utils.parseaddr(pair), (name, addr))
+        self.assertEqual(utils.formataddr((name, addr)), pair)
+
 
 # Test the iterator/generators
 class TestIterators(TestEmailBase):

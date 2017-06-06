@@ -1430,7 +1430,9 @@ be concerned about converting host names themselves when they pass them to the
 socket module. On top of that, modules that have host names as function
 parameters, such as :mod:`http.client` and :mod:`ftplib`, accept Unicode host
 names (:mod:`http.client` then also transparently sends an IDNA hostname in the
-:mailheader:`Host` field if it sends that field at all).
+:mailheader:`Host` field if it sends that field at all), and the :mod:`email`
+module's :func:`parseaddr`, :func:`getaddresses`, and :func:`formataddr`
+functions automatically apply IDNA to the hostnames in email addresses.
 
 .. _section 3.1: https://tools.ietf.org/html/rfc3490#section-3.1
 

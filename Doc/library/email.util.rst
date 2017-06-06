@@ -60,12 +60,18 @@ of the new API.
    begins with angle brackets, they are stripped off.
 
 
-.. function:: parseaddr(address)
+.. function:: parseaddr(address, decode_idna=True)
 
    Parse address -- which should be the value of some address-containing field such
    as :mailheader:`To` or :mailheader:`Cc` -- into its constituent *realname* and
    *email address* parts.  Returns a tuple of that information, unless the parse
    fails, in which case a 2-tuple of ``('', '')`` is returned.
+
+   If *decode_idna* is ``True`` the domain part of the address is decoded
+   according to :RFC:`3490`.
+
+   .. versionchanged:: 3.7
+      Added the *decode_idna* option.
 
 
 .. function:: formataddr(pair, charset='utf-8')

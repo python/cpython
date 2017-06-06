@@ -147,7 +147,7 @@ def quoteaddr(addrstring):
 
     Should be able to handle anything email.utils.parseaddr can handle.
     """
-    displayname, addr = email.utils.parseaddr(addrstring)
+    displayname, addr = email.utils.parseaddr(addrstring, decode_idna=False)
     if (displayname, addr) == ('', ''):
         # parseaddr couldn't parse it, use it as is and hope for the best.
         if addrstring.strip().startswith('<'):
@@ -156,7 +156,7 @@ def quoteaddr(addrstring):
     return "<%s>" % addr
 
 def _addr_only(addrstring):
-    displayname, addr = email.utils.parseaddr(addrstring)
+    displayname, addr = email.utils.parseaddr(addrstring, decode_idna=False)
     if (displayname, addr) == ('', ''):
         # parseaddr couldn't parse it, so use it as is.
         return addrstring
