@@ -992,6 +992,10 @@ Library
 - Issue #29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
   classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
 
+- Issue #30463: Add ``__slots__ = ()`` to ``abc.ABC`` to allow
+  subclassers to deny ``__dict__`` and ``__weakref__`` creation.
+  Patch by Aaron Hall.
+
 Windows
 -------
 
