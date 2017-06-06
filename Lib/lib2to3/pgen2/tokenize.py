@@ -74,10 +74,11 @@ Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
 Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
 # Tail end of """ string.
 Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
-Triple = group("[ubUB]?[rR]?'''", '[ubUB]?[rR]?"""')
+_litprefix = r"(?:[uUrRbBfF]|[rR][bB]|[bBuU][rR])?"
+Triple = group(_litprefix + "'''", _litprefix + '"""')
 # Single-line ' or " string.
-String = group(r"[uU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
-               r'[uU]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
+String = group(_litprefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
+               _litprefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
 # Because of leftmost-then-longest match semantics, be sure to put the
 # longest operators first (e.g., if = came before ==, == would get
@@ -95,9 +96,9 @@ PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
 # First (or only) line of ' or " string.
-ContStr = group(r"[uUbB]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
+ContStr = group(_litprefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
                 group("'", r'\\\r?\n'),
-                r'[uUbB]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
+                _litprefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
                 group('"', r'\\\r?\n'))
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
@@ -109,19 +110,26 @@ endprogs = {"'": re.compile(Single), '"': re.compile(Double),
             "r'''": single3prog, 'r"""': double3prog,
             "u'''": single3prog, 'u"""': double3prog,
             "b'''": single3prog, 'b"""': double3prog,
+            "f'''": single3prog, 'f"""': double3prog,
             "ur'''": single3prog, 'ur"""': double3prog,
             "br'''": single3prog, 'br"""': double3prog,
+            "rb'''": single3prog, 'rb"""': double3prog,
             "R'''": single3prog, 'R"""': double3prog,
             "U'''": single3prog, 'U"""': double3prog,
             "B'''": single3prog, 'B"""': double3prog,
+            "F'''": single3prog, 'F"""': double3prog,
             "uR'''": single3prog, 'uR"""': double3prog,
             "Ur'''": single3prog, 'Ur"""': double3prog,
             "UR'''": single3prog, 'UR"""': double3prog,
             "bR'''": single3prog, 'bR"""': double3prog,
             "Br'''": single3prog, 'Br"""': double3prog,
             "BR'''": single3prog, 'BR"""': double3prog,
+            "rB'''": single3prog, 'rB"""': double3prog,
+            "Rb'''": single3prog, 'Rb"""': double3prog,
+            "RB'''": single3prog, 'RB"""': double3prog,
             'r': None, 'R': None,
             'u': None, 'U': None,
+            'f': None, 'F': None,
             'b': None, 'B': None}
 
 triple_quoted = {}
@@ -129,20 +137,26 @@ for t in ("'''", '"""',
           "r'''", 'r"""', "R'''", 'R"""',
           "u'''", 'u"""', "U'''", 'U"""',
           "b'''", 'b"""', "B'''", 'B"""',
+          "f'''", 'f"""', "F'''", 'F"""',
           "ur'''", 'ur"""', "Ur'''", 'Ur"""',
           "uR'''", 'uR"""', "UR'''", 'UR"""',
           "br'''", 'br"""', "Br'''", 'Br"""',
-          "bR'''", 'bR"""', "BR'''", 'BR"""',):
+          "bR'''", 'bR"""', "BR'''", 'BR"""',
+          "rb'''", 'rb"""', "Rb'''", 'Rb"""',
+          "rB'''", 'rB"""', "RB'''", 'RB"""',):
     triple_quoted[t] = t
 single_quoted = {}
 for t in ("'", '"',
           "r'", 'r"', "R'", 'R"',
           "u'", 'u"', "U'", 'U"',
           "b'", 'b"', "B'", 'B"',
+          "f'", 'f"', "F'", 'F"',
           "ur'", 'ur"', "Ur'", 'Ur"',
           "uR'", 'uR"', "UR'", 'UR"',
           "br'", 'br"', "Br'", 'Br"',
-          "bR'", 'bR"', "BR'", 'BR"', ):
+          "bR'", 'bR"', "BR'", 'BR"',
+          "rb'", 'rb"', "Rb'", 'Rb"',
+          "rB'", 'rB"', "RB'", 'RB"',):
     single_quoted[t] = t
 
 tabsize = 8

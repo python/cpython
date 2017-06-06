@@ -278,7 +278,7 @@ static PyTypeObject StructTimeType;
 static PyObject *
 tmtotuple(struct tm *p
 #ifndef HAVE_STRUCT_TM_TM_ZONE
-        , const char *zone, int gmtoff
+        , const char *zone, time_t gmtoff
 #endif
 )
 {
@@ -304,7 +304,7 @@ tmtotuple(struct tm *p
 #else
     PyStructSequence_SET_ITEM(v, 9,
         PyUnicode_DecodeLocale(zone, "surrogateescape"));
-    SET(10, gmtoff);
+    PyStructSequence_SET_ITEM(v, 10, _PyLong_FromTime_t(gmtoff));
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
 #undef SET
     if (PyErr_Occurred()) {
@@ -396,7 +396,7 @@ time_localtime(PyObject *self, PyObject *args)
     {
         struct tm local = buf;
         char zone[100];
-        int gmtoff;
+        time_t gmtoff;
         strftime(zone, sizeof(zone), "%Z", &buf);
         gmtoff = timegm(&buf) - when;
         return tmtotuple(&local, zone, gmtoff);
@@ -440,7 +440,7 @@ gettmarg(PyObject *args, struct tm *p)
     if (Py_TYPE(args) == &StructTimeType) {
         PyObject *item;
         item = PyTuple_GET_ITEM(args, 9);
-        p->tm_zone = item == Py_None ? NULL : PyUnicode_AsUTF8(item);
+        p->tm_zone = item == Py_None ? NULL : (char*)PyUnicode_AsUTF8(item);
         item = PyTuple_GET_ITEM(args, 10);
         p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
         if (PyErr_Occurred())

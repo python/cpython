@@ -19,8 +19,15 @@ PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
  */
 PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
                                              const char *errors);
+
+/* PEP 432 Multi-phase initialization API (Private while provisional!) */
+PyAPI_FUNC(void) _Py_InitializeCore(const _PyCoreConfig *);
+PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
+PyAPI_FUNC(int) _Py_ReadMainInterpreterConfig(_PyMainInterpreterConfig *);
+PyAPI_FUNC(int) _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *);
 #endif
 
+/* Initialization and finalization */
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(void) Py_InitializeEx(int);
 #ifndef Py_LIMITED_API
@@ -29,6 +36,8 @@ PyAPI_FUNC(void) _Py_InitializeEx_Private(int, int);
 PyAPI_FUNC(void) Py_Finalize(void);
 PyAPI_FUNC(int) Py_FinalizeEx(void);
 PyAPI_FUNC(int) Py_IsInitialized(void);
+
+/* Subinterpreter support */
 PyAPI_FUNC(PyThreadState *) Py_NewInterpreter(void);
 PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);
 
@@ -77,14 +86,15 @@ PyAPI_FUNC(const char *) _Py_gitversion(void);
 /* Internal -- various one-time initializations */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
-PyAPI_FUNC(PyObject *) _PySys_Init(void);
+PyAPI_FUNC(PyObject *) _PySys_BeginInit(void);
+PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict);
 PyAPI_FUNC(void) _PyImport_Init(void);
 PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
 PyAPI_FUNC(void) _PyImportHooks_Init(void);
 PyAPI_FUNC(int) _PyFrame_Init(void);
 PyAPI_FUNC(int) _PyFloat_Init(void);
 PyAPI_FUNC(int) PyByteArray_Init(void);
-PyAPI_FUNC(void) _PyRandom_Init(void);
+PyAPI_FUNC(void) _Py_HashRandomization_Init(_PyCoreConfig *core_config);
 #endif
 
 /* Various internal finalizers */
@@ -106,7 +116,7 @@ PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
 PyAPI_FUNC(void) _PyGC_Fini(void);
 PyAPI_FUNC(void) PySlice_Fini(void);
 PyAPI_FUNC(void) _PyType_Fini(void);
-PyAPI_FUNC(void) _PyRandom_Fini(void);
+PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
 PyAPI_FUNC(void) PyAsyncGen_Fini(void);
 
 PyAPI_DATA(PyThreadState *) _Py_Finalizing;

@@ -171,8 +171,8 @@ static wchar_t * location_checks[] = {
     L"\\",
     L"\\PCBuild\\win32\\",
     L"\\PCBuild\\amd64\\",
-    // To support early 32bit versions of Python that stuck the build binaries
-    // directly in PCBuild...
+    /* To support early 32bit versions of Python that stuck the build binaries
+    * directly in PCBuild... */
     L"\\PCBuild\\",
     NULL
 };
@@ -234,7 +234,7 @@ locate_pythons_for_key(HKEY root, REGSAM flags)
                 status = RegOpenKeyExW(root, ip_path, 0, flags, &ip_key);
                 if (status != ERROR_SUCCESS) {
                     winerror(status, message, MSGSIZE);
-                    // Note: 'message' already has a trailing \n
+                    /* Note: 'message' already has a trailing \n*/
                     debug(L"%ls\\%ls: %ls", key_name, ip_path, message);
                     continue;
                 }
@@ -340,12 +340,12 @@ static void
 locate_all_pythons()
 {
 #if defined(_M_X64)
-    // If we are a 64bit process, first hit the 32bit keys.
+    /* If we are a 64bit process, first hit the 32bit keys. */
     debug(L"locating Pythons in 32bit registry\n");
     locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ | KEY_WOW64_32KEY);
     locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ | KEY_WOW64_32KEY);
 #else
-    // If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.
+    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.*/
     BOOL f64 = FALSE;
     if (IsWow64Process(GetCurrentProcess(), &f64) && f64) {
         debug(L"locating Pythons in 64bit registry\n");
@@ -353,7 +353,7 @@ locate_all_pythons()
         locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ | KEY_WOW64_64KEY);
     }
 #endif
-    // now hit the "native" key for this process bittedness.
+    /* now hit the "native" key for this process bittedness. */
     debug(L"locating Pythons in native registry\n");
     locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ);
     locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ);
@@ -370,8 +370,14 @@ find_python_by_version(wchar_t const * wanted_ver)
     size_t wlen = wcslen(wanted_ver);
     int bits = 0;
 
-    if (wcsstr(wanted_ver, L"-32"))
+    if (wcsstr(wanted_ver, L"-32")) {
         bits = 32;
+        wlen -= wcslen(L"-32");
+    }
+    else if (wcsstr(wanted_ver, L"-64")) { /* Added option to select 64 bit explicitly */
+        bits = 64;
+        wlen -= wcslen(L"-64");
+    }
     for (i = 0; i < num_installed_pythons; i++, ip++) {
         n = wcslen(ip->version);
         if (n > wlen)
@@ -608,14 +614,16 @@ run_child(wchar_t * cmdline)
     PROCESS_INFORMATION pi;
 
 #if defined(_WINDOWS)
-    // When explorer launches a Windows (GUI) application, it displays
-    // the "app starting" (the "pointer + hourglass") cursor for a number
-    // of seconds, or until the app does something UI-ish (eg, creating a
-    // window, or fetching a message).  As this launcher doesn't do this
-    // directly, that cursor remains even after the child process does these
-    // things.  We avoid that by doing a simple post+get message.
-    // See http://bugs.python.org/issue17290 and
-    // https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    /*
+    When explorer launches a Windows (GUI) application, it displays
+    the "app starting" (the "pointer + hourglass") cursor for a number
+    of seconds, or until the app does something UI-ish (eg, creating a
+    window, or fetching a message).  As this launcher doesn't do this
+    directly, that cursor remains even after the child process does these
+    things.  We avoid that by doing a simple post+get message.
+    See http://bugs.python.org/issue17290 and
+    https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    */
     MSG msg;
 
     PostMessage(0, 0, 0, 0);
@@ -1040,32 +1048,49 @@ find_terminator(char * buffer, int len, BOM *bom)
 static BOOL
 validate_version(wchar_t * p)
 {
-    BOOL result = TRUE;
+    /*
+    Version information should start with one of 2 or 3,
+    Optionally followed by a period and a minor version,
+    Optionally followed by a minus and one of 32 or 64.
+    Valid examples:
+      2
+      3
+      2.7
+      3.6
+      2.7-32
+      The intent is to add to the valid patterns:
+      3.10
+      3-32
+      3.6-64
+      3-64
+    */
+    BOOL result = (p != NULL); /* Default to False if null pointer. */
 
-    if (!isdigit(*p))               /* expect major version */
-        result = FALSE;
-    else if (*++p) {                /* more to do */
-        if (*p != L'.')             /* major/minor separator */
+    result = result && iswdigit(*p);  /* Result = False if fist string element is not a digit. */
+
+    while (result && iswdigit(*p))   /* Require a major version */
+        ++p;  /* Skip all leading digit(s) */
+    if (result && (*p == L'.'))     /* Allow . for major minor separator.*/
+    {
+        result = iswdigit(*++p);     /* Must be at least one digit */
+        while (result && iswdigit(*++p)) ; /* Skip any more Digits */
+    }
+    if (result && (*p == L'-')) {   /* Allow - for Bits Separator */
+        switch(*++p){
+        case L'3':                            /* 3 is OK */
+            result = (*++p == L'2') && !*++p; /* only if followed by 2 and ended.*/
+            break;
+        case L'6':                            /* 6 is OK */
+            result = (*++p == L'4') && !*++p; /* only if followed by 4 and ended.*/
+            break;
+        default:
             result = FALSE;
-        else {
-            ++p;
-            if (!isdigit(*p))       /* expect minor version */
-                result = FALSE;
-            else {
-                ++p;
-                if (*p) {           /* more to do */
-                    if (*p != L'-')
-                        result = FALSE;
-                    else {
-                        ++p;
-                        if ((*p != '3') && (*++p != '2') && !*++p)
-                            result = FALSE;
-                    }
-                }
-            }
+            break;
         }
     }
+    result = result && !*p; /* Must have reached EOS */
     return result;
+
 }
 
 typedef struct {
@@ -1529,7 +1554,7 @@ installed", &p[1]);
 #if defined(_M_X64)
             BOOL canDo64bit = TRUE;
 #else
-    // If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.
+    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys. */
             BOOL canDo64bit = FALSE;
             IsWow64Process(GetCurrentProcess(), &canDo64bit);
 #endif
@@ -1538,7 +1563,8 @@ installed", &p[1]);
             fwprintf(stdout, L"\
 Python Launcher for Windows Version %ls\n\n", version_text);
             fwprintf(stdout, L"\
-usage: %ls [ launcher-arguments ] [ python-arguments ] script [ script-arguments ]\n\n", argv[0]);
+usage:\n\
+%ls [launcher-args] [python-args] script [script-args]\n\n", argv[0]);
             fputws(L"\
 Launcher arguments:\n\n\
 -2     : Launch the latest Python 2.x version\n\
@@ -1546,7 +1572,11 @@ Launcher arguments:\n\n\
 -X.Y   : Launch the specified Python version\n", stdout);
             if (canDo64bit) {
                 fputws(L"\
--X.Y-32: Launch the specified 32bit Python version", stdout);
+     The above all default to 64 bit if a matching 64 bit python is present.\n\
+-X.Y-32: Launch the specified 32bit Python version\n\
+-X-32  : Launch the latest 32bit Python X version\n\
+-X.Y-64: Launch the specified 64bit Python version\n\
+-X-64  : Launch the latest 64bit Python X version", stdout);
             }
             fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
             fflush(stdout);

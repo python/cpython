@@ -2440,6 +2440,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(t.encoding, "ascii")
         self.assertEqual(t.errors, "strict")
         self.assertFalse(t.line_buffering)
+        self.assertFalse(t.write_through)
 
     def test_repr(self):
         raw = self.BytesIO("hello".encode("utf-8"))
@@ -2481,6 +2482,33 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(r.getvalue(), b"XY\nZ")  # All got flushed
         t.write("A\rB")
         self.assertEqual(r.getvalue(), b"XY\nZA\rB")
+
+    def test_reconfigure_line_buffering(self):
+        r = self.BytesIO()
+        b = self.BufferedWriter(r, 1000)
+        t = self.TextIOWrapper(b, newline="\n", line_buffering=False)
+        t.write("AB\nC")
+        self.assertEqual(r.getvalue(), b"")
+
+        t.reconfigure(line_buffering=True)   # implicit flush
+        self.assertEqual(r.getvalue(), b"AB\nC")
+        t.write("DEF\nG")
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nG")
+        t.write("H")
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nG")
+        t.reconfigure(line_buffering=False)   # implicit flush
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nGH")
+        t.write("IJ")
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nGH")
+
+        # Keeping default value
+        t.reconfigure()
+        t.reconfigure(line_buffering=None)
+        self.assertEqual(t.line_buffering, False)
+        t.reconfigure(line_buffering=True)
+        t.reconfigure()
+        t.reconfigure(line_buffering=None)
+        self.assertEqual(t.line_buffering, True)
 
     def test_default_encoding(self):
         old_environ = dict(os.environ)
@@ -3164,6 +3192,29 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertTrue(write_called)
         self.assertEqual(rawio.getvalue(), data * 11) # all flushed
 
+    def test_reconfigure_write_through(self):
+        raw = self.MockRawIO([])
+        t = self.TextIOWrapper(raw, encoding='ascii', newline='\n')
+        t.write('1')
+        t.reconfigure(write_through=True)  # implied flush
+        self.assertEqual(t.write_through, True)
+        self.assertEqual(b''.join(raw._write_stack), b'1')
+        t.write('23')
+        self.assertEqual(b''.join(raw._write_stack), b'123')
+        t.reconfigure(write_through=False)
+        self.assertEqual(t.write_through, False)
+        t.write('45')
+        t.flush()
+        self.assertEqual(b''.join(raw._write_stack), b'12345')
+        # Keeping default value
+        t.reconfigure()
+        t.reconfigure(write_through=None)
+        self.assertEqual(t.write_through, False)
+        t.reconfigure(write_through=True)
+        t.reconfigure()
+        t.reconfigure(write_through=None)
+        self.assertEqual(t.write_through, True)
+
     def test_read_nonbytes(self):
         # Issue #17106
         # Crash when underlying read() returns non-bytes
@@ -3732,6 +3783,7 @@ class CMiscIOTest(MiscIOTest):
             import sys
             import time
             import threading
+            from test.support import SuppressCrashReport
 
             file = sys.{stream_name}
 
@@ -3739,6 +3791,10 @@ class CMiscIOTest(MiscIOTest):
                 while True:
                     file.write('.')
                     file.flush()
+
+            crash = SuppressCrashReport()
+            crash.__enter__()
+            # don't call __exit__(): the crash occurs at Python shutdown
 
             thread = threading.Thread(target=run)
             thread.daemon = True
