@@ -53,6 +53,20 @@ Slice Objects
 
    Returns ``0`` on success and ``-1`` on error with exception set.
 
+   .. note::
+      This function considered not safe for resizable sequences.  Replace its invocation ::
+
+         if (PySlice_GetIndicesEx(slice, length, &start, &stop, &step, &slicelength) < 0) {
+             // return error
+         }
+
+      with using functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`::
+
+         if (PySlice_Unpack(slice, length, &start, &stop, &step) < 0) {
+             // return error
+         }
+         slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
+
    .. versionchanged:: 3.2
       The parameter type for the *slice* parameter was ``PySliceObject*``
       before.
