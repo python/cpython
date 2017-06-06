@@ -1035,7 +1035,7 @@ Library
 - Issue #25532: inspect.unwrap() will now only try to unwrap an object
   sys.getrecursionlimit() times, to protect against objects which create a new
   object on every attribute access.
-  
+
 Windows
 -------
 
