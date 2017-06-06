@@ -24,6 +24,7 @@ class NavigateBar(Frame):
         self.mode = ''
 
     def create_widgets(self):
+        self.bind('<FocusOut>', self.cancel)
         self.parent.bind('<Configure>', self.winconfig_event)
         self.label = Label(self, text='navigatebar')
         self.label.pack(side=LEFT)
