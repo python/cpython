@@ -238,6 +238,13 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Added Thread Specific Storage (TSS) API which would supersede use of the
+  existing Thread Local Storage (TLS) API within the CPython interpreter, while
+  deprecating the existing API.  The change is motivated primarily by the fact
+  that the old API uses int to represent TLS keys across all platforms, which
+  is neither POSIX-compliant, nor portable in any practical sense.  For more
+  information, see :pep:`539` and :issue:`25658`.
+
 * A full copy of libffi is no longer bundled for use when building the
   :mod:`_ctypes <ctypes>` module on non-OSX UNIX platforms.  An installed copy
   of libffi is now required when building ``_ctypes`` on such platforms.

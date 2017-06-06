@@ -1081,6 +1081,11 @@ Windows
 C API
 -----
 
+- bpo-25658: Implement PEP 539 for Thread Specific Strage (TSS) API: it is a
+  new Thread Local Storage (TLS) API to CPython which would supersede use of
+  the existing TLS API within the CPython interpreter, while deprecating the
+  existing API.
+
 - bpo-16500: Deprecate PyOS_AfterFork() and add PyOS_BeforeFork(),
   PyOS_AfterFork_Parent() and PyOS_AfterFork_Child().
 
