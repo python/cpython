@@ -2423,7 +2423,7 @@ class PropertyMock(Mock):
         self(val)
 
 
-def seal(in_mock):
+def seal(mock):
     """Disables the automatic generation of "submocks"
 
     Given an input Mock, seals it to ensure no further mocks will be generated
@@ -2443,13 +2443,13 @@ def seal(in_mock):
     >>> mock.not_submock.attribute2  # This won't raise
 
     """
-    in_mock._mock_sealed = True
-    for attr in dir(in_mock):
+    mock._mock_sealed = True
+    for attr in dir(mock):
         try:
-            m = getattr(in_mock, attr)
+            m = getattr(mock, attr)
         except AttributeError:
             continue
         if not isinstance(m, NonCallableMock):
             continue
-        if m._mock_new_parent is in_mock:
+        if m._mock_new_parent is mock:
             seal(m)
