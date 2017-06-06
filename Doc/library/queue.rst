@@ -190,6 +190,17 @@ Example of how to wait for enqueued tasks to be completed::
     for t in threads:
         t.join()
 
+One more method provides information about progress of tasks completion.
+
+.. method:: Queue.unfinished()
+
+   Return number of unfinished tasks i.e. number of such tasks which were queued but
+   consumer threads hadn't yet indicated that task is completed (via call of
+   :meth:`task_done`).
+
+   To get the correct value from this method you have to call :meth:`task_done`
+   for each call to :meth:`get` used to fetch a task to indicate that the item was
+   retrieved and all work on it is complete.
 
 .. seealso::
 

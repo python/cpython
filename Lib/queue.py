@@ -82,6 +82,13 @@ class Queue:
             while self.unfinished_tasks:
                 self.all_tasks_done.wait()
 
+    def unfinished(self):
+        '''Return number of unfinished tasks i.e. number of such tasks which
+        were queued but consumer threads hadn't yet indicated that task is
+        completed (via call of method task_done()).
+        '''
+        return self.unfinished_tasks
+
     def qsize(self):
         '''Return the approximate size of the queue (not reliable!).'''
         with self.mutex:

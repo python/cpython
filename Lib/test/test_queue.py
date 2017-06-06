@@ -193,6 +193,15 @@ class BaseQueueTestMixin(BlockingTestMixin):
         else:
             self.fail("Did not detect task count going negative")
 
+    def test_queue_unfinished(self):
+        q = self.type2test()
+        q.put(1)
+        q.put(2)
+        self.assertEqual(q.unfinished(), 2)
+        q.get()
+        q.task_done()
+        self.assertEqual(q.unfinished(), 1)
+
     def test_simple_queue(self):
         # Do it a couple of times on the same queue.
         # Done twice to make sure works with same instance reused.
