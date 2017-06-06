@@ -636,7 +636,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
         break;
 
     case METH_VARARGS:
-        if (!(flags & METH_KEYWORDS) && nkwargs) {
+        if (nkwargs) {
             goto no_keyword_error;
         }
         /* fall through next case */
