@@ -24,7 +24,7 @@
 import unittest
 import sqlite3 as sqlite
 
-from test.support import TESTFN, unlink
+from test.support import TESTFN, unlink, requires_mac_ver
 
 class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotString(self):
@@ -251,6 +251,8 @@ class TraceCallbackTests(unittest.TestCase):
                         % (ascii(unicode_value), ', '.join(map(ascii, traced_statements))))
 
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 3, 9), "sqlite3_prepare_v2 is not available")
+    # bpo-30126: Test fails on Mac OS X Tiger with SQLite 2.6.0 version 3.6.11
+    @requires_mac_ver(10, 5)
     def CheckTraceCallbackContent(self):
         # set_trace_callback() shouldn't produce duplicate content (bpo-26187)
         traced_statements = []
