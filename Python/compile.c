@@ -946,9 +946,9 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case POP_BLOCK:
             return 0;
         case POP_EXCEPT:
-            return 0;  /* -3 except if bad bytecode */
+            return -3; /* the previous exception state */
         case END_FINALLY:
-            return -1; /* or -2 or -3 if exception occurred */
+            return -6; /* see SETUP_FINALLY */
 
         case STORE_NAME:
             return -1;
@@ -4850,11 +4850,12 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
             if (instr->i_opcode == FOR_ITER) {
                 target_depth = depth-2;
             }
-            else if (instr->i_opcode == SETUP_FINALLY ||
-                     instr->i_opcode == SETUP_EXCEPT) {
-                target_depth = depth+3;
-                if (target_depth > maxdepth)
-                    maxdepth = target_depth;
+            else if (instr->i_opcode == SETUP_EXCEPT) {
+                depth = depth - 6;
+            }
+            else if (instr->i_opcode == SETUP_FINALLY) {
+                depth = depth - 1; /* for None */
+                continue; /* should pass to finally handler in any case  */
             }
             else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
                      instr->i_opcode == JUMP_IF_FALSE_OR_POP)

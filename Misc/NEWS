@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-24340: Fixed a "leak" in the computation of the stack size effect for
+  try/except and try/finally.
+
 - bpo-25324: Tokens needed for parsing in Python moved to C. ``COMMENT``,
   ``NL`` and ``ENCODING``. This way the tokens and tok_names in the token
   module don't get changed when you import the tokenize module.
