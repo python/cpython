@@ -57,19 +57,22 @@ Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
 25 26 27 28 29 30 31      29 30                     27 28 29 30 31
 """
 
+
+default_format = dict(year="year", month="month", encoding="ascii")
+
 result_2004_html = """\
-<?xml version="1.0" encoding="%(e)s"?>
+<?xml version="1.0" encoding="{encoding}"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=%(e)s" />
+<meta http-equiv="Content-Type" content="text/html; charset={encoding}" />
 <link rel="stylesheet" type="text/css" href="calendar.css" />
 <title>Calendar for 2004</title>
 </head>
 <body>
-<table border="0" cellpadding="0" cellspacing="0" class="year">
-<tr><th colspan="3" class="year">2004</th></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">January</th></tr>
+<table border="0" cellpadding="0" cellspacing="0" class="{year}">
+<tr><th colspan="3" class="{year}">2004</th></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">January</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="thu">1</td><td class="fri">2</td><td class="sat">3</td><td class="sun">4</td></tr>
 <tr><td class="mon">5</td><td class="tue">6</td><td class="wed">7</td><td class="thu">8</td><td class="fri">9</td><td class="sat">10</td><td class="sun">11</td></tr>
@@ -77,8 +80,8 @@ result_2004_html = """\
 <tr><td class="mon">19</td><td class="tue">20</td><td class="wed">21</td><td class="thu">22</td><td class="fri">23</td><td class="sat">24</td><td class="sun">25</td></tr>
 <tr><td class="mon">26</td><td class="tue">27</td><td class="wed">28</td><td class="thu">29</td><td class="fri">30</td><td class="sat">31</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">February</th></tr>
+</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">February</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="sun">1</td></tr>
 <tr><td class="mon">2</td><td class="tue">3</td><td class="wed">4</td><td class="thu">5</td><td class="fri">6</td><td class="sat">7</td><td class="sun">8</td></tr>
@@ -86,8 +89,8 @@ result_2004_html = """\
 <tr><td class="mon">16</td><td class="tue">17</td><td class="wed">18</td><td class="thu">19</td><td class="fri">20</td><td class="sat">21</td><td class="sun">22</td></tr>
 <tr><td class="mon">23</td><td class="tue">24</td><td class="wed">25</td><td class="thu">26</td><td class="fri">27</td><td class="sat">28</td><td class="sun">29</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">March</th></tr>
+</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">March</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="mon">1</td><td class="tue">2</td><td class="wed">3</td><td class="thu">4</td><td class="fri">5</td><td class="sat">6</td><td class="sun">7</td></tr>
 <tr><td class="mon">8</td><td class="tue">9</td><td class="wed">10</td><td class="thu">11</td><td class="fri">12</td><td class="sat">13</td><td class="sun">14</td></tr>
@@ -95,8 +98,8 @@ result_2004_html = """\
 <tr><td class="mon">22</td><td class="tue">23</td><td class="wed">24</td><td class="thu">25</td><td class="fri">26</td><td class="sat">27</td><td class="sun">28</td></tr>
 <tr><td class="mon">29</td><td class="tue">30</td><td class="wed">31</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">April</th></tr>
+</td></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">April</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="thu">1</td><td class="fri">2</td><td class="sat">3</td><td class="sun">4</td></tr>
 <tr><td class="mon">5</td><td class="tue">6</td><td class="wed">7</td><td class="thu">8</td><td class="fri">9</td><td class="sat">10</td><td class="sun">11</td></tr>
@@ -104,8 +107,8 @@ result_2004_html = """\
 <tr><td class="mon">19</td><td class="tue">20</td><td class="wed">21</td><td class="thu">22</td><td class="fri">23</td><td class="sat">24</td><td class="sun">25</td></tr>
 <tr><td class="mon">26</td><td class="tue">27</td><td class="wed">28</td><td class="thu">29</td><td class="fri">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">May</th></tr>
+</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">May</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="sat">1</td><td class="sun">2</td></tr>
 <tr><td class="mon">3</td><td class="tue">4</td><td class="wed">5</td><td class="thu">6</td><td class="fri">7</td><td class="sat">8</td><td class="sun">9</td></tr>
@@ -114,8 +117,8 @@ result_2004_html = """\
 <tr><td class="mon">24</td><td class="tue">25</td><td class="wed">26</td><td class="thu">27</td><td class="fri">28</td><td class="sat">29</td><td class="sun">30</td></tr>
 <tr><td class="mon">31</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">June</th></tr>
+</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">June</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="tue">1</td><td class="wed">2</td><td class="thu">3</td><td class="fri">4</td><td class="sat">5</td><td class="sun">6</td></tr>
 <tr><td class="mon">7</td><td class="tue">8</td><td class="wed">9</td><td class="thu">10</td><td class="fri">11</td><td class="sat">12</td><td class="sun">13</td></tr>
@@ -123,8 +126,8 @@ result_2004_html = """\
 <tr><td class="mon">21</td><td class="tue">22</td><td class="wed">23</td><td class="thu">24</td><td class="fri">25</td><td class="sat">26</td><td class="sun">27</td></tr>
 <tr><td class="mon">28</td><td class="tue">29</td><td class="wed">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">July</th></tr>
+</td></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">July</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="thu">1</td><td class="fri">2</td><td class="sat">3</td><td class="sun">4</td></tr>
 <tr><td class="mon">5</td><td class="tue">6</td><td class="wed">7</td><td class="thu">8</td><td class="fri">9</td><td class="sat">10</td><td class="sun">11</td></tr>
@@ -132,8 +135,8 @@ result_2004_html = """\
 <tr><td class="mon">19</td><td class="tue">20</td><td class="wed">21</td><td class="thu">22</td><td class="fri">23</td><td class="sat">24</td><td class="sun">25</td></tr>
 <tr><td class="mon">26</td><td class="tue">27</td><td class="wed">28</td><td class="thu">29</td><td class="fri">30</td><td class="sat">31</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">August</th></tr>
+</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">August</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="sun">1</td></tr>
 <tr><td class="mon">2</td><td class="tue">3</td><td class="wed">4</td><td class="thu">5</td><td class="fri">6</td><td class="sat">7</td><td class="sun">8</td></tr>
@@ -142,8 +145,8 @@ result_2004_html = """\
 <tr><td class="mon">23</td><td class="tue">24</td><td class="wed">25</td><td class="thu">26</td><td class="fri">27</td><td class="sat">28</td><td class="sun">29</td></tr>
 <tr><td class="mon">30</td><td class="tue">31</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">September</th></tr>
+</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">September</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="wed">1</td><td class="thu">2</td><td class="fri">3</td><td class="sat">4</td><td class="sun">5</td></tr>
 <tr><td class="mon">6</td><td class="tue">7</td><td class="wed">8</td><td class="thu">9</td><td class="fri">10</td><td class="sat">11</td><td class="sun">12</td></tr>
@@ -151,8 +154,8 @@ result_2004_html = """\
 <tr><td class="mon">20</td><td class="tue">21</td><td class="wed">22</td><td class="thu">23</td><td class="fri">24</td><td class="sat">25</td><td class="sun">26</td></tr>
 <tr><td class="mon">27</td><td class="tue">28</td><td class="wed">29</td><td class="thu">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">October</th></tr>
+</td></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">October</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="fri">1</td><td class="sat">2</td><td class="sun">3</td></tr>
 <tr><td class="mon">4</td><td class="tue">5</td><td class="wed">6</td><td class="thu">7</td><td class="fri">8</td><td class="sat">9</td><td class="sun">10</td></tr>
@@ -160,8 +163,8 @@ result_2004_html = """\
 <tr><td class="mon">18</td><td class="tue">19</td><td class="wed">20</td><td class="thu">21</td><td class="fri">22</td><td class="sat">23</td><td class="sun">24</td></tr>
 <tr><td class="mon">25</td><td class="tue">26</td><td class="wed">27</td><td class="thu">28</td><td class="fri">29</td><td class="sat">30</td><td class="sun">31</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">November</th></tr>
+</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">November</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="mon">1</td><td class="tue">2</td><td class="wed">3</td><td class="thu">4</td><td class="fri">5</td><td class="sat">6</td><td class="sun">7</td></tr>
 <tr><td class="mon">8</td><td class="tue">9</td><td class="wed">10</td><td class="thu">11</td><td class="fri">12</td><td class="sat">13</td><td class="sun">14</td></tr>
@@ -169,8 +172,8 @@ result_2004_html = """\
 <tr><td class="mon">22</td><td class="tue">23</td><td class="wed">24</td><td class="thu">25</td><td class="fri">26</td><td class="sat">27</td><td class="sun">28</td></tr>
 <tr><td class="mon">29</td><td class="tue">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="month">
-<tr><th colspan="7" class="month">December</th></tr>
+</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<tr><th colspan="7" class="{month}">December</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="wed">1</td><td class="thu">2</td><td class="fri">3</td><td class="sat">4</td><td class="sun">5</td></tr>
 <tr><td class="mon">6</td><td class="tue">7</td><td class="wed">8</td><td class="thu">9</td><td class="fri">10</td><td class="sat">11</td><td class="sun">12</td></tr>
@@ -327,9 +330,12 @@ class OutputTestCase(unittest.TestCase):
 
     def check_htmlcalendar_encoding(self, req, res):
         cal = calendar.HTMLCalendar()
+        format_ = default_format.copy()
+        format_["encoding"] = req or 'utf-8'
+        output = cal.formatyearpage(2004, encoding=req)
         self.assertEqual(
-            cal.formatyearpage(2004, encoding=req),
-            (result_2004_html % {'e': res}).encode(res)
+            output,
+            result_2004_html.format(**format_).encode(res)
         )
 
     def test_output(self):
@@ -825,7 +831,7 @@ class CommandLineTestCase(unittest.TestCase):
     def test_html_output_year_encoding(self):
         stdout = self.run_ok('-t', 'html', '--encoding', 'ascii', '2004')
         self.assertEqual(stdout,
-                         (result_2004_html % {'e': 'ascii'}).encode('ascii'))
+                         result_2004_html.format(**default_format).encode('ascii'))
 
     def test_html_output_year_css(self):
         self.assertFailure('-t', 'html', '-c')
@@ -843,6 +849,48 @@ class MiscTestCase(unittest.TestCase):
                      'prweek', 'week', 'format', 'formatstring', 'main'}
         support.check__all__(self, calendar, blacklist=blacklist)
 
+
+class TestSubClassingCase(unittest.TestCase):
+
+    def setUp(self):
+
+        class CustomHTMLCal(calendar.HTMLCalendar):
+            cssclasses = [style + " text-nowrap" for style in
+                          calendar.HTMLCalendar.cssclasses]
+            cssclasses_weekday_head = ["red", "blue", "green", "lilac",
+                                       "yellow", "orange", "pink"]
+            cssclass_month_head = "text-center month-head"
+            cssclass_month = "text-center month"
+            cssclass_year = "text-italic "
+            cssclass_year_head = "lead "
+
+        self.cal = CustomHTMLCal()
+
+    def test_formatmonthname(self):
+        self.assertIn('class="text-center month-head"',
+                      self.cal.formatmonthname(2017, 5))
+
+    def test_formatmonth(self):
+        self.assertIn('class="text-center month"',
+                      self.cal.formatmonth(2017, 5))
+
+    def test_formatweek(self):
+        weeks = self.cal.monthdays2calendar(2017, 5)
+        self.assertIn('class="wed text-nowrap"', self.cal.formatweek(weeks[0]))
+
+    def test_formatweek_head(self):
+        header = self.cal.formatweekheader()
+        for color in self.cal.cssclasses_weekday_head:
+            self.assertIn('<th class="%s">' % color, header)
+
+    def test_format_year(self):
+        self.assertIn(
+            ('<table border="0" cellpadding="0" cellspacing="0" class="%s">' %
+             self.cal.cssclass_year), self.cal.formatyear(2017))
+
+    def test_format_year_head(self):
+        self.assertIn('<tr><th colspan="%d" class="%s">%s</th></tr>' % (
+            3, self.cal.cssclass_year_head, 2017), self.cal.formatyear(2017))
 
 if __name__ == "__main__":
     unittest.main()

@@ -540,7 +540,7 @@ class Random(_random.Random):
                     return x * beta
 
         elif alpha == 1.0:
-            # expovariate(1)
+            # expovariate(1/beta)
             u = random()
             while u <= 1e-7:
                 u = random()
