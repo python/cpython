@@ -82,16 +82,15 @@ The :mod:`bdb` module also defines two classes:
 
    .. attribute:: line
 
-      Line number of the :class:`Breakpoint` within
-      :attr:`file <bdb.Breakpoint.file>`.
+      Line number of the :class:`Breakpoint` within :attr:`file`.
 
    .. attribute:: temporary
 
-      True if :class:`Breakpoint` at the (file, line) is temporary.
+      True if a :class:`Breakpoint` at (file, line) is temporary.
 
    .. attribute:: cond
 
-      Condition for evaluating :class:`Breakpoint` at the (file, line).
+      Condition for evaluating a :class:`Breakpoint` at (file, line).
 
    .. attribute:: funcname
 
@@ -142,7 +141,7 @@ The :mod:`bdb` module also defines two classes:
 
       Return canonical form of *filename*.
 
-      For real file names, the canonical form is an operating system dependent,
+      For real file names, the canonical form is an operating-system-dependent,
       :func:`case-normalized <os.path.normcase>` :func:`absolute path
       <os.path.abspath>`. A *filename* with angle brackets, such as `"<stdin>"`
       generated in interactive mode, is returned unchanged.
@@ -361,7 +360,7 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: get_stack(f, t)
 
-      Return a list of (frame, lineno) tuples in a stack trace and a size.
+      Return a list of (frame, lineno) tuples in a stack trace, and a size.
 
       List starts with the original calling frame, if there is one.  Size may
       be the number of frames above or below *f*.
