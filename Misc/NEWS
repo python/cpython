@@ -45,6 +45,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-30557: faulthandler now correctly filters and displays exception codes
+  on Windows
+
 - bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
   handle IPv6 addresses.
 
