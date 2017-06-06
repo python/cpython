@@ -983,8 +983,8 @@ class Popen(object):
             if have_handle_list or (use_std_handles and close_fds):
                 if attribute_list is None:
                     attribute_list = startupinfo.lpAttributeList = {}
-                handle_list = attribute_list.setdefault("handle_list", [])
-                handle_list = attribute_list["handle_list"] = list(handle_list)
+                handle_list = attribute_list["handle_list"] = \
+                    list(attribute_list.get("handle_list", []))
 
                 if use_std_handles:
                     handle_list += [int(p2cread), int(c2pwrite), int(errwrite)]
