@@ -177,8 +177,8 @@ class PkgutilTests(unittest.TestCase):
             del sys.modules[pkg]
 
     def test_walkpackages_on_bad_input(self):
-        """Test that walk_packages() throws ValueError if path is str or bytes
-        object.
+        """Test that walk_packages() throws TypeError / ValueError if path is
+        str or bytes object.
         """
         str_input = 'test_dir'
         with self.assertRaises((TypeError, ValueError)):
