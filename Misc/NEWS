@@ -345,6 +345,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30520: Loggers are now pickleable.
+
 - bpo-30557: faulthandler now correctly filters and displays exception codes
   on Windows
 
@@ -353,7 +355,7 @@ Library
 
 - bpo-30245: Fix possible overflow when organize struct.pack_into
   error message.  Patch by Yuan Liu.
-  
+
 - bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
   handle IPv6 addresses.
 
