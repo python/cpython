@@ -2433,15 +2433,6 @@ def seal(mock):
     parent. If a mock is assigned to an attribute of an existing mock,
     it is not considered a submock.
 
-    :Example:
-
-    >>> mock = Mock()
-    >>> mock.submock.attribute1 = 2
-    >>> mock.not_submock = mock.Mock()
-    >>> seal(mock)
-    >>> mock.submock.attribute2  # This will raise
-    >>> mock.not_submock.attribute2  # This won't raise
-
     """
     mock._mock_sealed = True
     for attr in dir(mock):
