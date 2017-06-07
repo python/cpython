@@ -560,18 +560,15 @@ class MaxLinesTestCase(BaseTestCase):
         self.check_wrap(self.text, 80, [self.text], placeholder='.' * 1000)
 
     def test_placeholder_backtrack(self):
-        # Test a relatively rare case which seems to occur
-        # when max_lines insufficient, but the what would be
-        # the last wrapped line so long that the placeholder
-        # cannot be added there without violence. So, textwrap
-        # backtracks and adds the placeholder to the penultimate
-        # line. This test exercises several lines that otherwise
-        # have no test coverage.
+        # Test special case when max_lines insufficient, but what
+        # would be last wrapped line so long the placeholder cannot
+        # be added there without violence. So, textwrap backtracks,
+        # adding placeholder to the penultimate line.
         text = 'Good grief Python features are advancing quickly!'
         self.check_wrap(text, 12,
-                ['Good grief', 'Python*****'],
-                max_lines=3,
-                placeholder='*****')
+                        ['Good grief', 'Python*****'],
+                        max_lines=3,
+                        placeholder='*****')
 
 
 class LongWordTestCase (BaseTestCase):
