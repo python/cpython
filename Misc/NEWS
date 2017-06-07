@@ -128,6 +128,9 @@ Core and Builtins
 
 - bpo-29546: Improve from-import error message with location
 
+- bpo-30537: itertools.islice now accepts integer-like objects (having
+  an __index__ method) as start, stop, and slice arguments
+
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
 - Issue #29337: Fixed possible BytesWarning when compare the code objects.
