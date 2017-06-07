@@ -1215,6 +1215,10 @@ an :term:`importer`.
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.7
+      Raises :exc:`ModuleNotFoundError` instead of :exc:`AttributeError` if
+      **package** can be imported but is missing the :attr:`__path__` attribute.
+
 .. function:: module_from_spec(spec)
 
    Create a new module based on **spec** and

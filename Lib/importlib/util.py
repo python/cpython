@@ -84,13 +84,13 @@ def find_spec(name, package=None):
     if fullname not in sys.modules:
         parent_name = fullname.rpartition('.')[0]
         if parent_name:
+            parent = __import__(parent_name, fromlist=['__path__'])
             try:
-                parent_path = __import__(parent_name,
-                                         fromlist=['__path__']).__path__
+                parent_path = parent.__path__
             except AttributeError as e:
                 raise ModuleNotFoundError(
-                    "Error while finding module specification for '{}'."
-                    .format(fullname), name=fullname) from e
+                    f"Error while finding module specification for "
+                    f"'{fullname}'.", name=fullname) from e
         else:
             parent_path = None
         return _find_spec(fullname, parent_path)

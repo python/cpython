@@ -522,12 +522,7 @@ class FindSpecTests:
             self.assertNotIn(name, sorted(sys.modules))
             self.assertNotIn(fullname, sorted(sys.modules))
 
-    def test_ModuleNotFoundError_raised_for_broken_module_name(self):
-        """
-        Test that calling find_spec with broken name raises ModuleNotFoundError.
-
-        See issue 30436 for discussion of this behaviour.
-        """
+    def test_find_submodule_in_module(self):
         with self.assertRaises(ModuleNotFoundError):
             self.util.find_spec('module.name')
 
