@@ -10,6 +10,7 @@ import unittest
 import test
 from test.test_unittest.testmock import support
 from test.test_unittest.testmock.support import SomeClass, is_instance
+from test.test_unittest.testmock.testmock import Something
 
 from test.support.import_helper import DirsOnSysPath
 from test.test_importlib.util import uncache
@@ -1074,6 +1075,155 @@ class PatchTest(unittest.TestCase):
             self.assertRaises(TypeError, method)
             self.assertRaises(TypeError, method, 1)
             self.assertRaises(TypeError, method, 1, 2, 3, c=4)
+
+    # gh-76273 / bpo-32092
+    def _check_autospeced_something(self, something):
+        self._check_autospeced_something_meth(something.meth)
+        self._check_autospeced_something_meth(something.cmeth)
+        self._check_autospeced_something_meth(something.smeth)
+
+
+    def _check_autospeced_something_meth(self, mock_method):
+        # check that the methods are callable with correct args.
+        mock_method(sentinel.a, sentinel.b, sentinel.c)
+        mock_method(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)
+        mock_method.assert_has_calls([
+            call(sentinel.a, sentinel.b, sentinel.c),
+            call(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)])
+
+        # assert that TypeError is raised if the method signature is not
+        # respected.
+        self.assertRaises(TypeError, mock_method)
+        self.assertRaises(TypeError, mock_method, sentinel.a)
+        self.assertRaises(TypeError, mock_method, a=sentinel.a)
+        self.assertRaises(TypeError, mock_method, sentinel.a, sentinel.b,
+                          sentinel.c, e=sentinel.e)
+
+
+    def test_patch_autospec_obj(self):
+        something = Something()
+        with patch.multiple(something, meth=DEFAULT, cmeth=DEFAULT,
+                            smeth=DEFAULT, autospec=True):
+            self._check_autospeced_something(something)
+
+
+    def test_patch_autospec_obj_wraps(self):
+        something = Something()
+        with (
+            patch.object(something, "meth", autospec=True, wraps=something.meth),
+            patch.object(something, "cmeth", autospec=True, wraps=something.cmeth),
+            patch.object(something, "smeth", autospec=True, wraps=something.smeth),
+        ):
+            self._check_autospeced_something(something)
+
+
+    @patch.object(Something, 'smeth', autospec=True)
+    @patch.object(Something, 'cmeth', autospec=True)
+    @patch.object(Something, 'meth', autospec=True)
+    def test_patch_autospec_class(self, mock_meth, mock_cmeth, mock_smeth):
+        # patching a single instance method with autospec should not require
+        # `self` to be passed to assertion methods (bpo-32092)
+        something = Something()
+        self._check_autospeced_something(something)
+
+
+    @patch.object(Something, 'smeth', autospec=True, wraps=Something.smeth)
+    @patch.object(Something, 'cmeth', autospec=True, wraps=Something.cmeth)
+    @patch.object(Something, 'meth', autospec=True, wraps=Something.meth)
+    def test_patch_autospec_class_wraps(self, mock_meth, mock_cmeth,
+                                        mock_smeth):
+        something = Something()
+        self._check_autospeced_something(something)
+
+
+    def test_patch_autospec_obj_side_effect(self):
+        for method in ["meth", "cmeth", "smeth"]:
+            seen = []
+            def side_effect(a, b, c, d=None):
+                seen.append((a, b, c, d))
+
+            something = Something()
+            with patch.object(something, method, autospec=True) as mock_method:
+                mock_method.side_effect = side_effect
+
+                getattr(something, method)(sentinel.a, sentinel.b, sentinel.c)
+
+                self.assertEqual(seen, [(sentinel.a, sentinel.b, sentinel.c, None)])
+                mock_method.assert_called_once_with(sentinel.a, sentinel.b,
+                                                    sentinel.c)
+
+
+    def test_patch_autospec_class_side_effect(self):
+        for method in ["cmeth", "smeth"]:
+            seen = []
+            def side_effect(a, b, c, d=None):
+                seen.append((a, b, c, d))
+
+            with patch.object(Something, method, autospec=True) as mock_method:
+                mock_method.side_effect = side_effect
+                something = Something()
+
+                getattr(something, method)(sentinel.a, sentinel.b, sentinel.c)
+
+                expected = (sentinel.a, sentinel.b, sentinel.c, None)
+                self.assertEqual(seen, [expected])
+                mock_method.assert_called_once_with(sentinel.a, sentinel.b,
+                                                    sentinel.c)
+
+        # `meth` is a plain instance method patched via the class; it will
+        # goes through the self-consuming funcopy path: `side_effect` gets
+        # `self` rebound onto it, just like `wraps` does. This doesn't apply
+        # to classmethods.
+        seen = []
+        def self_side_effect(self, a, b, c, d=None):
+            seen.append((self, a, b, c, d))
+
+        with patch.object(Something, "meth", autospec=True) as mock_method:
+            mock_method.side_effect = self_side_effect
+            something = Something()
+
+            something.meth(sentinel.a, sentinel.b, sentinel.c)
+
+            expected = (something, sentinel.a, sentinel.b, sentinel.c, None)
+            self.assertEqual(seen, [expected])
+            mock_method.assert_called_once_with(sentinel.a, sentinel.b, sentinel.c)
+
+
+    def test_autospec_wraps_getattr_idiom(self):
+        # mirrors test_hmac.py's watch_method() helper exactly.
+        class Foo:
+            def f(self, a, b):
+                return ('real', a, b)
+
+        def watch(cls, name):
+            wraps = getattr(cls, name)
+            return patch.object(cls, name, autospec=True, wraps=wraps)
+
+        with watch(Foo, 'f') as method:
+            foo = Foo()
+            self.assertEqual(foo.f(1, 2), ('real', 1, 2))
+            method.assert_called_once_with(1, 2)
+
+
+    def test_autospec_wraps_recursive_call(self):
+        # a wrapped method that calls itself (through the mock) should not
+        # corrupt call recording or the `self` rebound onto `wraps`.
+        class Foo:
+            def f(self, n): pass
+
+        def unbound_f(self, n):
+            if n <= 0:
+                return 0
+            return n + self.f(n - 1)
+
+        with patch.object(Foo, 'f', autospec=True, wraps=unbound_f) as method:
+            foo = Foo()
+            self.assertEqual(foo.f(3), 6)
+            self.assertEqual(method.call_count, 4)
+            self.assertEqual(
+                method.call_args_list,
+                [call(3), call(2), call(1), call(0)],
+            )
 
 
     def test_autospec_with_new(self):
