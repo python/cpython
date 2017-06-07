@@ -54,6 +54,9 @@ Library
 - bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
   handle IPv6 addresses.
 
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
+
 - bpo-30414: multiprocessing.Queue._feed background running
   thread do not break from main loop on exception.
 
@@ -96,9 +99,6 @@ Library
   Jim Fasarakis-Hilliard and Ivan Levkivskyi.
 
 - bpo-30205: Fix getsockname() for unbound AF_UNIX sockets on Linux.
-
-- bpo-29960: Preserve generator state when _random.Random.setstate()
-  raises an exception.  Patch by Bryan Olson.
 
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
 
