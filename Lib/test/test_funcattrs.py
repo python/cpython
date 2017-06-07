@@ -110,6 +110,8 @@ class FunctionPropertiesTest(FuncAttrsTest):
             self.fail("shouldn't be able to read an empty cell")
         with self.assertRaises(NameError):
             f()
+        with self.assertRaises(UnboundLocalError):
+            print(a)
 
     def test___name__(self):
         self.assertEqual(self.b.__name__, 'b')
