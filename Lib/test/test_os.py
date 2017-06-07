@@ -472,7 +472,7 @@ class StatAttributeTests(unittest.TestCase):
         # force CreateFile to fail with ERROR_ACCESS_DENIED.
         DETACHED_PROCESS = 8
         subprocess.check_call(
-            ['icacls.exe', fname, '/deny', 'Users:(S)'],
+            ['icacls.exe', fname, '/deny', '*S-1-5-32-545:(S)'],
             creationflags=DETACHED_PROCESS
         )
         result = os.stat(fname)
