@@ -238,6 +238,7 @@ class FeedParser:
         # Done with the headers, so parse them and figure out what we're
         # supposed to see in the body of the message.
         self._parse_headers(headers)
+        self._cur.group_headers()
         # Headers-only parsing is a backwards compatibility hack, which was
         # necessary in the older parser, which could raise errors.  All
         # remaining lines in the input are thrown into the message body.

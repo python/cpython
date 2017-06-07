@@ -366,6 +366,10 @@ class TestMessageAPI(TestEmailBase):
             'X-Header: foo; bar="one"; baz=two\n')
         eq(msg.get_params(header='x-header'),
            [('foo', ''), ('bar', 'one'), ('baz', 'two')])
+        msg = email.message_from_string(
+            'X-Header: foo=one;\nX-Header: bar=two\nX-Header: baz=three;')
+        eq(msg.get_params(header='x-header'),
+           [('foo', 'one'), ('bar', 'two'), ('baz', 'three')])
 
     # test_headerregistry.TestContentTypeHeader.spaces_around_param_equals
     def test_get_param_liberal(self):
