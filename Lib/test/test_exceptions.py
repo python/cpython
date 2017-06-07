@@ -10,7 +10,7 @@ import errno
 
 from test.support import (TESTFN, captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
-                          no_tracing, unlink, import_module)
+                          no_tracing, unlink, import_module, script_helper)
 
 class NaiveException(Exception):
     def __init__(self, x):
@@ -908,6 +908,60 @@ class ExceptionTests(unittest.TestCase):
         self.assertIsInstance(v, RecursionError, type(v))
         self.assertIn("maximum recursion depth exceeded", str(v))
 
+    @cpython_only
+    def test_recursion_normalizing_exception(self):
+        # Issue #22898.
+        # Test that an infinite recursion is not entered when recursion_depth
+        # is equal to recursion_limit in PyErr_NormalizeException(). Prior to
+        # #22898 a PyExc_RecursionErrorInst singleton was being used that held
+        # traceback data and locals indefinitely and would cause a segfault in
+        # _PyExc_Fini() upon finalization of these locals.
+        code = """if 1:
+            import sys
+            from _testcapi import get_recursion_depth
+
+            class MyException(Exception): pass
+
+            def setrecursionlimit(depth):
+                while 1:
+                    try:
+                        sys.setrecursionlimit(depth)
+                        return depth
+                    except RecursionError:
+                        # sys.setrecursionlimit() raises a RecursionError if
+                        # the new recursion limit is too low (issue #25274).
+                        depth += 1
+
+            def recurse(cnt):
+                cnt -= 1
+                if cnt:
+                    recurse(cnt)
+                else:
+                    generator.throw(MyException)
+
+            def gen():
+                f = open(%a, mode='rb', buffering=0)
+                yield
+
+            generator = gen()
+            next(generator)
+            recursionlimit = sys.getrecursionlimit()
+            depth = get_recursion_depth()
+            try:
+                # Upon the last recursive invocation of recurse(),
+                # tstate->recursion_depth is equal to (recursion_limit - 1)
+                # and is equal to recursion_limit when _gen_throw() calls
+                # PyErr_NormalizeException().
+                recurse(setrecursionlimit(depth + 2) - depth - 1)
+            finally:
+                sys.setrecursionlimit(recursionlimit)
+                print('Done.')
+        """ % __file__
+        rc, out, err = script_helper.assert_python_failure("-c", code)
+        # Check that the program does not fail with SIGABRT.
+        self.assertEqual(rc, 1)
+        self.assertIn(b'RecursionError', err)
+        self.assertIn(b'Done.', out)
 
     @cpython_only
     def test_MemoryError(self):

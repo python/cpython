@@ -224,7 +224,6 @@ EXPORTS
   PyExc_PermissionError=python37.PyExc_PermissionError DATA
   PyExc_ProcessLookupError=python37.PyExc_ProcessLookupError DATA
   PyExc_RecursionError=python37.PyExc_RecursionError DATA
-  PyExc_RecursionErrorInst=python37.PyExc_RecursionErrorInst DATA
   PyExc_ReferenceError=python37.PyExc_ReferenceError DATA
   PyExc_ResourceWarning=python37.PyExc_ResourceWarning DATA
   PyExc_RuntimeError=python37.PyExc_RuntimeError DATA
