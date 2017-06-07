@@ -357,16 +357,16 @@ _PyImport_Inittab
 #max_module_number  # slight race during import
 
 # Python/dynload_shlib.c
-_PyImport_DynLoadFiletab
+#_PyImport_DynLoadFiletab
 #handles  # slight race during import
 #nhandles  # slight race during import
 
 # Python/frozen.c
 M___hello__
-PyImport_FrozenModules
+#PyImport_FrozenModules
 
 # Python/import.c
-PyImport_Inittab
+#PyImport_Inittab
 #extensions  # slight race on init during import
 #import_lock  # For extension modules only.
 #import_lock_level  # For extension modules only.
@@ -400,20 +400,20 @@ _PyOS_optind
 
 # Python/pyhash.c
 PyHash_Func
-_Py_HashSecret
-_Py_HashSecret_Initialized
+#_Py_HashSecret
+#_Py_HashSecret_Initialized
 
 # Python/pylifecycle.c
 _PyOS_mystrnicmp_hack
 _Py_CoreInitialized
-#_Py_Finalizing
+_Py_Finalizing
 #_Py_StandardStreamEncoding
 #_Py_StandardStreamErrors
-default_home
-env_home
+#default_home
+#env_home
 #exitfuncs
 #nexitfuncs
-progname
+#progname
 #pyexitfunc
 #Py_BytesWarningFlag
 #Py_DebugFlag
