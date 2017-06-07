@@ -235,8 +235,8 @@ Optimizations
   (Contributed by Serhiy Storchaka in :issue:`30285`.)
 
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
-  and :meth:`selectors.DevpollSelector.modify` are around 1.5x faster.
-  (Contributed by Giampaolo Rodola')
+  and :meth:`selectors.DevpollSelector.modify` may be up to 11.4% faster under
+  heavy loads. (Contributed by Giampaolo Rodola')
 
 Build and C API Changes
 =======================
