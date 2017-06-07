@@ -188,7 +188,7 @@ class BaseSelectorTestCase(unittest.TestCase):
             patch = unittest.mock.patch(
                 'selectors.DevpollSelector._selector_cls')
         else:
-            return unittest.skip("")
+            raise self.skipTest("")
 
         with patch as m:
             m.return_value.modify = unittest.mock.Mock(

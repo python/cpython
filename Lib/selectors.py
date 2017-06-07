@@ -377,7 +377,8 @@ class _PollLikeSelector(_BaseSelectorImpl):
         try:
             key = self._fd_to_key[self._fileobj_lookup(fileobj)]
         except KeyError:
-            raise KeyError("{!r} is not registered".format(fileobj)) from None
+            raise KeyError(f"{fileobj!r} is not registered") from None
+
         changed = False
         if events != key.events:
             selector_events = 0
@@ -393,6 +394,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             changed = True
         if data != key.data:
             changed = True
+
         if changed:
             key = key._replace(events=events, data=data)
             self._fd_to_key[key.fd] = key
