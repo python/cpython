@@ -252,7 +252,6 @@ class _BaseSelectorImpl(BaseSelector):
         return key
 
     def modify(self, fileobj, events, data=None):
-        # TODO: Subclasses can probably optimize this even further.
         try:
             key = self._fd_to_key[self._fileobj_lookup(fileobj)]
         except KeyError:
@@ -388,7 +387,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
                 selector_events |= self._EVENT_WRITE
             try:
                 self._selector.modify(key.fd, selector_events)
-            except BaseException:
+            except Exception:
                 super().unregister(fileobj)
                 raise
             changed = True
