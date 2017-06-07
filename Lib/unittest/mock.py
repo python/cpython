@@ -181,12 +181,12 @@ def _instance_callable(obj):
     return False
 
 
-def _set_signature(mock, original, instance=False):
+def _set_signature(mock, original, instance=False, eat_self=None):
     # creates a function with signature (*args, **kwargs) that delegates to a
     # mock. It still does signature checking by calling a lambda with the same
     # signature as the original.
 
-    skipfirst = isinstance(original, type)
+    skipfirst = isinstance(original, type) if eat_self is None else eat_self
     result = _get_signature_object(original, instance, skipfirst)
     if result is None:
         return mock
@@ -198,31 +198,84 @@ def _set_signature(mock, original, instance=False):
     name = original.__name__
     if not name.isidentifier():
         name = 'funcopy'
-    context = {'_checksig_': checksig, 'mock': mock}
+
+    def _call_mock_wrapped(*args, **kwargs):
+        # if skipfirst, `self` is consumed here so that the recorded / checked
+        # call args doesn't include it (see bpo-32092).
+        # If set, `side_effect` and `wraps` still need `self` in order to be
+        # called correctly, e.g. if `wraps` is an unbound method (as in
+        # `wraps=getattr(cls, name)`) or if `side_effect` is meant to stand
+        # in for the real (bound) method.
+
+        if skipfirst:
+            slf, *args = args
+            args = tuple(args)
+
+        checksig(*args, **kwargs)
+        mock._increment_mock_call(*args, **kwargs)
+
+        effect = mock.side_effect
+        wraps = mock._mock_wraps
+        if skipfirst:
+            if effect is not None and _callable(effect) and not _is_exception(effect):
+                effect = partial(effect, slf)
+            if wraps is not None:
+                wraps = partial(wraps, slf)
+
+        return mock._resolve_effect(args, kwargs, effect, wraps)
+
+    context = {'mock': mock, '_call_mock_wrapped': _call_mock_wrapped}
     src = """def %s(*args, **kwargs):
-    _checksig_(*args, **kwargs)
-    return mock(*args, **kwargs)""" % name
+    return _call_mock_wrapped(*args, **kwargs)""" % name
     exec (src, context)
     funcopy = context[name]
     _setup_func(funcopy, mock, sig)
     return funcopy
 
-def _set_async_signature(mock, original, instance=False, is_async_mock=False):
+def _set_async_signature(mock, original, instance=False, is_async_mock=False,
+                         eat_self=None):
     # creates an async function with signature (*args, **kwargs) that delegates to a
     # mock. It still does signature checking by calling a lambda with the same
     # signature as the original.
 
-    skipfirst = isinstance(original, type)
+    skipfirst = isinstance(original, type) if eat_self is None else eat_self
     func, sig = _get_signature_object(original, instance, skipfirst)
     def checksig(*args, **kwargs):
         sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
 
     name = original.__name__
-    context = {'_checksig_': checksig, 'mock': mock}
+    if not name.isidentifier():
+        name = 'funcopy'
+
+    async def _call_mock_wrapped(*args, **kwargs):
+        # if skipfirst, `self` is consumed here so that the recorded / checked
+        # call args doesn't include it (see bpo-32092).
+        # If set, `side_effect` and `wraps` still need `self` in order to be
+        # called correctly, e.g. if `wraps` is an unbound method (as in
+        # `wraps=getattr(cls, name)`) or if `side_effect` is meant to stand
+        # in for the real (bound) method.
+        if skipfirst:
+            slf, *args = args
+            args = tuple(args)
+
+        checksig(*args, **kwargs)
+        mock._increment_mock_call(*args, **kwargs)
+        mock._record_await(args, kwargs)
+
+        effect = mock.side_effect
+        wraps = mock._mock_wraps
+        if skipfirst:
+            if effect is not None and _callable(effect) and not _is_exception(effect):
+                effect = partial(effect, slf)
+            if wraps is not None:
+                wraps = partial(wraps, slf)
+
+        return await mock._resolve_async_effect(args, kwargs, effect, wraps)
+
+    context = {'mock': mock, '_call_mock_wrapped': _call_mock_wrapped}
     src = """async def %s(*args, **kwargs):
-    _checksig_(*args, **kwargs)
-    return await mock(*args, **kwargs)""" % name
+    return await _call_mock_wrapped(*args, **kwargs)""" % name
     exec (src, context)
     funcopy = context[name]
     _setup_func(funcopy, mock, sig)
@@ -1232,8 +1285,13 @@ class CallableMixin(Base):
     def _execute_mock_call(self, /, *args, **kwargs):
         # separate from _increment_mock_call so that awaited functions are
         # executed separately from their call, also AsyncMock overrides this method
+        return self._resolve_effect(args, kwargs, self.side_effect, self._mock_wraps)
 
-        effect = self.side_effect
+    def _resolve_effect(self, args, kwargs, effect, wraps):
+        # `effect` and `wraps` are passed in explicitly rather than read
+        # from self, so that autospecced methods can rebind a consumed
+        # `self` onto them for a single call, without mutating shared mock
+        # state (see bpo-32092).
         if effect is not None:
             if _is_exception(effect):
                 raise effect
@@ -1253,8 +1311,8 @@ class CallableMixin(Base):
         if self._mock_delegate and self._mock_delegate.return_value is not DEFAULT:
             return self.return_value
 
-        if self._mock_wraps is not None:
-            return self._mock_wraps(*args, **kwargs)
+        if wraps is not None:
+            return wraps(*args, **kwargs)
 
         return self.return_value
 
@@ -1605,8 +1663,11 @@ class _patch(object):
                     f'{target_name!r} as it has already been mocked out. '
                     f'[target={self.target!r}, attr={autospec!r}]')
 
+            is_class = isinstance(self.target, type)
+            eat_self = _must_skip(self.target, self.attribute, is_class)
             new = create_autospec(autospec, spec_set=spec_set,
-                                  _name=self.attribute, **kwargs)
+                                  _name=self.attribute, _eat_self=eat_self,
+                                  **kwargs)
         elif kwargs:
             # can't set keyword args when we aren't creating the mock
             # XXXX If new is a Mock we could call new.configure_mock(**kwargs)
@@ -2313,12 +2374,22 @@ class AsyncMockMixin(Base):
         # This is nearly just like super(), except for special handling
         # of coroutines
 
+        self._record_await(args, kwargs)
+        return await self._resolve_async_effect(
+            args, kwargs, self.side_effect, self._mock_wraps
+        )
+
+    def _record_await(self, args, kwargs):
         _call = _Call((args, kwargs), two=True)
         self.await_count += 1
         self.await_args = _call
         self.await_args_list.append(_call)
 
-        effect = self.side_effect
+    async def _resolve_async_effect(self, args, kwargs, effect, wraps):
+        # `effect` and `wraps` are passed in explicitly rather than read
+        # from self, so that autospecced async methods can rebind a
+        # consumed `self` onto them for a single call, without mutating
+        # shared mock state (see bpo-32092).
         if effect is not None:
             if _is_exception(effect):
                 raise effect
@@ -2342,10 +2413,10 @@ class AsyncMockMixin(Base):
         if self._mock_return_value is not DEFAULT:
             return self.return_value
 
-        if self._mock_wraps is not None:
-            if iscoroutinefunction(self._mock_wraps):
-                return await self._mock_wraps(*args, **kwargs)
-            return self._mock_wraps(*args, **kwargs)
+        if wraps is not None:
+            if iscoroutinefunction(wraps):
+                return await wraps(*args, **kwargs)
+            return wraps(*args, **kwargs)
 
         return self.return_value
 
@@ -2737,7 +2808,7 @@ call = _Call(from_kall=False)
 
 
 def create_autospec(spec, spec_set=False, instance=False, _parent=None,
-                    _name=None, *, unsafe=False, **kwargs):
+                    _name=None, *, unsafe=False, _eat_self=None, **kwargs):
     """Create a mock object using another object as a spec. Attributes on the
     mock will use the corresponding attribute on the `spec` object as their
     spec.
@@ -2814,7 +2885,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         Klass = NonCallableMagicMock
 
     mock = Klass(parent=_parent, _new_parent=_parent, _new_name=_new_name,
-                 name=_name, **_kwargs)
+                 name=_name, _eat_self=_eat_self, **_kwargs)
     if is_dataclass_spec:
         mock._mock_extend_spec_methods(dataclass_spec_list)
 
@@ -2822,9 +2893,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # should only happen at the top level because we don't
         # recurse for functions
         if is_async_func:
-            mock = _set_async_signature(mock, spec)
+            mock = _set_async_signature(mock, spec, eat_self=_eat_self)
         else:
-            mock = _set_signature(mock, spec)
+            mock = _set_signature(mock, spec, eat_self=_eat_self)
     else:
         _check_signature(spec, mock, is_type, instance)
 

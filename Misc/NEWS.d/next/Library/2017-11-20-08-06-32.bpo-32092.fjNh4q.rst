@@ -1,0 +1,2 @@
+mock: :func:`unittest.mock.patch` no longer leaking ``self`` into the recorded
+call when autospeccing a plain instance method patched via its class.
