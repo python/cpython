@@ -21,6 +21,7 @@ except ImportError:
 
 from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
+from pathlib import Path
 
 from test.support import verbose, TESTFN, check_warnings
 from test.support import unlink as safe_unlink
@@ -529,6 +530,20 @@ class FileInputTests(unittest.TestCase):
             self.assertEqual(src.linesread, [''])
             self.assertRaises(StopIteration, next, fi)
             self.assertEqual(src.linesread, [])
+
+    def test_pathlib_file(self):
+        t1 = None
+        try:
+            t1 = Path(writeTmp(1, ["Pathlib file."]))
+            with FileInput(t1) as fi:
+                line = fi.readline()
+                self.assertEqual(line, 'Pathlib file.')
+                self.assertEqual(fi.lineno(), 1)
+                self.assertEqual(fi.filelineno(), 1)
+                self.assertEqual(fi.filename(), os.fspath(t1))
+        finally:
+            remove_tempfiles(t1)
+
 
 class MockFileInput:
     """A class that mocks out fileinput.FileInput for use during unit tests"""
