@@ -342,6 +342,8 @@ class SelectSelector(_BaseSelectorImpl):
 class _PollLikeSelector(_BaseSelectorImpl):
     """Base class shared between poll, epoll and devpoll selectors."""
     _selector_cls = None
+    _EVENT_READ = None
+    _EVENT_WRITE = None
 
     def __init__(self):
         super().__init__()
@@ -369,6 +371,31 @@ class _PollLikeSelector(_BaseSelectorImpl):
             # This can happen if the FD was closed since it
             # was registered.
             pass
+        return key
+
+    def modify(self, fileobj, events, data=None):
+        try:
+            key = self._fd_to_key[self._fileobj_lookup(fileobj)]
+        except KeyError:
+            raise KeyError("{!r} is not registered".format(fileobj)) from None
+        changed = False
+        if events != key.events:
+            selector_events = 0
+            if events & EVENT_READ:
+                selector_events |= self._EVENT_READ
+            if events & EVENT_WRITE:
+                selector_events |= self._EVENT_WRITE
+            try:
+                self._selector.modify(key.fd, selector_events)
+            except BaseException:
+                super().unregister(fileobj)
+                raise
+            changed = True
+        if data != key.data:
+            changed = True
+        if changed:
+            key = key._replace(events=events, data=data)
+            self._fd_to_key[key.fd] = key
         return key
 
     def select(self, timeout=None):

@@ -175,16 +175,18 @@ class BaseSelectorTestCase(unittest.TestCase):
         self.assertFalse(s.register.called)
         self.assertFalse(s.unregister.called)
 
-
     def test_modify_unregister(self):
         # Make sure the fd is unregister()ed in case of error on
         # modify(): http://bugs.python.org/issue30014
         if self.SELECTOR.__name__ == 'EpollSelector':
-            patch = unittest.mock.patch('selectors.select.epoll')
+            patch = unittest.mock.patch(
+                'selectors.EpollSelector._selector_cls')
         elif self.SELECTOR.__name__ == 'PollSelector':
-            patch = unittest.mock.patch('selectors.select.poll')
+            patch = unittest.mock.patch(
+                'selectors.PollSelector._selector_cls')
         elif self.SELECTOR.__name__ == 'DevpollSelector':
-            patch = unittest.mock.patch('selectors.select.devpoll')
+            patch = unittest.mock.patch(
+                'selectors.DevpollSelector._selector_cls')
         else:
             return unittest.skip("")
 
