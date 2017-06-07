@@ -154,6 +154,10 @@ def _set_signature(mock, original, instance=False):
     if not _callable(original):
         return
 
+    if '_spec_signature' in mock.__dict__:
+        # mock already has a spec signature. Nothing to do.
+        return mock
+
     skipfirst = isinstance(original, type)
     result = _get_signature_object(original, instance, skipfirst)
     if result is None:
@@ -1338,11 +1342,21 @@ class _patch(object):
             if original is DEFAULT:
                 raise TypeError("Can't use 'autospec' with create=True")
             spec_set = bool(spec_set)
+            is_class = isinstance(self.target, type)
             if autospec is True:
-                autospec = original
+                if is_class:
+                    # if it's a class, "original" could represent a class
+                    # or static method object (non-callable), instead of the
+                    # method itself, causing a NonCallableMagicMock to be
+                    # created.
+                    autospec = getattr(self.target, self.attribute, original)
+                else:
+                    autospec = original
 
+            eat_self = _must_skip(self.target, self.attribute, is_class)
             new = create_autospec(autospec, spec_set=spec_set,
-                                  _name=self.attribute, **kwargs)
+                                  _name=self.attribute, _eat_self=eat_self,
+                                  **kwargs)
         elif kwargs:
             # can't set keyword args when we aren't creating the mock
             # XXXX If new is a Mock we could call new.configure_mock(**kwargs)
@@ -2236,9 +2250,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
             new = _SpecState(original, spec_set, mock, entry, instance)
             mock._mock_children[entry] = new
         else:
+            # we are looping over a spec's attributes, so mock is the parent
+            # of mocked spec attributes.
             parent = mock
-            if isinstance(spec, FunctionTypes):
-                parent = mock.mock
 
             skipfirst = _must_skip(spec, entry, is_type)
             kwargs['_eat_self'] = skipfirst
