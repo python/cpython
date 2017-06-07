@@ -1040,6 +1040,13 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 }
 #endif
 
+#if (defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__))) || \
+    defined(__aarch64__)
+#define CTYPES_PASS_BY_REF_HACK
+#define POW2(x) (((x & ~(x - 1)) == x) ? x : 0)
+#define IS_PASS_BY_REF(x) (x > 8 || !POW2(x))
+#endif
+
 /*
  * Requirements, must be ensured by the caller:
  * - argtuple is tuple of arguments
@@ -1137,8 +1144,20 @@ PyObject *_ctypes_callproc(PPROC pProc,
     }
     for (i = 0; i < argcount; ++i) {
         atypes[i] = args[i].ffi_type;
-        if (atypes[i]->type == FFI_TYPE_STRUCT
-            )
+#ifdef CTYPES_PASS_BY_REF_HACK
+        size_t size = atypes[i]->size;
+        if (IS_PASS_BY_REF(size)) {
+            void *tmp = alloca(size);
+            if (atypes[i]->type == FFI_TYPE_STRUCT)
+                memcpy(tmp, args[i].value.p, size);
+            else
+                memcpy(tmp, (void*)&args[i].value, size);
+
+            avalues[i] = tmp;
+        }
+        else
+#endif
+        if (atypes[i]->type == FFI_TYPE_STRUCT)
             avalues[i] = (void *)args[i].value.p;
         else
             avalues[i] = (void *)&args[i].value;

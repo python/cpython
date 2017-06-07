@@ -417,6 +417,28 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.second, 0xcafebabe)
         self.assertEqual(s.third, 0x0bad1dea)
 
+    def test_pass_by_value_in_register(self):
+        class X(Structure):
+            _fields_ = [
+                ('first', c_uint),
+                ('second', c_uint)
+            ]
+
+        s = X()
+        s.first = 0xdeadbeef
+        s.second = 0xcafebabe
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_reg_struct_update_value
+        func.argtypes = (X,)
+        func.restype = None
+        func(s)
+        self.assertEqual(s.first, 0xdeadbeef)
+        self.assertEqual(s.second, 0xcafebabe)
+        got = X.in_dll(dll, "last_tfrsuv_arg")
+        self.assertEqual(s.first, got.first)
+        self.assertEqual(s.second, got.second)
+
+
 class PointerMemberTestCase(unittest.TestCase):
 
     def test(self):
