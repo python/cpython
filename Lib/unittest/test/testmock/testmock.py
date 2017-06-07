@@ -790,6 +790,21 @@ class MockTest(unittest.TestCase):
             patcher.stop()
 
 
+    def test_patch_autospec_obj(self):
+        something = Something()
+        with patch.multiple(something, meth=DEFAULT, cmeth=DEFAULT,
+                            smeth=DEFAULT, autospec=True):
+            self._check_autospeced_something(something)
+
+
+    @patch.object(Something, 'smeth', autospec=True)
+    @patch.object(Something, 'cmeth', autospec=True)
+    @patch.object(Something, 'meth', autospec=True)
+    def test_patch_autospec_class(self, mock_meth, mock_cmeth, mock_smeth):
+        something = Something()
+        self._check_autospeced_something(something)
+
+
     def test_configure_mock(self):
         mock = Mock(foo='bar')
         self.assertEqual(mock.foo, 'bar')

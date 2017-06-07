@@ -1,0 +1,1 @@
+mock: Fixes mock.patch self / cls argument consumption when autospec=True.
