@@ -750,7 +750,7 @@ The :class:`STARTUPINFO` class and following constants are only available
 on Windows.
 
 .. class:: STARTUPINFO(*, dwFlags=0, hStdInput=None, hStdOutput=None, \
-                       hStdError=None, wShowWindow=0)
+                       hStdError=None, wShowWindow=0, lpAttributeList=None)
 
    Partial support of the Windows
    `STARTUPINFO <https://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
@@ -812,18 +812,19 @@ on Windows.
          Sequence of handles that will be inherited. *close_fds* must be true if
          non-empty.
 
-         The handles must be made inheritable by
-         :func:`os.set_handle_inheritable` or :class:`OSError` will be raised
-         with Windows error `ERROR_INVALID_PARAMETER` (87). They only have to be
-         inheritable during the process creation and can be made non-inheritable
-         right afterwards.
+         The handles must be temporarily made inheritable by
+         :func:`os.set_handle_inheritable` when passed to the :class:`Popen`
+         constructor, else :class:`OSError` will be raised with Windows error
+         `ERROR_INVALID_PARAMETER` (87).
 
-         Note that inheritable handles can be inherited by any process created
-         that is set to inherit all handles. Other process creation functions
-         might not be using an explicit handle list to avoid inheriting all
-         handles like subprocess does, so you should be careful in using them
-         when you have handles marked as inheritable. Also note that standard
-         handles redirection requires creating inheritable handles temporarily.
+         .. warning::
+
+            In a multithreaded process, use caution to avoid leaking handles
+            that are marked inheritable when combining this feature with
+            concurrent calls to other process creation functions that inherit
+            all handles such as :func:`os.system`.  This also applies to
+            standard handle redirection, which temporarily creates inheritable
+            handles.
 
       .. versionadded:: 3.7
 
