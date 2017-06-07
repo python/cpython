@@ -1089,7 +1089,7 @@ class TestIsDataDescriptor(unittest.TestCase):
         class DataDescriptor2(object):
             __set__ = None
         self.assertFalse(inspect.isdatadescriptor(NonDataDescriptor),
-                         'class with __get__ not a data descriptor')
+                         'class with only __get__ not a data descriptor')
         self.assertTrue(inspect.isdatadescriptor(DataDescriptor0),
                         'class with __set__ is a data descriptor')
         self.assertTrue(inspect.isdatadescriptor(DataDescriptor1),
