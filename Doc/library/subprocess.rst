@@ -812,6 +812,19 @@ on Windows.
          Sequence of handles that will be inherited. *close_fds* must be true if
          non-empty.
 
+         The handles must be made inheritable by
+         :func:`os.set_handle_inheritable` or :class:`OSError` will be raised
+         with Windows error `ERROR_INVALID_PARAMETER` (87). They only have to be
+         inheritable during the process creation and can be made non-inheritable
+         right afterwards.
+
+         Note that inheritable handles can be inherited by any process created
+         that is set to inherit all handles. Other process creation functions
+         might not be using an explicit handle list to avoid inheriting all
+         handles like subprocess does, so you should be careful in using them
+         when you have handles marked as inheritable. Also note that standard
+         handles redirection requires creating inheritable handles temporarily.
+
       .. versionadded:: 3.7
 
 Constants
