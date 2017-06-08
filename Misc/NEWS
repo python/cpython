@@ -264,6 +264,13 @@ What's New in Python 3.6.1 release candidate 1
 ==============================================
 
 *Release date: 2017-03-04*
+Build
+-----
+
+- bpo-29643: Fix ``--enable-optimization`` didn't work.
+
+Tests
+-----
 
 Core and Builtins
 -----------------
