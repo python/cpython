@@ -45,6 +45,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
+  on stdin.write() if the child process is still running but closed the pipe.
+
 - bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
   by Nate Soares.
 
