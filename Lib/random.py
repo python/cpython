@@ -669,7 +669,7 @@ class SystemRandom(Random):
     """
 
     def random(self):
-        """Get the next random number in the range [0.0, 1.0)."""
+        """Get the next random number in the range 0.0 to 1.0."""
         return (int.from_bytes(_urandom(7), 'big') >> 3) * RECIP_BPF
 
     def getrandbits(self, k):
