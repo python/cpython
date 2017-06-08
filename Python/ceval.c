@@ -1267,7 +1267,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             else if (err > 0) {
                 Py_INCREF(Py_False);
                 SET_TOP(Py_False);
-                err = 0;
                 DISPATCH();
             }
             STACKADJ(-1);
@@ -2855,7 +2854,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
             if (err > 0)
-                err = 0;
+                ;
             else if (err == 0)
                 JUMPTO(oparg);
             else
@@ -2879,7 +2878,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
             if (err > 0) {
-                err = 0;
                 JUMPTO(oparg);
             }
             else if (err == 0)
@@ -2905,7 +2903,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             if (err > 0) {
                 STACKADJ(-1);
                 Py_DECREF(cond);
-                err = 0;
             }
             else if (err == 0)
                 JUMPTO(oparg);
@@ -2928,7 +2925,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             }
             err = PyObject_IsTrue(cond);
             if (err > 0) {
-                err = 0;
                 JUMPTO(oparg);
             }
             else if (err == 0) {
@@ -3221,7 +3217,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             if (err < 0)
                 goto error;
             else if (err > 0) {
-                err = 0;
                 /* There was an exception and a True return */
                 PUSH(PyLong_FromLong((long) WHY_SILENCED));
             }
