@@ -11,6 +11,10 @@
 #include <errno.h>
 #include <sys/time.h>
 
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
+
 #if defined(HAVE_SETLOCALE)
 /* GNU readline() mistakenly sets the LC_CTYPE locale.
  * This is evil.  Only the user or the app's main() should do this!
@@ -996,7 +1000,15 @@ setup_readline(void)
 /* Wrapper around GNU readline that handles signals differently. */
 
 
-#if defined(HAVE_RL_CALLBACK) && defined(HAVE_SELECT)
+#if defined(HAVE_RL_CALLBACK) && (defined(HAVE_SELECT) || defined(HAVE_POLL))
+/* Issue #26870: poll() does not work with terminals on all OSes.
+ * Be conservative and use select() on non-Linux.
+ * TODO(marienz) "glibc" is probably the wrong thing to check,
+ * but I cannot find an existing "OS is Linux" #define...
+ */
+#if defined(HAVE_POLL) && defined(__GLIBC__)
+#define READLINE_USE_POLL 1
+#endif
 
 static  char *completed_input_string;
 static void
@@ -1010,7 +1022,11 @@ static char *
 readline_until_enter_or_signal(char *prompt, int *signal)
 {
     char * not_done_reading = "";
+#ifdef READLINE_USE_POLL
+    struct pollfd pollfd;
+#else
     fd_set selectset;
+#endif
 
     *signal = 0;
 #ifdef HAVE_RL_CATCH_SIGNAL
@@ -1018,7 +1034,23 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 #endif
 
     rl_callback_handler_install (prompt, rlhandler);
+#ifdef READLINE_USE_POLL
+    pollfd.fd = fileno(rl_instream);
+    pollfd.events = POLLIN;
+#else
     FD_ZERO(&selectset);
+    if (fileno(rl_instream) >= FD_SETSIZE) {
+#ifdef WITH_THREAD
+        PyEval_RestoreThread(_PyOS_ReadlineTState);
+#endif
+        PyErr_SetString(PyExc_ValueError, "input fd too large for select");
+#ifdef WITH_THREAD
+        PyEval_SaveThread();
+#endif
+        *signal = -1;
+        return NULL;
+    }
+#endif
 
     completed_input_string = not_done_reading;
 
@@ -1026,13 +1058,19 @@ readline_until_enter_or_signal(char *prompt, int *signal)
         int has_input = 0;
 
         while (!has_input)
-        {               struct timeval timeout = {0, 100000}; /* 0.1 seconds */
-
+        {
+#ifdef READLINE_USE_POLL
+            int timeout = -1;
+            if (PyOS_InputHook)
+                timeout = 100; /* 0.1 seconds */
+#else
+            struct timeval timeout = {0, 100000}; /* 0.1 seconds */
             /* [Bug #1552726] Only limit the pause if an input hook has been
                defined.  */
             struct timeval *timeoutp = NULL;
             if (PyOS_InputHook)
                 timeoutp = &timeout;
+#endif
 #ifdef HAVE_RL_RESIZE_TERMINAL
             /* Update readline's view of the window size after SIGWINCH */
             if (sigwinch_received) {
@@ -1040,10 +1078,14 @@ readline_until_enter_or_signal(char *prompt, int *signal)
                 rl_resize_terminal();
             }
 #endif
+#ifdef READLINE_USE_POLL
+            has_input = poll(&pollfd, 1, timeout);
+#else
             FD_SET(fileno(rl_instream), &selectset);
             /* select resets selectset if no input was available */
             has_input = select(fileno(rl_instream) + 1, &selectset,
                                NULL, NULL, timeoutp);
+#endif
             if(PyOS_InputHook) PyOS_InputHook();
         }
 
@@ -1114,7 +1156,7 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 
     return p;
 }
-#endif /*defined(HAVE_RL_CALLBACK) && defined(HAVE_SELECT) */
+#endif /*defined(HAVE_RL_CALLBACK) && (defined(HAVE_SELECT) || defined(HAVE_POLL)) */
 
 
 static char *
