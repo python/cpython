@@ -352,7 +352,7 @@ PyAPI_FUNC(PyObject *) _PyErr_TrySetFromCause(
 #endif
 
 
-/* In sigcheck.c or signalmodule.c */
+/* In signalmodule.c */
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);
 
