@@ -1,4 +1,4 @@
-# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2017 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,12 +18,12 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, traceback, warnings, weakref, collections
+import sys, os, time, io, traceback, warnings, weakref, collections.abc
 
 from string import Template
 
@@ -273,8 +273,8 @@ class LogRecord(object):
         # to hasattr(args[0], '__getitem__'). However, the docs on string
         # formatting still seem to suggest a mapping object is required.
         # Thus, while not removing the isinstance check, it does now look
-        # for collections.Mapping rather than, as before, dict.
-        if (args and len(args) == 1 and isinstance(args[0], collections.Mapping)
+        # for collections.abc.Mapping rather than, as before, dict.
+        if (args and len(args) == 1 and isinstance(args[0], collections.abc.Mapping)
             and args[0]):
             args = args[0]
         self.args = args
@@ -1570,6 +1570,14 @@ class Logger(Filterer):
         level = getLevelName(self.getEffectiveLevel())
         return '<%s %s (%s)>' % (self.__class__.__name__, self.name, level)
 
+    def __reduce__(self):
+        # In general, only the root logger will not be accessible via its name.
+        # However, the root logger's class has its own __reduce__ method.
+        if getLogger(self.name) is not self:
+            import pickle
+            raise pickle.PicklingError('logger cannot be pickled')
+        return getLogger, (self.name,)
+
 
 class RootLogger(Logger):
     """
@@ -1582,6 +1590,9 @@ class RootLogger(Logger):
         Initialize the logger with the name "root".
         """
         Logger.__init__(self, "root", level)
+
+    def __reduce__(self):
+        return getLogger, ()
 
 _loggerClass = Logger
 

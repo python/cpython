@@ -578,12 +578,14 @@ format as builtin_format
 
 Return value.__format__(format_spec)
 
-format_spec defaults to the empty string
+format_spec defaults to the empty string.
+See the Format Specification Mini-Language section of help('FORMATTING') for
+details.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec)
-/*[clinic end generated code: output=2f40bdfa4954b077 input=6325e751a1b29b86]*/
+/*[clinic end generated code: output=2f40bdfa4954b077 input=88339c93ea522b33]*/
 {
     return PyObject_Format(value, format_spec);
 }
@@ -1479,8 +1481,10 @@ builtin_len(PyObject *module, PyObject *obj)
     Py_ssize_t res;
 
     res = PyObject_Size(obj);
-    if (res < 0 && PyErr_Occurred())
+    if (res < 0) {
+        assert(PyErr_Occurred());
         return NULL;
+    }
     return PyLong_FromSsize_t(res);
 }
 
@@ -2440,13 +2444,14 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
-    Py_ssize_t tuplesize = PySequence_Length(args);
+    Py_ssize_t tuplesize;
 
     if (type == &PyZip_Type && !_PyArg_NoKeywords("zip()", kwds))
         return NULL;
 
     /* args must be a tuple */
     assert(PyTuple_Check(args));
+    tuplesize = PyTuple_GET_SIZE(args);
 
     /* obtain iterators */
     ittuple = PyTuple_New(tuplesize);

@@ -148,7 +148,7 @@ static long dxp[256];
 #include "pythread.h"
 
 static PyThread_type_lock pending_lock = 0; /* for pending calls */
-static long main_thread = 0;
+static unsigned long main_thread = 0;
 /* This single variable consolidates all requests to break out of the fast path
    in the eval loop. */
 static _Py_atomic_int eval_breaker = {0};
@@ -232,16 +232,14 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     drop_gil(tstate);
 }
 
-/* This function is called from PyOS_AfterFork to destroy all threads which are
- * not running in the child process, and clear internal locks which might be
- * held by those threads. (This could also be done using pthread_atfork
- * mechanism, at least for the pthreads implementation.) */
+/* This function is called from PyOS_AfterFork_Child to destroy all threads
+ * which are not running in the child process, and clear internal locks
+ * which might be held by those threads.
+ */
 
 void
 PyEval_ReInitThreads(void)
 {
-    _Py_IDENTIFIER(_after_fork);
-    PyObject *threading, *result;
     PyThreadState *current_tstate = PyThreadState_GET();
 
     if (!gil_created())
@@ -250,22 +248,6 @@ PyEval_ReInitThreads(void)
     pending_lock = PyThread_allocate_lock();
     take_gil(current_tstate);
     main_thread = PyThread_get_thread_ident();
-
-    /* Update the threading module with the new state.
-     */
-    threading = PyMapping_GetItemString(current_tstate->interp->modules,
-                                        "threading");
-    if (threading == NULL) {
-        /* threading not imported */
-        PyErr_Clear();
-        return;
-    }
-    result = _PyObject_CallMethodId(threading, &PyId__after_fork, NULL);
-    if (result == NULL)
-        PyErr_WriteUnraisable(threading);
-    else
-        Py_DECREF(result);
-    Py_DECREF(threading);
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);
@@ -1064,9 +1046,20 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY) {
-                /* Make the last opcode before
-                   a try: finally: block uninterruptible. */
+            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
+                _Py_OPCODE(*next_instr) == YIELD_FROM) {
+                /* Two cases where we skip running signal handlers and other
+                   pending calls:
+                   - If we're about to enter the try: of a try/finally (not
+                     *very* useful, but might help in some cases and it's
+                     traditional)
+                   - If we're resuming a chain of nested 'yield from' or
+                     'await' calls, then each frame is parked with YIELD_FROM
+                     as its next opcode. If the user hit control-C we want to
+                     wait until we've reached the innermost frame before
+                     running the signal handler and raising KeyboardInterrupt
+                     (see bpo-30039).
+                */
                 goto fast_next_opcode;
             }
             if (_Py_atomic_load_relaxed(&pendingcalls_to_do)) {
@@ -4889,17 +4882,13 @@ do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
 /* Extract a slice index from a PyLong or an object with the
    nb_index slot defined, and store in *pi.
    Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
-   and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.
+   and silently boost values less than PY_SSIZE_T_MIN to PY_SSIZE_T_MIN.
    Return 0 on error, 1 on success.
-*/
-/* Note:  If v is NULL, return success without storing into *pi.  This
-   is because_PyEval_SliceIndex() is called by apply_slice(), which can be
-   called by the SLICE opcode with v and/or w equal to NULL.
 */
 int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
-    if (v != NULL) {
+    if (v != Py_None) {
         Py_ssize_t x;
         if (PyIndex_Check(v)) {
             x = PyNumber_AsSsize_t(v, NULL);
@@ -4916,6 +4905,26 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
     }
     return 1;
 }
+
+int
+_PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
+{
+    Py_ssize_t x;
+    if (PyIndex_Check(v)) {
+        x = PyNumber_AsSsize_t(v, NULL);
+        if (x == -1 && PyErr_Occurred())
+            return 0;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "slice indices must be integers or "
+                        "have an __index__ method");
+        return 0;
+    }
+    *pi = x;
+    return 1;
+}
+
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
                          "BaseException is not allowed"
@@ -5017,7 +5026,7 @@ import_from(PyObject *v, PyObject *name)
 {
     PyObject *x;
     _Py_IDENTIFIER(__name__);
-    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown;
+    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
     x = PyObject_GetAttr(v, name);
     if (x != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -5032,6 +5041,7 @@ import_from(PyObject *v, PyObject *name)
     }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
     if (fullmodname == NULL) {
+        Py_DECREF(pkgname);
         return NULL;
     }
     x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
@@ -5056,17 +5066,23 @@ import_from(PyObject *v, PyObject *name)
 
     if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
         PyErr_Clear();
-        PyErr_SetImportError(
-            PyUnicode_FromFormat("cannot import name %R from %R (unknown location)",
-                name, pkgname_or_unknown),
-            pkgname, NULL);
-    } else {
-        PyErr_SetImportError(
-            PyUnicode_FromFormat("cannot import name %R from %R (%S)",
-                name, pkgname_or_unknown, pkgpath),
-            pkgname, pkgpath);
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R (unknown location)",
+            name, pkgname_or_unknown
+        );
+        /* NULL check for errmsg done by PyErr_SetImportError. */
+        PyErr_SetImportError(errmsg, pkgname, NULL);
+    }
+    else {
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R (%S)",
+            name, pkgname_or_unknown, pkgpath
+        );
+        /* NULL check for errmsg done by PyErr_SetImportError. */
+        PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
 
+    Py_XDECREF(errmsg);
     Py_XDECREF(pkgname_or_unknown);
     Py_XDECREF(pkgpath);
     return NULL;

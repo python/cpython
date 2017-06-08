@@ -4,7 +4,6 @@
 """Unit tests for abc.py."""
 
 import unittest
-from test import support
 
 import abc
 from inspect import isabstract
@@ -402,6 +401,9 @@ class TestABC(unittest.TestCase):
         self.assertEqual(B.counter, 0)
         C()
         self.assertEqual(B.counter, 1)
+
+    def test_ABC_has___slots__(self):
+        self.assertTrue(hasattr(abc.ABC, '__slots__'))
 
 
 class TestABCWithInitSubclass(unittest.TestCase):

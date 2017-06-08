@@ -7,7 +7,6 @@
 
 import abc
 import ast
-import atexit
 import collections
 import contextlib
 import copy
@@ -27,7 +26,6 @@ import tempfile
 import textwrap
 import traceback
 import types
-import uuid
 
 from types import *
 NoneType = type(None)
@@ -2652,11 +2650,31 @@ class unsigned_long_long_converter(CConverter):
         if not bitwise:
             fail("Unsigned long long must be bitwise (for now).")
 
+
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
-    default_type = int
-    format_unit = 'n'
     c_ignored_default = "0"
+
+    def converter_init(self, *, accept={int}):
+        if accept == {int}:
+            self.format_unit = 'n'
+            self.default_type = int
+        elif accept == {int, NoneType}:
+            self.converter = '_Py_convert_optional_to_ssize_t'
+        else:
+            fail("Py_ssize_t_converter: illegal 'accept' argument " + repr(accept))
+
+
+class slice_index_converter(CConverter):
+    type = 'Py_ssize_t'
+
+    def converter_init(self, *, accept={int, NoneType}):
+        if accept == {int}:
+            self.converter = '_PyEval_SliceIndexNotNone'
+        elif accept == {int, NoneType}:
+            self.converter = '_PyEval_SliceIndex'
+        else:
+            fail("slice_index_converter: illegal 'accept' argument " + repr(accept))
 
 
 class float_converter(CConverter):
@@ -4317,7 +4335,10 @@ def main(argv):
     cmdline.add_argument("-o", "--output", type=str)
     cmdline.add_argument("-v", "--verbose", action='store_true')
     cmdline.add_argument("--converters", action='store_true')
-    cmdline.add_argument("--make", action='store_true')
+    cmdline.add_argument("--make", action='store_true',
+                         help="Walk --srcdir to run over all relevant files.")
+    cmdline.add_argument("--srcdir", type=str, default=os.curdir,
+                         help="The directory tree to walk in --make mode.")
     cmdline.add_argument("filename", type=str, nargs="*")
     ns = cmdline.parse_args(argv)
 
@@ -4388,7 +4409,12 @@ def main(argv):
             print()
             cmdline.print_usage()
             sys.exit(-1)
-        for root, dirs, files in os.walk('.'):
+        if not ns.srcdir:
+            print("Usage error: --srcdir must not be empty with --make.")
+            print()
+            cmdline.print_usage()
+            sys.exit(-1)
+        for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
                     dirs.remove(rcs_dir)

@@ -1825,6 +1825,54 @@ exit:
 
 #endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
 
+#if defined(HAVE_FORK)
+
+PyDoc_STRVAR(os_register_at_fork__doc__,
+"register_at_fork($module, /, *, before=None, after_in_child=None,\n"
+"                 after_in_parent=None)\n"
+"--\n"
+"\n"
+"Register callables to be called when forking a new process.\n"
+"\n"
+"  before\n"
+"    A callable to be called in the parent before the fork() syscall.\n"
+"  after_in_child\n"
+"    A callable to be called in the child after fork().\n"
+"  after_in_parent\n"
+"    A callable to be called in the parent after fork().\n"
+"\n"
+"\'before\' callbacks are called in reverse order.\n"
+"\'after_in_child\' and \'after_in_parent\' callbacks are called in order.");
+
+#define OS_REGISTER_AT_FORK_METHODDEF    \
+    {"register_at_fork", (PyCFunction)os_register_at_fork, METH_FASTCALL, os_register_at_fork__doc__},
+
+static PyObject *
+os_register_at_fork_impl(PyObject *module, PyObject *before,
+                         PyObject *after_in_child, PyObject *after_in_parent);
+
+static PyObject *
+os_register_at_fork(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"before", "after_in_child", "after_in_parent", NULL};
+    static _PyArg_Parser _parser = {"|$OOO:register_at_fork", _keywords, 0};
+    PyObject *before = NULL;
+    PyObject *after_in_child = NULL;
+    PyObject *after_in_parent = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &before, &after_in_child, &after_in_parent)) {
+        goto exit;
+    }
+    return_value = os_register_at_fork_impl(module, before, after_in_child, after_in_parent);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_FORK) */
+
 #if defined(HAVE_FORK1)
 
 PyDoc_STRVAR(os_fork1__doc__,
@@ -5926,7 +5974,7 @@ os_scandir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
     static _PyArg_Parser _parser = {"|O&:scandir", _keywords, 0};
-    path_t path = PATH_T_INITIALIZE("scandir", "path", 1, 0);
+    path_t path = PATH_T_INITIALIZE("scandir", "path", 1, PATH_HAVE_FDOPENDIR);
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path)) {
@@ -6121,6 +6169,10 @@ exit:
 #ifndef OS_SPAWNVE_METHODDEF
     #define OS_SPAWNVE_METHODDEF
 #endif /* !defined(OS_SPAWNVE_METHODDEF) */
+
+#ifndef OS_REGISTER_AT_FORK_METHODDEF
+    #define OS_REGISTER_AT_FORK_METHODDEF
+#endif /* !defined(OS_REGISTER_AT_FORK_METHODDEF) */
 
 #ifndef OS_FORK1_METHODDEF
     #define OS_FORK1_METHODDEF
@@ -6493,4 +6545,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=5a0be969e3f71660 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dce741f527ddbfa4 input=a9049054013a1b77]*/

@@ -112,8 +112,8 @@ class Test_Assertions(unittest.TestCase):
                 a = A()
                 wr = weakref.ref(a)
                 try:
-                    raise IOError
-                except IOError:
+                    raise OSError
+                except OSError:
                     raise ValueError
 
             def test_functional(self):
@@ -223,9 +223,11 @@ class TestLongMessage(unittest.TestCase):
                              "^1 == 1 : oops$"])
 
     def testAlmostEqual(self):
-        self.assertMessages('assertAlmostEqual', (1, 2),
-                            ["^1 != 2 within 7 places$", "^oops$",
-                             "^1 != 2 within 7 places$", "^1 != 2 within 7 places : oops$"])
+        self.assertMessages(
+            'assertAlmostEqual', (1, 2),
+            [r"^1 != 2 within 7 places \(1 difference\)$", "^oops$",
+             r"^1 != 2 within 7 places \(1 difference\)$",
+             r"^1 != 2 within 7 places \(1 difference\) : oops$"])
 
     def testNotAlmostEqual(self):
         self.assertMessages('assertNotAlmostEqual', (1, 1),
