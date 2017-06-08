@@ -49,6 +49,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
+  on stdin.write() if the child process is still running but closed the pipe.
+
 - bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
   handle IPv6 addresses.
 

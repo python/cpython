@@ -720,10 +720,11 @@ class Popen(object):
                         if e.errno == errno.EPIPE:
                             # communicate() should ignore broken pipe error
                             pass
-                        elif (e.errno == errno.EINVAL
-                              and self.poll() is not None):
-                            # Issue #19612: stdin.write() fails with EINVAL
-                            # if the process already exited before the write
+                        elif e.errno == errno.EINVAL:
+                            # bpo-19612, bpo-30418: On Windows, stdin.write()
+                            # fails with EINVAL if the child process exited or
+                            # if the child process is still running but closed
+                            # the pipe.
                             pass
                         else:
                             raise
