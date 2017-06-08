@@ -2,8 +2,8 @@
 # Demo/threads/bug.py.  It simply provokes a number of threads into
 # trying to import the same module "at the same time".
 # There are no pleasant failure modes -- most likely is that Python
-# complains several times about module random having no attribute
-# randrange, and then Python hangs.
+# complains several times about module colorsys having no attribute
+# rgb_to_hls(), and then Python hangs.
 
 import _imp as imp
 import os
@@ -23,12 +23,12 @@ def task(N, done, done_tasks, errors):
         # importing of different modules from several threads.
         if len(done_tasks) % 2:
             import modulefinder
-            import random
+            import colorsys
         else:
-            import random
+            import colorsys
             import modulefinder
-        # This will fail if random is not completely initialized
-        x = random.randrange(1, 3)
+        # This will fail if colorsys is not completely initialized
+        x = colorsys.rgb_to_hls(1.0, 1.0, 1.0)
     except Exception as e:
         errors.append(e.with_traceback(None))
     finally:
@@ -88,14 +88,14 @@ class FlushingFinder:
 class ThreadedImportTests(unittest.TestCase):
 
     def setUp(self):
-        self.old_random = sys.modules.pop('random', None)
+        self.old_colorsys = sys.modules.pop('colorsys', None)
 
     def tearDown(self):
-        # If the `random` module was already initialized, we restore the
+        # If the `colorsys` module was already initialized, we restore the
         # old module at the end so that pickling tests don't fail.
         # See http://bugs.python.org/issue3657#msg110461
-        if self.old_random is not None:
-            sys.modules['random'] = self.old_random
+        if self.old_colorsys is not None:
+            sys.modules['colorsys'] = self.old_colorsys
 
     def check_parallel_module_init(self):
         if imp.lock_held():
@@ -106,8 +106,8 @@ class ThreadedImportTests(unittest.TestCase):
         for N in (20, 50) * 3:
             if verbose:
                 print("Trying", N, "threads ...", end=' ')
-            # Make sure that random and modulefinder get reimported freshly
-            for modname in ['random', 'modulefinder']:
+            # Make sure that colorsys and modulefinder get reimported freshly
+            for modname in ['colorsys', 'modulefinder']:
                 try:
                     del sys.modules[modname]
                 except KeyError:
@@ -218,7 +218,7 @@ class ThreadedImportTests(unittest.TestCase):
         code = """if 1:
             import threading
             def target():
-                import random
+                import colorsys
             t = threading.Thread(target=target)
             t.start()
             t.join()"""
