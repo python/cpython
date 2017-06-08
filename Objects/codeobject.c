@@ -825,8 +825,6 @@ _PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
 int
 _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 {
-    assert(*extra == NULL);
-
     if (!PyCode_Check(code)) {
         PyErr_BadInternalCall();
         return -1;
