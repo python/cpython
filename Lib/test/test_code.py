@@ -307,15 +307,13 @@ if check_impl_detail(cpython=True):
             tt.join()
             self.assertEqual(LAST_FREED, 500)
 
-else:
-    class CoExtra(unittest.TestCase):
-        pass
-
 def test_main(verbose=None):
     from test import test_code
     run_doctest(test_code, verbose)
-    run_unittest(CodeTest, CodeConstsTest, CodeWeakRefTest, CoExtra)
-
+    tests = [CodeTest, CodeConstsTest, CodeWeakRefTest]
+    if check_impl_detail(cpython=True):
+        tests.append(CoExtra)
+    run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main()
