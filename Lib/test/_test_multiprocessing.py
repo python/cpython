@@ -274,6 +274,10 @@ class _TestProcess(BaseTestCase):
     def _test_terminate(cls):
         time.sleep(100)
 
+    @classmethod
+    def _test_sleep(cls, delay):
+        time.sleep(delay)
+
     def test_terminate(self):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -323,8 +327,9 @@ class _TestProcess(BaseTestCase):
 
         p.join()
 
-        # XXX sometimes get p.exitcode == 0 on Windows ...
-        #self.assertEqual(p.exitcode, -signal.SIGTERM)
+        # sometimes get p.exitcode == 0 on Windows ...
+        if os.name != 'nt':
+            self.assertEqual(p.exitcode, -signal.SIGTERM)
 
     def test_cpu_count(self):
         try:
@@ -397,6 +402,36 @@ class _TestProcess(BaseTestCase):
         event.set()
         p.join()
         self.assertTrue(wait_for_handle(sentinel, timeout=1))
+
+    def test_many_processes(self):
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        sm = multiprocessing.get_start_method()
+        N = 5 if sm == 'spawn' else 100
+
+        # Try to overwhelm the forkserver loop with events
+        procs = [self.Process(target=self._test_sleep, args=(0.01,))
+                 for i in range(N)]
+        for p in procs:
+            p.start()
+        for p in procs:
+            p.join(timeout=10)
+        for p in procs:
+            self.assertEqual(p.exitcode, 0)
+
+        procs = [self.Process(target=self._test_terminate)
+                 for i in range(N)]
+        for p in procs:
+            p.start()
+        time.sleep(0.001)  # let the children start...
+        for p in procs:
+            p.terminate()
+        for p in procs:
+            p.join(timeout=10)
+        if os.name != 'nt':
+            for p in procs:
+                self.assertEqual(p.exitcode, -signal.SIGTERM)
 
 #
 #
