@@ -17,7 +17,7 @@ from idlelib import autocomplete_w
 ID_CHARS = string.ascii_letters + string.digits + "_"
 
 SEPS = os.sep
-if os.altsep:  # e.g. '/' on Windows...f
+if os.altsep:  # e.g. '/' on Windows...
     SEPS += os.altsep
 
 
