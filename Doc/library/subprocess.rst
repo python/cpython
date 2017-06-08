@@ -815,7 +815,7 @@ on Windows.
          The handles must be temporarily made inheritable by
          :func:`os.set_handle_inheritable` when passed to the :class:`Popen`
          constructor, else :class:`OSError` will be raised with Windows error
-         `ERROR_INVALID_PARAMETER` (87).
+         ``ERROR_INVALID_PARAMETER`` (87).
 
          .. warning::
 
