@@ -4287,11 +4287,11 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     /* If the substring is all whitespace, it's an error.  We need to catch
        this here, and not when we call PyParser_ASTFromString, because turning
        the expression '' in to '()' would go from being invalid to valid. */
-    /* Note that this code says an empty string is all whitespace.  That's
-       important.  There's a test for it: f'{}'. */
     for (s = expr_start; s != expr_end; s++) {
         char c = *s;
-        if (!(c == ' ' || c == '\t' || c == '\n' || c == '\014')) {
+        /* The Python parser ignores only the following whitespace
+           characters (\r already is converted to \n). */
+        if (!(c == ' ' || c == '\t' || c == '\n' || c == '\f')) {
             break;
         }
     }

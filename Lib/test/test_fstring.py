@@ -279,7 +279,10 @@ f'{a * x()}'"""
                              "f'{ !r}'",
                              "f'{10:{ }}'",
                              "f' { } '",
-                             "f'''{\t\x0c\r\n}'''",
+
+                             # The Python parser ignores also the following
+                             # whitespace characters in additional to a space.
+                             "f'''{\t\f\r\n}'''",
 
                              # Catch the empty expression before the
                              #  invalid conversion.
@@ -301,8 +304,11 @@ f'{a * x()}'"""
                              "f'{:x'",
                              ])
 
+        # Different error message is raised for other whitespace characters.
         self.assertAllRaise(SyntaxError, 'invalid character in identifier',
-                            ["f'''{\xa0}'''"])
+                            ["f'''{\xa0}'''",
+                             "\xa0",
+                             ])
 
     def test_parens_in_expressions(self):
         self.assertEqual(f'{3,}', '(3,)')
