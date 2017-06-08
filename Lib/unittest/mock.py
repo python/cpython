@@ -102,6 +102,8 @@ def _check_signature(func, mock, skipfirst, instance=False):
     _copy_func_details(func, checksig)
     type(mock)._mock_check_sig = checksig
 
+    return sig
+
 
 def _copy_func_details(func, funcopy):
     # we explicitly don't copy func.__dict__ into this copy as it would
@@ -151,6 +153,10 @@ def _set_signature(mock, original, instance=False):
     # signature as the original.
     if not _callable(original):
         return
+
+    if '_spec_signature' in mock.__dict__:
+        # mock already has a spec signature. Nothing to do.
+        return mock
 
     skipfirst = isinstance(original, type)
     result = _get_signature_object(original, instance, skipfirst)
@@ -372,7 +378,8 @@ class NonCallableMock(Base):
     def __init__(
             self, spec=None, wraps=None, name=None, spec_set=None,
             parent=None, _spec_state=None, _new_name='', _new_parent=None,
-            _spec_as_instance=False, _eat_self=None, unsafe=False, **kwargs
+            _spec_as_instance=False, _eat_self=None, unsafe=False,
+            autospec=None, **kwargs
         ):
         if _new_parent is None:
             _new_parent = parent
@@ -382,10 +389,15 @@ class NonCallableMock(Base):
         __dict__['_mock_name'] = name
         __dict__['_mock_new_name'] = _new_name
         __dict__['_mock_new_parent'] = _new_parent
+        __dict__['_autospec'] = autospec
 
         if spec_set is not None:
             spec = spec_set
             spec_set = True
+        if autospec is not None:
+            # autospec is even stricter than spec_set.
+            spec = autospec
+            autospec = True
         if _eat_self is None:
             _eat_self = parent is not None
 
@@ -426,12 +438,18 @@ class NonCallableMock(Base):
         setattr(self, attribute, mock)
 
 
-    def mock_add_spec(self, spec, spec_set=False):
+    def mock_add_spec(self, spec, spec_set=False, autospec=None):
         """Add a spec to a mock. `spec` can either be an object or a
         list of strings. Only attributes on the `spec` can be fetched as
         attributes from the mock.
 
-        If `spec_set` is True then only attributes on the spec can be set."""
+        If `spec_set` is True then only attributes on the spec can be set.
+        If `autospec` is True then only attributes on the spec can be accessed
+        and set, and if a method in the `spec` is called, it's signature is
+        checked.
+        """
+        if autospec is not None:
+            self.__dict__['_autospec'] = autospec
         self._mock_add_spec(spec, spec_set)
 
 
@@ -445,9 +463,9 @@ class NonCallableMock(Base):
                 _spec_class = spec
             else:
                 _spec_class = _get_class(spec)
-            res = _get_signature_object(spec,
-                                        _spec_as_instance, _eat_self)
-            _spec_signature = res and res[1]
+
+            _spec_signature = _check_signature(spec, self, _eat_self,
+                                               _spec_as_instance)
 
             spec = dir(spec)
 
@@ -592,9 +610,20 @@ class NonCallableMock(Base):
                 # execution?
                 wraps = getattr(self._mock_wraps, name)
 
+            kwargs = {}
+            if self.__dict__.get('_autospec') is not None:
+                # get the mock's spec attribute with the same name and
+                # pass it to the child.
+                spec_class = self.__dict__.get('_spec_class')
+                spec = getattr(spec_class, name, None)
+                is_type = isinstance(spec_class, type)
+                eat_self = _must_skip(spec_class, name, is_type)
+                kwargs['_eat_self'] = eat_self
+                kwargs['autospec'] = spec
+
             result = self._get_child_mock(
                 parent=self, name=name, wraps=wraps, _new_name=name,
-                _new_parent=self
+                _new_parent=self, **kwargs
             )
             self._mock_children[name]  = result
 
@@ -1313,11 +1342,21 @@ class _patch(object):
             if original is DEFAULT:
                 raise TypeError("Can't use 'autospec' with create=True")
             spec_set = bool(spec_set)
+            is_class = isinstance(self.target, type)
             if autospec is True:
-                autospec = original
+                if is_class:
+                    # if it's a class, "original" could represent a class
+                    # or static method object (non-callable), instead of the
+                    # method itself, causing a NonCallableMagicMock to be
+                    # created.
+                    autospec = getattr(self.target, self.attribute, original)
+                else:
+                    autospec = original
 
+            eat_self = _must_skip(self.target, self.attribute, is_class)
             new = create_autospec(autospec, spec_set=spec_set,
-                                  _name=self.attribute, **kwargs)
+                                  _name=self.attribute, _eat_self=eat_self,
+                                  **kwargs)
         elif kwargs:
             # can't set keyword args when we aren't creating the mock
             # XXXX If new is a Mock we could call new.configure_mock(**kwargs)
@@ -2211,9 +2250,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
             new = _SpecState(original, spec_set, mock, entry, instance)
             mock._mock_children[entry] = new
         else:
+            # we are looping over a spec's attributes, so mock is the parent
+            # of mocked spec attributes.
             parent = mock
-            if isinstance(spec, FunctionTypes):
-                parent = mock.mock
 
             skipfirst = _must_skip(spec, entry, is_type)
             kwargs['_eat_self'] = skipfirst

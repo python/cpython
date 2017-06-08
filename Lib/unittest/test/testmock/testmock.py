@@ -510,6 +510,48 @@ class MockTest(unittest.TestCase):
                 )
 
 
+    def _check_autospeced_something(self, something):
+        for method_name in ['meth', 'cmeth', 'smeth']:
+            mock_method = getattr(something, method_name)
+
+            # check that the methods are callable with correct args.
+            mock_method(sentinel.a, sentinel.b, sentinel.c)
+            mock_method(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)
+            mock_method.assert_has_calls([
+                call(sentinel.a, sentinel.b, sentinel.c),
+                call(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)])
+
+            # assert that TypeError is raised if the method signature is not
+            # respected.
+            self.assertRaises(TypeError, mock_method)
+            self.assertRaises(TypeError, mock_method, sentinel.a)
+            self.assertRaises(TypeError, mock_method, a=sentinel.a)
+            self.assertRaises(TypeError, mock_method, sentinel.a, sentinel.b,
+                              sentinel.c, e=sentinel.e)
+
+        # assert that AttributeError is raised if the method does not exist.
+        self.assertRaises(AttributeError, getattr, something, 'foolish')
+
+
+    def test_mock_autospec_all_members(self):
+        for spec in [Something, Something()]:
+            mock = Mock(autospec=spec)
+            self._check_autospeced_something(mock)
+
+
+    def test_mock_spec_function(self):
+        def foo(lish):
+            pass
+
+        mock = Mock(spec=foo)
+
+        mock(sentinel.lish)
+        mock.assert_called_once_with(sentinel.lish)
+        self.assertRaises(TypeError, mock)
+        self.assertRaises(TypeError, sentinel.foo, sentinel.lish)
+        self.assertRaises(TypeError, mock, foo=sentinel.foo)
+
+
     def test_from_spec(self):
         class Something(object):
             x = 3
@@ -746,6 +788,21 @@ class MockTest(unittest.TestCase):
             self.assertEqual(set(), type_attrs - attrs)
         finally:
             patcher.stop()
+
+
+    def test_patch_autospec_obj(self):
+        something = Something()
+        with patch.multiple(something, meth=DEFAULT, cmeth=DEFAULT,
+                            smeth=DEFAULT, autospec=True):
+            self._check_autospeced_something(something)
+
+
+    @patch.object(Something, 'smeth', autospec=True)
+    @patch.object(Something, 'cmeth', autospec=True)
+    @patch.object(Something, 'meth', autospec=True)
+    def test_patch_autospec_class(self, mock_meth, mock_cmeth, mock_smeth):
+        something = Something()
+        self._check_autospeced_something(something)
 
 
     def test_configure_mock(self):
@@ -1374,6 +1431,13 @@ class MockTest(unittest.TestCase):
             mock.mock_add_spec(int)
             self.assertEqual(int(mock), 4)
             self.assertRaises(TypeError, lambda: mock['foo'])
+
+
+    def test_mock_add_spec_autospec_all_members(self):
+        for spec in [Something, Something()]:
+            mock = Mock()
+            mock.mock_add_spec(spec, autospec=True)
+            self._check_autospeced_something(mock)
 
 
     def test_adding_child_mock(self):
