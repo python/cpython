@@ -1,8 +1,8 @@
 #! /bin/sh
 # Attempt to guess a canonical system name.
-#   Copyright 1992-2016 Free Software Foundation, Inc.
+#   Copyright 1992-2017 Free Software Foundation, Inc.
 
-timestamp='2016-10-02'
+timestamp='2017-05-27'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ version="\
 GNU config.guess ($timestamp)
 
 Originally written by Per Bothner.
-Copyright 1992-2016 Free Software Foundation, Inc.
+Copyright 1992-2017 Free Software Foundation, Inc.
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -837,10 +837,11 @@ EOF
 	UNAME_PROCESSOR=`/usr/bin/uname -p`
 	case ${UNAME_PROCESSOR} in
 	    amd64)
-		echo x86_64-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'` ;;
-	    *)
-		echo ${UNAME_PROCESSOR}-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'` ;;
+		UNAME_PROCESSOR=x86_64 ;;
+	    i386)
+		UNAME_PROCESSOR=i586 ;;
 	esac
+	echo ${UNAME_PROCESSOR}-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`
 	exit ;;
     i*:CYGWIN*:*)
 	echo ${UNAME_MACHINE}-pc-cygwin
@@ -1303,13 +1304,20 @@ EOF
 	if test `echo "$UNAME_RELEASE" | sed -e 's/\..*//'` -le 10 ; then
 	    if [ "$CC_FOR_BUILD" != no_compiler_found ]; then
 		if (echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | \
-		    (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
-		    grep IS_64BIT_ARCH >/dev/null
+		       (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
+		       grep IS_64BIT_ARCH >/dev/null
 		then
 		    case $UNAME_PROCESSOR in
 			i386) UNAME_PROCESSOR=x86_64 ;;
 			powerpc) UNAME_PROCESSOR=powerpc64 ;;
 		    esac
+		fi
+		# On 10.4-10.6 one might compile for PowerPC via gcc -arch ppc
+		if (echo '#ifdef __POWERPC__'; echo IS_PPC; echo '#endif') | \
+		       (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
+		       grep IS_PPC >/dev/null
+		then
+		    UNAME_PROCESSOR=powerpc
 		fi
 	    fi
 	elif test "$UNAME_PROCESSOR" = i386 ; then
@@ -1334,14 +1342,17 @@ EOF
     *:QNX:*:4*)
 	echo i386-pc-qnx
 	exit ;;
-    NEO-?:NONSTOP_KERNEL:*:*)
+    NEO-*:NONSTOP_KERNEL:*:*)
 	echo neo-tandem-nsk${UNAME_RELEASE}
 	exit ;;
     NSE-*:NONSTOP_KERNEL:*:*)
 	echo nse-tandem-nsk${UNAME_RELEASE}
 	exit ;;
-    NSR-?:NONSTOP_KERNEL:*:*)
+    NSR-*:NONSTOP_KERNEL:*:*)
 	echo nsr-tandem-nsk${UNAME_RELEASE}
+	exit ;;
+    NSX-*:NONSTOP_KERNEL:*:*)
+	echo nsx-tandem-nsk${UNAME_RELEASE}
 	exit ;;
     *:NonStop-UX:*:*)
 	echo mips-compaq-nonstopux
