@@ -1417,7 +1417,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     numargs = PyTuple_Size(args);
     if (numargs == 2) {
         if (a1 != Py_None) {
-            stop = PyLong_AsSsize_t(a1);
+            stop = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
@@ -1429,11 +1429,11 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     } else {
         if (a1 != Py_None)
-            start = PyLong_AsSsize_t(a1);
+            start = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
         if (start == -1 && PyErr_Occurred())
             PyErr_Clear();
         if (a2 != Py_None) {
-            stop = PyLong_AsSsize_t(a2);
+            stop = PyNumber_AsSsize_t(a2, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
@@ -1453,7 +1453,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (a3 != NULL) {
         if (a3 != Py_None)
-            step = PyLong_AsSsize_t(a3);
+            step = PyNumber_AsSsize_t(a3, PyExc_OverflowError);
         if (step == -1 && PyErr_Occurred())
             PyErr_Clear();
     }
