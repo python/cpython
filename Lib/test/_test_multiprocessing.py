@@ -398,6 +398,67 @@ class _TestProcess(BaseTestCase):
         p.join()
         self.assertTrue(wait_for_handle(sentinel, timeout=1))
 
+    @classmethod
+    def _test_close(cls, rc=0, q=None):
+        if q is not None:
+            q.get()
+        sys.exit(rc)
+
+    def test_close(self):
+        if self.TYPE == "threads":
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        p = self.Process(target=self._test_close)
+        p.daemon = True
+        p.start()
+        p.join()
+
+        self.assertEqual(p.is_alive(), False)
+        self.assertEqual(p.exitcode, 0)
+        p.close()
+        with self.assertRaises(ValueError):
+            p.is_alive()
+        with self.assertRaises(ValueError):
+            p.join()
+        with self.assertRaises(ValueError):
+            p.terminate()
+        p.close()
+
+        wr = weakref.ref(p)
+        del p
+        gc.collect()
+        self.assertIs(wr(), None)
+
+    def test_close_before_end(self):
+        if self.TYPE == "threads":
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        q = self.Queue()
+        p = self.Process(target=self._test_close, kwargs={'q': q})
+        p.daemon = True
+        p.start()
+
+        def _cleanup():
+            q.put(None)
+            time.sleep(0.5)  # let child die
+
+        self.addCleanup(_cleanup)
+
+        self.assertEqual(p.is_alive(), True)
+        self.assertIn(p, self.active_children())
+        p.close()
+        self.assertNotIn(p, self.active_children())
+        with self.assertRaises(ValueError):
+            p.is_alive()
+        with self.assertRaises(ValueError):
+            p.join()
+        with self.assertRaises(ValueError):
+            p.terminate()
+
+        wr = weakref.ref(p)
+        del p
+        gc.collect()
+        self.assertIs(wr(), None)
+
+
 #
 #
 #

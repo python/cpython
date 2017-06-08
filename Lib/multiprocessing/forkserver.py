@@ -208,13 +208,20 @@ def _serve_one(s, listener, alive_r, handlers):
     semaphore_tracker._semaphore_tracker._fd = stfd
 
     # send pid to client processes
-    write_unsigned(child_w, os.getpid())
+    try:
+        write_unsigned(child_w, os.getpid())
+    except BrokenPipeError:
+        # client died
+        return 1
 
     # run process object received over pipe
     code = spawn._main(child_r)
 
     # write the exit code to the pipe
-    write_unsigned(child_w, code)
+    try:
+        write_unsigned(child_w, code)
+    except BrokenPipeError:
+        return 1
 
 #
 # Read and write unsigned numbers

@@ -76,6 +76,7 @@ class BaseProcess(object):
         self._config = _current_process._config.copy()
         self._parent_pid = os.getpid()
         self._popen = None
+        self._closed = False
         self._target = target
         self._args = tuple(args)
         self._kwargs = dict(kwargs)
@@ -84,6 +85,10 @@ class BaseProcess(object):
         if daemon is not None:
             self.daemon = daemon
         _dangling.add(self)
+
+    def _check_closed(self):
+        if self._closed:
+            raise ValueError("process object is closed")
 
     def run(self):
         '''
@@ -96,6 +101,7 @@ class BaseProcess(object):
         '''
         Start child process
         '''
+        self._check_closed()
         assert self._popen is None, 'cannot start a process twice'
         assert self._parent_pid == os.getpid(), \
                'can only start a process object created by current process'
@@ -110,12 +116,14 @@ class BaseProcess(object):
         '''
         Terminate process; sends SIGTERM signal or uses TerminateProcess()
         '''
+        self._check_closed()
         self._popen.terminate()
 
     def join(self, timeout=None):
         '''
         Wait until child process terminates
         '''
+        self._check_closed()
         assert self._parent_pid == os.getpid(), 'can only join a child process'
         assert self._popen is not None, 'can only join a started process'
         res = self._popen.wait(timeout)
@@ -126,6 +134,7 @@ class BaseProcess(object):
         '''
         Return whether process is alive
         '''
+        self._check_closed()
         if self is _current_process:
             return True
         assert self._parent_pid == os.getpid(), 'can only test a child process'
@@ -133,6 +142,20 @@ class BaseProcess(object):
             return False
         self._popen.poll()
         return self._popen.returncode is None
+
+    def close(self):
+        '''
+        Close the Process object.
+
+        This releases resources held by this object, but does not join or
+        terminate the child process.
+        '''
+        if self._popen is not None:
+            self._popen.close()
+            self._popen = None
+            del self._sentinel
+            _children.discard(self)
+        self._closed = True
 
     @property
     def name(self):
@@ -295,6 +318,7 @@ class _MainProcess(BaseProcess):
         self._name = 'MainProcess'
         self._parent_pid = None
         self._popen = None
+        self._closed = False
         self._config = {'authkey': AuthenticationString(os.urandom(32)),
                         'semprefix': '/mp'}
         # Note that some versions of FreeBSD only allow named
@@ -306,6 +330,9 @@ class _MainProcess(BaseProcess):
         #
         # Everything in self._config will be inherited by descendant
         # processes.
+
+    def close(self):
+        pass
 
 
 _current_process = _MainProcess()
