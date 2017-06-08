@@ -18,13 +18,6 @@ class _io.TextIOWrapper "textio *" "&TextIOWrapper_TYpe"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=2097a4fc85670c26]*/
 
-/*[python input]
-class io_ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = '_PyIO_ConvertSsize_t'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
-
 _Py_IDENTIFIER(close);
 _Py_IDENTIFIER(_dealloc_warn);
 _Py_IDENTIFIER(decode);
@@ -931,7 +924,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
             goto error;
     }
     else {
-        PyErr_SetString(PyExc_IOError,
+        PyErr_SetString(PyExc_OSError,
                         "could not determine default encoding");
     }
 
@@ -1078,7 +1071,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         if (cookieObj == NULL)
             goto error;
 
-        cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         Py_DECREF(cookieObj);
         if (cmp < 0) {
             goto error;
@@ -1087,7 +1080,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         if (cmp == 0) {
             self->encoding_start_of_stream = 0;
             res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_setstate,
-                                             _PyIO_zero, NULL);
+                                             _PyLong_Zero, NULL);
             if (res == NULL)
                 goto error;
             Py_DECREF(res);
@@ -1100,6 +1093,64 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
   error:
     Py_XDECREF(codec_info);
     return -1;
+}
+
+/* Return *default_value* if ob is None, 0 if ob is false, 1 if ob is true,
+ * -1 on error.
+ */
+static int
+convert_optional_bool(PyObject *obj, int default_value)
+{
+    long v;
+    if (obj == Py_None) {
+        v = default_value;
+    }
+    else {
+        v = PyLong_AsLong(obj);
+        if (v == -1 && PyErr_Occurred())
+            return -1;
+    }
+    return v != 0;
+}
+
+
+/*[clinic input]
+_io.TextIOWrapper.reconfigure
+    *
+    line_buffering as line_buffering_obj: object = None
+    write_through as write_through_obj: object = None
+
+Reconfigure the text stream with new parameters.
+
+This also does an implicit stream flush.
+
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_reconfigure_impl(textio *self,
+                                   PyObject *line_buffering_obj,
+                                   PyObject *write_through_obj)
+/*[clinic end generated code: output=7cdf79e7001e2856 input=baade27ecb9db7bc]*/
+{
+    int line_buffering;
+    int write_through;
+    PyObject *res;
+
+    line_buffering = convert_optional_bool(line_buffering_obj,
+                                           self->line_buffering);
+    write_through = convert_optional_bool(write_through_obj,
+                                          self->write_through);
+    if (line_buffering < 0 || write_through < 0) {
+        return NULL;
+    }
+    res = PyObject_CallMethodObjArgs((PyObject *) self, _PyIO_str_flush, NULL);
+    Py_XDECREF(res);
+    if (res == NULL) {
+        return NULL;
+    }
+    self->line_buffering = line_buffering;
+    self->write_through = write_through;
+    Py_RETURN_NONE;
 }
 
 static int
@@ -1529,13 +1580,13 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
 
 /*[clinic input]
 _io.TextIOWrapper.read
-    size as n: io_ssize_t = -1
+    size as n: Py_ssize_t(accept={int, NoneType}) = -1
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
-/*[clinic end generated code: output=7e651ce6cc6a25a6 input=8c09398424085cca]*/
+/*[clinic end generated code: output=7e651ce6cc6a25a6 input=123eecbfe214aeb8]*/
 {
     PyObject *result = NULL, *chunks = NULL;
 
@@ -2030,7 +2081,7 @@ _textiowrapper_encoder_reset(textio *self, int start_of_stream)
     }
     else {
         res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_setstate,
-                                         _PyIO_zero, NULL);
+                                         _PyLong_Zero, NULL);
         self->encoding_start_of_stream = 0;
     }
     if (res == NULL)
@@ -2075,7 +2126,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 
     if (whence == 1) {
         /* seek relative to current position */
-        cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
             goto fail;
 
@@ -2094,7 +2145,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     }
     else if (whence == 2) {
         /* seek relative to end of file */
-        cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
             goto fail;
 
@@ -2123,7 +2174,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         if (self->encoder) {
             /* If seek() == 0, we are at the start of stream, otherwise not */
-            cmp = PyObject_RichCompareBool(res, _PyIO_zero, Py_EQ);
+            cmp = PyObject_RichCompareBool(res, _PyLong_Zero, Py_EQ);
             if (cmp < 0 || _textiowrapper_encoder_reset(self, cmp)) {
                 Py_DECREF(res);
                 goto fail;
@@ -2137,7 +2188,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         goto fail;
     }
 
-    cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_LT);
+    cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_LT);
     if (cmp < 0)
         goto fail;
 
@@ -2212,7 +2263,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 
         /* Skip chars_to_skip of the decoded characters. */
         if (PyUnicode_GetLength(self->decoded_chars) < cookie.chars_to_skip) {
-            PyErr_SetString(PyExc_IOError, "can't restore logical file position");
+            PyErr_SetString(PyExc_OSError, "can't restore logical file position");
             goto fail;
         }
         self->decoded_chars_used = cookie.chars_to_skip;
@@ -2262,7 +2313,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
         goto fail;
     }
     if (!self->telling) {
-        PyErr_SetString(PyExc_IOError,
+        PyErr_SetString(PyExc_OSError,
                         "telling position disabled by next() call");
         goto fail;
     }
@@ -2428,7 +2479,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
         cookie.need_eof = 1;
 
         if (chars_decoded < chars_to_skip) {
-            PyErr_SetString(PyExc_IOError,
+            PyErr_SetString(PyExc_OSError,
                             "can't reconstruct logical file position");
             goto fail;
         }
@@ -2700,7 +2751,7 @@ textiowrapper_iternext(textio *self)
         line = PyObject_CallMethodObjArgs((PyObject *)self,
                                            _PyIO_str_readline, NULL);
         if (line && !PyUnicode_Check(line)) {
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
                          "not '%.200s'", Py_TYPE(line)->tp_name);
             Py_DECREF(line);
@@ -2846,6 +2897,7 @@ PyTypeObject PyIncrementalNewlineDecoder_Type = {
 
 static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_DETACH_METHODDEF
+    _IO_TEXTIOWRAPPER_RECONFIGURE_METHODDEF
     _IO_TEXTIOWRAPPER_WRITE_METHODDEF
     _IO_TEXTIOWRAPPER_READ_METHODDEF
     _IO_TEXTIOWRAPPER_READLINE_METHODDEF
@@ -2869,6 +2921,7 @@ static PyMemberDef textiowrapper_members[] = {
     {"encoding", T_OBJECT, offsetof(textio, encoding), READONLY},
     {"buffer", T_OBJECT, offsetof(textio, buffer), READONLY},
     {"line_buffering", T_BOOL, offsetof(textio, line_buffering), READONLY},
+    {"write_through", T_BOOL, offsetof(textio, write_through), READONLY},
     {"_finalizing", T_BOOL, offsetof(textio, finalizing), 0},
     {NULL}
 };

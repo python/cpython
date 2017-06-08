@@ -1,6 +1,12 @@
-import macpath
 from test import test_genericpath
 import unittest
+import warnings
+
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", "the macpath module is deprecated",
+                            DeprecationWarning)
+    import macpath
 
 
 class MacPathTestCase(unittest.TestCase):

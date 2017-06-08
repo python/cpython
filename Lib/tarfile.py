@@ -31,8 +31,6 @@
 
 version     = "0.9.0"
 __author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
-__date__    = "$Date: 2011-02-25 17:42:01 +0200 (Fri, 25 Feb 2011) $"
-__cvsid__   = "$Id: tarfile.py 88586 2011-02-25 15:42:01Z marc-andre.lemburg $"
 __credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
 
 #---------
@@ -2450,11 +2448,11 @@ open = TarFile.open
 def main():
     import argparse
 
-    description = 'A simple command line interface for tarfile module.'
+    description = 'A simple command-line interface for tarfile module.'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help='Verbose output')
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', metavar='<tarfile>',
                        help='Show listing of a tarfile')
     group.add_argument('-e', '--extract', nargs='+',
@@ -2467,7 +2465,7 @@ def main():
                        help='Test if a tarfile is valid')
     args = parser.parse_args()
 
-    if args.test:
+    if args.test is not None:
         src = args.test
         if is_tarfile(src):
             with open(src, 'r') as tar:
@@ -2478,7 +2476,7 @@ def main():
         else:
             parser.exit(1, '{!r} is not a tar archive.\n'.format(src))
 
-    elif args.list:
+    elif args.list is not None:
         src = args.list
         if is_tarfile(src):
             with TarFile.open(src, 'r:*') as tf:
@@ -2486,7 +2484,7 @@ def main():
         else:
             parser.exit(1, '{!r} is not a tar archive.\n'.format(src))
 
-    elif args.extract:
+    elif args.extract is not None:
         if len(args.extract) == 1:
             src = args.extract[0]
             curdir = os.curdir
@@ -2508,7 +2506,7 @@ def main():
         else:
             parser.exit(1, '{!r} is not a tar archive.\n'.format(src))
 
-    elif args.create:
+    elif args.create is not None:
         tar_name = args.create.pop(0)
         _, ext = os.path.splitext(tar_name)
         compressions = {
@@ -2533,9 +2531,6 @@ def main():
 
         if args.verbose:
             print('{!r} file created.'.format(tar_name))
-
-    else:
-        parser.exit(1, parser.format_help())
 
 if __name__ == '__main__':
     main()

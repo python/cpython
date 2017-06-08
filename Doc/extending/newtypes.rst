@@ -124,7 +124,7 @@ our objects and in some error messages, for example::
 
    >>> "" + noddy.new_noddy()
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: cannot add type "noddy.Noddy" to string
 
 Note that the name is a dotted name that includes both the module name and the
@@ -1361,9 +1361,9 @@ Here is a desultory example of the implementation of the call function. ::
    newdatatype_call(newdatatypeobject *obj, PyObject *args, PyObject *other)
    {
        PyObject *result;
-       char *arg1;
-       char *arg2;
-       char *arg3;
+       const char *arg1;
+       const char *arg2;
+       const char *arg3;
 
        if (!PyArg_ParseTuple(args, "sss:call", &arg1, &arg2, &arg3)) {
            return NULL;

@@ -77,7 +77,7 @@ The build process consists in the usual ::
    make install
 
 invocations. Configuration options and caveats for specific Unix platforms are
-extensively documented in the :source:`README` file in the root of the Python
+extensively documented in the :source:`README.rst` file in the root of the Python
 source tree.
 
 .. warning::

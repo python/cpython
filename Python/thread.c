@@ -92,12 +92,6 @@ static size_t _pythread_stacksize = 0;
 #endif
 
 
-/*
-#ifdef FOOBAR_THREADS
-#include "thread_foobar.h"
-#endif
-*/
-
 /* return the current thread stack size */
 size_t
 PyThread_get_stacksize(void)
@@ -172,7 +166,7 @@ struct key {
     struct key *next;
 
     /* The thread id, according to PyThread_get_thread_ident(). */
-    long id;
+    unsigned long id;
 
     /* The key and its associated value. */
     int key;
@@ -208,7 +202,7 @@ static struct key *
 find_key(int set_value, int key, void *value)
 {
     struct key *p, *prev_p;
-    long id = PyThread_get_thread_ident();
+    unsigned long id = PyThread_get_thread_ident();
 
     if (!keymutex)
         return NULL;
@@ -312,7 +306,7 @@ PyThread_get_key_value(int key)
 void
 PyThread_delete_key_value(int key)
 {
-    long id = PyThread_get_thread_ident();
+    unsigned long id = PyThread_get_thread_ident();
     struct key *p, **q;
 
     PyThread_acquire_lock(keymutex, 1);
@@ -331,14 +325,14 @@ PyThread_delete_key_value(int key)
 }
 
 /* Forget everything not associated with the current thread id.
- * This function is called from PyOS_AfterFork().  It is necessary
+ * This function is called from PyOS_AfterFork_Child().  It is necessary
  * because other thread ids which were in use at the time of the fork
  * may be reused for new threads created in the forked process.
  */
 void
 PyThread_ReInitTLS(void)
 {
-    long id = PyThread_get_thread_ident();
+    unsigned long id = PyThread_get_thread_ident();
     struct key *p, **q;
 
     if (!keymutex)

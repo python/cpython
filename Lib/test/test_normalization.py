@@ -36,15 +36,23 @@ def unistr(data):
 
 class NormalizationTest(unittest.TestCase):
     def test_main(self):
-        part = None
-        part1_data = {}
         # Hit the exception early
         try:
             testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
                                         check=check_version)
+        except PermissionError:
+            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
+                          f"into the test data directory")
         except (OSError, HTTPException):
-            self.skipTest("Could not retrieve " + TESTDATAURL)
-        self.addCleanup(testdata.close)
+            self.fail(f"Could not retrieve {TESTDATAURL}")
+
+        with testdata:
+            self.run_normalization_tests(testdata)
+
+    def run_normalization_tests(self, testdata):
+        part = None
+        part1_data = {}
+
         for line in testdata:
             if '#' in line:
                 line = line.split('#')[0]

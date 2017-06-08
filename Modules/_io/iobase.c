@@ -20,13 +20,6 @@ class _io._RawIOBase "PyObject *" "&PyRawIOBase_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=d29a4d076c2b211c]*/
 
-/*[python input]
-class io_ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = '_PyIO_ConvertSsize_t'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
-
 /*
  * IOBase class, an abstract class
  */
@@ -488,7 +481,7 @@ _io__IOBase_isatty_impl(PyObject *self)
 
 /*[clinic input]
 _io._IOBase.readline
-    size as limit: io_ssize_t = -1
+    size as limit: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read and return a line from the stream.
@@ -502,7 +495,7 @@ terminator(s) recognized.
 
 static PyObject *
 _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
-/*[clinic end generated code: output=4479f79b58187840 input=df4cc8884f553cab]*/
+/*[clinic end generated code: output=4479f79b58187840 input=d0c596794e877bff]*/
 {
     /* For backwards compatibility, a (slowish) readline(). */
 
@@ -533,7 +526,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
                 goto fail;
             }
             if (!PyBytes_Check(readahead)) {
-                PyErr_Format(PyExc_IOError,
+                PyErr_Format(PyExc_OSError,
                              "peek() should have returned a bytes object, "
                              "not '%.200s'", Py_TYPE(readahead)->tp_name);
                 Py_DECREF(readahead);
@@ -573,7 +566,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
             goto fail;
         }
         if (!PyBytes_Check(b)) {
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "read() should have returned a bytes object, "
                          "not '%.200s'", Py_TYPE(b)->tp_name);
             Py_DECREF(b);
@@ -625,7 +618,8 @@ iobase_iternext(PyObject *self)
     if (line == NULL)
         return NULL;
 
-    if (PyObject_Size(line) == 0) {
+    if (PyObject_Size(line) <= 0) {
+        /* Error or empty */
         Py_DECREF(line);
         return NULL;
     }
@@ -635,7 +629,7 @@ iobase_iternext(PyObject *self)
 
 /*[clinic input]
 _io._IOBase.readlines
-    hint: io_ssize_t = -1
+    hint: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Return a list of lines from the stream.
@@ -647,10 +641,10 @@ lines so far exceeds hint.
 
 static PyObject *
 _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
-/*[clinic end generated code: output=2f50421677fa3dea input=1961c4a95e96e661]*/
+/*[clinic end generated code: output=2f50421677fa3dea input=9400c786ea9dc416]*/
 {
     Py_ssize_t length = 0;
-    PyObject *result;
+    PyObject *result, *it = NULL;
 
     result = PyList_New(0);
     if (result == NULL)
@@ -665,19 +659,23 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
                                                       self, NULL);
 
         if (ret == NULL) {
-            Py_DECREF(result);
-            return NULL;
+            goto error;
         }
         Py_DECREF(ret);
         return result;
     }
 
+    it = PyObject_GetIter(self);
+    if (it == NULL) {
+        goto error;
+    }
+
     while (1) {
-        PyObject *line = PyIter_Next(self);
+        Py_ssize_t line_length;
+        PyObject *line = PyIter_Next(it);
         if (line == NULL) {
             if (PyErr_Occurred()) {
-                Py_DECREF(result);
-                return NULL;
+                goto error;
             }
             else
                 break; /* StopIteration raised */
@@ -685,16 +683,25 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
 
         if (PyList_Append(result, line) < 0) {
             Py_DECREF(line);
-            Py_DECREF(result);
-            return NULL;
+            goto error;
         }
-        length += PyObject_Size(line);
+        line_length = PyObject_Size(line);
         Py_DECREF(line);
-
-        if (length > hint)
+        if (line_length < 0) {
+            goto error;
+        }
+        if (line_length > hint - length)
             break;
+        length += line_length;
     }
+
+    Py_DECREF(it);
     return result;
+
+ error:
+    Py_XDECREF(it);
+    Py_DECREF(result);
+    return NULL;
 }
 
 /*[clinic input]

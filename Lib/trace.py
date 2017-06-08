@@ -48,7 +48,7 @@ Sample use, programmatically
   r.write_results(show_missing=True, coverdir="/tmp")
 """
 __all__ = ['Trace', 'CoverageResults']
-import argparse
+
 import linecache
 import os
 import re
@@ -609,6 +609,7 @@ class Trace:
                                callers=self._callers)
 
 def main():
+    import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version', version='trace 2.0')

@@ -101,7 +101,7 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
 
     DWORD length;
     wchar_t name_buf[MAX_PATH], *pname_buf = name_buf;
-    
+
     length = GetFullPathNameW(decoded_wstr, MAX_PATH, pname_buf, NULL);
     if (length > MAX_PATH) {
         pname_buf = PyMem_New(wchar_t, length);
@@ -139,13 +139,6 @@ module _io
 class _io._WindowsConsoleIO "winconsoleio *" "&PyWindowsConsoleIO_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e897fdc1fba4e131]*/
-
-/*[python input]
-class io_ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = '_PyIO_ConvertSsize_t'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
 
 typedef struct {
     PyObject_HEAD
@@ -305,8 +298,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     self->fd = fd;
 
     if (fd < 0) {
-        PyObject *decodedname = Py_None;
-        Py_INCREF(decodedname);
+        PyObject *decodedname;
 
         int d = PyUnicode_FSDecoder(nameobj, (void*)&decodedname);
         if (!d)
@@ -906,7 +898,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
 
 /*[clinic input]
 _io._WindowsConsoleIO.read
-    size: io_ssize_t = -1
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read at most size bytes, returned as bytes.
@@ -918,7 +910,7 @@ Return an empty bytes object at EOF.
 
 static PyObject *
 _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
-/*[clinic end generated code: output=57df68af9f4b22d0 input=6c56fceec460f1dd]*/
+/*[clinic end generated code: output=57df68af9f4b22d0 input=8bc73bc15d0fa072]*/
 {
     PyObject *bytes;
     Py_ssize_t bytes_size;
@@ -1007,7 +999,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, wbuf, wlen);
     if (wlen) {
         res = WriteConsoleW(self->handle, wbuf, wlen, &n, NULL);
-        if (n < wlen) {
+        if (res && n < wlen) {
             /* Wrote fewer characters than expected, which means our
              * len value may be wrong. So recalculate it from the
              * characters that were written. As this could potentially

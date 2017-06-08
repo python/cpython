@@ -3,6 +3,7 @@
 /python
 !/Python/
 *.cover
+*.iml
 *.o
 *.orig
 *.pyc
@@ -54,6 +55,8 @@ PCbuild/*.suo
 PCbuild/*.*sdf
 PCbuild/*-pgi
 PCbuild/*-pgo
+PCbuild/*.VC.db
+PCbuild/*.VC.opendb
 PCbuild/.vs/
 PCbuild/amd64/
 PCbuild/obj/
@@ -72,6 +75,7 @@ config.status.lineno
 core
 db_home
 .hg/
+.idea/
 ipch/
 libpython*.a
 libpython*.so*

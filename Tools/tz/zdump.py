@@ -3,7 +3,7 @@ import os
 import struct
 from array import array
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime
 
 ttinfo = namedtuple('ttinfo', ['tt_gmtoff', 'tt_isdst', 'tt_abbrind'])
 

@@ -143,14 +143,14 @@ _PyImportZip_Init(void)
 #include "pythread.h"
 
 static PyThread_type_lock import_lock = 0;
-static long import_lock_thread = -1;
+static unsigned long import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
 static int import_lock_level = 0;
 
 void
 _PyImport_AcquireLock(void)
 {
-    long me = PyThread_get_thread_ident();
-    if (me == -1)
+    unsigned long me = PyThread_get_thread_ident();
+    if (me == PYTHREAD_INVALID_THREAD_ID)
         return; /* Too bad */
     if (import_lock == NULL) {
         import_lock = PyThread_allocate_lock();
@@ -161,7 +161,8 @@ _PyImport_AcquireLock(void)
         import_lock_level++;
         return;
     }
-    if (import_lock_thread != -1 || !PyThread_acquire_lock(import_lock, 0))
+    if (import_lock_thread != PYTHREAD_INVALID_THREAD_ID ||
+        !PyThread_acquire_lock(import_lock, 0))
     {
         PyThreadState *tstate = PyEval_SaveThread();
         PyThread_acquire_lock(import_lock, 1);
@@ -175,21 +176,21 @@ _PyImport_AcquireLock(void)
 int
 _PyImport_ReleaseLock(void)
 {
-    long me = PyThread_get_thread_ident();
-    if (me == -1 || import_lock == NULL)
+    unsigned long me = PyThread_get_thread_ident();
+    if (me == PYTHREAD_INVALID_THREAD_ID || import_lock == NULL)
         return 0; /* Too bad */
     if (import_lock_thread != me)
         return -1;
     import_lock_level--;
     assert(import_lock_level >= 0);
     if (import_lock_level == 0) {
-        import_lock_thread = -1;
+        import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
         PyThread_release_lock(import_lock);
     }
     return 1;
 }
 
-/* This function is called from PyOS_AfterFork to ensure that newly
+/* This function is called from PyOS_AfterFork_Child to ensure that newly
    created child processes do not share locks with the parent.
    We now acquire the import lock around fork() calls but on some platforms
    (Solaris 9 and earlier? see isue7242) that still left us with problems. */
@@ -205,7 +206,7 @@ _PyImport_ReInitLock(void)
     }
     if (import_lock_level > 1) {
         /* Forked as a side effect of import */
-        long me = PyThread_get_thread_ident();
+        unsigned long me = PyThread_get_thread_ident();
         /* The following could fail if the lock is already held, but forking as
            a side-effect of an import is a) rare, b) nuts, and c) difficult to
            do thanks to the lock only being held when doing individual module
@@ -214,7 +215,7 @@ _PyImport_ReInitLock(void)
         import_lock_thread = me;
         import_lock_level--;
     } else {
-        import_lock_thread = -1;
+        import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
         import_lock_level = 0;
     }
 }
@@ -234,7 +235,7 @@ _imp_lock_held_impl(PyObject *module)
 /*[clinic end generated code: output=8b89384b5e1963fc input=9b088f9b217d9bdf]*/
 {
 #ifdef WITH_THREAD
-    return PyBool_FromLong(import_lock_thread != -1);
+    return PyBool_FromLong(import_lock_thread != PYTHREAD_INVALID_THREAD_ID);
 #else
     Py_RETURN_FALSE;
 #endif
