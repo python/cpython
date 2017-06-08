@@ -754,6 +754,11 @@ def foo():
         expect = "Foo\n  Bar\n\n Baz\n"
         self.assertEqual(expect, dedent(text))
 
+        # Uneven indentation with declining indent level.
+        text = "     Foo\n    Bar\n"  # 5 spaces, then 4
+        expect = " Foo\nBar\n"
+        self.assertEqual(expect, dedent(text))
+
     # dedent() should not mangle internal tabs
     def test_dedent_preserve_internal_tabs(self):
         text = "  hello\tthere\n  how are\tyou?"
