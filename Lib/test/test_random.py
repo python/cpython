@@ -790,12 +790,13 @@ class TestDistributions(unittest.TestCase):
         self.assertRaises(ValueError, random.gammavariate, 2, 0)
         self.assertRaises(ValueError, random.gammavariate, 1, -3)
 
+
+    # There are three different possibilities in the current implementation
+    # of random.gammavariate(), depending on the value of 'alpha'. What we
+    # are going to do here is to fix the values returned by random() to
+    # generate test cases that provide 100% line coverage of the method.
     @unittest.mock.patch('random.Random.random')
-    def test_gammavariate_full_code_coverage(self, random_mock):
-        # There are three different possibilities in the current implementation
-        # of random.gammavariate(), depending on the value of 'alpha'. What we
-        # are going to do here is to fix the values returned by random() to
-        # generate test cases that provide 100% line coverage of the method.
+    def test_gammavariate_alpha_greater_one(self, random_mock):
 
         # #1: alpha > 1.0: we want the first random number to be outside the
         # [1e-7, .9999999] range, so that the continue statement executes
@@ -804,12 +805,18 @@ class TestDistributions(unittest.TestCase):
         returned_value = random.gammavariate(1.1, 2.3)
         self.assertAlmostEqual(returned_value, 2.53)
 
-        # #2: alpha == 1: first random number less than 1e-7 to that the body
+    @unittest.mock.patch('random.Random.random')
+    def test_gammavariate_alpha_equal_one(self, random_mock):
+
+        # #2: alpha == 1: first random number less than 1e-7. The execution body
         # of the while loop executes once. Then random.random() returns 0.45,
         # which causes while to stop looping and the algorithm to terminate.
-        random_mock.side_effect = [1e-8, 0.45]
+        random_mock.side_effect = [0.45]
         returned_value = random.gammavariate(1.0, 3.14)
-        self.assertAlmostEqual(returned_value, 2.507314166123803)
+        self.assertAlmostEqual(returned_value, 1.877208182372648)
+
+    @unittest.mock.patch('random.Random.random')
+    def test_gammavariate_alpha_between_zero_and_one(self, random_mock):
 
         # #3: 0 < alpha < 1. This is the most complex region of code to cover,
         # as there are multiple if-else statements. Let's take a look at the
