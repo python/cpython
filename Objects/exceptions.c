@@ -2897,8 +2897,24 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
     if (PyUnicode_Tailmatch(self->text, print_prefix,
                             start, text_len, -1)) {
-        Py_XSETREF(self->msg,
-                  PyUnicode_FromString("Missing parentheses in call to 'print'"));
+        char *error_msg_start = "Missing parentheses in call to 'print'. Did you mean 'print(";
+        // PRINT_OFFSET is to remove print word from the data.
+        const int PRINT_OFFSET = 6;
+        char *msg = data + PRINT_OFFSET;
+        char *error_msg_end = ")'?";
+
+        char *error_msg = malloc(strlen(error_msg_start) + \
+                          text_len + \
+                          strlen(error_msg_end)) + 1;
+
+        strcat(error_msg, error_msg_start);
+        strcat(error_msg, msg);
+        strcat(error_msg, error_msg_end);
+
+        Py_XSETREF(
+            self->msg,
+            PyUnicode_FromString(error_msg)
+        );
         return 1;
     }
 
