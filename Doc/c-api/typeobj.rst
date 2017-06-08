@@ -1421,7 +1421,7 @@ member in the :c:type:`PyTypeObject` structure should be *NULL*.  Otherwise, the
    buffer interface or that the :attr:`bf_getcharbuffer` slot is non-*NULL*.
 
 
-.. c:type:: Py_ssize_t (*readbufferproc) (PyObject *self, Py_ssize_t segment, void **ptrptr)
+.. c:type:: Py_ssize_t (*getreadbufferproc) (PyObject *self, Py_ssize_t segment, void **ptrptr)
 
    Return a pointer to a readable segment of the buffer in ``*ptrptr``.  This
    function is allowed to raise an exception, in which case it must return ``-1``.
@@ -1431,7 +1431,7 @@ member in the :c:type:`PyTypeObject` structure should be *NULL*.  Otherwise, the
    ``*ptrptr`` to a pointer to that memory.
 
 
-.. c:type:: Py_ssize_t (*writebufferproc) (PyObject *self, Py_ssize_t segment, void **ptrptr)
+.. c:type:: Py_ssize_t (*getwritebufferproc) (PyObject *self, Py_ssize_t segment, void **ptrptr)
 
    Return a pointer to a writable memory buffer in ``*ptrptr``, and the length of
    that segment as the function return value.  The memory buffer must correspond to
@@ -1445,14 +1445,14 @@ member in the :c:type:`PyTypeObject` structure should be *NULL*.  Otherwise, the
       segment. That indicates a blatant programming error in the C code.
 
 
-.. c:type:: Py_ssize_t (*segcountproc) (PyObject *self, Py_ssize_t *lenp)
+.. c:type:: Py_ssize_t (*getsegcountproc) (PyObject *self, Py_ssize_t *lenp)
 
    Return the number of memory segments which comprise the buffer.  If *lenp* is
    not *NULL*, the implementation must report the sum of the sizes (in bytes) of
    all segments in ``*lenp``. The function cannot fail.
 
 
-.. c:type:: Py_ssize_t (*charbufferproc) (PyObject *self, Py_ssize_t segment, char **ptrptr)
+.. c:type:: Py_ssize_t (*getcharbufferproc) (PyObject *self, Py_ssize_t segment, char **ptrptr)
 
    Return the size of the segment *segment* that *ptrptr*  is set to.  ``*ptrptr``
    is set to the memory buffer. Returns ``-1`` on error.
