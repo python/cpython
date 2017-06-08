@@ -7,21 +7,17 @@ import os
 import string
 import sys
 
-# These constants represent the two different types of completions.
-# They must be defined here so autocomple_w can import them.
-COMPLETE_ATTRIBUTES, COMPLETE_FILES = range(1, 2+1)
-
-from idlelib import autocomplete_w
 from idlelib.config import idleConf
 from idlelib.hyperparser import HyperParser
-import __main__
+from idlelib.run import COMPLETE_ATTRIBUTES, COMPLETE_FILES, completion_list
+from idlelib import autocomplete_w
 
 # This string includes all chars that may be in an identifier.
 # TODO Update this here and elsewhere.
 ID_CHARS = string.ascii_letters + string.digits + "_"
 
 SEPS = os.sep
-if os.altsep:  # e.g. '/' on Windows...
+if os.altsep:  # e.g. '/' on Windows...f
     SEPS += os.altsep
 
 
@@ -158,74 +154,35 @@ class AutoComplete:
             return None
         comp_lists = self.fetch_completions(comp_what, mode)
         if not comp_lists[0]:
-            return None
+            return None, 1
         self.autocompletewindow = self._make_autocomplete_window()
         return not self.autocompletewindow.show_window(
                 comp_lists, "insert-%dc" % len(comp_start),
                 complete, mode, userWantsWin)
 
     def fetch_completions(self, what, mode):
-        """Return a pair of lists of completions for something. The first list
-        is a sublist of the second. Both are sorted.
+        """Return a pair of sorted lists of completions for something.
 
-        If there is a Python subprocess, get the comp. list there.  Otherwise,
-        either fetch_completions() is running in the subprocess itself or it
-        was called in an IDLE EditorWindow before any script had been run.
+        The first list is a sublist of the second.
 
-        The subprocess environment is that of the most recently run script.  If
-        two unrelated modules are being edited some calltips in the current
-        module may be inoperative if the module was not the last to run.
+        If there is a Python subprocess, get the list there.  Otherwise,
+        IDLE is running in a single process or fetch_completions() was
+        called in an IDLE EditorWindow before any script had been run.
+
+        The subprocess environment is that of the most recently run
+        script.  If two unrelated modules are being edited some calltips
+        in the current module may be inoperative if the module was not
+        the last to run.
         """
         try:
             rpcclt = self.editwin.flist.pyshell.interp.rpcclt
-        except:
+        except AttributeError:
             rpcclt = None
         if rpcclt:
             return rpcclt.remotecall("exec", "get_the_completion_list",
                                      (what, mode), {})
         else:
-            if mode == COMPLETE_ATTRIBUTES:
-                if what == "":
-                    namespace = __main__.__dict__.copy()
-                    namespace.update(__main__.__builtins__.__dict__)
-                    bigl = eval("dir()", namespace)
-                    bigl.sort()
-                    if "__all__" in bigl:
-                        smalll = sorted(eval("__all__", namespace))
-                    else:
-                        smalll = [s for s in bigl if s[:1] != '_']
-                else:
-                    try:
-                        entity = self.get_entity(what)
-                        bigl = dir(entity)
-                        bigl.sort()
-                        if "__all__" in bigl:
-                            smalll = sorted(entity.__all__)
-                        else:
-                            smalll = [s for s in bigl if s[:1] != '_']
-                    except:
-                        return [], []
-
-            elif mode == COMPLETE_FILES:
-                if what == "":
-                    what = "."
-                try:
-                    expandedpath = os.path.expanduser(what)
-                    bigl = os.listdir(expandedpath)
-                    bigl.sort()
-                    smalll = [s for s in bigl if s[:1] != '.']
-                except OSError:
-                    return [], []
-
-            if not smalll:
-                smalll = bigl
-            return smalll, bigl
-
-    def get_entity(self, name):
-        """Lookup name in a namespace spanning sys.modules and __main.dict__"""
-        namespace = sys.modules.copy()
-        namespace.update(__main__.__dict__)
-        return eval(name, namespace)
+            return completion_list(what, mode)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import io
 import linecache
+import os
 import queue
 import sys
 import time
@@ -10,7 +11,6 @@ import warnings
 
 import tkinter  # Tcl, deletions, messagebox if startup fails
 
-from idlelib import autocomplete  # AutoComplete, fetch_encodings
 from idlelib import calltips  # CallTips
 from idlelib import debugger_r  # start_debugger
 from idlelib import debugobj_r  # remote_object_tree_item
@@ -440,13 +440,64 @@ class MyHandler(rpc.RPCHandler):
         thread.interrupt_main()
 
 
+# Functions used in Executive methods and sometimes in IDLE process.
+# Constants and completion_list are imported into autocomplete.
+
+# Define the two different types of completions.
+COMPLETE_ATTRIBUTES, COMPLETE_FILES = 1, 2
+
+
+def completion_list(what, mode):
+    """Return a pair of sorted lists of completions for something.
+
+    The first list is a sublist of the second.
+    """
+    if mode == COMPLETE_ATTRIBUTES:
+        if what == "":
+            namespace = __main__.__dict__.copy()
+            namespace.update(__main__.__builtins__.__dict__)
+            big = eval("dir()", namespace)
+            big.sort()
+            if "__all__" in big:
+                small = sorted(eval("__all__", namespace))
+            else:
+                small = [s for s in big if s[:1] != '_']
+        else:
+            try:
+                namespace = sys.modules.copy()
+                namespace.update(__main__.__dict__)
+                entity = eval(name, namespace)
+                big = dir(entity)
+                big.sort()
+                if "__all__" in big:
+                    small = sorted(entity.__all__)
+                else:
+                    small = [s for s in big if s[:1] != '_']
+            except:
+                return [], []
+
+    elif mode == COMPLETE_FILES:
+        if what == "":
+            what = "."
+        try:
+            expandedpath = os.path.expanduser(what)
+            big = os.listdir(expandedpath)
+            big.sort()
+            small = [s for s in big if s[:1] != '.']
+        except OSError:
+            return [], []
+
+    if not small:
+        small = big
+    return small, big
+    
+
 class Executive(object):
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
         self.locals = __main__.__dict__
         self.calltip = calltips.CallTips()
-        self.autocomplete = autocomplete.AutoComplete()
 
     def runcode(self, code):
         global interruptable
@@ -488,7 +539,7 @@ class Executive(object):
         return self.calltip.fetch_tip(name)
 
     def get_the_completion_list(self, what, mode):
-        return self.autocomplete.fetch_completions(what, mode)
+        return completion_list(what, mode)
 
     def stackviewer(self, flist_oid=None):
         if self.usr_exc_info:
@@ -504,5 +555,6 @@ class Executive(object):
         sys.last_value = val
         item = stackviewer.StackTreeItem(flist, tb)
         return debugobj_r.remote_object_tree_item(item)
+
 
 capture_warnings(False)  # Make sure turned off; see issue 18081

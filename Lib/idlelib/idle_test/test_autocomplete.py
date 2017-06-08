@@ -1,4 +1,4 @@
-''' Test autocomplete and autocomple_w
+''' Test idlelib.autocomplete and idlelib.autocomple_w
 
 Coverage of autocomple: 56%
 '''
@@ -137,11 +137,6 @@ class AutoCompleteTest(unittest.TestCase):
         # a small list containing non-private variables.
         # For file completion, a large list containing all files in the path,
         # and a small list containing files that do not start with '.'
-        pass
-
-    def test_get_entity(self):
-        # Test that a name is in the namespace of sys.modules and
-        # __main__.__dict__
         pass
 
 
