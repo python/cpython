@@ -57,6 +57,24 @@ _testfunc_large_struct_update_value(Test in)
     ((volatile Test *)&in)->third = 0x0badf00d;
 }
 
+typedef struct {
+    unsigned int first;
+    unsigned int second;
+} TestReg;
+
+
+EXPORT(TestReg) last_tfrsuv_arg;
+
+
+EXPORT(void)
+_testfunc_reg_struct_update_value(TestReg in)
+{
+    last_tfrsuv_arg = in;
+    ((volatile TestReg *)&in)->first = 0x0badf00d;
+    ((volatile TestReg *)&in)->second = 0x0badf00d;
+}
+
+
 EXPORT(void)testfunc_array(int values[4])
 {
     printf("testfunc_array %d %d %d %d\n",
