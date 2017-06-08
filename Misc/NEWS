@@ -10,6 +10,11 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30486: Allows setting cell values for __closure__. Patch by Lisa Roach.
+
+- bpo-30537: itertools.islice now accepts integer-like objects (having
+  an __index__ method) as start, stop, and slice arguments
+
 - bpo-25324: Tokens needed for parsing in Python moved to C. ``COMMENT``,
   ``NL`` and ``ENCODING``. This way the tokens and tok_names in the token
   module don't get changed when you import the tokenize module.
@@ -127,9 +132,6 @@ Core and Builtins
 - bpo-29546: Set the 'path' and 'name' attribute on ImportError for ``from ... import ...``.
 
 - bpo-29546: Improve from-import error message with location
-
-- bpo-30537: itertools.islice now accepts integer-like objects (having
-  an __index__ method) as start, stop, and slice arguments
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
