@@ -13,13 +13,12 @@ This is Python version 3.7.0 alpha 1
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
-reserved.
+Copyright (c) 2001-2017 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
 .. contents::
+
 
 General Information
 -------------------
@@ -30,6 +29,7 @@ General Information
 - Documentation: https://docs.python.org
 - Developer's Guide: https://docs.python.org/devguide/
 
+
 Contributing to CPython
 -----------------------
 
@@ -38,6 +38,7 @@ see the `Developer Guide`_.
 
 .. _Developer Guide: https://docs.python.org/devguide/
 
+
 Using Python
 ------------
 
@@ -45,6 +46,7 @@ Installable Python kits, and information about using Python, are available at
 `python.org`_.
 
 .. _python.org: https://www.python.org/
+
 
 Build Instructions
 ------------------
@@ -232,8 +234,7 @@ See :pep:`537` for Python 3.7 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2017 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 
