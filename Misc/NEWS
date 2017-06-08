@@ -10,6 +10,11 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30486: Allows setting cell values for __closure__. Patch by Lisa Roach.
+
+- bpo-30537: itertools.islice now accepts integer-like objects (having
+  an __index__ method) as start, stop, and slice arguments
+
 - bpo-25324: Tokens needed for parsing in Python moved to C. ``COMMENT``,
   ``NL`` and ``ENCODING``. This way the tokens and tok_names in the token
   module don't get changed when you import the tokenize module.
@@ -345,12 +350,23 @@ Extension Modules
 Library
 -------
 
+- bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
+  on stdin.write() if the child process is still running but closed the pipe.
+
+- bpo-30463: Addded empty __slots__ to abc.ABC.  This allows subclassers
+  to deny __dict__ and __weakref__ creation.  Patch by Aaron Hall.
+
+- bpo-30520: Loggers are now pickleable.
+
+- bpo-30557: faulthandler now correctly filters and displays exception codes
+  on Windows
+
 - bpo-30526: Add TextIOWrapper.reconfigure() and a TextIOWrapper.write_through
   attribute.
 
 - bpo-30245: Fix possible overflow when organize struct.pack_into
   error message.  Patch by Yuan Liu.
-  
+
 - bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
   handle IPv6 addresses.
 

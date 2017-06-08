@@ -69,7 +69,7 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
     PyObject *filename = NULL;
     Py_ssize_t len, flen;
 
-    if (!_PyArg_NoKeywords("zipimporter()", kwds))
+    if (!_PyArg_NoKeywords("zipimporter", kwds))
         return -1;
 
     if (!PyArg_ParseTuple(args, "O&:zipimporter",

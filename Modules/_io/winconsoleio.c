@@ -98,7 +98,7 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
 
     DWORD length;
     wchar_t name_buf[MAX_PATH], *pname_buf = name_buf;
-    
+
     length = GetFullPathNameW(decoded_wstr, MAX_PATH, pname_buf, NULL);
     if (length > MAX_PATH) {
         pname_buf = PyMem_New(wchar_t, length);
@@ -290,7 +290,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     self->fd = fd;
 
     if (fd < 0) {
-        PyObject *decodedname = NULL;
+        PyObject *decodedname;
 
         int d = PyUnicode_FSDecoder(nameobj, (void*)&decodedname);
         if (!d)
