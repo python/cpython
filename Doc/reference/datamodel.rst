@@ -531,7 +531,7 @@ Callable types
       can be used, for example, to attach metadata to functions.  Regular attribute
       dot-notation is used to get and set such attributes. *Note that the current
       implementation only supports function attributes on user-defined functions.
-      Function attributes on built-in functions may be supported in the future.
+      Function attributes on built-in functions may be supported in the future.*
 
       A cell object has the attribute ``cell_contents``. This can be used to get
       the value of the cell, as well as set the value.
