@@ -144,6 +144,7 @@ class Task(futures.Future):
         terminates with a CancelledError exception (even if cancel()
         was not called).
         """
+        self._log_traceback = False
         if self.done():
             return False
         if self._fut_waiter is not None:
