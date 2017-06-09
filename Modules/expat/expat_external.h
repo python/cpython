@@ -7,10 +7,6 @@
 
 /* External API definitions */
 
-/* Namespace external symbols to allow multiple libexpat version to
-   co-exist. */
-#include "pyexpatns.h"
-
 #if defined(_MSC_EXTENSIONS) && !defined(__BEOS__) && !defined(__CYGWIN__)
 #define XML_USE_MSC_EXTENSIONS 1
 #endif
@@ -69,12 +65,26 @@
 #endif
 #endif  /* not defined XML_STATIC */
 
+#if !defined(XMLIMPORT) && defined(__GNUC__) && (__GNUC__ >= 4)
+#define XMLIMPORT __attribute__ ((visibility ("default")))
+#endif
 
 /* If we didn't define it above, define it away: */
 #ifndef XMLIMPORT
 #define XMLIMPORT
 #endif
 
+#if defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96))
+#define XML_ATTR_MALLOC __attribute__((__malloc__))
+#else
+#define XML_ATTR_MALLOC
+#endif
+
+#if defined(__GNUC__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))
+#define XML_ATTR_ALLOC_SIZE(x)  __attribute__((__alloc_size__(x)))
+#else
+#define XML_ATTR_ALLOC_SIZE(x)
+#endif
 
 #define XMLPARSEAPI(type) XMLIMPORT type XMLCALL
 
