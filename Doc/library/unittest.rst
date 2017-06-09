@@ -1170,6 +1170,9 @@ Test cases
          :meth:`.assertRegex`.
       .. versionadded:: 3.2
          :meth:`.assertNotRegex`.
+      .. versionadded:: 3.5
+         The name ``assertNotRegexpMatches`` is a deprecated alias
+         for :meth:`.assertNotRegex`.
 
 
    .. method:: assertCountEqual(first, second, msg=None)
@@ -1435,9 +1438,9 @@ For historical reasons, some of the :class:`TestCase` methods had one or more
 aliases that are now deprecated.  The following table lists the correct names
 along with their deprecated aliases:
 
-   ==============================  ====================== ======================
+   ==============================  ====================== =======================
     Method Name                     Deprecated alias       Deprecated alias
-   ==============================  ====================== ======================
+   ==============================  ====================== =======================
     :meth:`.assertEqual`            failUnlessEqual        assertEquals
     :meth:`.assertNotEqual`         failIfEqual            assertNotEquals
     :meth:`.assertTrue`             failUnless             assert\_
@@ -1446,8 +1449,9 @@ along with their deprecated aliases:
     :meth:`.assertAlmostEqual`      failUnlessAlmostEqual  assertAlmostEquals
     :meth:`.assertNotAlmostEqual`   failIfAlmostEqual      assertNotAlmostEquals
     :meth:`.assertRegex`                                   assertRegexpMatches
+    :meth:`.assertNotRegex`                                assertNotRegexpMatches
     :meth:`.assertRaisesRegex`                             assertRaisesRegexp
-   ==============================  ====================== ======================
+   ==============================  ====================== =======================
 
    .. deprecated:: 3.1
          the fail* aliases listed in the second column.
@@ -1455,8 +1459,9 @@ along with their deprecated aliases:
          the assert* aliases listed in the third column.
    .. deprecated:: 3.2
          ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
-         :meth:`.assertRegex` and :meth:`.assertRaisesRegex`
-
+         :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
+   .. deprecated:: 3.5
+         the ``assertNotRegexpMatches`` name in favor of :meth:`.assertNotRegex`.
 
 .. _testsuite-objects:
 
