@@ -7,6 +7,7 @@ and CGIHTTPRequestHandler for CGI scripts.
 It does, however, optionally implement HTTP/1.1 persistent connections,
 as of version 0.3.
 
+
 Notes on CGIHTTPRequestHandler
 ------------------------------
 
@@ -639,7 +640,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
         "text/javascript", "application/javascript", "application/json"]
-    
+
     def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
@@ -701,6 +702,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         try:
             fs = os.fstat(f.fileno())
+            content_length = fs[6]
             # Use browser cache if possible
             if ("If-Modified-Since" in self.headers
                     and "If-None-Match" not in self.headers):
@@ -731,22 +733,29 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
-            self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified", 
                 self.date_time_string(fs.st_mtime))
 
             # Use HTTP compression (gzip) if possible
-            if ctype in self.compressed_types:
-                accept_encoding = self.headers.get("Accept-Encoding")
-                if accept_encoding:
-                    encodings = [x.strip() for x in accept_encoding.split(',')]
-                    if 'gzip' in encodings:
-                        self.send_header("Content-Encoding", "gzip")
-                        with gzip.GzipFile(fileobj=tempfile.TemporaryFile()) as f_out:
-                            shutil.copyfileobj(f, f_out)
-
-                        f = f_out
-
+            accept_encoding = self.headers.get("Accept-Encoding", "")
+            encodings = [x.strip() for x in accept_encoding.split(",")]
+            if ctype in self.compressed_types and "gzip" in encodings:
+                self.send_header("Content-Encoding", "gzip")
+                if content_length < 2 << 18:
+                    # for small files, load content in memory
+                    content = gzip.compress(f.read())
+                    content_length = len(content)
+                    f = io.BytesIO(content)
+                else:
+                    # for large files, store zipped content in a 
+                    # temporary file
+                    dest = tempfile.TemporaryFile()
+                    with gzip.GzipFile(fileobj=dest, mode="wb") as f_gz:
+                        shutil.copyfileobj(f, f_gz)
+                    content_length = dest.tell()
+                    f = dest
+                        
+            self.send_header("Content-Length", content_length)
             self.end_headers()
             return f
         except:
