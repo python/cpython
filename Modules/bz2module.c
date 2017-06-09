@@ -1360,6 +1360,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
     static char *kwlist[] = {"filename", "mode", "buffering",
                                    "compresslevel", 0};
     PyObject *name;
+    PyObject *file;
     char *mode = "r";
     int buffering = -1;
     int compresslevel = 9;
@@ -1420,10 +1421,12 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
     mode = (mode_char == 'r') ? "rb" : "wb";
 
-    self->file = PyObject_CallFunction((PyObject*)&PyFile_Type, "(Osi)",
-                                       name, mode, buffering);
-    if (self->file == NULL)
+    file = PyObject_CallFunction((PyObject*)&PyFile_Type, "(Osi)",
+				 name, mode, buffering);
+    if (file == NULL)
         return -1;
+
+    self->file = file;
 
     /* From now on, we have stuff to dealloc, so jump to error label
      * instead of returning */
