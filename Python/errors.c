@@ -226,17 +226,18 @@ PyErr_ExceptionMatches(PyObject *exc)
 void
 PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 {
-    PyObject *type = *exc;
-    PyObject *value = *val;
-    PyObject *inclass = NULL;
-    PyObject *initial_tb = NULL;
-    PyThreadState *tstate = NULL;
+    int recursion_depth = 0;
+    PyObject *type, *value, *initial_tb;
+    PyThreadState *tstate;
 
+restart:
+    type = *exc;
     if (type == NULL) {
         /* There was no exception, so nothing to do. */
         return;
     }
 
+    value = *val;
     /* If PyErr_SetNone() was used, the value will have been actually
        set to NULL.
     */
@@ -245,14 +246,18 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
         Py_INCREF(value);
     }
 
-    if (PyExceptionInstance_Check(value))
-        inclass = PyExceptionInstance_Class(value);
-
     /* Normalize the exception so that if the type is a class, the
        value will be an instance.
     */
     if (PyExceptionClass_Check(type)) {
+        PyObject *inclass;
         int is_subclass;
+
+        if (PyExceptionInstance_Check(value))
+            inclass = PyExceptionInstance_Class(value);
+        else
+            inclass = NULL;
+
         if (inclass) {
             is_subclass = PyObject_IsSubclass(inclass, type);
             if (is_subclass < 0)
@@ -266,7 +271,7 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
            value as an argument to instantiation of the type
            class.
         */
-        if (!inclass || !is_subclass) {
+        if (!is_subclass) {
             PyObject *fixed_value;
 
             fixed_value = _PyErr_CreateException(type, value);
@@ -289,6 +294,7 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
     *exc = type;
     *val = value;
     return;
+
 finally:
     Py_DECREF(type);
     Py_DECREF(value);
@@ -298,6 +304,7 @@ finally:
     */
     initial_tb = *tb;
     PyErr_Fetch(exc, val, tb);
+    assert(*exc != NULL);
     if (initial_tb != NULL) {
         if (*tb == NULL)
             *tb = initial_tb;
@@ -306,18 +313,17 @@ finally:
     }
     /* normalize recursively */
     tstate = PyThreadState_GET();
-    if (++tstate->recursion_depth > Py_GetRecursionLimit()) {
-        --tstate->recursion_depth;
+    if (++recursion_depth > Py_GetRecursionLimit() - tstate->recursion_depth) {
         /* throw away the old exception and use the recursion error instead */
         Py_INCREF(PyExc_RecursionError);
         Py_SETREF(*exc, PyExc_RecursionError);
         Py_INCREF(PyExc_RecursionErrorInst);
-        Py_SETREF(*val, PyExc_RecursionErrorInst);
+        Py_XSETREF(*val, PyExc_RecursionErrorInst);
         /* just keeping the old traceback */
         return;
     }
-    PyErr_NormalizeException(exc, val, tb);
-    --tstate->recursion_depth;
+    /* eliminate tail recursion */
+    goto restart;
 }
 
 
