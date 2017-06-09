@@ -350,6 +350,9 @@ Extension Modules
 Library
 -------
 
+- bpo-27585: Fix waiter cancellation in asyncio.Lock.
+  Patch by Mathieu Sornay.
+
 - bpo-30014: modify() method of poll(), epoll() and devpoll() based classes of
   selectors module is around 10% faster.  Patch by Giampaolo Rodola'.
 
