@@ -234,6 +234,9 @@ Optimizations
   expressions <re>`.  Searching some patterns can now be up to 20 times faster.
   (Contributed by Serhiy Storchaka in :issue:`30285`.)
 
+* :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
+  and :meth:`selectors.DevpollSelector.modify` may be around 10% faster under
+  heavy loads. (Contributed by Giampaolo Rodola' in :issue:`30014`)
 
 Build and C API Changes
 =======================
