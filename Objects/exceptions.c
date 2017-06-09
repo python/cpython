@@ -2880,9 +2880,9 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
     const int PRINT_OFFSET = 6;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(data);
     data = PyUnicode_Substring(data, PRINT_OFFSET, text_len);
-    // gets the modified text_len after stripping print ``
+    // gets the modified text_len after stripping `print `
     text_len = PyUnicode_GET_LENGTH(data);
-    char *maybe_end_arg = " end=' '";
+    char *maybe_end_arg = " end=\" \"";
 
     PyObject *error_msg = PyUnicode_FromFormat(
         "Missing parentheses in call to 'print'. Did you mean print(%U)?",
