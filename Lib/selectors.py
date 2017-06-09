@@ -259,7 +259,7 @@ class _BaseSelectorImpl(BaseSelector):
         if events != key.events:
             self.unregister(fileobj)
             key = self.register(fileobj, events, data)
-        elif data != key.data:
+        elif data is not key.data:
             # Use a shortcut to update the data.
             key = key._replace(data=data)
             self._fd_to_key[key.fd] = key
@@ -391,7 +391,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
                 super().unregister(fileobj)
                 raise
             changed = True
-        if data != key.data:
+        if data is not key.data:
             changed = True
 
         if changed:
