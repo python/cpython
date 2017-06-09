@@ -95,12 +95,12 @@ _tracemalloc_start(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     PyObject *return_value = NULL;
     Py_ssize_t nframe = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:start",
-        &nframe)) {
+    if (!_PyArg_NoStackKeywords("start", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("start", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|n:start",
+        &nframe)) {
         goto exit;
     }
     return_value = _tracemalloc_start_impl(module, nframe);
@@ -189,4 +189,4 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_get_traced_memory_impl(module);
 }
-/*[clinic end generated code: output=159ce5d627964f09 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca7b197d1bdcdf27 input=a9049054013a1b77]*/

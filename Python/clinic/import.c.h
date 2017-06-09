@@ -88,12 +88,12 @@ _imp__fix_co_filename(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObj
     PyCodeObject *code;
     PyObject *path;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!U:_fix_co_filename",
-        &PyCode_Type, &code, &path)) {
+    if (!_PyArg_NoStackKeywords("_fix_co_filename", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("_fix_co_filename", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O!U:_fix_co_filename",
+        &PyCode_Type, &code, &path)) {
         goto exit;
     }
     return_value = _imp__fix_co_filename_impl(module, code, path);
@@ -285,13 +285,13 @@ _imp_create_dynamic(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObjec
     PyObject *spec;
     PyObject *file = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "create_dynamic",
-        1, 2,
-        &spec, &file)) {
+    if (!_PyArg_NoStackKeywords("create_dynamic", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("create_dynamic", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "create_dynamic",
+        1, 2,
+        &spec, &file)) {
         goto exit;
     }
     return_value = _imp_create_dynamic_impl(module, spec, file);
@@ -369,4 +369,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=c1d0e65d04114958 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b970357dbbe25ee4 input=a9049054013a1b77]*/

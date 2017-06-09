@@ -195,13 +195,13 @@ bytes_strip(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "strip",
-        0, 1,
-        &bytes)) {
+    if (!_PyArg_NoStackKeywords("strip", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("strip", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "strip",
+        0, 1,
+        &bytes)) {
         goto exit;
     }
     return_value = bytes_strip_impl(self, bytes);
@@ -230,13 +230,13 @@ bytes_lstrip(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObject *k
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
-        0, 1,
-        &bytes)) {
+    if (!_PyArg_NoStackKeywords("lstrip", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lstrip", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
+        0, 1,
+        &bytes)) {
         goto exit;
     }
     return_value = bytes_lstrip_impl(self, bytes);
@@ -265,13 +265,13 @@ bytes_rstrip(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObject *k
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
-        0, 1,
-        &bytes)) {
+    if (!_PyArg_NoStackKeywords("rstrip", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("rstrip", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
+        0, 1,
+        &bytes)) {
         goto exit;
     }
     return_value = bytes_rstrip_impl(self, bytes);
@@ -342,12 +342,12 @@ bytes_maketrans(void *null, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     Py_buffer frm = {NULL, NULL};
     Py_buffer to = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*:maketrans",
-        &frm, &to)) {
+    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*y*:maketrans",
+        &frm, &to)) {
         goto exit;
     }
     return_value = bytes_maketrans_impl(&frm, &to);
@@ -393,12 +393,12 @@ bytes_replace(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObject *
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*|n:replace",
-        &old, &new, &count)) {
+    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*y*|n:replace",
+        &old, &new, &count)) {
         goto exit;
     }
     return_value = bytes_replace_impl(self, &old, &new, count);
@@ -519,4 +519,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2504c1225108d348 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a82999760469bbec input=a9049054013a1b77]*/
