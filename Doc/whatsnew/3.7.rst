@@ -153,6 +153,14 @@ and the ``--directory`` to the command line of the module :mod:`~http.server`.
 With this parameter, the server serves the specified directory, by default it uses the current working directory.
 (Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
 
+Support HTTP compression : if the user agent sends a request with header
+``Accept-Encoding`` including gzip, and if the content type guessed from the
+file extension is in the attribute ``compressed_types`` of
+:class:`~http.server.SimpleHTTPRequestHandler`, set the response header
+``Content-Encoding`` to "gzip", set ``Content-Length`` to the length of the
+gzipped content, and return a file object with the gzipped content.
+(Contributed by Pierre Quentel in :issue:`30576`.)
+
 locale
 ------
 
@@ -165,6 +173,12 @@ math
 
 New :func:`~math.remainder` function, implementing the IEEE 754-style remainder
 operation. (Contributed by Mark Dickinson in :issue:`29962`.)
+
+mimetypes
+---------
+
+Extension *.json* is mapped to the content type "application/json".
+(Contributed by Pierre Quentel in :issue:`30576`.)
 
 os
 --

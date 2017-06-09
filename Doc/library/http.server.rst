@@ -328,6 +328,12 @@ of which this module provides three different variants:
 
       If not specified, the directory to serve is the current working directory.
 
+   .. attribute:: compressed_types
+
+      The list of content types for which HTTP compression is applied. Set by
+      default to : ``["text/plain", "text/html", "text/css", "text/xml",
+      "text/javascript", "application/javascript", "application/json"]``.
+
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
    .. method:: do_HEAD()

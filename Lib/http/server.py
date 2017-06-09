@@ -95,12 +95,14 @@ import http.client
 import io
 import mimetypes
 import os
+import gzip
 import posixpath
 import select
 import shutil
 import socket # For gethostbyaddr()
 import socketserver
 import sys
+import tempfile
 import time
 import urllib.parse
 from functools import partial
@@ -635,6 +637,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "SimpleHTTP/" + __version__
 
+    compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
+        "text/javascript", "application/javascript", "application/json"]
+    
     def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
@@ -729,6 +734,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified", 
                 self.date_time_string(fs.st_mtime))
+
+            # Use HTTP compression (gzip) if possible
+            if ctype in self.compressed_types:
+                accept_encoding = self.headers.get("Accept-Encoding")
+                if accept_encoding:
+                    encodings = [x.strip() for x in accept_encoding.split(',')]
+                    if 'gzip' in encodings:
+                        self.send_header("Content-Encoding", "gzip")
+                        with gzip.GzipFile(fileobj=tempfile.TemporaryFile()) as f_out:
+                            shutil.copyfileobj(f, f_out)
+
+                        f = f_out
+
             self.end_headers()
             return f
         except:

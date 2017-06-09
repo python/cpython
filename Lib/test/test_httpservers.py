@@ -12,6 +12,7 @@ import os
 import sys
 import re
 import base64
+import gzip
 import ntpath
 import shutil
 import email.message
@@ -548,6 +549,80 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         html_text = '>%s<' % html.escape(filename, quote=False)
         self.assertIn(html_text.encode(enc), body)
 
+class HTTPCompressionTestCase(BaseTestCase):
+    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+        pass
+
+    def setUp(self):
+        BaseTestCase.setUp(self)
+        self.cwd = os.getcwd()
+        basetempdir = tempfile.gettempdir()
+        os.chdir(basetempdir)
+        self.data = 10 * b'We are the knights who say Ni!'
+        self.tempdir = tempfile.mkdtemp(dir=basetempdir)
+        self.tempdir_name = os.path.basename(self.tempdir)
+        self.base_url = '/' + self.tempdir_name
+
+        with open(os.path.join(self.tempdir, 'test'), 'wb') as temp:
+            temp.write(self.data)
+
+        with open(os.path.join(self.tempdir, 'test.abc'), 'wb') as temp:
+            temp.write(self.data)
+
+        self.compressible_ext = ["txt", "js", "json", "html", "css"]
+        
+        for ext in self.compressible_ext:
+            path = os.path.join(self.tempdir, 'test.{}'.format(ext))
+            with open(path, 'wb') as temp:
+                temp.write(self.data)
+
+    def tearDown(self):
+        try:
+            os.chdir(self.cwd)
+            try:
+                shutil.rmtree(self.tempdir)
+            except:
+                pass
+        finally:
+            BaseTestCase.tearDown(self)
+
+    def test_no_content_encoding_header(self):
+        # no Content-Encoding header, no file extension
+        response = self.request(self.base_url + '/test')
+        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertEqual(response.read(), self.data)
+
+        # no Content-Encoding header, uncompressible file extension
+        response = self.request(self.base_url + '/test.abc')
+        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertEqual(response.read(), self.data)
+
+        # no Content-Encoding header, compressible file extension
+        response = self.request(self.base_url + '/test.txt')
+        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertEqual(response.read(), self.data)
+
+    def test_header_set_unsupported_extension(self):
+        # no file extension
+        response = self.request(self.base_url + '/test',
+            headers={'Accept-Encoding': 'gzip'})
+        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertEqual(response.read(), self.data)
+
+        # uncompressible file extension
+        response = self.request(self.base_url + '/test.abc',
+            headers={'Accept-Encoding': 'gzip'})
+        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertEqual(response.read(), self.data)
+
+    def test_header_set_supported_extension(self):
+        # Content-Encoding header set, compressible file extension
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip'})
+            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertEqual(gzip.decompress(response.read()), self.data)
+        
 
 cgi_file1 = """\
 #!%s
@@ -1122,6 +1197,7 @@ def test_main(verbose=None):
             CGIHTTPServerTestCase,
             SimpleHTTPRequestHandlerTestCase,
             MiscTestCase,
+            HTTPCompressionTestCase
         )
     finally:
         os.chdir(cwd)
