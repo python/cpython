@@ -1368,7 +1368,7 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(p, lower_char))
         self.assertEqual(
             str(warns.warnings[0].message),
-            'Flags not at the start of the expression %s' % p
+            "Flags not at the start of the expression '%s'" % p
         )
         self.assertEqual(warns.warnings[0].filename, __file__)
 
@@ -1377,7 +1377,7 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(p, lower_char))
         self.assertEqual(
             str(warns.warnings[0].message),
-            'Flags not at the start of the expression %s (truncated)' % p[:20]
+            "Flags not at the start of the expression '%s' (truncated)" % p[:20]
         )
         self.assertEqual(warns.warnings[0].filename, __file__)
 
@@ -1933,16 +1933,16 @@ ELSE
 
         # equal: test bytes patterns
         re.purge()
-        pattern2 = re.compile(b'abc')
-        self.assertEqual(hash(pattern2), hash(pattern1))
-        self.assertEqual(pattern2, pattern1)
-
-        # not equal: pattern of a different types (str vs bytes),
-        # comparison must not raise a BytesWarning
-        re.purge()
-        pattern3 = re.compile('abc')
         with warnings.catch_warnings():
             warnings.simplefilter('error', BytesWarning)
+            pattern2 = re.compile(b'abc')
+            self.assertEqual(hash(pattern2), hash(pattern1))
+            self.assertEqual(pattern2, pattern1)
+
+            # not equal: pattern of a different types (str vs bytes),
+            # comparison must not raise a BytesWarning
+            re.purge()
+            pattern3 = re.compile('abc')
             self.assertNotEqual(pattern3, pattern1)
 
     def test_bug_29444(self):
