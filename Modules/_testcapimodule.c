@@ -1560,7 +1560,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
 {
     PyObject *sub_args;
     PyObject *sub_kwargs;
-    char *sub_format;
+    const char *sub_format;
     PyObject *sub_keywords;
 
     Py_ssize_t i, size;
@@ -1573,7 +1573,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
 
     double buffers[8][4]; /* double ensures alignment where necessary */
 
-    if (!PyArg_ParseTuple(args, "OOyO:parse_tuple_and_keywords",
+    if (!PyArg_ParseTuple(args, "OOsO:parse_tuple_and_keywords",
         &sub_args, &sub_kwargs,
         &sub_format, &sub_keywords))
         return NULL;
@@ -3813,7 +3813,7 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
     if (_PyTime_AsTimeval(t, &tv, round) < 0)
         return NULL;
 
-    seconds = PyLong_FromLong((long long)tv.tv_sec);
+    seconds = PyLong_FromLongLong(tv.tv_sec);
     if (seconds == NULL)
         return NULL;
     return Py_BuildValue("Nl", seconds, tv.tv_usec);
@@ -4028,6 +4028,127 @@ dict_get_version(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
+{
+    PyGenObject *gen;
+
+    if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
+        return NULL;
+
+    /* This is used in a test to check what happens if a signal arrives just
+       as we're in the process of entering a yield from chain (see
+       bpo-30039).
+
+       Needs to be done in C, because:
+       - we don't have a Python wrapper for raise()
+       - we need to make sure that the Python-level signal handler doesn't run
+         *before* we enter the generator frame, which is impossible in Python
+         because we check for signals before every bytecode operation.
+     */
+    raise(SIGINT);
+    return _PyGen_Send(gen, Py_None);
+}
+
+
+static int
+fastcall_args(PyObject *args, PyObject ***stack, Py_ssize_t *nargs)
+{
+    if (args == Py_None) {
+        *stack = NULL;
+        *nargs = 0;
+    }
+    else if (PyTuple_Check(args)) {
+        *stack = &PyTuple_GET_ITEM(args, 0);
+        *nargs = PyTuple_GET_SIZE(args);
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "args must be None or a tuple");
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject *
+test_pyobject_fastcall(PyObject *self, PyObject *args)
+{
+    PyObject *func, *func_args;
+    PyObject **stack;
+    Py_ssize_t nargs;
+
+    if (!PyArg_ParseTuple(args, "OO", &func, &func_args)) {
+        return NULL;
+    }
+
+    if (fastcall_args(func_args, &stack, &nargs) < 0) {
+        return NULL;
+    }
+    return _PyObject_FastCall(func, stack, nargs);
+}
+
+
+static PyObject *
+test_pyobject_fastcalldict(PyObject *self, PyObject *args)
+{
+    PyObject *func, *func_args, *kwargs;
+    PyObject **stack;
+    Py_ssize_t nargs;
+
+    if (!PyArg_ParseTuple(args, "OOO", &func, &func_args, &kwargs)) {
+        return NULL;
+    }
+
+    if (fastcall_args(func_args, &stack, &nargs) < 0) {
+        return NULL;
+    }
+
+    if (kwargs == Py_None) {
+        kwargs = NULL;
+    }
+    else if (!PyDict_Check(kwargs)) {
+        PyErr_SetString(PyExc_TypeError, "kwnames must be None or a dict");
+        return NULL;
+    }
+
+    return _PyObject_FastCallDict(func, stack, nargs, kwargs);
+}
+
+
+static PyObject *
+test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
+{
+    PyObject *func, *func_args, *kwnames = NULL;
+    PyObject **stack;
+    Py_ssize_t nargs, nkw;
+
+    if (!PyArg_ParseTuple(args, "OOO", &func, &func_args, &kwnames)) {
+        return NULL;
+    }
+
+    if (fastcall_args(func_args, &stack, &nargs) < 0) {
+        return NULL;
+    }
+
+    if (kwnames == Py_None) {
+        kwnames = NULL;
+    }
+    else if (PyTuple_Check(kwnames)) {
+        nkw = PyTuple_GET_SIZE(kwnames);
+        if (nargs < nkw) {
+            PyErr_SetString(PyExc_ValueError, "kwnames longer than args");
+            return NULL;
+        }
+        nargs -= nkw;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "kwnames must be None or a tuple");
+        return NULL;
+    }
+    return _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4232,6 +4353,10 @@ static PyMethodDef TestMethods[] = {
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
     {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
     {"dict_get_version", dict_get_version, METH_VARARGS},
+    {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
+    {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
+    {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
+    {"pyobject_fastcallkeywords", test_pyobject_fastcallkeywords, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

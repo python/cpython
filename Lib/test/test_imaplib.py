@@ -10,7 +10,6 @@ import os.path
 import socketserver
 import time
 import calendar
-import inspect
 
 from test.support import (reap_threads, verbose, transient_internet,
                           run_with_tz, run_with_locale)
@@ -966,6 +965,9 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
             _server = self.imap_class(self.host, self.port)
             self.check_logincapa(_server)
 
+    @unittest.skipIf(True,
+                     "bpo-30175: FIXME: cyrus.andrew.cmu.edu doesn't accept "
+                     "our randomly generated client x509 certificate anymore")
     def test_logincapa_with_client_certfile(self):
         with transient_internet(self.host):
             with support.check_warnings(('', DeprecationWarning)):
@@ -973,6 +975,9 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
                                           certfile=CERTFILE)
                 self.check_logincapa(_server)
 
+    @unittest.skipIf(True,
+                     "bpo-30175: FIXME: cyrus.andrew.cmu.edu doesn't accept "
+                     "our randomly generated client x509 certificate anymore")
     def test_logincapa_with_client_ssl_context(self):
         with transient_internet(self.host):
             _server = self.imap_class(

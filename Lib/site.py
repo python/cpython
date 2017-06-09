@@ -416,7 +416,7 @@ def enablerlcompleter():
                                    '.python_history')
             try:
                 readline.read_history_file(history)
-            except IOError:
+            except OSError:
                 pass
             atexit.register(readline.write_history_file, history)
 
@@ -522,8 +522,13 @@ def main():
     """
     global ENABLE_USER_SITE
 
-    abs_paths()
+    orig_path = sys.path[:]
     known_paths = removeduppaths()
+    if orig_path != sys.path:
+        # removeduppaths() might make sys.path absolute.
+        # fix __file__ and __cached__ of already imported modules too.
+        abs_paths()
+
     known_paths = venv(known_paths)
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()

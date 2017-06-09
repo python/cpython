@@ -129,8 +129,8 @@ class ABCMeta(type):
     #       external code.
     _abc_invalidation_counter = 0
 
-    def __new__(mcls, name, bases, namespace):
-        cls = super().__new__(mcls, name, bases, namespace)
+    def __new__(mcls, name, bases, namespace, **kwargs):
+        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
         # Compute set of abstract method names
         abstracts = {name
                      for name, value in namespace.items()
@@ -235,7 +235,7 @@ class ABC(metaclass=ABCMeta):
     """Helper class that provides a standard way to create an ABC using
     inheritance.
     """
-    pass
+    __slots__ = ()
 
 
 def get_cache_token():

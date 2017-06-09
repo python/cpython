@@ -936,10 +936,9 @@ Color control
        >>> turtle.fillcolor("violet")
        >>> turtle.fillcolor()
        'violet'
-       >>> col = turtle.pencolor()
-       >>> col
+       >>> turtle.pencolor()
        (50.0, 193.0, 143.0)
-       >>> turtle.fillcolor(col)
+       >>> turtle.fillcolor((50, 193, 143))  # Integers, not floats
        >>> turtle.fillcolor()
        (50.0, 193.0, 143.0)
        >>> turtle.fillcolor('#ffffff')
@@ -1797,7 +1796,7 @@ Input methods
    :param prompt: string
 
    Pop up a dialog window for input of a string. Parameter title is
-   the title of the dialog window, propmt is a text mostly describing
+   the title of the dialog window, prompt is a text mostly describing
    what information to input.
    Return the string input. If the dialog is canceled, return ``None``. ::
 

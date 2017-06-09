@@ -369,14 +369,18 @@ Random generation
 Certificate handling
 ^^^^^^^^^^^^^^^^^^^^
 
+.. testsetup::
+
+   import ssl
+
 .. function:: match_hostname(cert, hostname)
 
    Verify that *cert* (in decoded format as returned by
    :meth:`SSLSocket.getpeercert`) matches the given *hostname*.  The rules
    applied are those for checking the identity of HTTPS servers as outlined
-   in :rfc:`2818` and :rfc:`6125`.  In addition to HTTPS, this function
-   should be suitable for checking the identity of servers in various
-   SSL-based protocols such as FTPS, IMAPS, POPS and others.
+   in :rfc:`2818`, :rfc:`5280` and :rfc:`6125`.  In addition to HTTPS, this
+   function should be suitable for checking the identity of servers in
+   various SSL-based protocols such as FTPS, IMAPS, POPS and others.
 
    :exc:`CertificateError` is raised on failure. On success, the function
    returns nothing::
@@ -415,10 +419,10 @@ Certificate handling
 
       >>> import ssl
       >>> timestamp = ssl.cert_time_to_seconds("Jan  5 09:34:43 2018 GMT")
-      >>> timestamp
+      >>> timestamp  # doctest: +SKIP
       1515144883
       >>> from datetime import datetime
-      >>> print(datetime.utcfromtimestamp(timestamp))
+      >>> print(datetime.utcfromtimestamp(timestamp))  # doctest: +SKIP
       2018-01-05 09:34:43
 
    "notBefore" or "notAfter" dates must use GMT (:rfc:`5280`).
@@ -610,13 +614,13 @@ Constants
 .. data:: PROTOCOL_TLS
 
    Selects the highest protocol version that both the client and server support.
-   Despite the name, this option can select "TLS" protocols as well as "SSL".
+   Despite the name, this option can select both "SSL" and "TLS" protocols.
 
    .. versionadded:: 3.6
 
 .. data:: PROTOCOL_TLS_CLIENT
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_SSLv23`,
+   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
    but only support client-side :class:`SSLSocket` connections. The protocol
    enables :data:`CERT_REQUIRED` and :attr:`~SSLContext.check_hostname` by
    default.
@@ -625,7 +629,7 @@ Constants
 
 .. data:: PROTOCOL_TLS_SERVER
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_SSLv23`,
+   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
    but only support server-side :class:`SSLSocket` connections.
 
    .. versionadded:: 3.6
@@ -820,7 +824,7 @@ Constants
 .. data:: HAS_SNI
 
    Whether the OpenSSL library has built-in support for the *Server Name
-   Indication* extension (as defined in :rfc:`4366`).
+   Indication* extension (as defined in :rfc:`6066`).
 
    .. versionadded:: 3.2
 
@@ -1378,6 +1382,7 @@ to speed up repeated connections from the same clients.
          'strength_bits': 128}]
 
    On OpenSSL 1.1 and newer the cipher dict contains additional fields::
+
        >>> ctx.get_ciphers()  # OpenSSL 1.1+
        [{'aead': True,
          'alg_bits': 256,
@@ -1638,7 +1643,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       :attr:`SSLContext.options` returns :class:`Options` flags:
 
-         >>> ssl.create_default_context().options
+         >>> ssl.create_default_context().options  # doctest: +SKIP
          <Options.OP_ALL|OP_NO_SSLv3|OP_NO_SSLv2|OP_NO_COMPRESSION: 2197947391>
 
 .. attribute:: SSLContext.protocol
@@ -1658,7 +1663,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       :attr:`SSLContext.verify_flags` returns :class:`VerifyFlags` flags:
 
-         >>> ssl.create_default_context().verify_flags
+         >>> ssl.create_default_context().verify_flags  # doctest: +SKIP
          <VerifyFlags.VERIFY_X509_TRUSTED_FIRST: 32768>
 
 .. attribute:: SSLContext.verify_mode
@@ -2259,6 +2264,8 @@ recommended to use :const:`PROTOCOL_TLS_CLIENT` or
 :const:`PROTOCOL_TLS_SERVER` as the protocol version. SSLv2 and SSLv3 are
 disabled by default.
 
+::
+
    >>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
    >>> client_context.options |= ssl.OP_NO_TLSv1
    >>> client_context.options |= ssl.OP_NO_TLSv1_1
@@ -2306,14 +2313,11 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
    `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <https://www.ietf.org/rfc/rfc1422>`_
        Steve Kent
 
-   `RFC 1750: Randomness Recommendations for Security <https://www.ietf.org/rfc/rfc1750>`_
-       D. Eastlake et. al.
+   `RFC 4086: Randomness Requirements for Security <http://datatracker.ietf.org/doc/rfc4086/>`_
+       Donald E., Jeffrey I. Schiller
 
-   `RFC 3280: Internet X.509 Public Key Infrastructure Certificate and CRL Profile <https://www.ietf.org/rfc/rfc3280>`_
-       Housley et. al.
-
-   `RFC 4366: Transport Layer Security (TLS) Extensions <https://www.ietf.org/rfc/rfc4366>`_
-       Blake-Wilson et. al.
+   `RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <http://datatracker.ietf.org/doc/rfc5280/>`_
+       D. Cooper
 
    `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <https://tools.ietf.org/html/rfc5246>`_
        T. Dierks et. al.

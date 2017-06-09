@@ -778,19 +778,21 @@ class Popen(object):
                 self.stdin.write(input)
             except BrokenPipeError:
                 pass  # communicate() must ignore broken pipe errors.
-            except OSError as e:
-                if e.errno == errno.EINVAL and self.poll() is not None:
-                    # Issue #19612: On Windows, stdin.write() fails with EINVAL
-                    # if the process already exited before the write
+            except OSError as exc:
+                if exc.errno == errno.EINVAL:
+                    # bpo-19612, bpo-30418: On Windows, stdin.write() fails
+                    # with EINVAL if the child process exited or if the child
+                    # process is still running but closed the pipe.
                     pass
                 else:
                     raise
+
         try:
             self.stdin.close()
         except BrokenPipeError:
             pass  # communicate() must ignore broken pipe errors.
-        except OSError as e:
-            if e.errno == errno.EINVAL and self.poll() is not None:
+        except OSError as exc:
+            if exc.errno == errno.EINVAL:
                 pass
             else:
                 raise
@@ -1252,7 +1254,8 @@ class Popen(object):
                     fds_to_keep.add(errpipe_write)
                     self.pid = _posixsubprocess.fork_exec(
                             args, executable_list,
-                            close_fds, sorted(fds_to_keep), cwd, env_list,
+                            close_fds, tuple(sorted(map(int, fds_to_keep))),
+                            cwd, env_list,
                             p2cread, p2cwrite, c2pread, c2pwrite,
                             errread, errwrite,
                             errpipe_read, errpipe_write,

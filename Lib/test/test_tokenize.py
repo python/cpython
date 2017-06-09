@@ -39,6 +39,7 @@ class TokenizeTest(TestCase):
     """)
         self.check_tokenize("if False:\n"
                             "    # NL\n"
+                            "    \n"
                             "    True = False # NEWLINE\n", """\
     NAME       'if'          (1, 0) (1, 2)
     NAME       'False'       (1, 3) (1, 8)
@@ -46,13 +47,14 @@ class TokenizeTest(TestCase):
     NEWLINE    '\\n'          (1, 9) (1, 10)
     COMMENT    '# NL'        (2, 4) (2, 8)
     NL         '\\n'          (2, 8) (2, 9)
-    INDENT     '    '        (3, 0) (3, 4)
-    NAME       'True'        (3, 4) (3, 8)
-    OP         '='           (3, 9) (3, 10)
-    NAME       'False'       (3, 11) (3, 16)
-    COMMENT    '# NEWLINE'   (3, 17) (3, 26)
-    NEWLINE    '\\n'          (3, 26) (3, 27)
-    DEDENT     ''            (4, 0) (4, 0)
+    NL         '\\n'          (3, 4) (3, 5)
+    INDENT     '    '        (4, 0) (4, 4)
+    NAME       'True'        (4, 4) (4, 8)
+    OP         '='           (4, 9) (4, 10)
+    NAME       'False'       (4, 11) (4, 16)
+    COMMENT    '# NEWLINE'   (4, 17) (4, 26)
+    NEWLINE    '\\n'          (4, 26) (4, 27)
+    DEDENT     ''            (5, 0) (5, 0)
     """)
         indent_error_file = b"""\
 def k(x):
@@ -407,6 +409,25 @@ def"', """\
     OP         ')'           (1, 22) (1, 23)
     OP         ':'           (1, 23) (1, 24)
     NAME       'pass'        (1, 25) (1, 29)
+    """)
+        self.check_tokenize("def d23(a: str, b: int=3) -> int: pass", """\
+    NAME       'def'         (1, 0) (1, 3)
+    NAME       'd23'         (1, 4) (1, 7)
+    OP         '('           (1, 7) (1, 8)
+    NAME       'a'           (1, 8) (1, 9)
+    OP         ':'           (1, 9) (1, 10)
+    NAME       'str'         (1, 11) (1, 14)
+    OP         ','           (1, 14) (1, 15)
+    NAME       'b'           (1, 16) (1, 17)
+    OP         ':'           (1, 17) (1, 18)
+    NAME       'int'         (1, 19) (1, 22)
+    OP         '='           (1, 22) (1, 23)
+    NUMBER     '3'           (1, 23) (1, 24)
+    OP         ')'           (1, 24) (1, 25)
+    OP         '->'          (1, 26) (1, 28)
+    NAME       'int'         (1, 29) (1, 32)
+    OP         ':'           (1, 32) (1, 33)
+    NAME       'pass'        (1, 34) (1, 38)
     """)
 
     def test_comparison(self):
@@ -1322,13 +1343,13 @@ class TestTokenize(TestCase):
         tokens = list(tokenize(BytesIO(opstr.encode('utf-8')).readline))
         num_optypes = len(optypes)
         self.assertEqual(len(tokens), 2 + num_optypes)
-        self.assertEqual(token.tok_name[tokens[0].exact_type],
-                         token.tok_name[ENCODING])
+        self.assertEqual(tok_name[tokens[0].exact_type],
+                         tok_name[ENCODING])
         for i in range(num_optypes):
-            self.assertEqual(token.tok_name[tokens[i + 1].exact_type],
-                             token.tok_name[optypes[i]])
-        self.assertEqual(token.tok_name[tokens[1 + num_optypes].exact_type],
-                         token.tok_name[token.ENDMARKER])
+            self.assertEqual(tok_name[tokens[i + 1].exact_type],
+                             tok_name[optypes[i]])
+        self.assertEqual(tok_name[tokens[1 + num_optypes].exact_type],
+                         tok_name[token.ENDMARKER])
 
     def test_exact_type(self):
         self.assertExactTypeEqual('()', token.LPAR, token.RPAR)
@@ -1371,6 +1392,8 @@ class TestTokenize(TestCase):
         self.assertExactTypeEqual('**=', token.DOUBLESTAREQUAL)
         self.assertExactTypeEqual('//', token.DOUBLESLASH)
         self.assertExactTypeEqual('//=', token.DOUBLESLASHEQUAL)
+        self.assertExactTypeEqual('...', token.ELLIPSIS)
+        self.assertExactTypeEqual('->', token.RARROW)
         self.assertExactTypeEqual('@', token.AT)
         self.assertExactTypeEqual('@=', token.ATEQUAL)
 

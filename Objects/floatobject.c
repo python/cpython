@@ -443,7 +443,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
             double fracpart;
             double intpart;
             PyObject *result = NULL;
-            PyObject *one = NULL;
             PyObject *vv = NULL;
             PyObject *ww = w;
 
@@ -466,23 +465,19 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                  */
                 PyObject *temp;
 
-                one = PyLong_FromLong(1);
-                if (one == NULL)
-                    goto Error;
-
-                temp = PyNumber_Lshift(ww, one);
+                temp = PyNumber_Lshift(ww, _PyLong_One);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(ww);
                 ww = temp;
 
-                temp = PyNumber_Lshift(vv, one);
+                temp = PyNumber_Lshift(vv, _PyLong_One);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
                 vv = temp;
 
-                temp = PyNumber_Or(vv, one);
+                temp = PyNumber_Or(vv, _PyLong_One);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
@@ -496,7 +491,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
          Error:
             Py_XDECREF(vv);
             Py_XDECREF(ww);
-            Py_XDECREF(one);
             return result;
         }
     } /* else if (PyLong_Check(w)) */
@@ -1612,19 +1606,23 @@ error:
 }
 
 static PyObject *
-float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+float_subtype_new(PyTypeObject *type, PyObject *x);
+
+/*[clinic input]
+@classmethod
+float.__new__ as float_new
+    x: object(c_default="_PyLong_Zero") = 0
+    /
+
+Convert a string or number to a floating point number, if possible.
+[clinic start generated code]*/
 
 static PyObject *
-float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+float_new_impl(PyTypeObject *type, PyObject *x)
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=540ee77c204ff87a]*/
 {
-    PyObject *x = Py_False; /* Integer zero */
-
     if (type != &PyFloat_Type)
-        return float_subtype_new(type, args, kwds); /* Wimp out */
-    if (!_PyArg_NoKeywords("float()", kwds))
-        return NULL;
-    if (!PyArg_UnpackTuple(args, "float", 0, 1, &x))
-        return NULL;
+        return float_subtype_new(type, x); /* Wimp out */
     /* If it's a string, but not a string subclass, use
        PyFloat_FromString. */
     if (PyUnicode_CheckExact(x))
@@ -1638,12 +1636,12 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    from the regular float.  The regular float is then thrown away.
 */
 static PyObject *
-float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+float_subtype_new(PyTypeObject *type, PyObject *x)
 {
     PyObject *tmp, *newobj;
 
     assert(PyType_IsSubtype(type, &PyFloat_Type));
-    tmp = float_new(&PyFloat_Type, args, kwds);
+    tmp = float_new_impl(&PyFloat_Type, x);
     if (tmp == NULL)
         return NULL;
     assert(PyFloat_Check(tmp));
@@ -1874,11 +1872,6 @@ static PyGetSetDef float_getset[] = {
     {NULL}  /* Sentinel */
 };
 
-PyDoc_STRVAR(float_doc,
-"float(x) -> floating point number\n\
-\n\
-Convert a string or number to a floating point number, if possible.");
-
 
 static PyNumberMethods float_as_number = {
     float_add,          /* nb_add */
@@ -1937,7 +1930,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    float_doc,                                  /* tp_doc */
+    float_new__doc__,                           /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     float_richcompare,                          /* tp_richcompare */

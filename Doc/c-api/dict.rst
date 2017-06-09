@@ -72,7 +72,7 @@ Dictionary Objects
    .. index:: single: PyUnicode_FromString()
 
    Insert *value* into the dictionary *p* using *key* as a key. *key* should
-   be a :c:type:`char\*`.  The key object is created using
+   be a :c:type:`const char\*`.  The key object is created using
    ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
    failure.
 
@@ -107,7 +107,7 @@ Dictionary Objects
 .. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
 
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
-   :c:type:`char\*`, rather than a :c:type:`PyObject\*`.
+   :c:type:`const char\*`, rather than a :c:type:`PyObject\*`.
 
 
 .. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *default)
