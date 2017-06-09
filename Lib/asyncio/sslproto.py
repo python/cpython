@@ -681,12 +681,14 @@ class SSLProtocol(protocols.Protocol):
             self._transport._force_close(exc)
 
     def _finalize(self):
+        self._sslpipe = None
+
         if self._transport is not None:
             self._transport.close()
 
     def _abort(self):
-        if self._transport is not None:
-            try:
+        try:
+            if self._transport is not None:
                 self._transport.abort()
-            finally:
-                self._finalize()
+        finally:
+            self._finalize()
