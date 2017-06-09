@@ -410,6 +410,10 @@ Library
 - bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
   running coroutine and the coroutine returned without any more ``await``.
 
+- bpo-30266: contextlib.AbstractContextManager now supports anti-registration
+  by setting __enter__ = None or __exit__ = None, following the pattern
+  introduced in bpo-25958. Patch by Jelle Zijlstra.
+
 - bpo-30340: Enhanced regular expressions optimization. This increased
   the performance of matching some patterns up to 25 times.
 
