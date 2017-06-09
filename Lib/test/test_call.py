@@ -136,6 +136,10 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"__contains__\(\) takes exactly one argument \(2 given\)"
         self.assertRaisesRegex(TypeError, msg, {}.__contains__, 0, 1)
 
+    def test_varargs3(self):
+        msg = r"^from_bytes\(\) takes at most 2 positional arguments \(3 given\)"
+        self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
+
     def test_varargs1_kw(self):
         msg = r"__contains__\(\) takes no keyword arguments"
         self.assertRaisesRegex(TypeError, msg, {}.__contains__, x=2)
