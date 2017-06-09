@@ -459,7 +459,8 @@ class PydocDocTest(unittest.TestCase):
     def test_mixed_case_module_names_are_lower_cased(self):
         # issue16484
         doc_link = get_pydoc_link(xml.etree.ElementTree)
-        self.assertIn('xml.etree.elementtree', doc_link)
+        if doc_link:
+            self.assertIn('xml.etree.elementtree', doc_link)
 
     def test_issue8225(self):
         # Test issue8225 to ensure no doc link appears for xml.etree
