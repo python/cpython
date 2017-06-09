@@ -54,7 +54,7 @@ Slice Objects
    Returns ``0`` on success and ``-1`` on error with exception set.
 
    .. note::
-      This function considered not safe for resizable sequences.  Replace its invocation ::
+      This function is considered not safe for resizable sequences.  Replace its invocation ::
 
          if (PySlice_GetIndicesEx(slice, length, &start, &stop, &step, &slicelength) < 0) {
              // return error
