@@ -2089,13 +2089,13 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     if (parser->max < nargs) {
         if (parser->max == 0) {
             PyErr_Format(PyExc_TypeError,
-                         "%200s%s takes no positional arguments",
+                         "%.200s%s takes no positional arguments",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()");
         }
         else {
             PyErr_Format(PyExc_TypeError,
-                         "%200s%s takes %s %d positional arguments (%d given)",
+                         "%.200s%s takes %s %d positional arguments (%d given)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
                          (parser->min != INT_MAX) ? "at most" : "exactly",
