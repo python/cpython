@@ -350,6 +350,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl 
+  implementation. Patch by Michaël Sghaïer.
+
 - bpo-29743: Closing transport during handshake process leaks open socket.
   Patch by Nikolay Kim
 
