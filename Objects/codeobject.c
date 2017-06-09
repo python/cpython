@@ -411,11 +411,11 @@ static void
 code_dealloc(PyCodeObject *co)
 {
     if (co->co_extra != NULL) {
-        PyInterpreterState *interp = PyThreadState_Get()->interp;
+        PyCodeExtraState *state = _PyCodeExtraState_Get();
         _PyCodeObjectExtra *co_extra = co->co_extra;
 
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
-            freefunc free_extra = interp->co_extra_freefuncs[i];
+            freefunc free_extra = state->co_extra_freefuncs[i];
 
             if (free_extra != NULL) {
                 free_extra(co_extra->ce_extras[i]);
@@ -847,10 +847,10 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 int
 _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyCodeExtraState *state = _PyCodeExtraState_Get();
 
     if (!PyCode_Check(code) || index < 0 ||
-            index >= interp->co_extra_user_count) {
+            index >= state->co_extra_user_count) {
         PyErr_BadInternalCall();
         return -1;
     }
@@ -865,13 +865,13 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
         }
 
         co_extra->ce_extras = PyMem_Malloc(
-            interp->co_extra_user_count * sizeof(void*));
+            state->co_extra_user_count * sizeof(void*));
         if (co_extra->ce_extras == NULL) {
             PyMem_Free(co_extra);
             return -1;
         }
 
-        co_extra->ce_size = interp->co_extra_user_count;
+        co_extra->ce_size = state->co_extra_user_count;
 
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
             co_extra->ce_extras[i] = NULL;
@@ -881,24 +881,24 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
     }
     else if (co_extra->ce_size <= index) {
         void** ce_extras = PyMem_Realloc(
-            co_extra->ce_extras, interp->co_extra_user_count * sizeof(void*));
+            co_extra->ce_extras, state->co_extra_user_count * sizeof(void*));
 
         if (ce_extras == NULL) {
             return -1;
         }
 
         for (Py_ssize_t i = co_extra->ce_size;
-             i < interp->co_extra_user_count;
+             i < state->co_extra_user_count;
              i++) {
             ce_extras[i] = NULL;
         }
 
         co_extra->ce_extras = ce_extras;
-        co_extra->ce_size = interp->co_extra_user_count;
+        co_extra->ce_size = state->co_extra_user_count;
     }
 
     if (co_extra->ce_extras[index] != NULL) {
-        freefunc free = interp->co_extra_freefuncs[index];
+        freefunc free = state->co_extra_freefuncs[index];
         if (free != NULL) {
             free(co_extra->ce_extras[index]);
         }

@@ -48,12 +48,18 @@ typedef struct _is {
     PyObject *import_func;
     /* Initialized to PyEval_EvalFrameDefault(). */
     _PyFrameEvalFunction eval_frame;
-
-    Py_ssize_t co_extra_user_count;
-    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 } PyInterpreterState;
 #endif
 
+typedef struct _co_extra_state {
+    struct _co_extra_state *next;
+    PyInterpreterState* interp;
+
+    Py_ssize_t co_extra_user_count;
+    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
+} PyCodeExtraState;
+
+PyCodeExtraState* _PyCodeExtraState_Get();
 
 /* State unique per thread */
 
@@ -144,6 +150,11 @@ typedef struct _ts {
 
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
+
+    /* Now used from PyInterpreterState, kept here for ABI
+       compatibility with PyThreadState */
+    Py_ssize_t _preserve_36_ABI_1;
+    freefunc _preserve_36_ABI_2[MAX_CO_EXTRA_USERS];
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
