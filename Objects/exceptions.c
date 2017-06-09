@@ -2862,6 +2862,52 @@ _PyErr_TrySetFromCause(const char *format, ...)
  * or minus, using the stream redirection syntax).
  */
 
+
+// Static helper for setting legacy print error message
+static int
+_set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
+{
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+
+    /*
+    `data` is UTF-8 encoded and treated as an indivisible opaque blob. All
+    we know about it is that it starts with `print ` and may end with a `,`
+    in which case we also append suggest_end_arg which makes the input
+    analogous to Python3 print syntax.
+    */
+    void *data = PyUnicode_DATA(self->text);
+    char *error_msg_start = "Missing parentheses in call to 'print'. Did you mean 'print(";
+    // PRINT_OFFSET is to remove print word from the data.
+    const int PRINT_OFFSET = 6;
+    char *msg = data + PRINT_OFFSET;
+    text_len = text_len - PRINT_OFFSET - 1;
+    // strips off newline character from msg
+    msg[strcspn(msg, "\r\n")] = 0;
+    char *error_msg_end = ")'?";
+
+    char *suggest_end_arg = " end=' '";
+
+    char *error_msg = malloc(
+                        strlen(error_msg_start) + \
+                        text_len + \
+                        strlen(suggest_end_arg) + \
+                        strlen(error_msg_end)
+                      ) + 1;
+
+    strcat(error_msg, error_msg_start);
+    strcat(error_msg, msg);
+    if(strcmp(&msg[text_len-1], ",") == 0)
+        strcat(error_msg, suggest_end_arg);
+    strcat(error_msg, error_msg_end);
+
+    Py_XSETREF(
+        self->msg,
+        PyUnicode_FromString(error_msg)
+    );
+//    free(error_msg);
+    return 1;
+}
+
 static int
 _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
 {
@@ -2897,25 +2943,8 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
     if (PyUnicode_Tailmatch(self->text, print_prefix,
                             start, text_len, -1)) {
-        char *error_msg_start = "Missing parentheses in call to 'print'. Did you mean 'print(";
-        // PRINT_OFFSET is to remove print word from the data.
-        const int PRINT_OFFSET = 6;
-        char *msg = data + PRINT_OFFSET;
-        char *error_msg_end = ")'?";
 
-        char *error_msg = malloc(strlen(error_msg_start) + \
-                          text_len + \
-                          strlen(error_msg_end)) + 1;
-
-        strcat(error_msg, error_msg_start);
-        strcat(error_msg, msg);
-        strcat(error_msg, error_msg_end);
-
-        Py_XSETREF(
-            self->msg,
-            PyUnicode_FromString(error_msg)
-        );
-        return 1;
+        return _set_legacy_print_statement_msg(self, start);
     }
 
     /* Check for legacy exec statements */
