@@ -1368,7 +1368,7 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(p, lower_char))
         self.assertEqual(
             str(warns.warnings[0].message),
-            "Flags not at the start of the expression '%s'" % p
+            'Flags not at the start of the expression %r' % p
         )
         self.assertEqual(warns.warnings[0].filename, __file__)
 
@@ -1377,9 +1377,21 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(p, lower_char))
         self.assertEqual(
             str(warns.warnings[0].message),
-            "Flags not at the start of the expression '%s' (truncated)" % p[:20]
+            'Flags not at the start of the expression %r (truncated)' % p[:20]
         )
         self.assertEqual(warns.warnings[0].filename, __file__)
+
+        # bpo-30605: Compiling a bytes instance regex was throwing a BytesWarning
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', BytesWarning)
+            p = b'A(?i)'
+            with self.assertWarns(DeprecationWarning) as warns:
+                self.assertTrue(re.match(p, b'a'))
+            self.assertEqual(
+                str(warns.warnings[0].message),
+                'Flags not at the start of the expression %r' % p
+            )
+            self.assertEqual(warns.warnings[0].filename, __file__)
 
         with self.assertWarns(DeprecationWarning):
             self.assertTrue(re.match('(?s).(?i)' + upper_char, '\n' + lower_char))
@@ -1933,16 +1945,16 @@ ELSE
 
         # equal: test bytes patterns
         re.purge()
+        pattern2 = re.compile(b'abc')
+        self.assertEqual(hash(pattern2), hash(pattern1))
+        self.assertEqual(pattern2, pattern1)
+
+        # not equal: pattern of a different types (str vs bytes),
+        # comparison must not raise a BytesWarning
+        re.purge()
+        pattern3 = re.compile('abc')
         with warnings.catch_warnings():
             warnings.simplefilter('error', BytesWarning)
-            pattern2 = re.compile(b'abc')
-            self.assertEqual(hash(pattern2), hash(pattern1))
-            self.assertEqual(pattern2, pattern1)
-
-            # not equal: pattern of a different types (str vs bytes),
-            # comparison must not raise a BytesWarning
-            re.purge()
-            pattern3 = re.compile('abc')
             self.assertNotEqual(pattern3, pattern1)
 
     def test_bug_29444(self):
