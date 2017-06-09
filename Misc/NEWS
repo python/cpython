@@ -350,6 +350,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30014: modify() method of poll(), epoll() and devpoll() based classes of
+  selectors module is around 10% faster.  Patch by Giampaolo Rodola'.
+
 - bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
   on stdin.write() if the child process is still running but closed the pipe.
 
