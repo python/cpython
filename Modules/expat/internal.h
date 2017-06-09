@@ -71,3 +71,25 @@
 #define inline
 #endif
 #endif
+
+#ifndef UNUSED_P
+# ifdef __GNUC__
+#  define UNUSED_P(p) UNUSED_ ## p __attribute__((__unused__))
+# else
+#  define UNUSED_P(p) UNUSED_ ## p
+# endif
+#endif
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+void
+align_limit_to_full_utf8_characters(const char * from, const char ** fromLimRef);
+
+
+#ifdef __cplusplus
+}
+#endif

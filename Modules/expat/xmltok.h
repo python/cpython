@@ -130,6 +130,12 @@ typedef int (PTRCALL *SCANNER)(const ENCODING *,
                                const char *,
                                const char **);
 
+enum XML_Convert_Result {
+  XML_CONVERT_COMPLETED = 0,
+  XML_CONVERT_INPUT_INCOMPLETE = 1,
+  XML_CONVERT_OUTPUT_EXHAUSTED = 2  /* and therefore potentially input remaining as well */
+};
+
 struct encoding {
   SCANNER scanners[XML_N_STATES];
   SCANNER literalScanners[XML_N_LITERAL_TYPES];
@@ -158,12 +164,12 @@ struct encoding {
                             const char *ptr,
                             const char *end,
                             const char **badPtr);
-  void (PTRCALL *utf8Convert)(const ENCODING *enc,
+  enum XML_Convert_Result (PTRCALL *utf8Convert)(const ENCODING *enc,
                               const char **fromP,
                               const char *fromLim,
                               char **toP,
                               const char *toLim);
-  void (PTRCALL *utf16Convert)(const ENCODING *enc,
+  enum XML_Convert_Result (PTRCALL *utf16Convert)(const ENCODING *enc,
                                const char **fromP,
                                const char *fromLim,
                                unsigned short **toP,

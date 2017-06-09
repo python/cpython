@@ -342,7 +342,7 @@ XML_SetEntityDeclHandler(XML_Parser parser,
                          XML_EntityDeclHandler handler);
 
 /* OBSOLETE -- OBSOLETE -- OBSOLETE
-   This handler has been superceded by the EntityDeclHandler above.
+   This handler has been superseded by the EntityDeclHandler above.
    It is provided here for backward compatibility.
 
    This is called for a declaration of an unparsed (NDATA) entity.
@@ -915,8 +915,6 @@ XMLPARSEAPI(int)
 XML_SetHashSalt(XML_Parser parser,
                 unsigned long hash_salt);
 
-#define XML_HAS_SET_HASH_SALT  /* Python Only: Defined for pyexpat.c. */
-
 /* If XML_Parse or XML_ParseBuffer have returned XML_STATUS_ERROR, then
    XML_GetErrorCode returns information about the error.
 */
@@ -975,9 +973,12 @@ XML_FreeContentModel(XML_Parser parser, XML_Content *model);
 
 /* Exposing the memory handling functions used in Expat */
 XMLPARSEAPI(void *)
+XML_ATTR_MALLOC
+XML_ATTR_ALLOC_SIZE(2)
 XML_MemMalloc(XML_Parser parser, size_t size);
 
 XMLPARSEAPI(void *)
+XML_ATTR_ALLOC_SIZE(3)
 XML_MemRealloc(XML_Parser parser, void *ptr, size_t size);
 
 XMLPARSEAPI(void)
@@ -1033,14 +1034,12 @@ XMLPARSEAPI(const XML_Feature *)
 XML_GetFeatureList(void);
 
 
-/* Expat follows the GNU/Linux convention of odd number minor version for
-   beta/development releases and even number minor version for stable
-   releases. Micro is bumped with each release, and set to 0 with each
-   change to major or minor version.
+/* Expat follows the semantic versioning convention.
+   See http://semver.org.
 */
 #define XML_MAJOR_VERSION 2
-#define XML_MINOR_VERSION 1
-#define XML_MICRO_VERSION 1
+#define XML_MINOR_VERSION 2
+#define XML_MICRO_VERSION 0
 
 #ifdef __cplusplus
 }
