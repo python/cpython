@@ -5389,7 +5389,7 @@ mv config.c Modules
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
-    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&AS_MESSAGE_FD
+    echo "If you want a release build with all stable optimizations active (PGO, etc),"
     echo "please run ./configure --enable-optimizations" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
