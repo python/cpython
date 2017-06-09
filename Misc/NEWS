@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-27585: Fix waiter cancellation in asyncio.Lock.
+  Patch by Mathieu Sornay.
+
 - bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
   on stdin.write() if the child process is still running but closed the pipe.
 
