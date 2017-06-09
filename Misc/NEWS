@@ -10,6 +10,11 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30486: Allows setting cell values for __closure__. Patch by Lisa Roach.
+
+- bpo-30537: itertools.islice now accepts integer-like objects (having
+  an __index__ method) as start, stop, and slice arguments
+
 - bpo-25324: Tokens needed for parsing in Python moved to C. ``COMMENT``,
   ``NL`` and ``ENCODING``. This way the tokens and tok_names in the token
   module don't get changed when you import the tokenize module.
@@ -345,8 +350,13 @@ Extension Modules
 Library
 -------
 
+<<<<<<< HEAD
 - bpo-30576 : http.server supports HTTP compression (gzip).  Patch by Pierre
   Quentel.
+=======
+- bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
+  on stdin.write() if the child process is still running but closed the pipe.
+>>>>>>> upstream2/master
 
 - bpo-30463: Addded empty __slots__ to abc.ABC.  This allows subclassers
   to deny __dict__ and __weakref__ creation.  Patch by Aaron Hall.
@@ -404,6 +414,10 @@ Library
 
 - bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
   running coroutine and the coroutine returned without any more ``await``.
+
+- bpo-30266: contextlib.AbstractContextManager now supports anti-registration
+  by setting __enter__ = None or __exit__ = None, following the pattern
+  introduced in bpo-25958. Patch by Jelle Zijlstra.
 
 - bpo-30340: Enhanced regular expressions optimization. This increased
   the performance of matching some patterns up to 25 times.
