@@ -2867,44 +2867,32 @@ _PyErr_TrySetFromCause(const char *format, ...)
 static int
 _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
-    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
-
     /*
     `data` is UTF-8 encoded and treated as an indivisible opaque blob. All
     we know about it is that it starts with `print ` and may end with a `,`
     in which case we also append suggest_end_arg which makes the input
     analogous to Python3 print syntax.
     */
-    void *data = PyUnicode_DATA(self->text);
-    char *error_msg_start = "Missing parentheses in call to 'print'. Did you mean 'print(";
+
+    PyObject *strip_sep_obj = PyUnicode_FromString("\r\n");
+    PyObject *data = _PyUnicode_XStrip(self->text, 1, strip_sep_obj);
     // PRINT_OFFSET is to remove print word from the data.
     const int PRINT_OFFSET = 6;
-    char *msg = data + PRINT_OFFSET;
-    text_len = text_len - PRINT_OFFSET - 1;
-    // strips off newline character from msg
-    msg[strcspn(msg, "\r\n")] = 0;
-    char *error_msg_end = ")'?";
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(data);
+    data = PyUnicode_Substring(data, PRINT_OFFSET, text_len);
+    // gets the modified text_len after stripping print ``
+    text_len = PyUnicode_GET_LENGTH(data);
+    char *maybe_end_arg = " end=' '";
 
-    char *suggest_end_arg = " end=' '";
+    PyObject *error_msg = PyUnicode_FromFormat(
+        "Missing parentheses in call to 'print'. Did you mean print(%U)?",
+         data);
+    if (PyUnicode_Tailmatch(data, PyUnicode_FromString(","), start, text_len, 1))
+        error_msg = PyUnicode_FromFormat(
+            "Missing parentheses in call to 'print'. Did you mean print(%U%s)?",
+            data, maybe_end_arg);
 
-    char *error_msg = malloc(
-                        strlen(error_msg_start) + \
-                        text_len + \
-                        strlen(suggest_end_arg) + \
-                        strlen(error_msg_end)
-                      ) + 1;
-
-    strcat(error_msg, error_msg_start);
-    strcat(error_msg, msg);
-    if(strcmp(&msg[text_len-1], ",") == 0)
-        strcat(error_msg, suggest_end_arg);
-    strcat(error_msg, error_msg_end);
-
-    Py_XSETREF(
-        self->msg,
-        PyUnicode_FromString(error_msg)
-    );
-//    free(error_msg);
+    Py_XSETREF(self->msg, error_msg);
     return 1;
 }
 
