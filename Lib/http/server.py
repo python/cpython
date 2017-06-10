@@ -754,6 +754,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                         shutil.copyfileobj(f, f_gz)
                     content_length = dest.tell()
                     f = dest
+                    f.seek(0)
                         
             self.send_header("Content-Length", content_length)
             self.end_headers()
@@ -1282,3 +1283,4 @@ if __name__ == '__main__':
         handler_class = partial(SimpleHTTPRequestHandler,
                                 directory=args.directory)
     test(HandlerClass=handler_class, port=args.port, bind=args.bind)
+
