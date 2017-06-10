@@ -1,0 +1,3 @@
+multiprocessing.Queue.get() with a timeout now polls its reader in non-
+blocking mode if it succeeded to aquire the lock but the acquire took longer
+than the timeout.
