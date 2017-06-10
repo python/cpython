@@ -765,7 +765,7 @@ def _parse(source, state, verbose, nested, first=False):
                         if not first or subpattern:
                             import warnings
                             warnings.warn(
-                                'Flags not at the start of the expression %s%s' % (
+                                'Flags not at the start of the expression %r%s' % (
                                     source.string[:20],  # truncate long regexes
                                     ' (truncated)' if len(source.string) > 20 else '',
                                 ),
