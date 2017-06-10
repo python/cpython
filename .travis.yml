@@ -78,6 +78,8 @@ before_script:
       fi
       ./configure --with-pydebug
       make -j4
+      make -j4 regen-all clinic
+      test -z "`git status --porcelain`"
 
 script:
   # `-r -w` implicitly provided through `make buildbottest`.
