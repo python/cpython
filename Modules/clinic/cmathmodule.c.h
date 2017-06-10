@@ -653,12 +653,12 @@ cmath_log(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     Py_complex x;
     PyObject *y_obj = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "D|O:log",
-        &x, &y_obj)) {
+    if (!_PyArg_NoStackKeywords("log", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("log", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "D|O:log",
+        &x, &y_obj)) {
         goto exit;
     }
     return_value = cmath_log_impl(module, x, y_obj);
@@ -742,12 +742,12 @@ cmath_rect(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     double r;
     double phi;
 
-    if (!_PyArg_ParseStack(args, nargs, "dd:rect",
-        &r, &phi)) {
+    if (!_PyArg_NoStackKeywords("rect", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("rect", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "dd:rect",
+        &r, &phi)) {
         goto exit;
     }
     return_value = cmath_rect_impl(module, r, phi);
@@ -890,4 +890,4 @@ cmath_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=93eff5d4c242ee57 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11a0b5bb8a652de6 input=a9049054013a1b77]*/
