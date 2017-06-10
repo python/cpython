@@ -350,6 +350,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30605: re.compile() no longer raises a BytesWarning when compiling a
+  bytes instance with misplaced inline modifier.  Patch by Roy Williams.
+
 - bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
   on stdin.write() if the child process is still running but closed the pipe.
 
@@ -645,9 +648,6 @@ Library
 
 - bpo-29851: importlib.reload() now raises ModuleNotFoundError if the
   module lacks a spec.
-
-- bpo-30605: re.compile() no longer raises a BytesWarning when compiling a
-  bytes instance.
 
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
