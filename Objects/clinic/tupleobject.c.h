@@ -25,12 +25,12 @@ tuple_index(PyTupleObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kw
     Py_ssize_t start = 0;
     Py_ssize_t stop = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index",
-        &value, _PyEval_SliceIndexNotNone, &start, _PyEval_SliceIndexNotNone, &stop)) {
+    if (!_PyArg_NoStackKeywords("index", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("index", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index",
+        &value, _PyEval_SliceIndexNotNone, &start, _PyEval_SliceIndexNotNone, &stop)) {
         goto exit;
     }
     return_value = tuple_index_impl(self, value, start, stop);
@@ -99,4 +99,4 @@ tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl(self);
 }
-/*[clinic end generated code: output=145bcfff64e8c809 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=70b4de94a0002ec3 input=a9049054013a1b77]*/
