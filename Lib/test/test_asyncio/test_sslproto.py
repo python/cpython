@@ -115,6 +115,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
                         'transport': transport,
                         'protocol': ssl_proto}
         )
+        self.assertIsNone(ssl_proto._shutdown_timeout_handle)
 
     def test_close(self):
         # From issue #bpo-29406

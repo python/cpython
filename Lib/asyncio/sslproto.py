@@ -694,6 +694,10 @@ class SSLProtocol(protocols.Protocol):
             self._transport._force_close(exc)
             self._transport = None
 
+        if self._shutdown_timeout_handle is not None:
+            self._shutdown_timeout_handle.cancel()
+            self._shutdown_timeout_handle = None
+
     def _finalize(self):
         self._sslpipe = None
 
