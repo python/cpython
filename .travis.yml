@@ -77,9 +77,9 @@ before_script:
         exit
       fi
       ./configure --with-pydebug
-      make -j4
-      make -j4 regen-all clinic
-      test -z "`git status --porcelain`"
+      make -j4 || exit 1
+      make -j4 regen-all clinic || exit 1
+      test -z "`git status --porcelain`" || exit 1
 
 script:
   # `-r -w` implicitly provided through `make buildbottest`.
