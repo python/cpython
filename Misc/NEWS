@@ -353,6 +353,29 @@ Library
 - bpo-30576 : http.server supports HTTP compression (gzip).  Patch by Pierre
   Quentel.
 
+- bpo-30595: multiprocessing.Queue.get() with a timeout now polls its reader in
+  non-blocking mode if it succeeded to aquire the lock but the acquire took
+  longer than the timeout.
+
+- bpo-30605: re.compile() no longer raises a BytesWarning when compiling a
+  bytes instance with misplaced inline modifier.  Patch by Roy Williams.
+
+- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl
+  implementation. Patch by Michaël Sghaïer.
+
+- bpo-29743: Closing transport during handshake process leaks open socket.
+  Patch by Nikolay Kim
+
+- bpo-29406: asyncio SSL contexts leak sockets after calling close with
+  certain servers.
+  Patch by Nikolay Kim
+
+- bpo-27585: Fix waiter cancellation in asyncio.Lock.
+  Patch by Mathieu Sornay.
+
+- bpo-30014: modify() method of poll(), epoll() and devpoll() based classes of
+  selectors module is around 10% faster.  Patch by Giampaolo Rodola'.
+
 - bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
   on stdin.write() if the child process is still running but closed the pipe.
 
