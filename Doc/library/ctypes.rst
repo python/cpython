@@ -274,7 +274,7 @@ All these types can be created by calling them with an optional initializer of
 the correct type and value::
 
    >>> c_int()
-   c_long(0)
+   c_int(0)
    >>> c_wchar_p("Hello, World")
    c_wchar_p(140018365411392)
    >>> c_ushort(-3)
@@ -285,7 +285,7 @@ Since these types are mutable, their value can also be changed afterwards::
 
    >>> i = c_int(42)
    >>> print(i)
-   c_long(42)
+   c_int(42)
    >>> print(i.value)
    42
    >>> i.value = -99
