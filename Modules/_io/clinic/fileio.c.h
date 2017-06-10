@@ -213,12 +213,12 @@ _io_FileIO_read(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _Py_convert_optional_to_ssize_t, &size)) {
+    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("read", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
     return_value = _io_FileIO_read_impl(self, size);
@@ -290,12 +290,12 @@ _io_FileIO_seek(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *pos;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
-        &pos, &whence)) {
+    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
+        &pos, &whence)) {
         goto exit;
     }
     return_value = _io_FileIO_seek_impl(self, pos, whence);
@@ -347,13 +347,13 @@ _io_FileIO_truncate(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *k
     PyObject *return_value = NULL;
     PyObject *posobj = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truncate",
-        0, 1,
-        &posobj)) {
+    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "truncate",
+        0, 1,
+        &posobj)) {
         goto exit;
     }
     return_value = _io_FileIO_truncate_impl(self, posobj);
@@ -385,4 +385,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=a4044e2d878248d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2c6a5470100a8f10 input=a9049054013a1b77]*/
