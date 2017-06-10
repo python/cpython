@@ -4224,8 +4224,8 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
                PyThreadState *tstate, PyFrameObject *f)
 {
     PyObject *type, *value, *traceback, *orig_traceback, *arg;
-    int err;
     PyErr_Fetch(&type, &value, &orig_traceback);
+    assert(type != NULL);
     if (value == NULL) {
         value = Py_None;
         Py_INCREF(value);
@@ -4233,19 +4233,11 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
     PyErr_NormalizeException(&type, &value, &orig_traceback);
     traceback = (orig_traceback != NULL) ? orig_traceback : Py_None;
     arg = PyTuple_Pack(3, type, value, traceback);
-    if (arg == NULL) {
-        PyErr_Restore(type, value, orig_traceback);
-        return;
+    if (arg != NULL) {
+        (void)call_trace(func, self, tstate, f, PyTrace_EXCEPTION, arg);
+        Py_DECREF(arg);
     }
-    err = call_trace(func, self, tstate, f, PyTrace_EXCEPTION, arg);
-    Py_DECREF(arg);
-    if (err == 0)
-        PyErr_Restore(type, value, orig_traceback);
-    else {
-        Py_XDECREF(type);
-        Py_XDECREF(value);
-        Py_XDECREF(orig_traceback);
-    }
+    _PyErr_ChainExceptions(type, value, orig_traceback);
 }
 
 static int
@@ -4257,17 +4249,8 @@ call_trace_protected(Py_tracefunc func, PyObject *obj,
     int err;
     PyErr_Fetch(&type, &value, &traceback);
     err = call_trace(func, obj, tstate, frame, what, arg);
-    if (err == 0)
-    {
-        PyErr_Restore(type, value, traceback);
-        return 0;
-    }
-    else {
-        Py_XDECREF(type);
-        Py_XDECREF(value);
-        Py_XDECREF(traceback);
-        return -1;
-    }
+    _PyErr_ChainExceptions(type, value, traceback);
+    return err;
 }
 
 static int

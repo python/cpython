@@ -284,17 +284,11 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
             /* Pop the exception before issuing a warning. */
             PyErr_Fetch(&exc, &val, &tb);
 
-            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "generator '%.50S' raised StopIteration",
-                                 gen->gi_qualname)) {
-                /* Warning was converted to an error. */
-                Py_XDECREF(exc);
-                Py_XDECREF(val);
-                Py_XDECREF(tb);
-            }
-            else {
-                PyErr_Restore(exc, val, tb);
-            }
+            (void)PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                   "generator '%.50S' raised StopIteration",
+                                   gen->gi_qualname);
+            /* Warning can be converted to an error. */
+            _PyErr_ChainExceptions(exc, val, tb);
         }
     }
     else if (PyAsyncGen_CheckExact(gen) && !result &&

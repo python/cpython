@@ -495,9 +495,7 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
                 limit = PyTraceBack_LIMIT;
             }
             else {
-                Py_XDECREF(exc_type);
-                Py_XDECREF(exc_value);
-                Py_XDECREF(exc_tb);
+                _PyErr_ChainExceptions(exc_type, exc_value, exc_tb);
                 return 0;
             }
         }

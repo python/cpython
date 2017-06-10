@@ -924,14 +924,17 @@ void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...)
     va_list vargs;
     PyObject *tp, *v, *tb, *s, *cls_str, *msg_str;
 
+    PyErr_Fetch(&tp, &v, &tb);
+    assert(tp != NULL);
+    PyErr_NormalizeException(&tp, &v, &tb);
+
     va_start(vargs, fmt);
     s = PyUnicode_FromFormatV(fmt, vargs);
     va_end(vargs);
-    if (!s)
-        return;
+    if (s == NULL) {
+        goto error;
+    }
 
-    PyErr_Fetch(&tp, &v, &tb);
-    PyErr_NormalizeException(&tp, &v, &tb);
     cls_str = PyObject_Str(tp);
     if (cls_str) {
         PyUnicode_AppendAndDel(&s, cls_str);
@@ -950,10 +953,11 @@ void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...)
     if (s == NULL)
         goto error;
     PyErr_SetObject(exc_class, s);
+    Py_DECREF(s);
+    return;
+
 error:
-    Py_XDECREF(tp);
-    Py_XDECREF(v);
-    Py_XDECREF(tb);
+    _PyErr_ChainExceptions(tp, v, tb);
     Py_XDECREF(s);
 }
 
