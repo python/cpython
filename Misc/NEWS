@@ -354,6 +354,10 @@ Library
   non-blocking mode if it succeeded to aquire the lock but the acquire took
   longer than the timeout.
 
+- bpo-28556: Updates to typing module: Add generic AsyncContextManager, add
+  support for ContextManager on all versions. Original PRs by Jelle Zijlstra
+  and Ivan Levkivskyi
+
 - bpo-30605: re.compile() no longer raises a BytesWarning when compiling a
   bytes instance with misplaced inline modifier.  Patch by Roy Williams.
 
