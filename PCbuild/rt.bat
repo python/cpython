@@ -49,7 +49,7 @@ echo Deleting .pyc files ...
 "%exe%" "%pcbuild%rmpyc.py"
 
 echo Cleaning _pth files ...
-if exist %prefix%*._pth del %prefix%*._pth 
+if exist %prefix%*._pth del %prefix%*._pth
 
 echo on
 %cmd%
