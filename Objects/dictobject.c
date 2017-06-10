@@ -254,8 +254,6 @@ static int numfree = 0;
 static PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
 static int numfreekeys = 0;
 
-#include "clinic/dictobject.c.h"
-
 int
 PyDict_ClearFreeList(void)
 {
