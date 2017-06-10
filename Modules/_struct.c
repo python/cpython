@@ -1817,7 +1817,7 @@ to the format string S.format.  See help(struct) for more on format\n\
 strings.");
 
 static PyObject *
-s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames_unused)
 {
     PyStructObject *soself;
     PyObject *result;
@@ -1830,9 +1830,6 @@ s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     {
         PyErr_Format(StructError,
             "pack expected %zd items for packing (got %zd)", soself->s_len, nargs);
-        return NULL;
-    }
-    if (!_PyArg_NoStackKeywords("pack", kwnames)) {
         return NULL;
     }
 
@@ -1859,7 +1856,7 @@ offset.  Note that the offset is a required argument.  See\n\
 help(struct) for more on format strings.");
 
 static PyObject *
-s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames_unused)
 {
     PyStructObject *soself;
     Py_buffer buffer;
@@ -1884,9 +1881,6 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
                         "pack_into expected %zd items for packing (got %zd)",
                         soself->s_len, (nargs - 2));
         }
-        return NULL;
-    }
-    if (!_PyArg_NoStackKeywords("pack_into", kwnames)) {
         return NULL;
     }
 
@@ -2131,6 +2125,10 @@ pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     PyObject *s_object = NULL;
     PyObject *format, *result;
 
+    if (!_PyArg_NoStackKeywords("pack", kwnames)) {
+        return NULL;
+    }
+
     if (nargs == 0) {
         PyErr_SetString(PyExc_TypeError, "missing format argument");
         return NULL;
@@ -2158,6 +2156,10 @@ pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
+
+    if (!_PyArg_NoStackKeywords("pack_into", kwnames)) {
+        return NULL;
+    }
 
     if (nargs == 0) {
         PyErr_SetString(PyExc_TypeError, "missing format argument");

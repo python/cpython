@@ -997,12 +997,12 @@ builtin_getattr(PyObject *self, PyObject **args, Py_ssize_t nargs,
     PyObject *v, *result, *dflt = NULL;
     PyObject *name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "getattr", 2, 3, &v, &name, &dflt))
-        return NULL;
-
     if (!_PyArg_NoStackKeywords("getattr", kwnames)) {
         return NULL;
     }
+
+    if (!_PyArg_UnpackStack(args, nargs, "getattr", 2, 3, &v, &name, &dflt))
+        return NULL;
 
     if (!PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1307,12 +1307,12 @@ builtin_next(PyObject *self, PyObject **args, Py_ssize_t nargs,
     PyObject *it, *res;
     PyObject *def = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "next", 1, 2, &it, &def))
-        return NULL;
-
     if (!_PyArg_NoStackKeywords("next", kwnames)) {
         return NULL;
     }
+
+    if (!_PyArg_UnpackStack(args, nargs, "next", 1, 2, &it, &def))
+        return NULL;
 
     if (!PyIter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
