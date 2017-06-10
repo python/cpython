@@ -1353,6 +1353,30 @@ static PyMemberDef BZ2File_members[] = {
 
 /* ===================================================================== */
 /* Slot definitions for BZ2File_Type. */
+static int
+BZ2File_clear(BZ2FileObject *self)
+{
+    int bzerror;
+
+    ACQUIRE_LOCK(self);
+    switch (self->mode) {
+        case MODE_READ:
+        case MODE_READ_EOF:
+            BZ2_bzReadClose(&bzerror, self->fp);
+            break;
+        case MODE_WRITE:
+            BZ2_bzWriteClose(&bzerror, self->fp,
+                             0, NULL, NULL);
+            break;
+    }
+    if (self->fp != NULL && self->file != NULL)
+        PyFile_DecUseCount((PyFileObject *)self->file);
+    self->fp = NULL;
+    Util_DropReadAhead(self);
+    Py_CLEAR(self->file);
+    RELEASE_LOCK(self);
+    return 0;
+}
 
 static int
 BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
@@ -1420,6 +1444,19 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
     mode = (mode_char == 'r') ? "rb" : "wb";
 
+#ifdef WITH_THREAD
+    if (!self->lock) {
+        self->lock = PyThread_allocate_lock();
+    }
+    
+    if (!self->lock) {
+        PyErr_SetString(PyExc_MemoryError, "unable to allocate lock");
+        goto error;
+    }
+#endif
+
+    BZ2File_clear(self);
+
     self->file = PyObject_CallFunction((PyObject*)&PyFile_Type, "(Osi)",
                                        name, mode, buffering);
     if (self->file == NULL)
@@ -1427,14 +1464,6 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
     /* From now on, we have stuff to dealloc, so jump to error label
      * instead of returning */
-
-#ifdef WITH_THREAD
-    self->lock = PyThread_allocate_lock();
-    if (!self->lock) {
-        PyErr_SetString(PyExc_MemoryError, "unable to allocate lock");
-        goto error;
-    }
-#endif
 
     if (mode_char == 'r')
         self->fp = BZ2_bzReadOpen(&bzerror,
@@ -1469,26 +1498,11 @@ error:
 static void
 BZ2File_dealloc(BZ2FileObject *self)
 {
-    int bzerror;
+    BZ2File_clear(self);
 #ifdef WITH_THREAD
     if (self->lock)
         PyThread_free_lock(self->lock);
 #endif
-    switch (self->mode) {
-        case MODE_READ:
-        case MODE_READ_EOF:
-            BZ2_bzReadClose(&bzerror, self->fp);
-            break;
-        case MODE_WRITE:
-            BZ2_bzWriteClose(&bzerror, self->fp,
-                             0, NULL, NULL);
-            break;
-    }
-    if (self->fp != NULL && self->file != NULL)
-        PyFile_DecUseCount((PyFileObject *)self->file);
-    self->fp = NULL;
-    Util_DropReadAhead(self);
-    Py_XDECREF(self->file);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -1574,7 +1588,7 @@ static PyTypeObject BZ2File_Type = {
     Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /*tp_flags*/
     BZ2File__doc__,         /*tp_doc*/
     0,                      /*tp_traverse*/
-    0,                      /*tp_clear*/
+    (inquiry)BZ2File_clear, /*tp_clear*/
     0,                      /*tp_richcompare*/
     0,                      /*tp_weaklistoffset*/
     (getiterfunc)BZ2File_getiter, /*tp_iter*/
