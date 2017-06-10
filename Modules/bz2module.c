@@ -1445,9 +1445,10 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
     mode = (mode_char == 'r') ? "rb" : "wb";
 
 #ifdef WITH_THREAD
-    if (!self->lock)
+    if (!self->lock) {
         self->lock = PyThread_allocate_lock();
-
+    }
+    
     if (!self->lock) {
         PyErr_SetString(PyExc_MemoryError, "unable to allocate lock");
         goto error;
