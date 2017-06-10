@@ -350,6 +350,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30624: selectors does not take KeyboardInterrupt and SystemExit into
+  account, leaving a fd in a bad state in case of error. Patch by Giampaolo
+  Rodola'.
+
 - bpo-30595: multiprocessing.Queue.get() with a timeout now polls its reader in
   non-blocking mode if it succeeded to aquire the lock but the acquire took
   longer than the timeout.
