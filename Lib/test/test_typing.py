@@ -1552,6 +1552,12 @@ class AsyncIteratorWrapper(typing.AsyncIterator[T_a]):
             return data
         else:
             raise StopAsyncIteration
+
+class ACM:
+    async def __aenter__(self) -> int:
+        return 42
+    async def __aexit__(self, etype, eval, tb):
+        return None
 """
 
 if ASYNCIO:
@@ -1562,12 +1568,13 @@ if ASYNCIO:
 else:
     # fake names for the sake of static analysis
     asyncio = None
-    AwaitableWrapper = AsyncIteratorWrapper = object
+    AwaitableWrapper = AsyncIteratorWrapper = ACM = object
 
 PY36 = sys.version_info[:2] >= (3, 6)
 
 PY36_TESTS = """
 from test import ann_module, ann_module2, ann_module3
+from typing import AsyncContextManager
 
 class A:
     y: float
@@ -1604,6 +1611,16 @@ class XRepr(NamedTuple):
         return f'{self.x} -> {self.y}'
     def __add__(self, other):
         return 0
+
+async def g_with(am: AsyncContextManager[int]):
+    x: int
+    async with am as x:
+        return x
+
+try:
+    g_with(ACM()).send(None)
+except StopIteration as e:
+    assert e.args[0] == 42
 """
 
 if PY36:
@@ -2156,8 +2173,6 @@ class CollectionsAbcTests(BaseTestCase):
 
 class OtherABCTests(BaseTestCase):
 
-    @skipUnless(hasattr(typing, 'ContextManager'),
-                'requires typing.ContextManager')
     def test_contextmanager(self):
         @contextlib.contextmanager
         def manager():
@@ -2166,6 +2181,24 @@ class OtherABCTests(BaseTestCase):
         cm = manager()
         self.assertIsInstance(cm, typing.ContextManager)
         self.assertNotIsInstance(42, typing.ContextManager)
+
+    @skipUnless(ASYNCIO, 'Python 3.5 required')
+    def test_async_contextmanager(self):
+        class NotACM:
+            pass
+        self.assertIsInstance(ACM(), typing.AsyncContextManager)
+        self.assertNotIsInstance(NotACM(), typing.AsyncContextManager)
+        @contextlib.contextmanager
+        def manager():
+            yield 42
+
+        cm = manager()
+        self.assertNotIsInstance(cm, typing.AsyncContextManager)
+        self.assertEqual(typing.AsyncContextManager[int].__args__, (int,))
+        with self.assertRaises(TypeError):
+            isinstance(42, typing.AsyncContextManager[int])
+        with self.assertRaises(TypeError):
+            typing.AsyncContextManager[int, str]
 
 
 class TypeTests(BaseTestCase):
