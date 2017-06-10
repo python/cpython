@@ -350,6 +350,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30605: re.compile() no longer raises a BytesWarning when compiling a
+  bytes instance with misplaced inline modifier.  Patch by Roy Williams.
+
 - bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl 
   implementation. Patch by Michaël Sghaïer.
 
