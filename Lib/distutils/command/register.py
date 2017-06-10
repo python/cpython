@@ -255,7 +255,7 @@ Your selection [default 1]: ''', log.INFO)
                                                     log.INFO)
         # Build up the MIME payload for the urllib2 POST data
         boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
-        sep_boundary = '\n--' + boundary
+        sep_boundary = '\r\n--' + boundary
         end_boundary = sep_boundary + '--'
         body = io.StringIO()
         for key, value in data.items():
@@ -265,8 +265,8 @@ Your selection [default 1]: ''', log.INFO)
             for value in value:
                 value = str(value)
                 body.write(sep_boundary)
-                body.write('\nContent-Disposition: form-data; name="%s"'%key)
-                body.write("\n\n")
+                body.write('\r\nContent-Disposition: form-data; name="%s"'%key)
+                body.write("\r\n\r\n")
                 body.write(value)
                 if value and value[-1] == '\r':
                     body.write('\n')  # write an extra newline (lurve Macs)
