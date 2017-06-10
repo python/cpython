@@ -350,6 +350,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30595: multiprocessing.Queue.get() with a timeout now polls its reader in
+  non-blocking mode if it succeeded to aquire the lock but the acquire took
+  longer than the timeout.
+
 - bpo-28556: Updates to typing module: Add generic AsyncContextManager, add
   support for ContextManager on all versions. Original PRs by Jelle Zijlstra
   and Ivan Levkivskyi
@@ -357,7 +361,7 @@ Library
 - bpo-30605: re.compile() no longer raises a BytesWarning when compiling a
   bytes instance with misplaced inline modifier.  Patch by Roy Williams.
 
-- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl 
+- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl
   implementation. Patch by Michaël Sghaïer.
 
 - bpo-29743: Closing transport during handshake process leaks open socket.
