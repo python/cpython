@@ -328,6 +328,7 @@ class _ssl._SSLSocket "PySSLSocket *" "&PySSLSocket_Type"
 class _ssl.MemoryBIO "PySSLMemoryBIO *" "&PySSLMemoryBIO_Type"
 class _ssl.SSLSession "PySSLSession *" "&PySSLSession_Type"
 [clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bdc67fafeeaa8109]*/
 
 #include "clinic/_ssl.c.h"
 
