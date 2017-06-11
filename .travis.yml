@@ -80,9 +80,11 @@ before_script:
       ./configure --with-pydebug
       make -j4
       make -j4 regen-all clinic
-      if ! test -z "`git status --porcelain`"
+      changes=`git status --porcelain`
+      if ! test -z "$changes"
       then
         echo "Generated files not up to date"
+        echo "$changes"
         exit 1
       fi
 
