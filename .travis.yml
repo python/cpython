@@ -71,6 +71,7 @@ matrix:
 # Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
   - |
+      set -e
       if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
       then
         echo "Only docs were updated, stopping build process."
@@ -78,6 +79,12 @@ before_script:
       fi
       ./configure --with-pydebug
       make -j4
+      make -j4 regen-all clinic
+      if ! test -z "`git status --porcelain`"
+      then
+        echo "Generated files not up to date"
+        exit 1
+      fi
 
 script:
   # `-r -w` implicitly provided through `make buildbottest`.
