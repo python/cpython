@@ -22,12 +22,12 @@ _opcode_stack_effect(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObje
     PyObject *oparg = Py_None;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "i|O:stack_effect",
-        &opcode, &oparg)) {
+    if (!_PyArg_NoStackKeywords("stack_effect", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("stack_effect", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "i|O:stack_effect",
+        &opcode, &oparg)) {
         goto exit;
     }
     _return_value = _opcode_stack_effect_impl(module, opcode, oparg);
@@ -39,4 +39,4 @@ _opcode_stack_effect(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObje
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=62858005ac85baa9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38f3bf305b3bb601 input=a9049054013a1b77]*/

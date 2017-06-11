@@ -8,8 +8,9 @@ import sys
 import subprocess
 import tempfile
 from test.support import script_helper, is_android
-from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
-    assert_python_failure)
+from test.support.script_helper import (
+    spawn_python, kill_python, assert_python_ok, assert_python_failure
+)
 
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
@@ -150,6 +151,7 @@ class CmdLineTest(unittest.TestCase):
         env = os.environ.copy()
         # Use C locale to get ascii for the locale encoding
         env['LC_ALL'] = 'C'
+        env['PYTHONCOERCECLOCALE'] = '0'
         code = (
             b'import locale; '
             b'print(ascii("' + undecodable + b'"), '

@@ -371,14 +371,21 @@ class EmbeddingTests(unittest.TestCase):
     def tearDown(self):
         os.chdir(self.oldcwd)
 
-    def run_embedded_interpreter(self, *args):
+    def run_embedded_interpreter(self, *args, env=None):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
+        if env is not None and sys.platform == 'win32':
+            # Windows requires at least the SYSTEMROOT environment variable to
+            # start Python.
+            env = env.copy()
+            env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
+
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
-                             universal_newlines=True)
+                             universal_newlines=True,
+                             env=env)
         (out, err) = p.communicate()
         self.assertEqual(p.returncode, 0,
                          "bad returncode %d, stderr is %r" %
@@ -471,26 +478,16 @@ class EmbeddingTests(unittest.TestCase):
                 self.assertNotEqual(sub.tstate, main.tstate)
                 self.assertNotEqual(sub.modules, main.modules)
 
-    @staticmethod
-    def _get_default_pipe_encoding():
-        rp, wp = os.pipe()
-        try:
-            with os.fdopen(wp, 'w') as w:
-                default_pipe_encoding = w.encoding
-        finally:
-            os.close(rp)
-        return default_pipe_encoding
-
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
-        out, err = self.run_embedded_interpreter("forced_io_encoding")
-        if support.verbose:
+        env = {"PYTHONIOENCODING": "utf-8:surrogateescape"}
+        out, err = self.run_embedded_interpreter("forced_io_encoding", env=env)
+        if support.verbose > 1:
             print()
             print(out)
             print(err)
-        expected_errors = sys.__stdout__.errors
-        expected_stdin_encoding = sys.__stdin__.encoding
-        expected_pipe_encoding = self._get_default_pipe_encoding()
+        expected_stream_encoding = "utf-8"
+        expected_errors = "surrogateescape"
         expected_output = '\n'.join([
         "--- Use defaults ---",
         "Expected encoding: default",
@@ -517,8 +514,8 @@ class EmbeddingTests(unittest.TestCase):
         "stdout: latin-1:replace",
         "stderr: latin-1:backslashreplace"])
         expected_output = expected_output.format(
-                                in_encoding=expected_stdin_encoding,
-                                out_encoding=expected_pipe_encoding,
+                                in_encoding=expected_stream_encoding,
+                                out_encoding=expected_stream_encoding,
                                 errors=expected_errors)
         # This is useful if we ever trip over odd platform behaviour
         self.maxDiff = None
