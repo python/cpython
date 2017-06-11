@@ -71,7 +71,7 @@ pybuilddir.txt
 pyconfig.h
 python$
 python.exe
-python-gdb.py
+python*-gdb.py
 tags
 TAGS
 .coverage
