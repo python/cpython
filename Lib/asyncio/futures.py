@@ -191,6 +191,7 @@ class Future:
         change the future's state to cancelled, schedule the callbacks and
         return True.
         """
+        self._log_traceback = False
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
