@@ -148,12 +148,12 @@ winreg_ConnectRegistry(PyObject *module, PyObject **args, Py_ssize_t nargs, PyOb
     HKEY key;
     HKEY _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ZO&:ConnectRegistry",
-        &computer_name, clinic_HKEY_converter, &key)) {
+    if (!_PyArg_NoStackKeywords("ConnectRegistry", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ConnectRegistry", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "ZO&:ConnectRegistry",
+        &computer_name, clinic_HKEY_converter, &key)) {
         goto exit;
     }
     _return_value = winreg_ConnectRegistry_impl(module, computer_name, key);
@@ -199,12 +199,12 @@ winreg_CreateKey(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     Py_UNICODE *sub_key;
     HKEY _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&Z:CreateKey",
-        clinic_HKEY_converter, &key, &sub_key)) {
+    if (!_PyArg_NoStackKeywords("CreateKey", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("CreateKey", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&Z:CreateKey",
+        clinic_HKEY_converter, &key, &sub_key)) {
         goto exit;
     }
     _return_value = winreg_CreateKey_impl(module, key, sub_key);
@@ -306,12 +306,12 @@ winreg_DeleteKey(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     HKEY key;
     Py_UNICODE *sub_key;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&u:DeleteKey",
-        clinic_HKEY_converter, &key, &sub_key)) {
+    if (!_PyArg_NoStackKeywords("DeleteKey", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("DeleteKey", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&u:DeleteKey",
+        clinic_HKEY_converter, &key, &sub_key)) {
         goto exit;
     }
     return_value = winreg_DeleteKey_impl(module, key, sub_key);
@@ -397,12 +397,12 @@ winreg_DeleteValue(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     HKEY key;
     Py_UNICODE *value;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&Z:DeleteValue",
-        clinic_HKEY_converter, &key, &value)) {
+    if (!_PyArg_NoStackKeywords("DeleteValue", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("DeleteValue", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&Z:DeleteValue",
+        clinic_HKEY_converter, &key, &value)) {
         goto exit;
     }
     return_value = winreg_DeleteValue_impl(module, key, value);
@@ -439,12 +439,12 @@ winreg_EnumKey(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumKey",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_NoStackKeywords("EnumKey", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("EnumKey", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumKey",
+        clinic_HKEY_converter, &key, &index)) {
         goto exit;
     }
     return_value = winreg_EnumKey_impl(module, key, index);
@@ -490,12 +490,12 @@ winreg_EnumValue(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumValue",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_NoStackKeywords("EnumValue", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("EnumValue", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumValue",
+        clinic_HKEY_converter, &key, &index)) {
         goto exit;
     }
     return_value = winreg_EnumValue_impl(module, key, index);
@@ -614,12 +614,12 @@ winreg_LoadKey(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     Py_UNICODE *sub_key;
     Py_UNICODE *file_name;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&uu:LoadKey",
-        clinic_HKEY_converter, &key, &sub_key, &file_name)) {
+    if (!_PyArg_NoStackKeywords("LoadKey", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("LoadKey", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&uu:LoadKey",
+        clinic_HKEY_converter, &key, &sub_key, &file_name)) {
         goto exit;
     }
     return_value = winreg_LoadKey_impl(module, key, sub_key, file_name);
@@ -801,12 +801,12 @@ winreg_QueryValue(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     HKEY key;
     Py_UNICODE *sub_key;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&Z:QueryValue",
-        clinic_HKEY_converter, &key, &sub_key)) {
+    if (!_PyArg_NoStackKeywords("QueryValue", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("QueryValue", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&Z:QueryValue",
+        clinic_HKEY_converter, &key, &sub_key)) {
         goto exit;
     }
     return_value = winreg_QueryValue_impl(module, key, sub_key);
@@ -844,12 +844,12 @@ winreg_QueryValueEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObjec
     HKEY key;
     Py_UNICODE *name;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&Z:QueryValueEx",
-        clinic_HKEY_converter, &key, &name)) {
+    if (!_PyArg_NoStackKeywords("QueryValueEx", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("QueryValueEx", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&Z:QueryValueEx",
+        clinic_HKEY_converter, &key, &name)) {
         goto exit;
     }
     return_value = winreg_QueryValueEx_impl(module, key, name);
@@ -892,12 +892,12 @@ winreg_SaveKey(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     HKEY key;
     Py_UNICODE *file_name;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&u:SaveKey",
-        clinic_HKEY_converter, &key, &file_name)) {
+    if (!_PyArg_NoStackKeywords("SaveKey", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("SaveKey", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&u:SaveKey",
+        clinic_HKEY_converter, &key, &file_name)) {
         goto exit;
     }
     return_value = winreg_SaveKey_impl(module, key, file_name);
@@ -950,12 +950,12 @@ winreg_SetValue(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     Py_UNICODE *value;
     Py_ssize_clean_t value_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&Zku#:SetValue",
-        clinic_HKEY_converter, &key, &sub_key, &type, &value, &value_length)) {
+    if (!_PyArg_NoStackKeywords("SetValue", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("SetValue", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&Zku#:SetValue",
+        clinic_HKEY_converter, &key, &sub_key, &type, &value, &value_length)) {
         goto exit;
     }
     return_value = winreg_SetValue_impl(module, key, sub_key, type, value, value_length);
@@ -1024,12 +1024,12 @@ winreg_SetValueEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     DWORD type;
     PyObject *value;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&ZOkO:SetValueEx",
-        clinic_HKEY_converter, &key, &value_name, &reserved, &type, &value)) {
+    if (!_PyArg_NoStackKeywords("SetValueEx", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("SetValueEx", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&ZOkO:SetValueEx",
+        clinic_HKEY_converter, &key, &value_name, &reserved, &type, &value)) {
         goto exit;
     }
     return_value = winreg_SetValueEx_impl(module, key, value_name, reserved, type, value);
@@ -1139,4 +1139,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ddc72b006143d33d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=57f166c252c5ba7a input=a9049054013a1b77]*/

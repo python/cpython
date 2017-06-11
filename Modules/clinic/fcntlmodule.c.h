@@ -32,12 +32,12 @@ fcntl_fcntl(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     int code;
     PyObject *arg = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|O:fcntl",
-        conv_descriptor, &fd, &code, &arg)) {
+    if (!_PyArg_NoStackKeywords("fcntl", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("fcntl", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&i|O:fcntl",
+        conv_descriptor, &fd, &code, &arg)) {
         goto exit;
     }
     return_value = fcntl_fcntl_impl(module, fd, code, arg);
@@ -95,12 +95,12 @@ fcntl_ioctl(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *ob_arg = NULL;
     int mutate_arg = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&I|Op:ioctl",
-        conv_descriptor, &fd, &code, &ob_arg, &mutate_arg)) {
+    if (!_PyArg_NoStackKeywords("ioctl", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ioctl", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&I|Op:ioctl",
+        conv_descriptor, &fd, &code, &ob_arg, &mutate_arg)) {
         goto exit;
     }
     return_value = fcntl_ioctl_impl(module, fd, code, ob_arg, mutate_arg);
@@ -131,12 +131,12 @@ fcntl_flock(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     int fd;
     int code;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:flock",
-        conv_descriptor, &fd, &code)) {
+    if (!_PyArg_NoStackKeywords("flock", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("flock", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&i:flock",
+        conv_descriptor, &fd, &code)) {
         goto exit;
     }
     return_value = fcntl_flock_impl(module, fd, code);
@@ -189,12 +189,12 @@ fcntl_lockf(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *startobj = NULL;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|OOi:lockf",
-        conv_descriptor, &fd, &code, &lenobj, &startobj, &whence)) {
+    if (!_PyArg_NoStackKeywords("lockf", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lockf", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&i|OOi:lockf",
+        conv_descriptor, &fd, &code, &lenobj, &startobj, &whence)) {
         goto exit;
     }
     return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence);
@@ -202,4 +202,4 @@ fcntl_lockf(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b67e9579722e6d4f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f189ac833d1448af input=a9049054013a1b77]*/

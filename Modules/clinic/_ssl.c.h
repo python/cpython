@@ -71,12 +71,12 @@ _ssl__SSLSocket_peer_certificate(PySSLSocket *self, PyObject **args, Py_ssize_t 
     PyObject *return_value = NULL;
     int binary_mode = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "|p:peer_certificate",
-        &binary_mode)) {
+    if (!_PyArg_NoStackKeywords("peer_certificate", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("peer_certificate", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|p:peer_certificate",
+        &binary_mode)) {
         goto exit;
     }
     return_value = _ssl__SSLSocket_peer_certificate_impl(self, binary_mode);
@@ -772,12 +772,12 @@ _ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject **args, Py_ssize_t nargs, PyO
     PyObject *return_value = NULL;
     int len = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:read",
-        &len)) {
+    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("read", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|i:read",
+        &len)) {
         goto exit;
     }
     return_value = _ssl_MemoryBIO_read_impl(self, len);
@@ -847,7 +847,7 @@ PyDoc_STRVAR(_ssl_RAND_add__doc__,
 "Mix string into the OpenSSL PRNG state.\n"
 "\n"
 "entropy (a float) is a lower bound on the entropy contained in\n"
-"string.  See RFC 1750.");
+"string.  See RFC 4086.");
 
 #define _SSL_RAND_ADD_METHODDEF    \
     {"RAND_add", (PyCFunction)_ssl_RAND_add, METH_FASTCALL, _ssl_RAND_add__doc__},
@@ -862,12 +862,12 @@ _ssl_RAND_add(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     Py_buffer view = {NULL, NULL};
     double entropy;
 
-    if (!_PyArg_ParseStack(args, nargs, "s*d:RAND_add",
-        &view, &entropy)) {
+    if (!_PyArg_NoStackKeywords("RAND_add", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("RAND_add", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "s*d:RAND_add",
+        &view, &entropy)) {
         goto exit;
     }
     return_value = _ssl_RAND_add_impl(module, &view, entropy);
@@ -1180,4 +1180,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=53cd9100580b45a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=30284eec805dbdf8 input=a9049054013a1b77]*/
