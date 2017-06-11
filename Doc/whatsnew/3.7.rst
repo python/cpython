@@ -178,6 +178,14 @@ contextlib
 :func:`contextlib.asynccontextmanager` has been added. (Contributed by
 Jelle Zijlstra in :issue:`29679`.)
 
+dis
+---
+
+The :func:`~dis.dis` function now is able to
+disassemble nested code objects (the code of comprehensions, generator
+expressions and nested functions, and the code used for building nested
+classes).  (Contributed by Serhiy Storchaka in :issue:`11822`.)
+
 distutils
 ---------
 
