@@ -56,6 +56,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
+  called.
+
 - bpo-28556: Updates to typing module: Add generic AsyncContextManager, add
   support for ContextManager on all versions. Original PRs by Jelle Zijlstra
   and Ivan Levkivskyi
