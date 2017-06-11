@@ -359,6 +359,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
+  called.
+
 - bpo-11822: The dis.dis() function now is able to disassemble nested
   code objects.
 
