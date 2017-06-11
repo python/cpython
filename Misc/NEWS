@@ -56,10 +56,6 @@ Library
   support for ContextManager on all versions. Original PRs by Jelle Zijlstra
   and Ivan Levkivskyi
 
-- bpo-29406: asyncio SSL contexts leak sockets after calling close with
-  certain servers.
-  Patch by Nikolay Kim
-
 - bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl
   implementation. Patch by Michaël Sghaïer.
 
