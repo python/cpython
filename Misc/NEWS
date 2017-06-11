@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30501: The compiler now produces more optimal code for complex condition
+  expressions in the "if", "while" and "assert" statement, the "if" expression,
+  and generator expressions and comprehensions.
+
 - bpo-28180: Implement PEP 538 (legacy C locale coercion). This means that when
   a suitable coercion target locale is available, both the core interpreter and
   locale-aware C extensions will assume the use of UTF-8 as the default text
@@ -357,6 +361,9 @@ Library
 
 - bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
   called.
+
+- bpo-11822: The dis.dis() function now is able to disassemble nested
+  code objects.
 
 - bpo-30624: selectors does not take KeyboardInterrupt and SystemExit into
   account, leaving a fd in a bad state in case of error. Patch by Giampaolo
