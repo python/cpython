@@ -357,7 +357,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             poller_events |= self._EVENT_WRITE
         try:
             self._selector.register(key.fd, poller_events)
-        except Exception:
+        except:
             super().unregister(fileobj)
             raise
         return key
