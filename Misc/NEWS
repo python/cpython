@@ -355,6 +355,9 @@ Extension Modules
 Library
 -------
 
+- bpo-11822: The dis.dis() function now is able to disassemble nested
+  code objects.
+
 - bpo-30624: selectors does not take KeyboardInterrupt and SystemExit into
   account, leaving a fd in a bad state in case of error. Patch by Giampaolo
   Rodola'.
