@@ -82,6 +82,7 @@ before_script:
       if ! test -z "`git status --porcelain`"
       then
         echo "Generated files not up to date"
+        git status --porcelain
         exit 1
       fi
 
