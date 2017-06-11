@@ -2000,6 +2000,131 @@ compiler_class(struct compiler *c, stmt_ty s)
 }
 
 static int
+cmpop(cmpop_ty op)
+{
+    switch (op) {
+    case Eq:
+        return PyCmp_EQ;
+    case NotEq:
+        return PyCmp_NE;
+    case Lt:
+        return PyCmp_LT;
+    case LtE:
+        return PyCmp_LE;
+    case Gt:
+        return PyCmp_GT;
+    case GtE:
+        return PyCmp_GE;
+    case Is:
+        return PyCmp_IS;
+    case IsNot:
+        return PyCmp_IS_NOT;
+    case In:
+        return PyCmp_IN;
+    case NotIn:
+        return PyCmp_NOT_IN;
+    default:
+        return PyCmp_BAD;
+    }
+}
+
+static int
+compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
+{
+    switch (e->kind) {
+    case UnaryOp_kind:
+        if (e->v.UnaryOp.op == Not)
+            return compiler_jump_if(c, e->v.UnaryOp.operand, next, !cond);
+        /* fallback to general implementation */
+        break;
+    case BoolOp_kind: {
+        asdl_seq *s = e->v.BoolOp.values;
+        Py_ssize_t i, n = asdl_seq_LEN(s) - 1;
+        assert(n >= 0);
+        int cond2 = e->v.BoolOp.op == Or;
+        basicblock *next2 = next;
+        if (!cond2 != !cond) {
+            next2 = compiler_new_block(c);
+            if (next2 == NULL)
+                return 0;
+        }
+        for (i = 0; i < n; ++i) {
+            if (!compiler_jump_if(c, (expr_ty)asdl_seq_GET(s, i), next2, cond2))
+                return 0;
+        }
+        if (!compiler_jump_if(c, (expr_ty)asdl_seq_GET(s, n), next, cond))
+            return 0;
+        if (next2 != next)
+            compiler_use_next_block(c, next2);
+        return 1;
+    }
+    case IfExp_kind: {
+        basicblock *end, *next2;
+        end = compiler_new_block(c);
+        if (end == NULL)
+            return 0;
+        next2 = compiler_new_block(c);
+        if (next2 == NULL)
+            return 0;
+        if (!compiler_jump_if(c, e->v.IfExp.test, next2, 0))
+            return 0;
+        if (!compiler_jump_if(c, e->v.IfExp.body, next, cond))
+            return 0;
+        ADDOP_JREL(c, JUMP_FORWARD, end);
+        compiler_use_next_block(c, next2);
+        if (!compiler_jump_if(c, e->v.IfExp.orelse, next, cond))
+            return 0;
+        compiler_use_next_block(c, end);
+        return 1;
+    }
+    case Compare_kind: {
+        Py_ssize_t i, n = asdl_seq_LEN(e->v.Compare.ops) - 1;
+        if (n > 0) {
+            basicblock *cleanup = compiler_new_block(c);
+            if (cleanup == NULL)
+                return 0;
+            VISIT(c, expr, e->v.Compare.left);
+            for (i = 0; i < n; i++) {
+                VISIT(c, expr,
+                    (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
+                ADDOP(c, DUP_TOP);
+                ADDOP(c, ROT_THREE);
+                ADDOP_I(c, COMPARE_OP,
+                    cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, i))));
+                ADDOP_JABS(c, POP_JUMP_IF_FALSE, cleanup);
+                NEXT_BLOCK(c);
+            }
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
+            ADDOP_I(c, COMPARE_OP,
+                   cmpop((cmpop_ty)(asdl_seq_GET(e->v.Compare.ops, n))));
+            ADDOP_JABS(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+            basicblock *end = compiler_new_block(c);
+            if (end == NULL)
+                return 0;
+            ADDOP_JREL(c, JUMP_FORWARD, end);
+            compiler_use_next_block(c, cleanup);
+            ADDOP(c, POP_TOP);
+            if (!cond) {
+                ADDOP_JREL(c, JUMP_FORWARD, next);
+            }
+            compiler_use_next_block(c, end);
+            return 1;
+        }
+        /* fallback to general implementation */
+        break;
+    }
+    default:
+        /* fallback to general implementation */
+        break;
+    }
+
+    /* general implementation */
+    VISIT(c, expr, e);
+    ADDOP_JABS(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    return 1;
+}
+
+static int
 compiler_ifexp(struct compiler *c, expr_ty e)
 {
     basicblock *end, *next;
@@ -2011,8 +2136,8 @@ compiler_ifexp(struct compiler *c, expr_ty e)
     next = compiler_new_block(c);
     if (next == NULL)
         return 0;
-    VISIT(c, expr, e->v.IfExp.test);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
+    if (!compiler_jump_if(c, e->v.IfExp.test, next, 0))
+        return 0;
     VISIT(c, expr, e->v.IfExp.body);
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, next);
@@ -2101,8 +2226,8 @@ compiler_if(struct compiler *c, stmt_ty s)
         }
         else
             next = end;
-        VISIT(c, expr, s->v.If.test);
-        ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
+        if (!compiler_jump_if(c, s->v.If.test, next, 0))
+            return 0;
         VISIT_SEQ(c, stmt, s->v.If.body);
         if (asdl_seq_LEN(s->v.If.orelse)) {
             ADDOP_JREL(c, JUMP_FORWARD, end);
@@ -2261,8 +2386,8 @@ compiler_while(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, LOOP, loop))
         return 0;
     if (constant == -1) {
-        VISIT(c, expr, s->v.While.test);
-        ADDOP_JABS(c, POP_JUMP_IF_FALSE, anchor);
+        if (!compiler_jump_if(c, s->v.While.test, anchor, 0))
+            return 0;
     }
     VISIT_SEQ(c, stmt, s->v.While.body);
     ADDOP_JABS(c, JUMP_ABSOLUTE, loop);
@@ -2721,11 +2846,11 @@ compiler_assert(struct compiler *c, stmt_ty s)
         }
         Py_DECREF(msg);
     }
-    VISIT(c, expr, s->v.Assert.test);
     end = compiler_new_block(c);
     if (end == NULL)
         return 0;
-    ADDOP_JABS(c, POP_JUMP_IF_TRUE, end);
+    if (!compiler_jump_if(c, s->v.Assert.test, end, 1))
+        return 0;
     ADDOP_O(c, LOAD_GLOBAL, assertion_error, names);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
@@ -2906,35 +3031,6 @@ binop(struct compiler *c, operator_ty op)
         PyErr_Format(PyExc_SystemError,
             "binary op %d should not be possible", op);
         return 0;
-    }
-}
-
-static int
-cmpop(cmpop_ty op)
-{
-    switch (op) {
-    case Eq:
-        return PyCmp_EQ;
-    case NotEq:
-        return PyCmp_NE;
-    case Lt:
-        return PyCmp_LT;
-    case LtE:
-        return PyCmp_LE;
-    case Gt:
-        return PyCmp_GT;
-    case GtE:
-        return PyCmp_GE;
-    case Is:
-        return PyCmp_IS;
-    case IsNot:
-        return PyCmp_IS_NOT;
-    case In:
-        return PyCmp_IN;
-    case NotIn:
-        return PyCmp_NOT_IN;
-    default:
-        return PyCmp_BAD;
     }
 }
 
@@ -3676,8 +3772,8 @@ compiler_sync_comprehension_generator(struct compiler *c,
     n = asdl_seq_LEN(gen->ifs);
     for (i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        VISIT(c, expr, e);
-        ADDOP_JABS(c, POP_JUMP_IF_FALSE, if_cleanup);
+        if (!compiler_jump_if(c, e, if_cleanup, 0))
+            return 0;
         NEXT_BLOCK(c);
     }
 
@@ -3807,8 +3903,8 @@ compiler_async_comprehension_generator(struct compiler *c,
     n = asdl_seq_LEN(gen->ifs);
     for (i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        VISIT(c, expr, e);
-        ADDOP_JABS(c, POP_JUMP_IF_FALSE, if_cleanup);
+        if (!compiler_jump_if(c, e, if_cleanup, 0))
+            return 0;
         NEXT_BLOCK(c);
     }
 
