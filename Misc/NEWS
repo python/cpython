@@ -10,6 +10,11 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28180: Implement PEP 538 (legacy C locale coercion). This means that when
+  a suitable coercion target locale is available, both the core interpreter and
+  locale-aware C extensions will assume the use of UTF-8 as the default text
+  encoding, rather than ASCII.
+
 - bpo-30486: Allows setting cell values for __closure__. Patch by Lisa Roach.
 
 - bpo-30537: itertools.islice now accepts integer-like objects (having
