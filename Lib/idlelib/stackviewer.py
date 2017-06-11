@@ -1,6 +1,5 @@
 import linecache
 import os
-import re
 import sys
 
 import tkinter as tk
