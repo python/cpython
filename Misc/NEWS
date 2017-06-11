@@ -358,8 +358,6 @@ Library
 - bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
   called.
 
-- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl 
-
 - bpo-30624: selectors does not take KeyboardInterrupt and SystemExit into
   account, leaving a fd in a bad state in case of error. Patch by Giampaolo
   Rodola'.
