@@ -371,21 +371,28 @@ class EmbeddingTests(unittest.TestCase):
     def tearDown(self):
         os.chdir(self.oldcwd)
 
-    def run_embedded_interpreter(self, *args):
+    def run_embedded_interpreter(self, *args, env=None):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
+        if env is not None and sys.platform == 'win32':
+            # Windows requires at least the SYSTEMROOT environment variable to
+            # start Python.
+            env = env.copy()
+            env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
+
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
-                             universal_newlines=True)
+                             universal_newlines=True,
+                             env=env)
         (out, err) = p.communicate()
         self.assertEqual(p.returncode, 0,
                          "bad returncode %d, stderr is %r" %
                          (p.returncode, err))
         return out, err
 
-    def test_subinterps(self):
+    def run_repeated_init_and_subinterpreters(self):
         out, err = self.run_embedded_interpreter("repeated_init_and_subinterpreters")
         self.assertEqual(err, "")
 
@@ -404,94 +411,83 @@ class EmbeddingTests(unittest.TestCase):
                       r"id\(modules\) = ([\d]+)$")
         Interp = namedtuple("Interp", "id interp tstate modules")
 
-        main = None
-        lastmain = None
-        numinner = None
         numloops = 0
+        current_run = []
         for line in out.splitlines():
             if line == "--- Pass {} ---".format(numloops):
-                if numinner is not None:
-                    self.assertEqual(numinner, 5)
+                self.assertEqual(len(current_run), 0)
                 if support.verbose:
                     print(line)
-                lastmain = main
-                main = None
-                mainid = 0
                 numloops += 1
-                numinner = 0
                 continue
-            numinner += 1
 
-            self.assertLessEqual(numinner, 5)
+            self.assertLess(len(current_run), 5)
             match = re.match(interp_pat, line)
             if match is None:
                 self.assertRegex(line, interp_pat)
-
-            # The last line in the loop should be the same as the first.
-            if numinner == 5:
-                self.assertEqual(match.groups(), main)
-                continue
 
             # Parse the line from the loop.  The first line is the main
             # interpreter and the 3 afterward are subinterpreters.
             interp = Interp(*match.groups())
             if support.verbose:
                 print(interp)
-            if numinner == 1:
-                main = interp
-                id = str(mainid)
-            else:
-                subid = mainid + numinner - 1
-                id = str(subid)
-
-            # Validate the loop line for each interpreter.
-            self.assertEqual(interp.id, id)
             self.assertTrue(interp.interp)
             self.assertTrue(interp.tstate)
             self.assertTrue(interp.modules)
-            if platform.system() == 'Windows':
-                # XXX Fix on Windows: something is going on with the
-                # pointers in Programs/_testembed.c.  interp.interp
-                # is 0x0 and # interp.modules is the same between
-                # interpreters.
-                continue
-            if interp is main:
-                if lastmain is not None:
-                    # A new main interpreter may have the same interp
-                    # and/or tstate pointer as an earlier finalized/
-                    # destroyed one.  So we do not check interp or
-                    # tstate here.
-                    self.assertNotEqual(interp.modules, lastmain.modules)
-            else:
+            current_run.append(interp)
+
+            # The last line in the loop should be the same as the first.
+            if len(current_run) == 5:
+                main = current_run[0]
+                self.assertEqual(interp, main)
+                yield current_run
+                current_run = []
+
+    def test_subinterps_main(self):
+        for run in self.run_repeated_init_and_subinterpreters():
+            main = run[0]
+
+            self.assertEqual(main.id, '0')
+
+    def test_subinterps_different_ids(self):
+        for run in self.run_repeated_init_and_subinterpreters():
+            main, *subs, _ = run
+
+            mainid = int(main.id)
+            for i, sub in enumerate(subs):
+                self.assertEqual(sub.id, str(mainid + i + 1))
+
+    def test_subinterps_distinct_state(self):
+        for run in self.run_repeated_init_and_subinterpreters():
+            main, *subs, _ = run
+
+            if '0x0' in main:
+                # XXX Fix on Windows (and other platforms): something
+                # is going on with the pointers in Programs/_testembed.c.
+                # interp.interp is 0x0 and interp.modules is the same
+                # between interpreters.
+                raise unittest.SkipTest('platform prints pointers as 0x0')
+
+            for sub in subs:
                 # A new subinterpreter may have the same
                 # PyInterpreterState pointer as a previous one if
                 # the earlier one has already been destroyed.  So
                 # we compare with the main interpreter.  The same
                 # applies to tstate.
-                self.assertNotEqual(interp.interp, main.interp)
-                self.assertNotEqual(interp.tstate, main.tstate)
-                self.assertNotEqual(interp.modules, main.modules)
-
-    @staticmethod
-    def _get_default_pipe_encoding():
-        rp, wp = os.pipe()
-        try:
-            with os.fdopen(wp, 'w') as w:
-                default_pipe_encoding = w.encoding
-        finally:
-            os.close(rp)
-        return default_pipe_encoding
+                self.assertNotEqual(sub.interp, main.interp)
+                self.assertNotEqual(sub.tstate, main.tstate)
+                self.assertNotEqual(sub.modules, main.modules)
 
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
-        out, err = self.run_embedded_interpreter("forced_io_encoding")
-        if support.verbose:
+        env = {"PYTHONIOENCODING": "utf-8:surrogateescape"}
+        out, err = self.run_embedded_interpreter("forced_io_encoding", env=env)
+        if support.verbose > 1:
             print()
             print(out)
             print(err)
-        expected_errors = sys.__stdout__.errors
-        expected_stdin_encoding = sys.__stdin__.encoding
-        expected_pipe_encoding = self._get_default_pipe_encoding()
+        expected_stream_encoding = "utf-8"
+        expected_errors = "surrogateescape"
         expected_output = '\n'.join([
         "--- Use defaults ---",
         "Expected encoding: default",
@@ -518,8 +514,8 @@ class EmbeddingTests(unittest.TestCase):
         "stdout: latin-1:replace",
         "stderr: latin-1:backslashreplace"])
         expected_output = expected_output.format(
-                                in_encoding=expected_stdin_encoding,
-                                out_encoding=expected_pipe_encoding,
+                                in_encoding=expected_stream_encoding,
+                                out_encoding=expected_stream_encoding,
                                 errors=expected_errors)
         # This is useful if we ever trip over odd platform behaviour
         self.maxDiff = None

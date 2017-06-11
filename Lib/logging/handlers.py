@@ -827,11 +827,26 @@ class SysLogHandler(logging.Handler):
             self.unixsocket = False
             if socktype is None:
                 socktype = socket.SOCK_DGRAM
-            self.socket = socket.socket(socket.AF_INET, socktype)
-            if socktype == socket.SOCK_STREAM:
-                self.socket.connect(address)
+            host, port = address
+            ress = socket.getaddrinfo(host, port, 0, socktype)
+            if not ress:
+                raise OSError("getaddrinfo returns an empty list")
+            for res in ress:
+                af, socktype, proto, _, sa = res
+                err = sock = None
+                try:
+                    sock = socket.socket(af, socktype, proto)
+                    if socktype == socket.SOCK_STREAM:
+                        sock.connect(sa)
+                    break
+                except OSError as exc:
+                    err = exc
+                    if sock is not None:
+                        sock.close()
+            if err is not None:
+                raise err
+            self.socket = sock
             self.socktype = socktype
-        self.formatter = None
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
@@ -870,7 +885,7 @@ class SysLogHandler(logging.Handler):
             priority = self.priority_names[priority]
         return (facility << 3) | priority
 
-    def close (self):
+    def close(self):
         """
         Closes the socket.
         """

@@ -23,6 +23,28 @@ typedef struct _is PyInterpreterState;
 #else
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
+
+typedef struct {
+    int ignore_environment;
+    int use_hash_seed;
+    unsigned long hash_seed;
+    int _disable_importlib; /* Needed by freeze_importlib */
+} _PyCoreConfig;
+
+#define _PyCoreConfig_INIT {0, -1, 0, 0}
+
+/* Placeholders while working on the new configuration API
+ *
+ * See PEP 432 for final anticipated contents
+ *
+ * For the moment, just handle the args to _Py_InitializeEx
+ */
+typedef struct {
+    int install_signal_handlers;
+} _PyMainInterpreterConfig;
+
+#define _PyMainInterpreterConfig_INIT {-1}
+
 typedef struct _is {
 
     struct _is *next;
@@ -42,6 +64,8 @@ typedef struct _is {
     int codecs_initialized;
     int fscodec_initialized;
 
+    _PyCoreConfig core_config;
+    _PyMainInterpreterConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
@@ -50,6 +74,11 @@ typedef struct _is {
     PyObject *import_func;
     /* Initialized to PyEval_EvalFrameDefault(). */
     _PyFrameEvalFunction eval_frame;
+#ifdef HAVE_FORK
+    PyObject *before_forkers;
+    PyObject *after_forkers_parent;
+    PyObject *after_forkers_child;
+#endif
 } PyInterpreterState;
 #endif
 

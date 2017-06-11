@@ -429,7 +429,7 @@ filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it;
     filterobject *lz;
 
-    if (type == &PyFilter_Type && !_PyArg_NoKeywords("filter()", kwds))
+    if (type == &PyFilter_Type && !_PyArg_NoKeywords("filter", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "filter", 2, 2, &func, &seq))
@@ -578,12 +578,14 @@ format as builtin_format
 
 Return value.__format__(format_spec)
 
-format_spec defaults to the empty string
+format_spec defaults to the empty string.
+See the Format Specification Mini-Language section of help('FORMATTING') for
+details.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec)
-/*[clinic end generated code: output=2f40bdfa4954b077 input=6325e751a1b29b86]*/
+/*[clinic end generated code: output=2f40bdfa4954b077 input=88339c93ea522b33]*/
 {
     return PyObject_Format(value, format_spec);
 }
@@ -1123,7 +1125,7 @@ map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     mapobject *lz;
     Py_ssize_t numargs, i;
 
-    if (type == &PyMap_Type && !_PyArg_NoKeywords("map()", kwds))
+    if (type == &PyMap_Type && !_PyArg_NoKeywords("map", kwds))
         return NULL;
 
     numargs = PyTuple_Size(args);
@@ -2444,7 +2446,7 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *result;
     Py_ssize_t tuplesize;
 
-    if (type == &PyZip_Type && !_PyArg_NoKeywords("zip()", kwds))
+    if (type == &PyZip_Type && !_PyArg_NoKeywords("zip", kwds))
         return NULL;
 
     /* args must be a tuple */

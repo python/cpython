@@ -74,7 +74,7 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     rangeobject *obj;
     PyObject *start = NULL, *stop = NULL, *step = NULL;
 
-    if (!_PyArg_NoKeywords("range()", kw))
+    if (!_PyArg_NoKeywords("range", kw))
         return NULL;
 
     if (PyTuple_Size(args) <= 1) {

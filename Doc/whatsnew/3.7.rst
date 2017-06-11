@@ -70,6 +70,51 @@ Summary -- Release highlights
 New Features
 ============
 
+.. _whatsnew37-pep538:
+
+PEP 538: Legacy C Locale Coercion
+---------------------------------
+
+An ongoing challenge within the Python 3 series has been determining a sensible
+default strategy for handling the "7-bit ASCII" text encoding assumption
+currently implied by the use of the default C locale on non-Windows platforms.
+
+:pep:`538` updates the default interpreter command line interface to
+automatically coerce that locale to an available UTF-8 based locale as
+described in the documentation of the new :envvar:`PYTHONCOERCECLOCALE`
+environment variable. Automatically setting ``LC_CTYPE`` this way means that
+both the core interpreter and locale-aware C extensions (such as
+:mod:`readline`) will assume the use of UTF-8 as the default text encoding,
+rather than ASCII.
+
+The platform support definition in :pep:`11` has also been updated to limit
+full text handling support to suitably configured non-ASCII based locales.
+
+As part of this change, the default error handler for ``stdin`` and ``stdout``
+is now ``surrogateescape`` (rather than ``strict``) when using any of the
+defined coercion target locales (currently ``C.UTF-8``, ``C.utf8``, and
+``UTF-8``). The default error handler for ``stderr`` continues to be
+``backslashreplace``, regardless of locale.
+
+.. note::
+
+   In the current implementation, a warning message is printed directly to
+   ``stderr`` even for successful implicit locale coercion. This gives
+   redistributors and system integrators the opportunity to determine if they
+   should be making an environmental change to avoid the need for implicit
+   coercion at the Python interpreter level.
+
+   However, it's not clear that this is going to be the best approach for
+   the final 3.7.0 release, and we may end up deciding to disable the warning
+   by default and provide some way of opting into it at runtime or build time.
+
+   Concrete examples of use cases where it would be preferrable to disable the
+   warning by default can be noted on :issue:`30565`.
+
+.. seealso::
+
+    :pep:`538` -- Coercing the legacy C locale to a UTF-8 based locale
+       PEP written and implemented by Nick Coghlan.
 
 
 Other Language Changes
@@ -103,13 +148,6 @@ New Modules
 Improved Modules
 ================
 
-cgi
----
-
-:func:`~cgi.parse_multipart` returns the same results as
-:class:`~FieldStorage` : for non-file fields, the value associated to a key
-is a list of strings, not bytes.
-(Contributed by Pierre Quentel in :issue:`29979`.)
 
 binascii
 --------
@@ -117,6 +155,22 @@ binascii
 The :func:`~binascii.b2a_uu` function now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+
+calendar
+--------
+
+The :class:`~calendar.HTMLCalendar` has added new class attribute which ease the
+customisation the CSS classes in the produced HTML calendar.
+(Contributed by Oz Tiram in :issue:`30095`.)
+
+cgi
+---
+
+:func:`~cgi.parse_multipart` returns the same results as
+:class:`~FieldStorage` : for non-file fields, the value associated to a key
+is a list of strings, not bytes.
+(Contributed by Pierre Quentel in :issue:`29979`.)
 
 contextlib
 ----------
@@ -139,6 +193,11 @@ If-Modified-Since header. The server returns the 304 response status if the
 target file was not modified after the time specified in the header.
 (Contributed by Pierre Quentel in :issue:`29654`.)
 
+Add the parameter ``directory`` to the :class:`~http.server.SimpleHTTPRequestHandler`
+and the ``--directory`` to the command line of the module :mod:`~http.server`.
+With this parameter, the server serves the specified directory, by default it uses the current working directory.
+(Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
+
 locale
 ------
 
@@ -160,6 +219,10 @@ Serhiy Storchaka in :issue:`28682`.)
 
 Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
 on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
+
+New function :func:`os.register_at_fork` allows registering Python callbacks
+to be executed on a process fork.  (Contributed by Antoine Pitrou in
+:issue:`16500`.)
 
 unittest.mock
 -------------
@@ -216,6 +279,9 @@ Optimizations
   expressions <re>`.  Searching some patterns can now be up to 20 times faster.
   (Contributed by Serhiy Storchaka in :issue:`30285`.)
 
+* :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
+  and :meth:`selectors.DevpollSelector.modify` may be around 10% faster under
+  heavy loads. (Contributed by Giampaolo Rodola' in :issue:`30014`)
 
 Build and C API Changes
 =======================
@@ -237,6 +303,11 @@ Build and C API Changes
 
 * Added functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`.
   (Contributed by Serhiy Storchaka in :issue:`27867`.)
+
+* :c:func:`PyOS_AfterFork` is deprecated in favour of the new functions
+  :c:func:`PyOS_BeforeFork`, :c:func:`PyOS_AfterFork_Parent` and
+  :c:func:`PyOS_AfterFork_Child`.  (Contributed by Antoine Pitrou in
+  :issue:`16500`.)
 
 
 Deprecated

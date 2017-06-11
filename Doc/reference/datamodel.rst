@@ -510,6 +510,9 @@ Callable types
       | :attr:`__closure__`     | ``None`` or a tuple of cells  | Read-only |
       |                         | that contain bindings for the |           |
       |                         | function's free variables.    |           |
+      |                         | See below for information on  |           |
+      |                         | the ``cell_contents``         |           |
+      |                         | attribute.                    |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__annotations__` | A dict containing annotations | Writable  |
       |                         | of parameters.  The keys of   |           |
@@ -529,6 +532,9 @@ Callable types
       dot-notation is used to get and set such attributes. *Note that the current
       implementation only supports function attributes on user-defined functions.
       Function attributes on built-in functions may be supported in the future.*
+
+      A cell object has the attribute ``cell_contents``. This can be used to get
+      the value of the cell, as well as set the value.
 
       Additional information about a function's definition can be retrieved from its
       code object; see the description of internal types below.
@@ -1614,15 +1620,11 @@ instances cannot override the behavior of a property.
 __slots__
 ^^^^^^^^^
 
-By default, instances of classes have a dictionary for attribute storage.  This
-wastes space for objects having very few instance variables.  The space
-consumption can become acute when creating large numbers of instances.
+*__slots__* allow us to explicitly declare data members (like
+properties) and deny the creation of *__dict__* and *__weakref__*
+(unless explicitly declared in *__slots__* or available in a parent.)
 
-The default can be overridden by defining *__slots__* in a class definition.
-The *__slots__* declaration takes a sequence of instance variables and reserves
-just enough space in each instance to hold a value for each variable.  Space is
-saved because *__dict__* is not created for each instance.
-
+The space saved over using *__dict__* can be significant.
 
 .. data:: object.__slots__
 
@@ -1635,9 +1637,8 @@ saved because *__dict__* is not created for each instance.
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 
-* When inheriting from a class without *__slots__*, the *__dict__* attribute of
-  that class will always be accessible, so a *__slots__* definition in the
-  subclass is meaningless.
+* When inheriting from a class without *__slots__*, the *__dict__* and
+  *__weakref__* attribute of the instances will always be accessible.
 
 * Without a *__dict__* variable, instances cannot be assigned new variables not
   listed in the *__slots__* definition.  Attempts to assign to an unlisted
@@ -1656,9 +1657,11 @@ Notes on using *__slots__*
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
-* The action of a *__slots__* declaration is limited to the class where it is
-  defined.  As a result, subclasses will have a *__dict__* unless they also define
-  *__slots__* (which must only contain names of any *additional* slots).
+* The action of a *__slots__* declaration is not limited to the class
+  where it is defined.  *__slots__* declared in parents are available in
+  child classes. However, child subclasses will get a *__dict__*  and
+  *__weakref__* unless they also define *__slots__* (which should only
+  contain names of any *additional* slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
@@ -1674,6 +1677,10 @@ Notes on using *__slots__*
 
 * *__class__* assignment works only if both classes have the same *__slots__*.
 
+* Multiple inheritance with multiple slotted parent classes can be used,
+  but only one parent is allowed to have attributes created by slots
+  (the other bases must have empty slot layouts) - violations raise
+  :exc:`TypeError`.
 
 .. _class-customization:
 

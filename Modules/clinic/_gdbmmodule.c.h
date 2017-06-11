@@ -21,13 +21,13 @@ _gdbm_gdbm_get(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "get",
-        1, 2,
-        &key, &default_value)) {
+    if (!_PyArg_NoStackKeywords("get", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("get", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "get",
+        1, 2,
+        &key, &default_value)) {
         goto exit;
     }
     return_value = _gdbm_gdbm_get_impl(self, key, default_value);
@@ -56,13 +56,13 @@ _gdbm_gdbm_setdefault(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObje
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setdefault",
-        1, 2,
-        &key, &default_value)) {
+    if (!_PyArg_NoStackKeywords("setdefault", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("setdefault", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "setdefault",
+        1, 2,
+        &key, &default_value)) {
         goto exit;
     }
     return_value = _gdbm_gdbm_setdefault_impl(self, key, default_value);
@@ -252,12 +252,12 @@ dbmopen(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     const char *flags = "r";
     int mode = 438;
 
-    if (!_PyArg_ParseStack(args, nargs, "s|si:open",
-        &name, &flags, &mode)) {
+    if (!_PyArg_NoStackKeywords("open", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("open", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "s|si:open",
+        &name, &flags, &mode)) {
         goto exit;
     }
     return_value = dbmopen_impl(module, name, flags, mode);
@@ -265,4 +265,4 @@ dbmopen(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=03a3a63a814ada93 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=94c5713a85dab560 input=a9049054013a1b77]*/
