@@ -6,8 +6,6 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
-from . import compat
-from . import futures
 from . import protocols
 from . import transports
 from .log import logger
@@ -409,7 +407,7 @@ class SSLProtocol(protocols.Protocol):
 
     def __init__(self, loop, app_protocol, sslcontext, waiter,
                  server_side=False, server_hostname=None,
-                 call_connection_made=True, shutdown_timeout=5.0):
+                 call_connection_made=True):
         if ssl is None:
             raise RuntimeError('stdlib ssl module not available')
 
@@ -440,8 +438,6 @@ class SSLProtocol(protocols.Protocol):
         self._session_established = False
         self._in_handshake = False
         self._in_shutdown = False
-        self._shutdown_timeout = shutdown_timeout
-        self._shutdown_timeout_handle = None
         # transport, ex: SelectorSocketTransport
         self._transport = None
         self._call_connection_made = call_connection_made
@@ -555,15 +551,6 @@ class SSLProtocol(protocols.Protocol):
         else:
             self._in_shutdown = True
             self._write_appdata(b'')
-
-        if self._shutdown_timeout is not None:
-            self._shutdown_timeout_handle = self._loop.call_later(
-                self._shutdown_timeout, self._on_shutdown_timeout)
-
-    def _on_shutdown_timeout(self):
-        if self._transport is not None:
-            self._fatal_error(
-                futures.TimeoutError(), 'Can not complete shitdown operation')
 
     def _write_appdata(self, data):
         self._write_backlog.append((data, 0))
@@ -692,22 +679,12 @@ class SSLProtocol(protocols.Protocol):
             })
         if self._transport:
             self._transport._force_close(exc)
-            self._transport = None
-
-        if self._shutdown_timeout_handle is not None:
-            self._shutdown_timeout_handle.cancel()
-            self._shutdown_timeout_handle = None
 
     def _finalize(self):
         self._sslpipe = None
 
         if self._transport is not None:
             self._transport.close()
-            self._transport = None
-
-        if self._shutdown_timeout_handle is not None:
-            self._shutdown_timeout_handle.cancel()
-            self._shutdown_timeout_handle = None
 
     def _abort(self):
         try:
