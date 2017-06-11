@@ -41,7 +41,7 @@ pysqlite_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     assert(type != NULL && type->tp_alloc != NULL);
 
-    if (!_PyArg_NoKeywords("Row()", kwargs))
+    if (!_PyArg_NoKeywords("Row", kwargs))
         return NULL;
     if (!PyArg_ParseTuple(args, "OO", &cursor, &data))
         return NULL;

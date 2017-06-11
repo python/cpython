@@ -4274,49 +4274,32 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
                      struct compiling *c, const node *n)
 
 {
-    int all_whitespace = 1;
-    int kind;
-    void *data;
     PyCompilerFlags cf;
     mod_ty mod;
     char *str;
-    PyObject *o;
     Py_ssize_t len;
-    Py_ssize_t i;
+    const char *s;
 
     assert(expr_end >= expr_start);
     assert(*(expr_start-1) == '{');
     assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
 
-    /* We know there are no escapes here, because backslashes are not allowed,
-       and we know it's utf-8 encoded (per PEP 263).  But, in order to check
-       that each char is not whitespace, we need to decode it to unicode.
-       Which is unfortunate, but such is life. */
-
     /* If the substring is all whitespace, it's an error.  We need to catch
        this here, and not when we call PyParser_ASTFromString, because turning
        the expression '' in to '()' would go from being invalid to valid. */
-    /* Note that this code says an empty string is all whitespace.  That's
-       important.  There's a test for it: f'{}'. */
-    o = PyUnicode_DecodeUTF8(expr_start, expr_end-expr_start, NULL);
-    if (o == NULL)
-        return NULL;
-    len = PyUnicode_GET_LENGTH(o);
-    kind = PyUnicode_KIND(o);
-    data = PyUnicode_DATA(o);
-    for (i = 0; i < len; i++) {
-        if (!Py_UNICODE_ISSPACE(PyUnicode_READ(kind, data, i))) {
-            all_whitespace = 0;
+    for (s = expr_start; s != expr_end; s++) {
+        char c = *s;
+        /* The Python parser ignores only the following whitespace
+           characters (\r already is converted to \n). */
+        if (!(c == ' ' || c == '\t' || c == '\n' || c == '\f')) {
             break;
         }
     }
-    Py_DECREF(o);
-    if (all_whitespace) {
+    if (s == expr_end) {
         ast_error(c, n, "f-string: empty expression not allowed");
         return NULL;
     }
 
-    /* Reuse len to be the length of the utf-8 input string. */
     len = expr_end - expr_start;
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
     str = PyMem_RawMalloc(len + 3);

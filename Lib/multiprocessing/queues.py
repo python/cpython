@@ -101,7 +101,7 @@ class Queue(object):
             try:
                 if block:
                     timeout = deadline - time.time()
-                    if timeout < 0 or not self._poll(timeout):
+                    if not self._poll(timeout):
                         raise Empty
                 elif not self._poll():
                     raise Empty
