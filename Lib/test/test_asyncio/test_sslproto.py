@@ -96,40 +96,6 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
 
-    def test_close_abort(self):
-        # From issue #bpo-29406
-        # abort connection if server does not complete shutdown procedure
-        ssl_proto = self.ssl_protocol()
-        transport = self.connection_made(ssl_proto)
-        ssl_proto._on_handshake_complete(None)
-        ssl_proto._start_shutdown()
-        self.assertIsNotNone(ssl_proto._shutdown_timeout_handle)
-
-        exc_handler = mock.Mock()
-        self.loop.set_exception_handler(exc_handler)
-        ssl_proto._shutdown_timeout_handle._run()
-
-        exc_handler.assert_called_with(
-            self.loop, {'message': 'Can not complete shitdown operation',
-                        'exception': mock.ANY,
-                        'transport': transport,
-                        'protocol': ssl_proto}
-        )
-        self.assertIsNone(ssl_proto._shutdown_timeout_handle)
-
-    def test_close(self):
-        # From issue #bpo-29406
-        # abort connection if server does not complete shutdown procedure
-        ssl_proto = self.ssl_protocol()
-        transport = self.connection_made(ssl_proto)
-        ssl_proto._on_handshake_complete(None)
-        ssl_proto._start_shutdown()
-        self.assertIsNotNone(ssl_proto._shutdown_timeout_handle)
-
-        ssl_proto._finalize()
-        self.assertIsNone(ssl_proto._transport)
-        self.assertIsNone(ssl_proto._shutdown_timeout_handle)
-
     def test_close_during_handshake(self):
         # bpo-29743 Closing transport during handshake process leaks socket
         waiter = asyncio.Future(loop=self.loop)
