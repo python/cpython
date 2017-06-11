@@ -2112,8 +2112,8 @@ provided.
    When compared to :class:`SSLSocket`, this object lacks the following
    features:
 
-   - Any form of network IO incluging methods such as ``recv()`` and
-     ``send()``.
+   - Any form of network IO including; ``recv()`` and ``send()`` read and write
+     only to the underlying :class:`MemoryBIO` buffers.
 
    - There is no *do_handshake_on_connect* machinery. You must always manually
      call :meth:`~SSLSocket.do_handshake` to start the handshake.
