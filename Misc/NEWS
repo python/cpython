@@ -14,6 +14,20 @@ Core and Builtins
   expressions in the "if", "while" and "assert" statement, the "if" expression,
   and generator expressions and comprehensions.
 
+- bpo-28180: Implement PEP 538 (legacy C locale coercion). This means that when
+  a suitable coercion target locale is available, both the core interpreter and
+  locale-aware C extensions will assume the use of UTF-8 as the default text
+  encoding, rather than ASCII.
+
+- bpo-30486: Allows setting cell values for __closure__. Patch by Lisa Roach.
+
+- bpo-30537: itertools.islice now accepts integer-like objects (having
+  an __index__ method) as start, stop, and slice arguments
+
+- bpo-25324: Tokens needed for parsing in Python moved to C. ``COMMENT``,
+  ``NL`` and ``ENCODING``. This way the tokens and tok_names in the token
+  module don't get changed when you import the tokenize module.
+
 - bpo-29104: Fixed parsing backslashes in f-strings.
 
 - bpo-27945: Fixed various segfaults with dict when input collections are
@@ -345,6 +359,57 @@ Extension Modules
 Library
 -------
 
+- bpo-30624: selectors does not take KeyboardInterrupt and SystemExit into
+  account, leaving a fd in a bad state in case of error. Patch by Giampaolo
+  Rodola'.
+
+- bpo-30595: multiprocessing.Queue.get() with a timeout now polls its reader in
+  non-blocking mode if it succeeded to aquire the lock but the acquire took
+  longer than the timeout.
+
+- bpo-28556: Updates to typing module: Add generic AsyncContextManager, add
+  support for ContextManager on all versions. Original PRs by Jelle Zijlstra
+  and Ivan Levkivskyi
+
+- bpo-30605: re.compile() no longer raises a BytesWarning when compiling a
+  bytes instance with misplaced inline modifier.  Patch by Roy Williams.
+
+- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl
+  implementation. Patch by Michaël Sghaïer.
+
+- bpo-29743: Closing transport during handshake process leaks open socket.
+  Patch by Nikolay Kim
+
+- bpo-29406: asyncio SSL contexts leak sockets after calling close with
+  certain servers.
+  Patch by Nikolay Kim
+
+- bpo-27585: Fix waiter cancellation in asyncio.Lock.
+  Patch by Mathieu Sornay.
+
+- bpo-30014: modify() method of poll(), epoll() and devpoll() based classes of
+  selectors module is around 10% faster.  Patch by Giampaolo Rodola'.
+
+- bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
+  on stdin.write() if the child process is still running but closed the pipe.
+
+- bpo-30463: Addded empty __slots__ to abc.ABC.  This allows subclassers
+  to deny __dict__ and __weakref__ creation.  Patch by Aaron Hall.
+
+- bpo-30520: Loggers are now pickleable.
+
+- bpo-30557: faulthandler now correctly filters and displays exception codes
+  on Windows
+
+- bpo-30526: Add TextIOWrapper.reconfigure() and a TextIOWrapper.write_through
+  attribute.
+
+- bpo-30245: Fix possible overflow when organize struct.pack_into
+  error message.  Patch by Yuan Liu.
+
+- bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
+  handle IPv6 addresses.
+
 - bpo-16500: Allow registering at-fork handlers.
 
 - bpo-30470: Deprecate invalid ctypes call protection on Windows.  Patch by
@@ -384,6 +449,10 @@ Library
 
 - bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
   running coroutine and the coroutine returned without any more ``await``.
+
+- bpo-30266: contextlib.AbstractContextManager now supports anti-registration
+  by setting __enter__ = None or __exit__ = None, following the pattern
+  introduced in bpo-25958. Patch by Jelle Zijlstra.
 
 - bpo-30340: Enhanced regular expressions optimization. This increased
   the performance of matching some patterns up to 25 times.
@@ -1018,6 +1087,22 @@ Library
   sys.getrecursionlimit() times, to protect against objects which create a new
   object on every attribute access.
 
+IDLE
+----
+
+- bpo-30290: Help-about: use pep8 names and add tests.
+  Increase coverage to 100%.
+  Patches by Louie Lu, Cheryl Sabella, and Terry Jan Reedy.
+
+- bpo-30303: Add _utest option to textview; add new tests.
+  Increase coverage to 100%.
+  Patches by Louie Lu and Terry Jan Reedy.
+
+- Issue #29071: IDLE colors f-string prefixes (but not invalid ur prefixes).
+
+- Issue #28572: Add 10% to coverage of IDLE's test_configdialog.
+  Update and augment description of the configuration system.
+
 Windows
 -------
 
@@ -1102,6 +1187,15 @@ C API
 
 Documentation
 -------------
+
+- Issue #30052: the link targets for :func:`bytes` and
+  :func:`bytearray` are now their respective type definitions, rather
+  than the corresponding builtin function entries. Use :ref:`bytes <func-bytes>`
+  and :ref:`bytearray <func-bytearray>` to reference the latter.
+
+  In order to ensure this and future cross-reference updates are applied
+  automatically, the daily documentation builds now disable the default
+  output caching features in Sphinx.
 
 - bpo-26985: Add missing info of code object in inspect documentation.
 

@@ -283,12 +283,12 @@ binascii_crc_hqx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     unsigned int crc;
     unsigned int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*I:crc_hqx",
-        &data, &crc)) {
+    if (!_PyArg_NoStackKeywords("crc_hqx", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("crc_hqx", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*I:crc_hqx",
+        &data, &crc)) {
         goto exit;
     }
     _return_value = binascii_crc_hqx_impl(module, &data, crc);
@@ -326,12 +326,12 @@ binascii_crc32(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     unsigned int crc = 0;
     unsigned int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|I:crc32",
-        &data, &crc)) {
+    if (!_PyArg_NoStackKeywords("crc32", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("crc32", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*|I:crc32",
+        &data, &crc)) {
         goto exit;
     }
     _return_value = binascii_crc32_impl(module, &data, crc);
@@ -562,4 +562,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9db57e86dbe7b2fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=490f08a964e97390 input=a9049054013a1b77]*/

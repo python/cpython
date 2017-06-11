@@ -1704,13 +1704,21 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 break;
             }
             if (max < nargs) {
-                PyErr_Format(PyExc_TypeError,
-                             "%.200s%s takes %s %d positional arguments"
-                             " (%d given)",
-                             (fname == NULL) ? "function" : fname,
-                             (fname == NULL) ? "" : "()",
-                             (min != INT_MAX) ? "at most" : "exactly",
-                             max, nargs);
+                if (max == 0) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "%.200s%s takes no positional arguments",
+                                 (fname == NULL) ? "function" : fname,
+                                 (fname == NULL) ? "" : "()");
+                }
+                else {
+                    PyErr_Format(PyExc_TypeError,
+                                 "%.200s%s takes %s %d positional arguments"
+                                 " (%d given)",
+                                 (fname == NULL) ? "function" : fname,
+                                 (fname == NULL) ? "" : "()",
+                                 (min != INT_MAX) ? "at most" : "exactly",
+                                 max, nargs);
+                }
                 return cleanreturn(0, &freelist);
             }
         }
@@ -2079,12 +2087,20 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
         return cleanreturn(0, &freelist);
     }
     if (parser->max < nargs) {
-        PyErr_Format(PyExc_TypeError,
-                     "%200s%s takes %s %d positional arguments (%d given)",
-                     (parser->fname == NULL) ? "function" : parser->fname,
-                     (parser->fname == NULL) ? "" : "()",
-                     (parser->min != INT_MAX) ? "at most" : "exactly",
-                     parser->max, nargs);
+        if (parser->max == 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s%s takes no positional arguments",
+                         (parser->fname == NULL) ? "function" : parser->fname,
+                         (parser->fname == NULL) ? "" : "()");
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s%s takes %s %d positional arguments (%d given)",
+                         (parser->fname == NULL) ? "function" : parser->fname,
+                         (parser->fname == NULL) ? "" : "()",
+                         (parser->min != INT_MAX) ? "at most" : "exactly",
+                         parser->max, nargs);
+        }
         return cleanreturn(0, &freelist);
     }
 
@@ -2489,7 +2505,7 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kwargs)
         return 1;
     }
 
-    PyErr_Format(PyExc_TypeError, "%.200s does not take keyword arguments",
+    PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
                     funcname);
     return 0;
 }
@@ -2506,7 +2522,7 @@ _PyArg_NoStackKeywords(const char *funcname, PyObject *kwnames)
         return 1;
     }
 
-    PyErr_Format(PyExc_TypeError, "%.200s does not take keyword arguments",
+    PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
                     funcname);
     return 0;
 }
@@ -2524,7 +2540,7 @@ _PyArg_NoPositional(const char *funcname, PyObject *args)
     if (PyTuple_GET_SIZE(args) == 0)
         return 1;
 
-    PyErr_Format(PyExc_TypeError, "%.200s does not take positional arguments",
+    PyErr_Format(PyExc_TypeError, "%.200s() takes no positional arguments",
                     funcname);
     return 0;
 }
