@@ -410,7 +410,7 @@ if hasattr(select, 'epoll'):
                 epoll_events |= select.EPOLLOUT
             try:
                 self._epoll.register(key.fd, epoll_events)
-            except BaseException:
+            except:
                 super().unregister(fileobj)
                 raise
             return key
@@ -543,7 +543,7 @@ if hasattr(select, 'kqueue'):
                     kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
                                         select.KQ_EV_ADD)
                     self._kqueue.control([kev], 0, 0)
-            except BaseException:
+            except:
                 super().unregister(fileobj)
                 raise
             return key

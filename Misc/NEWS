@@ -49,6 +49,10 @@ Core and Builtins
 Library
 -------
 
+- bpo-30624: selectors does not take KeyboardInterrupt and SystemExit into
+  account, leaving a fd in a bad state in case of error. Patch by Giampaolo
+  Rodola'.
+
 - bpo-28556: Updates to typing module: Add generic AsyncContextManager, add
   support for ContextManager on all versions. Original PRs by Jelle Zijlstra
   and Ivan Levkivskyi
