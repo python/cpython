@@ -5,7 +5,6 @@ Coverage: 56%
 from idlelib import tree
 from test.support import requires
 requires('gui')
-import os
 import unittest
 from tkinter import Tk
 
