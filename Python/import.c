@@ -1784,9 +1784,13 @@ PyImport_Import(PyObject *module_name)
     Py_DECREF(r);
 
     modules = PyImport_GetModuleDict();
-    r = PyDict_GetItem(modules, module_name);
-    if (r != NULL)
+    r = PyDict_GetItemWithError(modules, module_name);
+    if (r != NULL) {
         Py_INCREF(r);
+    }
+    else if (!PyErr_Occurred()) {
+        PyErr_SetObject(PyExc_KeyError, module_name);
+    }
 
   err:
     Py_XDECREF(globals);
