@@ -213,13 +213,13 @@ _pickle_Unpickler_find_class(UnpicklerObject *self, PyObject **args, Py_ssize_t 
     PyObject *module_name;
     PyObject *global_name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "find_class",
-        2, 2,
-        &module_name, &global_name)) {
+    if (!_PyArg_NoStackKeywords("find_class", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("find_class", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "find_class",
+        2, 2,
+        &module_name, &global_name)) {
         goto exit;
     }
     return_value = _pickle_Unpickler_find_class_impl(self, module_name, global_name);
@@ -564,4 +564,4 @@ _pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b921d325b2f7a096 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=639dd0eb8de16c3c input=a9049054013a1b77]*/
