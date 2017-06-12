@@ -1853,6 +1853,15 @@ Build and C API Changes
 * The :c:func:`PyUnicode_FSConverter` and :c:func:`PyUnicode_FSDecoder`
   functions will now accept :term:`path-like objects <path-like object>`.
 
+.. versionchanged:: 3.6.2
+   The UNIX build system using Makefile does not recompile generated files
+   based on file modification time anymore. The new ``make regen-all`` command
+   can be called explicitly to force a recompilation of all generated files. As
+   a consequence, by default, compililing Python doesn't need Python anymore.
+   The ``make touch`` command (to fix file modification time) was also removed
+   since it becomes useless.  (Contributed by Victor Stinner in
+   :issue:`23404`.)
+
 
 Other Improvements
 ==================
