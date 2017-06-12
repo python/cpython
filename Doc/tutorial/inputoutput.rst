@@ -390,6 +390,7 @@ sent over a network connection to some distant machine.
 If you have an object ``x``, you can view its JSON string representation with a
 simple line of code::
 
+   >>> import json
    >>> json.dumps([1, 'simple', 'list'])
    '[1, "simple", "list"]'
 
