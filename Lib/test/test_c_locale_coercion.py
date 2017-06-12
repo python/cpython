@@ -155,18 +155,12 @@ class _LocaleCoercionTargetsTestCase(_ChildProcessEncodingTestCase):
             return
         cls.available_targets = []
 
-        first_target_locale = None
         # Find the target locales available in the current system
         for target_locale in _C_UTF8_LOCALES:
             if _set_locale_in_subprocess(target_locale):
                 cls.available_targets.append(target_locale)
-                if first_target_locale is None:
-                    first_target_locale = target_locale
         if not cls.available_targets:
             raise unittest.SkipTest("No C-with-UTF-8 locale available")
-        # Expect coercion to use the first available locale
-        warning_msg = CLI_COERCION_WARNING_FMT.format(first_target_locale)
-        cls.EXPECTED_COERCION_WARNING = warning_msg
 
 
 class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
@@ -218,7 +212,9 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
 
         expected_warning = []
         if coerce_c_locale != "0":
-            expected_warning.append(self.EXPECTED_COERCION_WARNING)
+            # Expect coercion to use the first available locale
+            warning_msg = CLI_COERCION_WARNING_FMT.format(self.available_targets[0])
+            expected_warning.append(warning_msg)
 
         base_var_dict = {
             "LANG": "",
