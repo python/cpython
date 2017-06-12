@@ -1277,7 +1277,7 @@ AC_SUBST(DEF_MAKE_ALL_RULE)
 AC_SUBST(DEF_MAKE_RULE)
 Py_OPT='false'
 AC_MSG_CHECKING(for --enable-optimizations)
-AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive optimizations (PGO, etc).  Disabled by default.]),
+AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive, stable optimizations (PGO, etc).  Disabled by default.]),
 [
 if test "$enableval" != no
 then
@@ -3324,6 +3324,40 @@ then
     ABIFLAGS="${ABIFLAGS}m"
 fi
 AC_MSG_RESULT($with_pymalloc)
+
+# Check for --with-c-locale-coercion
+AC_MSG_CHECKING(for --with-c-locale-coercion)
+AC_ARG_WITH(c-locale-coercion,
+            AS_HELP_STRING([--with(out)-c-locale-coercion],
+              [disable/enable C locale coercion to a UTF-8 based locale]))
+
+if test -z "$with_c_locale_coercion"
+then
+    with_c_locale_coercion="yes"
+fi
+if test "$with_c_locale_coercion" != "no"
+then
+    AC_DEFINE(PY_COERCE_C_LOCALE, 1,
+      [Define if you want to coerce the C locale to a UTF-8 based locale])
+fi
+AC_MSG_RESULT($with_c_locale_coercion)
+
+# Check for --with-c-locale-warning
+AC_MSG_CHECKING(for --with-c-locale-warning)
+AC_ARG_WITH(c-locale-warning,
+            AS_HELP_STRING([--with(out)-c-locale-warning],
+              [disable/enable locale compatibility warning in the C locale]))
+
+if test -z "$with_c_locale_warning"
+then
+    with_c_locale_warning="yes"
+fi
+if test "$with_c_locale_warning" != "no"
+then
+    AC_DEFINE(PY_WARN_ON_C_LOCALE, 1,
+      [Define to emit a locale compatibility warning in the C locale])
+fi
+AC_MSG_RESULT($with_c_locale_warning)
 
 # Check for Valgrind support
 AC_MSG_CHECKING([for --with-valgrind])
@@ -5469,7 +5503,7 @@ mv config.c Modules
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
-    echo "If you want a release build with all optimizations active (LTO, PGO, etc)," >&AS_MESSAGE_FD
+    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&AS_MESSAGE_FD
     echo "please run ./configure --enable-optimizations" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD

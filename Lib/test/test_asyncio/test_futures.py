@@ -319,6 +319,14 @@ class BaseFutureTests:
         self.assertFalse(m_log.error.called)
 
     @mock.patch('asyncio.base_events.logger')
+    def test_tb_logger_not_called_after_cancel(self, m_log):
+        fut = self._new_future(loop=self.loop)
+        fut.set_exception(Exception())
+        fut.cancel()
+        del fut
+        self.assertFalse(m_log.error.called)
+
+    @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_result_unretrieved(self, m_log):
         fut = self._new_future(loop=self.loop)
         fut.set_result(42)

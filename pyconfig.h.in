@@ -1247,8 +1247,14 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
+/* Define if you want to coerce the C locale to a UTF-8 based locale */
+#undef PY_COERCE_C_LOCALE
+
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
+
+/* Define to emit a locale compatibility warning in the C locale */
+#undef PY_WARN_ON_C_LOCALE
 
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG

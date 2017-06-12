@@ -1243,6 +1243,19 @@ class TestBasicOps(unittest.TestCase):
         support.gc_collect()
         self.assertIsNone(wr())
 
+        # Issue #30537: islice can accept integer-like objects as
+        # arguments
+        class IntLike(object):
+            def __init__(self, val):
+                self.val = val
+            def __index__(self):
+                return self.val
+        self.assertEqual(list(islice(range(100), IntLike(10))), list(range(10)))
+        self.assertEqual(list(islice(range(100), IntLike(10), IntLike(50))),
+                         list(range(10, 50)))
+        self.assertEqual(list(islice(range(100), IntLike(10), IntLike(50), IntLike(5))),
+                         list(range(10,50,5)))
+
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
         self.assertEqual(list(takewhile(underten, data)), [1, 3, 5])
