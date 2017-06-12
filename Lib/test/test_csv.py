@@ -967,6 +967,18 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
         self.assertEqual(sniffer.has_header(self.header2 + self.sample8),
                          True)
 
+    def test_guess_quote_and_delimiter_regex(self):
+        cases = [('asd',       ('', False, None, 0)),   # No match
+                 (',"123,4",', ('"', False, ',', 0)),   # ,".*?",
+                 ('"123,4",',  ('"', False, ',', 0)),   # ".*?",
+                 (',"123,4"',  ('"', False, ',', 0)),   # ,".*?"
+                 ('"123,4"',  ('"', False, '', 0))]   # ,".*?"
+
+        sniffer = csv.Sniffer()
+        for test_input, expected in cases:
+            guess = sniffer._guess_quote_and_delimiter(test_input, ',')
+            self.assertEqual(guess, expected)
+
     def test_sniff(self):
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(self.sample1)
