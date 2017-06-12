@@ -158,7 +158,7 @@ void
 PyInterpreterState_Delete(PyInterpreterState *interp)
 {
     PyInterpreterState **p;
-    PyCodeExtraState **pExtra;
+    PyCodeExtraState **pextra;
     zapthreads(interp);
     HEAD_LOCK();
     for (p = &interp_head; /* N/A */; p = &(*p)->next) {
@@ -172,13 +172,13 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         Py_FatalError("PyInterpreterState_Delete: remaining threads");
     *p = interp->next;
 
-    for (pExtra = &coextra_head; ; pExtra = &(*pExtra)->next) {
-        if (*pExtra == NULL)
+    for (pextra = &coextra_head; ; pextra = &(*pextra)->next) {
+        if (*pextra == NULL)
             Py_FatalError(
                 "PyInterpreterState_Delete: invalid extra");
-        PyCodeExtraState* extra = *pExtra;
+        PyCodeExtraState* extra = *pextra;
         if (extra->interp == interp) {
-            *pExtra = extra->next;
+            *pextra = extra->next;
             PyMem_RawFree(extra);
             break;
         }
