@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30501: The compiler now produces more optimal code for complex condition
+  expressions in the "if", "while" and "assert" statement, the "if" expression,
+  and generator expressions and comprehensions.
+
 - bpo-28180: Implement PEP 538 (legacy C locale coercion). This means that when
   a suitable coercion target locale is available, both the core interpreter and
   locale-aware C extensions will assume the use of UTF-8 as the default text
@@ -358,6 +362,9 @@ Library
 - bpo-28994: The traceback no longer displayed for SystemExit raised in
   a callback registered by atexit.
 
+- bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
+  called.
+
 - bpo-11822: The dis.dis() function now is able to disassemble nested
   code objects.
 
@@ -380,10 +387,6 @@ Library
   implementation. Patch by Michaël Sghaïer.
 
 - bpo-29743: Closing transport during handshake process leaks open socket.
-  Patch by Nikolay Kim
-
-- bpo-29406: asyncio SSL contexts leak sockets after calling close with
-  certain servers.
   Patch by Nikolay Kim
 
 - bpo-27585: Fix waiter cancellation in asyncio.Lock.
