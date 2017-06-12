@@ -365,7 +365,7 @@ Library
 <<<<<<< HEAD
 - bpo-30576 : http.server supports HTTP compression (gzip).  Patch by Pierre
   Quentel.
-=======
+
 - bpo-30589: Fix multiprocessing.Process.exitcode to return the opposite
   of the signal number when the process is killed by a signal (instead
   of 255) when using the "forkserver" method.
