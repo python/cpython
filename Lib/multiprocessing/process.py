@@ -200,6 +200,7 @@ class BaseProcess(object):
         '''
         Return exit code of process or `None` if it has yet to stop
         '''
+        self._check_closed()
         if self._popen is None:
             return self._popen
         return self._popen.poll()
@@ -209,6 +210,7 @@ class BaseProcess(object):
         '''
         Return identifier (PID) of process or `None` if it has yet to start
         '''
+        self._check_closed()
         if self is _current_process:
             return os.getpid()
         else:
@@ -222,6 +224,7 @@ class BaseProcess(object):
         Return a file descriptor (Unix) or handle (Windows) suitable for
         waiting for process termination.
         '''
+        self._check_closed()
         try:
             return self._sentinel
         except AttributeError:
@@ -230,6 +233,8 @@ class BaseProcess(object):
     def __repr__(self):
         if self is _current_process:
             status = 'started'
+        elif self._closed:
+            status = 'closed'
         elif self._parent_pid != os.getpid():
             status = 'unknown'
         elif self._popen is None:
