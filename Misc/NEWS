@@ -359,6 +359,9 @@ Extension Modules
 Library
 -------
 
+- bpo-28994: The traceback no longer displayed for SystemExit raised in
+  a callback registered by atexit.
+
 - bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
   called.
 
