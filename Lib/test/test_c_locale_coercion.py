@@ -146,20 +146,24 @@ CLI_COERCION_WARNING_FMT = (
 class _LocaleCoercionTargetsTestCase(_ChildProcessEncodingTestCase):
     # Base class for test cases that rely on coercion targets being defined
 
-    available_targets = []
+    available_targets = None
     targets_required = True
 
     @classmethod
     def setUpClass(cls):
+        if cls.available_targets is not None:
+            # initialization already done
+            return
+        cls.available_targets = []
+
         first_target_locale = None
-        available_targets = cls.available_targets
         # Find the target locales available in the current system
         for target_locale in _C_UTF8_LOCALES:
             if _set_locale_in_subprocess(target_locale):
-                available_targets.append(target_locale)
+                cls.available_targets.append(target_locale)
                 if first_target_locale is None:
                     first_target_locale = target_locale
-        if cls.targets_required and not available_targets:
+        if cls.targets_required and not cls.available_targets:
             raise unittest.SkipTest("No C-with-UTF-8 locale available")
         # Expect coercion to use the first available locale
         warning_msg = CLI_COERCION_WARNING_FMT.format(first_target_locale)
