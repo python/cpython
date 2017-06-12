@@ -576,6 +576,14 @@ class HTTPCompressionTestCase(BaseTestCase):
             with open(path, 'wb') as temp:
                 temp.write(self.data)
 
+        # create big files, size > 2 << 18
+        self.repeat = (2 << 19) // len(self.data)
+        for ext in self.compressible_ext:
+            path = os.path.join(self.tempdir, 'test_big.{}'.format(ext))
+            with open(path, 'wb') as temp:
+                for _ in range(self.repeat):
+                    temp.write(self.data)
+
     def tearDown(self):
         try:
             os.chdir(self.cwd)
@@ -622,7 +630,14 @@ class HTTPCompressionTestCase(BaseTestCase):
                 headers={'Accept-Encoding': 'gzip'})
             self.assertTrue('Content-Encoding' in response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
-        
+
+        # same for big files
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test_big.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip'})
+            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertEqual(gzip.decompress(response.read()),
+                self.repeat * self.data)
 
 cgi_file1 = """\
 #!%s
