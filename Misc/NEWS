@@ -201,6 +201,9 @@ Library
   exception) to exception(s) raised in the dispatched methods.
   Patch by Petr Motejlek.
 
+- bpo-30177: path.resolve(strict=False) no longer cuts the path after the first
+  element not present in the filesystem.  Patch by Antoine Pietri.
+
 IDLE
 ----
 
