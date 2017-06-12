@@ -6,6 +6,7 @@ import socket
 import struct
 import sys
 import threading
+import warnings
 
 from . import connection
 from . import process
@@ -22,7 +23,7 @@ __all__ = ['ensure_running', 'get_inherited_fds', 'connect_to_new_process',
 #
 
 MAXFDS_TO_SEND = 256
-UNSIGNED_STRUCT = struct.Struct('Q')     # large enough for pid_t
+SIGNED_STRUCT = struct.Struct('q')     # large enough for pid_t
 
 #
 # Forkserver class
@@ -148,14 +149,25 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
 
     util._close_stdin()
 
-    # ignoring SIGCHLD means no need to reap zombie processes;
+    sig_r, sig_w = os.pipe()
+    os.set_blocking(sig_w, False)
+
+    def sigchld_handler(*_unused):
+        try:
+            os.write(sig_w, b'.')
+        except BlockingIOError:
+            pass
+
     # letting SIGINT through avoids KeyboardInterrupt tracebacks
     handlers = {
-        signal.SIGCHLD: signal.SIG_IGN,
+        signal.SIGCHLD: sigchld_handler,
         signal.SIGINT: signal.SIG_DFL,
         }
     old_handlers = {sig: signal.signal(sig, val)
                     for (sig, val) in handlers.items()}
+
+    # map child pids to client fds
+    pid_to_fd = {}
 
     with socket.socket(socket.AF_UNIX, fileno=listener_fd) as listener, \
          selectors.DefaultSelector() as selector:
@@ -163,6 +175,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
 
         selector.register(listener, selectors.EVENT_READ)
         selector.register(alive_r, selectors.EVENT_READ)
+        selector.register(sig_r, selectors.EVENT_READ)
 
         while True:
             try:
@@ -176,62 +189,100 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                     assert os.read(alive_r, 1) == b''
                     raise SystemExit
 
-                assert listener in rfds
-                with listener.accept()[0] as s:
-                    code = 1
-                    if os.fork() == 0:
+                if sig_r in rfds:
+                    # Got SIGCHLD
+                    os.read(sig_r, 65536)  # exhaust
+                    while True:
+                        # Scan for child processes
                         try:
-                            _serve_one(s, listener, alive_r, old_handlers)
-                        except Exception:
-                            sys.excepthook(*sys.exc_info())
-                            sys.stderr.flush()
-                        finally:
-                            os._exit(code)
+                            pid, sts = os.waitpid(-1, os.WNOHANG)
+                        except ChildProcessError:
+                            break
+                        if pid == 0:
+                            break
+                        child_w = pid_to_fd.pop(pid, None)
+                        if child_w is not None:
+                            if os.WIFSIGNALED(sts):
+                                returncode = -os.WTERMSIG(sts)
+                            else:
+                                assert os.WIFEXITED(sts)
+                                returncode = os.WEXITSTATUS(sts)
+                            # Write the exit code to the pipe
+                            write_signed(child_w, returncode)
+                            os.close(child_w)
+                        else:
+                            # This shouldn't happen really
+                            warnings.warn('forkserver: waitpid returned '
+                                          'unexpected pid %d' % pid)
+
+                if listener in rfds:
+                    # Incoming fork request
+                    with listener.accept()[0] as s:
+                        # Receive fds from client
+                        fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
+                        assert len(fds) <= MAXFDS_TO_SEND
+                        child_r, child_w, *fds = fds
+                        s.close()
+                        pid = os.fork()
+                        if pid == 0:
+                            # Child
+                            code = 1
+                            try:
+                                listener.close()
+                                code = _serve_one(child_r, fds,
+                                                  (alive_r, child_w, sig_r, sig_w),
+                                                  old_handlers)
+                            except Exception:
+                                sys.excepthook(*sys.exc_info())
+                                sys.stderr.flush()
+                            finally:
+                                os._exit(code)
+                        else:
+                            # Send pid to client processes
+                            write_signed(child_w, pid)
+                            pid_to_fd[pid] = child_w
+                            os.close(child_r)
+                            for fd in fds:
+                                os.close(fd)
 
             except OSError as e:
                 if e.errno != errno.ECONNABORTED:
                     raise
 
-def _serve_one(s, listener, alive_r, handlers):
+
+def _serve_one(child_r, fds, unused_fds, handlers):
     # close unnecessary stuff and reset signal handlers
-    listener.close()
-    os.close(alive_r)
     for sig, val in handlers.items():
         signal.signal(sig, val)
+    for fd in unused_fds:
+        os.close(fd)
 
-    # receive fds from parent process
-    fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
-    s.close()
-    assert len(fds) <= MAXFDS_TO_SEND
-    (child_r, child_w, _forkserver._forkserver_alive_fd,
-     stfd, *_forkserver._inherited_fds) = fds
-    semaphore_tracker._semaphore_tracker._fd = stfd
+    (_forkserver._forkserver_alive_fd,
+     semaphore_tracker._semaphore_tracker._fd,
+     *_forkserver._inherited_fds) = fds
 
-    # send pid to client processes
-    write_unsigned(child_w, os.getpid())
-
-    # run process object received over pipe
+    # Run process object received over pipe
     code = spawn._main(child_r)
 
-    # write the exit code to the pipe
-    write_unsigned(child_w, code)
+    return code
+
 
 #
-# Read and write unsigned numbers
+# Read and write signed numbers
 #
 
-def read_unsigned(fd):
+def read_signed(fd):
     data = b''
-    length = UNSIGNED_STRUCT.size
+    length = SIGNED_STRUCT.size
     while len(data) < length:
         s = os.read(fd, length - len(data))
         if not s:
             raise EOFError('unexpected EOF')
         data += s
-    return UNSIGNED_STRUCT.unpack(data)[0]
+    return SIGNED_STRUCT.unpack(data)[0]
 
-def write_unsigned(fd, n):
-    msg = UNSIGNED_STRUCT.pack(n)
+def write_signed(fd, n):
+    msg = SIGNED_STRUCT.pack(n)
     while msg:
         nbytes = os.write(fd, msg)
         if nbytes == 0:
