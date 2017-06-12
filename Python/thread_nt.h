@@ -408,7 +408,8 @@ PyThread_delete_key_value(int key)
  */
 void
 PyThread_ReInitTLS(void)
-{}
+{
+}
 
 
 /* Thread Specific Storage (TSS) API */
@@ -480,6 +481,7 @@ PyThread_tss_delete_value(Py_tss_t key)
  */
 void
 PyThread_ReInitTSS(void)
-{}
+{
+}
 
 #endif
