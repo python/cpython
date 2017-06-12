@@ -150,21 +150,24 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
     util._close_stdin()
 
     sig_r, sig_w = os.pipe()
+    os.set_blocking(sig_r, False)
     os.set_blocking(sig_w, False)
 
     def sigchld_handler(*_unused):
-        try:
-            os.write(sig_w, b'.')
-        except BlockingIOError:
-            pass
+        # Dummy signal handler, doesn't do anything
+        pass
 
     # letting SIGINT through avoids KeyboardInterrupt tracebacks
+    # unblocking SIGCHLD allows the wakeup fd to notify our event loop
     handlers = {
         signal.SIGCHLD: sigchld_handler,
         signal.SIGINT: signal.SIG_DFL,
         }
     old_handlers = {sig: signal.signal(sig, val)
                     for (sig, val) in handlers.items()}
+
+    # calling os.write() in the Python signal handler is racy
+    signal.set_wakeup_fd(sig_w)
 
     # map child pids to client fds
     pid_to_fd = {}
