@@ -220,11 +220,13 @@ find_key(int set_value, int key, void *value)
          * they do we must abort.  Otherwise we'll end up spinning
          * in a tight loop with the lock held.  A similar check is done
          * in pystate.c tstate_delete_common().  */
-        if (p == prev_p)
+        if (p == prev_p) {
             Py_FatalError("tss find_key: small circular list(!)");
+        }
         prev_p = p;
-        if (p->next == keyhead)
+        if (p->next == keyhead) {
             Py_FatalError("tss find_key: circular list(!)");
+        }
     }
     if (!set_value && value == NULL) {
         assert(p == NULL);
@@ -255,8 +257,9 @@ int
 PyThread_create_key(void)
 {
     Py_tss_t proxy = Py_tss_NEEDS_INIT;
-    if (PyThread_tss_create(&proxy) != 0)
+    if (PyThread_tss_create(&proxy) != 0) {
         return -1;
+    }
     /* In the own implementation, platform-specific key type is int. */
     return proxy._key;
 }
@@ -314,11 +317,13 @@ PyThread_tss_create(Py_tss_t *key)
      */
     assert(key != NULL);
     /* If the key has been created, function is silently skipped. */
-    if (key->_is_initialized)
+    if (key->_is_initialized) {
         return 0;
+    }
 
-    if (keymutex == NULL)
+    if (keymutex == NULL) {
         keymutex = PyThread_allocate_lock();
+    }
     key->_key = ++nkeys;
     key->_is_initialized = true;
     return 0;
@@ -330,8 +335,9 @@ PyThread_tss_delete(Py_tss_t *key)
 {
     assert(key != NULL);
     /* If the key has not been created, function is silently skipped. */
-    if (!key->_is_initialized)
+    if (!key->_is_initialized) {
         return;
+    }
 
     struct key *p, **q;
 

@@ -501,8 +501,9 @@ PyThreadState_Delete(PyThreadState *tstate)
     if (tstate == GET_TSTATE())
         Py_FatalError("PyThreadState_Delete: tstate is still current");
 #ifdef WITH_THREAD
-    if (autoInterpreterState && PyThread_tss_get(&autoTSSkey) == tstate)
+    if (autoInterpreterState && PyThread_tss_get(&autoTSSkey) == tstate) {
         PyThread_tss_delete_value(&autoTSSkey);
+    }
 #endif /* WITH_THREAD */
     tstate_delete_common(tstate);
 }
@@ -517,8 +518,9 @@ PyThreadState_DeleteCurrent()
         Py_FatalError(
             "PyThreadState_DeleteCurrent: no current tstate");
     tstate_delete_common(tstate);
-    if (autoInterpreterState && PyThread_tss_get(&autoTSSkey) == tstate)
+    if (autoInterpreterState && PyThread_tss_get(&autoTSSkey) == tstate) {
         PyThread_tss_delete_value(&autoTSSkey);
+    }
     SET_TSTATE(NULL);
     PyEval_ReleaseLock();
 }
@@ -776,8 +778,9 @@ void
 _PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
 {
     assert(i && t); /* must init with valid states */
-    if (PyThread_tss_create(&autoTSSkey) != 0)
+    if (PyThread_tss_create(&autoTSSkey) != 0) {
         Py_FatalError("Could not allocate TSS entry");
+    }
     autoInterpreterState = i;
     assert(PyThread_tss_get(&autoTSSkey) == NULL);
     assert(t->gilstate_counter == 0);
@@ -811,13 +814,15 @@ _PyGILState_Reinit(void)
 #endif
     PyThreadState *tstate = PyGILState_GetThisThreadState();
     PyThread_tss_delete(&autoTSSkey);
-    if (PyThread_tss_create(&autoTSSkey) != 0)
+    if (PyThread_tss_create(&autoTSSkey) != 0) {
         Py_FatalError("Could not allocate TSS entry");
+    }
 
     /* If the thread had an associated auto thread state, reassociate it with
      * the new key. */
-    if (tstate && PyThread_tss_set(&autoTSSkey, (void *)tstate) != 0)
+    if (tstate && PyThread_tss_set(&autoTSSkey, (void *)tstate) != 0) {
         Py_FatalError("Couldn't create autoTSSkey mapping");
+    }
 }
 
 /* When a thread state is created for a thread by some mechanism other than
@@ -847,8 +852,9 @@ _PyGILState_NoteThreadState(PyThreadState* tstate)
        "win", which seems reasonable behaviour.
     */
     if (PyThread_tss_get(&autoTSSkey) == NULL) {
-        if (PyThread_tss_set(&autoTSSkey, (void *)tstate) != 0)
+        if (PyThread_tss_set(&autoTSSkey, (void *)tstate) != 0) {
             Py_FatalError("Couldn't create autoTSSkey mapping");
+        }
     }
 
     /* PyGILState_Release must not try to delete this thread state. */
@@ -872,8 +878,9 @@ PyGILState_Check(void)
     if (!_PyGILState_check_enabled)
         return 1;
 
-    if (!PyThread_tss_is_created(&autoTSSkey))
+    if (!PyThread_tss_is_created(&autoTSSkey)) {
         return 1;
+    }
 
     tstate = GET_TSTATE();
     if (tstate == NULL)

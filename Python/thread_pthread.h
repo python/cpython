@@ -689,12 +689,14 @@ PyThread_tss_create(Py_tss_t *key)
 {
     assert(key != NULL);
     /* If the key has been created, function is silently skipped. */
-    if (key->_is_initialized)
+    if (key->_is_initialized) {
         return 0;
+    }
 
     int fail = pthread_key_create(&(key->_key), NULL);
-    if (fail)
+    if (fail) {
         return -1;
+    }
     key->_is_initialized = true;
     return 0;
 }
@@ -704,8 +706,9 @@ PyThread_tss_delete(Py_tss_t *key)
 {
     assert(key != NULL);
     /* If the key has not been created, function is silently skipped. */
-    if (!key->_is_initialized)
+    if (!key->_is_initialized) {
         return;
+    }
 
     pthread_key_delete(key->_key);
     /* pthread has not provided the defined invalid value for the key. */

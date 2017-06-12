@@ -422,12 +422,14 @@ PyThread_tss_create(Py_tss_t *key)
 {
     assert(key != NULL);
     /* If the key has been created, function is silently skipped. */
-    if (key->_is_initialized)
+    if (key->_is_initialized) {
         return 0;
+    }
 
     DWORD result = TlsAlloc();
-    if (result == TLS_OUT_OF_INDEXES)
+    if (result == TLS_OUT_OF_INDEXES) {
         return -1;
+    }
     /* In Windows, platform-specific key type is DWORD. */
     key->_key = result;
     key->_is_initialized = true;
@@ -439,8 +441,9 @@ PyThread_tss_delete(Py_tss_t *key)
 {
     assert(key != NULL);
     /* If the key has not been created, function is silently skipped. */
-    if (!key->_is_initialized)
+    if (!key->_is_initialized) {
         return;
+    }
 
     TlsFree(key->_key);
     key->_key = TLS_OUT_OF_INDEXES;
