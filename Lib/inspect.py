@@ -640,15 +640,6 @@ def cleandoc(doc):
             lines.pop(0)
         return '\n'.join(lines)
 
-class SourceNotFindableError(TypeError):
-    """Exception raised by getfile() when the object has no link to its source.
-    """
-    def __init__(self, obj):
-        self.obj = obj
-
-    def __str__(self):
-        return ('{!r} is not a module, class, method, '
-                'function, traceback, frame, or code object').format(self.obj)
 
 def getfile(object):
     """Work out which source or compiled file an object was defined in."""
@@ -672,7 +663,9 @@ def getfile(object):
         object = object.f_code
     if iscode(object):
         return object.co_filename
-    raise SourceNotFindableError(object)
+    raise TypeError('object of type {} is not a module, class, method, '
+                    'function, traceback, frame, or code object'.format(
+                        type(object).__name__))
 
 def getmodulename(path):
     """Return the module name for a given file, or None."""
