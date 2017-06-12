@@ -2371,13 +2371,17 @@ void DeleteRegistryKey(char *string)
     line = strdup(string); /* so we can change it */
 
     keyname = strchr(line, '[');
-    if (!keyname)
+    if (!keyname) {
+        free(line);
         return;
+    }
     ++keyname;
 
     subkeyname = strchr(keyname, ']');
-    if (!subkeyname)
+    if (!subkeyname) {
+        free(line);
         return;
+    }
     *subkeyname++='\0';
     delim = strchr(subkeyname, '\n');
     if (delim)
@@ -2413,16 +2417,22 @@ void DeleteRegistryValue(char *string)
 
 /* Format is 'Reg DB Value: [key]name=value' */
     keyname = strchr(line, '[');
-    if (!keyname)
+    if (!keyname) {
+        free(line);
         return;
+    }
     ++keyname;
     valuename = strchr(keyname, ']');
-    if (!valuename)
+    if (!valuename) {
+        free(line);
         return;
+    }
     *valuename++ = '\0';
     value = strchr(valuename, '=');
-    if (!value)
+    if (!value) {
+        free(line);
         return;
+    }
 
     *value++ = '\0';
 
@@ -2538,8 +2548,10 @@ int DoUninstall(int argc, char **argv)
     }
 
     lines = (char **)malloc(sizeof(char *) * lines_buffer_size);
-    if (!lines)
+    if (!lines) {
+        fclose(logfile);
         return SystemError(0, "Out of memory");
+    }
 
     /* Read the whole logfile, realloacting the buffer */
     while (fgets(buffer, sizeof(buffer), logfile)) {
@@ -2553,8 +2565,10 @@ int DoUninstall(int argc, char **argv)
             lines_buffer_size += 10;
             lines = (char **)realloc(lines,
                                      sizeof(char *) * lines_buffer_size);
-            if (!lines)
+            if (!lines) {
+                fclose(logfile);
                 return SystemError(0, "Out of memory");
+            }
         }
     }
     fclose(logfile);
