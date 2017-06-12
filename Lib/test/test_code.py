@@ -220,7 +220,7 @@ if check_impl_detail(cpython=True):
     freefunc = ctypes.CFUNCTYPE(None,ctypes.c_voidp)
 
     RequestCodeExtraIndex = py._PyEval_RequestCodeExtraIndex
-    RequestCodeExtraIndex.argtypes = (freefunc, )
+    RequestCodeExtraIndex.argtypes = (freefunc,)
     RequestCodeExtraIndex.restype = ctypes.c_ssize_t
 
     SetExtra = py._PyCode_SetExtra
