@@ -411,7 +411,7 @@ static void
 code_dealloc(PyCodeObject *co)
 {
     if (co->co_extra != NULL) {
-        PyCodeExtraState *state = _PyCodeExtraState_Get();
+        PyCodeExtraState *state = __PyCodeExtraState_Get();
         _PyCodeObjectExtra *co_extra = co->co_extra;
 
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
@@ -847,7 +847,7 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 int
 _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
-    PyCodeExtraState *state = _PyCodeExtraState_Get();
+    PyCodeExtraState *state = __PyCodeExtraState_Get();
 
     if (!PyCode_Check(code) || index < 0 ||
             index >= state->co_extra_user_count) {

@@ -5442,7 +5442,7 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
 Py_ssize_t
 _PyEval_RequestCodeExtraIndex(freefunc free)
 {
-    PyCodeExtraState *state = _PyCodeExtraState_Get();
+    PyCodeExtraState *state = __PyCodeExtraState_Get();
     Py_ssize_t new_index;
 
     if (state->co_extra_user_count == MAX_CO_EXTRA_USERS - 1) {

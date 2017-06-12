@@ -572,7 +572,7 @@ PyThreadState_Swap(PyThreadState *newts)
 }
 
 PyCodeExtraState* 
-_PyCodeExtraState_Get() {
+__PyCodeExtraState_Get() {
     PyInterpreterState* interp = PyThreadState_Get()->interp;
 
     HEAD_LOCK();
@@ -584,7 +584,7 @@ _PyCodeExtraState_Get() {
     }
     HEAD_UNLOCK();
 
-    Py_FatalError("_PyCodeExtraState_Get: no code state for interpreter");
+    Py_FatalError("__PyCodeExtraState_Get: no code state for interpreter");
     return NULL;
 }
 

@@ -103,9 +103,9 @@ consts: ('None',)
 """
 
 import sys
+import threading
 import unittest
 import weakref
-import threading
 from test.support import (run_doctest, run_unittest, cpython_only,
                           check_impl_detail)
 

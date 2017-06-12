@@ -59,7 +59,8 @@ typedef struct _co_extra_state {
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 } PyCodeExtraState;
 
-PyCodeExtraState* _PyCodeExtraState_Get();
+/* This is temporary for backwards compat in 3.6 and will be removed in 3.7 */
+PyCodeExtraState* __PyCodeExtraState_Get();
 
 /* State unique per thread */
 
