@@ -147,10 +147,13 @@ class BaseProcess(object):
         '''
         Close the Process object.
 
-        This releases resources held by this object, but does not join or
-        terminate the child process.
+        This method releases resources held by the Process object.  It is
+        an error to call this method if the child process is still running.
         '''
         if self._popen is not None:
+            if self._popen.poll() is None:
+                raise ValueError("Cannot close a process while it is still running. "
+                                 "You should first call join() or terminate().")
             self._popen.close()
             self._popen = None
             del self._sentinel
