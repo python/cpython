@@ -5,12 +5,17 @@ import atexit
 from imp import reload
 from test import test_support
 
+
+def exit():
+    raise SystemExit
+
+
 class TestCase(unittest.TestCase):
     def setUp(self):
-        s = StringIO.StringIO()
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
-        sys.stdout = sys.stderr = self.subst_io = s
+        self.stream = StringIO.StringIO()
+        sys.stdout = sys.stderr = self.subst_io = self.stream
         self.save_handlers = atexit._exithandlers
         atexit._exithandlers = []
 
@@ -54,6 +59,13 @@ class TestCase(unittest.TestCase):
         atexit.register(self.raise1)
         atexit.register(self.raise2)
         self.assertRaises(TypeError, atexit._run_exitfuncs)
+
+    def test_exit(self):
+        # be sure a SystemExit is handled properly
+        atexit.register(exit)
+
+        self.assertRaises(SystemExit, atexit._run_exitfuncs)
+        self.assertEqual(self.stream.getvalue(), '')
 
     ### helpers
     def h1(self):
