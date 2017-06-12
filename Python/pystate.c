@@ -74,8 +74,8 @@ PyInterpreterState_New(void)
                                  PyMem_RawMalloc(sizeof(PyInterpreterState));
 
     if (interp != NULL) {
-        PyCodeExtraState* coExtra = PyMem_RawMalloc(sizeof(PyCodeExtraState));
-        if (coExtra == NULL) {
+        PyCodeExtraState* coextra = PyMem_RawMalloc(sizeof(PyCodeExtraState));
+        if (coextra == NULL) {
             PyMem_RawFree(interp);
             return NULL;
         }
@@ -99,8 +99,8 @@ PyInterpreterState_New(void)
         interp->importlib = NULL;
         interp->import_func = NULL;
         interp->eval_frame = _PyEval_EvalFrameDefault;
-        coExtra->co_extra_user_count = 0;
-        coExtra->interp = interp;
+        coextra->co_extra_user_count = 0;
+        coextra->interp = interp;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
         interp->dlopenflags = RTLD_NOW;
@@ -112,8 +112,8 @@ PyInterpreterState_New(void)
         HEAD_LOCK();
         interp->next = interp_head;
         interp_head = interp;
-        coExtra->next = coextra_head;
-        coextra_head = coExtra;
+        coextra->next = coextra_head;
+        coextra_head = coextra;
         HEAD_UNLOCK();
     }
 
