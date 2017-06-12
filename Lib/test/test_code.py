@@ -263,8 +263,8 @@ if check_impl_detail(cpython=True):
                               ctypes.c_voidp(100)), 0)
 
         def test_free_called(self):
-            '''Verify that the provided free function gets invoked
-            when the code object is cleaned up'''
+            # Verify that the provided free function gets invoked
+            # when the code object is cleaned up.
             f = self.get_func()
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(100))
@@ -272,7 +272,7 @@ if check_impl_detail(cpython=True):
             self.assertEqual(LAST_FREED, 100)
 
         def test_get_set(self):
-            '''Basic get/set round tripping'''
+            # Test basic get/set round tripping.
             f = self.get_func()
 
             extra = ctypes.c_voidp()
@@ -288,8 +288,8 @@ if check_impl_detail(cpython=True):
             del f
 
         def test_free_different_thread(self):
-            '''Freeing a code object on a different thread then
-            where the co_extra was set should be safe'''
+            # Freeing a code object on a different thread then
+            # where the co_extra was set should be safe.
             f = self.get_func()
             class ThreadTest(threading.Thread):
                 def __init__(self, f, test):
