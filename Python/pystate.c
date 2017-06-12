@@ -72,7 +72,7 @@ PyInterpreterState_New(void)
 {
     PyInterpreterState *interp = (PyInterpreterState *)
                                  PyMem_RawMalloc(sizeof(PyInterpreterState));
-    
+
     if (interp != NULL) {
         PyCodeExtraState* coExtra = PyMem_RawMalloc(sizeof(PyCodeExtraState));
         if (coExtra == NULL) {
@@ -161,7 +161,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     PyCodeExtraState **pExtra;
     zapthreads(interp);
     HEAD_LOCK();
-    for (p = &interp_head; ; p = &(*p)->next) {
+    for (p = &interp_head; /* N/A */; p = &(*p)->next) {
         if (*p == NULL)
             Py_FatalError(
                 "PyInterpreterState_Delete: invalid interp");
