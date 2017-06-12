@@ -7,7 +7,6 @@ and CGIHTTPRequestHandler for CGI scripts.
 It does, however, optionally implement HTTP/1.1 persistent connections,
 as of version 0.3.
 
-
 Notes on CGIHTTPRequestHandler
 ------------------------------
 
@@ -1283,4 +1282,3 @@ if __name__ == '__main__':
         handler_class = partial(SimpleHTTPRequestHandler,
                                 directory=args.directory)
     test(HandlerClass=handler_class, port=args.port, bind=args.bind)
-
