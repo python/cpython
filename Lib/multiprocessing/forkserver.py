@@ -255,6 +255,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
 
 def _serve_one(child_r, fds, unused_fds, handlers):
     # close unnecessary stuff and reset signal handlers
+    signal.set_wakeup_fd(-1)
     for sig, val in handlers.items():
         signal.signal(sig, val)
     for fd in unused_fds:
