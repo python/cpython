@@ -569,7 +569,7 @@ class SSLObject(object):
         server hostame is set."""
         return self._sslobj.server_hostname
 
-    def read(self, len=0, buffer=None):
+    def read(self, len=1024, buffer=None):
         """Read up to 'len' bytes from the SSL object and return them.
 
         If 'buffer' is provided, read into this buffer and return the number of
@@ -578,7 +578,7 @@ class SSLObject(object):
         if buffer is not None:
             v = self._sslobj.read(len, buffer)
         else:
-            v = self._sslobj.read(len or 1024)
+            v = self._sslobj.read(len)
         return v
 
     def write(self, data):
@@ -604,6 +604,13 @@ class SSLObject(object):
         of the peers."""
         if _ssl.HAS_NPN:
             return self._sslobj.selected_npn_protocol()
+
+    def selected_alpn_protocol(self):
+        """Return the currently selected ALPN protocol as a string, or ``None``
+        if a next protocol was not negotiated or if ALPN is not supported by one
+        of the peers."""
+        if _ssl.HAS_ALPN:
+            return self._sslobj.selected_alpn_protocol()
 
     def cipher(self):
         """Return the currently selected cipher as a 3-tuple ``(name,
@@ -841,17 +848,7 @@ class SSLSocket(socket):
                 raise ValueError(
                     "non-zero flags not allowed in calls to send() on %s" %
                     self.__class__)
-            try:
-                v = self._sslobj.write(data)
-            except SSLError as x:
-                if x.args[0] == SSL_ERROR_WANT_READ:
-                    return 0
-                elif x.args[0] == SSL_ERROR_WANT_WRITE:
-                    return 0
-                else:
-                    raise
-            else:
-                return v
+            return self._sslobj.write(data)
         else:
             return self._sock.send(data, flags)
 
