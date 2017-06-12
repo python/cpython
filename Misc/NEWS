@@ -1099,6 +1099,9 @@ Library
   sys.getrecursionlimit() times, to protect against objects which create a new
   object on every attribute access.
 
+- bpo-30177: path.resolve(strict=False) no longer cuts the path after the first
+  element not present in the filesystem.  Patch by Antoine Pietri.
+
 IDLE
 ----
 
