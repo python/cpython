@@ -1817,12 +1817,15 @@ to the format string S.format.  See help(struct) for more on format\n\
 strings.");
 
 static PyObject *
-s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames_unused)
+s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyStructObject *soself;
     PyObject *result;
 
     /* Validate arguments. */
+    if (!_PyArg_NoStackKeywords("pack", kwnames)) {
+        return NULL;
+    }
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
     assert(soself->s_codes != NULL);
@@ -1856,13 +1859,16 @@ offset.  Note that the offset is a required argument.  See\n\
 help(struct) for more on format strings.");
 
 static PyObject *
-s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames_unused)
+s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyStructObject *soself;
     Py_buffer buffer;
     Py_ssize_t offset;
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
+    if (!_PyArg_NoStackKeywords("pack_into", kwnames)) {
+        return NULL;
+    }
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
     assert(soself->s_codes != NULL);

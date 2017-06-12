@@ -182,6 +182,10 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"^index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, collections.deque().index, x=2)
 
+    def test_varargs11_kw(self):
+        msg = r"^pack\(\) takes no keyword arguments$"
+        self.assertRaisesRegex(TypeError, msg, struct.Struct.pack, struct.Struct(""), x=2)
+
     def test_oldargs0_1(self):
         msg = r"keys\(\) takes no arguments \(1 given\)"
         self.assertRaisesRegex(TypeError, msg, {}.keys, 0)
