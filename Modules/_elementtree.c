@@ -1266,8 +1266,10 @@ element_repr(ElementObject* self)
     if (status == 0) {
         PyObject *repr, *tag;
         tag = PyObject_Repr(self->tag);
-        if (!tag)
+        if (!tag) {
+            Py_ReprLeave((PyObject *)self);
             return NULL;
+        }
 
         repr = PyString_FromFormat("<Element %s at %p>",
                                    PyString_AS_STRING(tag), self);
