@@ -48,6 +48,9 @@ Core and Builtins
 - Issue #29337: Fixed possible BytesWarning when compare the code objects.
   Warnings could be emitted at compile time.
 
+- bpo-29478: If max_line_length=None is specified while using the Compat32 policy,
+  it is no longer ignored.  Patch by Mircea Cosbuc.
+
 Extension Modules
 -----------------
 
