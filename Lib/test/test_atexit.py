@@ -23,6 +23,9 @@ def raise1():
 def raise2():
     raise SystemError
 
+def exit():
+    raise SystemExit
+
 
 class GeneralTest(unittest.TestCase):
 
@@ -75,6 +78,13 @@ class GeneralTest(unittest.TestCase):
 
         self.assertRaises(ZeroDivisionError, atexit._run_exitfuncs)
         self.assertIn("ZeroDivisionError", self.stream.getvalue())
+
+    def test_exit(self):
+        # be sure a SystemExit is handled properly
+        atexit.register(exit)
+
+        self.assertRaises(SystemExit, atexit._run_exitfuncs)
+        self.assertEqual(self.stream.getvalue(), '')
 
     def test_print_tracebacks(self):
         # Issue #18776: the tracebacks should be printed when errors occur.
