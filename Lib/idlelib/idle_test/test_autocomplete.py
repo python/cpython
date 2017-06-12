@@ -129,7 +129,24 @@ class AutoCompleteTest(unittest.TestCase):
     def test_open_completions(self):
         # Test completions of files and attributes as well as non-completion
         # of errors
-        pass
+
+        # Test attributes
+        self.text.insert('1.0', 'pr')
+        self.assertTrue(self.autocomplete.open_completions(False, True, True))
+        self.text.delete('1.0', 'end')
+
+        # Test files
+        self.text.insert('1.0', '"t')
+        self.assertTrue(self.autocomplete.open_completions(False, True, True))
+        self.text.delete('1.0', 'end')
+
+        # Test with blank will failed
+        self.assertFalse(self.autocomplete.open_completions(False, True, True))
+
+        # Test with only string quote will failed
+        self.text.insert('1.0', '"')
+        self.assertFalse(self.autocomplete.open_completions(False, True, True))
+        self.text.delete('1.0', 'end')
 
     def test_fetch_completions(self):
         # Test that fetch_completions returns 2 lists:
@@ -137,12 +154,64 @@ class AutoCompleteTest(unittest.TestCase):
         # a small list containing non-private variables.
         # For file completion, a large list containing all files in the path,
         # and a small list containing files that do not start with '.'
-        pass
+        def get_attributes_smalll(l):
+            return [s for s in sorted(l) if s[:1] != '_']
+
+        def get_file_smalll(path):
+            return [s for s in sorted(os.listdir(path)) if s[:1] != '.']
+
+        # Test attribute completion for time module
+        import time
+        mode = ac.COMPLETE_ATTRIBUTES
+
+        comp_what = 'time'
+        small, big = self.autocomplete.fetch_completions(comp_what, mode)
+        self.assertEqual(big, sorted(dir(time)))
+        self.assertEqual(small, get_attributes_smalll(big))
+
+        # Test attribute completion for namespace
+        comp_what = ''
+        small, big = self.autocomplete.fetch_completions(comp_what, mode)
+        self.assertTrue(set(small).issubset(set(big)))
+        self.assertEqual(small, get_attributes_smalll(big))
+
+        # Test with non-exist attribute
+        comp_what = 'NOT_EXIST_ENTITY'
+        small, big = self.autocomplete.fetch_completions(comp_what, mode)
+        self.assertEqual(big, [])
+        self.assertEqual(small, [])
+
+        # Test file completion
+        import os
+        mode = ac.COMPLETE_FILES
+
+        # Test file completion with __file__
+        comp_what = os.path.dirname(__file__)
+        small, big = self.autocomplete.fetch_completions(comp_what, mode)
+        self.assertEqual(big, sorted(os.listdir(comp_what)))
+        self.assertEqual(small, get_file_smalll(comp_what))
+
+        # Test file completion with '.'
+        comp_what = ''
+        small, big = self.autocomplete.fetch_completions(comp_what, mode)
+        self.assertEqual(big, sorted(os.listdir('.')))
+        self.assertEqual(small, get_file_smalll('.'))
+
+        # Test file completion with non-exist path
+        comp_what = 'NOT_EXIST_PATH'
+        small, big = self.autocomplete.fetch_completions(comp_what, mode)
+        self.assertEqual(big, [])
+        self.assertEqual(small, [])
 
     def test_get_entity(self):
         # Test that a name is in the namespace of sys.modules and
         # __main__.__dict__
-        pass
+
+        # Unittest __main__.__dict__ will be unittest packages'
+        import time
+        self.assertEqual(time, self.autocomplete.get_entity('time'))
+        with self.assertRaises(SyntaxError):
+            self.autocomplete.get_entity('')
 
 
 if __name__ == '__main__':
