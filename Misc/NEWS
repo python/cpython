@@ -142,6 +142,9 @@ Core and Builtins
 
 - bpo-29546: Improve from-import error message with location
 
+- bpo-29478: If max_line_length=None is specified while using the Compat32 policy,
+  it is no longer ignored.  Patch by Mircea Cosbuc.
+
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
 - Issue #29337: Fixed possible BytesWarning when compare the code objects.
