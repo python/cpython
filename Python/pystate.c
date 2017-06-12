@@ -55,7 +55,7 @@ static int autoTLSkey = -1;
 #endif
 
 static PyInterpreterState *interp_head = NULL;
-static PyCodeExtraState *coextra_head = NULL;
+static __PyCodeExtraState *coextra_head = NULL;
 
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
@@ -74,7 +74,7 @@ PyInterpreterState_New(void)
                                  PyMem_RawMalloc(sizeof(PyInterpreterState));
 
     if (interp != NULL) {
-        PyCodeExtraState* coextra = PyMem_RawMalloc(sizeof(PyCodeExtraState));
+        __PyCodeExtraState* coextra = PyMem_RawMalloc(sizeof(__PyCodeExtraState));
         if (coextra == NULL) {
             PyMem_RawFree(interp);
             return NULL;
@@ -158,7 +158,7 @@ void
 PyInterpreterState_Delete(PyInterpreterState *interp)
 {
     PyInterpreterState **p;
-    PyCodeExtraState **pextra;
+    __PyCodeExtraState **pextra;
     zapthreads(interp);
     HEAD_LOCK();
     for (p = &interp_head; /* N/A */; p = &(*p)->next) {
@@ -176,7 +176,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         if (*pextra == NULL)
             Py_FatalError(
                 "PyInterpreterState_Delete: invalid extra");
-        PyCodeExtraState* extra = *pextra;
+        __PyCodeExtraState* extra = *pextra;
         if (extra->interp == interp) {
             *pextra = extra->next;
             PyMem_RawFree(extra);
@@ -571,12 +571,12 @@ PyThreadState_Swap(PyThreadState *newts)
     return oldts;
 }
 
-PyCodeExtraState* 
+__PyCodeExtraState* 
 __PyCodeExtraState_Get() {
     PyInterpreterState* interp = PyThreadState_Get()->interp;
 
     HEAD_LOCK();
-    for (PyCodeExtraState* cur = coextra_head; cur != NULL; cur = cur->next) {
+    for (__PyCodeExtraState* cur = coextra_head; cur != NULL; cur = cur->next) {
         if (cur->interp == interp) {
             HEAD_UNLOCK();
             return cur;
