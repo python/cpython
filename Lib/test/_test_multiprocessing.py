@@ -3195,7 +3195,6 @@ class _TestFinalize(BaseTestCase):
         def make_finalizers():
             nonlocal exc
             d = {}
-            threshold = 60
             while not finish:
                 try:
                     # Old Foo's get gradually replaced and later
@@ -3210,17 +3209,11 @@ class _TestFinalize(BaseTestCase):
         try:
             sys.setswitchinterval(1e-6)
             gc.set_threshold(5, 5, 5)
-            threads = []
-            t = threading.Thread(target=run_finalizers)
-            t.start()
-            threads.append(t)
-            t = threading.Thread(target=make_finalizers)
-            t.start()
-            threads.append(t)
-            time.sleep(4.0)  # Wait a bit to trigger race condition
-            finish = True
-            for t in threads:
-                t.join()
+            threads = [threading.Thread(target=run_finalizers),
+                       threading.Thread(target=make_finalizers)]
+            with test.support.start_threads(threads):
+                time.sleep(4.0)  # Wait a bit to trigger race condition
+                finish = True
             if exc is not None:
                 raise exc
         finally:
