@@ -232,10 +232,10 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     drop_gil(tstate);
 }
 
-/* This function is called from PyOS_AfterFork to destroy all threads which are
- * not running in the child process, and clear internal locks which might be
- * held by those threads. (This could also be done using pthread_atfork
- * mechanism, at least for the pthreads implementation.) */
+/* This function is called from PyOS_AfterFork_Child to destroy all threads
+ * which are not running in the child process, and clear internal locks
+ * which might be held by those threads.
+ */
 
 void
 PyEval_ReInitThreads(void)

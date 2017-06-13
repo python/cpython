@@ -166,6 +166,10 @@ Serhiy Storchaka in :issue:`28682`.)
 Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
 on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+New function :func:`os.register_at_fork` allows registering Python callbacks
+to be executed on a process fork.  (Contributed by Antoine Pitrou in
+:issue:`16500`.)
+
 unittest.mock
 -------------
 
@@ -242,6 +246,11 @@ Build and C API Changes
 
 * Added functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`.
   (Contributed by Serhiy Storchaka in :issue:`27867`.)
+
+* :c:func:`PyOS_AfterFork` is deprecated in favour of the new functions
+  :c:func:`PyOS_BeforeFork`, :c:func:`PyOS_AfterFork_Parent` and
+  :c:func:`PyOS_AfterFork_Child`.  (Contributed by Antoine Pitrou in
+  :issue:`16500`.)
 
 
 Deprecated

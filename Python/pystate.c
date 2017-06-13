@@ -798,7 +798,7 @@ _PyGILState_Fini(void)
     autoInterpreterState = NULL;
 }
 
-/* Reset the TSS key - called by PyOS_AfterFork().
+/* Reset the TSS key - called by PyOS_AfterFork_Child().
  * This should not be necessary, but some - buggy - pthread implementations
  * don't reset TSS upon fork(), see issue #10517.
  */

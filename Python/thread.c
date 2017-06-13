@@ -394,7 +394,7 @@ PyThread_tss_delete_value(Py_tss_t key)
 
 
 /* Forget everything not associated with the current thread id.
- * This function is called from PyOS_AfterFork().  It is necessary
+ * This function is called from PyOS_AfterFork_Child().  It is necessary
  * because other thread ids which were in use at the time of the fork
  * may be reused for new threads created in the forked process.
  */

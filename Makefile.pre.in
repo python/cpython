@@ -20,9 +20,10 @@
 
 # === Variables set by makesetup ===
 
-MODNAMES=       _MODNAMES_
-MODOBJS=        _MODOBJS_
-MODLIBS=        _MODLIBS_
+MODBUILT_NAMES=    _MODBUILT_NAMES_
+MODDISABLED_NAMES= _MODDISABLED_NAMES_
+MODOBJS=           _MODOBJS_
+MODLIBS=           _MODLIBS_
 
 # === Variables set by configure
 VERSION=	@VERSION@
@@ -527,7 +528,7 @@ coverage-report: regen-grammar regen-importlib
 # (depends on python having already been built)
 .PHONY=clinic
 clinic: $(BUILDPYTHON) $(srcdir)/Modules/_blake2/blake2s_impl.c
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) ./Tools/clinic/clinic.py --make
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
