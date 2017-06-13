@@ -265,6 +265,9 @@ def _run_finalizers(minpriority=None):
     else:
         f = lambda p : p[0][0] is not None and p[0][0] >= minpriority
 
+    # Careful: _finalizer_registry may be mutated while this function
+    # is running (either by a GC run or by another thread).
+
     items = [x for x in _finalizer_registry.items() if f(x)]
     items.sort(reverse=True)
 
