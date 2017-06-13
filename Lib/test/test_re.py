@@ -883,17 +883,23 @@ class ReTests(unittest.TestCase):
     def test_category(self):
         self.assertEqual(re.match(r"(\s)", " ").group(1), " ")
 
-    def test_getlower(self):
+    @cpython_only
+    def test_case_helpers(self):
         import _sre
-        self.assertEqual(_sre.getlower(ord('A'), 0), ord('a'))
-        self.assertEqual(_sre.getlower(ord('A'), re.LOCALE), ord('a'))
-        self.assertEqual(_sre.getlower(ord('A'), re.UNICODE), ord('a'))
-        self.assertEqual(_sre.getlower(ord('A'), re.ASCII), ord('a'))
+        for i in range(128):
+            c = chr(i)
+            lo = ord(c.lower())
+            self.assertEqual(_sre.ascii_tolower(i), lo)
+            self.assertEqual(_sre.unicode_tolower(i), lo)
 
-        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
-        self.assertEqual(re.match(b"abc", b"ABC", re.I).group(0), b"ABC")
-        self.assertEqual(re.match("abc", "ABC", re.I|re.A).group(0), "ABC")
-        self.assertEqual(re.match(b"abc", b"ABC", re.I|re.L).group(0), b"ABC")
+        for i in list(range(128, 0x1000)) + [0x10400, 0x10428]:
+            c = chr(i)
+            self.assertEqual(_sre.ascii_tolower(i), i)
+            if i != 0x0130:
+                self.assertEqual(_sre.unicode_tolower(i), ord(c.lower()))
+
+        self.assertEqual(_sre.ascii_tolower(0x0130), 0x0130)
+        self.assertEqual(_sre.unicode_tolower(0x0130), ord('i'))
 
     def test_not_literal(self):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
@@ -1729,6 +1735,38 @@ SUBPATTERN None 0 0
         self.assertTrue(re.match(b'(?Li)\xc5\xe5', b'\xc5\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
+
+    def test_locale_compiled(self):
+        oldlocale = locale.setlocale(locale.LC_CTYPE)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
+        for loc in 'en_US.iso88591', 'en_US.utf8':
+            try:
+                locale.setlocale(locale.LC_CTYPE, loc)
+            except locale.Error:
+                # Unsupported locale on this system
+                self.skipTest('test needs %s locale' % loc)
+
+        locale.setlocale(locale.LC_CTYPE, 'en_US.iso88591')
+        p1 = re.compile(b'\xc5\xe5', re.L|re.I)
+        p2 = re.compile(b'[a\xc5][a\xe5]', re.L|re.I)
+        p3 = re.compile(b'[az\xc5][az\xe5]', re.L|re.I)
+        p4 = re.compile(b'[^\xc5][^\xe5]', re.L|re.I)
+        for p in p1, p2, p3:
+            self.assertTrue(p.match(b'\xc5\xe5'))
+            self.assertTrue(p.match(b'\xe5\xe5'))
+            self.assertTrue(p.match(b'\xc5\xc5'))
+        self.assertIsNone(p4.match(b'\xe5\xc5'))
+        self.assertIsNone(p4.match(b'\xe5\xe5'))
+        self.assertIsNone(p4.match(b'\xc5\xc5'))
+
+        locale.setlocale(locale.LC_CTYPE, 'en_US.utf8')
+        for p in p1, p2, p3:
+            self.assertTrue(p.match(b'\xc5\xe5'))
+            self.assertIsNone(p.match(b'\xe5\xe5'))
+            self.assertIsNone(p.match(b'\xc5\xc5'))
+        self.assertTrue(p4.match(b'\xe5\xc5'))
+        self.assertIsNone(p4.match(b'\xe5\xe5'))
+        self.assertIsNone(p4.match(b'\xc5\xc5'))
 
     def test_error(self):
         with self.assertRaises(re.error) as cm:

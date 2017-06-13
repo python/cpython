@@ -614,13 +614,13 @@ Constants
 .. data:: PROTOCOL_TLS
 
    Selects the highest protocol version that both the client and server support.
-   Despite the name, this option can select "TLS" protocols as well as "SSL".
+   Despite the name, this option can select both "SSL" and "TLS" protocols.
 
    .. versionadded:: 3.6
 
 .. data:: PROTOCOL_TLS_CLIENT
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_SSLv23`,
+   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
    but only support client-side :class:`SSLSocket` connections. The protocol
    enables :data:`CERT_REQUIRED` and :attr:`~SSLContext.check_hostname` by
    default.
@@ -629,7 +629,7 @@ Constants
 
 .. data:: PROTOCOL_TLS_SERVER
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_SSLv23`,
+   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
    but only support server-side :class:`SSLSocket` connections.
 
    .. versionadded:: 3.6

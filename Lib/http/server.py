@@ -87,7 +87,6 @@ __all__ = [
     "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
 ]
 
-import argparse
 import copy
 import datetime
 import email.utils
@@ -1227,6 +1226,8 @@ def test(HandlerClass=BaseHTTPRequestHandler,
             sys.exit(0)
 
 if __name__ == '__main__':
+    import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                        help='Run as CGI Server')

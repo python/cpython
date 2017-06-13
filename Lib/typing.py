@@ -11,9 +11,9 @@ try:
 except ImportError:
     import collections as collections_abc  # Fallback for PY3.2.
 try:
-    from types import SlotWrapperType, MethodWrapperType, MethodDescriptorType
+    from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType
 except ImportError:
-    SlotWrapperType = type(object.__init__)
+    WrapperDescriptorType = type(object.__init__)
     MethodWrapperType = type(object().__str__)
     MethodDescriptorType = type(str.join)
 
@@ -63,6 +63,8 @@ __all__ = [
     # Structural checks, a.k.a. protocols.
     'Reversible',
     'SupportsAbs',
+    'SupportsBytes',
+    'SupportsComplex',
     'SupportsFloat',
     'SupportsInt',
     'SupportsRound',
@@ -418,6 +420,31 @@ class _Any(_FinalTypingBase, _root=True):
 
 
 Any = _Any(_root=True)
+
+
+class _NoReturn(_FinalTypingBase, _root=True):
+    """Special type indicating functions that never return.
+    Example::
+
+      from typing import NoReturn
+
+      def stop() -> NoReturn:
+          raise Exception('no way')
+
+    This type is invalid in other positions, e.g., ``List[NoReturn]``
+    will fail in static type checkers.
+    """
+
+    __slots__ = ()
+
+    def __instancecheck__(self, obj):
+        raise TypeError("NoReturn cannot be used with isinstance().")
+
+    def __subclasscheck__(self, cls):
+        raise TypeError("NoReturn cannot be used with issubclass().")
+
+
+NoReturn = _NoReturn(_root=True)
 
 
 class TypeVar(_TypingBase, _root=True):
@@ -1450,7 +1477,7 @@ def _get_defaults(func):
 
 _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   types.MethodType, types.ModuleType,
-                  SlotWrapperType, MethodWrapperType, MethodDescriptorType)
+                  WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
 
 def get_type_hints(obj, globalns=None, localns=None):
@@ -2051,7 +2078,7 @@ _PY36 = sys.version_info[:2] >= (3, 6)
 # attributes prohibited to set in NamedTuple class syntax
 _prohibited = ('__new__', '__init__', '__slots__', '__getnewargs__',
                '_fields', '_field_defaults', '_field_types',
-               '_make', '_replace', '_asdict')
+               '_make', '_replace', '_asdict', '_source')
 
 _special = ('__module__', '__name__', '__qualname__', '__annotations__')
 

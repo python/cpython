@@ -120,18 +120,22 @@ class Regrtest:
     def display_progress(self, test_index, test):
         if self.ns.quiet:
             return
+
+        # "[ 51/405/1] test_tcl passed"
+        line = f"{test_index:{self.test_count_width}}{self.test_count}"
         if self.bad and not self.ns.pgo:
-            fmt = "{time} [{test_index:{count_width}}{test_count}/{nbad}] {test_name}"
-        else:
-            fmt = "{time} [{test_index:{count_width}}{test_count}] {test_name}"
+            line = f"{line}/{len(self.bad)}"
+        line = f"[{line}] {test}"
+
+        # add the system load prefix: "load avg: 1.80 "
+        if hasattr(os, 'getloadavg'):
+            load_avg_1min = os.getloadavg()[0]
+            line = f"load avg: {load_avg_1min:.2f} {line}"
+
+        # add the timestamp prefix:  "0:01:05 "
         test_time = time.monotonic() - self.start_time
         test_time = datetime.timedelta(seconds=int(test_time))
-        line = fmt.format(count_width=self.test_count_width,
-                          test_index=test_index,
-                          test_count=self.test_count,
-                          nbad=len(self.bad),
-                          test_name=test,
-                          time=test_time)
+        line = f"{test_time} {line}"
         print(line, flush=True)
 
     def parse_args(self, kwargs):
@@ -376,23 +380,28 @@ class Regrtest:
                 if self.bad:
                     return
 
+    def display_header(self):
+        # Print basic platform information
+        print("==", platform.python_implementation(), *sys.version.split())
+        print("==", platform.platform(aliased=True),
+                      "%s-endian" % sys.byteorder)
+        print("== hash algorithm:", sys.hash_info.algorithm,
+              "64bit" if sys.maxsize > 2**32 else "32bit")
+        print("== cwd:", os.getcwd())
+        cpu_count = os.cpu_count()
+        if cpu_count:
+            print("== CPU count:", cpu_count)
+        print("== encodings: locale=%s, FS=%s"
+              % (locale.getpreferredencoding(False),
+                 sys.getfilesystemencoding()))
+        print("Testing with flags:", sys.flags)
+
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
-        if (self.ns.verbose
-            or self.ns.header
-            or not (self.ns.pgo or self.ns.quiet or self.ns.single
-                    or self.tests or self.ns.args)):
-            # Print basic platform information
-            print("==", platform.python_implementation(), *sys.version.split())
-            print("==  ", platform.platform(aliased=True),
-                          "%s-endian" % sys.byteorder)
-            print("==  ", "hash algorithm:", sys.hash_info.algorithm,
-                  "64bit" if sys.maxsize > 2**32 else "32bit")
-            print("==  cwd:", os.getcwd())
-            print("==  encodings: locale=%s, FS=%s"
-                  % (locale.getpreferredencoding(False),
-                     sys.getfilesystemencoding()))
-            print("Testing with flags:", sys.flags)
+        if (self.ns.header
+            or not(self.ns.pgo or self.ns.quiet or self.ns.single
+                   or self.tests or self.ns.args)):
+            self.display_header()
 
         if self.ns.randomize:
             print("Using random seed", self.ns.random_seed)

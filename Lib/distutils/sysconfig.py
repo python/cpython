@@ -97,7 +97,7 @@ def get_python_inc(plat_specific=0, prefix=None):
             if plat_specific:
                 return base
             if _sys_home:
-                incdir = os.path.join(_sys_home, get_config_var('AST_H_DIR'))
+                incdir = os.path.join(_sys_home, 'Include')
             else:
                 incdir = os.path.join(get_config_var('srcdir'), 'Include')
             return os.path.normpath(incdir)

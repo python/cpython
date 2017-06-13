@@ -210,7 +210,7 @@ You can experiment with the iteration interface manually:
     3
     >>> next(it)
     Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
+      File "<stdin>", line 1, in <module>
     StopIteration
     >>>
 
@@ -474,7 +474,7 @@ Here's a sample usage of the ``generate_ints()`` generator:
     2
     >>> next(gen)
     Traceback (most recent call last):
-      File "stdin", line 1, in ?
+      File "stdin", line 1, in <module>
       File "stdin", line 2, in generate_ints
     StopIteration
 
@@ -577,7 +577,7 @@ And here's an example of changing the counter:
     9
     >>> next(it)  #doctest: +SKIP
     Traceback (most recent call last):
-      File "t.py", line 15, in ?
+      File "t.py", line 15, in <module>
         it.next()
     StopIteration
 

@@ -18,11 +18,10 @@ if TkVersion < 8.5:
     raise SystemExit(1)
 
 from code import InteractiveInterpreter
-import getopt
 import linecache
 import os
 import os.path
-from platform import python_version, system
+from platform import python_version
 import re
 import socket
 import subprocess
@@ -31,14 +30,12 @@ import time
 import tokenize
 import warnings
 
-from idlelib import testing  # bool value
 from idlelib.colorizer import ColorDelegator
 from idlelib.config import idleConf
 from idlelib import debugger
 from idlelib import debugger_r
 from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
-from idlelib import macosx
 from idlelib.outwin import OutputWindow
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
@@ -1371,6 +1368,11 @@ echo "import sys; print(sys.argv)" | idle - "foobar"
 """
 
 def main():
+    import getopt
+    from platform import system
+    from idlelib import testing  # bool value
+    from idlelib import macosx
+
     global flist, root, use_subprocess
 
     capture_warnings(True)
