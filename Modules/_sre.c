@@ -274,6 +274,38 @@ _sre_getcodesize_impl(PyObject *module)
 }
 
 /*[clinic input]
+_sre.ascii_iscased -> bool
+
+    character: int
+    /
+
+[clinic start generated code]*/
+
+static int
+_sre_ascii_iscased_impl(PyObject *module, int character)
+/*[clinic end generated code: output=4f454b630fbd19a2 input=9f0bd952812c7ed3]*/
+{
+    unsigned int ch = (unsigned int)character;
+    return ch != sre_lower(ch) || ch != sre_upper(ch);
+}
+
+/*[clinic input]
+_sre.unicode_iscased -> bool
+
+    character: int
+    /
+
+[clinic start generated code]*/
+
+static int
+_sre_unicode_iscased_impl(PyObject *module, int character)
+/*[clinic end generated code: output=9c5ddee0dc2bc258 input=51e42c3b8dddb78e]*/
+{
+    unsigned int ch = (unsigned int)character;
+    return ch != sre_lower_unicode(ch) || ch != sre_upper_unicode(ch);
+}
+
+/*[clinic input]
 _sre.ascii_tolower -> int
 
     character: int
@@ -2750,6 +2782,8 @@ static PyTypeObject Scanner_Type = {
 static PyMethodDef _functions[] = {
     _SRE_COMPILE_METHODDEF
     _SRE_GETCODESIZE_METHODDEF
+    _SRE_ASCII_ISCASED_METHODDEF
+    _SRE_UNICODE_ISCASED_METHODDEF
     _SRE_ASCII_TOLOWER_METHODDEF
     _SRE_UNICODE_TOLOWER_METHODDEF
     {NULL, NULL}

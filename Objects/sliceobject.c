@@ -197,6 +197,8 @@ PySlice_Unpack(PyObject *_r,
     PySliceObject *r = (PySliceObject*)_r;
     /* this is harder to get right than you might think */
 
+    Py_BUILD_ASSERT(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX);
+
     if (r->step == Py_None) {
         *step = 1;
     }
@@ -217,14 +219,14 @@ PySlice_Unpack(PyObject *_r,
     }
 
     if (r->start == Py_None) {
-        *start = *step < 0 ? PY_SSIZE_T_MAX-1 : 0;;
+        *start = *step < 0 ? PY_SSIZE_T_MAX : 0;
     }
     else {
         if (!_PyEval_SliceIndex(r->start, start)) return -1;
     }
 
     if (r->stop == Py_None) {
-        *stop = *step < 0 ? -PY_SSIZE_T_MAX : PY_SSIZE_T_MAX;
+        *stop = *step < 0 ? PY_SSIZE_T_MIN : PY_SSIZE_T_MAX;
     }
     else {
         if (!_PyEval_SliceIndex(r->stop, stop)) return -1;
@@ -258,7 +260,7 @@ PySlice_AdjustIndices(Py_ssize_t length,
             *stop = (step < 0) ? -1 : 0;
         }
     }
-    else  if (*stop >= length) {
+    else if (*stop >= length) {
         *stop = (step < 0) ? length - 1 : length;
     }
 

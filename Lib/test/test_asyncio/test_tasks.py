@@ -587,6 +587,24 @@ class BaseTaskTests:
         self.assertFalse(t._must_cancel)  # White-box test.
         self.assertFalse(t.cancel())
 
+    def test_cancel_at_end(self):
+        """coroutine end right after task is cancelled"""
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        @asyncio.coroutine
+        def task():
+            t.cancel()
+            self.assertTrue(t._must_cancel)  # White-box test.
+            return 12
+
+        t = self.new_task(loop, task())
+        self.assertRaises(
+            asyncio.CancelledError, loop.run_until_complete, t)
+        self.assertTrue(t.done())
+        self.assertFalse(t._must_cancel)  # White-box test.
+        self.assertFalse(t.cancel())
+
     def test_stop_while_run_in_complete(self):
 
         def gen():

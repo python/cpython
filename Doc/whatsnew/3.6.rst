@@ -534,7 +534,7 @@ provide correctly read str objects to Python code. ``sys.stdin``,
 
 This change only applies when using an interactive console, and not when
 redirecting files or pipes. To revert to the previous behaviour for interactive
-console use, set :envvar:`PYTHONLEGACYWINDOWSIOENCODING`.
+console use, set :envvar:`PYTHONLEGACYWINDOWSSTDIO`.
 
 .. seealso::
 

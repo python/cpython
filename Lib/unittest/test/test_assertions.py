@@ -225,9 +225,9 @@ class TestLongMessage(unittest.TestCase):
     def testAlmostEqual(self):
         self.assertMessages(
             'assertAlmostEqual', (1, 2),
-            ["^1 != 2 within 7 places \(1 difference\)$", "^oops$",
-             "^1 != 2 within 7 places \(1 difference\)$",
-             "^1 != 2 within 7 places \(1 difference\) : oops$"])
+            [r"^1 != 2 within 7 places \(1 difference\)$", "^oops$",
+             r"^1 != 2 within 7 places \(1 difference\)$",
+             r"^1 != 2 within 7 places \(1 difference\) : oops$"])
 
     def testNotAlmostEqual(self):
         self.assertMessages('assertNotAlmostEqual', (1, 1),

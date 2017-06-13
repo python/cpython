@@ -9,6 +9,7 @@ from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
 
+
 class TestBasicOps:
     # Superclass with tests common to all generators.
     # Subclasses must arrange for self.gen to retrieve the Random instance
@@ -50,7 +51,7 @@ class TestBasicOps:
     @unittest.mock.patch('random._urandom') # os.urandom
     def test_seed_when_randomness_source_not_found(self, urandom_mock):
         # Random.seed() uses time.time() when an operating system specific
-        # randomness source is not found. To test this on machines were it
+        # randomness source is not found. To test this on machines where it
         # exists, run the above test, test_seedargs(), again after mocking
         # os.urandom() so that it raises the exception expected when the
         # randomness source is not available.
@@ -88,6 +89,15 @@ class TestBasicOps:
         self.assertTrue(lst != shuffled_lst)
         shuffle(lst)
         self.assertTrue(lst != shuffled_lst)
+        self.assertRaises(TypeError, shuffle, (1, 2, 3))
+
+    def test_shuffle_random_argument(self):
+        # Test random argument to shuffle.
+        shuffle = self.gen.shuffle
+        mock_random = unittest.mock.Mock(return_value=0.5)
+        seq = bytearray(b'abcdefghijk')
+        shuffle(seq, mock_random)
+        mock_random.assert_called_with()
 
     def test_choice(self):
         choice = self.gen.choice

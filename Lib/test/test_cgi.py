@@ -126,8 +126,8 @@ class CgiTests(unittest.TestCase):
         env = {'boundary': BOUNDARY.encode('latin1'),
                'CONTENT-LENGTH': '558'}
         result = cgi.parse_multipart(fp, env)
-        expected = {'submit': [b' Add '], 'id': [b'1234'],
-                    'file': [b'Testing 123.\n'], 'title': [b'']}
+        expected = {'submit': [' Add '], 'id': ['1234'],
+                    'file': [b'Testing 123.\n'], 'title': ['']}
         self.assertEqual(result, expected)
 
     def test_fieldstorage_properties(self):

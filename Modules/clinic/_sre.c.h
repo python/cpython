@@ -29,6 +29,68 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_sre_ascii_iscased__doc__,
+"ascii_iscased($module, character, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_ASCII_ISCASED_METHODDEF    \
+    {"ascii_iscased", (PyCFunction)_sre_ascii_iscased, METH_O, _sre_ascii_iscased__doc__},
+
+static int
+_sre_ascii_iscased_impl(PyObject *module, int character);
+
+static PyObject *
+_sre_ascii_iscased(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int character;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:ascii_iscased", &character)) {
+        goto exit;
+    }
+    _return_value = _sre_ascii_iscased_impl(module, character);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_unicode_iscased__doc__,
+"unicode_iscased($module, character, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_UNICODE_ISCASED_METHODDEF    \
+    {"unicode_iscased", (PyCFunction)_sre_unicode_iscased, METH_O, _sre_unicode_iscased__doc__},
+
+static int
+_sre_unicode_iscased_impl(PyObject *module, int character);
+
+static PyObject *
+_sre_unicode_iscased(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int character;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:unicode_iscased", &character)) {
+        goto exit;
+    }
+    _return_value = _sre_unicode_iscased_impl(module, character);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_sre_ascii_tolower__doc__,
 "ascii_tolower($module, character, /)\n"
 "--\n"
@@ -715,4 +777,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=811e67d7f8f5052e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5fe47c49e475cccb input=a9049054013a1b77]*/

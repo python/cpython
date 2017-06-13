@@ -922,7 +922,7 @@ annotation.
    builtin: eval
    builtin: compile
 
-**Programmer's note:** the :keyword:`global` is a directive to the parser.  It
+**Programmer's note:** :keyword:`global` is a directive to the parser.  It
 applies only to code parsed at the same time as the :keyword:`global` statement.
 In particular, a :keyword:`global` statement contained in a string or code
 object supplied to the built-in :func:`exec` function does not affect the code
