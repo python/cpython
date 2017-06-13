@@ -176,6 +176,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io_TextIOWrapper_reconfigure__doc__,
+"reconfigure($self, /, *, line_buffering=None, write_through=None)\n"
+"--\n"
+"\n"
+"Reconfigure the text stream with new parameters.\n"
+"\n"
+"This also does an implicit stream flush.");
+
+#define _IO_TEXTIOWRAPPER_RECONFIGURE_METHODDEF    \
+    {"reconfigure", (PyCFunction)_io_TextIOWrapper_reconfigure, METH_FASTCALL, _io_TextIOWrapper_reconfigure__doc__},
+
+static PyObject *
+_io_TextIOWrapper_reconfigure_impl(textio *self,
+                                   PyObject *line_buffering_obj,
+                                   PyObject *write_through_obj);
+
+static PyObject *
+_io_TextIOWrapper_reconfigure(textio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"line_buffering", "write_through", NULL};
+    static _PyArg_Parser _parser = {"|$OO:reconfigure", _keywords, 0};
+    PyObject *line_buffering_obj = Py_None;
+    PyObject *write_through_obj = Py_None;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &line_buffering_obj, &write_through_obj)) {
+        goto exit;
+    }
+    return_value = _io_TextIOWrapper_reconfigure_impl(self, line_buffering_obj, write_through_obj);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_TextIOWrapper_detach__doc__,
 "detach($self, /)\n"
 "--\n"
@@ -480,4 +515,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=8e5c21c88c7c70bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d0dc8eae4b725a1 input=a9049054013a1b77]*/

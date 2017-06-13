@@ -847,7 +847,7 @@ PyDoc_STRVAR(_ssl_RAND_add__doc__,
 "Mix string into the OpenSSL PRNG state.\n"
 "\n"
 "entropy (a float) is a lower bound on the entropy contained in\n"
-"string.  See RFC 1750.");
+"string.  See RFC 4086.");
 
 #define _SSL_RAND_ADD_METHODDEF    \
     {"RAND_add", (PyCFunction)_ssl_RAND_add, METH_FASTCALL, _ssl_RAND_add__doc__},

@@ -1929,11 +1929,14 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
 
     /* Check boundaries */
     if ((buffer.len - offset) < soself->s_size) {
+        assert(offset >= 0);
+        assert(soself->s_size >= 0);
+
         PyErr_Format(StructError,
-                     "pack_into requires a buffer of at least %zd bytes for "
+                     "pack_into requires a buffer of at least %zu bytes for "
                      "packing %zd bytes at offset %zd "
                      "(actual buffer size is %zd)",
-                     soself->s_size + offset,
+                     (size_t)soself->s_size + (size_t)offset,
                      soself->s_size,
                      offset,
                      buffer.len);

@@ -1343,13 +1343,13 @@ class TestTokenize(TestCase):
         tokens = list(tokenize(BytesIO(opstr.encode('utf-8')).readline))
         num_optypes = len(optypes)
         self.assertEqual(len(tokens), 2 + num_optypes)
-        self.assertEqual(token.tok_name[tokens[0].exact_type],
-                         token.tok_name[ENCODING])
+        self.assertEqual(tok_name[tokens[0].exact_type],
+                         tok_name[ENCODING])
         for i in range(num_optypes):
-            self.assertEqual(token.tok_name[tokens[i + 1].exact_type],
-                             token.tok_name[optypes[i]])
-        self.assertEqual(token.tok_name[tokens[1 + num_optypes].exact_type],
-                         token.tok_name[token.ENDMARKER])
+            self.assertEqual(tok_name[tokens[i + 1].exact_type],
+                             tok_name[optypes[i]])
+        self.assertEqual(tok_name[tokens[1 + num_optypes].exact_type],
+                         tok_name[token.ENDMARKER])
 
     def test_exact_type(self):
         self.assertExactTypeEqual('()', token.LPAR, token.RPAR)

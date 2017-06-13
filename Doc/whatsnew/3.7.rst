@@ -103,13 +103,6 @@ New Modules
 Improved Modules
 ================
 
-cgi
----
-
-:func:`~cgi.parse_multipart` returns the same results as
-:class:`~FieldStorage` : for non-file fields, the value associated to a key
-is a list of strings, not bytes.
-(Contributed by Pierre Quentel in :issue:`29979`.)
 
 binascii
 --------
@@ -117,6 +110,22 @@ binascii
 The :func:`~binascii.b2a_uu` function now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+
+calendar
+--------
+
+The :class:`~calendar.HTMLCalendar` has added new class attribute which ease the
+customisation the CSS classes in the produced HTML calendar.
+(Contributed by Oz Tiram in :issue:`30095`.)
+
+cgi
+---
+
+:func:`~cgi.parse_multipart` returns the same results as
+:class:`~FieldStorage` : for non-file fields, the value associated to a key
+is a list of strings, not bytes.
+(Contributed by Pierre Quentel in :issue:`29979`.)
 
 contextlib
 ----------

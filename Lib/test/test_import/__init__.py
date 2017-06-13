@@ -597,7 +597,7 @@ class PathsTests(unittest.TestCase):
         try:
             os.listdir(unc)
         except OSError as e:
-            if e.errno in (errno.EPERM, errno.EACCES):
+            if e.errno in (errno.EPERM, errno.EACCES, errno.ENOENT):
                 # See issue #15338
                 self.skipTest("cannot access administrative share %r" % (unc,))
             raise

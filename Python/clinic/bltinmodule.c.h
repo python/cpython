@@ -77,7 +77,9 @@ PyDoc_STRVAR(builtin_format__doc__,
 "\n"
 "Return value.__format__(format_spec)\n"
 "\n"
-"format_spec defaults to the empty string");
+"format_spec defaults to the empty string.\n"
+"See the Format Specification Mini-Language section of help(\'FORMATTING\') for\n"
+"details.");
 
 #define BUILTIN_FORMAT_METHODDEF    \
     {"format", (PyCFunction)builtin_format, METH_FASTCALL, builtin_format__doc__},
@@ -722,4 +724,4 @@ builtin_issubclass(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3234725ef4d8bbf1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17fedd2dec148677 input=a9049054013a1b77]*/

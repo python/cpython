@@ -38,17 +38,10 @@ cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
-__all__ = token.__all__ + ["COMMENT", "tokenize", "detect_encoding",
-                           "NL", "untokenize", "ENCODING", "TokenInfo"]
+__all__ = token.__all__ + ["tokenize", "detect_encoding",
+                           "untokenize", "TokenInfo"]
 del token
 
-COMMENT = N_TOKENS
-tok_name[COMMENT] = 'COMMENT'
-NL = N_TOKENS + 1
-tok_name[NL] = 'NL'
-ENCODING = N_TOKENS + 2
-tok_name[ENCODING] = 'ENCODING'
-N_TOKENS += 3
 EXACT_TOKEN_TYPES = {
     '(':   LPAR,
     ')':   RPAR,

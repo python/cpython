@@ -240,8 +240,6 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 void
 PyEval_ReInitThreads(void)
 {
-    _Py_IDENTIFIER(_after_fork);
-    PyObject *threading, *result;
     PyThreadState *current_tstate = PyThreadState_GET();
 
     if (!gil_created())
@@ -250,22 +248,6 @@ PyEval_ReInitThreads(void)
     pending_lock = PyThread_allocate_lock();
     take_gil(current_tstate);
     main_thread = PyThread_get_thread_ident();
-
-    /* Update the threading module with the new state.
-     */
-    threading = PyMapping_GetItemString(current_tstate->interp->modules,
-                                        "threading");
-    if (threading == NULL) {
-        /* threading not imported */
-        PyErr_Clear();
-        return;
-    }
-    result = _PyObject_CallMethodId(threading, &PyId__after_fork, NULL);
-    if (result == NULL)
-        PyErr_WriteUnraisable(threading);
-    else
-        Py_DECREF(result);
-    Py_DECREF(threading);
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);

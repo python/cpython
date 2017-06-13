@@ -147,7 +147,7 @@ it's the base calendar for all computations.
    This class can be used to generate HTML calendars.
 
 
-   :class:`HTMLCalendar` instances have the following methods:
+   :class:`!HTMLCalendar` instances have the following methods:
 
    .. method:: formatmonth(theyear, themonth, withyear=True)
 
@@ -169,6 +169,85 @@ it's the base calendar for all computations.
       cascading style sheet to be used. :const:`None` can be passed if no style
       sheet should be used. *encoding* specifies the encoding to be used for the
       output (defaulting to the system default encoding).
+
+
+   :class:`!HTMLCalendar` has the following attributes you can override to
+   customize the CSS classes used by the calendar:
+
+   .. attribute:: cssclasses
+
+      A list of CSS classes used for each weekday. The default class list is::
+
+         cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+      more styles can be added for each day::
+
+         cssclasses = ["mon text-bold", "tue", "wed", "thu", "fri", "sat", "sun red"]
+
+      Note that the length of this list must be seven items.
+
+
+   .. attribute:: cssclass_noday
+
+      The CSS class for a weekday occurring in the previous or coming month.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclasses_weekday_head
+
+      A list of CSS classes used for weekday names in the header row.
+      The default is the same as :attr:`cssclasses`.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclass_month_head
+
+      The month's head CSS class (used by :meth:`formatmonthname`).
+      The default value is ``"month"``.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclass_month
+
+      The CSS class for the whole month's table (used by :meth:`formatmonth`).
+      The default value is ``"month"``.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclass_year
+
+      The CSS class for the whole year's table of tables (used by
+      :meth:`formatyear`). The default value is ``"year"``.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: cssclass_year_head
+
+      The CSS class for the table head for the whole year (used by
+      :meth:`formatyear`). The default value is ``"year"``.
+
+      .. versionadded:: 3.7
+
+
+   Note that although the naming for the above described class attributes is
+   singular (e.g. ``cssclass_month`` ``cssclass_noday``), one can replace the
+   single CSS class with a space separated list of CSS classes, for example::
+
+         "text-bold text-red"
+
+   Here is an example how :class:`!HTMLCalendar` can be customized::
+
+       class CustomHTMLCal(calendar.HTMLCalendar):
+           cssclasses = [style + " text-nowrap" for style in
+                         calendar.HTMLCalendar.cssclasses]
+           cssclass_month_head = "text-center month-head"
+           cssclass_month = "text-center month"
+           cssclass_year = "text-italic lead"
 
 
 .. class:: LocaleTextCalendar(firstweekday=0, locale=None)

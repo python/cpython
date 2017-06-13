@@ -189,19 +189,41 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(pid, res.si_pid)
 
     @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
-    def test_register_after_fork(self):
+    def test_register_at_fork(self):
+        with self.assertRaises(TypeError, msg="Positional args not allowed"):
+            os.register_at_fork(lambda: None)
+        with self.assertRaises(TypeError, msg="Args must be callable"):
+            os.register_at_fork(before=2)
+        with self.assertRaises(TypeError, msg="Args must be callable"):
+            os.register_at_fork(after_in_child="three")
+        with self.assertRaises(TypeError, msg="Args must be callable"):
+            os.register_at_fork(after_in_parent=b"Five")
+        with self.assertRaises(TypeError, msg="Args must not be None"):
+            os.register_at_fork(before=None)
+        with self.assertRaises(TypeError, msg="Args must not be None"):
+            os.register_at_fork(after_in_child=None)
+        with self.assertRaises(TypeError, msg="Args must not be None"):
+            os.register_at_fork(after_in_parent=None)
+        with self.assertRaises(TypeError, msg="Invalid arg was allowed"):
+            # Ensure a combination of valid and invalid is an error.
+            os.register_at_fork(before=None, after_in_parent=lambda: 3)
+        with self.assertRaises(TypeError, msg="Invalid arg was allowed"):
+            # Ensure a combination of valid and invalid is an error.
+            os.register_at_fork(before=lambda: None, after_in_child='')
+        # We test actual registrations in their own process so as not to
+        # pollute this one.  There is no way to unregister for cleanup.
         code = """if 1:
             import os
 
             r, w = os.pipe()
             fin_r, fin_w = os.pipe()
 
-            os.register_at_fork(lambda: os.write(w, b'A'), when='before')
-            os.register_at_fork(lambda: os.write(w, b'B'), when='before')
-            os.register_at_fork(lambda: os.write(w, b'C'), when='parent')
-            os.register_at_fork(lambda: os.write(w, b'D'), when='parent')
-            os.register_at_fork(lambda: os.write(w, b'E'), when='child')
-            os.register_at_fork(lambda: os.write(w, b'F'), when='child')
+            os.register_at_fork(before=lambda: os.write(w, b'A'))
+            os.register_at_fork(after_in_parent=lambda: os.write(w, b'C'))
+            os.register_at_fork(after_in_child=lambda: os.write(w, b'E'))
+            os.register_at_fork(before=lambda: os.write(w, b'B'),
+                                after_in_parent=lambda: os.write(w, b'D'),
+                                after_in_child=lambda: os.write(w, b'F'))
 
             pid = os.fork()
             if pid == 0:
