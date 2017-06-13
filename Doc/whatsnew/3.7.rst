@@ -395,6 +395,10 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
+* :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
+  Previously an empty list was returned. (Contributed by Sanyam Khurana in
+  :issue:`24744`.)
+
 * A format string argument for :meth:`string.Formatter.format`
   is now :ref:`positional-only <positional-only_parameter>`.
   Passing it as a keyword argument was deprecated in Python 3.5. (Contributed

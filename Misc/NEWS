@@ -362,6 +362,9 @@ Extension Modules
 Library
 -------
 
+- bpo-24744: pkgutil.walk_packages function now raises ValueError if *path*
+  is a string. Patch by Sanyam Khurana.
+
 - bpo-24484: Avoid race condition in multiprocessing cleanup.
 
 - bpo-30589: Fix multiprocessing.Process.exitcode to return the opposite
