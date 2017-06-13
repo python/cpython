@@ -60,7 +60,7 @@ typedef struct _co_extra_state {
 } __PyCodeExtraState;
 
 /* This is temporary for backwards compat in 3.6 and will be removed in 3.7 */
-__PyCodeExtraState* __PyCodeExtraState_Get();
+__PyCodeExtraState* __PyCodeExtraState_Get(void);
 
 /* State unique per thread */
 

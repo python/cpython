@@ -571,8 +571,8 @@ PyThreadState_Swap(PyThreadState *newts)
     return oldts;
 }
 
-__PyCodeExtraState* 
-__PyCodeExtraState_Get() {
+__PyCodeExtraState*
+__PyCodeExtraState_Get(void) {
     PyInterpreterState* interp = PyThreadState_Get()->interp;
 
     HEAD_LOCK();
