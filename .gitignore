@@ -3,6 +3,7 @@
 /python
 !/Python/
 *.cover
+*.iml
 *.o
 *.orig
 *.pyc
@@ -74,6 +75,7 @@ config.status.lineno
 core
 db_home
 .hg/
+.idea/
 ipch/
 libpython*.a
 libpython*.so*

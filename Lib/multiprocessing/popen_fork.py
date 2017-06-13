@@ -68,9 +68,6 @@ class Popen(object):
         if self.pid == 0:
             try:
                 os.close(parent_r)
-                if 'random' in sys.modules:
-                    import random
-                    random.seed()
                 code = process_obj._bootstrap()
             finally:
                 os._exit(code)

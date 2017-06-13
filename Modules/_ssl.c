@@ -298,9 +298,7 @@ typedef struct {
     PyObject *Socket; /* weakref to socket on which we're layered */
     SSL *ssl;
     PySSLContext *ctx; /* weakref to SSL context */
-    X509 *peer_cert;
     char shutdown_seen_zero;
-    char handshake_done;
     enum py_ssl_server_or_client socket_type;
     PyObject *owner; /* Python level "owner" passed to servername callback */
     PyObject *server_hostname;
@@ -595,12 +593,10 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     if (self == NULL)
         return NULL;
 
-    self->peer_cert = NULL;
     self->ssl = NULL;
     self->Socket = NULL;
     self->ctx = sslctx;
     self->shutdown_seen_zero = 0;
-    self->handshake_done = 0;
     self->owner = NULL;
     self->server_hostname = NULL;
     if (server_hostname != NULL) {
@@ -747,13 +743,6 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     Py_XDECREF(sock);
     if (ret < 1)
         return PySSL_SetError(self, ret, __FILE__, __LINE__);
-
-    if (self->peer_cert)
-        X509_free (self->peer_cert);
-    PySSL_BEGIN_ALLOW_THREADS
-    self->peer_cert = SSL_get_peer_certificate(self->ssl);
-    PySSL_END_ALLOW_THREADS
-    self->handshake_done = 1;
 
     Py_RETURN_NONE;
 
@@ -1506,25 +1495,30 @@ _ssl__SSLSocket_peer_certificate_impl(PySSLSocket *self, int binary_mode)
 /*[clinic end generated code: output=f0dc3e4d1d818a1d input=8281bd1d193db843]*/
 {
     int verification;
+    X509 *peer_cert;
+    PyObject *result;
 
-    if (!self->handshake_done) {
+    if (!SSL_is_init_finished(self->ssl)) {
         PyErr_SetString(PyExc_ValueError,
                         "handshake not done yet");
         return NULL;
     }
-    if (!self->peer_cert)
+    peer_cert = SSL_get_peer_certificate(self->ssl);
+    if (peer_cert == NULL)
         Py_RETURN_NONE;
 
     if (binary_mode) {
         /* return cert in DER-encoded format */
-        return _certificate_to_der(self->peer_cert);
+        result = _certificate_to_der(peer_cert);
     } else {
         verification = SSL_CTX_get_verify_mode(SSL_get_SSL_CTX(self->ssl));
         if ((verification & SSL_VERIFY_PEER) == 0)
-            return PyDict_New();
+            result = PyDict_New();
         else
-            return _decode_certificate(self->peer_cert);
+            result = _decode_certificate(peer_cert);
     }
+    X509_free(peer_cert);
+    return result;
 }
 
 static PyObject *
@@ -1845,8 +1839,6 @@ Passed as \"self\" in servername callback.");
 
 static void PySSL_dealloc(PySSLSocket *self)
 {
-    if (self->peer_cert)        /* Possible not to have one? */
-        X509_free (self->peer_cert);
     if (self->ssl)
         SSL_free(self->ssl);
     Py_XDECREF(self->Socket);
@@ -2442,7 +2434,7 @@ static int PySSL_set_session(PySSLSocket *self, PyObject *value,
                         "Cannot set session for server-side SSLSocket.");
         return -1;
     }
-    if (self->handshake_done) {
+    if (SSL_is_init_finished(self->ssl)) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot set session after handshake.");
         return -1;

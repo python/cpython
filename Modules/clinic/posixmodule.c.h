@@ -1825,6 +1825,50 @@ exit:
 
 #endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
 
+#if defined(HAVE_FORK)
+
+PyDoc_STRVAR(os_register_at_fork__doc__,
+"register_at_fork($module, func, /, when)\n"
+"--\n"
+"\n"
+"Register a callable object to be called when forking.\n"
+"\n"
+"  func\n"
+"    Function or callable\n"
+"  when\n"
+"    \'before\', \'child\' or \'parent\'\n"
+"\n"
+"\'before\' callbacks are called in reverse order before forking.\n"
+"\'child\' callbacks are called in order after forking, in the child process.\n"
+"\'parent\' callbacks are called in order after forking, in the parent process.");
+
+#define OS_REGISTER_AT_FORK_METHODDEF    \
+    {"register_at_fork", (PyCFunction)os_register_at_fork, METH_FASTCALL, os_register_at_fork__doc__},
+
+static PyObject *
+os_register_at_fork_impl(PyObject *module, PyObject *func, const char *when);
+
+static PyObject *
+os_register_at_fork(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "when", NULL};
+    static _PyArg_Parser _parser = {"Os:register_at_fork", _keywords, 0};
+    PyObject *func;
+    const char *when;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &func, &when)) {
+        goto exit;
+    }
+    return_value = os_register_at_fork_impl(module, func, when);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_FORK) */
+
 #if defined(HAVE_FORK1)
 
 PyDoc_STRVAR(os_fork1__doc__,
@@ -6122,6 +6166,10 @@ exit:
     #define OS_SPAWNVE_METHODDEF
 #endif /* !defined(OS_SPAWNVE_METHODDEF) */
 
+#ifndef OS_REGISTER_AT_FORK_METHODDEF
+    #define OS_REGISTER_AT_FORK_METHODDEF
+#endif /* !defined(OS_REGISTER_AT_FORK_METHODDEF) */
+
 #ifndef OS_FORK1_METHODDEF
     #define OS_FORK1_METHODDEF
 #endif /* !defined(OS_FORK1_METHODDEF) */
@@ -6493,4 +6541,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=5529857101c08b49 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=699e11c5579a104e input=a9049054013a1b77]*/

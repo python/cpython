@@ -349,7 +349,7 @@ PYTHON_OBJS=	\
 		Python/pystate.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
-		Python/random.o \
+		Python/bootstrap_hash.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
@@ -1674,7 +1674,6 @@ funny:
 		-o -name Makefile \
 		-o -name ChangeLog \
 		-o -name .hgignore \
-		-o -name .bzrignore \
 		-o -name MANIFEST \
 		-o -print
 

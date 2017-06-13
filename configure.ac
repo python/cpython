@@ -1251,6 +1251,27 @@ else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
 
+# Check for --with-assertions. Py_DEBUG implies assertions, but also changes
+# the ABI. This allows enabling assertions without changing the ABI.
+assertions='false'
+AC_MSG_CHECKING(for --with-assertions)
+AC_ARG_WITH(assertions,
+            AC_HELP_STRING([--with-assertions], [build with C assertions enabled]),
+[
+if test "$withval" != no
+then
+  assertions='true'
+fi],
+[])
+if test "$assertions" = 'true'; then
+  AC_MSG_RESULT(yes)
+elif test "$Py_DEBUG" = 'true'; then
+  assertions='true'
+  AC_MSG_RESULT(implied by --with-pydebug)
+else
+  AC_MSG_RESULT(no)
+fi
+
 # Enable optimization flags
 AC_SUBST(DEF_MAKE_ALL_RULE)
 AC_SUBST(DEF_MAKE_RULE)
@@ -1868,7 +1889,7 @@ case "$CC" in
     ;;
 esac
 
-if test "$Py_DEBUG" = 'true'; then
+if test "$assertions" = 'true'; then
   :
 else
   OPT="-DNDEBUG $OPT"

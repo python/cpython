@@ -13,9 +13,10 @@ class AboutDialog(Toplevel):
     """Modal about dialog for idle
 
     """
-    def __init__(self, parent, title, _htest=False):
+    def __init__(self, parent, title, _htest=False, _utest=False):
         """
         _htest - bool, change box location when running htest
+        _utest - bool, don't wait_window when running unittest
         """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
@@ -35,7 +36,12 @@ class AboutDialog(Toplevel):
         self.buttonOk.focus_set()
         self.bind('<Return>',self.Ok) #dismiss dialog
         self.bind('<Escape>',self.Ok) #dismiss dialog
-        self.wait_window()
+        self._current_textview = None
+        self._utest = _utest
+
+        if not _utest:
+            self.deiconify()
+            self.wait_window()
 
     def CreateWidgets(self):
         release = version[:version.index(' ')]
@@ -80,18 +86,18 @@ class AboutDialog(Toplevel):
         labelTkVer.grid(row=9, column=1, sticky=W, padx=2, pady=0)
         py_button_f = Frame(frameBg, bg=self.bg)
         py_button_f.grid(row=10, column=0, columnspan=2, sticky=NSEW)
-        buttonLicense = Button(py_button_f, text='License', width=8,
-                               highlightbackground=self.bg,
-                               command=self.ShowLicense)
-        buttonLicense.pack(side=LEFT, padx=10, pady=10)
-        buttonCopyright = Button(py_button_f, text='Copyright', width=8,
-                                 highlightbackground=self.bg,
-                                 command=self.ShowCopyright)
-        buttonCopyright.pack(side=LEFT, padx=10, pady=10)
-        buttonCredits = Button(py_button_f, text='Credits', width=8,
-                               highlightbackground=self.bg,
-                               command=self.ShowPythonCredits)
-        buttonCredits.pack(side=LEFT, padx=10, pady=10)
+        self.buttonLicense = Button(py_button_f, text='License', width=8,
+                                    highlightbackground=self.bg,
+                                    command=self.ShowLicense)
+        self.buttonLicense.pack(side=LEFT, padx=10, pady=10)
+        self.buttonCopyright = Button(py_button_f, text='Copyright', width=8,
+                                      highlightbackground=self.bg,
+                                      command=self.ShowCopyright)
+        self.buttonCopyright.pack(side=LEFT, padx=10, pady=10)
+        self.buttonCredits = Button(py_button_f, text='Credits', width=8,
+                                    highlightbackground=self.bg,
+                                    command=self.ShowPythonCredits)
+        self.buttonCredits.pack(side=LEFT, padx=10, pady=10)
         Frame(frameBg, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=11, column=0, sticky=EW,
                                          columnspan=3, padx=5, pady=5)
@@ -100,18 +106,18 @@ class AboutDialog(Toplevel):
         idle_v.grid(row=12, column=0, sticky=W, padx=10, pady=0)
         idle_button_f = Frame(frameBg, bg=self.bg)
         idle_button_f.grid(row=13, column=0, columnspan=3, sticky=NSEW)
-        idle_about_b = Button(idle_button_f, text='README', width=8,
-                                highlightbackground=self.bg,
-                                command=self.ShowIDLEAbout)
-        idle_about_b.pack(side=LEFT, padx=10, pady=10)
-        idle_news_b = Button(idle_button_f, text='NEWS', width=8,
-                                highlightbackground=self.bg,
-                                command=self.ShowIDLENEWS)
-        idle_news_b.pack(side=LEFT, padx=10, pady=10)
-        idle_credits_b = Button(idle_button_f, text='Credits', width=8,
-                                highlightbackground=self.bg,
-                                command=self.ShowIDLECredits)
-        idle_credits_b.pack(side=LEFT, padx=10, pady=10)
+        self.idle_about_b = Button(idle_button_f, text='README', width=8,
+                                   highlightbackground=self.bg,
+                                   command=self.ShowIDLEAbout)
+        self.idle_about_b.pack(side=LEFT, padx=10, pady=10)
+        self.idle_news_b = Button(idle_button_f, text='NEWS', width=8,
+                                  highlightbackground=self.bg,
+                                  command=self.ShowIDLENEWS)
+        self.idle_news_b.pack(side=LEFT, padx=10, pady=10)
+        self.idle_credits_b = Button(idle_button_f, text='Credits', width=8,
+                                     highlightbackground=self.bg,
+                                     command=self.ShowIDLECredits)
+        self.idle_credits_b.pack(side=LEFT, padx=10, pady=10)
 
     # License, et all, are of type _sitebuiltins._Printer
     def ShowLicense(self):
@@ -137,11 +143,13 @@ class AboutDialog(Toplevel):
     def display_printer_text(self, title, printer):
         printer._Printer__setup()
         text = '\n'.join(printer._Printer__lines)
-        textview.view_text(self, title, text)
+        self._current_textview = textview.view_text(
+            self, title, text, _utest=self._utest)
 
     def display_file_text(self, title, filename, encoding=None):
         fn = os.path.join(os.path.abspath(os.path.dirname(__file__)), filename)
-        textview.view_file(self, title, fn, encoding)
+        self._current_textview = textview.view_file(
+            self, title, fn, encoding, _utest=self._utest)
 
     def Ok(self, event=None):
         self.destroy()

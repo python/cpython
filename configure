@@ -817,6 +817,7 @@ with_suffix
 enable_shared
 enable_profiling
 with_pydebug
+with_assertions
 enable_optimizations
 with_lto
 with_hash_algorithm
@@ -1512,6 +1513,7 @@ Optional Packages:
                           compiler
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
+  --with-assertions       build with C assertions enabled
   --with-lto              Enable Link Time Optimization in PGO builds.
                           Disabled by default.
   --with-hash-algorithm=[fnv|siphash24]
@@ -6464,6 +6466,33 @@ $as_echo "no" >&6; }
 fi
 
 
+# Check for --with-assertions. Py_DEBUG implies assertions, but also changes
+# the ABI. This allows enabling assertions without changing the ABI.
+assertions='false'
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-assertions" >&5
+$as_echo_n "checking for --with-assertions... " >&6; }
+
+# Check whether --with-assertions was given.
+if test "${with_assertions+set}" = set; then :
+  withval=$with_assertions;
+if test "$withval" != no
+then
+  assertions='true'
+fi
+fi
+
+if test "$assertions" = 'true'; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+elif test "$Py_DEBUG" = 'true'; then
+  assertions='true'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: implied by --with-pydebug" >&5
+$as_echo "implied by --with-pydebug" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
 # Enable optimization flags
 
 
@@ -7414,7 +7443,7 @@ case "$CC" in
     ;;
 esac
 
-if test "$Py_DEBUG" = 'true'; then
+if test "$assertions" = 'true'; then
   :
 else
   OPT="-DNDEBUG $OPT"

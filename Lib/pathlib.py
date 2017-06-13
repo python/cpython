@@ -114,10 +114,7 @@ class _WindowsFlavour(_Flavour):
 
     is_supported = (os.name == 'nt')
 
-    drive_letters = (
-        set(chr(x) for x in range(ord('a'), ord('z') + 1)) |
-        set(chr(x) for x in range(ord('A'), ord('Z') + 1))
-    )
+    drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     ext_namespace_prefix = '\\\\?\\'
 
     reserved_names = (

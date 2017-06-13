@@ -203,6 +203,9 @@ Functions
    classes.
 
    .. versionadded:: 3.4
+   .. versionchanged:: 3.7
+       :exc:`ModuleNotFoundError` is raised when the module being reloaded lacks
+       a :class:`ModuleSpec`.
 
 
 :mod:`importlib.abc` -- Abstract base classes related to import
