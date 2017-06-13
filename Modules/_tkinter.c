@@ -2131,8 +2131,12 @@ Tkapp_GetInt(PyObject *self, PyObject *args)
     result = fromWideIntObj(self, value);
 #endif
     Tcl_DecrRefCount(value);
-    if (result != NULL)
-        return PyNumber_Int(result);
+    if (result != NULL) {
+        PyObject *resint = PyNumber_Int(result);
+        Py_DECREF(result);
+        return resint;
+    }
+
     if (PyErr_Occurred())
         return NULL;
 #else
