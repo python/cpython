@@ -176,7 +176,7 @@ class _LocaleCoercionTargetsTestCase(_ChildProcessEncodingTestCase):
     # Base class for test cases that rely on coercion targets being defined
 
     @classmethod
-    def setupClass(cls):
+    def setUpClass(cls):
         if not AVAILABLE_TARGETS:
             raise unittest.SkipTest("No C-with-UTF-8 locale available")
 
