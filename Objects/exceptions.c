@@ -2868,8 +2868,8 @@ static int
 _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
 
-    PyObject *strip_sep_obj = PyUnicode_FromString("\r\n");
-    Py_UCS4 soft_space_check = PyUnicode_READ_CHAR(PyUnicode_FromString(","), 0);
+    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
+//    Py_UCS4 soft_space_check = PyUnicode_READ_CHAR(PyUnicode_FromString(","), 0);
 
     if (strip_sep_obj == NULL)
         return -1;
@@ -2879,28 +2879,37 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
     PyObject *data = PyUnicode_Substring(self->text, PRINT_OFFSET, text_len);
 
-    if (data == NULL)
+    if (data == NULL) {
+        Py_DECREF(strip_sep_obj);
         return -1;
+    }
 
-    data = _PyUnicode_XStrip(data, 1, strip_sep_obj);
+    PyObject *new_data = _PyUnicode_XStrip(data, 1, strip_sep_obj);
 
+    Py_DECREF(data);
     Py_DECREF(strip_sep_obj);
 
+    if (new_data == NULL) {
+        return -1;
+    }
+
     // gets the modified text_len after stripping `print `
-    text_len = PyUnicode_GET_LENGTH(data);
+    text_len = PyUnicode_GET_LENGTH(new_data);
     const char *maybe_end_arg = "";
 
-    if (text_len > 0) {
-        if (PyUnicode_READ_CHAR(data, text_len-1) == soft_space_check) {
-            maybe_end_arg = " end=\" \"";
-        }
+    if (text_len > 0 && PyUnicode_READ_CHAR(new_data, text_len-1) == ',') {
+        maybe_end_arg = " end=\" \"";
     }
 
     PyObject *error_msg = PyUnicode_FromFormat(
         "Missing parentheses in call to 'print'. Did you mean print(%U%s)?",
-        data, maybe_end_arg);
+        new_data, maybe_end_arg
+    );
 
-    Py_DECREF(data);
+    Py_DECREF(new_data);
+
+    if (error_msg == NULL)
+        return -1;
 
     Py_XSETREF(self->msg, error_msg);
 
