@@ -81,7 +81,11 @@ PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
 
 
 /* Thread Local Storage (TLS) API
-   TLS API is DEPRECATED.  Use Thread Specific Storage API.
+   TLS API is DEPRECATED.  Use Thread Specific Storage (TSS) API.
+
+   Since existing TLS API has assumed the thread key type to int, but it is
+   not compatible with POSIX (see PEP 539).  Therefore, new TSS API uses
+   opaque data type for the thread key to ensure cross-platform.
 */
 PyAPI_FUNC(int) PyThread_create_key(void) Py_DEPRECATED(3.7);
 PyAPI_FUNC(void) PyThread_delete_key(int key) Py_DEPRECATED(3.7);
@@ -93,11 +97,10 @@ PyAPI_FUNC(void) PyThread_delete_key_value(int key) Py_DEPRECATED(3.7);
 PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
 
 
-/* Thread Specific Storage (TSS) API
+/* Thread Specific Storage (TSS) API */
 
-   POSIX hasn't defined that pthread_key_t is compatible with int
-   (for details, see PEP 539).  Therefore, TSS API uses opaque type to cover
-   the key details.
+/* Py_tss_t is an opaque data type the definition of which depends on the
+   underlying TSS implementation.
 */
 #ifdef Py_LIMITED_API
 typedef struct _py_tss_t Py_tss_t;
@@ -112,12 +115,14 @@ typedef struct _py_tss_t Py_tss_t;
        but hardcode the unsigned long to avoid errors for include directive.
     */
 #   define NATIVE_TSS_KEY_T     unsigned long
-#else  /* For the platform that has not supplied native TSS */
+#else
+    /* For the platform that has not supplied native TSS */
 #   define NATIVE_TSS_KEY_T     int
 #endif
 
-/* Py_tss_t is opaque type and you *must not* directly read and write.
-   When you'd check whether the key is created, use PyThread_tss_is_created.
+/* When Py_LIMITED_API is not defined, the type layout of Py_tss_t is in
+   public to allow for static declarations in API clients.  Even in this case,
+   you must handle TSS key through API functions due to compatibility.
 */
 typedef struct _py_tss_t {
     bool _is_initialized;
@@ -126,13 +131,7 @@ typedef struct _py_tss_t {
 
 #undef NATIVE_TSS_KEY_T
 
-/* Py_tss_NEEDS_INIT is the defined invalid value, and you *must* initialize
-   the Py_tss_t variable by this value to use TSS API.
-
-   For example:
-   static Py_tss_t thekey = Py_tss_NEEDS_INIT;
-   int fail = PyThread_tss_create(&thekey);
-*/
+/* In static declaration, you must initialize with Py_tss_NEEDS_INIT. */
 #define Py_tss_NEEDS_INIT   {._is_initialized = false}
 #endif
 
@@ -147,9 +146,14 @@ PyAPI_FUNC(void) PyThread_tss_delete_value(Py_tss_t *key);
 PyAPI_FUNC(void) PyThread_ReInitTSS(void);
 #endif
 
+/* In the limited API, Py_tss_t value must be allocated through a pointer by
+   PyThread_tss_alloc, and free by PyThread_tss_free at the life cycle end of
+   the CPython interpreter.
+*/
 PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
 PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
 
+/* When you'd check whether the key is created, use PyThread_tss_is_created. */
 PyAPI_FUNC(bool) PyThread_tss_is_created(Py_tss_t *key);
 
 #ifdef __cplusplus
