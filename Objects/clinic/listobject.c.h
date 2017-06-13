@@ -21,12 +21,12 @@ list_insert(PyListObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     Py_ssize_t index;
     PyObject *object;
 
-    if (!_PyArg_ParseStack(args, nargs, "nO:insert",
-        &index, &object)) {
+    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "nO:insert",
+        &index, &object)) {
         goto exit;
     }
     return_value = list_insert_impl(self, index, object);
@@ -109,12 +109,12 @@ list_pop(PyListObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:pop",
-        &index)) {
+    if (!_PyArg_NoStackKeywords("pop", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("pop", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|n:pop",
+        &index)) {
         goto exit;
     }
     return_value = list_pop_impl(self, index);
@@ -195,12 +195,12 @@ list_index(PyListObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     Py_ssize_t start = 0;
     Py_ssize_t stop = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index",
-        &value, _PyEval_SliceIndexNotNone, &start, _PyEval_SliceIndexNotNone, &stop)) {
+    if (!_PyArg_NoStackKeywords("index", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("index", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index",
+        &value, _PyEval_SliceIndexNotNone, &start, _PyEval_SliceIndexNotNone, &stop)) {
         goto exit;
     }
     return_value = list_index_impl(self, value, start, stop);
@@ -297,4 +297,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=71deae70ca0e6799 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=63cbe6d6320e916f input=a9049054013a1b77]*/

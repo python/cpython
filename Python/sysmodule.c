@@ -2136,10 +2136,10 @@ _PySys_EndInit(PyObject *sysdict)
         if (warnoptions == NULL)
             return -1;
     }
-    else {
-        Py_INCREF(warnoptions);
-    }
-    SET_SYS_FROM_STRING_BORROW_INT_RESULT("warnoptions", warnoptions);
+
+    SET_SYS_FROM_STRING_INT_RESULT("warnoptions",
+                                   PyList_GetSlice(warnoptions,
+                                                   0, Py_SIZE(warnoptions)));
 
     SET_SYS_FROM_STRING_BORROW_INT_RESULT("_xoptions", get_xoptions());
 

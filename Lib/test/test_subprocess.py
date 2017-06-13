@@ -642,7 +642,8 @@ class ProcessTestCase(BaseTestCase):
             # on adding even when the environment in exec is empty.
             # Gentoo sandboxes also force LD_PRELOAD and SANDBOX_* to exist.
             return ('VERSIONER' in n or '__CF' in n or  # MacOS
-                    n == 'LD_PRELOAD' or n.startswith('SANDBOX'))  # Gentoo
+                    n == 'LD_PRELOAD' or n.startswith('SANDBOX') or # Gentoo
+                    n == 'LC_CTYPE') # Locale coercion triggered
 
         with subprocess.Popen([sys.executable, "-c",
                                'import os; print(list(os.environ.keys()))'],

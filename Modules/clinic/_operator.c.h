@@ -49,13 +49,13 @@ _operator_add(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "add",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("add", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("add", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "add",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_add_impl(module, a, b);
@@ -83,13 +83,13 @@ _operator_sub(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "sub",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("sub", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("sub", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "sub",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_sub_impl(module, a, b);
@@ -117,13 +117,13 @@ _operator_mul(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "mul",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("mul", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("mul", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "mul",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_mul_impl(module, a, b);
@@ -151,13 +151,13 @@ _operator_matmul(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "matmul",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("matmul", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("matmul", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "matmul",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_matmul_impl(module, a, b);
@@ -185,13 +185,13 @@ _operator_floordiv(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "floordiv",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("floordiv", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("floordiv", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "floordiv",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_floordiv_impl(module, a, b);
@@ -219,13 +219,13 @@ _operator_truediv(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truediv",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("truediv", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("truediv", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "truediv",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_truediv_impl(module, a, b);
@@ -253,13 +253,13 @@ _operator_mod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "mod",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("mod", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("mod", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "mod",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_mod_impl(module, a, b);
@@ -332,13 +332,13 @@ _operator_lshift(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lshift",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("lshift", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lshift", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "lshift",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_lshift_impl(module, a, b);
@@ -366,13 +366,13 @@ _operator_rshift(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "rshift",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("rshift", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("rshift", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "rshift",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_rshift_impl(module, a, b);
@@ -428,13 +428,13 @@ _operator_and_(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "and_",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("and_", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("and_", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "and_",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_and__impl(module, a, b);
@@ -462,13 +462,13 @@ _operator_xor(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "xor",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("xor", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("xor", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "xor",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_xor_impl(module, a, b);
@@ -496,13 +496,13 @@ _operator_or_(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "or_",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("or_", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("or_", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "or_",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_or__impl(module, a, b);
@@ -530,13 +530,13 @@ _operator_iadd(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "iadd",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("iadd", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("iadd", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "iadd",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_iadd_impl(module, a, b);
@@ -564,13 +564,13 @@ _operator_isub(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "isub",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("isub", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("isub", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "isub",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_isub_impl(module, a, b);
@@ -598,13 +598,13 @@ _operator_imul(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "imul",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("imul", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("imul", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "imul",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_imul_impl(module, a, b);
@@ -632,13 +632,13 @@ _operator_imatmul(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "imatmul",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("imatmul", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("imatmul", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "imatmul",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_imatmul_impl(module, a, b);
@@ -666,13 +666,13 @@ _operator_ifloordiv(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObjec
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ifloordiv",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("ifloordiv", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ifloordiv", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "ifloordiv",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_ifloordiv_impl(module, a, b);
@@ -700,13 +700,13 @@ _operator_itruediv(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "itruediv",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("itruediv", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("itruediv", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "itruediv",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_itruediv_impl(module, a, b);
@@ -734,13 +734,13 @@ _operator_imod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "imod",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("imod", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("imod", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "imod",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_imod_impl(module, a, b);
@@ -768,13 +768,13 @@ _operator_ilshift(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ilshift",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("ilshift", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ilshift", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "ilshift",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_ilshift_impl(module, a, b);
@@ -802,13 +802,13 @@ _operator_irshift(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "irshift",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("irshift", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("irshift", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "irshift",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_irshift_impl(module, a, b);
@@ -836,13 +836,13 @@ _operator_iand(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "iand",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("iand", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("iand", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "iand",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_iand_impl(module, a, b);
@@ -870,13 +870,13 @@ _operator_ixor(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ixor",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("ixor", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ixor", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "ixor",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_ixor_impl(module, a, b);
@@ -904,13 +904,13 @@ _operator_ior(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ior",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("ior", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ior", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "ior",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_ior_impl(module, a, b);
@@ -938,13 +938,13 @@ _operator_concat(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "concat",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("concat", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("concat", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "concat",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_concat_impl(module, a, b);
@@ -972,13 +972,13 @@ _operator_iconcat(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "iconcat",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("iconcat", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("iconcat", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "iconcat",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_iconcat_impl(module, a, b);
@@ -1007,13 +1007,13 @@ _operator_contains(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     PyObject *b;
     int _return_value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "contains",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("contains", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("contains", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "contains",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     _return_value = _operator_contains_impl(module, a, b);
@@ -1046,13 +1046,13 @@ _operator_indexOf(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *b;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "indexOf",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("indexOf", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("indexOf", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "indexOf",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     _return_value = _operator_indexOf_impl(module, a, b);
@@ -1085,13 +1085,13 @@ _operator_countOf(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *b;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "countOf",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("countOf", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("countOf", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "countOf",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     _return_value = _operator_countOf_impl(module, a, b);
@@ -1123,13 +1123,13 @@ _operator_getitem(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "getitem",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("getitem", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("getitem", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "getitem",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_getitem_impl(module, a, b);
@@ -1159,13 +1159,13 @@ _operator_setitem(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *b;
     PyObject *c;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setitem",
-        3, 3,
-        &a, &b, &c)) {
+    if (!_PyArg_NoStackKeywords("setitem", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("setitem", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "setitem",
+        3, 3,
+        &a, &b, &c)) {
         goto exit;
     }
     return_value = _operator_setitem_impl(module, a, b, c);
@@ -1193,13 +1193,13 @@ _operator_delitem(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "delitem",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("delitem", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("delitem", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "delitem",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_delitem_impl(module, a, b);
@@ -1227,13 +1227,13 @@ _operator_eq(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "eq",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("eq", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("eq", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "eq",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_eq_impl(module, a, b);
@@ -1261,13 +1261,13 @@ _operator_ne(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ne",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("ne", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ne", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "ne",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_ne_impl(module, a, b);
@@ -1295,13 +1295,13 @@ _operator_lt(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lt",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("lt", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lt", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "lt",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_lt_impl(module, a, b);
@@ -1329,13 +1329,13 @@ _operator_le(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "le",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("le", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("le", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "le",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_le_impl(module, a, b);
@@ -1363,13 +1363,13 @@ _operator_gt(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "gt",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("gt", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("gt", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "gt",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_gt_impl(module, a, b);
@@ -1397,13 +1397,13 @@ _operator_ge(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ge",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("ge", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ge", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "ge",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_ge_impl(module, a, b);
@@ -1431,13 +1431,13 @@ _operator_pow(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "pow",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("pow", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("pow", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "pow",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_pow_impl(module, a, b);
@@ -1465,13 +1465,13 @@ _operator_ipow(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ipow",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("ipow", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ipow", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "ipow",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_ipow_impl(module, a, b);
@@ -1508,13 +1508,13 @@ _operator_is_(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "is_",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("is_", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("is_", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "is_",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_is__impl(module, a, b);
@@ -1542,13 +1542,13 @@ _operator_is_not(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "is_not",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("is_not", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("is_not", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "is_not",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator_is_not_impl(module, a, b);
@@ -1584,12 +1584,12 @@ _operator_length_hint(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObj
     Py_ssize_t default_value = 0;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|n:length_hint",
-        &obj, &default_value)) {
+    if (!_PyArg_NoStackKeywords("length_hint", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("length_hint", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|n:length_hint",
+        &obj, &default_value)) {
         goto exit;
     }
     _return_value = _operator_length_hint_impl(module, obj, default_value);
@@ -1631,13 +1631,13 @@ _operator__compare_digest(PyObject *module, PyObject **args, Py_ssize_t nargs, P
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_compare_digest",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("_compare_digest", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("_compare_digest", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "_compare_digest",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = _operator__compare_digest_impl(module, a, b);
@@ -1645,4 +1645,4 @@ _operator__compare_digest(PyObject *module, PyObject **args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c030b6747fddd9c6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa8d3eeea396bbec input=a9049054013a1b77]*/

@@ -102,12 +102,12 @@ _io__Buffered_peek(buffered *self, PyObject **args, Py_ssize_t nargs, PyObject *
     PyObject *return_value = NULL;
     Py_ssize_t size = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:peek",
-        &size)) {
+    if (!_PyArg_NoStackKeywords("peek", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("peek", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|n:peek",
+        &size)) {
         goto exit;
     }
     return_value = _io__Buffered_peek_impl(self, size);
@@ -133,12 +133,12 @@ _io__Buffered_read(buffered *self, PyObject **args, Py_ssize_t nargs, PyObject *
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _Py_convert_optional_to_ssize_t, &n)) {
+    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("read", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
+        _Py_convert_optional_to_ssize_t, &n)) {
         goto exit;
     }
     return_value = _io__Buffered_read_impl(self, n);
@@ -164,12 +164,12 @@ _io__Buffered_read1(buffered *self, PyObject **args, Py_ssize_t nargs, PyObject 
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:read1",
-        &n)) {
+    if (!_PyArg_NoStackKeywords("read1", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("read1", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|n:read1",
+        &n)) {
         goto exit;
     }
     return_value = _io__Buffered_read1_impl(self, n);
@@ -257,12 +257,12 @@ _io__Buffered_readline(buffered *self, PyObject **args, Py_ssize_t nargs, PyObje
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
-        _Py_convert_optional_to_ssize_t, &size)) {
+    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
     return_value = _io__Buffered_readline_impl(self, size);
@@ -289,12 +289,12 @@ _io__Buffered_seek(buffered *self, PyObject **args, Py_ssize_t nargs, PyObject *
     PyObject *targetobj;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
-        &targetobj, &whence)) {
+    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
+        &targetobj, &whence)) {
         goto exit;
     }
     return_value = _io__Buffered_seek_impl(self, targetobj, whence);
@@ -320,13 +320,13 @@ _io__Buffered_truncate(buffered *self, PyObject **args, Py_ssize_t nargs, PyObje
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truncate",
-        0, 1,
-        &pos)) {
+    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "truncate",
+        0, 1,
+        &pos)) {
         goto exit;
     }
     return_value = _io__Buffered_truncate_impl(self, pos);
@@ -500,4 +500,4 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3cf3262c9b157dc1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4f7490f82427c63b input=a9049054013a1b77]*/
