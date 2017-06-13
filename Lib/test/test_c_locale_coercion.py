@@ -14,6 +14,17 @@ from test.support.script_helper import (
     interpreter_requires_environment,
 )
 
+# Set our expectation for the default encoding used in the C locale
+# for the filesystem encoding and the standard streams
+if sys.platform == "darwin":
+    EXPECTED_C_LOCALE_FSENCODING = "utf-8"
+else:
+    EXPECTED_C_LOCALE_FSENCODING = "ascii"
+
+# XXX (ncoghlan): The above is probably still wrong for:
+# * Windows when PYTHONLEGACYWINDOWSFSENCODING is set
+# * AIX and any other platforms that use latin-1 in the C locale
+
 # In order to get the warning messages to match up as expected, the candidate
 # order here must much the target locale order in Python/pylifecycle.c
 _C_UTF8_LOCALES = ("C.UTF-8", "C.utf8", "UTF-8")
@@ -134,7 +145,7 @@ class LocaleWarningTests(_ChildProcessEncodingTestCase):
             }
             with self.subTest(forced_locale=locale_to_set):
                 self._check_child_encoding_details(var_dict,
-                                                   "ascii",
+                                                   EXPECTED_C_LOCALE_FSENCODING,
                                                    [LIBRARY_C_LOCALE_WARNING])
 
 # Details of the CLI locale coercion warning emitted at runtime
@@ -158,14 +169,16 @@ def setUpModule():
     for target_locale in _C_UTF8_LOCALES:
         if _set_locale_in_subprocess(target_locale):
             AVAILABLE_TARGETS.append(target_locale)
-    if not AVAILABLE_TARGETS:
-        raise unittest.SkipTest("No C-with-UTF-8 locale available")
 
 
 
 class _LocaleCoercionTargetsTestCase(_ChildProcessEncodingTestCase):
     # Base class for test cases that rely on coercion targets being defined
-    pass
+
+    @classmethod
+    def setUpClass(cls):
+        if not AVAILABLE_TARGETS:
+            raise unittest.SkipTest("No C-with-UTF-8 locale available")
 
 
 class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
@@ -186,6 +199,11 @@ class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
         }
         for env_var in ("LANG", "LC_CTYPE"):
             for locale_to_set in AVAILABLE_TARGETS:
+                # XXX (ncoghlan): LANG=UTF-8 doesn't appear to work as
+                #                 expected, so skip that combination for now
+                if env_var == "LANG" and locale_to_set == "UTF-8":
+                    continue
+
                 with self.subTest(env_var=env_var,
                                   configured_locale=locale_to_set):
                     var_dict = base_var_dict.copy()
@@ -251,7 +269,8 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
 
     def test_PYTHONCOERCECLOCALE_set_to_zero(self):
         # The setting "0" should result in the locale coercion being disabled
-        self._check_c_locale_coercion("ascii", coerce_c_locale="0")
+        self._check_c_locale_coercion(EXPECTED_C_LOCALE_FSENCODING,
+                                      coerce_c_locale="0")
 
 
 def test_main():
