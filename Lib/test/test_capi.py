@@ -480,7 +480,7 @@ class EmbeddingTests(unittest.TestCase):
 
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
-        env = {"PYTHONIOENCODING": "utf-8:surrogateescape"}
+        env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
         out, err = self.run_embedded_interpreter("forced_io_encoding", env=env)
         if support.verbose > 1:
             print()
