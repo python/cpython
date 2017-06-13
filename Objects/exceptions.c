@@ -2867,32 +2867,43 @@ _PyErr_TrySetFromCause(const char *format, ...)
 static int
 _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
-    /*
-    `data` is UTF-8 encoded and treated as an indivisible opaque blob. All
-    we know about it is that it starts with `print ` and may end with a `,`
-    in which case we also append suggest_end_arg which makes the input
-    analogous to Python3 print syntax.
-    */
 
     PyObject *strip_sep_obj = PyUnicode_FromString("\r\n");
-    PyObject *data = _PyUnicode_XStrip(self->text, 1, strip_sep_obj);
-    // PRINT_OFFSET is to remove print word from the data.
+    Py_UCS4 soft_space_check = PyUnicode_READ_CHAR(PyUnicode_FromString(","), 0);
+
+    if (strip_sep_obj == NULL)
+        return -1;
+
+    // PRINT_OFFSET is to remove `print ` word from the data.
     const int PRINT_OFFSET = 6;
-    Py_ssize_t text_len = PyUnicode_GET_LENGTH(data);
-    data = PyUnicode_Substring(data, PRINT_OFFSET, text_len);
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+    PyObject *data = PyUnicode_Substring(self->text, PRINT_OFFSET, text_len);
+
+    if (data == NULL)
+        return -1;
+
+    data = _PyUnicode_XStrip(data, 1, strip_sep_obj);
+
+    Py_DECREF(strip_sep_obj);
+
     // gets the modified text_len after stripping `print `
     text_len = PyUnicode_GET_LENGTH(data);
-    char *maybe_end_arg = " end=\" \"";
+    const char *maybe_end_arg = "";
+
+    if (text_len > 0) {
+        if (PyUnicode_READ_CHAR(data, text_len-1) == soft_space_check) {
+            maybe_end_arg = " end=\" \"";
+        }
+    }
 
     PyObject *error_msg = PyUnicode_FromFormat(
-        "Missing parentheses in call to 'print'. Did you mean print(%U)?",
-         data);
-    if (PyUnicode_Tailmatch(data, PyUnicode_FromString(","), start, text_len, 1))
-        error_msg = PyUnicode_FromFormat(
-            "Missing parentheses in call to 'print'. Did you mean print(%U%s)?",
-            data, maybe_end_arg);
+        "Missing parentheses in call to 'print'. Did you mean print(%U%s)?",
+        data, maybe_end_arg);
+
+    Py_DECREF(data);
 
     Py_XSETREF(self->msg, error_msg);
+
     return 1;
 }
 
