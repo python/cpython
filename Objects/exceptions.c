@@ -2869,7 +2869,6 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
 
     PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
-//    Py_UCS4 soft_space_check = PyUnicode_READ_CHAR(PyUnicode_FromString(","), 0);
 
     if (strip_sep_obj == NULL)
         return -1;
