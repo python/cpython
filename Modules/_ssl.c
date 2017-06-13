@@ -596,6 +596,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = NULL;
     self->Socket = NULL;
     self->ctx = sslctx;
+    Py_INCREF(sslctx);
     self->shutdown_seen_zero = 0;
     self->owner = NULL;
     self->server_hostname = NULL;
@@ -608,8 +609,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
         self->server_hostname = hostname;
     }
-
-    Py_INCREF(sslctx);
 
     /* Make sure the SSL error state is initialized */
     (void) ERR_get_state();
@@ -905,18 +904,15 @@ _get_peer_alt_names (X509 *certificate) {
        then iterates through the stack to add the
        names. */
 
-    int i, j;
+    int j;
     PyObject *peer_alt_names = Py_None;
     PyObject *v = NULL, *t;
-    X509_EXTENSION *ext = NULL;
     GENERAL_NAMES *names = NULL;
     GENERAL_NAME *name;
-    const X509V3_EXT_METHOD *method;
     BIO *biobuf = NULL;
     char buf[2048];
     char *vptr;
     int len;
-    const unsigned char *p;
 
     if (certificate == NULL)
         return peer_alt_names;
@@ -924,37 +920,14 @@ _get_peer_alt_names (X509 *certificate) {
     /* get a memory buffer */
     biobuf = BIO_new(BIO_s_mem());
 
-    i = -1;
-    while ((i = X509_get_ext_by_NID(
-                    certificate, NID_subject_alt_name, i)) >= 0) {
-
+    names = (GENERAL_NAMES *)X509_get_ext_d2i(
+        certificate, NID_subject_alt_name, NULL, NULL);
+    if (names != NULL) {
         if (peer_alt_names == Py_None) {
             peer_alt_names = PyList_New(0);
             if (peer_alt_names == NULL)
                 goto fail;
         }
-
-        /* now decode the altName */
-        ext = X509_get_ext(certificate, i);
-        if(!(method = X509V3_EXT_get(ext))) {
-            PyErr_SetString
-              (PySSLErrorObject,
-               ERRSTR("No method for internalizing subjectAltName!"));
-            goto fail;
-        }
-
-        p = X509_EXTENSION_get_data(ext)->data;
-        if (method->it)
-            names = (GENERAL_NAMES*)
-              (ASN1_item_d2i(NULL,
-                             &p,
-                             X509_EXTENSION_get_data(ext)->length,
-                             ASN1_ITEM_ptr(method->it)));
-        else
-            names = (GENERAL_NAMES*)
-              (method->d2i(NULL,
-                           &p,
-                           X509_EXTENSION_get_data(ext)->length));
 
         for(j = 0; j < sk_GENERAL_NAME_num(names); j++) {
             /* get a rendering of each name in the set of names */
@@ -4467,12 +4440,12 @@ _ssl.RAND_add
 Mix string into the OpenSSL PRNG state.
 
 entropy (a float) is a lower bound on the entropy contained in
-string.  See RFC 1750.
+string.  See RFC 4086.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_RAND_add_impl(PyObject *module, Py_buffer *view, double entropy)
-/*[clinic end generated code: output=e6dd48df9c9024e9 input=580c85e6a3a4fe29]*/
+/*[clinic end generated code: output=e6dd48df9c9024e9 input=5c33017422828f5c]*/
 {
     const char *buf;
     Py_ssize_t len, written;

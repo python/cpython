@@ -398,12 +398,12 @@ _elementtree_Element_insert(ElementObject *self, PyObject **args, Py_ssize_t nar
     Py_ssize_t index;
     PyObject *subelement;
 
-    if (!_PyArg_ParseStack(args, nargs, "nO!:insert",
-        &index, &Element_Type, &subelement)) {
+    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "nO!:insert",
+        &index, &Element_Type, &subelement)) {
         goto exit;
     }
     return_value = _elementtree_Element_insert_impl(self, index, subelement);
@@ -465,13 +465,13 @@ _elementtree_Element_makeelement(ElementObject *self, PyObject **args, Py_ssize_
     PyObject *tag;
     PyObject *attrib;
 
-    if (!_PyArg_UnpackStack(args, nargs, "makeelement",
-        2, 2,
-        &tag, &attrib)) {
+    if (!_PyArg_NoStackKeywords("makeelement", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("makeelement", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "makeelement",
+        2, 2,
+        &tag, &attrib)) {
         goto exit;
     }
     return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
@@ -525,13 +525,13 @@ _elementtree_Element_set(ElementObject *self, PyObject **args, Py_ssize_t nargs,
     PyObject *key;
     PyObject *value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "set",
-        2, 2,
-        &key, &value)) {
+    if (!_PyArg_NoStackKeywords("set", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("set", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "set",
+        2, 2,
+        &key, &value)) {
         goto exit;
     }
     return_value = _elementtree_Element_set_impl(self, key, value);
@@ -614,13 +614,13 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject **args, Py_ssiz
     PyObject *tag;
     PyObject *attrs = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "start",
-        1, 2,
-        &tag, &attrs)) {
+    if (!_PyArg_NoStackKeywords("start", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("start", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "start",
+        1, 2,
+        &tag, &attrs)) {
         goto exit;
     }
     return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
@@ -706,13 +706,13 @@ _elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_
     PyObject *pubid;
     PyObject *system;
 
-    if (!_PyArg_UnpackStack(args, nargs, "doctype",
-        3, 3,
-        &name, &pubid, &system)) {
+    if (!_PyArg_NoStackKeywords("doctype", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("doctype", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "doctype",
+        3, 3,
+        &name, &pubid, &system)) {
         goto exit;
     }
     return_value = _elementtree_XMLParser_doctype_impl(self, name, pubid, system);
@@ -741,13 +741,13 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject **args, Py_ssi
     PyObject *events_queue;
     PyObject *events_to_report = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_setevents",
-        1, 2,
-        &events_queue, &events_to_report)) {
+    if (!_PyArg_NoStackKeywords("_setevents", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("_setevents", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "_setevents",
+        1, 2,
+        &events_queue, &events_to_report)) {
         goto exit;
     }
     return_value = _elementtree_XMLParser__setevents_impl(self, events_queue, events_to_report);
@@ -755,4 +755,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject **args, Py_ssi
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fbc92d64735adec0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6606b1018d2562e1 input=a9049054013a1b77]*/
