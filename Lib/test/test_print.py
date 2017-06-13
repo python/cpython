@@ -146,7 +146,6 @@ class TestPy2MigrationHint(unittest.TestCase):
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
-        print(str(context.exception))
         self.assertTrue('print("Hello World", end=" ")' in str(context.exception))
 
 
