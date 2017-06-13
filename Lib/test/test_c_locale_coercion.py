@@ -143,27 +143,29 @@ CLI_COERCION_WARNING_FMT = (
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior)."
 )
 
+
+AVAILABLE_TARGETS = None
+
+def setUpModule():
+    global AVAILABLE_TARGETS
+
+    if AVAILABLE_TARGETS is not None:
+        # initialization already done
+        return
+    AVAILABLE_TARGETS = []
+
+    # Find the target locales available in the current system
+    for target_locale in _C_UTF8_LOCALES:
+        if _set_locale_in_subprocess(target_locale):
+            AVAILABLE_TARGETS.append(target_locale)
+    if not AVAILABLE_TARGETS:
+        raise unittest.SkipTest("No C-with-UTF-8 locale available")
+
+
+
 class _LocaleCoercionTargetsTestCase(_ChildProcessEncodingTestCase):
     # Base class for test cases that rely on coercion targets being defined
-
-    available_targets = []
-    targets_required = True
-
-    @classmethod
-    def setUpClass(cls):
-        first_target_locale = None
-        available_targets = cls.available_targets
-        # Find the target locales available in the current system
-        for target_locale in _C_UTF8_LOCALES:
-            if _set_locale_in_subprocess(target_locale):
-                available_targets.append(target_locale)
-                if first_target_locale is None:
-                    first_target_locale = target_locale
-        if cls.targets_required and not available_targets:
-            raise unittest.SkipTest("No C-with-UTF-8 locale available")
-        # Expect coercion to use the first available locale
-        warning_msg = CLI_COERCION_WARNING_FMT.format(first_target_locale)
-        cls.EXPECTED_COERCION_WARNING = warning_msg
+    pass
 
 
 class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
@@ -183,7 +185,7 @@ class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
             "LC_ALL": "",
         }
         for env_var in ("LANG", "LC_CTYPE"):
-            for locale_to_set in self.available_targets:
+            for locale_to_set in AVAILABLE_TARGETS:
                 with self.subTest(env_var=env_var,
                                   configured_locale=locale_to_set):
                     var_dict = base_var_dict.copy()
@@ -215,7 +217,9 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
 
         expected_warning = []
         if coerce_c_locale != "0":
-            expected_warning.append(self.EXPECTED_COERCION_WARNING)
+            # Expect coercion to use the first available locale
+            warning_msg = CLI_COERCION_WARNING_FMT.format(AVAILABLE_TARGETS[0])
+            expected_warning.append(warning_msg)
 
         base_var_dict = {
             "LANG": "",
