@@ -108,7 +108,7 @@ static const char usage_6[] =
 "   hooks.\n";
 static const char usage_7[] =
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
-"coercion behavior\n";
+"   coercion behavior\n";
 
 static int
 usage(int exitcode, const wchar_t* program)
