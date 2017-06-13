@@ -197,8 +197,10 @@ The :mod:`signal` module defines the following functions:
    written to the fd.  This can be used by a library to wakeup a poll or select
    call, allowing the signal to be fully processed.
 
-   The old wakeup fd is returned.  *fd* must be non-blocking.  It is up to the
-   library to remove any bytes before calling poll or select again.
+   The old wakeup fd is returned (or -1 if file descriptor wakeup was not
+   enabled).  If *fd* is -1, file descriptor wakeup is disabled.
+   If not -1, *fd* must be non-blocking.  It is up to the library to remove
+   any bytes from *fd* before calling poll or select again.
 
    When threads are enabled, this function can only be called from the main thread;
    attempting to call it from other threads will cause a :exc:`ValueError`
