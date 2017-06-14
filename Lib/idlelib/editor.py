@@ -27,6 +27,7 @@ from idlelib import query
 from idlelib import replace
 from idlelib import search
 from idlelib import windows
+from idlelib import sidebar
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -57,7 +58,7 @@ class EditorWindow(object):
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
 
-    def __init__(self, flist=None, filename=None, key=None, root=None):
+    def __init__(self, flist=None, filename=None, key=None, root=None, has_lineno=False):
         if EditorWindow.help_url is None:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
             if sys.platform.count('linux'):
@@ -120,7 +121,8 @@ class EditorWindow(object):
                 'height': idleConf.GetOption(
                         'main', 'EditorWindow', 'height', type='int'),
                 }
-        self.text = text = MultiCallCreator(Text)(text_frame, **text_options)
+
+        self.text = text = MultiCallCreator(sidebar.SidebarText)(text_frame, **text_options)
         self.top.focused_widget = self.text
 
         self.createmenubar()
@@ -190,6 +192,14 @@ class EditorWindow(object):
         text['yscrollcommand'] = vbar.set
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
+
+        if has_lineno:
+            self.sidebar = sidebar.LineNumberSidebar(text_frame, width=48)
+            self.sidebar.attach(text)
+            self.sidebar.pack(side=LEFT, fill=Y)
+            self.text.bind('<<Change>>', self.set_sidebar)
+            self.text.bind('<Configure>', self.set_sidebar)
+
         text.pack(side=TOP, fill=BOTH, expand=1)
         text.focus_set()
 
@@ -354,6 +364,9 @@ class EditorWindow(object):
         line, column = self.text.index(INSERT).split('.')
         self.status_bar.set_label('column', 'Col: %s' % column)
         self.status_bar.set_label('line', 'Ln: %s' % line)
+
+    def set_sidebar(self, event=None):
+        self.sidebar.redraw()
 
     menu_specs = [
         ("file", "_File"),
