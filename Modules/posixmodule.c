@@ -5223,7 +5223,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     Py_ssize_t argc, i, envc;
     intptr_t spawnval;
     PyObject *(*getitem)(PyObject *, Py_ssize_t);
-    Py_ssize_t lastarg = 0;
+    Py_ssize_t lastarg = -1;
 
     /* spawnve has four arguments: (mode, path, argv, env), where
        argv is a list or tuple of strings and env is a dictionary
@@ -5302,7 +5302,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
         PyMem_DEL(envlist[envc]);
     PyMem_DEL(envlist);
   fail_1:
-    free_string_array(argvlist, lastarg);
+    free_string_array(argvlist, lastarg + 1);
   fail_0:
     return res;
 }
