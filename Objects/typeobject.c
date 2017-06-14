@@ -6225,7 +6225,6 @@ slot_tp_hash(PyObject *self)
     }
 
     if (func == NULL) {
-        PyErr_Clear();
         return PyObject_HashNotImplemented(self);
     }
 
