@@ -441,6 +441,10 @@ Library
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
+  
+- bpo-30436: importlib.find_spec() raises ModuleNotFoundError instead of
+  AttributeError if the specified parent module is not a package
+  (i.e. lacks a __path__ attribute).
 
 - bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
   *spawn* and *forkserver* start methods.
