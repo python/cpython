@@ -9,7 +9,6 @@ from idlelib.idle_test.mock_tk import Mbox_func
 from idlelib import filelist
 from idlelib import outwin
 from test.support import requires
-requires('gui')
 
 
 class OutputWindowTest(unittest.TestCase):
@@ -33,31 +32,34 @@ class OutputWindowTest(unittest.TestCase):
         self.text.delete('1.0', 'end')
 
     def test_window_title(self):
-        self.assertEqual(self.window.top.title(), "Output")
+        self.assertEqual(self.window.top.title(), 'Output')
 
     def test_ispythonsource(self):
-        self.assertFalse(self.window.ispythonsource("test.py"))
+        "OutputWindow overrides ispythonsource to always return False."
+        self.assertFalse(self.window.ispythonsource('test.txt'))
+        self.assertFalse(self.window.ispythonsource(__file__))
 
     def test_maybesave(self):
         self.window.get_saved = mock.Mock(return_value=False)
-        self.assertEqual(self.window.maybesave(), "no")
+        self.assertEqual(self.window.maybesave(), 'no')
         self.window.get_saved.assert_called_once()
+        del self.window.get_saved
 
     def test_write(self):
         text = self.text
         write = self.window.write
-        test_text = "test text\nLine 2"
+        test_text = 'test text\nLine 2'
         self.assertEqual(write(test_text), len(test_text))
-        self.assertEqual(text.get('1.0', '1.end'), "test text")
+        self.assertEqual(text.get('1.0', '1.end'), 'test text')
         self.assertEqual(text.get('insert linestart', 'insert lineend'),
                          'Line 2')
 
     def test_writelines(self):
         text = self.text
         writelines = self.window.writelines
-        writelines(["Line 1\n", "Line 2\n", "Line 3\n"])
-        self.assertEqual(text.get('1.0', '1.end'), "Line 1")
-        self.assertEqual(text.get('3.0', '3.end'), "Line 3")
+        writelines(['Line 1\n', 'Line 2\n', 'Line 3\n'])
+        self.assertEqual(text.get('1.0', '1.end'), 'Line 1')
+        self.assertEqual(text.get('3.0', '3.end'), 'Line 3')
 
 
 class GotoFileLineTest(unittest.TestCase):
@@ -81,13 +83,16 @@ class GotoFileLineTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
+    def setUp(self):
+        self.window.flist.gotofileline = mock.Mock()
+
     def tearDown(self):
         self.window.text.delete('1.0', 'end')
+        del self.window.flist.gotofileline
 
     def test_curr_line(self):
         text = self.text
         goto_file_line = self.window.goto_file_line
-        self.window.flist.gotofileline = mock.Mock()
 
         text.insert('insert', '{}: 42: spam\n'.format(str(__file__)))
         text.insert('insert', '{}: 21: spam'.format(str(__file__)))
@@ -97,7 +102,6 @@ class GotoFileLineTest(unittest.TestCase):
     def test_no_line(self):
         text = self.text
         goto_file_line = self.window.goto_file_line
-        self.window.flist.gotofileline = mock.Mock()
 
         text.insert('insert', 'Not a file line')
         self.assertIsNone(goto_file_line())
@@ -107,7 +111,6 @@ class GotoFileLineTest(unittest.TestCase):
     def test_prev_line(self):
         text = self.text
         goto_file_line = self.window.goto_file_line
-        self.window.flist.gotofileline = mock.Mock()
 
         text.insert('insert', '{}: 42: spam\n'.format(str(__file__)))
         text.insert('insert', 'Not a file line')
