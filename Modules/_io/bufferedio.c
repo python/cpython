@@ -818,6 +818,12 @@ buffered_flush_and_rewind_unlocked(buffered *self)
 {
     PyObject *res;
 
+    if ((!VALID_WRITE_BUFFER(self) || self->write_pos == self->write_end)
+       && READAHEAD(self) == 0) {
+        /* read and write buffers are empty: nothing to do */
+        Py_RETURN_NONE;
+    }
+
     res = _bufferedwriter_flush_unlocked(self);
     if (res == NULL)
         return NULL;
