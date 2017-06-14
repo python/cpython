@@ -523,6 +523,8 @@ class FindSpecTests:
             self.assertNotIn(fullname, sorted(sys.modules))
 
     def test_find_submodule_in_module(self):
+        # ModuleNotFoundError raised when a module is specified as
+        # a parent instead of a package.
         with self.assertRaises(ModuleNotFoundError):
             self.util.find_spec('module.name')
 
