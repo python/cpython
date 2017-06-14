@@ -25,8 +25,7 @@ else:
 # * Windows when PYTHONLEGACYWINDOWSFSENCODING is set
 # * AIX and any other platforms that use latin-1 in the C locale
 
-# In order to get the warning messages to match up as expected, the candidate
-# order here must much the target locale order in Python/pylifecycle.c
+# Use the target locale order of Python/pylifecycle.c
 _C_UTF8_LOCALES = ("C.UTF-8", "C.utf8", "UTF-8")
 
 # There's no reliable cross-platform way of checking locale alias
@@ -107,8 +106,7 @@ class _ChildProcessEncodingTestCase(unittest.TestCase):
 
     def _check_child_encoding_details(self,
                                       env_vars,
-                                      expected_fsencoding,
-                                      expected_warning):
+                                      expected_fsencoding):
         """Check the C locale handling for the given process environment
 
         Parameters:
@@ -122,37 +120,7 @@ class _ChildProcessEncodingTestCase(unittest.TestCase):
         self.assertEqual(encoding_details,
                          EncodingDetails.get_expected_details(
                              expected_fsencoding))
-        self.assertEqual(stderr_lines, expected_warning)
-
-# Details of the shared library warning emitted at runtime
-LIBRARY_C_LOCALE_WARNING = (
-    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
-    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
-    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
-    "locales is recommended."
-)
-
-@unittest.skipUnless(sysconfig.get_config_var("PY_WARN_ON_C_LOCALE"),
-                     "C locale runtime warning disabled at build time")
-class LocaleWarningTests(_ChildProcessEncodingTestCase):
-    # Test warning emitted when running in the C locale
-
-    def test_library_c_locale_warning(self):
-        self.maxDiff = None
-        for locale_to_set in ("C", "POSIX", "invalid.ascii"):
-            var_dict = {
-                "LC_ALL": locale_to_set
-            }
-            with self.subTest(forced_locale=locale_to_set):
-                self._check_child_encoding_details(var_dict,
-                                                   EXPECTED_C_LOCALE_FSENCODING,
-                                                   [LIBRARY_C_LOCALE_WARNING])
-
-# Details of the CLI locale coercion warning emitted at runtime
-CLI_COERCION_WARNING_FMT = (
-    "Python detected LC_CTYPE=C: LC_CTYPE coerced to {} (set another locale "
-    "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior)."
-)
+        self.assertEqual(stderr_lines, [])
 
 
 AVAILABLE_TARGETS = None
@@ -189,7 +157,6 @@ class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
         # is seen when implicitly coercing to that target locale
         self.maxDiff = None
 
-        expected_warning = []
         expected_fsencoding = "utf-8"
 
         base_var_dict = {
@@ -209,8 +176,7 @@ class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
                     var_dict = base_var_dict.copy()
                     var_dict[env_var] = locale_to_set
                     self._check_child_encoding_details(var_dict,
-                                                       expected_fsencoding,
-                                                       expected_warning)
+                                                       expected_fsencoding)
 
 
 
@@ -230,15 +196,6 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
               str: the value set in the child's environment
         """
 
-        # Check for expected warning on stderr if C locale is coerced
-        self.maxDiff = None
-
-        expected_warning = []
-        if coerce_c_locale != "0":
-            # Expect coercion to use the first available locale
-            warning_msg = CLI_COERCION_WARNING_FMT.format(AVAILABLE_TARGETS[0])
-            expected_warning.append(warning_msg)
-
         base_var_dict = {
             "LANG": "",
             "LC_CTYPE": "",
@@ -254,8 +211,7 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
                     if coerce_c_locale is not None:
                         var_dict["PYTHONCOERCECLOCALE"] = coerce_c_locale
                     self._check_child_encoding_details(var_dict,
-                                                       expected_fsencoding,
-                                                       expected_warning)
+                                                       expected_fsencoding)
 
     def test_test_PYTHONCOERCECLOCALE_not_set(self):
         # This should coerce to the first available target locale by default
@@ -276,8 +232,7 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
 def test_main():
     test.support.run_unittest(
         LocaleConfigurationTests,
-        LocaleCoercionTests,
-        LocaleWarningTests
+        LocaleCoercionTests
     )
     test.support.reap_children()
 
