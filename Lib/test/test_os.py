@@ -626,7 +626,9 @@ class UtimeTests(unittest.TestCase):
             # bpo-30649: Tolerate 50 ms for slow Windows buildbots.
             delta = 0.050
         else:
-            delta = 0.010
+            # bpo-30649: PPC64 Fedora 3.x buildbot requires
+            # at least a delta of 14 ms
+            delta = 0.020
         st = os.stat(self.fname)
         msg = ("st_time=%r, current=%r, dt=%r"
                % (st.st_mtime, current, st.st_mtime - current))
