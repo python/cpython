@@ -122,7 +122,7 @@ class async_chat(asyncore.dispatcher):
             return
 
         if isinstance(data, str) and self.use_encoding:
-            data = bytes(str, self.encoding)
+            data = bytes(data, self.encoding)
         self.ac_in_buffer = self.ac_in_buffer + data
 
         # Continue to search for self.terminator in self.ac_in_buffer,
