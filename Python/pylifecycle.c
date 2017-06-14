@@ -401,10 +401,6 @@ get_default_standard_stream_error_handler(void)
 }
 
 #ifdef PY_COERCE_C_LOCALE
-static const char *_C_LOCALE_COERCION_WARNING =
-    "Python detected LC_CTYPE=C: LC_CTYPE coerced to %.20s (set another locale "
-    "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
-
 static void
 _coerce_default_locale_settings(const _LocaleCoercionTarget *target)
 {
@@ -419,7 +415,6 @@ _coerce_default_locale_settings(const _LocaleCoercionTarget *target)
                 "Error setting LC_CTYPE, skipping C locale coercion\n");
         return;
     }
-    fprintf(stderr, _C_LOCALE_COERCION_WARNING, newloc);
 
     /* Reconfigure with the overridden environment variables */
     setlocale(LC_ALL, "");
@@ -463,26 +458,6 @@ _Py_CoerceLegacyLocale(void)
     /* No C locale warning here, as Py_Initialize will emit one later */
 #endif
 }
-
-
-#ifdef PY_WARN_ON_C_LOCALE
-static const char *_C_LOCALE_WARNING =
-    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
-    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
-    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
-    "locales is recommended.\n";
-
-static void
-_emit_stderr_warning_for_c_locale(void)
-{
-    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
-    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
-        if (_Py_LegacyLocaleDetected()) {
-            fprintf(stderr, "%s", _C_LOCALE_WARNING);
-        }
-    }
-}
-#endif
 
 
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
@@ -561,9 +536,6 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
        the locale's charset without having to switch
        locales. */
     setlocale(LC_CTYPE, "");
-#ifdef PY_WARN_ON_C_LOCALE
-    _emit_stderr_warning_for_c_locale();
-#endif
 #endif
 #endif
 
