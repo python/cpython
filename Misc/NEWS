@@ -35,6 +35,10 @@ Core and Builtins
 Library
 -------
 
+- [Security] bpo-29591: Update expat copy from 2.1.0 to 2.2.0 to get fixes
+  of CVE-2016-0718 and CVE-2016-4472. See
+  https://sourceforge.net/p/expat/bugs/537/ for more information.
+
 - Issue #28563: Fixed possible DoS and arbitrary code execution when handle
   plural form selections in the gettext module.  The expression parser now
   supports exact syntax supported by GNU gettext.
