@@ -28,7 +28,13 @@ except ImportError:
 # to keep the test files in a subfolder.  This eases the cleanup of leftover
 # files using the "make distclean" command.
 if sysconfig.is_python_build():
-    TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
+    TEMPDIR = sysconfig.get_config_var('abs_builddir')
+    if TEMPDIR is None:
+        # bpo-30284: On Windows, only srcdir is available. Using abs_builddir
+        # mostly matters on UNIX when building Python out of the source tree,
+        # especially when the source tree is read only.
+        TEMPDIR = sysconfig.get_config_var('srcdir')
+    TEMPDIR = os.path.join(TEMPDIR, 'build')
 else:
     TEMPDIR = tempfile.gettempdir()
 TEMPDIR = os.path.abspath(TEMPDIR)
