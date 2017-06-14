@@ -89,8 +89,8 @@ def find_spec(name, package=None):
                 parent_path = parent.__path__
             except AttributeError as e:
                 raise ModuleNotFoundError(
-                    "Error while finding module specification for "
-                    f"'{fullname}'.", name=fullname) from e
+                    "__path__ attribute missing on parent of "
+                    f"{fullname!r}.", name=fullname) from e
         else:
             parent_path = None
         return _find_spec(fullname, parent_path)
