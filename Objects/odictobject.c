@@ -882,8 +882,8 @@ odict_eq(PyObject *a, PyObject *b)
 
 PyDoc_STRVAR(odict_init__doc__,
 "Initialize an ordered dictionary.  The signature is the same as\n\
-        regular dictionaries, but keyword arguments are not recommended because\n\
-        their insertion order is arbitrary.\n\
+        regular dictionaries. As of Python 3.6, keyword argument insertion\n\
+        order is stable. (PEP 468)\n\
 \n\
         ");
 
