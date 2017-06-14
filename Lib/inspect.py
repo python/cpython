@@ -640,7 +640,6 @@ def cleandoc(doc):
             lines.pop(0)
         return '\n'.join(lines)
 
-
 def getfile(object):
     """Work out which source or compiled file an object was defined in."""
     if ismodule(object):
