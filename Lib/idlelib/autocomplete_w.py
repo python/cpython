@@ -325,8 +325,9 @@ class AutoCompleteWindow:
             return "break"
 
         elif keysym == "Return":
+            self.complete()
             self.hide_window()
-            return None
+            return 'break'
 
         elif (self.mode == COMPLETE_ATTRIBUTES and keysym in
               ("period", "space", "parenleft", "parenright", "bracketleft",
