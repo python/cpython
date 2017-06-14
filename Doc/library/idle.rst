@@ -551,7 +551,7 @@ If there are arguments:
 * Otherwise, arguments are files opened for editing and
   ``sys.argv`` reflects the arguments passed to IDLE itself.
 
- 
+
 Startup failure
 ^^^^^^^^^^^^^^^
 
@@ -595,7 +595,7 @@ be to delete one or more of the configuration files.
 If IDLE quits with no message, and it was not started from a console, try
 starting from a console (``python -m idlelib)`` and see if a message appears.
 
- 
+
 IDLE-console differences
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
