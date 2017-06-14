@@ -345,6 +345,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30436: `importlib.find_spec()` raises ModuleNotFoundError instead of
+  AttributeError if the package can be imported but is missing the __path__
+  attribute.
+
 - bpo-16500: Allow registering at-fork handlers.
 
 - bpo-30470: Deprecate invalid ctypes call protection on Windows.  Patch by
