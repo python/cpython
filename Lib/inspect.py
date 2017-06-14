@@ -664,7 +664,7 @@ def getfile(object):
         return object.co_filename
     raise TypeError('object of type {} is not a module, class, method, '
                     'function, traceback, frame, or code object'.format(
-                        type(object).__name__))
+                    type(object).__name__))
 
 def getmodulename(path):
     """Return the module name for a given file, or None."""
