@@ -85,9 +85,9 @@ class OrderedDict(dict):
 
     def __init__(*args, **kwds):
         '''Initialize an ordered dictionary.  The signature is the same as
-        regular dictionaries, but keyword arguments are not recommended because
-        their insertion order is arbitrary.
-
+        regular dictionaries. As of Python 3.6, keyword argument insertion
+        order is stable, not arbitrary as it was in Python 3.5 and earlier
+        releases. (PEP 468)
         '''
         if not args:
             raise TypeError("descriptor '__init__' of 'OrderedDict' object "
