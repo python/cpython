@@ -5165,7 +5165,7 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
             return NULL;
         }
         if (i == 0 && !argvlist[0][0]) {
-            free_string_array(argvlist, i);
+            free_string_array(argvlist, i + 1);
             PyErr_SetString(
                 PyExc_ValueError,
                 "spawnv() arg 2 first element cannot be empty");
