@@ -1075,6 +1075,27 @@ class BaseTaskTests:
         res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertAlmostEqual(0.15, loop.time())
 
+    def test_as_completed_over_iterable(self):
+
+        def gen():
+            for i in range(3):
+                yield 0.1
+
+        loop = self.new_test_loop(gen)
+
+        fs_it = (asyncio.sleep(i/10.0, i, loop=loop) for i in range(0, 3))
+
+        @asyncio.coroutine
+        def foo():
+            values = []
+            for r in asyncio.as_completed(fs_it, loop=loop):
+                v = yield from r
+                values.append(v)
+            return values
+
+        res = list(sorted(loop.run_until_complete(self.new_task(loop, foo()))))
+        self.assertEqual([0, 1, 2], res)
+
     def test_as_completed_with_timeout(self):
 
         def gen():
@@ -1676,10 +1697,6 @@ class BaseTaskTests:
         # as_completed() expects a list of futures, not a future instance
         self.assertRaises(TypeError, self.loop.run_until_complete,
             asyncio.as_completed(fut, loop=self.loop))
-        coro = coroutine_function()
-        self.assertRaises(TypeError, self.loop.run_until_complete,
-            asyncio.as_completed(coro, loop=self.loop))
-        coro.close()
 
     def test_wait_invalid_args(self):
         fut = self.new_future(self.loop)

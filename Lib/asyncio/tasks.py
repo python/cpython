@@ -423,7 +423,7 @@ def as_completed(fs, *, loop=None, timeout=None):
 
     Note: The futures 'f' are not necessarily members of fs.
     """
-    if futures.isfuture(fs) or coroutines.iscoroutine(fs):
+    if futures.isfuture(fs):
         raise TypeError("expect a list of futures, not %s" % type(fs).__name__)
     loop = loop if loop is not None else events.get_event_loop()
     todo = {ensure_future(f, loop=loop) for f in set(fs)}
