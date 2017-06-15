@@ -140,6 +140,7 @@ import sysconfig
 import tempfile
 import time
 import traceback
+import types
 import unittest
 import warnings
 from inspect import isabstract
@@ -448,17 +449,15 @@ def run_test_in_subprocess(testname, ns):
     # required to spawn a new process with PGO flag on/off
     if ns.pgo:
         base_cmd = base_cmd + ['--pgo']
-    slaveargs = (
-            (testname, ns.verbose, ns.quiet),
-            dict(huntrleaks=ns.huntrleaks,
-                 use_resources=ns.use_resources,
-                 output_on_failure=ns.verbose3,
-                 timeout=ns.timeout, failfast=ns.failfast,
-                 match_tests=ns.match_tests, pgo=ns.pgo))
+
+    ns_dict = vars(ns)
+    slaveargs = (ns_dict, testname)
+    slaveargs = json.dumps(slaveargs)
+
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
-    popen = Popen(base_cmd + ['--slaveargs', json.dumps(slaveargs)],
+    popen = Popen(base_cmd + ['--slaveargs', slaveargs],
                   stdout=PIPE, stderr=PIPE,
                   universal_newlines=True,
                   close_fds=(os.name != 'nt'),
@@ -466,6 +465,43 @@ def run_test_in_subprocess(testname, ns):
     stdout, stderr = popen.communicate()
     retcode = popen.wait()
     return retcode, stdout, stderr
+
+
+def setup_tests(ns):
+    if ns.huntrleaks:
+        # Avoid false positives due to various caches
+        # filling slowly with random data:
+        warm_caches()
+    if ns.memlimit is not None:
+        support.set_memlimit(ns.memlimit)
+    if ns.threshold is not None:
+        import gc
+        gc.set_threshold(ns.threshold)
+    if ns.nowindows:
+        print('The --nowindows (-n) option is deprecated. '
+              'Use -vv to display assertions in stderr.')
+    try:
+        import msvcrt
+    except ImportError:
+        pass
+    else:
+        msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
+                            msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
+                            msvcrt.SEM_NOGPFAULTERRORBOX|
+                            msvcrt.SEM_NOOPENFILEERRORBOX)
+        try:
+            msvcrt.CrtSetReportMode
+        except AttributeError:
+            # release build
+            pass
+        else:
+            for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
+                if ns.verbose and ns.verbose >= 2:
+                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
+                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+                else:
+                    msvcrt.CrtSetReportMode(m, 0)
+
 
 
 def main(tests=None, **kwargs):
@@ -509,57 +545,37 @@ def main(tests=None, **kwargs):
 
     ns = _parse_args(sys.argv[1:], **kwargs)
 
-    if ns.huntrleaks:
-        # Avoid false positives due to various caches
-        # filling slowly with random data:
-        warm_caches()
-    if ns.memlimit is not None:
-        support.set_memlimit(ns.memlimit)
-    if ns.threshold is not None:
-        import gc
-        gc.set_threshold(ns.threshold)
-    if ns.nowindows:
-        print('The --nowindows (-n) option is deprecated. '
-              'Use -vv to display assertions in stderr.')
-    try:
-        import msvcrt
-    except ImportError:
-        pass
-    else:
-        msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                            msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                            msvcrt.SEM_NOGPFAULTERRORBOX|
-                            msvcrt.SEM_NOOPENFILEERRORBOX)
-        try:
-            msvcrt.CrtSetReportMode
-        except AttributeError:
-            # release build
-            pass
-        else:
-            for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                if ns.verbose and ns.verbose >= 2:
-                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-                else:
-                    msvcrt.CrtSetReportMode(m, 0)
-    if ns.wait:
-        input("Press any key to continue...")
-
     if ns.slaveargs is not None:
-        args, kwargs = json.loads(ns.slaveargs)
-        if kwargs.get('huntrleaks'):
+        ns_dict, testname = json.loads(ns.slaveargs)
+        ns = types.SimpleNamespace(**ns_dict)
+
+        setup_tests(ns)
+
+        if ns.huntrleaks:
             unittest.BaseTestSuite._cleanup = False
+
         try:
-            result = runtest(*args, **kwargs)
+            result = runtest(testname, ns.verbose, ns.quiet,
+                             ns.huntrleaks,
+                             output_on_failure=ns.verbose3,
+                             timeout=ns.timeout, failfast=ns.failfast,
+                             match_tests=ns.match_tests, pgo=ns.pgo,
+                             use_resources=ns.use_resources)
         except KeyboardInterrupt:
             result = INTERRUPTED, ''
         except BaseException as e:
             traceback.print_exc()
             result = CHILD_ERROR, str(e)
+
         sys.stdout.flush()
         print()   # Force a newline (just in case)
         print(json.dumps(result))
         sys.exit(0)
+
+    setup_tests(ns)
+
+    if ns.wait:
+        input("Press any key to continue...")
 
     good = []
     bad = []
