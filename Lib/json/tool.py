@@ -27,7 +27,7 @@ def main():
                         help='write the output of infile to outfile')
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
-    parser.add_argument('--indent', action='indent', default=4,
+    parser.add_argument('--indent', action='store', default=4, type=int,
                         help='level of indentation used for pretty printing')
     options = parser.parse_args()
 
