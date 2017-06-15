@@ -55,6 +55,7 @@ static int autoTLSkey = -1;
 #endif
 
 static PyInterpreterState *interp_head = NULL;
+static __PyCodeExtraState *coextra_head = NULL;
 
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
@@ -73,6 +74,12 @@ PyInterpreterState_New(void)
                                  PyMem_RawMalloc(sizeof(PyInterpreterState));
 
     if (interp != NULL) {
+        __PyCodeExtraState* coextra = PyMem_RawMalloc(sizeof(__PyCodeExtraState));
+        if (coextra == NULL) {
+            PyMem_RawFree(interp);
+            return NULL;
+        }
+
         HEAD_INIT();
 #ifdef WITH_THREAD
         if (head_mutex == NULL)
@@ -92,6 +99,8 @@ PyInterpreterState_New(void)
         interp->importlib = NULL;
         interp->import_func = NULL;
         interp->eval_frame = _PyEval_EvalFrameDefault;
+        coextra->co_extra_user_count = 0;
+        coextra->interp = interp;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
         interp->dlopenflags = RTLD_NOW;
@@ -103,6 +112,8 @@ PyInterpreterState_New(void)
         HEAD_LOCK();
         interp->next = interp_head;
         interp_head = interp;
+        coextra->next = coextra_head;
+        coextra_head = coextra;
         HEAD_UNLOCK();
     }
 
@@ -147,9 +158,10 @@ void
 PyInterpreterState_Delete(PyInterpreterState *interp)
 {
     PyInterpreterState **p;
+    __PyCodeExtraState **pextra;
     zapthreads(interp);
     HEAD_LOCK();
-    for (p = &interp_head; ; p = &(*p)->next) {
+    for (p = &interp_head; /* N/A */; p = &(*p)->next) {
         if (*p == NULL)
             Py_FatalError(
                 "PyInterpreterState_Delete: invalid interp");
@@ -159,6 +171,18 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     if (interp->tstate_head != NULL)
         Py_FatalError("PyInterpreterState_Delete: remaining threads");
     *p = interp->next;
+
+    for (pextra = &coextra_head; ; pextra = &(*pextra)->next) {
+        if (*pextra == NULL)
+            Py_FatalError(
+                "PyInterpreterState_Delete: invalid extra");
+        __PyCodeExtraState* extra = *pextra;
+        if (extra->interp == interp) {
+            *pextra = extra->next;
+            PyMem_RawFree(extra);
+            break;
+        }
+    }
     HEAD_UNLOCK();
     PyMem_RawFree(interp);
 #ifdef WITH_THREAD
@@ -224,7 +248,6 @@ new_threadstate(PyInterpreterState *interp, int init)
 
         tstate->coroutine_wrapper = NULL;
         tstate->in_coroutine_wrapper = 0;
-        tstate->co_extra_user_count = 0;
 
         tstate->async_gen_firstiter = NULL;
         tstate->async_gen_finalizer = NULL;
@@ -548,6 +571,23 @@ PyThreadState_Swap(PyThreadState *newts)
     return oldts;
 }
 
+__PyCodeExtraState*
+__PyCodeExtraState_Get(void) {
+    PyInterpreterState* interp = PyThreadState_Get()->interp;
+
+    HEAD_LOCK();
+    for (__PyCodeExtraState* cur = coextra_head; cur != NULL; cur = cur->next) {
+        if (cur->interp == interp) {
+            HEAD_UNLOCK();
+            return cur;
+        }
+    }
+    HEAD_UNLOCK();
+
+    Py_FatalError("__PyCodeExtraState_Get: no code state for interpreter");
+    return NULL;
+}
+
 /* An extension mechanism to store arbitrary additional per-thread state.
    PyThreadState_GetDict() returns a dictionary that can be used to hold such
    state; the caller should pick a unique key and store its state there.  If
@@ -743,6 +783,10 @@ _PyGILState_Fini(void)
 void
 _PyGILState_Reinit(void)
 {
+#ifdef WITH_THREAD
+    head_mutex = NULL;
+    HEAD_INIT();
+#endif
     PyThreadState *tstate = PyGILState_GetThisThreadState();
     PyThread_delete_key(autoTLSkey);
     if ((autoTLSkey = PyThread_create_key()) == -1)

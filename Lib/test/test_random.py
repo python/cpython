@@ -427,6 +427,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))
 
     def test_setstate_middle_arg(self):
+        start_state = self.gen.getstate()
         # Wrong type, s/b tuple
         self.assertRaises(TypeError, self.gen.setstate, (2, None, None))
         # Wrong length, s/b 625
@@ -440,6 +441,10 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             self.gen.setstate((2, (1,)*624+(625,), None))
         with self.assertRaises((ValueError, OverflowError)):
             self.gen.setstate((2, (1,)*624+(-1,), None))
+        # Failed calls to setstate() should not have changed the state.
+        bits100 = self.gen.getrandbits(100)
+        self.gen.setstate(start_state)
+        self.assertEqual(self.gen.getrandbits(100), bits100)
 
         # Little trick to make "tuple(x % (2**32) for x in internalstate)"
         # raise ValueError. I cannot think of a simple way to achieve this, so

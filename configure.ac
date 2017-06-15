@@ -1258,12 +1258,33 @@ else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
 
+# Check for --with-assertions. Py_DEBUG implies assertions, but also changes
+# the ABI. This allows enabling assertions without changing the ABI.
+assertions='false'
+AC_MSG_CHECKING(for --with-assertions)
+AC_ARG_WITH(assertions,
+            AC_HELP_STRING([--with-assertions], [build with C assertions enabled]),
+[
+if test "$withval" != no
+then
+  assertions='true'
+fi],
+[])
+if test "$assertions" = 'true'; then
+  AC_MSG_RESULT(yes)
+elif test "$Py_DEBUG" = 'true'; then
+  assertions='true'
+  AC_MSG_RESULT(implied by --with-pydebug)
+else
+  AC_MSG_RESULT(no)
+fi
+
 # Enable optimization flags
 AC_SUBST(DEF_MAKE_ALL_RULE)
 AC_SUBST(DEF_MAKE_RULE)
 Py_OPT='false'
 AC_MSG_CHECKING(for --enable-optimizations)
-AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive optimizations (PGO, etc).  Disabled by default.]),
+AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive, stable optimizations (PGO, etc).  Disabled by default.]),
 [
 if test "$enableval" != no
 then
@@ -1855,7 +1876,7 @@ case "$CC" in
     ;;
 esac
 
-if test "$Py_DEBUG" = 'true'; then
+if test "$assertions" = 'true'; then
   :
 else
   OPT="-DNDEBUG $OPT"
@@ -5431,7 +5452,7 @@ mv config.c Modules
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
-    echo "If you want a release build with all optimizations active (LTO, PGO, etc)," >&AS_MESSAGE_FD
+    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&AS_MESSAGE_FD
     echo "please run ./configure --enable-optimizations" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD

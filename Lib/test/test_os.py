@@ -473,7 +473,9 @@ class StatAttributeTests(unittest.TestCase):
         # force CreateFile to fail with ERROR_ACCESS_DENIED.
         DETACHED_PROCESS = 8
         subprocess.check_call(
-            ['icacls.exe', fname, '/deny', 'Users:(S)'],
+            # bpo-30584: Use security identifier *S-1-5-32-545 instead
+            # of localized "Users" to not depend on the locale.
+            ['icacls.exe', fname, '/deny', '*S-1-5-32-545:(S)'],
             creationflags=DETACHED_PROCESS
         )
         result = os.stat(fname)
@@ -620,8 +622,13 @@ class UtimeTests(unittest.TestCase):
 
         if not self.support_subsecond(self.fname):
             delta = 1.0
+        elif os.name == 'nt':
+            # On Windows, the usual resolution of time.time() is 15.6 ms.
+            # bpo-30649: Tolerate 50 ms for slow Windows buildbots.
+            delta = 0.050
         else:
-            # On Windows, the usual resolution of time.time() is 15.6 ms
+            # bpo-30649: PPC64 Fedora 3.x buildbot requires
+            # at least a delta of 14 ms
             delta = 0.020
         st = os.stat(self.fname)
         msg = ("st_time=%r, current=%r, dt=%r"

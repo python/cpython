@@ -4,7 +4,6 @@ Coverage: 71% on Windows.
 '''
 from idlelib import macosx
 from test.support import requires
-import sys
 import tkinter as tk
 import unittest
 import unittest.mock as mock
@@ -78,6 +77,10 @@ class SetupTest(unittest.TestCase):
         requires('gui')
         cls.root = tk.Tk()
         cls.root.withdraw()
+        def cmd(tkpath, func):
+            assert isinstance(tkpath, str)
+            assert isinstance(func, type(cmd))
+        cls.root.createcommand = cmd
 
     @classmethod
     def tearDownClass(cls):

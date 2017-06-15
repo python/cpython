@@ -636,7 +636,7 @@ which are used to control the execution of a generator function.
    without yielding another value, an :exc:`StopAsyncIteration` exception is
    raised by the awaitable.
    If the generator function does not catch the passed-in exception, or
-   raises a different exception, then when the awaitalbe is run that exception
+   raises a different exception, then when the awaitable is run that exception
    propagates to the caller of the awaitable.
 
 .. index:: exception: GeneratorExit

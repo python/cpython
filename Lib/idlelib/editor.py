@@ -26,7 +26,6 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
-from idlelib import textview
 from idlelib import windows
 
 # The default tab setting for a Text widget, in average-width characters.

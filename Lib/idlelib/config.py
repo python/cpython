@@ -29,7 +29,7 @@ from configparser import ConfigParser
 import os
 import sys
 
-from tkinter.font import Font, nametofont
+from tkinter.font import Font
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass

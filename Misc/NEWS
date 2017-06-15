@@ -1,4 +1,4 @@
-+++++++++++
+﻿+++++++++++
 Python News
 +++++++++++
 
@@ -9,6 +9,21 @@ What's New in Python 3.6.2 release candidate 1?
 
 Core and Builtins
 -----------------
+
+- bpo-30604: Move co_extra_freefuncs to not be per-thread to avoid crashes
+
+- bpo-29104: Fixed parsing backslashes in f-strings.
+
+- bpo-27945: Fixed various segfaults with dict when input collections are
+  mutated during searching, inserting or comparing.  Based on patches by
+  Duane Griffin and Tim Mitchell.
+
+- bpo-25794: Fixed type.__setattr__() and type.__delattr__() for
+  non-interned attribute names.  Based on patch by Eryk Sun.
+
+- bpo-30039: If a KeyboardInterrupt happens when the interpreter is in
+  the middle of resuming a chain of nested 'yield from' or 'await'
+  calls, it's now correctly delivered to the innermost frame.
 
 - bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
@@ -40,6 +55,61 @@ Library
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
 
+- bpo-29931: Fixed comparison check for ipaddress.ip_interface objects.
+  Patch by Sanjay Sundaresan.
+
+- bpo-30605: re.compile() no longer raises a BytesWarning when compiling a
+  bytes instance with misplaced inline modifier.  Patch by Roy Williams.
+
+- [Security] bpo-29591: Update expat copy from 2.1.1 to 2.2.0 to get fixes
+  of CVE-2016-0718 and CVE-2016-4472. See
+  https://sourceforge.net/p/expat/bugs/537/ for more information.
+
+- bpo-24484: Avoid race condition in multiprocessing cleanup (#2159)
+
+- bpo-28994: The traceback no longer displayed for SystemExit raised in
+  a callback registered by atexit.
+
+- bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
+  called.
+
+- bpo-28556: Updates to typing module: Add generic AsyncContextManager, add
+  support for ContextManager on all versions. Original PRs by Jelle Zijlstra
+  and Ivan Levkivskyi
+
+- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl
+  implementation. Patch by Michaël Sghaïer.
+
+- bpo-29743: Closing transport during handshake process leaks open socket.
+  Patch by Nikolay Kim
+
+- bpo-27585: Fix waiter cancellation in asyncio.Lock.
+  Patch by Mathieu Sornay.
+
+- bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
+  on stdin.write() if the child process is still running but closed the pipe.
+
+- bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
+  by Nate Soares.
+
+- bpo-29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
+  classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
+
+- bpo-30557: faulthandler now correctly filters and displays exception codes
+  on Windows
+
+- bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
+  handle IPv6 addresses.
+
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
+
+- bpo-30414: multiprocessing.Queue._feed background running
+  thread do not break from main loop on exception.
+
+- bpo-30003: Fix handling escape characters in HZ codec.  Based on patch
+  by Ma Lin.
+
 - bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
   *spawn* and *forkserver* start methods.
 
@@ -53,6 +123,10 @@ Library
 
 - bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
   running coroutine and the coroutine returned without any more ``await``.
+
+- bpo-30266: contextlib.AbstractContextManager now supports anti-registration
+  by setting __enter__ = None or __exit__ = None, following the pattern
+  introduced in bpo-25958. Patch by Jelle Zijlstra.
 
 - bpo-30298: Weaken the condition of deprecation warnings for inline modifiers.
   Now allowed several subsequential inline modifiers at the start of the
@@ -145,8 +219,33 @@ Library
   exception) to exception(s) raised in the dispatched methods.
   Patch by Petr Motejlek.
 
+- bpo-30177: path.resolve(strict=False) no longer cuts the path after the first
+  element not present in the filesystem.  Patch by Antoine Pietri.
+
+IDLE
+----
+
+- bpo-30290: Help-about: use pep8 names and add tests.
+  Increase coverage to 100%.
+  Patches by Louie Lu, Cheryl Sabella, and Terry Jan Reedy.
+
+- bpo-30303: Add _utest option to textview; add new tests.
+  Increase coverage to 100%.
+  Patches by Louie Lu and Terry Jan Reedy.
+
+C API
+-----
+
+- Issue #27867: Function PySlice_GetIndicesEx() no longer replaced with a macro
+  if Py_LIMITED_API is not set.
+
+
 Build
 -----
+
+- bpo-29941: Add ``--with-assertions`` configure flag to explicitly enable
+  C ``assert()`` checks. Defaults to off. ``--with-pydebug`` implies
+  ``--with-assertions``.
 
 - bpo-28787: Fix out-of-tree builds of Python when configured with
   ``--with--dtrace``.
@@ -163,6 +262,15 @@ Build
 
 Documentation
 -------------
+
+- Issue #30052: the link targets for :func:`bytes` and
+  :func:`bytearray` are now their respective type definitions, rather
+  than the corresponding builtin function entries. Use :ref:`bytes <func-bytes>`
+  and :ref:`bytearray <func-bytearray>` to reference the latter.
+
+  In order to ensure this and future cross-reference updates are applied
+  automatically, the daily documentation builds now disable the default
+  output caching features in Sphinx.
 
 - bpo-26985: Add missing info of code object in inspect documentation.
 
@@ -417,6 +525,14 @@ Library
 - Issue #26937: The chown() method of the tarfile.TarFile class does not fail
   now when the grp module cannot be imported, as for example on Android
   platforms.
+
+IDLE
+----
+
+- Issue #29071: IDLE colors f-string prefixes (but not invalid ur prefixes).
+
+- Issue #28572: Add 10% to coverage of IDLE's test_configdialog.
+  Update and augment description of the configuration system.
 
 Windows
 -------

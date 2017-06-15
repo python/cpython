@@ -243,8 +243,7 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
         PyObject *kwnames;
         _PyCFunctionFast fastmeth = (_PyCFunctionFast)meth;
 
-        stack = _PyStack_UnpackDict(args, nargs, kwargs, &kwnames, func_obj);
-        if (stack == NULL) {
+        if (_PyStack_UnpackDict(args, nargs, kwargs, &stack, &kwnames) < 0) {
             return NULL;
         }
 

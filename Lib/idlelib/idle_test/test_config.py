@@ -3,9 +3,7 @@
 Much is tested by opening config dialog live or in test_configdialog.
 Coverage: 27%
 '''
-from sys import modules
 from test.support import captured_stderr
-from tkinter import Tk
 import unittest
 from idlelib import config
 

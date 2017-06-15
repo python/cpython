@@ -599,6 +599,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = NULL;
     self->Socket = NULL;
     self->ctx = sslctx;
+    Py_INCREF(sslctx);
     self->shutdown_seen_zero = 0;
     self->handshake_done = 0;
     self->owner = NULL;
@@ -612,8 +613,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
         self->server_hostname = hostname;
     }
-
-    Py_INCREF(sslctx);
 
     /* Make sure the SSL error state is initialized */
     (void) ERR_get_state();
@@ -4476,12 +4475,12 @@ _ssl.RAND_add
 Mix string into the OpenSSL PRNG state.
 
 entropy (a float) is a lower bound on the entropy contained in
-string.  See RFC 1750.
+string.  See RFC 4086.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_RAND_add_impl(PyObject *module, Py_buffer *view, double entropy)
-/*[clinic end generated code: output=e6dd48df9c9024e9 input=580c85e6a3a4fe29]*/
+/*[clinic end generated code: output=e6dd48df9c9024e9 input=5c33017422828f5c]*/
 {
     const char *buf;
     Py_ssize_t len, written;

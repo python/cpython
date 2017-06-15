@@ -105,7 +105,8 @@ of which this module provides three different variants:
 
       Contains the output stream for writing a response back to the
       client. Proper adherence to the HTTP protocol must be used when writing to
-      this stream.
+      this stream in order to achieve successful interoperation with HTTP
+      clients.
 
       .. versionchanged:: 3.6
          This is an :class:`io.BufferedIOBase` stream.

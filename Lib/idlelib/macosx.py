@@ -2,7 +2,6 @@
 A number of functions that enhance IDLE on Mac OSX.
 """
 from sys import platform  # Used in _init_tk_type, changed by test.
-import warnings
 
 import tkinter
 

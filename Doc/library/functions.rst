@@ -16,8 +16,8 @@ are always available.  They are listed here in alphabetical order.
 :func:`ascii`        :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
 :func:`bin`          :func:`eval`       :func:`int`         :func:`open`      |func-str|_
 :func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
-:func:`bytearray`    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
-:func:`bytes`        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
+|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
+|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
 :func:`callable`     :func:`format`     :func:`len`         :func:`property`  :func:`type`
 :func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_     :func:`vars`
 :func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
@@ -37,7 +37,8 @@ are always available.  They are listed here in alphabetical order.
 .. |func-str| replace:: ``str()``
 .. |func-tuple| replace:: ``tuple()``
 .. |func-range| replace:: ``range()``
-
+.. |func-bytearray| replace:: ``bytearray()``
+.. |func-bytes| replace:: ``bytes()``
 
 .. function:: abs(x)
 
@@ -99,6 +100,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-bytearray:
 .. class:: bytearray([source[, encoding[, errors]]])
+   :noindex:
 
    Return a new array of bytes.  The :class:`bytearray` class is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
@@ -128,6 +130,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-bytes:
 .. class:: bytes([source[, encoding[, errors]]])
+   :noindex:
 
    Return a new "bytes" object, which is an immutable sequence of integers in
    the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
