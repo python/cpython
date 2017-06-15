@@ -56,6 +56,9 @@ Extension Modules
 Library
 -------
 
+- bpo-23890: unittest.TestCase.assertRaises() now manually breaks a reference
+  cycle to not keep objects alive longer than expected.
+
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
