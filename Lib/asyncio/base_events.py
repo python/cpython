@@ -452,6 +452,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             self.run_forever()
         except:
+            if new_task and not future.done():
+                # A signal from outside interrupted the execution. Cancel the
+                # coroutine and wait for the exit handlers to finish
+                future.cancel()
+                self.run_forever()
             if new_task and future.done() and not future.cancelled():
                 # The coroutine raised a BaseException. Consume the exception
                 # to not log a warning, the caller doesn't have access to the
