@@ -365,6 +365,15 @@ Library
 - bpo-30576 : http.server supports HTTP compression (gzip).  Patch by Pierre
   Quentel.
 
+- [Security] bpo-29591: Update expat copy from 2.1.1 to 2.2.0 to get fixes
+  of CVE-2016-0718 and CVE-2016-4472. See
+  https://sourceforge.net/p/expat/bugs/537/ for more information.
+
+- bpo-24744: pkgutil.walk_packages function now raises ValueError if *path*
+  is a string. Patch by Sanyam Khurana.
+
+- bpo-24484: Avoid race condition in multiprocessing cleanup.
+
 - bpo-30589: Fix multiprocessing.Process.exitcode to return the opposite
   of the signal number when the process is killed by a signal (instead
   of 255) when using the "forkserver" method.
@@ -439,6 +448,10 @@ Library
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
+  
+- bpo-30436: importlib.find_spec() raises ModuleNotFoundError instead of
+  AttributeError if the specified parent module is not a package
+  (i.e. lacks a __path__ attribute).
 
 - bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
   *spawn* and *forkserver* start methods.

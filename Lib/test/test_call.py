@@ -5,6 +5,8 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+import struct
+import collections
 
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C
@@ -159,6 +161,30 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
     def test_varargs5_kw(self):
         msg = r"^hasattr\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, hasattr, x=2)
+
+    def test_varargs6_kw(self):
+        msg = r"^getattr\(\) takes no keyword arguments$"
+        self.assertRaisesRegex(TypeError, msg, getattr, x=2)
+
+    def test_varargs7_kw(self):
+        msg = r"^next\(\) takes no keyword arguments$"
+        self.assertRaisesRegex(TypeError, msg, next, x=2)
+
+    def test_varargs8_kw(self):
+        msg = r"^pack\(\) takes no keyword arguments$"
+        self.assertRaisesRegex(TypeError, msg, struct.pack, x=2)
+
+    def test_varargs9_kw(self):
+        msg = r"^pack_into\(\) takes no keyword arguments$"
+        self.assertRaisesRegex(TypeError, msg, struct.pack_into, x=2)
+
+    def test_varargs10_kw(self):
+        msg = r"^index\(\) takes no keyword arguments$"
+        self.assertRaisesRegex(TypeError, msg, collections.deque().index, x=2)
+
+    def test_varargs11_kw(self):
+        msg = r"^pack\(\) takes no keyword arguments$"
+        self.assertRaisesRegex(TypeError, msg, struct.Struct.pack, struct.Struct(""), x=2)
 
     def test_oldargs0_1(self):
         msg = r"keys\(\) takes no arguments \(1 given\)"
