@@ -16,10 +16,11 @@ from test.support.script_helper import (
 
 # Set our expectation for the default encoding used in the C locale
 # for the filesystem encoding and the standard streams
+C_LOCALE_STREAM_ENCODING = "ascii"
 if sys.platform == "darwin":
-    EXPECTED_C_LOCALE_FSENCODING = "utf-8"
+    C_LOCALE_FS_ENCODING = "utf-8"
 else:
-    EXPECTED_C_LOCALE_FSENCODING = "ascii"
+    C_LOCALE_FS_ENCODING = C_LOCALE_STREAM_ENCODING
 
 # XXX (ncoghlan): The above is probably still wrong for:
 # * Windows when PYTHONLEGACYWINDOWSFSENCODING is set
@@ -52,15 +53,15 @@ class EncodingDetails(_EncodingDetails):
     ])
 
     @classmethod
-    def get_expected_details(cls, expected_fsencoding):
+    def get_expected_details(cls, fs_encoding, stream_encoding):
         """Returns expected child process details for a given encoding"""
-        _stream = expected_fsencoding + ":{}"
+        _stream = stream_encoding + ":{}"
         # stdin and stdout should use surrogateescape either because the
         # coercion triggered, or because the C locale was detected
         stream_info = 2*[_stream.format("surrogateescape")]
         # stderr should always use backslashreplace
         stream_info.append(_stream.format("backslashreplace"))
-        return dict(cls(expected_fsencoding, *stream_info)._asdict())
+        return dict(cls(fs_encoding, *stream_info)._asdict())
 
     @staticmethod
     def _handle_output_variations(data):
@@ -107,21 +108,22 @@ class _ChildProcessEncodingTestCase(unittest.TestCase):
 
     def _check_child_encoding_details(self,
                                       env_vars,
-                                      expected_fsencoding,
+                                      expected_fs_encoding,
+                                      expected_stream_encoding,
                                       expected_warning):
         """Check the C locale handling for the given process environment
 
         Parameters:
-            expected_fsencoding: the encoding the child is expected to report
-            allow_c_locale: setting to use for PYTHONALLOWCLOCALE
-              None: don't set the variable at all
-              str: the value set in the child's environment
+            expected_fs_encoding: expected sys.getfilesystemencoding() result
+            expected_stream_encoding: expected encoding for standard streams
+            expected_warning: stderr output to expect (if any)
         """
         result = EncodingDetails.get_child_details(env_vars)
         encoding_details, stderr_lines = result
         self.assertEqual(encoding_details,
                          EncodingDetails.get_expected_details(
-                             expected_fsencoding))
+                             expected_fs_encoding,
+                             expected_stream_encoding))
         self.assertEqual(stderr_lines, expected_warning)
 
 # Details of the shared library warning emitted at runtime
@@ -140,12 +142,17 @@ class LocaleWarningTests(_ChildProcessEncodingTestCase):
     def test_library_c_locale_warning(self):
         self.maxDiff = None
         for locale_to_set in ("C", "POSIX", "invalid.ascii"):
+            # XXX (ncoghlan): Mac OS X doesn't behave as expected in the
+            #                 POSIX locale, so we skip that for now
+            if sys.platform == "darwin" and locale_to_set == "POSIX":
+                continue
             var_dict = {
                 "LC_ALL": locale_to_set
             }
             with self.subTest(forced_locale=locale_to_set):
                 self._check_child_encoding_details(var_dict,
-                                                   EXPECTED_C_LOCALE_FSENCODING,
+                                                   C_LOCALE_FS_ENCODING,
+                                                   C_LOCALE_STREAM_ENCODING,
                                                    [LIBRARY_C_LOCALE_WARNING])
 
 # Details of the CLI locale coercion warning emitted at runtime
@@ -190,7 +197,8 @@ class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
         self.maxDiff = None
 
         expected_warning = []
-        expected_fsencoding = "utf-8"
+        expected_fs_encoding = "utf-8"
+        expected_stream_encoding = "utf-8"
 
         base_var_dict = {
             "LANG": "",
@@ -209,7 +217,8 @@ class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
                     var_dict = base_var_dict.copy()
                     var_dict[env_var] = locale_to_set
                     self._check_child_encoding_details(var_dict,
-                                                       expected_fsencoding,
+                                                       expected_fs_encoding,
+                                                       expected_stream_encoding,
                                                        expected_warning)
 
 
@@ -220,12 +229,13 @@ class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
 class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
     # Test implicit reconfiguration of the environment during CLI startup
 
-    def _check_c_locale_coercion(self, expected_fsencoding, coerce_c_locale):
+    def _check_c_locale_coercion(self, fs_encoding, stream_encoding, coerce_c_locale):
         """Check the C locale handling for various configurations
 
         Parameters:
-            expected_fsencoding: the encoding the child is expected to report
-            allow_c_locale: setting to use for PYTHONALLOWCLOCALE
+            fs_encoding: expected sys.getfilesystemencoding() result
+            stream_encoding: expected encoding for standard streams
+            coerce_c_locale: setting to use for PYTHONCOERCECLOCALE
               None: don't set the variable at all
               str: the value set in the child's environment
         """
@@ -246,6 +256,10 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
         }
         for env_var in ("LANG", "LC_CTYPE"):
             for locale_to_set in ("", "C", "POSIX", "invalid.ascii"):
+                # XXX (ncoghlan): Mac OS X doesn't behave as expected in the
+                #                 POSIX locale, so we skip that for now
+                if sys.platform == "darwin" and locale_to_set == "POSIX":
+                    continue
                 with self.subTest(env_var=env_var,
                                   nominal_locale=locale_to_set,
                                   PYTHONCOERCECLOCALE=coerce_c_locale):
@@ -254,22 +268,24 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
                     if coerce_c_locale is not None:
                         var_dict["PYTHONCOERCECLOCALE"] = coerce_c_locale
                     self._check_child_encoding_details(var_dict,
-                                                       expected_fsencoding,
+                                                       fs_encoding,
+                                                       stream_encoding,
                                                        expected_warning)
 
     def test_test_PYTHONCOERCECLOCALE_not_set(self):
         # This should coerce to the first available target locale by default
-        self._check_c_locale_coercion("utf-8", coerce_c_locale=None)
+        self._check_c_locale_coercion("utf-8", "utf-8", coerce_c_locale=None)
 
     def test_PYTHONCOERCECLOCALE_not_zero(self):
         # *Any* string other that "0" is considered "set" for our purposes
         # and hence should result in the locale coercion being enabled
         for setting in ("", "1", "true", "false"):
-            self._check_c_locale_coercion("utf-8", coerce_c_locale=setting)
+            self._check_c_locale_coercion("utf-8", "utf-8", coerce_c_locale=setting)
 
     def test_PYTHONCOERCECLOCALE_set_to_zero(self):
         # The setting "0" should result in the locale coercion being disabled
-        self._check_c_locale_coercion(EXPECTED_C_LOCALE_FSENCODING,
+        self._check_c_locale_coercion(C_LOCALE_FS_ENCODING,
+                                      C_LOCALE_STREAM_ENCODING,
                                       coerce_c_locale="0")
 
 
