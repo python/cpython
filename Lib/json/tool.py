@@ -27,11 +27,14 @@ def main():
                         help='write the output of infile to outfile')
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
+    parser.add_argument('--indent', action='store', default=4, type=int,
+                        help='level of indentation used for pretty printing')
     options = parser.parse_args()
 
     infile = options.infile or sys.stdin
     outfile = options.outfile or sys.stdout
     sort_keys = options.sort_keys
+    indent = options.indent or 4
     with infile:
         try:
             if sort_keys:
@@ -42,7 +45,7 @@ def main():
         except ValueError as e:
             raise SystemExit(e)
     with outfile:
-        json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
+        json.dump(obj, outfile, sort_keys=sort_keys, indent=indent)
         outfile.write('\n')
 
 
