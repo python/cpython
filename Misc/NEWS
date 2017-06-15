@@ -10,6 +10,13 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- bpo-27945: Fixed various segfaults with dict when input collections are
+  mutated during searching, inserting or comparing.  Based on patches by
+  Duane Griffin and Tim Mitchell.
+
+- bpo-25794: Fixed type.__setattr__() and type.__delattr__() for
+  non-interned attribute names.  Based on patch by Eryk Sun.
+
 - bpo-29935: Fixed error messages in the index() method of tuple, list and deque
   when pass indices of wrong type.
 
@@ -52,6 +59,49 @@ Library
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
+
+- bpo-29931: Fixed comparison check for ipaddress.ip_interface objects.
+  Patch by Sanjay Sundaresan.
+
+- [Security] bpo-29591: Update expat copy from 2.1.1 to 2.2.0 to get fixes
+  of CVE-2016-0718 and CVE-2016-4472. See
+  https://sourceforge.net/p/expat/bugs/537/ for more information.
+
+- bpo-24484: Avoid race condition in multiprocessing cleanup.
+
+- bpo-28994: The traceback no longer displayed for SystemExit raised in
+  a callback registered by atexit.
+
+- bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
+  called.
+
+- bpo-28556: Updates to typing module: Add generic AsyncContextManager, add
+  support for ContextManager on all versions. Original PRs by Jelle Zijlstra
+  and Ivan Levkivskyi
+
+- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl
+  implementation. Patch by Michaël Sghaïer.
+
+- bpo-29743: Closing transport during handshake process leaks open socket.
+  Patch by Nikolay Kim
+
+- bpo-27585: Fix waiter cancellation in asyncio.Lock.
+  Patch by Mathieu Sornay.
+
+- bpo-30418: On Windows, subprocess.Popen.communicate() now also ignore EINVAL
+  on stdin.write() if the child process is still running but closed the pipe.
+
+- bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
+  handle IPv6 addresses.
+
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
+
+- bpo-30414: multiprocessing.Queue._feed background running
+  thread do not break from main loop on exception.
+
+- bpo-30003: Fix handling escape characters in HZ codec.  Based on patch
+  by Ma Lin.
 
 - bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
   *spawn* and *forkserver* start methods.
@@ -7242,7 +7292,7 @@ Library
 - Issue #17702: On error, os.environb now suppresses the exception context
   when raising a new KeyError with the original key.
 
-- Issue #16809: Fixed some tkinter incompabilities with Tcl/Tk 8.6.
+- Issue #16809: Fixed some tkinter incompatibilities with Tcl/Tk 8.6.
 
 - Issue #16809: Tkinter's splitlist() and split() methods now accept Tcl_Obj
   argument.

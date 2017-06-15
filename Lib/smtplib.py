@@ -250,6 +250,7 @@ class SMTP:
         if host:
             (code, msg) = self.connect(host, port)
             if code != 220:
+                self.close()
                 raise SMTPConnectError(code, msg)
         if local_hostname is not None:
             self.local_hostname = local_hostname

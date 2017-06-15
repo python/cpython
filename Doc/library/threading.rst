@@ -371,8 +371,9 @@ All methods are executed atomically.
    lock, subsequent attempts to acquire it block, until it is released; any
    thread may release it.
 
-   .. versionchanged:: 3.3
-      Changed from a factory function to a class.
+   Note that ``Lock`` is actually a factory function which returns an instance
+   of the most efficient version of the concrete Lock class that is supported
+   by the platform.
 
 
    .. method:: acquire(blocking=True, timeout=-1)

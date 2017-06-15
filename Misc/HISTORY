@@ -3285,7 +3285,7 @@ Library
 - Issue #11382: Trivial system calls, such as dup() or pipe(), needn't
   release the GIL.  Patch by Charles-François Natali.
 
-- Issue #11223: Add threading._info() function providing informations about
+- Issue #11223: Add threading._info() function providing information about
   the thread implementation.
 
 - Issue #11731: simplify/enhance email parser/generator API by introducing
