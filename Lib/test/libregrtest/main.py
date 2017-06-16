@@ -10,9 +10,10 @@ import sysconfig
 import tempfile
 import textwrap
 import time
+import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
-    findtests, runtest,
+    findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
     INTERRUPTED, CHILD_ERROR,
     PROGRESS_MIN_TIME, format_test_result)
@@ -28,7 +29,13 @@ except ImportError:
 # to keep the test files in a subfolder.  This eases the cleanup of leftover
 # files using the "make distclean" command.
 if sysconfig.is_python_build():
-    TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
+    TEMPDIR = sysconfig.get_config_var('abs_builddir')
+    if TEMPDIR is None:
+        # bpo-30284: On Windows, only srcdir is available. Using abs_builddir
+        # mostly matters on UNIX when building Python out of the source tree,
+        # especially when the source tree is read only.
+        TEMPDIR = sysconfig.get_config_var('srcdir')
+    TEMPDIR = os.path.join(TEMPDIR, 'build')
 else:
     TEMPDIR = tempfile.gettempdir()
 TEMPDIR = os.path.abspath(TEMPDIR)
@@ -107,7 +114,7 @@ class Regrtest:
             self.test_times.append((test_time, test))
         if ok == PASSED:
             self.good.append(test)
-        elif ok == FAILED:
+        elif ok in (FAILED, CHILD_ERROR):
             self.bad.append(test)
         elif ok == ENV_CHANGED:
             self.environment_changed.append(test)
@@ -116,22 +123,28 @@ class Regrtest:
         elif ok == RESOURCE_DENIED:
             self.skipped.append(test)
             self.resource_denieds.append(test)
+        elif ok != INTERRUPTED:
+            raise ValueError("invalid test result: %r" % ok)
 
     def display_progress(self, test_index, test):
         if self.ns.quiet:
             return
+
+        # "[ 51/405/1] test_tcl passed"
+        line = f"{test_index:{self.test_count_width}}{self.test_count}"
         if self.bad and not self.ns.pgo:
-            fmt = "{time} [{test_index:{count_width}}{test_count}/{nbad}] {test_name}"
-        else:
-            fmt = "{time} [{test_index:{count_width}}{test_count}] {test_name}"
+            line = f"{line}/{len(self.bad)}"
+        line = f"[{line}] {test}"
+
+        # add the system load prefix: "load avg: 1.80 "
+        if hasattr(os, 'getloadavg'):
+            load_avg_1min = os.getloadavg()[0]
+            line = f"load avg: {load_avg_1min:.2f} {line}"
+
+        # add the timestamp prefix:  "0:01:05 "
         test_time = time.monotonic() - self.start_time
         test_time = datetime.timedelta(seconds=int(test_time))
-        line = fmt.format(count_width=self.test_count_width,
-                          test_index=test_index,
-                          test_count=self.test_count,
-                          nbad=len(self.bad),
-                          test_name=test,
-                          time=test_time)
+        line = f"{test_time} {line}"
         print(line, flush=True)
 
     def parse_args(self, kwargs):
@@ -179,19 +192,14 @@ class Regrtest:
             self.tests = []
             # regex to match 'test_builtin' in line:
             # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
-            regex = (r'^(?:[0-9]+:[0-9]+:[0-9]+ *)?'
-                     r'(?:\[[0-9/ ]+\] *)?'
-                     r'(test_[a-zA-Z0-9_]+)')
-            regex = re.compile(regex)
+            regex = re.compile(r'\btest_[a-zA-Z0-9_]+\b')
             with open(os.path.join(support.SAVEDCWD, self.ns.fromfile)) as fp:
                 for line in fp:
+                    line = line.split('#', 1)[0]
                     line = line.strip()
-                    if line.startswith('#'):
-                        continue
-                    match = regex.match(line)
-                    if match is None:
-                        continue
-                    self.tests.append(match.group(1))
+                    match = regex.search(line)
+                    if match is not None:
+                        self.tests.append(match.group())
 
         removepy(self.tests)
 
@@ -240,6 +248,29 @@ class Regrtest:
     def list_tests(self):
         for name in self.selected:
             print(name)
+
+    def _list_cases(self, suite):
+        for test in suite:
+            if isinstance(test, unittest.loader._FailedTest):
+                continue
+            if isinstance(test, unittest.TestSuite):
+                self._list_cases(test)
+            elif isinstance(test, unittest.TestCase):
+                print(test.id())
+
+    def list_cases(self):
+        for test in self.selected:
+            abstest = get_abs_module(self.ns, test)
+            try:
+                suite = unittest.defaultTestLoader.loadTestsFromName(abstest)
+                self._list_cases(suite)
+            except unittest.SkipTest:
+                self.skipped.append(test)
+
+        if self.skipped:
+            print(file=sys.stderr)
+            print(count(len(self.skipped), "test"), "skipped:", file=sys.stderr)
+            printlist(self.skipped, file=sys.stderr)
 
     def rerun_failed_tests(self):
         self.ns.verbose = True
@@ -381,23 +412,28 @@ class Regrtest:
                 if self.bad:
                     return
 
+    def display_header(self):
+        # Print basic platform information
+        print("==", platform.python_implementation(), *sys.version.split())
+        print("==", platform.platform(aliased=True),
+                      "%s-endian" % sys.byteorder)
+        print("== hash algorithm:", sys.hash_info.algorithm,
+              "64bit" if sys.maxsize > 2**32 else "32bit")
+        print("== cwd:", os.getcwd())
+        cpu_count = os.cpu_count()
+        if cpu_count:
+            print("== CPU count:", cpu_count)
+        print("== encodings: locale=%s, FS=%s"
+              % (locale.getpreferredencoding(False),
+                 sys.getfilesystemencoding()))
+        print("Testing with flags:", sys.flags)
+
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
-        if (self.ns.verbose
-            or self.ns.header
-            or not (self.ns.pgo or self.ns.quiet or self.ns.single
-                    or self.tests or self.ns.args)):
-            # Print basic platform information
-            print("==", platform.python_implementation(), *sys.version.split())
-            print("==  ", platform.platform(aliased=True),
-                          "%s-endian" % sys.byteorder)
-            print("==  ", "hash algorithm:", sys.hash_info.algorithm,
-                  "64bit" if sys.maxsize > 2**32 else "32bit")
-            print("==  cwd:", os.getcwd())
-            print("==  encodings: locale=%s, FS=%s"
-                  % (locale.getpreferredencoding(False),
-                     sys.getfilesystemencoding()))
-            print("Testing with flags:", sys.flags)
+        if (self.ns.header
+            or not(self.ns.pgo or self.ns.quiet or self.ns.single
+                   or self.tests or self.ns.args)):
+            self.display_header()
 
         if self.ns.randomize:
             print("Using random seed", self.ns.random_seed)
@@ -487,6 +523,10 @@ class Regrtest:
             self.list_tests()
             sys.exit(0)
 
+        if self.ns.list_cases:
+            self.list_cases()
+            sys.exit(0)
+
         self.run_tests()
         self.display_result()
 
@@ -513,7 +553,7 @@ def count(n, word):
         return "%d %ss" % (n, word)
 
 
-def printlist(x, width=70, indent=4):
+def printlist(x, width=70, indent=4, file=None):
     """Print the elements of iterable x to stdout.
 
     Optional arg width (default 70) is the maximum line length.
@@ -524,7 +564,8 @@ def printlist(x, width=70, indent=4):
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks))
+                        initial_indent=blanks, subsequent_indent=blanks),
+          file=file)
 
 
 def main(tests=None, **kwargs):
