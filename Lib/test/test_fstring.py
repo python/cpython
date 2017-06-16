@@ -780,5 +780,11 @@ f'{a * x()}'"""
         self.assertEqual(f'{d["foo"]}', 'bar')
         self.assertEqual(f"{d['foo']}", 'bar')
 
+    def test_backslash_char(self):
+        # Check eval of a backslash followed by a control char.
+        # See bpo-30682: this used to raise an assert in pydebug mode.
+        self.assertEqual(eval('f"\\\n"'), '')
+        self.assertEqual(eval('f"\\\r"'), '')
+
 if __name__ == '__main__':
     unittest.main()
