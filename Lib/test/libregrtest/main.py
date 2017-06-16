@@ -14,7 +14,7 @@ import time
 import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
-    findtests, runtest,
+    findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
     INTERRUPTED, CHILD_ERROR,
     PROGRESS_MIN_TIME, format_test_result)
@@ -262,12 +262,18 @@ class Regrtest:
                 print(test.id())
 
     def list_cases(self):
-        for name in self.selected:
+        for test in self.selected:
+            abstest = get_abs_module(self.ns, test)
             try:
-                suite = unittest.defaultTestLoader.loadTestsFromName(name)
+                suite = unittest.defaultTestLoader.loadTestsFromName(abstest)
                 self._list_cases(suite)
             except unittest.SkipTest:
-                pass
+                self.skipped.append(test)
+
+        if self.skipped:
+            print(file=sys.stderr)
+            print(count(len(self.skipped), "test"), "skipped:", file=sys.stderr)
+            printlist(self.skipped, file=sys.stderr)
 
     def rerun_failed_tests(self):
         self.ns.verbose = True
@@ -550,7 +556,7 @@ def count(n, word):
         return "%d %ss" % (n, word)
 
 
-def printlist(x, width=70, indent=4):
+def printlist(x, width=70, indent=4, file=None):
     """Print the elements of iterable x to stdout.
 
     Optional arg width (default 70) is the maximum line length.
@@ -561,7 +567,8 @@ def printlist(x, width=70, indent=4):
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks))
+                        initial_indent=blanks, subsequent_indent=blanks),
+          file=file)
 
 
 def main(tests=None, **kwargs):
