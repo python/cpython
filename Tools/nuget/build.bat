@@ -21,7 +21,8 @@ if "%~1" EQU "-p" (set PACKAGES=%PACKAGES% %~2) && shift && shift && goto CheckO
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
 call "%D%..\msi\get_externals.bat"
-call "%PCBUILD%env.bat" x86
+call "%PCBUILD%find_msbuild.bat" %MSBUILD%
+if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
 if defined PACKAGES set PACKAGES="/p:Packages=%PACKAGES%"
 
@@ -30,7 +31,7 @@ if defined BUILDX86 (
     ) else if not exist "%PCBUILD%win32\python.exe" call "%PCBUILD%build.bat" -e
     if errorlevel 1 goto :eof
 
-    msbuild "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x86 %OUTPUT% %PACKAGES%
+    %MSBUILD% "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x86 %OUTPUT% %PACKAGES%
     if errorlevel 1 goto :eof
 )
 
@@ -39,7 +40,7 @@ if defined BUILDX64 (
     ) else if not exist "%PCBUILD%amd64\python.exe" call "%PCBUILD%build.bat" -p x64 -e
     if errorlevel 1 goto :eof
 
-    msbuild "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x64 %OUTPUT% %PACKAGES%
+    %MSBUILD% "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x64 %OUTPUT% %PACKAGES%
     if errorlevel 1 goto :eof
 )
 
