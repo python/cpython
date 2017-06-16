@@ -3012,6 +3012,16 @@ class TestMiscellaneous(TestEmailBase):
         eq(time.localtime(t)[:6], timetup[:6])
         eq(int(time.strftime('%Y', timetup[:9])), 2003)
 
+    def test_parsedate_to_datetime_returns_None_for_invalid_strings(self):
+        self.assertIsNone(utils.parsedate_to_datetime(''))
+        self.assertIsNone(utils.parsedate_to_datetime('0'))
+        self.assertIsNone(utils.parsedate_to_datetime('A Complete Waste of Time'))
+
+    def test_parsedate_to_datetime_returns_None_for_invalid_dates(self):
+        self.assertIsNone(utils.parsedate_to_datetime('Tue, 06 Jun 2017 27:39:33 +0600'))
+        self.assertIsNone(utils.parsedate_to_datetime('Tue, 06 Jun 2017 07:39:33 +2600'))
+        self.assertIsNone(utils.parsedate_to_datetime('Tue, 06 Jun 2017 27:39:33'))
+
     def test_mktime_tz(self):
         self.assertEqual(utils.mktime_tz((1970, 1, 1, 0, 0, 0,
                                           -1, -1, -1, 0)), 0)
