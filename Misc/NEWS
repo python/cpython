@@ -286,7 +286,7 @@ Tools/Demos
 Tests
 -----
 
-* bpo-30357: test_thread: setUp() now uses support.threading_setup() and
+- bpo-30357: test_thread: setUp() now uses support.threading_setup() and
   support.threading_cleanup() to wait until threads complete to avoid
   random side effects on following tests. Initial patch written by Grzegorz
   Grzywacz.
@@ -296,6 +296,14 @@ Tests
   inside the with statement.  The old value of the attribute or item (or None
   if it doesn't exist) now will be assigned to the target of the "as" clause,
   if there is one.
+
+Windows
+-------
+
+- bpo-30450: The build process on Windows no longer depends on Subversion,
+  instead pulling external code from GitHub via a Python script.  If Python 3.6
+  is not found on the system (via ``py -3.6``), NuGet is used to download a
+  copy of 32-bit Python.
 
 
 What's New in Python 3.6.1?
