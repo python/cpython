@@ -38,6 +38,7 @@ Selecting tests
 -x/--exclude    -- arguments are tests to *exclude*
 -s/--single     -- single step through a set of tests (see below)
 -m/--match PAT  -- match test cases and methods with glob pattern PAT
+--matchfile FILENAME -- filters tests using a text file, one pattern per line
 -G/--failfast   -- fail as soon as a test fails (only with -v or -W)
 -u/--use RES1,RES2,...
                 -- specify which special resource intensive tests to run
@@ -157,6 +158,13 @@ resources to test.  Currently only the following are defined:
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
+
+--matchfile filters tests using a text file, one pattern per line.
+Pattern examples:
+
+- test method: test_stat_attributes
+- test class: FileTests
+- test identifier: test_os.FileTests.test_stat_attributes
 """
 
 import StringIO
@@ -316,7 +324,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
-             'failfast', 'match=', 'testdir=', 'list-tests', 'coverage'])
+             'failfast', 'match=', 'testdir=', 'list-tests', 'coverage',
+             'matchfile='])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -354,7 +363,16 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif o in ('-f', '--fromfile'):
             fromfile = a
         elif o in ('-m', '--match'):
-            match_tests = a
+            if match_tests is None:
+                match_tests = []
+            match_tests.append(a)
+        elif o == '--matchfile':
+            if match_tests is None:
+                match_tests = []
+            filename = os.path.join(test_support.SAVEDCWD, a)
+            with open(filename) as fp:
+                for line in fp:
+                    match_tests.append(line.strip())
         elif o in ('-l', '--findleaks'):
             findleaks = True
         elif o in ('-L', '--runleaks'):
