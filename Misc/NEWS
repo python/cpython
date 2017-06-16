@@ -286,6 +286,8 @@ Build
 Documentation
 -------------
 
+- bpo-30176: Add missing attribute related constants in curses documentation.
+
 - Issue #30052: the link targets for :func:`bytes` and
   :func:`bytearray` are now their respective type definitions, rather
   than the corresponding builtin function entries. Use :ref:`bytes <func-bytes>`
