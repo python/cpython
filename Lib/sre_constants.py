@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20140917
+MAGIC = 20170530
 
 from _sre import MAXREPEAT, MAXGROUPS
 
@@ -21,6 +21,17 @@ from _sre import MAXREPEAT, MAXGROUPS
 # should this really be here?
 
 class error(Exception):
+    """Exception raised for invalid regular expressions.
+
+    Attributes:
+
+        msg: The unformatted error message
+        pattern: The regular expression pattern
+        pos: The index in the pattern where compilation failed (may be None)
+        lineno: The line corresponding to pos (may be None)
+        colno: The column corresponding to pos (may be None)
+    """
+
     def __init__(self, msg, pattern=None, pos=None):
         self.msg = msg
         self.pattern = pattern
@@ -87,6 +98,9 @@ OPCODES = _makecodes("""
     SUBPATTERN
     MIN_REPEAT_ONE
     RANGE_IGNORE
+    LITERAL_LOC_IGNORE
+    NOT_LITERAL_LOC_IGNORE
+    IN_LOC_IGNORE
 
     MIN_REPEAT MAX_REPEAT
 """)
@@ -122,6 +136,11 @@ OP_IGNORE = {
     LITERAL: LITERAL_IGNORE,
     NOT_LITERAL: NOT_LITERAL_IGNORE,
     RANGE: RANGE_IGNORE,
+}
+
+OP_LOC_IGNORE = {
+    LITERAL: LITERAL_LOC_IGNORE,
+    NOT_LITERAL: NOT_LITERAL_LOC_IGNORE,
 }
 
 AT_MULTILINE = {

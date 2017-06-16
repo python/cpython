@@ -908,6 +908,24 @@ Text I/O
 
       Whether line buffering is enabled.
 
+   .. attribute:: write_through
+
+      Whether writes are passed immediately to the underlying binary
+      buffer.
+
+      .. versionadded:: 3.7
+
+   .. method:: reconfigure(*, line_buffering=None, write_through=None)
+
+      Reconfigure this text stream using new settings for *line_buffering*
+      and *write_through*.  Passing ``None`` as an argument will retain
+      the current setting for that parameter.
+
+      This method does an implicit stream flush before setting the
+      new parameters.
+
+      .. versionadded:: 3.7
+
 
 .. class:: StringIO(initial_value='', newline='\\n')
 

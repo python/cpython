@@ -1109,7 +1109,6 @@ class ZipFile:
                 # set the modified flag so central directory gets written
                 # even if no files are added to the archive
                 self._didModify = True
-                self._start_disk = 0
                 try:
                     self.start_dir = self.fp.tell()
                 except (AttributeError, OSError):
@@ -1135,7 +1134,7 @@ class ZipFile:
                     # set the modified flag so central directory gets written
                     # even if no files are added to the archive
                     self._didModify = True
-                    self.start_dir = self._start_disk = self.fp.tell()
+                    self.start_dir = self.fp.tell()
             else:
                 raise ValueError("Mode must be 'r', 'w', 'x', or 'a'")
         except:
@@ -1179,18 +1178,17 @@ class ZipFile:
         offset_cd = endrec[_ECD_OFFSET]         # offset of central directory
         self._comment = endrec[_ECD_COMMENT]    # archive comment
 
-        # self._start_disk:  Position of the start of ZIP archive
-        # It is zero, unless ZIP was concatenated to another file
-        self._start_disk = endrec[_ECD_LOCATION] - size_cd - offset_cd
+        # "concat" is zero, unless zip was concatenated to another file
+        concat = endrec[_ECD_LOCATION] - size_cd - offset_cd
         if endrec[_ECD_SIGNATURE] == stringEndArchive64:
             # If Zip64 extension structures are present, account for them
-            self._start_disk -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
+            concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
 
         if self.debug > 2:
-            inferred = self._start_disk + offset_cd
-            print("given, inferred, offset", offset_cd, inferred, self._start_disk)
+            inferred = concat + offset_cd
+            print("given, inferred, offset", offset_cd, inferred, concat)
         # self.start_dir:  Position of start of central directory
-        self.start_dir = offset_cd + self._start_disk
+        self.start_dir = offset_cd + concat
         fp.seek(self.start_dir, 0)
         data = fp.read(size_cd)
         fp = io.BytesIO(data)
@@ -1230,7 +1228,7 @@ class ZipFile:
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
 
             x._decodeExtra()
-            x.header_offset = x.header_offset + self._start_disk
+            x.header_offset = x.header_offset + concat
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
 
@@ -1701,10 +1699,11 @@ class ZipFile:
                 file_size = zinfo.file_size
                 compress_size = zinfo.compress_size
 
-            header_offset = zinfo.header_offset - self._start_disk
-            if header_offset > ZIP64_LIMIT:
-                extra.append(header_offset)
+            if zinfo.header_offset > ZIP64_LIMIT:
+                extra.append(zinfo.header_offset)
                 header_offset = 0xffffffff
+            else:
+                header_offset = zinfo.header_offset
 
             extra_data = zinfo.extra
             min_version = 0
@@ -1751,7 +1750,7 @@ class ZipFile:
         # Write end-of-zip-archive record
         centDirCount = len(self.filelist)
         centDirSize = pos2 - self.start_dir
-        centDirOffset = self.start_dir - self._start_disk
+        centDirOffset = self.start_dir
         requires_zip64 = None
         if centDirCount > ZIP_FILECOUNT_LIMIT:
             requires_zip64 = "Files count"

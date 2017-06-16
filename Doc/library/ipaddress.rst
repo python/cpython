@@ -25,9 +25,11 @@ This is the full module API reference—for an overview and introduction, see
 .. versionadded:: 3.3
 
 .. testsetup::
-   >>> import ipaddress
-   >>> from ipaddress import (ip_network, IPv4Address, IPv4Interface,
-   ...                        IPv4Network)
+
+   import ipaddress
+   from ipaddress import (
+       ip_network, IPv4Address, IPv4Interface, IPv4Network,
+   )
 
 Convenience factory functions
 -----------------------------

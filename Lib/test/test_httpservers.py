@@ -22,6 +22,7 @@ import urllib.parse
 import tempfile
 import time
 import datetime
+from unittest import mock
 from io import BytesIO
 
 import unittest
@@ -782,7 +783,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        request = mock.Mock()
+        request.makefile.return_value = BytesIO()
+        super().__init__(request, None, None)
+
         self.get_called = False
         self.protocol_version = "HTTP/1.1"
 

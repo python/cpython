@@ -2194,8 +2194,10 @@ else:
         def test_get_event_loop_new_process(self):
             async def main():
                 pool = concurrent.futures.ProcessPoolExecutor()
-                return await self.loop.run_in_executor(
+                result = await self.loop.run_in_executor(
                     pool, _test_get_event_loop_new_process__sub_proc)
+                pool.shutdown()
+                return result
 
             self.unpatch_get_running_loop()
 

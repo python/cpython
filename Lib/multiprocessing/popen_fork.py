@@ -24,15 +24,12 @@ class Popen(object):
 
     def poll(self, flag=os.WNOHANG):
         if self.returncode is None:
-            while True:
-                try:
-                    pid, sts = os.waitpid(self.pid, flag)
-                except OSError as e:
-                    # Child process not yet created. See #1731717
-                    # e.errno == errno.ECHILD == 10
-                    return None
-                else:
-                    break
+            try:
+                pid, sts = os.waitpid(self.pid, flag)
+            except OSError as e:
+                # Child process not yet created. See #1731717
+                # e.errno == errno.ECHILD == 10
+                return None
             if pid == self.pid:
                 if os.WIFSIGNALED(sts):
                     self.returncode = -os.WTERMSIG(sts)
@@ -68,9 +65,6 @@ class Popen(object):
         if self.pid == 0:
             try:
                 os.close(parent_r)
-                if 'random' in sys.modules:
-                    import random
-                    random.seed()
                 code = process_obj._bootstrap()
             finally:
                 os._exit(code)

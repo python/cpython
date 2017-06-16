@@ -1678,7 +1678,7 @@ class SysLogHandlerTest(BaseTest):
         server.ready.wait()
         hcls = logging.handlers.SysLogHandler
         if isinstance(server.server_address, tuple):
-            self.sl_hdlr = hcls(('localhost', server.port))
+            self.sl_hdlr = hcls((server.server_address[0], server.port))
         else:
             self.sl_hdlr = hcls(server.server_address)
         self.log_output = ''
@@ -1737,6 +1737,24 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
     def tearDown(self):
         SysLogHandlerTest.tearDown(self)
         support.unlink(self.address)
+
+@unittest.skipUnless(support.IPV6_ENABLED,
+                     'IPv6 support required for this test.')
+@unittest.skipUnless(threading, 'Threading required for this test.')
+class IPv6SysLogHandlerTest(SysLogHandlerTest):
+
+    """Test for SysLogHandler with IPv6 host."""
+
+    server_class = TestUDPServer
+    address = ('::1', 0)
+
+    def setUp(self):
+        self.server_class.address_family = socket.AF_INET6
+        super(IPv6SysLogHandlerTest, self).setUp()
+
+    def tearDown(self):
+        self.server_class.address_family = socket.AF_INET
+        super(IPv6SysLogHandlerTest, self).tearDown()
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class HTTPHandlerTest(BaseTest):
@@ -4068,6 +4086,14 @@ class LoggerTest(BaseTest):
         self.assertRaises(TypeError, logging.getLogger, any)
         self.assertRaises(TypeError, logging.getLogger, b'foo')
 
+    def test_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for name in ('', 'root', 'foo', 'foo.bar', 'baz.bar'):
+                logger = logging.getLogger(name)
+                s = pickle.dumps(logger, proto)
+                unpickled = pickle.loads(s)
+                self.assertIs(unpickled, logger)
+
 
 class BaseFileTest(BaseTest):
     "Base class for handler tests that write log files"
@@ -4404,7 +4430,7 @@ def test_main():
         QueueHandlerTest, ShutdownTest, ModuleLevelMiscTest, BasicConfigTest,
         LoggerAdapterTest, LoggerTest, SMTPHandlerTest, FileHandlerTest,
         RotatingFileHandlerTest,  LastResortTest, LogRecordTest,
-        ExceptionTest, SysLogHandlerTest, HTTPHandlerTest,
+        ExceptionTest, SysLogHandlerTest, IPv6SysLogHandlerTest, HTTPHandlerTest,
         NTEventLogHandlerTest, TimedRotatingFileHandlerTest,
         UnixSocketHandlerTest, UnixDatagramHandlerTest, UnixSysLogHandlerTest,
         MiscTestCase

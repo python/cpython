@@ -255,7 +255,6 @@ You can use :mod:`sysconfig` as a script with Python's *-m* option:
             AIX_GENUINE_CPLUSPLUS = "0"
             AR = "ar"
             ARFLAGS = "rc"
-            ASDLGEN = "./Parser/asdl_c.py"
             ...
 
 This call will print in the standard output the information returned by

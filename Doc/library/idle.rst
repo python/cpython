@@ -244,7 +244,7 @@ Go to File/Line
    single: stack viewer
 
 Debugger (toggle)
-   When actived, code entered in the Shell or run from an Editor will run
+   When activated, code entered in the Shell or run from an Editor will run
    under the debugger.  In the Editor, breakpoints can be set with the context
    menu.  This feature is still incomplete and somewhat experimental.
 
@@ -372,7 +372,7 @@ the :kbd:`Command` key on Mac OSX.
 
    * :kbd:`C-l` center window around the insertion point
 
-   * :kbd:`C-b` go backwards one character without deleting (usually you can
+   * :kbd:`C-b` go backward one character without deleting (usually you can
      also use the cursor key for this)
 
    * :kbd:`C-f` go forward one character without deleting (usually you can
@@ -394,7 +394,7 @@ After a block-opening statement, the next line is indented by 4 spaces (in the
 Python Shell window by one tab).  After certain keywords (break, return etc.)
 the next line is dedented.  In leading indentation, :kbd:`Backspace` deletes up
 to 4 spaces if they are there. :kbd:`Tab` inserts spaces (in the Python
-Shell window one tab), number depends on Indent width. Currently tabs
+Shell window one tab), number depends on Indent width. Currently, tabs
 are restricted to four spaces due to Tcl/Tk limitations.
 
 See also the indent/dedent region commands in the edit menu.
@@ -418,7 +418,7 @@ If there is only one possible completion for the characters entered, a
 :kbd:`C-space` will open a completions window. In an empty
 string, this will contain the files in the current directory. On a
 blank line, it will contain the built-in and user-defined functions and
-classes in the current name spaces, plus any modules imported. If some
+classes in the current namespaces, plus any modules imported. If some
 characters have been entered, the ACW will attempt to be more specific.
 
 If a string of characters is typed, the ACW selection will jump to the
@@ -552,12 +552,56 @@ If there are arguments:
   ``sys.argv`` reflects the arguments passed to IDLE itself.
 
 
+Startup failure
+^^^^^^^^^^^^^^^
+
+IDLE uses a socket to communicate between the IDLE GUI process and the user
+code execution process.  A connection must be established whenever the Shell
+starts or restarts.  (The latter is indicated by a divider line that says
+'RESTART'). If the user process fails to connect to the GUI process, it
+displays a ``Tk`` error box with a 'cannot connect' message that directs the
+user here.  It then exits.
+
+A common cause of failure is a user-written file with the same name as a
+standard library module, such as *random.py* and *tkinter.py*. When such a
+file is located in the same directory as a file that is about to be run,
+IDLE cannot import the stdlib file.  The current fix is to rename the
+user file.
+
+Though less common than in the past, an antivirus or firewall program may
+stop the connection.  If the program cannot be taught to allow the
+connection, then it must be turned off for IDLE to work.  It is safe to
+allow this internal connection because no data is visible on external
+ports.  A similar problem is a network mis-configuration that blocks
+connections.
+
+Python installation issues occasionally stop IDLE: multiple versions can
+clash, or a single installation might need admin access.  If one undo the
+clash, or cannot or does not want to run as admin, it might be easiest to
+completely remove Python and start over.
+
+A zombie pythonw.exe process could be a problem.  On Windows, use Task
+Manager to detect and stop one.  Sometimes a restart initiated by a program
+crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
+the error box or Restart Shell on the Shell menu may fix a temporary problem.
+
+When IDLE first starts, it attempts to read user configuration files in
+~/.idlerc/ (~ is one's home directory).  If there is a problem, an error
+message should be displayed.  Leaving aside random disk glitches, this can
+be prevented by never editing the files by hand, using the configuration
+dialog, under Options, instead Options.  Once it happens, the solution may
+be to delete one or more of the configuration files.
+
+If IDLE quits with no message, and it was not started from a console, try
+starting from a console (``python -m idlelib)`` and see if a message appears.
+
+
 IDLE-console differences
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 As much as possible, the result of executing Python code with IDLE is the
 same as executing the same code in a console window.  However, the different
-interface and operation occasionally affects visible results.  For instance,
+interface and operation occasionally affect visible results.  For instance,
 ``sys.modules`` starts with more entries.
 
 IDLE also replaces ``sys.stdin``, ``sys.stdout``, and ``sys.stderr`` with
@@ -583,7 +627,7 @@ If firewall software complains anyway, you can ignore it.
 
 If the attempt to make the socket connection fails, Idle will notify you.
 Such failures are sometimes transient, but if persistent, the problem
-may be either a firewall blocking the connecton or misconfiguration of
+may be either a firewall blocking the connection or misconfiguration of
 a particular system.  Until the problem is fixed, one can run Idle with
 the -n command line switch.
 
@@ -619,14 +663,14 @@ Setting preferences
 
 The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.  Keys can be user defined;
-IDLE ships with four built in key sets. In addition a user can create a
+IDLE ships with four built-in key sets. In addition, a user can create a
 custom key set in the Configure IDLE dialog under the keys tab.
 
 
 Extensions
 ^^^^^^^^^^
 
-IDLE contains an extension facility.  Peferences for extensions can be
+IDLE contains an extension facility.  Preferences for extensions can be
 changed with Configure Extensions. See the beginning of config-extensions.def
 in the idlelib directory for further information.  The default extensions
 are currently:

@@ -828,13 +828,13 @@ class CLanguage(Language):
                 parser_prototype = parser_prototype_fastcall
 
                 parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!_PyArg_UnpackStack(args, nargs, "{name}",
-                        {unpack_min}, {unpack_max},
-                        {parse_arguments})) {{
+                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
                         goto exit;
                     }}
 
-                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
+                    if (!_PyArg_UnpackStack(args, nargs, "{name}",
+                        {unpack_min}, {unpack_max},
+                        {parse_arguments})) {{
                         goto exit;
                     }}
                     """, indent=4))
@@ -859,12 +859,12 @@ class CLanguage(Language):
                 parser_prototype = parser_prototype_fastcall
 
                 parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
-                        {parse_arguments})) {{
+                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
                         goto exit;
                     }}
 
-                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
+                    if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
+                        {parse_arguments})) {{
                         goto exit;
                     }}
                     """, indent=4))
@@ -4335,7 +4335,10 @@ def main(argv):
     cmdline.add_argument("-o", "--output", type=str)
     cmdline.add_argument("-v", "--verbose", action='store_true')
     cmdline.add_argument("--converters", action='store_true')
-    cmdline.add_argument("--make", action='store_true')
+    cmdline.add_argument("--make", action='store_true',
+                         help="Walk --srcdir to run over all relevant files.")
+    cmdline.add_argument("--srcdir", type=str, default=os.curdir,
+                         help="The directory tree to walk in --make mode.")
     cmdline.add_argument("filename", type=str, nargs="*")
     ns = cmdline.parse_args(argv)
 
@@ -4406,7 +4409,12 @@ def main(argv):
             print()
             cmdline.print_usage()
             sys.exit(-1)
-        for root, dirs, files in os.walk('.'):
+        if not ns.srcdir:
+            print("Usage error: --srcdir must not be empty with --make.")
+            print()
+            cmdline.print_usage()
+            sys.exit(-1)
+        for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
                     dirs.remove(rcs_dir)

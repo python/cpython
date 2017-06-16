@@ -115,7 +115,7 @@ def synchronized(obj, lock=None, ctx=None):
             scls = class_cache[cls]
         except KeyError:
             names = [field[0] for field in cls._fields_]
-            d = dict((name, make_property(name)) for name in names)
+            d = {name: make_property(name) for name in names}
             classname = 'Synchronized' + cls.__name__
             scls = class_cache[cls] = type(classname, (SynchronizedBase,), d)
         return scls(obj, lock, ctx)

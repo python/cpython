@@ -52,7 +52,7 @@ def main():
     sleep(1)
 
     at = clock()
-    while any([t.undobufferentries() for t in s.turtles()]):
+    while any(t.undobufferentries() for t in s.turtles()):
         for t in s.turtles():
             t.undo()
     et = clock()

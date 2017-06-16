@@ -92,12 +92,6 @@ static size_t _pythread_stacksize = 0;
 #endif
 
 
-/*
-#ifdef FOOBAR_THREADS
-#include "thread_foobar.h"
-#endif
-*/
-
 /* return the current thread stack size */
 size_t
 PyThread_get_stacksize(void)
@@ -331,7 +325,7 @@ PyThread_delete_key_value(int key)
 }
 
 /* Forget everything not associated with the current thread id.
- * This function is called from PyOS_AfterFork().  It is necessary
+ * This function is called from PyOS_AfterFork_Child().  It is necessary
  * because other thread ids which were in use at the time of the fork
  * may be reused for new threads created in the forked process.
  */
