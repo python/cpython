@@ -1,4 +1,5 @@
 import datetime
+import doctest
 import faulthandler
 import locale
 import os
@@ -10,6 +11,7 @@ import sysconfig
 import tempfile
 import textwrap
 import time
+import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest,
@@ -247,6 +249,25 @@ class Regrtest:
     def list_tests(self):
         for name in self.selected:
             print(name)
+
+    def _list_cases(self, suite):
+        for test in suite:
+            if isinstance(test, unittest.loader._FailedTest):
+                continue
+            elif isinstance(test, doctest.DocTestCase):
+                continue
+            if isinstance(test, unittest.TestSuite):
+                self._list_cases(test)
+            elif isinstance(test, unittest.TestCase):
+                print(test.id())
+
+    def list_cases(self):
+        for name in self.selected:
+            try:
+                suite = unittest.defaultTestLoader.loadTestsFromName(name)
+                self._list_cases(suite)
+            except unittest.SkipTest:
+                pass
 
     def rerun_failed_tests(self):
         self.ns.verbose = True
@@ -497,6 +518,10 @@ class Regrtest:
 
         if self.ns.list_tests:
             self.list_tests()
+            sys.exit(0)
+
+        if self.ns.list_cases:
+            self.list_cases()
             sys.exit(0)
 
         self.run_tests()
