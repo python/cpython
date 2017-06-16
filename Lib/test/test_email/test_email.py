@@ -39,6 +39,7 @@ from email import encoders
 from email import iterators
 from email import base64mime
 from email import quoprimime
+from email._policybase import compat32
 
 from test.support import unlink, start_threads
 from test.test_email import openfile, TestEmailBase
@@ -758,6 +759,10 @@ class TestMessageAPI(TestEmailBase):
 
             w4kgdGVzdGFiYwo=
             """))
+
+    def test_date_header_from_message_with_invalid_date(self):
+        msg = self._msgobj('msg_47.txt', policy=email.policy.default)
+        self.assertEqual(msg['date'], 'Tue, 06 Jun 2017 27:39:33 +0600')
 
 
 # Test the email.encoders module
@@ -2710,10 +2715,12 @@ class TestIdempotent(TestEmailBase):
 
     linesep = '\n'
 
-    def _msgobj(self, filename):
+    def _msgobj(self, filename, policy=None):
+        if policy is None:
+            policy = self.policy
         with openfile(filename) as fp:
             data = fp.read()
-        msg = email.message_from_string(data)
+        msg = email.message_from_string(data, policy=policy)
         return msg, data
 
     def _idempotent(self, msg, text, unixfrom=False):
@@ -2813,6 +2820,10 @@ class TestIdempotent(TestEmailBase):
 
     def test_message_signed_idempotent(self):
         msg, text = self._msgobj('msg_45.txt')
+        self._idempotent(msg, text)
+
+    def test_invalid_date(self):
+        msg, text = self._msgobj('msg_47.txt', policy=email.policy.default)
         self._idempotent(msg, text)
 
     def test_content_type(self):
@@ -3011,6 +3022,16 @@ class TestMiscellaneous(TestEmailBase):
         t = int(time.mktime(timetup[:9]))
         eq(time.localtime(t)[:6], timetup[:6])
         eq(int(time.strftime('%Y', timetup[:9])), 2003)
+
+    def test_parsedate_to_datetime_returns_None_for_invalid_strings(self):
+        self.assertIsNone(utils.parsedate_to_datetime(''))
+        self.assertIsNone(utils.parsedate_to_datetime('0'))
+        self.assertIsNone(utils.parsedate_to_datetime('A Complete Waste of Time'))
+
+    def test_parsedate_to_datetime_returns_None_for_invalid_dates(self):
+        self.assertIsNone(utils.parsedate_to_datetime('Tue, 06 Jun 2017 27:39:33 +0600'))
+        self.assertIsNone(utils.parsedate_to_datetime('Tue, 06 Jun 2017 07:39:33 +2600'))
+        self.assertIsNone(utils.parsedate_to_datetime('Tue, 06 Jun 2017 27:39:33'))
 
     def test_mktime_tz(self):
         self.assertEqual(utils.mktime_tz((1970, 1, 1, 0, 0, 0,
@@ -4154,11 +4175,13 @@ class BaseTestBytesGeneratorIdempotent:
 
     maxDiff = None
 
-    def _msgobj(self, filename):
+    def _msgobj(self, filename, policy=None):
+        if policy is None:
+            policy = self.policy
         with openfile(filename, 'rb') as fp:
             data = fp.read()
         data = self.normalize_linesep_regex.sub(self.blinesep, data)
-        msg = email.message_from_bytes(data)
+        msg = email.message_from_bytes(data, policy=policy)
         return msg, data
 
     def _idempotent(self, msg, data, unixfrom=False):
