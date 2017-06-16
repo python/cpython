@@ -65,6 +65,8 @@ Special runs
                    (instead of the Python stdlib test suite)
 --list-tests    -- only write the name of tests that will be run,
                    don't execute them
+--list-cases    -- only write the name of test cases that will be run,
+                   don't execute them
 
 
 Additional Option Details:
@@ -324,8 +326,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
-             'failfast', 'match=', 'testdir=', 'list-tests', 'coverage',
-             'matchfile='])
+             'failfast', 'match=', 'testdir=', 'list-tests', 'list-cases',
+             'coverage', 'matchfile='])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -336,6 +338,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         use_resources = []
     slaveargs = None
     list_tests = False
+    list_cases_opt = False
     for o, a in opts:
         if o in ('-h', '--help'):
             usage(0)
@@ -434,6 +437,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             testdir = a
         elif o == '--list-tests':
             list_tests = True
+        elif o == '--list-cases':
+            list_cases_opt = True
         else:
             print >>sys.stderr, ("No handler for option {}.  Please "
                 "report this as a bug at http://bugs.python.org.").format(o)
@@ -550,6 +555,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if list_tests:
         for name in selected:
             print(name)
+        sys.exit(0)
+
+    if list_cases_opt:
+        list_cases(testdir, selected)
         sys.exit(0)
 
     if trace:
@@ -1142,11 +1151,7 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
         try:
             if capture_stdout:
                 sys.stdout = capture_stdout
-            if test.startswith('test.') or testdir:
-                abstest = test
-            else:
-                # Always import it from the test package
-                abstest = 'test.' + test
+            abstest = get_abs_module(testdir, test)
             clear_caches()
             with saved_test_environment(test, verbose, quiet, pgo) as environment:
                 start_time = time.time()
@@ -1470,7 +1475,7 @@ def count(n, word):
     else:
         return "%d %ss" % (n, word)
 
-def printlist(x, width=70, indent=4):
+def printlist(x, width=70, indent=4, file=None):
     """Print the elements of iterable x to stdout.
 
     Optional arg width (default 70) is the maximum line length.
@@ -1481,8 +1486,37 @@ def printlist(x, width=70, indent=4):
     from textwrap import fill
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
-    print fill(' '.join(str(elt) for elt in sorted(x)), width,
-               initial_indent=blanks, subsequent_indent=blanks)
+    print >>file, fill(' '.join(str(elt) for elt in sorted(x)), width,
+                       initial_indent=blanks, subsequent_indent=blanks)
+
+def get_abs_module(testdir, test):
+    if test.startswith('test.') or testdir:
+        return test
+    else:
+        # Always import it from the test package
+        return 'test.' + test
+
+def _list_cases(suite):
+    for test in suite:
+        if isinstance(test, unittest.TestSuite):
+            _list_cases(test)
+        elif isinstance(test, unittest.TestCase):
+            print(test.id())
+
+def list_cases(testdir, selected):
+    skipped = []
+    for test in selected:
+        abstest = get_abs_module(testdir, test)
+        try:
+            suite = unittest.defaultTestLoader.loadTestsFromName(abstest)
+            _list_cases(suite)
+        except unittest.SkipTest:
+            skipped.append(test)
+
+    if skipped:
+        print >>sys.stderr
+        print >>sys.stderr, count(len(skipped), "test"), "skipped:"
+        printlist(skipped, file=sys.stderr)
 
 # Map sys.platform to a string containing the basenames of tests
 # expected to be skipped on that platform.
