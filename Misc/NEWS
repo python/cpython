@@ -10,6 +10,10 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- bpo-30654: Fixed reset of the SIGINT handler to SIG_DFL on interpreter
+  shutdown even when there was a custom handler set previously. Patch by
+  Philipp Kerling.
+
 - bpo-27945: Fixed various segfaults with dict when input collections are
   mutated during searching, inserting or comparing.  Based on patches by
   Duane Griffin and Tim Mitchell.
