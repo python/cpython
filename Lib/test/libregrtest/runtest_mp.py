@@ -41,7 +41,7 @@ def run_test_in_subprocess(testname, ns):
     slaveargs = json.dumps(slaveargs)
 
     cmd = [sys.executable, *support.args_from_interpreter_flags(),
-           '-X', 'faulthandler',
+           '-u',    # Unbuffered stdout and stderr
            '-m', 'test.regrtest',
            '--slaveargs', slaveargs]
     if ns.pgo:
@@ -124,13 +124,13 @@ class MultiprocessThread(threading.Thread):
         finally:
             self.current_test = None
 
-        stdout, _, result = stdout.strip().rpartition("\n")
         if retcode != 0:
             result = (CHILD_ERROR, "Exit code %s" % retcode)
             self.output.put((test, stdout.rstrip(), stderr.rstrip(),
                              result))
-            return True
+            return False
 
+        stdout, _, result = stdout.strip().rpartition("\n")
         if not result:
             self.output.put((None, None, None, None))
             return True
@@ -203,6 +203,8 @@ def run_tests_multiprocess(regrtest):
                 and test_time >= PROGRESS_MIN_TIME
                 and not regrtest.ns.pgo):
                 text += ' (%.0f sec)' % test_time
+            elif ok == CHILD_ERROR:
+                text = '%s (%s)' % (text, test_time)
             running = get_running(workers)
             if running and not regrtest.ns.pgo:
                 text += ' -- running: %s' % ', '.join(running)
@@ -216,9 +218,6 @@ def run_tests_multiprocess(regrtest):
 
             if result[0] == INTERRUPTED:
                 raise KeyboardInterrupt
-            if result[0] == CHILD_ERROR:
-                msg = "Child error on {}: {}".format(test, result[1])
-                raise Exception(msg)
             test_index += 1
     except KeyboardInterrupt:
         regrtest.interrupted = True

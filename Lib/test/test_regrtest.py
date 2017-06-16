@@ -118,6 +118,9 @@ class ParseArgsTestCase(unittest.TestCase):
         ns = libregrtest._parse_args(['--header'])
         self.assertTrue(ns.header)
 
+        ns = libregrtest._parse_args(['--verbose'])
+        self.assertTrue(ns.header)
+
     def test_randomize(self):
         for opt in '-r', '--randomize':
             with self.subTest(opt=opt):
@@ -156,8 +159,23 @@ class ParseArgsTestCase(unittest.TestCase):
         for opt in '-m', '--match':
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt, 'pattern'])
-                self.assertEqual(ns.match_tests, 'pattern')
+                self.assertEqual(ns.match_tests, ['pattern'])
                 self.checkError([opt], 'expected one argument')
+
+        ns = libregrtest._parse_args(['-m', 'pattern1',
+                                      '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, ['pattern1', 'pattern2'])
+
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, "w") as fp:
+            print('matchfile1', file=fp)
+            print('matchfile2', file=fp)
+
+        filename = os.path.abspath(support.TESTFN)
+        ns = libregrtest._parse_args(['-m', 'match',
+                                      '--matchfile', filename])
+        self.assertEqual(ns.match_tests,
+                         ['match', 'matchfile1', 'matchfile2'])
 
     def test_failfast(self):
         for opt in '-G', '--failfast':
@@ -272,7 +290,6 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = libregrtest._parse_args([opt])
                 self.assertTrue(ns.forever)
 
-
     def test_unrecognized_argument(self):
         self.checkError(['--xxx'], 'usage:')
 
@@ -354,7 +371,7 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
-        regex = (r'^[0-9]+:[0-9]+:[0-9]+ \[ *[0-9]+(?:/ *[0-9]+)?\] (%s)'
+        regex = (r'^[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
                  % self.TESTNAME_REGEX)
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
@@ -453,7 +470,6 @@ class BaseTestCase(unittest.TestCase):
                         % proc.stderr)
             self.fail(msg)
         return proc
-
 
     def run_python(self, args, **kw):
         args = [sys.executable, '-X', 'faulthandler', '-I', *args]
@@ -676,6 +692,14 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('--fromfile', filename)
         self.check_executed_tests(output, tests)
 
+        # test format 'Lib/test/test_opcodes.py'
+        with open(filename, "w") as fp:
+            for name in tests:
+                print('Lib/test/%s.py' % name, file=fp)
+
+        output = self.run_tests('--fromfile', filename)
+        self.check_executed_tests(output, tests)
+
     def test_interrupted(self):
         code = TEST_INTERRUPTED
         test = self.create_test('sigint', code=code)
@@ -800,6 +824,79 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('--list-tests', *tests)
         self.assertEqual(output.rstrip().splitlines(),
                          tests)
+
+    def test_list_cases(self):
+        # test --list-cases
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+        all_methods = ['%s.Tests.test_method1' % testname,
+                       '%s.Tests.test_method2' % testname]
+        output = self.run_tests('--list-cases', testname)
+        self.assertEqual(output.splitlines(), all_methods)
+
+    def test_crashed(self):
+        # Any code which causes a crash
+        code = 'import faulthandler; faulthandler._sigsegv()'
+        crash_test = self.create_test(name="crash", code=code)
+        ok_test = self.create_test(name="ok")
+
+        tests = [crash_test, ok_test]
+        output = self.run_tests("-j2", *tests, exitcode=1)
+        self.check_executed_tests(output, tests, failed=crash_test,
+                                  randomize=True)
+
+    def parse_methods(self, output):
+        regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
+        return [match.group(1) for match in regex.finditer(output)]
+
+    def test_matchfile(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+                def test_method3(self):
+                    pass
+                def test_method4(self):
+                    pass
+        """)
+        all_methods = ['test_method1', 'test_method2',
+                       'test_method3', 'test_method4']
+        testname = self.create_test(code=code)
+
+        # by default, all methods should be run
+        output = self.run_tests("-v", testname)
+        methods = self.parse_methods(output)
+        self.assertEqual(methods, all_methods)
+
+        # only run a subset
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        subset = [
+            # only match the method name
+            'test_method1',
+            # match the full identifier
+            '%s.Tests.test_method3' % testname]
+        with open(filename, "w") as fp:
+            for name in subset:
+                print(name, file=fp)
+
+        output = self.run_tests("-v", "--matchfile", filename, testname)
+        methods = self.parse_methods(output)
+        subset = ['test_method1', 'test_method3']
+        self.assertEqual(methods, subset)
 
 
 if __name__ == '__main__':
