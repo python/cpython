@@ -59,7 +59,8 @@ class TestProgram(object):
     def __init__(self, module='__main__', defaultTest=None, argv=None,
                     testRunner=None, testLoader=loader.defaultTestLoader,
                     exit=True, verbosity=1, failfast=None, catchbreak=None,
-                    buffer=None, warnings=None, *, tb_locals=False):
+                    buffer=None, warnings=None,
+                    *, tb_locals=False, list_tests=False):
         if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -73,6 +74,7 @@ class TestProgram(object):
         self.failfast = failfast
         self.catchbreak = catchbreak
         self.verbosity = verbosity
+        self.list_tests = list_tests
         self.buffer = buffer
         self.tb_locals = tb_locals
         if warnings is None and not sys.warnoptions:
@@ -164,6 +166,10 @@ class TestProgram(object):
         parser.add_argument('--locals', dest='tb_locals',
                             action='store_true',
                             help='Show local variables in tracebacks')
+        parser.add_argument('--list-tests',
+                            action='store_true',
+                            help="Only display the list of test names, "
+                                 "don't run tests")
         if self.failfast is None:
             parser.add_argument('-f', '--failfast', dest='failfast',
                                 action='store_true',
@@ -231,7 +237,9 @@ class TestProgram(object):
     def runTests(self):
         if self.catchbreak:
             installHandler()
-        if self.testRunner is None:
+        if self.list_tests:
+            self.testRunner = runner.TextListTestRunner
+        elif self.testRunner is None:
             self.testRunner = runner.TextTestRunner
         if isinstance(self.testRunner, type):
             try:
