@@ -445,7 +445,7 @@ Library
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
-  
+
 - bpo-30436: importlib.find_spec() raises ModuleNotFoundError instead of
   AttributeError if the specified parent module is not a package
   (i.e. lacks a __path__ attribute).
@@ -1215,6 +1215,8 @@ C API
 
 Documentation
 -------------
+
+- bpo-30176: Add missing attribute related constants in curses documentation.
 
 - Issue #30052: the link targets for :func:`bytes` and
   :func:`bytearray` are now their respective type definitions, rather
