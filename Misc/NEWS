@@ -10,6 +10,9 @@ What's New in Python 3.6.2 release candidate 1?
 Core and Builtins
 -----------------
 
+- bpo-30682: Removed a too-strict assertion that failed for certain f-strings,
+  such as eval("f'\\\n'") and eval("f'\\\r'").
+
 - bpo-30604: Move co_extra_freefuncs to not be per-thread to avoid crashes
 
 - bpo-29104: Fixed parsing backslashes in f-strings.
