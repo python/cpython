@@ -780,5 +780,19 @@ f'{a * x()}'"""
         self.assertEqual(f'{d["foo"]}', 'bar')
         self.assertEqual(f"{d['foo']}", 'bar')
 
+    def test_backslash_char(self):
+        # Check eval of a backslash followed by a control char.
+        # As part of bpo-30529, this used to raise an assert in pydebug mode.
+        for i in range(1, 32):
+            with self.subTest(i=i):
+                # This will result in a backslash followed by the control
+                #  char, except for \n and \r which give a zero length
+                #  string. The same thing happens with non-fstrings.
+                expected_len = 0 if i in (10, 13) else 2
+                s = f'f"\\{chr(i)}"'
+                self.assertEqual(len(eval(s)), expected_len)
+                s = f'"\\{chr(i)}"'
+                self.assertEqual(len(eval(s)), expected_len)
+
 if __name__ == '__main__':
     unittest.main()
