@@ -129,8 +129,23 @@ class ParseArgsTestCase(unittest.TestCase):
         for opt in '-m', '--match':
             with self.subTest(opt=opt):
                 ns = regrtest._parse_args([opt, 'pattern'])
-                self.assertEqual(ns.match_tests, 'pattern')
+                self.assertEqual(ns.match_tests, ['pattern'])
                 self.checkError([opt], 'expected one argument')
+
+        ns = regrtest._parse_args(['-m', 'pattern1',
+                                      '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, ['pattern1', 'pattern2'])
+
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, "w") as fp:
+            print('matchfile1', file=fp)
+            print('matchfile2', file=fp)
+
+        filename = os.path.abspath(support.TESTFN)
+        ns = regrtest._parse_args(['-m', 'match',
+                                      '--matchfile', filename])
+        self.assertEqual(ns.match_tests,
+                         ['match', 'matchfile1', 'matchfile2'])
 
     def test_failfast(self):
         for opt in '-G', '--failfast':

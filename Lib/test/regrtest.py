@@ -117,6 +117,13 @@ resources to test.  Currently only the following are defined:
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
+
+--matchfile filters tests using a text file, one pattern per line.
+Pattern examples:
+
+- test method: test_stat_attributes
+- test class: FileTests
+- test identifier: test_os.FileTests.test_stat_attributes
 """
 
 # We import importlib *ASAP* in order to test #15386
@@ -276,8 +283,12 @@ def _create_parser():
                        help='single step through a set of tests.' +
                             more_details)
     group.add_argument('-m', '--match', metavar='PAT',
-                       dest='match_tests',
+                       dest='match_tests', action='append',
                        help='match test cases and methods with glob pattern PAT')
+    group.add_argument('--matchfile', metavar='FILENAME',
+                       dest='match_filename',
+                       help='similar to --match but get patterns from a '
+                            'text file, one pattern per line')
     group.add_argument('-G', '--failfast', action='store_true',
                        help='fail as soon as a test fails (only with -v or -W)')
     group.add_argument('-u', '--use', metavar='RES1,RES2,...',
@@ -323,6 +334,9 @@ def _create_parser():
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
                             'error happens')
+    group.add_argument('--list-cases', action='store_true',
+                       help='only write the name of test cases that will be run'
+                            ' , don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization training')
 
@@ -361,7 +375,8 @@ def _parse_args(args, **kwargs):
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, failfast=False, match_tests=None, pgo=False)
+         header=False, failfast=False, match_tests=None, match_filename=None,
+         pgo=False)
     for k, v in kwargs.items():
         if not hasattr(ns, k):
             raise TypeError('%r is an invalid keyword argument '
@@ -431,6 +446,13 @@ def _parse_args(args, **kwargs):
         print("WARNING: Disable --verbose3 because it's incompatible with "
               "--huntrleaks: see http://bugs.python.org/issue27103",
               file=sys.stderr)
+    if ns.match_filename:
+        if ns.match_tests is None:
+            ns.match_tests = []
+        filename = os.path.join(support.SAVEDCWD, ns.match_filename)
+        with open(filename) as fp:
+            for line in fp:
+                ns.match_tests.append(line.strip())
 
     return ns
 
@@ -555,7 +577,7 @@ def main(tests=None, **kwargs):
             unittest.BaseTestSuite._cleanup = False
 
         try:
-            result = runtest(testname, ns.verbose, ns.quiet,
+            result = runtest(ns, testname, ns.verbose, ns.quiet,
                              ns.huntrleaks,
                              output_on_failure=ns.verbose3,
                              timeout=ns.timeout, failfast=ns.failfast,
@@ -632,18 +654,6 @@ def main(tests=None, **kwargs):
             nottests.add(arg)
         ns.args = []
 
-    # For a partial run, we do not need to clutter the output.
-    if (ns.verbose or ns.header or
-            not (ns.pgo or ns.quiet or ns.single or tests or ns.args)):
-        # Print basic platform information
-        print("==", platform.python_implementation(), *sys.version.split())
-        print("==  ", platform.platform(aliased=True),
-                        "%s-endian" % sys.byteorder)
-        print("==  ", "hash algorithm:", sys.hash_info.algorithm,
-                "64bit" if sys.maxsize > 2**32 else "32bit")
-        print("==  ", os.getcwd())
-        print("Testing with flags:", sys.flags)
-
     # if testdir is set, then we are not running the python tests suite, so
     # don't add default tests to be executed or skipped (pass empty values)
     if ns.testdir:
@@ -697,6 +707,10 @@ def main(tests=None, **kwargs):
             skipped.append(test)
             resource_denieds.append(test)
 
+    if ns.list_cases:
+        list_cases(ns, selected)
+        sys.exit(0)
+
     if ns.forever:
         def test_forever(tests=list(selected)):
             while True:
@@ -711,6 +725,18 @@ def main(tests=None, **kwargs):
         tests = iter(selected)
         test_count = '/{}'.format(len(selected))
         test_count_width = len(test_count) - 1
+
+    # For a partial run, we do not need to clutter the output.
+    if (ns.verbose or ns.header or
+            not (ns.pgo or ns.quiet or ns.single or tests or ns.args)):
+        # Print basic platform information
+        print("==", platform.python_implementation(), *sys.version.split())
+        print("==  ", platform.platform(aliased=True),
+                        "%s-endian" % sys.byteorder)
+        print("==  ", "hash algorithm:", sys.hash_info.algorithm,
+                "64bit" if sys.maxsize > 2**32 else "32bit")
+        print("==  ", os.getcwd())
+        print("Testing with flags:", sys.flags)
 
     if ns.use_mp:
         try:
@@ -797,11 +823,11 @@ def main(tests=None, **kwargs):
             if ns.trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                tracer.runctx('runtest(test, ns.verbose, ns.quiet, timeout=ns.timeout)',
+                tracer.runctx('runtest(ns, test, ns.verbose, ns.quiet, timeout=ns.timeout)',
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(test, ns.verbose, ns.quiet,
+                    result = runtest(ns, test, ns.verbose, ns.quiet,
                                      ns.huntrleaks,
                                      output_on_failure=ns.verbose3,
                                      timeout=ns.timeout, failfast=ns.failfast,
@@ -859,7 +885,7 @@ def main(tests=None, **kwargs):
             sys.stdout.flush()
             try:
                 ns.verbose = True
-                ok = runtest(test, True, ns.quiet, ns.huntrleaks,
+                ok = runtest(ns, test, True, ns.quiet, ns.huntrleaks,
                              timeout=ns.timeout, pgo=ns.pgo)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
@@ -956,7 +982,7 @@ def replace_stdout():
         sys.stdout = stdout
     atexit.register(restore_stdout)
 
-def runtest(test, verbose, quiet,
+def runtest(ns, test, verbose, quiet,
             huntrleaks=False, use_resources=None,
             output_on_failure=False, failfast=False, match_tests=None,
             timeout=None, *, pgo=False):
@@ -1011,8 +1037,9 @@ def runtest(test, verbose, quiet,
             try:
                 sys.stdout = stream
                 sys.stderr = stream
-                result = runtest_inner(test, verbose, quiet, huntrleaks,
-                                       display_failure=False, pgo=pgo)
+                result = runtest_inner(ns, test, verbose, quiet, huntrleaks,
+                                       display_failure=False,
+                                       pgo=pgo)
                 if result[0] != PASSED and not pgo:
                     output = stream.getvalue()
                     orig_stderr.write(output)
@@ -1022,8 +1049,9 @@ def runtest(test, verbose, quiet,
                 sys.stderr = orig_stderr
         else:
             support.verbose = verbose  # Tell tests to be moderately quiet
-            result = runtest_inner(test, verbose, quiet, huntrleaks,
-                                   display_failure=not verbose, pgo=pgo)
+            result = runtest_inner(ns, test, verbose, quiet, huntrleaks,
+                                   display_failure=not verbose,
+                                   pgo=pgo)
         return result
     finally:
         if use_timeout:
@@ -1294,18 +1322,14 @@ class saved_test_environment:
         return False
 
 
-def runtest_inner(test, verbose, quiet,
+def runtest_inner(ns, test, verbose, quiet,
                   huntrleaks=False, display_failure=True, pgo=False):
     support.unload(test)
 
     test_time = 0.0
     refleak = False  # True if the test leaked references.
     try:
-        if test.startswith('test.'):
-            abstest = test
-        else:
-            # Always import it from the test package
-            abstest = 'test.' + test
+        abstest = get_abs_module(ns, test)
         clear_caches()
         with saved_test_environment(test, verbose, quiet, pgo=pgo) as environment:
             start_time = time.time()
@@ -1646,7 +1670,7 @@ def count(n, word):
     else:
         return "%d %ss" % (n, word)
 
-def printlist(x, width=70, indent=4):
+def printlist(x, width=70, indent=4, file=None):
     """Print the elements of iterable x to stdout.
 
     Optional arg width (default 70) is the maximum line length.
@@ -1658,7 +1682,41 @@ def printlist(x, width=70, indent=4):
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(fill(' '.join(str(elt) for elt in sorted(x)), width,
-               initial_indent=blanks, subsequent_indent=blanks))
+               initial_indent=blanks, subsequent_indent=blanks), file=file)
+
+
+def get_abs_module(ns, test):
+    if test.startswith('test.') or ns.testdir:
+        return test
+    else:
+        # Always import it from the test package
+        return 'test.' + test
+
+
+def _list_cases(suite):
+    for test in suite:
+        if isinstance(test, unittest.loader._FailedTest):
+            continue
+        if isinstance(test, unittest.TestSuite):
+            _list_cases(test)
+        elif isinstance(test, unittest.TestCase):
+            print(test.id())
+
+
+def list_cases(ns, selected):
+    skipped = []
+    for test in selected:
+        abstest = get_abs_module(ns, test)
+        try:
+            suite = unittest.defaultTestLoader.loadTestsFromName(abstest)
+            _list_cases(suite)
+        except unittest.SkipTest:
+            skipped.append(test)
+
+    if skipped:
+        print(file=sys.stderr)
+        print(count(len(skipped), "test"), "skipped:", file=sys.stderr)
+        printlist(skipped, file=sys.stderr)
 
 
 def main_in_temp_cwd():
