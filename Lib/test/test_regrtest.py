@@ -827,7 +827,6 @@ class ArgsTestCase(BaseTestCase):
 
     def test_list_cases(self):
         # test --list-cases
-        # TODO: Add doctest testcase
         code = textwrap.dedent("""
             import unittest
 
@@ -859,7 +858,6 @@ class ArgsTestCase(BaseTestCase):
         return [match.group(1) for match in regex.finditer(output)]
 
     def test_matchfile(self):
-        # Any code which causes a crash
         code = textwrap.dedent("""
             import unittest
 
