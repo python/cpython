@@ -53,7 +53,6 @@ exit /b 127
 :Run
 setlocal
 set platf=Win32
-set vs_platf=x86
 set conf=Release
 set target=Build
 set dir=%~dp0
@@ -94,21 +93,6 @@ if "%IncludeSSL%"=="" set IncludeSSL=true
 if "%IncludeTkinter%"=="" set IncludeTkinter=true
 
 if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
-
-if "%platf%"=="x64" (
-    if "%on_64_bit%"=="true" (
-        rem This ought to always be correct these days...
-        set vs_platf=amd64
-    ) else (
-        if "%do_pgo%"=="true" (
-            echo.ERROR: Cannot cross-compile with PGO
-            echo.    32bit operating system detected, if this is incorrect,
-            echo.    make sure the ProgramFiles(x86^) environment variable is set
-            exit /b 1
-        )
-        set vs_platf=x86_amd64
-    )
-)
 
 if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
 if exist "%GIT%" set GITProperty=/p:GIT="%GIT%"
