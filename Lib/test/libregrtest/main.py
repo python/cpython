@@ -1,5 +1,4 @@
 import datetime
-import doctest
 import faulthandler
 import locale
 import os
@@ -253,8 +252,6 @@ class Regrtest:
     def _list_cases(self, suite):
         for test in suite:
             if isinstance(test, unittest.loader._FailedTest):
-                continue
-            elif isinstance(test, doctest.DocTestCase):
                 continue
             if isinstance(test, unittest.TestSuite):
                 self._list_cases(test)
