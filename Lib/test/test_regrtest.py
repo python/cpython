@@ -482,6 +482,77 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests, failed=crash_test,
                                   randomize=True)
 
+    def parse_methods(self, output):
+        regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
+        return [match.group(1) for match in regex.finditer(output)]
+
+    def test_matchfile(self):
+        # Any code which causes a crash
+        code = textwrap.dedent("""
+            import unittest
+            from test import support
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+                def test_method3(self):
+                    pass
+                def test_method4(self):
+                    pass
+
+            def test_main():
+                support.run_unittest(Tests)
+        """)
+        all_methods = ['test_method1', 'test_method2',
+                       'test_method3', 'test_method4']
+        testname = self.create_test(code=code)
+
+        # by default, all methods should be run
+        output = self.run_tests("-v", testname)
+        methods = self.parse_methods(output)
+        self.assertEqual(methods, all_methods)
+
+        # only run a subset
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        subset = [
+            # only match the method name
+            'test_method1',
+            # match the full identifier
+            '%s.Tests.test_method3' % testname]
+        with open(filename, "w") as fp:
+            for name in subset:
+                print(name, file=fp)
+
+        output = self.run_tests("-v", "--matchfile", filename, testname)
+        methods = self.parse_methods(output)
+        subset = ['test_method1', 'test_method3']
+        self.assertEqual(methods, subset)
+
+    def test_list_cases(self):
+        # test --list-cases
+        code = textwrap.dedent("""
+            import unittest
+            from test import support
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+
+            def test_main():
+                support.run_unittest(Tests)
+        """)
+        testname = self.create_test(code=code)
+        all_methods = ['%s.Tests.test_method1' % testname,
+                       '%s.Tests.test_method2' % testname]
+        output = self.run_tests('--list-cases', testname)
+        self.assertEqual(output.splitlines(), all_methods)
+
 
 def test_main():
     support.run_unittest(ProgramsTestCase, ArgsTestCase)
