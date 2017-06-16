@@ -2,7 +2,7 @@ import unittest
 from unittest import mock
 
 
-class SampleObject(object):
+class SampleObject:
     def __init__(self):
         self.attr_sample1 = 1
         self.attr_sample2 = 1
@@ -15,14 +15,13 @@ class SampleObject(object):
 
 
 class TestSealable(unittest.TestCase):
-    """Validates the ability to seal a mock which freezes its spec"""
 
     def test_attributes_return_more_mocks_by_default(self):
         m = mock.Mock()
 
-        assert isinstance(m.test, mock.Mock)
-        assert isinstance(m.test(), mock.Mock)
-        assert isinstance(m.test().test2(), mock.Mock)
+        self.assertIsInstance(m.test, mock.Mock)
+        self.assertIsInstance(m.test(), mock.Mock)
+        self.assertIsInstance(m.test().test2(), mock.Mock)
 
     def test_new_attributes_cannot_be_accessed_on_seal(self):
         m = mock.Mock()
@@ -46,7 +45,7 @@ class TestSealable(unittest.TestCase):
 
         mock.seal(m)
         m.test.test2 = 2
-        assert m.test.test2 == 2
+        self.assertEqual(m.test.test2, 2)
 
     def test_new_attributes_cannot_be_set_on_child_of_seal(self):
         m = mock.Mock()
@@ -62,13 +61,13 @@ class TestSealable(unittest.TestCase):
         m.test.return_value = 3
 
         mock.seal(m)
-        assert m.test() == 3
+        self.assertEqual(m.test(), 3)
 
     def test_initialized_attributes_allowed_after_seal(self):
         m = mock.Mock(test_value=1)
 
         mock.seal(m)
-        assert m.test_value == 1
+        self.assertEqual(m.test_value, 1)
 
     def test_call_on_sealed_mock_fails(self):
         m = mock.Mock()
@@ -81,7 +80,7 @@ class TestSealable(unittest.TestCase):
         m = mock.Mock(return_value=5)
 
         mock.seal(m)
-        assert m() == 5
+        self.assertEqual(m(), 5)
 
     def test_seals_recurse_on_added_attributes(self):
         m = mock.Mock()
@@ -89,7 +88,7 @@ class TestSealable(unittest.TestCase):
         m.test1.test2().test3 = 4
 
         mock.seal(m)
-        assert m.test1.test2().test3 == 4
+        self.assertEqual(m.test1.test2().test3, 4)
         with self.assertRaises(AttributeError):
             m.test1.test2().test4
         with self.assertRaises(AttributeError):
@@ -102,8 +101,8 @@ class TestSealable(unittest.TestCase):
         m.test1.test3[2:5].test3 = 4
 
         mock.seal(m)
-        assert m.test1.test2["a"].test3 == 4
-        assert m.test1.test2[2:5].test3 == 4
+        self.assertEqual(m.test1.test2["a"].test3, 4)
+        self.assertEqual(m.test1.test2[2:5].test3, 4)
         with self.assertRaises(AttributeError):
             m.test1.test2["a"].test4
         with self.assertRaises(AttributeError):
@@ -116,7 +115,7 @@ class TestSealable(unittest.TestCase):
         m.test1.test2.test3 = 4
 
         mock.seal(m)
-        assert m.test1.test2.test3 == 4
+        self.assertEqual(m.test1.test2.test3, 4)
         m.test1.test2.test4  # Does not raise
         m.test1.test2.test4 = 1  # Does not raise
 
@@ -128,8 +127,8 @@ class TestSealable(unittest.TestCase):
         m.attr_sample3 = 3
 
         mock.seal(m)
-        assert m.attr_sample1 == 1
-        assert m.attr_sample3 == 3
+        self.assertEqual(m.attr_sample1, 1)
+        self.assertEqual(m.attr_sample3, 3)
         with self.assertRaises(AttributeError):
             m.attr_sample2
 
@@ -140,7 +139,7 @@ class TestSealable(unittest.TestCase):
         m.method_sample1.return_value = 1
 
         mock.seal(m)
-        assert m.method_sample1() == 1
+        self.assertEqual(m.method_sample1(), 1)
         with self.assertRaises(AttributeError):
             m.method_sample2()
 
@@ -155,30 +154,27 @@ class TestSealable(unittest.TestCase):
         m = mock.Mock()
 
         mock.seal(m)
-        try:
+        with self.assertRaises(AttributeError) as cm:
             m.SECRETE_name
-        except AttributeError as ex:
-            assert "SECRETE_name" in str(ex)
+        self.assertIn("SECRETE_name", str(cm.exception))
 
     def test_attribute_chain_is_maintained(self):
         m = mock.Mock(name="mock_name")
         m.test1.test2.test3.test4
 
         mock.seal(m)
-        try:
+        with self.assertRaises(AttributeError) as cm:
             m.test1.test2.test3.test4.boom
-        except AttributeError as ex:
-            assert "mock_name.test1.test2.test3.test4.boom" in str(ex)
+        self.assertIn("mock_name.test1.test2.test3.test4.boom", str(cm.exception))
 
     def test_call_chain_is_maintained(self):
         m = mock.Mock()
         m.test1().test2.test3().test4
 
         mock.seal(m)
-        try:
+        with self.assertRaises(AttributeError) as cm:
             m.test1().test2.test3().test4()
-        except AttributeError as ex:
-            assert "mock.test1().test2.test3().test4" in str(ex)
+        self.assertIn("mock.test1().test2.test3().test4", str(cm.exception))
 
 
 if __name__ == "__main__":

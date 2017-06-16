@@ -611,10 +611,6 @@ class NonCallableMock(Base):
 
 
     def _extract_mock_name(self):
-        """Extracts the mock access path as a string
-
-        Returns the whole access chain since the root mock
-        """
         _name_list = [self._mock_new_name]
         _parent = self._mock_new_parent
         last = self
@@ -715,9 +711,9 @@ class NonCallableMock(Base):
             if _check_and_set_parent(self, value, name, name):
                 self._mock_children[name] = value
 
-        if self._mock_sealed and not getattr(self, name):
-            mock_name = self._extract_mock_name() + "." + name
-            raise AttributeError("Cannot set " + mock_name)
+        if self._mock_sealed and not hasattr(self, name):
+            mock_name = f'{self._extract_mock_name()}.{name}'
+            raise AttributeError(f'Cannot set {mock_name}')
 
         return object.__setattr__(self, name, value)
 
@@ -2424,7 +2420,7 @@ class PropertyMock(Mock):
 
 
 def seal(mock):
-    """Disables the automatic generation of "submocks"
+    """Disable the automatic generation of "submocks"
 
     Given an input Mock, seals it to ensure no further mocks will be generated
     when accessing an attribute that was not already defined.
