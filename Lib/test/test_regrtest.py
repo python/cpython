@@ -825,6 +825,30 @@ class ArgsTestCase(BaseTestCase):
         self.assertEqual(output.rstrip().splitlines(),
                          tests)
 
+    def test_list_cases(self):
+        # test --list-cases
+        # TODO: Add doctest testcase
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+                def test_method3(self):
+                    pass
+                def test_method4(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+        all_methods = ['%s.Tests.test_method1' % testname,
+                       '%s.Tests.test_method2' % testname,
+                       '%s.Tests.test_method3' % testname,
+                       '%s.Tests.test_method4' % testname]
+        output = self.run_tests('--list-cases', testname)
+        self.assertEqual(output.rstrip().splitlines(), all_methods)
+
     def test_crashed(self):
         # Any code which causes a crash
         code = 'import faulthandler; faulthandler._sigsegv()'
