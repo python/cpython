@@ -1,4 +1,4 @@
-"""Grep dialog for Find in File functionality.
+"""Grep dialog for Find in Files functionality.
 
    Inherits from SearchDialogBase for GUI and uses searchengine
    to prepare search pattern.
@@ -23,8 +23,8 @@ def grep(text, io=None, flist=None):
     Args:
         text: Text widget that contains the selected text for
               default search phrase.
-        io: IOBinding with default path to search.
-        flist: FileList for OutputWindow parent.
+        io: iomenu.IOBinding instance with default path to search.
+        flist: filelist.FileList instance for OutputWindow parent.
     """
 
     root = text._root()
@@ -37,14 +37,14 @@ def grep(text, io=None, flist=None):
 
 
 class GrepDialog(SearchDialogBase):
-    "Search Dialog for Find in Files."
+    "Dialog for searching multiple files."
 
     title = "Find in Files Dialog"
     icon = "Grep"
     needwrapbutton = 0
 
     def __init__(self, root, engine, flist):
-        """Create Search Dialog for searching for a phrase in the file system.
+        """Create search dialog for searching for a phrase in the file system.
 
         Uses SearchDialogBase as the basis for the GUI and a
         searchengine instance to prepare the search.
@@ -90,20 +90,20 @@ class GrepDialog(SearchDialogBase):
         self.make_button("Search Files", self.default_command, 1)
 
     def default_command(self, event=None):
-        """Grep for search pattern in file path.
-
-        The default command is bound to <Return>.
+        """Grep for search pattern in file path. The default command is bound
+        to <Return>.
 
         If entry values are populated, set OutputWindow as stdout
-        and perform search.
+        and perform search.  The search dialog is closed automatically
+        when the search begins.
         """
         prog = self.engine.getprog()
         if not prog:
-            return None
+            return
         path = self.globvar.get()
         if not path:
             self.top.bell()
-            return None
+            return
         from idlelib.outwin import OutputWindow  # leave here!
         save = sys.stdout
         try:
@@ -111,12 +111,11 @@ class GrepDialog(SearchDialogBase):
             self.grep_it(prog, path)
         finally:
             sys.stdout = save
-        return None
 
     def grep_it(self, prog, path):
         """Search for prog within the lines of the files in path.
 
-        For the each file in the path directory , open the file and
+        For the each file in the path directory, open the file and
         search each line for the matching pattern.  If the pattern is
         found,  write the file and line information to stdout (which
         is an OutputWindow).
@@ -126,7 +125,7 @@ class GrepDialog(SearchDialogBase):
         list.sort()
         self.close()
         pat = self.engine.getpat()
-        print("Searching %r in %s ..." % (pat, path))
+        print(f"Searching {pat!r} in {path} ...")
         hits = 0
         try:
             for fn in list:
@@ -136,14 +135,12 @@ class GrepDialog(SearchDialogBase):
                             if line[-1:] == '\n':
                                 line = line[:-1]
                             if prog.search(line):
-                                sys.stdout.write("%s: %s: %s\n" %
-                                                 (fn, lineno, line))
+                                sys.stdout.write(f"{fn}: {lineno}: {line}\n")
                                 hits += 1
                 except OSError as msg:
                     print(msg)
-            print(("Hits found: %s\n"
-                   "(Hint: right-click to open locations.)"
-                   % hits) if hits else "No hits.")
+            print(f"Hits found: {hits}\n(Hint: right-click to open locations.)"
+                  if hits else "No hits.")
         except AttributeError:
             # Tk window has been closed, OutputWindow.text = None,
             # so in OW.write, OW.text.insert fails.
@@ -173,10 +170,6 @@ class GrepDialog(SearchDialogBase):
                 list.extend(self.findfiles(subdir, base, rec))
         return list
 
-    def close(self, event=None):
-        "Close the dialog."
-        SearchDialogBase.close(self, event)
-
 
 def _grep_dialog(parent):  # htest #
     from tkinter import Toplevel, Text, SEL, END
@@ -185,7 +178,7 @@ def _grep_dialog(parent):  # htest #
     top = Toplevel(parent)
     top.title("Test GrepDialog")
     x, y = map(int, parent.geometry().split('+')[1:])
-    top.geometry("+%d+%d" % (x, y + 175))
+    top.geometry(f"+{x}+{y + 175}")
 
     flist = PyShellFileList(top)
     text = Text(top, height=5)
