@@ -9,6 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python", "python.vcxproj", "{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0E9791DB-593A-465F-98BC-681011311618} = {0E9791DB-593A-465F-98BC-681011311618}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythoncore", "pythoncore.vcxproj", "{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}"
 EndProject
