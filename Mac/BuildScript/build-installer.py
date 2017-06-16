@@ -1168,8 +1168,25 @@ def buildPython():
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
-    print("Running make")
-    runCommand("make")
+    # Look for environment value BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS
+    # and, if defined, append its value to the make command.  This allows
+    # us to pass in version control tags, like GITTAG, to a build from a
+    # tarball rather than from a vcs checkout, thus eliminating the need
+    # to have a working copy of the vcs program on the build machine.
+    #
+    # A typical use might be:
+    #      export BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS=" \
+    #                         GITVERSION='echo 123456789a' \
+    #                         GITTAG='echo v3.6.0' \
+    #                         GITBRANCH='echo 3.6'"
+
+    make_extras = os.getenv("BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS")
+    if make_extras:
+        make_cmd = "make " + make_extras
+    else:
+        make_cmd = "make"
+    print("Running " + make_cmd)
+    runCommand(make_cmd)
 
     print("Running make install")
     runCommand("make install DESTDIR=%s"%(
