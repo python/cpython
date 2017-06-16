@@ -836,18 +836,12 @@ class ArgsTestCase(BaseTestCase):
                     pass
                 def test_method2(self):
                     pass
-                def test_method3(self):
-                    pass
-                def test_method4(self):
-                    pass
         """)
         testname = self.create_test(code=code)
         all_methods = ['%s.Tests.test_method1' % testname,
-                       '%s.Tests.test_method2' % testname,
-                       '%s.Tests.test_method3' % testname,
-                       '%s.Tests.test_method4' % testname]
+                       '%s.Tests.test_method2' % testname]
         output = self.run_tests('--list-cases', testname)
-        self.assertEqual(output.rstrip().splitlines(), all_methods)
+        self.assertEqual(output.splitlines(), all_methods)
 
     def test_crashed(self):
         # Any code which causes a crash
