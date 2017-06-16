@@ -438,6 +438,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if slaveargs is not None:
         args, kwargs = json.loads(slaveargs)
+        if kwargs['huntrleaks']:
+            warm_caches()
         if testdir:
             kwargs['testdir'] = testdir
         try:
@@ -447,6 +449,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         print   # Force a newline (just in case)
         print json.dumps(result)
         sys.exit(0)
+
+    if huntrleaks:
+        warm_caches()
 
     good = []
     bad = []
@@ -1417,6 +1422,18 @@ def clear_caches():
 
     # Collect cyclic trash.
     gc.collect()
+
+def warm_caches():
+    """Create explicitly internal singletons which are created on demand
+    to prevent false positive when hunting reference leaks."""
+    # char cache
+    for i in range(256):
+        chr(i)
+    # unicode cache
+    for i in range(256):
+        unichr(i)
+    # int cache
+    list(range(-5, 257))
 
 def findtestdir(path=None):
     return path or os.path.dirname(__file__) or os.curdir
