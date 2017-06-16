@@ -1134,6 +1134,11 @@ IDLE
 Windows
 -------
 
+- bpo-30450: The build process on Windows no longer depends on Subversion,
+  instead pulling external code from GitHub via a Python script.  If Python 3.6
+  is not found on the system (via ``py -3.6``), NuGet is used to download a
+  copy of 32-bit Python.
+
 - bpo-29579: Removes readme.txt from the installer.
 
 - Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)

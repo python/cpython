@@ -317,6 +317,12 @@ Build and C API Changes
   :c:func:`PyOS_AfterFork_Child`.  (Contributed by Antoine Pitrou in
   :issue:`16500`.)
 
+* The Windows build process no longer depends on Subversion to pull in external
+  sources, a Python script is used to download zipfiles from GitHub instead.
+  If Python 3.6 is not found on the system (via ``py -3.6``), NuGet is used to
+  download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
+  Ware in :issue:`30450`.)
+
 
 Deprecated
 ==========
