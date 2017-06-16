@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30682: Removed a too-strict assertion that failed for certain f-strings,
+  such as eval("f'\\\n'") and eval("f'\\\r'").
+  
 - bpo-30501: The compiler now produces more optimal code for complex condition
   expressions in the "if", "while" and "assert" statement, the "if" expression,
   and generator expressions and comprehensions.
