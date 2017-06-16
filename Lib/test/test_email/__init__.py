@@ -37,9 +37,11 @@ class TestEmailBase(unittest.TestCase):
     # Backward compatibility to minimize test_email test changes.
     ndiffAssertEqual = unittest.TestCase.assertEqual
 
-    def _msgobj(self, filename):
+    def _msgobj(self, filename, policy=None):
+        if policy is None:
+            policy = self.policy
         with openfile(filename) as fp:
-            return email.message_from_file(fp, policy=self.policy)
+            return email.message_from_file(fp, policy=policy)
 
     def _str_msg(self, string, message=None, policy=None):
         if policy is None:
