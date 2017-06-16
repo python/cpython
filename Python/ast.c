@@ -4915,7 +4915,7 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
                NULL). */
         } else if (!state->last_str) {
             /*  Note that the literal can be zero length, if the
-                Input string is "\\\n" or "\\\r". */
+                input string is "\\\n" or "\\\r", among others. */
             state->last_str = literal;
             literal = NULL;
         } else {
