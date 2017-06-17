@@ -57,6 +57,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-30038: Fix race condition between signal delivery and wakeup file
+  descriptor.  Patch by Nathaniel Smith.
+
 - bpo-23894: lib2to3 now recognizes ``rb'...'`` and ``f'...'`` strings.
 
 - bpo-23890: unittest.TestCase.assertRaises() now manually breaks a reference
