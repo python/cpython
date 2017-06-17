@@ -57,6 +57,8 @@ Core and Builtins
 Library
 -------
 
+- bpo-23894: lib2to3 now recognizes ``rb'...'`` and ``f'...'`` strings.
+
 - bpo-23890: unittest.TestCase.assertRaises() now manually breaks a reference
   cycle to not keep objects alive longer than expected.
 
