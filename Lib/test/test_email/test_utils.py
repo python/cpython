@@ -48,16 +48,6 @@ class DateTimeTests(unittest.TestCase):
             utils.parsedate_to_datetime(self.datestring + ' -0000'),
             self.naive_dt)
 
-    def test_parsedate_to_datetime_invalid_string(self):
-        self.assertIsNone(
-            utils.parsedate_to_datetime('')
-        )
-
-    def test_parsedate_to_datetime_invalid_date(self):
-        self.assertIsNone(
-            utils.parsedate_to_datetime('Tue, 06 Jun 2017 27:39:33 +0600')
-        )
-
 
 class LocaltimeTests(unittest.TestCase):
 

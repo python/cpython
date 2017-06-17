@@ -207,19 +207,11 @@ def make_msgid(idstring=None, domain=None):
 
 
 def parsedate_to_datetime(data):
-    try:
-        *dtuple, tz = _parsedate_tz(data)
-    except TypeError:
-        # _parsedate_tz(data) returned None due to failure to parse
-        return None
-    try:
-        if tz is None:
-            return datetime.datetime(*dtuple[:6])
-        return datetime.datetime(*dtuple[:6],
-                tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
-    except ValueError:
-        # Date parsed ok, but one or more component values are invalid
-        return None
+    *dtuple, tz = _parsedate_tz(data)
+    if tz is None:
+        return datetime.datetime(*dtuple[:6])
+    return datetime.datetime(*dtuple[:6],
+            tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
 
 
 def parseaddr(addr):
