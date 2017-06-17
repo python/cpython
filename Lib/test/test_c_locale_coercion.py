@@ -158,13 +158,8 @@ def setUpModule():
         CLI_COERCION_WARNING = CLI_COERCION_WARNING_FMT.format(CLI_COERCION_TARGET)
 
 
-class _LocaleCoercionTargetsTestCase(unittest.TestCase):
-    # Base class for test cases that rely on coercion targets being defined
-
-    @classmethod
-    def setUpClass(cls):
-        if not AVAILABLE_TARGETS:
-            raise unittest.SkipTest("No C-with-UTF-8 locale available")
+class _LocaleHandlingTestCase(unittest.TestCase):
+    # Base class to check expected locale handling behaviour
 
     def _check_child_encoding_details(self,
                                       env_vars,
@@ -193,10 +188,17 @@ class _LocaleCoercionTargetsTestCase(unittest.TestCase):
         self.assertEqual(stderr_lines, expected_warnings)
 
 
-class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
+class LocaleConfigurationTests(_LocaleHandlingTestCase):
     # Test explicit external configuration via the process environment
 
+    def setUpClass():
+        # This relies on setupModule() having been run, so it can't be
+        # handled via the @unittest.skipUnless decorator
+        if not AVAILABLE_TARGETS:
+            raise unittest.SkipTest("No C-with-UTF-8 locale available")
+
     def test_external_target_locale_configuration(self):
+
         # Explicitly setting a target locale should give the same behaviour as
         # is seen when implicitly coercing to that target locale
         self.maxDiff = None
@@ -213,6 +215,7 @@ class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
             for locale_to_set in AVAILABLE_TARGETS:
                 # XXX (ncoghlan): LANG=UTF-8 doesn't appear to work as
                 #                 expected, so skip that combination for now
+                # See https://bugs.python.org/issue30672 for discussion
                 if env_var == "LANG" and locale_to_set == "UTF-8":
                     continue
 
@@ -231,7 +234,7 @@ class LocaleConfigurationTests(_LocaleCoercionTargetsTestCase):
 @test.support.cpython_only
 @unittest.skipUnless(sysconfig.get_config_var("PY_COERCE_C_LOCALE"),
                      "C locale coercion disabled at build time")
-class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
+class LocaleCoercionTests(_LocaleHandlingTestCase):
     # Test implicit reconfiguration of the environment during CLI startup
 
     def _check_c_locale_coercion(self,
@@ -251,9 +254,14 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
             expected_warnings: expected warning lines on stderr
             extra_vars: additional environment variables to set in subprocess
         """
-
-        # Check for expected warning on stderr if C locale is coerced
         self.maxDiff = None
+
+        if AVAILABLE_TARGETS is None:
+            # Locale coercion is disabled when there aren't any target locales
+            fs_encoding = C_LOCALE_FS_ENCODING
+            stream_encoding = C_LOCALE_STREAM_ENCODING
+            expected_warnings = []
+            coercion_expected = False
 
         base_var_dict = {
             "LANG": "",
@@ -265,6 +273,7 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
             for locale_to_set in ("", "C", "POSIX", "invalid.ascii"):
                 # XXX (ncoghlan): Mac OS X doesn't behave as expected in the
                 #                 POSIX locale, so we skip that for now
+                # See https://bugs.python.org/issue30672 for discussion
                 if sys.platform == "darwin" and locale_to_set == "POSIX":
                     continue
                 with self.subTest(env_var=env_var,
@@ -318,13 +327,12 @@ class LocaleCoercionTests(_LocaleCoercionTargetsTestCase):
                                       coerce_c_locale=None,
                                       LC_ALL="C",
                                       coercion_expected=False)
-        # And result in a second warning indicating locale coercion didn't work
-        ineffective_coercion_warning = [LEGACY_LOCALE_WARNING]
+        # And result in a warning about a lack of locale compatibility
         self._check_c_locale_coercion(C_LOCALE_FS_ENCODING,
                                       C_LOCALE_STREAM_ENCODING,
                                       coerce_c_locale="warn",
                                       LC_ALL="C",
-                                      expected_warnings=ineffective_coercion_warning,
+                                      expected_warnings=[LEGACY_LOCALE_WARNING],
                                       coercion_expected=False)
 
 def test_main():
