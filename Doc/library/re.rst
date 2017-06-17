@@ -450,7 +450,7 @@ accepted by the regular expression parser::
 (Note that ``\b`` is used to represent word boundaries, and means "backspace"
 only inside character classes.)
 
-``'\u'`` and ``'\U'`` escape sequences are only recognized in Unicode
+``'\u'``, ``'\U'``, and ``'\N{name}'`` escape sequences are only recognized in Unicode
 patterns.  In bytes patterns they are not treated specially.
 
 Octal escapes are included in a limited form.  If the first digit is a 0, or if
