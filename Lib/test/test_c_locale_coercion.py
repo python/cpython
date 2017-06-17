@@ -256,7 +256,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
         """
         self.maxDiff = None
 
-        if AVAILABLE_TARGETS is None:
+        if not AVAILABLE_TARGETS:
             # Locale coercion is disabled when there aren't any target locales
             fs_encoding = C_LOCALE_FS_ENCODING
             stream_encoding = C_LOCALE_STREAM_ENCODING
