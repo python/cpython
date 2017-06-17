@@ -94,6 +94,15 @@ if "%IncludeTkinter%"=="" set IncludeTkinter=true
 
 if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
 
+if "%do_pgo%" EQU "true" if "%platf%" EQU "x64" (
+    if "%PROCESSOR_ARCHITEW6432%" NEQ "AMD64" if "%PROCESSOR_ARCHITECTURE%" NEQ "AMD64" (
+        echo.ERROR: Cannot cross-compile with PGO 
+        echo.    32bit operating system detected, if this is incorrect, 
+        echo.    make sure the ProgramFiles(x86^) environment variable is set 
+        exit /b 1 
+    )
+)
+
 if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
 if exist "%GIT%" set GITProperty=/p:GIT="%GIT%"
 if not exist "%GIT%" echo Cannot find Git on PATH & set GITProperty=
