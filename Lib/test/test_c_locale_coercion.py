@@ -152,9 +152,10 @@ def setUpModule():
         if _set_locale_in_subprocess(target_locale):
             AVAILABLE_TARGETS.append(target_locale)
 
-    # Coercion is expected to use the first available target locale
-    CLI_COERCION_TARGET = AVAILABLE_TARGETS[0]
-    CLI_COERCION_WARNING = CLI_COERCION_WARNING_FMT.format(CLI_COERCION_TARGET)
+    if AVAILABLE_TARGETS:
+        # Coercion is expected to use the first available target locale
+        CLI_COERCION_TARGET = AVAILABLE_TARGETS[0]
+        CLI_COERCION_WARNING = CLI_COERCION_WARNING_FMT.format(CLI_COERCION_TARGET)
 
 
 class _LocaleCoercionTargetsTestCase(unittest.TestCase):
