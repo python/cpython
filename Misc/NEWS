@@ -365,6 +365,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30038: Fix race condition between signal delivery and wakeup file
+  descriptor.  Patch by Nathaniel Smith.
+
 - bpo-23894: lib2to3 now recognizes ``rb'...'`` and ``f'...'`` strings.
 
 - [Security] bpo-29591: Update expat copy from 2.1.1 to 2.2.0 to get fixes
