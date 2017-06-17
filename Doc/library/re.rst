@@ -443,7 +443,7 @@ character ``'$'``.
 Most of the standard escapes supported by Python string literals are also
 accepted by the regular expression parser::
 
-   \a      \b      \f      \n
+   \a      \b      \f      \n      \N{name}
    \r      \t      \u      \U
    \v      \x      \\
 
@@ -464,6 +464,9 @@ three digits in length.
 .. versionchanged:: 3.6
    Unknown escapes consisting of ``'\'`` and an ASCII letter now are errors.
 
+.. versionchanged:: 3.7
+   The ``'\N{name}'`` escape sequence has been added. As in string literals,
+   it expands to the named Unicode character (e.g. ``'\N{EM DASH}'``).
 
 .. seealso::
 

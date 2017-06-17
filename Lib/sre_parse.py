@@ -13,6 +13,7 @@
 # XXX: show string offset and offending character for all errors
 
 from sre_constants import *
+from ast import literal_eval
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"
@@ -24,6 +25,11 @@ HEXDIGITS = frozenset("0123456789abcdefABCDEF")
 ASCIILETTERS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 WHITESPACE = frozenset(" \t\n\r\v\f")
+
+UNICODE_NAME = ASCIILETTERS | DIGITS | frozenset(' -')
+CLOSING_BRACE = frozenset("}")
+OPENING_BRACE = frozenset("{")
+
 
 _REPEATCODES = frozenset({MIN_REPEAT, MAX_REPEAT})
 _UNITCODES = frozenset({ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY})
@@ -322,6 +328,17 @@ def _class_escape(source, escape):
             c = int(escape[2:], 16)
             chr(c) # raise ValueError for invalid code
             return LITERAL, c
+        elif c == "N" and source.istext:
+            # named unicode escape e.g. \N{EM DASH}
+            escape += source.getwhile(1, OPENING_BRACE)
+            escape += source.getwhile(100, UNICODE_NAME)
+            escape += source.getwhile(1, CLOSING_BRACE)
+            try:
+                c = ord(literal_eval('"%s"' % escape))
+            except SyntaxError:
+                charname = escape[2:].strip('{}')
+                raise source.error("unknown Unicode character name %s" % charname, len(escape))
+            return LITERAL, c
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
             escape += source.getwhile(2, OCTDIGITS)
@@ -369,6 +386,17 @@ def _escape(source, escape, state):
                 raise source.error("incomplete escape %s" % escape, len(escape))
             c = int(escape[2:], 16)
             chr(c) # raise ValueError for invalid code
+            return LITERAL, c
+        elif c == "N" and source.istext:
+            # named unicode escape e.g. \N{EM DASH}
+            escape += source.getwhile(1, OPENING_BRACE)
+            escape += source.getwhile(100, UNICODE_NAME)
+            escape += source.getwhile(1, CLOSING_BRACE)
+            try:
+                c = ord(literal_eval('"%s"' % escape))
+            except SyntaxError:
+                charname = escape[2:].strip('{}')
+                raise source.error("unknown Unicode character name %s" % charname, len(escape))
             return LITERAL, c
         elif c == "0":
             # octal escape
