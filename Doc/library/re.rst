@@ -443,14 +443,14 @@ character ``'$'``.
 Most of the standard escapes supported by Python string literals are also
 accepted by the regular expression parser::
 
-   \a      \b      \f      \n      \N{name}
+   \a      \b      \f      \n      \N
    \r      \t      \u      \U
    \v      \x      \\
 
 (Note that ``\b`` is used to represent word boundaries, and means "backspace"
 only inside character classes.)
 
-``'\u'``, ``'\U'``, and ``'\N{name}'`` escape sequences are only recognized in Unicode
+``'\u'``, ``'\U'``, and ``'\N'`` escape sequences are only recognized in Unicode
 patterns.  In bytes patterns they are not treated specially.
 
 Octal escapes are included in a limited form.  If the first digit is a 0, or if
