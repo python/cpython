@@ -272,10 +272,10 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
         base_var_dict.update(extra_vars)
         for env_var in ("LANG", "LC_CTYPE"):
             for locale_to_set in ("", "C", "POSIX", "invalid.ascii"):
-                # XXX (ncoghlan): Mac OS X doesn't behave as expected in the
+                # XXX (ncoghlan): *BSD platforms don't behave as expected in the
                 #                 POSIX locale, so we skip that for now
                 # See https://bugs.python.org/issue30672 for discussion
-                if sys.platform == "darwin" and locale_to_set == "POSIX":
+                if locale_to_set == "POSIX":
                     continue
                 with self.subTest(env_var=env_var,
                                   nominal_locale=locale_to_set,
