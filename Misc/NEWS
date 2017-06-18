@@ -400,6 +400,10 @@ Library
 - bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
   called.
 
+- bpo-30645: Fix path creation of __init__.pyc in imp.load_package(),
+  for cases when a package is only shipped with bytecodes. This bug
+  was not noticeable if the source-code of __init__.py was available.
+
 - bpo-11822: The dis.dis() function now is able to disassemble nested
   code objects.
 
