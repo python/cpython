@@ -96,20 +96,11 @@ defined coercion target locales (currently ``C.UTF-8``, ``C.utf8``, and
 ``UTF-8``). The default error handler for ``stderr`` continues to be
 ``backslashreplace``, regardless of locale.
 
-.. note::
-
-   In the current implementation, a warning message is printed directly to
-   ``stderr`` even for successful implicit locale coercion. This gives
-   redistributors and system integrators the opportunity to determine if they
-   should be making an environmental change to avoid the need for implicit
-   coercion at the Python interpreter level.
-
-   However, it's not clear that this is going to be the best approach for
-   the final 3.7.0 release, and we may end up deciding to disable the warning
-   by default and provide some way of opting into it at runtime or build time.
-
-   Concrete examples of use cases where it would be preferrable to disable the
-   warning by default can be noted on :issue:`30565`.
+Locale coercion is silent by default, but to assist in debugging potentially
+locale related integration problems, explicit warnings (emitted directly on
+``stderr`` can be requested by setting ``PYTHONCOERCECLOCALE=warn``. This
+setting will also cause the Python runtime to emit a warning if the legacy C
+locale remains active when the core interpreter is initialized.
 
 .. seealso::
 
