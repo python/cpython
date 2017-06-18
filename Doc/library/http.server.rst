@@ -362,7 +362,7 @@ of which this module provides three different variants:
       a ``304``, ``'Not Modified'`` response is sent. Otherwise, the content
       type is guessed by calling the :meth:`guess_type` method, which in turn
       uses the *extensions_map* variable, and the file contents are returned.
-      
+
       If the content type is in the list ``compressed_types``, and if the
       user agent has sent an ``'Accept-Encoding'`` header that included
       "gzip", a header ``'Content-Encoding'`` set to "gzip" is sent and the
