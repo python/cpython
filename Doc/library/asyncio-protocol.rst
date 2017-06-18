@@ -170,7 +170,7 @@ WriteTransport
       high-water limit.  Neither *high* nor *low* can be negative.
 
       :meth:`pause_writing` is called when the buffer size becomes greater 
-      than or equal to the *high* value. If writing has been paused, 
+      than or equal to the *high* value. If writing has been paused,
       :meth:`resume_writing` is called when the buffer size becomes less
       than or equal to the *low* value.
 
