@@ -250,6 +250,9 @@ def _create_parser():
     group.add_argument('--list-tests', action='store_true',
                        help="only write the name of tests that will be run, "
                             "don't execute them")
+    group.add_argument('--list-cases', action='store_true',
+                       help='only write the name of test cases that will be run'
+                            ' , don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization training')
 

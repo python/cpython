@@ -356,12 +356,40 @@ _Py_LegacyLocaleDetected(void)
 {
 #ifndef MS_WINDOWS
     /* On non-Windows systems, the C locale is considered a legacy locale */
+    /* XXX (ncoghlan): some platforms (notably Mac OS X) don't appear to treat
+     *                 the POSIX locale as a simple alias for the C locale, so
+     *                 we may also want to check for that explicitly.
+     */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     return ctype_loc != NULL && strcmp(ctype_loc, "C") == 0;
 #else
     /* Windows uses code pages instead of locales, so no locale is legacy */
     return 0;
 #endif
+}
+
+static const char *_C_LOCALE_WARNING =
+    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
+    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
+    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
+    "locales is recommended.\n";
+
+static int
+_legacy_locale_warnings_enabled(void)
+{
+    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+    return (coerce_c_locale != NULL &&
+            strncmp(coerce_c_locale, "warn", 5) == 0);
+}
+
+static void
+_emit_stderr_warning_for_legacy_locale(void)
+{
+    if (_legacy_locale_warnings_enabled()) {
+        if (_Py_LegacyLocaleDetected()) {
+            fprintf(stderr, "%s", _C_LOCALE_WARNING);
+        }
+    }
 }
 
 typedef struct _CandidateLocale {
@@ -371,9 +399,16 @@ typedef struct _CandidateLocale {
 static _LocaleCoercionTarget _TARGET_LOCALES[] = {
     {"C.UTF-8"},
     {"C.utf8"},
-    {"UTF-8"},
+    /* {"UTF-8"}, */
     {NULL}
 };
+
+/* XXX (ncoghlan): Using UTF-8 as a target locale is currently disabled due to
+ *                 problems encountered on *BSD systems with those test cases
+ * For additional details see:
+ *     nl_langinfo CODESET error: https://bugs.python.org/issue30647
+ *     locale handling differences: https://bugs.python.org/issue30672
+ */
 
 static char *
 get_default_standard_stream_error_handler(void)
@@ -419,7 +454,9 @@ _coerce_default_locale_settings(const _LocaleCoercionTarget *target)
                 "Error setting LC_CTYPE, skipping C locale coercion\n");
         return;
     }
-    fprintf(stderr, _C_LOCALE_COERCION_WARNING, newloc);
+    if (_legacy_locale_warnings_enabled()) {
+        fprintf(stderr, _C_LOCALE_COERCION_WARNING, newloc);
+    }
 
     /* Reconfigure with the overridden environment variables */
     setlocale(LC_ALL, "");
@@ -463,26 +500,6 @@ _Py_CoerceLegacyLocale(void)
     /* No C locale warning here, as Py_Initialize will emit one later */
 #endif
 }
-
-
-#ifdef PY_WARN_ON_C_LOCALE
-static const char *_C_LOCALE_WARNING =
-    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
-    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
-    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
-    "locales is recommended.\n";
-
-static void
-_emit_stderr_warning_for_c_locale(void)
-{
-    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
-    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
-        if (_Py_LegacyLocaleDetected()) {
-            fprintf(stderr, "%s", _C_LOCALE_WARNING);
-        }
-    }
-}
-#endif
 
 
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
@@ -561,9 +578,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
        the locale's charset without having to switch
        locales. */
     setlocale(LC_CTYPE, "");
-#ifdef PY_WARN_ON_C_LOCALE
-    _emit_stderr_warning_for_c_locale();
-#endif
+    _emit_stderr_warning_for_legacy_locale();
 #endif
 #endif
 

@@ -10,7 +10,7 @@
 """
 
 import re
-import codecs
+import io
 from os import path
 from time import asctime
 from pprint import pformat
@@ -254,11 +254,8 @@ class MiscNews(Directive):
         fpath = path.join(source_dir, fname)
         self.state.document.settings.record_dependencies.add(fpath)
         try:
-            fp = codecs.open(fpath, encoding='utf-8')
-            try:
+            with io.open(fpath, encoding='utf-8') as fp:
                 content = fp.read()
-            finally:
-                fp.close()
         except Exception:
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
