@@ -260,8 +260,9 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             # Locale coercion is disabled when there aren't any target locales
             fs_encoding = C_LOCALE_FS_ENCODING
             stream_encoding = C_LOCALE_STREAM_ENCODING
-            expected_warnings = []
             coercion_expected = False
+            if expected_warnings:
+                expected_warnings = [LEGACY_LOCALE_WARNING]
 
         base_var_dict = {
             "LANG": "",
