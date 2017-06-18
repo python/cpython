@@ -737,7 +737,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             # Use HTTP compression (gzip) if possible
             accept_encoding = self.headers.get("Accept-Encoding", "")
-            encodings = [x.strip() for x in accept_encoding.split(",")]
+
+            encodings = []
+            for accepted in accept_encoding.split(","):
+                encoding, *quality = accepted.lower().split(";")
+                if quality:
+                    q, *v = quality[0].split("=")
+                    if q == "q" and v and v[0] == "0":
+                        encoding = ""
+                encodings.append(encoding if encoding != "*" else "gzip")
+
             if ctype in self.compressed_types and "gzip" in encodings:
                 self.send_header("Content-Encoding", "gzip")
                 if content_length < 2 << 18:
