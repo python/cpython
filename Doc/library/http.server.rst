@@ -332,7 +332,8 @@ of which this module provides three different variants:
 
       The list of content types for which HTTP compression is applied. Set by
       default to : ``["text/plain", "text/html", "text/css", "text/xml",
-      "text/javascript", "application/javascript", "application/json"]``.
+      "text/javascript", "application/javascript", "application/json"]``. To
+      disable compression, set the attribute to the empty list.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -361,6 +362,12 @@ of which this module provides three different variants:
       a ``304``, ``'Not Modified'`` response is sent. Otherwise, the content
       type is guessed by calling the :meth:`guess_type` method, which in turn
       uses the *extensions_map* variable, and the file contents are returned.
+      
+      If the content type is in the list ``compressed_types``, and if the
+      user agent has sent an ``'Accept-Encoding'`` header that included
+      "gzip", a header ``'Content-Encoding'`` set to "gzip" is sent and the
+      file content is compressed using gzip. For big files, the gzipped
+      content is stored in a temporary file.
 
       A ``'Content-type:'`` header with the guessed content type is output,
       followed by a ``'Content-Length:'`` header with the file's size and a
@@ -374,7 +381,8 @@ of which this module provides three different variants:
       invocation in the :mod:`http.server` module.
 
       .. versionchanged:: 3.7
-         Support of the ``'If-Modified-Since'`` header.
+         Support of the ``'If-Modified-Since'`` header and of HTTP
+         compression.
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
