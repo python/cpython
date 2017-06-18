@@ -365,6 +365,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29755: Fixed the lgettext() family of functions in the gettext module.
+  They now always return bytes.
+
 - bpo-30038: Fix race condition between signal delivery and wakeup file
   descriptor.  Patch by Nathaniel Smith.
 

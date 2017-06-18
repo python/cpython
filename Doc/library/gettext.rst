@@ -48,9 +48,10 @@ class-based API instead.
 
 .. function:: bind_textdomain_codeset(domain, codeset=None)
 
-   Bind the *domain* to *codeset*, changing the encoding of strings returned by the
-   :func:`gettext` family of functions. If *codeset* is omitted, then the current
-   binding is returned.
+   Bind the *domain* to *codeset*, changing the encoding of byte strings
+   returned by the :func:`lgettext`, :func:`ldgettext`, :func:`lngettext`
+   and :func:`ldngettext` functions.
+   If *codeset* is omitted, then the current binding is returned.
 
 
 .. function:: textdomain(domain=None)
@@ -69,10 +70,9 @@ class-based API instead.
 
 .. function:: lgettext(message)
 
-   Equivalent to :func:`gettext`, but the translation is returned in the
-   preferred system encoding, if no other encoding was explicitly set with
-   :func:`bind_textdomain_codeset`.
-
+   Equivalent to :func:`gettext`, but the translation is returned as a
+   byte string encoded in the preferred system encoding if no other encoding
+   was explicitly set with :func:`bind_textdomain_codeset`.
 
 .. function:: dgettext(domain, message)
 
@@ -81,9 +81,9 @@ class-based API instead.
 
 .. function:: ldgettext(domain, message)
 
-   Equivalent to :func:`dgettext`, but the translation is returned in the
-   preferred system encoding, if no other encoding was explicitly set with
-   :func:`bind_textdomain_codeset`.
+   Equivalent to :func:`dgettext`, but the translation is returned as a
+   byte string encoded in the preferred system encoding if no other encoding
+   was explicitly set with :func:`bind_textdomain_codeset`.
 
 
 .. function:: ngettext(singular, plural, n)
@@ -103,9 +103,9 @@ class-based API instead.
 
 .. function:: lngettext(singular, plural, n)
 
-   Equivalent to :func:`ngettext`, but the translation is returned in the
-   preferred system encoding, if no other encoding was explicitly set with
-   :func:`bind_textdomain_codeset`.
+   Equivalent to :func:`ngettext`, but the translation is returned as a
+   byte string encoded in the preferred system encoding if no other encoding
+   was explicitly set with :func:`bind_textdomain_codeset`.
 
 
 .. function:: dngettext(domain, singular, plural, n)
@@ -115,9 +115,9 @@ class-based API instead.
 
 .. function:: ldngettext(domain, singular, plural, n)
 
-   Equivalent to :func:`dngettext`, but the translation is returned in the
-   preferred system encoding, if no other encoding was explicitly set with
-   :func:`bind_textdomain_codeset`.
+   Equivalent to :func:`dngettext`, but the translation is returned as a
+   byte string encoded in the preferred system encoding if no other encoding
+   was explicitly set with :func:`bind_textdomain_codeset`.
 
 
 Note that GNU :program:`gettext` also defines a :func:`dcgettext` method, but
@@ -257,7 +257,9 @@ are the methods of :class:`NullTranslations`:
    .. method:: lgettext(message)
 
       If a fallback has been set, forward :meth:`lgettext` to the fallback.
-      Otherwise, return the translated message.  Overridden in derived classes.
+      Otherwise, return the translated message as a byte string encoded in
+      the preferred system encoding if no encoding was explicitly set with
+      :meth:`set_output_charset`.  Overridden in derived classes.
 
 
    .. method:: ngettext(singular, plural, n)
@@ -269,7 +271,9 @@ are the methods of :class:`NullTranslations`:
    .. method:: lngettext(singular, plural, n)
 
       If a fallback has been set, forward :meth:`lngettext` to the fallback.
-      Otherwise, return the translated message.  Overridden in derived classes.
+      Otherwise, return the translated message as a byte string encoded in
+      the preferred system encoding if no encoding was explicitly set with
+      :meth:`set_output_charset`.  Overridden in derived classes.
 
 
    .. method:: info()
@@ -279,21 +283,18 @@ are the methods of :class:`NullTranslations`:
 
    .. method:: charset()
 
-      Return the "protected" :attr:`_charset` variable, which is the encoding of
-      the message catalog file.
+      Return the encoding of the message catalog file.
 
 
    .. method:: output_charset()
 
-      Return the "protected" :attr:`_output_charset` variable, which defines the
-      encoding used to return translated messages in :meth:`lgettext` and
-      :meth:`lngettext`.
+      Return the encoding used to return translated messages in :meth:`lgettext`
+      and :meth:`lngettext`.
 
 
    .. method:: set_output_charset(charset)
 
-      Change the "protected" :attr:`_output_charset` variable, which defines the
-      encoding used to return translated messages.
+      Change the encoding used to return translated messages.
 
 
    .. method:: install(names=None)
@@ -303,8 +304,7 @@ are the methods of :class:`NullTranslations`:
 
       If the *names* parameter is given, it must be a sequence containing the
       names of functions you want to install in the builtins namespace in
-      addition to :func:`_`.  Supported names are ``'gettext'`` (bound to
-      :meth:`self.gettext`), ``'ngettext'`` (bound to :meth:`self.ngettext`),
+      addition to :func:`_`.  Supported names are ``'gettext'``, ``'ngettext'``,
       ``'lgettext'`` and ``'lngettext'``.
 
       Note that this is only one way, albeit the most convenient way, to make
@@ -363,8 +363,8 @@ The following methods are overridden from the base class implementation:
 .. method:: GNUTranslations.lgettext(message)
 
    Equivalent to :meth:`gettext`, but the translation is returned as a
-   bytestring encoded in the selected output charset, or in the preferred system
-   encoding if no encoding was explicitly set with :meth:`set_output_charset`.
+   byte string encoded in the preferred system encoding if no encoding was
+   explicitly set with :meth:`set_output_charset`.
 
 
 .. method:: GNUTranslations.ngettext(singular, plural, n)
@@ -389,9 +389,9 @@ The following methods are overridden from the base class implementation:
 
 .. method:: GNUTranslations.lngettext(singular, plural, n)
 
-   Equivalent to :meth:`gettext`, but the translation is returned as a
-   bytestring encoded in the selected output charset, or in the preferred system
-   encoding if no encoding was explicitly set with :meth:`set_output_charset`.
+   Equivalent to :meth:`ngettext`, but the translation is returned as a
+   byte string encoded in the preferred system encoding if no encoding was
+   explicitly set with :meth:`set_output_charset`.
 
 
 Solaris message catalog support
@@ -509,7 +509,7 @@ module::
 
    import gettext
    t = gettext.translation('spam', '/usr/share/locale')
-   _ = t.lgettext
+   _ = t.gettext
 
 
 Localizing your application
