@@ -1,8 +1,13 @@
 """Tests for asyncio/sslproto.py."""
-
+import contextlib
 import logging
+import os
+import socket
+import threading
 import unittest
 from unittest import mock
+
+
 try:
     import ssl
 except ImportError:
@@ -12,6 +17,55 @@ import asyncio
 from asyncio import log
 from asyncio import sslproto
 from asyncio import test_utils
+
+HOST = '127.0.0.1'
+
+
+def data_file(name):
+    return os.path.join(os.path.dirname(__file__), name)
+
+
+class DummySSLServer(threading.Thread):
+    class Protocol(asyncio.Protocol):
+        transport = None
+
+        def connection_lost(self, exc):
+            self.transport.close()
+
+        def connection_made(self, transport):
+            self.transport = transport
+
+    def __init__(self):
+        super().__init__()
+
+        self.loop = asyncio.new_event_loop()
+        context = ssl.SSLContext()
+        context.load_cert_chain(data_file('keycert3.pem'))
+        server_future = self.loop.create_server(
+            self.Protocol, *(HOST, 0),
+            ssl=context)
+        self.server = self.loop.run_until_complete(server_future)
+
+    def run(self):
+        self.loop.run_forever()
+        self.server.close()
+        self.loop.run_until_complete(self.server.wait_closed())
+        self.loop.close()
+
+    def stop(self):
+        self.loop.call_soon_threadsafe(self.loop.stop)
+
+
+@contextlib.contextmanager
+def run_test_ssl_server():
+    th = DummySSLServer()
+    th.start()
+    try:
+        yield th.server
+    finally:
+        th.stop()
+        th.join()
+
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')
@@ -120,6 +174,15 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         self.assertIsNotNone(ssl_proto._get_extra_info('socket'))
         ssl_proto.connection_lost(None)
         self.assertIsNone(ssl_proto._get_extra_info('socket'))
+
+    def test_ssl_shutdown(self):
+        # bpo-30698 Shutdown the ssl layer cleanly
+        with run_test_ssl_server() as server:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(server.sockets[0].getsockname())
+            ssl_socket = test_utils.dummy_ssl_context().wrap_socket(sock)
+            with contextlib.closing(ssl_socket):
+                ssl_socket.unwrap()
 
 
 if __name__ == '__main__':

@@ -135,7 +135,7 @@ class _SSLPipe(object):
         assert len(appdata) == 0
         return ssldata
 
-    def shutdown(self, callback=None):
+    def shutdown(self):
         """Start the SSL shutdown sequence.
 
         Return a list of ssldata. A ssldata element is a list of buffers
@@ -150,7 +150,6 @@ class _SSLPipe(object):
             raise RuntimeError('shutdown in progress')
         assert self._state in (_WRAPPED, _DO_HANDSHAKE)
         self._state = _SHUTDOWN
-        self._shutdown_cb = callback
         ssldata, appdata = self.feed_ssldata(b'')
         assert appdata == [] or appdata == [b'']
         return ssldata
@@ -218,8 +217,6 @@ class _SSLPipe(object):
                 self._sslobj.unwrap()
                 self._sslobj = None
                 self._state = _UNWRAPPED
-                if self._shutdown_cb:
-                    self._shutdown_cb()
 
             elif self._state == _UNWRAPPED:
                 # Drain possible plaintext data after close_notify.
@@ -636,11 +633,14 @@ class SSLProtocol(protocols.Protocol):
                         self._on_handshake_complete)
                     offset = 1
                 else:
-                    ssldata = self._sslpipe.shutdown(self._finalize)
+                    try:
+                        ssldata = self._sslpipe.shutdown()
+                        self._feed_ssl_data(ssldata)
+                    finally:
+                        self._finalize()
                     offset = 1
 
-                for chunk in ssldata:
-                    self._transport.write(chunk)
+                self._feed_ssl_data(ssldata)
 
                 if offset < len(data):
                     self._write_backlog[0] = (data, offset)
@@ -664,6 +664,10 @@ class SSLProtocol(protocols.Protocol):
             if not isinstance(exc, Exception):
                 # BaseException
                 raise
+
+    def _feed_ssl_data(self, ssldata):
+        for chunk in ssldata:
+            self._transport.write(chunk)
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.

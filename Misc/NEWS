@@ -365,6 +365,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30698: Asyncio sslproto shutdown the ssl layer cleanly
+
 - bpo-30038: Fix race condition between signal delivery and wakeup file
   descriptor.  Patch by Nathaniel Smith.
 
