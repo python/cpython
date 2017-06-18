@@ -612,7 +612,13 @@ PyObject *PyString_DecodeEscape(const char *s,
     char *p, *buf;
     const char *end;
     PyObject *v;
-    Py_ssize_t newlen = recode_encoding ? 4*len:len;
+    Py_ssize_t newlen;
+    /* Check for integer overflow */
+    if (recode_encoding && (len > PY_SSIZE_T_MAX / 4)) {
+        PyErr_SetString(PyExc_OverflowError, "string is too large");
+        return NULL;
+    }
+    newlen = recode_encoding ? 4*len:len;
     v = PyString_FromStringAndSize((char *)NULL, newlen);
     if (v == NULL)
         return NULL;

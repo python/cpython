@@ -10,6 +10,9 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- bpo-30657: Fixed possible integer overflow in PyString_DecodeEscape.
+  Patch by Jay Bosamiya.
+
 - bpo-27945: Fixed various segfaults with dict when input collections are
   mutated during searching, inserting or comparing.  Based on patches by
   Duane Griffin and Tim Mitchell.
