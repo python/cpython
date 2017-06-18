@@ -32,7 +32,13 @@ else:
 
 # In order to get the warning messages to match up as expected, the candidate
 # order here must much the target locale order in Python/pylifecycle.c
-_C_UTF8_LOCALES = ("C.UTF-8", "C.utf8", "UTF-8")
+_C_UTF8_LOCALES = ("C.UTF-8", "C.utf8") #, "UTF-8")
+
+# XXX (ncoghlan): Using UTF-8 as a target locale is currently disabled due to
+#                 problems encountered on *BSD systems with those test cases
+# For additional details see:
+#     nl_langinfo CODESET error: https://bugs.python.org/issue30647
+#     locale handling differences: https://bugs.python.org/issue30672
 
 # There's no reliable cross-platform way of checking locale alias
 # lists, so the only way of knowing which of these locales will work

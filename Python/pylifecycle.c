@@ -399,9 +399,16 @@ typedef struct _CandidateLocale {
 static _LocaleCoercionTarget _TARGET_LOCALES[] = {
     {"C.UTF-8"},
     {"C.utf8"},
-    {"UTF-8"},
+    /* {"UTF-8"}, */
     {NULL}
 };
+
+/* XXX (ncoghlan): Using UTF-8 as a target locale is currently disabled due to
+ *                 problems encountered on *BSD systems with those test cases
+ * For additional details see:
+ *     nl_langinfo CODESET error: https://bugs.python.org/issue30647
+ *     locale handling differences: https://bugs.python.org/issue30672
+ */
 
 static char *
 get_default_standard_stream_error_handler(void)
