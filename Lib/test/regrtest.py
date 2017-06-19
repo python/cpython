@@ -334,6 +334,9 @@ def _create_parser():
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
                             'error happens')
+    group.add_argument('--list-tests', action='store_true',
+                       help="only write the name of tests that will be run, "
+                            "don't execute them")
     group.add_argument('--list-cases', action='store_true',
                        help='only write the name of test cases that will be run'
                             ' , don\'t execute them')
@@ -712,6 +715,11 @@ def main(tests=None, **kwargs):
             resource_denieds.append(test)
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
+
+    if ns.list_tests:
+        for name in selected:
+            print(name)
+        sys.exit(0)
 
     if ns.list_cases:
         list_cases(ns, selected)

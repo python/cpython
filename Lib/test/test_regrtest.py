@@ -732,6 +732,13 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('--forever', test, exitcode=1)
         self.check_executed_tests(output, [test]*3, failed=test)
 
+    def test_list_tests(self):
+        # test --list-tests
+        tests = [self.create_test() for i in range(5)]
+        output = self.run_tests('--list-tests', *tests)
+        self.assertEqual(output.rstrip().splitlines(),
+                         tests)
+
     def test_list_cases(self):
         # test --list-cases
         code = textwrap.dedent("""
