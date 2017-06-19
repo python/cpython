@@ -262,7 +262,7 @@ def _create_parser():
                        help='display test output on failure')
     group.add_argument('-q', '--quiet', action='store_true',
                        help='no output unless one or more tests fail')
-    group.add_argument('-o', '--slow', action='store_true', dest='print_slow',
+    group.add_argument('-o', '--slowest', action='store_true', dest='print_slow',
                        help='print the slowest 10 tests')
     group.add_argument('--header', action='store_true',
                        help='print header with interpreter info')
@@ -869,7 +869,7 @@ def main(tests=None, **kwargs):
         test_times.sort(reverse=True)
         print("10 slowest tests:")
         for time, test in test_times[:10]:
-            print("%s: %.1fs" % (test, time))
+            print("- %s: %.1fs" % (test, time))
     if bad and not ns.pgo:
         print(count(len(bad), "test"), "failed:")
         printlist(bad)
