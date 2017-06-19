@@ -917,6 +917,14 @@ def main(tests=None, **kwargs):
     if ns.runleaks:
         os.system("leaks %d" % os.getpid())
 
+    if bad:
+        result = "FAILURE"
+    elif interrupted:
+        result = "INTERRUPTED"
+    else:
+        result = "SUCCESS"
+    print("Tests result: %s" % result)
+
     sys.exit(len(bad) > 0 or interrupted)
 
 
