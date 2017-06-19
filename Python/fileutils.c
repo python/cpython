@@ -712,20 +712,36 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     int err;
     struct _stat wstatbuf;
     wchar_t *wpath;
+    Py_ssize_t pathlen;
 
-    wpath = PyUnicode_AsUnicode(path);
+    wpath = PyUnicode_AsUnicodeAndSize(path, &pathlen);
     if (wpath == NULL)
         return -2;
+    if (wcslen(wpath) != pathlen) {
+        PyErr_SetString(PyExc_TypeError, "embedded null character");
+        return -2;
+    }
+
     err = _wstat(wpath, &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
     return err;
 #else
     int ret;
-    PyObject *bytes = PyUnicode_EncodeFSDefault(path);
+    PyObject *bytes;
+    char *cpath;
+
+    bytes = PyUnicode_EncodeFSDefault(path);
     if (bytes == NULL)
         return -2;
-    ret = stat(PyBytes_AS_STRING(bytes), statbuf);
+
+    /* check for embedded null bytes */
+    if (PyBytes_AsStringAndSize(bytes, &cpath, NULL) == -1) {
+        Py_DECREF(bytes);
+        return -2;
+    }
+
+    ret = stat(cpath, statbuf);
     Py_DECREF(bytes);
     return ret;
 #endif
@@ -1083,6 +1099,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
+    Py_ssize_t pathlen;
 
 #ifdef WITH_THREAD
     assert(PyGILState_Check());
@@ -1094,9 +1111,13 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-    wpath = PyUnicode_AsUnicode(path);
+    wpath = PyUnicode_AsUnicodeAndSize(path, &pathlen);
     if (wpath == NULL)
         return NULL;
+    if (wcslen(wpath) != pathlen) {
+        PyErr_SetString(PyExc_TypeError, "embedded null character");
+        return NULL;
+    }
 
     usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, sizeof(wmode));
     if (usize == 0) {
