@@ -1465,11 +1465,11 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
    Called unconditionally to implement attribute accesses for instances of the
    class. If the class also defines :meth:`__getattr__`, the latter will not be
-   called unless :meth:`__getattribute__` either calls it explicitly or raises an
-   :exc:`AttributeError`. This method should return the (computed) attribute value
-   or raise an :exc:`AttributeError` exception. In order to avoid infinite
-   recursion in this method, its implementation should always call the base class
-   method with the same name to access any attributes it needs, for example,
+   called unless :meth:`__getattribute__` raises an :exc:`AttributeError`. This
+   method should return the (computed) attribute value or raise an
+   :exc:`AttributeError` exception. In order to avoid infinite recursion in this
+   method, its implementation should always call the base class method with the
+   same name to access any attributes it needs, for example,
    ``object.__getattribute__(self, name)``.
 
    .. note::
