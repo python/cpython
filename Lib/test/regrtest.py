@@ -824,19 +824,24 @@ def main(tests=None, **kwargs):
                 print(fmt.format(
                     test_count_width, test_index, test_count, len(bad), test))
                 sys.stdout.flush()
+
+
+            def runtest_accumulate():
+                result = runtest(ns, test, ns.verbose, ns.quiet,
+                                 ns.huntrleaks,
+                                 output_on_failure=ns.verbose3,
+                                 timeout=ns.timeout, failfast=ns.failfast,
+                                 match_tests=ns.match_tests, pgo=ns.pgo)
+                accumulate_result(test, result)
+
             if ns.trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                tracer.runctx('runtest(ns, test, ns.verbose, ns.quiet, timeout=ns.timeout)',
+                tracer.runctx('runtest_accumulate()',
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(ns, test, ns.verbose, ns.quiet,
-                                     ns.huntrleaks,
-                                     output_on_failure=ns.verbose3,
-                                     timeout=ns.timeout, failfast=ns.failfast,
-                                     match_tests=ns.match_tests, pgo=ns.pgo)
-                    accumulate_result(test, result)
+                    runtest_accumulate()
                 except KeyboardInterrupt:
                     interrupted = True
                     break

@@ -696,6 +696,15 @@ class ArgsTestCase(BaseTestCase):
             regex = ('10 slowest tests:\n')
             self.check_line(output, regex)
 
+    def test_coverage(self):
+        # test --coverage
+        test = self.create_test('coverage')
+        output = self.run_tests("--coverage", test)
+        self.check_executed_tests(output, [test])
+        regex = (r'lines +cov% +module +\(path\)\n'
+                 r'(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
+        self.check_line(output, regex)
+
     def test_wait(self):
         # test --wait
         test = self.create_test('wait')
