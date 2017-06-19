@@ -252,6 +252,9 @@ Library
 Windows
 -------
 
+- bpo-30687: Locate msbuild.exe on Windows when building rather than
+  vcvarsall.bat
+
 - Issue #29392: Prevent crash when passing invalid arguments into msvcrt module.
 
 C API
