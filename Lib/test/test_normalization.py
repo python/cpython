@@ -40,6 +40,9 @@ class NormalizationTest(unittest.TestCase):
         try:
             testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
                                         check=check_version)
+        except PermissionError:
+            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
+                          f"into the test data directory")
         except (OSError, HTTPException):
             self.fail(f"Could not retrieve {TESTDATAURL}")
 
