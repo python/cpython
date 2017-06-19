@@ -121,6 +121,13 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = regrtest._parse_args([opt])
                 self.assertTrue(ns.randomize)
 
+    def test_randseed(self):
+        ns = libregrtest._parse_args(['--randseed', '12345'])
+        self.assertEqual(ns.random_seed, 12345)
+        self.assertTrue(ns.randomize)
+        self.checkError(['--randseed'], 'expected one argument')
+        self.checkError(['--randseed', 'foo'], 'invalid int value')
+
     def test_fromfile(self):
         for opt in '-f', '--fromfile':
             with self.subTest(opt=opt):
