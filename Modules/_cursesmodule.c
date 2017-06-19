@@ -341,6 +341,7 @@ static int
 PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
                          PyObject **bytes, wchar_t **wstr)
 {
+    char *str;
     if (PyUnicode_Check(obj)) {
 #ifdef HAVE_NCURSESW
         Py_ssize_t wlen;
@@ -360,12 +361,20 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
         *bytes = PyUnicode_AsEncodedString(obj, win->encoding, NULL);
         if (*bytes == NULL)
             return 0;
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            return 0;
+        }
         return 1;
 #endif
     }
     else if (PyBytes_Check(obj)) {
         Py_INCREF(obj);
         *bytes = obj;
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            return 0;
+        }
         return 1;
     }
 
