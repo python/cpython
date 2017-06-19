@@ -131,6 +131,7 @@ import importlib
 
 import argparse
 import builtins
+import datetime
 import faulthandler
 import io
 import json
@@ -262,7 +263,7 @@ def _create_parser():
                        help='display test output on failure')
     group.add_argument('-q', '--quiet', action='store_true',
                        help='no output unless one or more tests fail')
-    group.add_argument('-o', '--slow', action='store_true', dest='print_slow',
+    group.add_argument('-o', '--slowest', action='store_true', dest='print_slow',
                        help='print the slowest 10 tests')
     group.add_argument('--header', action='store_true',
                        help='print header with interpreter info')
@@ -334,6 +335,9 @@ def _create_parser():
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
                             'error happens')
+    group.add_argument('--list-tests', action='store_true',
+                       help="only write the name of tests that will be run, "
+                            "don't execute them")
     group.add_argument('--list-cases', action='store_true',
                        help='only write the name of test cases that will be run'
                             ' , don\'t execute them')
@@ -490,6 +494,10 @@ def run_test_in_subprocess(testname, ns):
 
 
 def setup_tests(ns):
+    if ns.testdir:
+        # Prepend test directory to sys.path, so runtest() will be able
+        # to locate tests
+        sys.path.insert(0, os.path.abspath(ns.testdir))
     if ns.huntrleaks:
         # Avoid false positives due to various caches
         # filling slowly with random data:
@@ -549,6 +557,8 @@ def main(tests=None, **kwargs):
     directly to set the values that would normally be set by flags
     on the command line.
     """
+    start_time = time.monotonic()
+
     # Display the Python traceback on fatal errors (e.g. segfault)
     faulthandler.enable(all_threads=True)
 
@@ -634,12 +644,15 @@ def main(tests=None, **kwargs):
     if ns.fromfile:
         tests = []
         with open(os.path.join(support.SAVEDCWD, ns.fromfile)) as fp:
-            count_pat = re.compile(r'\[\s*\d+/\s*\d+\]')
+            # regex to match 'test_builtin' in line:
+            # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
+            regex = re.compile(r'\btest_[a-zA-Z0-9_]+\b')
             for line in fp:
-                line = count_pat.sub('', line)
-                guts = line.split() # assuming no test has whitespace in its name
-                if guts and not guts[0].startswith('#'):
-                    tests.extend(guts)
+                line = line.split('#', 1)[0]
+                line = line.strip()
+                match = regex.search(line)
+                if match is not None:
+                    tests.append(match.group())
 
     # Strip .py extensions.
     removepy(ns.args)
@@ -682,9 +695,7 @@ def main(tests=None, **kwargs):
         random.shuffle(selected)
     if ns.trace:
         import trace, tempfile
-        tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
-                                         tempfile.gettempdir()],
-                             trace=False, count=True)
+        tracer = trace.Trace(trace=False, count=True)
 
     test_times = []
     support.verbose = ns.verbose      # Tell tests to be moderately quiet
@@ -697,7 +708,7 @@ def main(tests=None, **kwargs):
             test_times.append((test_time, test))
         if ok == PASSED:
             good.append(test)
-        elif ok == FAILED:
+        elif ok in (FAILED, CHILD_ERROR):
             bad.append(test)
         elif ok == ENV_CHANGED:
             environment_changed.append(test)
@@ -706,6 +717,13 @@ def main(tests=None, **kwargs):
         elif ok == RESOURCE_DENIED:
             skipped.append(test)
             resource_denieds.append(test)
+        elif ok != INTERRUPTED:
+            raise ValueError("invalid test result: %r" % ok)
+
+    if ns.list_tests:
+        for name in selected:
+            print(name)
+        sys.exit(0)
 
     if ns.list_cases:
         list_cases(ns, selected)
@@ -738,6 +756,27 @@ def main(tests=None, **kwargs):
         print("==  ", os.getcwd())
         print("Testing with flags:", sys.flags)
 
+    def display_progress(test_index, test):
+        if ns.quiet:
+            return
+
+        # "[ 51/405/1] test_tcl passed"
+        line = "{0:{1}}{2}".format(test_index, test_count_width, test_count)
+        if bad and not ns.pgo:
+            line = "{0}/{1}".format(line, len(bad))
+        line = "[{0}] {1}".format(line, test)
+
+        # add the system load prefix: "load avg: 1.80 "
+        if hasattr(os, 'getloadavg'):
+            load_avg_1min = os.getloadavg()[0]
+            line = "load avg: {0:.2f} {1}".format(load_avg_1min, line)
+
+        # add the timestamp prefix:  "0:01:05 "
+        test_time = time.monotonic() - start_time
+        test_time = datetime.timedelta(seconds=int(test_time))
+        line = "{0} {1}".format(test_time, line)
+        print(line, flush=True)
+
     if ns.use_mp:
         try:
             from threading import Thread
@@ -765,7 +804,7 @@ def main(tests=None, **kwargs):
                     if retcode != 0:
                         result = (CHILD_ERROR, "Exit code %s" % retcode)
                         output.put((test, stdout.rstrip(), stderr.rstrip(), result))
-                        return
+                        continue
                     if not result:
                         output.put((None, None, None, None))
                         return
@@ -786,14 +825,7 @@ def main(tests=None, **kwargs):
                     finished += 1
                     continue
                 accumulate_result(test, result)
-                if not ns.quiet:
-                    if bad and not ns.pgo:
-                        fmt = "[{1:{0}}{2}/{3}] {4}"
-                    else:
-                        fmt = "[{1:{0}}{2}] {4}"
-                    print(fmt.format(
-                        test_count_width, test_index, test_count,
-                        len(bad), test))
+                display_progress(test_index, test)
                 if stdout:
                     print(stdout)
                 if stderr and not ns.pgo:
@@ -802,8 +834,6 @@ def main(tests=None, **kwargs):
                 sys.stderr.flush()
                 if result[0] == INTERRUPTED:
                     raise KeyboardInterrupt
-                if result[0] == CHILD_ERROR:
-                    raise Exception("Child error on {}: {}".format(test, result[1]))
                 test_index += 1
         except KeyboardInterrupt:
             interrupted = True
@@ -812,27 +842,24 @@ def main(tests=None, **kwargs):
             worker.join()
     else:
         for test_index, test in enumerate(tests, 1):
-            if not ns.quiet:
-                if bad and not ns.pgo:
-                    fmt = "[{1:{0}}{2}/{3}] {4}"
-                else:
-                    fmt = "[{1:{0}}{2}] {4}"
-                print(fmt.format(
-                    test_count_width, test_index, test_count, len(bad), test))
-                sys.stdout.flush()
+            display_progress(test_index, test)
+
+            def runtest_accumulate():
+                result = runtest(ns, test, ns.verbose, ns.quiet,
+                                 ns.huntrleaks,
+                                 output_on_failure=ns.verbose3,
+                                 timeout=ns.timeout, failfast=ns.failfast,
+                                 match_tests=ns.match_tests, pgo=ns.pgo)
+                accumulate_result(test, result)
+
             if ns.trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                tracer.runctx('runtest(ns, test, ns.verbose, ns.quiet, timeout=ns.timeout)',
+                tracer.runctx('runtest_accumulate()',
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(ns, test, ns.verbose, ns.quiet,
-                                     ns.huntrleaks,
-                                     output_on_failure=ns.verbose3,
-                                     timeout=ns.timeout, failfast=ns.failfast,
-                                     match_tests=ns.match_tests, pgo=ns.pgo)
-                    accumulate_result(test, result)
+                    runtest_accumulate()
                 except KeyboardInterrupt:
                     interrupted = True
                     break
@@ -864,8 +891,8 @@ def main(tests=None, **kwargs):
     if ns.print_slow:
         test_times.sort(reverse=True)
         print("10 slowest tests:")
-        for time, test in test_times[:10]:
-            print("%s: %.1fs" % (test, time))
+        for test_time, test in test_times[:10]:
+            print("- %s: %.1fs" % (test, test_time))
     if bad and not ns.pgo:
         print(count(len(bad), "test"), "failed:")
         printlist(bad)
@@ -912,6 +939,14 @@ def main(tests=None, **kwargs):
 
     if ns.runleaks:
         os.system("leaks %d" % os.getpid())
+
+    if bad:
+        result = "FAILURE"
+    elif interrupted:
+        result = "INTERRUPTED"
+    else:
+        result = "SUCCESS"
+    print("Tests result: %s" % result)
 
     sys.exit(len(bad) > 0 or interrupted)
 
