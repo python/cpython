@@ -594,8 +594,14 @@ summary_setproperty(msiobj* si, PyObject *args)
         return NULL;
 
     if (PyUnicode_Check(data)) {
+        Py_ssize_t size;
+        WCHAR *value = PyUnicode_AsUnicodeAndSize(data, &size);
+        if (wcslen(value) != (size_t)size) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return NULL;
+        }
         status = MsiSummaryInfoSetPropertyW(si->h, field, VT_LPSTR,
-            0, NULL, PyUnicode_AsUnicode(data));
+            0, NULL, value);
     } else if (PyLong_CheckExact(data)) {
         long value = PyLong_AsLong(data);
         if (value == -1 && PyErr_Occurred()) {

@@ -845,13 +845,19 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
         return NULL;
 
     if (env_mapping != Py_None) {
+        Py_ssize_t size;
         environment = getenvironment(env_mapping);
-        if (! environment)
+        if (environment == NULL) {
             return NULL;
-        wenvironment = PyUnicode_AsUnicode(environment);
-        if (wenvironment == NULL)
-        {
-            Py_XDECREF(environment);
+        }
+        wenvironment = PyUnicode_AsUnicodeAndSize(environment, &size);
+        if (wenvironment == NULL) {
+            Py_DECREF(environment);
+            return NULL;
+        }
+        if (wcslen(wenvironment) != (size_t)size) {
+            Py_DECREF(environment);
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             return NULL;
         }
     }

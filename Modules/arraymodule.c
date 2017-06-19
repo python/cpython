@@ -2655,14 +2655,13 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_UNICODE *ustr;
                 Py_ssize_t n;
 
-                ustr = PyUnicode_AsUnicode(initial);
+                ustr = PyUnicode_AsUnicodeAndSize(initial, &n);
                 if (ustr == NULL) {
                     PyErr_NoMemory();
                     Py_DECREF(a);
                     return NULL;
                 }
 
-                n = PyUnicode_GET_DATA_SIZE(initial);
                 if (n > 0) {
                     arrayobject *self = (arrayobject *)a;
                     char *item = self->ob_item;

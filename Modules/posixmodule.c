@@ -3756,10 +3756,15 @@ os__getfinalpathname_impl(PyObject *module, PyObject *path)
     int result_length;
     PyObject *result;
     const wchar_t *path_wchar;
+    Py_ssize_t pathsize;
 
-    path_wchar = PyUnicode_AsUnicode(path);
+    path_wchar = PyUnicode_AsUnicodeAndSize(path, &pathsize);
     if (path_wchar == NULL)
         return NULL;
+    if (wcslen(path_wchar) != (size_t)pathsize) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
 
     hFile = CreateFileW(
         path_wchar,
@@ -7173,6 +7178,7 @@ static PyObject *
 win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const wchar_t *path;
+    Py_ssize_t pathsize;
     DWORD n_bytes_returned;
     DWORD io_result;
     PyObject *po, *result;
@@ -7191,9 +7197,13 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                           ))
         return NULL;
 
-    path = PyUnicode_AsUnicode(po);
+    path = PyUnicode_AsUnicodeAndSize(po, &pathsize);
     if (path == NULL)
         return NULL;
+    if (wcslen(path) != (size_t)pathsize) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -8984,22 +8994,27 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=ba586581c2e6105f]*/
 {
     const wchar_t *env;
+    Py_ssize_t size;
 
     PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
     if (unicode == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
-    if (_MAX_ENV < PyUnicode_GET_LENGTH(unicode)) {
+
+    env = PyUnicode_AsUnicodeAndSize(uncode, &size);
+    if (env == NULL)
+        goto error;
+    if (size > _MAX_ENV) {
         PyErr_Format(PyExc_ValueError,
                      "the environment variable is longer than %u characters",
                      _MAX_ENV);
         goto error;
     }
-
-    env = PyUnicode_AsUnicode(unicode);
-    if (env == NULL)
+    if (wcslen(env) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto error;
+    }
+
     if (_wputenv(env)) {
         posix_error();
         goto error;

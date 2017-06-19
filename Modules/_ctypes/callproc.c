@@ -1253,12 +1253,18 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     PyObject *nameobj;
     PyObject *ignored;
     HMODULE hMod;
-    if (!PyArg_ParseTuple(args, "O|O:LoadLibrary", &nameobj, &ignored))
+    Py_ssize_t namesize;
+
+    if (!PyArg_ParseTuple(args, "U|O:LoadLibrary", &nameobj, &ignored))
         return NULL;
 
-    name = PyUnicode_AsUnicode(nameobj);
+    name = PyUnicode_AsUnicodeAndSize(nameobj, &namesize);
     if (!name)
         return NULL;
+    if (wcslen(name) != (size_t)namesize) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
 
     hMod = LoadLibraryW(name);
     if (!hMod)
