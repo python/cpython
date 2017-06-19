@@ -1,6 +1,6 @@
 '''Test idlelib.textview.
 
-Since all methods and functions create (or destroy) a TextViewer, which
+Since all methods and functions create (or destroy) a TextviewWindow, which
 is a widget containing multiple widgets, all tests must be gui tests.
 Using mock Text would not change this.  Other mocks are used to retrieve
 information about calls.
@@ -13,7 +13,8 @@ requires('gui')
 
 import unittest
 import os
-from tkinter import Tk, Button
+from tkinter import Tk
+from tkinter.ttk import Button
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
 
@@ -28,12 +29,12 @@ def tearDownModule():
     root.destroy()  # Pyflakes falsely sees root as undefined.
     del root
 
-# If we call TextViewer or wrapper functions with defaults
+# If we call TextviewWindow or wrapper functions with defaults
 # modal=True, _utest=False, test hangs on call to wait_window.
 # Have also gotten tk error 'can't invoke "event" command'.
 
 
-class TV(tv.TextViewer):  # Used in TextViewTest.
+class TV(tv.TextviewWindow):  # Used in TextViewTest.
     transient = Func()
     grab_set = Func()
     wait_window = Func()
@@ -70,7 +71,28 @@ class TextViewTest(unittest.TestCase):
         view.destroy()
 
 
-# Call TextViewer with modal=False.
+class TextviewFrameTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        "By itself, this tests that file parsed without exception."
+        cls.root = root = Tk()
+        root.withdraw()
+        cls.frame = tv.TextviewFrame(root, 'test text')
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.frame
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def test_line1(self):
+        text = self.frame.text
+        self.assertEqual(text.get('1.0', '1.end'), 'test text')
+
+
+# Call TextviewWindow with modal=False.
 class ViewFunctionTest(unittest.TestCase):
 
     @classmethod
@@ -85,13 +107,15 @@ class ViewFunctionTest(unittest.TestCase):
 
     def test_view_text(self):
         view = tv.view_text(root, 'Title', 'test text', modal=False)
-        self.assertIsInstance(view, tv.TextViewer)
+        self.assertIsInstance(view, tv.TextviewWindow)
+        self.assertIsInstance(view.textframe, tv.TextviewFrame)
         view.ok()
 
     def test_view_file(self):
         view = tv.view_file(root, 'Title', __file__, modal=False)
-        self.assertIsInstance(view, tv.TextViewer)
-        self.assertIn('Test', view.text.get('1.0', '1.end'))
+        self.assertIsInstance(view, tv.TextviewWindow)
+        self.assertIsInstance(view.textframe, tv.TextviewFrame)
+        self.assertIn('Test', view.textframe.text.get('1.0', '1.end'))
         view.ok()
 
     def test_bad_file(self):
@@ -109,8 +133,7 @@ class ViewFunctionTest(unittest.TestCase):
         self.assertEqual(tv.showerror.title, 'Unicode Decode Error')
 
 
-
-# Call TextViewer with _utest=True.
+# Call TextviewWindow with _utest=True.
 class ButtonClickTest(unittest.TestCase):
 
     def setUp(self):
@@ -131,7 +154,7 @@ class ButtonClickTest(unittest.TestCase):
 
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_TEXT')
-        self.assertEqual(self.view.text.get('1.0', '1.end'), 'COMMAND')
+        self.assertEqual(self.view.textframe.text.get('1.0', '1.end'), 'COMMAND')
 
     def test_view_file_bind_with_button(self):
         def _command():
@@ -144,10 +167,10 @@ class ButtonClickTest(unittest.TestCase):
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_FILE')
         with open(__file__) as f:
-            self.assertEqual(self.view.text.get('1.0', '1.end'),
+            self.assertEqual(self.view.textframe.text.get('1.0', '1.end'),
                              f.readline().strip())
             f.readline()
-            self.assertEqual(self.view.text.get('3.0', '3.end'),
+            self.assertEqual(self.view.textframe.text.get('3.0', '3.end'),
                              f.readline().strip())
 
 
