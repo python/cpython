@@ -641,12 +641,15 @@ def main(tests=None, **kwargs):
     if ns.fromfile:
         tests = []
         with open(os.path.join(support.SAVEDCWD, ns.fromfile)) as fp:
-            count_pat = re.compile(r'\[\s*\d+/\s*\d+\]')
+            # regex to match 'test_builtin' in line:
+            # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
+            regex = re.compile(r'\btest_[a-zA-Z0-9_]+\b')
             for line in fp:
-                line = count_pat.sub('', line)
-                guts = line.split() # assuming no test has whitespace in its name
-                if guts and not guts[0].startswith('#'):
-                    tests.extend(guts)
+                line = line.split('#', 1)[0]
+                line = line.strip()
+                match = regex.search(line)
+                if match is not None:
+                    tests.append(match.group())
 
     # Strip .py extensions.
     removepy(ns.args)
