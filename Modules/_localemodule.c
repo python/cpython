@@ -224,7 +224,7 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
                         "embedded null character");
         goto done;
     }
-    ws2 = PyUnicode_AsWideCharString(os2, NULL);
+    ws2 = PyUnicode_AsWideCharString(os2, &wlen);
     if (ws2 == NULL)
         goto done;
     if (wcslen(ws2) != (size_t)wlen) {
