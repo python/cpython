@@ -490,6 +490,10 @@ def run_test_in_subprocess(testname, ns):
 
 
 def setup_tests(ns):
+    if ns.testdir:
+        # Prepend test directory to sys.path, so runtest() will be able
+        # to locate tests
+        sys.path.insert(0, os.path.abspath(ns.testdir))
     if ns.huntrleaks:
         # Avoid false positives due to various caches
         # filling slowly with random data:
