@@ -717,7 +717,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     wpath = PyUnicode_AsUnicodeAndSize(path, &pathlen);
     if (wpath == NULL)
         return -2;
-    if (wcslen(wpath) != pathlen) {
+    if (wcslen(wpath) != (size_t)pathlen) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         return -2;
     }
@@ -1114,7 +1114,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     wpath = PyUnicode_AsUnicodeAndSize(path, &pathlen);
     if (wpath == NULL)
         return NULL;
-    if (wcslen(wpath) != pathlen) {
+    if (wcslen(wpath) != (size_t)pathlen) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
