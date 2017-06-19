@@ -131,6 +131,7 @@ import importlib
 
 import argparse
 import builtins
+import datetime
 import faulthandler
 import io
 import json
@@ -556,6 +557,8 @@ def main(tests=None, **kwargs):
     directly to set the values that would normally be set by flags
     on the command line.
     """
+    start_time = time.monotonic()
+
     # Display the Python traceback on fatal errors (e.g. segfault)
     faulthandler.enable(all_threads=True)
 
@@ -755,6 +758,27 @@ def main(tests=None, **kwargs):
         print("==  ", os.getcwd())
         print("Testing with flags:", sys.flags)
 
+    def display_progress(test_index, test):
+        if ns.quiet:
+            return
+
+        # "[ 51/405/1] test_tcl passed"
+        line = "{0:{1}}{2}".format(test_index, test_count_width, test_count)
+        if bad and not ns.pgo:
+            line = "{0}/{1}".format(line, len(bad))
+        line = "[{0}] {1}".format(line, test)
+
+        # add the system load prefix: "load avg: 1.80 "
+        if hasattr(os, 'getloadavg'):
+            load_avg_1min = os.getloadavg()[0]
+            line = "load avg: {0:.2f} {1}".format(load_avg_1min, line)
+
+        # add the timestamp prefix:  "0:01:05 "
+        test_time = time.monotonic() - start_time
+        test_time = datetime.timedelta(seconds=int(test_time))
+        line = "{0} {1}".format(test_time, line)
+        print(line, flush=True)
+
     if ns.use_mp:
         try:
             from threading import Thread
@@ -803,14 +827,7 @@ def main(tests=None, **kwargs):
                     finished += 1
                     continue
                 accumulate_result(test, result)
-                if not ns.quiet:
-                    if bad and not ns.pgo:
-                        fmt = "[{1:{0}}{2}/{3}] {4}"
-                    else:
-                        fmt = "[{1:{0}}{2}] {4}"
-                    print(fmt.format(
-                        test_count_width, test_index, test_count,
-                        len(bad), test))
+                display_progress(test_index, test)
                 if stdout:
                     print(stdout)
                 if stderr and not ns.pgo:
@@ -827,15 +844,7 @@ def main(tests=None, **kwargs):
             worker.join()
     else:
         for test_index, test in enumerate(tests, 1):
-            if not ns.quiet:
-                if bad and not ns.pgo:
-                    fmt = "[{1:{0}}{2}/{3}] {4}"
-                else:
-                    fmt = "[{1:{0}}{2}] {4}"
-                print(fmt.format(
-                    test_count_width, test_index, test_count, len(bad), test))
-                sys.stdout.flush()
-
+            display_progress(test_index, test)
 
             def runtest_accumulate():
                 result = runtest(ns, test, ns.verbose, ns.quiet,
@@ -884,8 +893,8 @@ def main(tests=None, **kwargs):
     if ns.print_slow:
         test_times.sort(reverse=True)
         print("10 slowest tests:")
-        for time, test in test_times[:10]:
-            print("- %s: %.1fs" % (test, time))
+        for test_time, test in test_times[:10]:
+            print("- %s: %.1fs" % (test, test_time))
     if bad and not ns.pgo:
         print(count(len(bad), "test"), "failed:")
         printlist(bad)
