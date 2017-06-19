@@ -1336,7 +1336,7 @@ Clear the internal type lookup cache.");
 static PyObject *
 sys_is_finalizing(PyObject* self, PyObject* args)
 {
-    return PyBool_FromLong(_Py_Finalizing != NULL);
+    return PyBool_FromLong(_Py_IS_FINALIZING());
 }
 
 PyDoc_STRVAR(is_finalizing_doc,

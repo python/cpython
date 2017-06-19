@@ -53,7 +53,7 @@ get_warnings_attr(const char *attr, int try_import)
     }
 
     /* don't try to import after the start of the Python finallization */
-    if (try_import && _Py_Finalizing == NULL) {
+    if (try_import && !_Py_IS_FINALIZING()) {
         warnings_module = PyImport_Import(warnings_str);
         if (warnings_module == NULL) {
             /* Fallback to the C implementation if we cannot get

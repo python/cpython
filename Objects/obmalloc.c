@@ -914,7 +914,8 @@ the prevpool member.
 #define PTA(x)  ((poolp )((uint8_t *)&(usedpools[2*(x)]) - 2*sizeof(block *)))
 #define PT(x)   PTA(x), PTA(x)
 
-static poolp usedpools[2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8] = {
+#define MAX_POOLS  (2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8)
+static poolp usedpools[MAX_POOLS] = {
     PT(0), PT(1), PT(2), PT(3), PT(4), PT(5), PT(6), PT(7)
 #if NB_SMALL_SIZE_CLASSES > 8
     , PT(8), PT(9), PT(10), PT(11), PT(12), PT(13), PT(14), PT(15)

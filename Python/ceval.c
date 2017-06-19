@@ -279,7 +279,7 @@ PyEval_RestoreThread(PyThreadState *tstate)
         int err = errno;
         take_gil(tstate);
         /* _Py_Finalizing is protected by the GIL */
-        if (_Py_Finalizing && tstate != _Py_Finalizing) {
+        if (_Py_IS_FINALIZING() && !_Py_CURRENTLY_FINALIZING(tstate)) {
             drop_gil(tstate);
             PyThread_exit_thread();
             assert(0);  /* unreachable */
@@ -992,7 +992,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 take_gil(tstate);
 
                 /* Check if we should make a quick exit. */
-                if (_Py_Finalizing && _Py_Finalizing != tstate) {
+                if (_Py_IS_FINALIZING() && !_Py_CURRENTLY_FINALIZING(tstate)) {
                     drop_gil(tstate);
                     PyThread_exit_thread();
                 }
