@@ -184,6 +184,14 @@ typedef struct _ts {
 } PyThreadState;
 #endif
 
+#ifndef Py_LIMITED_API
+#else
+typedef struct {
+    // XXX Consolidate globals found via the check-c-globals script.
+} _PyRuntimeState;
+
+PyAPI_DATA(_PyRuntimeState) _PyRuntime;
+#endif
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyInterpreterState_Init(void);
