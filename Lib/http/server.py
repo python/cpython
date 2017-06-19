@@ -748,22 +748,25 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 encodings.append(encoding if encoding != "*" else "gzip")
 
             if ctype in self.compressed_types and "gzip" in encodings:
-                self.send_header("Content-Encoding", "gzip")
                 if content_length < 2 << 18:
                     # for small files, load content in memory
                     content = gzip.compress(f.read())
                     content_length = len(content)
                     f = io.BytesIO(content)
+                    self.send_header("Content-Encoding", "gzip")
                 else:
                     # for large files, store zipped content in a 
                     # temporary file
-                    dest = tempfile.TemporaryFile()
-                    with gzip.GzipFile(fileobj=dest, mode="wb") as f_gz:
-                        shutil.copyfileobj(f, f_gz)
-                    content_length = dest.tell()
-                    f = dest
-                    f.seek(0)
-                        
+                    try:
+                        dest = tempfile.TemporaryFile()
+                        with gzip.GzipFile(fileobj=dest, mode="wb") as f_gz:
+                            shutil.copyfileobj(f, f_gz)
+                        content_length = dest.tell()
+                        f = dest
+                        f.seek(0)
+                        self.send_header("Content-Encoding", "gzip")
+                    except IOError:
+                        pass
             self.send_header("Content-Length", content_length)
             self.end_headers()
             return f
