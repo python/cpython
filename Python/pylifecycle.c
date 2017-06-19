@@ -77,6 +77,16 @@ extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
 extern void _PyGILState_Fini(void);
 #endif /* WITH_THREAD */
 
+_PyRuntimeState _PyRuntime = {};
+
+void
+_PyRuntime_Init(void)
+{
+    _PyRuntimeState initial = {};
+
+    _PyRuntime = initial;
+}
+
 /* Global configuration variable declarations are in pydebug.h */
 /* XXX (ncoghlan): move those declarations to pylifecycle.h? */
 int Py_DebugFlag; /* Needed by parser.c */
@@ -100,8 +110,6 @@ int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
 
-PyThreadState *_Py_Finalizing = NULL;
-
 /* Hack to force loading of object files */
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
     PyOS_mystrnicmp; /* Python/pystrcmp.o */
@@ -120,7 +128,6 @@ PyModule_GetWarningsModule(void)
  * Can be called prior to Py_Initialize.
  */
 int _Py_CoreInitialized = 0;
-int _Py_Initialized = 0;
 
 int
 _Py_IsCoreInitialized(void)
@@ -131,7 +138,7 @@ _Py_IsCoreInitialized(void)
 int
 Py_IsInitialized(void)
 {
-    return _Py_Initialized;
+    return _PyRuntime.initialized;
 }
 
 /* Helper to allow an embedding application to override the normal
@@ -544,11 +551,13 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     _PyCoreConfig core_config = _PyCoreConfig_INIT;
     _PyMainInterpreterConfig preinit_config = _PyMainInterpreterConfig_INIT;
 
+    _PyRuntime_Init();
+
     if (config != NULL) {
         core_config = *config;
     }
 
-    if (_Py_Initialized) {
+    if (_PyRuntime.initialized) {
         Py_FatalError("Py_InitializeCore: main interpreter already initialized");
     }
     if (_Py_CoreInitialized) {
@@ -564,7 +573,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
      * threads still hanging around from a previous Py_Initialize/Finalize
      * pair :(
      */
-    _Py_Finalizing = NULL;
+    _PyRuntime.finalizing = NULL;
 
 #ifdef __ANDROID__
     /* Passing "" to setlocale() on Android requests the C locale rather
@@ -742,7 +751,7 @@ int _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     if (!_Py_CoreInitialized) {
         Py_FatalError("Py_InitializeMainInterpreter: runtime core not initialized");
     }
-    if (_Py_Initialized) {
+    if (_PyRuntime.initialized) {
         Py_FatalError("Py_InitializeMainInterpreter: main interpreter already initialized");
     }
 
@@ -763,7 +772,7 @@ int _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
          * This means anything which needs support from extension modules
          * or pure Python code in the standard library won't work.
          */
-        _Py_Initialized = 1;
+        _PyRuntime.initialized = 1;
         return 0;
     }
     /* TODO: Report exceptions rather than fatal errors below here */
@@ -808,7 +817,7 @@ int _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         Py_XDECREF(warnings_module);
     }
 
-    _Py_Initialized = 1;
+    _PyRuntime.initialized = 1;
 
     if (!Py_NoSiteFlag)
         initsite(); /* Module site */
@@ -924,7 +933,7 @@ Py_FinalizeEx(void)
     PyThreadState *tstate;
     int status = 0;
 
-    if (!_Py_Initialized)
+    if (!_PyRuntime.initialized)
         return status;
 
     wait_for_thread_shutdown();
@@ -946,8 +955,8 @@ Py_FinalizeEx(void)
 
     /* Remaining threads (e.g. daemon threads) will automatically exit
        after taking the GIL (in PyEval_RestoreThread()). */
-    _Py_Finalizing = tstate;
-    _Py_Initialized = 0;
+    _PyRuntime.finalizing = tstate;
+    _PyRuntime.initialized = 0;
     _Py_CoreInitialized = 0;
 
     /* Flush sys.stdout and sys.stderr */
@@ -1139,7 +1148,7 @@ Py_NewInterpreter(void)
     PyThreadState *tstate, *save_tstate;
     PyObject *bimod, *sysmod;
 
-    if (!_Py_Initialized)
+    if (!_PyRuntime.initialized)
         Py_FatalError("Py_NewInterpreter: call Py_Initialize first");
 
 #ifdef WITH_THREAD
@@ -1854,20 +1863,19 @@ exit:
 #  include "pythread.h"
 #endif
 
-static void (*pyexitfunc)(void) = NULL;
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(void))
 {
-    pyexitfunc = func;
+    _PyRuntime.pyexitfunc = func;
 }
 
 static void
 call_py_exitfuncs(void)
 {
-    if (pyexitfunc == NULL)
+    if (_PyRuntime.pyexitfunc == NULL)
         return;
 
-    (*pyexitfunc)();
+    (*_PyRuntime.pyexitfunc)();
     PyErr_Clear();
 }
 
@@ -1900,22 +1908,19 @@ wait_for_thread_shutdown(void)
 }
 
 #define NEXITFUNCS 32
-static void (*exitfuncs[NEXITFUNCS])(void);
-static int nexitfuncs = 0;
-
 int Py_AtExit(void (*func)(void))
 {
-    if (nexitfuncs >= NEXITFUNCS)
+    if (_PyRuntime.nexitfuncs >= NEXITFUNCS)
         return -1;
-    exitfuncs[nexitfuncs++] = func;
+    _PyRuntime.exitfuncs[_PyRuntime.nexitfuncs++] = func;
     return 0;
 }
 
 static void
 call_ll_exitfuncs(void)
 {
-    while (nexitfuncs > 0)
-        (*exitfuncs[--nexitfuncs])();
+    while (_PyRuntime.nexitfuncs > 0)
+        (*_PyRuntime.exitfuncs[--_PyRuntime.nexitfuncs])();
 
     fflush(stdout);
     fflush(stderr);

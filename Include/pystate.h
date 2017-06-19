@@ -185,8 +185,17 @@ typedef struct _ts {
 #endif
 
 #ifndef Py_LIMITED_API
-#else
 typedef struct {
+
+    // Python/pylifecycle.c
+    int initialized;
+    PyThreadState *finalizing;
+//    wchar_t env_home[MAXPATHLEN+1];
+#define NEXITFUNCS 32
+    void (*exitfuncs[NEXITFUNCS])(void);
+    int nexitfuncs;
+    void (*pyexitfunc)(void);
+
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
