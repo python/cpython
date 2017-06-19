@@ -152,7 +152,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
         # embedded null character
-        self.assertRaises(TypeError, __import__, 'a\x00b')
+        self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
 
     def test_abs(self):
         # int
@@ -1013,8 +1013,8 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(fp.read(1000), 'YYY'*100)
 
         # embedded null character
-        self.assertRaises(TypeError, open, b'a\x00b')
-        self.assertRaises(TypeError, open, 'a\x00b')
+        self.assertRaises(ValueError, open, b'a\x00b')
+        self.assertRaises(ValueError, open, 'a\x00b')
 
     def test_open_default_encoding(self):
         old_environ = dict(os.environ)

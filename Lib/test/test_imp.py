@@ -315,8 +315,8 @@ class ImportTests(unittest.TestCase):
         loader.get_data(imp.__file__)  # Will need to create a newly opened file
 
     def test_load_source(self):
-        self.assertRaisesRegex(TypeError, 'embedded NUL character',
-                               imp.load_source, __name__, __file__ + "\0")
+        with self.assertRaisesRegex(ValueError, 'embedded null byte'):
+            imp.load_source(__name__, __file__ + "\0")
 
 
 class ReloadTests(unittest.TestCase):
