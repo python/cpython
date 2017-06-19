@@ -83,12 +83,12 @@ unicode_center(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|O&:center",
-        &width, convert_uc, &fillchar)) {
+    if (!_PyArg_NoStackKeywords("center", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("center", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "n|O&:center",
+        &width, convert_uc, &fillchar)) {
         goto exit;
     }
     return_value = unicode_center_impl(self, width, fillchar);
@@ -435,12 +435,12 @@ unicode_ljust(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|O&:ljust",
-        &width, convert_uc, &fillchar)) {
+    if (!_PyArg_NoStackKeywords("ljust", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ljust", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "n|O&:ljust",
+        &width, convert_uc, &fillchar)) {
         goto exit;
     }
     return_value = unicode_ljust_impl(self, width, fillchar);
@@ -487,13 +487,13 @@ unicode_strip(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *return_value = NULL;
     PyObject *chars = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "strip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_NoStackKeywords("strip", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("strip", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "strip",
+        0, 1,
+        &chars)) {
         goto exit;
     }
     return_value = unicode_strip_impl(self, chars);
@@ -522,13 +522,13 @@ unicode_lstrip(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_NoStackKeywords("lstrip", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lstrip", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
+        0, 1,
+        &chars)) {
         goto exit;
     }
     return_value = unicode_lstrip_impl(self, chars);
@@ -557,13 +557,13 @@ unicode_rstrip(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_NoStackKeywords("rstrip", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("rstrip", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
+        0, 1,
+        &chars)) {
         goto exit;
     }
     return_value = unicode_rstrip_impl(self, chars);
@@ -600,12 +600,12 @@ unicode_replace(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *new;
     Py_ssize_t count = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "UU|n:replace",
-        &old, &new, &count)) {
+    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "UU|n:replace",
+        &old, &new, &count)) {
         goto exit;
     }
     return_value = unicode_replace_impl(self, old, new, count);
@@ -635,12 +635,12 @@ unicode_rjust(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|O&:rjust",
-        &width, convert_uc, &fillchar)) {
+    if (!_PyArg_NoStackKeywords("rjust", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("rjust", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "n|O&:rjust",
+        &width, convert_uc, &fillchar)) {
         goto exit;
     }
     return_value = unicode_rjust_impl(self, width, fillchar);
@@ -840,12 +840,12 @@ unicode_maketrans(void *null, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *y = NULL;
     PyObject *z = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|UU:maketrans",
-        &x, &y, &z)) {
+    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|UU:maketrans",
+        &x, &y, &z)) {
         goto exit;
     }
     return_value = unicode_maketrans_impl(x, y, z);
@@ -962,4 +962,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=88b06f61edd282f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=339a83c0c100dd17 input=a9049054013a1b77]*/

@@ -194,7 +194,7 @@ _PyImport_ReleaseLock(void)
     return 1;
 }
 
-/* This function is called from PyOS_AfterFork to ensure that newly
+/* This function is called from PyOS_AfterFork_Child to ensure that newly
    created child processes do not share locks with the parent.
    We now acquire the import lock around fork() calls but on some platforms
    (Solaris 9 and earlier? see isue7242) that still left us with problems. */
@@ -1784,9 +1784,13 @@ PyImport_Import(PyObject *module_name)
     Py_DECREF(r);
 
     modules = PyImport_GetModuleDict();
-    r = PyDict_GetItem(modules, module_name);
-    if (r != NULL)
+    r = PyDict_GetItemWithError(modules, module_name);
+    if (r != NULL) {
         Py_INCREF(r);
+    }
+    else if (!PyErr_Occurred()) {
+        PyErr_SetObject(PyExc_KeyError, module_name);
+    }
 
   err:
     Py_XDECREF(globals);

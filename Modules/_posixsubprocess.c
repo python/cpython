@@ -559,9 +559,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
     Py_ssize_t arg_num;
-#ifdef WITH_THREAD
-    int import_lock_held = 0;
-#endif
+    int need_after_fork = 0;
 
     if (!PyArg_ParseTuple(
             args, "OOpO!OOiiiiiiiiiiO:fork_exec",
@@ -653,16 +651,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             goto cleanup;
     }
 
-    if (preexec_fn != Py_None) {
-        preexec_fn_args_tuple = PyTuple_New(0);
-        if (!preexec_fn_args_tuple)
-            goto cleanup;
-#ifdef WITH_THREAD
-        _PyImport_AcquireLock();
-        import_lock_held = 1;
-#endif
-    }
-
     if (cwd_obj != Py_None) {
         if (PyUnicode_FSConverter(cwd_obj, &cwd_obj2) == 0)
             goto cleanup;
@@ -670,6 +658,17 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     } else {
         cwd = NULL;
         cwd_obj2 = NULL;
+    }
+
+    /* This must be the last thing done before fork() because we do not
+     * want to call PyOS_BeforeFork() if there is any chance of another
+     * error leading to the cleanup: code without calling fork(). */
+    if (preexec_fn != Py_None) {
+        preexec_fn_args_tuple = PyTuple_New(0);
+        if (!preexec_fn_args_tuple)
+            goto cleanup;
+        PyOS_BeforeFork();
+        need_after_fork = 1;
     }
 
     pid = fork();
@@ -686,7 +685,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
              * This call may not be async-signal-safe but neither is calling
              * back into Python.  The user asked us to use hope as a strategy
              * to avoid deadlock... */
-            PyOS_AfterFork();
+            PyOS_AfterFork_Child();
         }
 
         child_exec(exec_array, argv, envp, cwd,
@@ -703,17 +702,10 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         /* Capture the errno exception before errno can be clobbered. */
         PyErr_SetFromErrno(PyExc_OSError);
     }
-#ifdef WITH_THREAD
-    if (preexec_fn != Py_None
-        && _PyImport_ReleaseLock() < 0 && !PyErr_Occurred()) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        pid = -1;
-    }
-    import_lock_held = 0;
-#endif
 
     /* Parent process */
+    if (need_after_fork)
+        PyOS_AfterFork_Parent();
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)
@@ -733,10 +725,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     return PyLong_FromPid(pid);
 
 cleanup:
-#ifdef WITH_THREAD
-    if (import_lock_held)
-        _PyImport_ReleaseLock();
-#endif
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)

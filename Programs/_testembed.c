@@ -1,4 +1,5 @@
 #include <Python.h>
+#include <inttypes.h>
 #include <stdio.h>
 
 /*********************************************************
@@ -22,9 +23,13 @@ static void _testembed_Py_Initialize(void)
 
 static void print_subinterp(void)
 {
-    /* Just output some debug stuff */
+    /* Output information about the interpreter in the format
+       expected in Lib/test/test_capi.py (test_subinterps). */
     PyThreadState *ts = PyThreadState_Get();
-    printf("interp %p, thread state %p: ", ts->interp, ts);
+    PyInterpreterState *interp = ts->interp;
+    int64_t id = PyInterpreterState_GetID(interp);
+    printf("interp %" PRId64 " <0x%" PRIXPTR ">, thread state <0x%" PRIXPTR ">: ",
+            id, (uintptr_t)interp, (uintptr_t)ts);
     fflush(stdout);
     PyRun_SimpleString(
         "import sys;"

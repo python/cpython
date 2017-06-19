@@ -1618,21 +1618,15 @@ _clear_pending_signals(void)
 }
 
 void
-PyOS_AfterFork(void)
+_PySignal_AfterFork(void)
 {
     /* Clear the signal flags after forking so that they aren't handled
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
 #ifdef WITH_THREAD
-    /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
-     * can be called safely. */
-    PyThread_ReInitTLS();
-    _PyGILState_Reinit();
-    PyEval_ReInitThreads();
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
-    _PyImport_ReInitLock();
 #endif
 }
 

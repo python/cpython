@@ -44,6 +44,16 @@ class TestAbstractContextManager(unittest.TestCase):
 
         self.assertTrue(issubclass(DefaultEnter, AbstractContextManager))
 
+        class NoEnter(ManagerFromScratch):
+            __enter__ = None
+
+        self.assertFalse(issubclass(NoEnter, AbstractContextManager))
+
+        class NoExit(ManagerFromScratch):
+            __exit__ = None
+
+        self.assertFalse(issubclass(NoExit, AbstractContextManager))
+
 
 class ContextManagerTestCase(unittest.TestCase):
 

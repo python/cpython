@@ -1,7 +1,9 @@
 """Simple text browser for IDLE
 
 """
-from tkinter import *
+from tkinter import Toplevel, Frame, Button, Text
+from tkinter import DISABLED, SUNKEN, VERTICAL, WORD
+from tkinter import RIGHT, LEFT, TOP, BOTTOM, BOTH, X, Y
 from tkinter.ttk import Scrollbar
 from tkinter.messagebox import showerror
 
@@ -16,6 +18,9 @@ class TextViewer(Toplevel):
         If modal is left True, users cannot interact with other windows
         until the textview window is closed.
 
+        parent - parent of this dialog
+        title - string which is title of popup dialog
+        text - text to display in dialog
         _htest - bool; change box location when running htest.
         _utest - bool; don't wait_window when running unittest.
         """
@@ -29,16 +34,16 @@ class TextViewer(Toplevel):
         self.bg = '#ffffff'
         self.fg = '#000000'
 
-        self.CreateWidgets()
+        self.create_widgets()
         self.title(title)
-        self.protocol("WM_DELETE_WINDOW", self.Ok)
+        self.protocol("WM_DELETE_WINDOW", self.ok)
         self.parent = parent
-        self.textView.focus_set()
+        self.text.focus_set()
         # Bind keys for closing this dialog.
-        self.bind('<Return>',self.Ok)
-        self.bind('<Escape>',self.Ok)
-        self.textView.insert(0.0, text)
-        self.textView.config(state=DISABLED)
+        self.bind('<Return>', self.ok)
+        self.bind('<Escape>', self.ok)
+        self.text.insert(0.0, text)
+        self.text.config(state=DISABLED)
 
         if modal:
             self.transient(parent)
@@ -46,34 +51,48 @@ class TextViewer(Toplevel):
             if not _utest:
                 self.wait_window()
 
-    def CreateWidgets(self):
+    def create_widgets(self):
         "Create Frame with Text (with vertical Scrollbar) and Button."
-        frameText = Frame(self, relief=SUNKEN, height=700)
-        frameButtons = Frame(self)
-        self.buttonOk = Button(frameButtons, text='Close',
-                               command=self.Ok, takefocus=FALSE)
-        self.scrollbarView = Scrollbar(frameText, orient=VERTICAL,
-                                       takefocus=FALSE)
-        self.textView = Text(frameText, wrap=WORD, highlightthickness=0,
+        frame = Frame(self, relief=SUNKEN, height=700)
+        frame_buttons = Frame(self)
+        self.button_ok = Button(frame_buttons, text='Close',
+                                command=self.ok, takefocus=False)
+        self.scrollbar = Scrollbar(frame, orient=VERTICAL, takefocus=False)
+        self.text = Text(frame, wrap=WORD, highlightthickness=0,
                              fg=self.fg, bg=self.bg)
-        self.scrollbarView.config(command=self.textView.yview)
-        self.textView.config(yscrollcommand=self.scrollbarView.set)
-        self.buttonOk.pack()
-        self.scrollbarView.pack(side=RIGHT,fill=Y)
-        self.textView.pack(side=LEFT,expand=TRUE,fill=BOTH)
-        frameButtons.pack(side=BOTTOM,fill=X)
-        frameText.pack(side=TOP,expand=TRUE,fill=BOTH)
+        self.scrollbar.config(command=self.text.yview)
+        self.text.config(yscrollcommand=self.scrollbar.set)
+        
+        self.button_ok.pack()
+        self.scrollbar.pack(side=RIGHT, fill=Y)
+        self.text.pack(side=LEFT, expand=True, fill=BOTH)
+        frame_buttons.pack(side=BOTTOM, fill=X)
+        frame.pack(side=TOP, expand=True, fill=BOTH)
 
-    def Ok(self, event=None):
+    def ok(self, event=None):
+        """Dismiss text viewer dialog."""
         self.destroy()
 
 
 def view_text(parent, title, text, modal=True, _utest=False):
-    "Display text in a TextViewer."
+    """Create TextViewer for given text.
+
+    parent - parent of this dialog
+    title - string which is the title of popup dialog
+    text - text to display in this dialog
+    modal - controls if users can interact with other windows while this
+            dialog is displayed
+    _utest - bool; controls wait_window on unittest
+    """
     return TextViewer(parent, title, text, modal, _utest=_utest)
 
+
 def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
-    "Display file in a TextViever or show error message."
+    """Create TextViewer for text in filename.
+
+    Return error message if file cannot be read.  Otherwise calls view_text
+    with contents of the file.
+    """
     try:
         with open(filename, 'r', encoding=encoding) as file:
             contents = file.read()

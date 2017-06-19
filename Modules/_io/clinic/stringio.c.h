@@ -59,12 +59,12 @@ _io_StringIO_read(stringio *self, PyObject **args, Py_ssize_t nargs, PyObject *k
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _Py_convert_optional_to_ssize_t, &size)) {
+    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("read", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
     return_value = _io_StringIO_read_impl(self, size);
@@ -93,12 +93,12 @@ _io_StringIO_readline(stringio *self, PyObject **args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
-        _Py_convert_optional_to_ssize_t, &size)) {
+    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
     return_value = _io_StringIO_readline_impl(self, size);
@@ -129,12 +129,12 @@ _io_StringIO_truncate(stringio *self, PyObject **args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     Py_ssize_t size = self->pos;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:truncate",
-        _Py_convert_optional_to_ssize_t, &size)) {
+    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:truncate",
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
     return_value = _io_StringIO_truncate_impl(self, size);
@@ -168,12 +168,12 @@ _io_StringIO_seek(stringio *self, PyObject **args, Py_ssize_t nargs, PyObject *k
     Py_ssize_t pos;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "n|i:seek",
-        &pos, &whence)) {
+    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "n|i:seek",
+        &pos, &whence)) {
         goto exit;
     }
     return_value = _io_StringIO_seek_impl(self, pos, whence);
@@ -302,4 +302,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=03429d95ed7cd92f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=443f5dd99bbbd053 input=a9049054013a1b77]*/

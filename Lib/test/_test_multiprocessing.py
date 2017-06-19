@@ -274,6 +274,10 @@ class _TestProcess(BaseTestCase):
     def _test_terminate(cls):
         time.sleep(100)
 
+    @classmethod
+    def _test_sleep(cls, delay):
+        time.sleep(delay)
+
     def test_terminate(self):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -323,8 +327,9 @@ class _TestProcess(BaseTestCase):
 
         p.join()
 
-        # XXX sometimes get p.exitcode == 0 on Windows ...
-        #self.assertEqual(p.exitcode, -signal.SIGTERM)
+        # sometimes get p.exitcode == 0 on Windows ...
+        if os.name != 'nt':
+            self.assertEqual(p.exitcode, -signal.SIGTERM)
 
     def test_cpu_count(self):
         try:
@@ -397,6 +402,36 @@ class _TestProcess(BaseTestCase):
         event.set()
         p.join()
         self.assertTrue(wait_for_handle(sentinel, timeout=1))
+
+    def test_many_processes(self):
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        sm = multiprocessing.get_start_method()
+        N = 5 if sm == 'spawn' else 100
+
+        # Try to overwhelm the forkserver loop with events
+        procs = [self.Process(target=self._test_sleep, args=(0.01,))
+                 for i in range(N)]
+        for p in procs:
+            p.start()
+        for p in procs:
+            p.join(timeout=10)
+        for p in procs:
+            self.assertEqual(p.exitcode, 0)
+
+        procs = [self.Process(target=self._test_terminate)
+                 for i in range(N)]
+        for p in procs:
+            p.start()
+        time.sleep(0.001)  # let the children start...
+        for p in procs:
+            p.terminate()
+        for p in procs:
+            p.join(timeout=10)
+        if os.name != 'nt':
+            for p in procs:
+                self.assertEqual(p.exitcode, -signal.SIGTERM)
 
 #
 #
@@ -751,6 +786,21 @@ class _TestQueue(BaseTestCase):
         # Tolerate a delta of 30 ms because of the bad clock resolution on
         # Windows (usually 15.6 ms)
         self.assertGreaterEqual(delta, 0.170)
+
+    def test_queue_feeder_donot_stop_onexc(self):
+        # bpo-30414: verify feeder handles exceptions correctly
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        class NotSerializable(object):
+            def __reduce__(self):
+                raise AttributeError
+        with test.support.captured_stderr():
+            q = self.Queue()
+            q.put(NotSerializable())
+            q.put(True)
+            # bpo-30595: use a timeout of 1 second for slow buildbots
+            self.assertTrue(q.get(timeout=1.0))
 
 #
 #
@@ -3061,6 +3111,14 @@ class _TestFinalize(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
 
+    def setUp(self):
+        self.registry_backup = util._finalizer_registry.copy()
+        util._finalizer_registry.clear()
+
+    def tearDown(self):
+        self.assertFalse(util._finalizer_registry)
+        util._finalizer_registry.update(self.registry_backup)
+
     @classmethod
     def _test_finalize(cls, conn):
         class Foo(object):
@@ -3109,6 +3167,61 @@ class _TestFinalize(BaseTestCase):
 
         result = [obj for obj in iter(conn.recv, 'STOP')]
         self.assertEqual(result, ['a', 'b', 'd10', 'd03', 'd02', 'd01', 'e'])
+
+    def test_thread_safety(self):
+        # bpo-24484: _run_finalizers() should be thread-safe
+        def cb():
+            pass
+
+        class Foo(object):
+            def __init__(self):
+                self.ref = self  # create reference cycle
+                # insert finalizer at random key
+                util.Finalize(self, cb, exitpriority=random.randint(1, 100))
+
+        finish = False
+        exc = None
+
+        def run_finalizers():
+            nonlocal exc
+            while not finish:
+                time.sleep(random.random() * 1e-1)
+                try:
+                    # A GC run will eventually happen during this,
+                    # collecting stale Foo's and mutating the registry
+                    util._run_finalizers()
+                except Exception as e:
+                    exc = e
+
+        def make_finalizers():
+            nonlocal exc
+            d = {}
+            while not finish:
+                try:
+                    # Old Foo's get gradually replaced and later
+                    # collected by the GC (because of the cyclic ref)
+                    d[random.getrandbits(5)] = {Foo() for i in range(10)}
+                except Exception as e:
+                    exc = e
+                    d.clear()
+
+        old_interval = sys.getswitchinterval()
+        old_threshold = gc.get_threshold()
+        try:
+            sys.setswitchinterval(1e-6)
+            gc.set_threshold(5, 5, 5)
+            threads = [threading.Thread(target=run_finalizers),
+                       threading.Thread(target=make_finalizers)]
+            with test.support.start_threads(threads):
+                time.sleep(4.0)  # Wait a bit to trigger race condition
+                finish = True
+            if exc is not None:
+                raise exc
+        finally:
+            sys.setswitchinterval(old_interval)
+            gc.set_threshold(*old_threshold)
+            gc.collect()  # Collect remaining Foo's
+
 
 #
 # Test that from ... import * works for each module

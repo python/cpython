@@ -713,6 +713,47 @@ conflict.
 
    .. versionadded:: 3.6
 
+
+.. envvar:: PYTHONCOERCECLOCALE
+
+   If set to the value ``0``, causes the main Python command line application
+   to skip coercing the legacy ASCII-based C locale to a more capable UTF-8
+   based alternative. Note that this setting is checked even when the
+   :option:`-E` or :option:`-I` options are used, as it is handled prior to
+   the processing of command line options.
+
+   If this variable is *not* set, or is set to a value other than ``0``, and
+   the current locale reported for the ``LC_CTYPE`` category is the default
+   ``C`` locale, then the Python CLI will attempt to configure the following
+   locales for the ``LC_CTYPE`` category in the order listed before loading the
+   interpreter runtime:
+
+   * ``C.UTF-8``
+   * ``C.utf8``
+   * ``UTF-8``
+
+   If setting one of these locale categories succeeds, then the ``LC_CTYPE``
+   environment variable will also be set accordingly in the current process
+   environment before the Python runtime is initialized. This ensures the
+   updated setting is seen in subprocesses, as well as in operations that
+   query the environment rather than the current C locale (such as Python's
+   own :func:`locale.getdefaultlocale`).
+
+   Configuring one of these locales (either explicitly or via the above
+   implicit locale coercion) will automatically set the error handler for
+   :data:`sys.stdin` and :data:`sys.stdout` to ``surrogateescape``. This
+   behavior can be overridden using :envvar:`PYTHONIOENCODING` as usual.
+
+   For debugging purposes, setting ``PYTHONCOERCECLOCALE=warn`` will cause
+   Python to emit warning messages on ``stderr`` if either the locale coercion
+   activates, or else if a locale that *would* have triggered coercion is
+   still active when the Python runtime is initialized.
+
+   Availability: \*nix
+
+   .. versionadded:: 3.7
+      See :pep:`538` for more details.
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
