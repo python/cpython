@@ -184,6 +184,8 @@ Library
 Documentation
 -------------
 
+- bpo-30176: Add missing attribute related constants in curses documentation.
+
 - bpo-28929: Link the documentation to its source file on GitHub.
 
 - Issue #26355: Add canonical header link on each page to corresponding major
