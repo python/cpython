@@ -718,7 +718,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     if (wpath == NULL)
         return -2;
     if (wcslen(wpath) != pathlen) {
-        PyErr_SetString(PyExc_TypeError, "embedded null character");
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return -2;
     }
 
@@ -1115,7 +1115,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     if (wpath == NULL)
         return NULL;
     if (wcslen(wpath) != pathlen) {
-        PyErr_SetString(PyExc_TypeError, "embedded null character");
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
 

@@ -220,7 +220,7 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     if (ws1 == NULL)
         goto done;
     if (wcslen(ws1) != (size_t)wlen) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_ValueError,
                         "embedded null character");
         goto done;
     }
@@ -228,7 +228,7 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     if (ws2 == NULL)
         goto done;
     if (wcslen(ws2) != (size_t)wlen) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_ValueError,
                         "embedded null character");
         goto done;
     }
@@ -264,7 +264,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     if (s == NULL)
         goto exit;
     if (wcslen(s) != (size_t)n1) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_ValueError,
                         "embedded null character");
         goto exit;
     }

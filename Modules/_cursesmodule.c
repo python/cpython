@@ -349,8 +349,8 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
         *wstr = PyUnicode_AsWideCharString(obj, &wlen);
         if (*wstr == NULL)
             return 0;
-        if (wlen != wcslen(wstr)) {
-            PyErr_SetString(PyExc_TypeError,
+        if (wcslen(wstr) != (size_t)wlen) {
+            PyErr_SetString(PyExc_ValueError,
                             "embedded null character");
             return 0;
         }
