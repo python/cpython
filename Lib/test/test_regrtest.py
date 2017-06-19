@@ -749,6 +749,17 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('--list-cases', testname)
         self.assertEqual(output.splitlines(), all_methods)
 
+    def test_crashed(self):
+        # Any code which causes a crash
+        code = 'import faulthandler; faulthandler._sigsegv()'
+        crash_test = self.create_test(name="crash", code=code)
+        ok_test = self.create_test(name="ok")
+
+        tests = [crash_test, ok_test]
+        output = self.run_tests("-j2", *tests, exitcode=1)
+        self.check_executed_tests(output, tests, failed=crash_test,
+                                  randomize=True)
+
     def parse_methods(self, output):
         regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
         return [match.group(1) for match in regex.finditer(output)]

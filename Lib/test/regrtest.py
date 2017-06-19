@@ -701,7 +701,7 @@ def main(tests=None, **kwargs):
             test_times.append((test_time, test))
         if ok == PASSED:
             good.append(test)
-        elif ok == FAILED:
+        elif ok in (FAILED, CHILD_ERROR):
             bad.append(test)
         elif ok == ENV_CHANGED:
             environment_changed.append(test)
@@ -710,6 +710,8 @@ def main(tests=None, **kwargs):
         elif ok == RESOURCE_DENIED:
             skipped.append(test)
             resource_denieds.append(test)
+        elif ok != INTERRUPTED:
+            raise ValueError("invalid test result: %r" % ok)
 
     if ns.list_cases:
         list_cases(ns, selected)
@@ -769,7 +771,7 @@ def main(tests=None, **kwargs):
                     if retcode != 0:
                         result = (CHILD_ERROR, "Exit code %s" % retcode)
                         output.put((test, stdout.rstrip(), stderr.rstrip(), result))
-                        return
+                        continue
                     if not result:
                         output.put((None, None, None, None))
                         return
@@ -806,8 +808,6 @@ def main(tests=None, **kwargs):
                 sys.stderr.flush()
                 if result[0] == INTERRUPTED:
                     raise KeyboardInterrupt
-                if result[0] == CHILD_ERROR:
-                    raise Exception("Child error on {}: {}".format(test, result[1]))
                 test_index += 1
         except KeyboardInterrupt:
             interrupted = True
