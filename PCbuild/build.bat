@@ -61,10 +61,6 @@ set verbose=/nologo /v:m
 set kill=
 set do_pgo=
 set pgo_job=-m test --pgo
-set on_64_bit=true
-
-rem This may not be 100% accurate, but close enough.
-if "%ProgramFiles(x86)%"=="" (set on_64_bit=false)
 
 :CheckOpts
 if "%~1"=="-h" goto Usage
@@ -97,8 +93,8 @@ if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
 if "%do_pgo%" EQU "true" if "%platf%" EQU "x64" (
     if "%PROCESSOR_ARCHITEW6432%" NEQ "AMD64" if "%PROCESSOR_ARCHITECTURE%" NEQ "AMD64" (
         echo.ERROR: Cannot cross-compile with PGO 
-        echo.    32bit operating system detected, if this is incorrect, 
-        echo.    make sure the ProgramFiles(x86^) environment variable is set 
+        echo.       32bit operating system detected. Ensure your PROCESSOR_ARCHITECTURE
+        echo.       and PROCESSOR_ARCHITEW6432 environment variables are correct.
         exit /b 1 
     )
 )

@@ -16,34 +16,36 @@
 @if '%2' EQU '' goto :one_arg
 
 @rem Entire command line may represent the full path if quoting failed.
-@if exist "%*" (set MSBUILD="%*") & (set _SOURCE=environment) & goto :found
+@if exist "%*" (set MSBUILD="%*") & (set _Py_MSBuild_Source=environment) & goto :found
 @goto :begin_search
 
 :one_arg
-@if exist "%~1" (set MSBUILD="%~1") & (set _SOURCE=environment) & goto :found
+@if exist "%~1" (set MSBUILD="%~1") & (set _Py_MSBuild_Source=environment) & goto :found
 
 :begin_search
 @set MSBUILD=
 
 @rem If msbuild.exe is on the PATH, assume that the user wants that one.
 @where msbuild > "%TEMP%\msbuild.loc" 2> nul && set /P MSBUILD= < "%TEMP%\msbuild.loc" & del "%TEMP%\msbuild.loc"
-@if exist "%MSBUILD%" set MSBUILD="%MSBUILD%" & (set _SOURCE=PATH) & goto :found
+@if exist "%MSBUILD%" set MSBUILD="%MSBUILD%" & (set _Py_MSBuild_Source=PATH) & goto :found
 
 @rem VS 2017 sets exactly one install as the "main" install, so we may find MSBuild in there.
-@for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32') DO @(
+@reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32 >nul 2>nul
+@if NOT ERRORLEVEL 1 @for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32') DO @(
     @if "%%i"=="15.0" @if exist "%%k\MSBuild\15.0\Bin\msbuild.exe" @(set MSBUILD="%%k\MSBuild\15.0\Bin\msbuild.exe")
 )
-@if exist %MSBUILD% (set _SOURCE=Visual Studio 2017 registry) & goto :found
+@if exist %MSBUILD% (set _Py_MSBuild_Source=Visual Studio 2017 registry) & goto :found
 
 @rem VS 2015 and earlier register MSBuild separately, so we can find it.
-@for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32') DO @(
+@reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32 >nul 2>nul
+@if NOT ERRORLEVEL 1 @for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32') DO @(
     @if "%%i"=="MSBuildToolsPath" @if exist "%%k\msbuild.exe" @(set MSBUILD="%%k\msbuild.exe")
 )
-@if exist %MSBUILD% (set _SOURCE=registry) & goto :found
+@if exist %MSBUILD% (set _Py_MSBuild_Source=registry) & goto :found
 
 
 @exit /b 1
 
 :found
-@echo Using %MSBUILD% (found in the %_SOURCE%)
-@set _SOURCE=
+@echo Using %MSBUILD% (found in the %_Py_MSBuild_Source%)
+@set _Py_MSBuild_Source=
