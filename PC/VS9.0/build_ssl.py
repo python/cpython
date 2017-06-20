@@ -1,4 +1,3 @@
-from __future__ import with_statement, print_function
 # Script for building the _ssl and _hashlib modules for Windows.
 # Uses Perl to setup the OpenSSL environment correctly
 # and build OpenSSL, then invokes a simple nmake session
@@ -24,221 +23,212 @@ from __future__ import with_statement, print_function
 # python.exe build_ssl.py Release x64
 # python.exe build_ssl.py Release Win32
 
-from __future__ import with_statement
-import os, sys, re, shutil
+from __future__ import with_statement, print_function
+import os
+import re
+import sys
+import time
 import subprocess
+from shutil import copy
+from distutils import log
+from distutils.spawn import find_executable
+from distutils.file_util import copy_file
+from distutils.sysconfig import parse_makefile, expand_makefile_vars
 
-# Find all "foo.exe" files on the PATH.
-def find_all_on_path(filename, extras = None):
-    entries = os.environ["PATH"].split(os.pathsep)
-    ret = []
-    for p in entries:
-        fname = os.path.abspath(os.path.join(p, filename))
-        if os.path.isfile(fname) and fname not in ret:
-            ret.append(fname)
-    if extras:
-        for p in extras:
-            fname = os.path.abspath(os.path.join(p, filename))
-            if os.path.isfile(fname) and fname not in ret:
-                ret.append(fname)
-    return ret
+# The mk1mf.pl output filename template
+# !!! This must match what is used in prepare_ssl.py
+MK1MF_FMT = 'ms\\nt{}.mak'
 
-# Find a suitable Perl installation for OpenSSL.
-# cygwin perl does *not* work.  ActivePerl does.
-# Being a Perl dummy, the simplest way I can check is if the "Win32" package
-# is available.
-def find_working_perl(perls):
-    for perl in perls:
+# The header files output directory name template
+# !!! This must match what is used in prepare_ssl.py
+INCLUDE_FMT = 'include{}'
+
+# Fetch all the directory definitions from VC properties
+def get_project_properties(propfile):
+    macro_pattern = r'<UserMacro\s+Name="([^"]+?)"\s+Value="([^"]*?)"\s*/>'
+    with open(propfile) as fin:
+        items = re.findall(macro_pattern, fin.read(), re.MULTILINE)
+    props = dict(items)
+    for name, value in items:
         try:
-            subprocess.check_output([perl, "-e", "use win32;"])
-        except Subprocess.CalledProcessError:
-            continue
-        else:
-            return perl
-    print("Can not find a suitable PERL:")
-    if perls:
-        print(" the following perl interpreters were found:")
-        for p in perls:
-            print(" ", p)
-        print(" None of these versions appear suitable for building OpenSSL")
-    else:
-        print(" NO perl interpreters were found on this machine at all!")
-    print(" Please install ActivePerl and ensure it appears on your path")
-    return None
-
-# Fetch SSL directory from VC properties
-def get_ssl_dir():
-    propfile = (os.path.join(os.path.dirname(__file__), 'pyproject.vsprops'))
-    with open(propfile) as f:
-        m = re.search('openssl-([^"]+)"', f.read())
-        return "..\..\externals\openssl-"+m.group(1)
+            props[name] = expand_makefile_vars(value, props)
+        except TypeError:
+            # value contains undefined variable reference, drop it
+            del props[name]
+    return props
 
 
-def create_makefile64(makefile, m32):
-    """Create and fix makefile for 64bit
-
-    Replace 32 with 64bit directories
-    """
-    if not os.path.isfile(m32):
-        return
-    with open(m32) as fin:
-        with open(makefile, 'w') as fout:
-            for line in fin:
-                line = line.replace("=tmp32", "=tmp64")
-                line = line.replace("=out32", "=out64")
-                line = line.replace("=inc32", "=inc64")
-                # force 64 bit machine
-                line = line.replace("MKLIB=lib", "MKLIB=lib /MACHINE:X64")
-                line = line.replace("LFLAGS=", "LFLAGS=/MACHINE:X64 ")
-                # don't link against the lib on 64bit systems
-                line = line.replace("bufferoverflowu.lib", "")
-                fout.write(line)
-    os.unlink(m32)
-
-def fix_makefile(makefile):
+_variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
+def fix_makefile(makefile, platform_makefile, suffix):
     """Fix some stuff in all makefiles
     """
-    if not os.path.isfile(makefile):
-        return
-    fin = open(makefile)
-    with open(makefile) as fin:
-        lines = fin.readlines()
-    with open(makefile, 'w') as fout:
-        for line in lines:
-            if line.startswith("PERL="):
-                continue
-            if line.startswith("CP="):
-                line = "CP=copy\n"
-            if line.startswith("MKDIR="):
-                line = "MKDIR=mkdir\n"
-            if line.startswith("CFLAG="):
-                line = line.strip()
-                for algo in ("RC5", "MDC2", "IDEA"):
-                    noalgo = " -DOPENSSL_NO_%s" % algo
-                    if noalgo not in line:
-                        line = line + noalgo
-                line = line + '\n'
+    subs = {
+        'PERL': 'rem',  # just in case
+        'CP': 'copy',
+        'MKDIR': 'mkdir',
+        'OUT_D': 'out' + suffix,
+        'TMP_D': 'tmp' + suffix,
+        'INC_D': INCLUDE_FMT.format(suffix),
+        'INCO_D': '$(INC_D)\\openssl',
+        }
+    with open(platform_makefile) as fin, open(makefile, 'w') as fout:
+        for line in fin:
+            m = _variable_rx.match(line)
+            if m:
+                name = m.group(1)
+                if name in subs:
+                    line = '%s=%s\n' % (name, subs[name])
             fout.write(line)
 
-def run_configure(configure, do_script):
-    print("perl Configure "+configure+" no-idea no-mdc2")
-    os.system("perl Configure "+configure+" no-idea no-mdc2")
-    print(do_script)
-    os.system(do_script)
+
+_copy_rx = re.compile(r'\t\$\(PERL\) '
+                      r'\$\(SRC_D\)\\util\\copy-if-different.pl '
+                      r'"([^"]+)"\s+"([^"]+)"')
+def copy_files(makefile, makevars):
+    # Create the destination directories (see 'init' rule in nt.dll)
+    for varname in ('TMP_D', 'LIB_D', 'INC_D', 'INCO_D'):
+        dirname = makevars[varname]
+        if not os.path.isdir(dirname):
+            os.mkdir(dirname)
+    # Process the just local library headers (HEADER) as installed headers
+    # (EXHEADER) are handled by prepare_ssl.py (see 'headers' rule in nt.dll)
+    headers = set(makevars['HEADER'].split())
+    with open(makefile) as fin:
+        for line in fin:
+            m = _copy_rx.match(line)
+            if m:
+                src, dst = m.groups()
+                src = expand_makefile_vars(src, makevars)
+                dst = expand_makefile_vars(dst, makevars)
+                if dst in headers:
+                    copy_file(src, dst, preserve_times=False, update=True)
+
+
+# Update buildinf.h for the build platform.
+def fix_buildinf(makevars):
+    platform_cpp_symbol = 'MK1MF_PLATFORM_'
+    platform_cpp_symbol += makevars['PLATFORM'].replace('-', '_')
+    fn = expand_makefile_vars('$(INCL_D)\\buildinf.h', makevars)
+    with open(fn, 'w') as f:
+        # sanity check
+        f.write(('#ifndef {}\n'
+                 '  #error "Windows build (PLATFORM={PLATFORM}) only"\n'
+                 '#endif\n').format(platform_cpp_symbol, **makevars))
+        buildinf = (
+            '#define CFLAGS "compiler: cl {CFLAG}"\n'
+            '#define PLATFORM "{PLATFORM}"\n'
+            '#define DATE "{}"\n'
+            ).format(time.asctime(time.gmtime()),
+                     **makevars)
+        f.write(buildinf)
+    print('Updating buildinf:')
+    print(buildinf)
+    sys.stdout.flush()
+
 
 def main():
-    build_all = "-a" in sys.argv
-    if sys.argv[1] == "Release":
-        debug = False
-    elif sys.argv[1] == "Debug":
-        debug = True
-    else:
-        raise ValueError(str(sys.argv))
+    if sys.argv[1] == "Debug":
+        print("OpenSSL debug builds aren't supported.")
+    elif sys.argv[1] != "Release":
+        raise ValueError('Unrecognized configuration: %s' % sys.argv[1])
 
     if sys.argv[2] == "Win32":
-        arch = "x86"
-        configure = "VC-WIN32"
-        do_script = "ms\\do_nasm"
-        makefile="ms\\nt.mak"
-        m32 = makefile
+        platform = "VC-WIN32"
+        suffix = '32'
     elif sys.argv[2] == "x64":
-        arch="amd64"
-        configure = "VC-WIN64A"
-        do_script = "ms\\do_win64a"
-        makefile = "ms\\nt64.mak"
-        m32 = makefile.replace('64', '')
-        #os.environ["VSEXTCOMP_USECL"] = "MS_OPTERON"
+        platform = "VC-WIN64A"
+        suffix = '64'
     else:
-        raise ValueError(str(sys.argv))
+        raise ValueError('Unrecognized platform: %s' % sys.argv[2])
 
-    make_flags = ""
-    if build_all:
-        make_flags = "-a"
-    # perl should be on the path, but we also look in "\perl" and "c:\\perl"
-    # as "well known" locations
-    perls = find_all_on_path("perl.exe", [r"\perl\bin",
-                                          r"C:\perl\bin",
-                                          r"\perl64\bin",
-                                          r"C:\perl64\bin",
-                                         ])
-    perl = find_working_perl(perls)
-    if perl:
-        print("Found a working perl at '%s'" % (perl,))
-        # Set PERL for the makefile to find it
-        os.environ["PERL"] = perl
-    else:
-        print("No Perl installation was found. Existing Makefiles are used.")
-    sys.stdout.flush()
-    # Look for SSL 2 levels up from pcbuild - ie, same place zlib etc all live.
-    ssl_dir = get_ssl_dir()
-    if ssl_dir is None:
+    # Have the distutils functions display information output
+    log.set_verbosity(1)
+
+    # Use the same properties that are used in the VS projects
+    solution_dir = os.path.dirname(__file__)
+    propfile = os.path.join(solution_dir, 'pyproject.vsprops')
+    props = get_project_properties(propfile)
+
+    # Ensure we have the necessary external depenedencies
+    ssl_dir = os.path.join(solution_dir, props['opensslDir'])
+    if not os.path.isdir(ssl_dir):
+        print("Could not find the OpenSSL sources, try running "
+              "'build.bat -e'")
+        sys.exit(1)
+
+    # Ensure the executables used herein are available.
+    if not find_executable('nmake.exe'):
+        print('Could not find nmake.exe, try running env.bat')
         sys.exit(1)
 
     # add our copy of NASM to PATH.  It will be on the same level as openssl
-    for dir in os.listdir(os.path.join(ssl_dir, os.pardir)):
+    externals_dir = os.path.join(solution_dir, props['externalsDir'])
+    for dir in os.listdir(externals_dir):
         if dir.startswith('nasm'):
-            nasm_dir = os.path.join(ssl_dir, os.pardir, dir)
+            nasm_dir = os.path.join(externals_dir, dir)
             nasm_dir = os.path.abspath(nasm_dir)
             old_path = os.environ['PATH']
             os.environ['PATH'] = os.pathsep.join([nasm_dir, old_path])
             break
     else:
-        print('NASM was not found, make sure it is on PATH')
+        if not find_executable('nasm.exe'):
+            print('Could not find nasm.exe, please add to PATH')
+            sys.exit(1)
 
+    # If the ssl makefiles do not exist, we invoke PCbuild/prepare_ssl.py
+    # to generate them.
+    platform_makefile = MK1MF_FMT.format(suffix)
+    if not os.path.isfile(os.path.join(ssl_dir, platform_makefile)):
+        pcbuild_dir = os.path.join(os.path.dirname(externals_dir), 'PCbuild')
+        prepare_ssl = os.path.join(pcbuild_dir, 'prepare_ssl.py')
+        rc = subprocess.call([sys.executable, prepare_ssl, ssl_dir])
+        if rc:
+            print('Executing', prepare_ssl, 'failed (error %d)' % rc)
+            sys.exit(rc)
 
     old_cd = os.getcwd()
     try:
         os.chdir(ssl_dir)
-        # rebuild makefile when we do the role over from 32 to 64 build
-        if arch == "amd64" and os.path.isfile(m32) and not os.path.isfile(makefile):
-            os.unlink(m32)
 
-        # If the ssl makefiles do not exist, we invoke Perl to generate them.
-        # Due to a bug in this script, the makefile sometimes ended up empty
-        # Force a regeneration if it is.
-        if not os.path.isfile(makefile) or os.path.getsize(makefile)==0:
-            if perl is None:
-                print("Perl is required to build the makefiles!")
-                sys.exit(1)
+        # Get the variables defined in the current makefile, if it exists.
+        makefile = MK1MF_FMT.format('')
+        try:
+            makevars = parse_makefile(makefile)
+        except EnvironmentError:
+            makevars = {'PLATFORM': None}
 
-            print("Creating the makefiles...")
+        # Rebuild the makefile when building for different a platform than
+        # the last run.
+        if makevars['PLATFORM'] != platform:
+            print("Updating the makefile...")
             sys.stdout.flush()
-            # Put our working Perl at the front of our path
-            os.environ["PATH"] = os.path.dirname(perl) + \
-                                          os.pathsep + \
-                                          os.environ["PATH"]
-            run_configure(configure, do_script)
-            if debug:
-                print("OpenSSL debug builds aren't supported.")
-            #if arch=="x86" and debug:
-            #    # the do_masm script in openssl doesn't generate a debug
-            #    # build makefile so we generate it here:
-            #    os.system("perl util\mk1mf.pl debug "+configure+" >"+makefile)
+            # Firstly, apply the changes for the platform makefile into
+            # a temporary file to prevent any errors from this script
+            # causing false positives on subsequent runs.
+            new_makefile = makefile + '.new'
+            fix_makefile(new_makefile, platform_makefile, suffix)
+            makevars = parse_makefile(new_makefile)
 
-            if arch == "amd64":
-                create_makefile64(makefile, m32)
-            fix_makefile(makefile)
-            shutil.copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
-            shutil.copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
+            # Secondly, perform the make recipes that use Perl
+            copy_files(new_makefile, makevars)
+
+            # Set our build information in buildinf.h.
+            # XXX: This isn't needed for a properly "prepared" SSL, but
+            # it fixes the current checked-in external (as of 2017-05).
+            fix_buildinf(makevars)
+
+            # Finally, move the temporary file to its real destination.
+            if os.path.exists(makefile):
+                os.remove(makefile)
+            os.rename(new_makefile, makefile)
 
         # Now run make.
-        if arch == "amd64":
-            rc = os.system("nasm -f win64 -DNEAR -Ox -g ms\\uptable.asm")
-            if rc:
-                print("nasm assembler has failed.")
-                sys.exit(rc)
-
-        shutil.copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
-        shutil.copy(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
-
-        #makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
-        makeCommand = "nmake /nologo -f \"%s\"" % makefile
+        makeCommand = "nmake /nologo /f \"%s\" lib" % makefile
         print("Executing ssl makefiles:", makeCommand)
         sys.stdout.flush()
         rc = os.system(makeCommand)
         if rc:
-            print("Executing "+makefile+" failed")
-            print(rc)
+            print("Executing", makefile, "failed (error %d)" % rc)
             sys.exit(rc)
     finally:
         os.chdir(old_cd)
