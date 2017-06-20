@@ -2867,9 +2867,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
 static int
 _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
-
     PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
-
     if (strip_sep_obj == NULL)
         return -1;
 
@@ -2882,36 +2880,28 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
         Py_DECREF(strip_sep_obj);
         return -1;
     }
-
-    PyObject *new_data = _PyUnicode_XStrip(data, 1, strip_sep_obj);
-
+    PyObject *new_data = _PyUnicode_XStrip(data, 2, strip_sep_obj);
     Py_DECREF(data);
     Py_DECREF(strip_sep_obj);
 
     if (new_data == NULL) {
         return -1;
     }
-
     // gets the modified text_len after stripping `print `
     text_len = PyUnicode_GET_LENGTH(new_data);
     const char *maybe_end_arg = "";
-
     if (text_len > 0 && PyUnicode_READ_CHAR(new_data, text_len-1) == ',') {
         maybe_end_arg = " end=\" \"";
     }
-
     PyObject *error_msg = PyUnicode_FromFormat(
         "Missing parentheses in call to 'print'. Did you mean print(%U%s)?",
         new_data, maybe_end_arg
     );
-
     Py_DECREF(new_data);
-
     if (error_msg == NULL)
         return -1;
 
     Py_XSETREF(self->msg, error_msg);
-
     return 1;
 }
 

@@ -139,14 +139,21 @@ class TestPy2MigrationHint(unittest.TestCase):
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
-        self.assertTrue('print("Hello World")' in str(context.exception))
+        self.assertIn('print("Hello World")', str(context.exception))
 
     def test_string_with_soft_space(self):
         python2_print_str = 'print "Hello World",'
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
-        self.assertTrue('print("Hello World", end=" ")' in str(context.exception))
+        self.assertIn('print("Hello World", end=" ")', str(context.exception))
+
+    def test_string_with_excessive_whitespace(self):
+        python2_print_str = 'print "Hello World", '
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print("Hello World", end=" ")', str(context.exception))
 
 
 if __name__ == "__main__":
