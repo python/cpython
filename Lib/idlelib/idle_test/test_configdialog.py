@@ -26,7 +26,7 @@ testcfg = {
 # For testing, record args in a list for comparison with expected.
 changes = []
 class TestDialog(ConfigDialog):
-    def AddChangedItem(self, *args):
+    def add_changed_item(self, *args):
         changes.append(args)
 
 def setUpModule():
@@ -58,21 +58,21 @@ class FontTabTest(unittest.TestCase):
         dfont = idleConf.GetFont(root, 'main', 'EditorWindow')
         dsize = str(dfont[1])
         dbold = dfont[2] == 'bold'
-        configure.fontName.set('Test Font')
+        configure.font_name.set('Test Font')
         expected = [
             ('main', 'EditorWindow', 'font', 'Test Font'),
             ('main', 'EditorWindow', 'font-size', dsize),
             ('main', 'EditorWindow', 'font-bold', dbold)]
         self.assertEqual(changes, expected)
         changes.clear()
-        configure.fontSize.set(20)
+        configure.font_size.set(20)
         expected = [
             ('main', 'EditorWindow', 'font', 'Test Font'),
             ('main', 'EditorWindow', 'font-size', '20'),
             ('main', 'EditorWindow', 'font-bold', dbold)]
         self.assertEqual(changes, expected)
         changes.clear()
-        configure.fontBold.set(not dbold)
+        configure.font_bold.set(not dbold)
         expected = [
             ('main', 'EditorWindow', 'font', 'Test Font'),
             ('main', 'EditorWindow', 'font-size', '20'),
@@ -82,7 +82,7 @@ class FontTabTest(unittest.TestCase):
     #def test_sample(self): pass  # TODO
 
     def test_tabspace(self):
-        configure.spaceNum.set(6)
+        configure.space_num.set(6)
         self.assertEqual(changes, [('main', 'Indent', 'num-spaces', 6)])
 
 
@@ -106,19 +106,19 @@ class GeneralTest(unittest.TestCase):
         changes.clear()
 
     def test_startup(self):
-        configure.radioStartupEdit.invoke()
+        configure.radio_startup_edit.invoke()
         self.assertEqual(changes,
                          [('main', 'General', 'editor-on-startup', 1)])
 
     def test_autosave(self):
-        configure.radioSaveAuto.invoke()
+        configure.radio_save_auto.invoke()
         self.assertEqual(changes, [('main', 'General', 'autosave', 1)])
 
     def test_editor_size(self):
-        configure.entryWinHeight.insert(0, '1')
+        configure.entry_win_height.insert(0, '1')
         self.assertEqual(changes, [('main', 'EditorWindow', 'height', '140')])
         changes.clear()
-        configure.entryWinWidth.insert(0, '1')
+        configure.entry_win_width.insert(0, '1')
         self.assertEqual(changes, [('main', 'EditorWindow', 'width', '180')])
 
     #def test_help_sources(self): pass  # TODO
