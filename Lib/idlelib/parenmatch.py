@@ -13,19 +13,26 @@ CHECK_DELAY = 100 # milliseconds
 class ParenMatch:
     """Highlight matching parentheses
 
-    There are three supported style of paren matching, based loosely
+    There are three supported styles of paren matching, based loosely
     on the Emacs options.  The style is select based on the
-    HILITE_STYLE attribute; it can be changed used the set_style
+    HILITE_STYLE attribute; it can be changed using the set_style
     method.
 
     The supported styles are:
 
     default -- When a right paren is typed, highlight the matching
-        left paren for 1/2 sec.
+        left paren.
 
     expression -- When a right paren is typed, highlight the entire
         expression from the left paren to the right paren.
 
+    parens -- When a right paren is typed, highlight the left and
+        right parens.
+
+
+    flash-delay option determines how long (milliseconds) the highlighting
+        remains. If set to 0, it does not timeout.
+    
     TODO:
         - extend IDLE with configuration dialog to change options
         - implement rest of Emacs highlight styles (see below)
@@ -83,10 +90,14 @@ class ParenMatch:
     def set_style(self, style):
         self.STYLE = style
         if style == "default":
-            self.create_tag = self.create_tag_default
-            self.set_timeout = self.set_timeout_last
+            self.create_tag = self.create_tag_default            
         elif style == "expression":
-            self.create_tag = self.create_tag_expression
+            self.create_tag = self.create_tag_expression            
+        elif style == "parens":
+            self.create_tag = self.create_tag_parens
+        if self.FLASH_DELAY:
+            self.set_timeout = self.set_timeout_last
+        else:
             self.set_timeout = self.set_timeout_none
 
     def flash_paren_event(self, event):
@@ -140,7 +151,15 @@ class ParenMatch:
             rightindex = indices[1]
         self.text.tag_add("paren", indices[0], rightindex)
         self.text.tag_config("paren", self.HILITE_CONFIG)
-
+        
+    def create_tag_parens(self, indices):
+        """Highlight the left and right parens"""
+        if self.text.get(indices[1]) in (')', ']', '}'):
+            rightindex = indices[1]+"+1c"
+        else:
+            rightindex = indices[1]
+        self.text.tag_add("paren", indices[0], indices[0]+"+1c", rightindex+"-1c", rightindex)
+        self.text.tag_config("paren", self.HILITE_CONFIG)
     # any one of the set_timeout_XXX methods can be used depending on
     # the style
 
@@ -160,7 +179,7 @@ class ParenMatch:
         self.editwin.text_frame.after(CHECK_DELAY, callme, callme)
 
     def set_timeout_last(self):
-        """The last highlight created will be removed after .5 sec"""
+        """The last highlight created will be removed after FLASH_DELAY millisecs"""
         # associate a counter with an event; only disable the "paren"
         # tag if the event is for the most recent timer.
         self.counter += 1
