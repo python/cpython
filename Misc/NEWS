@@ -2,6 +2,23 @@
 Python News
 +++++++++++
 
+What's New in Python 3.6.3 release candidate 1?
+===============================================
+
+*Release date: XXXX-XX-XX*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- [Security] bpo-30500: Fix urllib.parse.splithost() to correctly parse
+  fragments. For example, ``splithost('//127.0.0.1#@evil.com/')`` now
+  correctly returns the ``127.0.0.1`` host, instead of treating ``@evil.com``
+  as the host in an authentification (``login@host``).
+
+
 What's New in Python 3.6.2 release candidate 1?
 ===============================================
 
