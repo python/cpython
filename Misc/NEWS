@@ -52,6 +52,11 @@ Extension Modules
 Library
 -------
 
+- [Security] bpo-30500: Fix urllib.splithost() to correctly parse
+  fragments. For example, ``splithost('//127.0.0.1#@evil.com/')`` now
+  correctly returns the ``127.0.0.1`` host, instead of treating ``@evil.com``
+  as the host in an authentification (``login@host``).
+
 - [Security] bpo-29591: Update expat copy from 2.1.1 to 2.2.0 to get fixes
   of CVE-2016-0718 and CVE-2016-4472. See
   https://sourceforge.net/p/expat/bugs/537/ for more information.
