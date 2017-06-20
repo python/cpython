@@ -108,7 +108,8 @@ class ParenMatch:
             return
         self.activate_restore()
         self.create_tag(indices)
-        self.set_timeout_last()
+        self.set_timeout()
+        self.set_timeout()
 
     def paren_closed_event(self, event):
         # If it was a shortcut and not really a closing paren, quit.
