@@ -981,6 +981,15 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(splittype('type:'), ('type', ''))
         self.assertEqual(splittype('type:opaque:string'), ('type', 'opaque:string'))
 
+        # bpo-30713: The newline character U+000A is invalid in URLs
+        for url in (
+            '\ntype:string',
+            'ty\npe:string',
+            'type:str\ning',
+            'type:string\n',
+        ):
+            self.assertEqual(splittype(url), (None, url))
+
     def test_splithost(self):
         splithost = urllib.parse.splithost
         self.assertEqual(splithost('//www.example.org:80/foo/bar/baz.html'),
@@ -1009,6 +1018,15 @@ class Utility_Tests(unittest.TestCase):
                          ('example.net', '/file?'))
         self.assertEqual(splithost("//example.net/file#"),
                          ('example.net', '/file#'))
+
+        # bpo-30713: The newline character U+000A is invalid in URLs
+        for url in (
+            '\n//hostname/url',
+            '//host\nname/url',
+            '//hostname/u\nrl',
+            '//hostname/url\n',
+        ):
+            self.assertEqual(splithost(url), (None, url))
 
     def test_splituser(self):
         splituser = urllib.parse.splituser
@@ -1051,6 +1069,15 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(splitport('[::1]:88'), ('[::1]', '88'))
         self.assertEqual(splitport('[::1]'), ('[::1]', None))
         self.assertEqual(splitport(':88'), ('', '88'))
+
+        # bpo-30713: The newline character U+000A is invalid in URLs
+        for url in (
+            '\nparrot:88',
+            'par\nrot:88',
+            'parrot:8\n8',
+            'parrot:88\n',
+        ):
+            self.assertEqual(splitport(url), (url, None))
 
     def test_splitnport(self):
         splitnport = urllib.parse.splitnport
