@@ -365,6 +365,11 @@ Extension Modules
 Library
 -------
 
+- bpo-30665: fcntl.ioctl() now accepts larger range of integers as the third
+  argument.  On Linux signed and unsigned integers that fit in the size of
+  C pointer are accepted.  On other platforms integers that are representable
+  as C types "int" or "unsigned int" are accepted.
+
 - bpo-30038: Fix race condition between signal delivery and wakeup file
   descriptor.  Patch by Nathaniel Smith.
 

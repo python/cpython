@@ -161,14 +161,18 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
        in their unsigned long ioctl codes this will break and need
        special casing based on the platform being built on.
      */
-    int arg = 0;
     int ret;
     Py_buffer pstr;
     char *str;
     Py_ssize_t len;
     char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
-    if (ob_arg != NULL) {
+    if (ob_arg == NULL) {
+        Py_BEGIN_ALLOW_THREADS
+        ret = ioctl(fd, code, NULL);
+        Py_END_ALLOW_THREADS
+    }
+    else {
         if (PyArg_Parse(ob_arg, "w*:ioctl", &pstr)) {
             char *arg;
             str = pstr.buf;
@@ -246,17 +250,46 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
         }
 
         PyErr_Clear();
-        if (!PyArg_Parse(ob_arg,
-             "i;ioctl requires a file or file descriptor,"
-             " an integer and optionally an integer or buffer argument",
-             &arg)) {
-          return NULL;
+        if (PyLong_Check(ob_arg)) {
+#ifdef __linux__
+            char *arg;
+            arg = PyLong_AsVoidPtr(ob_arg);
+            if (arg == NULL && PyErr_Occurred()) {
+                return NULL;
+            }
+#else
+            unsigned int arg;
+            if (Py_SIZE(ob_arg) < 0) {
+                arg = (unsigned int)_PyLong_AsInt(ob_arg);
+                if (arg == (unsigned int)-1 && PyErr_Occurred()) {
+                    return NULL;
+                }
+            }
+            else {
+                unsigned long larg = PyLong_AsUnsignedLong(ob_arg);
+                if ((larg == (unsigned long)-1 && PyErr_Occurred()) ||
+                    (larg > UINT_MAX))
+                {
+                    PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C unsigned int");
+                    return NULL;
+                }
+                arg = (unsigned int)larg;
+            }
+#endif
+            Py_BEGIN_ALLOW_THREADS
+            ret = ioctl(fd, code, arg);
+            Py_END_ALLOW_THREADS
+            // Fall-through to outside the 'if' statement.
         }
-        // Fall-through to outside the 'if' statement.
+        else {
+            PyErr_SetString(PyExc_TypeError,
+                "ioctl requires a file or file descriptor,"
+                " an integer and optionally an integer or buffer argument");
+            return NULL;
+        }
     }
-    Py_BEGIN_ALLOW_THREADS
-    ret = ioctl(fd, code, arg);
-    Py_END_ALLOW_THREADS
+
     if (ret < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
