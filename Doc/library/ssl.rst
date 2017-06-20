@@ -1447,8 +1447,9 @@ to speed up repeated connections from the same clients.
    This method will raise :exc:`NotImplementedError` if :data:`HAS_ALPN` is
    False.
 
-   OpenSSL 1.1.0+ will abort the handshake and raise :exc:`SSLError` when
-   both sides support ALPN but cannot agree on a protocol.
+   OpenSSL 1.1.0 to 1.1.0e will abort the handshake and raise :exc:`SSLError`
+   when both sides support ALPN but cannot agree on a protocol. 1.1.0f+
+   behaves like 1.0.2, :meth:`SSLSocket.selected_alpn_protocol` returns None.
 
    .. versionadded:: 3.5
 
