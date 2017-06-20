@@ -1,0 +1,3 @@
+The splittype(), splitport() and splithost() functions of the urllib.parse
+module now reject URLs which contain a newline character, but splittype()
+accepts newlines after the type.
