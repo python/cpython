@@ -78,11 +78,12 @@ extern void _PyGILState_Fini(void);
 _PyRuntimeState _PyRuntime = {};
 
 void
-_PyRuntime_Init(void)
+_PyRuntime_Initialize(void)
 {
     _PyRuntimeState initial = {};
-
     _PyRuntime = initial;
+
+    _PyMem_Initialize();
 }
 
 /* Global configuration variable declarations are in pydebug.h */
@@ -549,7 +550,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     _PyCoreConfig core_config = _PyCoreConfig_INIT;
     _PyMainInterpreterConfig preinit_config = _PyMainInterpreterConfig_INIT;
 
-    _PyRuntime_Init();
+    _PyRuntime_Initialize();
 
     if (config != NULL) {
         core_config = *config;

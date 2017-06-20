@@ -196,6 +196,44 @@ typedef struct {
     int nexitfuncs;
     void (*pyexitfunc)(void);
 
+    struct {
+        // Objects/object.c
+        /* List of objects that still need to be cleaned up, singly linked
+         * via their gc headers' gc_prev pointers.
+         */
+        PyObject *trash_delete_later;
+        /* Current call-stack depth of tp_dealloc calls. */
+        int trash_delete_nesting;
+
+        // Objects/obmalloc.c
+        PyMemAllocatorEx allocator;
+        PyMemAllocatorEx allocator_raw;
+        PyMemAllocatorEx allocator_object;
+        PyObjectArenaAllocator allocator_arenas;
+        /* Array of objects used to track chunks of memory (arenas). */
+        struct arena_object* arenas;
+        /* The head of the singly-linked, NULL-terminated list of available
+         * arena_objects.
+         */
+        struct arena_object* unused_arena_objects;
+        /* The head of the doubly-linked, NULL-terminated at each end, list of
+         * arena_objects associated with arenas that have pools available.
+         */
+        struct arena_object* usable_arenas;
+        /* Number of slots currently allocated in the `arenas` vector. */
+        uint maxarenas;
+        /* Number of arenas allocated that haven't been free()'d. */
+        size_t narenas_currently_allocated;
+        /* High water mark (max value ever seen) for
+         * narenas_currently_allocated. */
+        size_t narenas_highwater;
+        /* Total number of times malloc() called to allocate an arena. */
+        size_t ntimes_arena_allocated;
+//        poolp usedpools[MAX_POOLS];
+        Py_ssize_t num_allocated_blocks;
+        size_t serialno;     /* incremented on each debug {m,re}alloc */
+    } mem;
+
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
