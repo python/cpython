@@ -149,7 +149,7 @@ class TestPy2MigrationHint(unittest.TestCase):
         self.assertIn('print("Hello World", end=" ")', str(context.exception))
 
     def test_string_with_excessive_whitespace(self):
-        python2_print_str = 'print "Hello World", '
+        python2_print_str = 'print  "Hello World", '
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
