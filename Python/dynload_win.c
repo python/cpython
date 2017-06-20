@@ -191,19 +191,14 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
     dl_funcptr p;
     char funcname[258], *import_python;
     wchar_t *wpathname;
-    Py_ssize_t pathsize;
 
 #ifndef _DEBUG
     _Py_CheckPython3();
 #endif
 
-    wpathname = PyUnicode_AsUnicodeAndSize(pathname, &pathsize);
+    wpathname = _PyUnicode_AsUnicode(pathname);
     if (wpathname == NULL)
         return NULL;
-    if (wcslen(wpathname) != (size_t)pathsize) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return NULL;
-    }
 
     PyOS_snprintf(funcname, sizeof(funcname), "%.20s_%.200s", prefix, shortname);
 

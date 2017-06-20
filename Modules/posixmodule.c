@@ -3756,15 +3756,10 @@ os__getfinalpathname_impl(PyObject *module, PyObject *path)
     int result_length;
     PyObject *result;
     const wchar_t *path_wchar;
-    Py_ssize_t pathsize;
 
-    path_wchar = PyUnicode_AsUnicodeAndSize(path, &pathsize);
+    path_wchar = _PyUnicode_AsUnicode(path);
     if (path_wchar == NULL)
         return NULL;
-    if (wcslen(path_wchar) != (size_t)pathsize) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return NULL;
-    }
 
     hFile = CreateFileW(
         path_wchar,
@@ -7178,7 +7173,6 @@ static PyObject *
 win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const wchar_t *path;
-    Py_ssize_t pathsize;
     DWORD n_bytes_returned;
     DWORD io_result;
     PyObject *po, *result;
@@ -7197,13 +7191,9 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                           ))
         return NULL;
 
-    path = PyUnicode_AsUnicodeAndSize(po, &pathsize);
+    path = _PyUnicode_AsUnicode(po);
     if (path == NULL)
         return NULL;
-    if (wcslen(path) != (size_t)pathsize) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return NULL;
-    }
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS

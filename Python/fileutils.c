@@ -711,16 +711,11 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
     struct _stat wstatbuf;
-    wchar_t *wpath;
-    Py_ssize_t pathlen;
+    const wchar_t *wpath;
 
-    wpath = PyUnicode_AsUnicodeAndSize(path, &pathlen);
+    wpath = _PyUnicode_AsUnicode(path);
     if (wpath == NULL)
         return -2;
-    if (wcslen(wpath) != (size_t)pathlen) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return -2;
-    }
 
     err = _wstat(wpath, &wstatbuf);
     if (!err)
@@ -1096,7 +1091,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     FILE *f;
     int async_err = 0;
 #ifdef MS_WINDOWS
-    wchar_t *wpath;
+    const wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
     Py_ssize_t pathlen;
@@ -1111,13 +1106,9 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-    wpath = PyUnicode_AsUnicodeAndSize(path, &pathlen);
+    wpath = _PyUnicode_AsUnicode(path);
     if (wpath == NULL)
         return NULL;
-    if (wcslen(wpath) != (size_t)pathlen) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return NULL;
-    }
 
     usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, sizeof(wmode));
     if (usize == 0) {

@@ -756,23 +756,27 @@ PyAPI_FUNC(Py_UCS4*) PyUnicode_AsUCS4(
 PyAPI_FUNC(Py_UCS4*) PyUnicode_AsUCS4Copy(PyObject *unicode);
 #endif
 
+#ifndef Py_LIMITED_API
 /* Return a read-only pointer to the Unicode object's internal
    Py_UNICODE buffer.
    If the wchar_t/Py_UNICODE representation is not yet available, this
    function will calculate it. */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
     PyObject *unicode           /* Unicode object */
     ) /* Py_DEPRECATED(3.3) */;
-#endif
+
+/* Similar to PyUnicode_AsUnicode(), but raises a ValueError if the string
+   contains null characters. */
+PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
+    PyObject *unicode           /* Unicode object */
+    );
 
 /* Return a read-only pointer to the Unicode object's internal
    Py_UNICODE buffer and save the length at size.
    If the wchar_t/Py_UNICODE representation is not yet available, this
    function will calculate it. */
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     PyObject *unicode,          /* Unicode object */
     Py_ssize_t *size            /* location where to save the length */
