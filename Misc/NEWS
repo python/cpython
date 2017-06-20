@@ -10,9 +10,12 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30597: ``print`` now shows expected input in custom error message when
+  used as a Python 2 statement. Patch by Sanyam Khurana.
+
 - bpo-30682: Removed a too-strict assertion that failed for certain f-strings,
   such as eval("f'\\\n'") and eval("f'\\\r'").
-  
+
 - bpo-30501: The compiler now produces more optimal code for complex condition
   expressions in the "if", "while" and "assert" statement, the "if" expression,
   and generator expressions and comprehensions.
@@ -367,6 +370,11 @@ Library
 
 - bpo-29755: Fixed the lgettext() family of functions in the gettext module.
   They now always return bytes.
+
+- [Security] bpo-30500: Fix urllib.parse.splithost() to correctly parse
+  fragments. For example, ``splithost('http://127.0.0.1#@evil.com/')`` now
+  correctly returns the ``127.0.0.1`` host, instead of treating ``@evil.com``
+  as the host in an authentification (``login@host``).
 
 - bpo-30038: Fix race condition between signal delivery and wakeup file
   descriptor.  Patch by Nathaniel Smith.
@@ -1282,6 +1290,9 @@ Documentation
 
 Build
 -----
+
+- bpo-30687: Locate msbuild.exe on Windows when building rather than
+  vcvarsall.bat
 
 - bpo-20210: Support the *disabled* marker in Setup files. Extension modules
   listed after this marker are not built at all, neither by the Makefile nor by
