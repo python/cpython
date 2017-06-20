@@ -43,7 +43,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="$(opensslDir)\include32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -106,7 +106,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc64"
+				AdditionalIncludeDirectories="$(opensslDir)\include64"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -169,7 +169,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="$(opensslDir)\include32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -233,7 +233,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc64"
+				AdditionalIncludeDirectories="$(opensslDir)\include64"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -296,7 +296,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="$(opensslDir)\include32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -360,7 +360,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc64"
+				AdditionalIncludeDirectories="$(opensslDir)\include64"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -424,7 +424,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="$(opensslDir)\include32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -488,7 +488,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc64"
+				AdditionalIncludeDirectories="$(opensslDir)\include64"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
