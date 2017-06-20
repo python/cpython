@@ -24,12 +24,12 @@ pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject **args, Py_ssize_t nargs,
     PyObject *data;
     int isfinal = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:Parse",
-        &data, &isfinal)) {
+    if (!_PyArg_NoStackKeywords("Parse", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("Parse", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|i:Parse",
+        &data, &isfinal)) {
         goto exit;
     }
     return_value = pyexpat_xmlparser_Parse_impl(self, data, isfinal);
@@ -134,12 +134,12 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject **ar
     const char *context;
     const char *encoding = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "z|s:ExternalEntityParserCreate",
-        &context, &encoding)) {
+    if (!_PyArg_NoStackKeywords("ExternalEntityParserCreate", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ExternalEntityParserCreate", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "z|s:ExternalEntityParserCreate",
+        &context, &encoding)) {
         goto exit;
     }
     return_value = pyexpat_xmlparser_ExternalEntityParserCreate_impl(self, context, encoding);
@@ -204,12 +204,12 @@ pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyObject **args, Py_ssize_
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|p:UseForeignDTD",
-        &flag)) {
+    if (!_PyArg_NoStackKeywords("UseForeignDTD", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("UseForeignDTD", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|p:UseForeignDTD",
+        &flag)) {
         goto exit;
     }
     return_value = pyexpat_xmlparser_UseForeignDTD_impl(self, flag);
@@ -301,4 +301,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=0548a6b12157e29b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a51f9d31aff1a757 input=a9049054013a1b77]*/

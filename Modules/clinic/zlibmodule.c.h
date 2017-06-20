@@ -301,12 +301,12 @@ zlib_Compress_flush(compobject *self, PyObject **args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     int mode = Z_FINISH;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:flush",
-        &mode)) {
+    if (!_PyArg_NoStackKeywords("flush", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("flush", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|i:flush",
+        &mode)) {
         goto exit;
     }
     return_value = zlib_Compress_flush_impl(self, mode);
@@ -380,12 +380,12 @@ zlib_Decompress_flush(compobject *self, PyObject **args, Py_ssize_t nargs, PyObj
     PyObject *return_value = NULL;
     Py_ssize_t length = DEF_BUF_SIZE;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:flush",
-        ssize_t_converter, &length)) {
+    if (!_PyArg_NoStackKeywords("flush", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("flush", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:flush",
+        ssize_t_converter, &length)) {
         goto exit;
     }
     return_value = zlib_Decompress_flush_impl(self, length);
@@ -418,12 +418,12 @@ zlib_adler32(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     Py_buffer data = {NULL, NULL};
     unsigned int value = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|I:adler32",
-        &data, &value)) {
+    if (!_PyArg_NoStackKeywords("adler32", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("adler32", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*|I:adler32",
+        &data, &value)) {
         goto exit;
     }
     return_value = zlib_adler32_impl(module, &data, value);
@@ -461,12 +461,12 @@ zlib_crc32(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     Py_buffer data = {NULL, NULL};
     unsigned int value = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*|I:crc32",
-        &data, &value)) {
+    if (!_PyArg_NoStackKeywords("crc32", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("crc32", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*|I:crc32",
+        &data, &value)) {
         goto exit;
     }
     return_value = zlib_crc32_impl(module, &data, value);
@@ -483,4 +483,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=fa1b5f4a6208c342 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7abf02e091bcad3 input=a9049054013a1b77]*/

@@ -1188,10 +1188,8 @@ newxmlparseobject(const char *encoding, const char *namespace_separator, PyObjec
         Py_DECREF(self);
         return NULL;
     }
-#if XML_COMBINED_VERSION >= 20100 || defined(XML_HAS_SET_HASH_SALT)
-    /* This feature was added upstream in libexpat 2.1.0.  Our expat copy
-     * has a backport of this feature where we also define XML_HAS_SET_HASH_SALT
-     * to indicate that we can still use it. */
+#if XML_COMBINED_VERSION >= 20100
+    /* This feature was added upstream in libexpat 2.1.0. */
     XML_SetHashSalt(self->itself,
                     (unsigned long)_Py_HashSecret.expat.hashsalt);
 #endif

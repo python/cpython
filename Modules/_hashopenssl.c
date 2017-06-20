@@ -931,11 +931,11 @@ generate_hash_name_list(void)
         Py_buffer view = { 0 }; \
         PyObject *ret_obj; \
      \
-        if (!_PyArg_ParseStack(args, nargs, "|O:" #NAME , &data_obj)) { \
+        if (!_PyArg_NoStackKeywords(#NAME, kwnames)) { \
             return NULL; \
         } \
      \
-        if (!_PyArg_NoStackKeywords(#NAME, kwnames)) { \
+        if (!_PyArg_ParseStack(args, nargs, "|O:" #NAME , &data_obj)) { \
             return NULL; \
         } \
      \

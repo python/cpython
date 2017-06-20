@@ -828,13 +828,13 @@ class CLanguage(Language):
                 parser_prototype = parser_prototype_fastcall
 
                 parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!_PyArg_UnpackStack(args, nargs, "{name}",
-                        {unpack_min}, {unpack_max},
-                        {parse_arguments})) {{
+                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
                         goto exit;
                     }}
 
-                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
+                    if (!_PyArg_UnpackStack(args, nargs, "{name}",
+                        {unpack_min}, {unpack_max},
+                        {parse_arguments})) {{
                         goto exit;
                     }}
                     """, indent=4))
@@ -859,12 +859,12 @@ class CLanguage(Language):
                 parser_prototype = parser_prototype_fastcall
 
                 parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
-                        {parse_arguments})) {{
+                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
                         goto exit;
                     }}
 
-                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
+                    if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
+                        {parse_arguments})) {{
                         goto exit;
                     }}
                     """, indent=4))

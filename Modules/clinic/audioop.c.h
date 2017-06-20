@@ -23,12 +23,12 @@ audioop_getsample(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     int width;
     Py_ssize_t index;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*in:getsample",
-        &fragment, &width, &index)) {
+    if (!_PyArg_NoStackKeywords("getsample", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("getsample", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*in:getsample",
+        &fragment, &width, &index)) {
         goto exit;
     }
     return_value = audioop_getsample_impl(module, &fragment, width, index);
@@ -61,12 +61,12 @@ audioop_max(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:max",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("max", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("max", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:max",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_max_impl(module, &fragment, width);
@@ -99,12 +99,12 @@ audioop_minmax(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:minmax",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("minmax", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("minmax", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:minmax",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_minmax_impl(module, &fragment, width);
@@ -137,12 +137,12 @@ audioop_avg(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:avg",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("avg", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("avg", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:avg",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_avg_impl(module, &fragment, width);
@@ -175,12 +175,12 @@ audioop_rms(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:rms",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("rms", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("rms", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:rms",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_rms_impl(module, &fragment, width);
@@ -214,12 +214,12 @@ audioop_findfit(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     Py_buffer fragment = {NULL, NULL};
     Py_buffer reference = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*:findfit",
-        &fragment, &reference)) {
+    if (!_PyArg_NoStackKeywords("findfit", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("findfit", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*y*:findfit",
+        &fragment, &reference)) {
         goto exit;
     }
     return_value = audioop_findfit_impl(module, &fragment, &reference);
@@ -257,12 +257,12 @@ audioop_findfactor(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     Py_buffer fragment = {NULL, NULL};
     Py_buffer reference = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*:findfactor",
-        &fragment, &reference)) {
+    if (!_PyArg_NoStackKeywords("findfactor", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("findfactor", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*y*:findfactor",
+        &fragment, &reference)) {
         goto exit;
     }
     return_value = audioop_findfactor_impl(module, &fragment, &reference);
@@ -300,12 +300,12 @@ audioop_findmax(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     Py_buffer fragment = {NULL, NULL};
     Py_ssize_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*n:findmax",
-        &fragment, &length)) {
+    if (!_PyArg_NoStackKeywords("findmax", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("findmax", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*n:findmax",
+        &fragment, &length)) {
         goto exit;
     }
     return_value = audioop_findmax_impl(module, &fragment, length);
@@ -338,12 +338,12 @@ audioop_avgpp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:avgpp",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("avgpp", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("avgpp", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:avgpp",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_avgpp_impl(module, &fragment, width);
@@ -376,12 +376,12 @@ audioop_maxpp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:maxpp",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("maxpp", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("maxpp", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:maxpp",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_maxpp_impl(module, &fragment, width);
@@ -414,12 +414,12 @@ audioop_cross(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:cross",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("cross", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("cross", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:cross",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_cross_impl(module, &fragment, width);
@@ -454,12 +454,12 @@ audioop_mul(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     int width;
     double factor;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*id:mul",
-        &fragment, &width, &factor)) {
+    if (!_PyArg_NoStackKeywords("mul", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("mul", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*id:mul",
+        &fragment, &width, &factor)) {
         goto exit;
     }
     return_value = audioop_mul_impl(module, &fragment, width, factor);
@@ -495,12 +495,12 @@ audioop_tomono(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     double lfactor;
     double rfactor;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*idd:tomono",
-        &fragment, &width, &lfactor, &rfactor)) {
+    if (!_PyArg_NoStackKeywords("tomono", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("tomono", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*idd:tomono",
+        &fragment, &width, &lfactor, &rfactor)) {
         goto exit;
     }
     return_value = audioop_tomono_impl(module, &fragment, width, lfactor, rfactor);
@@ -536,12 +536,12 @@ audioop_tostereo(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     double lfactor;
     double rfactor;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*idd:tostereo",
-        &fragment, &width, &lfactor, &rfactor)) {
+    if (!_PyArg_NoStackKeywords("tostereo", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("tostereo", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*idd:tostereo",
+        &fragment, &width, &lfactor, &rfactor)) {
         goto exit;
     }
     return_value = audioop_tostereo_impl(module, &fragment, width, lfactor, rfactor);
@@ -576,12 +576,12 @@ audioop_add(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     Py_buffer fragment2 = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*i:add",
-        &fragment1, &fragment2, &width)) {
+    if (!_PyArg_NoStackKeywords("add", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("add", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*y*i:add",
+        &fragment1, &fragment2, &width)) {
         goto exit;
     }
     return_value = audioop_add_impl(module, &fragment1, &fragment2, width);
@@ -619,12 +619,12 @@ audioop_bias(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     int width;
     int bias;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*ii:bias",
-        &fragment, &width, &bias)) {
+    if (!_PyArg_NoStackKeywords("bias", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("bias", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*ii:bias",
+        &fragment, &width, &bias)) {
         goto exit;
     }
     return_value = audioop_bias_impl(module, &fragment, width, bias);
@@ -657,12 +657,12 @@ audioop_reverse(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:reverse",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("reverse", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("reverse", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:reverse",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_reverse_impl(module, &fragment, width);
@@ -695,12 +695,12 @@ audioop_byteswap(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:byteswap",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("byteswap", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("byteswap", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:byteswap",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_byteswap_impl(module, &fragment, width);
@@ -735,12 +735,12 @@ audioop_lin2lin(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     int width;
     int newwidth;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*ii:lin2lin",
-        &fragment, &width, &newwidth)) {
+    if (!_PyArg_NoStackKeywords("lin2lin", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lin2lin", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*ii:lin2lin",
+        &fragment, &width, &newwidth)) {
         goto exit;
     }
     return_value = audioop_lin2lin_impl(module, &fragment, width, newwidth);
@@ -782,12 +782,12 @@ audioop_ratecv(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     int weightA = 1;
     int weightB = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*iiiiO|ii:ratecv",
-        &fragment, &width, &nchannels, &inrate, &outrate, &state, &weightA, &weightB)) {
+    if (!_PyArg_NoStackKeywords("ratecv", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ratecv", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*iiiiO|ii:ratecv",
+        &fragment, &width, &nchannels, &inrate, &outrate, &state, &weightA, &weightB)) {
         goto exit;
     }
     return_value = audioop_ratecv_impl(module, &fragment, width, nchannels, inrate, outrate, state, weightA, weightB);
@@ -820,12 +820,12 @@ audioop_lin2ulaw(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:lin2ulaw",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("lin2ulaw", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lin2ulaw", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:lin2ulaw",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_lin2ulaw_impl(module, &fragment, width);
@@ -858,12 +858,12 @@ audioop_ulaw2lin(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:ulaw2lin",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("ulaw2lin", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ulaw2lin", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:ulaw2lin",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_ulaw2lin_impl(module, &fragment, width);
@@ -896,12 +896,12 @@ audioop_lin2alaw(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:lin2alaw",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("lin2alaw", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lin2alaw", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:lin2alaw",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_lin2alaw_impl(module, &fragment, width);
@@ -934,12 +934,12 @@ audioop_alaw2lin(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     Py_buffer fragment = {NULL, NULL};
     int width;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*i:alaw2lin",
-        &fragment, &width)) {
+    if (!_PyArg_NoStackKeywords("alaw2lin", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("alaw2lin", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*i:alaw2lin",
+        &fragment, &width)) {
         goto exit;
     }
     return_value = audioop_alaw2lin_impl(module, &fragment, width);
@@ -974,12 +974,12 @@ audioop_lin2adpcm(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     int width;
     PyObject *state;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*iO:lin2adpcm",
-        &fragment, &width, &state)) {
+    if (!_PyArg_NoStackKeywords("lin2adpcm", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lin2adpcm", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*iO:lin2adpcm",
+        &fragment, &width, &state)) {
         goto exit;
     }
     return_value = audioop_lin2adpcm_impl(module, &fragment, width, state);
@@ -1014,12 +1014,12 @@ audioop_adpcm2lin(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
     int width;
     PyObject *state;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*iO:adpcm2lin",
-        &fragment, &width, &state)) {
+    if (!_PyArg_NoStackKeywords("adpcm2lin", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("adpcm2lin", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*iO:adpcm2lin",
+        &fragment, &width, &state)) {
         goto exit;
     }
     return_value = audioop_adpcm2lin_impl(module, &fragment, width, state);
@@ -1032,4 +1032,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ee7c63ec28a11b78 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4eaee23043922a41 input=a9049054013a1b77]*/
