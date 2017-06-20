@@ -368,6 +368,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30616: Functional API of enum allows to create empty enums.
+  Patched by Dong-hee Na
+
 - bpo-29755: Fixed the lgettext() family of functions in the gettext module.
   They now always return bytes.
 
