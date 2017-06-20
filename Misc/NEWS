@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30597: ``print`` now shows expected input in custom error message when
+  used as a Python 2 statement. Patch by Sanyam Khurana.
+
 - bpo-30682: Removed a too-strict assertion that failed for certain f-strings,
   such as eval("f'\\\n'") and eval("f'\\\r'").
 
