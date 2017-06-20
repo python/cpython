@@ -934,9 +934,9 @@ def splittype(url):
     """splittype('type:opaquestring') --> 'type', 'opaquestring'."""
     global _typeprog
     if _typeprog is None:
-        _typeprog = re.compile('([^/:]+):(.*)', re.DOTALL)
+        _typeprog = re.compile('([^/:\n]+):(.*)')
 
-    match = _typeprog.match(url)
+    match = _typeprog.fullmatch(url)
     if match:
         scheme, data = match.groups()
         return scheme.lower(), data
@@ -947,9 +947,9 @@ def splithost(url):
     """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
     global _hostprog
     if _hostprog is None:
-        _hostprog = re.compile('//([^/#?]*)(.*)', re.DOTALL)
+        _hostprog = re.compile('//([^/#?\n]*)(.*)')
 
-    match = _hostprog.match(url)
+    match = _hostprog.fullmatch(url)
     if match:
         host_port, path = match.groups()
         if path and path[0] != '/':
@@ -973,9 +973,9 @@ def splitport(host):
     """splitport('host:port') --> 'host', 'port'."""
     global _portprog
     if _portprog is None:
-        _portprog = re.compile('(.*):([0-9]*)$', re.DOTALL)
+        _portprog = re.compile('(.*):([0-9]*)')
 
-    match = _portprog.match(host)
+    match = _portprog.fullmatch(host)
     if match:
         host, port = match.groups()
         if port:
