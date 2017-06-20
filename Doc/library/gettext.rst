@@ -104,7 +104,8 @@ class-based API instead.
    system encoding if no other encoding was explicitly set with
    :func:`bind_textdomain_codeset`.
 
-   .. warning:
+   .. warning::
+
       These functions should be avoided in Python 3, because they return
       encoded bytes.  It's much better to use alternatives which return
       Unicode strings instead, since most Python applications will want to
@@ -265,7 +266,8 @@ are the methods of :class:`NullTranslations`:
       if no encoding was explicitly set with :meth:`set_output_charset`.
       Overridden in derived classes.
 
-      .. warning:
+      .. warning::
+
          These methods should be avoided in Python 3.  See the warning for the
          :func:`lgettext` function.
 
@@ -385,7 +387,8 @@ unexpected, or if other problems occur while reading the file, instantiating a
       if no encoding  was explicitly set with
       :meth:`~NullTranslations.set_output_charset`.
 
-      .. warning:
+      .. warning::
+
          These methods should be avoided in Python 3.  See the warning for the
          :func:`lgettext` function.
 
