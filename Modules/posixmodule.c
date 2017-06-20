@@ -8991,7 +8991,7 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         return NULL;
     }
 
-    env = PyUnicode_AsUnicodeAndSize(uncode, &size);
+    env = PyUnicode_AsUnicodeAndSize(unicode, &size);
     if (env == NULL)
         goto error;
     if (size > _MAX_ENV) {

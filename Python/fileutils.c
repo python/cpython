@@ -1094,7 +1094,6 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     const wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
-    Py_ssize_t pathlen;
 
 #ifdef WITH_THREAD
     assert(PyGILState_Check());
