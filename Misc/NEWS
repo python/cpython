@@ -385,6 +385,9 @@ Library
   correctly returns the ``127.0.0.1`` host, instead of treating ``@evil.com``
   as the host in an authentification (``login@host``).
 
+- bpo-30616: Functional API of enum allows to create empty enums.
+  Patched by Dong-hee Na
+
 - bpo-30038: Fix race condition between signal delivery and wakeup file
   descriptor.  Patch by Nathaniel Smith.
 
