@@ -422,6 +422,10 @@ Changes in the Python API
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
 
+* Due to internal changes in :mod:`socket` you won't be able to
+  :func:`socket.fromshare` a socket :func:`~socket.socket.share`-ed in older
+  Python versions.
+
 
 CPython bytecode changes
 ------------------------
