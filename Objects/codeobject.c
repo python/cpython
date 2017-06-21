@@ -416,7 +416,7 @@ static void
 code_dealloc(PyCodeObject *co)
 {
     if (co->co_extra != NULL) {
-        PyInterpreterState *interp= PyThreadState_Get()->interp;
+        PyInterpreterState *interp = PyThreadState_Get()->interp;
         _PyCodeObjectExtra *co_extra = co->co_extra;
 
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
