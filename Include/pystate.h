@@ -234,6 +234,16 @@ typedef struct {
         size_t serialno;     /* incremented on each debug {m,re}alloc */
     } mem;
 
+    struct {
+        // Python/_warnings.c
+        /* Both 'filters' and 'onceregistry' can be set in warnings.py;
+           get_warnings_attr() will reset these variables accordingly. */
+        PyObject *filters;  /* List */
+        PyObject *once_registry;  /* Dict */
+        PyObject *default_action; /* String */
+        long filters_version;
+    } warnings;
+
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
