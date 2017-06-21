@@ -434,6 +434,7 @@ _PyEval_Initialize(void)
 {
     _PyRuntime.ceval.recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
     _PyRuntime.ceval.check_recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
+    _gil_initialize();
 }
 
 int

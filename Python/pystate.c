@@ -34,28 +34,14 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
-int _PyGILState_check_enabled = 1;
-
 #include "pythread.h"
 static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
 #define HEAD_INIT() (void)(head_mutex || (head_mutex = PyThread_allocate_lock()))
 #define HEAD_LOCK() PyThread_acquire_lock(head_mutex, WAIT_LOCK)
 #define HEAD_UNLOCK() PyThread_release_lock(head_mutex)
 
-/* The single PyInterpreterState used by this process'
-   GILState implementation
-*/
-/* TODO: Given interp_main, it may be possible to kill this ref */
-static PyInterpreterState *autoInterpreterState = NULL;
-static int autoTLSkey = -1;
-
 static PyInterpreterState *interp_head = NULL;
 static PyInterpreterState *interp_main = NULL;
-
-/* Assuming the current thread holds the GIL, this is the
-   PyThreadState for the current thread. */
-_Py_atomic_address _PyThreadState_Current = {0};
-PyThreadFrameGetter _PyThreadState_GetFrame = NULL;
 
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 
@@ -481,8 +467,8 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     if (tstate == GET_TSTATE())
         Py_FatalError("PyThreadState_Delete: tstate is still current");
-    if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
-        PyThread_delete_key_value(autoTLSkey);
+    if (_PyRuntime.ceval.gil.autoInterpreterState && PyThread_get_key_value(_PyRuntime.ceval.gil.autoTLSkey) == tstate)
+        PyThread_delete_key_value(_PyRuntime.ceval.gil.autoTLSkey);
     tstate_delete_common(tstate);
 }
 
@@ -495,8 +481,8 @@ PyThreadState_DeleteCurrent()
         Py_FatalError(
             "PyThreadState_DeleteCurrent: no current tstate");
     tstate_delete_common(tstate);
-    if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
-        PyThread_delete_key_value(autoTLSkey);
+    if (_PyRuntime.ceval.gil.autoInterpreterState && PyThread_get_key_value(_PyRuntime.ceval.gil.autoTLSkey) == tstate)
+        PyThread_delete_key_value(_PyRuntime.ceval.gil.autoTLSkey);
     SET_TSTATE(NULL);
     PyEval_ReleaseLock();
 }
@@ -752,11 +738,11 @@ void
 _PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
 {
     assert(i && t); /* must init with valid states */
-    autoTLSkey = PyThread_create_key();
-    if (autoTLSkey == -1)
+    _PyRuntime.ceval.gil.autoTLSkey = PyThread_create_key();
+    if (_PyRuntime.ceval.gil.autoTLSkey == -1)
         Py_FatalError("Could not allocate TLS entry");
-    autoInterpreterState = i;
-    assert(PyThread_get_key_value(autoTLSkey) == NULL);
+    _PyRuntime.ceval.gil.autoInterpreterState = i;
+    assert(PyThread_get_key_value(_PyRuntime.ceval.gil.autoTLSkey) == NULL);
     assert(t->gilstate_counter == 0);
 
     _PyGILState_NoteThreadState(t);
@@ -765,15 +751,15 @@ _PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
 PyInterpreterState *
 _PyGILState_GetInterpreterStateUnsafe(void)
 {
-    return autoInterpreterState;
+    return _PyRuntime.ceval.gil.autoInterpreterState;
 }
 
 void
 _PyGILState_Fini(void)
 {
-    PyThread_delete_key(autoTLSkey);
-    autoTLSkey = -1;
-    autoInterpreterState = NULL;
+    PyThread_delete_key(_PyRuntime.ceval.gil.autoTLSkey);
+    _PyRuntime.ceval.gil.autoTLSkey = -1;
+    _PyRuntime.ceval.gil.autoInterpreterState = NULL;
 }
 
 /* Reset the TLS key - called by PyOS_AfterFork_Child().
@@ -786,13 +772,13 @@ _PyGILState_Reinit(void)
     head_mutex = NULL;
     HEAD_INIT();
     PyThreadState *tstate = PyGILState_GetThisThreadState();
-    PyThread_delete_key(autoTLSkey);
-    if ((autoTLSkey = PyThread_create_key()) == -1)
+    PyThread_delete_key(_PyRuntime.ceval.gil.autoTLSkey);
+    if ((_PyRuntime.ceval.gil.autoTLSkey = PyThread_create_key()) == -1)
         Py_FatalError("Could not allocate TLS entry");
 
     /* If the thread had an associated auto thread state, reassociate it with
      * the new key. */
-    if (tstate && PyThread_set_key_value(autoTLSkey, (void *)tstate) < 0)
+    if (tstate && PyThread_set_key_value(_PyRuntime.ceval.gil.autoTLSkey, (void *)tstate) < 0)
         Py_FatalError("Couldn't create autoTLSkey mapping");
 }
 
@@ -807,7 +793,7 @@ _PyGILState_NoteThreadState(PyThreadState* tstate)
     /* If autoTLSkey isn't initialized, this must be the very first
        threadstate created in Py_Initialize().  Don't do anything for now
        (we'll be back here when _PyGILState_Init is called). */
-    if (!autoInterpreterState)
+    if (!_PyRuntime.ceval.gil.autoInterpreterState)
         return;
 
     /* Stick the thread state for this thread in thread local storage.
@@ -822,8 +808,8 @@ _PyGILState_NoteThreadState(PyThreadState* tstate)
        The first thread state created for that given OS level thread will
        "win", which seems reasonable behaviour.
     */
-    if (PyThread_get_key_value(autoTLSkey) == NULL) {
-        if (PyThread_set_key_value(autoTLSkey, (void *)tstate) < 0)
+    if (PyThread_get_key_value(_PyRuntime.ceval.gil.autoTLSkey) == NULL) {
+        if (PyThread_set_key_value(_PyRuntime.ceval.gil.autoTLSkey, (void *)tstate) < 0)
             Py_FatalError("Couldn't create autoTLSkey mapping");
     }
 
@@ -835,9 +821,9 @@ _PyGILState_NoteThreadState(PyThreadState* tstate)
 PyThreadState *
 PyGILState_GetThisThreadState(void)
 {
-    if (autoInterpreterState == NULL)
+    if (_PyRuntime.ceval.gil.autoInterpreterState == NULL)
         return NULL;
-    return (PyThreadState *)PyThread_get_key_value(autoTLSkey);
+    return (PyThreadState *)PyThread_get_key_value(_PyRuntime.ceval.gil.autoTLSkey);
 }
 
 int
@@ -848,7 +834,7 @@ PyGILState_Check(void)
     if (!_PyGILState_check_enabled)
         return 1;
 
-    if (autoTLSkey == -1)
+    if (_PyRuntime.ceval.gil.autoTLSkey == -1)
         return 1;
 
     tstate = GET_TSTATE();
@@ -868,8 +854,8 @@ PyGILState_Ensure(void)
        spells out other issues.  Embedders are expected to have
        called Py_Initialize() and usually PyEval_InitThreads().
     */
-    assert(autoInterpreterState); /* Py_Initialize() hasn't been called! */
-    tcur = (PyThreadState *)PyThread_get_key_value(autoTLSkey);
+    assert(_PyRuntime.ceval.gil.autoInterpreterState); /* Py_Initialize() hasn't been called! */
+    tcur = (PyThreadState *)PyThread_get_key_value(_PyRuntime.ceval.gil.autoTLSkey);
     if (tcur == NULL) {
         /* At startup, Python has no concrete GIL. If PyGILState_Ensure() is
            called from a new thread for the first time, we need the create the
@@ -877,7 +863,7 @@ PyGILState_Ensure(void)
         PyEval_InitThreads();
 
         /* Create a new thread state for this thread */
-        tcur = PyThreadState_New(autoInterpreterState);
+        tcur = PyThreadState_New(_PyRuntime.ceval.gil.autoInterpreterState);
         if (tcur == NULL)
             Py_FatalError("Couldn't create thread-state for new thread");
         /* This is our thread state!  We'll need to delete it in the
@@ -902,7 +888,7 @@ void
 PyGILState_Release(PyGILState_STATE oldstate)
 {
     PyThreadState *tcur = (PyThreadState *)PyThread_get_key_value(
-                                                            autoTLSkey);
+                                                            _PyRuntime.ceval.gil.autoTLSkey);
     if (tcur == NULL)
         Py_FatalError("auto-releasing thread-state, "
                       "but no thread-state for this thread");

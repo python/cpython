@@ -194,6 +194,8 @@ typedef struct _ts {
 #endif
 
 #ifndef Py_LIMITED_API
+typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
+
 typedef struct {
 
     // Python/pylifecycle.c
@@ -289,6 +291,46 @@ typedef struct {
         volatile int pendingfirst;
         volatile int pendinglast;
 #endif /* WITH_THREAD */
+
+        struct {
+            // Python/ceval_gil.h
+            /* microseconds (the Python API uses seconds, though) */
+            unsigned long interval;
+            /* Last PyThreadState holding / having held the GIL. This helps us know
+               whether anyone else was scheduled after we dropped the GIL. */
+            _Py_atomic_address last_holder;
+            /* Whether the GIL is already taken (-1 if uninitialized). This is atomic
+               because it can be read without any lock taken in ceval.c. */
+            _Py_atomic_int locked;
+            /* Number of GIL switches since the beginning. */
+            unsigned long switch_number;
+            /* This condition variable allows one or several threads to wait until
+               the GIL is released. In addition, the mutex also protects the above
+               variables. */
+//            PyCOND_T cond;
+//            Py_MUTEX_T mutex;
+//#ifdef FORCE_SWITCHING
+            /* This condition variable helps the GIL-releasing thread wait for
+               a GIL-awaiting thread to be scheduled and take the GIL. */
+//            PyCOND_T switch_cond;
+//            PyMUTEX_T switch_mutex;
+//#endif
+
+            // Python/pystate.c
+            int gilstate_check_enabled;
+            /* Assuming the current thread holds the GIL, this is the
+               PyThreadState for the current thread. */
+            _Py_atomic_address tstate_current;
+            PyThreadFrameGetter getframe;
+#ifdef WITH_THREAD
+            /* The single PyInterpreterState used by this process'
+               GILState implementation
+            */
+            /* TODO: Given interp_main, it may be possible to kill this ref */
+            PyInterpreterState *autoInterpreterState;
+            int autoTLSkey;
+#endif /* WITH_THREAD */
+        } gil;
 #endif /* Py_BUILD_CORE */
     } ceval;
 
@@ -357,7 +399,7 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
 #ifdef Py_BUILD_CORE
-PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
+#  define _PyThreadState_Current _PyRuntime.ceval.gil.tstate_current
 #  define PyThreadState_GET() \
              ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
 #else
@@ -413,7 +455,7 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 #ifndef Py_LIMITED_API
 /* Issue #26558: Flag to disable PyGILState_Check().
    If set to non-zero, PyGILState_Check() always return 1. */
-PyAPI_DATA(int) _PyGILState_check_enabled;
+#define _PyGILState_check_enabled _PyRuntime.ceval.gil.gilstate_check_enabled
 
 /* Helper/diagnostic function - return 1 if the current thread
    currently holds the GIL, 0 otherwise.
@@ -445,13 +487,11 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
-
-typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 #endif
 
 /* hook for PyEval_GetFrame(), requested for Psyco */
 #ifndef Py_LIMITED_API
-PyAPI_DATA(PyThreadFrameGetter) _PyThreadState_GetFrame;
+#define _PyThreadState_GetFrame _PyRuntime.ceval.gil.getframe
 #endif
 
 #ifdef __cplusplus
