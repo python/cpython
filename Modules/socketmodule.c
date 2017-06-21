@@ -4397,7 +4397,7 @@ SIO_LOOPBACK_FAST_PATH: 'option' is a boolean value, and is disabled by default"
 static PyObject*
 sock_share(PySocketSockObject *s, PyObject *arg)
 {
-    WSAPROTOCOL_INFO info;
+    WSAPROTOCOL_INFOW info;
     DWORD processId;
     int result;
 
@@ -4405,7 +4405,7 @@ sock_share(PySocketSockObject *s, PyObject *arg)
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    result = WSADuplicateSocket(s->sock_fd, processId, &info);
+    result = WSADuplicateSocketW(s->sock_fd, processId, &info);
     Py_END_ALLOW_THREADS
     if (result == SOCKET_ERROR)
         return set_error();
@@ -4636,7 +4636,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 #ifdef MS_WINDOWS
         /* recreate a socket that was duplicated */
         if (PyBytes_Check(fdobj)) {
-            WSAPROTOCOL_INFO info;
+            WSAPROTOCOL_INFOW info;
             if (PyBytes_GET_SIZE(fdobj) != sizeof(info)) {
                 PyErr_Format(PyExc_ValueError,
                     "socket descriptor string has wrong size, "
@@ -4645,7 +4645,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
             }
             memcpy(&info, PyBytes_AS_STRING(fdobj), sizeof(info));
             Py_BEGIN_ALLOW_THREADS
-            fd = WSASocket(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
+            fd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                      FROM_PROTOCOL_INFO, &info, 0, WSA_FLAG_OVERLAPPED);
             Py_END_ALLOW_THREADS
             if (fd == INVALID_SOCKET) {
@@ -4678,7 +4678,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 
         Py_BEGIN_ALLOW_THREADS
         if (support_wsa_no_inherit) {
-            fd = WSASocket(family, type, proto,
+            fd = WSASocketW(family, type, proto,
                            NULL, 0,
                            WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
             if (fd == INVALID_SOCKET) {
@@ -5336,7 +5336,7 @@ socket_dup(PyObject *self, PyObject *fdobj)
     SOCKET_T fd, newfd;
     PyObject *newfdobj;
 #ifdef MS_WINDOWS
-    WSAPROTOCOL_INFO info;
+    WSAPROTOCOL_INFOW info;
 #endif
 
     fd = PyLong_AsSocket_t(fdobj);
@@ -5344,10 +5344,10 @@ socket_dup(PyObject *self, PyObject *fdobj)
         return NULL;
 
 #ifdef MS_WINDOWS
-    if (WSADuplicateSocket(fd, GetCurrentProcessId(), &info))
+    if (WSADuplicateSocketW(fd, GetCurrentProcessId(), &info))
         return set_error();
 
-    newfd = WSASocket(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
+    newfd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                       FROM_PROTOCOL_INFO,
                       &info, 0, WSA_FLAG_OVERLAPPED);
     if (newfd == INVALID_SOCKET)
