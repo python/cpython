@@ -5774,16 +5774,16 @@ static PyObject *
 socket_inet_pton(PyObject *self, PyObject *args)
 {
     int af;
-    char* ip;
+    Py_UNICODE* ip;
     struct sockaddr_in6 addr;
     INT ret, size;
 
-    if (!PyArg_ParseTuple(args, "is:inet_pton", &af, &ip)) {
+    if (!PyArg_ParseTuple(args, "iu:inet_pton", &af, &ip)) {
         return NULL;
     }
 
     size = sizeof(addr);
-    ret = WSAStringToAddressA(ip, af, NULL, (LPSOCKADDR)&addr, &size);
+    ret = WSAStringToAddressW(ip, af, NULL, (LPSOCKADDR)&addr, &size);
 
     if (ret) {
         PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
@@ -5876,9 +5876,9 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     struct sockaddr_in6 addr;
     DWORD addrlen, ret, retlen;
 #ifdef ENABLE_IPV6
-    char ip[Py_MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
+    wchar_t ip[Py_MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
 #else
-    char ip[INET_ADDRSTRLEN + 1];
+    wchar_t ip[INET_ADDRSTRLEN + 1];
 #endif
 
     /* Guarantee NUL-termination for PyUnicode_FromString() below */
@@ -5921,15 +5921,15 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     }
     PyBuffer_Release(&packed_ip);
 
-    retlen = sizeof(ip);
-    ret = WSAAddressToStringA((struct sockaddr*)&addr, addrlen, NULL,
+    retlen = sizeof(ip) / sizeof(wchar_t);
+    ret = WSAAddressToStringW((struct sockaddr*)&addr, addrlen, NULL,
                               ip, &retlen);
 
     if (ret) {
         PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
         return NULL;
     } else {
-        return PyUnicode_FromString(ip);
+        return PyUnicode_FromWideChar(ip, retlen - 1);
     }
 }
 
