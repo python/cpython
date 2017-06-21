@@ -84,6 +84,7 @@ _PyRuntime_Initialize(void)
     _PyRuntime = initial;
 
     _PyMem_Initialize();
+    _PyEval_Initialize();
 }
 
 /* Global configuration variable declarations are in pydebug.h */

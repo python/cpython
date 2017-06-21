@@ -188,7 +188,7 @@ static void drop_gil(PyThreadState *tstate)
     MUTEX_UNLOCK(gil_mutex);
 
 #ifdef FORCE_SWITCHING
-    if (_Py_atomic_load_relaxed(&gil_drop_request) && tstate != NULL) {
+    if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.gil_drop_request) && tstate != NULL) {
         MUTEX_LOCK(switch_mutex);
         /* Not switched yet => wait */
         if ((PyThreadState*)_Py_atomic_load_relaxed(&gil_last_holder) == tstate) {
@@ -248,7 +248,7 @@ _ready:
     COND_SIGNAL(switch_cond);
     MUTEX_UNLOCK(switch_mutex);
 #endif
-    if (_Py_atomic_load_relaxed(&gil_drop_request)) {
+    if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.gil_drop_request)) {
         RESET_GIL_DROP_REQUEST();
     }
     if (tstate->async_exc != NULL) {

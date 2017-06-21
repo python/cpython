@@ -87,72 +87,57 @@ static long dxp[256];
 #endif
 #endif
 
-#define GIL_REQUEST _Py_atomic_load_relaxed(&gil_drop_request)
+#define GIL_REQUEST _Py_atomic_load_relaxed(&_PyRuntime.ceval.gil_drop_request)
 
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
    the GIL eventually anyway. */
 #define COMPUTE_EVAL_BREAKER() \
     _Py_atomic_store_relaxed( \
-        &eval_breaker, \
+        &_PyRuntime.ceval.eval_breaker, \
         GIL_REQUEST | \
-        _Py_atomic_load_relaxed(&pendingcalls_to_do) | \
-        pending_async_exc)
+        _Py_atomic_load_relaxed(&_PyRuntime.ceval.pendingcalls_to_do) | \
+        _PyRuntime.ceval.pending_async_exc)
 
 #define SET_GIL_DROP_REQUEST() \
     do { \
-        _Py_atomic_store_relaxed(&gil_drop_request, 1); \
-        _Py_atomic_store_relaxed(&eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.gil_drop_request, 1); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
     } while (0)
 
 #define RESET_GIL_DROP_REQUEST() \
     do { \
-        _Py_atomic_store_relaxed(&gil_drop_request, 0); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.gil_drop_request, 0); \
         COMPUTE_EVAL_BREAKER(); \
     } while (0)
 
 /* Pending calls are only modified under pending_lock */
 #define SIGNAL_PENDING_CALLS() \
     do { \
-        _Py_atomic_store_relaxed(&pendingcalls_to_do, 1); \
-        _Py_atomic_store_relaxed(&eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.pendingcalls_to_do, 1); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
     } while (0)
 
 #define UNSIGNAL_PENDING_CALLS() \
     do { \
-        _Py_atomic_store_relaxed(&pendingcalls_to_do, 0); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.pendingcalls_to_do, 0); \
         COMPUTE_EVAL_BREAKER(); \
     } while (0)
 
 #define SIGNAL_ASYNC_EXC() \
     do { \
-        pending_async_exc = 1; \
-        _Py_atomic_store_relaxed(&eval_breaker, 1); \
+        _PyRuntime.ceval.pending_async_exc = 1; \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
     } while (0)
 
 #define UNSIGNAL_ASYNC_EXC() \
-    do { pending_async_exc = 0; COMPUTE_EVAL_BREAKER(); } while (0)
+    do { _PyRuntime.ceval.pending_async_exc = 0; COMPUTE_EVAL_BREAKER(); } while (0)
 
-
-/* This single variable consolidates all requests to break out of the fast path
-   in the eval loop. */
-static _Py_atomic_int eval_breaker = {0};
-/* Request for running pending calls. */
-static _Py_atomic_int pendingcalls_to_do = {0};
-/* Request for looking at the `async_exc` field of the current thread state.
-   Guarded by the GIL. */
-static int pending_async_exc = 0;
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
 #include "pythread.h"
-
-static PyThread_type_lock pending_lock = 0; /* for pending calls */
-static unsigned long main_thread = 0;
-/* Request for dropping the GIL */
-static _Py_atomic_int gil_drop_request = {0};
-
 #include "ceval_gil.h"
 
 int
@@ -168,9 +153,9 @@ PyEval_InitThreads(void)
         return;
     create_gil();
     take_gil(PyThreadState_GET());
-    main_thread = PyThread_get_thread_ident();
-    if (!pending_lock)
-        pending_lock = PyThread_allocate_lock();
+    _PyRuntime.ceval.main_thread = PyThread_get_thread_ident();
+    if (!_PyRuntime.ceval.pending_lock)
+        _PyRuntime.ceval.pending_lock = PyThread_allocate_lock();
 }
 
 void
@@ -238,9 +223,9 @@ PyEval_ReInitThreads(void)
     if (!gil_created())
         return;
     recreate_gil();
-    pending_lock = PyThread_allocate_lock();
+    _PyRuntime.ceval.pending_lock = PyThread_allocate_lock();
     take_gil(current_tstate);
-    main_thread = PyThread_get_thread_ident();
+    _PyRuntime.ceval.main_thread = PyThread_get_thread_ident();
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);
@@ -326,19 +311,11 @@ _PyEval_SignalReceived(void)
    callback.
  */
 
-#define NPENDINGCALLS 32
-static struct {
-    int (*func)(void *);
-    void *arg;
-} pendingcalls[NPENDINGCALLS];
-static int pendingfirst = 0;
-static int pendinglast = 0;
-
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
     int i, j, result=0;
-    PyThread_type_lock lock = pending_lock;
+    PyThread_type_lock lock = _PyRuntime.ceval.pending_lock;
 
     /* try a few times for the lock.  Since this mechanism is used
      * for signal handling (on the main thread), there is a (slim)
@@ -360,14 +337,14 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
             return -1;
     }
 
-    i = pendinglast;
+    i = _PyRuntime.ceval.pendinglast;
     j = (i + 1) % NPENDINGCALLS;
-    if (j == pendingfirst) {
+    if (j == _PyRuntime.ceval.pendingfirst) {
         result = -1; /* Queue full */
     } else {
-        pendingcalls[i].func = func;
-        pendingcalls[i].arg = arg;
-        pendinglast = j;
+        _PyRuntime.ceval.pendingcalls[i].func = func;
+        _PyRuntime.ceval.pendingcalls[i].arg = arg;
+        _PyRuntime.ceval.pendinglast = j;
     }
     /* signal main loop */
     SIGNAL_PENDING_CALLS();
@@ -385,15 +362,15 @@ Py_MakePendingCalls(void)
 
     assert(PyGILState_Check());
 
-    if (!pending_lock) {
+    if (!_PyRuntime.ceval.pending_lock) {
         /* initial allocation of the lock */
-        pending_lock = PyThread_allocate_lock();
-        if (pending_lock == NULL)
+        _PyRuntime.ceval.pending_lock = PyThread_allocate_lock();
+        if (_PyRuntime.ceval.pending_lock == NULL)
             return -1;
     }
 
     /* only service pending calls on main thread */
-    if (main_thread && PyThread_get_thread_ident() != main_thread)
+    if (_PyRuntime.ceval.main_thread && PyThread_get_thread_ident() != _PyRuntime.ceval.main_thread)
         return 0;
     /* don't perform recursive pending calls */
     if (busy)
@@ -416,16 +393,18 @@ Py_MakePendingCalls(void)
         void *arg = NULL;
 
         /* pop one item off the queue while holding the lock */
-        PyThread_acquire_lock(pending_lock, WAIT_LOCK);
-        j = pendingfirst;
-        if (j == pendinglast) {
+        PyThread_acquire_lock(_PyRuntime.ceval.pending_lock, WAIT_LOCK);
+        j = _PyRuntime.ceval.pendingfirst;
+        if (j == _PyRuntime.ceval.pendinglast) {
             func = NULL; /* Queue empty */
         } else {
-            func = pendingcalls[j].func;
-            arg = pendingcalls[j].arg;
-            pendingfirst = (j + 1) % NPENDINGCALLS;
+            func = _PyRuntime.ceval.pendingcalls[j].func;
+            arg = _PyRuntime.ceval.pendingcalls[j].arg;
+            _PyRuntime.ceval.pendingfirst = (j + 1) % NPENDINGCALLS;
         }
-        PyThread_release_lock(pending_lock);
+//        if (_PyRuntime.ceval.pendingfirst != _PyRuntime.ceval.pendinglast)
+//            SIGNAL_PENDING_CALLS();
+        PyThread_release_lock(_PyRuntime.ceval.pending_lock);
         /* having released the lock, perform the callback */
         if (func == NULL)
             break;
@@ -444,26 +423,30 @@ error:
     return -1;
 }
 
-
 /* The interpreter's recursion limit */
 
 #ifndef Py_DEFAULT_RECURSION_LIMIT
 #define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
-static int recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
-int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
+
+void
+_PyEval_Initialize(void)
+{
+    _PyRuntime.ceval.recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
+    _PyRuntime.ceval.check_recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
+}
 
 int
 Py_GetRecursionLimit(void)
 {
-    return recursion_limit;
+    return _PyRuntime.ceval.recursion_limit;
 }
 
 void
 Py_SetRecursionLimit(int new_limit)
 {
-    recursion_limit = new_limit;
-    _Py_CheckRecursionLimit = recursion_limit;
+    _PyRuntime.ceval.recursion_limit = new_limit;
+    _Py_CheckRecursionLimit = _PyRuntime.ceval.recursion_limit;
 }
 
 /* the macro Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
@@ -475,6 +458,7 @@ int
 _Py_CheckRecursiveCall(const char *where)
 {
     PyThreadState *tstate = PyThreadState_GET();
+    int recursion_limit = _PyRuntime.ceval.recursion_limit;
 
 #ifdef USE_STACKCHECK
     if (PyOS_CheckStack()) {
@@ -659,7 +643,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
 #define DISPATCH() \
     { \
-        if (!_Py_atomic_load_relaxed(&eval_breaker)) {      \
+        if (!_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {      \
                     FAST_DISPATCH(); \
         } \
         continue; \
@@ -960,7 +944,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
            async I/O handler); see Py_AddPendingCall() and
            Py_MakePendingCalls() above. */
 
-        if (_Py_atomic_load_relaxed(&eval_breaker)) {
+        if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {
             if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
                 _Py_OPCODE(*next_instr) == YIELD_FROM) {
                 /* Two cases where we skip running signal handlers and other
@@ -977,11 +961,11 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 */
                 goto fast_next_opcode;
             }
-            if (_Py_atomic_load_relaxed(&pendingcalls_to_do)) {
+            if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.pendingcalls_to_do)) {
                 if (Py_MakePendingCalls() < 0)
                     goto error;
             }
-            if (_Py_atomic_load_relaxed(&gil_drop_request)) {
+            if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.gil_drop_request)) {
                 /* Give another thread a chance */
                 if (PyThreadState_Swap(NULL) != tstate)
                     Py_FatalError("ceval: tstate mix-up");
