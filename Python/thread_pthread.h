@@ -205,8 +205,8 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return PYTHREAD_INVALID_THREAD_ID;
 #endif
 #if defined(THREAD_STACK_SIZE)
-    tss = (_pythread_stacksize != 0) ? _pythread_stacksize
-                                     : THREAD_STACK_SIZE;
+    size_t stacksize = PyThreadState_GET()->interp->pythread_stacksize;
+    tss = (stacksize != 0) ? stacksize : THREAD_STACK_SIZE;
     if (tss != 0) {
         if (pthread_attr_setstacksize(&attrs, tss) != 0) {
             pthread_attr_destroy(&attrs);
@@ -578,7 +578,7 @@ _pythread_pthread_set_stacksize(size_t size)
 
     /* set to default */
     if (size == 0) {
-        _pythread_stacksize = 0;
+        PyThreadState_GET()->interp->pythread_stacksize = 0;
         return 0;
     }
 
@@ -595,7 +595,7 @@ _pythread_pthread_set_stacksize(size_t size)
             rc = pthread_attr_setstacksize(&attrs, size);
             pthread_attr_destroy(&attrs);
             if (rc == 0) {
-                _pythread_stacksize = size;
+                PyThreadState_GET()->interp->pythread_stacksize = size;
                 return 0;
             }
         }
