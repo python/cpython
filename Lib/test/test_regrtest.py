@@ -825,6 +825,23 @@ class ArgsTestCase(BaseTestCase):
         self.assertEqual(output.rstrip().splitlines(),
                          tests)
 
+    def test_list_cases(self):
+        # test --list-cases
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+        all_methods = ['%s.Tests.test_method1' % testname,
+                       '%s.Tests.test_method2' % testname]
+        output = self.run_tests('--list-cases', testname)
+        self.assertEqual(output.splitlines(), all_methods)
+
     def test_crashed(self):
         # Any code which causes a crash
         code = 'import faulthandler; faulthandler._sigsegv()'
@@ -841,7 +858,6 @@ class ArgsTestCase(BaseTestCase):
         return [match.group(1) for match in regex.finditer(output)]
 
     def test_matchfile(self):
-        # Any code which causes a crash
         code = textwrap.dedent("""
             import unittest
 

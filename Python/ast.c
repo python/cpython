@@ -4914,6 +4914,8 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
             /* Do nothing. Just leave last_str alone (and possibly
                NULL). */
         } else if (!state->last_str) {
+            /*  Note that the literal can be zero length, if the
+                input string is "\\\n" or "\\\r", among others. */
             state->last_str = literal;
             literal = NULL;
         } else {
@@ -4923,8 +4925,6 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
                 return -1;
             literal = NULL;
         }
-        assert(!state->last_str ||
-               PyUnicode_GET_LENGTH(state->last_str) != 0);
 
         /* We've dealt with the literal now. It can't be leaked on further
            errors. */

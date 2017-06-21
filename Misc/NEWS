@@ -13,6 +13,12 @@ Core and Builtins
 - bpo-30604:  Move co_extra_freefuncs from per-thread to per-interpreter to
   avoid crashes.
 
+- bpo-30597: ``print`` now shows expected input in custom error message when
+  used as a Python 2 statement. Patch by Sanyam Khurana.
+
+- bpo-30682: Removed a too-strict assertion that failed for certain f-strings,
+  such as eval("f'\\\n'") and eval("f'\\\r'").
+
 - bpo-30501: The compiler now produces more optimal code for complex condition
   expressions in the "if", "while" and "assert" statement, the "if" expression,
   and generator expressions and comprehensions.
@@ -365,6 +371,40 @@ Extension Modules
 Library
 -------
 
+- [Security] bpo-30694: Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes
+  of multiple security vulnerabilities including: CVE-2017-9233 (External
+  entity infinite loop DoS), CVE-2016-9063 (Integer overflow, re-fix),
+  CVE-2016-0718 (Fix regression bugs from 2.2.0's fix to CVE-2016-0718)
+  and CVE-2012-0876 (Counter hash flooding with SipHash).
+  Note: the CVE-2016-5300 (Use os-specific entropy sources like getrandom)
+  doesn't impact Python, since Python already gets entropy from the OS to set
+  the expat secret using ``XML_SetHashSalt()``.
+
+- bpo-29755: Fixed the lgettext() family of functions in the gettext module.
+  They now always return bytes.
+
+- [Security] bpo-30500: Fix urllib.parse.splithost() to correctly parse
+  fragments. For example, ``splithost('//127.0.0.1#@evil.com/')`` now
+  correctly returns the ``127.0.0.1`` host, instead of treating ``@evil.com``
+  as the host in an authentification (``login@host``).
+
+- bpo-30616: Functional API of enum allows to create empty enums.
+  Patched by Dong-hee Na
+
+- bpo-30038: Fix race condition between signal delivery and wakeup file
+  descriptor.  Patch by Nathaniel Smith.
+
+- bpo-23894: lib2to3 now recognizes ``rb'...'`` and ``f'...'`` strings.
+
+- [Security] bpo-29591: Update expat copy from 2.1.1 to 2.2.0 to get fixes
+  of CVE-2016-0718 and CVE-2016-4472. See
+  https://sourceforge.net/p/expat/bugs/537/ for more information.
+
+- bpo-24744: pkgutil.walk_packages function now raises ValueError if *path*
+  is a string. Patch by Sanyam Khurana.
+
+- bpo-24484: Avoid race condition in multiprocessing cleanup.
+
 - bpo-30589: Fix multiprocessing.Process.exitcode to return the opposite
   of the signal number when the process is killed by a signal (instead
   of 255) when using the "forkserver" method.
@@ -439,6 +479,10 @@ Library
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
+
+- bpo-30436: importlib.find_spec() raises ModuleNotFoundError instead of
+  AttributeError if the specified parent module is not a package
+  (i.e. lacks a __path__ attribute).
 
 - bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
   *spawn* and *forkserver* start methods.
@@ -1108,6 +1152,20 @@ Library
 IDLE
 ----
 
+- bpo-15786: Fix several problems with IDLE's autocompletion box.
+  The following should now work: clicking on selection box items;
+  using the scrollbar; selecting an item by hitting Return.
+  Hangs on MacOSX should no longer happen. Patch by Louie Lu.
+
+- bpo-25514: Add doc subsubsection about IDLE failure to start.
+  Popup no-connection message directs users to this section.
+
+- bpo-30642: Fix reference leaks in IDLE tests.
+  Patches by Louie Lu and Terry Jan Reedy.
+
+- bpo-30495: Add docstrings for textview.py and use PEP8 names.
+  Patches by Cheryl Sabella and Terry Jan Reedy.
+
 - bpo-30290: Help-about: use pep8 names and add tests.
   Increase coverage to 100%.
   Patches by Louie Lu, Cheryl Sabella, and Terry Jan Reedy.
@@ -1123,6 +1181,11 @@ IDLE
 
 Windows
 -------
+
+- bpo-30450: The build process on Windows no longer depends on Subversion,
+  instead pulling external code from GitHub via a Python script.  If Python 3.6
+  is not found on the system (via ``py -3.6``), NuGet is used to download a
+  copy of 32-bit Python.
 
 - bpo-29579: Removes readme.txt from the installer.
 
@@ -1206,6 +1269,8 @@ C API
 Documentation
 -------------
 
+- bpo-30176: Add missing attribute related constants in curses documentation.
+
 - Issue #30052: the link targets for :func:`bytes` and
   :func:`bytearray` are now their respective type definitions, rather
   than the corresponding builtin function entries. Use :ref:`bytes <func-bytes>`
@@ -1240,6 +1305,9 @@ Documentation
 
 Build
 -----
+
+- bpo-30687: Locate msbuild.exe on Windows when building rather than
+  vcvarsall.bat
 
 - bpo-20210: Support the *disabled* marker in Setup files. Extension modules
   listed after this marker are not built at all, neither by the Makefile nor by

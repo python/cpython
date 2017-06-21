@@ -744,6 +744,11 @@ conflict.
    :data:`sys.stdin` and :data:`sys.stdout` to ``surrogateescape``. This
    behavior can be overridden using :envvar:`PYTHONIOENCODING` as usual.
 
+   For debugging purposes, setting ``PYTHONCOERCECLOCALE=warn`` will cause
+   Python to emit warning messages on ``stderr`` if either the locale coercion
+   activates, or else if a locale that *would* have triggered coercion is
+   still active when the Python runtime is initialized.
+
    Availability: \*nix
 
    .. versionadded:: 3.7
