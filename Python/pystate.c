@@ -92,6 +92,7 @@ PyInterpreterState_New(void)
         interp->builtins = NULL;
         interp->builtins_copy = NULL;
         interp->tstate_head = NULL;
+        interp->num_threads = 0;
         interp->codec_search_path = NULL;
         interp->codec_search_cache = NULL;
         interp->codec_error_registry = NULL;

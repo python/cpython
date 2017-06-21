@@ -57,6 +57,9 @@ typedef struct _is {
     PyObject *builtins;
     PyObject *importlib;
 
+    /* Used in Modules/_threadmodule.c. */
+    long num_threads;
+
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
