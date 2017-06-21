@@ -188,6 +188,10 @@ import tempfile
 import imp
 import platform
 import sysconfig
+try:
+    import threading
+except ImportError:
+    threading = None
 
 
 # Some times __path__ and __file__ are not absolute (e.g. while running from
@@ -330,6 +334,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     directly to set the values that would normally be set by flags
     on the command line.
     """
+    watchdog = None
+
     regrtest_start_time = time.time()
 
     test_support.record_original_stdout(sys.stdout)
@@ -342,7 +348,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
              'failfast', 'match=', 'testdir=', 'list-tests', 'list-cases',
-             'coverage', 'matchfile=', 'fail-env-changed'])
+             'coverage', 'matchfile=', 'fail-env-changed', 'timeout='])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -355,6 +361,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     list_tests = False
     list_cases_opt = False
     fail_env_changed = False
+    timeout = None
     for o, a in opts:
         if o in ('-h', '--help'):
             usage(0)
@@ -392,6 +399,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             with open(filename) as fp:
                 for line in fp:
                     match_tests.append(line.strip())
+        elif o == '--timeout':
+            timeout = float(a)
         elif o in ('-l', '--findleaks'):
             findleaks = True
         elif o in ('-L', '--runleaks'):
@@ -469,6 +478,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         usage(2, "-l and -j don't go together!")
     if failfast and not (verbose or verbose3):
         usage("-G/--failfast needs either -v or -W")
+
+    if timeout is not None:
+        if threading is None:
+            print("ERROR: --timeout needs threading support")
+            sys.exit(1)
+
+        watchdog = WatchDogThread(timeout)
+        watchdog.start()
 
     if testdir:
         testdir = os.path.abspath(testdir)
@@ -801,6 +818,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 display_progress(test_index, text)
 
             def local_runtest():
+                if watchdog is not None:
+                    watchdog.reset()
+
                 result = runtest(test, verbose, quiet, huntrleaks, None, pgo,
                                  failfast=failfast,
                                  match_tests=match_tests,
@@ -822,6 +842,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     if verbose3 and result[0] == FAILED:
                         if not pgo:
                             print "Re-running test %r in verbose mode" % test
+                        if watchdog is not None:
+                            watchdog.reset()
                         runtest(test, True, quiet, huntrleaks, None, pgo,
                                 testdir=testdir)
                 except KeyboardInterrupt:
@@ -898,6 +920,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             print "Re-running test %r in verbose mode" % test
             sys.stdout.flush()
             try:
+                if watchdog is not None:
+                    watchdog.reset()
                 test_support.verbose = True
                 ok = runtest(test, True, quiet, huntrleaks, None, pgo,
                              testdir=testdir)
@@ -926,6 +950,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if runleaks:
         os.system("leaks %d" % os.getpid())
+
+    if watchdog is not None:
+        watchdog.stop()
+        watchdog.stop()
 
     print
     duration = time.time() - regrtest_start_time
@@ -1962,6 +1990,70 @@ class _ExpectedSkips:
 
         assert self.isvalid()
         return self.expected
+
+
+if threading is not None:
+    class WatchDogThread(threading.Thread):
+        daemon = True
+
+        def __init__(self, timeout):
+            threading.Thread.__init__(self)
+            self.timeout = timeout
+            self.stream = sys.__stdout__
+            self.quit = False
+            self.reset()
+
+        def reset(self):
+            self.deadline = time.time() + self.timeout
+
+        def write(self, line):
+            self.stream.write(line + "\n")
+            self.stream.flush()
+
+        def run(self):
+            while True:
+                # the sleep duration impacts the delay of .join()
+                # called by .stop()
+                time.sleep(0.1)
+                if self.quit:
+                    return
+                if time.time() >= self.deadline:
+                    break
+
+            try:
+                self.dump_threads()
+            except:
+                self.write("FAILED TO DUMP THREADS")
+            os._exit(1)
+
+        def stop(self):
+            if not self.is_alive():
+                return
+
+            print("Stop watchdog")
+            self.quit = True
+            self.join()
+
+        def dump_thread(self, stack):
+            for filename, lineno, name, line in traceback.extract_stack(stack):
+                self.write('File: "%s", line %d, in %s' % (filename, lineno, name))
+                line = line.strip()
+                if line:
+                    self.write("  %s" % line)
+
+        def dump_threads(self):
+            self.write("*** STACKTRACE - START ***")
+
+            for threadId, stack in sys._current_frames().items():
+                self.write("# ThreadID: %s" % threadId)
+                try:
+                    self.dump_thread(stack)
+                except:
+                    self.write("FAILED TO DUMP THREAD STACK")
+                self.write("")
+
+            self.write("*** STACKTRACE - END ***")
+
 
 def main_in_temp_cwd():
     """Run main() in a temporary working directory."""
