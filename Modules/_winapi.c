@@ -744,6 +744,12 @@ getenvironment(PyObject* environment)
                 "environment can only contain strings");
             goto error;
         }
+        if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
+            PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto error;
+        }
         if (totalsize > PY_SSIZE_T_MAX - PyUnicode_GET_LENGTH(key) - 1) {
             PyErr_SetString(PyExc_OverflowError, "environment too long");
             goto error;
@@ -831,6 +837,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
     STARTUPINFOW si;
     PyObject* environment;
     const wchar_t *wenvironment;
+    Py_ssize_t wenvironment_size;
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
@@ -849,7 +856,8 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
         if (environment == NULL) {
             return NULL;
         }
-        wenvironment = _PyUnicode_AsUnicode(environment);
+        /* contains embedded null characters */
+        wenvironment = PyUnicode_AsUnicode(environment);
         if (wenvironment == NULL) {
             Py_DECREF(environment);
             return NULL;
