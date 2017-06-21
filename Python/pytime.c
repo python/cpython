@@ -700,7 +700,6 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     if (time == -1) {
         if (raise) {
             PyErr_SetFromErrno(PyExc_OSError);
-            return -1;
         }
         return -1;
     }
