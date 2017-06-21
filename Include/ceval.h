@@ -7,6 +7,10 @@ extern "C" {
 
 /* Interface to random parts in ceval.c */
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _PyEval_Initialize(void);
+#endif
+
 /* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
  * and PyEval_CallMethod are kept for backward compatibility: PyObject_Call(),
  * PyObject_CallFunction() and PyObject_CallMethod() are recommended to call
@@ -93,7 +97,7 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
       PyThreadState_GET()->overflowed = 0;  \
     } while(0)
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char *where);
-PyAPI_DATA(int) _Py_CheckRecursionLimit;
+#define _Py_CheckRecursionLimit _PyRuntime.ceval.check_recursion_limit
 
 #ifdef USE_STACKCHECK
 /* With USE_STACKCHECK, we artificially decrement the recursion limit in order
