@@ -371,6 +371,10 @@ Extension Modules
 Library
 -------
 
+- bpo-29212: Fix concurrent.futures.thread.ThreadPoolExecutor threads to have
+  a non repr() based thread name by default when no thread_name_prefix is
+  supplied.  They will now identify themselves as "ThreadPoolExecutor-y_n".
+
 - [Security] bpo-30694: Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes
   of multiple security vulnerabilities including: CVE-2017-9233 (External
   entity infinite loop DoS), CVE-2016-9063 (Integer overflow, re-fix),
