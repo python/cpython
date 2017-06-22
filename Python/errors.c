@@ -217,6 +217,10 @@ PyErr_ExceptionMatches(PyObject *exc)
 }
 
 
+#ifndef Py_NORMALIZE_RECURSION_LIMIT
+#define Py_NORMALIZE_RECURSION_LIMIT 32
+#endif
+
 /* Used in many places to normalize a raised exception, including in
    eval_code2(), do_raise(), and PyErr_Print()
 
@@ -230,7 +234,7 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
     PyObject *value = *val;
     PyObject *inclass = NULL;
     PyObject *initial_tb = NULL;
-    PyThreadState *tstate = NULL;
+    static int recursion_depth = 0;
 
     if (type == NULL) {
         /* There was no exception, so nothing to do. */
@@ -292,6 +296,10 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 finally:
     Py_DECREF(type);
     Py_DECREF(value);
+    if (recursion_depth + 1 == Py_NORMALIZE_RECURSION_LIMIT) {
+        PyErr_Format(PyExc_RecursionError, "maximum recursion depth exceeded "
+                     "while normalizing an exception");
+    }
     /* If the new exception doesn't set a traceback and the old
        exception had a traceback, use the old traceback for the
        new exception.  It's better than nothing.
@@ -304,20 +312,21 @@ finally:
         else
             Py_DECREF(initial_tb);
     }
-    /* normalize recursively */
-    tstate = PyThreadState_GET();
-    if (++tstate->recursion_depth > Py_GetRecursionLimit()) {
-        --tstate->recursion_depth;
-        /* throw away the old exception and use the recursion error instead */
-        Py_INCREF(PyExc_RecursionError);
-        Py_SETREF(*exc, PyExc_RecursionError);
-        Py_INCREF(PyExc_RecursionErrorInst);
-        Py_SETREF(*val, PyExc_RecursionErrorInst);
-        /* just keeping the old traceback */
-        return;
+    /* Normalize recursively.
+     * Abort when Py_NORMALIZE_RECURSION_LIMIT has been exceeded and the
+     * corresponding RecursionError could not be normalized.*/
+    if (++recursion_depth > Py_NORMALIZE_RECURSION_LIMIT) {
+        if (PyErr_GivenExceptionMatches(*exc, PyExc_MemoryError)) {
+            Py_FatalError("Cannot recover from MemoryErrors "
+                          "while normalizing exceptions.");
+        }
+        else {
+            Py_FatalError("Cannot recover from the recursive normalization "
+                          "of an exception.");
+        }
     }
     PyErr_NormalizeException(exc, val, tb);
-    --tstate->recursion_depth;
+    --recursion_depth;
 }
 
 
