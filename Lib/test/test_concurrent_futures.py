@@ -172,10 +172,9 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, unittest.Tes
         del executor
 
         for t in threads:
-            # We don't particularly care what the default name is, just that
-            # it has a default name implying that it is a ThreadPoolExecutor
-            # followed by what looks like a thread number.
-            self.assertRegex(t.name, r'^.*ThreadPoolExecutor.*_[0-4]$')
+            # Ensure that our default name is reasonably sane and unique when
+            # no thread_name_prefix was supplied.
+            self.assertRegex(t.name, r'ThreadPoolExecutor-\d+_[0-4]$')
             t.join()
 
 
