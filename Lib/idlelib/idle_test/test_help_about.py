@@ -5,7 +5,6 @@ Coverage: 100%
 from test.support import requires, findfile
 from tkinter import Tk, TclError
 import unittest
-from unittest import mock
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
 from idlelib.help_about import AboutDialog as About
