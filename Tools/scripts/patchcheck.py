@@ -271,11 +271,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--travis',
                         help='Perform pass/fail checks')
-    parser.add_argument('--srcdir',
-                        help='Path to the checkout')
     args = parser.parse_args()
-    if args.srcdir:
-        SRCDIR = args.srcdir
     if args.travis:
         travis(args.travis)
     else:
