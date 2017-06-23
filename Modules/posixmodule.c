@@ -5223,7 +5223,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     Py_ssize_t argc, i, envc;
     intptr_t spawnval;
     PyObject *(*getitem)(PyObject *, Py_ssize_t);
-    Py_ssize_t lastarg = -1;
+    Py_ssize_t lastarg = 0;
 
     /* spawnve has four arguments: (mode, path, argv, env), where
        argv is a list or tuple of strings and env is a dictionary
@@ -5266,7 +5266,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
             goto fail_1;
         }
         if (i == 0 && !argvlist[0][0]) {
-            lastarg = i;
+            lastarg = i + 1;
             PyErr_SetString(
                 PyExc_ValueError,
                 "spawnv() arg 2 first element cannot be empty");
@@ -5302,7 +5302,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
         PyMem_DEL(envlist[envc]);
     PyMem_DEL(envlist);
   fail_1:
-    free_string_array(argvlist, lastarg + 1);
+    free_string_array(argvlist, lastarg);
   fail_0:
     return res;
 }
