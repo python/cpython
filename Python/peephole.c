@@ -783,3 +783,160 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     PyMem_Free(codestr);
     return code;
 }
+
+
+/* PeepholeOptimizer */
+
+static PyObject*
+optimizer_code_transformer(PyObject *self, PyObject *args)
+{
+    PyCodeObject *code, *new_code;
+    PyObject *context;
+    PyObject *lnotab = NULL, *consts = NULL, *bytecode = NULL;
+    PyObject *tmp;
+    Py_ssize_t i, len;
+
+    if (!PyArg_ParseTuple(args, "O!O",
+                         &PyCode_Type, &code, &context))
+        return NULL;
+
+
+    len = PyBytes_GET_SIZE(code->co_lnotab);
+    if (len != 0) {
+        lnotab = PyBytes_FromStringAndSize(NULL, len);
+        if (lnotab == NULL)
+            goto error;
+
+        assert(Py_REFCNT(lnotab) == 1);
+        memcpy(PyBytes_AS_STRING(lnotab), PyBytes_AS_STRING(code->co_lnotab),
+               len);
+        Py_SIZE(lnotab) = len;
+    }
+    else {
+        Py_INCREF(code->co_lnotab);
+        lnotab = code->co_lnotab;
+    }
+
+    len = PyTuple_GET_SIZE(code->co_consts);
+    consts = PyList_New(len);
+    if (consts == NULL)
+        goto error;
+    for (i=0; i < len; i++) {
+        PyObject *item = PyTuple_GET_ITEM(code->co_consts, i);
+        Py_INCREF(item);
+        PyList_SET_ITEM(consts, i, item);
+    }
+
+    bytecode = PyCode_Optimize(code->co_code,
+                               consts,
+                               code->co_names,
+                               lnotab);
+    if (bytecode == NULL)
+        goto error;
+
+    tmp = PyList_AsTuple(consts);
+    if (tmp == NULL)
+        goto error;
+    Py_SETREF(consts, tmp);
+
+    new_code = PyCode_New(code->co_argcount,
+                          code->co_kwonlyargcount,
+                          code->co_nlocals,
+                          code->co_stacksize,
+                          code->co_flags,
+                          bytecode,
+                          consts,
+                          code->co_names,
+                          code->co_varnames,
+                          code->co_freevars,
+                          code->co_cellvars,
+                          code->co_filename,
+                          code->co_name,
+                          code->co_firstlineno,
+                          lnotab);
+    Py_DECREF(lnotab);
+    Py_DECREF(consts);
+    Py_DECREF(bytecode);
+
+    return (PyObject *)new_code;
+
+error:
+    Py_XDECREF(lnotab);
+    Py_XDECREF(consts);
+    Py_XDECREF(bytecode);
+    return NULL;
+}
+
+PyDoc_STRVAR(code_transformer_doc,
+"code_transformer(code, consts, names, lnotab, context) -> tuple\n\
+\n\
+Run the peephole optimizer.\n"
+"Return optimized code as (code, lnotab) tuple.");
+
+/* FIXME: remove useless constructor? */
+static PyObject *
+optimizer_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    assert(type != NULL && type->tp_alloc != NULL);
+    return type->tp_alloc(type, 0);
+}
+
+static PyObject *
+optimizer_get_name(PyFunctionObject *op)
+{
+    return PyUnicode_FromString("opt");
+}
+
+static PyMethodDef optimizer_methods[] = {
+    {"code_transformer", optimizer_code_transformer, METH_VARARGS,
+     code_transformer_doc},
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyGetSetDef optimizer_getsetlist[] = {
+    {"name", (getter)optimizer_get_name, NULL},
+    {NULL} /* Sentinel */
+};
+
+
+PyTypeObject _PyPeepholeOptimizer_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "PeepholeOptimizer",
+    0,
+    0,
+    0,                                          /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    optimizer_methods,                          /* tp_methods */
+    0,                                          /* tp_members */
+    optimizer_getsetlist,                       /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    optimizer_new,                                /* tp_new */
+    0,                                          /* tp_free */
+};

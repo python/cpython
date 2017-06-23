@@ -37,6 +37,26 @@ PyAPI_FUNC(PyObject *) PySys_GetXOptions(void);
 PyAPI_FUNC(size_t) _PySys_GetSizeOf(PyObject *);
 #endif
 
+#ifndef Py_LIMITED_API
+typedef struct {
+    /* The code transformer object */
+    PyObject *transformer;
+
+    /* name of the transformer */
+    PyObject *name;
+
+    /* ast_transformer() method of transformer, or NULL */
+    PyObject *ast_transformer;
+
+    /* code_transformer() method of transformer, or NULL */
+    PyObject *code_transformer;
+} _PySys_CodeTransformer;
+
+PyAPI_FUNC(int) _PySys_GetCodeTransformers(
+    _PySys_CodeTransformer **transformers,
+    Py_ssize_t *ntransformer);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

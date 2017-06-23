@@ -98,6 +98,7 @@ int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
+PyObject* _Py_OptimTag = NULL; /* optimization tag for importlib */
 
 PyThreadState *_Py_Finalizing = NULL;
 

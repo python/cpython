@@ -253,7 +253,6 @@ MAGIC_NUMBER = (3390).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
-_OPT = 'opt-'
 
 SOURCE_SUFFIXES = ['.py']  # _setup() adds .pyw as needed.
 
@@ -294,15 +293,15 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         raise NotImplementedError('sys.implementation.cache_tag is None')
     almost_filename = ''.join([(base if base else rest), sep, tag])
     if optimization is None:
-        if sys.flags.optimize == 0:
-            optimization = ''
-        else:
-            optimization = sys.flags.optimize
+        optimization = sys.flags.optimize
+    elif optimization == '':
+        optimization = 0
     optimization = str(optimization)
     if optimization != '':
         if not optimization.isalnum():
             raise ValueError('{!r} is not alphanumeric'.format(optimization))
-        almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
+        part = sys.implementation.optim_tag + '-'
+        almost_filename = '{}.{}{}'.format(almost_filename, part, optimization)
     return _path_join(head, _PYCACHE, almost_filename + BYTECODE_SUFFIXES[0])
 
 
@@ -329,10 +328,12 @@ def source_from_cache(path):
                          '{!r}'.format(pycache_filename))
     elif dot_count == 3:
         optimization = pycache_filename.rsplit('.', 2)[-2]
-        if not optimization.startswith(_OPT):
+        optim_tag = sys.implementation.optim_tag + '-'
+        if optimization.startswith(optim_tag):
+            opt_level = optimization[len(optim_tag):]
+        else:
             raise ValueError("optimization portion of filename does not start "
-                             "with {!r}".format(_OPT))
-        opt_level = optimization[len(_OPT):]
+                             "with {!r}".format(optim_tag))
         if not opt_level.isalnum():
             raise ValueError("optimization level {!r} is not an alphanumeric "
                              "value".format(optimization))
@@ -683,6 +684,13 @@ class _LoaderBasics:
         return _bootstrap._load_module_shim(self, fullname)
 
 
+def _transformers_tag():
+    transformers = sys.get_code_transformers()
+    if not transformers:
+        return 'noopt'
+    return '-'.join(transformer.name for transformer in transformers)
+
+
 class SourceLoader(_LoaderBasics):
 
     def path_mtime(self, path):
@@ -778,6 +786,15 @@ class SourceLoader(_LoaderBasics):
                         return _compile_bytecode(bytes_data, name=fullname,
                                                  bytecode_path=bytecode_path,
                                                  source_path=source_path)
+
+        optim_tag= sys.implementation.optim_tag
+        transformers_tag = _transformers_tag()
+        if optim_tag != transformers_tag:
+            # AST transformers are missing, the code cannot be compiled
+            raise ImportError("missing AST transformers for %r: "
+                              "optim_tag=%r, transformers tag=%r"
+                              % (source_path, optim_tag, transformers_tag))
+
         source_bytes = self.get_data(source_path)
         code_object = self.source_to_code(source_bytes, source_path)
         _bootstrap._verbose_message('code object from {}', source_path)

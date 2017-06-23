@@ -22,6 +22,7 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
 #define PyCF_DONT_IMPLY_DEDENT 0x0200
 #define PyCF_ONLY_AST 0x0400
 #define PyCF_IGNORE_COOKIE 0x0800
+#define PyCF_TRANSFORMED_AST 0x1000
 
 #ifndef Py_LIMITED_API
 typedef struct {

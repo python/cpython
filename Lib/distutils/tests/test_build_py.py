@@ -62,8 +62,9 @@ class BuildPyTestCase(support.TempdirManager,
             self.assertFalse(os.path.exists(pycache_dir))
         else:
             pyc_files = os.listdir(pycache_dir)
-            self.assertIn("__init__.%s.pyc" % sys.implementation.cache_tag,
-                          pyc_files)
+            fn = '__init__.%s.%s-0.pyc' % (sys.implementation.cache_tag,
+                                           sys.implementation.optim_tag)
+            self.assertIn(fn, pyc_files)
 
     def test_empty_package_dir(self):
         # See bugs #1668596/#1720897
@@ -102,8 +103,10 @@ class BuildPyTestCase(support.TempdirManager,
         found = os.listdir(cmd.build_lib)
         self.assertEqual(sorted(found), ['__pycache__', 'boiledeggs.py'])
         found = os.listdir(os.path.join(cmd.build_lib, '__pycache__'))
+        fn = 'boiledeggs.%s.%s-0.pyc' % (sys.implementation.cache_tag,
+                                         sys.implementation.optim_tag)
         self.assertEqual(found,
-                         ['boiledeggs.%s.pyc' % sys.implementation.cache_tag])
+                         [fn])
 
     @unittest.skipIf(sys.dont_write_bytecode, 'byte-compile disabled')
     def test_byte_compile_optimized(self):
@@ -120,7 +123,9 @@ class BuildPyTestCase(support.TempdirManager,
         found = os.listdir(cmd.build_lib)
         self.assertEqual(sorted(found), ['__pycache__', 'boiledeggs.py'])
         found = os.listdir(os.path.join(cmd.build_lib, '__pycache__'))
-        expect = 'boiledeggs.{}.opt-1.pyc'.format(sys.implementation.cache_tag)
+        expect = ('boiledeggs.%s.%s-1.pyc'
+                  % (sys.implementation.cache_tag,
+                     sys.implementation.optim_tag))
         self.assertEqual(sorted(found), [expect])
 
     def test_dir_in_package_data(self):
