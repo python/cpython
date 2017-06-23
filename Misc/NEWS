@@ -374,6 +374,9 @@ Extension Modules
 Library
 -------
 
+- [Security] bpo-30730: Prevent environment variables injection in subprocess on
+  Windows.  Prevent passing other environment variables and command arguments.
+
 - bpo-21071: struct.Struct.format type is now :class:`str` instead of
   :class:`bytes`.
 
