@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
-"""Base16, Base32, Base64 (RFC 3548), Base85 and Ascii85 data encodings"""
+"""Base16, Base32, Base64 (RFC 4648), Base85 and Ascii85 data encodings"""
 
 # Modified 04-Oct-1995 by Jack Jansen to use binascii module
-# Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
+# Modified 30-Dec-2003 by Barry Warsaw to add full RFC 4648 support
 # Modified 22-May-2007 by Guido van Rossum to use bytes everywhere
 
 import re
@@ -183,13 +183,14 @@ def b32decode(s, casefold=False, map01=None):
     Optional casefold is a flag specifying whether a lowercase alphabet is
     acceptable as input.  For security purposes, the default is False.
 
-    RFC 3548 allows for optional mapping of the digit 0 (zero) to the
+    One might desire an optional mapping of the digit 0 (zero) to the
     letter O (oh), and for optional mapping of the digit 1 (one) to
     either the letter I (eye) or letter L (el).  The optional argument
     map01 when not None, specifies which letter the digit 1 should be
     mapped to (when map01 is not None, the digit 0 is always mapped to
     the letter O).  For security purposes the default is None, so that
-    0 and 1 are not allowed in the input.
+    0 and 1 are not allowed in the input. Note that RFC 4648 (which
+    made RFC 3548 obsolete) did not allow such a mapping.
 
     The result is returned as a bytes object.  A binascii.Error is raised if
     the input is incorrectly padded or if there are non-alphabet
@@ -248,7 +249,7 @@ def b32decode(s, casefold=False, map01=None):
 
 
 
-# RFC 3548, Base 16 Alphabet specifies uppercase, but hexlify() returns
+# RFC 4648, Base 16 Alphabet specifies uppercase, but hexlify() returns
 # lowercase.  The RFC also recommends against accepting input case
 # insensitively.
 def b16encode(s):

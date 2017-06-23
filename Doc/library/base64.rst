@@ -2,7 +2,7 @@
 ===============================================================
 
 .. module:: base64
-   :synopsis: RFC 3548: Base16, Base32, Base64 Data Encodings;
+   :synopsis: RFC 4648: Base16, Base32, Base64 Data Encodings;
               Base85 and Ascii85
 
 **Source code:** :source:`Lib/base64.py`
@@ -16,10 +16,10 @@
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data.
 It provides encoding and decoding functions for the encodings specified in
-:rfc:`3548`, which defines the Base16, Base32, and Base64 algorithms,
+:rfc:`4648`, which defines the Base16, Base32, and Base64 algorithms,
 and for the de-facto standard Ascii85 and Base85 encodings.
 
-The :rfc:`3548` encodings are suitable for encoding binary data so that it can
+The :rfc:`4648` encodings are suitable for encoding binary data so that it can
 safely sent by email, used as parts of URLs, or included as part of an HTTP
 POST request.  The encoding algorithm is not the same as the
 :program:`uuencode` program.
@@ -28,7 +28,7 @@ There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
 :class:`bytes`, and decoding :term:`bytes-like objects <bytes-like object>` or
 strings containing ASCII to :class:`bytes`.  Both base-64 alphabets
-defined in :rfc:`3548` (normal, and URL- and filesystem-safe) are supported.
+defined in :rfc:`4648` (normal, and URL- and filesystem-safe) are supported.
 
 The legacy interface does not support decoding from strings, but it does
 provide functions for encoding and decoding to and from :term:`file objects
@@ -124,12 +124,13 @@ The modern interface provides:
    whether a lowercase alphabet is acceptable as input.  For security purposes,
    the default is ``False``.
 
-   :rfc:`3548` allows for optional mapping of the digit 0 (zero) to the letter O
+   One might desire an optional mapping of the digit 0 (zero) to the letter O
    (oh), and for optional mapping of the digit 1 (one) to either the letter I (eye)
    or letter L (el).  The optional argument *map01* when not ``None``, specifies
    which letter the digit 1 should be mapped to (when *map01* is not ``None``, the
    digit 0 is always mapped to the letter O).  For security purposes the default is
-   ``None``, so that 0 and 1 are not allowed in the input.
+   ``None``, so that 0 and 1 are not allowed in the input. Note that :rfc:`4648`
+    (which made :rfc:`3548` obsolete) did not allow such a mapping.
 
    A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
