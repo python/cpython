@@ -34,6 +34,12 @@ matrix:
         - export LDFLAGS="-L$(brew --prefix openssl)/lib"
     - os: linux
       language: python
+      python: 3.6
+      env: TESTING=whitespace
+      script:
+        - python Tools/scripts/patchcheck.py --travis $TRAVIS_PULL_REQUEST --srcdir .
+    - os: linux
+      language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
       python: 3.6
       env: TESTING=docs
