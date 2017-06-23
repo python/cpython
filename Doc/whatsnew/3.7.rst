@@ -237,6 +237,13 @@ xmlrpc.server
 its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
 :issue:`7769`.)
 
+unicodedata
+-----------
+
+The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
+<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
+Peterson.)
+
 urllib.parse
 ------------
 
