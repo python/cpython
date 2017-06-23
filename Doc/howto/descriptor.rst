@@ -258,10 +258,10 @@ to wrap access to the value attribute in a property data descriptor::
 
     class Cell(object):
         . . .
-        def getvalue(self, obj):
-            "Recalculate cell before returning value"
+        def getvalue(self):
+            "Recalculate the cell before returning value"
             self.recalc()
-            return obj._value
+            return self._value
         value = property(getvalue)
 
 
