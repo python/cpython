@@ -203,7 +203,7 @@ def load_package(name, path):
         extensions = (machinery.SOURCE_SUFFIXES[:] +
                       machinery.BYTECODE_SUFFIXES[:])
         for extension in extensions:
-            init_path = os.path.join(path, '__init__'+extension)
+            init_path = os.path.join(path, '__init__' + extension)
             if os.path.exists(init_path):
                 path = init_path
                 break
