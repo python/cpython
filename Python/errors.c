@@ -227,14 +227,14 @@ PyErr_ExceptionMatches(PyObject *exc)
    XXX: should PyErr_NormalizeException() also call
             PyException_SetTraceback() with the resulting value and tb?
 */
-void
-PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
+static void
+PyErr_NormalizeExceptionEx(PyObject **exc, PyObject **val,
+                           PyObject **tb, int recursion_depth)
 {
     PyObject *type = *exc;
     PyObject *value = *val;
     PyObject *inclass = NULL;
     PyObject *initial_tb = NULL;
-    static int recursion_depth = 0;
 
     if (type == NULL) {
         /* There was no exception, so nothing to do. */
@@ -297,8 +297,8 @@ finally:
     Py_DECREF(type);
     Py_DECREF(value);
     if (recursion_depth + 1 == Py_NORMALIZE_RECURSION_LIMIT) {
-        PyErr_Format(PyExc_RecursionError, "maximum recursion depth exceeded "
-                     "while normalizing an exception");
+        PyErr_SetString(PyExc_RecursionError, "maximum recursion depth "
+                        "exceeded while normalizing an exception");
     }
     /* If the new exception doesn't set a traceback and the old
        exception had a traceback, use the old traceback for the
@@ -325,8 +325,13 @@ finally:
                           "of an exception.");
         }
     }
-    PyErr_NormalizeException(exc, val, tb);
-    --recursion_depth;
+    PyErr_NormalizeExceptionEx(exc, val, tb, recursion_depth);
+}
+
+void
+PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
+{
+    PyErr_NormalizeExceptionEx(exc, val, tb, 0);
 }
 
 
