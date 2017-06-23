@@ -5,10 +5,12 @@ Coverage: 100%
 from test.support import requires, findfile
 from tkinter import Tk, TclError
 import unittest
+from unittest import mock
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
 from idlelib.help_about import AboutDialog as About
 from idlelib import textview
+import os.path
 
 class LiveDialogTest(unittest.TestCase):
     """Simulate user clicking buttons other than [Close].
@@ -32,6 +34,12 @@ class LiveDialogTest(unittest.TestCase):
     def test_dialog_title(self):
         """Test about dialog title"""
         self.assertEqual(self.dialog.title(), 'About IDLE')
+
+    def test_dialog_logo(self):
+        """Test about dialog logo."""
+        path, file = os.path.split(self.dialog.icon_image['file'])
+        fn, ext = os.path.splitext(file)
+        self.assertEqual(fn, 'idle_48')
 
     def test_printer_buttons(self):
         """Test buttons whose commands use printer function."""
