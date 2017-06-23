@@ -34,12 +34,6 @@ matrix:
         - export LDFLAGS="-L$(brew --prefix openssl)/lib"
     - os: linux
       language: python
-      python: 3.6
-      env: TESTING=whitespace
-      script:
-        - python Tools/scripts/patchcheck.py --travis $TRAVIS_PULL_REQUEST --srcdir .
-    - os: linux
-      language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
       python: 3.6
       env: TESTING=docs
@@ -95,6 +89,17 @@ before_script:
       fi
 
 script:
+  # Using the built Python as patchcheck.py is built around the idea of using
+  # a checkout-build of CPython to know things like what base branch the changes
+  # should be compared against.
+  - |
+    set -e
+    if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+      PYTHON_EXE = "python.exe"
+    else
+      PYTHON_EXE = "python"
+    fi
+    ./$PYTHON_EXE Tools/scripts/patchcheck.py --travis $TRAVIS_PULL_REQUEST
   # `-r -w` implicitly provided through `make buildbottest`.
   - make buildbottest TESTOPTS="-j4 -uall,-cpu,-tzdata"
 
