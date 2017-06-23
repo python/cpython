@@ -136,7 +136,7 @@ def report_modified_files(file_paths):
         return "\n".join(lines)
 
 
-@status("Fixing whitespace", info=report_modified_files)
+@status("Fixing Python file whitespace", info=report_modified_files)
 def normalize_whitespace(file_paths):
     """Make sure that the whitespace for .py files have been normalized."""
     reindent.makebackup = False  # No need to create backups.
@@ -223,7 +223,6 @@ def travis(pull_request):
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
-    print(f'Checking {sum(map(len, [python_files, c_files, doc_files]))} files')
     fixed = []
     fixed.extend(normalize_whitespace(python_files))
     fixed.extend(normalize_c_whitespace(c_files))
@@ -231,9 +230,8 @@ def travis(pull_request):
     if not fixed:
         print('No whitespace issues found')
     else:
-        print('The following files have whitespace issues:')
-        for file_path in fixed:
-            print('   ', file_path)
+        print(f'Please fix the {len(fixed)} file(s) with whitespace issues')
+        sys.exit(1)
 
 def main():
     base_branch = get_base_branch()
@@ -273,7 +271,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--travis',
                         help='Perform pass/fail checks')
-    args = args = parser.parse_args()
+    parser.add_argument('--srcdir',
+                        help='Path to the checkout')
+    args = parser.parse_args()
+    if args.srcdir:
+        SRCDIR = args.srcdir
     if args.travis:
         travis(args.travis)
     else:
