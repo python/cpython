@@ -106,6 +106,10 @@ import sys
 import threading
 import unittest
 import weakref
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
 from test.support import (run_doctest, run_unittest, cpython_only,
                           check_impl_detail)
 
@@ -214,8 +218,7 @@ class CodeWeakRefTest(unittest.TestCase):
         self.assertTrue(self.called)
 
 
-if check_impl_detail(cpython=True):
-    import ctypes
+if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi
     freefunc = ctypes.CFUNCTYPE(None,ctypes.c_voidp)
 
@@ -311,7 +314,7 @@ def test_main(verbose=None):
     from test import test_code
     run_doctest(test_code, verbose)
     tests = [CodeTest, CodeConstsTest, CodeWeakRefTest]
-    if check_impl_detail(cpython=True):
+    if check_impl_detail(cpython=True) and ctypes is not None:
         tests.append(CoExtra)
     run_unittest(*tests)
 
