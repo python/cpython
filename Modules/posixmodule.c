@@ -3315,6 +3315,12 @@ posix_execve(PyObject *self, PyObject *args)
         {
             goto fail_2;
         }
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (*k == '\0' || strchr(k + 1, '=') != NULL) {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            goto fail_2;
+        }
 
 #if defined(PYOS_OS2)
         /* Omit Pseudo-Env Vars that Would Confuse Programs if Passed On */

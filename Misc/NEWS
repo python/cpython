@@ -52,6 +52,9 @@ Extension Modules
 Library
 -------
 
+- [Security] bpo-30730: Prevent environment variables injection in subprocess on
+  Windows.  Prevent passing other environment variables and command arguments.
+
 - [Security] bpo-30694: Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes
   of multiple security vulnerabilities including: CVE-2017-9233 (External
   entity infinite loop DoS), CVE-2016-9063 (Integer overflow, re-fix),
