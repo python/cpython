@@ -1957,8 +1957,8 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
 static PyObject *
 s_get_format(PyStructObject *self, void *unused)
 {
-    Py_INCREF(self->s_format);
-    return self->s_format;
+    return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
+                                       PyBytes_GET_SIZE(self->s_format));
 }
 
 static PyObject *

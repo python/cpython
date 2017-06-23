@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30736: The internal unicodedata database has been upgraded to Unicode
+  10.0.
+
 - bpo-30604:  Move co_extra_freefuncs from per-thread to per-interpreter to
   avoid crashes.
 
@@ -373,6 +376,9 @@ Library
 
 - [Security] bpo-30730: Prevent environment variables injection in subprocess on
   Windows.  Prevent passing other environment variables and command arguments.
+
+- bpo-21071: struct.Struct.format type is now :class:`str` instead of
+  :class:`bytes`.
 
 - bpo-29212: Fix concurrent.futures.thread.ThreadPoolExecutor threads to have
   a non repr() based thread name by default when no thread_name_prefix is

@@ -4,8 +4,8 @@
 import os
 from sys import version
 
-from tkinter import Toplevel, Frame, Label, Button
-from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW
+from tkinter import Toplevel, Frame, Label, Button, PhotoImage
+from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
 
 from idlelib import textview
 
@@ -62,7 +62,16 @@ class AboutDialog(Toplevel):
 
         header = Label(frame_background, text='IDLE', fg=self.fg,
                        bg=self.bg, font=('courier', 24, 'bold'))
-        header.grid(row=0, column=0, sticky=W, padx=10, pady=10)
+        header.grid(row=0, column=0, sticky=E, padx=10, pady=10)
+
+        tk_patchlevel = self.tk.call('info', 'patchlevel')
+        ext = '.png' if tk_patchlevel >= '8.6' else '.gif'
+        icon = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            'Icons', f'idle_48{ext}')
+        self.icon_image = PhotoImage(master=self._root(), file=icon)
+        logo = Label(frame_background, image=self.icon_image, bg=self.bg)
+        logo.grid(row=0, column=0, sticky=W, rowspan=2, padx=10, pady=10)
+
         byline_text = "Python's Integrated DeveLopment Environment" + 5*'\n'
         byline = Label(frame_background, text=byline_text, justify=LEFT,
                        fg=self.fg, bg=self.bg)
@@ -82,7 +91,6 @@ class AboutDialog(Toplevel):
         pyver = Label(frame_background, text='Python version:  ' + release,
                       fg=self.fg, bg=self.bg)
         pyver.grid(row=9, column=0, sticky=W, padx=10, pady=0)
-        tk_patchlevel = self.tk.call('info', 'patchlevel')
         tkver = Label(frame_background, text='Tk version:  ' + tk_patchlevel,
                       fg=self.fg, bg=self.bg)
         tkver.grid(row=9, column=1, sticky=W, padx=2, pady=0)
