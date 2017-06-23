@@ -482,7 +482,7 @@ class ConditionTests(BaseTestCase):
         # we continue. See issues #8799 and #30727.
         while len(ready) < 5:
             _wait()
-        ready = []
+        ready.clear()
         self.assertEqual(results1, [])
         # Notify 3 threads at first
         cond.acquire()
