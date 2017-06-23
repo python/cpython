@@ -2593,5 +2593,8 @@ def _flush_all_writers():
     # finalized before the buffered writer wrapping it then any buffered
     # data will be lost.
     for w in _all_writers:
-        w.flush()
+        try:
+            w.flush()
+        except:
+            pass
 atexit.register(_flush_all_writers)
