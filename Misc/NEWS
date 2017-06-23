@@ -101,6 +101,10 @@ Library
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
 
+- bpo-30645: Fix path calculation in imp.load_package(), fixing it for
+  cases when a package is only shipped with bytecodes. Patch by
+  Alexandru Ardelean.
+
 - bpo-29931: Fixed comparison check for ipaddress.ip_interface objects.
   Patch by Sanjay Sundaresan.
 
