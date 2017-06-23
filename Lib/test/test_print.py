@@ -161,7 +161,8 @@ class TestPy2MigrationHint(unittest.TestCase):
         with self.assertRaises(TypeError) as context:
             exec(python2_print_str)
 
-        self.assertIn('print(message, file={:100!r}).format(sys.stderr)', str(context.exception))
+        self.assertIn('Did you mean "print(<message>, '
+                'file=<output_stream>)', str(context.exception))
 
 
 if __name__ == "__main__":
