@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Check proposed changes for common issues."""
 import re
 import sys
 import shutil
@@ -212,6 +213,28 @@ def regenerated_pyconfig_h_in(file_paths):
     else:
         return "not needed"
 
+def travis(pull_request):
+    if pull_request == 'false':
+        print('Not a pull request; skipping')
+        return
+    base_branch = get_base_branch()
+    file_paths = changed_files(base_branch)
+    python_files = [fn for fn in file_paths if fn.endswith('.py')]
+    c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
+    doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
+                 fn.endswith(('.rst', '.inc'))]
+    print(f'Checking {sum(map(len, [python_files, c_files, doc_files]))} files')
+    fixed = []
+    fixed.extend(normalize_whitespace(python_files))
+    fixed.extend(normalize_c_whitespace(c_files))
+    fixed.extend(normalize_docs_whitespace(doc_files))
+    if not fixed:
+        print('No whitespace issues found')
+    else:
+        print('The following files have whitespace issues:')
+        for file_path in fixed:
+            print('   ', file_path)
+
 def main():
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
@@ -246,4 +269,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--travis',
+                        help='Perform pass/fail checks')
+    args = args = parser.parse_args()
+    if args.travis:
+        travis(args.travis)
+    else:
+        main()
