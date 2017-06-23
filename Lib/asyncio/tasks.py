@@ -9,6 +9,7 @@ __all__ = ['Task',
 import concurrent.futures
 import functools
 import inspect
+import itertools
 import warnings
 import weakref
 
@@ -421,12 +422,25 @@ def as_completed(fs, *, loop=None, timeout=None, limit=None):
     If a timeout is specified, the 'yield from' will raise
     TimeoutError when the timeout occurs before all Futures are done.
 
+    If a limit is specified, and the supplied Futures (or coroutines)
+    have not already been scheduled for execution, they will be scheduled
+    in a limited way, ensuring that the number that are executed
+    concurrently will not go above the limit.
+
     Note: The futures 'f' are not necessarily members of fs.
     """
     if futures.isfuture(fs):
         raise TypeError("expect a list of futures, not %s" % type(fs).__name__)
     loop = loop if loop is not None else events.get_event_loop()
-    todo = {ensure_future(f, loop=loop) for f in set(fs)}
+    if limit is not None:
+        fiter = iter(fs)
+        initial_futures = set(itertools.islice(fiter, 0, limit))
+    else:
+        fiter = None
+        initial_futures = set(fs)
+    todo = {ensure_future(f, loop=loop) for f in initial_futures}
+    received = len(todo)
+    yielded = 0
     from .queues import Queue  # Import here to avoid circular import problem.
     done = Queue(loop=loop)
     timeout_handle = None
@@ -438,10 +452,19 @@ def as_completed(fs, *, loop=None, timeout=None, limit=None):
         todo.clear()  # Can't do todo.remove(f) in the loop.
 
     def _on_completion(f):
+        nonlocal received, fiter
         if not todo:
             return  # _on_timeout() was here first.
         todo.remove(f)
         done.put_nowait(f)
+        if fiter is not None:
+            try:
+                newf = ensure_future(next(fiter), loop=loop)
+                received += 1
+                todo.add(newf)
+                newf.add_done_callback(_on_completion)
+            except StopIteration:
+                fiter = None  # We've finished all the work we were given
         if not todo and timeout_handle is not None:
             timeout_handle.cancel()
 
@@ -457,8 +480,9 @@ def as_completed(fs, *, loop=None, timeout=None, limit=None):
         f.add_done_callback(_on_completion)
     if todo and timeout is not None:
         timeout_handle = loop.call_later(timeout, _on_timeout)
-    for _ in range(len(todo)):
+    while received > yielded:
         yield _wait_for_one()
+        yielded += 1
 
 
 @coroutine

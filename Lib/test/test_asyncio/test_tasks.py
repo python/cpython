@@ -1104,7 +1104,7 @@ class BaseTaskTests:
         executions is kept to a given value.
         """
         num_futures = 10
-        limit = 10  # TODO: limit is not implemented yet
+        limit = 3
 
         def gen():
             yield 0
