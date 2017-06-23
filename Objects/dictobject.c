@@ -631,29 +631,20 @@ PyDict_New(void)
 static Py_ssize_t
 lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
 {
-    size_t i;
     size_t mask = DK_MASK(k);
-    Py_ssize_t ix;
+    size_t perturb = (size_t)hash;
+    size_t i = (size_t)hash & mask;
 
-    i = (size_t)hash & mask;
-    ix = dk_get_index(k, i);
-    if (ix == index) {
-        return i;
-    }
-    if (ix == DKIX_EMPTY) {
-        return DKIX_EMPTY;
-    }
-
-    for (size_t perturb = hash;;) {
-        perturb >>= PERTURB_SHIFT;
-        i = mask & ((i << 2) + i + perturb + 1);
-        ix = dk_get_index(k, i);
+    for (;;) {
+        Py_ssize_t ix = dk_get_index(k, i);
         if (ix == index) {
             return i;
         }
         if (ix == DKIX_EMPTY) {
             return DKIX_EMPTY;
         }
+        perturb >>= PERTURB_SHIFT;
+        i = mask & (i*5 + perturb + 1);
     }
     assert(0);          /* NOT REACHED */
     return DKIX_ERROR;
