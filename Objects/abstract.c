@@ -819,6 +819,21 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     PyObject *result = binary_op1(v, w, op_slot);
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
+
+        if (strcmp(op_name, ">>") == 0 && \
+                strcmp(v->ob_type->tp_name, "builtin_function_or_method") == 0) {
+            PyErr_Format(PyExc_TypeError,
+                 "unsupported operand type(s) for %.100s: "
+                 "'%.100s' and '%.100s'. Did you mean \"print(%s, "
+                 "file={:100!r}).format(%s))\"",
+                 op_name,
+                 v->ob_type->tp_name,
+                 w->ob_type->tp_name,
+                 "message",
+                 "sys.stderr");
+            return NULL;
+        }
+
         return binop_type_error(v, w, op_name);
     }
     return result;

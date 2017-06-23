@@ -155,6 +155,14 @@ class TestPy2MigrationHint(unittest.TestCase):
 
         self.assertIn('print("Hello World", end=" ")', str(context.exception))
 
+    def test_string_with_stream_redirection(self):
+        import sys
+        python2_print_str = 'print >> sys.stderr, "message"'
+        with self.assertRaises(TypeError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print(message, file={:100!r}).format(sys.stderr)', str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
