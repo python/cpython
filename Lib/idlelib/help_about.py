@@ -5,7 +5,7 @@ import os
 from sys import version
 
 from tkinter import Toplevel, Frame, Label, Button, PhotoImage
-from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, NE
+from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
 
 from idlelib import textview
 
@@ -62,15 +62,15 @@ class AboutDialog(Toplevel):
 
         header = Label(frame_background, text='IDLE', fg=self.fg,
                        bg=self.bg, font=('courier', 24, 'bold'))
-        header.grid(row=0, column=0, sticky=W, padx=10, pady=10)
+        header.grid(row=0, column=0, sticky=E, padx=10, pady=10)
 
         tk_patchlevel = self.tk.call('info', 'patchlevel')
         ext = '.png' if tk_patchlevel >= '8.6' else '.gif'
-        iconfn = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                              'Icons', f'idle_48{ext}')
-        self.icon_image = PhotoImage(master=self._root(), file=iconfn)
+        icon = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            'Icons', f'idle_48{ext}')
+        self.icon_image = PhotoImage(master=self._root(), file=icon)
         logo = Label(frame_background, image=self.icon_image, bg=self.bg)
-        logo.grid(row=0, column=0, sticky=NE, rowspan=2, padx=10, pady=10)
+        logo.grid(row=0, column=0, sticky=W, rowspan=2, padx=10, pady=10)
 
         byline_text = "Python's Integrated DeveLopment Environment" + 5*'\n'
         byline = Label(frame_background, text=byline_text, justify=LEFT,
