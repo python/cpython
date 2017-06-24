@@ -130,7 +130,7 @@ The modern interface provides:
    which letter the digit 1 should be mapped to (when *map01* is not ``None``, the
    digit 0 is always mapped to the letter O).  For security purposes the default is
    ``None``, so that 0 and 1 are not allowed in the input. Note that :rfc:`4648`
-    (which made :rfc:`3548` obsolete) did not allow such a mapping.
+   (which made :rfc:`3548` obsolete) did not allow such a mapping.
 
    A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
