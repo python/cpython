@@ -96,20 +96,11 @@ defined coercion target locales (currently ``C.UTF-8``, ``C.utf8``, and
 ``UTF-8``). The default error handler for ``stderr`` continues to be
 ``backslashreplace``, regardless of locale.
 
-.. note::
-
-   In the current implementation, a warning message is printed directly to
-   ``stderr`` even for successful implicit locale coercion. This gives
-   redistributors and system integrators the opportunity to determine if they
-   should be making an environmental change to avoid the need for implicit
-   coercion at the Python interpreter level.
-
-   However, it's not clear that this is going to be the best approach for
-   the final 3.7.0 release, and we may end up deciding to disable the warning
-   by default and provide some way of opting into it at runtime or build time.
-
-   Concrete examples of use cases where it would be preferrable to disable the
-   warning by default can be noted on :issue:`30565`.
+Locale coercion is silent by default, but to assist in debugging potentially
+locale related integration problems, explicit warnings (emitted directly on
+``stderr`` can be requested by setting ``PYTHONCOERCECLOCALE=warn``. This
+setting will also cause the Python runtime to emit a warning if the legacy C
+locale remains active when the core interpreter is initialized.
 
 .. seealso::
 
@@ -246,6 +237,13 @@ xmlrpc.server
 its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
 :issue:`7769`.)
 
+unicodedata
+-----------
+
+The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
+<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
+Peterson.)
+
 urllib.parse
 ------------
 
@@ -317,6 +315,12 @@ Build and C API Changes
   :c:func:`PyOS_AfterFork_Child`.  (Contributed by Antoine Pitrou in
   :issue:`16500`.)
 
+* The Windows build process no longer depends on Subversion to pull in external
+  sources, a Python script is used to download zipfiles from GitHub instead.
+  If Python 3.6 is not found on the system (via ``py -3.6``), NuGet is used to
+  download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
+  Ware in :issue:`30450`.)
+
 
 Deprecated
 ==========
@@ -376,7 +380,7 @@ API and Feature Removals
 
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now
-  be passes only as positional argument.
+  be passed only as positional argument.
 
 * Removed previously deprecated in Python 2.4 classes ``Plist``, ``Dict`` and
   ``_InternalDict`` in the :mod:`plistlib` module.  Dict values in the result
@@ -394,6 +398,10 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
+
+* :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
+  Previously an empty list was returned. (Contributed by Sanyam Khurana in
+  :issue:`24744`.)
 
 * A format string argument for :meth:`string.Formatter.format`
   is now :ref:`positional-only <positional-only_parameter>`.
@@ -420,6 +428,9 @@ Changes in the Python API
   To set their file permission bits you can set the umask before invoking
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
+
+* The :attr:`struct.Struct.format` type is now :class:`str` instead of
+  :class:`bytes`. (Contributed by Victor Stinner in :issue:`21071`.)
 
 
 CPython bytecode changes
