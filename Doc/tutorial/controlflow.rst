@@ -126,7 +126,7 @@ function, see :ref:`tut-loopidioms`.
 :keyword:`break` and :keyword:`continue` Statements, and :keyword:`else` Clauses on Loops
 =========================================================================================
 
-The :keyword:`break` statement, like in C, breaks out of the smallest enclosing
+The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
 Loop statements may have an ``else`` clause; it is executed when the loop
