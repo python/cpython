@@ -637,6 +637,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "SimpleHTTP/" + __version__
 
+    # Content-Types that will be gzip-compressed. Set to [] to
+    # disable compression.
     compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
         "text/javascript", "application/javascript", "application/json"]
 
