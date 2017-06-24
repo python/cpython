@@ -46,7 +46,8 @@ _C_UTF8_LOCALES = ("C.UTF-8", "C.utf8", "UTF-8")
 def _set_locale_in_subprocess(locale_name):
     cmd_fmt = "import locale; print(locale.setlocale(locale.LC_CTYPE, '{}'))"
     if hasattr(locale, "nl_langinfo") and hasattr(locale, "CODESET"):
-        cmd_fmt += "; print(locale.nl_langinfo(locale.CODESET))"
+        # If there's no valid CODESET, we expect coercion to be skipped
+        cmd_fmt += "; import sys; sys.exit(not locale.nl_langinfo(locale.CODESET))"
     cmd = cmd_fmt.format(locale_name)
     result, py_cmd = run_python_until_end("-c", cmd, __isolated=True)
     return result.rc == 0
