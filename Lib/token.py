@@ -129,33 +129,37 @@ def _main():
                 comment = comment_match.group(1)
                 tokens[prev_val]['comment'] = comment
     keys = sorted(tokens.keys())
-    # load the output skeleton from the target:
+    # load the output skeleton from the target, taking
+    # care to preserve its newline convention.
+    # newline detection code from keyword.py
     try:
-        fp = open(outFileName)
+        fp = open(outFileName, newline='')
     except OSError as err:
         sys.stderr.write("I/O error: %s\n" % str(err))
         sys.exit(2)
     with fp:
-        format = fp.read().split("\n")
+        format = fp.readlines()
+    nl = format[0][len(format[0].strip()):] if format else '\n'
+
     try:
-        start = format.index("#--start constants--") + 1
-        end = format.index("#--end constants--")
+        start = format.index("#--start constants--" + nl) + 1
+        end = format.index("#--end constants--" + nl)
     except ValueError:
         sys.stderr.write("target does not contain format markers")
         sys.exit(3)
     lines = []
     for key in keys:
-        lines.append("%s = %d" % (tokens[key]["token"], key))
+        lines.append("%s = %d%s" % (tokens[key]["token"], key, nl))
         if "comment" in tokens[key]:
-            lines.append("# %s" % tokens[key]["comment"])
+            lines.append("# %s%s" % (tokens[key]["comment"], nl))
     format[start:end] = lines
     try:
-        fp = open(outFileName, 'w')
+        fp = open(outFileName, 'w', newline='')
     except OSError as err:
         sys.stderr.write("I/O error: %s\n" % str(err))
         sys.exit(4)
     with fp:
-        fp.write("\n".join(format))
+        fp.writelines(format)
 
 
 if __name__ == "__main__":
