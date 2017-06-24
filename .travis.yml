@@ -89,6 +89,11 @@ before_script:
       fi
 
 script:
+  # Using the built Python as patchcheck.py is built around the idea of using
+  # a checkout-build of CPython to know things like what base branch the changes
+  # should be compared against.
+  # Only run on Linux as the check only needs to be run once.
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./python Tools/scripts/patchcheck.py --travis $TRAVIS_PULL_REQUEST; fi
   # `-r -w` implicitly provided through `make buildbottest`.
   - make buildbottest TESTOPTS="-j4 -uall,-cpu,-tzdata"
 
