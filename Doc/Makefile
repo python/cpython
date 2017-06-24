@@ -106,8 +106,11 @@ clean:
 	-rm -rf build/* venv/*
 
 venv:
-	$(PYTHON) -m venv venv
-	./venv/bin/python3 -m pip install -U Sphinx
+	@if [ "$(SPHINXBUILD)" == "./venv/bin/sphinx-build" ]; then \
+		echo "Creating venv and installing Sphinx"; \
+		$(PYTHON) -m venv venv; \
+		./venv/bin/python3 -m pip install -U Sphinx; \
+	fi
 
 dist:
 	rm -rf dist
