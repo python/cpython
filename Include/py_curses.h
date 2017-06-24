@@ -10,11 +10,6 @@
 #ifdef  _BSD_WCHAR_T_DEFINED_
 #define _WCHAR_T
 #endif
-
-/* the following define is necessary for OS X 10.6; without it, the
-   Apple-supplied ncurses.h sets NCURSES_OPAQUE to 1, and then Python
-   can't get at the WINDOW flags field. */
-#define NCURSES_OPAQUE 0
 #endif /* __APPLE__ */
 
 #ifdef __FreeBSD__
@@ -44,15 +39,13 @@
 #endif
 #endif
 
-#ifdef HAVE_NCURSES_H
 #if !defined(HAVE_CURSES_IS_PAD) && !defined(WINDOW_HAS_FLAGS)
 /* If ncurses doesn't have both is_pad function and _flags field of WINDOW,
    there is no method to check whether WINDOW is a pad.  Therefore, add the
-   definitions to make WINDOW to non-opaque type before including ncurses.h.
+   definitions to make WINDOW to non-opaque type before including [n]curses.h.
 */
 #define NCURSES_OPAQUE 0
 #define WINDOW_HAS_FLAGS 1
-#endif
 #endif
 
 #ifdef HAVE_NCURSES_H
