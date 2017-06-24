@@ -7,7 +7,12 @@ import tkinter.messagebox as tkMessageBox
 import string
 import sys
 
+
 class GetKeysDialog(Toplevel):
+
+    # Dialog title for invalid key sequence
+    keyerror_title = 'Key Sequence Error'
+
     def __init__(self, parent, title, action, currentKeySequences,
                  _htest=False, _utest=False):
         """
@@ -219,33 +224,34 @@ class GetKeysDialog(Toplevel):
         return key
 
     def OK(self, event=None):
-        if self.advanced or self.KeysOK():  # doesn't check advanced string yet
-            self.result=self.keyString.get()
+        key = self.keyString.get()
+        key.strip()
+        if not key:
+            tkMessageBox.showerror(title=self.keyerror_title, parent=self,
+                                   message="No keys specified.")
+            return
+        if (self.advanced or self.KeysOK(key)) and self.sequence_ok(key):
+            self.result = self.keyString.get()
             self.destroy()
 
     def Cancel(self, event=None):
         self.result=''
         self.destroy()
 
-    def KeysOK(self):
+    def KeysOK(self, keys):
         '''Validity check on user's 'basic' keybinding selection.
 
         Doesn't check the string produced by the advanced dialog because
         'modifiers' isn't set.
 
         '''
-        keys = self.keyString.get()
-        keys.strip()
         finalKey = self.listKeysFinal.get(ANCHOR)
         modifiers = self.GetModifiers()
         # create a key sequence list for overlap check:
         keySequence = keys.split()
         keysOK = False
-        title = 'Key Sequence Error'
-        if not keys:
-            tkMessageBox.showerror(title=title, parent=self,
-                                   message='No keys specified.')
-        elif not keys.endswith('>'):
+        title = self.keyerror_title
+        if not keys.endswith('>'):
             tkMessageBox.showerror(title=title, parent=self,
                                    message='Missing the final Key')
         elif (not modifiers
@@ -265,7 +271,26 @@ class GetKeysDialog(Toplevel):
             keysOK = True
         return keysOK
 
+    def sequence_ok(self, keys):
+        """Verify if Tcl accepts the new keys."""
+        accepted = False
+
+        try:
+            binding = self.bind(keys, lambda: None)
+        except TclError as err:
+            tkMessageBox.showerror(
+                    title=self.keyerror_title, parent=self,
+                    message=(f'The entered key sequence is not accepted.\n\n'
+                             f'Error: {err}'))
+        else:
+            self.unbind(keys, binding)
+            accepted = True
+
+        return accepted
+
 
 if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_config_key', verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
     run(GetKeysDialog)
