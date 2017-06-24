@@ -71,6 +71,14 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + sorted(tests)
 
 
+def get_abs_module(ns, test):
+    if test.startswith('test.') or ns.testdir:
+        return test
+    else:
+        # Always import it from the test package
+        return 'test.' + test
+
+
 def runtest(ns, test):
     """Run a single test.
 
@@ -141,11 +149,7 @@ def runtest_inner(ns, test, display_failure=True):
     test_time = 0.0
     refleak = False  # True if the test leaked references.
     try:
-        if test.startswith('test.') or ns.testdir:
-            abstest = test
-        else:
-            # Always import it from the test package
-            abstest = 'test.' + test
+        abstest = get_abs_module(ns, test)
         clear_caches()
         with saved_test_environment(test, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
             start_time = time.time()

@@ -5165,7 +5165,7 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
             return NULL;
         }
         if (i == 0 && !argvlist[0][0]) {
-            free_string_array(argvlist, i);
+            free_string_array(argvlist, i + 1);
             PyErr_SetString(
                 PyExc_ValueError,
                 "spawnv() arg 2 first element cannot be empty");
@@ -5266,7 +5266,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
             goto fail_1;
         }
         if (i == 0 && !argvlist[0][0]) {
-            lastarg = i;
+            lastarg = i + 1;
             PyErr_SetString(
                 PyExc_ValueError,
                 "spawnv() arg 2 first element cannot be empty");
@@ -12935,7 +12935,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, SCHED_RR)) return -1;
 #endif
 #ifdef SCHED_SPORADIC
-    if (PyModule_AddIntMacro(m, SCHED_SPORADIC) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_SPORADIC)) return -1;
 #endif
 #ifdef SCHED_BATCH
     if (PyModule_AddIntMacro(m, SCHED_BATCH)) return -1;

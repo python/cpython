@@ -163,10 +163,16 @@ WriteTransport
 
       Set the *high*- and *low*-water limits for write flow control.
 
-      These two values control when call the protocol's
+      These two values (measured in number of
+      bytes) control when the protocol's
       :meth:`pause_writing` and :meth:`resume_writing` methods are called.
       If specified, the low-water limit must be less than or equal to the
       high-water limit.  Neither *high* nor *low* can be negative.
+
+      :meth:`pause_writing` is called when the buffer size becomes greater
+      than or equal to the *high* value. If writing has been paused,
+      :meth:`resume_writing` is called when the buffer size becomes less
+      than or equal to the *low* value.
 
       The defaults are implementation-specific.  If only the
       high-water limit is given, the low-water limit defaults to an

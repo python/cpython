@@ -111,6 +111,7 @@ PyInterpreterState_New(void)
         interp->importlib = NULL;
         interp->import_func = NULL;
         interp->eval_frame = _PyEval_EvalFrameDefault;
+        interp->co_extra_user_count = 0;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
         interp->dlopenflags = RTLD_NOW;
@@ -281,7 +282,6 @@ new_threadstate(PyInterpreterState *interp, int init)
 
         tstate->coroutine_wrapper = NULL;
         tstate->in_coroutine_wrapper = 0;
-        tstate->co_extra_user_count = 0;
 
         tstate->async_gen_firstiter = NULL;
         tstate->async_gen_finalizer = NULL;

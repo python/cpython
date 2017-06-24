@@ -48,8 +48,35 @@ def interpreter_requires_environment():
     return __cached_interp_requires_environment
 
 
-_PythonRunResult = collections.namedtuple("_PythonRunResult",
-                                          ("rc", "out", "err"))
+class _PythonRunResult(collections.namedtuple("_PythonRunResult",
+                                          ("rc", "out", "err"))):
+    """Helper for reporting Python subprocess run results"""
+    def fail(self, cmd_line):
+        """Provide helpful details about failed subcommand runs"""
+        # Limit to 80 lines to ASCII characters
+        maxlen = 80 * 100
+        out, err = self.out, self.err
+        if len(out) > maxlen:
+            out = b'(... truncated stdout ...)' + out[-maxlen:]
+        if len(err) > maxlen:
+            err = b'(... truncated stderr ...)' + err[-maxlen:]
+        out = out.decode('ascii', 'replace').rstrip()
+        err = err.decode('ascii', 'replace').rstrip()
+        raise AssertionError("Process return code is %d\n"
+                             "command line: %r\n"
+                             "\n"
+                             "stdout:\n"
+                             "---\n"
+                             "%s\n"
+                             "---\n"
+                             "\n"
+                             "stderr:\n"
+                             "---\n"
+                             "%s\n"
+                             "---"
+                             % (self.rc, cmd_line,
+                                out,
+                                err))
 
 
 # Executing the interpreter in a subprocess
@@ -107,30 +134,7 @@ def run_python_until_end(*args, **env_vars):
 def _assert_python(expected_success, *args, **env_vars):
     res, cmd_line = run_python_until_end(*args, **env_vars)
     if (res.rc and expected_success) or (not res.rc and not expected_success):
-        # Limit to 80 lines to ASCII characters
-        maxlen = 80 * 100
-        out, err = res.out, res.err
-        if len(out) > maxlen:
-            out = b'(... truncated stdout ...)' + out[-maxlen:]
-        if len(err) > maxlen:
-            err = b'(... truncated stderr ...)' + err[-maxlen:]
-        out = out.decode('ascii', 'replace').rstrip()
-        err = err.decode('ascii', 'replace').rstrip()
-        raise AssertionError("Process return code is %d\n"
-                             "command line: %r\n"
-                             "\n"
-                             "stdout:\n"
-                             "---\n"
-                             "%s\n"
-                             "---\n"
-                             "\n"
-                             "stderr:\n"
-                             "---\n"
-                             "%s\n"
-                             "---"
-                             % (res.rc, cmd_line,
-                                out,
-                                err))
+        res.fail(cmd_line)
     return res
 
 def assert_python_ok(*args, **env_vars):
