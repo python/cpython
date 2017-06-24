@@ -231,6 +231,7 @@ def travis(pull_request):
         print('No whitespace issues found')
     else:
         print(f'Please fix the {len(fixed)} file(s) with whitespace issues')
+        print('(on UNIX you can run `make patchcheck` to make the fixes)')
         sys.exit(1)
 
 def main():
