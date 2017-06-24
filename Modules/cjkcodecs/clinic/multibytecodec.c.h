@@ -204,13 +204,13 @@ _multibytecodec_MultibyteStreamReader_read(MultibyteStreamReaderObject *self, Py
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "read",
-        0, 1,
-        &sizeobj)) {
+    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("read", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "read",
+        0, 1,
+        &sizeobj)) {
         goto exit;
     }
     return_value = _multibytecodec_MultibyteStreamReader_read_impl(self, sizeobj);
@@ -237,13 +237,13 @@ _multibytecodec_MultibyteStreamReader_readline(MultibyteStreamReaderObject *self
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "readline",
-        0, 1,
-        &sizeobj)) {
+    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "readline",
+        0, 1,
+        &sizeobj)) {
         goto exit;
     }
     return_value = _multibytecodec_MultibyteStreamReader_readline_impl(self, sizeobj);
@@ -270,13 +270,13 @@ _multibytecodec_MultibyteStreamReader_readlines(MultibyteStreamReaderObject *sel
     PyObject *return_value = NULL;
     PyObject *sizehintobj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "readlines",
-        0, 1,
-        &sizehintobj)) {
+    if (!_PyArg_NoStackKeywords("readlines", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("readlines", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "readlines",
+        0, 1,
+        &sizehintobj)) {
         goto exit;
     }
     return_value = _multibytecodec_MultibyteStreamReader_readlines_impl(self, sizehintobj);
@@ -342,4 +342,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=26710ffd4b3c7d7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=12192026a9d55d48 input=a9049054013a1b77]*/

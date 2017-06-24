@@ -16,6 +16,7 @@
     <PreprocessorDefinitions Include="L_ENDIAN" />
     <PreprocessorDefinitions Include="_CRT_SECURE_NO_WARNINGS" />
     <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE" />
+    <PreprocessorDefinitions Include="_WINSOCK_DEPRECATED_NO_WARNINGS" />
     <PreprocessorDefinitions Include="OPENSSL_THREADS" />
     <!-- <PreprocessorDefinitions Include="OPENSSL_SYSNAME_WIN32" /> -->
     <PreprocessorDefinitions Include="OPENSSL_IA32_SSE2" />

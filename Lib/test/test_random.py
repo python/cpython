@@ -1,6 +1,7 @@
 import unittest
 import unittest.mock
 import random
+import os
 import time
 import pickle
 import warnings
@@ -901,6 +902,24 @@ class TestModule(unittest.TestCase):
             def __init__(self, newarg=None):
                 random.Random.__init__(self)
         Subclass(newarg=1)
+
+    @unittest.skipUnless(hasattr(os, "fork"), "fork() required")
+    def test_after_fork(self):
+        # Test the global Random instance gets reseeded in child
+        r, w = os.pipe()
+        if os.fork() == 0:
+            try:
+                val = random.getrandbits(128)
+                with open(w, "w") as f:
+                    f.write(str(val))
+            finally:
+                os._exit(0)
+        else:
+            os.close(w)
+            val = random.getrandbits(128)
+            with open(r, "r") as f:
+                child_val = eval(f.read())
+            self.assertNotEqual(val, child_val)
 
 
 if __name__ == "__main__":

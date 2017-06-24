@@ -1823,6 +1823,9 @@ s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     PyObject *result;
 
     /* Validate arguments. */
+    if (!_PyArg_NoStackKeywords("pack", kwnames)) {
+        return NULL;
+    }
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
     assert(soself->s_codes != NULL);
@@ -1830,9 +1833,6 @@ s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     {
         PyErr_Format(StructError,
             "pack expected %zd items for packing (got %zd)", soself->s_len, nargs);
-        return NULL;
-    }
-    if (!_PyArg_NoStackKeywords("pack", kwnames)) {
         return NULL;
     }
 
@@ -1866,6 +1866,9 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     Py_ssize_t offset;
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
+    if (!_PyArg_NoStackKeywords("pack_into", kwnames)) {
+        return NULL;
+    }
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
     assert(soself->s_codes != NULL);
@@ -1884,9 +1887,6 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
                         "pack_into expected %zd items for packing (got %zd)",
                         soself->s_len, (nargs - 2));
         }
-        return NULL;
-    }
-    if (!_PyArg_NoStackKeywords("pack_into", kwnames)) {
         return NULL;
     }
 
@@ -1929,11 +1929,14 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
 
     /* Check boundaries */
     if ((buffer.len - offset) < soself->s_size) {
+        assert(offset >= 0);
+        assert(soself->s_size >= 0);
+
         PyErr_Format(StructError,
-                     "pack_into requires a buffer of at least %zd bytes for "
+                     "pack_into requires a buffer of at least %zu bytes for "
                      "packing %zd bytes at offset %zd "
                      "(actual buffer size is %zd)",
-                     soself->s_size + offset,
+                     (size_t)soself->s_size + (size_t)offset,
                      soself->s_size,
                      offset,
                      buffer.len);
@@ -1954,8 +1957,8 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
 static PyObject *
 s_get_format(PyStructObject *self, void *unused)
 {
-    Py_INCREF(self->s_format);
-    return self->s_format;
+    return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
+                                       PyBytes_GET_SIZE(self->s_format));
 }
 
 static PyObject *
@@ -2128,6 +2131,10 @@ pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     PyObject *s_object = NULL;
     PyObject *format, *result;
 
+    if (!_PyArg_NoStackKeywords("pack", kwnames)) {
+        return NULL;
+    }
+
     if (nargs == 0) {
         PyErr_SetString(PyExc_TypeError, "missing format argument");
         return NULL;
@@ -2155,6 +2162,10 @@ pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
+
+    if (!_PyArg_NoStackKeywords("pack_into", kwnames)) {
+        return NULL;
+    }
 
     if (nargs == 0) {
         PyErr_SetString(PyExc_TypeError, "missing format argument");

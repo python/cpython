@@ -3343,9 +3343,6 @@ PyInit__curses(void)
     SetDictInt("A_BLINK",               A_BLINK);
     SetDictInt("A_DIM",                 A_DIM);
     SetDictInt("A_BOLD",                A_BOLD);
-#ifdef A_ITALIC
-    SetDictInt("A_ITALIC",              A_ITALIC);
-#endif
     SetDictInt("A_ALTCHARSET",          A_ALTCHARSET);
 #if !defined(__NetBSD__)
     SetDictInt("A_INVIS",           A_INVIS);
@@ -3372,6 +3369,11 @@ PyInit__curses(void)
 #endif
 #ifdef A_VERTICAL
     SetDictInt("A_VERTICAL",        A_VERTICAL);
+#endif
+
+    /* ncurses extension */
+#ifdef A_ITALIC
+    SetDictInt("A_ITALIC",          A_ITALIC);
 #endif
 
     SetDictInt("COLOR_BLACK",       COLOR_BLACK);

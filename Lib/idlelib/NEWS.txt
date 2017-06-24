@@ -1,6 +1,38 @@
-What's New in IDLE 3.6.0?
-===========================
-*Release date: 2016-12-16?*
+What's New in IDLE 3.7.0
+Released on 2018-06-18?
+========================
+
+bpo-15786: Fix several problems with IDLE's autocompletion box.
+The following should now work: clicking on selection box items;
+using the scrollbar; selecting an item by hitting Return.
+Hangs on MacOSX should no longer happen. Patch by Louie Lu.
+
+bpo-25514: Add doc subsubsection about IDLE failure to start.
+Popup no-connection message directs users to this section.
+
+bpo-30642: Fix reference leaks in IDLE tests.
+Patches by Louie Lu and Terry Jan Reedy.
+
+bpo-30495: Add docstrings for textview.py and use PEP8 names.
+Patches by Cheryl Sabella and Terry Jan Reedy.
+
+bpo-30290: Help-about: use pep8 names and add tests.
+Increase coverage to 100%.
+Patches by Louie Lu, Cheryl Sabella, and Terry Jan Reedy.
+
+bpo-30303: Add _utest option to textview; add new tests.
+Increase coverage to 100%.
+Patches by Louie Lu and Terry Jan Reedy.
+
+Issue #29071: IDLE colors f-string prefixes (but not invalid ur prefixes).
+
+Issue #28572: Add 10% to coverage of IDLE's test_configdialog.
+Update and augment description of the configuration system.
+
+
+What's New in IDLE 3.6.0
+Released on 2016-12-23
+========================
 
 - Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
   Patch by Roger Serwy, updated by Bayard Randel.
