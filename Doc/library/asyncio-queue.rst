@@ -3,6 +3,8 @@
 Queues
 ======
 
+**Source code:** :source:`Lib/asyncio/queues.py`
+
 Queues:
 
 * :class:`Queue`
