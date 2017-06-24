@@ -10,6 +10,7 @@ from idlelib.idle_test.mock_tk import Mbox_func
 from idlelib.help_about import AboutDialog as About
 from idlelib import textview
 import os.path
+from platform import python_version
 
 class LiveDialogTest(unittest.TestCase):
     """Simulate user clicking buttons other than [Close].
@@ -77,6 +78,28 @@ class LiveDialogTest(unittest.TestCase):
                     f.readline().strip(),
                     dialog._current_textview.text.get('3.0', '3.end'))
             dialog._current_textview.destroy()
+
+
+class DefaultTitleTest(unittest.TestCase):
+    "Test default title."
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.dialog = About(cls.root, _utest=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.dialog
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def test_dialog_title(self):
+        """Test about dialog title"""
+        self.assertEqual(self.dialog.title(), f'About IDLE {python_version()}')
 
 
 class CloseTest(unittest.TestCase):
