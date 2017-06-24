@@ -369,6 +369,8 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- bpo-25720: curses: Fix check for whether WINDOW is a pad.
+
 - Issue #29169: Update zlib to 1.2.11.
 
 Library
