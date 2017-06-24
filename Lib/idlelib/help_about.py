@@ -2,12 +2,21 @@
 
 """
 import os
-from platform import python_version
+import sys
+from platform import python_version, architecture
 
 from tkinter import Toplevel, Frame, Label, Button, PhotoImage
 from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
 
 from idlelib import textview
+
+
+def _bitness():
+    "Return bitness of platform."
+    bits, linkage = architecture()
+    if sys.platform == 'darwin':
+        bits = '64bit' if sys.maxsize > 2**32 else '32bit'
+    return bits[:2]
 
 
 class AboutDialog(Toplevel):
@@ -28,11 +37,12 @@ class AboutDialog(Toplevel):
         self.geometry("+%d+%d" % (
                         parent.winfo_rootx()+30,
                         parent.winfo_rooty()+(30 if not _htest else 100)))
-        self.bg = "#707070"
-        self.fg = "#ffffff"
+        self.bg = "#bbbbbb"
+        self.fg = "#000000"
         self.create_widgets()
         self.resizable(height=False, width=False)
-        self.title(title or f'About IDLE {python_version()}')
+        self.title(title or
+                   f'About IDLE {python_version()} ({_bitness()} bit)')
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.ok)
