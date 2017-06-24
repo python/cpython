@@ -59,6 +59,7 @@
     <TixDirs>BUILDDIRTOP="$(BuildDirTop)" TCL_DIR="$(tclDir.TrimEnd(`\`))" TK_DIR="$(tkDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TixDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUG=1 NODEBUG=0 TCL_DBGX=g TK_DBGX=g</DebugFlags>
     <DebugFlags Condition="'$(Configuration)' != 'Debug'">DEBUG=0 NODEBUG=1</DebugFlags>
+    <CFlags>-c -W3 -nologo -MD -wd4028 -wd4090</CFlags>
     <NMakeBuildCommandLine>setlocal
 @(ExpectedOutputs->'if not exist "%(FullPath)" goto build','
 ')
@@ -66,7 +67,7 @@ goto :eof
 :build
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tixDir)win"
-nmake /nologo -f makefile.vc MACHINE=$(TclMachine) $(DebugFlags) $(TclShortVersions) $(TixDirs) all install
+nmake /nologo -f makefile.vc MACHINE=$(TclMachine) cflags="$(CFlags)" $(DebugFlags) $(TclShortVersions) $(TixDirs) all install
 </NMakeBuildCommandLine>
     <NMakeCleanCommandLine>rmdir /q/s "$(OutDir.TrimEnd(`\`))"</NMakeCleanCommandLine>
   </PropertyGroup>

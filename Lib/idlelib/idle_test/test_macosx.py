@@ -77,6 +77,10 @@ class SetupTest(unittest.TestCase):
         requires('gui')
         cls.root = tk.Tk()
         cls.root.withdraw()
+        def cmd(tkpath, func):
+            assert isinstance(tkpath, str)
+            assert isinstance(func, type(cmd))
+        cls.root.createcommand = cmd
 
     @classmethod
     def tearDownClass(cls):

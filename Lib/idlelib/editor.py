@@ -463,7 +463,7 @@ class EditorWindow(object):
     def about_dialog(self, event=None):
         "Handle Help 'About IDLE' event."
         # Synchronize with macosx.overrideRootMenu.about_dialog.
-        help_about.AboutDialog(self.top,'About IDLE')
+        help_about.AboutDialog(self.top)
 
     def config_dialog(self, event=None):
         "Handle Options 'Configure IDLE' event."

@@ -2291,6 +2291,26 @@ class TestIntFlag(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
 
+    def test_programatic_function_from_empty_list(self):
+        Perm = enum.IntFlag('Perm', [])
+        lst = list(Perm)
+        self.assertEqual(len(lst), len(Perm))
+        self.assertEqual(len(Perm), 0, Perm)
+        Thing = enum.Enum('Thing', [])
+        lst = list(Thing)
+        self.assertEqual(len(lst), len(Thing))
+        self.assertEqual(len(Thing), 0, Thing)
+
+
+    def test_programatic_function_from_empty_tuple(self):
+        Perm = enum.IntFlag('Perm', ())
+        lst = list(Perm)
+        self.assertEqual(len(lst), len(Perm))
+        self.assertEqual(len(Perm), 0, Perm)
+        Thing = enum.Enum('Thing', ())
+        self.assertEqual(len(lst), len(Thing))
+        self.assertEqual(len(Thing), 0, Thing)
+
     def test_containment(self):
         Perm = self.Perm
         R, W, X = Perm
