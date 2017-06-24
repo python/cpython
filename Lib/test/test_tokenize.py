@@ -1357,6 +1357,7 @@ class TestTokenize(TestCase):
             token.STRING, token.NEWLINE, token.INDENT,
             token.DEDENT, token.OP, token.ERRORTOKEN,
             token.AWAIT, token.ASYNC,
+            token.COMMENT, token.NL, token.ENCODING,
             token.N_TOKENS, token.NT_OFFSET,
         }
 
