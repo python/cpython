@@ -738,7 +738,7 @@ top:
 
     for (size_t perturb = hash;;) {
         perturb >>= PERTURB_SHIFT;
-        i = ((i << 2) + i + perturb + 1) & mask;
+        i = (i*5 + perturb + 1) & mask;
         ix = dk_get_index(dk, i);
         if (ix == DKIX_EMPTY) {
             if (hashpos != NULL) {
@@ -834,7 +834,7 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
 
     for (size_t perturb = hash;;) {
         perturb >>= PERTURB_SHIFT;
-        i = mask & ((i << 2) + i + perturb + 1);
+        i = mask & (i*5 + perturb + 1);
         ix = dk_get_index(mp->ma_keys, i);
         if (ix == DKIX_EMPTY) {
             if (hashpos != NULL) {
@@ -905,7 +905,7 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
     }
     for (size_t perturb = hash;;) {
         perturb >>= PERTURB_SHIFT;
-        i = mask & ((i << 2) + i + perturb + 1);
+        i = mask & (i*5 + perturb + 1);
         ix = dk_get_index(mp->ma_keys, i);
         assert (ix != DKIX_DUMMY);
         if (ix == DKIX_EMPTY) {
@@ -972,7 +972,7 @@ lookdict_split(PyDictObject *mp, PyObject *key,
     }
     for (size_t perturb = hash;;) {
         perturb >>= PERTURB_SHIFT;
-        i = mask & ((i << 2) + i + perturb + 1);
+        i = mask & (i*5 + perturb + 1);
         ix = dk_get_index(mp->ma_keys, i);
         if (ix == DKIX_EMPTY) {
             if (hashpos != NULL)
@@ -1073,7 +1073,7 @@ find_empty_slot(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     ix = dk_get_index(keys, i);
     for (size_t perturb = hash; ix != DKIX_EMPTY;) {
         perturb >>= PERTURB_SHIFT;
-        i = (i << 2) + i + perturb + 1;
+        i = i*5 + perturb + 1;
         ix = dk_get_index(keys, i & mask);
     }
     assert(DK_ENTRIES(keys)[keys->dk_nentries].me_value == NULL);
@@ -1190,7 +1190,7 @@ build_indices(PyDictKeysObject *keys, PyDictKeyEntry *ep, Py_ssize_t n)
         size_t i = hash & mask;
         for (size_t perturb = hash; dk_get_index(keys, i) != DKIX_EMPTY;) {
             perturb >>= PERTURB_SHIFT;
-            i = mask & ((i << 2) + i + perturb + 1);
+            i = mask & (i*5 + perturb + 1);
         }
         dk_set_index(keys, i, ix);
     }
