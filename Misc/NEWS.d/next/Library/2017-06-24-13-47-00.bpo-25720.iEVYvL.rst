@@ -1,0 +1,1 @@
+curses: Fix check for whether WINDOW is a pad.
