@@ -4964,8 +4964,14 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             goto error;
         }
 
-        k = PyBytes_AsString(key2);
-        v = PyBytes_AsString(val2);
+        k = PyBytes_AS_STRING(key2);
+        v = PyBytes_AS_STRING(val2);
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (*k == '\0' || strchr(k + 1, '=') != NULL) {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            goto error;
+        }
         len = PyBytes_GET_SIZE(key2) + PyBytes_GET_SIZE(val2) + 2;
 
         p = PyMem_NEW(char, len);
@@ -9069,9 +9075,16 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 {
     wchar_t *env;
 
+    /* Search from index 1 because on Windows starting '=' is allowed for
+       defining hidden environment variables. */
+    if (PyUnicode_GET_LENGTH(name) == 0 ||
+        PyUnicode_FindChar(name, '=', 1, PyUnicode_GET_LENGTH(name), 1) != -1)
+    {
+        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+        return NULL;
+    }
     PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
     if (unicode == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     if (_MAX_ENV < PyUnicode_GET_LENGTH(unicode)) {
@@ -9113,12 +9126,15 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 {
     PyObject *bytes = NULL;
     char *env;
-    char *name_string = PyBytes_AsString(name);
-    char *value_string = PyBytes_AsString(value);
+    const char *name_string = PyBytes_AS_STRING(name);
+    const char *value_string = PyBytes_AS_STRING(value);
 
+    if (strchr(name_string, '=') != NULL) {
+        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+        return NULL;
+    }
     bytes = PyBytes_FromFormat("%s=%s", name_string, value_string);
     if (bytes == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
 
