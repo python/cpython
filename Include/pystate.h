@@ -74,6 +74,10 @@ typedef struct _is {
     PyObject *import_func;
     /* Initialized to PyEval_EvalFrameDefault(). */
     _PyFrameEvalFunction eval_frame;
+
+    Py_ssize_t co_extra_user_count;
+    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
+
 #ifdef HAVE_FORK
     PyObject *before_forkers;
     PyObject *after_forkers_parent;
@@ -172,9 +176,6 @@ typedef struct _ts {
 
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
-
-    Py_ssize_t co_extra_user_count;
-    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;

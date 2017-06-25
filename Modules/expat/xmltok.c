@@ -4,19 +4,13 @@
 
 #include <stddef.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "winconfig.h"
-#elif defined(MACOS_CLASSIC)
-#include "macconfig.h"
-#elif defined(__amigaos__)
-#include "amigaconfig.h"
-#elif defined(__WATCOMC__)
-#include "watcomconfig.h"
 #else
 #ifdef HAVE_EXPAT_CONFIG_H
 #include <expat_config.h>
 #endif
-#endif /* ndef WIN32 */
+#endif /* ndef _WIN32 */
 
 #include "expat_external.h"
 #include "internal.h"
@@ -369,24 +363,24 @@ utf8_toUtf8(const ENCODING *UNUSED_P(enc),
             const char **fromP, const char *fromLim,
             char **toP, const char *toLim)
 {
-  enum XML_Convert_Result res = XML_CONVERT_COMPLETED;
   char *to;
   const char *from;
-  if (fromLim - *fromP > toLim - *toP) {
-    /* Avoid copying partial characters. */
-    res = XML_CONVERT_OUTPUT_EXHAUSTED;
-    fromLim = *fromP + (toLim - *toP);
-    align_limit_to_full_utf8_characters(*fromP, &fromLim);
-  }
+  const char *fromLimInitial = fromLim;
+
+  /* Avoid copying partial characters. */
+  align_limit_to_full_utf8_characters(*fromP, &fromLim);
+
   for (to = *toP, from = *fromP; (from < fromLim) && (to < toLim); from++, to++)
     *to = *from;
   *fromP = from;
   *toP = to;
 
-  if ((to == toLim) && (from < fromLim))
+  if (fromLim < fromLimInitial)
+    return XML_CONVERT_INPUT_INCOMPLETE;
+  else if ((to == toLim) && (from < fromLim))
     return XML_CONVERT_OUTPUT_EXHAUSTED;
   else
-    return res;
+    return XML_CONVERT_COMPLETED;
 }
 
 static enum XML_Convert_Result PTRCALL
@@ -402,7 +396,7 @@ utf8_toUtf16(const ENCODING *enc,
     case BT_LEAD2:
       if (fromLim - from < 2) {
         res = XML_CONVERT_INPUT_INCOMPLETE;
-        break;
+        goto after;
       }
       *to++ = (unsigned short)(((from[0] & 0x1f) << 6) | (from[1] & 0x3f));
       from += 2;
@@ -410,7 +404,7 @@ utf8_toUtf16(const ENCODING *enc,
     case BT_LEAD3:
       if (fromLim - from < 3) {
         res = XML_CONVERT_INPUT_INCOMPLETE;
-        break;
+        goto after;
       }
       *to++ = (unsigned short)(((from[0] & 0xf) << 12)
                                | ((from[1] & 0x3f) << 6) | (from[2] & 0x3f));
@@ -441,6 +435,8 @@ utf8_toUtf16(const ENCODING *enc,
       break;
     }
   }
+  if (from < fromLim)
+    res = XML_CONVERT_OUTPUT_EXHAUSTED;
 after:
   *fromP = from;
   *toP = to;

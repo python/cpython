@@ -237,6 +237,13 @@ xmlrpc.server
 its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
 :issue:`7769`.)
 
+unicodedata
+-----------
+
+The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
+<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
+Peterson.)
+
 urllib.parse
 ------------
 
@@ -377,7 +384,7 @@ API and Feature Removals
 
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now
-  be passes only as positional argument.
+  be passed only as positional argument.
 
 * Removed previously deprecated in Python 2.4 classes ``Plist``, ``Dict`` and
   ``_InternalDict`` in the :mod:`plistlib` module.  Dict values in the result
@@ -425,6 +432,9 @@ Changes in the Python API
   To set their file permission bits you can set the umask before invoking
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
+
+* The :attr:`struct.Struct.format` type is now :class:`str` instead of
+  :class:`bytes`. (Contributed by Victor Stinner in :issue:`21071`.)
 
 
 CPython bytecode changes
