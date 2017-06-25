@@ -13,6 +13,8 @@
 # endif
 
 #else /* MS_WINDOWS */
+/* disable annoying winsock warnings. */
+# define _WINSOCK_DEPRECATED_NO_WARNINGS
 # include <winsock2.h>
 /* Windows 'supports' CMSG_LEN, but does not follow the POSIX standard
  * interface at all, so there is no point including the code that
