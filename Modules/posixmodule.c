@@ -4963,48 +4963,26 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             Py_DECREF(key2);
             goto error;
         }
-<<<<<<< HEAD
 
-        k = PyBytes_AsString(key2);
-        v = PyBytes_AsString(val2);
+        k = PyBytes_AS_STRING(key2);
+        v = PyBytes_AS_STRING(val2);
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (*k == '\0' || strchr(k + 1, '=') != NULL) {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            goto error;
+        }
         len = PyBytes_GET_SIZE(key2) + PyBytes_GET_SIZE(val2) + 2;
 
         p = PyMem_NEW(char, len);
         if (p == NULL) {
             PyErr_NoMemory();
-=======
-        /* Search from index 1 because on Windows starting '=' is allowed for
-           defining hidden environment variables. */
-        if (PyUnicode_GET_LENGTH(key2) == 0 ||
-            PyUnicode_FindChar(key2, '=', 1, PyUnicode_GET_LENGTH(key2), 1) != -1)
-        {
-            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
-            goto error;
-        }
-        keyval = PyUnicode_FromFormat("%U=%U", key2, val2);
-#else
-        if (!PyUnicode_FSConverter(key, &key2))
-            goto error;
-        if (!PyUnicode_FSConverter(val, &val2)) {
->>>>>>> 77703942c5... bpo-30746: Prohibited the '=' character in environment variable names (#2382)
             Py_DECREF(key2);
             Py_DECREF(val2);
             goto error;
         }
-<<<<<<< HEAD
         PyOS_snprintf(p, len, "%s=%s", k, v);
         envlist[envc++] = p;
-=======
-        if (PyBytes_GET_SIZE(key2) == 0 ||
-            strchr(PyBytes_AS_STRING(key2) + 1, '=') != NULL)
-        {
-            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
-            goto error;
-        }
-        keyval = PyBytes_FromFormat("%s=%s", PyBytes_AS_STRING(key2),
-                                             PyBytes_AS_STRING(val2));
-#endif
->>>>>>> 77703942c5... bpo-30746: Prohibited the '=' character in environment variable names (#2382)
         Py_DECREF(key2);
         Py_DECREF(val2);
     }
@@ -9148,13 +9126,8 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 {
     PyObject *bytes = NULL;
     char *env;
-<<<<<<< HEAD
-    char *name_string = PyBytes_AsString(name);
-    char *value_string = PyBytes_AsString(value);
-=======
     const char *name_string = PyBytes_AS_STRING(name);
     const char *value_string = PyBytes_AS_STRING(value);
->>>>>>> 77703942c5... bpo-30746: Prohibited the '=' character in environment variable names (#2382)
 
     if (strchr(name_string, '=') != NULL) {
         PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
