@@ -3,7 +3,7 @@ Dialog for building Tkinter accelerator key bindings
 """
 from tkinter import *
 from tkinter.ttk import Scrollbar
-import tkinter.messagebox as tkMessageBox
+from tkinter.messagebox import showerror
 import string
 import sys
 
@@ -224,15 +224,14 @@ class GetKeysDialog(Toplevel):
         return key
 
     def OK(self, event=None):
-        key = self.keyString.get()
-        key.strip()
-        if not key:
-            tkMessageBox.showerror(title=self.keyerror_title, parent=self,
-                                   message="No keys specified.")
+        keys = self.keyString.get().strip()
+        if not keys:
+            showerror(title=self.keyerror_title, parent=self,
+                      message="No key specified.")
             return
-        if (self.advanced or self.KeysOK(key)) and self.sequence_ok(key):
-            self.result = self.keyString.get()
-            self.destroy()
+        if (self.advanced or self.KeysOK(keys)) and self.bind_ok(keys):
+            self.result = keys
+        self.destroy()
 
     def Cancel(self, event=None):
         self.result=''
@@ -252,41 +251,38 @@ class GetKeysDialog(Toplevel):
         keysOK = False
         title = self.keyerror_title
         if not keys.endswith('>'):
-            tkMessageBox.showerror(title=title, parent=self,
-                                   message='Missing the final Key')
+            showerror(title=title, parent=self,
+                      message='Missing the final Key')
         elif (not modifiers
               and finalKey not in self.functionKeys + self.moveKeys):
-            tkMessageBox.showerror(title=title, parent=self,
-                                   message='No modifier key(s) specified.')
+            showerror(title=title, parent=self,
+                      message='No modifier key(s) specified.')
         elif (modifiers == ['Shift']) \
                  and (finalKey not in
                       self.functionKeys + self.moveKeys + ('Tab', 'Space')):
             msg = 'The shift modifier by itself may not be used with'\
                   ' this key symbol.'
-            tkMessageBox.showerror(title=title, parent=self, message=msg)
+            showerror(title=title, parent=self, message=msg)
         elif keySequence in self.currentKeySequences:
             msg = 'This key combination is already in use.'
-            tkMessageBox.showerror(title=title, parent=self, message=msg)
+            showerror(title=title, parent=self, message=msg)
         else:
             keysOK = True
         return keysOK
 
-    def sequence_ok(self, keys):
-        """Verify if Tcl accepts the new keys."""
-        accepted = False
+    def bind_ok(self, keys):
+        "Return True if Tcl accepts the new keys else show message."
 
         try:
             binding = self.bind(keys, lambda: None)
         except TclError as err:
-            tkMessageBox.showerror(
-                    title=self.keyerror_title, parent=self,
-                    message=(f'The entered key sequence is not accepted.\n\n'
-                             f'Error: {err}'))
+            showerror(title=self.keyerror_title, parent=self,
+                      message=(f'The entered key sequence is not accepted.\n\n'
+                               f'Error: {err}'))
+            return False
         else:
             self.unbind(keys, binding)
-            accepted = True
-
-        return accepted
+            return True
 
 
 if __name__ == '__main__':
