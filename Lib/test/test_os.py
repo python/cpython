@@ -909,7 +909,7 @@ class SpawnTests(unittest.TestCase):
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
         try:
             exitcode = spawn(os.P_WAIT, args[0], args, newenv)
-        except ValueError:
+        except TypeError:
             pass
         else:
             self.assertEqual(exitcode, 127)
@@ -919,7 +919,7 @@ class SpawnTests(unittest.TestCase):
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
         try:
             exitcode = spawn(os.P_WAIT, args[0], args, newenv)
-        except ValueError:
+        except TypeError:
             pass
         else:
             self.assertEqual(exitcode, 127)
