@@ -3958,15 +3958,15 @@ tracemalloc_track(PyObject *self, PyObject *args)
 
     if (release_gil) {
         Py_BEGIN_ALLOW_THREADS
-        res = _PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
+        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
         Py_END_ALLOW_THREADS
     }
     else {
-        res = _PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
+        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
     }
 
     if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "_PyTraceMalloc_Track error");
+        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Track error");
         return NULL;
     }
 
@@ -3987,9 +3987,9 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
     if (PyErr_Occurred())
         return NULL;
 
-    res = _PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+    res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
     if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "_PyTraceMalloc_Track error");
+        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Untrack error");
         return NULL;
     }
 

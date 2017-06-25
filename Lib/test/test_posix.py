@@ -813,6 +813,21 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(type(k), item_type)
             self.assertEqual(type(v), item_type)
 
+    @unittest.skipUnless(hasattr(os, "putenv"), "requires os.putenv()")
+    def test_putenv(self):
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT\0VEGETABLE', 'cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv(b'FRUIT\0VEGETABLE', b'cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT', 'orange\0VEGETABLE=cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv(b'FRUIT', b'orange\0VEGETABLE=cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT=ORANGE', 'lemon')
+        with self.assertRaises(ValueError):
+            os.putenv(b'FRUIT=ORANGE', b'lemon')
+
     @unittest.skipUnless(hasattr(posix, 'getcwd'), 'test needs posix.getcwd()')
     def test_getcwd_long_pathnames(self):
         dirname = 'getcwd-test-directory-0123456789abcdef-01234567890abcdef'
