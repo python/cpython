@@ -478,7 +478,11 @@ _Py_CoerceLegacyLocale(void)
         const char *locale_override = getenv("LC_ALL");
         if (locale_override == NULL || *locale_override == '\0') {
             /* LC_ALL is also not set (or is set to an empty string) */
-            const char *initial_locale = setlocale(LC_CTYPE, NULL);
+#if !defined(__APPLE__) && defined(HAVE_LANGINFO_H) && defined(CODESET)
+            /* Save the initial locale on platforms where we may need it later */
+            const char *initial_locale =
+#endif
+            setlocale(LC_CTYPE, NULL);
             const _LocaleCoercionTarget *target = NULL;
             for (target = _TARGET_LOCALES; target->locale_name; target++) {
                 const char *new_locale = setlocale(LC_CTYPE,
