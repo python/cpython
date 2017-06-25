@@ -2418,9 +2418,13 @@ class SpawnTests(unittest.TestCase):
             self.assertEqual(exitcode, 127)
 
         # equal character in the enviroment variable value
-        args = [sys.executable, '-c',
-                'import sys, os\n'
-                'if os.getenv("FRUIT") != "orange=lemon": raise AssertionError']
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        with open(filename, "w") as fp:
+            fp.write('import sys, os\n'
+                     'if os.getenv("FRUIT") != "orange=lemon":\n'
+                     '    raise AssertionError')
+        args = [sys.executable, filename]
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange=lemon"
         exitcode = os.spawnve(os.P_WAIT, args[0], args, newenv)
