@@ -3012,15 +3012,14 @@ PyUnicode_AsWideCharString(PyObject *unicode,
         return NULL;
     }
 
-    buflen++;
-    buffer = PyMem_NEW(wchar_t, buflen);
+    buffer = PyMem_NEW(wchar_t, buflen + 1);
     if (buffer == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memcpy(buffer, wstr, buflen * sizeof(wchar_t));
+    memcpy(buffer, wstr, (buflen + 1) * sizeof(wchar_t));
     if (size != NULL)
-        *size = buflen - 1;
+        *size = buflen;
     return buffer;
 }
 
