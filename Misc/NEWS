@@ -52,6 +52,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30746: Prohibited the '=' character in environment variable names in
+  ``os.putenv()`` and ``os.spawn*()``.
+
 - [Security] bpo-30730: Prevent environment variables injection in subprocess on
   Windows.  Prevent passing other environment variables and command arguments.
 
