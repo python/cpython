@@ -1501,6 +1501,27 @@ class ExecTests(unittest.TestCase):
         if os.name != "nt":
             self._test_internal_execvpe(bytes)
 
+    def test_execve_invalid_env(self):
+        args = [sys.executable, '-c', 'pass']
+
+        # null character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT\0VEGETABLE"] = "cabbage"
+        with self.assertRaises(ValueError):
+            os.execve(args[0], args, newenv)
+
+        # null character in the enviroment variable value
+        newenv = os.environ.copy()
+        newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
+        with self.assertRaises(ValueError):
+            os.execve(args[0], args, newenv)
+
+        # equal character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT=ORANGE"] = "lemon"
+        with self.assertRaises(ValueError):
+            os.execve(args[0], args, newenv)
+
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32ErrorTests(unittest.TestCase):
@@ -2311,36 +2332,34 @@ class SpawnTests(unittest.TestCase):
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], ('',), {})
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], [''], {})
 
-    @requires_os_func('spawnve')
-    def test_spawnve_invalid_env(self):
-        # null character in the enviroment variable name
+    def _test_invalid_env(self, spawn):
         args = [sys.executable, '-c', 'pass']
+
+        # null character in the enviroment variable name
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
         try:
-            exitcode = os.spawnve(os.P_WAIT, args[0], args, newenv)
+            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
         except ValueError:
             pass
         else:
             self.assertEqual(exitcode, 127)
 
         # null character in the enviroment variable value
-        args = [sys.executable, '-c', 'pass']
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
         try:
-            exitcode = os.spawnve(os.P_WAIT, args[0], args, newenv)
+            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
         except ValueError:
             pass
         else:
             self.assertEqual(exitcode, 127)
 
         # equal character in the enviroment variable name
-        args = [sys.executable, '-c', 'pass']
         newenv = os.environ.copy()
         newenv["FRUIT=ORANGE"] = "lemon"
         try:
-            exitcode = os.spawnve(os.P_WAIT, args[0], args, newenv)
+            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
         except ValueError:
             pass
         else:
@@ -2356,8 +2375,16 @@ class SpawnTests(unittest.TestCase):
         args = [sys.executable, filename]
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange=lemon"
-        exitcode = os.spawnve(os.P_WAIT, args[0], args, newenv)
+        exitcode = spawn(os.P_WAIT, args[0], args, newenv)
         self.assertEqual(exitcode, 0)
+
+    @requires_os_func('spawnve')
+    def test_spawnve_invalid_env(self):
+        self._test_invalid_env(os.spawnve)
+
+    @requires_os_func('spawnvpe')
+    def test_spawnvpe_invalid_env(self):
+        self._test_invalid_env(os.spawnvpe)
 
 
 >>>>>>> 77703942c5... bpo-30746: Prohibited the '=' character in environment variable names (#2382)
