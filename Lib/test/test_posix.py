@@ -504,6 +504,15 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.lchflags(_DUMMY_SYMLINK, dummy_symlink_st.st_flags)
 
+    @unittest.skipUnless(hasattr(os, "putenv"), "requires os.putenv()")
+    def test_putenv(self):
+        with self.assertRaises(TypeError):
+            os.putenv('FRUIT\0VEGETABLE', 'cabbage')
+        with self.assertRaises(TypeError):
+            os.putenv('FRUIT', 'orange\0VEGETABLE=cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT=ORANGE', 'lemon')
+
     @unittest.skipUnless(hasattr(posix, 'getcwd'),
                          'test needs posix.getcwd()')
     def test_getcwd_long_pathnames(self):
