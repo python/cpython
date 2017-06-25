@@ -192,10 +192,11 @@ def credit_given(file_paths):
     return os.path.join('Misc', 'ACKS') in file_paths
 
 
-@status("Misc/NEWS updated", modal=True)
+@status("Misc/NEWS.d updated with `blurb`", modal=True)
 def reported_news(file_paths):
-    """Check if Misc/NEWS has been changed."""
-    return os.path.join('Misc', 'NEWS') in file_paths
+    """Check if Misc/NEWS.d has been changed."""
+    return any(p.startswith(os.path.join('Misc', 'NEWS.d', 'next'))
+               for p in file_paths)
 
 @status("configure regenerated", modal=True, info=str)
 def regenerated_configure(file_paths):
@@ -241,8 +242,7 @@ def main():
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
-    misc_files = {os.path.join('Misc', 'ACKS'), os.path.join('Misc', 'NEWS')}\
-            & set(file_paths)
+    misc_files = {p for p in file_paths if p.startswith('Misc')}
     # PEP 8 whitespace rules enforcement.
     normalize_whitespace(python_files)
     # C rules enforcement.
