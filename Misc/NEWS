@@ -374,6 +374,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30746: Prohibited the '=' character in environment variable names in
+  ``os.putenv()`` and ``os.spawn*()``.
+
 - bpo-30664: The description of a unittest subtest now preserves the order of
   keyword arguments of TestCase.subTest().
 

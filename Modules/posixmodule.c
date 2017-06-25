@@ -4894,12 +4894,26 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             Py_DECREF(key2);
             goto error;
         }
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (PyUnicode_GET_LENGTH(key2) == 0 ||
+            PyUnicode_FindChar(key2, '=', 1, PyUnicode_GET_LENGTH(key2), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            goto error;
+        }
         keyval = PyUnicode_FromFormat("%U=%U", key2, val2);
 #else
         if (!PyUnicode_FSConverter(key, &key2))
             goto error;
         if (!PyUnicode_FSConverter(val, &val2)) {
             Py_DECREF(key2);
+            goto error;
+        }
+        if (PyBytes_GET_SIZE(key2) == 0 ||
+            strchr(PyBytes_AS_STRING(key2) + 1, '=') != NULL)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
             goto error;
         }
         keyval = PyBytes_FromFormat("%s=%s", PyBytes_AS_STRING(key2),
@@ -8985,9 +8999,16 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 {
     const wchar_t *env;
 
+    /* Search from index 1 because on Windows starting '=' is allowed for
+       defining hidden environment variables. */
+    if (PyUnicode_GET_LENGTH(name) == 0 ||
+        PyUnicode_FindChar(name, '=', 1, PyUnicode_GET_LENGTH(name), 1) != -1)
+    {
+        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+        return NULL;
+    }
     PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
     if (unicode == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     if (_MAX_ENV < PyUnicode_GET_LENGTH(unicode)) {
@@ -9029,12 +9050,15 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 {
     PyObject *bytes = NULL;
     char *env;
-    const char *name_string = PyBytes_AsString(name);
-    const char *value_string = PyBytes_AsString(value);
+    const char *name_string = PyBytes_AS_STRING(name);
+    const char *value_string = PyBytes_AS_STRING(value);
 
+    if (strchr(name_string, '=') != NULL) {
+        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+        return NULL;
+    }
     bytes = PyBytes_FromFormat("%s=%s", name_string, value_string);
     if (bytes == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
 
