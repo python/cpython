@@ -21,13 +21,18 @@ testcfg = {
     'extensions': config.IdleUserConfParser(''),
 }
 
-# ConfigDialog.changedItems is a 3-level hierarchical dictionary of
+# ConfigDialog.changed_items is a 3-level hierarchical dictionary of
 # pending changes that mirrors the multilevel user config dict.
 # For testing, record args in a list for comparison with expected.
 changes = []
+root = None
+configure = None
+
+
 class TestDialog(ConfigDialog):
     def add_changed_item(self, *args):
         changes.append(args)
+
 
 def setUpModule():
     global root, configure
@@ -49,34 +54,33 @@ def tearDownModule():
 
 class FontTabTest(unittest.TestCase):
 
-
     def setUp(self):
         changes.clear()
 
     def test_font(self):
         # Set values guaranteed not to be defaults.
-        dfont = idleConf.GetFont(root, 'main', 'EditorWindow')
-        dsize = str(dfont[1])
-        dbold = dfont[2] == 'bold'
+        default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
+        default_size = str(default_font[1])
+        default_bold = default_font[2] == 'bold'
         configure.font_name.set('Test Font')
         expected = [
             ('main', 'EditorWindow', 'font', 'Test Font'),
-            ('main', 'EditorWindow', 'font-size', dsize),
-            ('main', 'EditorWindow', 'font-bold', dbold)]
+            ('main', 'EditorWindow', 'font-size', default_size),
+            ('main', 'EditorWindow', 'font-bold', default_bold)]
         self.assertEqual(changes, expected)
         changes.clear()
         configure.font_size.set(20)
         expected = [
             ('main', 'EditorWindow', 'font', 'Test Font'),
             ('main', 'EditorWindow', 'font-size', '20'),
-            ('main', 'EditorWindow', 'font-bold', dbold)]
+            ('main', 'EditorWindow', 'font-bold', default_bold)]
         self.assertEqual(changes, expected)
         changes.clear()
-        configure.font_bold.set(not dbold)
+        configure.font_bold.set(not default_bold)
         expected = [
             ('main', 'EditorWindow', 'font', 'Test Font'),
             ('main', 'EditorWindow', 'font-size', '20'),
-            ('main', 'EditorWindow', 'font-bold', not dbold)]
+            ('main', 'EditorWindow', 'font-bold', not default_bold)]
         self.assertEqual(changes, expected)
 
     #def test_sample(self): pass  # TODO
