@@ -4940,6 +4940,25 @@ sock_decode_hostname(const char *name)
 #endif
 }
 
+static PyStructSequence_Field struct_host_type_fields[] = {
+    {"host", ""},
+    {"aliaslist", ""},
+    {"ipaddrlist", ""},
+    {0}
+};
+
+static int initialized;
+
+static PyStructSequence_Desc struct_host_type_desc = {
+    "socket.struct_host",
+    "",
+    struct_host_type_fields,
+    3,
+};
+
+static PyTypeObject StructHostType;
+
+
 /* Convenience function common to gethostbyname_ex and gethostbyaddr */
 
 static PyObject *
@@ -5062,14 +5081,21 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
     name = sock_decode_hostname(h->h_name);
     if (name == NULL)
         goto err;
-    rtn_tuple = Py_BuildValue("NOO", name, name_list, addr_list);
+    rtn_tuple = PyStructSequence_New(&StructHostType);
+    if (rtn_tuple == NULL) {
+        Py_DECREF(name);
+        goto err;
+    }
 
- err:
+    PyStructSequence_SET_ITEM(rtn_tuple, 0, name);
+    PyStructSequence_SET_ITEM(rtn_tuple, 1, name_list);
+    PyStructSequence_SET_ITEM(rtn_tuple, 2, addr_list);
+    return rtn_tuple;
+err:
     Py_XDECREF(name_list);
     Py_XDECREF(addr_list);
-    return rtn_tuple;
+    return NULL;
 }
-
 
 /* Python interface to gethostbyname_ex(name). */
 
@@ -7707,10 +7733,19 @@ PyInit__socket(void)
 #endif
 #endif /* _MSTCPIP_ */
 
+    if (!initialized) {
+      if (PyStructSequence_InitType2(&StructHostType,
+				     &struct_host_type_desc) < 0)
+	return NULL;
+    }
+    Py_INCREF(&StructHostType);
+    PyModule_AddObject(m, "struct_host", (PyObject*) &StructHostType);
+
     /* Initialize gethostbyname lock */
 #if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
     netdb_lock = PyThread_allocate_lock();
 #endif
+    initialized = 1;
     return m;
 }
 
