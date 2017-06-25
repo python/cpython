@@ -3,7 +3,7 @@ Dialog for building Tkinter accelerator key bindings
 """
 from tkinter import *
 from tkinter.ttk import Scrollbar
-from tkinter.messagebox import showerror
+from tkinter import messagebox
 import string
 import sys
 
@@ -58,6 +58,10 @@ class GetKeysDialog(Toplevel):
         if not _utest:
             self.deiconify() #geometry set, unhide
             self.wait_window()
+
+    def showerror(self, *args, **kwargs):
+        # Make testing easier.  Replace in #30751.
+        messagebox.showerror(*args, **kwargs)
 
     def CreateWidgets(self):
         frameMain = Frame(self,borderwidth=2,relief=SUNKEN)
@@ -226,8 +230,8 @@ class GetKeysDialog(Toplevel):
     def OK(self, event=None):
         keys = self.keyString.get().strip()
         if not keys:
-            showerror(title=self.keyerror_title, parent=self,
-                      message="No key specified.")
+            self.showerror(title=self.keyerror_title, parent=self,
+                           message="No key specified.")
             return
         if (self.advanced or self.KeysOK(keys)) and self.bind_ok(keys):
             self.result = keys
@@ -251,21 +255,21 @@ class GetKeysDialog(Toplevel):
         keysOK = False
         title = self.keyerror_title
         if not keys.endswith('>'):
-            showerror(title=title, parent=self,
-                      message='Missing the final Key')
+            self.showerror(title, parent=self,
+                           message='Missing the final Key')
         elif (not modifiers
               and finalKey not in self.functionKeys + self.moveKeys):
-            showerror(title=title, parent=self,
-                      message='No modifier key(s) specified.')
+            self.showerror(title=title, parent=self,
+                           message='No modifier key(s) specified.')
         elif (modifiers == ['Shift']) \
                  and (finalKey not in
                       self.functionKeys + self.moveKeys + ('Tab', 'Space')):
             msg = 'The shift modifier by itself may not be used with'\
                   ' this key symbol.'
-            showerror(title=title, parent=self, message=msg)
+            self.showerror(title=title, parent=self, message=msg)
         elif keySequence in self.currentKeySequences:
             msg = 'This key combination is already in use.'
-            showerror(title=title, parent=self, message=msg)
+            self.showerror(title=title, parent=self, message=msg)
         else:
             keysOK = True
         return keysOK
@@ -276,9 +280,10 @@ class GetKeysDialog(Toplevel):
         try:
             binding = self.bind(keys, lambda: None)
         except TclError as err:
-            showerror(title=self.keyerror_title, parent=self,
-                      message=(f'The entered key sequence is not accepted.\n\n'
-                               f'Error: {err}'))
+            self.showerror(
+                    title=self.keyerror_title, parent=self,
+                    message=(f'The entered key sequence is not accepted.\n\n'
+                             f'Error: {err}'))
             return False
         else:
             self.unbind(keys, binding)

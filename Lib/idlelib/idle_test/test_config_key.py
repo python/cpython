@@ -7,79 +7,92 @@ from test.support import requires
 import sys
 import unittest
 from tkinter import Tk
-from tkinter import messagebox
-from idlelib.idle_test.mock_tk import Mbox_func
+from idlelib.idle_test.mock_idle import Func
+from idlelib.idle_test.mock_tk import Var, Mbox_func
 
 
-class GetKeysTest(unittest.TestCase):
+class ValidationTest(unittest.TestCase):
+    "Test validation methods: OK, KeysOK, bind_ok."
+
+    class Validator(config_key.GetKeysDialog):
+        def __init__(self, *args, **kwargs):
+            config_key.GetKeysDialog.__init__(self, *args, **kwargs)
+            class listKeysFinal:
+                get = Func()
+            self.listKeysFinal = listKeysFinal
+        GetModifiers = Func()
+        showerror = Mbox_func()
 
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        config_key.showerror = Mbox_func()
         cls.root = Tk()
         cls.root.withdraw()
-        cls.dialog = config_key.GetKeysDialog(
-            cls.root, 'test', '<<Test>>', ['<Key-F12>'], _utest=True)
+        cls.dialog = cls.Validator(
+            cls.root, 'Title', '<<Test>>', [['<Key-F12>']], _utest=True)
 
     @classmethod
     def tearDownClass(cls):
-        del cls.dialog
+        cls.dialog.Cancel()
         cls.root.update_idletasks()
         cls.root.destroy()
-        del cls.root
-        config_key.showerror = messagebox.showerror
+        del cls.dialog, cls.root
 
     def setUp(self):
-        config_key.showerror.message = ''
-
-    def test_init(self):
-        dia = config_key.GetKeysDialog(
-            self.root, 'test', '<<Test>>', [['<Control-Key-x>']], _utest=True)
-        dia.Cancel()
-        self.assertEqual(config_key.showerror.message, '')
+        self.dialog.showerror.message = ''
+    # A test that needs a particular final key value should set it.
+    # A test that sets a non-blank modifier list should reset it to [].
+    
+    def test_dummy(self):
+        pass
 
     def test_ok_empty(self):
         self.dialog.keyString.set(' ')
         self.dialog.OK()
         self.assertEqual(self.dialog.result, '')
-        self.assertEqual(config_key.showerror.message, 'No key specified.')
+        self.assertEqual(self.dialog.showerror.message, 'No key specified.')
 
-# Getting this test to work requires ability to get KeyOK to return True.
-# This requires an ability to manipulate modifiers and final key
-# or a refactoring of code to make it more easily tested
-# or temporary mocks.
-##    def test_ok_good(self):
-##        self.dialog.keyString.set('Key-F11')
-##        self.dialog.OK()
-##        self.assertEqual(self.dialog.result, '<Key-F11>')
-##        self.assertEqual(config_key.showerror.message, '')
+    def test_ok_good(self):
+        self.dialog.keyString.set('<Key-F11>')
+        self.dialog.listKeysFinal.get.result = 'F11'
+        self.dialog.OK()
+        self.assertEqual(self.dialog.result, '<Key-F11>')
+        self.assertEqual(self.dialog.showerror.message, '')
 
-    def test_keys_short(self):
+    def test_keys_no_ending(self):
         self.assertFalse(self.dialog.KeysOK('<Control-Shift'))
-        self.assertIn('Missing the final', config_key.showerror.message)
+        self.assertIn('Missing the final', self.dialog.showerror.message)
 
-    def test_keys_mod(self):
+    def test_keys_no_modifier_bad(self):
+        self.dialog.listKeysFinal.get.result = 'A'
         self.assertFalse(self.dialog.KeysOK('<Key-A>'))
-        self.assertIn('No modifier', config_key.showerror.message)
+        self.assertIn('No modifier', self.dialog.showerror.message)
 
-# Need tests for shift, duplication, and success this or test_keys_shift or test_keys_ok to work
-# 
-# The attempt below failed.  Code should be made easier to test.
-##    def test_keys_dup(self):
-##        modifier_index = 1 if sys.platform == 'darwin' else 0
-##        self.dialog.modifier_vars[modifier_index].set('Control')
-##        self.assertFalse(self.dialog.KeysOK('<Control-Key-x>'))
-##        self.assertIn('already in use', config_key.showerror.message)
+    def test_keys_no_modifier_ok(self):
+        self.dialog.listKeysFinal.get.result = 'F11'
+        self.assertTrue(self.dialog.KeysOK('<Key-F11>'))
+        self.assertEqual(self.dialog.showerror.message, '')
 
+    def test_keys_shift_bad(self):
+        self.dialog.listKeysFinal.get.result = 'a'
+        self.dialog.GetModifiers.result = ['Shift']
+        self.assertFalse(self.dialog.KeysOK('<a>'))
+        self.assertIn('shift modifier', self.dialog.showerror.message)
+        self.dialog.GetModifiers.result = []
+
+    def test_keys_dup(self):
+        self.dialog.listKeysFinal.get.result = 'F12'
+        self.dialog.GetModifiers.result = []
+        self.assertFalse(self.dialog.KeysOK('<Key-F12>'))
+        self.assertIn('already in use', self.dialog.showerror.message)
 
     def test_bind_ok(self):
         self.assertTrue(self.dialog.bind_ok('<Control-Shift-Key-a>'))
-        self.assertEqual(config_key.showerror.message, '')
+        self.assertEqual(self.dialog.showerror.message, '')
 
     def test_bind_not_ok(self):
         self.assertFalse(self.dialog.bind_ok('<Control-Shift>'))
-        self.assertIn('not accepted', config_key.showerror.message)
+        self.assertIn('not accepted', self.dialog.showerror.message)
 
 
 if __name__ == '__main__':
