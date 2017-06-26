@@ -558,7 +558,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         sys.exit(0)
 
     if list_cases_opt:
-        list_cases(testdir, selected)
+        list_cases(testdir, selected, match_tests)
         sys.exit(0)
 
     if trace:
@@ -1501,9 +1501,13 @@ def _list_cases(suite):
         if isinstance(test, unittest.TestSuite):
             _list_cases(test)
         elif isinstance(test, unittest.TestCase):
-            print(test.id())
+            if test_support._match_test(test):
+                print(test.id())
 
-def list_cases(testdir, selected):
+def list_cases(testdir, selected, match_tests):
+    test_support.verbose = False
+    test_support.match_tests = match_tests
+
     skipped = []
     for test in selected:
         abstest = get_abs_module(testdir, test)
