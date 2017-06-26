@@ -697,7 +697,8 @@ class _Environ(MutableMapping):
             raise KeyError(key) from None
 
     def __iter__(self):
-        for key in self._data:
+        data = list(self._data)
+        for key in data:
             yield self.decodekey(key)
 
     def __len__(self):
