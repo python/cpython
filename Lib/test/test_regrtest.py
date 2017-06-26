@@ -377,19 +377,19 @@ class BaseTestCase(unittest.TestCase):
         return list(match.group(1) for match in parser)
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
-                             omitted=(), randomize=False, interrupted=False):
+                             env_changed=(), omitted=(),
+                             randomize=False, interrupted=False,
+                             fail_env_changed=False):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
             skipped = [skipped]
         if isinstance(failed, str):
             failed = [failed]
+        if isinstance(env_changed, str):
+            env_changed = [env_changed]
         if isinstance(omitted, str):
             omitted = [omitted]
-        ntest = len(tests)
-        nskipped = len(skipped)
-        nfailed = len(failed)
-        nomitted = len(omitted)
 
         executed = self.parse_executed_tests(output)
         if randomize:
@@ -415,11 +415,17 @@ class BaseTestCase(unittest.TestCase):
             regex = list_regex('%s test%s failed', failed)
             self.check_line(output, regex)
 
+        if env_changed:
+            regex = list_regex('%s test%s altered the execution environment',
+                               env_changed)
+            self.check_line(output, regex)
+
         if omitted:
             regex = list_regex('%s test%s omitted', omitted)
             self.check_line(output, regex)
 
-        good = ntest - nskipped - nfailed - nomitted
+        good = (len(tests) - len(skipped) - len(failed)
+                - len(omitted) - len(env_changed))
         if good:
             regex = r'%s test%s OK\.$' % (good, plural(good))
             if not skipped and not failed and good > 1:
@@ -429,10 +435,12 @@ class BaseTestCase(unittest.TestCase):
         if interrupted:
             self.check_line(output, 'Test suite interrupted by signal SIGINT.')
 
-        if nfailed:
+        if failed:
             result = 'FAILURE'
         elif interrupted:
             result = 'INTERRUPTED'
+        elif fail_env_changed and env_changed:
+            result = 'ENV CHANGED'
         else:
             result = 'SUCCESS'
         self.check_line(output, 'Tests result: %s' % result)
@@ -906,6 +914,25 @@ class ArgsTestCase(BaseTestCase):
         methods = self.parse_methods(output)
         subset = ['test_method1', 'test_method3']
         self.assertEqual(methods, subset)
+
+    def test_env_changed(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_env_changed(self):
+                    open("env_changed", "w").close()
+        """)
+        testname = self.create_test(code=code)
+
+        # don't fail by default
+        output = self.run_tests(testname)
+        self.check_executed_tests(output, [testname], env_changed=testname)
+
+        # fail with --fail-env-changed
+        output = self.run_tests("--fail-env-changed", testname, exitcode=3)
+        self.check_executed_tests(output, [testname], env_changed=testname,
+                                  fail_env_changed=True)
 
 
 if __name__ == '__main__':
