@@ -11,12 +11,12 @@ from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
 from idlelib import textview
 
 
-def _bitness():
-    "Return bitness of platform."
-    bits, linkage = architecture()
+def build_bits():
+    "Return bits for platform."
     if sys.platform == 'darwin':
-        bits = '64bit' if sys.maxsize > 2**32 else '32bit'
-    return bits[:2]
+        return '64' if sys.maxsize > 2**32 else '32'
+    else:
+        return architecture()[0][:2]
 
 
 class AboutDialog(Toplevel):
@@ -42,7 +42,7 @@ class AboutDialog(Toplevel):
         self.create_widgets()
         self.resizable(height=False, width=False)
         self.title(title or
-                   f'About IDLE {python_version()} ({_bitness()} bit)')
+                   f'About IDLE {python_version()} ({build_bits()} bit)')
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.ok)

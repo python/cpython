@@ -34,6 +34,9 @@ class LiveDialogTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
+    def test_build_bits(self):
+        self.assertIn(help_about.build_bits(), ('32', '64'))
+
     def test_dialog_title(self):
         """Test about dialog title"""
         self.assertEqual(self.dialog.title(), 'About IDLE')
@@ -91,12 +94,11 @@ class DefaultTitleTest(unittest.TestCase):
         requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
-        help_about._bitness = mock.Mock(return_value=42)
         cls.dialog = About(cls.root, _utest=True)
 
     @classmethod
     def tearDownClass(cls):
-        del cls.dialog, help_about._bitness
+        del cls.dialog
         cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
@@ -105,7 +107,7 @@ class DefaultTitleTest(unittest.TestCase):
         """Test about dialog title"""
         self.assertEqual(self.dialog.title(),
                          f'About IDLE {python_version()}'
-                         f' (42 bit)')
+                         f' ({help_about.build_bits()} bit)')
 
 
 class CloseTest(unittest.TestCase):
@@ -174,38 +176,6 @@ class DisplayFileTest(unittest.TestCase):
                 handler()
                 self.assertEqual(self.error.message, '')
                 self.assertEqual(self.view.called, True)
-
-
-class BitnessTest(unittest.TestCase):
-    "Test helper function for bitness of system."
-
-    def test_darwin(self):
-        help_about.sys = mock.MagicMock()
-        platform = mock.PropertyMock(return_value='darwin')
-        size = mock.PropertyMock(return_value=2**32)
-        type(help_about.sys).platform = platform
-        type(help_about.sys).maxsize = size
-        help_about.architecture = mock.Mock(return_value=('64bit', 'ELF'))
-        self.assertEqual(help_about._bitness(), '32')
-        platform.assert_called_with()
-        size.assert_called_with()
-
-        size = mock.PropertyMock(return_value=2**64)
-        type(help_about.sys).maxsize = size
-        self.assertEqual(help_about._bitness(), '64')
-        platform.assert_called_with()
-        size.assert_called_with()
-
-    def test_not_darwin(self):
-        help_about.sys = mock.MagicMock()
-        platform = mock.PropertyMock(return_value='linux')
-        size = mock.PropertyMock(return_value=2**32)
-        type(help_about.sys).platform = platform
-        type(help_about.sys).maxsize = size
-        help_about.architecture = mock.Mock(return_value=('64bit', 'ELF'))
-        self.assertEqual(help_about._bitness(), '64')
-        platform.assert_called_with()
-        size.assert_not_called()
 
 
 if __name__ == '__main__':
