@@ -343,6 +343,9 @@ def _create_parser():
                             ' , don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization training')
+    group.add_argument('--fail-env-changed', action='store_true',
+                       help='if a test file alters the environment, mark '
+                            'the test as failed')
 
     return parser
 
@@ -944,11 +947,19 @@ def main(tests=None, **kwargs):
         result = "FAILURE"
     elif interrupted:
         result = "INTERRUPTED"
+    elif environment_changed and ns.fail_env_changed:
+        result = "ENV CHANGED"
     else:
         result = "SUCCESS"
     print("Tests result: %s" % result)
 
-    sys.exit(len(bad) > 0 or interrupted)
+    if bad:
+        sys.exit(2)
+    if interrupted:
+        sys.exit(130)
+    if ns.fail_env_changed and environment_changed:
+        sys.exit(3)
+    sys.exit(0)
 
 
 # small set of tests to determine if we have a basically functioning interpreter
