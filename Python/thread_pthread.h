@@ -410,31 +410,41 @@ PyThread_free_lock(PyThread_type_lock lock)
 int
 PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
 {
-    int success;
+    int success = 0;
     pthread_lock *thelock = (pthread_lock *)lock;
     int status, error = 0;
 
     dprintf(("PyThread_acquire_lock(%p, %d) called\n", lock, waitflag));
 
-    status = pthread_mutex_lock( &thelock->mut );
-    CHECK_STATUS("pthread_mutex_lock[1]");
-    success = thelock->locked == 0;
-
-    if ( !success && waitflag ) {
-        /* continue trying until we get the lock */
-
-        /* mut must be locked by me -- part of the condition
-         * protocol */
-        while ( thelock->locked ) {
-            status = pthread_cond_wait(&thelock->lock_released,
-                                       &thelock->mut);
-            CHECK_STATUS("pthread_cond_wait");
-        }
-        success = 1;
+    if (waitflag) {
+        status = pthread_mutex_lock( &thelock->mut );
+        CHECK_STATUS("pthread_mutex_lock[1]");
     }
-    if (success) thelock->locked = 1;
-    status = pthread_mutex_unlock( &thelock->mut );
-    CHECK_STATUS("pthread_mutex_unlock[1]");
+    else {
+        status = pthread_mutex_trylock( &thelock->mut );
+        if (status != EBUSY)
+            CHECK_STATUS("pthread_mutex_trylock[1]");
+    }
+    if (status == 0) {
+        success = thelock->locked == 0;
+
+        if ( !success && waitflag ) {
+            /* continue trying until we get the lock */
+
+            /* mut must be locked by me -- part of the condition
+             * protocol */
+            while ( thelock->locked ) {
+                status = pthread_cond_wait(&thelock->lock_released,
+                                           &thelock->mut);
+                CHECK_STATUS("pthread_cond_wait");
+            }
+            success = 1;
+        }
+
+        if (success) thelock->locked = 1;
+        status = pthread_mutex_unlock( &thelock->mut );
+        CHECK_STATUS("pthread_mutex_unlock[1]");
+    }
 
     if (error) success = 0;
     dprintf(("PyThread_acquire_lock(%p, %d) -> %d\n", lock, waitflag, success));
