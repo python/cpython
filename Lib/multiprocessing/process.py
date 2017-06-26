@@ -18,6 +18,7 @@ import sys
 import signal
 import itertools
 from _weakrefset import WeakSet
+import imp
 
 #
 #
@@ -296,9 +297,14 @@ class BaseProcess(object):
             traceback.print_exc()
         finally:
             util.info('process exiting with exitcode %d' % exitcode)
-            sys.stdout.flush()
-            sys.stderr.flush()
-
+            if sys.version_info[:2] != (3, 4):
+                # checks if app is running frozen
+                is_frozen = (hasattr(sys, "frozen") or # new py2exe
+                             hasattr(sys, "importers") or # old py2exe
+                             imp.is_frozen("__main__")) # tools/freeze
+                if not is_frozen:
+                    sys.stdout.flush()
+                    sys.stderr.flush()
         return exitcode
 
 #
