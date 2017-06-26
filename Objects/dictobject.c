@@ -839,51 +839,38 @@ static Py_ssize_t _Py_HOT_FUNCTION
 lookdict_split(PyDictObject *mp, PyObject *key,
                Py_hash_t hash, PyObject **value_addr)
 {
-    size_t i;
-    size_t mask = DK_MASK(mp->ma_keys);
-    Py_ssize_t ix;
-    PyDictKeyEntry *ep, *ep0 = DK_ENTRIES(mp->ma_keys);
-
     /* mp must split table */
     assert(mp->ma_values != NULL);
     if (!PyUnicode_CheckExact(key)) {
-        ix = lookdict(mp, key, hash, value_addr);
+        Py_ssize_t ix = lookdict(mp, key, hash, value_addr);
         if (ix >= 0) {
             *value_addr = mp->ma_values[ix];
         }
         return ix;
     }
 
-    i = (size_t)hash & mask;
-    ix = dk_get_index(mp->ma_keys, i);
-    if (ix == DKIX_EMPTY) {
-        *value_addr = NULL;
-        return DKIX_EMPTY;
-    }
-    assert(ix >= 0);
-    ep = &ep0[ix];
-    assert(ep->me_key != NULL && PyUnicode_CheckExact(ep->me_key));
-    if (ep->me_key == key ||
-        (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
-        *value_addr = mp->ma_values[ix];
-        return ix;
-    }
-    for (size_t perturb = hash;;) {
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-        ix = dk_get_index(mp->ma_keys, i);
+    PyDictKeyEntry *ep0 = DK_ENTRIES(mp->ma_keys);
+    size_t mask = DK_MASK(mp->ma_keys);
+    size_t perturb = (size_t)hash;
+    size_t i = (size_t)hash & mask;
+
+    for (;;) {
+        Py_ssize_t ix = dk_get_index(mp->ma_keys, i);
+        assert (ix != DKIX_DUMMY);
         if (ix == DKIX_EMPTY) {
             *value_addr = NULL;
             return DKIX_EMPTY;
         }
-        assert(ix >= 0);
-        ep = &ep0[ix];
-        assert(ep->me_key != NULL && PyUnicode_CheckExact(ep->me_key));
+        PyDictKeyEntry *ep = &ep0[ix];
+        assert(ep->me_key != NULL);
+        assert(PyUnicode_CheckExact(ep->me_key));
         if (ep->me_key == key ||
             (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
             *value_addr = mp->ma_values[ix];
             return ix;
         }
+        perturb >>= PERTURB_SHIFT;
+        i = mask & (i*5 + perturb + 1);
     }
     assert(0);          /* NOT REACHED */
     return 0;
