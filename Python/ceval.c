@@ -387,12 +387,27 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
     return result;
 }
 
+void
+_PyEval_SignalReceived(void)
+{
+    /* bpo-30703: Function called when the C signal handler of Python gets a
+       signal. We cannot queue a callback using Py_AddPendingCall() since this
+       function is not reentrant (use a lock and a list). */
+    SIGNAL_PENDING_CALLS();
+}
+
 int
 Py_MakePendingCalls(void)
 {
     static int busy = 0;
     int i;
     int r = 0;
+
+    /* Python signal handler doesn't really queue a callback: it only signals
+       that an UNIX signal was received, see _PyEval_SignalReceived(). */
+    if (PyErr_CheckSignals() < 0) {
+        return -1;
+    }
 
     if (!pending_lock) {
         /* initial allocation of the lock */
