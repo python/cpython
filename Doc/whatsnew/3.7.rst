@@ -151,8 +151,8 @@ instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 calendar
 --------
 
-The :class:`~calendar.HTMLCalendar` has added new class attribute which ease the
-customisation the CSS classes in the produced HTML calendar.
+The class :class:`~calendar.HTMLCalendar` has new class attributes which ease
+the customisation of the CSS classes in the produced HTML calendar.
 (Contributed by Oz Tiram in :issue:`30095`.)
 
 cgi
