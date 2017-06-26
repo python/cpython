@@ -1,0 +1,4 @@
+Add context argument for `concurrent.fututres.ProcessPoolExecutor`. Make
+`ProcessPoolExecutor` more robust to faulty user code such as unpicklable
+items and fix other race conditions. Add tests for possible deadlocks in
+`ProcessPoolExecutor`. Patch by Thomas Moreau and Olivier Grisel
