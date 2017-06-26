@@ -42,9 +42,6 @@ class ValidationTest(unittest.TestCase):
         self.dialog.showerror.message = ''
     # A test that needs a particular final key value should set it.
     # A test that sets a non-blank modifier list should reset it to [].
-    
-    def test_dummy(self):
-        pass
 
     def test_ok_empty(self):
         self.dialog.keyString.set(' ')
