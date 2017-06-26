@@ -28,10 +28,16 @@ from idlelib.query import SectionName, HelpSource
 from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
 
+
 class ConfigDialog(Toplevel):
+    """Config dialog for IDLE.
+    """
 
     def __init__(self, parent, title='', _htest=False, _utest=False):
-        """
+        """Show the tabbed dialog for user configuration.
+
+        parent - parent of this dialog
+        title - string which is the title of this popup dialog
         _htest - bool, change box location when running htest
         _utest - bool, don't wait_window when running unittest
         """
@@ -84,6 +90,7 @@ class ConfigDialog(Toplevel):
             self.wait_window()
 
     def create_widgets(self):
+        "Create and place widgets for tabbed dialog."
         self.tab_pages = TabbedPageSet(self,
                 page_names=['Fonts/Tabs', 'Highlighting', 'Keys', 'General',
                             'Extensions'])
@@ -96,6 +103,7 @@ class ConfigDialog(Toplevel):
         self.create_action_buttons().pack(side=BOTTOM)
 
     def create_action_buttons(self):
+        "Return frame of action buttons for dialog."
         if macosx.isAquaTk():
             # Changing the default padding on OSX results in unreadable
             # text in the buttons
@@ -117,6 +125,15 @@ class ConfigDialog(Toplevel):
         return outer
 
     def create_page_font_tab(self):
+        """Return frame of widgets for Font/Tabs tab.
+
+        Configuration attributes:
+            font_size: Font size.
+            font_bold: Select font bold or not.
+            font_name: Font face.
+            space_num: Indentation width.
+            edit_font: Font widget with default font.
+        """
         parent = self.parent
         self.font_size = StringVar(parent)
         self.font_bold = BooleanVar(parent)
@@ -185,6 +202,16 @@ class ConfigDialog(Toplevel):
         return frame
 
     def create_page_highlight(self):
+        """Return frame of widgets for Highlighting tab.
+
+        Configuration attributes:
+            builtin_theme: Menu variable for built-in theme.
+            custom_theme: Menu variable for custom theme.
+            fg_bg_toggle: Toggle for foreground/background color.
+            colour: Color of selected target.
+            is_builtin_theme: Selector for built-in or custom theme.
+            highlight_target: Menu variable for the highlight tag target.
+        """
         parent = self.parent
         self.builtin_theme = StringVar(parent)
         self.custom_theme = StringVar(parent)
@@ -296,6 +323,14 @@ class ConfigDialog(Toplevel):
         return frame
 
     def create_page_keys(self):
+        """Return frame of widgets for Keys tab.
+
+        Configuration attributes:
+            builtin_keys: Menu variable for built-in keybindings.
+            custom_keys: Menu variable for custom keybindings.
+            are_keys_builtin: Selector for built-in or custom keybindings.
+            keybinding: Action/key bindings.
+        """
         parent = self.parent
         self.binding_target = StringVar(parent)
         self.builtin_keys = StringVar(parent)
@@ -375,6 +410,15 @@ class ConfigDialog(Toplevel):
         return frame
 
     def create_page_general(self):
+        """Return frame of widgets for General tab.
+
+        Configuration attributes:
+            win_width: Initial window width in characters.
+            win_height: Initial window height in characters.
+            startup_edit: Selector for opening in editor or shell mode.
+            autosave: Selector for save prompt popup when using Run.
+            encoding: ?
+        """
         parent = self.parent
         self.win_width = StringVar(parent)
         self.win_height = StringVar(parent)
@@ -471,6 +515,7 @@ class ConfigDialog(Toplevel):
         return frame
 
     def attach_var_callbacks(self):
+        "Attach callbacks to variables that can be changed."
         self.font_size.trace_add('write', self.var_changed_font)
         self.font_name.trace_add('write', self.var_changed_font)
         self.font_bold.trace_add('write', self.var_changed_font)
@@ -619,6 +664,7 @@ class ConfigDialog(Toplevel):
         self.add_changed_item('main', 'EditorWindow', 'encoding', value)
 
     def reset_changed_items(self):
+        "Reset dictionary containing the items changed on each tab."
         #When any config item is changed in this dialog, an entry
         #should be made in the relevant section (config type) of this
         #dictionary. The key should be the config file section name and the
@@ -628,12 +674,14 @@ class ConfigDialog(Toplevel):
                              'extensions':{}}
 
     def add_changed_item(self, typ, section, item, value):
+        "Add item/value pair to changed items dictionary for typ and section."
         value = str(value) #make sure we use a string
         if section not in self.changed_items[typ]:
             self.changed_items[typ][section] = {}
         self.changed_items[typ][section][item] = value
 
     def GetDefaultItems(self):
+        "Return dictionary of default configuration settings."
         d_items={'main':{}, 'highlight':{}, 'keys':{}, 'extensions':{}}
         for config_type in d_items:
             sections = idleConf.GetSectionList('default', config_type)
@@ -646,6 +694,7 @@ class ConfigDialog(Toplevel):
         return d_items
 
     def set_theme_type(self):
+        "Set screen options based on theme type of builtin or custom."
         if self.is_builtin_theme.get():
             self.opt_menu_theme_builtin.config(state=NORMAL)
             self.opt_menu_theme_custom.config(state=DISABLED)
@@ -657,6 +706,7 @@ class ConfigDialog(Toplevel):
             self.button_delete_custom_theme.config(state=NORMAL)
 
     def set_keys_type(self):
+        "Set screen options based on keys type of builtin or custom."
         if self.are_keys_builtin.get():
             self.opt_menu_keys_builtin.config(state=NORMAL)
             self.opt_menu_keys_custom.config(state=DISABLED)
@@ -668,6 +718,14 @@ class ConfigDialog(Toplevel):
             self.button_delete_custom_keys.config(state=NORMAL)
 
     def get_new_keys(self):
+        """Handle event to change key binding for selected line.
+
+        A selection of a key/binding in the list of current
+        bindings pops up a dialog to enter a new binding.  If
+        the current key set is builtin and a binding has
+        changed, then a name for a custom key set needs to be
+        entered for the change to be applied.
+        """
         list_index = self.list_bindings.index(ANCHOR)
         binding = self.list_bindings.get(list_index)
         bind_name = binding.split()[0] #first part, up to first space
@@ -704,6 +762,7 @@ class ConfigDialog(Toplevel):
             self.list_bindings.select_anchor(list_index)
 
     def get_new_keys_name(self, message):
+        "Return new key set name from query popup."
         used_names = (idleConf.GetSectionList('user', 'keys') +
                 idleConf.GetSectionList('default', 'keys'))
         new_keyset = SectionName(
@@ -711,14 +770,22 @@ class ConfigDialog(Toplevel):
         return new_keyset
 
     def save_as_new_key_set(self):
+        "Prompt for name of new key set and save changes using that name."
         new_keys_name = self.get_new_keys_name('New Key Set Name:')
         if new_keys_name:
             self.create_new_key_set(new_keys_name)
 
     def keybinding_selected(self, event):
+        "Activate button to assign new keys to selected action."
         self.button_new_keys.config(state=NORMAL)
 
     def create_new_key_set(self, new_key_set_name):
+        """Create a new custom key set with the given name.
+
+        Create the new key set based on the previously active set
+        with the current changes applied.  Once it is saved, then
+        activate the new key set.
+        """
         #creates new custom key set based on the previously active key set,
         #and makes the new key set active
         if self.are_keys_builtin.get():
@@ -746,6 +813,10 @@ class ConfigDialog(Toplevel):
         self.set_keys_type()
 
     def load_keys_list(self, keyset_name):
+        """Load the list of action/key binding pairs for the active key set.
+
+        An action/key binding can be selected to change the key binding.
+        """
         reselect = 0
         new_keyset = 0
         if self.list_bindings.curselection():
@@ -769,6 +840,13 @@ class ConfigDialog(Toplevel):
             self.list_bindings.select_anchor(list_index)
 
     def delete_custom_keys(self):
+        """Handle event to delete a custom key set.
+
+        Applying the delete deactivates the current configuration and
+        reverts to the default.  The custom key set is permanently
+        deleted from the config file.
+        """
+
         keyset_name=self.custom_keys.get()
         delmsg = 'Are you sure you wish to delete the key set %r ?'
         if not tkMessageBox.askyesno(
@@ -800,6 +878,12 @@ class ConfigDialog(Toplevel):
         self.set_keys_type()
 
     def delete_custom_theme(self):
+        """Handle event to delete custom theme.
+
+        The current theme is deactivated and the default theme is
+        activated.  The custom theme is permanently removed from
+        the config file.
+        """
         theme_name = self.custom_theme.get()
         delmsg = 'Are you sure you wish to delete the theme %r ?'
         if not tkMessageBox.askyesno(
@@ -829,6 +913,11 @@ class ConfigDialog(Toplevel):
         self.set_theme_type()
 
     def get_colour(self):
+        """Handle button to select a new color for the target tag.
+
+        If a new color is selected while using a builtin theme, a
+        name must be supplied to create a custom theme.
+        """
         target = self.highlight_target.get()
         prev_colour = self.frame_colour_set.cget('bg')
         rgbTuplet, colour_string = tkColorChooser.askcolor(
@@ -849,6 +938,7 @@ class ConfigDialog(Toplevel):
                 self.colour.set(colour_string)
 
     def on_new_colour_set(self):
+        "Display sample of new color selection on the dialog."
         new_colour=self.colour.get()
         self.frame_colour_set.config(bg=new_colour)  #set sample
         plane ='foreground' if self.fg_bg_toggle.get() else 'background'
@@ -859,6 +949,7 @@ class ConfigDialog(Toplevel):
         self.add_changed_item('highlight', theme, theme_element, new_colour)
 
     def get_new_theme_name(self, message):
+        "Return name of new theme from query popup."
         used_names = (idleConf.GetSectionList('user', 'highlight') +
                 idleConf.GetSectionList('default', 'highlight'))
         new_theme = SectionName(
@@ -866,11 +957,19 @@ class ConfigDialog(Toplevel):
         return new_theme
 
     def save_as_new_theme(self):
+        "Prompt for new theme name and create the theme."
         new_theme_name = self.get_new_theme_name('New Theme Name:')
         if new_theme_name:
             self.create_new_theme(new_theme_name)
 
     def create_new_theme(self, new_theme_name):
+        """Create a new custom theme with the given name.
+
+        Create the new theme based on the previously active theme
+        with the current changes applied.  Once it is saved, then
+        activate the new theme.
+        """
+
         #creates new custom theme based on the previously active theme,
         #and makes the new theme active
         if self.is_builtin_theme.get():
@@ -895,11 +994,17 @@ class ConfigDialog(Toplevel):
         self.set_theme_type()
 
     def on_list_fonts_button_release(self, event):
+        """Handle event of selecting a font from the list.
+
+        Change the font name to the font selected from the list
+        and update sample text to show that font.
+        """
         font = self.list_fonts.get(ANCHOR)
         self.font_name.set(font.lower())
         self.set_font_sample()
 
     def set_font_sample(self, event=None):
+        "Update the screen samples with the font settings from the dialog."
         font_name = self.font_name.get()
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
         new_font = (font_name, self.font_size.get(), font_weight)
@@ -907,6 +1012,7 @@ class ConfigDialog(Toplevel):
         self.text_highlight_sample.configure(font=new_font)
 
     def set_highlight_target(self):
+        "Set fg/bg toggle and color based on highlight tag target."
         if self.highlight_target.get() == 'Cursor':  #bg not possible
             self.radio_fg.config(state=DISABLED)
             self.radio_bg.config(state=DISABLED)
@@ -918,9 +1024,11 @@ class ConfigDialog(Toplevel):
         self.set_colour_sample()
 
     def set_colour_sample_binding(self, *args):
+        "Change color sample based on foreground/background toggle."
         self.set_colour_sample()
 
     def set_colour_sample(self):
+        "Set the color of the frame background to reflect the selected target."
         #set the colour smaple area
         tag = self.theme_elements[self.highlight_target.get()][0]
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
@@ -928,6 +1036,7 @@ class ConfigDialog(Toplevel):
         self.frame_colour_set.config(bg=colour)
 
     def paint_theme_sample(self):
+        "Apply the theme colors to each element tag in the sample text."
         if self.is_builtin_theme.get():  #a default theme
             theme = self.builtin_theme.get()
         else:  #a user theme
@@ -949,9 +1058,11 @@ class ConfigDialog(Toplevel):
         self.set_colour_sample()
 
     def help_source_selected(self, event):
+        "Handle event for selecting additional help."
         self.set_helplist_button_states()
 
     def set_helplist_button_states(self):
+        "Toggle the state for the help list buttons based on list entries."
         if self.list_help.size() < 1:  #no entries in list
             self.button_helplist_edit.config(state=DISABLED)
             self.button_helplist_remove.config(state=DISABLED)
@@ -964,6 +1075,11 @@ class ConfigDialog(Toplevel):
                 self.button_helplist_remove.config(state=DISABLED)
 
     def helplist_item_add(self):
+        """Handle add button for the help list.
+
+        Query for name and location of new help sources and add
+        them to the list.
+        """
         help_source = HelpSource(self, 'New Help Source',
                                 ).result
         if help_source:
@@ -973,6 +1089,11 @@ class ConfigDialog(Toplevel):
         self.set_helplist_button_states()
 
     def helplist_item_edit(self):
+        """Handle edit button for the help list.
+
+        Query with existing help source information and update
+        config if the values are changed.
+        """
         item_index = self.list_help.index(ANCHOR)
         help_source = self.user_helplist[item_index]
         new_help_source = HelpSource(
@@ -988,6 +1109,10 @@ class ConfigDialog(Toplevel):
             self.set_helplist_button_states()
 
     def helplist_item_remove(self):
+        """Handle remove button for the help list.
+
+        Delete the help list item from config.
+        """
         item_index = self.list_help.index(ANCHOR)
         del(self.user_helplist[item_index])
         self.list_help.delete(item_index)
@@ -1003,6 +1128,7 @@ class ConfigDialog(Toplevel):
                     ';'.join(self.user_helplist[num-1][:2]))
 
     def load_font_cfg(self):
+        "Load current configuration settings for the font options."
         ##base editor font selection list
         fonts = list(tkFont.families(self))
         fonts.sort()
@@ -1031,12 +1157,14 @@ class ConfigDialog(Toplevel):
         self.set_font_sample()
 
     def load_tab_cfg(self):
+        "Load current configuration settings for the tab options."
         ##indent sizes
         space_num = idleConf.GetOption(
             'main', 'Indent', 'num-spaces', default=4, type='int')
         self.space_num.set(space_num)
 
     def load_theme_cfg(self):
+        "Load current configuration settings for the theme options."
         ##current theme type radiobutton
         self.is_builtin_theme.set(idleConf.GetOption(
                 'main', 'Theme', 'default', type='bool', default=1))
@@ -1070,6 +1198,7 @@ class ConfigDialog(Toplevel):
         self.set_highlight_target()
 
     def load_key_cfg(self):
+        "Load current configuration settings for the keybinding options."
         ##current keys type radiobutton
         self.are_keys_builtin.set(idleConf.GetOption(
                 'main', 'Keys', 'default', type='bool', default=1))
@@ -1100,6 +1229,7 @@ class ConfigDialog(Toplevel):
         self.load_keys_list(keyset_name)
 
     def load_general_cfg(self):
+        "Load current configuration settings for the general options."
         #startup state
         self.startup_edit.set(idleConf.GetOption(
                 'main', 'General', 'editor-on-startup', default=1, type='bool'))
@@ -1121,8 +1251,9 @@ class ConfigDialog(Toplevel):
         self.set_helplist_button_states()
 
     def load_configs(self):
-        """
-        load configuration from default and user config files and populate
+        """Load configuration for each page.
+
+        Load configuration from default and user config files and populate
         the widgets on the config dialog pages.
         """
         ### fonts / tabs page
@@ -1137,8 +1268,8 @@ class ConfigDialog(Toplevel):
         # note: extension page handled separately
 
     def save_new_key_set(self, keyset_name, keyset):
-        """
-        save a newly created core key set.
+        """Save a newly created core key set.
+
         keyset_name - string, the name of the new key set
         keyset - dictionary containing the new key set
         """
@@ -1149,8 +1280,8 @@ class ConfigDialog(Toplevel):
             idleConf.userCfg['keys'].SetOption(keyset_name, event, value)
 
     def save_new_theme(self, theme_name, theme):
-        """
-        save a newly created theme.
+        """Save a newly created theme.
+
         theme_name - string, the name of the new theme
         theme - dictionary containing the new theme
         """
@@ -1161,6 +1292,7 @@ class ConfigDialog(Toplevel):
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
 
     def set_user_value(self, config_type, section, item, value):
+        "Return True if the configuration value was added or changed."
         if idleConf.defaultCfg[config_type].has_option(section, item):
             if idleConf.defaultCfg[config_type].Get(section, item) == value:
                 #the setting equals a default setting, remove it from user cfg
@@ -1169,7 +1301,7 @@ class ConfigDialog(Toplevel):
         return idleConf.userCfg[config_type].SetOption(section, item, value)
 
     def save_all_changed_configs(self):
-        "Save configuration changes to the user config file."
+        "Save all configuration changes to the user config file."
         idleConf.userCfg['main'].Save()
         for config_type in self.changed_items:
             cfg_type_changed = False
@@ -1191,6 +1323,7 @@ class ConfigDialog(Toplevel):
         self.save_all_changed_extensions()  # uses a different mechanism
 
     def deactivate_current_config(self):
+        "Remove current key bindings."
         #Before a config is saved, some cleanup of current
         #config must be done - remove the previous keybindings
         win_instances = self.parent.instance_dict.keys()
@@ -1208,18 +1341,22 @@ class ConfigDialog(Toplevel):
             instance.reset_help_menu_entries()
 
     def cancel(self):
+        "Dismiss config dialog."
         self.destroy()
 
     def ok(self):
+        "Apply config changes, then dismiss dialog."
         self.apply()
         self.destroy()
 
     def apply(self):
+        "Apply config changes and leave dialog open."
         self.deactivate_current_config()
         self.save_all_changed_configs()
         self.activate_config_changes()
 
     def help(self):
+        "Create textview for config dialog help."
         page = self.tab_pages._current_page
         view_text(self, title='Help for IDLE preferences',
                  text=help_common+help_pages.get(page, ''))
@@ -1323,6 +1460,7 @@ class ConfigDialog(Toplevel):
                                                  })
 
     def extension_selected(self, event):
+        "Handle selection of an extension from the list."
         newsel = self.extension_list.curselection()
         if newsel:
             newsel = self.extension_list.get(newsel)
@@ -1363,6 +1501,11 @@ class ConfigDialog(Toplevel):
         return
 
     def set_extension_value(self, section, opt):
+        """Return True if the configuration was added or changed.
+
+        If the value is the same as the default, then remove it
+        from user config file.
+        """
         name = opt['name']
         default = opt['default']
         value = opt['var'].get().strip() or default
