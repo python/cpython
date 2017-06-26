@@ -478,6 +478,8 @@ class Regrtest:
             result = "FAILURE"
         elif self.interrupted:
             result = "INTERRUPTED"
+        elif self.environment_changed and self.ns.fail_env_changed:
+            result = "ENV CHANGED"
         else:
             result = "SUCCESS"
         print("Tests result: %s" % result)
@@ -538,7 +540,13 @@ class Regrtest:
             self.rerun_failed_tests()
 
         self.finalize()
-        sys.exit(len(self.bad) > 0 or self.interrupted)
+        if self.bad:
+            sys.exit(2)
+        if self.interrupted:
+            sys.exit(130)
+        if self.ns.fail_env_changed and self.environment_changed:
+            sys.exit(3)
+        sys.exit(0)
 
 
 def removepy(names):
