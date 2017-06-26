@@ -142,9 +142,19 @@ typedef struct {
     pthread_mutex_t  mut;
 } pthread_lock;
 
+#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
+
 #define CHECK_STATUS(name)  if (status != 0) { perror(name); error = 1; }
-#define CHECK_STATUS_PTHREAD(name)  if (status != 0) { fprintf(stderr, \
-    "%s: %s\n", name, strerror(status)); error = 1; }
+/* CHECK_STATUS_PTHREAD is async-signal-safe */
+#define CHECK_STATUS_PTHREAD(name) \
+    if (status != 0) { \
+        int _stderr_fd = 2; \
+        PUTS(_stderr_fd, name); \
+        PUTS(_stderr_fd, ": failed with status "); \
+        _Py_DumpDecimal(_stderr_fd, (unsigned long) status); \
+        PUTS(_stderr_fd, "\n"); \
+        error = 1; \
+    }
 
 /*
  * Initialization.
