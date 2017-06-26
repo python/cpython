@@ -67,6 +67,8 @@ Special runs
                    don't execute them
 --list-cases    -- only write the name of test cases that will be run,
                    don't execute them
+--fail-env-changed  -- if a test file alters the environment, mark the test
+                       as failed
 
 
 Additional Option Details:
@@ -327,7 +329,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
              'failfast', 'match=', 'testdir=', 'list-tests', 'list-cases',
-             'coverage', 'matchfile='])
+             'coverage', 'matchfile=', 'fail-env-changed'])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -339,6 +341,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     slaveargs = None
     list_tests = False
     list_cases_opt = False
+    fail_env_changed = False
     for o, a in opts:
         if o in ('-h', '--help'):
             usage(0)
@@ -439,6 +442,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             list_tests = True
         elif o == '--list-cases':
             list_cases_opt = True
+        elif o == '--fail-env-changed':
+            fail_env_changed = True
         else:
             print >>sys.stderr, ("No handler for option {}.  Please "
                 "report this as a bug at http://bugs.python.org.").format(o)
@@ -908,11 +913,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         result = "FAILURE"
     elif interrupted:
         result = "INTERRUPTED"
+    elif environment_changed and fail_env_changed:
+        result = "ENV CHANGED"
     else:
         result = "SUCCESS"
     print("Tests result: %s" % result)
 
-    sys.exit(len(bad) > 0 or interrupted)
+    if bad:
+        sys.exit(2)
+    if interrupted:
+        sys.exit(130)
+    if fail_env_changed and environment_changed:
+        sys.exit(3)
+    sys.exit(0)
 
 
 STDTESTS = [
