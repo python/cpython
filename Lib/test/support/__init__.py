@@ -1919,5 +1919,3 @@ class SuppressCrashReport:
                     resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
                 except (ValueError, OSError):
                     pass
-
-
