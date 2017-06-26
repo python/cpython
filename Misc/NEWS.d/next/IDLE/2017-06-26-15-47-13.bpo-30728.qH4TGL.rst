@@ -1,0 +1,4 @@
+Review and change idlelib.configdialog names.
+Lowercase method and attribute names.
+Replace 'colour' with 'color', expand overly cryptic names, delete unneeded underscores.
+Replace ``import *`` with specific imports. Patches by Cheryl Sabella.
