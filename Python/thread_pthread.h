@@ -473,10 +473,17 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
-    status = pthread_mutex_lock( &thelock->mut );
-    CHECK_STATUS_PTHREAD("pthread_mutex_lock[1]");
+    if (microseconds == 0) {
+        status = pthread_mutex_trylock( &thelock->mut );
+        if (status != EBUSY)
+            CHECK_STATUS_PTHREAD("pthread_mutex_trylock[1]");
+    }
+    else {
+        status = pthread_mutex_lock( &thelock->mut );
+        CHECK_STATUS_PTHREAD("pthread_mutex_lock[1]");
+    }
 
-    if (thelock->locked == 0) {
+    if (status == 0 && thelock->locked == 0) {
         success = PY_LOCK_ACQUIRED;
     } else if (microseconds == 0) {
         success = PY_LOCK_FAILURE;
