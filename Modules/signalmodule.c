@@ -189,12 +189,6 @@ It raises KeyboardInterrupt.");
 
 
 static int
-checksignals_witharg(void * unused)
-{
-    return PyErr_CheckSignals();
-}
-
-static int
 report_wakeup_write_error(void *data)
 {
     int save_errno = errno;
