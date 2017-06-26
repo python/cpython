@@ -81,7 +81,6 @@
 #else
 #  undef USE_SEMAPHORES
 #endif
-#  undef USE_SEMAPHORES
 
 
 /* On platforms that don't use standard POSIX threads pthread_sigmask()
