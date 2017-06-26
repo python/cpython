@@ -405,7 +405,7 @@ def _wait(fs, timeout, return_when, loop):
 
 
 # This is *not* a @coroutine!  It is just an iterator (yielding Futures).
-def as_completed(fs, *, loop=None, timeout=None):
+def as_completed(fs, *, loop=None, timeout=None, limit=None):
     """Return an iterator whose values are coroutines.
 
     When waiting for the yielded coroutines you'll get the results (or

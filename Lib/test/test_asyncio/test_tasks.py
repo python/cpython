@@ -1096,6 +1096,61 @@ class BaseTaskTests:
         res = list(sorted(loop.run_until_complete(self.new_task(loop, foo()))))
         self.assertEqual([0, 1, 2], res)
 
+    def test_as_completed_with_limit(self):
+        """
+        Use as_completed to get a number of results
+        concurrently, but supply the limit parameter
+        to ensure the number of concurrent
+        executions is kept to a given value.
+        """
+        num_futures = 10
+        limit = 10  # TODO: limit is not implemented yet
+
+        def gen():
+            yield 0
+            for i in range(num_futures):
+                yield 1
+
+        loop = self.new_test_loop(gen)
+
+        concurrent = 0
+        max_concurrent = 0
+
+        @asyncio.coroutine
+        def sleeper(dt):
+            nonlocal concurrent, max_concurrent
+            concurrent += 1
+            if concurrent > max_concurrent:
+                max_concurrent = concurrent
+            yield from asyncio.sleep(dt * 0.1, loop=loop)
+            concurrent -= 1
+            return str(dt)
+
+        times = list(range(1, num_futures + 1))
+        # We supply the coroutines in the opposite
+        # order from the order in which we expect
+        # the results to come, to confirm things
+        # happen concurrently.
+        fs = (sleeper(t) for t in reversed(times))
+
+        @asyncio.coroutine
+        def foo():
+            values = []
+            for f in asyncio.as_completed(fs, loop=loop, limit=limit):
+                values.append((yield from f))
+            return values
+
+        res = loop.run_until_complete(self.new_task(loop, foo()))
+
+        # The loop ran to the end, and we got all the
+        # values out.  They are in a weird order because
+        # we supplied them slow-first, so we had to wait
+        # for the slowest ones before we hit the faster
+        # ones.
+        self.assertListEqual(sorted(res), sorted([str(t) for t in times]))
+        # We never started more than limit concurrent executions
+        self.assertEqual(max_concurrent, limit)
+
     def test_as_completed_with_timeout(self):
 
         def gen():
