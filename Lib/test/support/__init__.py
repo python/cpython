@@ -1863,8 +1863,34 @@ class SuppressCrashReport:
         soft limit to 0.
         """
         if sys.platform.startswith('win'):
-            # TODO: backport the Windows implementation
-            pass
+            # see http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx
+            # GetErrorMode is not available on Windows XP and Windows Server 2003,
+            # but SetErrorMode returns the previous value, so we can use that
+            import ctypes
+            self._k32 = ctypes.windll.kernel32
+            SEM_NOGPFAULTERRORBOX = 0x02
+            self.old_value = self._k32.SetErrorMode(SEM_NOGPFAULTERRORBOX)
+            self._k32.SetErrorMode(self.old_value | SEM_NOGPFAULTERRORBOX)
+
+            # Suppress assert dialogs in debug builds
+            # (see http://bugs.python.org/issue23314)
+            try:
+                import _testcapi
+                _testcapi.CrtSetReportMode
+            except (AttributeError, ImportError):
+                # no _testcapi or a release build
+                pass
+            else:
+                self.old_modes = {}
+                for report_type in [_testcapi.CRT_WARN,
+                                    _testcapi.CRT_ERROR,
+                                    _testcapi.CRT_ASSERT]:
+                    old_mode = _testcapi.CrtSetReportMode(report_type,
+                            _testcapi.CRTDBG_MODE_FILE)
+                    old_file = _testcapi.CrtSetReportFile(report_type,
+                            _testcapi.CRTDBG_FILE_STDERR)
+                    self.old_modes[report_type] = old_mode, old_file
+
         else:
             try:
                 import resource
@@ -1906,16 +1932,16 @@ class SuppressCrashReport:
             return
 
         if sys.platform.startswith('win'):
-            # TODO: backport the Windows implementation
-            pass
-        else:
-            try:
-                import resource
-            except ImportError:
-                resource = None
+            self._k32.SetErrorMode(self.old_value)
 
-            if resource is not None:
-                try:
-                    resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
-                except (ValueError, OSError):
-                    pass
+            if self.old_modes:
+                import _testcapi
+                for report_type, (old_mode, old_file) in self.old_modes.items():
+                    _testcapi.CrtSetReportMode(report_type, old_mode)
+                    _testcapi.CrtSetReportFile(report_type, old_file)
+        else:
+            import resource
+            try:
+                resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
+            except (ValueError, OSError):
+                pass

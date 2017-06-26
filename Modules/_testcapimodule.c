@@ -11,6 +11,9 @@
 #include "datetime.h"
 #include "marshal.h"
 #include <signal.h>
+#ifdef MS_WINDOWS
+#  include <crtdbg.h>
+#endif
 
 #ifdef WITH_THREAD
 #include "pythread.h"
@@ -2501,6 +2504,42 @@ test_raise_signal(PyObject* self, PyObject *args)
 }
 
 
+#ifdef MS_WINDOWS
+static PyObject*
+msvcrt_CrtSetReportMode(PyObject* self, PyObject *args)
+{
+    int type, mode;
+    int res;
+
+    if (!PyArg_ParseTuple(args, "ii:CrtSetReportMode", &type, &mode)) {
+        return NULL;
+    }
+
+    res = _CrtSetReportMode(type, mode);
+    if (res == -1) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return PyInt_FromLong(res);
+}
+
+static PyObject*
+msvcrt_CrtSetReportFile(PyObject* self, PyObject *args)
+{
+    int type, file;
+    long res;
+
+    if (!PyArg_ParseTuple(args, "ii:CrtSetReportFile", &type, &file)) {
+        return NULL;
+    }
+
+    res = (long)_CrtSetReportFile(type, (_HFILE)file);
+
+    return PyInt_FromLong(res);
+}
+#endif
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -2613,6 +2652,10 @@ static PyMethodDef TestMethods[] = {
     {"pymarshal_read_object_from_file",
         pymarshal_read_object_from_file, METH_VARARGS},
     {"raise_signal", (PyCFunction)test_raise_signal, METH_VARARGS},
+#ifdef MS_WINDOWS
+    {"CrtSetReportMode", (PyCFunction)msvcrt_CrtSetReportMode, METH_VARARGS},
+    {"CrtSetReportFile", (PyCFunction)msvcrt_CrtSetReportFile, METH_VARARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
@@ -2808,6 +2851,14 @@ init_testcapi(void)
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyInt_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyInt_FromSsize_t(PY_SSIZE_T_MIN));
     PyModule_AddObject(m, "SIZEOF_PYGC_HEAD", PyInt_FromSsize_t(sizeof(PyGC_Head)));
+
+#ifdef MS_WINDOWS
+    PyModule_AddIntConstant(m, "CRT_WARN", _CRT_WARN);
+    PyModule_AddIntConstant(m, "CRT_ERROR", _CRT_ERROR);
+    PyModule_AddIntConstant(m, "CRT_ASSERT", _CRT_ASSERT);
+    PyModule_AddIntConstant(m, "CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
+    PyModule_AddIntConstant(m, "CRTDBG_FILE_STDERR", (int)_CRTDBG_FILE_STDERR);
+#endif
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
