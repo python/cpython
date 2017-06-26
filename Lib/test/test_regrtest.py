@@ -604,7 +604,7 @@ class ArgsTestCase(BaseTestCase):
         test_failing = self.create_test('failing', code=code)
         tests = [test_ok, test_failing]
 
-        output = self.run_tests(*tests, exitcode=1)
+        output = self.run_tests(*tests, exitcode=2)
         self.check_executed_tests(output, tests, failed=test_failing)
 
     def test_resources(self):
@@ -703,7 +703,7 @@ class ArgsTestCase(BaseTestCase):
     def test_interrupted(self):
         code = TEST_INTERRUPTED
         test = self.create_test('sigint', code=code)
-        output = self.run_tests(test, exitcode=1)
+        output = self.run_tests(test, exitcode=130)
         self.check_executed_tests(output, test, omitted=test,
                                   interrupted=True)
 
@@ -732,7 +732,7 @@ class ArgsTestCase(BaseTestCase):
                 args = ("--slowest", "-j2", test)
             else:
                 args = ("--slowest", test)
-            output = self.run_tests(*args, exitcode=1)
+            output = self.run_tests(*args, exitcode=130)
             self.check_executed_tests(output, test,
                                       omitted=test, interrupted=True)
 
@@ -772,7 +772,7 @@ class ArgsTestCase(BaseTestCase):
                         builtins.__dict__['RUN'] = 1
         """)
         test = self.create_test('forever', code=code)
-        output = self.run_tests('--forever', test, exitcode=1)
+        output = self.run_tests('--forever', test, exitcode=2)
         self.check_executed_tests(output, [test]*3, failed=test)
 
     @unittest.skipUnless(Py_DEBUG, 'need a debug build')
@@ -804,7 +804,7 @@ class ArgsTestCase(BaseTestCase):
         filename = 'reflog.txt'
         self.addCleanup(support.unlink, filename)
         output = self.run_tests('--huntrleaks', '3:3:', test,
-                                exitcode=1,
+                                exitcode=2,
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test)
 
@@ -858,7 +858,7 @@ class ArgsTestCase(BaseTestCase):
         ok_test = self.create_test(name="ok")
 
         tests = [crash_test, ok_test]
-        output = self.run_tests("-j2", *tests, exitcode=1)
+        output = self.run_tests("-j2", *tests, exitcode=2)
         self.check_executed_tests(output, tests, failed=crash_test,
                                   randomize=True)
 

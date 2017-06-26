@@ -538,7 +538,11 @@ class Regrtest:
             self.rerun_failed_tests()
 
         self.finalize()
-        sys.exit(len(self.bad) > 0 or self.interrupted)
+        if self.bad:
+            sys.exit(2)
+        if self.interrupted:
+            sys.exit(130)
+        sys.exit(0)
 
 
 def removepy(names):
