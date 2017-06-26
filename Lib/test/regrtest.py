@@ -1735,10 +1735,14 @@ def _list_cases(suite):
         if isinstance(test, unittest.TestSuite):
             _list_cases(test)
         elif isinstance(test, unittest.TestCase):
-            print(test.id())
+            if support._match_test(test):
+                print(test.id())
 
 
 def list_cases(ns, selected):
+    support.verbose = False
+    support.match_tests = ns.match_tests
+
     skipped = []
     for test in selected:
         abstest = get_abs_module(ns, test)
