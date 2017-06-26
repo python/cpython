@@ -244,9 +244,9 @@ trip_signal(int sig_num)
     _PyEval_SignalReceived();
 
     /* And then write to the wakeup fd *after* setting all the globals and
-       doing the Py_AddPendingCall. We used to write to the wakeup fd and then
-       set the flag, but this allowed the following sequence of events
-       (especially on windows, where trip_signal runs in a new thread):
+       doing the _PyEval_SignalReceived. We used to write to the wakeup fd
+       and then set the flag, but this allowed the following sequence of events
+       (especially on windows, where trip_signal may run in a new thread):
 
        - main thread blocks on select([wakeup_fd], ...)
        - signal arrives
@@ -281,6 +281,8 @@ trip_signal(int sig_num)
                 wakeup.send_err_set = 1;
                 wakeup.send_errno = errno;
                 wakeup.send_win_error = GetLastError();
+                /* Py_AddPendingCall() isn't signal-safe, but we
+                   still use it for this exceptional case. */
                 Py_AddPendingCall(report_wakeup_send_error, NULL);
             }
         }
@@ -294,6 +296,8 @@ trip_signal(int sig_num)
             rc = _Py_write_noraise(fd, &byte, 1);
 
             if (rc < 0) {
+                /* Py_AddPendingCall() isn't signal-safe, but we
+                   still use it for this exceptional case. */
                 Py_AddPendingCall(report_wakeup_write_error,
                                   (void *)(intptr_t)errno);
             }
