@@ -994,20 +994,50 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_unt = do_until
 
     def do_step(self, arg):
-        """s(tep)
+        """s(tep) [count]
         Execute the current line, stop at the first possible occasion
         (either in a function that is called or in the current
-        function).
+        function). With count times, it will step count times until the
+        step is done, or stop when occured a breakpoint.
         """
+        if self.cmdqueue and self.break_here(self.curframe):
+            self.cmdqueue.clear()
+            return 0
+
+        if arg:
+            try:
+                count = int(arg) - 1
+                if count < 0:
+                    return 0
+                self.cmdqueue.extend(['s'] * count)
+            except ValueError:
+                self.error(f'Invalid number "{arg}"')
+                return 0
+
         self.set_step()
         return 1
     do_s = do_step
 
     def do_next(self, arg):
-        """n(ext)
+        """n(ext) [count]
         Continue execution until the next line in the current function
-        is reached or it returns.
+        is reached or it returns. With count times, it will next count
+        times until the next is done, or stop when occured a breakpoint.
         """
+        if self.cmdqueue and self.break_here(self.curframe):
+            self.cmdqueue.clear()
+            return 0
+
+        if arg:
+            try:
+                count = int(arg) - 1
+                if count < 0:
+                    return 0
+                self.cmdqueue.extend(['n'] * count)
+            except ValueError:
+                self.error(f'Invalid number "{arg}"')
+                return 0
+
         self.set_next(self.curframe)
         return 1
     do_n = do_next
@@ -1665,6 +1695,7 @@ def main():
     while True:
         try:
             pdb._runscript(mainpyfile)
+            pdb.cmdqueue.clear()
             if pdb._user_requested_quit:
                 break
             print("The program finished and will be restarted")

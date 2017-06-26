@@ -600,6 +600,431 @@ def test_pdb_run_with_code_object():
     (Pdb) continue
     """
 
+
+def test_next_with_count():
+    """Test that pdb can run next with count times
+
+    >>> def print_function(n):
+    ...     print(n)
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print_function(1)
+    ...     print_function(2)
+    ...     print_function(3)
+    ...     print_function(4)
+    ...     print_function(5)
+    ...     print_function(6)
+    ...     print_function(7)
+    ...     print_function(8)
+    ...     print_function(9)
+    ...     print_function(10)
+
+    >>> with PdbTestInput(['next',
+    ...                    'next 3',
+    ...                    'next 5',
+    ...                    'next 1a',
+    ...                    'next',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_next_with_count[1]>(3)test_function()
+    -> print_function(1)
+    (Pdb) next
+    1
+    > <doctest test.test_pdb.test_next_with_count[1]>(4)test_function()
+    -> print_function(2)
+    (Pdb) next 3
+    2
+    > <doctest test.test_pdb.test_next_with_count[1]>(5)test_function()
+    -> print_function(3)
+    3
+    > <doctest test.test_pdb.test_next_with_count[1]>(6)test_function()
+    -> print_function(4)
+    4
+    > <doctest test.test_pdb.test_next_with_count[1]>(7)test_function()
+    -> print_function(5)
+    (Pdb) next 5
+    5
+    > <doctest test.test_pdb.test_next_with_count[1]>(8)test_function()
+    -> print_function(6)
+    6
+    > <doctest test.test_pdb.test_next_with_count[1]>(9)test_function()
+    -> print_function(7)
+    7
+    > <doctest test.test_pdb.test_next_with_count[1]>(10)test_function()
+    -> print_function(8)
+    8
+    > <doctest test.test_pdb.test_next_with_count[1]>(11)test_function()
+    -> print_function(9)
+    9
+    > <doctest test.test_pdb.test_next_with_count[1]>(12)test_function()
+    -> print_function(10)
+    (Pdb) next 1a
+    *** Invalid number "1a"
+    (Pdb) next
+    10
+    --Return--
+    > <doctest test.test_pdb.test_next_with_count[1]>(12)test_function()->None
+    -> print_function(10)
+    (Pdb) continue
+    """
+
+
+def test_next_with_count_and_breakpoint():
+    """Test that pdb can run next with count times, and respect breakpoint
+
+    >>> def print_function(n):
+    ...     print(n)
+    ...     return
+
+    >>> def print_function_break_1(n):
+    ...     print(n)
+    ...     return
+
+    >>> def print_function_break_2(n):
+    ...     print(n)
+    ...     return
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print_function(1)
+    ...     print_function(2)
+    ...     print_function_break_1(3)
+    ...     print_function(4)
+    ...     print_function(5)
+    ...     print_function(6)
+    ...     print_function_break_2(7)
+    ...     print_function(8)
+    ...     print_function(9)
+    ...     print_function(10)
+
+    >>> with PdbTestInput(['break print_function_break_1',
+    ...                    'break print_function_break_2',
+    ...                    'next 1',
+    ...                    'next 1000',
+    ...                    'next 4',
+    ...                    'next 1000',
+    ...                    'next 4',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[3]>(3)test_function()
+    -> print_function(1)
+    (Pdb) break print_function_break_1
+    Breakpoint 2 at <doctest test.test_pdb.test_next_with_count_and_breakpoint[1]>:1
+    (Pdb) break print_function_break_2
+    Breakpoint 3 at <doctest test.test_pdb.test_next_with_count_and_breakpoint[2]>:1
+    (Pdb) next 1
+    1
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[3]>(4)test_function()
+    -> print_function(2)
+    (Pdb) next 1000
+    2
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[3]>(5)test_function()
+    -> print_function_break_1(3)
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[1]>(2)print_function_break_1()
+    -> print(n)
+    (Pdb) next 4
+    3
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[1]>(3)print_function_break_1()
+    -> return
+    --Return--
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[1]>(3)print_function_break_1()->None
+    -> return
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[3]>(6)test_function()
+    -> print_function(4)
+    4
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[3]>(7)test_function()
+    -> print_function(5)
+    (Pdb) next 1000
+    5
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[3]>(8)test_function()
+    -> print_function(6)
+    6
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[3]>(9)test_function()
+    -> print_function_break_2(7)
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[2]>(2)print_function_break_2()
+    -> print(n)
+    (Pdb) next 4
+    7
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[2]>(3)print_function_break_2()
+    -> return
+    --Return--
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[2]>(3)print_function_break_2()->None
+    -> return
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[3]>(10)test_function()
+    -> print_function(8)
+    8
+    > <doctest test.test_pdb.test_next_with_count_and_breakpoint[3]>(11)test_function()
+    -> print_function(9)
+    (Pdb) continue
+    9
+    10
+    """
+
+
+def test_step_with_count():
+    """Test that pdb can run step with count times
+
+    >>> def print_function(n):
+    ...     print(n)
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print_function(1)
+    ...     print_function(2)
+    ...     print_function(3)
+    ...     print_function(4)
+    ...     print_function(5)
+    ...     print_function(6)
+    ...     print_function(7)
+    ...     print_function(8)
+    ...     print_function(9)
+    ...     print_function(10)
+
+    >>> with PdbTestInput(['step',
+    ...                    'step 2',
+    ...                    'step 3',
+    ...                    'step 5',
+    ...                    'step 1a',
+    ...                    'step 20',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_step_with_count[1]>(3)test_function()
+    -> print_function(1)
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count[0]>(1)print_function()
+    -> def print_function(n):
+    (Pdb) step 2
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()
+    -> print(n)
+    1
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()->None
+    -> print(n)
+    (Pdb) step 3
+    > <doctest test.test_pdb.test_step_with_count[1]>(4)test_function()
+    -> print_function(2)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()
+    -> print(n)
+    (Pdb) step 5
+    2
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count[1]>(5)test_function()
+    -> print_function(3)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()
+    -> print(n)
+    3
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()->None
+    -> print(n)
+    (Pdb) step 1a
+    *** Invalid number "1a"
+    (Pdb) step 20
+    > <doctest test.test_pdb.test_step_with_count[1]>(6)test_function()
+    -> print_function(4)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()
+    -> print(n)
+    4
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count[1]>(7)test_function()
+    -> print_function(5)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()
+    -> print(n)
+    5
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count[1]>(8)test_function()
+    -> print_function(6)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()
+    -> print(n)
+    6
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count[1]>(9)test_function()
+    -> print_function(7)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()
+    -> print(n)
+    7
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count[1]>(10)test_function()
+    -> print_function(8)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()
+    -> print(n)
+    8
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count[0]>(2)print_function()->None
+    -> print(n)
+    (Pdb) continue
+    9
+    10
+    """
+
+
+def test_step_with_count_and_breakpoint():
+    """Test that pdb can run step with count times, and respect breakpoint
+
+    >>> def print_function(n):
+    ...     print(n)
+
+    >>> def print_function_break_1(n):
+    ...     print(n)
+
+    >>> def print_function_break_2(n):
+    ...     print(n)
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print_function(1)
+    ...     print_function(2)
+    ...     print_function_break_1(3)
+    ...     print_function(4)
+    ...     print_function(5)
+    ...     print_function(6)
+    ...     print_function_break_2(7)
+    ...     print_function(8)
+    ...     print_function(9)
+    ...     print_function(10)
+
+    >>> with PdbTestInput(['break print_function_break_1',
+    ...                    'break print_function_break_2',
+    ...                    'step',
+    ...                    'step 20',
+    ...                    'step 20',
+    ...                    'step 1a',
+    ...                    'step 5',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[3]>(3)test_function()
+    -> print_function(1)
+    (Pdb) break print_function_break_1
+    Breakpoint 7 at <doctest test.test_pdb.test_step_with_count_and_breakpoint[1]>:1
+    (Pdb) break print_function_break_2
+    Breakpoint 8 at <doctest test.test_pdb.test_step_with_count_and_breakpoint[2]>:1
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(1)print_function()
+    -> def print_function(n):
+    (Pdb) step 20
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()
+    -> print(n)
+    1
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[3]>(4)test_function()
+    -> print_function(2)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()
+    -> print(n)
+    2
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[3]>(5)test_function()
+    -> print_function_break_1(3)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[1]>(1)print_function_break_1()
+    -> def print_function_break_1(n):
+    (Pdb) step 20
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[1]>(2)print_function_break_1()
+    -> print(n)
+    3
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[1]>(2)print_function_break_1()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[3]>(6)test_function()
+    -> print_function(4)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()
+    -> print(n)
+    4
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[3]>(7)test_function()
+    -> print_function(5)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()
+    -> print(n)
+    5
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[3]>(8)test_function()
+    -> print_function(6)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()
+    -> print(n)
+    6
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[3]>(9)test_function()
+    -> print_function_break_2(7)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[2]>(1)print_function_break_2()
+    -> def print_function_break_2(n):
+    (Pdb) step 1a
+    *** Invalid number "1a"
+    (Pdb) step 5
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[2]>(2)print_function_break_2()
+    -> print(n)
+    7
+    --Return--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[2]>(2)print_function_break_2()->None
+    -> print(n)
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[3]>(10)test_function()
+    -> print_function(8)
+    --Call--
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(1)print_function()
+    -> def print_function(n):
+    > <doctest test.test_pdb.test_step_with_count_and_breakpoint[0]>(2)print_function()
+    -> print(n)
+    (Pdb) continue
+    8
+    9
+    10
+    """
+
+
 def test_next_until_return_at_return_event():
     """Test that pdb stops after a next/until/return issued at a return debug event.
 

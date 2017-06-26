@@ -342,18 +342,21 @@ by the local file.
    that are to print a specific message and then continue.  If none of the other
    commands print anything, you see no sign that the breakpoint was reached.
 
-.. pdbcommand:: s(tep)
+.. pdbcommand:: s(tep) [count]
 
    Execute the current line, stop at the first possible occasion (either in a
-   function that is called or on the next line in the current function).
+   function that is called or on the next line in the current function). With
+   count times, it will step *count* times until the step is done, or stop when
+   occured a breakpoint.
 
-.. pdbcommand:: n(ext)
+.. pdbcommand:: n(ext) [count]
 
    Continue execution until the next line in the current function is reached or
    it returns.  (The difference between :pdbcmd:`next` and :pdbcmd:`step` is
    that :pdbcmd:`step` stops inside a called function, while :pdbcmd:`next`
    executes called functions at (nearly) full speed, only stopping at the next
-   line in the current function.)
+   line in the current function.). With count times, it will next *count* times
+   until the next is done, or stop when occured a breakpoint.
 
 .. pdbcommand:: unt(il) [lineno]
 
