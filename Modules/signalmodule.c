@@ -244,12 +244,10 @@ trip_signal(int sig_num)
 
     Handlers[sig_num].tripped = 1;
 
-    if (!is_tripped) {
-        /* Set is_tripped after setting .tripped, as it gets
-           cleared in PyErr_CheckSignals() before .tripped. */
-        is_tripped = 1;
-        Py_AddPendingCall(checksignals_witharg, NULL);
-    }
+    /* Set is_tripped after setting .tripped, as it gets
+       cleared in PyErr_CheckSignals() before .tripped. */
+    is_tripped = 1;
+    _PyEval_SignalReceived();
 
     /* And then write to the wakeup fd *after* setting all the globals and
        doing the Py_AddPendingCall. We used to write to the wakeup fd and then
@@ -1556,8 +1554,10 @@ PyErr_CheckSignals(void)
                                            arglist);
                 Py_DECREF(arglist);
             }
-            if (!result)
+            if (!result) {
+                is_tripped = 1;
                 return -1;
+            }
 
             Py_DECREF(result);
         }
