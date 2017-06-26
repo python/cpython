@@ -1,0 +1,2 @@
+Modernize idlelib.configdialog: * replace import * with specific imports; *
+lowercase method and attribute lines. Patch by Cheryl Sabella.
