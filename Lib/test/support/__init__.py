@@ -23,6 +23,7 @@ import time
 import struct
 import sysconfig
 import types
+
 try:
     import thread
 except ImportError:
@@ -43,7 +44,8 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "threading_cleanup", "reap_threads", "start_threads", "cpython_only",
            "check_impl_detail", "get_attribute", "py3k_bytes",
            "import_fresh_module", "threading_cleanup", "reap_children",
-           "strip_python_stderr", "IPV6_ENABLED", "run_with_tz"]
+           "strip_python_stderr", "IPV6_ENABLED", "run_with_tz",
+           "SuppressCrashReport"]
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -1842,3 +1844,78 @@ def python_is_optimized():
         if opt.startswith('-O'):
             final_opt = opt
     return final_opt not in ('', '-O0', '-Og')
+
+
+class SuppressCrashReport:
+    """Try to prevent a crash report from popping up.
+
+    On Windows, don't display the Windows Error Reporting dialog.  On UNIX,
+    disable the creation of coredump file.
+    """
+    old_value = None
+    old_modes = None
+
+    def __enter__(self):
+        """On Windows, disable Windows Error Reporting dialogs using
+        SetErrorMode.
+
+        On UNIX, try to save the previous core file size limit, then set
+        soft limit to 0.
+        """
+        if sys.platform.startswith('win'):
+            # TODO: backport the Windows implementation
+            pass
+        else:
+            try:
+                import resource
+            except ImportError:
+                resource = None
+
+            if resource is not None:
+                try:
+                    self.old_value = resource.getrlimit(resource.RLIMIT_CORE)
+                    resource.setrlimit(resource.RLIMIT_CORE,
+                                       (0, self.old_value[1]))
+                except (ValueError, OSError):
+                    pass
+
+            if sys.platform == 'darwin':
+                # Check if the 'Crash Reporter' on OSX was configured
+                # in 'Developer' mode and warn that it will get triggered
+                # when it is.
+                #
+                # This assumes that this context manager is used in tests
+                # that might trigger the next manager.
+                cmd = ['/usr/bin/defaults', 'read',
+                       'com.apple.CrashReporter', 'DialogType']
+                proc = subprocess.Popen(cmd,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+                with proc:
+                    stdout = proc.communicate()[0]
+                if stdout.strip() == b'developer':
+                    sys.stdout.write("this test triggers the Crash Reporter, "
+                                     "that is intentional")
+                    sys.stdout.flush()
+
+        return self
+
+    def __exit__(self, *ignore_exc):
+        """Restore Windows ErrorMode or core file behavior to initial value."""
+        if self.old_value is None:
+            return
+
+        if sys.platform.startswith('win'):
+            # TODO: backport the Windows implementation
+            pass
+        else:
+            try:
+                import resource
+            except ImportError:
+                resource = None
+
+            if resource is not None:
+                try:
+                    resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
+                except (ValueError, OSError):
+                    pass
