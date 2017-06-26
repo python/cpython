@@ -1,0 +1,2 @@
+Avoid blocking in pthread_mutex_lock() when PyThread_acquire_lock() is asked
+not to block.
