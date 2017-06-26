@@ -837,9 +837,18 @@ class ArgsTestCase(BaseTestCase):
                     pass
         """)
         testname = self.create_test(code=code)
+
+        # Test --list-cases
         all_methods = ['%s.Tests.test_method1' % testname,
                        '%s.Tests.test_method2' % testname]
         output = self.run_tests('--list-cases', testname)
+        self.assertEqual(output.splitlines(), all_methods)
+
+        # Test --list-cases with --match
+        all_methods = ['%s.Tests.test_method1' % testname]
+        output = self.run_tests('--list-cases',
+                                '-m', 'test_method1',
+                                testname)
         self.assertEqual(output.splitlines(), all_methods)
 
     def test_crashed(self):
