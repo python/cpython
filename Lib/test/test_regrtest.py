@@ -91,19 +91,19 @@ class BaseTestCase(unittest.TestCase):
         return list(match.group(1) for match in parser)
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
-                             omitted=(), randomize=False, interrupted=False):
+                             env_changed=(), omitted=(),
+                             randomize=False, interrupted=False,
+                             fail_env_changed=False):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
             skipped = [skipped]
         if isinstance(failed, str):
             failed = [failed]
+        if isinstance(env_changed, str):
+            env_changed = [env_changed]
         if isinstance(omitted, str):
             omitted = [omitted]
-        ntest = len(tests)
-        nskipped = len(skipped)
-        nfailed = len(failed)
-        nomitted = len(omitted)
 
         executed = self.parse_executed_tests(output)
         if randomize:
@@ -129,11 +129,17 @@ class BaseTestCase(unittest.TestCase):
             regex = list_regex('%s test%s failed', failed)
             self.check_line(output, regex)
 
+        if env_changed:
+            regex = list_regex('%s test%s altered the execution environment',
+                               env_changed)
+            self.check_line(output, regex)
+
         if omitted:
             regex = list_regex('%s test%s omitted', omitted)
             self.check_line(output, regex)
 
-        good = ntest - nskipped - nfailed - nomitted
+        good = (len(tests) - len(skipped) - len(failed)
+                - len(omitted) - len(env_changed))
         if good:
             regex = r'%s test%s OK\.$' % (good, plural(good))
             if not skipped and not failed and good > 1:
@@ -143,10 +149,12 @@ class BaseTestCase(unittest.TestCase):
         if interrupted:
             self.check_line(output, 'Test suite interrupted by signal SIGINT.')
 
-        if nfailed:
+        if failed:
             result = 'FAILURE'
         elif interrupted:
             result = 'INTERRUPTED'
+        elif fail_env_changed and env_changed:
+            result = 'ENV CHANGED'
         else:
             result = 'SUCCESS'
         self.check_line(output, 'Tests result: %s' % result)
@@ -325,7 +333,7 @@ class ArgsTestCase(BaseTestCase):
         test_failing = self.create_test('failing', code=code)
         tests = [test_ok, test_failing]
 
-        output = self.run_tests(*tests, exitcode=1)
+        output = self.run_tests(*tests, exitcode=2)
         self.check_executed_tests(output, tests, failed=test_failing)
 
     def test_resources(self):
@@ -394,7 +402,7 @@ class ArgsTestCase(BaseTestCase):
     def test_interrupted(self):
         code = TEST_INTERRUPTED
         test = self.create_test('sigint', code=code)
-        output = self.run_tests(test, exitcode=1)
+        output = self.run_tests(test, exitcode=130)
         self.check_executed_tests(output, test, omitted=test,
                                   interrupted=True)
 
@@ -423,7 +431,7 @@ class ArgsTestCase(BaseTestCase):
                 args = ("--slowest", "-j2", test)
             else:
                 args = ("--slowest", test)
-            output = self.run_tests(*args, exitcode=1)
+            output = self.run_tests(*args, exitcode=130)
             self.check_executed_tests(output, test,
                                       omitted=test, interrupted=True)
 
@@ -461,8 +469,46 @@ class ArgsTestCase(BaseTestCase):
                 support.run_unittest(ForeverTester)
         """)
         test = self.create_test('forever', code=code)
-        output = self.run_tests('--forever', test, exitcode=1)
+        output = self.run_tests('--forever', test, exitcode=2)
         self.check_executed_tests(output, [test]*3, failed=test)
+
+    def check_leak(self, code, what):
+        test = self.create_test('huntrleaks', code=code)
+
+        filename = 'reflog.txt'
+        self.addCleanup(support.unlink, filename)
+        output = self.run_tests('--huntrleaks', '3:3:', test,
+                                exitcode=2,
+                                stderr=subprocess.STDOUT)
+        self.check_executed_tests(output, [test], failed=test)
+
+        line = 'beginning 6 repetitions\n123456\n......\n'
+        self.check_line(output, re.escape(line))
+
+        line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
+        self.assertIn(line2, output)
+
+        with open(filename) as fp:
+            reflog = fp.read()
+            self.assertIn(line2, reflog)
+
+    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    def test_huntrleaks(self):
+        # test --huntrleaks
+        code = textwrap.dedent("""
+            import unittest
+            from test import support
+
+            GLOBAL_LIST = []
+
+            class RefLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    GLOBAL_LIST.append(object())
+
+            def test_main():
+                support.run_unittest(RefLeakTest)
+        """)
+        self.check_leak(code, 'references')
 
     def test_list_tests(self):
         # test --list-tests
@@ -471,6 +517,32 @@ class ArgsTestCase(BaseTestCase):
         self.assertEqual(output.rstrip().splitlines(),
                          tests)
 
+    def test_list_cases(self):
+        # test --list-cases
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+
+        # Test --list-cases
+        all_methods = ['%s.Tests.test_method1' % testname,
+                       '%s.Tests.test_method2' % testname]
+        output = self.run_tests('--list-cases', testname)
+        self.assertEqual(output.splitlines(), all_methods)
+
+        # Test --list-cases with --match
+        all_methods = ['%s.Tests.test_method1' % testname]
+        output = self.run_tests('--list-cases',
+                                '-m', 'test_method1',
+                                testname)
+        self.assertEqual(output.splitlines(), all_methods)
+
     def test_crashed(self):
         # Any code which causes a crash
         code = 'import test.support; test.support._crash_python()'
@@ -478,7 +550,7 @@ class ArgsTestCase(BaseTestCase):
         ok_test = self.create_test(name="ok")
 
         tests = [crash_test, ok_test]
-        output = self.run_tests("-j2", *tests, exitcode=1)
+        output = self.run_tests("-j2", *tests, exitcode=2)
         self.check_executed_tests(output, tests, failed=crash_test,
                                   randomize=True)
 
@@ -532,26 +604,28 @@ class ArgsTestCase(BaseTestCase):
         subset = ['test_method1', 'test_method3']
         self.assertEqual(methods, subset)
 
-    def test_list_cases(self):
-        # test --list-cases
+    def test_env_changed(self):
         code = textwrap.dedent("""
             import unittest
             from test import support
 
             class Tests(unittest.TestCase):
-                def test_method1(self):
-                    pass
-                def test_method2(self):
-                    pass
+                def test_env_changed(self):
+                    open("env_changed", "w").close()
 
             def test_main():
                 support.run_unittest(Tests)
         """)
         testname = self.create_test(code=code)
-        all_methods = ['%s.Tests.test_method1' % testname,
-                       '%s.Tests.test_method2' % testname]
-        output = self.run_tests('--list-cases', testname)
-        self.assertEqual(output.splitlines(), all_methods)
+
+        # don't fail by default
+        output = self.run_tests(testname)
+        self.check_executed_tests(output, [testname], env_changed=testname)
+
+        # fail with --fail-env-changed
+        output = self.run_tests("--fail-env-changed", testname, exitcode=3)
+        self.check_executed_tests(output, [testname], env_changed=testname,
+                                  fail_env_changed=True)
 
 
 def test_main():
