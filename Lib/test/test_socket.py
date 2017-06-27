@@ -1362,6 +1362,15 @@ class GeneralModuleTests(unittest.TestCase):
             except socket.gaierror:
                 pass
 
+    @support.cpython_only
+    def test_getaddrinfo_overflow(self):
+        # Issue #30710: test that getaddrinfo does not raise OverflowError
+        import _testcapi
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, _testcapi.LONG_MAX + 1)
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, _testcapi.LONG_MIN - 1)
+
     def test_getnameinfo(self):
         # only IP addresses are allowed
         self.assertRaises(OSError, socket.getnameinfo, ('mail.python.org',0), 0)

@@ -5947,7 +5947,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     struct addrinfo *res0 = NULL;
     PyObject *hobj = NULL;
     PyObject *pobj = (PyObject *)NULL;
-    char pbuf[30];
+    PyObject *pstr = NULL;
     const char *hptr, *pptr;
     int family, socktype, protocol, flags;
     int error;
@@ -5977,11 +5977,13 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         return NULL;
     }
     if (PyLong_CheckExact(pobj)) {
-        long value = PyLong_AsLong(pobj);
-        if (value == -1 && PyErr_Occurred())
+        pstr = PyObject_Str(pobj);
+        if (pstr == NULL)
             goto err;
-        PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", value);
-        pptr = pbuf;
+        assert(PyUnicode_Check(pstr));
+        pptr = PyUnicode_AsUTF8(pstr);
+        if (pptr == NULL)
+            goto err;
     } else if (PyUnicode_Check(pobj)) {
         pptr = PyUnicode_AsUTF8(pobj);
         if (pptr == NULL)
@@ -6040,12 +6042,14 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         Py_XDECREF(single);
     }
     Py_XDECREF(idna);
+    Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
     return all;
  err:
     Py_XDECREF(all);
     Py_XDECREF(idna);
+    Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
     return (PyObject *)NULL;

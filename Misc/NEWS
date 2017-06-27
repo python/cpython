@@ -1172,6 +1172,9 @@ Library
 - bpo-30177: path.resolve(strict=False) no longer cuts the path after the first
   element not present in the filesystem.  Patch by Antoine Pietri.
 
+- bpo-30710: socket.getaddrinfo() now does not raise OverflowError if the
+  numeric port number is out of the C long range.
+
 IDLE
 ----
 
