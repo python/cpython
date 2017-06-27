@@ -20,6 +20,7 @@ class ZoomHeight:
     def zoom_height_event(self, event):
         top = self.editwin.top
         zoom_height(top)
+        return "break"
 
 
 def zoom_height(top):
