@@ -1172,6 +1172,9 @@ Library
 - bpo-30177: path.resolve(strict=False) no longer cuts the path after the first
   element not present in the filesystem.  Patch by Antoine Pietri.
 
+- bpo-30786: socket.getaddrinfo() now supports AI_NUMERICSERV on platforms
+  where the getaddrinfo function is not available or it's buggy.
+
 IDLE
 ----
 

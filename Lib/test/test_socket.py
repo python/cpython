@@ -1362,6 +1362,13 @@ class GeneralModuleTests(unittest.TestCase):
             except socket.gaierror:
                 pass
 
+    @unittest.skipUnless(hasattr(socket, 'AI_NUMERICSERV'),
+                         "AI_NUMERICSERV is not available")
+    def test_getaddrinfo_numericserv(self):
+        # Issue #30786: test that getaddrinfo does not resolve service name
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, "http", flags=socket.AI_NUMERICSERV)
+
     def test_getnameinfo(self):
         # only IP addresses are allowed
         self.assertRaises(OSError, socket.getnameinfo, ('mail.python.org',0), 0)
