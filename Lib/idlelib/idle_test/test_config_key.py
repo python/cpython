@@ -28,8 +28,9 @@ class ValidationTest(unittest.TestCase):
         requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
+        keylist = [['<Key-F12>'], ['<Control-Key-x>', '<Control-Key-X>']]
         cls.dialog = cls.Validator(
-            cls.root, 'Title', '<<Test>>', [['<Key-F12>']], _utest=True)
+            cls.root, 'Title', '<<Test>>', keylist, _utest=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -78,10 +79,15 @@ class ValidationTest(unittest.TestCase):
         self.dialog.GetModifiers.result = []
 
     def test_keys_dup(self):
-        self.dialog.listKeysFinal.get.result = 'F12'
+        for mods, final, seq in (([], 'F12', '<Key-F12>'),
+                                 (['Control'], 'x', '<Control-Key-x>'),
+                                 (['Control'], 'X', '<Control-Key-X>')):
+            with self.subTest(m=mods, f=final, s=seq):
+                self.dialog.listKeysFinal.get.result = final
+                self.dialog.GetModifiers.result = mods
+                self.assertFalse(self.dialog.KeysOK(seq))
+                self.assertIn('already in use', self.dialog.showerror.message)
         self.dialog.GetModifiers.result = []
-        self.assertFalse(self.dialog.KeysOK('<Key-F12>'))
-        self.assertIn('already in use', self.dialog.showerror.message)
 
     def test_bind_ok(self):
         self.assertTrue(self.dialog.bind_ok('<Control-Shift-Key-a>'))
