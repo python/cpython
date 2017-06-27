@@ -677,10 +677,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                          "%s(days=1, microseconds=100)" % name)
         self.assertEqual(repr(self.theclass(seconds=1, microseconds=100)),
                          "%s(seconds=1, microseconds=100)" % name)
-        # self.assertEqual(repr(self.theclass(seconds=-60)),
-        #                  "-%s(seconds=60)" % name)
-        # self.assertEqual(repr(self.theclass(minutes=-1)),
-        #                  "-%s(seconds=60)" % name)
 
     def test_roundtrip(self):
         for td in (timedelta(days=999999999, hours=23, minutes=59,
