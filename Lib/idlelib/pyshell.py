@@ -463,6 +463,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 debugger_r.close_subprocess_debugger(self.rpcclt)
             except:
                 pass
+            debug.endexecuting()
         # Kill subprocess, spawn a new one, accept connection.
         self.rpcclt.close()
         self.terminate_subprocess()
@@ -782,6 +783,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 if self.tkconsole.canceled:
                     self.tkconsole.canceled = False
                     print("KeyboardInterrupt", file=self.tkconsole.stderr)
+                    if self.interp.debugger:
+                        self.interp.debugger.endexecuting()
                 else:
                     self.showtraceback()
         finally:
@@ -967,11 +970,15 @@ class PyShell(OutputWindow):
 
     def beginexecuting(self):
         "Helper for ModifiedInterpreter"
+        if self.interp.debugger:
+            self.interp.debugger.beginexecuting()
         self.resetoutput()
         self.executing = 1
 
     def endexecuting(self):
         "Helper for ModifiedInterpreter"
+        if self.interp.debugger:
+            self.interp.debugger.endexecuting()
         self.executing = 0
         self.canceled = 0
         self.showprompt()
