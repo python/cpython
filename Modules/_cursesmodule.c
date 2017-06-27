@@ -345,7 +345,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
     if (PyUnicode_Check(obj)) {
 #ifdef HAVE_NCURSESW
         assert (wstr != NULL);
-        *wstr = PyUnicode_AsWideCharString(obj, NULL);
+        *wstr = _PyUnicode_AsWideCharString(obj);
         if (*wstr == NULL)
             return 0;
         return 2;
