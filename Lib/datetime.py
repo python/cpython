@@ -459,7 +459,7 @@ class timedelta:
         if self._days:
             arg_str += "days=%d" % self._days
 
-        if self._seconds or (not self._days and not self._microsecond):
+        if self._seconds or (not self._days and not self._microseconds):
             if arg_str != "":
                 arg_str += ", "
             arg_str += "seconds=%d" % self._seconds
