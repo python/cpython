@@ -1521,9 +1521,21 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             alloc_deltas[i] = alloc_after - alloc_before
         alloc_before, rc_before = alloc_after, rc_after
     print(file=sys.stderr)
+
     # These checkers return False on success, True on failure
     def check_rc_deltas(deltas):
-        return any(deltas)
+        # bpo-30776: Try to ignore false positives:
+        #
+        #   [3, 0, 0]
+        #   [0, 1, 0]
+        #   [8, -8, 1]
+        #
+        # Expected leaks:
+        #
+        #   [5, 5, 6]
+        #   [10, 1, 1]
+        return all(delta >= 1 for delta in deltas)
+
     def check_alloc_deltas(deltas):
         # At least 1/3rd of 0s
         if 3 * deltas.count(0) < len(deltas):
@@ -1535,10 +1547,13 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     failed = False
     for deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
-        (alloc_deltas, 'memory blocks', check_alloc_deltas)]:
+        (alloc_deltas, 'memory blocks', check_alloc_deltas)
+    ]:
+        # ignore warmup runs
+        deltas = deltas[nwarmup:]
         if checker(deltas):
             msg = '%s leaked %s %s, sum=%s' % (
-                test, deltas[nwarmup:], item_name, sum(deltas))
+                test, deltas, item_name, sum(deltas))
             print(msg, file=sys.stderr)
             sys.stderr.flush()
             with open(fname, "a") as refrep:
