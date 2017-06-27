@@ -3615,7 +3615,7 @@ PyInit__tkinter(void)
                     return NULL;
                 }
                 if (str_path != NULL) {
-                    wcs_path = PyUnicode_AsWideCharString(str_path, NULL);
+                    wcs_path = _PyUnicode_AsWideCharString(str_path);
                     if (wcs_path == NULL) {
                         return NULL;
                     }

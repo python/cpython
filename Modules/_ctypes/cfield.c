@@ -1372,7 +1372,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 
     /* We must create a wchar_t* buffer from the unicode object,
        and keep it alive */
-    buffer = PyUnicode_AsWideCharString(value, NULL);
+    buffer = _PyUnicode_AsWideCharString(value);
     if (!buffer)
         return NULL;
     keep = PyCapsule_New(buffer, CTYPES_CFIELD_CAPSULE_NAME_PYMEM, pymem_destructor);

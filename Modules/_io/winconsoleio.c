@@ -79,7 +79,7 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
         PyErr_Clear();
         return '\0';
     }
-    decoded_wstr = PyUnicode_AsWideCharString(decoded, NULL);
+    decoded_wstr = _PyUnicode_AsWideCharString(decoded);
     Py_CLEAR(decoded);
     if (!decoded_wstr) {
         PyErr_Clear();
@@ -311,8 +311,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         if (!d)
             return -1;
 
-        Py_ssize_t length;
-        name = PyUnicode_AsWideCharString(decodedname, &length);
+        name = _PyUnicode_AsWideCharString(decodedname);
         console_type = _PyIO_get_console_type(decodedname);
         Py_CLEAR(decodedname);
         if (name == NULL)
@@ -320,12 +319,6 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         if (console_type == '\0') {
             PyErr_SetString(PyExc_ValueError,
                 "Cannot open non-console file");
-            return -1;
-        }
-
-        if (wcslen(name) != length) {
-            PyMem_Free(name);
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             return -1;
         }
     }
