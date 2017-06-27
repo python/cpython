@@ -741,48 +741,31 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
         return lookdict(mp, key, hash, value_addr);
     }
 
-    size_t i;
+    PyDictKeyEntry *ep0 = DK_ENTRIES(mp->ma_keys);
     size_t mask = DK_MASK(mp->ma_keys);
-    Py_ssize_t ix;
-    PyDictKeyEntry *ep, *ep0 = DK_ENTRIES(mp->ma_keys);
+    size_t perturb = (size_t)hash;
+    size_t i = (size_t)hash & mask;
 
-    i = (size_t)hash & mask;
-    ix = dk_get_index(mp->ma_keys, i);
-    if (ix == DKIX_EMPTY) {
-        *value_addr = NULL;
-        return DKIX_EMPTY;
-    }
-    if (ix == DKIX_DUMMY) {
-    }
-    else {
-        ep = &ep0[ix];
-        assert(ep->me_key != NULL);
-        if (ep->me_key == key
-            || (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
-            *value_addr = ep->me_value;
-            return ix;
-        }
-    }
-
-    for (size_t perturb = hash;;) {
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-        ix = dk_get_index(mp->ma_keys, i);
+    for (;;) {
+        Py_ssize_t ix = dk_get_index(mp->ma_keys, i);
         if (ix == DKIX_EMPTY) {
             *value_addr = NULL;
             return DKIX_EMPTY;
         }
-        if (ix == DKIX_DUMMY) {
-            continue;
+        if (ix >= 0) {
+            PyDictKeyEntry *ep = &ep0[ix];
+            assert(ep->me_key != NULL);
+            assert(PyUnicode_CheckExact(ep->me_key));
+            if (ep->me_key == key ||
+                    (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
+                *value_addr = ep->me_value;
+                return ix;
+            }
         }
-        ep = &ep0[ix];
-        assert(ep->me_key != NULL);
-        if (ep->me_key == key
-            || (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
-            *value_addr = ep->me_value;
-            return ix;
-        }
+        perturb >>= PERTURB_SHIFT;
+        i = mask & (i*5 + perturb + 1);
     }
+
     assert(0);          /* NOT REACHED */
     return 0;
 }
