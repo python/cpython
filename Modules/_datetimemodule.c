@@ -2284,33 +2284,26 @@ delta_bool(PyDateTime_Delta *self)
 static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
-    char days[64] = "", seconds[64] = "", microseconds[64] = "";
+    PyObject *args = PyList_New(0);
+
     if (GET_TD_DAYS(self) != 0) {
-        sprintf(days, "days=%d", GET_TD_DAYS(self));
+        PyList_Append(args, PyUnicode_FromFormat("days=%d", GET_TD_DAYS(self)));
     }
 
     if (GET_TD_SECONDS(self) != 0 ||
             (GET_TD_DAYS(self) == 0 && GET_TD_MICROSECONDS(self) == 0)) {
-        if (strlen(days) == 0) {
-            sprintf(seconds, "seconds=%d", GET_TD_SECONDS(self));
-        } else {
-            sprintf(seconds, ", seconds=%d", GET_TD_SECONDS(self));
-        }
+        PyList_Append(args, PyUnicode_FromFormat("seconds=%d", GET_TD_SECONDS(self)));
     }
 
     if (GET_TD_MICROSECONDS(self) != 0) {
-        if (strlen(days) == 0 && strlen(seconds) == 0) {
-            sprintf(microseconds, "microseconds=%d", GET_TD_MICROSECONDS(self));
-        } else {
-            sprintf(microseconds, ", microseconds=%d", GET_TD_MICROSECONDS(self));
-        }
+        PyList_Append(args, PyUnicode_FromFormat("microseconds=%d", GET_TD_MICROSECONDS(self)));
     }
 
-    return PyUnicode_FromFormat("%s(%s%s%s)",
+    PyObject *args_string = PyUnicode_Join(PyUnicode_FromString(", "), args);
+
+    return PyUnicode_FromFormat("%s(%S)",
                                 Py_TYPE(self)->tp_name,
-                                days,
-                                seconds,
-                                microseconds);
+                                args_string);
 }
 
 static PyObject *
