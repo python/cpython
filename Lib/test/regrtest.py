@@ -1323,7 +1323,18 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         if i >= nwarmup:
             deltas.append(rc_after - rc_before)
     print >> sys.stderr
-    if any(deltas):
+
+    # bpo-30776: Try to ignore false positives:
+    #
+    #   [3, 0, 0]
+    #   [0, 1, 0]
+    #   [8, -8, 1]
+    #
+    # Expected leaks:
+    #
+    #   [5, 5, 6]
+    #   [10, 1, 1]
+    if all(delta >= 1 for delta in deltas):
         msg = '%s leaked %s references, sum=%s' % (test, deltas, sum(deltas))
         print >> sys.stderr, msg
         with open(fname, "a") as refrep:
