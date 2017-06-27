@@ -218,7 +218,7 @@ class ConfigDialog(Toplevel):
         self.custom_theme = StringVar(parent)
         self.fg_bg_toggle = BooleanVar(parent)
         self.colour = StringVar(parent)
-        # font_name is defined in create_page_font_tab.  Needed here too?
+        # XXX - font_name is defined in create_page_font_tab.  Needed here too?
         self.font_name = StringVar(parent)
         self.is_builtin_theme = BooleanVar(parent)
         self.highlight_target = StringVar(parent)
@@ -334,7 +334,7 @@ class ConfigDialog(Toplevel):
             keybinding: Action/key bindings.
         """
         parent = self.parent
-        # binding_target isn't used.
+        # XXX - binding_target isn't used.
         self.binding_target = StringVar(parent)
         self.builtin_keys = StringVar(parent)
         self.custom_keys = StringVar(parent)
@@ -427,7 +427,7 @@ class ConfigDialog(Toplevel):
         self.win_height = StringVar(parent)
         self.startup_edit = IntVar(parent)
         self.autosave = IntVar(parent)
-        # Encoding isn't on the screen to be set, but is saved to config.
+        # XXX - encoding isn't on the screen to be set, but is saved to config.
         self.encoding = StringVar(parent)
         # XXX - user_help_browser and help_browser aren't used.
         self.user_help_browser = BooleanVar(parent)
@@ -552,7 +552,7 @@ class ConfigDialog(Toplevel):
             var.trace_remove('write', var.trace_info()[0][1])
 
     def var_changed_font(self, *params):
-        """Process change to font attributes.
+        """Store changes to font attributes.
 
         When one font attribute changes, save them all, as they are
         not independent from each other. In particular, when we are
@@ -566,7 +566,7 @@ class ConfigDialog(Toplevel):
         self.add_changed_item('main', 'EditorWindow', 'font-bold', value)
 
     def var_changed_space_num(self, *params):
-        "Process change to indentation size."
+        "Store change to indentation size."
         value = self.space_num.get()
         self.add_changed_item('main', 'Indent', 'num-spaces', value)
 
@@ -623,7 +623,7 @@ class ConfigDialog(Toplevel):
         self.set_highlight_target()
 
     def var_changed_keybinding(self, *params):
-        "Process change to a keybinding."
+        "Store change to a keybinding."
         value = self.keybinding.get()
         key_set = self.custom_keys.get()
         event = self.list_bindings.get(ANCHOR).split()[0]
