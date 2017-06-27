@@ -134,7 +134,6 @@ static int get_name(const char *, struct gai_afd *,
                           int);
 static int get_addr(const char *, int, struct addrinfo **,
                         struct addrinfo *, int);
-static int str_isnumber(const char *);
 
 static const char * const ai_errlist[] = {
     "success.",
@@ -218,18 +217,6 @@ freeaddrinfo(struct addrinfo *ai)
         /* no need to free(ai->ai_addr) */
         free(ai);
     } while ((ai = next) != NULL);
-}
-
-static int
-str_isnumber(const char *p)
-{
-    unsigned char *q = (unsigned char *)p;
-    while (*q) {
-        if (! isdigit(*q))
-            return NO;
-        q++;
-    }
-    return YES;
 }
 
 int
@@ -333,13 +320,19 @@ getaddrinfo(const char*hostname, const char*servname,
      * service port
      */
     if (servname) {
-        if (str_isnumber(servname)) {
+        long servnum;
+        char *end;
+
+        servnum = strtol(servname, &end, 10);
+        if (*end == '\0') {  /* treat "" as 0 */
             if (pai->ai_socktype == GAI_ANY) {
                 /* caller accept *GAI_ANY* socktype */
                 pai->ai_socktype = SOCK_DGRAM;
                 pai->ai_protocol = IPPROTO_UDP;
             }
-            port = htons((u_short)atoi(servname));
+            if (servnum < 0 || servnum > 0xffff)
+                ERR(EAI_SERVICE);
+            port = htons((u_short)servnum);
         } else {
             struct servent *sp;
             char *proto;
