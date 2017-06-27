@@ -454,22 +454,24 @@ class timedelta:
         return self
 
     def __repr__(self):
+        arg_str = ""
+
+        if self._days:
+            arg_str += "days=%d" % self._days
+
+        if self._seconds or (not self._days and not self._microsecond):
+            if arg_str != "":
+                arg_str += ", "
+            arg_str += "seconds=%d" % self._seconds
+
         if self._microseconds:
-            return "%s.%s(days=%d, seconds=%d, microseconds=%d)" % \
-                                         (self.__class__.__module__,
-                                          self.__class__.__qualname__,
-                                          self._days,
-                                          self._seconds,
-                                          self._microseconds)
-        if self._seconds:
-            return "%s.%s(days=%d, seconds=%d)" % \
-                                     (self.__class__.__module__,
-                                      self.__class__.__qualname__,
-                                      self._days,
-                                      self._seconds)
-        return "%s.%s(days=%d)" % (self.__class__.__module__,
-                                   self.__class__.__qualname__,
-                                   self._days)
+            if arg_str != "":
+                arg_str += ", "
+            arg_str += "microseconds=%d" % self._microseconds
+
+        return "%s.%s(%s)" % (self.__class__.__module__,
+                              self.__class__.__qualname__,
+                              arg_str)
 
     def __str__(self):
         mm, ss = divmod(self._seconds, 60)

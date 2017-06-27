@@ -2284,21 +2284,33 @@ delta_bool(PyDateTime_Delta *self)
 static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
-    if (GET_TD_MICROSECONDS(self) != 0)
-        return PyUnicode_FromFormat("%s(days=%d, seconds=%d, microseconds=%d)",
-                                    Py_TYPE(self)->tp_name,
-                                    GET_TD_DAYS(self),
-                                    GET_TD_SECONDS(self),
-                                    GET_TD_MICROSECONDS(self));
-    if (GET_TD_SECONDS(self) != 0)
-        return PyUnicode_FromFormat("%s(days=%d, seconds=%d)",
-                                    Py_TYPE(self)->tp_name,
-                                    GET_TD_DAYS(self),
-                                    GET_TD_SECONDS(self));
+    char days[64] = "", seconds[64] = "", microseconds[64] = "";
+    if (GET_TD_DAYS(self) != 0) {
+        sprintf(days, "days=%d", GET_TD_DAYS(self));
+    }
 
-    return PyUnicode_FromFormat("%s(days=%d)",
+    if (GET_TD_SECONDS(self) != 0 ||
+            (GET_TD_DAYS(self) == 0 && GET_TD_MICROSECONDS(self) == 0)) {
+        if (strlen(days) == 0) {
+            sprintf(seconds, "seconds=%d", GET_TD_SECONDS(self));
+        } else {
+            sprintf(seconds, ", seconds=%d", GET_TD_SECONDS(self));
+        }
+    }
+
+    if (GET_TD_MICROSECONDS(self) != 0) {
+        if (strlen(days) == 0 && strlen(seconds) == 0) {
+            sprintf(microseconds, "microseconds=%d", GET_TD_MICROSECONDS(self));
+        } else {
+            sprintf(microseconds, ", microseconds=%d", GET_TD_MICROSECONDS(self));
+        }
+    }
+
+    return PyUnicode_FromFormat("%s(%s%s%s)",
                                 Py_TYPE(self)->tp_name,
-                                GET_TD_DAYS(self));
+                                days,
+                                seconds,
+                                microseconds);
 }
 
 static PyObject *
