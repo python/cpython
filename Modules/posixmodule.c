@@ -4969,6 +4969,8 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
         /* Search from index 1 because on Windows starting '=' is allowed for
            defining hidden environment variables. */
         if (*k == '\0' || strchr(k + 1, '=') != NULL) {
+            Py_DECREF(key2);
+            Py_DECREF(val2);
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
             goto error;
         }
