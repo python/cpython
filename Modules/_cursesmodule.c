@@ -344,17 +344,11 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
     char *str;
     if (PyUnicode_Check(obj)) {
 #ifdef HAVE_NCURSESW
-        Py_ssize_t wlen;
         assert (wstr != NULL);
 
-        *wstr = PyUnicode_AsWideCharString(obj, &wlen);
+        *wstr = PyUnicode_AsWideCharString(obj, NULL);
         if (*wstr == NULL)
             return 0;
-        if (wcslen(wstr) != (size_t)wlen) {
-            PyErr_SetString(PyExc_ValueError,
-                            "embedded null character");
-            return 0;
-        }
         return 2;
 #else
         assert (wstr == NULL);
