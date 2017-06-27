@@ -1408,14 +1408,14 @@ Launcher arguments:\n\n\
     fflush(stdout);
 }
 
-static void
+static BOOL
 show_python_list(wchar_t ** argv)
 {
     /*
      * Display options -0
      */
     INSTALLED_PYTHON * result = NULL;
-    INSTALLED_PYTHON * ip = installed_pythons;
+    INSTALLED_PYTHON * ip = installed_pythons; /* List of installed pythons */
     INSTALLED_PYTHON * defpy = locate_python(L"", FALSE);
     size_t i = 0;
     wchar_t *p = argv[1];
@@ -1431,10 +1431,10 @@ show_python_list(wchar_t ** argv)
     if (!_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")) /* Show path? */
         fmt = L"\n -%ls-%d\t%ls"; /* print VER-BITS path */
 
-    if (num_installed_pythons == 0)
-        locate_all_pythons();
+    if (num_installed_pythons == 0) /* We have somehow got here without searching for pythons */
+        locate_all_pythons(); /* Find them, Populates installed_pythons */
 
-    if (num_installed_pythons == 0)
+    if (num_installed_pythons == 0) /* No pythons found */
         fwprintf(stderr, L"\nNo Installed Pythons Found!");
     else
     {
@@ -1442,15 +1442,15 @@ show_python_list(wchar_t ** argv)
             fwprintf(stdout, fmt, ip->version, ip->bits, ip->executable);
             /* If there is a default indicate it */
             if ((defpy != NULL) && !_wcsicmp(ip->executable, defpy->executable))
-                fwprintf(stdout, defind);
+                fwprintf(stderr, defind);
         }
     }
 
-    ip = locate_python(L"", FALSE);
+    /*ip = locate_python(L"", FALSE);*/
     if ((defpy == NULL) && (num_installed_pythons > 0))
         /* We have pythons but none is the default */
         fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
-    exit(0);
+    return(FALSE); /* If this has been called we cannot continue */
 }
 
 static int
@@ -1601,19 +1601,16 @@ process(int argc, wchar_t ** argv)
         if (argc == 2) {
             slen = wcslen(L"-0");
             if(!wcsncmp(p, L"-0", slen)) /* Starts with -0 */
-                show_python_list(argv); /* Check for -0 FIRST */
-            slen = wcslen(L"-list");
-            if(!wcsncmp(p, L"-list", slen)) /* Starts with -0 */
-                show_python_list(argv); /* Check for -0 FIRST */
+                valid = show_python_list(argv); /* Check for -0 FIRST */
         }
-        valid = (*p == L'-') && validate_version(&p[1]);
+        valid = valid && (*p == L'-') && validate_version(&p[1]);
         if (valid) {
             ip = locate_python(&p[1], FALSE);
             if (ip == NULL)
             {
                 fwprintf(stdout, \
                          L"Python %ls not found!\n", &p[1]);
-                show_python_list(argv);
+                valid = show_python_list(argv);
                 error(RC_NO_PYTHON, L"Requested Python version (%ls) not \
 installed, use -0 for available pythons", &p[1]);
             }
@@ -1637,18 +1634,26 @@ installed, use -0 for available pythons", &p[1]);
     if (!valid) {
         if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
             show_help_text(argv);
-        /* Look for an active virtualenv */
-        executable = find_python_by_venv();
+        if ((argc == 2) && (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"-0p")))
+            executable = NULL; /* Info call only */
+        else
+        {
+            /* Look for an active virtualenv */
+            executable = find_python_by_venv();
 
-        /* If we didn't find one, look for the default Python */
-        if (executable == NULL) {
-            ip = locate_python(L"", FALSE);
-            if (ip == NULL)
-                error(RC_NO_PYTHON, L"Can't find a default Python.");
-            executable = ip->executable;
+            /* If we didn't find one, look for the default Python */
+            if (executable == NULL) {
+                ip = locate_python(L"", FALSE);
+                if (ip == NULL)
+                    error(RC_NO_PYTHON, L"Can't find a default Python.");
+                executable = ip->executable;
+            }
         }
     }
-    invoke_child(executable, NULL, command);
+    if (executable != NULL)
+        invoke_child(executable, NULL, command);
+    else
+        rc = RC_NO_PYTHON;
     return rc;
 }
 
