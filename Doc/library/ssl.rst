@@ -1270,13 +1270,13 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.load_cert_chain(certfile, keyfile=None, password=None)
 
    Load a private key and the corresponding certificate.  The *certfile*
-   string must be the path to a single file in PEM format containing the
+   string must be the path to a single file or a file object containing the
    certificate as well as any number of CA certificates needed to establish
-   the certificate's authenticity.  The *keyfile* string, if present, must
-   point to a file containing the private key in.  Otherwise the private
-   key will be taken from *certfile* as well.  See the discussion of
-   :ref:`ssl-certificates` for more information on how the certificate
-   is stored in the *certfile*.
+   the certificate's authenticity, in the PEM format. The *keyfile* string, if
+   present, must be the path to a file or a file object containing the private
+   key in PEM format. Otherwise the private key will be taken from *certfile*
+   as well. See the discussion of :ref:`ssl-certificates` for more information
+   on how the certificate is stored in *certfile*.
 
    The *password* argument may be a function to call to get the password for
    decrypting the private key.  It will only be called if the private key is
@@ -1286,6 +1286,10 @@ to speed up repeated connections from the same clients.
    Alternatively a string, bytes, or bytearray value may be supplied directly
    as the *password* argument.  It will be ignored if the private key is not
    encrypted and no password is needed.
+
+   If *certfile* is provided as a file path, *keyfile* (if given) must be
+   provided as a file path as well (mixing file path and file object for these
+   arguments is not allowed).
 
    If the *password* argument is not specified and a password is required,
    OpenSSL's built-in password prompting mechanism will be used to

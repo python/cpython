@@ -3187,7 +3187,7 @@ error:
 }
 
 /*[clinic input]
-_ssl._SSLContext.load_cert_chain
+_ssl._SSLContext._load_cert_chain_pem_from_file_paths
     certfile: object
     keyfile: object = NULL
     password: object = NULL
@@ -3195,9 +3195,11 @@ _ssl._SSLContext.load_cert_chain
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
-                                      PyObject *keyfile, PyObject *password)
-/*[clinic end generated code: output=9480bc1c380e2095 input=7cf9ac673cbee6fc]*/
+_ssl__SSLContext__load_cert_chain_pem_from_file_paths_impl(PySSLContext *self,
+                                                           PyObject *certfile,
+                                                           PyObject *keyfile,
+                                                           PyObject *password)
+/*[clinic end generated code: output=27abe7da8870568c input=a22e90623362407b]*/
 {
     PyObject *certfile_bytes = NULL, *keyfile_bytes = NULL;
     pem_password_cb *orig_passwd_cb = SSL_CTX_get_default_passwd_cb(self->ctx);
@@ -3286,6 +3288,200 @@ error:
     PyMem_Free(pw_info.password);
     Py_XDECREF(keyfile_bytes);
     Py_XDECREF(certfile_bytes);
+    return NULL;
+}
+
+
+static int
+_openssl_use_certificate_chain_from_bio(SSL_CTX *ctx, BIO *bio)
+{
+    /*
+    This function closely resembles the SSL_CTX_use_certificate_chain_file()
+    implementation from OpenSSL 1.1.0.
+
+    That is, a return value of 0 means that an error occurred.
+    */
+
+    int ret = 0;
+    int r = 0;
+    unsigned long err = 0;
+    X509 *usecert = NULL;
+    X509 *cacert = NULL;
+    pem_password_cb *pwcb;
+    void *pwcb_data;
+
+    ERR_clear_error();
+
+    pwcb = ctx->default_passwd_callback;
+    pwcb_data = ctx->default_passwd_callback_userdata;
+
+    usecert = PEM_read_bio_X509_AUX(bio, NULL, pwcb, pwcb_data);
+    if (usecert == NULL)
+        goto end;
+
+    /* The following call errors out if `bio` did not contain a cert. */
+    ret = SSL_CTX_use_certificate(ctx, usecert);
+    if (ERR_peek_error() != 0) {
+        ret = 0;
+        goto end;
+    }
+
+    /* Certificate is set up, proceed reading chain certificates. */
+    r = SSL_CTX_clear_chain_certs(ctx);
+    if (r == 0) {
+        ret = 0;
+        goto end;
+    }
+
+    while (1) {
+        cacert = PEM_read_bio_X509(bio, NULL, pwcb, pwcb_data);
+
+        if (cacert == NULL)
+            /* Error: BIO EOF or something critical */
+            break;
+
+        r = SSL_CTX_add0_chain_cert(ctx, cacert);
+        if (!r) {
+            X509_free(cacert);
+            ret = 0;
+            goto end;
+        }
+    }
+
+    err = ERR_peek_last_error();
+    if (ERR_GET_LIB(err) == ERR_LIB_PEM
+        && ERR_GET_REASON(err) == PEM_R_NO_START_LINE)
+        /* BIO EOF, expected. */
+        ERR_clear_error();
+    else
+        /* A critical error. */
+        ret = 0;
+
+ end:
+    X509_free(usecert);
+    return ret;
+}
+
+
+/*[clinic input]
+_ssl._SSLContext._load_cert_chain_pem_from_bio
+    certbio: object(subclass_of="&PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
+    keybio: object(subclass_of="&PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
+    password: object = NULL
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext__load_cert_chain_pem_from_bio_impl(PySSLContext *self,
+                                                    PySSLMemoryBIO *certbio,
+                                                    PySSLMemoryBIO *keybio,
+                                                    PyObject *password)
+/*[clinic end generated code: output=1fa9f45cbdeddf1c input=4ba4aff7f210d0fd]*/
+{
+    /*
+    Note that _password_callback() starts by invoking
+
+        PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
+
+    end finishes with invoking
+
+        PySSL_BEGIN_ALLOW_THREADS_S(pw_info->thread_state);
+
+    and all OpenSSL API calls that potentially call the password callback are
+    required to be wrapped in
+
+        PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state);
+        [...]
+        PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
+    */
+
+    EVP_PKEY *private_key = NULL;
+    pem_password_cb *orig_passwd_cb = self->ctx->default_passwd_callback;
+
+    void *orig_passwd_userdata = self->ctx->default_passwd_callback_userdata;
+    _PySSLPasswordInfo pw_info = { NULL, NULL, NULL, 0, 0 };
+    int r;
+
+    errno = 0;
+    ERR_clear_error();
+
+    if (password && password != Py_None) {
+        if (PyCallable_Check(password)) {
+            pw_info.callable = password;
+        } else if (!_pwinfo_set(&pw_info, password,
+                                "password should be a string or callable")) {
+            goto error;
+        }
+        SSL_CTX_set_default_passwd_cb(self->ctx, _password_callback);
+        SSL_CTX_set_default_passwd_cb_userdata(self->ctx, &pw_info);
+    }
+
+
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state);
+    r = _openssl_use_certificate_chain_from_bio(self->ctx, certbio->bio);
+    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
+
+    if (r != 1) {
+        if (pw_info.error) {
+            ERR_clear_error();
+            /* the password callback has already set the error information */
+        }
+        else if (errno != 0) {
+            ERR_clear_error();
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+        }
+        goto error;
+    }
+
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state);
+    private_key = PEM_read_bio_PrivateKey(
+        keybio->bio,
+        NULL,
+        self->ctx->default_passwd_callback,
+        self->ctx->default_passwd_callback_userdata
+        );
+    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
+
+    if (private_key == NULL) {
+        if (pw_info.error) {
+            ERR_clear_error();
+            /* the password callback has already set the error information */
+        }
+        else if (errno != 0) {
+            ERR_clear_error();
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            _setSSLError("Can't read private key", 0, __FILE__, __LINE__);
+        }
+        goto error;
+    }
+
+    r = SSL_CTX_use_PrivateKey(self->ctx, private_key);
+
+    EVP_PKEY_free(private_key);
+
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state);
+    r = SSL_CTX_check_private_key(self->ctx);
+    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
+    if (r != 1) {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        goto error;
+    }
+
+    /* Restore original password callback */
+    SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
+    PyMem_Free(pw_info.password);
+    Py_RETURN_NONE;
+
+error:
+    SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
+    PyMem_Free(pw_info.password);
     return NULL;
 }
 
@@ -3967,7 +4163,8 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT_SET_CIPHERS_METHODDEF
     _SSL__SSLCONTEXT__SET_ALPN_PROTOCOLS_METHODDEF
     _SSL__SSLCONTEXT__SET_NPN_PROTOCOLS_METHODDEF
-    _SSL__SSLCONTEXT_LOAD_CERT_CHAIN_METHODDEF
+    _SSL__SSLCONTEXT__LOAD_CERT_CHAIN_PEM_FROM_FILE_PATHS_METHODDEF
+    _SSL__SSLCONTEXT__LOAD_CERT_CHAIN_PEM_FROM_BIO_METHODDEF
     _SSL__SSLCONTEXT_LOAD_DH_PARAMS_METHODDEF
     _SSL__SSLCONTEXT_LOAD_VERIFY_LOCATIONS_METHODDEF
     _SSL__SSLCONTEXT_SESSION_STATS_METHODDEF

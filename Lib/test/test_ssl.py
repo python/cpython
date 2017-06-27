@@ -17,6 +17,7 @@ import asyncore
 import weakref
 import platform
 import functools
+from io import BytesIO, StringIO
 
 ssl = support.import_module("ssl")
 
@@ -122,6 +123,24 @@ def asn1time(cert_time):
             cert_time = cert_time[:4] + " " + cert_time[5:]
 
     return cert_time
+
+def bytebuf(filepath):
+    """
+    Get re-read()able buffer object, with bytes read from `filepath`.
+    """
+    with open(filepath, 'rb') as f:
+        buf = BytesIO(f.read())
+    buf.read = buf.getvalue
+    return buf
+
+def textbuf(filepath):
+    """
+    Get re-read()able buffer object, with bytes read from `filepath`.
+    """
+    with open(filepath) as f:
+        buf = StringIO(f.read())
+    buf.read = buf.getvalue
+    return buf
 
 # Issue #9415: Ubuntu hijacks their OpenSSL and forcefully disables SSLv2
 def skip_if_broken_ubuntu_ssl(func):
@@ -941,53 +960,122 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.verify_flags = None
 
-    def test_load_cert_chain(self):
+    def test_load_cert_chain_signature(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        # Combined key and cert in a single file
-        ctx.load_cert_chain(CERTFILE, keyfile=None)
-        ctx.load_cert_chain(CERTFILE, keyfile=CERTFILE)
-        self.assertRaises(TypeError, ctx.load_cert_chain, keyfile=CERTFILE)
-        with self.assertRaises(OSError) as cm:
-            ctx.load_cert_chain(NONEXISTINGCERT)
-        self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
-            ctx.load_cert_chain(BADCERT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
-            ctx.load_cert_chain(EMPTYCERT)
-        # Separate key and cert
+
+        # Test missing certfile argument.
+        with self.assertRaises(TypeError):
+            ctx.load_cert_chain(keyfile=ONLYKEY)
+
+        # Test behavior if no file object or file path is given for certfile.
+        with self.assertRaisesRegex(AttributeError, "has no attribute 'read'"):
+            ctx.load_cert_chain(certfile=True)
+
+        # Test behavior is certfile is valid (file obj), but keyfile is not.
+        with self.assertRaisesRegex(AttributeError, "has no attribute 'read'"):
+            ctx.load_cert_chain(certfile=textbuf(CERTFILE), keyfile=True)
+
+        # Test behavior is certfile is valid (file path), but keyfile is not.
+        # If certfile is a path, then keyfile is also expected to be one.
+        with self.assertRaisesRegex(
+                TypeError, "keyfile should be a valid filesystem path"):
+            ctx.load_cert_chain(certfile=CERTFILE, keyfile=True)
+
+        # Test behavior if keyfile is a valid object, but certfile is not.
+        with self.assertRaisesRegex(AttributeError, "has no attribute 'read'"):
+            ctx.load_cert_chain(certfile=True, keyfile=BYTES_ONLYKEY)
+
+        # Test behavior for mixed str and bytes file paths.
+        ctx.load_cert_chain(certfile=BYTES_ONLYCERT, keyfile=ONLYKEY)
+        ctx.load_cert_chain(certfile=ONLYCERT, keyfile=BYTES_ONLYKEY)
+
+    def test_load_cert_chain_core_filepaths(self):
+        self._test_load_cert_chain_core(lambda x:x)
+
+    def test_load_cert_chain_core_byte_buffers(self):
+        # Create byte buffers from file contents.
+        self._test_load_cert_chain_core(bytebuf)
+
+    def test_load_cert_chain_core_text_buffers(self):
+        # Create text buffers from file contents.
+        self._test_load_cert_chain_core(textbuf)
+
+    def _test_load_cert_chain_core(self, transform_func):
+        """
+        This method is executed multiple times, with varying transformation
+        functions.
+        """
+
+        # Prepare `keyfile` and `certfile` argument values based off defaults,
+        # (all being file paths, either str or byte objects). Apply
+        # transformation function to all values before proceeding with the
+        # tests.
+        base = {
+            'certfile': CERTFILE,
+            'onlycert': ONLYCERT,
+            'onlykey': ONLYKEY,
+            'bytes_onlykey': BYTES_ONLYKEY,
+            'bytes_onlycert': BYTES_ONLYCERT,
+            'cafile_cacert': CAFILE_CACERT,
+            'certfile_protected': CERTFILE_PROTECTED,
+            'onlykey_protected': ONLYKEY_PROTECTED
+            }
+
+        k = {key: transform_func(val) for key, val in base.items()}
+
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        ctx.load_cert_chain(ONLYCERT, ONLYKEY)
-        ctx.load_cert_chain(certfile=ONLYCERT, keyfile=ONLYKEY)
-        ctx.load_cert_chain(certfile=BYTES_ONLYCERT, keyfile=BYTES_ONLYKEY)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
-            ctx.load_cert_chain(ONLYCERT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
-            ctx.load_cert_chain(ONLYKEY)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
-            ctx.load_cert_chain(certfile=ONLYKEY, keyfile=ONLYCERT)
-        # Mismatching key and cert
+
+        # Test combined key and cert in a single file.
+        ctx.load_cert_chain(k['certfile'], keyfile=None)
+        ctx.load_cert_chain(k['certfile'], keyfile=k['certfile'])
+
+        # Test separate key and cert.
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        with self.assertRaisesRegex(ssl.SSLError, "key values mismatch"):
-            ctx.load_cert_chain(CAFILE_CACERT, ONLYKEY)
-        # Password protected key and cert
-        ctx.load_cert_chain(CERTFILE_PROTECTED, password=KEY_PASSWORD)
-        ctx.load_cert_chain(CERTFILE_PROTECTED, password=KEY_PASSWORD.encode())
-        ctx.load_cert_chain(CERTFILE_PROTECTED,
-                            password=bytearray(KEY_PASSWORD.encode()))
-        ctx.load_cert_chain(ONLYCERT, ONLYKEY_PROTECTED, KEY_PASSWORD)
-        ctx.load_cert_chain(ONLYCERT, ONLYKEY_PROTECTED, KEY_PASSWORD.encode())
-        ctx.load_cert_chain(ONLYCERT, ONLYKEY_PROTECTED,
-                            bytearray(KEY_PASSWORD.encode()))
+        ctx.load_cert_chain(k['onlycert'], k['onlykey'])
+        ctx.load_cert_chain(
+            certfile=k['onlycert'],
+            keyfile=k['onlykey']
+            )
+        ctx.load_cert_chain(
+            certfile=k['bytes_onlycert'],
+            keyfile=k['bytes_onlykey']
+            )
+
+        # Test password-protected key and cert in a single file.
+        ctx.load_cert_chain(
+            k['certfile_protected'],
+            password=KEY_PASSWORD
+            )
+        ctx.load_cert_chain(
+            k['certfile_protected'],
+            password=KEY_PASSWORD.encode()
+            )
+        ctx.load_cert_chain(
+            k['certfile_protected'],
+            password=bytearray(KEY_PASSWORD.encode())
+            )
+
+        # Test password-protected key.
+        ctx.load_cert_chain(
+            k['onlycert'],
+            k['onlykey_protected'],
+            KEY_PASSWORD
+            )
+        ctx.load_cert_chain(
+            k['onlycert'],
+            k['onlykey_protected'],
+            KEY_PASSWORD.encode()
+            )
+        ctx.load_cert_chain(
+            k['onlycert'],
+            k['onlykey_protected'],
+            bytearray(KEY_PASSWORD.encode())
+            )
+
         with self.assertRaisesRegex(TypeError, "should be a string"):
-            ctx.load_cert_chain(CERTFILE_PROTECTED, password=True)
-        with self.assertRaises(ssl.SSLError):
-            ctx.load_cert_chain(CERTFILE_PROTECTED, password="badpass")
-        with self.assertRaisesRegex(ValueError, "cannot be longer"):
-            # openssl has a fixed limit on the password buffer.
-            # PEM_BUFSIZE is generally set to 1kb.
-            # Return a string larger than this.
-            ctx.load_cert_chain(CERTFILE_PROTECTED, password=b'a' * 102400)
-        # Password callback
+            ctx.load_cert_chain(k['certfile_protected'], password=True)
+
+        # Test password callback.
         def getpass_unicode():
             return KEY_PASSWORD
         def getpass_bytes():
@@ -1007,22 +1095,95 @@ class ContextTests(unittest.TestCase):
                 return KEY_PASSWORD
             def getpass(self):
                 return KEY_PASSWORD
-        ctx.load_cert_chain(CERTFILE_PROTECTED, password=getpass_unicode)
-        ctx.load_cert_chain(CERTFILE_PROTECTED, password=getpass_bytes)
-        ctx.load_cert_chain(CERTFILE_PROTECTED, password=getpass_bytearray)
-        ctx.load_cert_chain(CERTFILE_PROTECTED, password=GetPassCallable())
-        ctx.load_cert_chain(CERTFILE_PROTECTED,
+        ctx.load_cert_chain(k['certfile_protected'], password=getpass_unicode)
+        ctx.load_cert_chain(k['certfile_protected'], password=getpass_bytes)
+        ctx.load_cert_chain(k['certfile_protected'], password=getpass_bytearray)
+        ctx.load_cert_chain(k['certfile_protected'], password=GetPassCallable())
+        ctx.load_cert_chain(k['certfile_protected'],
                             password=GetPassCallable().getpass)
         with self.assertRaises(ssl.SSLError):
-            ctx.load_cert_chain(CERTFILE_PROTECTED, password=getpass_badpass)
+            ctx.load_cert_chain(k['certfile_protected'], password=getpass_badpass)
         with self.assertRaisesRegex(ValueError, "cannot be longer"):
-            ctx.load_cert_chain(CERTFILE_PROTECTED, password=getpass_huge)
+            ctx.load_cert_chain(k['certfile_protected'], password=getpass_huge)
         with self.assertRaisesRegex(TypeError, "must return a string"):
-            ctx.load_cert_chain(CERTFILE_PROTECTED, password=getpass_bad_type)
+            ctx.load_cert_chain(k['certfile_protected'], password=getpass_bad_type)
         with self.assertRaisesRegex(Exception, "getpass error"):
-            ctx.load_cert_chain(CERTFILE_PROTECTED, password=getpass_exception)
-        # Make sure the password function isn't called if it isn't needed
-        ctx.load_cert_chain(CERTFILE, password=getpass_exception)
+            ctx.load_cert_chain(k['certfile_protected'], password=getpass_exception)
+
+        # Make sure the password function isn't called if it isn't needed.
+        ctx.load_cert_chain(k['certfile'], password=getpass_exception)
+
+    def test_load_cert_chain_byte_buffers(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+
+        with self.assertRaisesRegex(ssl.SSLError, "PEM: BAD_BASE64_DECODE"):
+            ctx.load_cert_chain(bytebuf(BADCERT))
+
+        with self.assertRaisesRegex(ssl.SSLError, "PEM: NO_START_LINE"):
+            ctx.load_cert_chain(bytebuf(EMPTYCERT))
+
+        with self.assertRaisesRegex(ssl.SSLError, "Can't read private key"):
+            ctx.load_cert_chain(bytebuf(ONLYCERT))
+
+        with self.assertRaisesRegex(ssl.SSLError, "PEM: NO_START_LINE"):
+            ctx.load_cert_chain(bytebuf(ONLYKEY))
+
+        with self.assertRaisesRegex(ssl.SSLError, "PEM: NO_START_LINE"):
+            ctx.load_cert_chain(
+                certfile=bytebuf(ONLYKEY),
+                keyfile=bytebuf(ONLYCERT)
+                )
+
+        with self.assertRaisesRegex(ssl.SSLError, "Can't read private key"):
+            ctx.load_cert_chain(bytebuf(CERTFILE_PROTECTED), password="bad")
+
+        with self.assertRaisesRegex(ssl.SSLError, "Can't read private key"):
+            ctx.load_cert_chain(
+                certfile=bytebuf(ONLYCERT),
+                keyfile=bytebuf(ONLYKEY_PROTECTED),
+                password="bad"
+                )
+
+        with self.assertRaisesRegex(ValueError, "cannot be longer"):
+            # OpenSSL has a limit on the password buffer.
+            ctx.load_cert_chain(
+                bytebuf(CERTFILE_PROTECTED),
+                password=b'a' * 102400
+                )
+
+        # Mismatching key and cert.
+        with self.assertRaisesRegex(ssl.SSLError, "SSL: NO_CERTIFICATE_ASSIGNED"):
+            ctx.load_cert_chain(bytebuf(CAFILE_CACERT), bytebuf(ONLYKEY))
+
+    def test_load_cert_chain_filepaths(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+
+        with self.assertRaises(OSError) as cm:
+            ctx.load_cert_chain(NONEXISTINGCERT)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
+
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+            ctx.load_cert_chain(BADCERT)
+
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+            ctx.load_cert_chain(EMPTYCERT)
+
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+            ctx.load_cert_chain(ONLYCERT)
+
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+            ctx.load_cert_chain(ONLYKEY)
+
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+            ctx.load_cert_chain(CERTFILE_PROTECTED, password="badpass")
+
+        with self.assertRaisesRegex(ValueError, "cannot be longer"):
+            # OpenSSL has a limit on the password buffer.
+            ctx.load_cert_chain(CERTFILE_PROTECTED, password=b'a' * 102400)
+
+        # Mismatching key and cert.
+        with self.assertRaisesRegex(ssl.SSLError, "key values mismatch"):
+            ctx.load_cert_chain(CAFILE_CACERT, ONLYKEY)
 
     def test_load_verify_locations(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
@@ -1099,7 +1260,6 @@ class ContextTests(unittest.TestCase):
             ctx.load_verify_locations(cadata="broken")
         with self.assertRaisesRegex(ssl.SSLError, "not enough data"):
             ctx.load_verify_locations(cadata=b"broken")
-
 
     def test_load_dh_params(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
@@ -2396,7 +2556,7 @@ if _have_threads:
                 sys.stdout.write("\n")
 
             server_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            server_context.load_cert_chain(SIGNED_CERTFILE)
+            server_context.load_cert_chain(bytebuf(SIGNED_CERTFILE))
 
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.verify_mode = ssl.CERT_REQUIRED

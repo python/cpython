@@ -467,24 +467,27 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_ssl__SSLContext_load_cert_chain__doc__,
-"load_cert_chain($self, /, certfile, keyfile=None, password=None)\n"
+PyDoc_STRVAR(_ssl__SSLContext__load_cert_chain_pem_from_file_paths__doc__,
+"_load_cert_chain_pem_from_file_paths($self, /, certfile, keyfile=None,\n"
+"                                     password=None)\n"
 "--\n"
 "\n");
 
-#define _SSL__SSLCONTEXT_LOAD_CERT_CHAIN_METHODDEF    \
-    {"load_cert_chain", (PyCFunction)_ssl__SSLContext_load_cert_chain, METH_FASTCALL, _ssl__SSLContext_load_cert_chain__doc__},
+#define _SSL__SSLCONTEXT__LOAD_CERT_CHAIN_PEM_FROM_FILE_PATHS_METHODDEF    \
+    {"_load_cert_chain_pem_from_file_paths", (PyCFunction)_ssl__SSLContext__load_cert_chain_pem_from_file_paths, METH_FASTCALL, _ssl__SSLContext__load_cert_chain_pem_from_file_paths__doc__},
 
 static PyObject *
-_ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
-                                      PyObject *keyfile, PyObject *password);
+_ssl__SSLContext__load_cert_chain_pem_from_file_paths_impl(PySSLContext *self,
+                                                           PyObject *certfile,
+                                                           PyObject *keyfile,
+                                                           PyObject *password);
 
 static PyObject *
-_ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl__SSLContext__load_cert_chain_pem_from_file_paths(PySSLContext *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"certfile", "keyfile", "password", NULL};
-    static _PyArg_Parser _parser = {"O|OO:load_cert_chain", _keywords, 0};
+    static _PyArg_Parser _parser = {"O|OO:_load_cert_chain_pem_from_file_paths", _keywords, 0};
     PyObject *certfile;
     PyObject *keyfile = NULL;
     PyObject *password = NULL;
@@ -493,7 +496,41 @@ _ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject **args, Py_ssize_t
         &certfile, &keyfile, &password)) {
         goto exit;
     }
-    return_value = _ssl__SSLContext_load_cert_chain_impl(self, certfile, keyfile, password);
+    return_value = _ssl__SSLContext__load_cert_chain_pem_from_file_paths_impl(self, certfile, keyfile, password);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLContext__load_cert_chain_pem_from_bio__doc__,
+"_load_cert_chain_pem_from_bio($self, /, certbio, keybio, password=None)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT__LOAD_CERT_CHAIN_PEM_FROM_BIO_METHODDEF    \
+    {"_load_cert_chain_pem_from_bio", (PyCFunction)_ssl__SSLContext__load_cert_chain_pem_from_bio, METH_FASTCALL, _ssl__SSLContext__load_cert_chain_pem_from_bio__doc__},
+
+static PyObject *
+_ssl__SSLContext__load_cert_chain_pem_from_bio_impl(PySSLContext *self,
+                                                    PySSLMemoryBIO *certbio,
+                                                    PySSLMemoryBIO *keybio,
+                                                    PyObject *password);
+
+static PyObject *
+_ssl__SSLContext__load_cert_chain_pem_from_bio(PySSLContext *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"certbio", "keybio", "password", NULL};
+    static _PyArg_Parser _parser = {"O!O!|O:_load_cert_chain_pem_from_bio", _keywords, 0};
+    PySSLMemoryBIO *certbio;
+    PySSLMemoryBIO *keybio;
+    PyObject *password = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &PySSLMemoryBIO_Type, &certbio, &PySSLMemoryBIO_Type, &keybio, &password)) {
+        goto exit;
+    }
+    return_value = _ssl__SSLContext__load_cert_chain_pem_from_bio_impl(self, certbio, keybio, password);
 
 exit:
     return return_value;
@@ -1180,4 +1217,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=30284eec805dbdf8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cfdb2849467223ed input=a9049054013a1b77]*/
