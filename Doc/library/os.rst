@@ -2029,6 +2029,9 @@ features:
    attributes of each :class:`os.DirEntry` will be ``bytes``; in all other
    circumstances, they will be of type ``str``.
 
+   This function can also support :ref:`specifying a file descriptor
+   <path_fd>`; the file descriptor must refer to a directory.
+
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
 
@@ -2075,6 +2078,9 @@ features:
 
       The function accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.7
+      Added support for :ref:`file descriptors <path_fd>` on Unix.
+
 
 .. class:: DirEntry
 
@@ -2114,7 +2120,9 @@ features:
       The entry's full path name: equivalent to ``os.path.join(scandir_path,
       entry.name)`` where *scandir_path* is the :func:`scandir` *path*
       argument.  The path is only absolute if the :func:`scandir` *path*
-      argument was absolute.
+      argument was absolute.  If the :func:`scandir` *path*
+      argument was a :ref:`file descriptor <path_fd>`, the :attr:`path`
+      attribute is the same as the :attr:`name` attribute.
 
       The :attr:`path` attribute will be ``bytes`` if the :func:`scandir`
       *path* argument is of type ``bytes`` and ``str`` otherwise.  Use
@@ -3270,6 +3278,39 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+
+.. function:: register_at_fork(*, before=None, after_in_parent=None, \
+                               after_in_child=None)
+
+   Register callables to be executed when a new child process is forked
+   using :func:`os.fork` or similar process cloning APIs.
+   The parameters are optional and keyword-only.
+   Each specifies a different call point.
+
+   * *before* is a function called before forking a child process.
+   * *after_in_parent* is a function called from the parent process
+     after forking a child process.
+   * *after_in_child* is a function called from the child process.
+
+   These calls are only made if control is expected to return to the
+   Python interpreter.  A typical :mod:`subprocess` launch will not
+   trigger them as the child is not going to re-enter the interpreter.
+
+   Functions registered for execution before forking are called in
+   reverse registration order.  Functions registered for execution
+   after forking (either in the parent or in the child) are called
+   in registration order.
+
+   Note that :c:func:`fork` calls made by third-party C code may not
+   call those functions, unless it explicitly calls :c:func:`PyOS_BeforeFork`,
+   :c:func:`PyOS_AfterFork_Parent` and :c:func:`PyOS_AfterFork_Child`.
+
+   There is no way to unregister a function.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
 
 
 .. function:: spawnl(mode, path, ...)

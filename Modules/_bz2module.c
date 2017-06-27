@@ -96,10 +96,10 @@ catch_bz2_error(int bzerror)
             return 1;
         case BZ_DATA_ERROR:
         case BZ_DATA_ERROR_MAGIC:
-            PyErr_SetString(PyExc_IOError, "Invalid data stream");
+            PyErr_SetString(PyExc_OSError, "Invalid data stream");
             return 1;
         case BZ_IO_ERROR:
-            PyErr_SetString(PyExc_IOError, "Unknown I/O error");
+            PyErr_SetString(PyExc_OSError, "Unknown I/O error");
             return 1;
         case BZ_UNEXPECTED_EOF:
             PyErr_SetString(PyExc_EOFError,
@@ -112,7 +112,7 @@ catch_bz2_error(int bzerror)
                             "Invalid sequence of commands sent to libbzip2");
             return 1;
         default:
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "Unrecognized error from libbzip2: %d", bzerror);
             return 1;
     }

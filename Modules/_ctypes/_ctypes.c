@@ -3606,12 +3606,9 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
         case PARAMFLAG_FIN | PARAMFLAG_FLCID:
             /* ['in', 'lcid'] parameter.  Always taken from defval,
              if given, else the integer 0. */
-            if (defval == NULL) {
-                defval = PyLong_FromLong(0);
-                if (defval == NULL)
-                    goto error;
-            } else
-                Py_INCREF(defval);
+            if (defval == NULL)
+                defval = _PyLong_Zero;
+            Py_INCREF(defval);
             PyTuple_SET_ITEM(callargs, i, defval);
             break;
         case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
@@ -4280,11 +4277,10 @@ Array_subscript(PyObject *myself, PyObject *item)
         PyObject *np;
         Py_ssize_t start, stop, step, slicelen, cur, i;
 
-        if (PySlice_GetIndicesEx(item,
-                                 self->b_length, &start, &stop,
-                                 &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelen = PySlice_AdjustIndices(self->b_length, &start, &stop, step);
 
         stgdict = PyObject_stgdict((PyObject *)self);
         assert(stgdict); /* Cannot be NULL for array object instances */
@@ -4421,11 +4417,10 @@ Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen, otherlen, i, cur;
 
-        if (PySlice_GetIndicesEx(item,
-                                 self->b_length, &start, &stop,
-                                 &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelen = PySlice_AdjustIndices(self->b_length, &start, &stop, step);
         if ((step < 0 && start < stop) ||
             (step > 0 && start > stop))
             stop = start;
@@ -5148,7 +5143,7 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "OOO:COMError", &hresult, &text, &details))
         return -1;
 
-    a = PySequence_GetSlice(args, 1, PySequence_Size(args));
+    a = PySequence_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (!a)
         return -1;
     status = PyObject_SetAttrString(self, "args", a);

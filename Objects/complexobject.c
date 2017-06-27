@@ -936,7 +936,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 /*[clinic input]
 @classmethod
 complex.__new__ as complex_new
-    real as r: object(c_default="Py_False") = 0
+    real as r: object(c_default="_PyLong_Zero") = 0
     imag as i: object(c_default="NULL") = 0
 
 Create a complex number from a real part and an optional imaginary part.
@@ -946,7 +946,7 @@ This is equivalent to (real + imag*1j) where imag defaults to 0.
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
-/*[clinic end generated code: output=b6c7dd577b537dc1 input=e3d6b77ddcf280da]*/
+/*[clinic end generated code: output=b6c7dd577b537dc1 input=6f6b0bedba29bcb5]*/
 {
     PyObject *tmp;
     PyNumberMethods *nbr, *nbi = NULL;

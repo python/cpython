@@ -344,6 +344,9 @@ class TestUUID(unittest.TestCase):
                                        'requires uuid_generate_time_safe(3)')
 
     @requires_ugt
+    # bpo-29925: On Mac OS X Tiger, uuid.uuid1().is_safe returns
+    # uuid.SafeUUID.unknown
+    @support.requires_mac_ver(10, 5)
     def test_uuid1_safe(self):
         u = uuid.uuid1()
         # uuid_generate_time_safe() may return 0 or -1 but what it returns is

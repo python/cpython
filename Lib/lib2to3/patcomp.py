@@ -59,7 +59,7 @@ class PatternCompiler(object):
         try:
             root = self.driver.parse_tokens(tokens, debug=debug)
         except parse.ParseError as e:
-            raise PatternSyntaxError(str(e))
+            raise PatternSyntaxError(str(e)) from None
         if with_tree:
             return self.compile_node(root), root
         else:

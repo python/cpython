@@ -10,7 +10,6 @@ import codecs
 import itertools
 import operator
 import struct
-import string
 import sys
 import unittest
 import warnings

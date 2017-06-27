@@ -21,6 +21,8 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+else:
+    import ctypes.util
 
 try:
     import threading
@@ -628,21 +630,70 @@ class ProcessTestCase(BaseTestCase):
     # Python
     @unittest.skipIf(sys.platform == 'win32',
                      'cannot test an empty env on Windows')
-    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') is not None,
-                     'the python library cannot be loaded '
-                     'with an empty environment')
+    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+                     'The Python shared library cannot be loaded '
+                     'with an empty environment.')
     def test_empty_env(self):
+        """Verify that env={} is as empty as possible."""
+
+        def is_env_var_to_ignore(n):
+            """Determine if an environment variable is under our control."""
+            # This excludes some __CF_* and VERSIONER_* keys MacOS insists
+            # on adding even when the environment in exec is empty.
+            # Gentoo sandboxes also force LD_PRELOAD and SANDBOX_* to exist.
+            return ('VERSIONER' in n or '__CF' in n or  # MacOS
+                    n == 'LD_PRELOAD' or n.startswith('SANDBOX') or # Gentoo
+                    n == 'LC_CTYPE') # Locale coercion triggered
+
         with subprocess.Popen([sys.executable, "-c",
-                               'import os; '
-                               'print(list(os.environ.keys()))'],
-                              stdout=subprocess.PIPE,
-                              env={}) as p:
+                               'import os; print(list(os.environ.keys()))'],
+                              stdout=subprocess.PIPE, env={}) as p:
             stdout, stderr = p.communicate()
-            self.assertIn(stdout.strip(),
-                (b"[]",
-                 # Mac OS X adds __CF_USER_TEXT_ENCODING variable to an empty
-                 # environment
-                 b"['__CF_USER_TEXT_ENCODING']"))
+            child_env_names = eval(stdout.strip())
+            self.assertIsInstance(child_env_names, list)
+            child_env_names = [k for k in child_env_names
+                               if not is_env_var_to_ignore(k)]
+            self.assertEqual(child_env_names, [])
+
+    def test_invalid_cmd(self):
+        # null character in the command name
+        cmd = sys.executable + '\0'
+        with self.assertRaises(ValueError):
+            subprocess.Popen([cmd, "-c", "pass"])
+
+        # null character in the command argument
+        with self.assertRaises(ValueError):
+            subprocess.Popen([sys.executable, "-c", "pass#\0"])
+
+    def test_invalid_env(self):
+        # null character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT\0VEGETABLE"] = "cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
+
+        # null character in the enviroment variable value
+        newenv = os.environ.copy()
+        newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
+
+        # equal character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT=ORANGE"] = "lemon"
+        with self.assertRaises(ValueError):
+            subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
+
+        # equal character in the enviroment variable value
+        newenv = os.environ.copy()
+        newenv["FRUIT"] = "orange=lemon"
+        with subprocess.Popen([sys.executable, "-c",
+                               'import sys, os;'
+                               'sys.stdout.write(os.getenv("FRUIT"))'],
+                              stdout=subprocess.PIPE,
+                              env=newenv) as p:
+            stdout, stderr = p.communicate()
+            self.assertEqual(stdout, b"orange=lemon")
 
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
@@ -2418,7 +2469,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 with self.assertRaises(TypeError):
                     _posixsubprocess.fork_exec(
                         args, exe_list,
-                        True, [], cwd, env_list,
+                        True, (), cwd, env_list,
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
                         True, True, func)
@@ -2430,6 +2481,16 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_fork_exec_sorted_fd_sanity_check(self):
         # Issue #23564: sanity check the fork_exec() fds_to_keep sanity check.
         import _posixsubprocess
+        class BadInt:
+            first = True
+            def __init__(self, value):
+                self.value = value
+            def __int__(self):
+                if self.first:
+                    self.first = False
+                    return self.value
+                raise ValueError
+
         gc_enabled = gc.isenabled()
         try:
             gc.enable()
@@ -2440,6 +2501,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 (18, 23, 42, 2**63),  # Out of range.
                 (5, 4),  # Not sorted.
                 (6, 7, 7, 8),  # Duplicate.
+                (BadInt(1), BadInt(2)),
             ):
                 with self.assertRaises(
                         ValueError,
@@ -2501,43 +2563,40 @@ class POSIXProcessTestCase(BaseTestCase):
             proc.communicate(timeout=999)
             mock_proc_stdin.close.assert_called_once_with()
 
-    _libc_file_extensions = {
-      'Linux': 'so.6',
-      'Darwin': 'dylib',
-    }
-    @unittest.skipIf(not ctypes, 'ctypes module required.')
-    @unittest.skipIf(platform.uname()[0] not in _libc_file_extensions,
-                     'Test requires a libc this code can load with ctypes.')
-    @unittest.skipIf(not sys.executable, 'Test requires sys.executable.')
+    @unittest.skipIf(not ctypes, 'ctypes module required')
+    @unittest.skipIf(not sys.executable, 'Test requires sys.executable')
     def test_child_terminated_in_stopped_state(self):
         """Test wait() behavior when waitpid returns WIFSTOPPED; issue29335."""
         PTRACE_TRACEME = 0  # From glibc and MacOS (PT_TRACE_ME).
-        libc_name = 'libc.' + self._libc_file_extensions[platform.uname()[0]]
+        libc_name = ctypes.util.find_library('c')
         libc = ctypes.CDLL(libc_name)
         if not hasattr(libc, 'ptrace'):
-            raise unittest.SkipTest('ptrace() required.')
-        test_ptrace = subprocess.Popen(
-            [sys.executable, '-c', """if True:
+            raise unittest.SkipTest('ptrace() required')
+
+        code = textwrap.dedent(f"""
              import ctypes
+             import faulthandler
+             from test.support import SuppressCrashReport
+
              libc = ctypes.CDLL({libc_name!r})
              libc.ptrace({PTRACE_TRACEME}, 0, 0)
-             """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
-            ])
-        if test_ptrace.wait() != 0:
-            raise unittest.SkipTest('ptrace() failed - unable to test.')
-        child = subprocess.Popen(
-            [sys.executable, '-c', """if True:
-             import ctypes
-             libc = ctypes.CDLL({libc_name!r})
-             libc.ptrace({PTRACE_TRACEME}, 0, 0)
-             libc.printf(ctypes.c_char_p(0xdeadbeef))  # Crash the process.
-             """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
-            ])
+        """)
+
+        child = subprocess.Popen([sys.executable, '-c', code])
+        if child.wait() != 0:
+            raise unittest.SkipTest('ptrace() failed - unable to test')
+
+        code += textwrap.dedent(f"""
+             with SuppressCrashReport():
+                # Crash the process
+                faulthandler._sigsegv()
+        """)
+        child = subprocess.Popen([sys.executable, '-c', code])
         try:
             returncode = child.wait()
-        except Exception as e:
+        except:
             child.kill()  # Clean up the hung stopped process.
-            raise e
+            raise
         self.assertNotEqual(0, returncode)
         self.assertLess(returncode, 0)  # signal death, likely SIGSEGV.
 

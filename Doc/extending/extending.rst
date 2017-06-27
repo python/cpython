@@ -727,9 +727,9 @@ Philbrick (philbrick@hks.com)::
    keywdarg_parrot(PyObject *self, PyObject *args, PyObject *keywds)
    {
        int voltage;
-       char *state = "a stiff";
-       char *action = "voom";
-       char *type = "Norwegian Blue";
+       const char *state = "a stiff";
+       const char *action = "voom";
+       const char *type = "Norwegian Blue";
 
        static char *kwlist[] = {"voltage", "state", "action", "type", NULL};
 

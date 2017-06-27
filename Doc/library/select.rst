@@ -290,7 +290,7 @@ Edge and Level Trigger Polling (epoll) Objects
    | :const:`EPOLLEXCLUSIVE` | Wake only one epoll object when the           |
    |                         | associated fd has an event. The default (if   |
    |                         | this flag is not set) is to wake all epoll    |
-   |                         | objects polling on on a fd.                   |
+   |                         | objects polling on a fd.                      |
    +-------------------------+-----------------------------------------------+
    | :const:`EPOLLRDHUP`     | Stream socket peer closed connection or shut  |
    |                         | down writing half of connection.              |

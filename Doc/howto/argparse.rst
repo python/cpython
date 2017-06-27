@@ -221,7 +221,7 @@ before proceeding.
 Introducing Optional arguments
 ==============================
 
-So far we, have been playing with positional arguments. Let us
+So far we have been playing with positional arguments. Let us
 have a look on how to add optional ones::
 
    import argparse

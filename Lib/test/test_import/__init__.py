@@ -597,7 +597,7 @@ class PathsTests(unittest.TestCase):
         try:
             os.listdir(unc)
         except OSError as e:
-            if e.errno in (errno.EPERM, errno.EACCES):
+            if e.errno in (errno.EPERM, errno.EACCES, errno.ENOENT):
                 # See issue #15338
                 self.skipTest("cannot access administrative share %r" % (unc,))
             raise
@@ -1167,6 +1167,12 @@ class CircularImportTests(unittest.TestCase):
             self.fail('circular import with rebinding of module attribute failed')
         from test.test_import.data.circular_imports.subpkg import util
         self.assertIs(util.util, rebinding.util)
+
+    def test_binding(self):
+        try:
+            import test.test_import.data.circular_imports.binding
+        except ImportError:
+            self.fail('circular import with binding a submodule to a name failed')
 
 
 if __name__ == '__main__':

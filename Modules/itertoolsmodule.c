@@ -871,7 +871,7 @@ cycle_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *saved;
     cycleobject *lz;
 
-    if (type == &cycle_type && !_PyArg_NoKeywords("cycle()", kwds))
+    if (type == &cycle_type && !_PyArg_NoKeywords("cycle", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "cycle", 1, 1, &iterable))
@@ -1072,7 +1072,7 @@ dropwhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it;
     dropwhileobject *lz;
 
-    if (type == &dropwhile_type && !_PyArg_NoKeywords("dropwhile()", kwds))
+    if (type == &dropwhile_type && !_PyArg_NoKeywords("dropwhile", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "dropwhile", 2, 2, &func, &seq))
@@ -1240,7 +1240,7 @@ takewhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it;
     takewhileobject *lz;
 
-    if (type == &takewhile_type && !_PyArg_NoKeywords("takewhile()", kwds))
+    if (type == &takewhile_type && !_PyArg_NoKeywords("takewhile", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "takewhile", 2, 2, &func, &seq))
@@ -1408,7 +1408,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t numargs;
     isliceobject *lz;
 
-    if (type == &islice_type && !_PyArg_NoKeywords("islice()", kwds))
+    if (type == &islice_type && !_PyArg_NoKeywords("islice", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
@@ -1417,7 +1417,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     numargs = PyTuple_Size(args);
     if (numargs == 2) {
         if (a1 != Py_None) {
-            stop = PyLong_AsSsize_t(a1);
+            stop = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
@@ -1429,11 +1429,11 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     } else {
         if (a1 != Py_None)
-            start = PyLong_AsSsize_t(a1);
+            start = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
         if (start == -1 && PyErr_Occurred())
             PyErr_Clear();
         if (a2 != Py_None) {
-            stop = PyLong_AsSsize_t(a2);
+            stop = PyNumber_AsSsize_t(a2, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
@@ -1453,7 +1453,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (a3 != NULL) {
         if (a3 != Py_None)
-            step = PyLong_AsSsize_t(a3);
+            step = PyNumber_AsSsize_t(a3, PyExc_OverflowError);
         if (step == -1 && PyErr_Occurred())
             PyErr_Clear();
     }
@@ -1662,7 +1662,7 @@ starmap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it;
     starmapobject *lz;
 
-    if (type == &starmap_type && !_PyArg_NoKeywords("starmap()", kwds))
+    if (type == &starmap_type && !_PyArg_NoKeywords("starmap", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "starmap", 2, 2, &func, &seq))
@@ -1820,7 +1820,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *source;
 
-    if (type == &chain_type && !_PyArg_NoKeywords("chain()", kwds))
+    if (type == &chain_type && !_PyArg_NoKeywords("chain", kwds))
         return NULL;
 
     source = PyObject_GetIter(args);
@@ -1864,33 +1864,37 @@ chain_next(chainobject *lz)
 {
     PyObject *item;
 
-    if (lz->source == NULL)
-        return NULL;                    /* already stopped */
-
-    if (lz->active == NULL) {
-        PyObject *iterable = PyIter_Next(lz->source);
-        if (iterable == NULL) {
-            Py_CLEAR(lz->source);
-            return NULL;                /* no more input sources */
-        }
-        lz->active = PyObject_GetIter(iterable);
-        Py_DECREF(iterable);
+    /* lz->source is the iterator of iterables. If it's NULL, we've already
+     * consumed them all. lz->active is the current iterator. If it's NULL,
+     * we should grab a new one from lz->source. */
+    while (lz->source != NULL) {
         if (lz->active == NULL) {
-            Py_CLEAR(lz->source);
-            return NULL;                /* input not iterable */
+            PyObject *iterable = PyIter_Next(lz->source);
+            if (iterable == NULL) {
+                Py_CLEAR(lz->source);
+                return NULL;            /* no more input sources */
+            }
+            lz->active = PyObject_GetIter(iterable);
+            Py_DECREF(iterable);
+            if (lz->active == NULL) {
+                Py_CLEAR(lz->source);
+                return NULL;            /* input not iterable */
+            }
         }
+        item = (*Py_TYPE(lz->active)->tp_iternext)(lz->active);
+        if (item != NULL)
+            return item;
+        if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_StopIteration))
+                PyErr_Clear();
+            else
+                return NULL;            /* input raised an exception */
+        }
+        /* lz->active is consumed, try with the next iterable. */
+        Py_CLEAR(lz->active);
     }
-    item = (*Py_TYPE(lz->active)->tp_iternext)(lz->active);
-    if (item != NULL)
-        return item;
-    if (PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_StopIteration))
-            PyErr_Clear();
-        else
-            return NULL;                /* input raised an exception */
-    }
-    Py_CLEAR(lz->active);
-    return chain_next(lz);              /* recurse and use next active */
+    /* Everything had been consumed already. */
+    return NULL;
 }
 
 static PyObject *
@@ -3765,7 +3769,7 @@ filterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     filterfalseobject *lz;
 
     if (type == &filterfalse_type &&
-        !_PyArg_NoKeywords("filterfalse()", kwds))
+        !_PyArg_NoKeywords("filterfalse", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "filterfalse", 2, 2, &func, &seq))
@@ -3965,24 +3969,16 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 fast_mode = 0;
             }
         }
-        Py_INCREF(long_cnt);
     } else {
         cnt = 0;
-        long_cnt = PyLong_FromLong(0);
-        if (long_cnt == NULL) {
-            return NULL;
-        }
+        long_cnt = _PyLong_Zero;
     }
+    Py_INCREF(long_cnt);
 
     /* If not specified, step defaults to 1 */
-    if (long_step == NULL) {
-        long_step = PyLong_FromLong(1);
-        if (long_step == NULL) {
-            Py_DECREF(long_cnt);
-            return NULL;
-        }
-    } else
-        Py_INCREF(long_step);
+    if (long_step == NULL)
+        long_step = _PyLong_One;
+    Py_INCREF(long_step);
 
     assert(long_cnt != NULL && long_step != NULL);
 
@@ -4329,7 +4325,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
     PyObject *fillvalue = Py_None;
-    Py_ssize_t tuplesize = PySequence_Length(args);
+    Py_ssize_t tuplesize;
 
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
         fillvalue = PyDict_GetItemString(kwds, "fillvalue");
@@ -4342,6 +4338,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* args must be a tuple */
     assert(PyTuple_Check(args));
+    tuplesize = PyTuple_GET_SIZE(args);
 
     /* obtain iterators */
     ittuple = PyTuple_New(tuplesize);

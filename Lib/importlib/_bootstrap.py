@@ -1134,12 +1134,15 @@ def _setup(sys_module, _imp_module):
 
 
 def _install(sys_module, _imp_module):
-    """Install importlib as the implementation of import."""
+    """Install importers for builtin and frozen modules"""
     _setup(sys_module, _imp_module)
 
     sys.meta_path.append(BuiltinImporter)
     sys.meta_path.append(FrozenImporter)
 
+
+def _install_external_importers():
+    """Install importers that require external filesystem access"""
     global _bootstrap_external
     import _frozen_importlib_external
     _bootstrap_external = _frozen_importlib_external

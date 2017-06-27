@@ -17,8 +17,8 @@
 
 This module provides access to the Unicode Character Database (UCD) which
 defines character properties for all Unicode characters. The data contained in
-this database is compiled from the `UCD version 9.0.0
-<http://www.unicode.org/Public/9.0.0/ucd>`_.
+this database is compiled from the `UCD version 10.0.0
+<http://www.unicode.org/Public/10.0.0/ucd>`_.
 
 The module uses the same names and symbols as defined by Unicode
 Standard Annex #44, `"Unicode Character Database"
@@ -158,7 +158,7 @@ Examples:
    9
    >>> unicodedata.decimal('a')
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ValueError: not a decimal
    >>> unicodedata.category('A')  # 'L'etter, 'u'ppercase
    'Lu'
@@ -168,6 +168,6 @@ Examples:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/9.0.0/ucd/NameAliases.txt
+.. [#] http://www.unicode.org/Public/10.0.0/ucd/NameAliases.txt
 
-.. [#] http://www.unicode.org/Public/9.0.0/ucd/NamedSequences.txt
+.. [#] http://www.unicode.org/Public/10.0.0/ucd/NamedSequences.txt

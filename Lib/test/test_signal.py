@@ -1,12 +1,11 @@
-import unittest
-from test import support
-from contextlib import closing
-import select
+import os
 import signal
 import socket
-import struct
 import subprocess
-import sys, os, time, errno
+import sys
+import time
+import unittest
+from test import support
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
     import threading

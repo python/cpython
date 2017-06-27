@@ -320,9 +320,9 @@ Sequences
 
          A bytes object is an immutable array.  The items are 8-bit bytes,
          represented by integers in the range 0 <= x < 256.  Bytes literals
-         (like ``b'abc'``) and the built-in function :func:`bytes` can be used to
-         construct bytes objects.  Also, bytes objects can be decoded to strings
-         via the :meth:`~bytes.decode` method.
+         (like ``b'abc'``) and the built-in :func:`bytes()` constructor
+         can be used to create bytes objects.  Also, bytes objects can be
+         decoded to strings via the :meth:`~bytes.decode` method.
 
    Mutable sequences
       .. index::
@@ -349,9 +349,9 @@ Sequences
          .. index:: bytearray
 
          A bytearray object is a mutable array. They are created by the built-in
-         :func:`bytearray` constructor.  Aside from being mutable (and hence
-         unhashable), byte arrays otherwise provide the same interface and
-         functionality as immutable bytes objects.
+         :func:`bytearray` constructor.  Aside from being mutable
+         (and hence unhashable), byte arrays otherwise provide the same interface
+         and functionality as immutable :class:`bytes` objects.
 
       .. index:: module: array
 
@@ -510,6 +510,9 @@ Callable types
       | :attr:`__closure__`     | ``None`` or a tuple of cells  | Read-only |
       |                         | that contain bindings for the |           |
       |                         | function's free variables.    |           |
+      |                         | See below for information on  |           |
+      |                         | the ``cell_contents``         |           |
+      |                         | attribute.                    |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__annotations__` | A dict containing annotations | Writable  |
       |                         | of parameters.  The keys of   |           |
@@ -529,6 +532,9 @@ Callable types
       dot-notation is used to get and set such attributes. *Note that the current
       implementation only supports function attributes on user-defined functions.
       Function attributes on built-in functions may be supported in the future.*
+
+      A cell object has the attribute ``cell_contents``. This can be used to get
+      the value of the cell, as well as set the value.
 
       Additional information about a function's definition can be retrieved from its
       code object; see the description of internal types below.
@@ -1119,9 +1125,9 @@ Basic customization
    (usually an instance of *cls*).
 
    Typical implementations create a new instance of the class by invoking the
-   superclass's :meth:`__new__` method using ``super(currentclass,
-   cls).__new__(cls[, ...])`` with appropriate arguments and then modifying the
-   newly-created instance as necessary before returning it.
+   superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
+   with appropriate arguments and then modifying the newly-created instance
+   as necessary before returning it.
 
    If :meth:`__new__` returns an instance of *cls*, then the new instance's
    :meth:`__init__` method will be invoked like ``__init__(self[, ...])``, where
@@ -1145,7 +1151,7 @@ Basic customization
    class constructor expression.  If a base class has an :meth:`__init__`
    method, the derived class's :meth:`__init__` method, if any, must explicitly
    call it to ensure proper initialization of the base class part of the
-   instance; for example: ``BaseClass.__init__(self, [args...])``.
+   instance; for example: ``super().__init__([args...])``.
 
    Because :meth:`__new__` and :meth:`__init__` work together in constructing
    objects (:meth:`__new__` to create it, and :meth:`__init__` to customize it),
@@ -1253,8 +1259,8 @@ Basic customization
 
    .. index:: builtin: bytes
 
-   Called by :func:`bytes` to compute a byte-string representation of an
-   object. This should return a ``bytes`` object.
+   Called by :ref:`bytes <func-bytes>` to compute a byte-string representation
+   of an object. This should return a :class:`bytes` object.
 
    .. index::
       single: string; __format__() (object method)
@@ -1281,6 +1287,10 @@ Basic customization
    .. versionchanged:: 3.4
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
       if passed any non-empty string.
+
+   .. versionchanged:: 3.7
+      ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
+      than ``format(str(self), '')``.
 
 
 .. _richcmpfuncs:
@@ -1375,7 +1385,7 @@ Basic customization
    :meth:`__hash__` method of a class is ``None``, instances of the class will
    raise an appropriate :exc:`TypeError` when a program attempts to retrieve
    their hash value, and will also be correctly identified as unhashable when
-   checking ``isinstance(obj, collections.Hashable)``.
+   checking ``isinstance(obj, collections.abc.Hashable)``.
 
    If a class that overrides :meth:`__eq__` needs to retain the implementation
    of :meth:`__hash__` from a parent class, the interpreter must be told this
@@ -1385,7 +1395,7 @@ Basic customization
    support, it should include ``__hash__ = None`` in the class definition.
    A class which defines its own :meth:`__hash__` that explicitly raises
    a :exc:`TypeError` would be incorrectly identified as hashable by
-   an ``isinstance(obj, collections.Hashable)`` call.
+   an ``isinstance(obj, collections.abc.Hashable)`` call.
 
 
    .. note::
@@ -1578,8 +1588,8 @@ Class Binding
    ``A.__dict__['x'].__get__(None, A)``.
 
 Super Binding
-   If ``a`` is an instance of :class:`super`, then the binding ``super(B,
-   obj).m()`` searches ``obj.__class__.__mro__`` for the base class ``A``
+   If ``a`` is an instance of :class:`super`, then the binding ``super(B, obj).m()``
+   searches ``obj.__class__.__mro__`` for the base class ``A``
    immediately preceding ``B`` and then invokes the descriptor with the call:
    ``A.__dict__['m'].__get__(obj, obj.__class__)``.
 
@@ -1610,15 +1620,11 @@ instances cannot override the behavior of a property.
 __slots__
 ^^^^^^^^^
 
-By default, instances of classes have a dictionary for attribute storage.  This
-wastes space for objects having very few instance variables.  The space
-consumption can become acute when creating large numbers of instances.
+*__slots__* allow us to explicitly declare data members (like
+properties) and deny the creation of *__dict__* and *__weakref__*
+(unless explicitly declared in *__slots__* or available in a parent.)
 
-The default can be overridden by defining *__slots__* in a class definition.
-The *__slots__* declaration takes a sequence of instance variables and reserves
-just enough space in each instance to hold a value for each variable.  Space is
-saved because *__dict__* is not created for each instance.
-
+The space saved over using *__dict__* can be significant.
 
 .. data:: object.__slots__
 
@@ -1631,9 +1637,8 @@ saved because *__dict__* is not created for each instance.
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 
-* When inheriting from a class without *__slots__*, the *__dict__* attribute of
-  that class will always be accessible, so a *__slots__* definition in the
-  subclass is meaningless.
+* When inheriting from a class without *__slots__*, the *__dict__* and
+  *__weakref__* attribute of the instances will always be accessible.
 
 * Without a *__dict__* variable, instances cannot be assigned new variables not
   listed in the *__slots__* definition.  Attempts to assign to an unlisted
@@ -1652,9 +1657,11 @@ Notes on using *__slots__*
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
-* The action of a *__slots__* declaration is limited to the class where it is
-  defined.  As a result, subclasses will have a *__dict__* unless they also define
-  *__slots__* (which must only contain names of any *additional* slots).
+* The action of a *__slots__* declaration is not limited to the class
+  where it is defined.  *__slots__* declared in parents are available in
+  child classes. However, child subclasses will get a *__dict__*  and
+  *__weakref__* unless they also define *__slots__* (which should only
+  contain names of any *additional* slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
@@ -1670,6 +1677,10 @@ Notes on using *__slots__*
 
 * *__class__* assignment works only if both classes have the same *__slots__*.
 
+* Multiple inheritance with multiple slotted parent classes can be used,
+  but only one parent is allowed to have attributes created by slots
+  (the other bases must have empty slot layouts) - violations raise
+  :exc:`TypeError`.
 
 .. _class-customization:
 
@@ -1981,7 +1992,7 @@ range of items.  It is also recommended that mappings provide the methods
 :meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
 :meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
 :meth:`update` behaving similar to those for Python's standard dictionary
-objects.  The :mod:`collections` module provides a
+objects.  The :mod:`collections.abc` module provides a
 :class:`~collections.abc.MutableMapping`
 abstract base class to help create those methods from a base set of
 :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__`, and :meth:`keys`.
@@ -2011,6 +2022,14 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    :meth:`__bool__` method and whose :meth:`__len__` method returns zero is
    considered to be false in a Boolean context.
 
+   .. impl-detail::
+
+      In CPython, the length is required to be at most :attr:`sys.maxsize`.
+      If the length is larger than :attr:`!sys.maxsize` some features (such as
+      :func:`len`) may raise :exc:`OverflowError`.  To prevent raising
+      :exc:`!OverflowError` by truth value testing, an object must define a
+      :meth:`__bool__` method.
+
 
 .. method:: object.__length_hint__(self)
 
@@ -2020,6 +2039,7 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    optimization and is never required for correctness.
 
    .. versionadded:: 3.4
+
 
 .. note::
 
@@ -2565,6 +2585,8 @@ An example of an asynchronous iterable object::
       In CPython 3.7, returning an awaitable from ``__aiter__`` will
       result in a :exc:`RuntimeError`.
 
+
+.. _async-context-managers:
 
 Asynchronous Context Managers
 -----------------------------

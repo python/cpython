@@ -244,6 +244,32 @@ trip_signal(int sig_num)
 
     Handlers[sig_num].tripped = 1;
 
+    if (!is_tripped) {
+        /* Set is_tripped after setting .tripped, as it gets
+           cleared in PyErr_CheckSignals() before .tripped. */
+        is_tripped = 1;
+        Py_AddPendingCall(checksignals_witharg, NULL);
+    }
+
+    /* And then write to the wakeup fd *after* setting all the globals and
+       doing the Py_AddPendingCall. We used to write to the wakeup fd and then
+       set the flag, but this allowed the following sequence of events
+       (especially on windows, where trip_signal runs in a new thread):
+
+       - main thread blocks on select([wakeup_fd], ...)
+       - signal arrives
+       - trip_signal writes to the wakeup fd
+       - the main thread wakes up
+       - the main thread checks the signal flags, sees that they're unset
+       - the main thread empties the wakeup fd
+       - the main thread goes back to sleep
+       - trip_signal sets the flags to request the Python-level signal handler
+         be run
+       - the main thread doesn't notice, because it's asleep
+
+       See bpo-30038 for more details.
+    */
+
 #ifdef MS_WINDOWS
     fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
 #else
@@ -280,13 +306,6 @@ trip_signal(int sig_num)
                                   (void *)(intptr_t)errno);
             }
         }
-    }
-
-    if (!is_tripped) {
-        /* Set is_tripped after setting .tripped, as it gets
-           cleared in PyErr_CheckSignals() before .tripped. */
-        is_tripped = 1;
-        Py_AddPendingCall(checksignals_witharg, NULL);
     }
 }
 
@@ -1438,7 +1457,7 @@ PyInit__signal(void)
 
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
-            PyExc_IOError, NULL);
+            PyExc_OSError, NULL);
     if (ItimerError != NULL)
         PyDict_SetItemString(d, "ItimerError", ItimerError);
 #endif
@@ -1599,21 +1618,15 @@ _clear_pending_signals(void)
 }
 
 void
-PyOS_AfterFork(void)
+_PySignal_AfterFork(void)
 {
     /* Clear the signal flags after forking so that they aren't handled
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
 #ifdef WITH_THREAD
-    /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
-     * can be called safely. */
-    PyThread_ReInitTLS();
-    _PyGILState_Reinit();
-    PyEval_ReInitThreads();
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
-    _PyImport_ReInitLock();
 #endif
 }
 

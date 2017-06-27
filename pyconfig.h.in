@@ -1247,8 +1247,14 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
+/* Define if you want to coerce the C locale to a UTF-8 based locale */
+#undef PY_COERCE_C_LOCALE
+
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
+
+/* Define to emit a locale compatibility warning in the C locale */
+#undef PY_WARN_ON_C_LOCALE
 
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
@@ -1341,9 +1347,6 @@
 
 /* Define if you want to use computed gotos in ceval.c. */
 #undef USE_COMPUTED_GOTOS
-
-/* Define to use the C99 inline keyword. */
-#undef USE_INLINE
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
@@ -1483,12 +1486,6 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef gid_t
-
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-#undef inline
-#endif
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t

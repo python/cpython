@@ -24,13 +24,6 @@ class _io.BufferedRandom "buffered *" "&PyBufferedRandom_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=59460b9c5639984d]*/
 
-/*[python input]
-class io_ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = '_PyIO_ConvertSsize_t'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
-
 _Py_IDENTIFIER(close);
 _Py_IDENTIFIER(_dealloc_warn);
 _Py_IDENTIFIER(flush);
@@ -702,7 +695,7 @@ _buffered_raw_tell(buffered *self)
     Py_DECREF(res);
     if (n < 0) {
         if (!PyErr_Occurred())
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "Raw stream returned invalid position %" PY_PRIdOFF,
                          (PY_OFF_T_COMPAT)n);
         return -1;
@@ -735,7 +728,7 @@ _buffered_raw_seek(buffered *self, Py_off_t target, int whence)
     Py_DECREF(res);
     if (n < 0) {
         if (!PyErr_Occurred())
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "Raw stream returned invalid position %" PY_PRIdOFF,
                          (PY_OFF_T_COMPAT)n);
         return -1;
@@ -783,7 +776,7 @@ _buffered_init(buffered *self)
     return 0;
 }
 
-/* Return 1 if an EnvironmentError with errno == EINTR is set (and then
+/* Return 1 if an OSError with errno == EINTR is set (and then
    clears the error indicator), 0 otherwise.
    Should only be called when PyErr_Occurred() is true.
 */
@@ -792,17 +785,17 @@ _PyIO_trap_eintr(void)
 {
     static PyObject *eintr_int = NULL;
     PyObject *typ, *val, *tb;
-    PyEnvironmentErrorObject *env_err;
+    PyOSErrorObject *env_err;
 
     if (eintr_int == NULL) {
         eintr_int = PyLong_FromLong(EINTR);
         assert(eintr_int != NULL);
     }
-    if (!PyErr_ExceptionMatches(PyExc_EnvironmentError))
+    if (!PyErr_ExceptionMatches(PyExc_OSError))
         return 0;
     PyErr_Fetch(&typ, &val, &tb);
     PyErr_NormalizeException(&typ, &val, &tb);
-    env_err = (PyEnvironmentErrorObject *) val;
+    env_err = (PyOSErrorObject *) val;
     assert(env_err != NULL);
     if (env_err->myerrno != NULL &&
         PyObject_RichCompareBool(env_err->myerrno, eintr_int, Py_EQ) > 0) {
@@ -892,13 +885,13 @@ end:
 
 /*[clinic input]
 _io._Buffered.read
-    size as n: io_ssize_t = -1
+    size as n: Py_ssize_t(accept={int, NoneType}) = -1
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_read_impl(buffered *self, Py_ssize_t n)
-/*[clinic end generated code: output=f41c78bb15b9bbe9 input=c0939ec7f9e9354f]*/
+/*[clinic end generated code: output=f41c78bb15b9bbe9 input=7df81e82e08a68a2]*/
 {
     PyObject *res;
 
@@ -1206,13 +1199,13 @@ end_unlocked:
 
 /*[clinic input]
 _io._Buffered.readline
-    size: io_ssize_t = -1
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
-/*[clinic end generated code: output=24dd2aa6e33be83c input=ff1e0df821cb4e5c]*/
+/*[clinic end generated code: output=24dd2aa6e33be83c input=673b6240e315ef8a]*/
 {
     CHECK_INITIALIZED(self)
     return _buffered_readline(self, size);
@@ -1381,7 +1374,7 @@ buffered_iternext(buffered *self)
         line = PyObject_CallMethodObjArgs((PyObject *)self,
                                            _PyIO_str_readline, NULL);
         if (line && !PyBytes_Check(line)) {
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "readline() should have returned a bytes object, "
                          "not '%.200s'", Py_TYPE(line)->tp_name);
             Py_DECREF(line);
@@ -1508,7 +1501,7 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
     if (n < 0 || n > len) {
-        PyErr_Format(PyExc_IOError,
+        PyErr_Format(PyExc_OSError,
                      "raw readinto() returned invalid length %zd "
                      "(should have been between 0 and %zd)", n, len);
         return -1;
@@ -1865,7 +1858,7 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
     if (n < 0 || n > len) {
-        PyErr_Format(PyExc_IOError,
+        PyErr_Format(PyExc_OSError,
                      "raw write() returned invalid length %zd "
                      "(should have been between 0 and %zd)", n, len);
         return -1;

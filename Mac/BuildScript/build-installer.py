@@ -1142,10 +1142,6 @@ def buildPython():
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
-    # bpo-29550: avoid using make touch until it is fixed for git
-    # print("Running make touch")
-    # runCommand("make touch")
-
     print("Running make")
     runCommand("make")
 

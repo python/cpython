@@ -1,11 +1,11 @@
 # Simple test suite for http/cookies.py
 
 import copy
-from test.support import run_unittest, run_doctest, check_warnings
+from test.support import run_unittest, run_doctest
 import unittest
 from http import cookies
 import pickle
-import warnings
+
 
 class CookieTests(unittest.TestCase):
 

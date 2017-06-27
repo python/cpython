@@ -24,6 +24,7 @@ class ParenMatchTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.root = Tk()
+        cls.root.withdraw()
         cls.text = Text(cls.root)
         cls.editwin = DummyEditwin(cls.text)
         cls.editwin.text_frame = Mock()

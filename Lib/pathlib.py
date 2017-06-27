@@ -6,8 +6,7 @@ import os
 import posixpath
 import re
 import sys
-from collections import Sequence
-from contextlib import contextmanager
+from collections.abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -115,10 +114,7 @@ class _WindowsFlavour(_Flavour):
 
     is_supported = (os.name == 'nt')
 
-    drive_letters = (
-        set(chr(x) for x in range(ord('a'), ord('z') + 1)) |
-        set(chr(x) for x in range(ord('A'), ord('Z') + 1))
-    )
+    drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     ext_namespace_prefix = '\\\\?\\'
 
     reserved_names = (
@@ -187,19 +183,18 @@ class _WindowsFlavour(_Flavour):
             if strict:
                 return self._ext_to_normal(_getfinalpathname(s))
             else:
+                tail_parts = []  # End of the path after the first one not found
                 while True:
                     try:
                         s = self._ext_to_normal(_getfinalpathname(s))
                     except FileNotFoundError:
                         previous_s = s
-                        s = os.path.dirname(s)
+                        s, tail = os.path.split(s)
+                        tail_parts.append(tail)
                         if previous_s == s:
                             return path
                     else:
-                        if previous_s is None:
-                            return s
-                        else:
-                            return s + os.path.sep + os.path.basename(previous_s)
+                        return os.path.join(s, *reversed(tail_parts))
         # Means fallback on absolute
         return None
 
@@ -330,12 +325,10 @@ class _PosixFlavour(_Flavour):
                 try:
                     target = accessor.readlink(newpath)
                 except OSError as e:
-                    if e.errno != EINVAL:
-                        if strict:
-                            raise
-                        else:
-                            return newpath
-                    # Not a symlink
+                    if e.errno != EINVAL and strict:
+                        raise
+                    # Not a symlink, or non-strict mode. We just leave the path
+                    # untouched.
                     path = newpath
                 else:
                     seen[newpath] = None # not resolved symlink
@@ -1218,8 +1211,8 @@ class Path(PurePath):
         except FileNotFoundError:
             if not parents or self.parent == self:
                 raise
-            self.parent.mkdir(parents=True)
-            self._accessor.mkdir(self, mode)
+            self.parent.mkdir(parents=True, exist_ok=True)
+            self.mkdir(mode, parents=False, exist_ok=exist_ok)
         except OSError:
             # Cannot rely on checking for EEXIST, since the operating system
             # could give priority to other errors like EACCES or EROFS

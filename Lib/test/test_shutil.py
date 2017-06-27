@@ -10,8 +10,8 @@ import os
 import os.path
 import errno
 import functools
+import pathlib
 import subprocess
-from contextlib import ExitStack
 from shutil import (make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats, Error, unpack_archive,
@@ -22,8 +22,7 @@ import tarfile
 import zipfile
 
 from test import support
-from test.support import (TESTFN, check_warnings, captured_stdout,
-                          android_not_root)
+from test.support import TESTFN, android_not_root
 
 TESTFN2 = TESTFN + "2"
 
@@ -1225,6 +1224,18 @@ class TestShutil(unittest.TestCase):
         self.assertNotIn('xxx', formats)
 
     def check_unpack_archive(self, format):
+        self.check_unpack_archive_with_converter(format, lambda path: path)
+        self.check_unpack_archive_with_converter(format, pathlib.Path)
+
+        class MyPath:
+            def __init__(self, path):
+                self.path = path
+            def __fspath__(self):
+                return self.path
+
+        self.check_unpack_archive_with_converter(format, MyPath)
+
+    def check_unpack_archive_with_converter(self, format, converter):
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
@@ -1234,16 +1245,16 @@ class TestShutil(unittest.TestCase):
 
         # let's try to unpack it now
         tmpdir2 = self.mkdtemp()
-        unpack_archive(filename, tmpdir2)
+        unpack_archive(converter(filename), converter(tmpdir2))
         self.assertEqual(rlistdir(tmpdir2), expected)
 
         # and again, this time with the format specified
         tmpdir3 = self.mkdtemp()
-        unpack_archive(filename, tmpdir3, format=format)
+        unpack_archive(converter(filename), converter(tmpdir3), format=format)
         self.assertEqual(rlistdir(tmpdir3), expected)
 
-        self.assertRaises(shutil.ReadError, unpack_archive, TESTFN)
-        self.assertRaises(ValueError, unpack_archive, TESTFN, format='xxx')
+        self.assertRaises(shutil.ReadError, unpack_archive, converter(TESTFN))
+        self.assertRaises(ValueError, unpack_archive, converter(TESTFN), format='xxx')
 
     def test_unpack_archive_tar(self):
         self.check_unpack_archive('tar')

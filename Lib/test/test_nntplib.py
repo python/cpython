@@ -286,7 +286,12 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     def setUpClass(cls):
         support.requires("network")
         with support.transient_internet(cls.NNTP_HOST):
-            cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, timeout=TIMEOUT, usenetrc=False)
+            try:
+                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, timeout=TIMEOUT,
+                                            usenetrc=False)
+            except EOFError:
+                raise unittest.SkipTest(f"{cls} got EOF error on connecting "
+                                        f"to {cls.NNTP_HOST!r}")
 
     @classmethod
     def tearDownClass(cls):

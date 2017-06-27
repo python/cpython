@@ -34,7 +34,7 @@ import numbers
 import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754, requires_docstrings)
-from test.support import (check_warnings, import_fresh_module, TestFailed,
+from test.support import (import_fresh_module, TestFailed,
                           run_with_locale, cpython_only)
 import random
 import inspect
@@ -1170,7 +1170,6 @@ class FormatTest(unittest.TestCase):
     @run_with_locale('LC_ALL', 'ps_AF')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point
-        import locale
         Decimal = self.decimal.Decimal
 
         decimal_point = locale.localeconv()['decimal_point']

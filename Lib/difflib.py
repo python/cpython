@@ -2079,7 +2079,7 @@ def restore(delta, which):
         tag = {1: "- ", 2: "+ "}[int(which)]
     except KeyError:
         raise ValueError('unknown delta choice (must be 1 or 2): %r'
-                           % which)
+                           % which) from None
     prefixes = ("  ", tag)
     for line in delta:
         if line[:2] in prefixes:

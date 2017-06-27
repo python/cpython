@@ -31,6 +31,9 @@ _Py_IDENTIFIER(big);
              (Py_SIZE(x) == 0 ? (sdigit)0 :                             \
               (sdigit)(x)->ob_digit[0]))
 
+PyObject *_PyLong_Zero = NULL;
+PyObject *_PyLong_One = NULL;
+
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 /* Small integers are preallocated in this array so that they
    can be shared.
@@ -2551,14 +2554,12 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         (size_a == size_b &&
          a->ob_digit[size_a-1] < b->ob_digit[size_b-1])) {
         /* |a| < |b|. */
-        *pdiv = (PyLongObject*)PyLong_FromLong(0);
-        if (*pdiv == NULL)
-            return -1;
         *prem = (PyLongObject *)long_long((PyObject *)a);
         if (*prem == NULL) {
-            Py_CLEAR(*pdiv);
             return -1;
         }
+        Py_INCREF(_PyLong_Zero);
+        *pdiv = (PyLongObject*)_PyLong_Zero;
         return 0;
     }
     if (size_b == 1) {
@@ -3695,7 +3696,6 @@ l_divmod(PyLongObject *v, PyLongObject *w,
     if ((Py_SIZE(mod) < 0 && Py_SIZE(w) > 0) ||
         (Py_SIZE(mod) > 0 && Py_SIZE(w) < 0)) {
         PyLongObject *temp;
-        PyLongObject *one;
         temp = (PyLongObject *) long_add(mod, w);
         Py_DECREF(mod);
         mod = temp;
@@ -3703,15 +3703,12 @@ l_divmod(PyLongObject *v, PyLongObject *w,
             Py_DECREF(div);
             return -1;
         }
-        one = (PyLongObject *) PyLong_FromLong(1L);
-        if (one == NULL ||
-            (temp = (PyLongObject *) long_sub(div, one)) == NULL) {
+        temp = (PyLongObject *) long_sub(div, (PyLongObject *)_PyLong_One);
+        if (temp == NULL) {
             Py_DECREF(mod);
             Py_DECREF(div);
-            Py_XDECREF(one);
             return -1;
         }
-        Py_DECREF(one);
         Py_DECREF(div);
         div = temp;
     }
@@ -4242,14 +4239,9 @@ long_invert(PyLongObject *v)
 {
     /* Implement ~x as -(x+1) */
     PyLongObject *x;
-    PyLongObject *w;
     if (Py_ABS(Py_SIZE(v)) <=1)
         return PyLong_FromLong(-(MEDIUM_VALUE(v)+1));
-    w = (PyLongObject *)PyLong_FromLong(1L);
-    if (w == NULL)
-        return NULL;
-    x = (PyLongObject *) long_add(v, w);
-    Py_DECREF(w);
+    x = (PyLongObject *) long_add(v, (PyLongObject *)_PyLong_One);
     if (x == NULL)
         return NULL;
     _PyLong_Negate(&x);
@@ -4285,14 +4277,53 @@ long_bool(PyLongObject *v)
     return Py_SIZE(v) != 0;
 }
 
+/* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
+static int
+divmod_shift(PyLongObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
+{
+    assert(PyLong_Check((PyObject *)shiftby));
+    assert(Py_SIZE(shiftby) >= 0);
+    Py_ssize_t lshiftby = PyLong_AsSsize_t((PyObject *)shiftby);
+    if (lshiftby >= 0) {
+        *wordshift = lshiftby / PyLong_SHIFT;
+        *remshift = lshiftby % PyLong_SHIFT;
+        return 0;
+    }
+    /* PyLong_Check(shiftby) is true and Py_SIZE(shiftby) >= 0, so it must
+       be that PyLong_AsSsize_t raised an OverflowError. */
+    assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+    PyErr_Clear();
+    PyLongObject *wordshift_obj = divrem1(shiftby, PyLong_SHIFT, remshift);
+    if (wordshift_obj == NULL) {
+        return -1;
+    }
+    *wordshift = PyLong_AsSsize_t((PyObject *)wordshift_obj);
+    Py_DECREF(wordshift_obj);
+    if (*wordshift >= 0 && *wordshift < PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(digit)) {
+        return 0;
+    }
+    PyErr_Clear();
+    /* Clip the value.  With such large wordshift the right shift
+       returns 0 and the left shift raises an error in _PyLong_New(). */
+    *wordshift = PY_SSIZE_T_MAX / sizeof(digit);
+    *remshift = 0;
+    return 0;
+}
+
 static PyObject *
 long_rshift(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z = NULL;
-    Py_ssize_t shiftby, newsize, wordshift, loshift, hishift, i, j;
-    digit lomask, himask;
+    Py_ssize_t newsize, wordshift, hishift, i, j;
+    digit loshift, lomask, himask;
 
     CHECK_BINOP(a, b);
+
+    if (Py_SIZE(b) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "negative shift count");
+        return NULL;
+    }
 
     if (Py_SIZE(a) < 0) {
         /* Right shifting negative numbers is harder */
@@ -4308,19 +4339,11 @@ long_rshift(PyLongObject *a, PyLongObject *b)
         Py_DECREF(a2);
     }
     else {
-        shiftby = PyLong_AsSsize_t((PyObject *)b);
-        if (shiftby == -1L && PyErr_Occurred())
+        if (divmod_shift(b, &wordshift, &loshift) < 0)
             return NULL;
-        if (shiftby < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "negative shift count");
-            return NULL;
-        }
-        wordshift = shiftby / PyLong_SHIFT;
-        newsize = Py_ABS(Py_SIZE(a)) - wordshift;
+        newsize = Py_SIZE(a) - wordshift;
         if (newsize <= 0)
             return PyLong_FromLong(0);
-        loshift = shiftby % PyLong_SHIFT;
         hishift = PyLong_SHIFT - loshift;
         lomask = ((digit)1 << hishift) - 1;
         himask = PyLong_MASK ^ lomask;
@@ -4344,27 +4367,22 @@ long_lshift(PyObject *v, PyObject *w)
     PyLongObject *a = (PyLongObject*)v;
     PyLongObject *b = (PyLongObject*)w;
     PyLongObject *z = NULL;
-    Py_ssize_t shiftby, oldsize, newsize, wordshift, remshift, i, j;
+    Py_ssize_t oldsize, newsize, wordshift, i, j;
+    digit remshift;
     twodigits accum;
 
     CHECK_BINOP(a, b);
 
-    shiftby = PyLong_AsSsize_t((PyObject *)b);
-    if (shiftby == -1L && PyErr_Occurred())
-        return NULL;
-    if (shiftby < 0) {
+    if (Py_SIZE(b) < 0) {
         PyErr_SetString(PyExc_ValueError, "negative shift count");
         return NULL;
     }
-
     if (Py_SIZE(a) == 0) {
         return PyLong_FromLong(0);
     }
 
-    /* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
-    wordshift = shiftby / PyLong_SHIFT;
-    remshift  = shiftby - wordshift * PyLong_SHIFT;
-
+    if (divmod_shift(b, &wordshift, &remshift) < 0)
+        return NULL;
     oldsize = Py_ABS(Py_SIZE(a));
     newsize = oldsize + wordshift;
     if (remshift)
@@ -4932,7 +4950,7 @@ PyObject *
 _PyLong_DivmodNear(PyObject *a, PyObject *b)
 {
     PyLongObject *quo = NULL, *rem = NULL;
-    PyObject *one = NULL, *twice_rem, *result, *temp;
+    PyObject *twice_rem, *result, *temp;
     int cmp, quo_is_odd, quo_is_neg;
 
     /* Equivalent Python code:
@@ -4959,16 +4977,12 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     /* Do a and b have different signs?  If so, quotient is negative. */
     quo_is_neg = (Py_SIZE(a) < 0) != (Py_SIZE(b) < 0);
 
-    one = PyLong_FromLong(1L);
-    if (one == NULL)
-        return NULL;
-
     if (long_divrem((PyLongObject*)a, (PyLongObject*)b, &quo, &rem) < 0)
         goto error;
 
     /* compare twice the remainder with the divisor, to see
        if we need to adjust the quotient and remainder */
-    twice_rem = long_lshift((PyObject *)rem, one);
+    twice_rem = long_lshift((PyObject *)rem, _PyLong_One);
     if (twice_rem == NULL)
         goto error;
     if (quo_is_neg) {
@@ -4985,9 +4999,9 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     if ((Py_SIZE(b) < 0 ? cmp < 0 : cmp > 0) || (cmp == 0 && quo_is_odd)) {
         /* fix up quotient */
         if (quo_is_neg)
-            temp = long_sub(quo, (PyLongObject *)one);
+            temp = long_sub(quo, (PyLongObject *)_PyLong_One);
         else
-            temp = long_add(quo, (PyLongObject *)one);
+            temp = long_add(quo, (PyLongObject *)_PyLong_One);
         Py_DECREF(quo);
         quo = (PyLongObject *)temp;
         if (quo == NULL)
@@ -5010,13 +5024,11 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     /* PyTuple_SET_ITEM steals references */
     PyTuple_SET_ITEM(result, 0, (PyObject *)quo);
     PyTuple_SET_ITEM(result, 1, (PyObject *)rem);
-    Py_DECREF(one);
     return result;
 
   error:
     Py_XDECREF(quo);
     Py_XDECREF(rem);
-    Py_XDECREF(one);
     return NULL;
 }
 
@@ -5505,6 +5517,13 @@ _PyLong_Init(void)
         v->ob_digit[0] = (digit)abs(ival);
     }
 #endif
+    _PyLong_Zero = PyLong_FromLong(0);
+    if (_PyLong_Zero == NULL)
+        return 0;
+    _PyLong_One = PyLong_FromLong(1);
+    if (_PyLong_One == NULL)
+        return 0;
+
     /* initialize int_info */
     if (Int_InfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0)
@@ -5520,6 +5539,8 @@ PyLong_Fini(void)
     /* Integers are currently statically allocated. Py_DECREF is not
        needed, but Python must forget about the reference or multiple
        reinitializations will fail. */
+    Py_CLEAR(_PyLong_One);
+    Py_CLEAR(_PyLong_Zero);
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
     int i;
     PyLongObject *v = small_ints;

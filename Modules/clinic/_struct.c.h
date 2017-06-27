@@ -204,12 +204,12 @@ unpack(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "O&y*:unpack",
-        cache_struct_converter, &s_object, &buffer)) {
+    if (!_PyArg_NoStackKeywords("unpack", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("unpack", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&y*:unpack",
+        cache_struct_converter, &s_object, &buffer)) {
         goto exit;
     }
     return_value = unpack_impl(module, s_object, &buffer);
@@ -294,12 +294,12 @@ iter_unpack(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyStructObject *s_object = NULL;
     PyObject *buffer;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O:iter_unpack",
-        cache_struct_converter, &s_object, &buffer)) {
+    if (!_PyArg_NoStackKeywords("iter_unpack", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("iter_unpack", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&O:iter_unpack",
+        cache_struct_converter, &s_object, &buffer)) {
         goto exit;
     }
     return_value = iter_unpack_impl(module, s_object, buffer);
@@ -310,4 +310,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=03e0d193ab1983f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=351350320f31ca82 input=a9049054013a1b77]*/

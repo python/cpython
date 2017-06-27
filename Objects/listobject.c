@@ -2486,10 +2486,11 @@ list_subscript(PyListObject* self, PyObject* item)
         PyObject* it;
         PyObject **src, **dest;
 
-        if (PySlice_GetIndicesEx(item, Py_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
+                                            step);
 
         if (slicelength <= 0) {
             return PyList_New(0);
@@ -2535,10 +2536,11 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength;
 
-        if (PySlice_GetIndicesEx(item, Py_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
+                                            step);
 
         if (step == 1)
             return list_ass_slice(self, start, stop, value);

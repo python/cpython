@@ -509,65 +509,63 @@ class ZipInfo (object):
         return self.filename[-1] == '/'
 
 
-class _ZipDecrypter:
-    """Class to handle decryption of files stored within a ZIP archive.
+# ZIP encryption uses the CRC32 one-byte primitive for scrambling some
+# internal keys. We noticed that a direct implementation is faster than
+# relying on binascii.crc32().
 
-    ZIP supports a password-based form of encryption. Even though known
-    plaintext attacks have been found against it, it is still useful
-    to be able to get data out of such a file.
+_crctable = None
+def _gen_crc(crc):
+    for j in range(8):
+        if crc & 1:
+            crc = (crc >> 1) ^ 0xEDB88320
+        else:
+            crc >>= 1
+    return crc
 
-    Usage:
-        zd = _ZipDecrypter(mypwd)
-        plain_char = zd(cypher_char)
-        plain_text = map(zd, cypher_text)
-    """
+# ZIP supports a password-based form of encryption. Even though known
+# plaintext attacks have been found against it, it is still useful
+# to be able to get data out of such a file.
+#
+# Usage:
+#     zd = _ZipDecrypter(mypwd)
+#     plain_bytes = zd(cypher_bytes)
 
-    def _GenerateCRCTable():
-        """Generate a CRC-32 table.
+def _ZipDecrypter(pwd):
+    key0 = 305419896
+    key1 = 591751049
+    key2 = 878082192
 
-        ZIP encryption uses the CRC32 one-byte primitive for scrambling some
-        internal keys. We noticed that a direct implementation is faster than
-        relying on binascii.crc32().
-        """
-        poly = 0xedb88320
-        table = [0] * 256
-        for i in range(256):
-            crc = i
-            for j in range(8):
-                if crc & 1:
-                    crc = ((crc >> 1) & 0x7FFFFFFF) ^ poly
-                else:
-                    crc = ((crc >> 1) & 0x7FFFFFFF)
-            table[i] = crc
-        return table
-    crctable = None
+    global _crctable
+    if _crctable is None:
+        _crctable = list(map(_gen_crc, range(256)))
+    crctable = _crctable
 
-    def _crc32(self, ch, crc):
+    def crc32(ch, crc):
         """Compute the CRC32 primitive on one byte."""
-        return ((crc >> 8) & 0xffffff) ^ self.crctable[(crc ^ ch) & 0xff]
+        return (crc >> 8) ^ crctable[(crc ^ ch) & 0xFF]
 
-    def __init__(self, pwd):
-        if _ZipDecrypter.crctable is None:
-            _ZipDecrypter.crctable = _ZipDecrypter._GenerateCRCTable()
-        self.key0 = 305419896
-        self.key1 = 591751049
-        self.key2 = 878082192
-        for p in pwd:
-            self._UpdateKeys(p)
+    def update_keys(c):
+        nonlocal key0, key1, key2
+        key0 = crc32(c, key0)
+        key1 = (key1 + (key0 & 0xFF)) & 0xFFFFFFFF
+        key1 = (key1 * 134775813 + 1) & 0xFFFFFFFF
+        key2 = crc32(key1 >> 24, key2)
 
-    def _UpdateKeys(self, c):
-        self.key0 = self._crc32(c, self.key0)
-        self.key1 = (self.key1 + (self.key0 & 255)) & 4294967295
-        self.key1 = (self.key1 * 134775813 + 1) & 4294967295
-        self.key2 = self._crc32((self.key1 >> 24) & 255, self.key2)
+    for p in pwd:
+        update_keys(p)
 
-    def __call__(self, c):
-        """Decrypt a single character."""
-        assert isinstance(c, int)
-        k = self.key2 | 2
-        c = c ^ (((k * (k^1)) >> 8) & 255)
-        self._UpdateKeys(c)
-        return c
+    def decrypter(data):
+        """Decrypt a bytes object."""
+        result = bytearray()
+        append = result.append
+        for c in data:
+            k = key2 | 2
+            c ^= ((k * (k^1)) >> 8) & 0xFF
+            update_keys(c)
+            append(c)
+        return bytes(result)
+
+    return decrypter
 
 
 class LZMACompressor:
@@ -953,7 +951,7 @@ class ZipExtFile(io.BufferedIOBase):
             raise EOFError
 
         if self._decrypter is not None:
-            data = bytes(map(self._decrypter, data))
+            data = self._decrypter(data)
         return data
 
     def close(self):
@@ -982,6 +980,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return True
 
     def write(self, data):
+        if self.closed:
+            raise ValueError('I/O operation on closed file.')
         nbytes = len(data)
         self._file_size += nbytes
         self._crc = crc32(data, self._crc)
@@ -992,6 +992,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return nbytes
 
     def close(self):
+        if self.closed:
+            return
         super().close()
         # Flush any data from the compressor, and update header info
         if self._compressor:
@@ -1107,7 +1109,6 @@ class ZipFile:
                 # set the modified flag so central directory gets written
                 # even if no files are added to the archive
                 self._didModify = True
-                self._start_disk = 0
                 try:
                     self.start_dir = self.fp.tell()
                 except (AttributeError, OSError):
@@ -1133,7 +1134,7 @@ class ZipFile:
                     # set the modified flag so central directory gets written
                     # even if no files are added to the archive
                     self._didModify = True
-                    self.start_dir = self._start_disk = self.fp.tell()
+                    self.start_dir = self.fp.tell()
             else:
                 raise ValueError("Mode must be 'r', 'w', 'x', or 'a'")
         except:
@@ -1177,18 +1178,17 @@ class ZipFile:
         offset_cd = endrec[_ECD_OFFSET]         # offset of central directory
         self._comment = endrec[_ECD_COMMENT]    # archive comment
 
-        # self._start_disk:  Position of the start of ZIP archive
-        # It is zero, unless ZIP was concatenated to another file
-        self._start_disk = endrec[_ECD_LOCATION] - size_cd - offset_cd
+        # "concat" is zero, unless zip was concatenated to another file
+        concat = endrec[_ECD_LOCATION] - size_cd - offset_cd
         if endrec[_ECD_SIGNATURE] == stringEndArchive64:
             # If Zip64 extension structures are present, account for them
-            self._start_disk -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
+            concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
 
         if self.debug > 2:
-            inferred = self._start_disk + offset_cd
-            print("given, inferred, offset", offset_cd, inferred, self._start_disk)
+            inferred = concat + offset_cd
+            print("given, inferred, offset", offset_cd, inferred, concat)
         # self.start_dir:  Position of start of central directory
-        self.start_dir = offset_cd + self._start_disk
+        self.start_dir = offset_cd + concat
         fp.seek(self.start_dir, 0)
         data = fp.read(size_cd)
         fp = io.BytesIO(data)
@@ -1228,7 +1228,7 @@ class ZipFile:
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
 
             x._decodeExtra()
-            x.header_offset = x.header_offset + self._start_disk
+            x.header_offset = x.header_offset + concat
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
 
@@ -1411,7 +1411,7 @@ class ZipFile:
                 #  or the MSB of the file time depending on the header type
                 #  and is used to check the correctness of the password.
                 header = zef_file.read(12)
-                h = list(map(zd, header[0:12]))
+                h = zd(header[0:12])
                 if zinfo.flag_bits & 0x8:
                     # compare against the file type from extended local headers
                     check_byte = (zinfo._raw_time >> 8) & 0xff
@@ -1699,10 +1699,11 @@ class ZipFile:
                 file_size = zinfo.file_size
                 compress_size = zinfo.compress_size
 
-            header_offset = zinfo.header_offset - self._start_disk
-            if header_offset > ZIP64_LIMIT:
-                extra.append(header_offset)
+            if zinfo.header_offset > ZIP64_LIMIT:
+                extra.append(zinfo.header_offset)
                 header_offset = 0xffffffff
+            else:
+                header_offset = zinfo.header_offset
 
             extra_data = zinfo.extra
             min_version = 0
@@ -1749,7 +1750,7 @@ class ZipFile:
         # Write end-of-zip-archive record
         centDirCount = len(self.filelist)
         centDirSize = pos2 - self.start_dir
-        centDirOffset = self.start_dir - self._start_disk
+        centDirOffset = self.start_dir
         requires_zip64 = None
         if centDirCount > ZIP_FILECOUNT_LIMIT:
             requires_zip64 = "Files count"
@@ -1967,9 +1968,9 @@ class PyZipFile(ZipFile):
 def main(args=None):
     import argparse
 
-    description = 'A simple command line interface for zipfile module.'
+    description = 'A simple command-line interface for zipfile module.'
     parser = argparse.ArgumentParser(description=description)
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', metavar='<zipfile>',
                        help='Show listing of a zipfile')
     group.add_argument('-e', '--extract', nargs=2,
@@ -2023,9 +2024,6 @@ def main(args=None):
                 if zippath in ('', os.curdir, os.pardir):
                     zippath = ''
                 addToZip(zf, path, zippath)
-
-    else:
-        parser.exit(2, parser.format_usage())
 
 if __name__ == "__main__":
     main()

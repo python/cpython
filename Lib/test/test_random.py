@@ -1,6 +1,7 @@
 import unittest
 import unittest.mock
 import random
+import os
 import time
 import pickle
 import warnings
@@ -8,6 +9,7 @@ from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
+
 
 class TestBasicOps:
     # Superclass with tests common to all generators.
@@ -50,7 +52,7 @@ class TestBasicOps:
     @unittest.mock.patch('random._urandom') # os.urandom
     def test_seed_when_randomness_source_not_found(self, urandom_mock):
         # Random.seed() uses time.time() when an operating system specific
-        # randomness source is not found. To test this on machines were it
+        # randomness source is not found. To test this on machines where it
         # exists, run the above test, test_seedargs(), again after mocking
         # os.urandom() so that it raises the exception expected when the
         # randomness source is not available.
@@ -88,6 +90,15 @@ class TestBasicOps:
         self.assertTrue(lst != shuffled_lst)
         shuffle(lst)
         self.assertTrue(lst != shuffled_lst)
+        self.assertRaises(TypeError, shuffle, (1, 2, 3))
+
+    def test_shuffle_random_argument(self):
+        # Test random argument to shuffle.
+        shuffle = self.gen.shuffle
+        mock_random = unittest.mock.Mock(return_value=0.5)
+        seq = bytearray(b'abcdefghijk')
+        shuffle(seq, mock_random)
+        mock_random.assert_called_with()
 
     def test_choice(self):
         choice = self.gen.choice
@@ -423,6 +434,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))
 
     def test_setstate_middle_arg(self):
+        start_state = self.gen.getstate()
         # Wrong type, s/b tuple
         self.assertRaises(TypeError, self.gen.setstate, (2, None, None))
         # Wrong length, s/b 625
@@ -436,6 +448,10 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             self.gen.setstate((2, (1,)*624+(625,), None))
         with self.assertRaises((ValueError, OverflowError)):
             self.gen.setstate((2, (1,)*624+(-1,), None))
+        # Failed calls to setstate() should not have changed the state.
+        bits100 = self.gen.getrandbits(100)
+        self.gen.setstate(start_state)
+        self.assertEqual(self.gen.getrandbits(100), bits100)
 
         # Little trick to make "tuple(x % (2**32) for x in internalstate)"
         # raise ValueError. I cannot think of a simple way to achieve this, so
@@ -886,6 +902,24 @@ class TestModule(unittest.TestCase):
             def __init__(self, newarg=None):
                 random.Random.__init__(self)
         Subclass(newarg=1)
+
+    @unittest.skipUnless(hasattr(os, "fork"), "fork() required")
+    def test_after_fork(self):
+        # Test the global Random instance gets reseeded in child
+        r, w = os.pipe()
+        if os.fork() == 0:
+            try:
+                val = random.getrandbits(128)
+                with open(w, "w") as f:
+                    f.write(str(val))
+            finally:
+                os._exit(0)
+        else:
+            os.close(w)
+            val = random.getrandbits(128)
+            with open(r, "r") as f:
+                child_val = eval(f.read())
+            self.assertNotEqual(val, child_val)
 
 
 if __name__ == "__main__":

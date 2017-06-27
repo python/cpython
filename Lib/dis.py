@@ -31,7 +31,7 @@ def _try_compile(source, name):
         c = compile(source, name, 'exec')
     return c
 
-def dis(x=None, *, file=None):
+def dis(x=None, *, file=None, depth=None):
     """Disassemble classes, methods, functions, generators, or code.
 
     With no argument, disassemble the last traceback.
@@ -52,16 +52,16 @@ def dis(x=None, *, file=None):
             if isinstance(x1, _have_code):
                 print("Disassembly of %s:" % name, file=file)
                 try:
-                    dis(x1, file=file)
+                    dis(x1, file=file, depth=depth)
                 except TypeError as msg:
                     print("Sorry:", msg, file=file)
                 print(file=file)
     elif hasattr(x, 'co_code'): # Code object
-        disassemble(x, file=file)
+        _disassemble_recursive(x, file=file, depth=depth)
     elif isinstance(x, (bytes, bytearray)): # Raw bytecode
         _disassemble_bytes(x, file=file)
     elif isinstance(x, str):    # Source code
-        _disassemble_str(x, file=file)
+        _disassemble_str(x, file=file, depth=depth)
     else:
         raise TypeError("don't know how to disassemble %s objects" %
                         type(x).__name__)
@@ -72,7 +72,7 @@ def distb(tb=None, *, file=None):
         try:
             tb = sys.last_traceback
         except AttributeError:
-            raise RuntimeError("no last traceback to disassemble")
+            raise RuntimeError("no last traceback to disassemble") from None
         while tb.tb_next: tb = tb.tb_next
     disassemble(tb.tb_frame.f_code, tb.tb_lasti, file=file)
 
@@ -175,6 +175,9 @@ _Instruction.offset.__doc__ = "Start index of operation within bytecode sequence
 _Instruction.starts_line.__doc__ = "Line started by this opcode (if any), otherwise None"
 _Instruction.is_jump_target.__doc__ = "True if other code jumps to here, otherwise False"
 
+_OPNAME_WIDTH = 20
+_OPARG_WIDTH = 5
+
 class Instruction(_Instruction):
     """Details for a bytecode operation
 
@@ -189,11 +192,12 @@ class Instruction(_Instruction):
          is_jump_target - True if other code jumps to here, otherwise False
     """
 
-    def _disassemble(self, lineno_width=3, mark_as_current=False):
+    def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=4):
         """Format instruction details for inclusion in disassembly output
 
         *lineno_width* sets the width of the line number field (0 omits it)
         *mark_as_current* inserts a '-->' marker arrow as part of the line
+        *offset_width* sets the width of the instruction offset field
         """
         fields = []
         # Column: Source code line number
@@ -214,12 +218,12 @@ class Instruction(_Instruction):
         else:
             fields.append('  ')
         # Column: Instruction offset from start of code sequence
-        fields.append(repr(self.offset).rjust(4))
+        fields.append(repr(self.offset).rjust(offset_width))
         # Column: Opcode name
-        fields.append(self.opname.ljust(20))
+        fields.append(self.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
         if self.arg is not None:
-            fields.append(repr(self.arg).rjust(5))
+            fields.append(repr(self.arg).rjust(_OPARG_WIDTH))
             # Column: Opcode argument details
             if self.argrepr:
                 fields.append('(' + self.argrepr + ')')
@@ -334,13 +338,35 @@ def disassemble(co, lasti=-1, *, file=None):
     _disassemble_bytes(co.co_code, lasti, co.co_varnames, co.co_names,
                        co.co_consts, cell_names, linestarts, file=file)
 
+def _disassemble_recursive(co, *, file=None, depth=None):
+    disassemble(co, file=file)
+    if depth is None or depth > 0:
+        if depth is not None:
+            depth = depth - 1
+        for x in co.co_consts:
+            if hasattr(x, 'co_code'):
+                print(file=file)
+                print("Disassembly of %r:" % (x,), file=file)
+                _disassemble_recursive(x, file=file, depth=depth)
+
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None, cells=None, linestarts=None,
                        *, file=None, line_offset=0):
     # Omit the line number column entirely if we have no line number info
     show_lineno = linestarts is not None
-    # TODO?: Adjust width upwards if max(linestarts.values()) >= 1000?
-    lineno_width = 3 if show_lineno else 0
+    if show_lineno:
+        maxlineno = max(linestarts.values()) + line_offset
+        if maxlineno >= 1000:
+            lineno_width = len(str(maxlineno))
+        else:
+            lineno_width = 3
+    else:
+        lineno_width = 0
+    maxoffset = len(code) - 2
+    if maxoffset >= 10000:
+        offset_width = len(str(maxoffset))
+    else:
+        offset_width = 4
     for instr in _get_instructions_bytes(code, varnames, names,
                                          constants, cells, linestarts,
                                          line_offset=line_offset):
@@ -350,11 +376,12 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
         if new_source_line:
             print(file=file)
         is_current_instr = instr.offset == lasti
-        print(instr._disassemble(lineno_width, is_current_instr), file=file)
+        print(instr._disassemble(lineno_width, is_current_instr, offset_width),
+              file=file)
 
-def _disassemble_str(source, *, file=None):
+def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
-    disassemble(_try_compile(source, '<dis>'), file=file)
+    _disassemble_recursive(_try_compile(source, '<dis>'), **kwargs)
 
 disco = disassemble                     # XXX For backwards compatibility
 

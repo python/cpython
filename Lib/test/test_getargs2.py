@@ -553,7 +553,8 @@ class Keywords_TestCase(unittest.TestCase):
         try:
             getargs_keywords(arg1=(1,2))
         except TypeError as err:
-            self.assertEqual(str(err), "Required argument 'arg2' (pos 2) not found")
+            self.assertEqual(
+                str(err), "function missing required argument 'arg2' (pos 2)")
         else:
             self.fail('TypeError should have been raised')
 
@@ -626,16 +627,16 @@ class KeywordOnly_TestCase(unittest.TestCase):
             )
         # required arg missing
         with self.assertRaisesRegex(TypeError,
-            r"Required argument 'required' \(pos 1\) not found"):
+            r"function missing required argument 'required' \(pos 1\)"):
             getargs_keyword_only(optional=2)
 
         with self.assertRaisesRegex(TypeError,
-            r"Required argument 'required' \(pos 1\) not found"):
+            r"function missing required argument 'required' \(pos 1\)"):
             getargs_keyword_only(keyword_only=3)
 
     def test_too_many_args(self):
         with self.assertRaisesRegex(TypeError,
-            r"Function takes at most 2 positional arguments \(3 given\)"):
+            r"function takes at most 2 positional arguments \(3 given\)"):
             getargs_keyword_only(1, 2, 3)
 
         with self.assertRaisesRegex(TypeError,
@@ -674,11 +675,11 @@ class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
         self.assertEqual(self.getargs(1), (1, -1, -1))
         # required positional arg missing
         with self.assertRaisesRegex(TypeError,
-            r"Function takes at least 1 positional arguments \(0 given\)"):
+            r"function takes at least 1 positional arguments \(0 given\)"):
             self.getargs()
 
         with self.assertRaisesRegex(TypeError,
-            r"Function takes at least 1 positional arguments \(0 given\)"):
+            r"function takes at least 1 positional arguments \(0 given\)"):
             self.getargs(keyword=3)
 
     def test_empty_keyword(self):

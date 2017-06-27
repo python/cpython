@@ -25,7 +25,6 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
-from idlelib import textview
 from idlelib import windows
 
 # The default tab setting for a Text widget, in average-width characters.
@@ -464,7 +463,7 @@ class EditorWindow(object):
     def about_dialog(self, event=None):
         "Handle Help 'About IDLE' event."
         # Synchronize with macosx.overrideRootMenu.about_dialog.
-        help_about.AboutDialog(self.top,'About IDLE')
+        help_about.AboutDialog(self.top)
         return "break"
 
     def config_dialog(self, event=None):

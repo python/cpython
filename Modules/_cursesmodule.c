@@ -3363,6 +3363,11 @@ PyInit__curses(void)
     SetDictInt("A_VERTICAL",        A_VERTICAL);
 #endif
 
+    /* ncurses extension */
+#ifdef A_ITALIC
+    SetDictInt("A_ITALIC",          A_ITALIC);
+#endif
+
     SetDictInt("COLOR_BLACK",       COLOR_BLACK);
     SetDictInt("COLOR_RED",         COLOR_RED);
     SetDictInt("COLOR_GREEN",       COLOR_GREEN);

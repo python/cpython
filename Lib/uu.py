@@ -26,8 +26,8 @@
 
 """Implementation of the UUencode and UUdecode functions.
 
-encode(in_file, out_file [,name, mode])
-decode(in_file [, out_file, mode])
+encode(in_file, out_file [,name, mode], *, backtick=False)
+decode(in_file [, out_file, mode, quiet])
 """
 
 import binascii
@@ -39,7 +39,7 @@ __all__ = ["Error", "encode", "decode"]
 class Error(Exception):
     pass
 
-def encode(in_file, out_file, name=None, mode=None):
+def encode(in_file, out_file, name=None, mode=None, *, backtick=False):
     """Uuencode file"""
     #
     # If in_file is a pathname open it and change defaults
@@ -79,9 +79,12 @@ def encode(in_file, out_file, name=None, mode=None):
         out_file.write(('begin %o %s\n' % ((mode & 0o777), name)).encode("ascii"))
         data = in_file.read(45)
         while len(data) > 0:
-            out_file.write(binascii.b2a_uu(data))
+            out_file.write(binascii.b2a_uu(data, backtick=backtick))
             data = in_file.read(45)
-        out_file.write(b' \nend\n')
+        if backtick:
+            out_file.write(b'`\nend\n')
+        else:
+            out_file.write(b' \nend\n')
     finally:
         for f in opened_files:
             f.close()
