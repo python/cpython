@@ -343,6 +343,9 @@ def _create_parser():
                             ' , don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization training')
+    group.add_argument('--fail-env-changed', action='store_true',
+                       help='if a test file alters the environment, mark '
+                            'the test as failed')
 
     return parser
 
@@ -944,11 +947,19 @@ def main(tests=None, **kwargs):
         result = "FAILURE"
     elif interrupted:
         result = "INTERRUPTED"
+    elif environment_changed and ns.fail_env_changed:
+        result = "ENV CHANGED"
     else:
         result = "SUCCESS"
     print("Tests result: %s" % result)
 
-    sys.exit(len(bad) > 0 or interrupted)
+    if bad:
+        sys.exit(2)
+    if interrupted:
+        sys.exit(130)
+    if ns.fail_env_changed and environment_changed:
+        sys.exit(3)
+    sys.exit(0)
 
 
 # small set of tests to determine if we have a basically functioning interpreter
@@ -1510,9 +1521,21 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             alloc_deltas[i] = alloc_after - alloc_before
         alloc_before, rc_before = alloc_after, rc_after
     print(file=sys.stderr)
+
     # These checkers return False on success, True on failure
     def check_rc_deltas(deltas):
-        return any(deltas)
+        # bpo-30776: Try to ignore false positives:
+        #
+        #   [3, 0, 0]
+        #   [0, 1, 0]
+        #   [8, -8, 1]
+        #
+        # Expected leaks:
+        #
+        #   [5, 5, 6]
+        #   [10, 1, 1]
+        return all(delta >= 1 for delta in deltas)
+
     def check_alloc_deltas(deltas):
         # At least 1/3rd of 0s
         if 3 * deltas.count(0) < len(deltas):
@@ -1524,10 +1547,13 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     failed = False
     for deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
-        (alloc_deltas, 'memory blocks', check_alloc_deltas)]:
+        (alloc_deltas, 'memory blocks', check_alloc_deltas)
+    ]:
+        # ignore warmup runs
+        deltas = deltas[nwarmup:]
         if checker(deltas):
             msg = '%s leaked %s %s, sum=%s' % (
-                test, deltas[nwarmup:], item_name, sum(deltas))
+                test, deltas, item_name, sum(deltas))
             print(msg, file=sys.stderr)
             sys.stderr.flush()
             with open(fname, "a") as refrep:
@@ -1735,10 +1761,14 @@ def _list_cases(suite):
         if isinstance(test, unittest.TestSuite):
             _list_cases(test)
         elif isinstance(test, unittest.TestCase):
-            print(test.id())
+            if support._match_test(test):
+                print(test.id())
 
 
 def list_cases(ns, selected):
+    support.verbose = False
+    support.match_tests = ns.match_tests
+
     skipped = []
     for test in selected:
         abstest = get_abs_module(ns, test)
