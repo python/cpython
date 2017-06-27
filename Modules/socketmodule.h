@@ -107,6 +107,13 @@ typedef int socklen_t;
 #define SOL_ALG 279
 #endif
 
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+#include <linux/vm_sockets.h>
+#ifndef AF_VSOCK
+#define AF_VSOCK 40
+#endif
+#endif
+
 /* Linux 3.19 */
 #ifndef ALG_SET_AEAD_ASSOCLEN
 #define ALG_SET_AEAD_ASSOCLEN           4
