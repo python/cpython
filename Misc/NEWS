@@ -1172,6 +1172,8 @@ Library
 - bpo-30177: path.resolve(strict=False) no longer cuts the path after the first
   element not present in the filesystem.  Patch by Antoine Pietri.
 
+- bpo-30711: socket.getaddrinfo() now detects invalid numeric services.
+
 IDLE
 ----
 
