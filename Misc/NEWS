@@ -10,6 +10,12 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30736: The internal unicodedata database has been upgraded to Unicode
+  10.0.
+
+- bpo-30604:  Move co_extra_freefuncs from per-thread to per-interpreter to
+  avoid crashes.
+
 - bpo-30597: ``print`` now shows expected input in custom error message when
   used as a Python 2 statement. Patch by Sanyam Khurana.
 
@@ -368,6 +374,31 @@ Extension Modules
 Library
 -------
 
+- bpo-30746: Prohibited the '=' character in environment variable names in
+  ``os.putenv()`` and ``os.spawn*()``.
+
+- bpo-30664: The description of a unittest subtest now preserves the order of
+  keyword arguments of TestCase.subTest().
+
+- [Security] bpo-30730: Prevent environment variables injection in subprocess on
+  Windows.  Prevent passing other environment variables and command arguments.
+
+- bpo-21071: struct.Struct.format type is now :class:`str` instead of
+  :class:`bytes`.
+
+- bpo-29212: Fix concurrent.futures.thread.ThreadPoolExecutor threads to have
+  a non repr() based thread name by default when no thread_name_prefix is
+  supplied.  They will now identify themselves as "ThreadPoolExecutor-y_n".
+
+- [Security] bpo-30694: Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes
+  of multiple security vulnerabilities including: CVE-2017-9233 (External
+  entity infinite loop DoS), CVE-2016-9063 (Integer overflow, re-fix),
+  CVE-2016-0718 (Fix regression bugs from 2.2.0's fix to CVE-2016-0718)
+  and CVE-2012-0876 (Counter hash flooding with SipHash).
+  Note: the CVE-2016-5300 (Use os-specific entropy sources like getrandom)
+  doesn't impact Python, since Python already gets entropy from the OS to set
+  the expat secret using ``XML_SetHashSalt()``.
+
 - bpo-29755: Fixed the lgettext() family of functions in the gettext module.
   They now always return bytes.
 
@@ -375,6 +406,9 @@ Library
   fragments. For example, ``splithost('//127.0.0.1#@evil.com/')`` now
   correctly returns the ``127.0.0.1`` host, instead of treating ``@evil.com``
   as the host in an authentification (``login@host``).
+
+- bpo-30616: Functional API of enum allows to create empty enums.
+  Patched by Dong-hee Na
 
 - bpo-30038: Fix race condition between signal delivery and wakeup file
   descriptor.  Patch by Nathaniel Smith.
@@ -399,6 +433,10 @@ Library
 
 - bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
   called.
+
+- bpo-30645: Fix path calculation in `imp.load_package()`, fixing it for
+  cases when a package is only shipped with bytecodes. Patch by
+  Alexandru Ardelean.
 
 - bpo-11822: The dis.dis() function now is able to disassemble nested
   code objects.
@@ -1206,6 +1244,10 @@ Windows
 
 C API
 -----
+
+- bpo-30708: PyUnicode_AsWideCharString() now raises a ValueError if the
+  second argument is NULL and the wchar_t\* string contains null
+  characters.
 
 - bpo-16500: Deprecate PyOS_AfterFork() and add PyOS_BeforeFork(),
   PyOS_AfterFork_Parent() and PyOS_AfterFork_Child().

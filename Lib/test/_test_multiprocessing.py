@@ -403,6 +403,42 @@ class _TestProcess(BaseTestCase):
         p.join()
         self.assertTrue(wait_for_handle(sentinel, timeout=1))
 
+    @classmethod
+    def _test_close(cls, rc=0, q=None):
+        if q is not None:
+            q.get()
+        sys.exit(rc)
+
+    def test_close(self):
+        if self.TYPE == "threads":
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        q = self.Queue()
+        p = self.Process(target=self._test_close, kwargs={'q': q})
+        p.daemon = True
+        p.start()
+        self.assertEqual(p.is_alive(), True)
+        # Child is still alive, cannot close
+        with self.assertRaises(ValueError):
+            p.close()
+
+        q.put(None)
+        p.join()
+        self.assertEqual(p.is_alive(), False)
+        self.assertEqual(p.exitcode, 0)
+        p.close()
+        with self.assertRaises(ValueError):
+            p.is_alive()
+        with self.assertRaises(ValueError):
+            p.join()
+        with self.assertRaises(ValueError):
+            p.terminate()
+        p.close()
+
+        wr = weakref.ref(p)
+        del p
+        gc.collect()
+        self.assertIs(wr(), None)
+
     def test_many_processes(self):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
