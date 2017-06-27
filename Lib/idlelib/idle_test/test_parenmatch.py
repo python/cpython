@@ -95,14 +95,14 @@ class ParenMatchTest(unittest.TestCase):
         pm = self.get_parenmatch()
 
         text.insert('insert', '# this is a commen)')
-        self.assertIsNone(pm.paren_closed_event('event'))
+        pm.paren_closed_event('event')
 
         text.insert('insert', '\ndef')
-        self.assertIsNone(pm.flash_paren_event('event'))
-        self.assertIsNone(pm.paren_closed_event('event'))
+        pm.flash_paren_event('event')
+        pm.paren_closed_event('event')
 
         text.insert('insert', ' a, *arg)')
-        self.assertIsNone(pm.paren_closed_event('event'))
+        pm.paren_closed_event('event')
 
     def test_handle_restore_timer(self):
         pm = self.get_parenmatch()
