@@ -297,6 +297,7 @@ class BaseProcess(object):
             traceback.print_exc()
         finally:
             util.info('process exiting with exitcode %d' % exitcode)
+            #check if windows platform and Python 3.4
             if sys.platform.startswith('win') and sys.version_info[:2] == (3, 4):
                 # checks if app is running frozen
                 is_frozen = (hasattr(sys, "frozen") or # new py2exe
