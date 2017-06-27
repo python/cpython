@@ -1054,6 +1054,12 @@ PyAPI_FUNC(wchar_t*) PyUnicode_AsWideCharString(
     );
 
 #ifndef Py_LIMITED_API
+/* Similar to PyUnicode_AsWideCharString(unicode, NULL), but check if
+   the string contains null characters. */
+PyAPI_FUNC(wchar_t*) _PyUnicode_AsWideCharString(
+    PyObject *unicode           /* Unicode object */
+    );
+
 PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
 #endif
 
