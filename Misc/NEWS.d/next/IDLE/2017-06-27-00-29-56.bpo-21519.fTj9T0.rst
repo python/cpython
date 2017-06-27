@@ -1,0 +1,2 @@
+IDLE's basic custom key entry dialog now detects duplicates properly.
+Original patch by Saimadhav Heblikar.

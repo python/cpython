@@ -1,0 +1,1 @@
+Fix email header value parser dropping folding white space in certain cases.
