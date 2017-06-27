@@ -3,13 +3,14 @@
 This must currently be a gui test because ParenMatch methods use
 several text methods not defined on idlelib.idle_test.mock_tk.Text.
 '''
+from idlelib.parenmatch import ParenMatch
 from test.support import requires
 requires('gui')
 
 import unittest
 from unittest.mock import Mock
 from tkinter import Tk, Text
-from idlelib.parenmatch import ParenMatch
+
 
 class DummyEditwin:
     def __init__(self, text):
@@ -46,7 +47,7 @@ class ParenMatchTest(unittest.TestCase):
 
     def test_paren_expression(self):
         """
-        Test ParenMatch with 'expression' style.
+        Test ParenMatch with 'expression' (or unknown) style.
         """
         text = self.text
         pm = self.get_parenmatch()
@@ -67,13 +68,13 @@ class ParenMatchTest(unittest.TestCase):
         self.assertTupleEqual(text.tag_prevrange('paren', 'end'),
                                                 ('1.10', '1.16'))
 
-    def test_paren_default(self):
+    def test_paren_opener(self):
         """
-        Test ParenMatch with 'default' style.
+        Test ParenMatch with 'opener' (or 'default') style.
         """
         text = self.text
         pm = self.get_parenmatch()
-        pm.set_style('default')
+        pm.set_style('opener')
 
         text.insert('insert', 'def foobar(a, b')
         pm.flash_paren_event('event')
