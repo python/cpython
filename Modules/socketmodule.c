@@ -375,6 +375,31 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define gai_strerror fake_gai_strerror
 #define freeaddrinfo fake_freeaddrinfo
 #include "getaddrinfo.c"
+#elif defined(HAVE_BROKEN_GETADDRINFO)
+/* getaddrinfo does not detect invalid numeric services.
+   Check the port number and return EAI_SERVICE if it's
+   invalid; call getaddrinfo otherwise. */
+static int
+wrap_getaddrinfo(const char *hostname, const char *servname,
+                 const struct addrinfo *hints, struct addrinfo **res)
+{
+    if (servname != NULL && servname[0] != '\0' &&
+        (hints == NULL ||   /* assume AF_UNSPEC */
+         hints->ai_family == AF_UNSPEC ||
+#ifdef ENABLE_IPV6
+         hints->ai_family == AF_INET6 ||
+#endif
+         hints->ai_family == AF_INET)) {
+        long port;
+        char *end;
+
+        port = strtol(servname, &end, 10);
+        if (*end == '\0' && (port < 0 || port > 0xffff))
+            return EAI_SERVICE;
+    }
+    return getaddrinfo(hostname, servname, hints, res);
+}
+#define getaddrinfo wrap_getaddrinfo
 #endif
 #if !defined(HAVE_GETNAMEINFO)
 #define getnameinfo fake_getnameinfo

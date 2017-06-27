@@ -1362,6 +1362,28 @@ class GeneralModuleTests(unittest.TestCase):
             except socket.gaierror:
                 pass
 
+    @support.cpython_only
+    def test_getaddrinfo_invalid_port(self):
+        # Issue #30711: test that getaddrinfo detects invalid port number
+        # See HAVE_BROKEN_GETADDRINFO in configure.ac for details.
+        import _testcapi
+        flags = getattr(socket, 'AI_NUMERICSERV', None)
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, "65536", flags=flags)
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, "-1", flags=flags)
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, str(_testcapi.LONG_MAX), flags=flags)
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, str(_testcapi.LONG_MAX + 1), flags=flags)
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, str(_testcapi.LONG_MIN), flags=flags)
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, str(_testcapi.LONG_MIN - 1), flags=flags)
+        with self.assertRaises(socket.gaierror):
+            socket.getaddrinfo(None, str(_testcapi.ULONG_MAX - 65535 + 1),
+                               flags=flags)
+
     def test_getnameinfo(self):
         # only IP addresses are allowed
         self.assertRaises(OSError, socket.getnameinfo, ('mail.python.org',0), 0)
