@@ -934,15 +934,21 @@ wchar_t Support
    Convert the Unicode object to a wide character string. The output string
    always ends with a null character. If *size* is not *NULL*, write the number
    of wide characters (excluding the trailing null termination character) into
-   *\*size*.
+   *\*size*. Note that the resulting :c:type:`wchar_t` string might contain
+   null characters, which would cause the string to be truncated when used with
+   most C functions. If *size* is *NULL* and the :c:type:`wchar_t*` string
+   contains null characters a :exc:`ValueError` is raised.
 
    Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
-   :c:func:`PyMem_Free` to free it) on success. On error, returns *NULL*,
-   *\*size* is undefined and raises a :exc:`MemoryError`. Note that the
-   resulting :c:type:`wchar_t` string might contain null characters, which
-   would cause the string to be truncated when used with most C functions.
+   :c:func:`PyMem_Free` to free it) on success. On error, returns *NULL*
+   and *\*size* is undefined. Raises a :exc:`MemoryError` if memory allocation
+   is failed.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.7
+      Raises a :exc:`ValueError` if *size* is *NULL* and the :c:type:`wchar_t*`
+      string contains null characters.
 
 
 .. _builtincodecs:
