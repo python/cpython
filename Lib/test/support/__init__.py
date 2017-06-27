@@ -1945,3 +1945,17 @@ class SuppressCrashReport:
                 resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
             except (ValueError, OSError):
                 pass
+
+
+def _crash_python():
+    """Deliberate crash of Python.
+
+    Python can be killed by a segmentation fault (SIGSEGV), a bus error
+    (SIGBUS), or a different error depending on the platform.
+
+    Use SuppressCrashReport() to prevent a crash report from popping up.
+    """
+
+    import ctypes
+    with SuppressCrashReport():
+        ctypes.string_at(0)

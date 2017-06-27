@@ -1277,7 +1277,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
         code = textwrap.dedent("""
              import ctypes
-             from test.support import SuppressCrashReport
+             from test.support import _crash_python
 
              libc = ctypes.CDLL({libc_name!r})
              libc.ptrace({PTRACE_TRACEME}, 0, 0)
@@ -1288,9 +1288,8 @@ class POSIXProcessTestCase(BaseTestCase):
             raise unittest.SkipTest('ptrace() failed - unable to test')
 
         code += textwrap.dedent("""
-             with SuppressCrashReport():
-                # Crash the process
-                libc.printf(ctypes.c_char_p(0xdeadbeef))  # Crash the process.
+             # Crash the process
+             _crash_python()
         """)
         child = subprocess.Popen([sys.executable, '-c', code])
         try:

@@ -473,7 +473,7 @@ class ArgsTestCase(BaseTestCase):
 
     def test_crashed(self):
         # Any code which causes a crash
-        code = 'import ctypes; ctypes.string_at(0)'
+        code = 'import test.support; test.support._crash_python()'
         crash_test = self.create_test(name="crash", code=code)
         ok_test = self.create_test(name="ok")
 
