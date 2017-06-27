@@ -101,7 +101,7 @@ winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags)
                          Py_TYPE(sound)->tp_name);
             return NULL;
         }
-        wsound = PyUnicode_AsWideCharString(sound, NULL);
+        wsound = _PyUnicode_AsWideCharString(sound);
         if (wsound == NULL) {
             return NULL;
         }

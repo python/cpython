@@ -607,7 +607,7 @@ time_strftime(PyObject *self, PyObject *args)
         buf.tm_isdst = 1;
 
 #ifdef HAVE_WCSFTIME
-    format = PyUnicode_AsWideCharString(format_arg, NULL);
+    format = _PyUnicode_AsWideCharString(format_arg);
     if (format == NULL)
         return NULL;
     fmt = format;
