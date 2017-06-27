@@ -783,6 +783,40 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('--forever', test, exitcode=2)
         self.check_executed_tests(output, [test]*3, failed=test)
 
+    def check_leak(self, code, what):
+        test = self.create_test('huntrleaks', code=code)
+
+        filename = 'reflog.txt'
+        self.addCleanup(support.unlink, filename)
+        output = self.run_tests('--huntrleaks', '3:3:', test,
+                                exitcode=2,
+                                stderr=subprocess.STDOUT)
+        self.check_executed_tests(output, [test], failed=test)
+
+        line = 'beginning 6 repetitions\n123456\n......\n'
+        self.check_line(output, re.escape(line))
+
+        line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
+        self.assertIn(line2, output)
+
+        with open(filename) as fp:
+            reflog = fp.read()
+            self.assertIn(line2, reflog)
+
+    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    def test_huntrleaks(self):
+        # test --huntrleaks
+        code = textwrap.dedent("""
+            import unittest
+
+            GLOBAL_LIST = []
+
+            class RefLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    GLOBAL_LIST.append(object())
+        """)
+        self.check_leak(code, 'references')
+
     @unittest.skipUnless(Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
         # test --huntrleaks for file descriptor leak
@@ -807,24 +841,7 @@ class ArgsTestCase(BaseTestCase):
                     fd = os.open(__file__, os.O_RDONLY)
                     # bug: never cloes the file descriptor
         """)
-        test = self.create_test('huntrleaks', code=code)
-
-        filename = 'reflog.txt'
-        self.addCleanup(support.unlink, filename)
-        output = self.run_tests('--huntrleaks', '3:3:', test,
-                                exitcode=2,
-                                stderr=subprocess.STDOUT)
-        self.check_executed_tests(output, [test], failed=test)
-
-        line = 'beginning 6 repetitions\n123456\n......\n'
-        self.check_line(output, re.escape(line))
-
-        line2 = '%s leaked [1, 1, 1] file descriptors, sum=3\n' % test
-        self.assertIn(line2, output)
-
-        with open(filename) as fp:
-            reflog = fp.read()
-            self.assertIn(line2, reflog)
+        self.check_leak(code, 'file descriptors')
 
     def test_list_tests(self):
         # test --list-tests
