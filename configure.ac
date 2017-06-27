@@ -3992,6 +3992,79 @@ then
 	fi
 else
 	AC_DEFINE(HAVE_GETADDRINFO, 1, [Define if you have the getaddrinfo function.])
+
+    AC_MSG_CHECKING(for broken getaddrinfo)
+    AC_CACHE_VAL(ac_cv_broken_getaddrinfo,
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <limits.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+static void
+invalid_servname(const char *servname)
+{
+    struct addrinfo hints, *ai;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = 0;
+    hints.ai_protocol = 0;
+#ifdef AI_NUMERICSERV
+    /* Prevent contacting a resolver if getaddrinfo does not treat
+       negative numbers as numeric services. */
+    hints.ai_flags = AI_NUMERICSERV;
+#else
+    hints.ai_flags = 0;
+#endif
+
+    if (getaddrinfo(NULL, servname, &hints, &ai) == 0) {
+        freeaddrinfo(ai);
+        exit(1);
+    }
+}
+
+int main()
+{
+    char buf[256];
+
+    invalid_servname("65536");
+    invalid_servname("-1");
+
+    /* Some getaddrinfo functions translate these numeric services to
+       port number 0 or 65535, depending on whether they use strtol or
+       strtoul function to convert the service to a number, and whether
+       or not the sizes of long and int are equal. */
+    sprintf(buf, "%ld", LONG_MAX);
+    invalid_servname(buf);
+    sprintf(buf, "%lu", ((unsigned long)LONG_MAX) + 1UL);
+    invalid_servname(buf);
+    sprintf(buf, "%ld", LONG_MIN);
+    invalid_servname(buf);
+    sprintf(buf, "-%lu", ((unsigned long)LONG_MIN) + 1UL);  /* LONG_MIN - 1 */
+    invalid_servname(buf);
+
+    /* strtoul negates the result if there is a leading minus sign. For
+       this input, strtoul returns 65535. */
+    sprintf(buf, "-%lu", ULONG_MAX - 65535UL + 1UL);
+    invalid_servname(buf);
+
+    return 0;
+}
+    ]]])],
+    [ac_cv_broken_getaddrinfo=no],
+    [ac_cv_broken_getaddrinfo=yes],
+    [ac_cv_broken_getaddrinfo=yes]))
+
+    AC_MSG_RESULT($ac_cv_broken_getaddrinfo)
+    if test $ac_cv_broken_getaddrinfo = yes
+    then
+        AC_DEFINE(HAVE_BROKEN_GETADDRINFO, 1,
+        [Define if the getaddrinfo function does not detect invalid numeric services.])
+    fi
 fi
 
 AC_CHECK_FUNCS(getnameinfo)

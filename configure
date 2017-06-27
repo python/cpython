@@ -12991,6 +12991,98 @@ else
 
 $as_echo "#define HAVE_GETADDRINFO 1" >>confdefs.h
 
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken getaddrinfo" >&5
+$as_echo_n "checking for broken getaddrinfo... " >&6; }
+    if ${ac_cv_broken_getaddrinfo+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_broken_getaddrinfo=yes
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <limits.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+static void
+invalid_servname(const char *servname)
+{
+    struct addrinfo hints, *ai;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = 0;
+    hints.ai_protocol = 0;
+#ifdef AI_NUMERICSERV
+    /* Prevent contacting a resolver if getaddrinfo does not treat
+       negative numbers as numeric services. */
+    hints.ai_flags = AI_NUMERICSERV;
+#else
+    hints.ai_flags = 0;
+#endif
+
+    if (getaddrinfo(NULL, servname, &hints, &ai) == 0) {
+        freeaddrinfo(ai);
+        exit(1);
+    }
+}
+
+int main()
+{
+    char buf[256];
+
+    invalid_servname("65536");
+    invalid_servname("-1");
+
+    /* Some getaddrinfo functions translate these numeric services to
+       port number 0 or 65535, depending on whether they use strtol or
+       strtoul function to convert the service to a number, and whether
+       or not the sizes of long and int are equal. */
+    sprintf(buf, "%ld", LONG_MAX);
+    invalid_servname(buf);
+    sprintf(buf, "%lu", ((unsigned long)LONG_MAX) + 1UL);
+    invalid_servname(buf);
+    sprintf(buf, "%ld", LONG_MIN);
+    invalid_servname(buf);
+    sprintf(buf, "-%lu", ((unsigned long)LONG_MIN) + 1UL);  /* LONG_MIN - 1 */
+    invalid_servname(buf);
+
+    /* strtoul negates the result if there is a leading minus sign. For
+       this input, strtoul returns 65535. */
+    sprintf(buf, "-%lu", ULONG_MAX - 65535UL + 1UL);
+    invalid_servname(buf);
+
+    return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_broken_getaddrinfo=no
+else
+  ac_cv_broken_getaddrinfo=yes
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_getaddrinfo" >&5
+$as_echo "$ac_cv_broken_getaddrinfo" >&6; }
+    if test $ac_cv_broken_getaddrinfo = yes
+    then
+
+$as_echo "#define HAVE_BROKEN_GETADDRINFO 1" >>confdefs.h
+
+    fi
 fi
 
 for ac_func in getnameinfo

@@ -79,6 +79,10 @@
 /* Define to 1 if you have the <bluetooth.h> header file. */
 #undef HAVE_BLUETOOTH_H
 
+/* Define if the getaddrinfo function does not detect invalid numeric
+   services. */
+#undef HAVE_BROKEN_GETADDRINFO
+
 /* Define if mbstowcs(NULL, "text", 0) does not return the number of wide
    chars that would be converted. */
 #undef HAVE_BROKEN_MBSTOWCS
