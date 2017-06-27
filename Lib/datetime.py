@@ -465,10 +465,9 @@ class timedelta:
         if self._microseconds:
             args.append("microseconds=%d" % self._microseconds)
 
-        arg_str = ', '.join(args)
         return "%s.%s(%s)" % (self.__class__.__module__,
                               self.__class__.__qualname__,
-                              arg_str)
+                              ', '.join(args))
 
     def __str__(self):
         mm, ss = divmod(self._seconds, 60)
