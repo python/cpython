@@ -299,7 +299,7 @@ class BaseProcess(object):
             util.info('process exiting with exitcode %d' % exitcode)
             #check if windows platform and Python 3.4
             if sys.platform.startswith('win') and sys.version_info[:2] == (3, 4):
-                # checks if app is running frozen
+                # checks if forzen app
                 is_frozen = (hasattr(sys, "frozen") or # new py2exe
                              hasattr(sys, "importers") or # old py2exe
                              imp.is_frozen("__main__")) # tools/freeze
