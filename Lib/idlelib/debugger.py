@@ -208,7 +208,11 @@ class Debugger:
         self.stack.bind('<<TreeviewSelect>>',
                         lambda e: self.stack_selection_changed())
         self.stack.bind('<Double-1>', lambda e: self.stack_doubleclick())
-        self.stack.bind('<<context-menu>>', self.stack_contextmenu)
+        if windowingsystem == 'aqua':
+            self.stack.bind('<Button-2>', self.stack_contextmenu)
+            self.stack.bind('<Control-Button-1>', self.stack_contextmenu)
+        else:
+            self.stack.bind('<Button-3>', self.stack_contextmenu)
 
         scroll = ttk.Scrollbar(left, command=self.stack.yview)
         self.stack['yscrollcommand'] = scroll.set
