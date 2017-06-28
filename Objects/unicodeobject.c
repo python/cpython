@@ -4133,6 +4133,20 @@ PyUnicode_AsUnicode(PyObject *unicode)
     return PyUnicode_AsUnicodeAndSize(unicode, NULL);
 }
 
+const Py_UNICODE *
+_PyUnicode_AsUnicode(PyObject *unicode)
+{
+    Py_ssize_t size;
+    const Py_UNICODE *wstr;
+
+    wstr = PyUnicode_AsUnicodeAndSize(unicode, &size);
+    if (wstr && wcslen(wstr) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    return wstr;
+}
+
 
 Py_ssize_t
 PyUnicode_GetSize(PyObject *unicode)
