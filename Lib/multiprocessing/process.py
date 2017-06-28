@@ -128,6 +128,9 @@ class Process(object):
         else:
             from .forking import Popen
         self._popen = Popen(self)
+        # Avoid a refcycle if the target function holds an indirect
+        # reference to the process object (see bpo-30775)
+        del self._target, self._args, self._kwargs
         _current_process._children.add(self)
 
     def terminate(self):
