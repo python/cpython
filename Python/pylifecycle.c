@@ -86,8 +86,8 @@ _PyRuntime_Initialize(void)
     _PyMem_Initialize();
     _PyEval_Initialize();
 
-    _PyRuntime.ceval.gil.gilstate_check_enabled = 1;
-    _PyRuntime.ceval.gil.autoTLSkey = -1;
+    _PyRuntime.gilstate.check_enabled = 1;
+    _PyRuntime.gilstate.autoTLSkey = -1;
 }
 
 /* Global configuration variable declarations are in pydebug.h */
