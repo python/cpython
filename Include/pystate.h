@@ -206,7 +206,19 @@ typedef struct _ts {
 #ifndef Py_LIMITED_API
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 
-typedef struct {
+#ifdef Py_BUILD_CORE
+
+#include "Python/condvar.h"
+#ifndef Py_HAVE_CONDVAR
+#error You need either a POSIX-compatible or a Windows system!
+#endif
+
+/* Enable if you want to force the switching of threads at least every `interval` */
+#undef FORCE_SWITCHING
+#define FORCE_SWITCHING
+#endif /* Py_BUILD_CORE */
+
+typedef struct pyruntimestate {
 
     // Python/pylifecycle.c
     int initialized;
@@ -217,7 +229,7 @@ typedef struct {
     int nexitfuncs;
     void (*pyexitfunc)(void);
 
-    struct {
+    struct _mem_globals {
         // Objects/object.c
         /* List of objects that still need to be cleaned up, singly linked
          * via their gc headers' gc_prev pointers.
@@ -255,7 +267,7 @@ typedef struct {
         size_t serialno;     /* incremented on each debug {m,re}alloc */
     } mem;
 
-    struct {
+    struct _warnings_globals {
         // Python/_warnings.c
         /* Both 'filters' and 'onceregistry' can be set in warnings.py;
            get_warnings_attr() will reset these variables accordingly. */
@@ -265,12 +277,11 @@ typedef struct {
         long filters_version;
     } warnings;
 
-    struct {
-        // Python/ceval.c
+    struct _ceval_globals {
         int recursion_limit;
         int check_recursion_limit;
-        unsigned long main_thread;
 #ifdef Py_BUILD_CORE
+        unsigned long main_thread;
 #ifdef WITH_THREAD
         PyThread_type_lock pending_lock;
         /* This single variable consolidates all requests to break out of the fast path
@@ -302,8 +313,7 @@ typedef struct {
         volatile int pendinglast;
 #endif /* WITH_THREAD */
 
-        struct {
-            // Python/ceval_gil.h
+        struct _gil_globals {
             /* microseconds (the Python API uses seconds, though) */
             unsigned long interval;
             /* Last PyThreadState holding / having held the GIL. This helps us know
@@ -314,19 +324,19 @@ typedef struct {
             _Py_atomic_int locked;
             /* Number of GIL switches since the beginning. */
             unsigned long switch_number;
+#ifdef WITH_THREAD
             /* This condition variable allows one or several threads to wait until
                the GIL is released. In addition, the mutex also protects the above
                variables. */
-//            PyCOND_T cond;
-//            Py_MUTEX_T mutex;
-//#ifdef FORCE_SWITCHING
+            PyCOND_T cond;
+            PyMUTEX_T mutex;
+#ifdef FORCE_SWITCHING
             /* This condition variable helps the GIL-releasing thread wait for
                a GIL-awaiting thread to be scheduled and take the GIL. */
-//            PyCOND_T switch_cond;
-//            PyMUTEX_T switch_mutex;
-//#endif
-
-            // Python/pystate.c
+            PyCOND_T switch_cond;
+            PyMUTEX_T switch_mutex;
+#endif
+#endif /* WITH_THREAD */
             int gilstate_check_enabled;
             /* Assuming the current thread holds the GIL, this is the
                PyThreadState for the current thread. */
@@ -348,7 +358,7 @@ typedef struct {
 } _PyRuntimeState;
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-#endif
+#endif /* !Py_LIMITED_API */
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyInterpreterState_Init(void);
