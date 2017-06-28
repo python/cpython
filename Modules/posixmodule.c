@@ -7164,7 +7164,7 @@ exit:
 static PyObject *
 win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    wchar_t *path;
+    const wchar_t *path;
     DWORD n_bytes_returned;
     DWORD io_result;
     PyObject *po, *result;
