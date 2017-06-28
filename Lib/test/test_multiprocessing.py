@@ -175,6 +175,12 @@ def get_value(self):
 # Testcases
 #
 
+class DummyCallable(object):
+    def __call__(self, q, c):
+        assert isinstance(c, DummyCallable)
+        q.put(5)
+
+
 class _TestProcess(BaseTestCase):
 
     ALLOWED_TYPES = ('processes', 'threads')
@@ -354,6 +360,18 @@ class _TestProcess(BaseTestCase):
             p.start()
             p.join(5)
             self.assertEqual(p.exitcode, reason)
+
+    def test_lose_target_ref(self):
+        c = DummyCallable()
+        wr = weakref.ref(c)
+        q = self.Queue()
+        p = self.Process(target=c, args=(q, c))
+        del c
+        p.start()
+        p.join()
+        self.assertIs(wr(), None)
+        self.assertEqual(q.get(), 5)
+
 
 #
 #
