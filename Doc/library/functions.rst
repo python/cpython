@@ -81,9 +81,23 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: bin(x)
 
-   Convert an integer number to a binary string. The result is a valid Python
-   expression.  If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer.
+   Convert an integer number to a binary string prefixed with "0b". The result is
+   a valid Python expression. If *x* is not a Python :class:`int` object, it has
+   to define an :meth:`__index__` method that returns an integer. Some examples:
+
+      >>> bin(12)
+      '0b1100'
+      >>> bin(-10)
+      '-0b1010'
+
+   If prefix "0b" is desired or not, you can use either of the following ways. See
+   also :func:`format` for more information.
+
+      >>> num = 14
+      >>> format(num, '#b'), format(num, 'b')
+      ('0b1110', '1110')
+      >>> f'{num:#b}', f'{num:b}'
+      ('0b1110', '1110')
 
 
 .. class:: bool([x])
@@ -635,16 +649,26 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: hex(x)
 
-   Convert an integer number to a lowercase hexadecimal string
-   prefixed with "0x", for example:
+   Convert an integer number to a lowercase hexadecimal string prefixed with "0x".
+   If x is not a Python :class:`int` object, it has to define an __index__() method
+   that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
       >>> hex(-42)
       '-0x2a'
 
-   If x is not a Python :class:`int` object, it has to define an __index__()
-   method that returns an integer.
+   If you want to convert an integer number to uppercase or lowercase hexadecimal
+   string either with prefix or not, you can use either of the following ways. See
+   also :func:`format` for more information.
+
+      >>> num=255
+      >>> '%#x' % num, '%x' % num, '%X' % num
+      ('0xff', 'ff', 'FF')
+      >>> format(num, '#x'), format(num, 'x'), format(num, 'X')
+      ('0xff', 'ff', 'FF')
+      >>> f'{num:#x}', f'{num:x}', f'{num:X}'
+      ('0xff', 'ff', 'FF')
 
    See also :func:`int` for converting a hexadecimal string to an
    integer using a base of 16.
@@ -878,9 +902,26 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: oct(x)
 
-   Convert an integer number to an octal string.  The result is a valid Python
-   expression.  If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer.
+   Convert an integer number to an octal string prefixed with "0o".  The result is
+   a valid Python expression. If *x* is not a Python :class:`int` object, it has to
+   define an :meth:`__index__` method that returns an integer. For example:
+
+      >>> oct(10)
+      '0o12'
+      >>> oct(-56)
+      '-0o70'
+
+   If you want to convert an integer number to octal string either with prefix "0o"
+   or not, you can use either of the following ways. See also :func:`format` for
+   more information.
+
+      >>> num = 10
+      >>> '%#o' % num, '%o' % num
+      ('0o12', '12')
+      >>> format(num, '#o'), format(num, 'o')
+      ('0o12', '12')
+      >>> f'{num:#o}', f'{num:o}'
+      ('0o12', '12')
 
 
    .. index::
