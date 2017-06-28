@@ -332,8 +332,8 @@ void
 _PyEval_SignalReceived(void)
 {
     /* bpo-30703: Function called when the C signal handler of Python gets a
-       signal. We cannot queue a callback using Py_AddPendingCall() since this
-       function is not reentrant (uses a lock and a list). */
+       signal. We cannot queue a callback using Py_AddPendingCall() since
+       that function is not async-signal-safe. */
     SIGNAL_PENDING_CALLS();
 }
 
@@ -401,6 +401,8 @@ Py_MakePendingCalls(void)
     int i;
     int r = 0;
 
+    assert(PyGILState_Check());
+
     if (!pending_lock) {
         /* initial allocation of the lock */
         pending_lock = PyThread_allocate_lock();
@@ -415,14 +417,14 @@ Py_MakePendingCalls(void)
     if (busy)
         return 0;
     busy = 1;
+    /* unsignal before starting to call callbacks, so that any callback
+       added in-between re-signals */
+    UNSIGNAL_PENDING_CALLS();
 
     /* Python signal handler doesn't really queue a callback: it only signals
        that a signal was received, see _PyEval_SignalReceived(). */
-    UNSIGNAL_PENDING_CALLS();
     if (PyErr_CheckSignals() < 0) {
-        busy = 0;
-        SIGNAL_PENDING_CALLS(); /* We're not done yet */
-        return -1;
+        goto error;
     }
 
     /* perform a bounded number of calls, in case of recursion */
@@ -447,14 +449,17 @@ Py_MakePendingCalls(void)
             break;
         r = func(arg);
         if (r) {
-            busy = 0;
-            SIGNAL_PENDING_CALLS(); /* We're not done yet */
-            return -1;
+            goto error;
         }
     }
 
     busy = 0;
     return r;
+
+error:
+    busy = 0;
+    SIGNAL_PENDING_CALLS(); /* We're not done yet */
+    return -1;
 }
 
 #else /* if ! defined WITH_THREAD */
@@ -523,11 +528,13 @@ Py_MakePendingCalls(void)
         return 0;
     busy = 1;
 
+    /* unsignal before starting to call callbacks, so that any callback
+       added in-between re-signals */
     UNSIGNAL_PENDING_CALLS();
+    /* Python signal handler doesn't really queue a callback: it only signals
+       that a signal was received, see _PyEval_SignalReceived(). */
     if (PyErr_CheckSignals() < 0) {
-        busy = 0;
-        SIGNAL_PENDING_CALLS(); /* We're not done yet */
-        return -1;
+        goto error;
     }
 
     for (;;) {
@@ -541,13 +548,16 @@ Py_MakePendingCalls(void)
         arg = pendingcalls[i].arg;
         pendingfirst = (i + 1) % NPENDINGCALLS;
         if (func(arg) < 0) {
-            busy = 0;
-            SIGNAL_PENDING_CALLS(); /* We're not done yet */
-            return -1;
+            goto error:
         }
     }
     busy = 0;
     return 0;
+
+error:
+    busy = 0;
+    SIGNAL_PENDING_CALLS(); /* We're not done yet */
+    return -1;
 }
 
 #endif /* WITH_THREAD */
