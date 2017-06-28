@@ -1407,6 +1407,21 @@ The IDLE Modern Unix key set is new in June 2016.  It can only
 be used with older IDLE releases if it is saved as a custom
 key set, with a different name.
 ''',
+    'Extensions': '''
+Extensions:
+
+Autocomplete: Popupwait is milleseconds to wait after key char, without
+cursor movement, before popping up completion box.  Key char is '.' after
+identifier or a '/' (or '\\' on Windows) within a string.
+
+FormatParagraph: Max-width is max chars in lines after re-formatting.
+Use with paragraphs in both strings and comment blocks.
+
+ParenMatch: Style indicates what is highlighted when closer is entered:
+'opener' - opener '({[' corresponding to closer; 'parens' - both chars;
+'expression' (default) - also everything in between.  Flash-delay is how
+long to highlight if cursor is not moved (0 means forever).
+'''
 }
 
 
