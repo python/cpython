@@ -126,6 +126,10 @@ class TimeTestCase(unittest.TestCase):
             except ValueError:
                 self.fail('conversion specifier: %r failed.' % format)
 
+        self.assertRaises(TypeError, time.strftime, b'%S', tt)
+        # embedded null character
+        self.assertRaises(ValueError, time.strftime, '%S\0', tt)
+
     def _bounds_checking(self, func):
         # Make sure that strftime() checks the bounds of the various parts
         # of the time tuple (0 is valid for *all* values).
