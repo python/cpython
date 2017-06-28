@@ -3420,7 +3420,7 @@ test_pyobject_setallocators(PyObject *self)
     return test_setallocators(PYMEM_DOMAIN_OBJ);
 }
 
-/* Part of the following code is inherited from the pyfailmalloc project
+/* Most part of the following code is inherited from the pyfailmalloc project
  * written by Victor Stinner. */
 static struct {
     int installed;
@@ -3429,18 +3429,28 @@ static struct {
     PyMemAllocatorEx obj;
 } FmHook;
 
-typedef struct fm_filter_t {
-    void *data;
-    int (*has_memory) (struct fm_filter_t *);
-} fm_filter_t;
+static struct {
+    int start;
+    int stop;
+    Py_ssize_t count;
+} FmData;
 
-static fm_filter_t *FmFilter;
+static int
+fm_nomemory(void)
+{
+    FmData.count++;
+    if (FmData.count > FmData.start &&
+            (FmData.stop <= 0 || FmData.count <= FmData.stop)) {
+        return 1;
+    }
+    return 0;
+}
 
 static void *
 hook_fmalloc(void *ctx, size_t size)
 {
     PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
-    if (FmFilter != NULL && ! FmFilter->has_memory(FmFilter)) {
+    if (fm_nomemory()) {
         return NULL;
     }
     return alloc->malloc(alloc->ctx, size);
@@ -3450,7 +3460,7 @@ static void *
 hook_fcalloc(void *ctx, size_t nelem, size_t elsize)
 {
     PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
-    if (FmFilter != NULL && ! FmFilter->has_memory(FmFilter)) {
+    if (fm_nomemory()) {
         return NULL;
     }
     return alloc->calloc(alloc->ctx, nelem, elsize);
@@ -3460,7 +3470,7 @@ static void *
 hook_frealloc(void *ctx, void *ptr, size_t new_size)
 {
     PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
-    if (FmFilter != NULL && ! FmFilter->has_memory(FmFilter)) {
+    if (fm_nomemory()) {
         return NULL;
     }
     return alloc->realloc(alloc->ctx, ptr, new_size);
@@ -3512,77 +3522,25 @@ fm_remove_hooks(void)
     }
 }
 
-static void
-fm_remove_filter(void)
-{
-    if (FmFilter != NULL) {
-        if (FmFilter->data != NULL) {
-            PyMem_RawFree(FmFilter->data);
-        }
-        PyMem_RawFree(FmFilter);
-        FmFilter = NULL;
-    }
-}
-
-typedef struct {
-    int count;
-    int start;
-    int stop;
-} nomem_data_t;
-
-static int
-nomem_func(fm_filter_t *filter)
-{
-    nomem_data_t *data = (nomem_data_t *)filter->data;
-    /* Return true if memory should be made available. */
-    data->count++;
-    if (data->count > data->start &&
-            (data->stop <= 0 || data->count <= data->stop)) {
-        return 0;
-    }
-    return 1;
-}
-
 static PyObject*
 set_nomemory(PyObject *self, PyObject *args)
 {
-    nomem_data_t *data;
-
-    fm_remove_filter();
-    data = (nomem_data_t *)PyMem_RawMalloc(sizeof(nomem_data_t));
-    if (data == NULL) {
-        goto error;
-    }
-    FmFilter = (fm_filter_t *)PyMem_RawMalloc(sizeof(fm_filter_t));
-    if (FmFilter == NULL) {
-        PyMem_RawFree(data);
-        goto error;
-    }
-    FmFilter->data = data;
-    FmFilter->has_memory = nomem_func;
-
     /* Memory allocation fails after 'start' allocation requests, and until
      * 'stop' allocation requests except when 'stop' is negative or equal
      * to 0 (default) in which case allocation failures never stop. */
-    data->count = 0;
-    data->stop = 0;
-    if (! PyArg_ParseTuple(args, "i|i", &data->start, &data->stop)) {
-        fm_remove_filter();
+    FmData.count = 0;
+    FmData.stop = 0;
+    if (!PyArg_ParseTuple(args, "i|i", &FmData.start, &FmData.stop)) {
         return NULL;
     }
     fm_setup_hooks();
     Py_RETURN_NONE;
-
-error:
-    PyErr_SetString(PyExc_RuntimeError, "PyMem_RawMalloc() returns NULL");
-    return NULL;
 }
 
 static PyObject*
 remove_mem_hooks(PyObject *self)
 {
     fm_remove_hooks();
-    fm_remove_filter();
     Py_RETURN_NONE;
 }
 
