@@ -152,7 +152,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
         # embedded null character
-        self.assertRaises(ImportError, __import__, 'string\x00')
+        self.assertRaises((ImportError, ValueError), __import__, 'string\x00')
 
     def test_abs(self):
         # int
