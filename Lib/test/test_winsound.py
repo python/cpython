@@ -88,8 +88,6 @@ class PlaySoundTest(unittest.TestCase):
             "none", winsound.SND_ASYNC | winsound.SND_MEMORY
         )
         self.assertRaises(TypeError, winsound.PlaySound, b"bad", 0)
-        self.assertRaises(TypeError, winsound.PlaySound, "bad",
-                          winsound.SND_MEMORY)
         self.assertRaises(TypeError, winsound.PlaySound, 1, 0)
         # embedded null character
         self.assertRaises(ValueError, winsound.PlaySound, 'bad\0', 0)
