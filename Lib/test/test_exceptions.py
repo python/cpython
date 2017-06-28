@@ -960,7 +960,7 @@ class ExceptionTests(unittest.TestCase):
                 sys.setrecursionlimit(recursionlimit)
                 print('Done.')
         """ % __file__
-        rc, out, err = script_helper.assert_python_failure("-c", code)
+        rc, out, err = script_helper.assert_python_failure("-Wd", "-c", code)
         # Check that the program does not fail with SIGABRT.
         self.assertEqual(rc, 1)
         self.assertIn(b'RecursionError', err)
