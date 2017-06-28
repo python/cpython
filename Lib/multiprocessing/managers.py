@@ -999,8 +999,8 @@ class ConditionProxy(AcquirerProxy):
     _exposed_ = ('acquire', 'release', 'wait', 'notify', 'notify_all')
     def wait(self, timeout=None):
         return self._callmethod('wait', (timeout,))
-    def notify(self):
-        return self._callmethod('notify')
+    def notify(self, n=1):
+        return self._callmethod('notify', (n,))
     def notify_all(self):
         return self._callmethod('notify_all')
     def wait_for(self, predicate, timeout=None):
