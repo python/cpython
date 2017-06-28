@@ -365,6 +365,21 @@ Changes in the C API
   characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
 
 
+Windows Only
+------------
+- The python launcher, (py.exe), can accept 32 & 64 bit specifiers **without**
+  having to specify a minor version as well. So ``py -3-32`` and ``py -3-64``
+  become valid as well as ``py -3.7-32``, also the -*m*-64 and -*m.n*-64 forms
+  are now accepted to force 64 bit python even if 32 bit would have otherwise
+  been used. If the specified version is not available py.exe will error exit.
+  (Contributed by Steve Barnes in :issue:`30291`.)
+
+- The launcher can be run as "py -0" to produce a list of the installed pythons,
+  *with default marked with an asterix*. Running "py -0p" will include the paths.
+  If py is run with a version specifier that cannot be matched it will also print
+  the *short form* list of available specifiers.
+  (Contributed by Steve Barnes in :issue:`30362`.)
+
 Removed
 =======
 
