@@ -1,8 +1,2 @@
-Changes to the windows launcher, (py.exe), to allow short, bit length
-specific, invocation. _Previously, if you wished to launch a specific bit
-length python, you had to specify both major and minor versions of python
-and you could not force 64 bit_. With this change you can call py -2-32 or
-py -3-32 to invoke the latest 32 bit python 2 & 3 installed on the machine
-and you can now also call py -3-64 to specifically invoke 64 bit with an
-error if it is not present.  You can still specify the minor version but you
-don't have to. Contributed by Steve (Gadget) Barnes.
+Allow requiring 64-bit interpreters from py.exe using -64 suffix. Contributed
+by Steve (Gadget) Barnes.
