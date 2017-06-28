@@ -83,20 +83,22 @@ are always available.  They are listed here in alphabetical order.
 
    Convert an integer number to a binary string prefixed with "0b". The result is
    a valid Python expression. If *x* is not a Python :class:`int` object, it has
-   to define an :meth:`__index__` method that returns an integer. Some examples:
+   to define an :meth:`__index__` method that returns an integer. 
+   
+   Some examples:
 
       >>> bin(12)
       '0b1100'
       >>> bin(-10)
       '-0b1010'
 
-   If prefix "0b" is desired or not, you can use either of the following ways. See
-   also :func:`format` for more information.
+   If prefix "0b" is desired or not, you can use either of the following ways. 
+   See also :
+      func:`format` for more information.
 
-      >>> num = 14
-      >>> format(num, '#b'), format(num, 'b')
+      >>> format(14, '#b'), format(14, 'b')
       ('0b1110', '1110')
-      >>> f'{num:#b}', f'{num:b}'
+      >>> f'{14:#b}', f'{14:b}'
       ('0b1110', '1110')
 
 
@@ -659,15 +661,17 @@ are always available.  They are listed here in alphabetical order.
       '-0x2a'
 
    If you want to convert an integer number to uppercase or lowercase hexadecimal
-   string either with prefix or not, you can use either of the following ways. See
-   also :func:`format` for more information.
+   string either with prefix or not, you can use either of the following ways. 
+   See also :
+      
+      func:`format` for more information.
 
-      >>> num=255
-      >>> '%#x' % num, '%x' % num, '%X' % num
+      
+      >>> '%#x' % 255, '%x' % 255, '%X' % 255
       ('0xff', 'ff', 'FF')
-      >>> format(num, '#x'), format(num, 'x'), format(num, 'X')
+      >>> format(255, '#x'), format(255, 'x'), format(255, 'X')
       ('0xff', 'ff', 'FF')
-      >>> f'{num:#x}', f'{num:x}', f'{num:X}'
+      >>> f'{255:#x}', f'{255:x}', f'{255:X}'
       ('0xff', 'ff', 'FF')
 
    See also :func:`int` for converting a hexadecimal string to an
