@@ -79,14 +79,6 @@ before_script:
       fi
       ./configure --with-pydebug
       make -j4
-      make -j4 regen-all clinic
-      changes=`git status --porcelain`
-      if ! test -z "$changes"
-      then
-        echo "Generated files not up to date"
-        echo "$changes"
-        exit 1
-      fi
 
 script:
   # Using the built Python as patchcheck.py is built around the idea of using
