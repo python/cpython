@@ -111,7 +111,7 @@ class BaseProcess(object):
         self._popen = self._Popen(self)
         self._sentinel = self._popen.sentinel
         # Avoid a refcycle if the target function holds an indirect
-        # reference to the process object
+        # reference to the process object (see bpo-30775)
         del self._target, self._args, self._kwargs
         _children.add(self)
 
