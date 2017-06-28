@@ -2652,28 +2652,29 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(v);
             }
             else if (initial != NULL && PyUnicode_Check(initial))  {
-                const Py_UNICODE *ustr;
+                Py_UNICODE *ustr;
                 Py_ssize_t n;
 
-                ustr = PyUnicode_AsUnicodeAndSize(initial, &n);
+                ustr = PyUnicode_AsUnicode(initial);
                 if (ustr == NULL) {
                     PyErr_NoMemory();
                     Py_DECREF(a);
                     return NULL;
                 }
 
+                n = PyUnicode_GET_DATA_SIZE(initial);
                 if (n > 0) {
                     arrayobject *self = (arrayobject *)a;
                     char *item = self->ob_item;
-                    item = (char *)PyMem_Realloc(item, n * sizeof(Py_UNICODE));
+                    item = (char *)PyMem_Realloc(item, n);
                     if (item == NULL) {
                         PyErr_NoMemory();
                         Py_DECREF(a);
                         return NULL;
                     }
                     self->ob_item = item;
-                    Py_SIZE(self) = n;
-                    memcpy(item, ustr, n * sizeof(Py_UNICODE));
+                    Py_SIZE(self) = n / sizeof(Py_UNICODE);
+                    memcpy(item, ustr, n);
                     self->allocated = Py_SIZE(self);
                 }
             }
