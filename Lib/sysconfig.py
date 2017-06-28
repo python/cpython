@@ -51,6 +51,7 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
+    # NOTE: When modifying "purelib" scheme, update site._get_path() too.
     'nt_user': {
         'stdlib': '{userbase}/Python{py_version_nodot}',
         'platstdlib': '{userbase}/Python{py_version_nodot}',
@@ -177,6 +178,8 @@ def _get_default_scheme():
     return os.name
 
 
+# NOTE: site.py has stripped copy of this function.
+# Update it too when modify this function.
 def _getuserbase():
     env_base = os.environ.get("PYTHONUSERBASE", None)
 
