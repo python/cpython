@@ -1,0 +1,8 @@
+The python launcher, py.exe, has gained a -0 option and a -0p option. These
+options _when used on their own_ will list the currently avaialbe python
+versions on the host machine, with the -0p also listing the paths of each.
+The current default python is indicated by an asterix on the same line.
+
+Note that the versions are in the format accepted by py.exe and that the
+stdout output when redirected to a file will only consist of these lines,
+the remaining output is printed to stderr. Contributed by Steve Barnes.

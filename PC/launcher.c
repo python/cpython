@@ -1446,10 +1446,11 @@ show_python_list(wchar_t ** argv)
         }
     }
 
-    /*ip = locate_python(L"", FALSE);*/
     if ((defpy == NULL) && (num_installed_pythons > 0))
         /* We have pythons but none is the default */
         fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
+    else
+        fwprintf(stderr, L"\n\n"); /* End with a blank line */
     return(FALSE); /* If this has been called we cannot continue */
 }
 
