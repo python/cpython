@@ -1249,7 +1249,7 @@ The handle may be used to locate exported functions in this\n\
 module.\n";
 static PyObject *load_library(PyObject *self, PyObject *args)
 {
-    WCHAR *name;
+    const WCHAR *name;
     PyObject *nameobj;
     PyObject *ignored;
     HMODULE hMod;
