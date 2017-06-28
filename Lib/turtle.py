@@ -1175,7 +1175,7 @@ class TurtleScreen(TurtleScreenBase):
             cl = [16*int(cstr[h], 16) for h in cstr[1:]]
         else:
             raise TurtleGraphicsError("bad colorstring: %s" % cstr)
-        return tuple([c * self._colormode/255 for c in cl])
+        return tuple(c * self._colormode/255 for c in cl)
 
     def colormode(self, cmode=None):
         """Return the colormode or set it to 1.0 or 255.
@@ -2989,7 +2989,7 @@ class RawTurtle(TPen, TNavigator):
             t11, t12, t21, t22 = l, 0, 0, l
         elif self._resizemode == "noresize":
             return polygon
-        return tuple([(t11*x + t12*y, t21*x + t22*y) for (x, y) in polygon])
+        return tuple((t11*x + t12*y, t21*x + t22*y) for (x, y) in polygon)
 
     def _drawturtle(self):
         """Manages the correct rendering of the turtle with respect to
@@ -3839,8 +3839,8 @@ def write_docstringdict(filename="turtle_docstringdict"):
         docsdict[key] = eval(key).__doc__
 
     with open("%s.py" % filename,"w") as f:
-        keys = sorted([x for x in docsdict.keys()
-                            if x.split('.')[1] not in _alias_list])
+        keys = sorted(x for x in docsdict.keys()
+                      if x.split('.')[1] not in _alias_list)
         f.write('docsdict = {\n\n')
         for key in keys[:-1]:
             f.write('%s :\n' % repr(key))

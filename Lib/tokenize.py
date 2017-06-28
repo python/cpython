@@ -38,17 +38,10 @@ cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
-__all__ = token.__all__ + ["COMMENT", "tokenize", "detect_encoding",
-                           "NL", "untokenize", "ENCODING", "TokenInfo"]
+__all__ = token.__all__ + ["tokenize", "detect_encoding",
+                           "untokenize", "TokenInfo"]
 del token
 
-COMMENT = N_TOKENS
-tok_name[COMMENT] = 'COMMENT'
-NL = N_TOKENS + 1
-tok_name[NL] = 'NL'
-ENCODING = N_TOKENS + 2
-tok_name[ENCODING] = 'ENCODING'
-N_TOKENS += 3
 EXACT_TOKEN_TYPES = {
     '(':   LPAR,
     ')':   RPAR,
@@ -142,7 +135,7 @@ def _all_string_prefixes():
     #  'rf'). The various permutations will be generated.
     _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
     # if we add binary f-strings, add: ['fb', 'fbr']
-    result = set([''])
+    result = {''}
     for prefix in _valid_string_prefixes:
         for t in _itertools.permutations(prefix):
             # create a list with upper and lower versions of each
@@ -560,13 +553,11 @@ def _tokenize(readline, encoding):
             if line[pos] in '#\r\n':           # skip comments or blank lines
                 if line[pos] == '#':
                     comment_token = line[pos:].rstrip('\r\n')
-                    nl_pos = pos + len(comment_token)
                     yield TokenInfo(COMMENT, comment_token,
                            (lnum, pos), (lnum, pos + len(comment_token)), line)
-                    yield TokenInfo(NL, line[nl_pos:],
-                           (lnum, nl_pos), (lnum, len(line)), line)
-                else:
-                    yield TokenInfo((NL, COMMENT)[line[pos] == '#'], line[pos:],
+                    pos += len(comment_token)
+
+                yield TokenInfo(NL, line[pos:],
                            (lnum, pos), (lnum, len(line)), line)
                 continue
 

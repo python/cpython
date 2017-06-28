@@ -461,21 +461,28 @@ class ConditionTests(BaseTestCase):
         # construct.  In particular, it is possible that this can no longer
         # be conveniently guaranteed should their implementation ever change.
         N = 5
+        ready = []
         results1 = []
         results2 = []
         phase_num = 0
         def f():
             cond.acquire()
+            ready.append(phase_num)
             result = cond.wait()
             cond.release()
             results1.append((result, phase_num))
             cond.acquire()
+            ready.append(phase_num)
             result = cond.wait()
             cond.release()
             results2.append((result, phase_num))
         b = Bunch(f, N)
         b.wait_for_started()
-        _wait()
+        # first wait, to ensure all workers settle into cond.wait() before
+        # we continue. See issues #8799 and #30727.
+        while len(ready) < 5:
+            _wait()
+        ready.clear()
         self.assertEqual(results1, [])
         # Notify 3 threads at first
         cond.acquire()
@@ -487,9 +494,9 @@ class ConditionTests(BaseTestCase):
             _wait()
         self.assertEqual(results1, [(True, 1)] * 3)
         self.assertEqual(results2, [])
-        # first wait, to ensure all workers settle into cond.wait() before
-        # we continue. See issue #8799
-        _wait()
+        # make sure all awaken workers settle into cond.wait()
+        while len(ready) < 3:
+            _wait()
         # Notify 5 threads: they might be in their first or second wait
         cond.acquire()
         cond.notify(5)
@@ -500,7 +507,9 @@ class ConditionTests(BaseTestCase):
             _wait()
         self.assertEqual(results1, [(True, 1)] * 3 + [(True, 2)] * 2)
         self.assertEqual(results2, [(True, 2)] * 3)
-        _wait() # make sure all workers settle into cond.wait()
+        # make sure all workers settle into cond.wait()
+        while len(ready) < 5:
+            _wait()
         # Notify all threads: they are all in their second wait
         cond.acquire()
         cond.notify_all()

@@ -77,7 +77,9 @@ PyDoc_STRVAR(builtin_format__doc__,
 "\n"
 "Return value.__format__(format_spec)\n"
 "\n"
-"format_spec defaults to the empty string");
+"format_spec defaults to the empty string.\n"
+"See the Format Specification Mini-Language section of help(\'FORMATTING\') for\n"
+"details.");
 
 #define BUILTIN_FORMAT_METHODDEF    \
     {"format", (PyCFunction)builtin_format, METH_FASTCALL, builtin_format__doc__},
@@ -92,12 +94,12 @@ builtin_format(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *value;
     PyObject *format_spec = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|U:format",
-        &value, &format_spec)) {
+    if (!_PyArg_NoStackKeywords("format", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("format", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|U:format",
+        &value, &format_spec)) {
         goto exit;
     }
     return_value = builtin_format_impl(module, value, format_spec);
@@ -201,13 +203,13 @@ builtin_divmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_UnpackStack(args, nargs, "divmod",
-        2, 2,
-        &x, &y)) {
+    if (!_PyArg_NoStackKeywords("divmod", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("divmod", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "divmod",
+        2, 2,
+        &x, &y)) {
         goto exit;
     }
     return_value = builtin_divmod_impl(module, x, y);
@@ -243,13 +245,13 @@ builtin_eval(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "eval",
-        1, 3,
-        &source, &globals, &locals)) {
+    if (!_PyArg_NoStackKeywords("eval", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("eval", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "eval",
+        1, 3,
+        &source, &globals, &locals)) {
         goto exit;
     }
     return_value = builtin_eval_impl(module, source, globals, locals);
@@ -285,13 +287,13 @@ builtin_exec(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "exec",
-        1, 3,
-        &source, &globals, &locals)) {
+    if (!_PyArg_NoStackKeywords("exec", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("exec", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "exec",
+        1, 3,
+        &source, &globals, &locals)) {
         goto exit;
     }
     return_value = builtin_exec_impl(module, source, globals, locals);
@@ -342,13 +344,13 @@ builtin_hasattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "hasattr",
-        2, 2,
-        &obj, &name)) {
+    if (!_PyArg_NoStackKeywords("hasattr", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("hasattr", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "hasattr",
+        2, 2,
+        &obj, &name)) {
         goto exit;
     }
     return_value = builtin_hasattr_impl(module, obj, name);
@@ -392,13 +394,13 @@ builtin_setattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     PyObject *name;
     PyObject *value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setattr",
-        3, 3,
-        &obj, &name, &value)) {
+    if (!_PyArg_NoStackKeywords("setattr", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("setattr", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "setattr",
+        3, 3,
+        &obj, &name, &value)) {
         goto exit;
     }
     return_value = builtin_setattr_impl(module, obj, name, value);
@@ -428,13 +430,13 @@ builtin_delattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "delattr",
-        2, 2,
-        &obj, &name)) {
+    if (!_PyArg_NoStackKeywords("delattr", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("delattr", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "delattr",
+        2, 2,
+        &obj, &name)) {
         goto exit;
     }
     return_value = builtin_delattr_impl(module, obj, name);
@@ -542,13 +544,13 @@ builtin_pow(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *y;
     PyObject *z = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "pow",
-        2, 3,
-        &x, &y, &z)) {
+    if (!_PyArg_NoStackKeywords("pow", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("pow", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "pow",
+        2, 3,
+        &x, &y, &z)) {
         goto exit;
     }
     return_value = builtin_pow_impl(module, x, y, z);
@@ -581,13 +583,13 @@ builtin_input(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *return_value = NULL;
     PyObject *prompt = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "input",
-        0, 1,
-        &prompt)) {
+    if (!_PyArg_NoStackKeywords("input", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("input", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "input",
+        0, 1,
+        &prompt)) {
         goto exit;
     }
     return_value = builtin_input_impl(module, prompt);
@@ -630,13 +632,13 @@ builtin_sum(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *iterable;
     PyObject *start = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "sum",
-        1, 2,
-        &iterable, &start)) {
+    if (!_PyArg_NoStackKeywords("sum", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("sum", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "sum",
+        1, 2,
+        &iterable, &start)) {
         goto exit;
     }
     return_value = builtin_sum_impl(module, iterable, start);
@@ -669,13 +671,13 @@ builtin_isinstance(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     PyObject *obj;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_UnpackStack(args, nargs, "isinstance",
-        2, 2,
-        &obj, &class_or_tuple)) {
+    if (!_PyArg_NoStackKeywords("isinstance", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("isinstance", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "isinstance",
+        2, 2,
+        &obj, &class_or_tuple)) {
         goto exit;
     }
     return_value = builtin_isinstance_impl(module, obj, class_or_tuple);
@@ -708,13 +710,13 @@ builtin_issubclass(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     PyObject *cls;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_UnpackStack(args, nargs, "issubclass",
-        2, 2,
-        &cls, &class_or_tuple)) {
+    if (!_PyArg_NoStackKeywords("issubclass", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("issubclass", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "issubclass",
+        2, 2,
+        &cls, &class_or_tuple)) {
         goto exit;
     }
     return_value = builtin_issubclass_impl(module, cls, class_or_tuple);
@@ -722,4 +724,4 @@ builtin_issubclass(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3234725ef4d8bbf1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e1a7417a7b33eeec input=a9049054013a1b77]*/

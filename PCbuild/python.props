@@ -63,6 +63,21 @@
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
   </PropertyGroup>
   
+  <PropertyGroup Condition="$(DefaultWindowsSDKVersion) == ''">
+    <!--
+    Attempt to select the latest installed WinSDK. If we don't find any, then we will
+    let the MSBuild targets determine which one it wants to use (typically the earliest
+    possible version). Since we limit WINVER to Windows 7 anyway, it doesn't really
+    matter which WinSDK version we use.
+    -->
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
+  </PropertyGroup>
+  
   <PropertyGroup Condition="'$(OverrideVersion)' == ''">
     <!--
     Read version information from Include\patchlevel.h. The following properties are set:

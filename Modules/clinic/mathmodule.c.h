@@ -21,13 +21,13 @@ math_gcd(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "gcd",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_NoStackKeywords("gcd", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("gcd", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "gcd",
+        2, 2,
+        &a, &b)) {
         goto exit;
     }
     return_value = math_gcd_impl(module, a, b);
@@ -142,12 +142,12 @@ math_ldexp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     double x;
     PyObject *i;
 
-    if (!_PyArg_ParseStack(args, nargs, "dO:ldexp",
-        &x, &i)) {
+    if (!_PyArg_NoStackKeywords("ldexp", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("ldexp", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "dO:ldexp",
+        &x, &i)) {
         goto exit;
     }
     return_value = math_ldexp_impl(module, x, i);
@@ -267,12 +267,12 @@ math_fmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     double x;
     double y;
 
-    if (!_PyArg_ParseStack(args, nargs, "dd:fmod",
-        &x, &y)) {
+    if (!_PyArg_NoStackKeywords("fmod", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("fmod", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "dd:fmod",
+        &x, &y)) {
         goto exit;
     }
     return_value = math_fmod_impl(module, x, y);
@@ -300,12 +300,12 @@ math_hypot(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     double x;
     double y;
 
-    if (!_PyArg_ParseStack(args, nargs, "dd:hypot",
-        &x, &y)) {
+    if (!_PyArg_NoStackKeywords("hypot", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("hypot", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "dd:hypot",
+        &x, &y)) {
         goto exit;
     }
     return_value = math_hypot_impl(module, x, y);
@@ -333,12 +333,12 @@ math_pow(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     double x;
     double y;
 
-    if (!_PyArg_ParseStack(args, nargs, "dd:pow",
-        &x, &y)) {
+    if (!_PyArg_NoStackKeywords("pow", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("pow", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "dd:pow",
+        &x, &y)) {
         goto exit;
     }
     return_value = math_pow_impl(module, x, y);
@@ -536,4 +536,4 @@ math_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=71806f73a5c4bf0b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9f1ac6ded547cc8 input=a9049054013a1b77]*/
