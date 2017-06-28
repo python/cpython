@@ -51,7 +51,6 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
-    # NOTE: When modifying "purelib" scheme, update site._get_path() too.
     'nt_user': {
         'stdlib': '{userbase}/Python{py_version_nodot}',
         'platstdlib': '{userbase}/Python{py_version_nodot}',
@@ -178,25 +177,32 @@ def _get_default_scheme():
     return os.name
 
 
-# NOTE: site.py has copy of this function.
-# Sync it when modify this function.
 def _getuserbase():
     env_base = os.environ.get("PYTHONUSERBASE", None)
-    if env_base:
-        return env_base
 
     def joinuser(*args):
         return os.path.expanduser(os.path.join(*args))
 
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
+        if env_base:
+            return env_base
+        else:
+            return joinuser(base, "Python")
 
-    if sys.platform == "darwin" and sys._framework:
-        return joinuser("~", "Library", sys._framework,
-                        "%d.%d" % sys.version_info[:2])
+    if sys.platform == "darwin":
+        framework = get_config_var("PYTHONFRAMEWORK")
+        if framework:
+            if env_base:
+                return env_base
+            else:
+                return joinuser("~", "Library", framework, "%d.%d" %
+                                sys.version_info[:2])
 
-    return joinuser("~", ".local")
+    if env_base:
+        return env_base
+    else:
+        return joinuser("~", ".local")
 
 
 def _parse_makefile(filename, vars=None):
