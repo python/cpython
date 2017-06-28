@@ -50,7 +50,7 @@ class GroupDatabaseTestCase(unittest.TestCase):
         self.assertRaises(TypeError, grp.getgrgid)
         self.assertRaises(TypeError, grp.getgrnam)
         self.assertRaises(TypeError, grp.getgrall, 42)
-        # reject embedded null bytes and characters
+        # embedded null character
         self.assertRaises(ValueError, grp.getgrnam, 'a\x00b')
 
         # try to get some errors
