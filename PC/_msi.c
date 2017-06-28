@@ -594,7 +594,7 @@ summary_setproperty(msiobj* si, PyObject *args)
         return NULL;
 
     if (PyUnicode_Check(data)) {
-        WCHAR *value = _PyUnicode_AsUnicode(data);
+        const WCHAR *value = _PyUnicode_AsUnicode(data);
         if (value == NULL) {
             return NULL;
         }
