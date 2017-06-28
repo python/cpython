@@ -235,8 +235,14 @@ def check_enableusersite():
     return True
 
 
+# NOTE: sysconfig and it's dependencies are relatively large but site module
+# needs very limited part of them.
+# To speedup startup time, we have copy of them.
+#
+# See https://bugs.python.org/issue29585
+
+# Copy of sysconfig._getuserbase()
 def _getuserbase():
-    # Stripped version of sysconfig._getuserbase()
     env_base = os.environ.get("PYTHONUSERBASE", None)
     if env_base:
         return env_base
@@ -255,6 +261,19 @@ def _getuserbase():
     return joinuser("~", ".local")
 
 
+# Same to sysconfig.get_path('purelib', os.name+'_user')
+def _get_path(userbase):
+    version = sys.version_info
+
+    if os.name == 'nt':
+        return f'{userbase}/Python{version[0]}{version[1]}/site-packages'
+
+    if sys.platform == 'darwin' and sys._framework:
+        return f'{userbase}/lib/python/site-packages'
+
+    return f'{userbase}/lib/python{version[0]}.{version[1]}/site-packages'
+
+
 def getuserbase():
     """Returns the `user base` directory path.
 
@@ -266,19 +285,6 @@ def getuserbase():
     if USER_BASE is None:
         USER_BASE = _getuserbase()
     return USER_BASE
-
-
-def _get_path(userbase):
-    # stripped version of sysconfig.get_path('purelib', os.name + '_user')
-    version = sys.version_info[:2]
-
-    if os.name == 'nt':
-        return f'{userbase}/Python{version[0]}{version[1]}/site-packages'
-
-    if sys.platform == 'darwin' and sys._framework:
-        return f'{userbase}/lib/python/site-packages'
-
-    return f'{userbase}/lib/python{version[0]}.{version[1]}/site-packages'
 
 
 def getusersitepackages():
