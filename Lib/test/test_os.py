@@ -1571,6 +1571,27 @@ class ExecTests(unittest.TestCase):
         if os.name != "nt":
             self._test_internal_execvpe(bytes)
 
+    def test_execve_invalid_env(self):
+        args = [sys.executable, '-c', 'pass']
+
+        # null character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT\0VEGETABLE"] = "cabbage"
+        with self.assertRaises(ValueError):
+            os.execve(args[0], args, newenv)
+
+        # null character in the enviroment variable value
+        newenv = os.environ.copy()
+        newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
+        with self.assertRaises(ValueError):
+            os.execve(args[0], args, newenv)
+
+        # equal character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT=ORANGE"] = "lemon"
+        with self.assertRaises(ValueError):
+            os.execve(args[0], args, newenv)
+
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32ErrorTests(unittest.TestCase):
@@ -2381,6 +2402,61 @@ class SpawnTests(unittest.TestCase):
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], [], {})
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], ('',), {})
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], [''], {})
+
+    def _test_invalid_env(self, spawn):
+        args = [sys.executable, '-c', 'pass']
+
+        # null character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT\0VEGETABLE"] = "cabbage"
+        try:
+            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+        except ValueError:
+            pass
+        else:
+            self.assertEqual(exitcode, 127)
+
+        # null character in the enviroment variable value
+        newenv = os.environ.copy()
+        newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
+        try:
+            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+        except ValueError:
+            pass
+        else:
+            self.assertEqual(exitcode, 127)
+
+        # equal character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT=ORANGE"] = "lemon"
+        try:
+            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+        except ValueError:
+            pass
+        else:
+            self.assertEqual(exitcode, 127)
+
+        # equal character in the enviroment variable value
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        with open(filename, "w") as fp:
+            fp.write('import sys, os\n'
+                     'if os.getenv("FRUIT") != "orange=lemon":\n'
+                     '    raise AssertionError')
+        args = [sys.executable, filename]
+        newenv = os.environ.copy()
+        newenv["FRUIT"] = "orange=lemon"
+        exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+        self.assertEqual(exitcode, 0)
+
+    @requires_os_func('spawnve')
+    def test_spawnve_invalid_env(self):
+        self._test_invalid_env(os.spawnve)
+
+    @requires_os_func('spawnvpe')
+    def test_spawnvpe_invalid_env(self):
+        self._test_invalid_env(os.spawnvpe)
+
 
 # The introduction of this TestCase caused at least two different errors on
 # *nix buildbots. Temporarily skip this to let the buildbots move along.
