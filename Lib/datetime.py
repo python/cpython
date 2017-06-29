@@ -455,19 +455,14 @@ class timedelta:
 
     def __repr__(self):
         args = []
-
         if self._days:
             args.append("days=%d" % self._days)
-
         if self._seconds:
             args.append("seconds=%d" % self._seconds)
-
         if self._microseconds:
             args.append("microseconds=%d" % self._microseconds)
-
-        if len(args) == 0:
+        if not args:
             args.append('0')
-
         return "%s.%s(%s)" % (self.__class__.__module__,
                               self.__class__.__qualname__,
                               ', '.join(args))

@@ -2319,9 +2319,8 @@ delta_repr(PyDateTime_Delta *self)
         Py_DECREF(microseconds);
     }
 
-    if (PyList_Size(args) == 0) {
+    if (PyList_GET_SIZE(args) == 0) {
         PyObject *zero = PyUnicode_FromString("0");
-
         if (zero == NULL || PyList_Append(args, zero) < 0) {
             Py_XDECREF(zero);
             goto error;
@@ -2338,7 +2337,6 @@ delta_repr(PyDateTime_Delta *self)
     PyObject *args_string = PyUnicode_Join(sep, args);
     Py_DECREF(sep);
     Py_DECREF(args);
-
     if (args_string == NULL) {
         return NULL;
     }
