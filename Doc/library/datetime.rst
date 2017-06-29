@@ -283,10 +283,12 @@ Supported operations:
 | ``abs(t)``                     | equivalent to +\ *t* when ``t.days >= 0``, and|
 |                                | to -*t* when ``t.days < 0``. (2)              |
 +--------------------------------+-----------------------------------------------+
-| ``str(t)``                     | Returns a string in the form                  |
-|                                | ``[D day[s], ][H]H:MM:SS[.UUUUUU]``, where D  |
-|                                | is negative for negative ``t``. (5)           |
+| ``str(t)``                     | Returns a string in the form                  | |                                | ``[D day[s], ][H]H:MM:SS[.UUUUUU]``, where D  | |                                | is negative for negative ``t``. (5)           |
 +--------------------------------+-----------------------------------------------+
+| ``repr(t)``                    | Returns the representation of the             |
+|                                | :class:`timedelta` object as a string.        |
++--------------------------------+-----------------------------------------------+
+
 
 Notes:
 
