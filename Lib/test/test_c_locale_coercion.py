@@ -1,6 +1,7 @@
 # Tests the attempted automatic coercion of the C locale to a UTF-8 locale
 
 import unittest
+import locale
 import os
 import sys
 import sysconfig
@@ -32,23 +33,33 @@ else:
 
 # In order to get the warning messages to match up as expected, the candidate
 # order here must much the target locale order in Python/pylifecycle.c
-_C_UTF8_LOCALES = ("C.UTF-8", "C.utf8") #, "UTF-8")
-
-# XXX (ncoghlan): Using UTF-8 as a target locale is currently disabled due to
-#                 problems encountered on *BSD systems with those test cases
-# For additional details see:
-#     nl_langinfo CODESET error: https://bugs.python.org/issue30647
-#     locale handling differences: https://bugs.python.org/issue30672
+_C_UTF8_LOCALES = ("C.UTF-8", "C.utf8", "UTF-8")
 
 # There's no reliable cross-platform way of checking locale alias
 # lists, so the only way of knowing which of these locales will work
 # is to try them with locale.setlocale(). We do that in a subprocess
 # to avoid altering the locale of the test runner.
+#
+# If the relevant locale module attributes exist, and we're not on a platform
+# where we expect it to always succeed, we also check that
+# `locale.nl_langinfo(locale.CODESET)` works, as if it fails, the interpreter
+# will skip locale coercion for that particular target locale
+_check_nl_langinfo_CODESET = bool(
+    sys.platform not in ("darwin", "linux") and
+    hasattr(locale, "nl_langinfo") and
+    hasattr(locale, "CODESET")
+)
+
 def _set_locale_in_subprocess(locale_name):
     cmd_fmt = "import locale; print(locale.setlocale(locale.LC_CTYPE, '{}'))"
+    if _check_nl_langinfo_CODESET:
+        # If there's no valid CODESET, we expect coercion to be skipped
+        cmd_fmt += "; import sys; sys.exit(not locale.nl_langinfo(locale.CODESET))"
     cmd = cmd_fmt.format(locale_name)
     result, py_cmd = run_python_until_end("-c", cmd, __isolated=True)
     return result.rc == 0
+
+
 
 _fields = "fsencoding stdin_info stdout_info stderr_info lang lc_ctype lc_all"
 _EncodingDetails = namedtuple("EncodingDetails", _fields)
