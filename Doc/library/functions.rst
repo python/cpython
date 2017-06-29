@@ -906,7 +906,7 @@ are always available.  They are listed here in alphabetical order.
 
    Convert an integer number to an octal string prefixed with "0o".  The result is
    a valid Python expression. If *x* is not a Python :class:`int` object, it has to
-   define an :meth:`__index__` method that returns an integer. 
+   define an :meth:`__index__` method that returns an integer.
 
    For example:
 
@@ -916,7 +916,7 @@ are always available.  They are listed here in alphabetical order.
       '-0o70'
 
    If you want to convert an integer number to octal string either with prefix "0o"
-   or not, you can use either of the following ways. 
+   or not, you can use either of the following ways.
 
       >>> num = 10
       >>> '%#o' % num, '%o' % num
