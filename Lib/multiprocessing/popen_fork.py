@@ -17,6 +17,7 @@ class Popen(object):
         sys.stdout.flush()
         sys.stderr.flush()
         self.returncode = None
+        self.finalizer = None
         self._launch(process_obj)
 
     def duplicate_for_child(self, fd):
@@ -70,5 +71,9 @@ class Popen(object):
                 os._exit(code)
         else:
             os.close(child_w)
-            util.Finalize(self, os.close, (parent_r,))
+            self.finalizer = util.Finalize(self, os.close, (parent_r,))
             self.sentinel = parent_r
+
+    def close(self):
+        if self.finalizer is not None:
+            self.finalizer()

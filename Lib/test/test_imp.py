@@ -314,6 +314,10 @@ class ImportTests(unittest.TestCase):
         loader.get_data(imp.__file__)  # File should be closed
         loader.get_data(imp.__file__)  # Will need to create a newly opened file
 
+    def test_load_source(self):
+        with self.assertRaisesRegex(ValueError, 'embedded null'):
+            imp.load_source(__name__, __file__ + "\0")
+
 
 class ReloadTests(unittest.TestCase):
 
