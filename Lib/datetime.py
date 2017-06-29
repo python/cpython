@@ -466,8 +466,7 @@ class timedelta:
             args.append("microseconds=%d" % self._microseconds)
 
         if len(args) == 0:
-            return "%s.%s(0)" % (self.__class__.__module__,
-                                 self.__class__.__qualname__)
+            args.append('0')
 
         return "%s.%s(%s)" % (self.__class__.__module__,
                               self.__class__.__qualname__,

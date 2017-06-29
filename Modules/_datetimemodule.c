@@ -2320,8 +2320,13 @@ delta_repr(PyDateTime_Delta *self)
     }
 
     if (PyList_Size(args) == 0) {
-        Py_DECREF(args);
-        return PyUnicode_FromFormat("%s(0)", Py_TYPE(self)->tp_name);
+        PyObject *zero = PyUnicode_FromString("0");
+
+        if (zero == NULL || PyList_Append(args, zero) < 0) {
+            Py_XDECREF(zero);
+            goto error;
+        }
+        Py_DECREF(zero);
     }
 
     PyObject *sep = PyUnicode_FromString(", ");
