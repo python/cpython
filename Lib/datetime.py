@@ -459,11 +459,15 @@ class timedelta:
         if self._days:
             args.append("days=%d" % self._days)
 
-        if self._seconds or (not self._days and not self._microseconds):
+        if self._seconds:
             args.append("seconds=%d" % self._seconds)
 
         if self._microseconds:
             args.append("microseconds=%d" % self._microseconds)
+
+        if len(args) == 0:
+            return "%s.%s(0)" % (self.__class__.__module__,
+                                 self.__class__.__qualname__)
 
         return "%s.%s(%s)" % (self.__class__.__module__,
                               self.__class__.__qualname__,

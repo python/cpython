@@ -663,20 +663,10 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                          "%s(days=10, seconds=2)" % name)
         self.assertEqual(repr(self.theclass(-10, 2, 400000)),
                          "%s(days=-10, seconds=2, microseconds=400000)" % name)
-        self.assertEqual(repr(self.theclass(1, -1)),
-                         "%s(seconds=86399)" % name)
-        self.assertEqual(repr(self.theclass(0, 1, -1)),
-                         "%s(microseconds=999999)" % name)
-        self.assertEqual(repr(self.theclass(0, 86400)),
-                         "%s(days=1)" % name)
-        self.assertEqual(repr(self.theclass(0, 2 * 86400)),
-                         "%s(days=2)" % name)
-        self.assertEqual(repr(self.theclass(days=1, seconds=0)),
-                         "%s(days=1)" % name)
         self.assertEqual(repr(self.theclass(seconds=60)),
                          "%s(seconds=60)" % name)
         self.assertEqual(repr(self.theclass()),
-                         "%s(seconds=0)" % name)
+                         "%s(0)" % name)
         self.assertEqual(repr(self.theclass(microseconds=100)),
                          "%s(microseconds=100)" % name)
         self.assertEqual(repr(self.theclass(days=1, microseconds=100)),

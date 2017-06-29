@@ -2293,36 +2293,35 @@ delta_repr(PyDateTime_Delta *self)
     if (GET_TD_DAYS(self) != 0) {
         PyObject *days = PyUnicode_FromFormat("days=%d", GET_TD_DAYS(self));
         if (days == NULL || PyList_Append(args, days) < 0) {
-            Py_DECREF(args);
             Py_XDECREF(days);
-            return NULL;
+            goto error;
         }
         Py_DECREF(days);
     }
 
-
-    if (GET_TD_SECONDS(self) != 0 ||
-        (GET_TD_DAYS(self) == 0 && GET_TD_MICROSECONDS(self) == 0)) {
+    if (GET_TD_SECONDS(self) != 0) {
         PyObject *seconds = PyUnicode_FromFormat("seconds=%d",
                                                  GET_TD_SECONDS(self));
         if (seconds == NULL || PyList_Append(args, seconds) < 0) {
-            Py_DECREF(args);
             Py_XDECREF(seconds);
-            return NULL;
+            goto error;
         }
         Py_DECREF(seconds);
     }
-
 
     if (GET_TD_MICROSECONDS(self) != 0) {
         PyObject *microseconds = PyUnicode_FromFormat("microseconds=%d",
                                                       GET_TD_MICROSECONDS(self));
         if (microseconds == NULL || PyList_Append(args, microseconds) < 0) {
-            Py_DECREF(args);
             Py_XDECREF(microseconds);
-            return NULL;
+            goto error;
         }
         Py_DECREF(microseconds);
+    }
+
+    if (PyList_Size(args) == 0) {
+        Py_DECREF(args);
+        return PyUnicode_FromFormat("%s(0)", Py_TYPE(self)->tp_name);
     }
 
     PyObject *sep = PyUnicode_FromString(", ");
@@ -2344,6 +2343,10 @@ delta_repr(PyDateTime_Delta *self)
                                           args_string);
     Py_DECREF(args_string);
     return repr;
+
+error:
+    Py_DECREF(args);
+    return NULL;
 }
 
 static PyObject *
