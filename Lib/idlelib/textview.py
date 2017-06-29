@@ -6,14 +6,14 @@ from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
 
-class TextviewFrame(Frame):
-    "Display frame for text and scroll."
+class TextFrame(Frame):
+    "Display text with scrollbar."
 
-    def __init__(self, parent, content):
+    def __init__(self, parent, rawtext):
         """Create a frame for Textview.
 
         parent - parent widget for this frame
-        content - text to display
+        rawtext - text to display
         """
         super().__init__(parent)
         self['relief'] = 'sunken'
@@ -27,7 +27,7 @@ class TextviewFrame(Frame):
         self.scroll = scroll = Scrollbar(self, orient='vertical',
                                          takefocus=False, command=text.yview)
         text['yscrollcommand'] = scroll.set
-        text.insert(0.0, content)
+        text.insert(0.0, rawtext)
         text['state'] = 'disabled'
         text.focus_set()
 
@@ -35,7 +35,25 @@ class TextviewFrame(Frame):
         text.pack(side='left', expand=True, fill='both')
 
 
-class TextviewWindow(Toplevel):
+class ViewFrame(Frame):
+    "Display TextFrame and Close button."
+    def __init__(self, parent, text):
+        super().__init__(parent)
+        self.parent = parent
+        self.bind('<Return>', self.ok)
+        self.bind('<Escape>', self.ok)
+        self.textframe = TextFrame(self, text)
+        self.button_ok = button_ok = Button(
+                self, text='Close', command=self.ok, takefocus=False)
+        self.textframe.pack(side='top', expand=True, fill='both')
+        button_ok.pack(side='bottom')
+
+    def ok(self, event=None):
+        """Dismiss text viewer dialog."""
+        self.parent.destroy()
+
+
+class ViewWindow(Toplevel):
     "A simple text viewer dialog for IDLE."
 
     def __init__(self, parent, title, text, modal=True,
@@ -59,18 +77,11 @@ class TextviewWindow(Toplevel):
         self.geometry(f'=750x500+{x}+{y}')
 
         self.title(title)
+        self.viewframe = ViewFrame(self, text)
         self.protocol("WM_DELETE_WINDOW", self.ok)
-        self.bind('<Return>', self.ok)
-        self.bind('<Escape>', self.ok)
-        self.textframe = textframe = TextviewFrame(self, text)
-        self.buttonframe = buttonframe = Frame(self)
-
-        self.button_ok = button_ok = Button(buttonframe, text='Close',
+        self.button_ok = button_ok = Button(self, text='Close',
                                             command=self.ok, takefocus=False)
-        button_ok.pack()
-
-        textframe.pack(side='top', expand=True, fill='both')
-        buttonframe.pack(side='bottom', fill='x')
+        self.viewframe.pack(side='top', expand=True, fill='both')
 
         if modal:
             self.transient(parent)
@@ -93,7 +104,7 @@ def view_text(parent, title, text, modal=True, _utest=False):
             dialog is displayed
     _utest - bool; controls wait_window on unittest
     """
-    return TextviewWindow(parent, title, text, modal, _utest=_utest)
+    return ViewWindow(parent, title, text, modal, _utest=_utest)
 
 
 def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
@@ -122,4 +133,4 @@ if __name__ == '__main__':
     import unittest
     unittest.main('idlelib.idle_test.test_textview', verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
-    run(TextviewWindow)
+    run(ViewWindow)
