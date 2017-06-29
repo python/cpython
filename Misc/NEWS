@@ -1245,6 +1245,10 @@ Windows
 C API
 -----
 
+- bpo-30708: PyUnicode_AsWideCharString() now raises a ValueError if the
+  second argument is NULL and the wchar_t\* string contains null
+  characters.
+
 - bpo-16500: Deprecate PyOS_AfterFork() and add PyOS_BeforeFork(),
   PyOS_AfterFork_Parent() and PyOS_AfterFork_Child().
 

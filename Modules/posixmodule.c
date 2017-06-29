@@ -3757,7 +3757,7 @@ os__getfinalpathname_impl(PyObject *module, PyObject *path)
     PyObject *result;
     const wchar_t *path_wchar;
 
-    path_wchar = PyUnicode_AsUnicode(path);
+    path_wchar = _PyUnicode_AsUnicode(path);
     if (path_wchar == NULL)
         return NULL;
 
@@ -4900,6 +4900,8 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             PyUnicode_FindChar(key2, '=', 1, PyUnicode_GET_LENGTH(key2), 1) != -1)
         {
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            Py_DECREF(key2);
+            Py_DECREF(val2);
             goto error;
         }
         keyval = PyUnicode_FromFormat("%U=%U", key2, val2);
@@ -4914,6 +4916,8 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             strchr(PyBytes_AS_STRING(key2) + 1, '=') != NULL)
         {
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            Py_DECREF(key2);
+            Py_DECREF(val2);
             goto error;
         }
         keyval = PyBytes_FromFormat("%s=%s", PyBytes_AS_STRING(key2),
@@ -7205,7 +7209,7 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                           ))
         return NULL;
 
-    path = PyUnicode_AsUnicode(po);
+    path = _PyUnicode_AsUnicode(po);
     if (path == NULL)
         return NULL;
 
@@ -8998,6 +9002,7 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=ba586581c2e6105f]*/
 {
     const wchar_t *env;
+    Py_ssize_t size;
 
     /* Search from index 1 because on Windows starting '=' is allowed for
        defining hidden environment variables. */
@@ -9011,16 +9016,21 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
     if (unicode == NULL) {
         return NULL;
     }
-    if (_MAX_ENV < PyUnicode_GET_LENGTH(unicode)) {
+
+    env = PyUnicode_AsUnicodeAndSize(unicode, &size);
+    if (env == NULL)
+        goto error;
+    if (size > _MAX_ENV) {
         PyErr_Format(PyExc_ValueError,
                      "the environment variable is longer than %u characters",
                      _MAX_ENV);
         goto error;
     }
-
-    env = PyUnicode_AsUnicode(unicode);
-    if (env == NULL)
+    if (wcslen(env) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto error;
+    }
+
     if (_wputenv(env)) {
         posix_error();
         goto error;

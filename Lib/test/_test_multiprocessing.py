@@ -191,6 +191,12 @@ def get_value(self):
 # Testcases
 #
 
+class DummyCallable:
+    def __call__(self, q, c):
+        assert isinstance(c, DummyCallable)
+        q.put(5)
+
+
 class _TestProcess(BaseTestCase):
 
     ALLOWED_TYPES = ('processes', 'threads')
@@ -468,6 +474,18 @@ class _TestProcess(BaseTestCase):
         if os.name != 'nt':
             for p in procs:
                 self.assertEqual(p.exitcode, -signal.SIGTERM)
+
+    def test_lose_target_ref(self):
+        c = DummyCallable()
+        wr = weakref.ref(c)
+        q = self.Queue()
+        p = self.Process(target=c, args=(q, c))
+        del c
+        p.start()
+        p.join()
+        self.assertIs(wr(), None)
+        self.assertEqual(q.get(), 5)
+
 
 #
 #
@@ -1253,10 +1271,19 @@ class Bunch(object):
         self._can_exit = namespace.Event()
         if not wait_before_exit:
             self._can_exit.set()
+
+        threads = []
         for i in range(n):
             p = namespace.Process(target=self.task)
             p.daemon = True
             p.start()
+            threads.append(p)
+
+        def finalize(threads):
+            for p in threads:
+                p.join()
+
+        self._finalizer = weakref.finalize(self, finalize, threads)
 
     def task(self):
         pid = os.getpid()
@@ -1278,6 +1305,9 @@ class Bunch(object):
 
     def do_finish(self):
         self._can_exit.set()
+
+    def close(self):
+        self._finalizer()
 
 
 class AppendTrue(object):
@@ -1311,8 +1341,11 @@ class _TestBarrier(BaseTestCase):
 
     def run_threads(self, f, args):
         b = Bunch(self, f, args, self.N-1)
-        f(*args)
-        b.wait_for_finished()
+        try:
+            f(*args)
+            b.wait_for_finished()
+        finally:
+            b.close()
 
     @classmethod
     def multipass(cls, barrier, results, n):

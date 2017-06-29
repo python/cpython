@@ -250,10 +250,10 @@ class GetKeysDialog(Toplevel):
         '''
         finalKey = self.listKeysFinal.get(ANCHOR)
         modifiers = self.GetModifiers()
-        # create a key sequence list for overlap check:
-        keySequence = keys.split()
         keysOK = False
         title = self.keyerror_title
+        key_sequences = [key for keylist in self.currentKeySequences
+                             for key in keylist]
         if not keys.endswith('>'):
             self.showerror(title, parent=self,
                            message='Missing the final Key')
@@ -267,7 +267,7 @@ class GetKeysDialog(Toplevel):
             msg = 'The shift modifier by itself may not be used with'\
                   ' this key symbol.'
             self.showerror(title=title, parent=self, message=msg)
-        elif keySequence in self.currentKeySequences:
+        elif keys in key_sequences:
             msg = 'This key combination is already in use.'
             self.showerror(title=title, parent=self, message=msg)
         else:

@@ -1,0 +1,2 @@
+Avoid importing ``sysconfig`` from ``site`` to improve startup speed. Python
+startup is about 5% faster on Linux and 30% faster on macOS.

@@ -2,12 +2,21 @@
 
 """
 import os
-from platform import python_version
+import sys
+from platform import python_version, architecture
 
 from tkinter import Toplevel, Frame, Label, Button, PhotoImage
 from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
 
 from idlelib import textview
+
+
+def build_bits():
+    "Return bits for platform."
+    if sys.platform == 'darwin':
+        return '64' if sys.maxsize > 2**32 else '32'
+    else:
+        return architecture()[0][:2]
 
 
 class AboutDialog(Toplevel):
@@ -28,11 +37,12 @@ class AboutDialog(Toplevel):
         self.geometry("+%d+%d" % (
                         parent.winfo_rootx()+30,
                         parent.winfo_rooty()+(30 if not _htest else 100)))
-        self.bg = "#707070"
-        self.fg = "#ffffff"
+        self.bg = "#bbbbbb"
+        self.fg = "#000000"
         self.create_widgets()
         self.resizable(height=False, width=False)
-        self.title(title or f'About IDLE {python_version()}')
+        self.title(title or
+                   f'About IDLE {python_version()} ({build_bits()} bit)')
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.ok)
@@ -71,7 +81,7 @@ class AboutDialog(Toplevel):
         logo = Label(frame_background, image=self.icon_image, bg=self.bg)
         logo.grid(row=0, column=0, sticky=W, rowspan=2, padx=10, pady=10)
 
-        byline_text = "Python's Integrated DeveLopment Environment" + 5*'\n'
+        byline_text = "Python's Integrated Development\nand Learning Environment" + 5*'\n'
         byline = Label(frame_background, text=byline_text, justify=LEFT,
                        fg=self.fg, bg=self.bg)
         byline.grid(row=2, column=0, sticky=W, columnspan=3, padx=10, pady=5)

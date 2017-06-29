@@ -1461,6 +1461,9 @@
 /* Define if you have POSIX threads, and your system does not define that. */
 #undef _POSIX_THREADS
 
+/* framework name */
+#undef _PYTHONFRAMEWORK
+
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
