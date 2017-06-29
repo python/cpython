@@ -1555,7 +1555,7 @@ cipher_to_dict(const SSL_CIPHER *cipher)
     cipher_protocol = SSL_CIPHER_get_version(cipher);
     cipher_id = SSL_CIPHER_get_id(cipher);
     SSL_CIPHER_description(cipher, buf, sizeof(buf) - 1);
-    len = (int)strlen(buf);
+    len = strlen(buf);
     if (len > 1 && buf[len-1] == '\n')
         buf[len-1] = '\0';
     strength_bits = SSL_CIPHER_get_bits(cipher, &alg_bits);
@@ -4073,7 +4073,7 @@ memory_bio_dealloc(PySSLMemoryBIO *self)
 static PyObject *
 memory_bio_get_pending(PySSLMemoryBIO *self, void *c)
 {
-    return PyLong_FromSize_t(BIO_ctrl_pending(self->bio));
+    return PyLong_FromLong(BIO_ctrl_pending(self->bio));
 }
 
 PyDoc_STRVAR(PySSL_memory_bio_pending_doc,
@@ -4109,7 +4109,7 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
     int avail, nbytes;
     PyObject *result;
 
-    avail = (int)BIO_ctrl_pending(self->bio);
+    avail = BIO_ctrl_pending(self->bio);
     if ((len < 0) || (len > avail))
         len = avail;
 
