@@ -73,6 +73,10 @@ format-paragraph=<Alt-Key-q>
 [ParenMatch]
 enable=True
 style= expression
+font=courier 10
+fgcolor=Black
+bgcolor=White
+underline=False
 flash-delay= 500
 bell=True
 [ParenMatch_cfgBindings]

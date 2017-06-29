@@ -41,7 +41,14 @@ class ParenMatch:
             'extensions','ParenMatch','flash-delay', type='int',default=500)
     BELL = idleConf.GetOption(
             'extensions','ParenMatch','bell', type='bool',default=1)
-    HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),'hilite')
+    BG_COLOR = idleConf.GetOption("extensions", "ParenMatch",
+                                 "bgcolor", type="str", default="LightGray")
+    FG_COLOR = idleConf.GetOption("extensions", "ParenMatch",
+                                 "fgcolor", type="str", default="Black")
+    P_FONT = idleConf.GetOption("extensions", "ParenMatch",
+                                 "font", type="str", default="courier 10 italic")
+    P_UNDERLINE = idleConf.GetOption("extensions", "ParenMatch",
+                                 "underline", type="bool", default=1)
 
     RESTORE_VIRTUAL_EVENT_NAME = "<<parenmatch-check-restore>>"
     # We want the restore event be called before the usual return and
@@ -133,7 +140,8 @@ class ParenMatch:
     def create_tag_opener(self, indices):
         """Highlight the single paren that matches"""
         self.text.tag_add("paren", indices[0])
-        self.text.tag_config("paren", self.HILITE_CONFIG)
+        self.text.tag_config("paren", background=self.BG_COLOR,foreground=self.FG_COLOR,
+		                     font=self.P_FONT,underline=self.P_UNDERLINE)
 
     def create_tag_parens(self, indices):
         """Highlight the left and right parens"""
@@ -142,7 +150,8 @@ class ParenMatch:
         else:
             rightindex = indices[1]
         self.text.tag_add("paren", indices[0], indices[0]+"+1c", rightindex+"-1c", rightindex)
-        self.text.tag_config("paren", self.HILITE_CONFIG)
+        self.text.tag_config("paren", background=self.BG_COLOR,foreground=self.FG_COLOR,
+		                     font=self.P_FONT,underline=self.P_UNDERLINE)
 
     def create_tag_expression(self, indices):
         """Highlight the entire expression"""
@@ -151,7 +160,8 @@ class ParenMatch:
         else:
             rightindex = indices[1]
         self.text.tag_add("paren", indices[0], rightindex)
-        self.text.tag_config("paren", self.HILITE_CONFIG)
+        self.text.tag_config("paren", background=self.BG_COLOR,foreground=self.FG_COLOR,
+		                     font=self.P_FONT,underline=self.P_UNDERLINE)
 
     # any one of the set_timeout_XXX methods can be used depending on
     # the style

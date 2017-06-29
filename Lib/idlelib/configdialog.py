@@ -1419,7 +1419,9 @@ Use with paragraphs in both strings and comment blocks.
 
 ParenMatch: Style indicates what is highlighted when closer is entered:
 'opener' - opener '({[' corresponding to closer; 'parens' - both chars;
-'expression' (default) - also everything in between.  Flash-delay is how
+'expression' (default) - also everything in between. Bgcolor and fgcolor
+are the matched background and foreground colors, respectively, and accept
+named colors and hex values preceeded by a # sign. Flash-delay is how
 long to highlight if cursor is not moved (0 means forever).
 '''
 }
