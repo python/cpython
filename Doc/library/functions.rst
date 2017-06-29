@@ -99,8 +99,7 @@ are always available.  They are listed here in alphabetical order.
       >>> f'{14:#b}', f'{14:b}'
       ('0b1110', '1110')
 
-   See also :
-      func:`format` for more information.
+   See also :func:`format` for more information.
 
 
 .. class:: bool([x])
@@ -663,9 +662,6 @@ are always available.  They are listed here in alphabetical order.
 
    If you want to convert an integer number to uppercase or lowercase hexadecimal
    string either with prefix or not, you can use either of the following ways.
-   See also :
-
-      func:`format` for more information.
 
 
       >>> '%#x' % 255, '%x' % 255, '%X' % 255
@@ -675,8 +671,9 @@ are always available.  They are listed here in alphabetical order.
       >>> f'{255:#x}', f'{255:x}', f'{255:X}'
       ('0xff', 'ff', 'FF')
 
-   See also :func:`int` for converting a hexadecimal string to an
-   integer using a base of 16.
+   See also :func:`format` for more information.
+
+   See also :func:`int` for converting a hexadecimal string to an integer using a base of 16.
 
    .. note::
 
@@ -909,7 +906,9 @@ are always available.  They are listed here in alphabetical order.
 
    Convert an integer number to an octal string prefixed with "0o".  The result is
    a valid Python expression. If *x* is not a Python :class:`int` object, it has to
-   define an :meth:`__index__` method that returns an integer. For example:
+   define an :meth:`__index__` method that returns an integer. 
+
+   For example:
 
       >>> oct(10)
       '0o12'
@@ -917,8 +916,7 @@ are always available.  They are listed here in alphabetical order.
       '-0o70'
 
    If you want to convert an integer number to octal string either with prefix "0o"
-   or not, you can use either of the following ways. See also :func:`format` for
-   more information.
+   or not, you can use either of the following ways. 
 
       >>> num = 10
       >>> '%#o' % num, '%o' % num
@@ -928,6 +926,7 @@ are always available.  They are listed here in alphabetical order.
       >>> f'{num:#o}', f'{num:o}'
       ('0o12', '12')
 
+      See also :func:`format` for more information.
 
    .. index::
       single: file object; open() built-in function
