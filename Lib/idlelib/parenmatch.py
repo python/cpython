@@ -141,7 +141,7 @@ class ParenMatch:
         """Highlight the single paren that matches"""
         self.text.tag_add("paren", indices[0])
         self.text.tag_config("paren", background=self.BG_COLOR,foreground=self.FG_COLOR,
-		                     font=self.P_FONT,underline=self.P_UNDERLINE)
+                             font=self.P_FONT,underline=self.P_UNDERLINE)
 
     def create_tag_parens(self, indices):
         """Highlight the left and right parens"""
@@ -151,7 +151,7 @@ class ParenMatch:
             rightindex = indices[1]
         self.text.tag_add("paren", indices[0], indices[0]+"+1c", rightindex+"-1c", rightindex)
         self.text.tag_config("paren", background=self.BG_COLOR,foreground=self.FG_COLOR,
-		                     font=self.P_FONT,underline=self.P_UNDERLINE)
+                             font=self.P_FONT,underline=self.P_UNDERLINE)
 
     def create_tag_expression(self, indices):
         """Highlight the entire expression"""
@@ -161,7 +161,7 @@ class ParenMatch:
             rightindex = indices[1]
         self.text.tag_add("paren", indices[0], rightindex)
         self.text.tag_config("paren", background=self.BG_COLOR,foreground=self.FG_COLOR,
-		                     font=self.P_FONT,underline=self.P_UNDERLINE)
+                             font=self.P_FONT,underline=self.P_UNDERLINE)
 
     # any one of the set_timeout_XXX methods can be used depending on
     # the style
