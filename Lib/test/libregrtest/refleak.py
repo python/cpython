@@ -96,6 +96,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 
     # These checkers return False on success, True on failure
     def check_rc_deltas(deltas):
+        # Checker for reference counters and memomry blocks.
+        #
         # bpo-30776: Try to ignore false positives:
         #
         #   [3, 0, 0]
@@ -108,22 +110,13 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         #   [10, 1, 1]
         return all(delta >= 1 for delta in deltas)
 
-    def check_alloc_deltas(deltas):
-        # At least 1/3rd of 0s
-        if 3 * deltas.count(0) < len(deltas):
-            return True
-        # Nothing else than 1s, 0s and -1s
-        if not set(deltas) <= {1,0,-1}:
-            return True
-        return False
-
     def check_fd_deltas(deltas):
         return any(deltas)
 
     failed = False
     for deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
-        (alloc_deltas, 'memory blocks', check_alloc_deltas),
+        (alloc_deltas, 'memory blocks', check_rc_deltas),
         (fd_deltas, 'file descriptors', check_fd_deltas)
     ]:
         # ignore warmup runs
