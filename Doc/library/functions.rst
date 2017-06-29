@@ -93,12 +93,12 @@ are always available.  They are listed here in alphabetical order.
       '-0b1010'
 
    If prefix "0b" is desired or not, you can use either of the following ways.
-   
+
       >>> format(14, '#b'), format(14, 'b')
       ('0b1110', '1110')
       >>> f'{14:#b}', f'{14:b}'
       ('0b1110', '1110')
-   
+
    See also :
       func:`format` for more information.
 
@@ -664,7 +664,7 @@ are always available.  They are listed here in alphabetical order.
    If you want to convert an integer number to uppercase or lowercase hexadecimal
    string either with prefix or not, you can use either of the following ways.
    See also :
-   
+
       func:`format` for more information.
 
 
