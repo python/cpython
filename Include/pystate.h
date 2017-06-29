@@ -254,6 +254,36 @@ struct _warnings_globals {
 };
 
 #ifdef Py_BUILD_CORE
+struct _pending_calls {
+    unsigned long main_thread;
+#ifdef WITH_THREAD
+    PyThread_type_lock lock;
+    /* Request for running pending calls. */
+    _Py_atomic_int calls_to_do;
+    /* Request for looking at the `async_exc` field of the current thread state.
+       Guarded by the GIL. */
+    int async_exc;
+#define NPENDINGCALLS 32
+    struct {
+        int (*func)(void *);
+        void *arg;
+    } calls[NPENDINGCALLS];
+    int first;
+    int last;
+#else /* ! WITH_THREAD */
+    _Py_atomic_int calls_to_do;
+#define NPENDINGCALLS 32
+    struct {
+        int (*func)(void *);
+        void *arg;
+    } calls[NPENDINGCALLS];
+    volatile int first;
+    volatile int last;
+#endif /* WITH_THREAD */
+};
+#endif /* Py_BUILD_CORE */
+
+#ifdef Py_BUILD_CORE
 #include "gil.h"
 #endif
 
@@ -261,37 +291,14 @@ struct _ceval_globals {
     int recursion_limit;
     int check_recursion_limit;
 #ifdef Py_BUILD_CORE
-    unsigned long main_thread;
-#ifdef WITH_THREAD
-    PyThread_type_lock pending_lock;
     /* This single variable consolidates all requests to break out of the fast path
        in the eval loop. */
     _Py_atomic_int eval_breaker;
+#ifdef WITH_THREAD
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
-    /* Request for running pending calls. */
-    _Py_atomic_int pendingcalls_to_do;
-    /* Request for looking at the `async_exc` field of the current thread state.
-       Guarded by the GIL. */
-    int pending_async_exc;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } pendingcalls[NPENDINGCALLS];
-    int pendingfirst;
-    int pendinglast;
-#else /* ! WITH_THREAD */
-    _Py_atomic_int eval_breaker;
-    _Py_atomic_int pendingcalls_to_do;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } pendingcalls[NPENDINGCALLS];
-    volatile int pendingfirst;
-    volatile int pendinglast;
-#endif /* WITH_THREAD */
+#endif
+    struct _pending_calls pending;
     struct _gil_globals gil;
 #endif /* Py_BUILD_CORE */
 };

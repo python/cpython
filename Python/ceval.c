@@ -96,8 +96,8 @@ static long dxp[256];
     _Py_atomic_store_relaxed( \
         &_PyRuntime.ceval.eval_breaker, \
         GIL_REQUEST | \
-        _Py_atomic_load_relaxed(&_PyRuntime.ceval.pendingcalls_to_do) | \
-        _PyRuntime.ceval.pending_async_exc)
+        _Py_atomic_load_relaxed(&_PyRuntime.ceval.pending.calls_to_do) | \
+        _PyRuntime.ceval.pending.async_exc)
 
 #define SET_GIL_DROP_REQUEST() \
     do { \
@@ -114,24 +114,24 @@ static long dxp[256];
 /* Pending calls are only modified under pending_lock */
 #define SIGNAL_PENDING_CALLS() \
     do { \
-        _Py_atomic_store_relaxed(&_PyRuntime.ceval.pendingcalls_to_do, 1); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.pending.calls_to_do, 1); \
         _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
     } while (0)
 
 #define UNSIGNAL_PENDING_CALLS() \
     do { \
-        _Py_atomic_store_relaxed(&_PyRuntime.ceval.pendingcalls_to_do, 0); \
+        _Py_atomic_store_relaxed(&_PyRuntime.ceval.pending.calls_to_do, 0); \
         COMPUTE_EVAL_BREAKER(); \
     } while (0)
 
 #define SIGNAL_ASYNC_EXC() \
     do { \
-        _PyRuntime.ceval.pending_async_exc = 1; \
+        _PyRuntime.ceval.pending.async_exc = 1; \
         _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
     } while (0)
 
 #define UNSIGNAL_ASYNC_EXC() \
-    do { _PyRuntime.ceval.pending_async_exc = 0; COMPUTE_EVAL_BREAKER(); } while (0)
+    do { _PyRuntime.ceval.pending.async_exc = 0; COMPUTE_EVAL_BREAKER(); } while (0)
 
 
 #ifdef HAVE_ERRNO_H
@@ -153,9 +153,9 @@ PyEval_InitThreads(void)
         return;
     create_gil();
     take_gil(PyThreadState_GET());
-    _PyRuntime.ceval.main_thread = PyThread_get_thread_ident();
-    if (!_PyRuntime.ceval.pending_lock)
-        _PyRuntime.ceval.pending_lock = PyThread_allocate_lock();
+    _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
+    if (!_PyRuntime.ceval.pending.lock)
+        _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
 }
 
 void
@@ -223,9 +223,9 @@ PyEval_ReInitThreads(void)
     if (!gil_created())
         return;
     recreate_gil();
-    _PyRuntime.ceval.pending_lock = PyThread_allocate_lock();
+    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
     take_gil(current_tstate);
-    _PyRuntime.ceval.main_thread = PyThread_get_thread_ident();
+    _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);
@@ -315,7 +315,7 @@ int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
     int i, j, result=0;
-    PyThread_type_lock lock = _PyRuntime.ceval.pending_lock;
+    PyThread_type_lock lock = _PyRuntime.ceval.pending.lock;
 
     /* try a few times for the lock.  Since this mechanism is used
      * for signal handling (on the main thread), there is a (slim)
@@ -337,14 +337,14 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
             return -1;
     }
 
-    i = _PyRuntime.ceval.pendinglast;
+    i = _PyRuntime.ceval.pending.last;
     j = (i + 1) % NPENDINGCALLS;
-    if (j == _PyRuntime.ceval.pendingfirst) {
+    if (j == _PyRuntime.ceval.pending.first) {
         result = -1; /* Queue full */
     } else {
-        _PyRuntime.ceval.pendingcalls[i].func = func;
-        _PyRuntime.ceval.pendingcalls[i].arg = arg;
-        _PyRuntime.ceval.pendinglast = j;
+        _PyRuntime.ceval.pending.calls[i].func = func;
+        _PyRuntime.ceval.pending.calls[i].arg = arg;
+        _PyRuntime.ceval.pending.last = j;
     }
     /* signal main loop */
     SIGNAL_PENDING_CALLS();
@@ -362,15 +362,15 @@ Py_MakePendingCalls(void)
 
     assert(PyGILState_Check());
 
-    if (!_PyRuntime.ceval.pending_lock) {
+    if (!_PyRuntime.ceval.pending.lock) {
         /* initial allocation of the lock */
-        _PyRuntime.ceval.pending_lock = PyThread_allocate_lock();
-        if (_PyRuntime.ceval.pending_lock == NULL)
+        _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
+        if (_PyRuntime.ceval.pending.lock == NULL)
             return -1;
     }
 
     /* only service pending calls on main thread */
-    if (_PyRuntime.ceval.main_thread && PyThread_get_thread_ident() != _PyRuntime.ceval.main_thread)
+    if (_PyRuntime.ceval.pending.main_thread && PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
         return 0;
     /* don't perform recursive pending calls */
     if (busy)
@@ -393,18 +393,16 @@ Py_MakePendingCalls(void)
         void *arg = NULL;
 
         /* pop one item off the queue while holding the lock */
-        PyThread_acquire_lock(_PyRuntime.ceval.pending_lock, WAIT_LOCK);
-        j = _PyRuntime.ceval.pendingfirst;
-        if (j == _PyRuntime.ceval.pendinglast) {
+        PyThread_acquire_lock(_PyRuntime.ceval.pending.lock, WAIT_LOCK);
+        j = _PyRuntime.ceval.pending.first;
+        if (j == _PyRuntime.ceval.pending.last) {
             func = NULL; /* Queue empty */
         } else {
-            func = _PyRuntime.ceval.pendingcalls[j].func;
-            arg = _PyRuntime.ceval.pendingcalls[j].arg;
-            _PyRuntime.ceval.pendingfirst = (j + 1) % NPENDINGCALLS;
+            func = _PyRuntime.ceval.pending.calls[j].func;
+            arg = _PyRuntime.ceval.pending.calls[j].arg;
+            _PyRuntime.ceval.pending.first = (j + 1) % NPENDINGCALLS;
         }
-//        if (_PyRuntime.ceval.pendingfirst != _PyRuntime.ceval.pendinglast)
-//            SIGNAL_PENDING_CALLS();
-        PyThread_release_lock(_PyRuntime.ceval.pending_lock);
+        PyThread_release_lock(_PyRuntime.ceval.pending.lock);
         /* having released the lock, perform the callback */
         if (func == NULL)
             break;
@@ -962,7 +960,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 */
                 goto fast_next_opcode;
             }
-            if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.pendingcalls_to_do)) {
+            if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.pending.calls_to_do)) {
                 if (Py_MakePendingCalls() < 0)
                     goto error;
             }
