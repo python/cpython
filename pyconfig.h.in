@@ -1247,9 +1247,6 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
-/* framework name */
-#undef PYTHONFRAMEWORK
-
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
 
@@ -1463,6 +1460,9 @@
 
 /* Define if you have POSIX threads, and your system does not define that. */
 #undef _POSIX_THREADS
+
+/* framework name */
+#undef _PYTHONFRAMEWORK
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

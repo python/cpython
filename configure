@@ -3245,7 +3245,7 @@ fi
 
 
 cat >>confdefs.h <<_ACEOF
-#define PYTHONFRAMEWORK "${PYTHONFRAMEWORK}"
+#define _PYTHONFRAMEWORK "${PYTHONFRAMEWORK}"
 _ACEOF
 
 
