@@ -317,6 +317,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         if (name == NULL)
             return -1;
         if (console_type == '\0') {
+            PyMem_Free(name);
             PyErr_SetString(PyExc_ValueError,
                 "Cannot open non-console file");
             return -1;
@@ -400,7 +401,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         PyErr_SetString(PyExc_ValueError,
             "Cannot open non-console file");
         goto error;
-    }    
+    }
     if (self->writable && console_type != 'w') {
         PyErr_SetString(PyExc_ValueError,
             "Cannot open console input buffer for writing");
@@ -428,8 +429,7 @@ error:
     internal_close(self);
 
 done:
-    if (name)
-        PyMem_Free(name);
+    PyMem_Free(name);
     return ret;
 }
 
