@@ -195,26 +195,11 @@ free_list
 numfree
 
 # Objects/object.c
-#_PyTrash_delete_later
-#_PyTrash_delete_nesting
 _Py_SwappedOp
 _Py_abstract_hack
 
 # Objects/obmalloc.c
-#_PyMem
 _PyMem_Debug
-#_PyMem_Raw
-#_PyObject
-#_PyObject_Arena
-#_Py_AllocatedBlocks
-#arenas
-#maxarenas
-#narenas_currently_allocated
-#narenas_highwater
-#ntimes_arena_allocated
-#serialno
-#unused_arena_objects
-#usable_arenas
 #usedpools
 
 # Objects/setobject.c
@@ -223,7 +208,7 @@ _dummy_struct
 emptyfrozenset
 
 # Objects/sliceobject.c
-#slice_cache  # slight race
+slice_cache  # slight race
 
 # Objects/structseq.c
 PyStructSequence_UnnamedField
@@ -234,8 +219,8 @@ free_list
 numfree
 
 # Objects/typeobject.c
-#method_cache  # only for static types
-#next_version_tag  # only for static types
+method_cache  # only for static types
+next_version_tag  # only for static types
 name_op
 slotdefs  # almost
 slotdefs_initialized  # almost
@@ -246,8 +231,8 @@ tp_new_methoddef
 
 # Objects/unicodeobject.c
 bloom_linebreak
-#interned  # slight race on init in PyUnicode_InternInPlace()
-#static_strings  # slight race
+interned  # slight race on init in PyUnicode_InternInPlace()
+static_strings  # slight race
 unicode_empty
 unicode_latin1
 
@@ -293,12 +278,6 @@ _PyExc_StopAsyncIteration
 _PyExc_StopIteration
 _PyExc_SystemExit
 
-# Python/_warnings.c
-#_default_action
-#_filters
-#_filters_version
-#_once_registry
-
 
 #######################################
 # compiler
@@ -331,20 +310,12 @@ alias_fields
 # interpreter
 
 # Python/ceval.c
-#_Py_CheckRecursionLimit  # move to core as global default
+#_Py_TracingPossible
 
 # Python/sysmodule.c
-#_check_interval  # move to core as global default
 _PySys_ImplCacheTag
 _PySys_ImplName
 whatstrings
-#warnoptions  # move to core as global default
-#xoptions  # move to core as global default
-
-# Python/thread.c
-#ThreadInfoType  # slight race on init in PyThread_GetInfo()
-#initialized  # very slight race in PyThread_init_thread()
-#_pythread_stacksize  # move to core as global default
 
 
 #######################################
@@ -354,26 +325,26 @@ whatstrings
 _PyImport_Inittab
 
 # Objects/moduleobject.c
-#max_module_number  # slight race during import
+max_module_number  # slight race during import
 
 # Python/dynload_shlib.c
-#_PyImport_DynLoadFiletab
-#handles  # slight race during import
-#nhandles  # slight race during import
+_PyImport_DynLoadFiletab
+handles  # slight race during import
+nhandles  # slight race during import
 
 # Python/frozen.c
 M___hello__
-#PyImport_FrozenModules
+PyImport_FrozenModules
 
 # Python/import.c
-#PyImport_Inittab
-#extensions  # slight race on init during import
+PyImport_Inittab
+extensions  # slight race on init during import
 #import_lock  # For extension modules only.
 #import_lock_level  # For extension modules only.
 #import_lock_thread  # For extension modules only.
 
 # Python/modsupport.c
-#_Py_PackageContext  # Slight race during import!  Move to PyThreadState?
+_Py_PackageContext  # Slight race during import!  Move to PyThreadState?
 
 
 #######################################
@@ -405,16 +376,12 @@ PyHash_Func
 
 # Python/pylifecycle.c
 _PyOS_mystrnicmp_hack
-_Py_CoreInitialized
-_Py_Finalizing
+#_Py_CoreInitialized
 #_Py_StandardStreamEncoding
 #_Py_StandardStreamErrors
-#default_home
-#env_home
-#exitfuncs
-#nexitfuncs
-#progname
-#pyexitfunc
+default_home
+env_home
+progname
 #Py_BytesWarningFlag
 #Py_DebugFlag
 #Py_DontWriteBytecodeFlag
@@ -432,6 +399,12 @@ _Py_Finalizing
 #Py_UseClassExceptionsFlag
 #Py_VerboseFlag
 
+# Python/pystate.c
+head_mutex
+interp_head
+interp_main
+_next_interp_id
+
 
 #######################################
 # others
@@ -443,10 +416,10 @@ _PyOS_ReadlineLock
 _PyOS_ReadlineTState
 
 # Python/dtoa.c
-#freelist  # very slight race
+freelist  # very slight race
 p5s
-#pmem_next  # very slight race
-#private_mem  # very slight race
+pmem_next  # very slight race
+private_mem  # very slight race
 
 # Python/fileutils.c
 _Py_open_cloexec_works
