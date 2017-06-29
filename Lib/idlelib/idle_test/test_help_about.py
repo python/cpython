@@ -5,10 +5,15 @@ Coverage: 100%
 from test.support import requires, findfile
 from tkinter import Tk, TclError
 import unittest
+from unittest import mock
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
 from idlelib.help_about import AboutDialog as About
+from idlelib import help_about
 from idlelib import textview
+import os.path
+from platform import python_version, architecture
+
 
 class LiveDialogTest(unittest.TestCase):
     """Simulate user clicking buttons other than [Close].
@@ -29,9 +34,18 @@ class LiveDialogTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
+    def test_build_bits(self):
+        self.assertIn(help_about.build_bits(), ('32', '64'))
+
     def test_dialog_title(self):
         """Test about dialog title"""
         self.assertEqual(self.dialog.title(), 'About IDLE')
+
+    def test_dialog_logo(self):
+        """Test about dialog logo."""
+        path, file = os.path.split(self.dialog.icon_image['file'])
+        fn, ext = os.path.splitext(file)
+        self.assertEqual(fn, 'idle_48')
 
     def test_printer_buttons(self):
         """Test buttons whose commands use printer function."""
@@ -70,6 +84,30 @@ class LiveDialogTest(unittest.TestCase):
                     f.readline().strip(),
                     dialog._current_textview.text.get('3.0', '3.end'))
             dialog._current_textview.destroy()
+
+
+class DefaultTitleTest(unittest.TestCase):
+    "Test default title."
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.dialog = About(cls.root, _utest=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.dialog
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def test_dialog_title(self):
+        """Test about dialog title"""
+        self.assertEqual(self.dialog.title(),
+                         f'About IDLE {python_version()}'
+                         f' ({help_about.build_bits()} bit)')
 
 
 class CloseTest(unittest.TestCase):

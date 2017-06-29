@@ -151,8 +151,8 @@ instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 calendar
 --------
 
-The :class:`~calendar.HTMLCalendar` has added new class attribute which ease the
-customisation the CSS classes in the produced HTML calendar.
+The class :class:`~calendar.HTMLCalendar` has new class attributes which ease
+the customisation of the CSS classes in the produced HTML calendar.
 (Contributed by Oz Tiram in :issue:`30095`.)
 
 cgi
@@ -236,6 +236,13 @@ xmlrpc.server
 :meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
 its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
 :issue:`7769`.)
+
+unicodedata
+-----------
+
+The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
+<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
+Peterson.)
 
 urllib.parse
 ------------
@@ -353,6 +360,25 @@ Changes in the C API
   :c:type:`unsigned long`.
   (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
+- :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
+  second argument is *NULL* and the :c:type:`wchar_t*` string contains null
+  characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
+
+
+Windows Only
+------------
+- The python launcher, (py.exe), can accept 32 & 64 bit specifiers **without**
+  having to specify a minor version as well. So ``py -3-32`` and ``py -3-64``
+  become valid as well as ``py -3.7-32``, also the -*m*-64 and -*m.n*-64 forms
+  are now accepted to force 64 bit python even if 32 bit would have otherwise
+  been used. If the specified version is not available py.exe will error exit.
+  (Contributed by Steve Barnes in :issue:`30291`.)
+
+- The launcher can be run as "py -0" to produce a list of the installed pythons,
+  *with default marked with an asterix*. Running "py -0p" will include the paths.
+  If py is run with a version specifier that cannot be matched it will also print
+  the *short form* list of available specifiers.
+  (Contributed by Steve Barnes in :issue:`30362`.)
 
 Removed
 =======
@@ -421,6 +447,13 @@ Changes in the Python API
   To set their file permission bits you can set the umask before invoking
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
+
+* The :attr:`struct.Struct.format` type is now :class:`str` instead of
+  :class:`bytes`. (Contributed by Victor Stinner in :issue:`21071`.)
+
+* Due to internal changes in :mod:`socket` you won't be able to
+  :func:`socket.fromshare` a socket :func:`~socket.socket.share`-ed in older
+  Python versions.
 
 
 CPython bytecode changes

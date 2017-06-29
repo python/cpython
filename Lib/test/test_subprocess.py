@@ -655,6 +655,46 @@ class ProcessTestCase(BaseTestCase):
                                if not is_env_var_to_ignore(k)]
             self.assertEqual(child_env_names, [])
 
+    def test_invalid_cmd(self):
+        # null character in the command name
+        cmd = sys.executable + '\0'
+        with self.assertRaises(ValueError):
+            subprocess.Popen([cmd, "-c", "pass"])
+
+        # null character in the command argument
+        with self.assertRaises(ValueError):
+            subprocess.Popen([sys.executable, "-c", "pass#\0"])
+
+    def test_invalid_env(self):
+        # null character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT\0VEGETABLE"] = "cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
+
+        # null character in the enviroment variable value
+        newenv = os.environ.copy()
+        newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
+
+        # equal character in the enviroment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT=ORANGE"] = "lemon"
+        with self.assertRaises(ValueError):
+            subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
+
+        # equal character in the enviroment variable value
+        newenv = os.environ.copy()
+        newenv["FRUIT"] = "orange=lemon"
+        with subprocess.Popen([sys.executable, "-c",
+                               'import sys, os;'
+                               'sys.stdout.write(os.getenv("FRUIT"))'],
+                              stdout=subprocess.PIPE,
+                              env=newenv) as p:
+            stdout, stderr = p.communicate()
+            self.assertEqual(stdout, b"orange=lemon")
+
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys;'
@@ -2523,37 +2563,40 @@ class POSIXProcessTestCase(BaseTestCase):
             proc.communicate(timeout=999)
             mock_proc_stdin.close.assert_called_once_with()
 
-    @unittest.skipIf(not ctypes, 'ctypes module required.')
-    @unittest.skipIf(not sys.executable, 'Test requires sys.executable.')
+    @unittest.skipIf(not ctypes, 'ctypes module required')
+    @unittest.skipIf(not sys.executable, 'Test requires sys.executable')
     def test_child_terminated_in_stopped_state(self):
         """Test wait() behavior when waitpid returns WIFSTOPPED; issue29335."""
         PTRACE_TRACEME = 0  # From glibc and MacOS (PT_TRACE_ME).
         libc_name = ctypes.util.find_library('c')
         libc = ctypes.CDLL(libc_name)
         if not hasattr(libc, 'ptrace'):
-            raise unittest.SkipTest('ptrace() required.')
-        test_ptrace = subprocess.Popen(
-            [sys.executable, '-c', """if True:
+            raise unittest.SkipTest('ptrace() required')
+
+        code = textwrap.dedent(f"""
              import ctypes
+             import faulthandler
+             from test.support import SuppressCrashReport
+
              libc = ctypes.CDLL({libc_name!r})
              libc.ptrace({PTRACE_TRACEME}, 0, 0)
-             """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
-            ])
-        if test_ptrace.wait() != 0:
-            raise unittest.SkipTest('ptrace() failed - unable to test.')
-        child = subprocess.Popen(
-            [sys.executable, '-c', """if True:
-             import ctypes, faulthandler
-             libc = ctypes.CDLL({libc_name!r})
-             libc.ptrace({PTRACE_TRACEME}, 0, 0)
-             faulthandler._sigsegv()  # Crash the process.
-             """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
-            ])
+        """)
+
+        child = subprocess.Popen([sys.executable, '-c', code])
+        if child.wait() != 0:
+            raise unittest.SkipTest('ptrace() failed - unable to test')
+
+        code += textwrap.dedent(f"""
+             with SuppressCrashReport():
+                # Crash the process
+                faulthandler._sigsegv()
+        """)
+        child = subprocess.Popen([sys.executable, '-c', code])
         try:
             returncode = child.wait()
-        except Exception as e:
+        except:
             child.kill()  # Clean up the hung stopped process.
-            raise e
+            raise
         self.assertNotEqual(0, returncode)
         self.assertLess(returncode, 0)  # signal death, likely SIGSEGV.
 
