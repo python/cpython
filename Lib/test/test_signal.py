@@ -966,6 +966,7 @@ class StressTest(unittest.TestCase):
                 # will be on this platform
                 signal.setitimer(signal.ITIMER_REAL, 1e-6)
 
+        self.addCleanup(signal.setitimer, signal.ITIMER_REAL, 0)
         self.setsig(signal.SIGALRM, handler)
         handler()
         while len(times) < N:
