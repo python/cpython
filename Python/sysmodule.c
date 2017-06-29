@@ -1965,7 +1965,7 @@ _PySys_BeginInit(void)
     SET_SYS_FROM_STRING("_git",
                         Py_BuildValue("(szz)", "CPython", _Py_gitidentifier(),
                                       _Py_gitversion()));
-    SET_SYS_FROM_STRING("_framework", PyUnicode_FromString(PYTHONFRAMEWORK));
+    SET_SYS_FROM_STRING("_framework", PyUnicode_FromString(_PYTHONFRAMEWORK));
     SET_SYS_FROM_STRING("api_version",
                         PyLong_FromLong(PYTHON_API_VERSION));
     SET_SYS_FROM_STRING("copyright",
