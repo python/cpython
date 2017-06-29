@@ -848,17 +848,17 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
         del os.environ[new_key]
 
-    def test_iter_error_when_changin_os_environ(self):
+    def test_iter_error_when_changing_os_environ(self):
         iter_environ = iter(os.environ)
         self._test_environ_iteration(iter_environ)
 
-    def test_iter_error_when_changin_os_environ_items(self):
-        iter_environ = iter(os.environ.items())
-        self._test_environ_iteration(iter_environ)
+    def test_iter_error_when_changing_os_environ_items(self):
+        iter_environ_items = iter(os.environ.items())
+        self._test_environ_iteration(iter_environ_items)
 
-    def test_iter_error_when_changin_os_environ_values(self):
-        iter_environ = iter(os.environ.values())
-        self._test_environ_iteration(iter_environ)
+    def test_iter_error_when_changing_os_environ_values(self):
+        iter_environ_values = iter(os.environ.values())
+        self._test_environ_iteration(iter_environ_values)
 
 
 class WalkTests(unittest.TestCase):
