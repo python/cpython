@@ -377,27 +377,28 @@ PyHash_Func
 # Python/pylifecycle.c
 _PyOS_mystrnicmp_hack
 #_Py_CoreInitialized
+_PyRuntime
 #_Py_StandardStreamEncoding
 #_Py_StandardStreamErrors
 default_home
 env_home
 progname
-#Py_BytesWarningFlag
-#Py_DebugFlag
-#Py_DontWriteBytecodeFlag
-#Py_FrozenFlag
-#Py_HashRandomizationFlag
-#Py_IgnoreEnvironmentFlag
-#Py_InspectFlag
-#Py_InteractiveFlag
-#Py_IsolatedFlag
-#Py_NoSiteFlag
-#Py_NoUserSiteDirectory
-#Py_OptimizeFlag
-#Py_QuietFlag
-#Py_UnbufferedStdioFlag
-#Py_UseClassExceptionsFlag
-#Py_VerboseFlag
+Py_BytesWarningFlag
+Py_DebugFlag
+Py_DontWriteBytecodeFlag
+Py_FrozenFlag
+Py_HashRandomizationFlag
+Py_IgnoreEnvironmentFlag
+Py_InspectFlag
+Py_InteractiveFlag
+Py_IsolatedFlag
+Py_NoSiteFlag
+Py_NoUserSiteDirectory
+Py_OptimizeFlag
+Py_QuietFlag
+Py_UnbufferedStdioFlag
+Py_UseClassExceptionsFlag
+Py_VerboseFlag
 
 # Python/pystate.c
 head_mutex
