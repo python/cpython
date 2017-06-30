@@ -10,14 +10,11 @@ import tempfile
 import time
 import re
 import sysconfig
-import textwrap
 
 try:
     import ctypes
 except ImportError:
     ctypes = None
-else:
-    import ctypes.util
 
 try:
     import resource
@@ -1265,33 +1262,41 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.assertEqual(p2.returncode, 0, "Unexpected error: " + repr(stderr))
 
-    @unittest.skipIf(not ctypes, 'ctypes module required')
-    @unittest.skipIf(not sys.executable, 'Test requires sys.executable')
+    _libc_file_extensions = {
+      'Linux': 'so.6',
+      'Darwin': 'dylib',
+    }
+    @unittest.skipIf(not ctypes, 'ctypes module required.')
+    @unittest.skipIf(platform.uname()[0] not in _libc_file_extensions,
+                     'Test requires a libc this code can load with ctypes.')
+    @unittest.skipIf(not sys.executable, 'Test requires sys.executable.')
     def test_child_terminated_in_stopped_state(self):
         """Test wait() behavior when waitpid returns WIFSTOPPED; issue29335."""
         PTRACE_TRACEME = 0  # From glibc and MacOS (PT_TRACE_ME).
-        libc_name = ctypes.util.find_library('c')
+        libc_name = 'libc.' + self._libc_file_extensions[platform.uname()[0]]
         libc = ctypes.CDLL(libc_name)
         if not hasattr(libc, 'ptrace'):
-            raise unittest.SkipTest('ptrace() required')
-
-        code = textwrap.dedent("""
+            raise unittest.SkipTest('ptrace() required.')
+        test_ptrace = subprocess.Popen(
+            [sys.executable, '-c', """if True:
              import ctypes
-             from test.support import _crash_python
-
              libc = ctypes.CDLL({libc_name!r})
              libc.ptrace({PTRACE_TRACEME}, 0, 0)
-        """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME))
+             """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
+            ])
+        if test_ptrace.wait() != 0:
+            raise unittest.SkipTest('ptrace() failed - unable to test.')
 
-        child = subprocess.Popen([sys.executable, '-c', code])
-        if child.wait() != 0:
-            raise unittest.SkipTest('ptrace() failed - unable to test')
-
-        code += textwrap.dedent("""
-             # Crash the process
-             _crash_python()
-        """)
-        child = subprocess.Popen([sys.executable, '-c', code])
+        child = subprocess.Popen(
+            [sys.executable, '-c', """if True:
+             import ctypes
+             from test.support import SuppressCrashReport
+             libc = ctypes.CDLL({libc_name!r})
+             libc.ptrace({PTRACE_TRACEME}, 0, 0)
+             with SuppressCrashReport():
+                 libc.printf(ctypes.c_char_p(0xdeadbeef))  # Crash the process.
+             """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME)
+            ])
         try:
             returncode = child.wait()
         except:
