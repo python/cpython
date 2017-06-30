@@ -16,7 +16,7 @@ available.  They are listed here in alphabetical order.
 :func:`basestring`   :func:`execfile`   :func:`issubclass`  :func:`print`      :func:`super`
 :func:`bin`          :func:`file`       :func:`iter`        :func:`property`   :func:`tuple`
 :func:`bool`         :func:`filter`     :func:`len`         :func:`range`      :func:`type`
-:func:`bytearray`    :func:`float`      :func:`list`        :func:`raw_input`  :func:`unichr`
+:func:`bytearray`    :func:`float`      |func-list|_        :func:`raw_input`  :func:`unichr`
 :func:`callable`     :func:`format`     :func:`locals`      :func:`reduce`     :func:`unicode`
 :func:`chr`          |func-frozenset|_  :func:`long`        :func:`reload`     :func:`vars`
 :func:`classmethod`  :func:`getattr`    :func:`map`         |func-repr|_       :func:`xrange`
@@ -38,6 +38,7 @@ section.
 
 .. |func-dict| replace:: ``dict()``
 .. |func-frozenset| replace:: ``frozenset()``
+.. |func-list| replace:: ``list()``
 .. |func-memoryview| replace:: ``memoryview()``
 .. |func-repr| replace:: ``repr()``
 .. |func-set| replace:: ``set()``
@@ -697,6 +698,7 @@ section.
       Support for a tuple of type information was added.
 
 
+.. _func-list:
 .. function:: issubclass(class, classinfo)
 
    Return true if *class* is a subclass (direct, indirect or :term:`virtual
