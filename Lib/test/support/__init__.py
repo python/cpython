@@ -2004,6 +2004,14 @@ def modules_cleanup(oldmodules):
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
 
+# Flag used by saved_test_environment of test.libregrtest.save_env,
+# to check if a test modified the environment. The flag should be set to False
+# before running a new test.
+#
+# For example, threading_cleanup() sets the flag is the function fails
+# to cleanup threads.
+environment_altered = False
+
 # NOTE: we use thread._count() rather than threading.enumerate() (or the
 # moral equivalent thereof) because a threading.Thread object is still alive
 # until its __bootstrap() method has returned, even after it has been
@@ -2019,16 +2027,27 @@ def threading_setup():
         return 1, ()
 
 def threading_cleanup(*original_values):
+    global environment_altered
+
     if not _thread:
         return
     _MAX_COUNT = 100
+    t0 = time.monotonic()
     for count in range(_MAX_COUNT):
         values = _thread._count(), threading._dangling
         if values == original_values:
             break
         time.sleep(0.01)
         gc_collect()
-    # XXX print a warning in case of failure?
+    else:
+        environment_altered = True
+
+        dt = time.monotonic() - t0
+        print("Warning -- threading_cleanup() failed to cleanup %s threads "
+              "after %.0f sec (count: %s, dangling: %s)"
+              % (values[0] - original_values[0], dt,
+                 values[0], len(values[1])),
+              file=sys.stderr)
 
 def reap_threads(func):
     """Use this function when threads are being used.  This will
