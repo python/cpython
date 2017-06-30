@@ -490,6 +490,16 @@ class ItimerTest(unittest.TestCase):
         # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 
+    def test_setitimer_tiny(self):
+        # bpo-30807: C setitimer() takes a microsecond-resolution interval.
+        # Check that float -> timeval conversion doesn't round
+        # the interval down to zero, which would disable the timer.
+        self.itimer = signal.ITIMER_REAL
+        signal.setitimer(self.itimer, 1e-6)
+        time.sleep(1)
+        self.assertEqual(self.hndl_called, True)
+
+
 def test_main():
     test_support.run_unittest(BasicSignalTests, InterProcessSignalTests,
                               WakeupFDTests, WakeupSignalTests,
