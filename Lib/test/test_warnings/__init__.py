@@ -727,10 +727,15 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         text = 'del _showwarnmsg test'
         with original_warnings.catch_warnings(module=self.module):
             self.module.filterwarnings("always", category=UserWarning)
-            del self.module._showwarnmsg
-            with support.captured_output('stderr') as stream:
-                self.module.warn(text)
-                result = stream.getvalue()
+
+            show = self.module._showwarnmsg
+            try:
+                del self.module._showwarnmsg
+                with support.captured_output('stderr') as stream:
+                    self.module.warn(text)
+                    result = stream.getvalue()
+            finally:
+                self.module._showwarnmsg = show
         self.assertIn(text, result)
 
     def test_showwarning_not_callable(self):
