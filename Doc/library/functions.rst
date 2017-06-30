@@ -698,7 +698,6 @@ section.
       Support for a tuple of type information was added.
 
 
-.. _func-list:
 .. function:: issubclass(class, classinfo)
 
    Return true if *class* is a subclass (direct, indirect or :term:`virtual
@@ -742,6 +741,7 @@ section.
    (such as a dictionary, set, or frozen set).
 
 
+.. _func-list:
 .. class:: list([iterable])
    :noindex:
 
