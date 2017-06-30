@@ -479,9 +479,9 @@ if hasattr(select, 'epoll'):
                 return ready
             for fd, event in fd_event_list:
                 events = 0
-                if event & ~select.EPOLLIN:
+                if event & ~self._EVENT_READ:
                     events |= EVENT_WRITE
-                if event & ~select.EPOLLOUT:
+                if event & ~self._EVENT_WRITE:
                     events |= EVENT_READ
 
                 key = self._key_from_fd(fd)
