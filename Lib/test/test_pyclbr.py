@@ -2,10 +2,14 @@
    Test cases for pyclbr.py
    Nick Mathewson
 '''
+
+import os
 import sys
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
+from test import support
+from functools import partial
 
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))
@@ -149,6 +153,121 @@ class PyclbrTest(TestCase):
         #      if it were not commented out.
         #
         self.checkModule('test.pyclbr_input', ignore=['om'])
+
+    def test_nested(self):
+
+        def clbr_from_tuple(t, store, parent=None, lineno=1):
+            '''Create pyclbr objects from the given tuple t.'''
+            name = t[0]
+            obj = pickp(name)
+            if parent is not None:
+                store = store[parent].objects
+            ob_name = name.split()[1]
+            store[ob_name] = obj(name=ob_name, lineno=lineno, parent=parent)
+            parent = ob_name
+
+            for item in t[1:]:
+                lineno += 1
+                if isinstance(item, str):
+                    obj = pickp(item)
+                    ob_name = item.split()[1]
+                    store[parent].objects[ob_name] = obj(
+                            name=ob_name, lineno=lineno, parent=parent)
+                else:
+                    lineno = clbr_from_tuple(item, store, parent, lineno)
+
+            return lineno
+
+        def tuple_to_py(t, output, indent=0):
+            '''Write python code to output according to the given tuple.'''
+            name = t[0]
+            output.write('{}{}():'.format(' ' * indent, name))
+            indent += 2
+
+            if not t[1:]:
+                output.write(' pass')
+            output.write('\n')
+
+            for item in t[1:]:
+                if isinstance(item, str):
+                    output.write('{}{}(): pass\n'.format(' ' * indent, item))
+                else:
+                    tuple_to_py(item, output, indent)
+
+        # Nested "thing" to test.
+        sample = (
+                ("class A",
+                    ("class B",
+                        ("def a",
+                            "def b")),
+                    "def c"),
+                ("def d",
+                    ("def e",
+                        ("class C",
+                            "def f")
+                     ),
+                 "def g")
+                )
+
+        pclass = partial(pyclbr.Class, module=None, file=None, super=None)
+        pfunc = partial(pyclbr.Function, module=None, file=None)
+
+        def pickp(name):
+            return pclass if name.startswith('class') else pfunc
+
+        # Create a module for storing the Python code.
+        dirname = os.path.abspath(support.TESTFN)
+        modname = 'notsupposedtoexist'
+        fname = os.path.join(dirname, modname) + os.extsep + 'py'
+        os.mkdir(dirname)
+
+        # Create pyclbr objects from the sample above, and also convert
+        # the same sample above to Python code and write it to fname.
+        d = {}
+        lineno = 1
+        with open(fname, 'w') as output:
+            for t in sample:
+                newlineno = clbr_from_tuple(t, d, lineno=lineno)
+                lineno = newlineno + 1
+                tuple_to_py(t, output)
+
+        # Get the data returned by readmodule_ex to compare against
+        # our generated data.
+        try:
+            with support.DirsOnSysPath(dirname):
+                d_cmp = pyclbr.readmodule_ex(modname)
+        finally:
+            support.unlink(fname)
+            support.rmtree(dirname)
+
+        # Finally perform the tests.
+        def check_objects(ob1, ob2):
+            self.assertEqual(ob1.lineno, ob2.lineno)
+            if ob1.parent is None:
+                self.assertIsNone(ob2.parent)
+            else:
+                # ob1 must come from our generated data since the parent
+                # attribute is always a string, while the ob2 must come
+                # from pyclbr which is always an Object instance.
+                self.assertEqual(ob1.parent, ob2.parent.name)
+            self.assertEqual(
+                    ob1.__class__.__name__,
+                    ob2.__class__.__name__)
+            self.assertEqual(ob1.objects.keys(), ob2.objects.keys())
+            for name, obj in list(ob1.objects.items()):
+                obj_cmp = ob2.objects.pop(name)
+                del ob1.objects[name]
+                check_objects(obj, obj_cmp)
+
+        for name, obj in list(d.items()):
+            self.assertIn(name, d_cmp)
+            obj_cmp = d_cmp.pop(name)
+            del d[name]
+            check_objects(obj, obj_cmp)
+            self.assertFalse(obj.objects)
+            self.assertFalse(obj_cmp.objects)
+        self.assertFalse(d)
+        self.assertFalse(d_cmp)
 
     def test_others(self):
         cm = self.checkModule
