@@ -16,6 +16,7 @@ import sys
 # generic events, that must be mapped to implementation-specific ones
 EVENT_READ = (1 << 0)
 EVENT_WRITE = (1 << 1)
+EVENT_EXCEPT = (1 << 2)
 
 
 def _fileobj_to_fd(fileobj):
@@ -104,7 +105,7 @@ class BaseSelector(metaclass=ABCMeta):
         Parameters:
         fileobj -- file object or file descriptor
         events  -- events to monitor
-                   (bitwise mask of EVENT_READ|EVENT_WRITE)
+                   (bitwise mask of EVENT_READ|EVENT_WRITE|EVENT_EXCEPT)
         data    -- attached data
 
         Returns:
@@ -147,7 +148,7 @@ class BaseSelector(metaclass=ABCMeta):
         Parameters:
         fileobj -- file object or file descriptor
         events  -- events to monitor
-                   (bitwise mask of EVENT_READ|EVENT_WRITE)
+                   (bitwise mask of EVENT_READ|EVENT_WRITE|EVENT_EXCEPT)
         data    -- attached data
 
         Returns:
@@ -173,8 +174,8 @@ class BaseSelector(metaclass=ABCMeta):
                    monitored file object becomes ready
 
         Returns:
-        list of (key, events) for ready file objects
-        `events` is a bitwise mask of EVENT_READ|EVENT_WRITE
+        list of (key, events) for ready file objects. `events` is a
+        bitwise mask of EVENT_READ|EVENT_WRITE|EVENT_EXCEPT
         """
         raise NotImplementedError
 
@@ -241,7 +242,7 @@ class _BaseSelectorImpl(BaseSelector):
             raise
 
     def register(self, fileobj, events, data=None):
-        if (not events) or (events & ~(EVENT_READ | EVENT_WRITE)):
+        if (not events) or (events & ~(EVENT_READ | EVENT_WRITE | EVENT_EXCEPT)):
             raise ValueError("Invalid events: {!r}".format(events))
 
         key = SelectorKey(fileobj, self._fileobj_lookup(fileobj), events, data)
@@ -303,6 +304,7 @@ class SelectSelector(_BaseSelectorImpl):
         super().__init__()
         self._readers = set()
         self._writers = set()
+        self._excepters = set()
 
     def register(self, fileobj, events, data=None):
         key = super().register(fileobj, events, data)
@@ -310,6 +312,8 @@ class SelectSelector(_BaseSelectorImpl):
             self._readers.add(key.fd)
         if events & EVENT_WRITE:
             self._writers.add(key.fd)
+        if events & EVENT_EXCEPT:
+            self._excepters.add(key.fd)
         return key
 
     def unregister(self, fileobj):
@@ -319,9 +323,11 @@ class SelectSelector(_BaseSelectorImpl):
         return key
 
     if sys.platform == 'win32':
-        def _select(self, r, w, _, timeout=None):
-            r, w, x = select.select(r, w, w, timeout)
-            return r, w + x, []
+        def _select(self, r, w, x, timeout=None):
+            r, _w, _x = select.select(r, w, w|x, timeout)
+            w = [fd for fd in _w+_x if fd in w]
+            x = [fd for fd in _x if fd in x]
+            return r, w, x
     else:
         _select = select.select
 
@@ -329,17 +335,21 @@ class SelectSelector(_BaseSelectorImpl):
         timeout = None if timeout is None else max(timeout, 0)
         ready = []
         try:
-            r, w, _ = self._select(self._readers, self._writers, [], timeout)
+            r, w, e = self._select(self._readers, self._writers,
+                                   self._excepters, timeout)
         except InterruptedError:
             return ready
         r = set(r)
         w = set(w)
-        for fd in r | w:
+        e = set(e)
+        for fd in r | w | e:
             events = 0
             if fd in r:
                 events |= EVENT_READ
             if fd in w:
                 events |= EVENT_WRITE
+            if fd in e:
+                events |= EVENT_EXCEPT
 
             key = self._key_from_fd(fd)
             if key:
@@ -352,6 +362,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
     _selector_cls = None
     _EVENT_READ = None
     _EVENT_WRITE = None
+    _EVENT_EXCEPT = None
 
     def __init__(self):
         super().__init__()
@@ -364,6 +375,8 @@ class _PollLikeSelector(_BaseSelectorImpl):
             poller_events |= self._EVENT_READ
         if events & EVENT_WRITE:
             poller_events |= self._EVENT_WRITE
+        if events & EVENT_EXCEPT:
+            poller_events |= self._EVENT_EXCEPT
         try:
             self._selector.register(key.fd, poller_events)
         except:
@@ -394,6 +407,8 @@ class _PollLikeSelector(_BaseSelectorImpl):
                 selector_events |= self._EVENT_READ
             if events & EVENT_WRITE:
                 selector_events |= self._EVENT_WRITE
+            if events & EVENT_EXCEPT:
+                selector_events |= self._EVENT_EXCEPT
             try:
                 self._selector.modify(key.fd, selector_events)
             except:
@@ -426,9 +441,11 @@ class _PollLikeSelector(_BaseSelectorImpl):
             return ready
         for fd, event in fd_event_list:
             events = 0
-            if event & ~self._EVENT_READ:
+            if event & ~(self._EVENT_READ | self._EVENT_WRITE):
+                events |= EVENT_EXCEPT
+            if event & ~(self._EVENT_READ | self._EVENT_EXCEPT):
                 events |= EVENT_WRITE
-            if event & ~self._EVENT_WRITE:
+            if event & ~(self._EVENT_WRITE | self._EVENT_EXCEPT):
                 events |= EVENT_READ
 
             key = self._key_from_fd(fd)
@@ -444,6 +461,7 @@ if hasattr(select, 'poll'):
         _selector_cls = select.poll
         _EVENT_READ = select.POLLIN
         _EVENT_WRITE = select.POLLOUT
+        _EVENT_EXCEPT = select.POLLPRI
 
 
 if hasattr(select, 'epoll'):
@@ -453,6 +471,7 @@ if hasattr(select, 'epoll'):
         _selector_cls = select.epoll
         _EVENT_READ = select.EPOLLIN
         _EVENT_WRITE = select.EPOLLOUT
+        _EVENT_EXCEPT = select.EPOLLPRI
 
         def fileno(self):
             return self._selector.fileno()
@@ -479,9 +498,11 @@ if hasattr(select, 'epoll'):
                 return ready
             for fd, event in fd_event_list:
                 events = 0
-                if event & ~self._EVENT_READ:
+                if event & ~(self._EVENT_READ | self._EVENT_WRITE):
+                    events |= EVENT_EXCEPT
+                if event & ~(self._EVENT_READ | self._EVENT_EXCEPT):
                     events |= EVENT_WRITE
-                if event & ~self._EVENT_WRITE:
+                if event & ~(self._EVENT_WRITE | self._EVENT_EXCEPT):
                     events |= EVENT_READ
 
                 key = self._key_from_fd(fd)
@@ -501,6 +522,7 @@ if hasattr(select, 'devpoll'):
         _selector_cls = select.devpoll
         _EVENT_READ = select.POLLIN
         _EVENT_WRITE = select.POLLOUT
+        _EVENT_EXCEPT = select.POLLPRI
 
         def fileno(self):
             return self._selector.fileno()

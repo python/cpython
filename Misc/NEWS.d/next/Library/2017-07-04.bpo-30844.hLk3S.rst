@@ -1,0 +1,1 @@
+selectors: add exceptional conditions event

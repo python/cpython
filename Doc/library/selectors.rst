@@ -63,6 +63,11 @@ constants below:
    +-----------------------+-----------------------------------------------+
    | :const:`EVENT_WRITE`  | Available for write                           |
    +-----------------------+-----------------------------------------------+
+   | :const:`EVENT_EXCEPT` | Available for exceptional conditions          |
+   +-----------------------+-----------------------------------------------+
+
+   .. versionchanged:: 3.7
+      Added :const:`EVENT_EXCEPT`.
 
 
 .. class:: SelectorKey
