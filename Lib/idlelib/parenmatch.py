@@ -41,8 +41,8 @@ class ParenMatch:
             'extensions','ParenMatch','flash-delay', type='int',default=500)
     BELL = idleConf.GetOption(
             'extensions','ParenMatch','bell', type='bool',default=1)
-    HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),
-                                          idleConf.GetOption(
+    HILITE_CONFIG = idleConf.GetHighlight(
+        idleConf.CurrentTheme(), idleConf.GetOption(
             'extensions','ParenMatch','hilite', default='expression'))
     
 
