@@ -174,7 +174,7 @@ msvcrt_get_osfhandle(PyObject *module, PyObject *arg)
         goto exit;
     }
     _return_value = msvcrt_get_osfhandle_impl(module, fd);
-    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
+    if ((_return_value == NULL || _return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = PyLong_FromVoidPtr(_return_value);
@@ -589,4 +589,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=14ab3d3d39ce9deb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7829f02d3bc2a9f input=a9049054013a1b77]*/

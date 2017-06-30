@@ -42,7 +42,9 @@ class HANDLE_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == INVALID_HANDLE_VALUE", data)
+        self.err_occurred_if(
+            "_return_value == NULL || _return_value == INVALID_HANDLE_VALUE",
+            data)
         data.return_conversion.append(
             'return_value = PyLong_FromVoidPtr(_return_value);\n')
 
@@ -63,7 +65,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=dab543102cf6345d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=2b25dc89e9e59534]*/
 
 /*[clinic input]
 module msvcrt
