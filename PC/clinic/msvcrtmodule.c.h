@@ -174,7 +174,7 @@ msvcrt_get_osfhandle(PyObject *module, PyObject *arg)
         goto exit;
     }
     _return_value = msvcrt_get_osfhandle_impl(module, fd);
-    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
+    if ((_return_value == NULL || _return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = PyLong_FromVoidPtr(_return_value);
@@ -458,7 +458,7 @@ msvcrt_CrtSetReportFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyO
         goto exit;
     }
     _return_value = msvcrt_CrtSetReportFile_impl(module, type, file);
-    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
+    if ((_return_value == NULL || _return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = PyLong_FromVoidPtr(_return_value);
@@ -589,4 +589,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=bf069e62089190cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=990a62e1a66b7ab5 input=a9049054013a1b77]*/
