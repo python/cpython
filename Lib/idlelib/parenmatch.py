@@ -44,7 +44,7 @@ class ParenMatch:
     HILITE_CONFIG = idleConf.GetHighlight(
         idleConf.CurrentTheme(), idleConf.GetOption(
             'extensions','ParenMatch','hilite', default='expression'))
-    
+
 
     RESTORE_VIRTUAL_EVENT_NAME = "<<parenmatch-check-restore>>"
     # We want the restore event be called before the usual return and
