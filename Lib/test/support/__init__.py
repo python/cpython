@@ -1916,13 +1916,13 @@ class SuppressCrashReport:
                 #
                 # This assumes that this context manager is used in tests
                 # that might trigger the next manager.
+                import subprocess
                 cmd = ['/usr/bin/defaults', 'read',
                        'com.apple.CrashReporter', 'DialogType']
                 proc = subprocess.Popen(cmd,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
-                with proc:
-                    stdout = proc.communicate()[0]
+                stdout = proc.communicate()[0]
                 if stdout.strip() == b'developer':
                     sys.stdout.write("this test triggers the Crash Reporter, "
                                      "that is intentional")
