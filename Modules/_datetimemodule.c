@@ -2284,72 +2284,55 @@ delta_bool(PyDateTime_Delta *self)
 static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
-    PyObject *args = PyList_New(0);
+    PyObject *args = PyUnicode_FromString("");
 
     if (args == NULL) {
         return NULL;
     }
 
+    char *sep = "";
+
     if (GET_TD_DAYS(self) != 0) {
-        PyObject *days = PyUnicode_FromFormat("days=%d", GET_TD_DAYS(self));
-        if (days == NULL || PyList_Append(args, days) < 0) {
-            Py_XDECREF(days);
-            goto error;
+        Py_SETREF(args, PyUnicode_FromFormat("days=%d", GET_TD_DAYS(self)));
+        if (args == NULL) {
+            return NULL;
         }
-        Py_DECREF(days);
+        sep = ", ";
     }
 
     if (GET_TD_SECONDS(self) != 0) {
-        PyObject *seconds = PyUnicode_FromFormat("seconds=%d",
-                                                 GET_TD_SECONDS(self));
-        if (seconds == NULL || PyList_Append(args, seconds) < 0) {
-            Py_XDECREF(seconds);
-            goto error;
+        Py_SETREF(args, PyUnicode_FromFormat("%U%sseconds=%d",
+                                             args,
+                                             sep,
+                                             GET_TD_SECONDS(self)));
+        if (args == NULL) {
+            return NULL;
         }
-        Py_DECREF(seconds);
+        sep = ", ";
     }
 
     if (GET_TD_MICROSECONDS(self) != 0) {
-        PyObject *microseconds = PyUnicode_FromFormat("microseconds=%d",
-                                                      GET_TD_MICROSECONDS(self));
-        if (microseconds == NULL || PyList_Append(args, microseconds) < 0) {
-            Py_XDECREF(microseconds);
-            goto error;
+        Py_SETREF(args, PyUnicode_FromFormat("%U%smicroseconds=%d",
+                                             args,
+                                             sep,
+                                             GET_TD_MICROSECONDS(self)));
+        if (args == NULL) {
+            return NULL;
         }
-        Py_DECREF(microseconds);
     }
 
-    if (PyList_GET_SIZE(args) == 0) {
-        PyObject *zero = PyUnicode_FromString("0");
-        if (zero == NULL || PyList_Append(args, zero) < 0) {
-            Py_XDECREF(zero);
-            goto error;
+    if (PyUnicode_GET_LENGTH(args) == 0) {
+        Py_SETREF(args, PyUnicode_FromString("0"));
+        if (args == NULL) {
+            return NULL;
         }
-        Py_DECREF(zero);
-    }
-
-    PyObject *sep = PyUnicode_FromString(", ");
-    if (sep == NULL) {
-        Py_DECREF(args);
-        return NULL;
-    }
-
-    PyObject *args_string = PyUnicode_Join(sep, args);
-    Py_DECREF(sep);
-    Py_DECREF(args);
-    if (args_string == NULL) {
-        return NULL;
     }
 
     PyObject *repr = PyUnicode_FromFormat("%s(%S)",
                                           Py_TYPE(self)->tp_name,
-                                          args_string);
-    Py_DECREF(args_string);
-    return repr;
-
-error:
+                                          args);
     Py_DECREF(args);
-    return NULL;
+    return repr;
 }
 
 static PyObject *
