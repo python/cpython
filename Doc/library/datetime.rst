@@ -287,8 +287,9 @@ Supported operations:
 |                                | ``[D day[s], ][H]H:MM:SS[.UUUUUU]``, where D  |
 |                                | is negative for negative ``t``. (5)           |
 +--------------------------------+-----------------------------------------------+
-| ``repr(t)``                    | Returns the representation of the             |
-|                                | :class:`timedelta` object as a string.        |
+| ``repr(t)``                    | Returns a string representation of the        |
+|                                | :class:`timedelta` object such that           |
+|                                | ``t == eval(repr(t))``.                       |
 +--------------------------------+-----------------------------------------------+
 
 
