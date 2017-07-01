@@ -20,7 +20,7 @@ Library
 -------
 
 - [Security] bpo-30730: Prevent environment variables injection in subprocess on
-  Windows.  Prevent passing other environment variables and command arguments.
+  Windows.  Prevent passing other invalid environment variables and command arguments.
 
 - Issue #27850: Remove 3DES from ssl module's default cipher list to counter
   measure sweet32 attack (CVE-2016-2183).
