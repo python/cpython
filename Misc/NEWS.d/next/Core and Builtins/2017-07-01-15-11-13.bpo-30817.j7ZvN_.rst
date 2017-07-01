@@ -1,0 +1,2 @@
+`PyErr_PrintEx()` does not ignore now when an exception is set after calling
+`_PySys_SetObjectId()`.
