@@ -218,12 +218,6 @@ math
 New :func:`~math.remainder` function, implementing the IEEE 754-style remainder
 operation. (Contributed by Mark Dickinson in :issue:`29962`.)
 
-mimetypes
----------
-
-Extension *.json* is mapped to the content type "application/json".
-(Contributed by Pierre Quentel in :issue:`30576`.)
-
 os
 --
 
