@@ -954,6 +954,7 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
 'Tommy''s Place'+ Blue Island'+ 'IL'+ '12/28/02'+ 'Blue Sunday/White Crow'
 'Stonecutters ''Seafood'' and Chop House'+ 'Lemont'+ 'IL'+ '12/19/02'+ 'Week Back'
 """
+    sample10 = "Date;Value\r2010-01-01;10\r2010-01-01;20"
 
     def test_has_header(self):
         sniffer = csv.Sniffer()
@@ -1017,6 +1018,16 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
         self.assertFalse(dialect.doublequote)
         dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
+
+    def test_guess_lineterminator(self):
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(self.sample5)
+        self.assertEqual(dialect.lineterminator, '\r\n')
+        dialect = sniffer.sniff(self.sample8)
+        self.assertEqual(dialect.lineterminator, '\n')
+        dialect = sniffer.sniff(self.sample10)
+        self.assertEqual(dialect.lineterminator, '\r')
+
 
 class NUL:
     def write(s, *args):
