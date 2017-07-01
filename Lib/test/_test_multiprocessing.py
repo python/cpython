@@ -337,6 +337,59 @@ class _TestProcess(BaseTestCase):
         if os.name != 'nt':
             self.assertEqual(p.exitcode, -signal.SIGTERM)
 
+    def test_kill(self):
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        p = self.Process(target=self._test_terminate)
+        p.daemon = True
+        p.start()
+
+        self.assertEqual(p.is_alive(), True)
+        self.assertIn(p, self.active_children())
+        self.assertEqual(p.exitcode, None)
+
+        join = TimingWrapper(p.join)
+
+        self.assertEqual(join(0), None)
+        self.assertTimingAlmostEqual(join.elapsed, 0.0)
+        self.assertEqual(p.is_alive(), True)
+
+        self.assertEqual(join(-1), None)
+        self.assertTimingAlmostEqual(join.elapsed, 0.0)
+        self.assertEqual(p.is_alive(), True)
+
+        # XXX maybe terminating too soon causes the problems on Gentoo...
+        time.sleep(1)
+
+        p.kill()
+
+        if hasattr(signal, 'alarm'):
+            # On the Gentoo buildbot waitpid() often seems to block forever.
+            # We use alarm() to interrupt it if it blocks for too long.
+            def handler(*args):
+                raise RuntimeError('join took too long: %s' % p)
+            old_handler = signal.signal(signal.SIGALRM, handler)
+            try:
+                signal.alarm(10)
+                self.assertEqual(join(), None)
+            finally:
+                signal.alarm(0)
+                signal.signal(signal.SIGALRM, old_handler)
+        else:
+            self.assertEqual(join(), None)
+
+        self.assertTimingAlmostEqual(join.elapsed, 0.0)
+
+        self.assertEqual(p.is_alive(), False)
+        self.assertNotIn(p, self.active_children())
+
+        p.join()
+
+        # sometimes get p.exitcode == 0 on Windows ...
+        if os.name != 'nt':
+            self.assertEqual(p.exitcode, -signal.SIGKILL)
+
     def test_cpu_count(self):
         try:
             cpus = multiprocessing.cpu_count()
