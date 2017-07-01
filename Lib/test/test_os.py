@@ -835,7 +835,8 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self.assertIs(cm.exception.args[0], missing)
         self.assertTrue(cm.exception.__suppress_context__)
 
-    def _test_environ_iteration(self, iterator):
+    def _test_environ_iteration(self, collection):
+        iterator = iter(collection)
         new_key = "__new_key__"
 
         next(iterator)  # start iteration over os.environ.items
@@ -843,22 +844,20 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         # add a new key in os.environ mapping
         os.environ[new_key] = "test_environ_iteration"
 
-        next(iterator)  # force iteration over modified mapping
-        self.assertEqual(os.environ[new_key], "test_environ_iteration")
-
-        del os.environ[new_key]
+        try:
+            next(iterator)  # force iteration over modified mapping
+            self.assertEqual(os.environ[new_key], "test_environ_iteration")
+        finally:
+            del os.environ[new_key]
 
     def test_iter_error_when_changing_os_environ(self):
-        iter_environ = iter(os.environ)
-        self._test_environ_iteration(iter_environ)
+        self._test_environ_iteration(os.environ)
 
     def test_iter_error_when_changing_os_environ_items(self):
-        iter_environ_items = iter(os.environ.items())
-        self._test_environ_iteration(iter_environ_items)
+        self._test_environ_iteration(os.environ.items())
 
     def test_iter_error_when_changing_os_environ_values(self):
-        iter_environ_values = iter(os.environ.values())
-        self._test_environ_iteration(iter_environ_values)
+        self._test_environ_iteration(os.environ.values())
 
 
 class WalkTests(unittest.TestCase):
