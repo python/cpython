@@ -570,7 +570,7 @@ class HTTPCompressionTestCase(BaseTestCase):
             temp.write(self.data)
 
         self.compressible_ext = ["txt", "js", "html", "css"]
-        
+
         for ext in self.compressible_ext:
             path = os.path.join(self.tempdir, 'test.{}'.format(ext))
             with open(path, 'wb') as temp:
