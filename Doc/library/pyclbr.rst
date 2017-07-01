@@ -11,13 +11,12 @@
 --------------
 
 The :mod:`pyclbr` module can be used to determine some limited information
-about the classes, methods and top-level functions defined in a module.  The
-information provided is sufficient to implement a traditional three-pane
-class browser.  The information is extracted from the source code rather
-than by importing the module, so this module is safe to use with untrusted
-code.  This restriction makes it impossible to use this module with modules
-not implemented in Python, including all standard and optional extension
-modules.
+about the classes, methods, and functions defined in a module.  The
+information provided is sufficient to implement a module browser.  The
+information is extracted from the source code rather than by importing the
+module, so this module is safe to use with untrusted code.  This restriction
+makes it impossible to use this module with modules not implemented in Python,
+including all standard and optional extension modules.
 
 
 .. function:: readmodule(module, path=None)
@@ -32,8 +31,8 @@ modules.
 .. function:: readmodule_ex(module, path=None)
 
    Like :func:`readmodule`, but the returned dictionary, in addition to
-   mapping class names to class descriptor objects, also maps top-level
-   function names to function descriptor objects.  Moreover, if the module
+   mapping class names to class descriptor objects, also maps function
+   names to function descriptor objects.  Moreover, if the module
    being read is a package, the key ``'__path__'`` in the returned
    dictionary has as its value a list which contains the package search
    path.
@@ -73,11 +72,22 @@ data members:
 
    The parent of this object, if any.
 
+   .. versionadded:: 3.7
 
-.. attribute:: Object.objects
+
+.. attribute:: Object.children
 
    A dictionary mapping object names to the objects that are defined inside the
    namespace created by the current object.
+
+   .. versionadded:: 3.7
+
+
+.. versionchanged:: 3.7
+   :class:`Object` was added as a base class for :class:`Class` and
+   :class:`Function` and, except as otherwise noted, the attributes
+   were previously common to those two classes.
+
 
 
 .. _pyclbr-class-objects:
@@ -85,9 +95,10 @@ data members:
 Class Objects
 -------------
 
-The :class:`Class` objects used as values in the dictionary returned by
-:func:`readmodule` and :func:`readmodule_ex` provide the following extra
-data members:
+:class:`Class` is a subclass of :class:`Object` whose objects are used as values
+in the dictionary returned by :func:`readmodule` and :func:`readmodule_ex`.
+In addition to the attributes from :class:`Object`, :class:`Class` objects
+also provide the following attributes:
 
 
 .. attribute:: Class.super
@@ -104,12 +115,18 @@ data members:
    A dictionary mapping method names to line numbers.
 
 
+.. versionchanged:: 3.7
+   :class:`Class` became a subclass of :class:`Object`.
+
+
 .. _pyclbr-function-objects:
 
 Function Objects
 ----------------
 
-The :class:`Function` objects used as values in the dictionary returned by
-:func:`readmodule_ex` provide only the members already defined by
-:class:`Class` objects.
+:class:`Function` is a subclass of :class:`Object` whose objects are used as
+values in the dictionary returned by :func:`readmodule_ex`.  The only instance
+attributes are those from :class:`Object`.
 
+.. versionchanged:: 3.7
+   :class:`Function` became a subclass of :class:`Object`.

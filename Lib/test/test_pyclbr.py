@@ -156,39 +156,39 @@ class PyclbrTest(TestCase):
 
     def test_nested(self):
 
-        def clbr_from_tuple(t, store, parent=None, lineno=1):
+        def clbr_from_tuple(tup, store, parent=None, lineno=1):
             '''Create pyclbr objects from the given tuple t.'''
-            name = t[0]
+            name = tup[0]
             obj = pickp(name)
             if parent is not None:
-                store = store[parent].objects
+                store = store[parent].children
             ob_name = name.split()[1]
             store[ob_name] = obj(name=ob_name, lineno=lineno, parent=parent)
             parent = ob_name
 
-            for item in t[1:]:
+            for item in tup[1:]:
                 lineno += 1
                 if isinstance(item, str):
                     obj = pickp(item)
                     ob_name = item.split()[1]
-                    store[parent].objects[ob_name] = obj(
+                    store[parent].children[ob_name] = obj(
                             name=ob_name, lineno=lineno, parent=parent)
                 else:
                     lineno = clbr_from_tuple(item, store, parent, lineno)
 
             return lineno
 
-        def tuple_to_py(t, output, indent=0):
+        def tuple_to_py(tup, output, indent=0):
             '''Write python code to output according to the given tuple.'''
-            name = t[0]
+            name = tup[0]
             output.write('{}{}():'.format(' ' * indent, name))
             indent += 2
 
-            if not t[1:]:
+            if not tup[1:]:
                 output.write(' pass')
             output.write('\n')
 
-            for item in t[1:]:
+            for item in tup[1:]:
                 if isinstance(item, str):
                     output.write('{}{}(): pass\n'.format(' ' * indent, item))
                 else:
@@ -200,7 +200,7 @@ class PyclbrTest(TestCase):
                     ("class B",
                         ("def a",
                             "def b")),
-                    "def c"),
+                 "def c"),
                 ("def d",
                     ("def e",
                         ("class C",
@@ -226,10 +226,10 @@ class PyclbrTest(TestCase):
         d = {}
         lineno = 1
         with open(fname, 'w') as output:
-            for t in sample:
-                newlineno = clbr_from_tuple(t, d, lineno=lineno)
+            for tup in sample:
+                newlineno = clbr_from_tuple(tup, d, lineno=lineno)
                 lineno = newlineno + 1
-                tuple_to_py(t, output)
+                tuple_to_py(tup, output)
 
         # Get the data returned by readmodule_ex to compare against
         # our generated data.
@@ -253,10 +253,10 @@ class PyclbrTest(TestCase):
             self.assertEqual(
                     ob1.__class__.__name__,
                     ob2.__class__.__name__)
-            self.assertEqual(ob1.objects.keys(), ob2.objects.keys())
-            for name, obj in list(ob1.objects.items()):
-                obj_cmp = ob2.objects.pop(name)
-                del ob1.objects[name]
+            self.assertEqual(ob1.children.keys(), ob2.children.keys())
+            for name, obj in list(ob1.children.items()):
+                obj_cmp = ob2.children.pop(name)
+                del ob1.children[name]
                 check_objects(obj, obj_cmp)
 
         for name, obj in list(d.items()):
@@ -264,8 +264,8 @@ class PyclbrTest(TestCase):
             obj_cmp = d_cmp.pop(name)
             del d[name]
             check_objects(obj, obj_cmp)
-            self.assertFalse(obj.objects)
-            self.assertFalse(obj_cmp.objects)
+            self.assertFalse(obj.children)
+            self.assertFalse(obj_cmp.children)
         self.assertFalse(d)
         self.assertFalse(d_cmp)
 

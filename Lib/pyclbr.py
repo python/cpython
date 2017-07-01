@@ -1,7 +1,7 @@
-"""Parse a Python module and describe its classes and methods.
+"""Parse a Python module and describe its classes and functions.
 
 Parse enough of a Python file to recognize imports and class and
-method definitions, and to find out the superclasses of a class.
+function definitions, and to find out the superclasses of a class.
 
 The interface consists of a single function:
         readmodule_ex(module [, path])
@@ -9,38 +9,38 @@ where module is the name of a Python module, and path is an optional
 list of directories where the module is to be searched.  If present,
 path is prepended to the system search path sys.path.  The return
 value is a dictionary.  The keys of the dictionary are the names of
-the classes defined in the module (including classes that are defined
-via the from XXX import YYY construct).  The values are class
-instances of the class Class defined here.  One special key/value pair
-is present for packages: the key '__path__' has a list as its value
-which contains the package search path.
+the classes and functions defined in the module (including classes that
+are defined via the from XXX import YYY construct).  The values are class
+instances of the class Class and function instances of the class Function,
+respectively.  One special key/value pair is present for packages: the
+key '__path__' has a list as its value which contains the package search
+path.
 
 Classes and functions have a common superclass in this module, the Object
-class. Every instance of this class have the following instance variables:
+class. Every instance of this class has the following instance variables:
         module  -- the module name
         name    -- the name of the object
         file    -- the file in which the object was defined
         lineno  -- the line in the file on which the definition of the object
                    started
         parent  -- the parent of this object, if any
-        objects -- the other classes and function this object may contain
-The 'objects' attribute is a dictionary where each key/value pair corresponds
-to the name of the object and the object itself.
+        children -- the nested objects (classes and functions) contained
+                    in this object
+The 'children' attribute is a dictionary mapping object names to objects.
 
 A class is described by the class Class in this module. Instances
-of this class have the following instance variables (plus the ones from
-Object):
+of this class have the attributes from Object, plus the following:
         super   -- a list of super classes (Class instances)
         methods -- a dictionary of methods
-The dictionary of methods uses the method names as keys and the line
-numbers on which the method was defined as values.
+'methods' maps method names to the line number where the definition begins.
 If the name of a super class is not recognized, the corresponding
 entry in the list of super classes is not a class instance but a
 string giving the name of the super class.  Since import statements
 are recognized and imported modules are scanned as well, this
 shouldn't happen often.
 
-A function is described by the class Function in this module.
+A function is described by the class Function in this module.  The
+only instance attributes are those of Object.
 """
 
 import io
@@ -55,27 +55,25 @@ _modules = {}                           # cache of modules we've seen
 
 
 class Object:
-    """Class to represent a Python object."""
+    """Class to represent a Python class or function."""
     def __init__(self, module, name, file, lineno, parent):
         self.module = module
         self.name = name
         self.file = file
         self.lineno = lineno
         self.parent = parent
-        self.objects = {}
+        self.children = {}
 
-    def _addobject(self, name, obj):
-        self.objects[name] = obj
+    def _addchild(self, name, obj):
+        self.children[name] = obj
 
 
-# each Python class is represented by an instance of this class
+# Each Python class is represented by an instance of this class.
 class Class(Object):
     '''Class to represent a Python class.'''
     def __init__(self, module, name, super, file, lineno, parent=None):
         Object.__init__(self, module, name, file, lineno, parent)
-        if super is None:
-            super = []
-        self.super = super
+        self.super = [] if super is None else super
         self.methods = {}
 
     def _addmethod(self, name, lineno):
@@ -127,7 +125,7 @@ def _readmodule(module, path, inpackage=None):
     package search path; otherwise, we are searching for a top-level
     module, and PATH is combined with sys.path.
     '''
-    # Compute the full module name (prepending inpackage if set)
+    # Compute the full module name (prepending inpackage if set).
     if inpackage is not None:
         fullmodule = "%s.%s" % (inpackage, module)
     else:
@@ -137,15 +135,15 @@ def _readmodule(module, path, inpackage=None):
     if fullmodule in _modules:
         return _modules[fullmodule]
 
-    # Initialize the dict for this module's contents
-    dict = {}
+    # Initialize the dict for this module's contents.
+    tree = {}
 
-    # Check if it is a built-in module; we don't do much for these
+    # Check if it is a built-in module; we don't do much for these.
     if module in sys.builtin_module_names and inpackage is None:
-        _modules[module] = dict
-        return dict
+        _modules[module] = tree
+        return tree
 
-    # Check for a dotted module name
+    # Check for a dotted module name.
     i = module.rfind('.')
     if i >= 0:
         package = module[:i]
@@ -157,27 +155,26 @@ def _readmodule(module, path, inpackage=None):
             raise ImportError('No package named {}'.format(package))
         return _readmodule(submodule, parent['__path__'], package)
 
-    # Search the path for the module
+    # Search the path for the module.
     f = None
     if inpackage is not None:
         search_path = path
     else:
         search_path = path + sys.path
     spec = importlib.util._find_spec_from_path(fullmodule, search_path)
-    _modules[fullmodule] = dict
+    _modules[fullmodule] = tree
     # is module a package?
     if spec.submodule_search_locations is not None:
-        dict['__path__'] = spec.submodule_search_locations
+        tree['__path__'] = spec.submodule_search_locations
     try:
         source = spec.loader.get_source(fullmodule)
         if source is None:
-            return dict
+            return tree
     except (AttributeError, ImportError):
-        # not Python source, can't do anything with this module
-        return dict
+        # not Python source, can't do anything with this module.
+        return tree
 
     fname = spec.loader.get_filename(fullmodule)
-
     f = io.StringIO(source)
 
     stack = [] # stack of (class, indent) pairs
@@ -195,7 +192,7 @@ def _readmodule(module, path, inpackage=None):
                 # close previous nested classes and defs
                 while stack and stack[-1][1] >= thisindent:
                     del stack[-1]
-                tokentype, meth_name, start = next(g)[0:3]
+                tokentype, func_name, start = next(g)[0:3]
                 if tokentype != NAME:
                     continue # Syntax error
                 cur_func = None
@@ -203,26 +200,26 @@ def _readmodule(module, path, inpackage=None):
                     cur_obj = stack[-1][0]
                     if isinstance(cur_obj, Object):
                         # It's a nested function or a method.
-                        cur_func = _newfunction(cur_obj, meth_name, lineno)
-                        cur_obj._addobject(meth_name, cur_func)
+                        cur_func = _newfunction(cur_obj, func_name, lineno)
+                        cur_obj._addchild(func_name, cur_func)
 
                         if isinstance(cur_obj, Class):
                             # it's a method
-                            cur_obj._addmethod(meth_name, lineno)
+                            cur_obj._addmethod(func_name, lineno)
                 else:
                     # it's a function
-                    cur_func = Function(fullmodule, meth_name, fname, lineno)
-                    dict[meth_name] = cur_func
+                    cur_func = Function(fullmodule, func_name, fname, lineno)
+                    tree[func_name] = cur_func
                 stack.append((cur_func, thisindent))  # Marker for nested fns.
             elif token == 'class':
                 lineno, thisindent = start
-                # close previous nested classes and defs
+                # Close previous nested classes and defs.
                 while stack and stack[-1][1] >= thisindent:
                     del stack[-1]
                 tokentype, class_name, start = next(g)[0:3]
                 if tokentype != NAME:
                     continue # Syntax error
-                # parse what follows the class name
+                # Parse what follows the class name.
                 tokentype, token, start = next(g)[0:3]
                 inherit = None
                 if token == '(':
@@ -234,9 +231,9 @@ def _readmodule(module, path, inpackage=None):
                         tokentype, token, start = next(g)[0:3]
                         if token in (')', ',') and level == 1:
                             n = "".join(super)
-                            if n in dict:
+                            if n in tree:
                                 # we know this super class
-                                n = dict[n]
+                                n = tree[n]
                             else:
                                 c = n.split('.')
                                 if len(c) > 1:
@@ -270,11 +267,11 @@ def _readmodule(module, path, inpackage=None):
                         # Either a nested class or a class inside a function.
                         cur_class = _newclass(cur_obj, class_name, inherit,
                                               lineno)
-                        cur_obj._addobject(class_name, cur_class)
+                        cur_obj._addchild(class_name, cur_class)
                 else:
                     cur_class = Class(fullmodule, class_name, inherit,
                                       fname, lineno)
-                    dict[class_name] = cur_class
+                    tree[class_name] = cur_class
                 stack.append((cur_class, thisindent))
             elif token == 'import' and start[1] == 0:
                 modules = _getnamelist(g)
@@ -298,27 +295,27 @@ def _readmodule(module, path, inpackage=None):
                     continue
                 names = _getnamelist(g)
                 try:
-                    # Recursively read the imported module
+                    # Recursively read the imported module.
                     d = _readmodule(mod, path, inpackage)
                 except:
                     # If we can't find or parse the imported module,
                     # too bad -- don't die here.
                     continue
-                # add any classes that were defined in the imported module
-                # to our name space if they were mentioned in the list
+                # Add any classes that were defined in the imported module
+                # to our name space if they were mentioned in the list.
                 for n, n2 in names:
                     if n in d:
-                        dict[n2 or n] = d[n]
+                        tree[n2 or n] = d[n]
                     elif n == '*':
                         # don't add names that start with _
                         for n in d:
                             if n[0] != '_':
-                                dict[n] = d[n]
+                                tree[n] = d[n]
     except StopIteration:
         pass
 
     f.close()
-    return dict
+    return tree
 
 
 def _getnamelist(g):
@@ -365,7 +362,10 @@ def _getname(g):
 def _main():
     # Main program for testing.
     import os
-    mod = sys.argv[1]
+    try:
+        mod = sys.argv[1]
+    except:
+        mod = __file__
     if os.path.exists(mod):
         path = [os.path.dirname(mod)]
         mod = os.path.basename(mod)
@@ -373,9 +373,9 @@ def _main():
             mod = mod[:-3]
     else:
         path = []
-    dict = readmodule_ex(mod, path)
+    tree = readmodule_ex(mod, path)
     lineno_key = lambda a: getattr(a, 'lineno', 0)
-    objs = sorted(dict.values(), key=lineno_key, reverse=True)
+    objs = sorted(tree.values(), key=lineno_key, reverse=True)
     indent_level = 2
     while objs:
         obj = objs.pop()
@@ -386,7 +386,7 @@ def _main():
             obj.indent = 0
 
         if isinstance(obj, Object):
-            new_objs = sorted(obj.objects.values(),
+            new_objs = sorted(obj.children.values(),
                               key=lineno_key, reverse=True)
             for ob in new_objs:
                 ob.indent = obj.indent + indent_level
