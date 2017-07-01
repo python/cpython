@@ -1048,7 +1048,6 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
             return True
         return False
 
-
     cgi_directories = ['/cgi-bin', '/htbin']
 
     def is_executable(self, path):

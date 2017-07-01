@@ -637,7 +637,7 @@ class HTTPCompressionTestCase(BaseTestCase):
                 headers={'Accept-Encoding': 'gzip; q=1'})
             self.assertTrue('Content-Encoding' in response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
-        
+
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': '*'})
             self.assertTrue('Content-Encoding' in response.headers)
