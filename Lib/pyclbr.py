@@ -175,6 +175,11 @@ def _readmodule(module, path, inpackage=None):
         return tree
 
     fname = spec.loader.get_filename(fullmodule)
+    return _create_tree(fullmodule, path, fname, source, tree, inpackage)
+
+
+def _create_tree(fullmodule, path, fname, source, tree, inpackage):
+    "Create the tree for each module."
     f = io.StringIO(source)
 
     stack = [] # stack of (class, indent) pairs
