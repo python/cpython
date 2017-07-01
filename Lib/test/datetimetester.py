@@ -61,7 +61,7 @@ class TestModule(unittest.TestCase):
         self.assertEqual(datetime.MAXYEAR, 9999)
 
     def test_name_cleanup(self):
-        if '_Fast' not in str(self):
+        if self._test_type == 'Pure':
             return
         datetime = datetime_module
         names = set(name for name in dir(datetime)
@@ -72,8 +72,9 @@ class TestModule(unittest.TestCase):
         self.assertEqual(names - allowed, set([]))
 
     def test_divide_and_round(self):
-        if '_Fast' in str(self):
+        if self._test_type == 'Fast':
             return
+
         dar = datetime_module._divide_and_round
 
         self.assertEqual(dar(-10, -3), 3)
@@ -2851,7 +2852,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(TypeError, t.strftime, "%Z")
 
         # Issue #6697:
-        if '_Fast' in str(self):
+        if self._test_type == 'Fast':
             Badtzname.tz = '\ud800'
             self.assertRaises(ValueError, t.strftime, "%Z")
 

@@ -33,7 +33,8 @@ for module, suffix in zip(test_modules, test_suffixes):
             suit = cls()
             test_classes.extend(type(test) for test in suit)
     for cls in test_classes:
-        cls.__name__ = name + suffix
+        cls.__qualname__ += suffix
+        cls._test_type = suffix[1:]
         @classmethod
         def setUpClass(cls_, module=module):
             cls_._save_sys_modules = sys.modules.copy()
