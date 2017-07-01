@@ -569,7 +569,7 @@ class HTTPCompressionTestCase(BaseTestCase):
         with open(os.path.join(self.tempdir, 'test.abc'), 'wb') as temp:
             temp.write(self.data)
 
-        self.compressible_ext = ["txt", "js", "json", "html", "css"]
+        self.compressible_ext = ["txt", "js", "html", "css"]
         
         for ext in self.compressible_ext:
             path = os.path.join(self.tempdir, 'test.{}'.format(ext))
@@ -1234,13 +1234,13 @@ def test_main(verbose=None):
     cwd = os.getcwd()
     try:
         support.run_unittest(
-            #RequestHandlerLoggingTestCase,
-            #BaseHTTPRequestHandlerTestCase,
-            #BaseHTTPServerTestCase,
-            #SimpleHTTPServerTestCase,
-            #CGIHTTPServerTestCase,
-            #SimpleHTTPRequestHandlerTestCase,
-            #MiscTestCase,
+            RequestHandlerLoggingTestCase,
+            BaseHTTPRequestHandlerTestCase,
+            BaseHTTPServerTestCase,
+            SimpleHTTPServerTestCase,
+            CGIHTTPServerTestCase,
+            SimpleHTTPRequestHandlerTestCase,
+            MiscTestCase,
             HTTPCompressionTestCase
         )
     finally:
