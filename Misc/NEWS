@@ -36,7 +36,7 @@ Library
 -------
 
 - [Security] bpo-30730: Prevent environment variables injection in subprocess on
-  Windows.  Prevent passing other environment variables and command arguments.
+  Windows.  Prevent passing other invalid environment variables and command arguments.
 
 - Issue #28563: Fixed possible DoS and arbitrary code execution when handle
   plural form selections in the gettext module.  The expression parser now
