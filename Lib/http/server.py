@@ -733,7 +733,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
-            self.send_header("Last-Modified", 
+            self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
 
             # Use HTTP compression (gzip) if possible
@@ -756,7 +756,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     f = io.BytesIO(content)
                     self.send_header("Content-Encoding", "gzip")
                 else:
-                    # for large files, store zipped content in a 
+                    # for large files, store zipped content in a
                     # temporary file
                     try:
                         dest = tempfile.TemporaryFile()

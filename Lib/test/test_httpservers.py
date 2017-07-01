@@ -472,7 +472,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         headers['If-Modified-Since'] = email.utils.format_datetime(new_dt,
             usegmt=True)
         response = self.request(self.base_url + '/test', headers=headers)
-        self.check_status_and_reason(response, HTTPStatus.NOT_MODIFIED)        
+        self.check_status_and_reason(response, HTTPStatus.NOT_MODIFIED)
 
     def test_browser_cache_file_changed(self):
         # with If-Modified-Since earlier than Last-Modified, must return 200
@@ -492,7 +492,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         headers['If-Modified-Since'] = self.last_modif_header
         headers['If-None-Match'] = "*"
         response = self.request(self.base_url + '/test', headers=headers)
-        self.check_status_and_reason(response, HTTPStatus.OK)        
+        self.check_status_and_reason(response, HTTPStatus.OK)
 
     def test_invalid_requests(self):
         response = self.request('/', method='FOO')
