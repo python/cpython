@@ -192,7 +192,7 @@ those made in the suite of the for-loop::
 
 Names in the target list are not deleted when the loop is finished, but if the
 sequence is empty, they will not have been assigned to at all by the loop.  Hint:
-the built-in function :func:`range` returns an iterator of integers suitable to
+Python's built-in :func:`range` gives you a sequence of integers suitable to
 emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
 returns the list ``[0, 1, 2]``.
 
