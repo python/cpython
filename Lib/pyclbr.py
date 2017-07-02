@@ -203,14 +203,11 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                 cur_func = None
                 if stack:
                     cur_obj = stack[-1][0]
-                    if isinstance(cur_obj, Object):
-                        # It's a nested function or a method.
-                        cur_func = _newfunction(cur_obj, func_name, lineno)
-                        cur_obj._addchild(func_name, cur_func)
-
-                        if isinstance(cur_obj, Class):
-                            # it's a method
-                            cur_obj._addmethod(func_name, lineno)
+                    cur_func = _newfunction(cur_obj, func_name, lineno)
+                    cur_obj._addchild(func_name, cur_func)
+                    if isinstance(cur_obj, Class):
+                        # it's a method
+                        cur_obj._addmethod(func_name, lineno)
                 else:
                     # it's a function
                     cur_func = Function(fullmodule, func_name, fname, lineno)
@@ -268,11 +265,9 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                     inherit = names
                 if stack:
                     cur_obj = stack[-1][0]
-                    if isinstance(cur_obj, Object):
-                        # Either a nested class or a class inside a function.
-                        cur_class = _newclass(cur_obj, class_name, inherit,
-                                              lineno)
-                        cur_obj._addchild(class_name, cur_class)
+                    cur_class = _newclass(cur_obj, class_name, inherit,
+                                          lineno)
+                    cur_obj._addchild(class_name, cur_class)
                 else:
                     cur_class = Class(fullmodule, class_name, inherit,
                                       fname, lineno)
