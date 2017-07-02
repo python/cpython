@@ -427,7 +427,8 @@ code_dealloc(PyCodeObject *co)
             }
         }
 
-        PyMem_FREE(co->co_extra);
+        PyMem_Free(co_extra->ce_extras);
+        PyMem_Free(co_extra);
     }
 
     Py_XDECREF(co->co_code);

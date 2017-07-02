@@ -60,6 +60,7 @@ class AutoComplete:
         if a function call is needed.
         """
         self.open_completions(True, False, True)
+        return "break"
 
     def try_open_completions_event(self, event):
         """Happens when it would be nice to open a completion list, but not

@@ -1,0 +1,1 @@
+Fix socket deprecation warnings in socketmodule.c. Patch by Segev Finer.

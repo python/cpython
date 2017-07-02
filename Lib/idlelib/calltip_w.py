@@ -89,24 +89,27 @@ class CallTip:
             # If the event was triggered by the same event that unbinded
             # this function, the function will be called nevertheless,
             # so do nothing in this case.
-            return
+            return None
         curline, curcol = map(int, self.widget.index("insert").split('.'))
         if curline < self.parenline or \
            (curline == self.parenline and curcol <= self.parencol) or \
            self.widget.compare("insert", ">", MARK_RIGHT):
             self.hidetip()
+            return "break"
         else:
             self.position_window()
             if self.checkhide_after_id is not None:
                 self.widget.after_cancel(self.checkhide_after_id)
             self.checkhide_after_id = \
                 self.widget.after(CHECKHIDE_TIME, self.checkhide_event)
+            return None
 
     def hide_event(self, event):
         if not self.tipwindow:
             # See the explanation in checkhide_event.
-            return
+            return None
         self.hidetip()
+        return "break"
 
     def hidetip(self):
         if not self.tipwindow:

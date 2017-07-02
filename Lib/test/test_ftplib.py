@@ -470,6 +470,7 @@ class TestFTPClass(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        asyncore.close_all(ignore_all=True)
 
     def check_data(self, received, expected):
         self.assertEqual(len(received), len(expected))
@@ -795,6 +796,7 @@ class TestIPv6Environment(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        asyncore.close_all(ignore_all=True)
 
     def test_af(self):
         self.assertEqual(self.client.af, socket.AF_INET6)
@@ -853,6 +855,7 @@ class TestTLS_FTPClass(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        asyncore.close_all(ignore_all=True)
 
     def test_control_connection(self):
         self.assertNotIsInstance(self.client.sock, ssl.SSLSocket)

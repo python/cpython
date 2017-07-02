@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Check proposed changes for common issues."""
 import re
 import sys
 import shutil
@@ -135,7 +136,7 @@ def report_modified_files(file_paths):
         return "\n".join(lines)
 
 
-@status("Fixing whitespace", info=report_modified_files)
+@status("Fixing Python file whitespace", info=report_modified_files)
 def normalize_whitespace(file_paths):
     """Make sure that the whitespace for .py files have been normalized."""
     reindent.makebackup = False  # No need to create backups.
@@ -191,10 +192,11 @@ def credit_given(file_paths):
     return os.path.join('Misc', 'ACKS') in file_paths
 
 
-@status("Misc/NEWS updated", modal=True)
+@status("Misc/NEWS.d updated with `blurb`", modal=True)
 def reported_news(file_paths):
-    """Check if Misc/NEWS has been changed."""
-    return os.path.join('Misc', 'NEWS') in file_paths
+    """Check if Misc/NEWS.d has been changed."""
+    return any(p.startswith(os.path.join('Misc', 'NEWS.d', 'next'))
+               for p in file_paths)
 
 @status("configure regenerated", modal=True, info=str)
 def regenerated_configure(file_paths):
@@ -212,6 +214,27 @@ def regenerated_pyconfig_h_in(file_paths):
     else:
         return "not needed"
 
+def travis(pull_request):
+    if pull_request == 'false':
+        print('Not a pull request; skipping')
+        return
+    base_branch = get_base_branch()
+    file_paths = changed_files(base_branch)
+    python_files = [fn for fn in file_paths if fn.endswith('.py')]
+    c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
+    doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
+                 fn.endswith(('.rst', '.inc'))]
+    fixed = []
+    fixed.extend(normalize_whitespace(python_files))
+    fixed.extend(normalize_c_whitespace(c_files))
+    fixed.extend(normalize_docs_whitespace(doc_files))
+    if not fixed:
+        print('No whitespace issues found')
+    else:
+        print(f'Please fix the {len(fixed)} file(s) with whitespace issues')
+        print('(on UNIX you can run `make patchcheck` to make the fixes)')
+        sys.exit(1)
+
 def main():
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
@@ -219,8 +242,7 @@ def main():
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
-    misc_files = {os.path.join('Misc', 'ACKS'), os.path.join('Misc', 'NEWS')}\
-            & set(file_paths)
+    misc_files = {p for p in file_paths if p.startswith('Misc')}
     # PEP 8 whitespace rules enforcement.
     normalize_whitespace(python_files)
     # C rules enforcement.
@@ -246,4 +268,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--travis',
+                        help='Perform pass/fail checks')
+    args = parser.parse_args()
+    if args.travis:
+        travis(args.travis)
+    else:
+        main()
