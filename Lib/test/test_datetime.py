@@ -32,6 +32,7 @@ for module, suffix in zip(test_modules, test_suffixes):
         elif issubclass(cls, unittest.TestSuite):
             suit = cls()
             test_classes.extend(type(test) for test in suit)
+    test_classes = sorted(set(test_classes), key=lambda cls: cls.__qualname__)
     for cls in test_classes:
         cls.__name__ += suffix
         cls.__qualname__ += suffix
