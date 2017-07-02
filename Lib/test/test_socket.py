@@ -783,6 +783,26 @@ class GeneralModuleTests(unittest.TestCase):
         socket.SOL_SOCKET
         socket.SO_REUSEADDR
 
+    def test_struct_sequence(self):
+        def _assert_host_info(host_info):
+            self.assertEqual(socket.struct_host_info, type(host_info))
+            self.assertEqual(host_info.host, host_info[0])
+            self.assertEqual(host_info.aliaslist, host_info[1])
+            self.assertEqual(host_info.ipaddrlist, host_info[2])
+
+        hostname = socket.gethostname()
+        try:
+            host_info = socket.gethostbyname_ex(hostname)
+            _assert_host_info(host_info)
+        except OSError:
+            # Probably name lookup wasn't set up right; skip this test
+            self.skipTest('name lookup failure')
+        try:
+            _assert_host_info(socket.gethostbyaddr(host_info.ipaddrlist[0]))
+        except OSError:
+            # Probably a similar problem as above; skip this test
+            self.skipTest('name lookup failure')
+
     def testHostnameRes(self):
         # Testing hostname resolution mechanisms
         hostname = socket.gethostname()

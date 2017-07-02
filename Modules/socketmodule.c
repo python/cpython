@@ -4940,7 +4940,7 @@ sock_decode_hostname(const char *name)
 #endif
 }
 
-static PyStructSequence_Field struct_host_type_fields[] = {
+static PyStructSequence_Field struct_host_info_type_fields[] = {
     {"host", ""},
     {"aliaslist", ""},
     {"ipaddrlist", ""},
@@ -4949,10 +4949,10 @@ static PyStructSequence_Field struct_host_type_fields[] = {
 
 static int initialized;
 
-static PyStructSequence_Desc struct_host_type_desc = {
-    "socket.struct_host",
+static PyStructSequence_Desc struct_host_info_type_desc = {
+    "_socket.struct_host_info",
     "",
-    struct_host_type_fields,
+    struct_host_info_type_fields,
     3,
 };
 
@@ -5963,6 +5963,24 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 
 /* Python interface to getaddrinfo(host, port). */
 
+static PyStructSequence_Field struct_addr_info_type_fields[] = {
+    {"family", ""},
+    {"type", ""},
+    {"proto", ""},
+    {"canonname", ""},
+    {"sockaddr", ""},
+    {0}
+};
+
+static PyStructSequence_Desc struct_addr_info_type_desc = {
+    "_socket.struct_addr_info",
+    "",
+    struct_addr_info_type_fields,
+    5,
+};
+
+static PyTypeObject StructAddrType;
+ 
 /*ARGSUSED*/
 static PyObject *
 socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
@@ -6053,13 +6071,23 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
             makesockaddr(-1, res->ai_addr, res->ai_addrlen, protocol);
         if (addr == NULL)
             goto err;
-        single = Py_BuildValue("iiisO", res->ai_family,
-            res->ai_socktype, res->ai_protocol,
-            res->ai_canonname ? res->ai_canonname : "",
-            addr);
-        Py_DECREF(addr);
-        if (single == NULL)
-            goto err;
+	single = PyStructSequence_New(&StructAddrType);
+	if (single == NULL) {
+	    Py_DECREF(addr);
+	    goto err;
+	}
+	PyStructSequence_SET_ITEM(single, 0,
+				  Py_BuildValue("i", res->ai_family));
+	PyStructSequence_SET_ITEM(single, 1,
+				  Py_BuildValue("i", res->ai_socktype));
+	PyStructSequence_SET_ITEM(single, 2,
+				  Py_BuildValue("i", res->ai_protocol));
+	PyStructSequence_SET_ITEM(single, 3,
+				  Py_BuildValue("s", res->ai_canonname ?
+						res->ai_canonname : ""));
+	PyStructSequence_SET_ITEM(single, 4, addr);
+
+	Py_DECREF(addr);
 
         if (PyList_Append(all, single))
             goto err;
@@ -6076,7 +6104,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         freeaddrinfo(res0);
     return (PyObject *)NULL;
 }
-
+ 
 PyDoc_STRVAR(getaddrinfo_doc,
 "getaddrinfo(host, port [, family, type, proto, flags])\n\
     -> list of (family, type, proto, canonname, sockaddr)\n\
@@ -6085,6 +6113,21 @@ Resolve host and port into addrinfo struct.");
 
 /* Python interface to getnameinfo(sa, flags). */
 
+static PyStructSequence_Field struct_name_info_type_fields[] = {
+    {"host", ""},
+    {"port", ""},
+    {0}
+};
+
+static PyStructSequence_Desc struct_name_info_type_desc = {
+    "_socket.struct_name_info",
+    "",
+    struct_name_info_type_fields,
+    2,
+};
+
+static PyTypeObject StructNameType;
+ 
 /*ARGSUSED*/
 static PyObject *
 socket_getnameinfo(PyObject *self, PyObject *args)
@@ -6166,8 +6209,13 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     name = sock_decode_hostname(hbuf);
     if (name == NULL)
         goto fail;
-    ret = Py_BuildValue("Ns", name, pbuf);
-
+    ret = PyStructSequence_New(&StructNameType);
+    if (ret == NULL) {
+      Py_DECREF(name);
+      goto fail;
+    }   
+    PyStructSequence_SET_ITEM(ret, 0, name);
+    PyStructSequence_SET_ITEM(ret, 1, Py_BuildValue("s", pbuf));
 fail:
     if (res)
         freeaddrinfo(res);
@@ -7735,12 +7783,22 @@ PyInit__socket(void)
 
     if (!initialized) {
       if (PyStructSequence_InitType2(&StructHostType,
-				     &struct_host_type_desc) < 0)
+				     &struct_host_info_type_desc) < 0)
+	return NULL;
+      if (PyStructSequence_InitType2(&StructAddrType,
+				     &struct_addr_info_type_desc) < 0)
+	return NULL;
+      if (PyStructSequence_InitType2(&StructNameType,
+				     &struct_name_info_type_desc) < 0)
 	return NULL;
     }
     Py_INCREF(&StructHostType);
-    PyModule_AddObject(m, "struct_host", (PyObject*) &StructHostType);
-
+    PyModule_AddObject(m, "struct_host_info", (PyObject*) &StructHostType);
+    Py_INCREF(&StructAddrType);
+    PyModule_AddObject(m, "struct_addr_info", (PyObject*) &StructAddrType);
+    Py_INCREF(&StructNameType);
+    PyModule_AddObject(m, "struct_name_info", (PyObject*) &StructNameType);
+    
     /* Initialize gethostbyname lock */
 #if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
     netdb_lock = PyThread_allocate_lock();
