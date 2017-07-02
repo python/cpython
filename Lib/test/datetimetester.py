@@ -62,7 +62,8 @@ class TestModule(unittest.TestCase):
 
     def test_name_cleanup(self):
         if self._test_type == 'Pure':
-            return
+            return self.skipTest('Only run for Fast C implementation')
+
         datetime = datetime_module
         names = set(name for name in dir(datetime)
                     if not name.startswith('__') and not name.endswith('__'))
@@ -73,7 +74,7 @@ class TestModule(unittest.TestCase):
 
     def test_divide_and_round(self):
         if self._test_type == 'Fast':
-            return
+            return self.skipTest('Only run for Pure Python implementation')
 
         dar = datetime_module._divide_and_round
 
