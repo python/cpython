@@ -4,12 +4,12 @@
 #
 
 from test import test_support
-from test import test_multibytecodec_support
+from test import multibytecodec_support
 import unittest
 
-class Test_CP949(test_multibytecodec_support.TestBase, unittest.TestCase):
+class Test_CP949(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'cp949'
-    tstring = test_multibytecodec_support.load_teststring('cp949')
+    tstring = multibytecodec_support.load_teststring('cp949')
     codectests = (
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),
@@ -19,9 +19,9 @@ class Test_CP949(test_multibytecodec_support.TestBase, unittest.TestCase):
         ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\uc894"),
     )
 
-class Test_EUCKR(test_multibytecodec_support.TestBase, unittest.TestCase):
+class Test_EUCKR(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'euc_kr'
-    tstring = test_multibytecodec_support.load_teststring('euc_kr')
+    tstring = multibytecodec_support.load_teststring('euc_kr')
     codectests = (
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),
@@ -49,9 +49,9 @@ class Test_EUCKR(test_multibytecodec_support.TestBase, unittest.TestCase):
         ("\xc1\xc4", "strict", u"\uc894"),
     )
 
-class Test_JOHAB(test_multibytecodec_support.TestBase, unittest.TestCase):
+class Test_JOHAB(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'johab'
-    tstring = test_multibytecodec_support.load_teststring('johab')
+    tstring = multibytecodec_support.load_teststring('johab')
     codectests = (
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),

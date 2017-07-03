@@ -4,10 +4,10 @@
 #
 
 from test import test_support
-from test import test_multibytecodec_support
+from test import multibytecodec_support
 import unittest
 
-class TestBig5HKSCSMap(test_multibytecodec_support.TestBase_Mapping,
+class TestBig5HKSCSMap(multibytecodec_support.TestBase_Mapping,
                        unittest.TestCase):
     encoding = 'big5hkscs'
     mapfileurl = 'http://www.pythontest.net/unicode/BIG5HKSCS-2004.TXT'

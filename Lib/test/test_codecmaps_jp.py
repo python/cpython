@@ -4,10 +4,10 @@
 #
 
 from test import test_support
-from test import test_multibytecodec_support
+from test import multibytecodec_support
 import unittest
 
-class TestCP932Map(test_multibytecodec_support.TestBase_Mapping,
+class TestCP932Map(multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'cp932'
     mapfileurl = 'http://www.pythontest.net/unicode/CP932.TXT'
@@ -22,14 +22,14 @@ class TestCP932Map(test_multibytecodec_support.TestBase_Mapping,
         supmaps.append((chr(i), unichr(i+0xfec0)))
 
 
-class TestEUCJPCOMPATMap(test_multibytecodec_support.TestBase_Mapping,
+class TestEUCJPCOMPATMap(multibytecodec_support.TestBase_Mapping,
                          unittest.TestCase):
     encoding = 'euc_jp'
     mapfilename = 'EUC-JP.TXT'
     mapfileurl = 'http://www.pythontest.net/unicode/EUC-JP.TXT'
 
 
-class TestSJISCOMPATMap(test_multibytecodec_support.TestBase_Mapping,
+class TestSJISCOMPATMap(multibytecodec_support.TestBase_Mapping,
                         unittest.TestCase):
     encoding = 'shift_jis'
     mapfilename = 'SHIFTJIS.TXT'
@@ -43,14 +43,14 @@ class TestSJISCOMPATMap(test_multibytecodec_support.TestBase_Mapping,
         ('\x81_', u'\\'),
     ]
 
-class TestEUCJISX0213Map(test_multibytecodec_support.TestBase_Mapping,
+class TestEUCJISX0213Map(multibytecodec_support.TestBase_Mapping,
                          unittest.TestCase):
     encoding = 'euc_jisx0213'
     mapfilename = 'EUC-JISX0213.TXT'
     mapfileurl = 'http://www.pythontest.net/unicode/EUC-JISX0213.TXT'
 
 
-class TestSJISX0213Map(test_multibytecodec_support.TestBase_Mapping,
+class TestSJISX0213Map(multibytecodec_support.TestBase_Mapping,
                        unittest.TestCase):
     encoding = 'shift_jisx0213'
     mapfilename = 'SHIFT_JISX0213.TXT'

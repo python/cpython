@@ -4,12 +4,12 @@
 #
 
 from test import test_support
-from test import test_multibytecodec_support
+from test import multibytecodec_support
 import unittest
 
-class Test_Big5HKSCS(test_multibytecodec_support.TestBase, unittest.TestCase):
+class Test_Big5HKSCS(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'big5hkscs'
-    tstring = test_multibytecodec_support.load_teststring('big5hkscs')
+    tstring = multibytecodec_support.load_teststring('big5hkscs')
     codectests = (
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),
