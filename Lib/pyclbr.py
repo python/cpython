@@ -4,43 +4,38 @@ Parse enough of a Python file to recognize imports and class and
 function definitions, and to find out the superclasses of a class.
 
 The interface consists of a single function:
-        readmodule_ex(module [, path])
+    readmodule_ex(module, path=None)
 where module is the name of a Python module, and path is an optional
 list of directories where the module is to be searched.  If present,
-path is prepended to the system search path sys.path.  The return
-value is a dictionary.  The keys of the dictionary are the names of
-the classes and functions defined in the module (including classes that
-are defined via the from XXX import YYY construct).  The values are class
-instances of the class Class and function instances of the class Function,
-respectively.  One special key/value pair is present for packages: the
-key '__path__' has a list as its value which contains the package search
-path.
+path is prepended to the system search path sys.path.  The return value
+is a dictionary.  The keys of the dictionary are the names of the
+classes and functions defined in the module (including classes that are
+defined via the from XXX import YYY construct).  The values are
+instances of classes Class and Function.  One special key/value pair is
+present for packages: the key '__path__' has a list as its value which
+contains the package search path.
 
-Classes and functions have a common superclass in this module, the Object
-class. Every instance of this class has the following instance variables:
-        module  -- the module name
-        name    -- the name of the object
-        file    -- the file in which the object was defined
-        lineno  -- the line in the file on which the definition of the object
-                   started
-        parent  -- the parent of this object, if any
-        children -- the nested objects (classes and functions) contained
-                    in this object
-The 'children' attribute is a dictionary mapping object names to objects.
+Classes and Functions have a common superclass: Object.  Every instance
+has the following attributes:
+    module  -- name of the module;
+    name    -- name of the object;
+    file    -- file in which the object is defined;
+    lineno  -- line in the file where the object's definition starts;
+    parent  -- parent of this object, if any;
+    children -- nested objects contained in this object.
+The 'children' attribute is a dictionary mapping names to objects.
 
-A class is described by the class Class in this module. Instances
-of this class have the attributes from Object, plus the following:
-        super   -- a list of super classes (Class instances)
-        methods -- a dictionary of methods
-'methods' maps method names to the line number where the definition begins.
+Instances of Function describe function with the attributes from Object.
+
+Instances of Class describe classes with the attributes from Object,
+plus the following:
+    super   -- list of super classes (Class instances if possible);
+    methods -- mapping of method names to beginning line numbers.
 If the name of a super class is not recognized, the corresponding
 entry in the list of super classes is not a class instance but a
 string giving the name of the super class.  Since import statements
 are recognized and imported modules are scanned as well, this
 shouldn't happen often.
-
-A function is described by the class Function in this module.  The
-only instance attributes are those of Object.
 """
 
 import io
@@ -51,11 +46,11 @@ from token import NAME, DEDENT, OP
 
 __all__ = ["readmodule", "readmodule_ex", "Object", "Class", "Function"]
 
-_modules = {}                           # cache of modules we've seen
+_modules = {}  # Initialize cache of modules we've seen.
 
 
 class Object:
-    """Class to represent a Python class or function."""
+    "Informaton about Python class or function."
     def __init__(self, module, name, file, lineno, parent):
         self.module = module
         self.name = name
@@ -68,9 +63,8 @@ class Object:
         self.children[name] = obj
 
 
-# Each Python class is represented by an instance of this class.
 class Class(Object):
-    '''Class to represent a Python class.'''
+    "Information about a Python class."
     def __init__(self, module, name, super, file, lineno, parent=None):
         Object.__init__(self, module, name, file, lineno, parent)
         self.super = [] if super is None else super
@@ -81,26 +75,26 @@ class Class(Object):
 
 
 class Function(Object):
-    '''Class to represent a top-level Python function'''
+    "Information about a Python function, including methods."
     def __init__(self, module, name, file, lineno, parent=None):
         Object.__init__(self, module, name, file, lineno, parent)
 
 
 def _newfunction(ob, name, lineno):
-    '''Helper function for creating a nested function or a method.'''
+    "Return a Function after expanding ob to 3 arguments."
     return Function(ob.module, name, ob.file, lineno, ob)
 
 
 def _newclass(ob, name, super, lineno):
-    '''Helper function for creating a nested class.'''
+    "Return a Class after expanding ob to 3 arguments."
     return Class(ob.module, name, super, ob.file, lineno, ob)
 
 
 def readmodule(module, path=None):
-    '''Backwards compatible interface.
+    """Return Class objects for the top-level classes in module.
 
-    Call readmodule_ex() and then only keep Class objects from the
-    resulting dictionary.'''
+    This is the original interface, before Functions were added.
+    """
 
     res = {}
     for key, value in _readmodule(module, path or []).items():
@@ -109,29 +103,29 @@ def readmodule(module, path=None):
     return res
 
 def readmodule_ex(module, path=None):
-    '''Read a module file and return a dictionary of classes.
+    """Return a dictionary with all functions and classes in module.
 
-    Search for MODULE in PATH and sys.path, read and parse the
-    module and return a dictionary with one entry for each class
-    found in the module.
-    '''
+    Search for module in PATH + sys.path.
+    If possible, include imported superclasses.
+    Do this by reading source, without importing (and executing) it.
+    """
     return _readmodule(module, path or [])
 
 def _readmodule(module, path, inpackage=None):
-    '''Do the hard work for readmodule[_ex].
+    """Do the hard work for readmodule[_ex].
 
-    If INPACKAGE is given, it must be the dotted name of the package in
+    If inpackage is given, it must be the dotted name of the package in
     which we are searching for a submodule, and then PATH must be the
     package search path; otherwise, we are searching for a top-level
-    module, and PATH is combined with sys.path.
-    '''
+    module, and path is combined with sys.path.
+    """
     # Compute the full module name (prepending inpackage if set).
     if inpackage is not None:
         fullmodule = "%s.%s" % (inpackage, module)
     else:
         fullmodule = module
 
-    # Check in the cache
+    # Check in the cache.
     if fullmodule in _modules:
         return _modules[fullmodule]
 
@@ -163,7 +157,7 @@ def _readmodule(module, path, inpackage=None):
         search_path = path + sys.path
     spec = importlib.util._find_spec_from_path(fullmodule, search_path)
     _modules[fullmodule] = tree
-    # is module a package?
+    # Is module a package?
     if spec.submodule_search_locations is not None:
         tree['__path__'] = spec.submodule_search_locations
     try:
@@ -171,7 +165,7 @@ def _readmodule(module, path, inpackage=None):
         if source is None:
             return tree
     except (AttributeError, ImportError):
-        # not Python source, can't do anything with this module.
+        # If module is not Python source, we cannot do anything.
         return tree
 
     fname = spec.loader.get_filename(fullmodule)
@@ -179,40 +173,40 @@ def _readmodule(module, path, inpackage=None):
 
 
 def _create_tree(fullmodule, path, fname, source, tree, inpackage):
-    "Create the tree for each module."
+    "Return the tree for a particular module."
     f = io.StringIO(source)
 
-    stack = [] # stack of (class, indent) pairs
+    stack = [] # Initialize stack of (class, indent) pairs.
 
     g = tokenize.generate_tokens(f.readline)
     try:
         for tokentype, token, start, _end, _line in g:
             if tokentype == DEDENT:
                 lineno, thisindent = start
-                # close nested classes and defs
+                # Close previous nested classes and defs.
                 while stack and stack[-1][1] >= thisindent:
                     del stack[-1]
             elif token == 'def':
                 lineno, thisindent = start
-                # close previous nested classes and defs
+                # Close previous nested classes and defs.
                 while stack and stack[-1][1] >= thisindent:
                     del stack[-1]
                 tokentype, func_name, start = next(g)[0:3]
                 if tokentype != NAME:
-                    continue # Syntax error
+                    continue  # Skip def with syntax error.
                 cur_func = None
                 if stack:
                     cur_obj = stack[-1][0]
                     cur_func = _newfunction(cur_obj, func_name, lineno)
                     cur_obj._addchild(func_name, cur_func)
                     if isinstance(cur_obj, Class):
-                        # it's a method
+                        # Function is a method.
                         cur_obj._addmethod(func_name, lineno)
                 else:
-                    # it's a function
+                    # It is just a function.
                     cur_func = Function(fullmodule, func_name, fname, lineno)
                     tree[func_name] = cur_func
-                stack.append((cur_func, thisindent))  # Marker for nested fns.
+                stack.append((cur_func, thisindent))
             elif token == 'class':
                 lineno, thisindent = start
                 # Close previous nested classes and defs.
@@ -220,28 +214,26 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                     del stack[-1]
                 tokentype, class_name, start = next(g)[0:3]
                 if tokentype != NAME:
-                    continue # Syntax error
+                    continue # Skip class with syntax error.
                 # Parse what follows the class name.
                 tokentype, token, start = next(g)[0:3]
                 inherit = None
                 if token == '(':
-                    names = [] # List of superclasses
-                    # there's a list of superclasses
+                    names = [] # Initialize list of superclasses.
                     level = 1
-                    super = [] # Tokens making up current superclass
+                    super = [] # Tokens making up current superclass.
                     while True:
                         tokentype, token, start = next(g)[0:3]
                         if token in (')', ',') and level == 1:
                             n = "".join(super)
                             if n in tree:
-                                # we know this super class
+                                # We know this super class.
                                 n = tree[n]
                             else:
                                 c = n.split('.')
                                 if len(c) > 1:
-                                    # super class is of the form
-                                    # module.class: look in module for
-                                    # class
+                                    # Super class form is module.class:
+                                    # look in module for class.
                                     m = c[-2]
                                     c = c[-1]
                                     if m in _modules:
@@ -258,10 +250,10 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                                 break
                         elif token == ',' and level == 1:
                             pass
-                        # only use NAME and OP (== dot) tokens for type name
+                        # Only use NAME and OP (== dot) tokens for type name.
                         elif tokentype in (NAME, OP) and level == 1:
                             super.append(token)
-                        # expressions in the base list are not supported
+                        # Expressions in the base list are not supported.
                     inherit = names
                 if stack:
                     cur_obj = stack[-1][0]
@@ -277,7 +269,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                 modules = _getnamelist(g)
                 for mod, _mod2 in modules:
                     try:
-                        # Recursively read the imported module
+                        # Recursively read the imported module.
                         if inpackage is None:
                             _readmodule(mod, path)
                         else:
@@ -307,7 +299,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                     if n in d:
                         tree[n2 or n] = d[n]
                     elif n == '*':
-                        # don't add names that start with _
+                        # Don't add names that start with _.
                         for n in d:
                             if n[0] != '_':
                                 tree[n] = d[n]
@@ -319,9 +311,10 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
 
 
 def _getnamelist(g):
-    # Helper to get a comma-separated list of dotted names plus 'as'
-    # clauses.  Return a list of pairs (name, name2) where name2 is
-    # the 'as' name, or None if there is no 'as' clause.
+    """Return list of (dotted-name, as-name or None) tuples for token source g.
+
+    An as-name is the name that follows 'as' in an as clause.
+    """
     names = []
     while True:
         name, token = _getname(g)
@@ -340,9 +333,7 @@ def _getnamelist(g):
 
 
 def _getname(g):
-    # Helper to get a dotted name, return a pair (name, token) where
-    # name is the dotted name, or None if there was no dotted name,
-    # and token is the next input token.
+    "Return (dotted-name or None, next-token) tuple for token source g."
     parts = []
     tokentype, token = next(g)[0:2]
     if tokentype != NAME and token != '*':
@@ -360,7 +351,7 @@ def _getname(g):
 
 
 def _main():
-    # Main program for testing.
+    "Print module output (default this file) for quick visual check."
     import os
     try:
         mod = sys.argv[1]
@@ -380,7 +371,7 @@ def _main():
     while objs:
         obj = objs.pop()
         if isinstance(obj, list):
-            # Value of a __path__ key
+            # Value is a __path__ key.
             continue
         if not hasattr(obj, 'indent'):
             obj.indent = 0
