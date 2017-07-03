@@ -256,7 +256,7 @@ class TestBase:
 
                 self.assertEqual(ostream.getvalue(), self.tstring[0])
 
-class TestBase_Mapping(unittest.TestCase):
+class TestBase_Mapping(object):
     pass_enctest = []
     pass_dectest = []
     supmaps = []
