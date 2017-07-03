@@ -3,22 +3,455 @@
 # unless that change should apply to all interpreters.
 #
 # See check-c-globals.py.
+#
+# Many generic names are handled via the script:
+#
+# * most exceptions and all warnings handled via _is_exception()
+# * for builtin modules, generic names are handled via _is_module()
+# * generic names for static types handled via _is_type_var()
+# * AST vars handled via _is_compiler()
 
 
 #######################################
-# builtin modules
+# main
 
-# Generic names handled via _is_module() in check-c-globals.py.
+# Modules/getpath.c
+exec_prefix
+module_search_path
+prefix
+progpath
+
+# Modules/main.c
+orig_argc
+orig_argv
+
+# Python/getopt.c
+opt_ptr
+_PyOS_optarg
+_PyOS_opterr
+_PyOS_optind
+
+
+#######################################
+# REPL
+
+# Parser/myreadline.c
+PyOS_InputHook
+PyOS_ReadlineFunctionPointer
+_PyOS_ReadlineLock
+_PyOS_ReadlineTState
+
+
+#######################################
+# state
+
+# Objects/obmalloc.c
+##usedpools
+
+# Python/dtoa.c
+p5s
+pmem_next  # very slight race
+private_mem  # very slight race
+
+# Python/import.c
+##import_lock  # For extension modules only.
+##import_lock_level  # For extension modules only.
+##import_lock_thread  # For extension modules only.
+
+# Python/pylifecycle.c
+_PyRuntime
+
+# Python/pystate.c
+##head_mutex
+##interp_head
+##interp_main
+##_next_interp_id
+
+# Python/symtable.c
+# XXX All okay?
+##__class__
+##dictcomp
+##genexpr
+##lambda
+##listcomp
+##setcomp
+##top
+
+
+#---------------------------------
+# module globals (PyObject)
+
+# Modules/_functoolsmodule.c
+kwd_mark
+
+# Modules/_localemodule.c
+Error
+
+# Modules/_threadmodule.c
+ThreadError
+
+# Modules/_tracemalloc.c
+##allocators
+##tables_lock
+##tracemalloc_config
+tracemalloc_empty_traceback
+##tracemalloc_filenames
+##tracemalloc_peak_traced_memory
+##tracemalloc_reentrant_key
+##tracemalloc_traceback
+##tracemalloc_tracebacks
+##tracemalloc_traced_memory
+##tracemalloc_traces
+unknown_filename
+
+# Modules/gcmodule.c
+##_PyGC_generation0
+##callbacks
+##collecting
+##debug
+##enabled
+##garbage
+gc_str
+##generation_stats
+##generations
+##long_lived_pending
+##long_lived_total
+
+# Modules/posixmodule.c
+billion
+posix_putenv_garbage
+
+# Modules/signalmodule.c
+DefaultHandler
+IgnoreHandler
+IntHandler
+ItimerError
+
+# Modules/zipimport.c
+ZipImportError
+##zip_directory_cache  # maybe
+zip_searchorder
+
+
+#---------------------------------
+# module globals (other)
+
+# Modules/faulthandler.c
+fatal_error
+faulthandler_handlers
+old_stack
+stack
+thread
+user_signals
+
+# Modules/posixmodule.c
+posix_constants_confstr
+posix_constants_pathconf
+posix_constants_sysconf
+_stat_float_times  # deprecated, __main__-only
+structseq_new
+ticks_per_second
+
+# Modules/signalmodule.c
+Handlers  # main thread only
+is_tripped  # main thread only
+main_pid
+main_thread
+old_siginthandler
+wakeup_fd  # main thread only
+
+# Python/bltinmodule.c
+Py_FileSystemDefaultEncodeErrors
+Py_FileSystemDefaultEncoding
+Py_HasFileSystemDefaultEncoding
+
+# Python/sysmodule.c
+_PySys_ImplCacheTag
+_PySys_ImplName
+
+
+#---------------------------------
+# freelists
 
 # Modules/_collectionsmodule.c
 freeblocks
 numfreeblocks
 
-# Modules/_functoolsmodule.c
-kwd_mark
+# Objects/classobject.c
+free_list
+numfree
+
+# Objects/dictobject.c
+free_list
+keys_free_list
+numfree
+numfreekeys
+
+# Objects/exceptions.c
+memerrors_freelist
+memerrors_numfree
+
+# Objects/floatobject.c
+free_list
+numfree
+
+# Objects/frameobject.c
+free_list
+numfree
+
+# Objects/genobject.c
+ag_asend_freelist
+ag_asend_freelist_free
+ag_value_freelist
+ag_value_freelist_free
+
+# Objects/listobject.c
+free_list
+numfree
+
+# Objects/methodobject.c
+free_list
+numfree
+
+# Objects/sliceobject.c
+slice_cache  # slight race
+
+# Objects/tupleobject.c
+free_list
+numfree
+
+# Python/dtoa.c
+freelist  # very slight race
+
+
+#---------------------------------
+# caches (PyObject)
+
+# Objects/typeobject.c
+method_cache  # only for static types
+next_version_tag  # only for static types
+
+# Python/dynload_shlib.c
+handles  # slight race during import
+nhandles  # slight race during import
+
+# Python/import.c
+extensions  # slight race on init during import
+
+
+#---------------------------------
+# caches (other)
+
+# Python/bootstrap_hash.c
+urandom_cache
+
+# Python/modsupport.c
+_Py_PackageContext  # Slight race during import!  Move to PyThreadState?
+
+
+#---------------------------------
+# counters
+
+# Objects/bytesobject.c
+null_strings
+one_strings
+
+# Objects/dictobject.c
+pydict_global_version
+
+# Objects/moduleobject.c
+max_module_number  # slight race during import
+
+
+#######################################
+# constants
+
+#---------------------------------
+# singletons
+
+# Objects/boolobject.c
+_Py_FalseStruct
+_Py_TrueStruct
+
+# Objects/object.c
+_Py_NoneStruct
+_Py_NotImplementedStruct
+
+# Objects/sliceobject.c
+_Py_EllipsisObject
+
+
+#---------------------------------
+# constants (other)
+
+# Modules/config.c
+_PyImport_Inittab
+
+# Objects/bytearrayobject.c
+_PyByteArray_empty_string
+
+# Objects/dictobject.c
+empty_keys_struct
+empty_values
+
+# Objects/floatobject.c
+detected_double_format
+detected_float_format
+double_format
+float_format
+
+# Objects/longobject.c
+_PyLong_DigitValue
+
+# Objects/object.c
+_Py_SwappedOp
+
+# Objects/obmalloc.c
+_PyMem_Debug
+
+# Objects/setobject.c
+_dummy_struct
+
+# Objects/structseq.c
+PyStructSequence_UnnamedField
+
+# Objects/typeobject.c
+name_op
+slotdefs  # almost
+slotdefs_initialized  # almost
+subtype_getsets_dict_only
+subtype_getsets_full
+subtype_getsets_weakref_only
+tp_new_methoddef
+
+# Objects/unicodeobject.c
+bloom_linebreak
+static_strings  # slight race
+
+# Parser/tokenizer.c
+_PyParser_TokenNames
+
+# Python/Python-ast.c
+alias_fields
+
+# Python/codecs.c
+Py_hexdigits
+ucnhash_CAPI  # slight performance-only race
+
+# Python/dynload_shlib.c
+_PyImport_DynLoadFiletab
+
+# Python/fileutils.c
+_Py_open_cloexec_works
+force_ascii
+
+# Python/frozen.c
+M___hello__
+PyImport_FrozenModules
+
+# Python/graminit.c
+_PyParser_Grammar
+dfas
+labels
+
+# Python/import.c
+PyImport_Inittab
+
+
+#---------------------------------
+# initialized (PyObject)
+
+# Objects/bytesobject.c
+characters
+nullstring
+
+# Objects/exceptions.c
+PyExc_RecursionErrorInst
+errnomap
+
+# Objects/longobject.c
+_PyLong_One
+_PyLong_Zero
+small_ints
+
+# Objects/setobject.c
+emptyfrozenset
+
+# Objects/unicodeobject.c
+interned  # slight race on init in PyUnicode_InternInPlace()
+unicode_empty
+unicode_latin1
+
+
+#---------------------------------
+# initialized (other)
+
+# Python/getargs.c
+static_arg_parsers
+
+# Python/pyhash.c
+PyHash_Func
+_Py_HashSecret
+_Py_HashSecret_Initialized
+
+# Python/pylifecycle.c
+_Py_CoreInitialized
+_Py_StandardStreamEncoding
+_Py_StandardStreamErrors
+default_home
+env_home
+progname
+Py_BytesWarningFlag
+Py_DebugFlag
+Py_DontWriteBytecodeFlag
+Py_FrozenFlag
+Py_HashRandomizationFlag
+Py_IgnoreEnvironmentFlag
+Py_InspectFlag
+Py_InteractiveFlag
+Py_IsolatedFlag
+Py_NoSiteFlag
+Py_NoUserSiteDirectory
+Py_OptimizeFlag
+Py_QuietFlag
+Py_UnbufferedStdioFlag
+Py_UseClassExceptionsFlag
+Py_VerboseFlag
+
+
+#---------------------------------
+# types
+
+# Modules/_threadmodule.c
+Locktype
+RLocktype
+localdummytype
+localtype
+
+# Objects/exceptions.c
+PyExc_BaseException
+PyExc_Exception
+PyExc_GeneratorExit
+PyExc_KeyboardInterrupt
+PyExc_StopAsyncIteration
+PyExc_StopIteration
+PyExc_SystemExit
+_PyExc_BaseException
+_PyExc_Exception
+_PyExc_GeneratorExit
+_PyExc_KeyboardInterrupt
+_PyExc_StopAsyncIteration
+_PyExc_StopIteration
+_PyExc_SystemExit
+
+# Objects/structseq.c
+_struct_sequence_template
+
+
+#---------------------------------
+# interned strings/bytes
 
 # Modules/_io/_iomodule.c
-# (interned strings/bytes)
 _PyIO_empty_bytes
 _PyIO_empty_str
 _PyIO_str_close
@@ -46,382 +479,28 @@ _PyIO_str_truncate
 _PyIO_str_writable
 _PyIO_str_write
 
-# Modules/_localemodule.c
-Error
-
 # Modules/_threadmodule.c
-Locktype
-RLocktype
-ThreadError
-localdummytype
-localtype
 str_dict
-
-# Modules/_tracemalloc.c
-#allocators
-#tables_lock
-#tracemalloc_config
-tracemalloc_empty_traceback
-#tracemalloc_filenames
-#tracemalloc_peak_traced_memory
-#tracemalloc_reentrant_key
-#tracemalloc_traceback
-#tracemalloc_tracebacks
-#tracemalloc_traced_memory
-#tracemalloc_traces
-unknown_filename
-
-# Modules/faulthandler.c
-fatal_error
-faulthandler_handlers
-old_stack
-stack
-thread
-user_signals
-
-# Modules/gcmodule.c
-#_PyGC_generation0
-#callbacks
-#collecting
-#debug
-#enabled
-#garbage
-gc_str
-#generation_stats
-#generations
-#long_lived_pending
-#long_lived_total
-
-# Modules/posixmodule.c
-billion
-posix_constants_confstr
-posix_constants_pathconf
-posix_constants_sysconf
-posix_putenv_garbage
-_stat_float_times  # deprecated, __main__-only
-structseq_new
-ticks_per_second
-
-# Modules/signalmodule.c
-DefaultHandler
-Handlers  # main thread only
-IgnoreHandler
-IntHandler
-ItimerError
-is_tripped  # main thread only
-main_pid
-main_thread
-old_siginthandler
-wakeup_fd  # main thread only
-
-# Modules/zipimport.c
-ZipImportError
-#zip_directory_cache  # maybe
-zip_searchorder
-
-# Python/bltinmodule.c
-Py_FileSystemDefaultEncodeErrors
-Py_FileSystemDefaultEncoding
-Py_HasFileSystemDefaultEncoding
-
-
-#######################################
-# builtin types
-
-# Generic names for static types handled via _is_type_var()
-# in check-c-globals.py.
 
 # Objects/boolobject.c
 false_str
 true_str
 
-# Objects/bytearrayobject.c
-_PyByteArray_empty_string
-
-# Objects/bytesobject.c
-characters
-nullstring
-
-# Objects/classobject.c
-free_list
-numfree
-
-# Objects/dictobject.c
-empty_keys_struct
-empty_values
-free_list
-keys_free_list
-numfree
-numfreekeys
-pydict_global_version  # maybe not
-
-# Objects/exceptions.c
-PyExc_RecursionErrorInst
-errnomap
-memerrors_freelist
-memerrors_numfree
-
-# Objects/floatobject.c
-detected_double_format
-detected_float_format
-double_format
-float_format
-free_list
-numfree
-
-# Objects/frameobject.c
-free_list
-numfree
-
-# Objects/genobject.c
-ag_asend_freelist
-ag_asend_freelist_free
-ag_value_freelist
-ag_value_freelist_free
-
 # Objects/listobject.c
 indexerr
-free_list
-numfree
-
-# Objects/longobject.c
-_PyLong_DigitValue
-_PyLong_One
-_PyLong_Zero
-small_ints
-
-# Objects/methodobject.c
-free_list
-numfree
-
-# Objects/object.c
-_Py_SwappedOp
-_Py_abstract_hack
-
-# Objects/obmalloc.c
-_PyMem_Debug
-#usedpools
-
-# Objects/setobject.c
-_PySet_Dummy
-_dummy_struct
-emptyfrozenset
-
-# Objects/sliceobject.c
-slice_cache  # slight race
-
-# Objects/structseq.c
-PyStructSequence_UnnamedField
-_struct_sequence_template
-
-# Objects/tupleobject.c
-free_list
-numfree
-
-# Objects/typeobject.c
-method_cache  # only for static types
-next_version_tag  # only for static types
-name_op
-slotdefs  # almost
-slotdefs_initialized  # almost
-subtype_getsets_dict_only
-subtype_getsets_full
-subtype_getsets_weakref_only
-tp_new_methoddef
-
-# Objects/unicodeobject.c
-bloom_linebreak
-interned  # slight race on init in PyUnicode_InternInPlace()
-static_strings  # slight race
-unicode_empty
-unicode_latin1
-
-# Python/codecs.c
-Py_hexdigits
-ucnhash_CAPI  # slight performance-only race
-
-
-#######################################
-# singletons
-
-# Include/boolobject.h
-_Py_FalseStruct
-_Py_TrueStruct
-
-# Include/object.h
-_Py_NoneStruct
-_Py_NotImplementedStruct
-
-# Include/sliceobject.h
-_Py_EllipsisObject
-
-
-#######################################
-# exceptions/warnings
-
-# Handled via _is_exception() in check-c-globals.py, with some special
-# cases here.
-
-# Objects/exceptions.c
-PyExc_BaseException
-PyExc_Exception
-PyExc_GeneratorExit
-PyExc_KeyboardInterrupt
-PyExc_StopAsyncIteration
-PyExc_StopIteration
-PyExc_SystemExit
-_PyExc_BaseException
-_PyExc_Exception
-_PyExc_GeneratorExit
-_PyExc_KeyboardInterrupt
-_PyExc_StopAsyncIteration
-_PyExc_StopIteration
-_PyExc_SystemExit
-
-
-#######################################
-# compiler
-
-# AST vars are handled in _is_compiler().
-
-# Parser/tokenizer.c
-_PyParser_TokenNames
-
-# Python/graminit.c
-_PyParser_Grammar
-dfas
-labels
-
-# Python/Python-ast.c
-alias_fields
-
-# Python/symtable.c
-# XXX All okay?
-#__class__
-#dictcomp
-#genexpr
-#lambda
-#listcomp
-#setcomp
-#top
-
-
-#######################################
-# interpreter
 
 # Python/sysmodule.c
-_PySys_ImplCacheTag
-_PySys_ImplName
 whatstrings
 
 
 #######################################
-# import
+# hacks
 
-# Modules/config.c
-_PyImport_Inittab
+# Objects/object.c
+_Py_abstract_hack
 
-# Objects/moduleobject.c
-max_module_number  # slight race during import
-
-# Python/dynload_shlib.c
-_PyImport_DynLoadFiletab
-handles  # slight race during import
-nhandles  # slight race during import
-
-# Python/frozen.c
-M___hello__
-PyImport_FrozenModules
-
-# Python/import.c
-PyImport_Inittab
-extensions  # slight race on init during import
-#import_lock  # For extension modules only.
-#import_lock_level  # For extension modules only.
-#import_lock_thread  # For extension modules only.
-
-# Python/modsupport.c
-_Py_PackageContext  # Slight race during import!  Move to PyThreadState?
-
-
-#######################################
-# startup
-
-# Modules/getpath.c
-exec_prefix
-module_search_path
-prefix
-progpath
-
-# Modules/main.c
-orig_argc
-orig_argv
-
-# Python/bootstrap_hash.c
-urandom_cache
-
-# Python/getopt.c
-opt_ptr
-_PyOS_optarg
-_PyOS_opterr
-_PyOS_optind
-
-# Python/pyhash.c
-PyHash_Func
-_Py_HashSecret
-_Py_HashSecret_Initialized
+# Objects/setobject.c
+_PySet_Dummy
 
 # Python/pylifecycle.c
 _PyOS_mystrnicmp_hack
-#_Py_CoreInitialized
-_PyRuntime
-#_Py_StandardStreamEncoding
-#_Py_StandardStreamErrors
-default_home
-env_home
-progname
-Py_BytesWarningFlag
-Py_DebugFlag
-Py_DontWriteBytecodeFlag
-Py_FrozenFlag
-Py_HashRandomizationFlag
-Py_IgnoreEnvironmentFlag
-Py_InspectFlag
-Py_InteractiveFlag
-Py_IsolatedFlag
-Py_NoSiteFlag
-Py_NoUserSiteDirectory
-Py_OptimizeFlag
-Py_QuietFlag
-Py_UnbufferedStdioFlag
-Py_UseClassExceptionsFlag
-Py_VerboseFlag
-
-# Python/pystate.c
-head_mutex
-interp_head
-interp_main
-_next_interp_id
-
-
-#######################################
-# others
-
-# Parser/myreadline.c
-PyOS_InputHook
-PyOS_ReadlineFunctionPointer
-_PyOS_ReadlineLock
-_PyOS_ReadlineTState
-
-# Python/dtoa.c
-freelist  # very slight race
-p5s
-pmem_next  # very slight race
-private_mem  # very slight race
-
-# Python/fileutils.c
-_Py_open_cloexec_works
-force_ascii
-
-# Python/getargs.c
-static_arg_parsers
