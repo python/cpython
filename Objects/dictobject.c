@@ -2341,8 +2341,8 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
 }
 
 /* Note: dict.update() uses the METH_VARARGS|METH_KEYWORDS calling convention.
-   Using METH_FASTCALL would make dict.update(**dict2) calls slower, see the
-   issue #29312. */
+   Using METH_FASTCALL|METH_KEYWORDS would make dict.update(**dict2) calls
+   slower, see the issue #29312. */
 static PyObject *
 dict_update(PyObject *self, PyObject *args, PyObject *kwds)
 {

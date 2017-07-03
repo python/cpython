@@ -15,15 +15,11 @@ static PyObject *
 list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object);
 
 static PyObject *
-list_insert(PyListObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+list_insert(PyListObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index;
     PyObject *object;
-
-    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "nO:insert",
         &index, &object)) {
@@ -104,14 +100,10 @@ static PyObject *
 list_pop_impl(PyListObject *self, Py_ssize_t index);
 
 static PyObject *
-list_pop(PyListObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+list_pop(PyListObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
-
-    if (!_PyArg_NoStackKeywords("pop", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "|n:pop",
         &index)) {
@@ -130,7 +122,7 @@ PyDoc_STRVAR(list_sort__doc__,
 "Stable sort *IN PLACE*.");
 
 #define LIST_SORT_METHODDEF    \
-    {"sort", (PyCFunction)list_sort, METH_FASTCALL, list_sort__doc__},
+    {"sort", (PyCFunction)list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse);
@@ -188,16 +180,12 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
                 Py_ssize_t stop);
 
 static PyObject *
-list_index(PyListObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+list_index(PyListObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
     Py_ssize_t start = 0;
     Py_ssize_t stop = PY_SSIZE_T_MAX;
-
-    if (!_PyArg_NoStackKeywords("index", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index",
         &value, _PyEval_SliceIndexNotNone, &start, _PyEval_SliceIndexNotNone, &stop)) {
@@ -297,4 +285,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=63cbe6d6320e916f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a4f72a5e7ff5068 input=a9049054013a1b77]*/
