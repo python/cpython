@@ -119,7 +119,7 @@ class TypeDefVisitor(EmitVisitor):
             enum.append("%s=%d" % (type.name, i + 1))
         enums = ", ".join(enum)
         ctype = get_c_type(name)
-        s = "typedef enum _%s { %s } %s;" % (name, enums, ctype)
+        s = "typedef enum _%s { %s } %s; /* Test bpo-30259 */" % (name, enums, ctype)
         self.emit(s, depth)
         self.emit("", depth)
 
