@@ -173,7 +173,17 @@ def _readmodule(module, path, inpackage=None):
 
 
 def _create_tree(fullmodule, path, fname, source, tree, inpackage):
-    "Return the tree for a particular module."
+    """Return the tree for a particular module.
+
+    fullmodule (full module name), inpackage+module, becomes o.module.
+    path is passed to recursive calls of _readmodule.
+    fname becomes o.file.
+    source is tokenized.  Imports cause recursive calls to _readmodule.
+    tree is {} or {'__path__': <submodule search locations>}.
+    inpackage, None or string, is passed to recursive calls of _readmodule.
+
+    The effect of recursive calls is mutation of global _modules.
+    """
     f = io.StringIO(source)
 
     stack = [] # Initialize stack of (class, indent) pairs.
