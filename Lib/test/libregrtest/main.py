@@ -415,6 +415,8 @@ class Regrtest:
                 yield test
                 if self.bad:
                     return
+                if self.ns.fail_env_changed and self.environment_changed:
+                    return
 
     def display_header(self):
         # Print basic platform information
@@ -478,7 +480,7 @@ class Regrtest:
             result = "FAILURE"
         elif self.interrupted:
             result = "INTERRUPTED"
-        elif self.environment_changed and self.ns.fail_env_changed:
+        elif self.ns.fail_env_changed and self.environment_changed:
             result = "ENV CHANGED"
         else:
             result = "SUCCESS"
