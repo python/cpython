@@ -130,12 +130,11 @@ PyModule_GetWarningsModule(void)
  *
  * Can be called prior to Py_Initialize.
  */
-int _Py_CoreInitialized = 0;
 
 int
 _Py_IsCoreInitialized(void)
 {
-    return _Py_CoreInitialized;
+    return _PyRuntime.core_initialized;
 }
 
 int
@@ -563,7 +562,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     if (_PyRuntime.initialized) {
         Py_FatalError("Py_InitializeCore: main interpreter already initialized");
     }
-    if (_Py_CoreInitialized) {
+    if (_PyRuntime.core_initialized) {
         Py_FatalError("Py_InitializeCore: runtime core already initialized");
     }
 
@@ -708,7 +707,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     }
 
     /* Only when we get here is the runtime core fully initialized */
-    _Py_CoreInitialized = 1;
+    _PyRuntime.core_initialized = 1;
 }
 
 /* Read configuration settings from standard locations
@@ -749,7 +748,7 @@ int _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     PyInterpreterState *interp;
     PyThreadState *tstate;
 
-    if (!_Py_CoreInitialized) {
+    if (!_PyRuntime.core_initialized) {
         Py_FatalError("Py_InitializeMainInterpreter: runtime core not initialized");
     }
     if (_PyRuntime.initialized) {
@@ -958,7 +957,7 @@ Py_FinalizeEx(void)
        after taking the GIL (in PyEval_RestoreThread()). */
     _PyRuntime.finalizing = tstate;
     _PyRuntime.initialized = 0;
-    _Py_CoreInitialized = 0;
+    _PyRuntime.core_initialized = 0;
 
     /* Flush sys.stdout and sys.stderr */
     if (flush_std_files() < 0) {
