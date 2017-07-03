@@ -15,6 +15,8 @@ def main(token_py='Lib/token.py', outfile='Doc/library/token-list.inc'):
     with open(outfile, 'w') as fobj:
         fobj.write(header)
         for value in sorted(tok_name):
+            if token['ERRORTOKEN'] < value < token['N_TOKENS']:
+                continue
             name = tok_name[value]
             fobj.write("   %s\n" % (name,))
 
