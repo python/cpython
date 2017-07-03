@@ -15,7 +15,7 @@ instances of classes Class and Function.  One special key/value pair is
 present for packages: the key '__path__' has a list as its value which
 contains the package search path.
 
-Classes and Functions have a common superclass: Object.  Every instance
+Classes and Functions have a common superclass: _Object.  Every instance
 has the following attributes:
     module  -- name of the module;
     name    -- name of the object;
@@ -25,9 +25,9 @@ has the following attributes:
     children -- nested objects contained in this object.
 The 'children' attribute is a dictionary mapping names to objects.
 
-Instances of Function describe function with the attributes from Object.
+Instances of Function describe functions with the attributes from _Object.
 
-Instances of Class describe classes with the attributes from Object,
+Instances of Class describe classes with the attributes from _Object,
 plus the following:
     super   -- list of super classes (Class instances if possible);
     methods -- mapping of method names to beginning line numbers.
@@ -44,12 +44,12 @@ import importlib.util
 import tokenize
 from token import NAME, DEDENT, OP
 
-__all__ = ["readmodule", "readmodule_ex", "Object", "Class", "Function"]
+__all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
 
 _modules = {}  # Initialize cache of modules we've seen.
 
 
-class Object:
+class _Object:
     "Informaton about Python class or function."
     def __init__(self, module, name, file, lineno, parent):
         self.module = module
@@ -63,10 +63,10 @@ class Object:
         self.children[name] = obj
 
 
-class Class(Object):
+class Class(_Object):
     "Information about a Python class."
     def __init__(self, module, name, super, file, lineno, parent=None):
-        Object.__init__(self, module, name, file, lineno, parent)
+        _Object.__init__(self, module, name, file, lineno, parent)
         self.super = [] if super is None else super
         self.methods = {}
 
@@ -74,10 +74,10 @@ class Class(Object):
         self.methods[name] = lineno
 
 
-class Function(Object):
+class Function(_Object):
     "Information about a Python function, including methods."
     def __init__(self, module, name, file, lineno, parent=None):
-        Object.__init__(self, module, name, file, lineno, parent)
+        _Object.__init__(self, module, name, file, lineno, parent)
 
 
 def _newfunction(ob, name, lineno):
@@ -376,7 +376,7 @@ def _main():
         if not hasattr(obj, 'indent'):
             obj.indent = 0
 
-        if isinstance(obj, Object):
+        if isinstance(obj, _Object):
             new_objs = sorted(obj.children.values(),
                               key=lineno_key, reverse=True)
             for ob in new_objs:
