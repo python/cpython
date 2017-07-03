@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 # This script generates the opcode.h header file.
 
 template = """\
