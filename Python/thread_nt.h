@@ -349,11 +349,6 @@ _pythread_nt_set_stacksize(size_t size)
 #define THREAD_SET_STACKSIZE(x) _pythread_nt_set_stacksize(x)
 
 
-/* use native Windows TLS functions */
-#define Py_HAVE_NATIVE_TLS
-
-#ifdef Py_HAVE_NATIVE_TLS
-
 /* Thread Local Storage (TLS) API, DEPRECATED since Python 3.7 */
 
 int
@@ -489,5 +484,3 @@ void
 PyThread_ReInitTSS(void)
 {
 }
-
-#endif

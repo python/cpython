@@ -255,6 +255,9 @@ def _create_parser():
                             ' , don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization training')
+    group.add_argument('--fail-env-changed', action='store_true',
+                       help='if a test file alters the environment, mark '
+                            'the test as failed')
 
     return parser
 

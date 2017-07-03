@@ -844,8 +844,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
     PROCESS_INFORMATION pi;
     STARTUPINFOW si;
     PyObject* environment;
-    const wchar_t *wenvironment;
-    Py_ssize_t wenvironment_size;
+    wchar_t *wenvironment;
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
