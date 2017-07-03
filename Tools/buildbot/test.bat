@@ -16,4 +16,4 @@ if "%1"=="+q" (set rt_opts=%rt_opts:-q=%) & shift & goto CheckOpts
 if NOT "%1"=="" (set regrtest_args=%regrtest_args% %1) & shift & goto CheckOpts
 
 echo on
-call "%here%..\..\PCbuild\rt.bat" %rt_opts% -uall -rwW %regrtest_args%
+call "%here%..\..\PCbuild\rt.bat" %rt_opts% -uall -rwW --slowest %regrtest_args%
