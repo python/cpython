@@ -115,9 +115,6 @@ PyThread_set_stacksize(size_t size)
 }
 
 
-/* If the platform has not supplied a platform-specific thread-local
-   storage implementation, CPython does not provide thread feature.
-*/
 /* ------------------------------------------------------------------------
 Per-thread data ("key") support.
 
