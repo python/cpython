@@ -75,31 +75,12 @@ Error
 ThreadError
 
 # Modules/_tracemalloc.c
-##allocators
-##tables_lock
-##tracemalloc_config
-tracemalloc_empty_traceback
-##tracemalloc_filenames
-##tracemalloc_peak_traced_memory
-##tracemalloc_reentrant_key
-##tracemalloc_traceback
-##tracemalloc_tracebacks
-##tracemalloc_traced_memory
-##tracemalloc_traces
 unknown_filename
 
 # Modules/gcmodule.c
-##_PyGC_generation0
 ##callbacks
-##collecting
-##debug
-##enabled
 ##garbage
 gc_str
-##generation_stats
-##generations
-##long_lived_pending
-##long_lived_total
 
 # Modules/posixmodule.c
 billion
@@ -113,12 +94,24 @@ ItimerError
 
 # Modules/zipimport.c
 ZipImportError
-##zip_directory_cache  # maybe
-zip_searchorder
+zip_directory_cache
 
 
 #---------------------------------
 # module globals (other)
+
+# Modules/_tracemalloc.c
+##allocators
+##tables_lock
+##tracemalloc_config
+tracemalloc_empty_traceback
+##tracemalloc_filenames
+##tracemalloc_peak_traced_memory
+##tracemalloc_reentrant_key
+##tracemalloc_traceback
+##tracemalloc_tracebacks
+##tracemalloc_traced_memory
+##tracemalloc_traces
 
 # Modules/faulthandler.c
 fatal_error
@@ -127,6 +120,16 @@ old_stack
 stack
 thread
 user_signals
+
+# Modules/gcmodule.c
+##_PyGC_generation0
+##collecting
+##debug
+##enabled
+##generation_stats
+##generations
+##long_lived_pending
+##long_lived_total
 
 # Modules/posixmodule.c
 posix_constants_confstr
@@ -143,6 +146,9 @@ main_pid
 main_thread
 old_siginthandler
 wakeup_fd  # main thread only
+
+# Modules/zipimport.c
+zip_searchorder
 
 # Python/bltinmodule.c
 Py_FileSystemDefaultEncodeErrors
