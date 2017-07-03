@@ -117,6 +117,13 @@ resources to test.  Currently only the following are defined:
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
+
+--matchfile filters tests using a text file, one pattern per line.
+Pattern examples:
+
+- test method: test_stat_attributes
+- test class: FileTests
+- test identifier: test_os.FileTests.test_stat_attributes
 """
 
 
@@ -189,8 +196,12 @@ def _create_parser():
                        help='single step through a set of tests.' +
                             more_details)
     group.add_argument('-m', '--match', metavar='PAT',
-                       dest='match_tests',
+                       dest='match_tests', action='append',
                        help='match test cases and methods with glob pattern PAT')
+    group.add_argument('--matchfile', metavar='FILENAME',
+                       dest='match_filename',
+                       help='similar to --match but get patterns from a '
+                            'text file, one pattern per line')
     group.add_argument('-G', '--failfast', action='store_true',
                        help='fail as soon as a test fails (only with -v or -W)')
     group.add_argument('-u', '--use', metavar='RES1,RES2,...',
@@ -239,8 +250,14 @@ def _create_parser():
     group.add_argument('--list-tests', action='store_true',
                        help="only write the name of tests that will be run, "
                             "don't execute them")
+    group.add_argument('--list-cases', action='store_true',
+                       help='only write the name of test cases that will be run'
+                            ' , don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization training')
+    group.add_argument('--fail-env-changed', action='store_true',
+                       help='if a test file alters the environment, mark '
+                            'the test as failed')
 
     return parser
 
@@ -350,5 +367,12 @@ def _parse_args(args, **kwargs):
         print("WARNING: Disable --verbose3 because it's incompatible with "
               "--huntrleaks: see http://bugs.python.org/issue27103",
               file=sys.stderr)
+    if ns.match_filename:
+        if ns.match_tests is None:
+            ns.match_tests = []
+        filename = os.path.join(support.SAVEDCWD, ns.match_filename)
+        with open(filename) as fp:
+            for line in fp:
+                ns.match_tests.append(line.strip())
 
     return ns

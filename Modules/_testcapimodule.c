@@ -3420,6 +3420,130 @@ test_pyobject_setallocators(PyObject *self)
     return test_setallocators(PYMEM_DOMAIN_OBJ);
 }
 
+/* Most part of the following code is inherited from the pyfailmalloc project
+ * written by Victor Stinner. */
+static struct {
+    int installed;
+    PyMemAllocatorEx raw;
+    PyMemAllocatorEx mem;
+    PyMemAllocatorEx obj;
+} FmHook;
+
+static struct {
+    int start;
+    int stop;
+    Py_ssize_t count;
+} FmData;
+
+static int
+fm_nomemory(void)
+{
+    FmData.count++;
+    if (FmData.count > FmData.start &&
+            (FmData.stop <= 0 || FmData.count <= FmData.stop)) {
+        return 1;
+    }
+    return 0;
+}
+
+static void *
+hook_fmalloc(void *ctx, size_t size)
+{
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+    if (fm_nomemory()) {
+        return NULL;
+    }
+    return alloc->malloc(alloc->ctx, size);
+}
+
+static void *
+hook_fcalloc(void *ctx, size_t nelem, size_t elsize)
+{
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+    if (fm_nomemory()) {
+        return NULL;
+    }
+    return alloc->calloc(alloc->ctx, nelem, elsize);
+}
+
+static void *
+hook_frealloc(void *ctx, void *ptr, size_t new_size)
+{
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+    if (fm_nomemory()) {
+        return NULL;
+    }
+    return alloc->realloc(alloc->ctx, ptr, new_size);
+}
+
+static void
+hook_ffree(void *ctx, void *ptr)
+{
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+    alloc->free(alloc->ctx, ptr);
+}
+
+static void
+fm_setup_hooks(void)
+{
+    PyMemAllocatorEx alloc;
+
+    if (FmHook.installed) {
+        return;
+    }
+    FmHook.installed = 1;
+
+    alloc.malloc = hook_fmalloc;
+    alloc.calloc = hook_fcalloc;
+    alloc.realloc = hook_frealloc;
+    alloc.free = hook_ffree;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &FmHook.raw);
+    PyMem_GetAllocator(PYMEM_DOMAIN_MEM, &FmHook.mem);
+    PyMem_GetAllocator(PYMEM_DOMAIN_OBJ, &FmHook.obj);
+
+    alloc.ctx = &FmHook.raw;
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &alloc);
+
+    alloc.ctx = &FmHook.mem;
+    PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &alloc);
+
+    alloc.ctx = &FmHook.obj;
+    PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &alloc);
+}
+
+static void
+fm_remove_hooks(void)
+{
+    if (FmHook.installed) {
+        FmHook.installed = 0;
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &FmHook.raw);
+        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &FmHook.mem);
+        PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &FmHook.obj);
+    }
+}
+
+static PyObject*
+set_nomemory(PyObject *self, PyObject *args)
+{
+    /* Memory allocation fails after 'start' allocation requests, and until
+     * 'stop' allocation requests except when 'stop' is negative or equal
+     * to 0 (default) in which case allocation failures never stop. */
+    FmData.count = 0;
+    FmData.stop = 0;
+    if (!PyArg_ParseTuple(args, "i|i", &FmData.start, &FmData.stop)) {
+        return NULL;
+    }
+    fm_setup_hooks();
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+remove_mem_hooks(PyObject *self)
+{
+    fm_remove_hooks();
+    Py_RETURN_NONE;
+}
+
 PyDoc_STRVAR(docstring_empty,
 ""
 );
@@ -3958,15 +4082,15 @@ tracemalloc_track(PyObject *self, PyObject *args)
 
     if (release_gil) {
         Py_BEGIN_ALLOW_THREADS
-        res = _PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
+        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
         Py_END_ALLOW_THREADS
     }
     else {
-        res = _PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
+        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
     }
 
     if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "_PyTraceMalloc_Track error");
+        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Track error");
         return NULL;
     }
 
@@ -3987,9 +4111,9 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
     if (PyErr_Occurred())
         return NULL;
 
-    res = _PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+    res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
     if (res < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "_PyTraceMalloc_Track error");
+        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Untrack error");
         return NULL;
     }
 
@@ -4048,6 +4172,104 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
      */
     raise(SIGINT);
     return _PyGen_Send(gen, Py_None);
+}
+
+
+static int
+fastcall_args(PyObject *args, PyObject ***stack, Py_ssize_t *nargs)
+{
+    if (args == Py_None) {
+        *stack = NULL;
+        *nargs = 0;
+    }
+    else if (PyTuple_Check(args)) {
+        *stack = &PyTuple_GET_ITEM(args, 0);
+        *nargs = PyTuple_GET_SIZE(args);
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "args must be None or a tuple");
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject *
+test_pyobject_fastcall(PyObject *self, PyObject *args)
+{
+    PyObject *func, *func_args;
+    PyObject **stack;
+    Py_ssize_t nargs;
+
+    if (!PyArg_ParseTuple(args, "OO", &func, &func_args)) {
+        return NULL;
+    }
+
+    if (fastcall_args(func_args, &stack, &nargs) < 0) {
+        return NULL;
+    }
+    return _PyObject_FastCall(func, stack, nargs);
+}
+
+
+static PyObject *
+test_pyobject_fastcalldict(PyObject *self, PyObject *args)
+{
+    PyObject *func, *func_args, *kwargs;
+    PyObject **stack;
+    Py_ssize_t nargs;
+
+    if (!PyArg_ParseTuple(args, "OOO", &func, &func_args, &kwargs)) {
+        return NULL;
+    }
+
+    if (fastcall_args(func_args, &stack, &nargs) < 0) {
+        return NULL;
+    }
+
+    if (kwargs == Py_None) {
+        kwargs = NULL;
+    }
+    else if (!PyDict_Check(kwargs)) {
+        PyErr_SetString(PyExc_TypeError, "kwnames must be None or a dict");
+        return NULL;
+    }
+
+    return _PyObject_FastCallDict(func, stack, nargs, kwargs);
+}
+
+
+static PyObject *
+test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
+{
+    PyObject *func, *func_args, *kwnames = NULL;
+    PyObject **stack;
+    Py_ssize_t nargs, nkw;
+
+    if (!PyArg_ParseTuple(args, "OOO", &func, &func_args, &kwnames)) {
+        return NULL;
+    }
+
+    if (fastcall_args(func_args, &stack, &nargs) < 0) {
+        return NULL;
+    }
+
+    if (kwnames == Py_None) {
+        kwnames = NULL;
+    }
+    else if (PyTuple_Check(kwnames)) {
+        nkw = PyTuple_GET_SIZE(kwnames);
+        if (nargs < nkw) {
+            PyErr_SetString(PyExc_ValueError, "kwnames longer than args");
+            return NULL;
+        }
+        nargs -= nkw;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "kwnames must be None or a tuple");
+        return NULL;
+    }
+    return _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
 }
 
 
@@ -4189,6 +4411,10 @@ static PyMethodDef TestMethods[] = {
      (PyCFunction)test_pymem_setallocators, METH_NOARGS},
     {"test_pyobject_setallocators",
      (PyCFunction)test_pyobject_setallocators, METH_NOARGS},
+    {"set_nomemory", (PyCFunction)set_nomemory, METH_VARARGS,
+     PyDoc_STR("set_nomemory(start:int, stop:int = 0)")},
+    {"remove_mem_hooks", (PyCFunction)remove_mem_hooks, METH_NOARGS,
+     PyDoc_STR("Remove memory hooks.")},
     {"no_docstring",
         (PyCFunction)test_with_docstring, METH_NOARGS},
     {"docstring_empty",
@@ -4256,6 +4482,9 @@ static PyMethodDef TestMethods[] = {
     {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
     {"dict_get_version", dict_get_version, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
+    {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
+    {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
+    {"pyobject_fastcallkeywords", test_pyobject_fastcallkeywords, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

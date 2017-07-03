@@ -235,7 +235,7 @@ class ABC(metaclass=ABCMeta):
     """Helper class that provides a standard way to create an ABC using
     inheritance.
     """
-    pass
+    __slots__ = ()
 
 
 def get_cache_token():

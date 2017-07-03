@@ -1,0 +1,5 @@
+IDLE: Make several improvements to parenmatch. Add 'parens' style to
+highlight both opener and closer. Make 'default' style, which is not
+default, a synonym for 'opener'. Make time-delay work the same with all
+styles. Add help for config dialog extensions tab, including help for
+parenmatch. Add new tests.  Original patch by Charles Wohlganger.

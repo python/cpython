@@ -100,12 +100,12 @@ bytearray_maketrans(void *null, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     Py_buffer frm = {NULL, NULL};
     Py_buffer to = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*:maketrans",
-        &frm, &to)) {
+    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*y*:maketrans",
+        &frm, &to)) {
         goto exit;
     }
     return_value = bytearray_maketrans_impl(&frm, &to);
@@ -151,12 +151,12 @@ bytearray_replace(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, Py
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*|n:replace",
-        &old, &new, &count)) {
+    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "y*y*|n:replace",
+        &old, &new, &count)) {
         goto exit;
     }
     return_value = bytearray_replace_impl(self, &old, &new, count);
@@ -330,12 +330,12 @@ bytearray_insert(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyO
     Py_ssize_t index;
     int item;
 
-    if (!_PyArg_ParseStack(args, nargs, "nO&:insert",
-        &index, _getbytevalue, &item)) {
+    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "nO&:insert",
+        &index, _getbytevalue, &item)) {
         goto exit;
     }
     return_value = bytearray_insert_impl(self, index, item);
@@ -410,12 +410,12 @@ bytearray_pop(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObje
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:pop",
-        &index)) {
+    if (!_PyArg_NoStackKeywords("pop", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("pop", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|n:pop",
+        &index)) {
         goto exit;
     }
     return_value = bytearray_pop_impl(self, index);
@@ -474,13 +474,13 @@ bytearray_strip(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyOb
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "strip",
-        0, 1,
-        &bytes)) {
+    if (!_PyArg_NoStackKeywords("strip", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("strip", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "strip",
+        0, 1,
+        &bytes)) {
         goto exit;
     }
     return_value = bytearray_strip_impl(self, bytes);
@@ -509,13 +509,13 @@ bytearray_lstrip(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyO
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
-        0, 1,
-        &bytes)) {
+    if (!_PyArg_NoStackKeywords("lstrip", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("lstrip", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
+        0, 1,
+        &bytes)) {
         goto exit;
     }
     return_value = bytearray_lstrip_impl(self, bytes);
@@ -544,13 +544,13 @@ bytearray_rstrip(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyO
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
-        0, 1,
-        &bytes)) {
+    if (!_PyArg_NoStackKeywords("rstrip", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("rstrip", kwnames)) {
+    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
+        0, 1,
+        &bytes)) {
         goto exit;
     }
     return_value = bytearray_rstrip_impl(self, bytes);
@@ -712,12 +712,12 @@ bytearray_reduce_ex(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, 
     PyObject *return_value = NULL;
     int proto = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:__reduce_ex__",
-        &proto)) {
+    if (!_PyArg_NoStackKeywords("__reduce_ex__", kwnames)) {
         goto exit;
     }
 
-    if (!_PyArg_NoStackKeywords("__reduce_ex__", kwnames)) {
+    if (!_PyArg_ParseStack(args, nargs, "|i:__reduce_ex__",
+        &proto)) {
         goto exit;
     }
     return_value = bytearray_reduce_ex_impl(self, proto);
@@ -743,4 +743,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=f5c364927425fae8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0079d8ee82614f7 input=a9049054013a1b77]*/

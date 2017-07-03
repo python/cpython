@@ -866,7 +866,7 @@ field names, the method and attribute names start with an underscore.
     .. versionchanged:: 3.1
         Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
 
-.. method:: somenamedtuple._replace(kwargs)
+.. method:: somenamedtuple._replace(**kwargs)
 
     Return a new instance of the named tuple replacing specified fields with new
     values::
