@@ -1817,15 +1817,12 @@ to the format string S.format.  See help(struct) for more on format\n\
 strings.");
 
 static PyObject *
-s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyStructObject *soself;
     PyObject *result;
 
     /* Validate arguments. */
-    if (!_PyArg_NoStackKeywords("pack", kwnames)) {
-        return NULL;
-    }
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
     assert(soself->s_codes != NULL);
@@ -1859,16 +1856,13 @@ offset.  Note that the offset is a required argument.  See\n\
 help(struct) for more on format strings.");
 
 static PyObject *
-s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyStructObject *soself;
     Py_buffer buffer;
     Py_ssize_t offset;
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
-    if (!_PyArg_NoStackKeywords("pack_into", kwnames)) {
-        return NULL;
-    }
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
     assert(soself->s_codes != NULL);
@@ -2126,14 +2120,10 @@ Return a bytes object containing the values v1, v2, ... packed according\n\
 to the format string.  See help(struct) for more on format strings.");
 
 static PyObject *
-pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
-
-    if (!_PyArg_NoStackKeywords("pack", kwnames)) {
-        return NULL;
-    }
 
     if (nargs == 0) {
         PyErr_SetString(PyExc_TypeError, "missing format argument");
@@ -2144,7 +2134,7 @@ pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     if (!cache_struct_converter(format, &s_object)) {
         return NULL;
     }
-    result = s_pack(s_object, args + 1, nargs - 1, kwnames);
+    result = s_pack(s_object, args + 1, nargs - 1);
     Py_DECREF(s_object);
     return result;
 }
@@ -2158,14 +2148,10 @@ that the offset is a required argument.  See help(struct) for more\n\
 on format strings.");
 
 static PyObject *
-pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
-
-    if (!_PyArg_NoStackKeywords("pack_into", kwnames)) {
-        return NULL;
-    }
 
     if (nargs == 0) {
         PyErr_SetString(PyExc_TypeError, "missing format argument");
@@ -2176,7 +2162,7 @@ pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     if (!cache_struct_converter(format, &s_object)) {
         return NULL;
     }
-    result = s_pack_into(s_object, args + 1, nargs - 1, kwnames);
+    result = s_pack_into(s_object, args + 1, nargs - 1);
     Py_DECREF(s_object);
     return result;
 }
