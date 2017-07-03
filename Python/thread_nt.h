@@ -348,10 +348,6 @@ _pythread_nt_set_stacksize(size_t size)
 #define THREAD_SET_STACKSIZE(x) _pythread_nt_set_stacksize(x)
 
 
-/* use native Windows TLS functions */
-#define Py_HAVE_NATIVE_TLS
-
-#ifdef Py_HAVE_NATIVE_TLS
 int
 PyThread_create_key(void)
 {
@@ -408,5 +404,3 @@ PyThread_delete_key_value(int key)
 void
 PyThread_ReInitTLS(void)
 {}
-
-#endif
