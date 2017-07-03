@@ -2489,6 +2489,8 @@ dir_fd and follow_symlinks may not be implemented
 It's an error to use dir_fd or follow_symlinks when specifying path as
   an open file descriptor.
 
+TEST BPO-30259: Test somehow that generated files are up to date: run make regen-all.
+
 [clinic start generated code]*/
 
 static PyObject *
