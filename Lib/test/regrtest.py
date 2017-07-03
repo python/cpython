@@ -599,6 +599,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     yield test
                     if bad:
                         return
+                    if fail_env_changed and environment_changed:
+                        return
         tests = test_forever()
         test_count = ''
         test_count_width = 3
@@ -913,7 +915,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         result = "FAILURE"
     elif interrupted:
         result = "INTERRUPTED"
-    elif environment_changed and fail_env_changed:
+    elif fail_env_changed and environment_changed:
         result = "ENV CHANGED"
     else:
         result = "SUCCESS"
