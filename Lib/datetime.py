@@ -2271,7 +2271,8 @@ else:
          _check_tzinfo_arg, _check_tzname, _check_utc_offset, _cmp, _cmperror,
          _date_class, _days_before_month, _days_before_year, _days_in_month,
          _format_time, _is_leap, _isoweek1monday, _math, _ord2ymd,
-         _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord)
+         _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
+         _divide_and_round)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and
