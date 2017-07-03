@@ -67,16 +67,6 @@ _PyRuntime
 ##interp_main
 ##_next_interp_id
 
-# Python/symtable.c
-# XXX All okay?
-##__class__
-##dictcomp
-##genexpr
-##lambda
-##listcomp
-##setcomp
-##top
-
 
 #---------------------------------
 # module globals (PyObject)
@@ -488,6 +478,15 @@ true_str
 
 # Objects/listobject.c
 indexerr
+
+# Python/symtable.c
+__class__
+dictcomp
+genexpr
+lambda
+listcomp
+setcomp
+top
 
 # Python/sysmodule.c
 whatstrings
