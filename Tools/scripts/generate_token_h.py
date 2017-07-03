@@ -36,15 +36,21 @@ PyAPI_FUNC(int) PyToken_ThreeChars(int, int, int);
 """
 
 
-def main(token_py='Lib/token.py', outfile='Include/token.h'):
-    token = {}
-    with open(token_py) as fp:
+def load_module(path):
+    module = type('Namespace', (), {})()
+    with open(path, 'rb') as fp:
         code = fp.read()
-    exec(code, token)
-    tok_name = token['tok_name']
+    exec(code, module.__dict__)
+    return module
+
+def main(token_py='Lib/token.py', outfile='Include/token.h'):
+    token = load_module(token_py)
+    tok_name = token.tok_name
     with open(outfile, 'w') as fobj:
         fobj.write(header)
         for value in sorted(tok_name):
+            if token.ERRORTOKEN < value < token.N_TOKENS:
+                continue
             name = tok_name[value]
             fobj.write("#define %-15s %d\n" % (name, value))
         fobj.write(footer)

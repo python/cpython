@@ -705,7 +705,7 @@ regen-importlib: Programs/_freeze_importlib
 ############################################################################
 # Regenerate all generated files
 
-regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen-token regen-ast regen-importlib
+regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen-token regen-symbol regen-ast regen-importlib
 
 ############################################################################
 # Special rules for object files
@@ -819,12 +819,20 @@ regen-token:
 	# using Tools/scripts/generate_token_c.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token_c.py \
 		$(srcdir)/Lib/token.py \
-		$(srcdir)/Parser/token_names.h
+		$(srcdir)/Parser/token.c
 	# Regenerate Doc/library/token-list.inc from Lib/token.py
 	# using Tools/scripts/generate_token_rst.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token_rst.py \
 		$(srcdir)/Lib/token.py \
 		$(srcdir)/Doc/library/token-list.inc
+
+.PHONY: regen-symbol
+regen-symbol: $(srcdir)/Include/graminit.h
+	# Regenerate Lib/symbol.py from Include/graminit.h
+	# using Lib/symbol.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Lib/symbol.py \
+		$(srcdir)/Include/graminit.h \
+		$(srcdir)/Lib/symbol.py
 
 Python/compile.o Python/symtable.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
 

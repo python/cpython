@@ -1333,8 +1333,8 @@ Documentation
 Build
 -----
 
-- bpo-30455: C code and documentation related to tokens now are generated
-  from token.py.
+- bpo-30455: The C code and the documentation related to tokens now are
+  generated from token.py.
 
 - bpo-30687: Locate msbuild.exe on Windows when building rather than
   vcvarsall.bat

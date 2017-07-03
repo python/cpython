@@ -67,9 +67,6 @@ extern "C" {
 #define AWAIT           54
 #define ASYNC           55
 #define ERRORTOKEN      56
-#define COMMENT         57
-#define NL              58
-#define ENCODING        59
 #define N_TOKENS        60
 #define NT_OFFSET       256
 

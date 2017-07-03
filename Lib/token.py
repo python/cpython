@@ -62,6 +62,8 @@ tokens = [
     'AWAIT',
     'ASYNC',
     'ERRORTOKEN',
+
+    # These aren't used by the C tokenizer but are needed for tokenize.py
     'COMMENT',
     'NL',
     'ENCODING',
