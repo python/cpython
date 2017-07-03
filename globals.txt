@@ -385,7 +385,6 @@ _Py_HashSecret
 _Py_HashSecret_Initialized
 
 # Python/pylifecycle.c
-_Py_CoreInitialized
 _Py_StandardStreamEncoding
 _Py_StandardStreamErrors
 default_home

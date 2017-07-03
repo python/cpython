@@ -333,6 +333,7 @@ typedef struct pyruntimestate {
 
     // Python/pylifecycle.c
     int initialized;
+    int core_initialized;
     PyThreadState *finalizing;
 //    wchar_t env_home[MAXPATHLEN+1];
 #define NEXITFUNCS 32
