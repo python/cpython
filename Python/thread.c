@@ -81,14 +81,14 @@ PyThread_init_thread(void)
    or the size specified by the THREAD_STACK_SIZE macro. */
 static size_t _pythread_stacksize = 0;
 
-#ifdef _POSIX_THREADS
-#define PYTHREAD_NAME "pthread"
-#include "thread_pthread.h"
-#endif
-
-#ifdef NT_THREADS
-#define PYTHREAD_NAME "nt"
-#include "thread_nt.h"
+#if defined(_POSIX_THREADS)
+#   define PYTHREAD_NAME "pthread"
+#   include "thread_pthread.h"
+#elif defined(NT_THREADS)
+#   define PYTHREAD_NAME "nt"
+#   include "thread_nt.h"
+#else
+#   error "Require native thread feature. See https://bugs.python.org/issue30832"
 #endif
 
 
