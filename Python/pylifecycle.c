@@ -88,6 +88,8 @@ _PyRuntime_Initialize(void)
 
     _PyRuntime.gilstate.check_enabled = 1;
     _PyRuntime.gilstate.autoTLSkey = -1;
+
+    _PyRuntime.interpreters.next_id = -1;
 }
 
 /* Global configuration variable declarations are in pydebug.h */

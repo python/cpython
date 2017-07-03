@@ -335,7 +335,26 @@ typedef struct pyruntimestate {
     int initialized;
     int core_initialized;
     PyThreadState *finalizing;
-//    wchar_t env_home[MAXPATHLEN+1];
+
+    struct pyinterpreters {
+#ifdef WITH_THREAD
+#ifdef Py_BUILD_CORE
+        PyThread_type_lock mutex;
+#endif
+#endif
+        PyInterpreterState *head;
+        PyInterpreterState *main;
+        /* _next_interp_id is an auto-numbered sequence of small
+           integers.  It gets initialized in _PyInterpreterState_Init(),
+           which is called in Py_Initialize(), and used in
+           PyInterpreterState_New().  A negative interpreter ID
+           indicates an error occurred.  The main interpreter will
+           always have an ID of 0.  Overflow results in a RuntimeError.
+           If that becomes a problem later then we can adjust, e.g. by
+           using a Python int. */
+        int64_t next_id;
+    } interpreters;
+
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;

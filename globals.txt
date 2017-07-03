@@ -61,12 +61,6 @@ private_mem  # very slight race
 # Python/pylifecycle.c
 _PyRuntime
 
-# Python/pystate.c
-##head_mutex
-##interp_head
-##interp_main
-##_next_interp_id
-
 
 #---------------------------------
 # module globals (PyObject)
