@@ -533,17 +533,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             nottests.add(arg)
         args = []
 
-    # For a partial run, we do not need to clutter the output.
-    if verbose or header or not (quiet or single or tests or args):
-        if not pgo:
-            # Print basic platform information
-            print "==", platform.python_implementation(), \
-                        " ".join(sys.version.split())
-            print "==  ", platform.platform(aliased=True), \
-                          "%s-endian" % sys.byteorder
-            print "==  ", os.getcwd()
-            print "Testing with flags:", sys.flags
-
     alltests = findtests(testdir, stdtests, nottests)
     selected = tests or args or alltests
     if single:
@@ -552,10 +541,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             next_single_test = alltests[alltests.index(selected[0])+1]
         except IndexError:
             next_single_test = None
-    if randomize:
-        random.seed(random_seed)
-        print "Using random seed", random_seed
-        random.shuffle(selected)
 
     if list_tests:
         for name in selected:
@@ -622,6 +607,22 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
         print(line)
         sys.stdout.flush()
+
+    # For a partial run, we do not need to clutter the output.
+    if verbose or header or not (quiet or single or tests or args):
+        if not pgo:
+            # Print basic platform information
+            print "==", platform.python_implementation(), \
+                        " ".join(sys.version.split())
+            print "==  ", platform.platform(aliased=True), \
+                          "%s-endian" % sys.byteorder
+            print "==  ", os.getcwd()
+            print "Testing with flags:", sys.flags
+
+    if randomize:
+        random.seed(random_seed)
+        print "Using random seed", random_seed
+        random.shuffle(selected)
 
     if use_mp:
         try:
