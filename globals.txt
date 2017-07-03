@@ -371,8 +371,8 @@ _PyOS_optind
 
 # Python/pyhash.c
 PyHash_Func
-#_Py_HashSecret
-#_Py_HashSecret_Initialized
+_Py_HashSecret
+_Py_HashSecret_Initialized
 
 # Python/pylifecycle.c
 _PyOS_mystrnicmp_hack
