@@ -35,40 +35,23 @@ extern "C" {
 #endif
 
 #ifdef WITH_THREAD
-#include "pythread.h"
-static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
-#define HEAD_INIT() (void)(head_mutex || (head_mutex = PyThread_allocate_lock()))
-#define HEAD_LOCK() PyThread_acquire_lock(head_mutex, WAIT_LOCK)
-#define HEAD_UNLOCK() PyThread_release_lock(head_mutex)
+#define HEAD_INIT() (void)(_PyRuntime.interpreters.mutex || (_PyRuntime.interpreters.mutex = PyThread_allocate_lock()))
+#define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, WAIT_LOCK)
+#define HEAD_UNLOCK() PyThread_release_lock(_PyRuntime.interpreters.mutex)
 #else
 #define HEAD_INIT() /* Nothing */
 #define HEAD_LOCK() /* Nothing */
 #define HEAD_UNLOCK() /* Nothing */
 #endif
 
-static PyInterpreterState *interp_head = NULL;
-static PyInterpreterState *interp_main = NULL;
-
 #ifdef WITH_THREAD
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 #endif
 
-/* _next_interp_id is an auto-numbered sequence of small integers.
-   It gets initialized in _PyInterpreterState_Init(), which is called
-   in Py_Initialize(), and used in PyInterpreterState_New().  A negative
-   interpreter ID indicates an error occurred.  The main interpreter
-   will always have an ID of 0.  Overflow results in a RuntimeError.
-   If that becomes a problem later then we can adjust, e.g. by using
-   a Python int.
-
-   We initialize this to -1 so that the pre-Py_Initialize() value
-   results in an error. */
-static int64_t _next_interp_id = -1;
-
 void
 _PyInterpreterState_Init(void)
 {
-    _next_interp_id = 0;
+    _PyRuntime.interpreters.next_id = 0;
 }
 
 PyInterpreterState *
@@ -80,7 +63,7 @@ PyInterpreterState_New(void)
     if (interp != NULL) {
         HEAD_INIT();
 #ifdef WITH_THREAD
-        if (head_mutex == NULL)
+        if (_PyRuntime.interpreters.mutex == NULL)
             Py_FatalError("Can't initialize threads for interpreter");
 #endif
         interp->modules_by_index = NULL;
@@ -116,19 +99,19 @@ PyInterpreterState_New(void)
 #endif
 
         HEAD_LOCK();
-        interp->next = interp_head;
-        if (interp_main == NULL) {
-            interp_main = interp;
+        interp->next = _PyRuntime.interpreters.head;
+        if (_PyRuntime.interpreters.main == NULL) {
+            _PyRuntime.interpreters.main = interp;
         }
-        interp_head = interp;
-        if (_next_interp_id < 0) {
+        _PyRuntime.interpreters.head = interp;
+        if (_PyRuntime.interpreters.next_id < 0) {
             /* overflow or Py_Initialize() not called! */
             PyErr_SetString(PyExc_RuntimeError,
                             "failed to get an interpreter ID");
             interp = NULL;
         } else {
-            interp->id = _next_interp_id;
-            _next_interp_id += 1;
+            interp->id = _PyRuntime.interpreters.next_id;
+            _PyRuntime.interpreters.next_id += 1;
         }
         HEAD_UNLOCK();
     }
@@ -180,7 +163,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     PyInterpreterState **p;
     zapthreads(interp);
     HEAD_LOCK();
-    for (p = &interp_head; ; p = &(*p)->next) {
+    for (p = &_PyRuntime.interpreters.head; ; p = &(*p)->next) {
         if (*p == NULL)
             Py_FatalError(
                 "PyInterpreterState_Delete: invalid interp");
@@ -190,17 +173,17 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     if (interp->tstate_head != NULL)
         Py_FatalError("PyInterpreterState_Delete: remaining threads");
     *p = interp->next;
-    if (interp_main == interp) {
-        interp_main = NULL;
-        if (interp_head != NULL)
+    if (_PyRuntime.interpreters.main == interp) {
+        _PyRuntime.interpreters.main = NULL;
+        if (_PyRuntime.interpreters.head != NULL)
             Py_FatalError("PyInterpreterState_Delete: remaining subinterpreters");
     }
     HEAD_UNLOCK();
     PyMem_RawFree(interp);
 #ifdef WITH_THREAD
-    if (interp_head == NULL && head_mutex != NULL) {
-        PyThread_free_lock(head_mutex);
-        head_mutex = NULL;
+    if (_PyRuntime.interpreters.head == NULL && _PyRuntime.interpreters.mutex != NULL) {
+        PyThread_free_lock(_PyRuntime.interpreters.mutex);
+        _PyRuntime.interpreters.mutex = NULL;
     }
 #endif
 }
@@ -667,13 +650,13 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 PyInterpreterState *
 PyInterpreterState_Head(void)
 {
-    return interp_head;
+    return _PyRuntime.interpreters.head;
 }
 
 PyInterpreterState *
 PyInterpreterState_Main(void)
 {
-    return interp_main;
+    return _PyRuntime.interpreters.main;
 }
 
 PyInterpreterState *
@@ -713,7 +696,7 @@ _PyThread_CurrentFrames(void)
      * need to grab head_mutex for the duration.
      */
     HEAD_LOCK();
-    for (i = interp_head; i != NULL; i = i->next) {
+    for (i = _PyRuntime.interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
             PyObject *id;
@@ -797,7 +780,7 @@ void
 _PyGILState_Reinit(void)
 {
 #ifdef WITH_THREAD
-    head_mutex = NULL;
+    _PyRuntime.interpreters.mutex = NULL;
     HEAD_INIT();
 #endif
     PyThreadState *tstate = PyGILState_GetThisThreadState();
