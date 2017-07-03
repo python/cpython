@@ -309,9 +309,6 @@ alias_fields
 #######################################
 # interpreter
 
-# Python/ceval.c
-#_Py_TracingPossible
-
 # Python/sysmodule.c
 _PySys_ImplCacheTag
 _PySys_ImplName
