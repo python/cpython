@@ -17,18 +17,10 @@ SOURCE_DIRS = ['Include', 'Objects', 'Modules', 'Parser', 'Python']
 CAPI_REGEX = re.compile(r'^ *PyAPI_DATA\([^)]*\) \W*(_?Py\w+(?:, \w+)*\w).*;.*$')
 
 # These variables are shared between all interpreters in the process.
-with open('globals-core.txt') as file:
-    RUNTIME_VARS = {line.partition('#')[0].strip()
+with open('globals.txt') as file:
+    GLOBAL_VARS = {line.partition('#')[0].strip()
                     for line in file
                     if line.strip() and not line.startswith('#')}
-with open('globals-main.txt') as file:
-    MAIN_VARS = {line.partition('#')[0].strip()
-                 for line in file
-                 if line.strip() and not line.startswith('#')}
-with open('globals-interp.txt') as file:
-    INTERP_VARS = {line.partition('#')[0].strip()
-                   for line in file
-                   if line.strip() and not line.startswith('#')}
 del file
 
 
@@ -72,7 +64,7 @@ def _find_capi_vars(lines):
             yield name
 
 
-def _is_core_var(name):
+def _is_global_var(name):
     if _is_autogen_var(name):
         return True
     if _is_type_var(name):
@@ -83,7 +75,7 @@ def _is_core_var(name):
         return True
     if _is_compiler(name):
         return True
-    return name in RUNTIME_VARS
+    return name in GLOBAL_VARS
 
 
 def _is_autogen_var(name):
@@ -146,14 +138,6 @@ def _is_compiler(name):
         )
 
 
-def _is_main_var(name):
-    return name in MAIN_VARS
-
-
-def _is_interp_var(name):
-    return name in INTERP_VARS
-
-
 class Var(namedtuple('Var', 'name kind scope capi filename')):
 
     @classmethod
@@ -170,12 +154,8 @@ class Var(namedtuple('Var', 'name kind scope capi filename')):
         name = name.strip()
         if _is_autogen_var(name):
             return None
-        if _is_core_var(name):
-            scope = 'core'
-        elif _is_main_var(name):
-            scope = 'main'
-        elif _is_interp_var(name):
-            scope = 'interp'
+        if _is_global_var(name):
+            scope = 'global'
         else:
             scope = None
         capi = (name in capi_vars or ())
