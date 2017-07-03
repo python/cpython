@@ -289,7 +289,7 @@ by reference to a primary resource and additional identifying information.
 """
 
 _ParseResultBase.__doc__ = """
-ParseResult(scheme, netloc, path, params,  query, fragment)
+ParseResult(scheme, netloc, path, params, query, fragment)
 
 A 6-tuple that contains components of a parsed URL.
 """
@@ -915,7 +915,7 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
     return '&'.join(l)
 
 
-def to_bytes(url=''):
+def to_bytes(url):
     warnings.warn("urllib.parse.to_bytes() is deprecated as of 3.7",
                   DeprecationWarning, stacklevel=2)
     return _to_bytes(url)
@@ -935,7 +935,7 @@ def _to_bytes(url):
     return url
 
 
-def unwrap(url=''):
+def unwrap(url):
     warnings.warn("urllib.parse.unwrap() is deprecated as of 3.7",
                   DeprecationWarning, stacklevel=2)
     return _unwrap(url)
@@ -950,7 +950,7 @@ def _unwrap(url):
     return url
 
 
-def splittype(url=''):
+def splittype(url):
     warnings.warn("urllib.parse.splittype() is deprecated as of 3.7, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -971,7 +971,7 @@ def _splittype(url):
     return None, url
 
 
-def splithost(url=''):
+def splithost(url):
     warnings.warn("urllib.parse.splithost() is deprecated as of 3.7, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -994,11 +994,11 @@ def _splithost(url):
     return None, url
 
 
-def splituser(url=''):
+def splituser(host):
     warnings.warn("urllib.parse.splituser() is deprecated as of 3.7, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
-    return _splituser(url)
+    return _splituser(host)
 
 
 def _splituser(host):
@@ -1007,11 +1007,11 @@ def _splituser(host):
     return (user if delim else None), host
 
 
-def splitpasswd(url=''):
+def splitpasswd(user):
     warnings.warn("urllib.parse.splitpasswd() is deprecated as of 3.7, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
-    return _splitpasswd(url)
+    return _splitpasswd(user)
 
 
 def _splitpasswd(user):
@@ -1020,11 +1020,11 @@ def _splitpasswd(user):
     return user, (passwd if delim else None)
 
 
-def splitport(url=''):
+def splitport(host):
     warnings.warn("urllib.parse.splitport() is deprecated as of 3.7, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
-    return _splitport(url)
+    return _splitport(host)
 
 
 # splittag('/path#tag') --> '/path', 'tag'
@@ -1043,11 +1043,11 @@ def _splitport(host):
     return host, None
 
 
-def splitnport(url=''):
+def splitnport(host, defport=-1):
     warnings.warn("urllib.parse.splitnport() is deprecated as of 3.7, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
-    return _splitnport(url)
+    return _splitnport(host, defport)
 
 
 def _splitnport(host, defport=-1):
@@ -1067,7 +1067,7 @@ def _splitnport(host, defport=-1):
     return host, defport
 
 
-def splitquery(url=''):
+def splitquery(url):
     warnings.warn("urllib.parse.splitquery() is deprecated as of 3.7, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1082,7 +1082,7 @@ def _splitquery(url):
     return url, None
 
 
-def splittag(url=''):
+def splittag(url):
     warnings.warn("urllib.parse.splittag() is deprecated as of 3.7, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1097,7 +1097,7 @@ def _splittag(url):
     return url, None
 
 
-def splitattr(url=''):
+def splitattr(url):
     warnings.warn("urllib.parse.splitattr() is deprecated as of 3.7, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1111,11 +1111,11 @@ def _splitattr(url):
     return words[0], words[1:]
 
 
-def splitvalue(url=''):
+def splitvalue(attr):
     warnings.warn("urllib.parse.splitvalue() is deprecated as of 3.7, "
-                  "use urllib.parse.urlparse() instead",
+                  "use urllib.parse.parse_qsl() instead",
                   DeprecationWarning, stacklevel=2)
-    return _splitvalue(url)
+    return _splitvalue(attr)
 
 
 def _splitvalue(attr):

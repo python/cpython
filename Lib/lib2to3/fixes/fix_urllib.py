@@ -16,9 +16,9 @@ MAPPING = {"urllib":  [
                      "pathname2url", "url2pathname"]),
                 ("urllib.parse",
                     ["quote", "quote_plus", "unquote", "unquote_plus",
-                     "urlencode", "_splitattr", "_splithost", "_splitnport",
-                     "_splitpasswd", "_splitport", "_splitquery", "_splittag",
-                     "_splittype", "_splituser", "_splitvalue", ]),
+                     "urlencode", "splitattr", "splithost", "splitnport",
+                     "splitpasswd", "splitport", "splitquery", "splittag",
+                     "splittype", "splituser", "splitvalue", ]),
                 ("urllib.error",
                     ["ContentTooShortError"])],
            "urllib2" : [
