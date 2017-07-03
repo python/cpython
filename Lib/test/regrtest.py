@@ -739,6 +739,8 @@ def main(tests=None, **kwargs):
                     yield test
                     if bad:
                         return
+                    if ns.fail_env_changed and environment_changed:
+                        return
         tests = test_forever()
         test_count = ''
         test_count_width = 3
@@ -947,7 +949,7 @@ def main(tests=None, **kwargs):
         result = "FAILURE"
     elif interrupted:
         result = "INTERRUPTED"
-    elif environment_changed and ns.fail_env_changed:
+    elif ns.fail_env_changed and environment_changed:
         result = "ENV CHANGED"
     else:
         result = "SUCCESS"
@@ -1524,6 +1526,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 
     # These checkers return False on success, True on failure
     def check_rc_deltas(deltas):
+        # Checker for reference counters and memomry blocks.
+        #
         # bpo-30776: Try to ignore false positives:
         #
         #   [3, 0, 0]
@@ -1536,18 +1540,10 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         #   [10, 1, 1]
         return all(delta >= 1 for delta in deltas)
 
-    def check_alloc_deltas(deltas):
-        # At least 1/3rd of 0s
-        if 3 * deltas.count(0) < len(deltas):
-            return True
-        # Nothing else than 1s, 0s and -1s
-        if not set(deltas) <= {1,0,-1}:
-            return True
-        return False
     failed = False
     for deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
-        (alloc_deltas, 'memory blocks', check_alloc_deltas)
+        (alloc_deltas, 'memory blocks', check_rc_deltas)
     ]:
         # ignore warmup runs
         deltas = deltas[nwarmup:]
