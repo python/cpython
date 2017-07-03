@@ -739,6 +739,8 @@ def main(tests=None, **kwargs):
                     yield test
                     if bad:
                         return
+                    if ns.fail_env_changed and environment_changed:
+                        return
         tests = test_forever()
         test_count = ''
         test_count_width = 3
@@ -947,7 +949,7 @@ def main(tests=None, **kwargs):
         result = "FAILURE"
     elif interrupted:
         result = "INTERRUPTED"
-    elif environment_changed and ns.fail_env_changed:
+    elif ns.fail_env_changed and environment_changed:
         result = "ENV CHANGED"
     else:
         result = "SUCCESS"
