@@ -454,13 +454,13 @@ code_sizeof(PyCodeObject *co, void *unused)
     Py_ssize_t res = _PyObject_SIZE(Py_TYPE(co));
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
 
-    if (co->co_cell2arg != NULL && co->co_cellvars != NULL)
+    if (co->co_cell2arg != NULL && co->co_cellvars != NULL) {
         res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(Py_ssize_t);
-
-    if (co_extra != NULL)
+    }
+    if (co_extra != NULL) {
         res += sizeof(_PyCodeObjectExtra) +
                (co_extra->ce_size-1) * sizeof(co_extra->ce_extras[0]);
-
+    }
     return PyLong_FromSsize_t(res);
 }
 
@@ -864,7 +864,7 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra *) o->co_extra;
 
     if (co_extra == NULL || co_extra->ce_size <= index) {
-        Py_ssize_t i = co_extra == NULL ? 0 : co_extra->ce_size;
+        Py_ssize_t i = (co_extra == NULL ? 0 : co_extra->ce_size);
         co_extra = PyMem_Realloc(
                 co_extra,
                 sizeof(_PyCodeObjectExtra) +
@@ -872,18 +872,15 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
         if (co_extra == NULL) {
             return -1;
         }
-
         for (; i < interp->co_extra_user_count; i++) {
             co_extra->ce_extras[i] = NULL;
         }
-
         co_extra->ce_size = interp->co_extra_user_count;
         o->co_extra = co_extra;
     }
 
     if (co_extra->ce_extras[index] != NULL) {
         freefunc free = interp->co_extra_freefuncs[index];
-
         if (free != NULL) {
             free(co_extra->ce_extras[index]);
         }
