@@ -2696,7 +2696,9 @@ sock_close(PySocketSockObject *s)
         Py_BEGIN_ALLOW_THREADS
         res = SOCKETCLOSE(fd);
         Py_END_ALLOW_THREADS
-        if (res < 0) {
+        /* bpo-30319: The peer can already have closed the connection.
+           Python ignores ECONNRESET on close(). */
+        if (res < 0 && errno != ECONNRESET) {
             return s->errorhandler();
         }
     }
