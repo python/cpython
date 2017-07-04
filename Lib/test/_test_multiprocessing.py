@@ -948,6 +948,17 @@ class _TestCondition(BaseTestCase):
         woken.release()
         cond.release()
 
+    def assertReachesEventually(self, func, value):
+        for i in range(10):
+            try:
+                if func() == value:
+                    break
+            except NotImplementedError:
+                break
+            time.sleep(DELTA)
+        time.sleep(DELTA)
+        self.assertReturnsIfImplemented(value, func)
+
     def check_invariant(self, cond):
         # this is only supposed to succeed when there are no sleepers
         if self.TYPE == 'processes':
@@ -1055,13 +1066,54 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check they have all woken
-        for i in range(10):
-            try:
-                if get_value(woken) == 6:
-                    break
-            except NotImplementedError:
-                break
-            time.sleep(DELTA)
+        self.assertReachesEventually(lambda: get_value(woken), 6)
+
+        # check state is not mucked up
+        self.check_invariant(cond)
+
+    def test_notify_n(self):
+        cond = self.Condition()
+        sleeping = self.Semaphore(0)
+        woken = self.Semaphore(0)
+
+        # start some threads/processes
+        for i in range(3):
+            p = self.Process(target=self.f, args=(cond, sleeping, woken))
+            p.daemon = True
+            p.start()
+
+            t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
+            t.daemon = True
+            t.start()
+
+        # wait for them to all sleep
+        for i in range(6):
+            sleeping.acquire()
+
+        # check no process/thread has woken up
+        time.sleep(DELTA)
+        self.assertReturnsIfImplemented(0, get_value, woken)
+
+        # wake some of them up
+        cond.acquire()
+        cond.notify(n=2)
+        cond.release()
+
+        # check 2 have woken
+        self.assertReachesEventually(lambda: get_value(woken), 2)
+
+        # wake the rest of them
+        cond.acquire()
+        cond.notify(n=4)
+        cond.release()
+
+        self.assertReachesEventually(lambda: get_value(woken), 6)
+
+        # doesn't do anything more
+        cond.acquire()
+        cond.notify(n=3)
+        cond.release()
+
         self.assertReturnsIfImplemented(6, get_value, woken)
 
         # check state is not mucked up
