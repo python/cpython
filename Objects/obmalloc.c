@@ -414,7 +414,8 @@ PyMem_RawRealloc(void *ptr, size_t new_size)
     return _PyMem_Raw.realloc(_PyMem_Raw.ctx, ptr, new_size);
 }
 
-void PyMem_RawFree(void *ptr)
+void
+PyMem_RawFree(void *ptr)
 {
     _PyMem_Raw.free(_PyMem_Raw.ctx, ptr);
 }
