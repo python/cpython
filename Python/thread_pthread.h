@@ -737,9 +737,3 @@ PyThread_tss_delete_value(Py_tss_t *key)
 {
     pthread_setspecific(key->_key, NULL);
 }
-
-
-void
-PyThread_ReInitTSS(void)
-{
-}

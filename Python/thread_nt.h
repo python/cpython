@@ -475,12 +475,3 @@ PyThread_tss_delete_value(Py_tss_t *key)
      */
     TlsSetValue(key->_key, NULL);
 }
-
-
-/* reinitialization of TSS is not necessary after fork when using
- * the native TLS functions.  And forking isn't supported on Windows either.
- */
-void
-PyThread_ReInitTSS(void)
-{
-}

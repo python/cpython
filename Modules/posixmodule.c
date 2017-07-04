@@ -450,9 +450,6 @@ void
 PyOS_AfterFork_Child(void)
 {
 #ifdef WITH_THREAD
-    /* PyThread_ReInitTSS() must be called early, to make sure that the TSS API
-     * can be called safely. */
-    PyThread_ReInitTSS();
     _PyGILState_Reinit();
     PyEval_ReInitThreads();
     _PyImport_ReInitLock();
