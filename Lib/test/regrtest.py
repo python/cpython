@@ -464,6 +464,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         # to locate tests
         sys.path.insert(0, testdir)
 
+    # Make sure that '' and Lib/test/ are not in sys.path
+    regrtest_dir = os.path.abspath(os.path.dirname(__file__))
+    for path in ('', regrtest_dir):
+        try:
+            sys.path.remove(path)
+        except ValueError:
+            pass
+
     if slaveargs is not None:
         args, kwargs = json.loads(slaveargs)
         if kwargs['huntrleaks']:
