@@ -4,6 +4,7 @@
                  style="vertical-align: middle; margin-top: -1px"/></li>
         <li><a href="https://www.python.org/">Python</a>{{ reldelim1 }}</li>
         <li>
+          <span class="language_switcher_placeholder">{{ language or 'en' }}</span>
           {%- if versionswitcher is defined %}
           <span class="version_switcher_placeholder">{{ release }}</span>
           <a href="{{ pathto('index') }}">{% trans %}Documentation {% endtrans %}</a>{{ reldelim1 }}
