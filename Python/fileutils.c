@@ -711,21 +711,32 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
     struct _stat wstatbuf;
-    wchar_t *wpath;
+    const wchar_t *wpath;
 
-    wpath = PyUnicode_AsUnicode(path);
+    wpath = _PyUnicode_AsUnicode(path);
     if (wpath == NULL)
         return -2;
+
     err = _wstat(wpath, &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
     return err;
 #else
     int ret;
-    PyObject *bytes = PyUnicode_EncodeFSDefault(path);
+    PyObject *bytes;
+    char *cpath;
+
+    bytes = PyUnicode_EncodeFSDefault(path);
     if (bytes == NULL)
         return -2;
-    ret = stat(PyBytes_AS_STRING(bytes), statbuf);
+
+    /* check for embedded null bytes */
+    if (PyBytes_AsStringAndSize(bytes, &cpath, NULL) == -1) {
+        Py_DECREF(bytes);
+        return -2;
+    }
+
+    ret = stat(cpath, statbuf);
     Py_DECREF(bytes);
     return ret;
 #endif
@@ -1080,7 +1091,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     FILE *f;
     int async_err = 0;
 #ifdef MS_WINDOWS
-    wchar_t *wpath;
+    const wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
 
@@ -1094,7 +1105,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-    wpath = PyUnicode_AsUnicode(path);
+    wpath = _PyUnicode_AsUnicode(path);
     if (wpath == NULL)
         return NULL;
 

@@ -947,7 +947,7 @@ def splithost(url):
     """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
     global _hostprog
     if _hostprog is None:
-        _hostprog = re.compile('//([^/?]*)(.*)', re.DOTALL)
+        _hostprog = re.compile('//([^/#?]*)(.*)', re.DOTALL)
 
     match = _hostprog.match(url)
     if match:

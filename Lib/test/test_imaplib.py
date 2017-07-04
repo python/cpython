@@ -12,7 +12,7 @@ import time
 import calendar
 
 from test.support import (reap_threads, verbose, transient_internet,
-                          run_with_tz, run_with_locale)
+                          run_with_tz, run_with_locale, cpython_only)
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -503,6 +503,15 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
                                  ssl_context=ssl_context)
         client.shutdown()
 
+    # Mock the private method _connect(), so mark the test as specific
+    # to CPython stdlib
+    @cpython_only
+    def test_certfile_arg_warn(self):
+        with support.check_warnings(('', DeprecationWarning)):
+            with mock.patch.object(self.imap_class, 'open'):
+                with mock.patch.object(self.imap_class, '_connect'):
+                    self.imap_class('localhost', 143, certfile=CERTFILE)
+
 class ThreadedNetworkedTests(unittest.TestCase):
     server_class = socketserver.TCPServer
     imap_class = imaplib.IMAP4
@@ -963,25 +972,6 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
     def test_logincapa(self):
         with transient_internet(self.host):
             _server = self.imap_class(self.host, self.port)
-            self.check_logincapa(_server)
-
-    @unittest.skipIf(True,
-                     "bpo-30175: FIXME: cyrus.andrew.cmu.edu doesn't accept "
-                     "our randomly generated client x509 certificate anymore")
-    def test_logincapa_with_client_certfile(self):
-        with transient_internet(self.host):
-            with support.check_warnings(('', DeprecationWarning)):
-                _server = self.imap_class(self.host, self.port,
-                                          certfile=CERTFILE)
-                self.check_logincapa(_server)
-
-    @unittest.skipIf(True,
-                     "bpo-30175: FIXME: cyrus.andrew.cmu.edu doesn't accept "
-                     "our randomly generated client x509 certificate anymore")
-    def test_logincapa_with_client_ssl_context(self):
-        with transient_internet(self.host):
-            _server = self.imap_class(
-                self.host, self.port, ssl_context=self.create_ssl_context())
             self.check_logincapa(_server)
 
     def test_logout(self):

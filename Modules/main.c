@@ -105,10 +105,10 @@ static const char usage_6[] =
 "   predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
-"   hooks.\n";
-static const char usage_7[] =
+"   hooks.\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
-"   coercion behavior\n";
+"   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
+"   locale coercion and locale compatibility warnings on stderr.\n";
 
 static int
 usage(int exitcode, const wchar_t* program)
@@ -125,7 +125,6 @@ usage(int exitcode, const wchar_t* program)
         fprintf(f, usage_4, (wint_t)DELIM);
         fprintf(f, usage_5, (wint_t)DELIM, PYTHONHOMEHELP);
         fputs(usage_6, f);
-        fputs(usage_7, f);
     }
     return exitcode;
 }

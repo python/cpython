@@ -210,8 +210,12 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                             else:
                                 assert os.WIFEXITED(sts)
                                 returncode = os.WEXITSTATUS(sts)
-                            # Write the exit code to the pipe
-                            write_signed(child_w, returncode)
+                            # Send exit code to client process
+                            try:
+                                write_signed(child_w, returncode)
+                            except BrokenPipeError:
+                                # client vanished
+                                pass
                             os.close(child_w)
                         else:
                             # This shouldn't happen really
@@ -241,8 +245,12 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                             finally:
                                 os._exit(code)
                         else:
-                            # Send pid to client processes
-                            write_signed(child_w, pid)
+                            # Send pid to client process
+                            try:
+                                write_signed(child_w, pid)
+                            except BrokenPipeError:
+                                # client vanished
+                                pass
                             pid_to_fd[pid] = child_w
                             os.close(child_r)
                             for fd in fds:

@@ -252,6 +252,11 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     s = PyUnicode_AsWideCharString(str, &n1);
     if (s == NULL)
         goto exit;
+    if (wcslen(s) != (size_t)n1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "embedded null character");
+        goto exit;
+    }
 
     /* assume no change in size, first */
     n1 = n1 + 1;
