@@ -1,7 +1,3 @@
-# Use absolute import to prevent importing Lib/test/bisect.py,
-# instead of Lib/bisect.py
-from __future__ import absolute_import
-
 import sys
 import unittest
 from test import test_support
