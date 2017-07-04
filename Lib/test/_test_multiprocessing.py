@@ -277,18 +277,18 @@ class _TestProcess(BaseTestCase):
         self.assertNotIn(p, self.active_children())
 
     @classmethod
-    def _test_sleep_some(cls):
+    def _sleep_some(cls):
         time.sleep(100)
 
     @classmethod
     def _test_sleep(cls, delay):
         time.sleep(delay)
 
-    def _test_signal(self, meth, sig):
+    def _kill_process(self, meth):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        p = self.Process(target=self._test_sleep_some)
+        p = self.Process(target=self._sleep_some)
         p.daemon = True
         p.start()
 
@@ -333,15 +333,17 @@ class _TestProcess(BaseTestCase):
 
         p.join()
 
-        # sometimes get p.exitcode == 0 on Windows ...
-        if os.name != 'nt':
-            self.assertEqual(p.exitcode, -sig)
+        return p.exitcode
 
     def test_terminate(self):
-        self._test_signal(multiprocessing.Process.terminate, signal.SIGTERM)
+        exitcode = self._kill_process(multiprocessing.Process.terminate)
+        if os.name != 'nt':
+            self.assertEqual(exitcode, -signal.SIGTERM)
 
     def test_kill(self):
-        self._test_signal(multiprocessing.Process.kill, signal.SIGKILL)
+        exitcode = self._kill_process(multiprocessing.Process.kill)
+        if os.name != 'nt':
+            self.assertEqual(exitcode, -signal.SIGKILL)
 
     def test_cpu_count(self):
         try:
@@ -468,7 +470,7 @@ class _TestProcess(BaseTestCase):
         for p in procs:
             self.assertEqual(p.exitcode, 0)
 
-        procs = [self.Process(target=self._test_sleep_some)
+        procs = [self.Process(target=self._sleep_some)
                  for i in range(N)]
         for p in procs:
             p.start()
