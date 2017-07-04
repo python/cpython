@@ -19,8 +19,33 @@ from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 from idlelib.windows import ListedToplevel
 
+__all__ = ['ClassBrowser']
+
 file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.
+
+
+def collect_children(d, name=None):
+    items = []
+    children = {}
+    for key, cl in d.items():
+        if name is None or cl.module == name:
+            s = key
+            if hasattr(cl, 'super') and cl.super:
+                supers = []
+                for sup in cl.super:
+                    if type(sup) is type(''):
+                        sname = sup
+                    else:
+                        sname = sup.name
+                        if sup.module != cl.module:
+                            sname = "%s.%s" % (sup.module, sname)
+                    supers.append(sname)
+                s = s + "(%s)" % ", ".join(supers)
+            items.append((cl.lineno, s))
+            children[s] = cl
+    return children, items
+
 
 class ClassBrowser:
     """Browse module classes and functions in IDLE.
@@ -121,8 +146,8 @@ class ModuleBrowserTreeItem(TreeItem):
         classes/functions within the module.
         """
         sublist = []
-        for name in self.listclasses():
-            item = ClassBrowserTreeItem(name, self.classes, self.file)
+        for name in self.listchildren():
+            item = ChildBrowserTreeItem(name, self.classes, self.file)
             sublist.append(item)
         return sublist
 
@@ -138,7 +163,7 @@ class ModuleBrowserTreeItem(TreeItem):
         "Return True if Python (.py) file."
         return os.path.normcase(self.file[-3:]) == ".py"
 
-    def listclasses(self):
+    def listchildren(self):
         """Return list of classes and functions in the module.
 
         The dictionary output from pyclbr is re-written as a
@@ -154,34 +179,15 @@ class ModuleBrowserTreeItem(TreeItem):
         if os.path.normcase(ext) != ".py":
             return []
         try:
-            dict = pyclbr.readmodule_ex(name, [dir] + sys.path)
+            tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:
             return []
-        items = []
-        self.classes = {}
-        for key, cl in dict.items():
-            if cl.module == name:
-                s = key
-                if hasattr(cl, 'super') and cl.super:
-                    supers = []
-                    for sup in cl.super:
-                        if type(sup) is type(''):
-                            sname = sup
-                        else:
-                            sname = sup.name
-                            if sup.module != cl.module:
-                                sname = "%s.%s" % (sup.module, sname)
-                        supers.append(sname)
-                    s = s + "(%s)" % ", ".join(supers)
-                items.append((cl.lineno, s))
-                self.classes[s] = cl
+        self.classes, items = collect_children(tree, name)
         items.sort()
-        list = []
-        for item, s in items:
-            list.append(s)
-        return list
+        return [s for item, s in items]
 
-class ClassBrowserTreeItem(TreeItem):
+
+class ChildBrowserTreeItem(TreeItem):
     """Browser tree for classes within a module.
 
     Uses TreeItem as the basis for the structure of the tree.
@@ -227,7 +233,7 @@ class ClassBrowserTreeItem(TreeItem):
         "Return True if this class has methods."
         if self.cl:
             try:
-                return not not self.cl.methods
+                return not not self.cl.children
             except AttributeError:
                 return False
         return None
@@ -240,8 +246,9 @@ class ClassBrowserTreeItem(TreeItem):
         if not self.cl:
             return []
         sublist = []
-        for name in self.listmethods():
-            item = MethodBrowserTreeItem(name, self.cl, self.file)
+        for obj in self.listchildren():
+            classes, item_name = obj
+            item = ChildBrowserTreeItem(item_name, classes, self.file)
             sublist.append(item)
         return sublist
 
@@ -254,55 +261,17 @@ class ClassBrowserTreeItem(TreeItem):
             lineno = self.cl.lineno
             edit.gotoline(lineno)
 
-    def listmethods(self):
+    def listchildren(self):
         "Return list of methods within a class sorted by lineno."
         if not self.cl:
             return []
-        items = []
-        for name, lineno in self.cl.methods.items():
-            items.append((lineno, name))
-        items.sort()
-        list = []
-        for item, name in items:
-            list.append(name)
-        return list
+        result = []
+        for name, ob in self.cl.children.items():
+            classes, items = collect_children({name: ob})
+            result.append((ob.lineno, classes, items[0][1]))
+        result.sort()
+        return [item[1:] for item in result]
 
-class MethodBrowserTreeItem(TreeItem):
-    """Browser tree for methods within a class.
-
-    Uses TreeItem as the basis for the structure of the tree.
-    """
-
-    def __init__(self, name, cl, file):
-        """Create a TreeItem for the methods.
-
-        Args:
-            name: Name of the class/function.
-            cl: pyclbr.Class instance for name.
-            file: Full path and module name.
-        """
-        self.name = name
-        self.cl = cl
-        self.file = file
-
-    def GetText(self):
-        "Return the method name to display."
-        return "def " + self.name + "(...)"
-
-    def GetIconName(self):
-        "Return the name of the icon to display."
-        return "python"
-
-    def IsExpandable(self):
-        "Return False as there are no tree items after methods."
-        return False
-
-    def OnDoubleClick(self):
-        "Open module with file_open and position at the method start."
-        if not os.path.exists(self.file):
-            return
-        edit = file_open(self.file)
-        edit.gotoline(self.cl.methods[self.name])
 
 def _class_browser(parent): # htest #
     try:
