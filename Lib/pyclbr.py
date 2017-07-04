@@ -63,6 +63,12 @@ class _Object:
         self.children[name] = obj
 
 
+class Function(_Object):
+    "Information about a Python function, including methods."
+    def __init__(self, module, name, file, lineno, parent=None):
+        _Object.__init__(self, module, name, file, lineno, parent)
+
+
 class Class(_Object):
     "Information about a Python class."
     def __init__(self, module, name, super, file, lineno, parent=None):
@@ -74,21 +80,19 @@ class Class(_Object):
         self.methods[name] = lineno
 
 
-class Function(_Object):
-    "Information about a Python function, including methods."
-    def __init__(self, module, name, file, lineno, parent=None):
-        _Object.__init__(self, module, name, file, lineno, parent)
+def _nest_function(ob, func_name, lineno):
+    "Return a Function after nesting within ob."
+    newfunc = Function(ob.module, func_name, ob.file, lineno, ob)
+    ob._addchild(func_name, newfunc)
+    if isinstance(ob, Class):
+        ob._addmethod(func_name, lineno)
+    return newfunc
 
-
-def _newfunction(ob, name, lineno):
-    "Return a Function after expanding ob to 3 arguments."
-    return Function(ob.module, name, ob.file, lineno, ob)
-
-
-def _newclass(ob, name, super, lineno):
-    "Return a Class after expanding ob to 3 arguments."
-    return Class(ob.module, name, super, ob.file, lineno, ob)
-
+def _nest_class(ob, class_name, lineno, super=None):
+    "Return a Class after nesting within ob."
+    newclass = Class(ob.module, class_name, super, ob.file, lineno, ob)
+    ob._addchild(class_name, newclass)
+    return newclass
 
 def readmodule(module, path=None):
     """Return Class objects for the top-level classes in module.
@@ -207,11 +211,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                 cur_func = None
                 if stack:
                     cur_obj = stack[-1][0]
-                    cur_func = _newfunction(cur_obj, func_name, lineno)
-                    cur_obj._addchild(func_name, cur_func)
-                    if isinstance(cur_obj, Class):
-                        # Function is a method.
-                        cur_obj._addmethod(func_name, lineno)
+                    cur_func = _nest_function(cur_obj, func_name, lineno)
                 else:
                     # It is just a function.
                     cur_func = Function(fullmodule, func_name, fname, lineno)
@@ -267,9 +267,8 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                     inherit = names
                 if stack:
                     cur_obj = stack[-1][0]
-                    cur_class = _newclass(cur_obj, class_name, inherit,
-                                          lineno)
-                    cur_obj._addchild(class_name, cur_class)
+                    cur_class = _nest_class(
+                            cur_obj, class_name, lineno, inherit)
                 else:
                     cur_class = Class(fullmodule, class_name, inherit,
                                       fname, lineno)

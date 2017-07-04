@@ -5,6 +5,7 @@
 
 import os
 import sys
+from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
@@ -155,119 +156,65 @@ class PyclbrTest(TestCase):
         self.checkModule('test.pyclbr_input', ignore=['om'])
 
     def test_nested(self):
+        mb = pyclbr
+        # Set arguments for descriptor creation and _creat_tree call.
+        m, p, f, t, i = 'test', '', 'test.py', {}, None
+        source = dedent("""\
+        def f0:
+            def f1(a,b,c):
+                def f2(a=1, b=2, c=3): pass
+                    return f1(a,b,d)
+            class c1: pass
+        class C0:
+            "Test class."
+            def F1():
+                "Method."
+                return 'return'
+            class C1():
+                class C2:
+                    "Class nested within nested class."
+                    def F3(): return 1+1
 
-        def clbr_from_tuple(tup, store, parent=None, lineno=1):
-            '''Create pyclbr objects from the given tuple t.'''
-            name = tup[0]
-            obj = pickp(name)
-            if parent is not None:
-                store = store[parent].children
-            ob_name = name.split()[1]
-            store[ob_name] = obj(name=ob_name, lineno=lineno, parent=parent)
-            parent = ob_name
+        """)
+        actual = mb._create_tree(m, p, f, source, t, i)
 
-            for item in tup[1:]:
-                lineno += 1
-                if isinstance(item, str):
-                    obj = pickp(item)
-                    ob_name = item.split()[1]
-                    store[parent].children[ob_name] = obj(
-                            name=ob_name, lineno=lineno, parent=parent)
-                else:
-                    lineno = clbr_from_tuple(item, store, parent, lineno)
+        # Create descriptors, linked together, and expected dict.
+        f0 = mb.Function(m, 'f0', f, 1)
+        f1 = mb._nest_function(f0, 'f1', 2)
+        f2 = mb._nest_function(f1, 'f2', 3)
+        c1 = mb._nest_class(f0, 'c1', 5)
+        C0 = mb.Class(m, 'C0', None, f, 6)
+        F1 = mb._nest_function(C0, 'F1', 8)
+        C1 = mb._nest_class(C0, 'C1', 11)
+        C2 = mb._nest_class(C1, 'C2', 12)
+        F3 = mb._nest_function(C2, 'F3', 14)
+        expected = {'f0':f0, 'C0':C0}
 
-            return lineno
+        def compare(parent1, children1, parent2, children2):
+            """Return equality of tree pairs.
 
-        def tuple_to_py(tup, output, indent=0):
-            '''Write python code to output according to the given tuple.'''
-            name = tup[0]
-            output.write('{}{}():'.format(' ' * indent, name))
-            indent += 2
+            Each parent,children pair define a tree.  The parents are
+            assumed equal.  Comparing the children dictionaries as such
+            does not work due to comparison by identity and double
+            linkage.  We separate comparing string and number attributes
+            from comparing the children of input children.
+            """
+            self.assertEqual(children1.keys(), children2.keys())
+            for ob in children1.values():
+                self.assertIs(ob.parent, parent1)
+            for ob in children2.values():
+                self.assertIs(ob.parent, parent2)
+            for key in children1.keys():
+                o1, o2 = children1[key], children2[key]
+                t1 = type(o1), o1.name, o1.file, o1.module, o1.lineno
+                t2 = type(o2), o2.name, o2.file, o2.module, o2.lineno
+                self.assertEqual(t1, t2)
+                if type(o1) is mb.Class:
+                    self.assertEqual(o1.methods, o2.methods)
+                # Skip superclasses for now as not part of example
+                compare(o1, o1.children, o2, o2.children)
 
-            if not tup[1:]:
-                output.write(' pass')
-            output.write('\n')
-
-            for item in tup[1:]:
-                if isinstance(item, str):
-                    output.write('{}{}(): pass\n'.format(' ' * indent, item))
-                else:
-                    tuple_to_py(item, output, indent)
-
-        # Nested "thing" to test.
-        sample = (
-                ("class A",
-                    ("class B",
-                        ("def a",
-                            "def b")),
-                 "def c"),
-                ("def d",
-                    ("def e",
-                        ("class C",
-                            "def f")
-                     ),
-                 "def g")
-                )
-
-        pclass = partial(pyclbr.Class, module=None, file=None, super=None)
-        pfunc = partial(pyclbr.Function, module=None, file=None)
-
-        def pickp(name):
-            return pclass if name.startswith('class') else pfunc
-
-        # Create a module for storing the Python code.
-        dirname = os.path.abspath(support.TESTFN)
-        modname = 'notsupposedtoexist'
-        fname = os.path.join(dirname, modname) + os.extsep + 'py'
-        os.mkdir(dirname)
-
-        # Create pyclbr objects from the sample above, and also convert
-        # the same sample above to Python code and write it to fname.
-        d = {}
-        lineno = 1
-        with open(fname, 'w') as output:
-            for tup in sample:
-                newlineno = clbr_from_tuple(tup, d, lineno=lineno)
-                lineno = newlineno + 1
-                tuple_to_py(tup, output)
-
-        # Get the data returned by readmodule_ex to compare against
-        # our generated data.
-        try:
-            with support.DirsOnSysPath(dirname):
-                d_cmp = pyclbr.readmodule_ex(modname)
-        finally:
-            support.unlink(fname)
-            support.rmtree(dirname)
-
-        # Finally perform the tests.
-        def check_objects(ob1, ob2):
-            self.assertEqual(ob1.lineno, ob2.lineno)
-            if ob1.parent is None:
-                self.assertIsNone(ob2.parent)
-            else:
-                # ob1 must come from our generated data since the parent
-                # attribute is always a string, while the ob2 must come
-                # from pyclbr which is always an Object instance.
-                self.assertEqual(ob1.parent, ob2.parent.name)
-            self.assertEqual(
-                    ob1.__class__.__name__,
-                    ob2.__class__.__name__)
-            self.assertEqual(ob1.children.keys(), ob2.children.keys())
-            for name, obj in list(ob1.children.items()):
-                obj_cmp = ob2.children.pop(name)
-                del ob1.children[name]
-                check_objects(obj, obj_cmp)
-
-        for name, obj in list(d.items()):
-            self.assertIn(name, d_cmp)
-            obj_cmp = d_cmp.pop(name)
-            del d[name]
-            check_objects(obj, obj_cmp)
-            self.assertFalse(obj.children)
-            self.assertFalse(obj_cmp.children)
-        self.assertFalse(d)
-        self.assertFalse(d_cmp)
+        compare(None, actual, None, expected)
 
     def test_others(self):
         cm = self.checkModule

@@ -42,6 +42,10 @@ modules.
    returned dictionary has a key ``'__path__'`` whose value is a list
    containing the package search path.
 
+.. versionadded:: 3.7
+   Descriptors for nested definitions.  They are accessed through the
+   new children attibute.  Each has a new parent attribute.
+
 The descriptors returned by these functions are instances of
 Function and Class classes.  Users are not expected to create instances
 of these classes.
