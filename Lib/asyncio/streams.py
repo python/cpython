@@ -529,7 +529,7 @@ class StreamReader:
         if seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
 
-        if self._exception is not None:
+        if self._exception is not None and not self._buffer:
             raise self._exception
 
         # Consume whole buffer except last bytes, which length is
@@ -584,6 +584,11 @@ class StreamReader:
                 self._buffer.clear()
                 raise IncompleteReadError(chunk, None)
 
+            # All data that was in the buffer has been returned, if there is
+            # an exception dont wait and just raise the exception.
+            if self._exception is not None:
+                raise self._exception
+
             # _wait_for_data() will resume reading if stream was paused.
             await self._wait_for_data('readuntil')
 
@@ -618,7 +623,15 @@ class StreamReader:
         """
 
         if self._exception is not None:
-            raise self._exception
+            # If some data came into the buffer and its
+            # still pending to be proccessed return it but
+            # just raise the last exception.
+            if self._buffer and n > 0:
+                data = bytes(self._buffer[:n])
+                del self._buffer[:n]
+                return data
+            else:
+                raise self._exception
 
         if n == 0:
             return b''
