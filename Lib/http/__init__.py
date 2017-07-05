@@ -100,7 +100,7 @@ class HTTPStatus(IntEnum):
     EXPECTATION_FAILED = (417, 'Expectation Failed',
         'Expect condition could not be satisfied')
     MISDIRECTED_REQUEST = (421, 'Misdirected Request',
-        'Server can not produce a response')
+        'Server is not able to produce a response')
     UNPROCESSABLE_ENTITY = 422, 'Unprocessable Entity'
     LOCKED = 423, 'Locked'
     FAILED_DEPENDENCY = 424, 'Failed Dependency'
