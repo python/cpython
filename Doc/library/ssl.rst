@@ -1774,20 +1774,11 @@ to be aware of:
         except ssl.SSLWantWriteError:
             select.select([], [sock], [])
 
-.. seealso::
-
-   The :mod:`asyncio` module supports :ref:`non-blocking SSL sockets
-   <ssl-nonblocking>` and provides a
-   higher level API. It polls for events using the :mod:`selectors` module and
-   handles :exc:`SSLWantWriteError`, :exc:`SSLWantReadError` and
-   :exc:`BlockingIOError` exceptions. It runs the SSL handshake asynchronously
-   as well.
-
 
 Memory BIO Support
 ------------------
 
-.. versionadded:: 2.7.9
+.. versionadded:: 2.7.14
 
 Ever since the SSL module was introduced in Python 2.6, the :class:`SSLSocket`
 class has provided two related but distinct areas of functionality:
@@ -1842,6 +1833,7 @@ provided.
    - :meth:`~SSLSocket.do_handshake`
    - :meth:`~SSLSocket.unwrap`
    - :meth:`~SSLSocket.get_channel_binding`
+   - :meth:`~SSLSocket.selected_alpn_protocol`
 
    When compared to :class:`SSLSocket`, this object lacks the following
    features:

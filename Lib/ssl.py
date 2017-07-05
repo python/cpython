@@ -527,7 +527,6 @@ def _https_verify_certificates(enable=True):
         _create_default_https_context = _create_unverified_context
 
 
-
 class SSLObject(object):
     """This class implements an interface on top of a low-level SSL object as
     implemented by OpenSSL. This object captures the state of an SSL connection
@@ -848,7 +847,17 @@ class SSLSocket(socket):
                 raise ValueError(
                     "non-zero flags not allowed in calls to send() on %s" %
                     self.__class__)
-            return self._sslobj.write(data)
+            try:
+                v = self._sslobj.write(data)
+            except SSLError as x:
+                if x.args[0] == SSL_ERROR_WANT_READ:
+                    return 0
+                elif x.args[0] == SSL_ERROR_WANT_WRITE:
+                    return 0
+                else:
+                    raise
+            else:
+                return v
         else:
             return self._sock.send(data, flags)
 
