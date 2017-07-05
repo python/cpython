@@ -215,6 +215,7 @@ class BaseSelector(metaclass=ABCMeta):
 
 class _BaseSelectorImpl(BaseSelector):
     """Base selector implementation."""
+    _ACCEPTED_EVENTS = (EVENT_READ | EVENT_WRITE | EVENT_URGENT)
 
     def __init__(self):
         # this maps file descriptors to keys
@@ -242,8 +243,7 @@ class _BaseSelectorImpl(BaseSelector):
             raise
 
     def register(self, fileobj, events, data=None):
-        if (not events) or
-                (events & ~(EVENT_READ | EVENT_WRITE | EVENT_URGENT)):
+        if (not events) or (events & ~self._ACCEPTED_EVENTS):
             raise ValueError("Invalid events: {!r}".format(events))
 
         key = SelectorKey(fileobj, self._fileobj_lookup(fileobj), events, data)
@@ -537,6 +537,7 @@ if hasattr(select, 'kqueue'):
 
     class KqueueSelector(_BaseSelectorImpl):
         """Kqueue-based selector."""
+        _ACCEPTED_EVENTS = (EVENT_READ | EVENT_WRITE)
 
         def __init__(self):
             super().__init__()
@@ -546,6 +547,26 @@ if hasattr(select, 'kqueue'):
             return self._selector.fileno()
 
         def register(self, fileobj, events, data=None):
+            """Register a file object.
+
+            Parameters:
+            fileobj -- file object or file descriptor
+            events  -- events to monitor
+                       (bitwise mask of EVENT_READ|EVENT_WRITE)
+            data    -- attached data
+
+            Returns:
+            SelectorKey instance
+
+            Raises:
+            ValueError if events is invalid
+            KeyError if fileobj is already registered
+            OSError if fileobj is closed or otherwise is unacceptable to
+                the underlying system call (if a system call is made)
+
+            Note:
+            OSError may or may not be raised
+            """
             key = super().register(fileobj, events, data)
             try:
                 if events & EVENT_READ:
@@ -582,7 +603,40 @@ if hasattr(select, 'kqueue'):
                     pass
             return key
 
+        def modify(self, fileobj, events, data=None):
+            """Change a registered file object monitored events or
+               attached data.
+
+            Parameters:
+            fileobj -- file object or file descriptor
+            events  -- events to monitor
+                       (bitwise mask of EVENT_READ|EVENT_WRITE)
+            data    -- attached data
+
+            Returns:
+            SelectorKey instance
+
+            Raises:
+            Anything that unregister() or register() raises
+            """
+            return super().modify(fileobj, events, data)
+
         def select(self, timeout=None):
+            """Perform the actual selection, until some monitored file
+            objects are ready or a timeout expires.
+
+            Parameters:
+            timeout -- if timeout > 0, this specifies the maximum wait
+                       time, in seconds
+                       if timeout <= 0, the select() call won't block,
+                       and will report the currently ready file objects
+                       if timeout is None, select() will block until a
+                       monitored file object becomes ready
+
+            Returns:
+            list of (key, events) for ready file objects
+            `events` is a bitwise mask of EVENT_READ|EVENT_WRITE
+            """
             timeout = None if timeout is None else max(timeout, 0)
             max_ev = len(self._fd_to_key)
             ready = []
