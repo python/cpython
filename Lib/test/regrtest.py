@@ -289,6 +289,13 @@ def format_test_result(test_name, result):
     return fmt % test_name
 
 
+def unload_test_modules(save_modules):
+    # Unload the newly imported modules (best effort finalization)
+    for module in sys.modules.keys():
+        if module not in save_modules and module.startswith("test."):
+            test_support.unload(module)
+
+
 def main(tests=None, testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
@@ -835,10 +842,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     # them again
                     found_garbage.extend(gc.garbage)
                     del gc.garbage[:]
-            # Unload the newly imported modules (best effort finalization)
-            for module in sys.modules.keys():
-                if module not in save_modules and module.startswith("test."):
-                    test_support.unload(module)
+
+            unload_test_modules(save_modules)
 
     if interrupted and not pgo:
         # print a newline after ^C
@@ -1543,6 +1548,7 @@ def list_cases(testdir, selected, match_tests):
     test_support.verbose = False
     test_support.match_tests = match_tests
 
+    save_modules = set(sys.modules)
     skipped = []
     for test in selected:
         abstest = get_abs_module(testdir, test)
@@ -1551,6 +1557,8 @@ def list_cases(testdir, selected, match_tests):
             _list_cases(suite)
         except unittest.SkipTest:
             skipped.append(test)
+
+        unload_test_modules(save_modules)
 
     if skipped:
         print >>sys.stderr
