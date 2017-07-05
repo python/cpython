@@ -45,9 +45,6 @@ _PyOS_ReadlineTState
 #######################################
 # state
 
-# Objects/obmalloc.c
-##usedpools
-
 # Python/dtoa.c
 p5s
 pmem_next  # very slight race
@@ -80,8 +77,6 @@ ThreadError
 unknown_filename
 
 # Modules/gcmodule.c
-##callbacks
-##garbage
 gc_str
 
 # Modules/posixmodule.c
@@ -103,17 +98,17 @@ zip_directory_cache
 # module globals (other)
 
 # Modules/_tracemalloc.c
-##allocators
-##tables_lock
-##tracemalloc_config
+allocators
+tables_lock
+tracemalloc_config
 tracemalloc_empty_traceback
-##tracemalloc_filenames
-##tracemalloc_peak_traced_memory
-##tracemalloc_reentrant_key
-##tracemalloc_traceback
-##tracemalloc_tracebacks
-##tracemalloc_traced_memory
-##tracemalloc_traces
+tracemalloc_filenames
+tracemalloc_peak_traced_memory
+tracemalloc_reentrant_key
+tracemalloc_traceback
+tracemalloc_tracebacks
+tracemalloc_traced_memory
+tracemalloc_traces
 
 # Modules/faulthandler.c
 fatal_error
@@ -122,16 +117,6 @@ old_stack
 stack
 thread
 user_signals
-
-# Modules/gcmodule.c
-##_PyGC_generation0
-##collecting
-##debug
-##enabled
-##generation_stats
-##generations
-##long_lived_pending
-##long_lived_total
 
 # Modules/posixmodule.c
 posix_constants_confstr
