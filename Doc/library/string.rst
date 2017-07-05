@@ -400,7 +400,8 @@ character of ``'0'`` with an *alignment* type of ``'='``.
 The *precision* is a decimal number indicating how many digits should be
 displayed after the decimal point for a floating point value formatted with
 ``'f'`` and ``'F'``, or before and after the decimal point for a floating point
-value formatted with ``'g'`` or ``'G'``.  For non-number types the field
+value formatted with ``'g'`` or ``'G'``.  Rounding is applied when the precision
+is smaller than the number of available digits. For non-number types the field
 indicates the maximum field size - in other words, how many characters will be
 used from the field content. The *precision* is not allowed for integer values.
 
