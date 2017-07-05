@@ -205,110 +205,6 @@ typedef struct _ts {
 
 #ifndef Py_LIMITED_API
 
-struct _mem_globals {
-    // Objects/object.c
-    /* List of objects that still need to be cleaned up, singly linked
-     * via their gc headers' gc_prev pointers.
-     */
-    PyObject *trash_delete_later;
-    /* Current call-stack depth of tp_dealloc calls. */
-    int trash_delete_nesting;
-
-    // Objects/obmalloc.c
-    PyMemAllocatorEx allocator;
-    PyMemAllocatorEx allocator_raw;
-    PyMemAllocatorEx allocator_object;
-    PyObjectArenaAllocator allocator_arenas;
-    /* Array of objects used to track chunks of memory (arenas). */
-    struct arena_object* arenas;
-    /* The head of the singly-linked, NULL-terminated list of available
-     * arena_objects.
-     */
-    struct arena_object* unused_arena_objects;
-    /* The head of the doubly-linked, NULL-terminated at each end, list of
-     * arena_objects associated with arenas that have pools available.
-     */
-    struct arena_object* usable_arenas;
-    /* Number of slots currently allocated in the `arenas` vector. */
-    uint maxarenas;
-    /* Number of arenas allocated that haven't been free()'d. */
-    size_t narenas_currently_allocated;
-    /* High water mark (max value ever seen) for
-     * narenas_currently_allocated. */
-    size_t narenas_highwater;
-    /* Total number of times malloc() called to allocate an arena. */
-    size_t ntimes_arena_allocated;
-//    poolp usedpools[MAX_POOLS];
-    Py_ssize_t num_allocated_blocks;
-    size_t serialno;     /* incremented on each debug {m,re}alloc */
-};
-
-struct _warnings_globals {
-    // Python/_warnings.c
-    /* Both 'filters' and 'onceregistry' can be set in warnings.py;
-       get_warnings_attr() will reset these variables accordingly. */
-    PyObject *filters;  /* List */
-    PyObject *once_registry;  /* Dict */
-    PyObject *default_action; /* String */
-    long filters_version;
-};
-
-#ifdef Py_BUILD_CORE
-struct _pending_calls {
-    unsigned long main_thread;
-#ifdef WITH_THREAD
-    PyThread_type_lock lock;
-    /* Request for running pending calls. */
-    _Py_atomic_int calls_to_do;
-    /* Request for looking at the `async_exc` field of the current thread state.
-       Guarded by the GIL. */
-    int async_exc;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
-    int first;
-    int last;
-#else /* ! WITH_THREAD */
-    _Py_atomic_int calls_to_do;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
-    volatile int first;
-    volatile int last;
-#endif /* WITH_THREAD */
-};
-#endif /* Py_BUILD_CORE */
-
-#ifdef Py_BUILD_CORE
-#include "gil.h"
-#endif
-
-struct _ceval_globals {
-    int recursion_limit;
-    int check_recursion_limit;
-    /* Records whether tracing is on for any thread.  Counts the number of
-       threads for which tstate->c_tracefunc is non-NULL, so if the value
-       is 0, we know we don't have to check this thread's c_tracefunc.
-       This speeds up the if statement in PyEval_EvalFrameEx() after
-       fast_next_opcode*/
-    int tracing_possible;
-#ifdef Py_BUILD_CORE
-    /* This single variable consolidates all requests to break out of the fast path
-       in the eval loop. */
-    _Py_atomic_int eval_breaker;
-#ifdef WITH_THREAD
-    /* Request for dropping the GIL */
-    _Py_atomic_int gil_drop_request;
-#endif
-    struct _pending_calls pending;
-    struct _gil_globals gil;
-#endif /* Py_BUILD_CORE */
-};
-
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 
 struct _gilstate_globals {
@@ -328,6 +224,9 @@ struct _gilstate_globals {
     int autoTLSkey;
 #endif /* WITH_THREAD */
 };
+
+#include "warnings.h"
+#include "ceval.h"
 
 typedef struct pyruntimestate {
 
@@ -360,7 +259,11 @@ typedef struct pyruntimestate {
     int nexitfuncs;
     void (*pyexitfunc)(void);
 
-    struct _mem_globals mem;
+#ifdef Py_BUILD_CORE
+    struct _pyobj_globals obj;
+    struct _gc_globals gc;
+    struct _pymem_globals mem;
+#endif
     struct _warnings_globals warnings;
     struct _ceval_globals ceval;
     struct _gilstate_globals gilstate;

@@ -222,11 +222,28 @@ PyAPI_FUNC(void) PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator);
 PyAPI_FUNC(void) PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator);
 #endif
 
+#ifdef Py_BUILD_CORE
+struct _pyobj_globals {
+    PyObjectArenaAllocator allocator_arenas;
+};
+#endif /* Py_BUILD_CORE */
+
 
 /*
  * Garbage Collection Support
  * ==========================
  */
+
+#ifdef Py_BUILD_CORE
+struct _gc_globals {
+    /* List of objects that still need to be cleaned up, singly linked
+     * via their gc headers' gc_prev pointers.
+     */
+    PyObject *trash_delete_later;
+    /* Current call-stack depth of tp_dealloc calls. */
+    int trash_delete_nesting;
+};
+#endif /* Py_BUILD_CORE */
 
 /* C equivalent of gc.collect() which ignores the state of gc.enabled. */
 PyAPI_FUNC(Py_ssize_t) PyGC_Collect(void);

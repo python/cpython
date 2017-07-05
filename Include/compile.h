@@ -24,7 +24,7 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
 #define PyCF_IGNORE_COOKIE 0x0800
 
 #ifndef Py_LIMITED_API
-typedef struct {
+typedef struct compilerflags {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
 } PyCompilerFlags;
 #endif
@@ -45,6 +45,8 @@ typedef struct {
 #define FUTURE_UNICODE_LITERALS "unicode_literals"
 #define FUTURE_BARRY_AS_BDFL "barry_as_FLUFL"
 #define FUTURE_GENERATOR_STOP "generator_stop"
+
+#include "pyarena.h"
 
 struct _mod; /* Declare the existence of this type */
 #define PyAST_Compile(mod, s, f, ar) PyAST_CompileEx(mod, s, f, -1, ar)
