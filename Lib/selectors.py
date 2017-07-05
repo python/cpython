@@ -441,13 +441,16 @@ class _PollLikeSelector(_BaseSelectorImpl):
             fd_event_list = self._selector.poll(timeout)
         except InterruptedError:
             return ready
+        flags_urgent = ~(self._EVENT_READ | self._EVENT_WRITE)
+        flags_write = ~(self._EVENT_READ | self._EVENT_URGENT)
+        flags_read = ~(self._EVENT_WRITE | self._EVENT_URGENT)
         for fd, event in fd_event_list:
             events = 0
-            if event & ~(self._EVENT_READ | self._EVENT_WRITE):
+            if event & flags_urgent:
                 events |= EVENT_URGENT
-            if event & ~(self._EVENT_READ | self._EVENT_URGENT):
+            if event & flags_write:
                 events |= EVENT_WRITE
-            if event & ~(self._EVENT_WRITE | self._EVENT_URGENT):
+            if event & flags_read:
                 events |= EVENT_READ
 
             key = self._key_from_fd(fd)
@@ -498,13 +501,16 @@ if hasattr(select, 'epoll'):
                 fd_event_list = self._selector.poll(timeout, max_ev)
             except InterruptedError:
                 return ready
+            flags_urgent = ~(self._EVENT_READ | self._EVENT_WRITE)
+            flags_write = ~(self._EVENT_READ | self._EVENT_URGENT)
+            flags_read = ~(self._EVENT_WRITE | self._EVENT_URGENT)
             for fd, event in fd_event_list:
                 events = 0
-                if event & ~(self._EVENT_READ | self._EVENT_WRITE):
+                if event & flags_urgent:
                     events |= EVENT_URGENT
-                if event & ~(self._EVENT_READ | self._EVENT_URGENT):
+                if event & flags_write:
                     events |= EVENT_WRITE
-                if event & ~(self._EVENT_WRITE | self._EVENT_URGENT):
+                if event & flags_read:
                     events |= EVENT_READ
 
                 key = self._key_from_fd(fd)
