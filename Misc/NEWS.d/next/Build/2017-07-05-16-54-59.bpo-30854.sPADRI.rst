@@ -1,0 +1,2 @@
+Fix compile error when compiling --without-threads.
+Patch by Masayuki Yamamoto.
