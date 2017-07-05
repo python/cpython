@@ -248,7 +248,7 @@ class DBShelveTestCase(unittest.TestCase):
             self.assertEqual(value.L, [x] * 10)
 
         else:
-            self.assertTrue(0, 'Unknown key type, fix the test')
+            self.fail('Unknown key type, fix the test')
 
 #----------------------------------------------------------------------
 

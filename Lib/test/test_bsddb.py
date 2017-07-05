@@ -172,7 +172,7 @@ class TestBSDDB(unittest.TestCase):
 
     def test_first_while_deleting(self):
         # Test for bug 1725856
-        self.assertTrue(len(self.d) >= 2, "test requires >=2 items")
+        self.assertGreaterEqual(len(self.d), 2, "test requires >=2 items")
         for _ in self.d:
             key = self.f.first()[0]
             del self.f[key]
@@ -180,7 +180,7 @@ class TestBSDDB(unittest.TestCase):
 
     def test_last_while_deleting(self):
         # Test for bug 1725856's evil twin
-        self.assertTrue(len(self.d) >= 2, "test requires >=2 items")
+        self.assertGreaterEqual(len(self.d), 2, "test requires >=2 items")
         for _ in self.d:
             key = self.f.last()[0]
             del self.f[key]
@@ -197,7 +197,7 @@ class TestBSDDB(unittest.TestCase):
     def test_has_key(self):
         for k in self.d:
             self.assertTrue(self.f.has_key(k))
-        self.assertTrue(not self.f.has_key('not here'))
+        self.assertFalse(self.f.has_key('not here'))
 
     def test_clear(self):
         self.f.clear()
@@ -271,7 +271,7 @@ class TestBSDDB(unittest.TestCase):
 
         self.assertEqual(nc1, nc2)
         self.assertEqual(nc1, nc4)
-        self.assertTrue(nc3 == nc1+1)
+        self.assertEqual(nc3, nc1+1)
 
     def test_popitem(self):
         k, v = self.f.popitem()

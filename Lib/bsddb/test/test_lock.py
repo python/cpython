@@ -129,7 +129,7 @@ class LockingTestCase(unittest.TestCase):
         end_time=time.time()
         deadlock_detection.end=True
         # Floating point rounding
-        self.assertTrue((end_time-start_time) >= 0.0999)
+        self.assertGreaterEqual(end_time-start_time, 0.0999)
         self.env.lock_put(lock)
         t.join()
 
@@ -137,7 +137,7 @@ class LockingTestCase(unittest.TestCase):
         self.env.lock_id_free(anID2)
 
         if db.version() >= (4,6):
-            self.assertTrue(deadlock_detection.count>0)
+            self.assertGreater(deadlock_detection.count, 0)
 
     def theThread(self, lockType):
         import sys

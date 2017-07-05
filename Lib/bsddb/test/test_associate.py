@@ -233,7 +233,7 @@ class AssociateTestCase(unittest.TestCase):
         self.assertEqual(vals, None, vals)
 
         vals = secDB.pget('Unknown', txn=txn)
-        self.assertTrue(vals[0] == 99 or vals[0] == '99', vals)
+        self.assertIn(vals[0], (99, '99'), vals)
         vals[1].index('Unknown')
         vals[1].index('Unnamed')
         vals[1].index('unknown')
@@ -247,7 +247,8 @@ class AssociateTestCase(unittest.TestCase):
             if type(self.keytype) == type(''):
                 self.assertTrue(int(rec[0]))  # for primary db, key is a number
             else:
-                self.assertTrue(rec[0] and type(rec[0]) == type(0))
+                self.assertTrue(rec[0])
+                self.assertIs(type(rec[0]), int)
             count = count + 1
             if verbose:
                 print rec
@@ -262,7 +263,7 @@ class AssociateTestCase(unittest.TestCase):
 
         # test cursor pget
         vals = self.cur.pget('Unknown', flags=db.DB_LAST)
-        self.assertTrue(vals[1] == 99 or vals[1] == '99', vals)
+        self.assertIn(vals[1], (99, '99'), vals)
         self.assertEqual(vals[0], 'Unknown')
         vals[2].index('Unknown')
         vals[2].index('Unnamed')

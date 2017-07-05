@@ -25,7 +25,7 @@ class MiscTestCase(unittest.TestCase):
     def test02_db_home(self):
         env = db.DBEnv()
         # check for crash fixed when db_home is used before open()
-        self.assertTrue(env.db_home is None)
+        self.assertIsNone(env.db_home)
         env.open(self.homeDir, db.DB_CREATE)
         if sys.version_info[0] < 3 :
             self.assertEqual(self.homeDir, env.db_home)
