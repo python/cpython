@@ -321,6 +321,7 @@ class SelectSelector(_BaseSelectorImpl):
         key = super().unregister(fileobj)
         self._readers.discard(key.fd)
         self._writers.discard(key.fd)
+        self._urgents.discard(key.fd)
         return key
 
     if sys.platform == 'win32':
