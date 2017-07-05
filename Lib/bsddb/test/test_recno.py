@@ -18,7 +18,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         def assertIsInstance(self, obj, datatype, msg=None) :
             return self.assertEqual(type(obj), datatype, msg=msg)
         def assertGreaterEqual(self, a, b, msg=None) :
-            return self.assertTrue(a>=b, msg=msg)
+            return self.assertGreaterEqual(a, b, msg=msg)
 
 
     def setUp(self):
