@@ -84,6 +84,7 @@ _PyRuntime_Initialize(void)
     _PyRuntime = initial;
 
     _PyMem_Initialize();
+    _PyGC_Initialize();
     _PyEval_Initialize();
 
     _PyRuntime.gilstate.check_enabled = 1;
