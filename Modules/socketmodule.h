@@ -108,10 +108,12 @@ typedef int socklen_t;
 #endif
 
 #ifdef HAVE_LINUX_VM_SOCKETS_H
-#include <linux/vm_sockets.h>
-#ifndef AF_VSOCK
-#define AF_VSOCK 40
-#endif
+# include <linux/vm_sockets.h>
+#  ifndef AF_VSOCK
+#    define AF_VSOCK 40
+#  endif
+#else
+# undef AF_VSOCK
 #endif
 
 /* Linux 3.19 */

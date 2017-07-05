@@ -46,7 +46,7 @@ try:
 except ImportError:
     _socket = None
 
-def getCid():
+def get_cid():
     import struct
     import fcntl
 
@@ -106,9 +106,8 @@ def _have_socket_alg():
 
 def _have_socket_vsock():
     """Check whether AF_VSOCK sockets are supported on this host."""
-    if (getCid() == None):
-        return False
-    return True
+    ret = get_cid() is not None
+    return ret
 
 HAVE_SOCKET_CAN = _have_socket_can()
 
@@ -229,6 +228,7 @@ class SocketRDSTest(unittest.TestCase):
             self.port = support.bind_port(self.serv)
         except OSError:
             self.skipTest('unable to bind RDS socket')
+
 
 class ThreadableTest:
     """Threadable Test class
@@ -415,12 +415,12 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
 
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
-@unittest.skipUnless(getCid() != 2,
+@unittest.skipUnless(get_cid() != 2,
           "This test can only be run on a virtual guest.")
 class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
 
-    def __init__(self, methodName = 'runTest'):
-        unittest.TestCase.__init__(self, methodName = methodName)
+    def __init__(self, methodName='runTest'):
+        unittest.TestCase.__init__(self, methodName=methodName)
         ThreadableTest.__init__(self)
 
     def setUp(self):
@@ -436,7 +436,7 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         time.sleep(0.1)
         self.cli = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
         self.addCleanup(self.cli.close)
-        cid = getCid()
+        cid = get_cid()
         self.cli.connect((cid, VSOCKPORT))
 
     def testStream(self):
@@ -5790,7 +5790,7 @@ def test_main():
     tests.append(LinuxKernelCryptoAPI)
     tests.extend([
         BasicVSOCKTest,
-        ThreadedVSOCKSocketStreamTest
+        ThreadedVSOCKSocketStreamTest,
     ])
     tests.extend([
         CmsgMacroTests,

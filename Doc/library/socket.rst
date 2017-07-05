@@ -154,8 +154,8 @@ created.  Socket addresses are represented as follows:
   .. versionadded:: 3.6
 
 - :const:`AF_VSOCK` allows communication between virtual machines and
-   their hosts. The sockets are represented as a (CID, port) tuple
-   where the context ID or CID and port are integers.
+  their hosts. The sockets are represented as a ``(CID,port)`` tuple
+  where the context ID or CID and port are integers.
 
   Availability: Linux >= 4.8. QEMU >= 2.8.
 
