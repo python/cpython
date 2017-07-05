@@ -229,8 +229,6 @@ struct _gilstate_globals {
 #include "ceval.h"
 
 typedef struct pyruntimestate {
-
-    // Python/pylifecycle.c
     int initialized;
     int core_initialized;
     PyThreadState *finalizing;
