@@ -284,7 +284,7 @@ _PyMem_Initialize(void)
     _PyRuntime.mem.allocator = _PyMem;
     _PyRuntime.mem.allocator_raw = _PyMem_Raw;
     _PyRuntime.mem.allocator_object = _PyObject;
-    _PyRuntime.mem.allocator_arenas = _PyObject_Arena;
+    _PyRuntime.obj.allocator_arenas = _PyObject_Arena;
 }
 
 #ifdef WITH_PYMALLOC
@@ -373,13 +373,13 @@ PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 void
 PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
 {
-    *allocator = _PyRuntime.mem.allocator_arenas;
+    *allocator = _PyRuntime.obj.allocator_arenas;
 }
 
 void
 PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 {
-    _PyRuntime.mem.allocator_arenas = *allocator;
+    _PyRuntime.obj.allocator_arenas = *allocator;
 }
 
 void *
@@ -1069,7 +1069,7 @@ new_arena(void)
     arenaobj = _PyRuntime.mem.unused_arena_objects;
     _PyRuntime.mem.unused_arena_objects = arenaobj->nextarena;
     assert(arenaobj->address == 0);
-    address = _PyRuntime.mem.allocator_arenas.alloc(_PyRuntime.mem.allocator_arenas.ctx, ARENA_SIZE);
+    address = _PyRuntime.obj.allocator_arenas.alloc(_PyRuntime.obj.allocator_arenas.ctx, ARENA_SIZE);
     if (address == NULL) {
         /* The allocation failed: return NULL after putting the
          * arenaobj back.
@@ -1539,7 +1539,7 @@ _PyObject_Free(void *ctx, void *p)
                 _PyRuntime.mem.unused_arena_objects = ao;
 
                 /* Free the entire arena. */
-                _PyRuntime.mem.allocator_arenas.free(_PyRuntime.mem.allocator_arenas.ctx,
+                _PyRuntime.obj.allocator_arenas.free(_PyRuntime.obj.allocator_arenas.ctx,
                                      (void *)ao->address, ARENA_SIZE);
                 ao->address = 0;                        /* mark unassociated */
                 --_PyRuntime.mem.narenas_currently_allocated;
