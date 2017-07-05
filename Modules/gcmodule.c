@@ -54,20 +54,21 @@ static PyObject *gc_str = NULL;
 #define GEN_HEAD(n) (&_PyRuntime.gc.generations[n].head)
 
 void
-_PyGC_Initialize(void)
+_PyGC_Initialize(struct _gc_globals *globals)
 {
-    _PyRuntime.gc.enabled = 1; /* automatic collection enabled? */
+    globals->enabled = 1; /* automatic collection enabled? */
 
+#define _GEN_HEAD(n) (&globals->generations[n].head)
     struct gc_generation generations[NUM_GENERATIONS] = {
-        /* PyGC_Head,                               threshold,      count */
-        {{{GEN_HEAD(0), GEN_HEAD(0), 0}},           700,            0},
-        {{{GEN_HEAD(1), GEN_HEAD(1), 0}},           10,             0},
-        {{{GEN_HEAD(2), GEN_HEAD(2), 0}},           10,             0},
+        /* PyGC_Head,                                 threshold,      count */
+        {{{_GEN_HEAD(0), _GEN_HEAD(0), 0}},           700,            0},
+        {{{_GEN_HEAD(1), _GEN_HEAD(1), 0}},           10,             0},
+        {{{_GEN_HEAD(2), _GEN_HEAD(2), 0}},           10,             0},
     };
     for (int i = 0; i < NUM_GENERATIONS; i++) {
-        _PyRuntime.gc.generations[i] = generations[i];
+        globals->generations[i] = generations[i];
     };
-    _PyRuntime.gc.generation0 = GEN_HEAD(0);
+    globals->generation0 = GEN_HEAD(0);
 }
 
 /*--------------------------------------------------------------------------

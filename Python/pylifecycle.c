@@ -83,9 +83,10 @@ _PyRuntime_Initialize(void)
     _PyRuntimeState initial = {};
     _PyRuntime = initial;
 
-    _PyMem_Initialize();
-    _PyGC_Initialize();
-    _PyEval_Initialize();
+    _PyObject_Initialize(&_PyRuntime.obj);
+    _PyMem_Initialize(&_PyRuntime.mem);
+    _PyGC_Initialize(&_PyRuntime.gc);
+    _PyEval_Initialize(&_PyRuntime.ceval);
 
     _PyRuntime.gilstate.check_enabled = 1;
     _PyRuntime.gilstate.autoTLSkey = -1;

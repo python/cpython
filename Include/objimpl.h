@@ -226,6 +226,8 @@ PyAPI_FUNC(void) PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator);
 struct _pyobj_globals {
     PyObjectArenaAllocator allocator_arenas;
 };
+
+PyAPI_FUNC(void) _PyObject_Initialize(struct _pyobj_globals *);
 #endif /* Py_BUILD_CORE */
 
 
@@ -235,8 +237,6 @@ struct _pyobj_globals {
  */
 
 #ifndef Py_LIMITED_API
-
-PyAPI_FUNC(void) _PyGC_Initialize(void);
 
 /* GC information is stored BEFORE the object structure. */
 typedef union _gc_head {
@@ -377,6 +377,8 @@ struct _gc_globals {
     */
     Py_ssize_t long_lived_pending;
 };
+
+PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_globals *);
 #endif /* Py_BUILD_CORE */
 
 #define _PyGC_generation0 _PyRuntime.gc.generation0
