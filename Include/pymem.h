@@ -225,6 +225,8 @@ PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
 #endif
 
 #ifdef Py_BUILD_CORE
+#include "pymalloc.h"
+
 struct _pymem_globals {
     PyMemAllocatorEx allocator;
     PyMemAllocatorEx allocator_raw;
@@ -249,7 +251,7 @@ struct _pymem_globals {
     size_t narenas_highwater;
     /* Total number of times malloc() called to allocate an arena. */
     size_t ntimes_arena_allocated;
-//    poolp usedpools[MAX_POOLS];
+    poolp usedpools[MAX_POOLS];
     Py_ssize_t num_allocated_blocks;
     size_t serialno;     /* incremented on each debug {m,re}alloc */
 #endif /* WITH_PYMALLOC */

@@ -281,10 +281,24 @@ static const PyObjectArenaAllocator _PyObject_Arena = {NULL,
 void
 _PyMem_Initialize(void)
 {
+    _PyRuntime.obj.allocator_arenas = _PyObject_Arena;
     _PyRuntime.mem.allocator = _PyMem;
     _PyRuntime.mem.allocator_raw = _PyMem_Raw;
     _PyRuntime.mem.allocator_object = _PyObject;
-    _PyRuntime.obj.allocator_arenas = _PyObject_Arena;
+
+#ifdef WITH_PYMALLOC
+    for (int i = 0; i < 8; i++) {
+        if (NB_SMALL_SIZE_CLASSES <= i * 8)
+            break;
+        for (int j = 0; j < 8; j++) {
+            int x = i * 8 + j;
+            poolp *addr = &(_PyRuntime.mem.usedpools[2*(x)]);
+            poolp val = (poolp)((uint8_t *)addr - 2*sizeof(pyblock *));
+            _PyRuntime.mem.usedpools[x * 2] = val;
+            _PyRuntime.mem.usedpools[x * 2 + 1] = val;
+        };
+    };
+#endif /* WITH_PYMALLOC */
 }
 
 #ifdef WITH_PYMALLOC
@@ -532,8 +546,6 @@ PyObject_Free(void *ptr)
 static int running_on_valgrind = -1;
 #endif
 
-#include "pymalloc.h"
-
 Py_ssize_t
 _Py_GetAllocatedBlocks(void)
 {
@@ -772,7 +784,7 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
          * Most frequent paths first
          */
         size = (uint)(nbytes - 1) >> ALIGNMENT_SHIFT;
-        pool = usedpools[size + size];
+        pool = _PyRuntime.mem.usedpools[size + size];
         if (pool != pool->nextpool) {
             /*
              * There is a used pool for this size class.
@@ -873,7 +885,7 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
             }
         init_pool:
             /* Frontlink to used pools. */
-            next = usedpools[size + size]; /* == prev */
+            next = _PyRuntime.mem.usedpools[size + size]; /* == prev */
             pool->nextpool = next;
             pool->prevpool = next;
             next->nextpool = pool;
@@ -1173,7 +1185,7 @@ _PyObject_Free(void *ctx, void *p)
         --pool->ref.count;
         assert(pool->ref.count > 0);            /* else the pool is empty */
         size = pool->szidx;
-        next = usedpools[size + size];
+        next = _PyRuntime.mem.usedpools[size + size];
         prev = next->prevpool;
         /* insert pool before next:   prev <-> pool <-> next */
         pool->nextpool = next;
@@ -1846,7 +1858,7 @@ _PyObject_DebugMallocStats(FILE *out)
             numfreeblocks[sz] += freeblocks;
 #ifdef Py_DEBUG
             if (freeblocks > 0)
-                assert(pool_is_in_list(p, usedpools[sz + sz]));
+                assert(pool_is_in_list(p, _PyRuntime.mem.usedpools[sz + sz]));
 #endif
         }
     }
