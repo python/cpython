@@ -20,7 +20,6 @@ PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
 /* Configure the Python memory allocators. Pass NULL to use default
    allocators. */
 PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
-PyAPI_FUNC(void) _PyMem_Initialize(void);
 
 #ifdef WITH_PYMALLOC
 PyAPI_FUNC(int) _PyMem_PymallocEnabled(void);
@@ -256,6 +255,8 @@ struct _pymem_globals {
     size_t serialno;     /* incremented on each debug {m,re}alloc */
 #endif /* WITH_PYMALLOC */
 };
+
+PyAPI_FUNC(void) _PyMem_Initialize(struct _pymem_globals *);
 #endif /* Py_BUILD_CORE */
 
 #ifdef __cplusplus

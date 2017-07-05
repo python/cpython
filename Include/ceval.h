@@ -66,7 +66,9 @@ struct _ceval_globals {
 #endif /* Py_BUILD_CORE */
 };
 
-PyAPI_FUNC(void) _PyEval_Initialize(void);
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_globals *);
+#endif /* Py_BUILD_CORE */
 #endif /* ! Py_LIMITED_API */
 
 /* Interface to random parts in ceval.c */
