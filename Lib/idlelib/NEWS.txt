@@ -2,6 +2,46 @@ What's New in IDLE 3.7.0
 Released on 2018-06-18?
 ========================
 
+
+bpo-30777: Configdialog - add docstrings and improve comments.
+Patch by Cheryl Sabella.
+
+bpo-30495: Improve textview with docstrings, PEP8 names, and more tests.
+Split TextViewer class into ViewWindow, ViewFrame, and TextFrame classes
+so that instances of the latter two can be placed with other widgets
+within a multiframe window.
+Patches by Cheryl Sabella and Terry Jan Reedy.
+
+bp0-30723: Make several improvements to parenmatch.
+* Add 'parens' style to highlight both opener and closer.
+* Make 'default' style, which is not default, a synonym for 'opener'.
+* Make time-delay work the same with all styles.
+* Add help for config dialog extensions tab, including parenmatch.
+* Add new tests. 
+Original patch by Charles Wohlganger.  Revisions by Terry Jan Reedy
+
+bpo-30674: Grep -- Add docstrings.  Patch by Cheryl Sabella.
+
+bpo-21519: IDLE's basic custom key entry dialog now detects
+duplicates properly. Original patch by Saimadhav Heblikar.
+
+bpo-29910: IDLE no longer deletes a character after commenting out a
+region by a key shortcut.  Add "return 'break'" for this and other
+potential conflicts between IDLE and default key bindings.
+Patch by Serhiy Storchaka.
+
+bpo-30728: Modernize idlelib.configdialog:
+* replace import * with specific imports;
+* lowercase method and attribute lines.
+Patch by Cheryl Sabella.
+
+bpo-6739: Verify user-entered key sequences by trying to bind them
+with to a tk widget.  Add tests for all 3 validation functions.
+Original patch by G Polo.  Tests added by Cheryl Sabella.
+Code revised and more tests added by Terry Jan Reedy
+
+bpo-24813: Add icon to help_about and make other changes.
+
 bpo-15786: Fix several problems with IDLE's autocompletion box.
 The following should now work: clicking on selection box items;
 using the scrollbar; selecting an item by hitting Return.
@@ -24,7 +64,7 @@ bpo-30303: Add _utest option to textview; add new tests.
 Increase coverage to 100%.
 Patches by Louie Lu and Terry Jan Reedy.
 
-Issue #29071: IDLE colors f-string prefixes (but not invalid ur prefixes).
+Issue #29071: IDLE colors f-string prefixes but not invalid ur prefixes.
 
 Issue #28572: Add 10% to coverage of IDLE's test_configdialog.
 Update and augment description of the configuration system.
