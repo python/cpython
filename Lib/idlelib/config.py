@@ -777,6 +777,80 @@ def _warn(msg, *key):
         _warned.add(key)
 
 
+class ConfigChanges:
+    """Manage a user's proposed configuration option changes.
+
+    Names used across multiple methods:
+        page -- one of the 4 top-level dicts representing a
+                .idlerc/config-x.cfg file.
+        config_type -- name of a page.
+        section -- a section within a page/file.
+        item -- name of a value within a section.
+        value -- value for the item.
+
+    Methods
+        add_item:
+        save_all: Save all the changes to the config file.
+
+        reset: Clear all changes by clearing each page.
+        set_user_value: Set value *in idleConf* for page, section, item.
+    """
+    def __init__(self):
+        "Create a page for each configuration file"
+        self.pages = {}
+        for config_type in ('main', 'highlight', 'keys', 'extensions'):
+            self[config_type] = {}
+            self.pages.add(self[config_type])
+
+    def add_item(self, config_type, section, item, value):
+        "Add item/value pair for config_type and section."
+        page = self[config_type]
+        value = str(value)  # Make sure we use a string.
+        if section not in page:
+            page[section] = {}
+        page[section][item] = value
+
+    def save_all(self):
+        "Save configuration changes to the user config file."
+
+        idleConf.userCfg['main'].Save()
+        for config_type in changes:
+            cfg_type_changed = False
+            for section in changes[config_type]:
+                if section == 'HelpFiles':
+                    # This section gets completely replaced.
+                    idleConf.userCfg['main'].remove_section('HelpFiles')
+                    cfg_type_changed = True
+                for item in changes[config_type][section]:
+                    value = self.changed_items[config_type][section][item]
+                    if self.set_user_value(config_type, section, item, value):
+                        cfg_type_changed = True
+            if cfg_type_changed:
+                idleConf.userCfg[config_type].Save()
+        for config_type in ['keys', 'highlight']:
+            # Save these even if unchanged!
+            idleConf.userCfg[config_type].Save()
+        self.clear()  # Clear the changed items dict.
+        self.save_all_changed_extensions()  # Uses a different mechanism.
+
+    def delete_section(self, config_type, section):
+        """Delete a section from this page.
+
+        Used to delete custom themes and keysets.
+        """
+        if section in self[config_type]:
+            del self[config_type][section]
+
+    def clear(self):
+        """Clear all 4 pages.
+
+        Called in save_all after saving to idleConf.
+        XXX Mark window *title* when there are changes; unmark here.
+        """
+        for page in self.config_types:
+            page.clear()
+
+
 # TODO Revise test output, write expanded unittest
 def _dump():  # htest # (not really, but ignore in coverage)
     from zlib import crc32
