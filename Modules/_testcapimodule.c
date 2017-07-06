@@ -4147,6 +4147,15 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
     return _PyGen_Send(gen, Py_None);
 }
 
+static PyObject*
+stack_pointer(PyObject *self, PyObject *args)
+{
+    int v = 5;
+    Py_uintptr_t sp = (Py_uintptr_t)&v;
+
+    return PyLong_FromUnsignedLongLong(sp);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -4355,6 +4364,7 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_fastcallkeywords", test_pyobject_fastcallkeywords, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
+    {"stack_pointer", stack_pointer, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
