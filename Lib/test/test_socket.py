@@ -1934,7 +1934,7 @@ class RDSTest(ThreadedRDSSocketTest):
         r, w, x = select.select([self.serv], [], [], 3.0)
         self.assertIn(self.serv, r)
 
- 
+
 @unittest.skipIf(fcntl is None, "need fcntl")
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
