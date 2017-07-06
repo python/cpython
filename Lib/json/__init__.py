@@ -76,7 +76,7 @@ Specializing JSON object encoding::
     >>> def encode_complex(obj):
     ...     if isinstance(obj, complex):
     ...         return [obj.real, obj.imag]
-    ...     raise TypeError(repr(o) + " is not JSON serializable")
+    ...     raise TypeError(repr(obj) + " is not JSON serializable")
     ...
     >>> json.dumps(2 + 1j, default=encode_complex)
     '[2.0, 1.0]'
