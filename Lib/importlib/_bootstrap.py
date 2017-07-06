@@ -956,9 +956,19 @@ def _find_and_load_unlocked(name, import_):
 
 
 def _find_and_load(name, import_):
-    """Find and load the module, and release the import lock."""
-    with _ModuleLockManager(name):
-        return _find_and_load_unlocked(name, import_)
+    """Find and load the module."""
+    _imp.acquire_lock()
+    if name not in sys.modules:
+        with _ModuleLockManager(name):
+            return _find_and_load_unlocked(name, import_)
+    module = sys.modules[name]
+    if module is None:
+        _imp.release_lock()
+        message = ('import of {} halted; '
+                   'None in sys.modules'.format(name))
+        raise ModuleNotFoundError(message, name=name)
+    _lock_unlock_module(name)
+    return module
 
 
 def _gcd_import(name, package=None, level=0):
@@ -973,17 +983,7 @@ def _gcd_import(name, package=None, level=0):
     _sanity_check(name, package, level)
     if level > 0:
         name = _resolve_name(name, package, level)
-    _imp.acquire_lock()
-    if name not in sys.modules:
-        return _find_and_load(name, _gcd_import)
-    module = sys.modules[name]
-    if module is None:
-        _imp.release_lock()
-        message = ('import of {} halted; '
-                   'None in sys.modules'.format(name))
-        raise ModuleNotFoundError(message, name=name)
-    _lock_unlock_module(name)
-    return module
+    return _find_and_load(name, _gcd_import)
 
 
 def _handle_fromlist(module, fromlist, import_):
