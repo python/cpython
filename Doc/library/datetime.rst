@@ -288,8 +288,8 @@ Supported operations:
 |                                | is negative for negative ``t``. (5)           |
 +--------------------------------+-----------------------------------------------+
 | ``repr(t)``                    | Returns a string representation of the        |
-|                                | :class:`timedelta` object such that           |
-|                                | ``t == eval(repr(t))``.                       |
+|                                | :class:`timedelta` object as a constructor    |
+|                                | call with canonical attribute values.         |
 +--------------------------------+-----------------------------------------------+
 
 
