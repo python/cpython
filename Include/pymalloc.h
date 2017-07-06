@@ -50,7 +50,7 @@
  */
 
 #ifndef Py_PYMALLOC_H
-#define Py_PyMALLOC_H
+#define Py_PYMALLOC_H
 
 /* #undef WITH_MEMORY_LIMITS */         /* disable mem limit checks  */
 
