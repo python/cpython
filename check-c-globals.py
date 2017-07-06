@@ -10,18 +10,12 @@ import subprocess
 
 VERBOSITY = 2
 
-ROOT_DIR = os.path.dirname(__file__) or '.'
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+GLOBALS_FILE = os.path.join(ROOT_DIR, 'globals.txt')
 
 SOURCE_DIRS = ['Include', 'Objects', 'Modules', 'Parser', 'Python']
 
 CAPI_REGEX = re.compile(r'^ *PyAPI_DATA\([^)]*\) \W*(_?Py\w+(?:, \w+)*\w).*;.*$')
-
-# These variables are shared between all interpreters in the process.
-with open('globals.txt') as file:
-    GLOBAL_VARS = {line.partition('#')[0].strip()
-                    for line in file
-                    if line.strip() and not line.startswith('#')}
-del file
 
 
 IGNORED_VARS = {
@@ -64,7 +58,15 @@ def _find_capi_vars(lines):
             yield name
 
 
-def _is_global_var(name):
+def _read_global_names(filename):
+    # These variables are shared between all interpreters in the process.
+    with open(filename) as file:
+        return {line.partition('#')[0].strip()
+                for line in file
+                if line.strip() and not line.startswith('#')}
+
+
+def _is_global_var(name, globalnames):
     if _is_autogen_var(name):
         return True
     if _is_type_var(name):
@@ -75,7 +77,7 @@ def _is_global_var(name):
         return True
     if _is_compiler(name):
         return True
-    return name in GLOBAL_VARS
+    return name in globalnames
 
 
 def _is_autogen_var(name):
@@ -141,7 +143,7 @@ def _is_compiler(name):
 class Var(namedtuple('Var', 'name kind scope capi filename')):
 
     @classmethod
-    def parse_nm(cls, line, expected, ignored, capi_vars):
+    def parse_nm(cls, line, expected, ignored, capi_vars, globalnames):
         _, _, line = line.partition(' ')  # strip off the address
         line = line.strip()
         kind, _, line = line.partition(' ')
@@ -154,7 +156,7 @@ class Var(namedtuple('Var', 'name kind scope capi filename')):
         name = name.strip()
         if _is_autogen_var(name):
             return None
-        if _is_global_var(name):
+        if _is_global_var(name, globalnames):
             scope = 'global'
         else:
             scope = None
@@ -168,11 +170,12 @@ class Var(namedtuple('Var', 'name kind scope capi filename')):
         return self.kind.isupper()
 
 
-def find_vars(root):
+def find_vars(root, globals_filename=GLOBALS_FILE):
     python = os.path.join(root, 'python')
     if not os.path.exists(python):
         raise RuntimeError('python binary missing (need to build it first?)')
     capi_vars = find_capi_vars(root)
+    globalnames = _read_global_names(globals_filename)
 
     nm = shutil.which('nm')
     if nm is None:
@@ -180,7 +183,8 @@ def find_vars(root):
         raise NotImplementedError
     else:
         yield from (var
-                    for var in _find_var_symbols(python, nm, capi_vars)
+                    for var in _find_var_symbols(python, nm, capi_vars,
+                                                 globalnames)
                     if var.name not in IGNORED_VARS)
 
 
@@ -193,13 +197,13 @@ NM_OTHER = set('ACGgiINpSsuUVvWw-?')
 NM_IGNORED = NM_FUNCS | NM_DATA | NM_OTHER
 
 
-def _find_var_symbols(python, nm, capi_vars):
+def _find_var_symbols(python, nm, capi_vars, globalnames):
     args = [nm,
             '--line-numbers',
             python]
     out = subprocess.check_output(args)
     for line in out.decode('utf-8').splitlines():
-        var = Var.parse_nm(line, NM_VARS, NM_IGNORED, capi_vars)
+        var = Var.parse_nm(line, NM_VARS, NM_IGNORED, capi_vars, globalnames)
         if var is None:
             continue
         yield var
@@ -373,6 +377,8 @@ def parse_args(argv=None):
 
     parser.add_argument('--rc-on-match', dest='rc', type=int)
 
+    parser.add_argument('filename', nargs='?', default=GLOBALS_FILE)
+
     args = parser.parse_args(argv)
 
     verbose = vars(args).pop('verbose', 0)
@@ -396,7 +402,7 @@ def parse_args(argv=None):
     return args
 
 
-def main(root=ROOT_DIR,
+def main(root=ROOT_DIR, filename=GLOBALS_FILE,
          filters=None, columns=COLUMN_NAMES, sort=None, group=None,
          verbosity=VERBOSITY, rc=1):
 
@@ -405,7 +411,7 @@ def main(root=ROOT_DIR,
         log = lambda msg: print(msg)
 
     allvars = (var
-               for var in find_vars(root)
+               for var in find_vars(root, filename)
                if filter_var(var, filters))
     if sort:
         allvars = sorted(allvars, key=make_sort_key(sort))
