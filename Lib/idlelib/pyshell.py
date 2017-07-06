@@ -892,7 +892,7 @@ class PyShell(OutputWindow):
         try:
             # page help() text to shell.
             import pydoc # import must be done here to capture i/o rebinding.
-            # XXX KBK 27Dec07 use TextViewer someday, but must work w/o subproc
+            # XXX KBK 27Dec07 use text viewer someday, but must work w/o subproc
             pydoc.pager = pydoc.plainpager
         except:
             sys.stderr = sys.__stderr__

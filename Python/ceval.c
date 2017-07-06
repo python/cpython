@@ -548,7 +548,7 @@ Py_MakePendingCalls(void)
         arg = pendingcalls[i].arg;
         pendingfirst = (i + 1) % NPENDINGCALLS;
         if (func(arg) < 0) {
-            goto error:
+            goto error;
         }
     }
     busy = 0;

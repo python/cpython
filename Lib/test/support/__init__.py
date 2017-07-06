@@ -2011,6 +2011,14 @@ def modules_cleanup(oldmodules):
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
 
+# Flag used by saved_test_environment of test.libregrtest.save_env,
+# to check if a test modified the environment. The flag should be set to False
+# before running a new test.
+#
+# For example, threading_cleanup() sets the flag is the function fails
+# to cleanup threads.
+environment_altered = False
+
 # NOTE: we use thread._count() rather than threading.enumerate() (or the
 # moral equivalent thereof) because a threading.Thread object is still alive
 # until its __bootstrap() method has returned, even after it has been
@@ -2026,6 +2034,8 @@ def threading_setup():
         return 1, ()
 
 def threading_cleanup(*original_values):
+    global environment_altered
+
     if not _thread:
         return
     _MAX_COUNT = 100
@@ -2037,6 +2047,8 @@ def threading_cleanup(*original_values):
         time.sleep(0.01)
         gc_collect()
     else:
+        environment_altered = True
+
         dt = time.monotonic() - t0
         print("Warning -- threading_cleanup() failed to cleanup %s threads "
               "after %.0f sec (count: %s, dangling: %s)"
@@ -2067,7 +2079,6 @@ def reap_children():
     stick around to hog resources and create problems when looking
     for refleaks.
     """
-
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
     if hasattr(os, 'waitpid'):
@@ -2078,6 +2089,8 @@ def reap_children():
                 pid, status = os.waitpid(any_process, os.WNOHANG)
                 if pid == 0:
                     break
+                print("Warning -- reap_children() reaped child process %s"
+                      % pid, file=sys.stderr)
             except:
                 break
 

@@ -10,6 +10,8 @@ import py_compile
 import random
 import stat
 import sys
+import threading
+import time
 import unittest
 import unittest.mock as mock
 import textwrap
@@ -379,6 +381,32 @@ class ImportTests(unittest.TestCase):
 
         self.assertEqual(str(cm.exception),
             "cannot import name 'does_not_exist' from '<unknown module name>' (unknown location)")
+
+    def test_concurrency(self):
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
+        try:
+            exc = None
+            def run():
+                event.wait()
+                try:
+                    import package
+                except BaseException as e:
+                    nonlocal exc
+                    exc = e
+
+            for i in range(10):
+                event = threading.Event()
+                threads = [threading.Thread(target=run) for x in range(2)]
+                try:
+                    with test.support.start_threads(threads, event.set):
+                        time.sleep(0)
+                finally:
+                    sys.modules.pop('package', None)
+                    sys.modules.pop('package.submodule', None)
+                if exc is not None:
+                    raise exc
+        finally:
+            del sys.path[0]
 
 
 @skip_if_dont_write_bytecode

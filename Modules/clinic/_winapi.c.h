@@ -95,7 +95,7 @@ PyDoc_STRVAR(_winapi_ConnectNamedPipe__doc__,
 "\n");
 
 #define _WINAPI_CONNECTNAMEDPIPE_METHODDEF    \
-    {"ConnectNamedPipe", (PyCFunction)_winapi_ConnectNamedPipe, METH_FASTCALL, _winapi_ConnectNamedPipe__doc__},
+    {"ConnectNamedPipe", (PyCFunction)_winapi_ConnectNamedPipe, METH_FASTCALL|METH_KEYWORDS, _winapi_ConnectNamedPipe__doc__},
 
 static PyObject *
 _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
@@ -138,7 +138,7 @@ _winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
                         DWORD flags_and_attributes, HANDLE template_file);
 
 static PyObject *
-_winapi_CreateFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_CreateFile(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     LPCTSTR file_name;
@@ -149,10 +149,6 @@ _winapi_CreateFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     DWORD flags_and_attributes;
     HANDLE template_file;
     HANDLE _return_value;
-
-    if (!_PyArg_NoStackKeywords("CreateFile", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "skk" F_POINTER "kk" F_HANDLE ":CreateFile",
         &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
@@ -184,15 +180,11 @@ _winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
                             LPWSTR dst_path);
 
 static PyObject *
-_winapi_CreateJunction(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_CreateJunction(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     LPWSTR src_path;
     LPWSTR dst_path;
-
-    if (!_PyArg_NoStackKeywords("CreateJunction", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "uu:CreateJunction",
         &src_path, &dst_path)) {
@@ -222,7 +214,7 @@ _winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
                              LPSECURITY_ATTRIBUTES security_attributes);
 
 static PyObject *
-_winapi_CreateNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_CreateNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     LPCTSTR name;
@@ -234,10 +226,6 @@ _winapi_CreateNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs, PyO
     DWORD default_timeout;
     LPSECURITY_ATTRIBUTES security_attributes;
     HANDLE _return_value;
-
-    if (!_PyArg_NoStackKeywords("CreateNamedPipe", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "skkkkkk" F_POINTER ":CreateNamedPipe",
         &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
@@ -274,15 +262,11 @@ static PyObject *
 _winapi_CreatePipe_impl(PyObject *module, PyObject *pipe_attrs, DWORD size);
 
 static PyObject *
-_winapi_CreatePipe(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_CreatePipe(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pipe_attrs;
     DWORD size;
-
-    if (!_PyArg_NoStackKeywords("CreatePipe", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "Ok:CreatePipe",
         &pipe_attrs, &size)) {
@@ -322,7 +306,7 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
                            PyObject *startup_info);
 
 static PyObject *
-_winapi_CreateProcess(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_CreateProcess(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_UNICODE *application_name;
@@ -334,10 +318,6 @@ _winapi_CreateProcess(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObj
     PyObject *env_mapping;
     Py_UNICODE *current_directory;
     PyObject *startup_info;
-
-    if (!_PyArg_NoStackKeywords("CreateProcess", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "ZZOOikOZO:CreateProcess",
         &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, &current_directory, &startup_info)) {
@@ -372,7 +352,7 @@ _winapi_DuplicateHandle_impl(PyObject *module, HANDLE source_process_handle,
                              DWORD options);
 
 static PyObject *
-_winapi_DuplicateHandle(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_DuplicateHandle(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE source_process_handle;
@@ -382,10 +362,6 @@ _winapi_DuplicateHandle(PyObject *module, PyObject **args, Py_ssize_t nargs, PyO
     BOOL inherit_handle;
     DWORD options = 0;
     HANDLE _return_value;
-
-    if (!_PyArg_NoStackKeywords("DuplicateHandle", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_HANDLE "" F_HANDLE "ki|k:DuplicateHandle",
         &source_process_handle, &source_handle, &target_process_handle, &desired_access, &inherit_handle, &options)) {
@@ -635,17 +611,13 @@ _winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
                          BOOL inherit_handle, DWORD process_id);
 
 static PyObject *
-_winapi_OpenProcess(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_OpenProcess(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     DWORD desired_access;
     BOOL inherit_handle;
     DWORD process_id;
     HANDLE _return_value;
-
-    if (!_PyArg_NoStackKeywords("OpenProcess", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "kik:OpenProcess",
         &desired_access, &inherit_handle, &process_id)) {
@@ -676,15 +648,11 @@ static PyObject *
 _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size);
 
 static PyObject *
-_winapi_PeekNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_PeekNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
     int size = 0;
-
-    if (!_PyArg_NoStackKeywords("PeekNamedPipe", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "|i:PeekNamedPipe",
         &handle, &size)) {
@@ -702,7 +670,7 @@ PyDoc_STRVAR(_winapi_ReadFile__doc__,
 "\n");
 
 #define _WINAPI_READFILE_METHODDEF    \
-    {"ReadFile", (PyCFunction)_winapi_ReadFile, METH_FASTCALL, _winapi_ReadFile__doc__},
+    {"ReadFile", (PyCFunction)_winapi_ReadFile, METH_FASTCALL|METH_KEYWORDS, _winapi_ReadFile__doc__},
 
 static PyObject *
 _winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
@@ -744,17 +712,13 @@ _winapi_SetNamedPipeHandleState_impl(PyObject *module, HANDLE named_pipe,
                                      PyObject *collect_data_timeout);
 
 static PyObject *
-_winapi_SetNamedPipeHandleState(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_SetNamedPipeHandleState(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE named_pipe;
     PyObject *mode;
     PyObject *max_collection_count;
     PyObject *collect_data_timeout;
-
-    if (!_PyArg_NoStackKeywords("SetNamedPipeHandleState", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "OOO:SetNamedPipeHandleState",
         &named_pipe, &mode, &max_collection_count, &collect_data_timeout)) {
@@ -780,15 +744,11 @@ _winapi_TerminateProcess_impl(PyObject *module, HANDLE handle,
                               UINT exit_code);
 
 static PyObject *
-_winapi_TerminateProcess(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_TerminateProcess(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
     UINT exit_code;
-
-    if (!_PyArg_NoStackKeywords("TerminateProcess", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "I:TerminateProcess",
         &handle, &exit_code)) {
@@ -812,15 +772,11 @@ static PyObject *
 _winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout);
 
 static PyObject *
-_winapi_WaitNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_WaitNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     LPCTSTR name;
     DWORD timeout;
-
-    if (!_PyArg_NoStackKeywords("WaitNamedPipe", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "sk:WaitNamedPipe",
         &name, &timeout)) {
@@ -846,16 +802,12 @@ _winapi_WaitForMultipleObjects_impl(PyObject *module, PyObject *handle_seq,
                                     BOOL wait_flag, DWORD milliseconds);
 
 static PyObject *
-_winapi_WaitForMultipleObjects(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_WaitForMultipleObjects(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *handle_seq;
     BOOL wait_flag;
     DWORD milliseconds = INFINITE;
-
-    if (!_PyArg_NoStackKeywords("WaitForMultipleObjects", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "Oi|k:WaitForMultipleObjects",
         &handle_seq, &wait_flag, &milliseconds)) {
@@ -885,16 +837,12 @@ _winapi_WaitForSingleObject_impl(PyObject *module, HANDLE handle,
                                  DWORD milliseconds);
 
 static PyObject *
-_winapi_WaitForSingleObject(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_WaitForSingleObject(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
     DWORD milliseconds;
     long _return_value;
-
-    if (!_PyArg_NoStackKeywords("WaitForSingleObject", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "k:WaitForSingleObject",
         &handle, &milliseconds)) {
@@ -916,7 +864,7 @@ PyDoc_STRVAR(_winapi_WriteFile__doc__,
 "\n");
 
 #define _WINAPI_WRITEFILE_METHODDEF    \
-    {"WriteFile", (PyCFunction)_winapi_WriteFile, METH_FASTCALL, _winapi_WriteFile__doc__},
+    {"WriteFile", (PyCFunction)_winapi_WriteFile, METH_FASTCALL|METH_KEYWORDS, _winapi_WriteFile__doc__},
 
 static PyObject *
 _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
@@ -941,4 +889,4 @@ _winapi_WriteFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9555c16ed2d95a9f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=afa6bd61eb0f18d2 input=a9049054013a1b77]*/

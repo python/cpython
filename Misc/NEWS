@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30814: Fixed a race condition when import a submodule from a package.
+
 - bpo-30736: The internal unicodedata database has been upgraded to Unicode
   10.0.
 
