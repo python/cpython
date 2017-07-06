@@ -766,7 +766,6 @@ class IdleConf:
 
 idleConf = IdleConf()
 
-
 _warned = set()
 def _warn(msg, *key):
     key = (msg,) + key
@@ -779,8 +778,7 @@ def _warn(msg, *key):
 
 
 # TODO Revise test output, write expanded unittest
-#
-if __name__ == '__main__':
+def _dump():  # htest # (not really, but ignore in coverage)
     from zlib import crc32
     line, crc = 0, 0
 
@@ -790,10 +788,10 @@ if __name__ == '__main__':
         line += 1
         crc = crc32(txt.encode(encoding='utf-8'), crc)
         print(txt)
-        #print('***', line, crc, '***')  # uncomment for diagnosis
+        #print('***', line, crc, '***')  # Uncomment for diagnosis.
 
     def dumpCfg(cfg):
-        print('\n', cfg, '\n')  # has variable '0xnnnnnnnn' addresses
+        print('\n', cfg, '\n')  # Cfg has variable '0xnnnnnnnn' address.
         for key in sorted(cfg.keys()):
             sections = cfg[key].sections()
             sprint(key)
@@ -808,3 +806,9 @@ if __name__ == '__main__':
     dumpCfg(idleConf.defaultCfg)
     dumpCfg(idleConf.userCfg)
     print('\nlines = ', line, ', crc = ', crc, sep='')
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_config',
+                  verbosity=2, exit=False)
+    #_dump()
