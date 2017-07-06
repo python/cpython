@@ -334,6 +334,9 @@ labels
 # Python/import.c
 PyImport_Inittab
 
+# Python/pylifecycle.c
+_TARGET_LOCALES
+
 
 #---------------------------------
 # initialized (PyObject)
