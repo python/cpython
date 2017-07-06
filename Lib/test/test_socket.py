@@ -47,9 +47,8 @@ except ImportError:
     _socket = None
 
 def get_cid():
-    import struct
-    import fcntl
-
+    if fcntl is None:
+        return None
     if not os.path.exists("/dev/vsock"):
         return None
     try:
@@ -413,6 +412,8 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
         self.cli = None
         ThreadableTest.clientTearDown(self)
 
+@unittest.skipIf(fcntl is None, "need fcntl")
+@unittest.skipUnless(thread, 'Threading required for this test.')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
 @unittest.skipUnless(get_cid() != 2,
@@ -1933,7 +1934,8 @@ class RDSTest(ThreadedRDSSocketTest):
         r, w, x = select.select([self.serv], [], [], 3.0)
         self.assertIn(self.serv, r)
 
-
+ 
+@unittest.skipIf(fcntl is None, "need fcntl")
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
 class BasicVSOCKTest(unittest.TestCase):
