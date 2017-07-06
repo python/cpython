@@ -10,8 +10,10 @@ import subprocess
 
 VERBOSITY = 2
 
-ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
-GLOBALS_FILE = os.path.join(ROOT_DIR, 'globals.txt')
+C_GLOBALS_DIR = os.path.abspath(os.path.dirname(__file__))
+TOOLS_DIR = os.path.dirname(C_GLOBALS_DIR)
+ROOT_DIR = os.path.dirname(TOOLS_DIR)
+GLOBALS_FILE = os.path.join(C_GLOBALS_DIR, 'globals.txt')
 
 SOURCE_DIRS = ['Include', 'Objects', 'Modules', 'Parser', 'Python']
 
