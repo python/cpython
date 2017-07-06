@@ -36,7 +36,8 @@ extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
-Py_LOCAL_INLINE(PyObject *) call_function(PyObject ***, Py_ssize_t, PyObject *);
+Py_LOCAL_INLINE(PyObject *) call_function(PyObject ***, Py_ssize_t,
+                                          PyObject *);
 static PyObject * do_call_core(PyObject *, PyObject *, PyObject *);
 
 #ifdef LLTRACE
@@ -52,13 +53,15 @@ static int call_trace_protected(Py_tracefunc, PyObject *,
 static void call_exc_trace(Py_tracefunc, PyObject *,
                            PyThreadState *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
-                                 PyThreadState *, PyFrameObject *, int *, int *, int *);
+                                 PyThreadState *, PyFrameObject *,
+                                 int *, int *, int *);
 static void maybe_dtrace_line(PyFrameObject *, int *, int *, int *);
 static void dtrace_function_entry(PyFrameObject *);
 static void dtrace_function_return(PyFrameObject *);
 
 static PyObject * cmp_outcome(int, PyObject *, PyObject *);
-static PyObject * import_name(PyFrameObject *, PyObject *, PyObject *, PyObject *);
+static PyObject * import_name(PyFrameObject *, PyObject *, PyObject *,
+                              PyObject *);
 static PyObject * import_from(PyObject *, PyObject *);
 static int import_all_from(PyObject *, PyObject *);
 static void format_exc_check_arg(PyObject *, const char *, PyObject *);
@@ -131,7 +134,10 @@ static long dxp[256];
     } while (0)
 
 #define UNSIGNAL_ASYNC_EXC() \
-    do { _PyRuntime.ceval.pending.async_exc = 0; COMPUTE_EVAL_BREAKER(); } while (0)
+    do { \
+        _PyRuntime.ceval.pending.async_exc = 0; \
+        COMPUTE_EVAL_BREAKER(); \
+    } while (0)
 
 
 #ifdef HAVE_ERRNO_H
@@ -370,8 +376,11 @@ Py_MakePendingCalls(void)
     }
 
     /* only service pending calls on main thread */
-    if (_PyRuntime.ceval.pending.main_thread && PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
+    if (_PyRuntime.ceval.pending.main_thread &&
+        PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
+    {
         return 0;
+    }
     /* don't perform recursive pending calls */
     if (busy)
         return 0;
@@ -636,7 +645,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
 #define DISPATCH() \
     { \
-        if (!_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {      \
+        if (!_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) { \
                     FAST_DISPATCH(); \
         } \
         continue; \
@@ -684,7 +693,8 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET()  (sizeof(_Py_CODEUNIT) * (int)(next_instr - first_instr))
+#define INSTR_OFFSET()  \
+    (sizeof(_Py_CODEUNIT) * (int)(next_instr - first_instr))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
@@ -954,11 +964,15 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 */
                 goto fast_next_opcode;
             }
-            if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.pending.calls_to_do)) {
+            if (_Py_atomic_load_relaxed(
+                        &_PyRuntime.ceval.pending.calls_to_do))
+            {
                 if (Py_MakePendingCalls() < 0)
                     goto error;
             }
-            if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.gil_drop_request)) {
+            if (_Py_atomic_load_relaxed(
+                        &_PyRuntime.ceval.gil_drop_request))
+            {
                 /* Give another thread a chance */
                 if (PyThreadState_Swap(NULL) != tstate)
                     Py_FatalError("ceval: tstate mix-up");
@@ -969,7 +983,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 take_gil(tstate);
 
                 /* Check if we should make a quick exit. */
-                if (_Py_IS_FINALIZING() && !_Py_CURRENTLY_FINALIZING(tstate)) {
+                if (_Py_IS_FINALIZING() &&
+                    !_Py_CURRENTLY_FINALIZING(tstate))
+                {
                     drop_gil(tstate);
                     PyThread_exit_thread();
                 }

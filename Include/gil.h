@@ -9,7 +9,8 @@
 #endif
 
 
-/* Enable if you want to force the switching of threads at least every `interval` */
+/* Enable if you want to force the switching of threads at least
+   every `interval`. */
 #undef FORCE_SWITCHING
 #define FORCE_SWITCHING
 
@@ -17,18 +18,18 @@
 struct _gil_globals {
     /* microseconds (the Python API uses seconds, though) */
     unsigned long interval;
-    /* Last PyThreadState holding / having held the GIL. This helps us know
-       whether anyone else was scheduled after we dropped the GIL. */
+    /* Last PyThreadState holding / having held the GIL. This helps us
+       know whether anyone else was scheduled after we dropped the GIL. */
     _Py_atomic_address last_holder;
-    /* Whether the GIL is already taken (-1 if uninitialized). This is atomic
-       because it can be read without any lock taken in ceval.c. */
+    /* Whether the GIL is already taken (-1 if uninitialized). This is
+       atomic because it can be read without any lock taken in ceval.c. */
     _Py_atomic_int locked;
     /* Number of GIL switches since the beginning. */
     unsigned long switch_number;
 #ifdef WITH_THREAD
-    /* This condition variable allows one or several threads to wait until
-       the GIL is released. In addition, the mutex also protects the above
-       variables. */
+    /* This condition variable allows one or several threads to wait
+       until the GIL is released. In addition, the mutex also protects
+       the above variables. */
     PyCOND_T cond;
     PyMUTEX_T mutex;
 #ifdef FORCE_SWITCHING

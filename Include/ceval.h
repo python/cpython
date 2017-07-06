@@ -17,7 +17,8 @@ struct _pending_calls {
     PyThread_type_lock lock;
     /* Request for running pending calls. */
     _Py_atomic_int calls_to_do;
-    /* Request for looking at the `async_exc` field of the current thread state.
+    /* Request for looking at the `async_exc` field of the current
+       thread state.
        Guarded by the GIL. */
     int async_exc;
 #define NPENDINGCALLS 32
@@ -47,15 +48,15 @@ struct _pending_calls {
 struct _ceval_globals {
     int recursion_limit;
     int check_recursion_limit;
-    /* Records whether tracing is on for any thread.  Counts the number of
-       threads for which tstate->c_tracefunc is non-NULL, so if the value
-       is 0, we know we don't have to check this thread's c_tracefunc.
-       This speeds up the if statement in PyEval_EvalFrameEx() after
-       fast_next_opcode*/
+    /* Records whether tracing is on for any thread.  Counts the number
+       of threads for which tstate->c_tracefunc is non-NULL, so if the
+       value is 0, we know we don't have to check this thread's
+       c_tracefunc.  This speeds up the if statement in
+       PyEval_EvalFrameEx() after fast_next_opcode. */
     int tracing_possible;
 #ifdef Py_BUILD_CORE
-    /* This single variable consolidates all requests to break out of the fast path
-       in the eval loop. */
+    /* This single variable consolidates all requests to break out of
+       the fast path in the eval loop. */
     _Py_atomic_int eval_breaker;
 #ifdef WITH_THREAD
     /* Request for dropping the GIL */

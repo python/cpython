@@ -234,12 +234,11 @@ struct _pymem_globals {
     /* Array of objects used to track chunks of memory (arenas). */
     struct arena_object* arenas;
     /* The head of the singly-linked, NULL-terminated list of available
-     * arena_objects.
-     */
+       arena_objects. */
     struct arena_object* unused_arena_objects;
-    /* The head of the doubly-linked, NULL-terminated at each end, list of
-     * arena_objects associated with arenas that have pools available.
-     */
+    /* The head of the doubly-linked, NULL-terminated at each end,
+       list of arena_objects associated with arenas that have pools
+       available. */
     struct arena_object* usable_arenas;
     /* Number of slots currently allocated in the `arenas` vector. */
     uint maxarenas;

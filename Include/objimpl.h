@@ -248,8 +248,8 @@ typedef union _gc_head {
     double dummy;  /* force worst-case alignment */
 } PyGC_Head;
 
-/* If we change this, we need to change the default value in the signature of
-   gc.collect. */
+/* If we change this, we need to change the default value in the
+   signature of gc.collect. */
 #define NUM_GENERATIONS 3
 
 /*
@@ -348,8 +348,7 @@ struct gc_generation_stats {
 #ifdef Py_BUILD_CORE
 struct _gc_globals {
     /* List of objects that still need to be cleaned up, singly linked
-     * via their gc headers' gc_prev pointers.
-     */
+     * via their gc headers' gc_prev pointers.  */
     PyObject *trash_delete_later;
     /* Current call-stack depth of tp_dealloc calls. */
     int trash_delete_nesting;
@@ -366,15 +365,16 @@ struct _gc_globals {
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
-    /* This is the number of objects that survived the last full collection. It
-       approximates the number of long lived objects tracked by the GC.
+    /* This is the number of objects that survived the last full
+       collection. It approximates the number of long lived objects
+       tracked by the GC.
     
-       (by "full collection", we mean a collection of the oldest generation).
-    */
+       (by "full collection", we mean a collection of the oldest
+       generation). */
     Py_ssize_t long_lived_total;
-    /* This is the number of objects that survived all "non-full" collections,
-       and are awaiting to undergo a full collection for the first time.
-    */
+    /* This is the number of objects that survived all "non-full"
+       collections, and are awaiting to undergo a full collection for
+       the first time. */
     Py_ssize_t long_lived_pending;
 };
 
