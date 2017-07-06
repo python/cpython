@@ -60,7 +60,7 @@ PCbuild/*.VC.opendb
 PCbuild/.vs/
 PCbuild/amd64/
 PCbuild/obj/
-PCBuild/win32/
+PCbuild/win32/
 .purify
 Parser/pgen
 Parser/pgen.exe
