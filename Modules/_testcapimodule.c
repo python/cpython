@@ -3857,6 +3857,15 @@ get_recursion_depth(PyObject *self, PyObject *args)
     return PyLong_FromLong(tstate->recursion_depth - 1);
 }
 
+static PyObject*
+stack_pointer(PyObject *self, PyObject *args)
+{
+    int v = 5;
+    Py_uintptr_t sp = (Py_uintptr_t)&v;
+
+    return PyLong_FromUnsignedLongLong(sp);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -4051,6 +4060,7 @@ static PyMethodDef TestMethods[] = {
     {"PyTime_AsMilliseconds", test_PyTime_AsMilliseconds, METH_VARARGS},
     {"PyTime_AsMicroseconds", test_PyTime_AsMicroseconds, METH_VARARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
+    {"stack_pointer", stack_pointer, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
