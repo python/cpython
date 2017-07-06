@@ -355,6 +355,8 @@ AC_SUBST(FRAMEWORKPYTHONW)
 AC_SUBST(FRAMEWORKUNIXTOOLSPREFIX)
 AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 
+AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
+
 ##AC_ARG_WITH(dyld,
 ##            AS_HELP_STRING([--with-dyld],
 ##                           [Use (OpenStep|Rhapsody) dynamic linker]))
@@ -3324,6 +3326,40 @@ then
     ABIFLAGS="${ABIFLAGS}m"
 fi
 AC_MSG_RESULT($with_pymalloc)
+
+# Check for --with-c-locale-coercion
+AC_MSG_CHECKING(for --with-c-locale-coercion)
+AC_ARG_WITH(c-locale-coercion,
+            AS_HELP_STRING([--with(out)-c-locale-coercion],
+              [disable/enable C locale coercion to a UTF-8 based locale]))
+
+if test -z "$with_c_locale_coercion"
+then
+    with_c_locale_coercion="yes"
+fi
+if test "$with_c_locale_coercion" != "no"
+then
+    AC_DEFINE(PY_COERCE_C_LOCALE, 1,
+      [Define if you want to coerce the C locale to a UTF-8 based locale])
+fi
+AC_MSG_RESULT($with_c_locale_coercion)
+
+# Check for --with-c-locale-warning
+AC_MSG_CHECKING(for --with-c-locale-warning)
+AC_ARG_WITH(c-locale-warning,
+            AS_HELP_STRING([--with(out)-c-locale-warning],
+              [disable/enable locale compatibility warning in the C locale]))
+
+if test -z "$with_c_locale_warning"
+then
+    with_c_locale_warning="yes"
+fi
+if test "$with_c_locale_warning" != "no"
+then
+    AC_DEFINE(PY_WARN_ON_C_LOCALE, 1,
+      [Define to emit a locale compatibility warning in the C locale])
+fi
+AC_MSG_RESULT($with_c_locale_warning)
 
 # Check for Valgrind support
 AC_MSG_CHECKING([for --with-valgrind])

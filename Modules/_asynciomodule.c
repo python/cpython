@@ -306,6 +306,8 @@ future_add_done_callback(FutureObj *fut, PyObject *arg)
 static PyObject *
 future_cancel(FutureObj *fut)
 {
+    fut->fut_log_tb = 0;
+
     if (fut->fut_state != STATE_PENDING) {
         Py_RETURN_FALSE;
     }
@@ -530,9 +532,16 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
             goto fail;
         }
         if (ret == 0) {
-            Py_INCREF(item);
-            PyList_SET_ITEM(newlist, j, item);
-            j++;
+            if (j < len) {
+                Py_INCREF(item);
+                PyList_SET_ITEM(newlist, j, item);
+                j++;
+            }
+            else {
+                if (PyList_Append(newlist, item)) {
+                    goto fail;
+                }
+            }
         }
     }
 
@@ -637,6 +646,17 @@ FutureObj_get_log_traceback(FutureObj *fut)
     else {
         Py_RETURN_FALSE;
     }
+}
+
+static int
+FutureObj_set_log_traceback(FutureObj *fut, PyObject *val)
+{
+    int is_true = PyObject_IsTrue(val);
+    if (is_true < 0) {
+        return -1;
+    }
+    fut->fut_log_tb = is_true;
+    return 0;
 }
 
 static PyObject *
@@ -883,7 +903,8 @@ static PyMethodDef FutureType_methods[] = {
     {"_callbacks", (getter)FutureObj_get_callbacks, NULL, NULL},              \
     {"_result", (getter)FutureObj_get_result, NULL, NULL},                    \
     {"_exception", (getter)FutureObj_get_exception, NULL, NULL},              \
-    {"_log_traceback", (getter)FutureObj_get_log_traceback, NULL, NULL},      \
+    {"_log_traceback", (getter)FutureObj_get_log_traceback,                   \
+                       (setter)FutureObj_set_log_traceback, NULL},            \
     {"_source_traceback", (getter)FutureObj_get_source_traceback, NULL, NULL},
 
 static PyGetSetDef FutureType_getsetlist[] = {
@@ -1569,6 +1590,8 @@ static PyObject *
 _asyncio_Task_cancel_impl(TaskObj *self)
 /*[clinic end generated code: output=6bfc0479da9d5757 input=13f9bf496695cb52]*/
 {
+    self->task_log_tb = 0;
+
     if (self->task_state != STATE_PENDING) {
         Py_RETURN_FALSE;
     }

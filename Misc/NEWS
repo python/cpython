@@ -10,6 +10,29 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30814: Fixed a race condition when import a submodule from a package.
+
+- bpo-30736: The internal unicodedata database has been upgraded to Unicode
+  10.0.
+
+- bpo-30604:  Move co_extra_freefuncs from per-thread to per-interpreter to
+  avoid crashes.
+
+- bpo-30597: ``print`` now shows expected input in custom error message when
+  used as a Python 2 statement. Patch by Sanyam Khurana.
+
+- bpo-30682: Removed a too-strict assertion that failed for certain f-strings,
+  such as eval("f'\\\n'") and eval("f'\\\r'").
+
+- bpo-30501: The compiler now produces more optimal code for complex condition
+  expressions in the "if", "while" and "assert" statement, the "if" expression,
+  and generator expressions and comprehensions.
+
+- bpo-28180: Implement PEP 538 (legacy C locale coercion). This means that when
+  a suitable coercion target locale is available, both the core interpreter and
+  locale-aware C extensions will assume the use of UTF-8 as the default text
+  encoding, rather than ASCII.
+
 - bpo-30486: Allows setting cell values for __closure__. Patch by Lisa Roach.
 
 - bpo-30537: itertools.islice now accepts integer-like objects (having
@@ -132,6 +155,9 @@ Core and Builtins
 - bpo-29546: Set the 'path' and 'name' attribute on ImportError for ``from ... import ...``.
 
 - bpo-29546: Improve from-import error message with location
+
+- bpo-29478: If max_line_length=None is specified while using the Compat32 policy,
+  it is no longer ignored.  Patch by Mircea Cosbuc.
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
@@ -350,17 +376,92 @@ Extension Modules
 Library
 -------
 
+- bpo-30746: Prohibited the '=' character in environment variable names in
+  ``os.putenv()`` and ``os.spawn*()``.
+
+- bpo-30664: The description of a unittest subtest now preserves the order of
+  keyword arguments of TestCase.subTest().
+
+- [Security] bpo-30730: Prevent environment variables injection in subprocess on
+  Windows.  Prevent passing other environment variables and command arguments.
+
+- bpo-21071: struct.Struct.format type is now :class:`str` instead of
+  :class:`bytes`.
+
+- bpo-29212: Fix concurrent.futures.thread.ThreadPoolExecutor threads to have
+  a non repr() based thread name by default when no thread_name_prefix is
+  supplied.  They will now identify themselves as "ThreadPoolExecutor-y_n".
+
+- [Security] bpo-30694: Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes
+  of multiple security vulnerabilities including: CVE-2017-9233 (External
+  entity infinite loop DoS), CVE-2016-9063 (Integer overflow, re-fix),
+  CVE-2016-0718 (Fix regression bugs from 2.2.0's fix to CVE-2016-0718)
+  and CVE-2012-0876 (Counter hash flooding with SipHash).
+  Note: the CVE-2016-5300 (Use os-specific entropy sources like getrandom)
+  doesn't impact Python, since Python already gets entropy from the OS to set
+  the expat secret using ``XML_SetHashSalt()``.
+
+- bpo-29755: Fixed the lgettext() family of functions in the gettext module.
+  They now always return bytes.
+
+- [Security] bpo-30500: Fix urllib.parse.splithost() to correctly parse
+  fragments. For example, ``splithost('//127.0.0.1#@evil.com/')`` now
+  correctly returns the ``127.0.0.1`` host, instead of treating ``@evil.com``
+  as the host in an authentification (``login@host``).
+
+- bpo-30616: Functional API of enum allows to create empty enums.
+  Patched by Dong-hee Na
+
+- bpo-30038: Fix race condition between signal delivery and wakeup file
+  descriptor.  Patch by Nathaniel Smith.
+
+- bpo-23894: lib2to3 now recognizes ``rb'...'`` and ``f'...'`` strings.
+
+- [Security] bpo-29591: Update expat copy from 2.1.1 to 2.2.0 to get fixes
+  of CVE-2016-0718 and CVE-2016-4472. See
+  https://sourceforge.net/p/expat/bugs/537/ for more information.
+
+- bpo-24744: pkgutil.walk_packages function now raises ValueError if *path*
+  is a string. Patch by Sanyam Khurana.
+
+- bpo-24484: Avoid race condition in multiprocessing cleanup.
+
+- bpo-30589: Fix multiprocessing.Process.exitcode to return the opposite
+  of the signal number when the process is killed by a signal (instead
+  of 255) when using the "forkserver" method.
+
+- bpo-28994: The traceback no longer displayed for SystemExit raised in
+  a callback registered by atexit.
+
+- bpo-30508: Don't log exceptions if Task/Future "cancel()" method was
+  called.
+
+- bpo-30645: Fix path calculation in `imp.load_package()`, fixing it for
+  cases when a package is only shipped with bytecodes. Patch by
+  Alexandru Ardelean.
+
+- bpo-11822: The dis.dis() function now is able to disassemble nested
+  code objects.
+
+- bpo-30624: selectors does not take KeyboardInterrupt and SystemExit into
+  account, leaving a fd in a bad state in case of error. Patch by Giampaolo
+  Rodola'.
+
+- bpo-30595: multiprocessing.Queue.get() with a timeout now polls its reader in
+  non-blocking mode if it succeeded to aquire the lock but the acquire took
+  longer than the timeout.
+
+- bpo-28556: Updates to typing module: Add generic AsyncContextManager, add
+  support for ContextManager on all versions. Original PRs by Jelle Zijlstra
+  and Ivan Levkivskyi
+
 - bpo-30605: re.compile() no longer raises a BytesWarning when compiling a
   bytes instance with misplaced inline modifier.  Patch by Roy Williams.
 
-- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl 
+- bpo-29870: Fix ssl sockets leaks when connection is aborted in asyncio/ssl
   implementation. Patch by Michaël Sghaïer.
 
 - bpo-29743: Closing transport during handshake process leaks open socket.
-  Patch by Nikolay Kim
-
-- bpo-29406: asyncio SSL contexts leak sockets after calling close with
-  certain servers.
   Patch by Nikolay Kim
 
 - bpo-27585: Fix waiter cancellation in asyncio.Lock.
@@ -403,6 +504,10 @@ Library
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
+
+- bpo-30436: importlib.find_spec() raises ModuleNotFoundError instead of
+  AttributeError if the specified parent module is not a package
+  (i.e. lacks a __path__ attribute).
 
 - bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
   *spawn* and *forkserver* start methods.
@@ -1066,8 +1171,46 @@ Library
   sys.getrecursionlimit() times, to protect against objects which create a new
   object on every attribute access.
 
+- bpo-30177: path.resolve(strict=False) no longer cuts the path after the first
+  element not present in the filesystem.  Patch by Antoine Pietri.
+
+IDLE
+----
+
+- bpo-15786: Fix several problems with IDLE's autocompletion box.
+  The following should now work: clicking on selection box items;
+  using the scrollbar; selecting an item by hitting Return.
+  Hangs on MacOSX should no longer happen. Patch by Louie Lu.
+
+- bpo-25514: Add doc subsubsection about IDLE failure to start.
+  Popup no-connection message directs users to this section.
+
+- bpo-30642: Fix reference leaks in IDLE tests.
+  Patches by Louie Lu and Terry Jan Reedy.
+
+- bpo-30495: Add docstrings for textview.py and use PEP8 names.
+  Patches by Cheryl Sabella and Terry Jan Reedy.
+
+- bpo-30290: Help-about: use pep8 names and add tests.
+  Increase coverage to 100%.
+  Patches by Louie Lu, Cheryl Sabella, and Terry Jan Reedy.
+
+- bpo-30303: Add _utest option to textview; add new tests.
+  Increase coverage to 100%.
+  Patches by Louie Lu and Terry Jan Reedy.
+
+- Issue #29071: IDLE colors f-string prefixes (but not invalid ur prefixes).
+
+- Issue #28572: Add 10% to coverage of IDLE's test_configdialog.
+  Update and augment description of the configuration system.
+
 Windows
 -------
+
+- bpo-30450: The build process on Windows no longer depends on Subversion,
+  instead pulling external code from GitHub via a Python script.  If Python 3.6
+  is not found on the system (via ``py -3.6``), NuGet is used to download a
+  copy of 32-bit Python.
 
 - bpo-29579: Removes readme.txt from the installer.
 
@@ -1103,6 +1246,10 @@ Windows
 
 C API
 -----
+
+- bpo-30708: PyUnicode_AsWideCharString() now raises a ValueError if the
+  second argument is NULL and the wchar_t\* string contains null
+  characters.
 
 - bpo-16500: Deprecate PyOS_AfterFork() and add PyOS_BeforeFork(),
   PyOS_AfterFork_Parent() and PyOS_AfterFork_Child().
@@ -1151,6 +1298,8 @@ C API
 Documentation
 -------------
 
+- bpo-30176: Add missing attribute related constants in curses documentation.
+
 - Issue #30052: the link targets for :func:`bytes` and
   :func:`bytearray` are now their respective type definitions, rather
   than the corresponding builtin function entries. Use :ref:`bytes <func-bytes>`
@@ -1185,6 +1334,9 @@ Documentation
 
 Build
 -----
+
+- bpo-30687: Locate msbuild.exe on Windows when building rather than
+  vcvarsall.bat
 
 - bpo-20210: Support the *disabled* marker in Setup files. Extension modules
   listed after this marker are not built at all, neither by the Makefile nor by

@@ -339,13 +339,6 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #  include "addrinfo.h"
 #endif
 
-#ifndef HAVE_INET_PTON
-#if !defined(NTDDI_VERSION) || (NTDDI_VERSION < NTDDI_LONGHORN)
-int inet_pton(int af, const char *src, void *dst);
-const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
-#endif
-#endif
-
 #ifdef __APPLE__
 /* On OS X, getaddrinfo returns no error indication of lookup
    failure, so we must use the emulation instead of the libinfo
@@ -514,11 +507,13 @@ select_error(void)
 #  define SET_SOCK_ERROR(err) WSASetLastError(err)
 #  define SOCK_TIMEOUT_ERR WSAEWOULDBLOCK
 #  define SOCK_INPROGRESS_ERR WSAEWOULDBLOCK
+#  define SUPPRESS_DEPRECATED_CALL __pragma(warning(suppress: 4996))
 #else
 #  define GET_SOCK_ERROR errno
 #  define SET_SOCK_ERROR(err) do { errno = err; } while (0)
 #  define SOCK_TIMEOUT_ERR EWOULDBLOCK
 #  define SOCK_INPROGRESS_ERR EINPROGRESS
+#  define SUPPRESS_DEPRECATED_CALL
 #endif
 
 
@@ -2701,7 +2696,9 @@ sock_close(PySocketSockObject *s)
         Py_BEGIN_ALLOW_THREADS
         res = SOCKETCLOSE(fd);
         Py_END_ALLOW_THREADS
-        if (res < 0) {
+        /* bpo-30319: The peer can already have closed the connection.
+           Python ignores ECONNRESET on close(). */
+        if (res < 0 && errno != ECONNRESET) {
             return s->errorhandler();
         }
     }
@@ -4397,7 +4394,7 @@ SIO_LOOPBACK_FAST_PATH: 'option' is a boolean value, and is disabled by default"
 static PyObject*
 sock_share(PySocketSockObject *s, PyObject *arg)
 {
-    WSAPROTOCOL_INFO info;
+    WSAPROTOCOL_INFOW info;
     DWORD processId;
     int result;
 
@@ -4405,7 +4402,7 @@ sock_share(PySocketSockObject *s, PyObject *arg)
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    result = WSADuplicateSocket(s->sock_fd, processId, &info);
+    result = WSADuplicateSocketW(s->sock_fd, processId, &info);
     Py_END_ALLOW_THREADS
     if (result == SOCKET_ERROR)
         return set_error();
@@ -4636,7 +4633,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 #ifdef MS_WINDOWS
         /* recreate a socket that was duplicated */
         if (PyBytes_Check(fdobj)) {
-            WSAPROTOCOL_INFO info;
+            WSAPROTOCOL_INFOW info;
             if (PyBytes_GET_SIZE(fdobj) != sizeof(info)) {
                 PyErr_Format(PyExc_ValueError,
                     "socket descriptor string has wrong size, "
@@ -4645,7 +4642,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
             }
             memcpy(&info, PyBytes_AS_STRING(fdobj), sizeof(info));
             Py_BEGIN_ALLOW_THREADS
-            fd = WSASocket(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
+            fd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                      FROM_PROTOCOL_INFO, &info, 0, WSA_FLAG_OVERLAPPED);
             Py_END_ALLOW_THREADS
             if (fd == INVALID_SOCKET) {
@@ -4678,7 +4675,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 
         Py_BEGIN_ALLOW_THREADS
         if (support_wsa_no_inherit) {
-            fd = WSASocket(family, type, proto,
+            fd = WSASocketW(family, type, proto,
                            NULL, 0,
                            WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
             if (fd == INVALID_SOCKET) {
@@ -5116,6 +5113,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_acquire_lock(netdb_lock, 1);
 #endif
+    SUPPRESS_DEPRECATED_CALL
     h = gethostbyname(name);
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
@@ -5214,6 +5212,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_acquire_lock(netdb_lock, 1);
 #endif
+    SUPPRESS_DEPRECATED_CALL
     h = gethostbyaddr(ap, al, af);
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
@@ -5336,7 +5335,7 @@ socket_dup(PyObject *self, PyObject *fdobj)
     SOCKET_T fd, newfd;
     PyObject *newfdobj;
 #ifdef MS_WINDOWS
-    WSAPROTOCOL_INFO info;
+    WSAPROTOCOL_INFOW info;
 #endif
 
     fd = PyLong_AsSocket_t(fdobj);
@@ -5344,10 +5343,10 @@ socket_dup(PyObject *self, PyObject *fdobj)
         return NULL;
 
 #ifdef MS_WINDOWS
-    if (WSADuplicateSocket(fd, GetCurrentProcessId(), &info))
+    if (WSADuplicateSocketW(fd, GetCurrentProcessId(), &info))
         return set_error();
 
-    newfd = WSASocket(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
+    newfd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                       FROM_PROTOCOL_INFO,
                       &info, 0, WSA_FLAG_OVERLAPPED);
     if (newfd == INVALID_SOCKET)
@@ -5666,6 +5665,7 @@ socket_inet_aton(PyObject *self, PyObject *args)
         packed_addr = INADDR_BROADCAST;
     } else {
 
+        SUPPRESS_DEPRECATED_CALL
         packed_addr = inet_addr(ip_addr);
 
         if (packed_addr == INADDR_NONE) {               /* invalid address */
@@ -5709,20 +5709,17 @@ socket_inet_ntoa(PyObject *self, PyObject *args)
     memcpy(&packed_addr, packed_ip.buf, packed_ip.len);
     PyBuffer_Release(&packed_ip);
 
+    SUPPRESS_DEPRECATED_CALL
     return PyUnicode_FromString(inet_ntoa(packed_addr));
 }
 
-#if defined(HAVE_INET_PTON) || defined(MS_WINDOWS)
+#ifdef HAVE_INET_PTON
 
 PyDoc_STRVAR(inet_pton_doc,
 "inet_pton(af, ip) -> packed IP address string\n\
 \n\
 Convert an IP address from string format to a packed string suitable\n\
 for use with low-level network functions.");
-
-#endif
-
-#ifdef HAVE_INET_PTON
 
 static PyObject *
 socket_inet_pton(PyObject *self, PyObject *args)
@@ -5768,52 +5765,12 @@ socket_inet_pton(PyObject *self, PyObject *args)
         return NULL;
     }
 }
-#elif defined(MS_WINDOWS)
-
-static PyObject *
-socket_inet_pton(PyObject *self, PyObject *args)
-{
-    int af;
-    char* ip;
-    struct sockaddr_in6 addr;
-    INT ret, size;
-
-    if (!PyArg_ParseTuple(args, "is:inet_pton", &af, &ip)) {
-        return NULL;
-    }
-
-    size = sizeof(addr);
-    ret = WSAStringToAddressA(ip, af, NULL, (LPSOCKADDR)&addr, &size);
-
-    if (ret) {
-        PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
-        return NULL;
-    } else if(af == AF_INET) {
-        struct sockaddr_in *addr4 = (struct sockaddr_in*)&addr;
-        return PyBytes_FromStringAndSize((const char *)&(addr4->sin_addr),
-                                         sizeof(addr4->sin_addr));
-    } else if (af == AF_INET6) {
-        return PyBytes_FromStringAndSize((const char *)&(addr.sin6_addr),
-                                          sizeof(addr.sin6_addr));
-    } else {
-        PyErr_SetString(PyExc_OSError, "unknown address family");
-        return NULL;
-    }
-}
-
-#endif
-
-#if defined(HAVE_INET_PTON) || defined(MS_WINDOWS)
 
 PyDoc_STRVAR(inet_ntop_doc,
 "inet_ntop(af, packed_ip) -> string formatted IP address\n\
 \n\
 Convert a packed IP address of the given family to string format.");
 
-#endif
-
-
-#ifdef HAVE_INET_PTON
 static PyObject *
 socket_inet_ntop(PyObject *self, PyObject *args)
 {
@@ -5863,73 +5820,6 @@ socket_inet_ntop(PyObject *self, PyObject *args)
         return NULL;
     } else {
         return PyUnicode_FromString(retval);
-    }
-}
-
-#elif defined(MS_WINDOWS)
-
-static PyObject *
-socket_inet_ntop(PyObject *self, PyObject *args)
-{
-    int af;
-    Py_buffer packed_ip;
-    struct sockaddr_in6 addr;
-    DWORD addrlen, ret, retlen;
-#ifdef ENABLE_IPV6
-    char ip[Py_MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
-#else
-    char ip[INET_ADDRSTRLEN + 1];
-#endif
-
-    /* Guarantee NUL-termination for PyUnicode_FromString() below */
-    memset((void *) &ip[0], '\0', sizeof(ip));
-
-    if (!PyArg_ParseTuple(args, "iy*:inet_ntop", &af, &packed_ip)) {
-        return NULL;
-    }
-
-    if (af == AF_INET) {
-        struct sockaddr_in * addr4 = (struct sockaddr_in *)&addr;
-
-        if (packed_ip.len != sizeof(struct in_addr)) {
-            PyErr_SetString(PyExc_ValueError,
-                "invalid length of packed IP address string");
-            PyBuffer_Release(&packed_ip);
-            return NULL;
-        }
-        memset(addr4, 0, sizeof(struct sockaddr_in));
-        addr4->sin_family = AF_INET;
-        memcpy(&(addr4->sin_addr), packed_ip.buf, sizeof(addr4->sin_addr));
-        addrlen = sizeof(struct sockaddr_in);
-    } else if (af == AF_INET6) {
-        if (packed_ip.len != sizeof(struct in6_addr)) {
-            PyErr_SetString(PyExc_ValueError,
-                "invalid length of packed IP address string");
-            PyBuffer_Release(&packed_ip);
-            return NULL;
-        }
-
-        memset(&addr, 0, sizeof(addr));
-        addr.sin6_family = AF_INET6;
-        memcpy(&(addr.sin6_addr), packed_ip.buf, sizeof(addr.sin6_addr));
-        addrlen = sizeof(addr);
-    } else {
-        PyErr_Format(PyExc_ValueError,
-            "unknown address family %d", af);
-        PyBuffer_Release(&packed_ip);
-        return NULL;
-    }
-    PyBuffer_Release(&packed_ip);
-
-    retlen = sizeof(ip);
-    ret = WSAAddressToStringA((struct sockaddr*)&addr, addrlen, NULL,
-                              ip, &retlen);
-
-    if (ret) {
-        PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
-        return NULL;
-    } else {
-        return PyUnicode_FromString(ip);
     }
 }
 
@@ -6394,7 +6284,7 @@ static PyMethodDef socket_methods[] = {
      METH_VARARGS, inet_aton_doc},
     {"inet_ntoa",               socket_inet_ntoa,
      METH_VARARGS, inet_ntoa_doc},
-#if defined(HAVE_INET_PTON) || defined(MS_WINDOWS)
+#ifdef HAVE_INET_PTON
     {"inet_pton",               socket_inet_pton,
      METH_VARARGS, inet_pton_doc},
     {"inet_ntop",               socket_inet_ntop,
@@ -7713,46 +7603,3 @@ PyInit__socket(void)
 #endif
     return m;
 }
-
-
-#ifndef HAVE_INET_PTON
-#if !defined(NTDDI_VERSION) || (NTDDI_VERSION < NTDDI_LONGHORN)
-
-/* Simplistic emulation code for inet_pton that only works for IPv4 */
-/* These are not exposed because they do not set errno properly */
-
-int
-inet_pton(int af, const char *src, void *dst)
-{
-    if (af == AF_INET) {
-#if (SIZEOF_INT != 4)
-#error "Not sure if in_addr_t exists and int is not 32-bits."
-#endif
-        unsigned int packed_addr;
-        packed_addr = inet_addr(src);
-        if (packed_addr == INADDR_NONE)
-            return 0;
-        memcpy(dst, &packed_addr, 4);
-        return 1;
-    }
-    /* Should set errno to EAFNOSUPPORT */
-    return -1;
-}
-
-const char *
-inet_ntop(int af, const void *src, char *dst, socklen_t size)
-{
-    if (af == AF_INET) {
-        struct in_addr packed_addr;
-        if (size < 16)
-            /* Should set errno to ENOSPC. */
-            return NULL;
-        memcpy(&packed_addr, src, sizeof(packed_addr));
-        return strncpy(dst, inet_ntoa(packed_addr), size);
-    }
-    /* Should set errno to EAFNOSUPPORT */
-    return NULL;
-}
-
-#endif
-#endif

@@ -77,15 +77,11 @@ static PyObject *
 unicode_center_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_center(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_center(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
-
-    if (!_PyArg_NoStackKeywords("center", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "n|O&:center",
         &width, convert_uc, &fillchar)) {
@@ -113,7 +109,7 @@ PyDoc_STRVAR(unicode_encode__doc__,
 "    codecs.register_error that can handle UnicodeEncodeErrors.");
 
 #define UNICODE_ENCODE_METHODDEF    \
-    {"encode", (PyCFunction)unicode_encode, METH_FASTCALL, unicode_encode__doc__},
+    {"encode", (PyCFunction)unicode_encode, METH_FASTCALL|METH_KEYWORDS, unicode_encode__doc__},
 
 static PyObject *
 unicode_encode_impl(PyObject *self, const char *encoding, const char *errors);
@@ -146,7 +142,7 @@ PyDoc_STRVAR(unicode_expandtabs__doc__,
 "If tabsize is not given, a tab size of 8 characters is assumed.");
 
 #define UNICODE_EXPANDTABS_METHODDEF    \
-    {"expandtabs", (PyCFunction)unicode_expandtabs, METH_FASTCALL, unicode_expandtabs__doc__},
+    {"expandtabs", (PyCFunction)unicode_expandtabs, METH_FASTCALL|METH_KEYWORDS, unicode_expandtabs__doc__},
 
 static PyObject *
 unicode_expandtabs_impl(PyObject *self, int tabsize);
@@ -429,15 +425,11 @@ static PyObject *
 unicode_ljust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_ljust(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_ljust(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
-
-    if (!_PyArg_NoStackKeywords("ljust", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "n|O&:ljust",
         &width, convert_uc, &fillchar)) {
@@ -482,14 +474,10 @@ static PyObject *
 unicode_strip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_strip(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_strip(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *chars = Py_None;
-
-    if (!_PyArg_NoStackKeywords("strip", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "strip",
         0, 1,
@@ -517,14 +505,10 @@ static PyObject *
 unicode_lstrip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_lstrip(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_lstrip(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
-
-    if (!_PyArg_NoStackKeywords("lstrip", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "lstrip",
         0, 1,
@@ -552,14 +536,10 @@ static PyObject *
 unicode_rstrip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_rstrip(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_rstrip(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
-
-    if (!_PyArg_NoStackKeywords("rstrip", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_UnpackStack(args, nargs, "rstrip",
         0, 1,
@@ -593,16 +573,12 @@ unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count);
 
 static PyObject *
-unicode_replace(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_replace(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *old;
     PyObject *new;
     Py_ssize_t count = -1;
-
-    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "UU|n:replace",
         &old, &new, &count)) {
@@ -629,15 +605,11 @@ static PyObject *
 unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_rjust(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_rjust(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
-
-    if (!_PyArg_NoStackKeywords("rjust", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "n|O&:rjust",
         &width, convert_uc, &fillchar)) {
@@ -664,7 +636,7 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    -1 (the default value) means no limit.");
 
 #define UNICODE_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)unicode_split, METH_FASTCALL, unicode_split__doc__},
+    {"split", (PyCFunction)unicode_split, METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -737,7 +709,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "Splits are done starting at the end of the string and working to the front.");
 
 #define UNICODE_RSPLIT_METHODDEF    \
-    {"rsplit", (PyCFunction)unicode_rsplit, METH_FASTCALL, unicode_rsplit__doc__},
+    {"rsplit", (PyCFunction)unicode_rsplit, METH_FASTCALL|METH_KEYWORDS, unicode_rsplit__doc__},
 
 static PyObject *
 unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -771,7 +743,7 @@ PyDoc_STRVAR(unicode_splitlines__doc__,
 "true.");
 
 #define UNICODE_SPLITLINES_METHODDEF    \
-    {"splitlines", (PyCFunction)unicode_splitlines, METH_FASTCALL, unicode_splitlines__doc__},
+    {"splitlines", (PyCFunction)unicode_splitlines, METH_FASTCALL|METH_KEYWORDS, unicode_splitlines__doc__},
 
 static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends);
@@ -833,16 +805,12 @@ static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
 
 static PyObject *
-unicode_maketrans(void *null, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unicode_maketrans(void *null, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *x;
     PyObject *y = NULL;
     PyObject *z = NULL;
-
-    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
-        goto exit;
-    }
 
     if (!_PyArg_ParseStack(args, nargs, "O|UU:maketrans",
         &x, &y, &z)) {
@@ -962,4 +930,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=339a83c0c100dd17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8fd799fd7f2cc724 input=a9049054013a1b77]*/

@@ -105,7 +105,10 @@ static const char usage_6[] =
 "   predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
-"   hooks.\n";
+"   hooks.\n"
+"PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
+"   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
+"   locale coercion and locale compatibility warnings on stderr.\n";
 
 static int
 usage(int exitcode, const wchar_t* program)

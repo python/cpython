@@ -1864,6 +1864,25 @@ class BaseTaskTests:
         })
         mock_handler.reset_mock()
 
+    @mock.patch('asyncio.base_events.logger')
+    def test_tb_logger_not_called_after_cancel(self, m_log):
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        @asyncio.coroutine
+        def coro():
+            raise TypeError
+
+        @asyncio.coroutine
+        def runner():
+            task = self.new_task(loop, coro())
+            yield from asyncio.sleep(0.05, loop=loop)
+            task.cancel()
+            task = None
+
+        loop.run_until_complete(runner())
+        self.assertFalse(m_log.error.called)
+
     @mock.patch('asyncio.coroutines.logger')
     def test_coroutine_never_yielded(self, m_log):
         with set_coroutine_debug(True):

@@ -552,6 +552,50 @@ If there are arguments:
   ``sys.argv`` reflects the arguments passed to IDLE itself.
 
 
+Startup failure
+^^^^^^^^^^^^^^^
+
+IDLE uses a socket to communicate between the IDLE GUI process and the user
+code execution process.  A connection must be established whenever the Shell
+starts or restarts.  (The latter is indicated by a divider line that says
+'RESTART'). If the user process fails to connect to the GUI process, it
+displays a ``Tk`` error box with a 'cannot connect' message that directs the
+user here.  It then exits.
+
+A common cause of failure is a user-written file with the same name as a
+standard library module, such as *random.py* and *tkinter.py*. When such a
+file is located in the same directory as a file that is about to be run,
+IDLE cannot import the stdlib file.  The current fix is to rename the
+user file.
+
+Though less common than in the past, an antivirus or firewall program may
+stop the connection.  If the program cannot be taught to allow the
+connection, then it must be turned off for IDLE to work.  It is safe to
+allow this internal connection because no data is visible on external
+ports.  A similar problem is a network mis-configuration that blocks
+connections.
+
+Python installation issues occasionally stop IDLE: multiple versions can
+clash, or a single installation might need admin access.  If one undo the
+clash, or cannot or does not want to run as admin, it might be easiest to
+completely remove Python and start over.
+
+A zombie pythonw.exe process could be a problem.  On Windows, use Task
+Manager to detect and stop one.  Sometimes a restart initiated by a program
+crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
+the error box or Restart Shell on the Shell menu may fix a temporary problem.
+
+When IDLE first starts, it attempts to read user configuration files in
+~/.idlerc/ (~ is one's home directory).  If there is a problem, an error
+message should be displayed.  Leaving aside random disk glitches, this can
+be prevented by never editing the files by hand, using the configuration
+dialog, under Options, instead Options.  Once it happens, the solution may
+be to delete one or more of the configuration files.
+
+If IDLE quits with no message, and it was not started from a console, try
+starting from a console (``python -m idlelib)`` and see if a message appears.
+
+
 IDLE-console differences
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

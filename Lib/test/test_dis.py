@@ -331,16 +331,77 @@ dis_fstring = """\
 def _g(x):
     yield x
 
+def _h(y):
+    def foo(x):
+        '''funcdoc'''
+        return [x + z for z in y]
+    return foo
+
+dis_nested_0 = """\
+%3d           0 LOAD_CLOSURE             0 (y)
+              2 BUILD_TUPLE              1
+              4 LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %d>)
+              6 LOAD_CONST               2 ('_h.<locals>.foo')
+              8 MAKE_FUNCTION            8
+             10 STORE_FAST               1 (foo)
+
+%3d          12 LOAD_FAST                1 (foo)
+             14 RETURN_VALUE
+""" % (_h.__code__.co_firstlineno + 1,
+       __file__,
+       _h.__code__.co_firstlineno + 1,
+       _h.__code__.co_firstlineno + 4,
+)
+
+dis_nested_1 = """%s
+Disassembly of <code object foo at 0x..., file "%s", line %d>:
+%3d           0 LOAD_CLOSURE             0 (x)
+              2 BUILD_TUPLE              1
+              4 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+              6 LOAD_CONST               2 ('_h.<locals>.foo.<locals>.<listcomp>')
+              8 MAKE_FUNCTION            8
+             10 LOAD_DEREF               1 (y)
+             12 GET_ITER
+             14 CALL_FUNCTION            1
+             16 RETURN_VALUE
+""" % (dis_nested_0,
+       __file__,
+       _h.__code__.co_firstlineno + 1,
+       _h.__code__.co_firstlineno + 3,
+       __file__,
+       _h.__code__.co_firstlineno + 3,
+)
+
+dis_nested_2 = """%s
+Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
+%3d           0 BUILD_LIST               0
+              2 LOAD_FAST                0 (.0)
+        >>    4 FOR_ITER                12 (to 18)
+              6 STORE_FAST               1 (z)
+              8 LOAD_DEREF               0 (x)
+             10 LOAD_FAST                1 (z)
+             12 BINARY_ADD
+             14 LIST_APPEND              2
+             16 JUMP_ABSOLUTE            4
+        >>   18 RETURN_VALUE
+""" % (dis_nested_1,
+       __file__,
+       _h.__code__.co_firstlineno + 3,
+       _h.__code__.co_firstlineno + 3,
+)
+
 class DisTests(unittest.TestCase):
 
-    def get_disassembly(self, func, lasti=-1, wrapper=True):
+    maxDiff = None
+
+    def get_disassembly(self, func, lasti=-1, wrapper=True, **kwargs):
         # We want to test the default printing behaviour, not the file arg
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             if wrapper:
-                dis.dis(func)
+                dis.dis(func, **kwargs)
             else:
-                dis.disassemble(func, lasti)
+                dis.disassemble(func, lasti, **kwargs)
         return output.getvalue()
 
     def get_disassemble_as_string(self, func, lasti=-1):
@@ -350,7 +411,7 @@ class DisTests(unittest.TestCase):
         return re.sub(r'\b0x[0-9A-Fa-f]+\b', '0x...', text)
 
     def do_disassembly_test(self, func, expected):
-        got = self.get_disassembly(func)
+        got = self.get_disassembly(func, depth=0)
         if got != expected:
             got = self.strip_addresses(got)
         self.assertEqual(got, expected)
@@ -502,15 +563,29 @@ class DisTests(unittest.TestCase):
     def test_dis_object(self):
         self.assertRaises(TypeError, dis.dis, object())
 
+    def test_disassemble_recursive(self):
+        def check(expected, **kwargs):
+            dis = self.get_disassembly(_h, **kwargs)
+            dis = self.strip_addresses(dis)
+            self.assertEqual(dis, expected)
+
+        check(dis_nested_0, depth=0)
+        check(dis_nested_1, depth=1)
+        check(dis_nested_2, depth=2)
+        check(dis_nested_2, depth=3)
+        check(dis_nested_2, depth=None)
+        check(dis_nested_2)
+
+
 class DisWithFileTests(DisTests):
 
     # Run the tests again, using the file arg instead of print
-    def get_disassembly(self, func, lasti=-1, wrapper=True):
+    def get_disassembly(self, func, lasti=-1, wrapper=True, **kwargs):
         output = io.StringIO()
         if wrapper:
-            dis.dis(func, file=output)
+            dis.dis(func, file=output, **kwargs)
         else:
-            dis.disassemble(func, lasti, file=output)
+            dis.disassemble(func, lasti, file=output, **kwargs)
         return output.getvalue()
 
 

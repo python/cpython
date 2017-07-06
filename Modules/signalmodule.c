@@ -139,6 +139,10 @@ timeval_from_double(double d, struct timeval *tv)
 {
     tv->tv_sec = floor(d);
     tv->tv_usec = fmod(d, 1.0) * 1000000.0;
+    /* Don't disable the timer if the computation above rounds down to zero. */
+    if (d > 0.0 && tv->tv_sec == 0 && tv->tv_usec == 0) {
+        tv->tv_usec = 1;
+    }
 }
 
 Py_LOCAL_INLINE(double)
@@ -187,12 +191,6 @@ PyDoc_STRVAR(default_int_handler_doc,
 The default handler for SIGINT installed by Python.\n\
 It raises KeyboardInterrupt.");
 
-
-static int
-checksignals_witharg(void * unused)
-{
-    return PyErr_CheckSignals();
-}
 
 static int
 report_wakeup_write_error(void *data)
@@ -244,17 +242,15 @@ trip_signal(int sig_num)
 
     Handlers[sig_num].tripped = 1;
 
-    if (!is_tripped) {
-        /* Set is_tripped after setting .tripped, as it gets
-           cleared in PyErr_CheckSignals() before .tripped. */
-        is_tripped = 1;
-        Py_AddPendingCall(checksignals_witharg, NULL);
-    }
+    /* Set is_tripped after setting .tripped, as it gets
+       cleared in PyErr_CheckSignals() before .tripped. */
+    is_tripped = 1;
+    _PyEval_SignalReceived();
 
     /* And then write to the wakeup fd *after* setting all the globals and
-       doing the Py_AddPendingCall. We used to write to the wakeup fd and then
-       set the flag, but this allowed the following sequence of events
-       (especially on windows, where trip_signal runs in a new thread):
+       doing the _PyEval_SignalReceived. We used to write to the wakeup fd
+       and then set the flag, but this allowed the following sequence of events
+       (especially on windows, where trip_signal may run in a new thread):
 
        - main thread blocks on select([wakeup_fd], ...)
        - signal arrives
@@ -289,6 +285,8 @@ trip_signal(int sig_num)
                 wakeup.send_err_set = 1;
                 wakeup.send_errno = errno;
                 wakeup.send_win_error = GetLastError();
+                /* Py_AddPendingCall() isn't signal-safe, but we
+                   still use it for this exceptional case. */
                 Py_AddPendingCall(report_wakeup_send_error, NULL);
             }
         }
@@ -302,6 +300,8 @@ trip_signal(int sig_num)
             rc = _Py_write_noraise(fd, &byte, 1);
 
             if (rc < 0) {
+                /* Py_AddPendingCall() isn't signal-safe, but we
+                   still use it for this exceptional case. */
                 Py_AddPendingCall(report_wakeup_write_error,
                                   (void *)(intptr_t)errno);
             }
@@ -1556,8 +1556,10 @@ PyErr_CheckSignals(void)
                                            arglist);
                 Py_DECREF(arglist);
             }
-            if (!result)
+            if (!result) {
+                is_tripped = 1;
                 return -1;
+            }
 
             Py_DECREF(result);
         }

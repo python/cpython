@@ -931,11 +931,11 @@ generate_hash_name_list(void)
         Py_buffer view = { 0 }; \
         PyObject *ret_obj; \
      \
-        if (!_PyArg_ParseStack(args, nargs, "|O:" #NAME , &data_obj)) { \
+        if (!_PyArg_NoStackKeywords(#NAME, kwnames)) { \
             return NULL; \
         } \
      \
-        if (!_PyArg_NoStackKeywords(#NAME, kwnames)) { \
+        if (!_PyArg_ParseStack(args, nargs, "|O:" #NAME , &data_obj)) { \
             return NULL; \
         } \
      \
@@ -967,7 +967,7 @@ generate_hash_name_list(void)
 
 /* a PyMethodDef structure for the constructor */
 #define CONSTRUCTOR_METH_DEF(NAME)  \
-    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, METH_FASTCALL, \
+    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, METH_FASTCALL | METH_KEYWORDS, \
         PyDoc_STR("Returns a " #NAME \
                   " hash object; optionally initialized with a string") \
     }
