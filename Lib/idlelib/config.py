@@ -44,7 +44,7 @@ class IdleConfParser(ConfigParser):
         """
         cfgFile - string, fully specified configuration file name
         """
-        self.file = cfgFile
+        self.file = cfgFile  # This is currently '' when testing.
         ConfigParser.__init__(self, defaults=cfgDefaults, strict=False)
 
     def Get(self, section, option, type=None, default=None, raw=False):
@@ -73,7 +73,8 @@ class IdleConfParser(ConfigParser):
 
     def Load(self):
         "Load the configuration file from disk."
-        self.read(self.file)
+        if self.file:
+            self.read(self.file)
 
 class IdleUserConfParser(IdleConfParser):
     """
@@ -130,21 +131,22 @@ class IdleUserConfParser(IdleConfParser):
     def Save(self):
         """Update user configuration file.
 
-        Remove empty sections. If resulting config isn't empty, write the file
-        to disk. If config is empty, remove the file from disk if it exists.
+        If self not empty after removing empty sections, write the file
+        to disk. Otherwise, remove the file from disk if it exists.
 
         """
-        if not self.IsEmpty():
-            fname = self.file
-            try:
-                cfgFile = open(fname, 'w')
-            except OSError:
-                os.unlink(fname)
-                cfgFile = open(fname, 'w')
-            with cfgFile:
-                self.write(cfgFile)
-        else:
-            self.RemoveFile()
+        fname = self.file
+        if self.fname:
+            if not self.IsEmpty():
+                try:
+                    cfgFile = open(fname, 'w')
+                except OSError:
+                    os.unlink(fname)
+                    cfgFile = open(fname, 'w')
+                with cfgFile:
+                    self.write(cfgFile)
+            else:
+                self.RemoveFile()
 
 class IdleConf:
     """Hold config parsers for all idle config files in singleton instance.
