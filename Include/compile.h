@@ -24,7 +24,7 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
 #define PyCF_IGNORE_COOKIE 0x0800
 
 #ifndef Py_LIMITED_API
-typedef struct compilerflags {
+typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
 } PyCompilerFlags;
 #endif

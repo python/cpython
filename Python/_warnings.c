@@ -129,19 +129,20 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         _PyRuntime.warnings.filters = warnings_filters;
     }
 
-    if (_PyRuntime.warnings.filters == NULL || !PyList_Check(_PyRuntime.warnings.filters)) {
+    PyObject *filters = _PyRuntime.warnings.filters;
+    if (filters == NULL || !PyList_Check(filters)) {
         PyErr_SetString(PyExc_ValueError,
                         MODULE_NAME ".filters must be a list");
         return NULL;
     }
 
     /* _PyRuntime.warnings.filters could change while we are iterating over it. */
-    for (i = 0; i < PyList_GET_SIZE(_PyRuntime.warnings.filters); i++) {
+    for (i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
         int is_subclass, good_msg, good_mod;
 
-        tmp_item = PyList_GET_ITEM(_PyRuntime.warnings.filters, i);
+        tmp_item = PyList_GET_ITEM(filters, i);
         if (!PyTuple_Check(tmp_item) || PyTuple_GET_SIZE(tmp_item) != 5) {
             PyErr_Format(PyExc_ValueError,
                          MODULE_NAME ".filters item %zd isn't a 5-tuple", i);
@@ -1153,7 +1154,8 @@ create_filter(PyObject *category, const char *action)
     }
 
     /* This assumes the line number is zero for now. */
-    return PyTuple_Pack(5, action_obj, Py_None, category, Py_None, _PyLong_Zero);
+    return PyTuple_Pack(5, action_obj, Py_None,
+                        category, Py_None, _PyLong_Zero);
 }
 
 static PyObject *
@@ -1236,7 +1238,8 @@ _PyWarnings_Init(void)
             return NULL;
     }
     Py_INCREF(_PyRuntime.warnings.once_registry);
-    if (PyModule_AddObject(m, "_onceregistry", _PyRuntime.warnings.once_registry) < 0)
+    if (PyModule_AddObject(m, "_onceregistry",
+                           _PyRuntime.warnings.once_registry) < 0)
         return NULL;
 
     if (_PyRuntime.warnings.default_action == NULL) {
@@ -1245,7 +1248,8 @@ _PyWarnings_Init(void)
             return NULL;
     }
     Py_INCREF(_PyRuntime.warnings.default_action);
-    if (PyModule_AddObject(m, "_defaultaction", _PyRuntime.warnings.default_action) < 0)
+    if (PyModule_AddObject(m, "_defaultaction",
+                           _PyRuntime.warnings.default_action) < 0)
         return NULL;
 
     _PyRuntime.warnings.filters_version = 0;
