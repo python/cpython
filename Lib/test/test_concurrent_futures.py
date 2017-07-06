@@ -63,6 +63,8 @@ class ExecutorMixin:
     worker_count = 5
 
     def setUp(self):
+        self._thread_cleanup = test.support.threading_setup()
+
         self.t1 = time.time()
         try:
             self.executor = self.executor_type(max_workers=self.worker_count)
@@ -72,10 +74,15 @@ class ExecutorMixin:
 
     def tearDown(self):
         self.executor.shutdown(wait=True)
+        self.executor = None
+
         dt = time.time() - self.t1
         if test.support.verbose:
             print("%.2fs" % dt, end=' ')
         self.assertLess(dt, 60, "synchronization issue: test lasted too long")
+
+        test.support.threading_cleanup(*self._thread_cleanup)
+        test.support.reap_children()
 
     def _prime_executor(self):
         # Make sure that the executor is ready to do work before running the

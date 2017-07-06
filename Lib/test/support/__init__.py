@@ -2079,7 +2079,6 @@ def reap_children():
     stick around to hog resources and create problems when looking
     for refleaks.
     """
-
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
     if hasattr(os, 'waitpid'):
@@ -2090,6 +2089,8 @@ def reap_children():
                 pid, status = os.waitpid(any_process, os.WNOHANG)
                 if pid == 0:
                     break
+                print("Warning -- reap_children() reaped child process %s"
+                      % pid, file=sys.stderr)
             except:
                 break
 

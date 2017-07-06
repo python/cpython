@@ -608,7 +608,6 @@ _pythread_pthread_set_stacksize(size_t size)
 
 #define THREAD_SET_STACKSIZE(x) _pythread_pthread_set_stacksize(x)
 
-#define Py_HAVE_NATIVE_TLS
 
 int
 PyThread_create_key(void)
