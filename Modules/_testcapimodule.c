@@ -2540,6 +2540,16 @@ msvcrt_CrtSetReportFile(PyObject* self, PyObject *args)
 #endif
 
 
+static PyObject*
+stack_pointer(PyObject *self, PyObject *args)
+{
+    int v = 5;
+    Py_uintptr_t sp = (Py_uintptr_t)&v;
+
+    return PyLong_FromUnsignedLongLong(sp);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -2656,6 +2666,7 @@ static PyMethodDef TestMethods[] = {
     {"CrtSetReportMode", (PyCFunction)msvcrt_CrtSetReportMode, METH_VARARGS},
     {"CrtSetReportFile", (PyCFunction)msvcrt_CrtSetReportFile, METH_VARARGS},
 #endif
+    {"stack_pointer", stack_pointer, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
