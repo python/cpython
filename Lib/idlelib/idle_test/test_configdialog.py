@@ -44,7 +44,7 @@ def setUpModule():
 
 def tearDownModule():
     global root, configure
-    idleConf.userCfg = testcfg
+    idleConf.userCfg = usercfg
     configure.remove_var_callbacks()
     del configure
     root.update_idletasks()
