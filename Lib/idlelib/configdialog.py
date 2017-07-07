@@ -560,16 +560,16 @@ class ConfigDialog(Toplevel):
         overriding the default font, we need to write out everything.
         """
         value = self.font_name.get()
-        changes.additem('main', 'EditorWindow', 'font', value)
+        changes.add_option('main', 'EditorWindow', 'font', value)
         value = self.font_size.get()
-        changes.additem('main', 'EditorWindow', 'font-size', value)
+        changes.add_option('main', 'EditorWindow', 'font-size', value)
         value = self.font_bold.get()
-        changes.additem('main', 'EditorWindow', 'font-bold', value)
+        changes.add_option('main', 'EditorWindow', 'font-bold', value)
 
     def var_changed_space_num(self, *params):
         "Store change to indentation size."
         value = self.space_num.get()
-        changes.additem('main', 'Indent', 'num-spaces', value)
+        changes.add_option('main', 'Indent', 'num-spaces', value)
 
     def var_changed_colour(self, *params):
         "Process change to color choice."
@@ -585,13 +585,13 @@ class ConfigDialog(Toplevel):
         value = self.builtin_theme.get()
         if value not in old_themes:
             if idleConf.GetOption('main', 'Theme', 'name') not in old_themes:
-                changes.additem('main', 'Theme', 'name', old_themes[0])
-            changes.additem('main', 'Theme', 'name2', value)
+                changes.add_option('main', 'Theme', 'name', old_themes[0])
+            changes.add_option('main', 'Theme', 'name2', value)
             self.new_custom_theme.config(text='New theme, see Help',
                                          fg='#500000')
         else:
-            changes.additem('main', 'Theme', 'name', value)
-            changes.additem('main', 'Theme', 'name2', '')
+            changes.add_option('main', 'Theme', 'name', value)
+            changes.add_option('main', 'Theme', 'name2', '')
             self.new_custom_theme.config(text='', fg='black')
         self.paint_theme_sample()
 
@@ -603,7 +603,7 @@ class ConfigDialog(Toplevel):
         """
         value = self.custom_theme.get()
         if value != '- no custom themes -':
-            changes.additem('main', 'Theme', 'name', value)
+            changes.add_option('main', 'Theme', 'name', value)
             self.paint_theme_sample()
 
     def var_changed_is_builtin_theme(self, *params):
@@ -613,7 +613,7 @@ class ConfigDialog(Toplevel):
         selected theme type.
         """
         value = self.is_builtin_theme.get()
-        changes.additem('main', 'Theme', 'default', value)
+        changes.add_option('main', 'Theme', 'default', value)
         if value:
             self.var_changed_builtin_theme()
         else:
@@ -629,11 +629,11 @@ class ConfigDialog(Toplevel):
         key_set = self.custom_keys.get()
         event = self.list_bindings.get(ANCHOR).split()[0]
         if idleConf.IsCoreBinding(event):
-            changes.additem('keys', key_set, event, value)
+            changes.add_option('keys', key_set, event, value)
         else:  # Event is an extension binding.
             ext_name = idleConf.GetExtnNameForEvent(event)
             ext_keybind_section = ext_name + '_cfgBindings'
-            changes.additem('extensions', ext_keybind_section, event, value)
+            changes.add_option('extensions', ext_keybind_section, event, value)
 
     def var_changed_builtin_keys(self, *params):
         "Process selection of builtin key set."
@@ -646,13 +646,13 @@ class ConfigDialog(Toplevel):
         value = self.builtin_keys.get()
         if value not in old_keys:
             if idleConf.GetOption('main', 'Keys', 'name') not in old_keys:
-                changes.additem('main', 'Keys', 'name', old_keys[0])
-            changes.additem('main', 'Keys', 'name2', value)
+                changes.add_option('main', 'Keys', 'name', old_keys[0])
+            changes.add_option('main', 'Keys', 'name2', value)
             self.new_custom_keys.config(text='New key set, see Help',
                                         fg='#500000')
         else:
-            changes.additem('main', 'Keys', 'name', value)
-            changes.additem('main', 'Keys', 'name2', '')
+            changes.add_option('main', 'Keys', 'name', value)
+            changes.add_option('main', 'Keys', 'name2', '')
             self.new_custom_keys.config(text='', fg='black')
         self.load_keys_list(value)
 
@@ -660,13 +660,13 @@ class ConfigDialog(Toplevel):
         "Process selection of custom key set."
         value = self.custom_keys.get()
         if value != '- no custom keys -':
-            changes.additem('main', 'Keys', 'name', value)
+            changes.add_option('main', 'Keys', 'name', value)
             self.load_keys_list(value)
 
     def var_changed_are_keys_builtin(self, *params):
         "Process toggle between builtin key set and custom key set."
         value = self.are_keys_builtin.get()
-        changes.additem('main', 'Keys', 'default', value)
+        changes.add_option('main', 'Keys', 'default', value)
         if value:
             self.var_changed_builtin_keys()
         else:
@@ -675,27 +675,27 @@ class ConfigDialog(Toplevel):
     def var_changed_win_width(self, *params):
         "Store change to window width."
         value = self.win_width.get()
-        changes.additem('main', 'EditorWindow', 'width', value)
+        changes.add_option('main', 'EditorWindow', 'width', value)
 
     def var_changed_win_height(self, *params):
         "Store change to window height."
         value = self.win_height.get()
-        changes.additem('main', 'EditorWindow', 'height', value)
+        changes.add_option('main', 'EditorWindow', 'height', value)
 
     def var_changed_startup_edit(self, *params):
         "Store change to toggle for starting IDLE in the editor or shell."
         value = self.startup_edit.get()
-        changes.additem('main', 'General', 'editor-on-startup', value)
+        changes.add_option('main', 'General', 'editor-on-startup', value)
 
     def var_changed_autosave(self, *params):
         "Store change to autosave."
         value = self.autosave.get()
-        changes.additem('main', 'General', 'autosave', value)
+        changes.add_option('main', 'General', 'autosave', value)
 
     def var_changed_encoding(self, *params):
         "Store change to encoding."
         value = self.encoding.get()
-        changes.additem('main', 'EditorWindow', 'encoding', value)
+        changes.add_option('main', 'EditorWindow', 'encoding', value)
 
     def GetDefaultItems(self):
         "Return dictionary of default configuration settings."
@@ -955,7 +955,7 @@ class ConfigDialog(Toplevel):
         self.text_highlight_sample.tag_config(sample_element, **{plane:new_colour})
         theme = self.custom_theme.get()
         theme_element = sample_element + '-' + plane
-        changes.additem('highlight', theme, theme_element, new_colour)
+        changes.add_option('highlight', theme, theme_element, new_colour)
 
     def get_new_theme_name(self, message):
         "Return name of new theme from query popup."
@@ -1129,7 +1129,7 @@ class ConfigDialog(Toplevel):
         "Clear and rebuild the HelpFiles section in changes"
         changes['main']['HelpFiles'] = {}
         for num in range(1, len(self.user_helplist) + 1):
-            changes.additem(
+            changes.add_option(
                     'main', 'HelpFiles', str(num),
                     ';'.join(self.user_helplist[num-1][:2]))
 

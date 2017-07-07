@@ -787,15 +787,15 @@ class ConfigChanges(dict):
                 .idlerc/config-x.cfg file.
         config_type -- name of a page.
         section -- a section within a page/file.
-        item -- name of a value within a section.
-        value -- value for the item.
+        option -- name of an option within a section.
+        value -- value for the option.
 
     Methods
-        add_item:
-        save_all: Save all the changes to the config file.
-
-        reset: Clear all changes by clearing each page.
-        set_user_value: Set value *in idleConf* for page, section, item.
+        add_option: Add option and value to changes.
+        save_option: Save option and value to config parser.
+        save_all: Save all the changes to the config parser and file.
+        delete_section: Delete section if it exists.
+        clear: Clear all changes by clearing each page.
     """
     def __init__(self):
         "Create a page for each configuration file"
@@ -804,7 +804,7 @@ class ConfigChanges(dict):
             self[config_type] = {}
             self.pages.append(self[config_type])
 
-    def additem(self, config_type, section, item, value):
+    def add_option(self, config_type, section, item, value):
         "Add item/value pair for config_type and section."
         page = self[config_type]
         value = str(value)  # Make sure we use a string.
@@ -813,7 +813,7 @@ class ConfigChanges(dict):
         page[section][item] = value
 
     @staticmethod
-    def set_value(config_type, section, item, value):
+    def save_option(config_type, section, item, value):
         """Return True if the configuration value was added or changed.
 
         Helper for save_all.
@@ -837,7 +837,7 @@ class ConfigChanges(dict):
                     idleConf.userCfg['main'].remove_section('HelpFiles')
                     cfg_type_changed = True
                 for item, value in page[section].items():
-                    if self.set_value(config_type, section, item, value):
+                    if self.save_option(config_type, section, item, value):
                         cfg_type_changed = True
             if cfg_type_changed:
                 idleConf.userCfg[config_type].Save()
@@ -858,7 +858,6 @@ class ConfigChanges(dict):
         configpage = idleConf.userCfg[config_type]
         configpage.remove_section(section)
         configpage.Save()
-
 
     def clear(self):
         """Clear all 4 pages.

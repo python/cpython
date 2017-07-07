@@ -143,9 +143,9 @@ class ChangesTest(unittest.TestCase):
 
     def load(self):
         changes = self.changes
-        changes.additem('main', 'Msec', 'mitem', 'mval')
-        changes.additem('highlight', 'Hsec', 'hitem', 'hval')
-        changes.additem('keys', 'Ksec', 'kitem', 'kval')
+        changes.add_option('main', 'Msec', 'mitem', 'mval')
+        changes.add_option('highlight', 'Hsec', 'hitem', 'hval')
+        changes.add_option('keys', 'Ksec', 'kitem', 'kval')
         return changes
 
     loaded = {'main': {'Msec': {'mitem': 'mval'}},
@@ -159,21 +159,21 @@ class ChangesTest(unittest.TestCase):
     def test_init(self):
         self.assertEqual(self.changes, self.empty)
 
-    def test_additem(self):
+    def test_add_option(self):
         changes = self.load()
         self.assertEqual(changes, self.loaded)
-        changes.additem('main', 'Msec', 'mitem', 'mval')
+        changes.add_option('main', 'Msec', 'mitem', 'mval')
         self.assertEqual(changes, self.loaded)
 
-    def test_set_value(self):  # Static function does not touch changes.
-        setval = self.changes.set_value
-        self.assertTrue(setval('main', 'Indent', 'what', '0'))
-        self.assertFalse(setval('main', 'Indent', 'what', '0'))
+    def test_save_option(self):  # Static function does not touch changes.
+        save_option = self.changes.save_option
+        self.assertTrue(save_option('main', 'Indent', 'what', '0'))
+        self.assertFalse(save_option('main', 'Indent', 'what', '0'))
         self.assertEqual(usermain['Indent']['what'], '0')
 
-        self.assertTrue(setval('main', 'Indent', 'use-spaces', '0'))
+        self.assertTrue(save_option('main', 'Indent', 'use-spaces', '0'))
         self.assertEqual(usermain['Indent']['use-spaces'], '0')
-        self.assertTrue(setval('main', 'Indent', 'use-spaces', '1'))
+        self.assertTrue(save_option('main', 'Indent', 'use-spaces', '1'))
         self.assertFalse(usermain.has_option('Indent', 'use-spaces'))
         usermain.remove_section('Indent')
 
@@ -189,16 +189,16 @@ class ChangesTest(unittest.TestCase):
 
     def test_save_help(self):
         changes = self.changes
-        changes.set_value('main', 'HelpFiles', 'IDLE', 'idledoc')
-        changes.additem('main', 'HelpFiles', 'ELDI', 'codeldi')
+        changes.save_option('main', 'HelpFiles', 'IDLE', 'idledoc')
+        changes.add_option('main', 'HelpFiles', 'ELDI', 'codeldi')
         changes.save_all()
         self.assertFalse(usermain.has_option('HelpFiles', 'IDLE'))
         self.assertTrue(usermain.has_option('HelpFiles', 'ELDI'))
 
     def test_save_default(self):  # Cover 2nd and 3rd false branches.
         changes = self.changes
-        changes.additem('main', 'Indent', 'use-spaces', '1')
-        # set_value returns False; cfg_type_changed remains False.
+        changes.add_option('main', 'Indent', 'use-spaces', '1')
+        # save_option returns False; cfg_type_changed remains False.
 
     # TODO: test that save_all calls usercfg Saves.
 
