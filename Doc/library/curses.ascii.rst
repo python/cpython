@@ -176,7 +176,7 @@ C library:
 
    Checks for a non-ASCII character (ordinal values 0x80 and above).
 
-These functions accept either integers or strings; when the argument is a
+These functions accept either integers or single-character strings; when the argument is a
 string, it is first converted using the built-in function :func:`ord`.
 
 Note that all these functions check ordinal bit values derived from the  first
