@@ -2723,5 +2723,14 @@ class TestFolding(TestEmailBase):
             folded
         )
 
+    def test_long_filename_attachment_with_space(self):
+        folded = self.policy.fold('Content-Disposition', 'attachment; filename="1234 67890123456789012345678901234567890123456789012345678901234567890"')
+        self.assertEqual(
+            'Content-Disposition: attachment;\n filename="1234 67890123456789012345678901234567890123456789012345678901234567890"\n',
+            folded
+        )
+
+
+
 if __name__ == '__main__':
     unittest.main()
