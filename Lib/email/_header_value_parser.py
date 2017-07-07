@@ -267,7 +267,7 @@ class TokenList(list):
         return self[0].startswith_fws()
 
     def pop_leading_fws(self):
-        if self[0].token_type == 'fws':
+        if self[0].token_type == 'fws' or self[0].token_type == 'cfws':
             return self.pop(0)
         return self[0].pop_leading_fws()
 
