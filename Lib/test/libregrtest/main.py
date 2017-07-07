@@ -432,6 +432,14 @@ class Regrtest:
         print("== encodings: locale=%s, FS=%s"
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
+        try:
+            import readline
+        except ImportError:
+            readline = None
+        if readline is not None:
+            print(f"== readline version: {readline._READLINE_VERSION:#06x}")
+            is_editline = readline.__doc__ and "libedit" in readline.__doc__
+            print("== readline implementation:", "editline" if is_editline else "GNU readline")
         print("Testing with flags:", sys.flags)
 
     def run_tests(self):
