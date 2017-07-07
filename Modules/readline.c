@@ -1427,6 +1427,7 @@ PyInit_readline(void)
 
     PyModule_AddIntConstant(m, "_READLINE_VERSION", RL_READLINE_VERSION);
     PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION", rl_readline_version);
+    PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION", rl_library_version);
 
     return m;
 }
