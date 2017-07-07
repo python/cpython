@@ -80,6 +80,16 @@ _PyRuntimeState _PyRuntime = {};
 void
 _PyRuntime_Initialize(void)
 {
+    /* XXX We only initialize once in the process, which aligns with
+       the static initialization of the former globals now found in
+       _PyRuntime.  However, _PyRuntime *should* be initialized with
+       every Py_Initialize() call, but doing so breaks the runtime.
+       This is because the runtime state is not properly finalized
+       currently. */
+    static int initialized = 0;
+    if (initialized)
+        return;
+    initialized = 1;
     _PyRuntimeState_Initialize(&_PyRuntime);
 }
 
