@@ -170,9 +170,11 @@ class ConfigDialog(Toplevel):
                 offvalue=0, text='Bold', command=self.set_font_sample)
         frame_font_sample = Frame(frame_font, relief=SOLID, borderwidth=1)
         self.font_sample = Label(
-                frame_font_sample, justify=LEFT, font=self.edit_font,
-                text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]')
-        #frame_indent
+            frame_font_sample, justify=LEFT, font=self.edit_font,
+            text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]\n\n'
+            'The quick brown fox jumps over the lazy dog.\n\n'
+            '南去經三國，東來過五湖')
+        #frame_indentAaBb
         frame_indent_size = Frame(frame_indent)
         indent_size_title = Label(
                 frame_indent_size, justify=LEFT,
