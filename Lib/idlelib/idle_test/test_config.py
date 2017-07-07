@@ -141,7 +141,7 @@ class ChangesTest(unittest.TestCase):
 
     empty = {'main':{}, 'highlight':{}, 'keys':{}, 'extensions':{}}
 
-    def load(self):
+    def load(self):  # Test_add_option verifies that this works.
         changes = self.changes
         changes.add_option('main', 'Msec', 'mitem', 'mval')
         changes.add_option('highlight', 'Hsec', 'hitem', 'hval')

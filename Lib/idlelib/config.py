@@ -160,7 +160,7 @@ class IdleConf:
         (user home dir)/.idlerc/config-{config-type}.cfg
     """
     def __init__(self):
-        self.config_types = ('main', 'extensions', 'highlight', 'keys')
+        self.config_types = ('main', 'highlight', 'keys', 'extensions')
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
@@ -800,7 +800,7 @@ class ConfigChanges(dict):
     def __init__(self):
         "Create a page for each configuration file"
         self.pages = []  # List of unhashable dicts.
-        for config_type in ('main', 'highlight', 'keys', 'extensions'):
+        for config_type in idleConf.config_types:
             self[config_type] = {}
             self.pages.append(self[config_type])
 
@@ -828,7 +828,7 @@ class ConfigChanges(dict):
     def save_all(self):
         """Save configuration changes to the user config file.
 
-        When clear self in preparation for additional changes.
+        Then clear self in preparation for additional changes.
         """
         idleConf.userCfg['main'].Save()
         for config_type in self:
