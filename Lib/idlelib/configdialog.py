@@ -14,7 +14,7 @@ from tkinter import (Toplevel, Frame, LabelFrame, Listbox, Label, Button,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
-                     HORIZONTAL, VERTICAL, ANCHOR, END)
+                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
 from tkinter.ttk import Scrollbar
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
@@ -157,8 +157,9 @@ class ConfigDialog(Toplevel):
                 frame_font_name, justify=LEFT, text='Font Face :')
         self.list_fonts = Listbox(
                 frame_font_name, height=5, takefocus=FALSE, exportselection=FALSE)
-        self.list_fonts.bind(
-                '<ButtonRelease-1>', self.on_list_fonts_button_release)
+        self.list_fonts.bind('<ButtonRelease-1>', self.on_list_fonts_button_release)
+        self.list_fonts.bind('<KeyRelease-Up>', self.on_list_fonts_key_release)
+        self.list_fonts.bind('<KeyRelease-Down>', self.on_list_fonts_key_release)
         scroll_font = Scrollbar(frame_font_name)
         scroll_font.config(command=self.list_fonts.yview)
         self.list_fonts.config(yscrollcommand=scroll_font.set)
@@ -1030,6 +1031,11 @@ class ConfigDialog(Toplevel):
         and update sample text to show that font.
         """
         font = self.list_fonts.get(ANCHOR)
+        self.font_name.set(font.lower())
+        self.set_font_sample()
+
+    def on_list_fonts_key_release(self, event):
+        font = self.list_fonts.get(ACTIVE)
         self.font_name.set(font.lower())
         self.set_font_sample()
 
