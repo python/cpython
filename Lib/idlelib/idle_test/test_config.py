@@ -9,12 +9,13 @@ from idlelib import config
 
 # Tests should not depend on fortuitous user configurations.
 # They must not affect actual user .cfg files.
-# Replace user parsers with empty parsers that cannot be saved.
+# Replace user parsers with empty parsers that cannot be saved
+# due to getting '' as the filename when created.
 
 idleConf = config.idleConf
 usercfg = idleConf.userCfg
 testcfg = {}
-usermain = testcfg['main'] = config.IdleUserConfParser('')  # filename
+usermain = testcfg['main'] = config.IdleUserConfParser('')
 userhigh = testcfg['highlight'] = config.IdleUserConfParser('')
 userkeys = testcfg['keys'] = config.IdleUserConfParser('')
 
@@ -135,6 +136,86 @@ class CurrentColorKeysTest(unittest.TestCase):
         usermain.remove_section('Keys')
         userkeys.remove_section('Custom Keys')
 
+
+class ChangesTest(unittest.TestCase):
+
+    empty = {'main':{}, 'highlight':{}, 'keys':{}, 'extensions':{}}
+
+    def load(self):
+        changes = self.changes
+        changes.additem('main', 'Msec', 'mitem', 'mval')
+        changes.additem('highlight', 'Hsec', 'hitem', 'hval')
+        changes.additem('keys', 'Ksec', 'kitem', 'kval')
+        return changes
+
+    loaded = {'main': {'Msec': {'mitem': 'mval'}},
+              'highlight': {'Hsec': {'hitem': 'hval'}},
+              'keys': {'Ksec': {'kitem':'kval'}},
+              'extensions': {}}
+
+    def setUp(self):
+        self.changes = config.ConfigChanges()    
+
+    def test_init(self):
+        self.assertEqual(self.changes, self.empty)
+
+    def test_additem(self):
+        changes = self.load()
+        self.assertEqual(changes, self.loaded)
+        changes.additem('main', 'Msec', 'mitem', 'mval')
+        self.assertEqual(changes, self.loaded)
+
+    def test_set_value(self):  # Static function does not touch changes.
+        setval = self.changes.set_value
+        self.assertTrue(setval('main', 'Indent', 'what', '0'))
+        self.assertFalse(setval('main', 'Indent', 'what', '0'))
+        self.assertEqual(usermain['Indent']['what'], '0')
+
+        self.assertTrue(setval('main', 'Indent', 'use-spaces', '0'))
+        self.assertEqual(usermain['Indent']['use-spaces'], '0')
+        self.assertTrue(setval('main', 'Indent', 'use-spaces', '1'))
+        self.assertFalse(usermain.has_option('Indent', 'use-spaces'))
+        usermain.remove_section('Indent')
+
+    def test_save_added(self):
+        changes = self.load()
+        changes.save_all()
+        self.assertEqual(usermain['Msec']['mitem'], 'mval')
+        self.assertEqual(userhigh['Hsec']['hitem'], 'hval')
+        self.assertEqual(userkeys['Ksec']['kitem'], 'kval')
+        usermain.remove_section('Msec')
+        userhigh.remove_section('Hsec')
+        userkeys.remove_section('Ksec')
+
+    def test_save_help(self):
+        changes = self.changes
+        changes.set_value('main', 'HelpFiles', 'IDLE', 'idledoc')
+        changes.additem('main', 'HelpFiles', 'ELDI', 'codeldi')
+        changes.save_all()
+        self.assertFalse(usermain.has_option('HelpFiles', 'IDLE'))
+        self.assertTrue(usermain.has_option('HelpFiles', 'ELDI'))
+
+    def test_save_default(self):  # Cover 2nd and 3rd false branches.
+        changes = self.changes
+        changes.additem('main', 'Indent', 'use-spaces', '1')
+        # set_value returns False; cfg_type_changed remains False.
+
+    # TODO: test that save_all calls usercfg Saves.
+
+    def test_delete_section(self):
+        changes = self.load()
+        changes.delete_section('main', 'fake')  # Test no exception.
+        self.assertEqual(changes, self.loaded)  # Test nothing deleted.
+        for cfgtype, section in (('main', 'Msec'), ('keys', 'Ksec')):
+            changes.delete_section(cfgtype, section)           
+            with self.assertRaises(KeyError):
+                changes[cfgtype][section]  # Test section gone.
+                
+    def test_clear(self):
+        changes = self.load()
+        changes.clear()
+        self.assertEqual(changes, self.empty)
+    
 
 class WarningTest(unittest.TestCase):
 
