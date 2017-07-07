@@ -826,8 +826,10 @@ class ConfigChanges(dict):
         return idleConf.userCfg[config_type].SetOption(section, item, value)
 
     def save_all(self):
-        "Save configuration changes to the user config file."
+        """Save configuration changes to the user config file.
 
+        When clear self in preparation for additional changes.
+        """
         idleConf.userCfg['main'].Save()
         for config_type in self:
             cfg_type_changed = False
