@@ -34,6 +34,23 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
+void
+_PyRuntimeState_Initialize(_PyRuntimeState *runtime)
+{
+    _PyRuntimeState initial = {};
+    *runtime = initial;
+
+    _PyObject_Initialize(&runtime->obj);
+    _PyMem_Initialize(&runtime->mem);
+    _PyGC_Initialize(&runtime->gc);
+    _PyEval_Initialize(&runtime->ceval);
+
+    runtime->gilstate.check_enabled = 1;
+    runtime->gilstate.autoTLSkey = -1;
+
+    runtime->interpreters.next_id = -1;
+}
+
 #define HEAD_INIT() (void)(_PyRuntime.interpreters.mutex || \
         (_PyRuntime.interpreters.mutex = PyThread_allocate_lock()))
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \

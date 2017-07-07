@@ -80,18 +80,7 @@ _PyRuntimeState _PyRuntime = {};
 void
 _PyRuntime_Initialize(void)
 {
-    _PyRuntimeState initial = {};
-    _PyRuntime = initial;
-
-    _PyObject_Initialize(&_PyRuntime.obj);
-    _PyMem_Initialize(&_PyRuntime.mem);
-    _PyGC_Initialize(&_PyRuntime.gc);
-    _PyEval_Initialize(&_PyRuntime.ceval);
-
-    _PyRuntime.gilstate.check_enabled = 1;
-    _PyRuntime.gilstate.autoTLSkey = -1;
-
-    _PyRuntime.interpreters.next_id = -1;
+    _PyRuntimeState_Initialize(&_PyRuntime);
 }
 
 /* Global configuration variable declarations are in pydebug.h */

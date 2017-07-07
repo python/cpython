@@ -270,6 +270,7 @@ typedef struct pyruntimestate {
 } _PyRuntimeState;
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
+PyAPI_FUNC(void) _PyRuntimeState_Initialize(_PyRuntimeState *);
 #endif /* !Py_LIMITED_API */
 
 #ifndef Py_LIMITED_API
