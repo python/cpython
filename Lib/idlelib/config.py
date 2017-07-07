@@ -812,7 +812,6 @@ class ConfigChanges(dict):
             page[section] = {}
         page[section][item] = value
 
-
     @staticmethod
     def set_value(config_type, section, item, value):
         """Return True if the configuration value was added or changed.
@@ -850,12 +849,16 @@ class ConfigChanges(dict):
         # self.save_all_changed_extensions()  # Uses a different mechanism.
 
     def delete_section(self, config_type, section):
-        """Delete a section from this page.
+        """Delete a section from self, userCfg, and file.
 
         Used to delete custom themes and keysets.
         """
         if section in self[config_type]:
             del self[config_type][section]
+        configpage = idleConf.userCfg[config_type]
+        configpage.remove_section(section)
+        configpage.Save()
+
 
     def clear(self):
         """Clear all 4 pages.

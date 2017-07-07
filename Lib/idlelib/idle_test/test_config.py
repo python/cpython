@@ -210,6 +210,7 @@ class ChangesTest(unittest.TestCase):
             changes.delete_section(cfgtype, section)           
             with self.assertRaises(KeyError):
                 changes[cfgtype][section]  # Test section gone.
+        # TODO Test change to userkeys and maybe save call.
                 
     def test_clear(self):
         changes = self.load()
