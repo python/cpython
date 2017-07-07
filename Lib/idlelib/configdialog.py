@@ -20,13 +20,15 @@ import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
 import tkinter.messagebox as tkMessageBox
 
-from idlelib.config import idleConf
+from idlelib.config import idleConf, ConfigChanges
 from idlelib.config_key import GetKeysDialog
 from idlelib.dynoption import DynOptionMenu
 from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
 from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
+
+changes = ConfigChanges()
 
 
 class ConfigDialog(Toplevel):
@@ -71,7 +73,6 @@ class ConfigDialog(Toplevel):
             'Shell Stdout Text': ('stdout', '12'),
             'Shell Stderr Text': ('stderr', '13'),
             }
-        self.reset_changed_items()  # Initialize changed_items dict.
         self.create_widgets()
         self.resizable(height=FALSE, width=FALSE)
         self.transient(parent)
@@ -559,16 +560,16 @@ class ConfigDialog(Toplevel):
         overriding the default font, we need to write out everything.
         """
         value = self.font_name.get()
-        self.add_changed_item('main', 'EditorWindow', 'font', value)
+        changes.add_option('main', 'EditorWindow', 'font', value)
         value = self.font_size.get()
-        self.add_changed_item('main', 'EditorWindow', 'font-size', value)
+        changes.add_option('main', 'EditorWindow', 'font-size', value)
         value = self.font_bold.get()
-        self.add_changed_item('main', 'EditorWindow', 'font-bold', value)
+        changes.add_option('main', 'EditorWindow', 'font-bold', value)
 
     def var_changed_space_num(self, *params):
         "Store change to indentation size."
         value = self.space_num.get()
-        self.add_changed_item('main', 'Indent', 'num-spaces', value)
+        changes.add_option('main', 'Indent', 'num-spaces', value)
 
     def var_changed_colour(self, *params):
         "Process change to color choice."
@@ -584,13 +585,13 @@ class ConfigDialog(Toplevel):
         value = self.builtin_theme.get()
         if value not in old_themes:
             if idleConf.GetOption('main', 'Theme', 'name') not in old_themes:
-                self.add_changed_item('main', 'Theme', 'name', old_themes[0])
-            self.add_changed_item('main', 'Theme', 'name2', value)
+                changes.add_option('main', 'Theme', 'name', old_themes[0])
+            changes.add_option('main', 'Theme', 'name2', value)
             self.new_custom_theme.config(text='New theme, see Help',
                                          fg='#500000')
         else:
-            self.add_changed_item('main', 'Theme', 'name', value)
-            self.add_changed_item('main', 'Theme', 'name2', '')
+            changes.add_option('main', 'Theme', 'name', value)
+            changes.add_option('main', 'Theme', 'name2', '')
             self.new_custom_theme.config(text='', fg='black')
         self.paint_theme_sample()
 
@@ -602,7 +603,7 @@ class ConfigDialog(Toplevel):
         """
         value = self.custom_theme.get()
         if value != '- no custom themes -':
-            self.add_changed_item('main', 'Theme', 'name', value)
+            changes.add_option('main', 'Theme', 'name', value)
             self.paint_theme_sample()
 
     def var_changed_is_builtin_theme(self, *params):
@@ -612,7 +613,7 @@ class ConfigDialog(Toplevel):
         selected theme type.
         """
         value = self.is_builtin_theme.get()
-        self.add_changed_item('main', 'Theme', 'default', value)
+        changes.add_option('main', 'Theme', 'default', value)
         if value:
             self.var_changed_builtin_theme()
         else:
@@ -628,11 +629,11 @@ class ConfigDialog(Toplevel):
         key_set = self.custom_keys.get()
         event = self.list_bindings.get(ANCHOR).split()[0]
         if idleConf.IsCoreBinding(event):
-            self.add_changed_item('keys', key_set, event, value)
+            changes.add_option('keys', key_set, event, value)
         else:  # Event is an extension binding.
             ext_name = idleConf.GetExtnNameForEvent(event)
             ext_keybind_section = ext_name + '_cfgBindings'
-            self.add_changed_item('extensions', ext_keybind_section, event, value)
+            changes.add_option('extensions', ext_keybind_section, event, value)
 
     def var_changed_builtin_keys(self, *params):
         "Process selection of builtin key set."
@@ -645,13 +646,13 @@ class ConfigDialog(Toplevel):
         value = self.builtin_keys.get()
         if value not in old_keys:
             if idleConf.GetOption('main', 'Keys', 'name') not in old_keys:
-                self.add_changed_item('main', 'Keys', 'name', old_keys[0])
-            self.add_changed_item('main', 'Keys', 'name2', value)
+                changes.add_option('main', 'Keys', 'name', old_keys[0])
+            changes.add_option('main', 'Keys', 'name2', value)
             self.new_custom_keys.config(text='New key set, see Help',
                                         fg='#500000')
         else:
-            self.add_changed_item('main', 'Keys', 'name', value)
-            self.add_changed_item('main', 'Keys', 'name2', '')
+            changes.add_option('main', 'Keys', 'name', value)
+            changes.add_option('main', 'Keys', 'name2', '')
             self.new_custom_keys.config(text='', fg='black')
         self.load_keys_list(value)
 
@@ -659,13 +660,13 @@ class ConfigDialog(Toplevel):
         "Process selection of custom key set."
         value = self.custom_keys.get()
         if value != '- no custom keys -':
-            self.add_changed_item('main', 'Keys', 'name', value)
+            changes.add_option('main', 'Keys', 'name', value)
             self.load_keys_list(value)
 
     def var_changed_are_keys_builtin(self, *params):
         "Process toggle between builtin key set and custom key set."
         value = self.are_keys_builtin.get()
-        self.add_changed_item('main', 'Keys', 'default', value)
+        changes.add_option('main', 'Keys', 'default', value)
         if value:
             self.var_changed_builtin_keys()
         else:
@@ -674,59 +675,27 @@ class ConfigDialog(Toplevel):
     def var_changed_win_width(self, *params):
         "Store change to window width."
         value = self.win_width.get()
-        self.add_changed_item('main', 'EditorWindow', 'width', value)
+        changes.add_option('main', 'EditorWindow', 'width', value)
 
     def var_changed_win_height(self, *params):
         "Store change to window height."
         value = self.win_height.get()
-        self.add_changed_item('main', 'EditorWindow', 'height', value)
+        changes.add_option('main', 'EditorWindow', 'height', value)
 
     def var_changed_startup_edit(self, *params):
         "Store change to toggle for starting IDLE in the editor or shell."
         value = self.startup_edit.get()
-        self.add_changed_item('main', 'General', 'editor-on-startup', value)
+        changes.add_option('main', 'General', 'editor-on-startup', value)
 
     def var_changed_autosave(self, *params):
         "Store change to autosave."
         value = self.autosave.get()
-        self.add_changed_item('main', 'General', 'autosave', value)
+        changes.add_option('main', 'General', 'autosave', value)
 
     def var_changed_encoding(self, *params):
         "Store change to encoding."
         value = self.encoding.get()
-        self.add_changed_item('main', 'EditorWindow', 'encoding', value)
-
-    def reset_changed_items(self):
-        """Reset dictionary containing the items changed on each tab.
-
-        When any config item is changed in this dialog, an entry
-        should be made in the relevant section (config type) of this
-        dictionary. The key should be the config file section name and the
-        value a dictionary, whose key:value pairs are item=value pairs for
-        that config file section.
-        """
-        self.changed_items = {'main':{}, 'highlight':{}, 'keys':{},
-                             'extensions':{}}
-
-    def add_changed_item(self, typ, section, item, value):
-        "Add item/value pair to changed items dictionary for typ and section."
-        value = str(value)  # Make sure we use a string.
-        if section not in self.changed_items[typ]:
-            self.changed_items[typ][section] = {}
-        self.changed_items[typ][section][item] = value
-
-    def GetDefaultItems(self):
-        "Return dictionary of default configuration settings."
-        d_items={'main':{}, 'highlight':{}, 'keys':{}, 'extensions':{}}
-        for config_type in d_items:
-            sections = idleConf.GetSectionList('default', config_type)
-            for section in sections:
-                d_items[config_type][section] = {}
-                options = idleConf.defaultCfg[config_type].GetOptionList(section)
-                for option in options:
-                    d_items[config_type][section][option] = (
-                            idleConf.defaultCfg[config_type].Get(section, option))
-        return d_items
+        changes.add_option('main', 'EditorWindow', 'encoding', value)
 
     def set_theme_type(self):
         "Set available screen options based on builtin or custom theme."
@@ -769,8 +738,8 @@ class ConfigDialog(Toplevel):
         else:
             current_key_set_name = self.custom_keys.get()
         current_bindings = idleConf.GetCurrentKeySet()
-        if current_key_set_name in self.changed_items['keys']:  # unsaved changes
-            key_set_changes = self.changed_items['keys'][current_key_set_name]
+        if current_key_set_name in changes['keys']:  # unsaved changes
+            key_set_changes = changes['keys'][current_key_set_name]
             for event in key_set_changes:
                 current_bindings[event] = key_set_changes[event].split()
         current_key_sequences = list(current_bindings.values())
@@ -832,8 +801,8 @@ class ConfigDialog(Toplevel):
             binding = ' '.join(prev_keys[event])
             new_keys[event_name] = binding
         # Handle any unsaved changes to prev key set.
-        if prev_key_set_name in self.changed_items['keys']:
-            key_set_changes = self.changed_items['keys'][prev_key_set_name]
+        if prev_key_set_name in changes['keys']:
+            key_set_changes = changes['keys'][prev_key_set_name]
             for event in key_set_changes:
                 new_keys[event] = key_set_changes[event]
         # Save the new key set.
@@ -863,10 +832,10 @@ class ConfigDialog(Toplevel):
         for bind_name in bind_names:
             key = ' '.join(keyset[bind_name])
             bind_name = bind_name[2:-2]  # Trim off the angle brackets.
-            if keyset_name in self.changed_items['keys']:
+            if keyset_name in changes['keys']:
                 # Handle any unsaved changes to this key set.
-                if bind_name in self.changed_items['keys'][keyset_name]:
-                    key = self.changed_items['keys'][keyset_name][bind_name]
+                if bind_name in changes['keys'][keyset_name]:
+                    key = changes['keys'][keyset_name][bind_name]
             self.list_bindings.insert(END, bind_name+' - '+key)
         if reselect:
             self.list_bindings.see(list_index)
@@ -886,12 +855,8 @@ class ConfigDialog(Toplevel):
                 'Delete Key Set',  delmsg % keyset_name, parent=self):
             return
         self.deactivate_current_config()
-        # Remove key set from config.
-        idleConf.userCfg['keys'].remove_section(keyset_name)
-        if keyset_name in self.changed_items['keys']:
-            del(self.changed_items['keys'][keyset_name])
-        # Write changes.
-        idleConf.userCfg['keys'].Save()
+        # Remove key set from changes, config, and file.
+        changes.remove(keyset_name)
         # Reload user key set list.
         item_list = idleConf.GetSectionList('user', 'keys')
         item_list.sort()
@@ -906,7 +871,8 @@ class ConfigDialog(Toplevel):
         self.builtin_keys.set(idleConf.defaultCfg['main'].Get('Keys', 'name')
                              or idleConf.default_keys())
         # User can't back out of these changes, they must be applied now.
-        self.save_all_changed_configs()
+        changes.save_all()
+        self.save_all_changed_extensions()
         self.activate_config_changes()
         self.set_keys_type()
 
@@ -923,12 +889,8 @@ class ConfigDialog(Toplevel):
                 'Delete Theme',  delmsg % theme_name, parent=self):
             return
         self.deactivate_current_config()
-        # Remove theme from config.
-        idleConf.userCfg['highlight'].remove_section(theme_name)
-        if theme_name in self.changed_items['highlight']:
-            del(self.changed_items['highlight'][theme_name])
-        # Write changes.
-        idleConf.userCfg['highlight'].Save()
+        # Remove theme from changes, config, and file.
+        changes.delete_section('highlight')
         # Reload user theme list.
         item_list = idleConf.GetSectionList('user', 'highlight')
         item_list.sort()
@@ -941,7 +903,8 @@ class ConfigDialog(Toplevel):
         self.is_builtin_theme.set(idleConf.defaultCfg['main'].Get('Theme', 'default'))
         self.builtin_theme.set(idleConf.defaultCfg['main'].Get('Theme', 'name'))
         # User can't back out of these changes, they must be applied now.
-        self.save_all_changed_configs()
+        changes.save_all()
+        self.save_all_changed_extensions()
         self.activate_config_changes()
         self.set_theme_type()
 
@@ -979,7 +942,7 @@ class ConfigDialog(Toplevel):
         self.text_highlight_sample.tag_config(sample_element, **{plane:new_colour})
         theme = self.custom_theme.get()
         theme_element = sample_element + '-' + plane
-        self.add_changed_item('highlight', theme, theme_element, new_colour)
+        changes.add_option('highlight', theme, theme_element, new_colour)
 
     def get_new_theme_name(self, message):
         "Return name of new theme from query popup."
@@ -1010,8 +973,8 @@ class ConfigDialog(Toplevel):
             theme_name = self.custom_theme.get()
         new_theme = idleConf.GetThemeDict(theme_type, theme_name)
         # Apply any of the old theme's unsaved changes to the new theme.
-        if theme_name in self.changed_items['highlight']:
-            theme_changes = self.changed_items['highlight'][theme_name]
+        if theme_name in changes['highlight']:
+            theme_changes = changes['highlight'][theme_name]
             for element in theme_changes:
                 new_theme[element] = theme_changes[element]
         # Save the new theme.
@@ -1078,8 +1041,8 @@ class ConfigDialog(Toplevel):
                 colours['background'] = idleConf.GetHighlight(
                         theme, 'normal', fgBg='bg')
             # Handle any unsaved changes to this theme.
-            if theme in self.changed_items['highlight']:
-                theme_dict = self.changed_items['highlight'][theme]
+            if theme in changes['highlight']:
+                theme_dict = changes['highlight'][theme]
                 if element + '-foreground' in theme_dict:
                     colours['foreground'] = theme_dict[element + '-foreground']
                 if element + '-background' in theme_dict:
@@ -1150,10 +1113,10 @@ class ConfigDialog(Toplevel):
         self.set_helplist_button_states()
 
     def update_user_help_changed_items(self):
-        "Clear and rebuild the HelpFiles section in self.changed_items"
-        self.changed_items['main']['HelpFiles'] = {}
+        "Clear and rebuild the HelpFiles section in changes"
+        changes['main']['HelpFiles'] = {}
         for num in range(1, len(self.user_helplist) + 1):
-            self.add_changed_item(
+            changes.add_option(
                     'main', 'HelpFiles', str(num),
                     ';'.join(self.user_helplist[num-1][:2]))
 
@@ -1317,37 +1280,6 @@ class ConfigDialog(Toplevel):
             value = theme[element]
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
 
-    def set_user_value(self, config_type, section, item, value):
-        "Return True if the configuration value was added or changed."
-        if idleConf.defaultCfg[config_type].has_option(section, item):
-            if idleConf.defaultCfg[config_type].Get(section, item) == value:
-                # The setting equals a default setting, remove it from user cfg.
-                return idleConf.userCfg[config_type].RemoveOption(section, item)
-        # If we got here, set the option.
-        return idleConf.userCfg[config_type].SetOption(section, item, value)
-
-    def save_all_changed_configs(self):
-        "Save all configuration changes to the user config file."
-        idleConf.userCfg['main'].Save()
-        for config_type in self.changed_items:
-            cfg_type_changed = False
-            for section in self.changed_items[config_type]:
-                if section == 'HelpFiles':
-                    # This section gets completely replaced.
-                    idleConf.userCfg['main'].remove_section('HelpFiles')
-                    cfg_type_changed = True
-                for item in self.changed_items[config_type][section]:
-                    value = self.changed_items[config_type][section][item]
-                    if self.set_user_value(config_type, section, item, value):
-                        cfg_type_changed = True
-            if cfg_type_changed:
-                idleConf.userCfg[config_type].Save()
-        for config_type in ['keys', 'highlight']:
-            # Save these even if unchanged!
-            idleConf.userCfg[config_type].Save()
-        self.reset_changed_items()  # Clear the changed items dict.
-        self.save_all_changed_extensions()  # Uses a different mechanism.
-
     def deactivate_current_config(self):
         "Remove current key bindings."
         # Before a config is saved, some cleanup of current
@@ -1378,7 +1310,8 @@ class ConfigDialog(Toplevel):
     def apply(self):
         "Apply config changes and leave dialog open."
         self.deactivate_current_config()
-        self.save_all_changed_configs()
+        changes.save_all()
+        self.save_all_changed_extensions()
         self.activate_config_changes()
 
     def help(self):

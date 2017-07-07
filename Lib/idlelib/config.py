@@ -44,7 +44,7 @@ class IdleConfParser(ConfigParser):
         """
         cfgFile - string, fully specified configuration file name
         """
-        self.file = cfgFile
+        self.file = cfgFile  # This is currently '' when testing.
         ConfigParser.__init__(self, defaults=cfgDefaults, strict=False)
 
     def Get(self, section, option, type=None, default=None, raw=False):
@@ -73,7 +73,8 @@ class IdleConfParser(ConfigParser):
 
     def Load(self):
         "Load the configuration file from disk."
-        self.read(self.file)
+        if self.file:
+            self.read(self.file)
 
 class IdleUserConfParser(IdleConfParser):
     """
@@ -130,21 +131,22 @@ class IdleUserConfParser(IdleConfParser):
     def Save(self):
         """Update user configuration file.
 
-        Remove empty sections. If resulting config isn't empty, write the file
-        to disk. If config is empty, remove the file from disk if it exists.
+        If self not empty after removing empty sections, write the file
+        to disk. Otherwise, remove the file from disk if it exists.
 
         """
-        if not self.IsEmpty():
-            fname = self.file
-            try:
-                cfgFile = open(fname, 'w')
-            except OSError:
-                os.unlink(fname)
-                cfgFile = open(fname, 'w')
-            with cfgFile:
-                self.write(cfgFile)
-        else:
-            self.RemoveFile()
+        fname = self.file
+        if fname:
+            if not self.IsEmpty():
+                try:
+                    cfgFile = open(fname, 'w')
+                except OSError:
+                    os.unlink(fname)
+                    cfgFile = open(fname, 'w')
+                with cfgFile:
+                    self.write(cfgFile)
+            else:
+                self.RemoveFile()
 
 class IdleConf:
     """Hold config parsers for all idle config files in singleton instance.
@@ -158,7 +160,7 @@ class IdleConf:
         (user home dir)/.idlerc/config-{config-type}.cfg
     """
     def __init__(self):
-        self.config_types = ('main', 'extensions', 'highlight', 'keys')
+        self.config_types = ('main', 'highlight', 'keys', 'extensions')
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
@@ -766,7 +768,6 @@ class IdleConf:
 
 idleConf = IdleConf()
 
-
 _warned = set()
 def _warn(msg, *key):
     key = (msg,) + key
@@ -778,9 +779,100 @@ def _warn(msg, *key):
         _warned.add(key)
 
 
+class ConfigChanges(dict):
+    """Manage a user's proposed configuration option changes.
+
+    Names used across multiple methods:
+        page -- one of the 4 top-level dicts representing a
+                .idlerc/config-x.cfg file.
+        config_type -- name of a page.
+        section -- a section within a page/file.
+        option -- name of an option within a section.
+        value -- value for the option.
+
+    Methods
+        add_option: Add option and value to changes.
+        save_option: Save option and value to config parser.
+        save_all: Save all the changes to the config parser and file.
+        delete_section: Delete section if it exists.
+        clear: Clear all changes by clearing each page.
+    """
+    def __init__(self):
+        "Create a page for each configuration file"
+        self.pages = []  # List of unhashable dicts.
+        for config_type in idleConf.config_types:
+            self[config_type] = {}
+            self.pages.append(self[config_type])
+
+    def add_option(self, config_type, section, item, value):
+        "Add item/value pair for config_type and section."
+        page = self[config_type]
+        value = str(value)  # Make sure we use a string.
+        if section not in page:
+            page[section] = {}
+        page[section][item] = value
+
+    @staticmethod
+    def save_option(config_type, section, item, value):
+        """Return True if the configuration value was added or changed.
+
+        Helper for save_all.
+        """
+        if idleConf.defaultCfg[config_type].has_option(section, item):
+            if idleConf.defaultCfg[config_type].Get(section, item) == value:
+                # The setting equals a default setting, remove it from user cfg.
+                return idleConf.userCfg[config_type].RemoveOption(section, item)
+        # If we got here, set the option.
+        return idleConf.userCfg[config_type].SetOption(section, item, value)
+
+    def save_all(self):
+        """Save configuration changes to the user config file.
+
+        Then clear self in preparation for additional changes.
+        """
+        idleConf.userCfg['main'].Save()
+        for config_type in self:
+            cfg_type_changed = False
+            page = self[config_type]
+            for section in page:
+                if section == 'HelpFiles':  # Remove it for replacement.
+                    idleConf.userCfg['main'].remove_section('HelpFiles')
+                    cfg_type_changed = True
+                for item, value in page[section].items():
+                    if self.save_option(config_type, section, item, value):
+                        cfg_type_changed = True
+            if cfg_type_changed:
+                idleConf.userCfg[config_type].Save()
+        for config_type in ['keys', 'highlight']:
+            # Save these even if unchanged!
+            idleConf.userCfg[config_type].Save()
+        self.clear()
+        # ConfigDialog caller must add the following call
+        # self.save_all_changed_extensions()  # Uses a different mechanism.
+
+    def delete_section(self, config_type, section):
+        """Delete a section from self, userCfg, and file.
+
+        Used to delete custom themes and keysets.
+        """
+        if section in self[config_type]:
+            del self[config_type][section]
+        configpage = idleConf.userCfg[config_type]
+        configpage.remove_section(section)
+        configpage.Save()
+
+    def clear(self):
+        """Clear all 4 pages.
+
+        Called in save_all after saving to idleConf.
+        XXX Mark window *title* when there are changes; unmark here.
+        """
+        for page in self.pages:
+            page.clear()
+
+
 # TODO Revise test output, write expanded unittest
-#
-if __name__ == '__main__':
+def _dump():  # htest # (not really, but ignore in coverage)
     from zlib import crc32
     line, crc = 0, 0
 
@@ -790,10 +882,10 @@ if __name__ == '__main__':
         line += 1
         crc = crc32(txt.encode(encoding='utf-8'), crc)
         print(txt)
-        #print('***', line, crc, '***')  # uncomment for diagnosis
+        #print('***', line, crc, '***')  # Uncomment for diagnosis.
 
     def dumpCfg(cfg):
-        print('\n', cfg, '\n')  # has variable '0xnnnnnnnn' addresses
+        print('\n', cfg, '\n')  # Cfg has variable '0xnnnnnnnn' address.
         for key in sorted(cfg.keys()):
             sections = cfg[key].sections()
             sprint(key)
@@ -808,3 +900,9 @@ if __name__ == '__main__':
     dumpCfg(idleConf.defaultCfg)
     dumpCfg(idleConf.userCfg)
     print('\nlines = ', line, ', crc = ', crc, sep='')
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_config',
+                  verbosity=2, exit=False)
+    #_dump()
