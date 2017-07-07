@@ -61,7 +61,7 @@ class saved_test_environment:
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
                  'warnings.filters', 'asyncore.socket_map',
                  'logging._handlers', 'logging._handlerList', 'sys.gettrace',
-                 'sys.warnoptions',
+                 'sys.warnoptions', 'idlerc',
                  # multiprocessing.process._cleanup() may release ref
                  # to a thread, so check processes first.
                  'multiprocessing.process._dangling', 'threading._dangling',
@@ -252,6 +252,29 @@ class saved_test_environment:
         return warnings.showwarning
     def restore_warnings_showwarning(self, fxn):
         warnings.showwarning = fxn
+
+    def get_idlerc(self):
+        import pathlib
+        from idlelib.config import idleConf
+        idlerc_dir = pathlib.Path(idleConf.GetUserCfgDir())
+
+        saved = {}
+        for filename in idlerc_dir.glob('*'):
+            with open(filename) as f:
+                saved[filename] = f.read()
+        return saved
+
+    def restore_idlerc(self, saved):
+        import pathlib
+        from idlelib.config import idleConf
+        idlerc_dir = pathlib.Path(idleConf.GetUserCfgDir())
+
+        for filename in idlerc_dir.glob('*'):
+            support.unlink(filename)
+
+        for filename in saved:
+            with open(filename, 'w') as f:
+                f.write(saved[filename])
 
     def resource_info(self):
         for name in self.resources:

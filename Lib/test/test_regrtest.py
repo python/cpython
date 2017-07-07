@@ -951,6 +951,30 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname], env_changed=testname,
                                   fail_env_changed=True)
 
+    def test_env_user_idlerc_changed(self):
+        code = textwrap.dedent("""
+            import unittest
+            from idlelib.config import idleConf
+
+            class Tests(unittest.TestCase):
+                def test_user_idlerc_changed(self):
+                    default = idleConf.GetOption('main', 'Theme', 'default',
+                                                 type='bool')
+                    idleConf.SetOption('main', 'Theme', 'default',
+                                       str(not default))
+                    idleConf.SaveUserCfgFiles()
+        """)
+        testname = self.create_test(code=code)
+
+        # don't fail by default
+        output = self.run_tests(testname)
+        self.check_executed_tests(output, [testname], env_changed=testname)
+
+        # fail with --fail-env-changed
+        output = self.run_tests("--fail-env-changed", testname, exitcode=3)
+        self.check_executed_tests(output, [testname], env_changed=testname,
+                                  fail_env_changed=True)
+
 
 if __name__ == '__main__':
     unittest.main()
