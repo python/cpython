@@ -697,19 +697,6 @@ class ConfigDialog(Toplevel):
         value = self.encoding.get()
         changes.add_option('main', 'EditorWindow', 'encoding', value)
 
-    def GetDefaultItems(self):
-        "Return dictionary of default configuration settings."
-        d_items={'main':{}, 'highlight':{}, 'keys':{}, 'extensions':{}}
-        for config_type in d_items:
-            sections = idleConf.GetSectionList('default', config_type)
-            for section in sections:
-                d_items[config_type][section] = {}
-                options = idleConf.defaultCfg[config_type].GetOptionList(section)
-                for option in options:
-                    d_items[config_type][section][option] = (
-                            idleConf.defaultCfg[config_type].Get(section, option))
-        return d_items
-
     def set_theme_type(self):
         "Set available screen options based on builtin or custom theme."
         if self.is_builtin_theme.get():
