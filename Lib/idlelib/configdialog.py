@@ -697,25 +697,6 @@ class ConfigDialog(Toplevel):
         value = self.encoding.get()
         changes.additem('main', 'EditorWindow', 'encoding', value)
 
-##    def reset_changed_items(self):
-##        """Reset dictionary containing the items changed on each tab.
-##
-##        When any config item is changed in this dialog, an entry
-##        should be made in the relevant section (config type) of this
-##        dictionary. The key should be the config file section name and the
-##        value a dictionary, whose key:value pairs are item=value pairs for
-##        that config file section.
-##        """
-##        changes = {'main':{}, 'highlight':{}, 'keys':{},
-##                             'extensions':{}}
-##
-##    def add_changed_item(self, typ, section, item, value):
-##        "Add item/value pair to changed items dictionary for typ and section."
-##        value = str(value)  # Make sure we use a string.
-##        if section not in changes[typ]:
-##            changes[typ][section] = {}
-##        changes[typ][section][item] = value
-##
     def GetDefaultItems(self):
         "Return dictionary of default configuration settings."
         d_items={'main':{}, 'highlight':{}, 'keys':{}, 'extensions':{}}
@@ -1311,37 +1292,6 @@ class ConfigDialog(Toplevel):
         for element in theme:
             value = theme[element]
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
-
-##    def set_user_value(self, config_type, section, item, value):
-##        "Return True if the configuration value was added or changed."
-##        if idleConf.defaultCfg[config_type].has_option(section, item):
-##            if idleConf.defaultCfg[config_type].Get(section, item) == value:
-##                # The setting equals a default setting, remove it from user cfg.
-##                return idleConf.userCfg[config_type].RemoveOption(section, item)
-##        # If we got here, set the option.
-##        return idleConf.userCfg[config_type].SetOption(section, item, value)
-##
-##    def save_all_changed_configs(self):
-##        "Save all configuration changes to the user config file."
-##        idleConf.userCfg['main'].Save()
-##        for config_type in changes:
-##            cfg_type_changed = False
-##            for section in changes[config_type]:
-##                if section == 'HelpFiles':
-##                    # This section gets completely replaced.
-##                    idleConf.userCfg['main'].remove_section('HelpFiles')
-##                    cfg_type_changed = True
-##                for item in changes[config_type][section]:
-##                    value = changes[config_type][section][item]
-##                    if self.set_user_value(config_type, section, item, value):
-##                        cfg_type_changed = True
-##            if cfg_type_changed:
-##                idleConf.userCfg[config_type].Save()
-##        for config_type in ['keys', 'highlight']:
-##            # Save these even if unchanged!
-##            idleConf.userCfg[config_type].Save()
-##        self.reset_changed_items()  # Clear the changed items dict.
-##        self.save_all_changed_extensions()  # Uses a different mechanism.
 
     def deactivate_current_config(self):
         "Remove current key bindings."
