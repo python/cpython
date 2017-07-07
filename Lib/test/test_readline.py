@@ -9,13 +9,29 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from test.support import import_module, unlink, temp_dir, TESTFN
+from test.support import import_module, unlink, temp_dir, TESTFN, verbose
 from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
 readline = import_module('readline')
 
-is_editline = readline.__doc__ and "libedit" in readline.__doc__
+if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
+    is_editline = ("EditLine wrapper" in readline._READLINE_LIBRARY_VERSION)
+else:
+    is_editline = (readline.__doc__ and "libedit" in readline.__doc__)
+
+
+def setUpModule():
+    if verbose:
+        # Python implementations other than CPython may not have
+        # these private attributes
+        if hasattr(readline, "_READLINE_VERSION"):
+            print(f"readline version: {readline._READLINE_VERSION:#x}")
+            print(f"readline runtime version: {readline._READLINE_RUNTIME_VERSION:#x}")
+        if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
+            print(f"readline library version: {readline._READLINE_LIBRARY_VERSION!r}")
+        print(f"use libedit emulation? {is_editline}")
+
 
 @unittest.skipUnless(hasattr(readline, "clear_history"),
                      "The history update test cannot be run because the "
