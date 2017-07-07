@@ -6,6 +6,7 @@ Coverage: 27%
 from test.support import captured_stderr
 import unittest
 from idlelib import config
+from idlelib.idle_test.mock_idle import Func
 
 # Tests should not depend on fortuitous user configurations.
 # They must not affect actual user .cfg files.
@@ -134,6 +135,45 @@ class CurrentColorKeysTest(unittest.TestCase):
         self.assertEqual(self.colorkeys('Keys'), 'Custom Keys')
         usermain.remove_section('Keys')
         userkeys.remove_section('Custom Keys')
+
+
+class ConfigChangesTest(unittest.TestCase):
+
+    def setUp(self):
+        self.changes = config.ConfigChanges()
+        self.changes.add_item('main', 'EditorWindow', 'font', 'Test Font')
+        self.changes.add_item('main', 'General', 'editor-on-startup', 1)
+
+    def tearDown(self):
+        del self.changes
+
+    def test_add_item(self):
+        changes = self.changes
+        expected = {'EditorWindow': {'font': 'Test Font'},
+                    'General': {'editor-on-startup': '1'}}
+        self.assertEqual(changes['main'], expected)
+
+    def test_save_all(self):
+        changes = self.changes
+        idleConf.userCfg['main'].Save = Func()
+        changes.save_all()
+        self.assertTrue(idleConf.userCfg['main'].Save.called)
+        self.assertEqual(testcfg['main']['EditorWindow']['font'], 'Test Font')
+        self.assertEqual(testcfg['main']['General']['editor-on-startup'], '1')
+
+    def test_clear(self):
+        changes = self.changes
+        expected = {'main': {}, 'highlight': {}, 'keys': {},
+                    'extensions': {}}
+        self.assertNotEqual(changes, expected)
+        changes.clear()
+        self.assertEqual(changes, expected)
+
+    def test_delete_section(self):
+        changes = self.changes
+        changes.delete_section('main', 'EditorWindow')
+        expected = {'General': {'editor-on-startup': '1'}}
+        self.assertEqual(changes['main'], expected)
 
 
 class WarningTest(unittest.TestCase):
