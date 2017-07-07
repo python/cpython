@@ -433,26 +433,23 @@ class Regrtest:
         print("== encodings: locale=%s, FS=%s"
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
-        rl_version_cmd = """if 1:
-        try:
-            import readline
-        except ImportError:
-            readline = None
-        if readline is not None:
-            print(f"{readline._READLINE_VERSION:#06x}")
-            is_editline = readline.__doc__ and "libedit" in readline.__doc__
-            print("editline" if is_editline else "GNU readline")
-        """
-        rl_output = subprocess.run([sys.executable, "-c", textwrap.dedent(rl_version_cmd)],
+        rl_version_cmd = textwrap.dedent("""
+            import sys
+            try:
+                import readline
+            except ImportError:
+                sys.exit(1)
+            else:
+                def get_rl_info():
+                    is_editline = readline.__doc__ and "libedit" in readline.__doc__
+                    return f"{readline._READLINE_VERSION:#06x}", "editline" if is_editline else "GNU readline"
+                rl_version, rl_implementation = get_rl_info()
+                print(f"== readline: version {rl_version} ({rl_implementation})", end="")
+        """)
+        rl_output = subprocess.run([sys.executable, "-c", rl_version_cmd],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if rl_output.returncode == 0:
-            try:
-                rl_version, rl_implementation = rl_output.stdout.decode().splitlines()
-            except ValueError:
-                pass
-            else:
-                print(f"== readline version: {rl_version}")
-                print(f"== readline implementation: {rl_implementation}")
+            print(rl_output.stdout.decode())
         print("Testing with flags:", sys.flags)
 
     def run_tests(self):
