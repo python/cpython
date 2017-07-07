@@ -816,7 +816,7 @@ class ConfigChanges(dict):
     def set_value(config_type, section, item, value):
         """Return True if the configuration value was added or changed.
 
-        Helper for save_all.  
+        Helper for save_all.
         """
         if idleConf.defaultCfg[config_type].has_option(section, item):
             if idleConf.defaultCfg[config_type].Get(section, item) == value:

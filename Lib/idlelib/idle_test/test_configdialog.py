@@ -28,7 +28,7 @@ highpage = changes['highlight']
 keyspage = changes['keys']
 
 class TestDialog(ConfigDialog): pass  # Delete?
- 
+
 
 def setUpModule():
     global root, configure

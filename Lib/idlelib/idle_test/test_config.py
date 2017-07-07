@@ -154,7 +154,7 @@ class ChangesTest(unittest.TestCase):
               'extensions': {}}
 
     def setUp(self):
-        self.changes = config.ConfigChanges()    
+        self.changes = config.ConfigChanges()
 
     def test_init(self):
         self.assertEqual(self.changes, self.empty)
@@ -207,16 +207,16 @@ class ChangesTest(unittest.TestCase):
         changes.delete_section('main', 'fake')  # Test no exception.
         self.assertEqual(changes, self.loaded)  # Test nothing deleted.
         for cfgtype, section in (('main', 'Msec'), ('keys', 'Ksec')):
-            changes.delete_section(cfgtype, section)           
+            changes.delete_section(cfgtype, section)
             with self.assertRaises(KeyError):
                 changes[cfgtype][section]  # Test section gone.
         # TODO Test change to userkeys and maybe save call.
-                
+
     def test_clear(self):
         changes = self.load()
         changes.clear()
         self.assertEqual(changes, self.empty)
-    
+
 
 class WarningTest(unittest.TestCase):
 
