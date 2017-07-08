@@ -21,6 +21,21 @@ Library
 - bpo-30746: Prohibited the '=' character in environment variable names in
   ``os.putenv()`` and ``os.spawn*()``.
 
+- bpo-29755: Fixed the lgettext() family of functions in the gettext module.
+  They now always return bytes.
+
+
+What's New in Python 3.6.2 release candidate 2?
+===============================================
+
+*Release date: 2017-07-07*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
 - [Security] bpo-30730: Prevent environment variables injection in subprocess on
   Windows.  Prevent passing other environment variables and command arguments.
 
@@ -32,9 +47,6 @@ Library
   Note: the CVE-2016-5300 (Use os-specific entropy sources like getrandom)
   doesn't impact Python, since Python already gets entropy from the OS to set
   the expat secret using ``XML_SetHashSalt()``.
-
-- bpo-29755: Fixed the lgettext() family of functions in the gettext module.
-  They now always return bytes.
 
 - [Security] bpo-30500: Fix urllib.parse.splithost() to correctly parse
   fragments. For example, ``splithost('//127.0.0.1#@evil.com/')`` now
