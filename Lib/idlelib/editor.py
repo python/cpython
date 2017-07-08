@@ -104,7 +104,7 @@ class EditorWindow(object):
                                     # values: Tkinter variable instances
             self.top.instance_dict = {}
         self.recent_files_path = os.path.join(
-                idleConf.user(), 'recent-files.lst')
+                idleConf.userdir(), 'recent-files.lst')
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         self.width = idleConf.GetOption('main', 'EditorWindow',
