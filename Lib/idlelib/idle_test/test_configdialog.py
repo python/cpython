@@ -3,7 +3,7 @@
 Half the class creates dialog, half works with user customizations.
 Coverage: 46% just by creating dialog, 56% with current tests.
 """
-from idlelib.configdialog import ConfigDialog, idleConf  # test import
+from idlelib.configdialog import ConfigDialog, idleConf, changes
 from test.support import requires
 requires('gui')
 from tkinter import Tk
@@ -21,17 +21,13 @@ testcfg = {
     'extensions': config.IdleUserConfParser(''),
 }
 
-# ConfigDialog.changed_items is a 3-level hierarchical dictionary of
-# pending changes that mirrors the multilevel user config dict.
-# For testing, record args in a list for comparison with expected.
-changes = []
 root = None
 configure = None
+mainpage = changes['main']
+highpage = changes['highlight']
+keyspage = changes['keys']
 
-
-class TestDialog(ConfigDialog):
-    def add_changed_item(self, *args):
-        changes.append(args)
+class TestDialog(ConfigDialog): pass  # Delete?
 
 
 def setUpModule():
@@ -63,31 +59,28 @@ class FontTabTest(unittest.TestCase):
         default_size = str(default_font[1])
         default_bold = default_font[2] == 'bold'
         configure.font_name.set('Test Font')
-        expected = [
-            ('main', 'EditorWindow', 'font', 'Test Font'),
-            ('main', 'EditorWindow', 'font-size', default_size),
-            ('main', 'EditorWindow', 'font-bold', default_bold)]
-        self.assertEqual(changes, expected)
+        expected = {'EditorWindow': {'font': 'Test Font',
+                                     'font-size': default_size,
+                                     'font-bold': str(default_bold)}}
+        self.assertEqual(mainpage, expected)
         changes.clear()
         configure.font_size.set(20)
-        expected = [
-            ('main', 'EditorWindow', 'font', 'Test Font'),
-            ('main', 'EditorWindow', 'font-size', '20'),
-            ('main', 'EditorWindow', 'font-bold', default_bold)]
-        self.assertEqual(changes, expected)
+        expected = {'EditorWindow': {'font': 'Test Font',
+                                     'font-size': '20',
+                                     'font-bold': str(default_bold)}}
+        self.assertEqual(mainpage, expected)
         changes.clear()
         configure.font_bold.set(not default_bold)
-        expected = [
-            ('main', 'EditorWindow', 'font', 'Test Font'),
-            ('main', 'EditorWindow', 'font-size', '20'),
-            ('main', 'EditorWindow', 'font-bold', not default_bold)]
-        self.assertEqual(changes, expected)
+        expected = {'EditorWindow': {'font': 'Test Font',
+                                     'font-size': '20',
+                                     'font-bold': str(not default_bold)}}
+        self.assertEqual(mainpage, expected)
 
     #def test_sample(self): pass  # TODO
 
     def test_tabspace(self):
         configure.space_num.set(6)
-        self.assertEqual(changes, [('main', 'Indent', 'num-spaces', 6)])
+        self.assertEqual(mainpage, {'Indent': {'num-spaces': '6'}})
 
 
 class HighlightTest(unittest.TestCase):
@@ -111,19 +104,19 @@ class GeneralTest(unittest.TestCase):
 
     def test_startup(self):
         configure.radio_startup_edit.invoke()
-        self.assertEqual(changes,
-                         [('main', 'General', 'editor-on-startup', 1)])
+        self.assertEqual(mainpage,
+                         {'General': {'editor-on-startup': '1'}})
 
     def test_autosave(self):
         configure.radio_save_auto.invoke()
-        self.assertEqual(changes, [('main', 'General', 'autosave', 1)])
+        self.assertEqual(mainpage, {'General': {'autosave': '1'}})
 
     def test_editor_size(self):
         configure.entry_win_height.insert(0, '1')
-        self.assertEqual(changes, [('main', 'EditorWindow', 'height', '140')])
+        self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
         changes.clear()
         configure.entry_win_width.insert(0, '1')
-        self.assertEqual(changes, [('main', 'EditorWindow', 'width', '180')])
+        self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
 
     #def test_help_sources(self): pass  # TODO
 
