@@ -175,7 +175,7 @@ class IdleConf:
             idleDir=os.path.dirname(__file__)
         else: # we were exec'ed (for testing only)
             idleDir=os.path.abspath(sys.path[0])
-        userDir=self.GetUserCfgDir()
+        self.userdir = userDir = self.GetUserCfgDir()
 
         defCfgFiles = {}
         usrCfgFiles = {}
