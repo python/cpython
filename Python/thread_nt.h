@@ -189,7 +189,8 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return PYTHREAD_INVALID_THREAD_ID;
     obj->func = func;
     obj->arg = arg;
-    size_t stacksize = PyThreadState_GET()->interp->pythread_stacksize;
+    PyThreadState *tstate = PyThreadState_GET();
+    size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
     hThread = (HANDLE)_beginthreadex(0,
                       Py_SAFE_DOWNCAST(stacksize, Py_ssize_t, unsigned int),
                       bootstrap, obj,
