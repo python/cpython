@@ -227,9 +227,11 @@ PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
 #include "pymalloc.h"
 
 struct _pymem_globals {
-    PyMemAllocatorEx allocator;
-    PyMemAllocatorEx allocator_raw;
-    PyMemAllocatorEx allocator_object;
+    struct _allocator_globals {
+        PyMemAllocatorEx mem;
+        PyMemAllocatorEx obj;
+        PyMemAllocatorEx raw;
+    } allocators;
 #ifdef WITH_PYMALLOC
     /* Array of objects used to track chunks of memory (arenas). */
     struct arena_object* arenas;
