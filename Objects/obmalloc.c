@@ -179,7 +179,8 @@ static struct {
     _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree
 
 
-static const PyMemAllocatorEx _PyMem_Raw = {
+#define _PyMem_Raw _PyRuntime.mem.allocator_raw
+static const PyMemAllocatorEx _pymem_raw = {
 #ifdef Py_DEBUG
     &_PyMem_Debug.raw, PYRAWDBG_FUNCS
 #else
@@ -187,7 +188,8 @@ static const PyMemAllocatorEx _PyMem_Raw = {
 #endif
     };
 
-static const PyMemAllocatorEx _PyMem = {
+#define _PyMem _PyRuntime.mem.allocator
+static const PyMemAllocatorEx _pymem = {
 #ifdef Py_DEBUG
     &_PyMem_Debug.mem, PYDBG_FUNCS
 #else
@@ -195,7 +197,8 @@ static const PyMemAllocatorEx _PyMem = {
 #endif
     };
 
-static const PyMemAllocatorEx _PyObject = {
+#define _PyObject _PyRuntime.mem.allocator_object
+static const PyMemAllocatorEx _pyobject = {
 #ifdef Py_DEBUG
     &_PyMem_Debug.obj, PYDBG_FUNCS
 #else
@@ -287,9 +290,9 @@ _PyObject_Initialize(struct _pyobj_globals *globals)
 void
 _PyMem_Initialize(struct _pymem_globals *globals)
 {
-    globals->allocator = _PyMem;
-    globals->allocator_raw = _PyMem_Raw;
-    globals->allocator_object = _PyObject;
+    globals->allocator = _pymem;
+    globals->allocator_raw = _pymem_raw;
+    globals->allocator_object = _pyobject;
 
 #ifdef WITH_PYMALLOC
     for (int i = 0; i < 8; i++) {
@@ -364,9 +367,9 @@ PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
     {
-    case PYMEM_DOMAIN_RAW: *allocator = _PyRuntime.mem.allocator_raw; break;
-    case PYMEM_DOMAIN_MEM: *allocator = _PyRuntime.mem.allocator; break;
-    case PYMEM_DOMAIN_OBJ: *allocator = _PyRuntime.mem.allocator_object; break;
+    case PYMEM_DOMAIN_RAW: *allocator = _PyMem_Raw; break;
+    case PYMEM_DOMAIN_MEM: *allocator = _PyMem; break;
+    case PYMEM_DOMAIN_OBJ: *allocator = _PyObject; break;
     default:
         /* unknown domain: set all attributes to NULL */
         allocator->ctx = NULL;
@@ -382,9 +385,9 @@ PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
     {
-    case PYMEM_DOMAIN_RAW: _PyRuntime.mem.allocator_raw = *allocator; break;
-    case PYMEM_DOMAIN_MEM: _PyRuntime.mem.allocator = *allocator; break;
-    case PYMEM_DOMAIN_OBJ: _PyRuntime.mem.allocator_object = *allocator; break;
+    case PYMEM_DOMAIN_RAW: _PyMem_Raw = *allocator; break;
+    case PYMEM_DOMAIN_MEM: _PyMem = *allocator; break;
+    case PYMEM_DOMAIN_OBJ: _PyObject = *allocator; break;
     /* ignore unknown domain */
     }
 }
