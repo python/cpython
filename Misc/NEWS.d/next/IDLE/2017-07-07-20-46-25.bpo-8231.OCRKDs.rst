@@ -1,0 +1,1 @@
+Call idlelib.config.GetGetUserCfgDir just once.
