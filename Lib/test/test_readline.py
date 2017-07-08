@@ -226,6 +226,13 @@ print("history", ascii(readline.get_history_item(1)))
         self.assertIn(b"result " + expected + b"\r\n", output)
         self.assertIn(b"history " + expected + b"\r\n", output)
 
+    # We have 2 reasons to skip this test:
+    # - readline: history size was added in 6.0
+    #   See https://cnswww.cns.cwru.edu/php/chet/readline/CHANGES
+    # - editline: history size is broken on OS X 10.11.6.
+    #   Newer versions were not tested yet.
+    @unittest.skipIf(readline._READLINE_VERSION < 0x600,
+                     "this readline version does not support history-size")
     @unittest.skipIf(is_editline,
                      "editline history size configuration is broken")
     def test_history_size(self):
