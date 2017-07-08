@@ -3411,14 +3411,17 @@ class TestScandir(unittest.TestCase):
     def test_bytes(self):
         self.create_file("file.txt")
 
-        path_bytes = os.fsencode(self.path)
-        entries = list(os.scandir(path_bytes))
-        self.assertEqual(len(entries), 1, entries)
-        entry = entries[0]
+        for cls in bytes, bytearray, memoryview:
+            path_bytes = cls(os.fsencode(self.path))
+            entries = list(os.scandir(path_bytes))
+            self.assertEqual(len(entries), 1, entries)
+            entry = entries[0]
 
-        self.assertEqual(entry.name, b'file.txt')
-        self.assertEqual(entry.path,
-                         os.fsencode(os.path.join(self.path, 'file.txt')))
+            self.assertEqual(entry.name, b'file.txt')
+            self.assertEqual(entry.path,
+                             os.fsencode(os.path.join(self.path, 'file.txt')))
+            self.assertIs(type(entry.name), bytes)
+            self.assertIs(type(entry.path), bytes)
 
     @unittest.skipUnless(os.listdir in os.supports_fd,
                          'fd support for listdir required for this test.')
