@@ -172,10 +172,10 @@ class IdleConf:
         "Populate default and user config parser dictionaries."
         #build idle install path
         if __name__ != '__main__': # we were imported
-            idleDir=os.path.dirname(__file__)
+            idleDir = os.path.dirname(__file__)
         else: # we were exec'ed (for testing only)
-            idleDir=os.path.abspath(sys.path[0])
-        userDir=self.GetUserCfgDir()
+            idleDir = os.path.abspath(sys.path[0])
+        self.userdir = userDir = self.GetUserCfgDir()
 
         defCfgFiles = {}
         usrCfgFiles = {}
