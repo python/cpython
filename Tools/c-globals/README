@@ -11,12 +11,13 @@ falls into one of several categories:
 * module state
 * Python runtime state
 
-The globals.txt file is organized similarly.  Of the the different
+The globals.txt file is organized similarly.  Of the different
 categories, the last two are problematic and generally should not exist
-in the codebase.  Globals that hold module state (i.e. in Modules/*.c)
-cause problems when multiple interpreters are in use.  For more info,
-see PEP 3121, which addresses the situation for extension modules in
-general.
+in the codebase.
+
+Globals that hold module state (i.e. in Modules/*.c) cause problems
+when multiple interpreters are in use.  For more info, see PEP 3121,
+which addresses the situation for extension modules in general.
 
 Globals in the last category should be avoided as well.  The problem
 isn't with the Python runtime having state.  Rather, the problem is with
