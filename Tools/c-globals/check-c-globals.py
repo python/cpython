@@ -13,7 +13,7 @@ VERBOSITY = 2
 C_GLOBALS_DIR = os.path.abspath(os.path.dirname(__file__))
 TOOLS_DIR = os.path.dirname(C_GLOBALS_DIR)
 ROOT_DIR = os.path.dirname(TOOLS_DIR)
-GLOBALS_FILE = os.path.join(C_GLOBALS_DIR, 'globals.txt')
+GLOBALS_FILE = os.path.join(C_GLOBALS_DIR, 'ignored-globals.txt')
 
 SOURCE_DIRS = ['Include', 'Objects', 'Modules', 'Parser', 'Python']
 

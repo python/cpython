@@ -11,7 +11,7 @@ falls into one of several categories:
 * module state
 * Python runtime state
 
-The globals.txt file is organized similarly.  Of the different
+The ignored-globals.txt file is organized similarly.  Of the different
 categories, the last two are problematic and generally should not exist
 in the codebase.
 
@@ -38,4 +38,4 @@ should be run to ensure that no new globals have been added:
 
 If it reports any globals then they should be resolved.  If the globals
 are runtime state then they should be folded into _PyRuntimeState.
-Otherwise they should be added to globals.txt.
+Otherwise they should be added to ignored-globals.txt.
