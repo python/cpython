@@ -653,9 +653,12 @@ class PosixTester(unittest.TestCase):
     def test_listdir_bytes(self):
         # When listdir is called with a bytes object,
         # the returned strings are of type bytes.
-        # Bytes-like objects are supported too.
-        for cls in bytes, bytearray, memoryview:
-            names = posix.listdir(cls(b'.'))
+        self.assertIn(os.fsencode(support.TESTFN), posix.listdir(b'.'))
+
+    def test_listdir_bytes_like(self):
+        for cls in bytearray, memoryview:
+            with self.assertWarns(DeprecationWarning):
+                names = posix.listdir(cls(b'.'))
             self.assertIn(os.fsencode(support.TESTFN), names)
             for name in names:
                 self.assertIs(type(name), bytes)

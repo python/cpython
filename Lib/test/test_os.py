@@ -3411,9 +3411,22 @@ class TestScandir(unittest.TestCase):
     def test_bytes(self):
         self.create_file("file.txt")
 
-        for cls in bytes, bytearray, memoryview:
+        path_bytes = os.fsencode(self.path)
+        entries = list(os.scandir(path_bytes))
+        self.assertEqual(len(entries), 1, entries)
+        entry = entries[0]
+
+        self.assertEqual(entry.name, b'file.txt')
+        self.assertEqual(entry.path,
+                         os.fsencode(os.path.join(self.path, 'file.txt')))
+
+    def test_bytes_like(self):
+        self.create_file("file.txt")
+
+        for cls in bytearray, memoryview:
             path_bytes = cls(os.fsencode(self.path))
-            entries = list(os.scandir(path_bytes))
+            with self.assertWarns(DeprecationWarning):
+                entries = list(os.scandir(path_bytes))
             self.assertEqual(len(entries), 1, entries)
             entry = entries[0]
 
