@@ -14,7 +14,7 @@ from tkinter import (Toplevel, Frame, LabelFrame, Listbox, Label, Button,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
-                     HORIZONTAL, VERTICAL, ANCHOR, END)
+                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
 from tkinter.ttk import Scrollbar
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
@@ -78,7 +78,7 @@ class ConfigDialog(Toplevel):
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.cancel)
-        self.tab_pages.focus_set()
+        self.fontlist.focus_set()
         # XXX Decide whether to keep or delete these key bindings.
         # Key bindings for this dialog.
         # self.bind('<Escape>', self.Cancel) #dismiss dialog, no save
@@ -143,26 +143,24 @@ class ConfigDialog(Toplevel):
         self.space_num = IntVar(parent)
         self.edit_font = tkFont.Font(parent, ('courier', 10, 'normal'))
 
-        ##widget creation
-        #body frame
+        # Create widgets.
+        # body and body section frames.
         frame = self.tab_pages.pages['Fonts/Tabs'].frame
-        #body section frames
         frame_font = LabelFrame(
                 frame, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
         frame_indent = LabelFrame(
                 frame, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
-        #frame_font
+        # frame_font
         frame_font_name = Frame(frame_font)
         frame_font_param = Frame(frame_font)
         font_name_title = Label(
                 frame_font_name, justify=LEFT, text='Font Face :')
-        self.list_fonts = Listbox(
+        self.fontlist = Listbox(
                 frame_font_name, height=5, takefocus=FALSE, exportselection=FALSE)
-        self.list_fonts.bind(
-                '<ButtonRelease-1>', self.on_list_fonts_button_release)
+        self.fontlist.bind('<<ListboxSelect>>', self.on_fontlist_select)
         scroll_font = Scrollbar(frame_font_name)
-        scroll_font.config(command=self.list_fonts.yview)
-        self.list_fonts.config(yscrollcommand=scroll_font.set)
+        scroll_font.config(command=self.fontlist.yview)
+        self.fontlist.config(yscrollcommand=scroll_font.set)
         font_size_title = Label(frame_font_param, text='Size :')
         self.opt_menu_font_size = DynOptionMenu(
                 frame_font_param, self.font_size, None, command=self.set_font_sample)
@@ -173,7 +171,7 @@ class ConfigDialog(Toplevel):
         self.font_sample = Label(
                 frame_font_sample, justify=LEFT, font=self.edit_font,
                 text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]')
-        #frame_indent
+        # frame_indent
         frame_indent_size = Frame(frame_indent)
         indent_size_title = Label(
                 frame_indent_size, justify=LEFT,
@@ -182,25 +180,26 @@ class ConfigDialog(Toplevel):
                 frame_indent_size, variable=self.space_num,
                 orient='horizontal', tickinterval=2, from_=2, to=16)
 
-        #widget packing
-        #body
+        # Pack widgets.
+        # body
         frame_font.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_indent.pack(side=LEFT, padx=5, pady=5, fill=Y)
-        #frame_font
+        # frame_font
         frame_font_name.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_font_param.pack(side=TOP, padx=5, pady=5, fill=X)
         font_name_title.pack(side=TOP, anchor=W)
-        self.list_fonts.pack(side=LEFT, expand=TRUE, fill=X)
+        self.fontlist.pack(side=LEFT, expand=TRUE, fill=X)
         scroll_font.pack(side=LEFT, fill=Y)
         font_size_title.pack(side=LEFT, anchor=W)
         self.opt_menu_font_size.pack(side=LEFT, anchor=W)
         check_font_bold.pack(side=LEFT, anchor=W, padx=20)
         frame_font_sample.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         self.font_sample.pack(expand=TRUE, fill=BOTH)
-        #frame_indent
+        # frame_indent
         frame_indent_size.pack(side=TOP, fill=X)
         indent_size_title.pack(side=TOP, anchor=W, padx=5)
         self.scale_indent_size.pack(side=TOP, padx=5, fill=X)
+
         return frame
 
     def create_page_highlight(self):
@@ -986,13 +985,13 @@ class ConfigDialog(Toplevel):
         self.is_builtin_theme.set(0)
         self.set_theme_type()
 
-    def on_list_fonts_button_release(self, event):
-        """Handle event of selecting a font from the list.
+    def on_fontlist_select(self, event):
+        """Handle selecting a font from the list.
 
-        Change the font name to the font selected from the list
-        and update sample text to show that font.
+        Event can result from either mouse click or Up or Down key.
+        Set font_name and example display to selection.
         """
-        font = self.list_fonts.get(ANCHOR)
+        font = self.fontlist.get(ANCHOR if event.type == 3 else ACTIVE)
         self.font_name.set(font.lower())
         self.set_font_sample()
 
@@ -1126,7 +1125,7 @@ class ConfigDialog(Toplevel):
         fonts = list(tkFont.families(self))
         fonts.sort()
         for font in fonts:
-            self.list_fonts.insert(END, font)
+            self.fontlist.insert(END, font)
         configured_font = idleConf.GetFont(self, 'main', 'EditorWindow')
         font_name = configured_font[0].lower()
         font_size = configured_font[1]
@@ -1135,9 +1134,10 @@ class ConfigDialog(Toplevel):
         lc_fonts = [s.lower() for s in fonts]
         try:
             current_font_index = lc_fonts.index(font_name)
-            self.list_fonts.see(current_font_index)
-            self.list_fonts.select_set(current_font_index)
-            self.list_fonts.select_anchor(current_font_index)
+            self.fontlist.see(current_font_index)
+            self.fontlist.select_set(current_font_index)
+            self.fontlist.select_anchor(current_font_index)
+            self.fontlist.activate(current_font_index)
         except ValueError:
             pass
         # Set font size dropdown.
