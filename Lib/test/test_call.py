@@ -7,6 +7,7 @@ except ImportError:
     _testcapi = None
 import struct
 import collections
+import types
 
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C

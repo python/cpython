@@ -4273,6 +4273,74 @@ test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+func_specialize(PyObject *self, PyObject *args)
+{
+    PyObject *func, *code, *guards;
+    int res;
+
+    if (!PyArg_ParseTuple(args, "O!OO:func_specialize",
+                          &PyFunction_Type, &func, &code, &guards)) {
+        return NULL;
+    }
+
+    res = PyFunction_Specialize(func, code, guards);
+    if (res < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+func_get_specialized(PyObject *self, PyObject *args)
+{
+    PyObject *func;
+
+    if (!PyArg_ParseTuple(args, "O!:func_get_specialized",
+                          &PyFunction_Type, &func)) {
+        return NULL;
+    }
+
+    return PyFunction_GetSpecializedCodes(func);
+}
+
+static PyObject *
+func_remove_specialized(PyObject *self, PyObject *args)
+{
+    PyObject *func;
+    Py_ssize_t index;
+
+    if (!PyArg_ParseTuple(args, "O!n:func_remove_specialized",
+                          &PyFunction_Type, &func, &index)) {
+        return NULL;
+    }
+
+    if (PyFunction_RemoveSpecialized(func, index) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+func_remove_all_specialized(PyObject *self, PyObject *args)
+{
+    PyObject *func;
+
+    if (!PyArg_ParseTuple(args, "O!:func_remove_all_specialized",
+                          &PyFunction_Type, &func)) {
+        return NULL;
+    }
+
+    if (PyFunction_RemoveAllSpecialized(func) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4485,6 +4553,10 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_fastcallkeywords", test_pyobject_fastcallkeywords, METH_VARARGS},
+    {"func_specialize", func_specialize, METH_VARARGS},
+    {"func_get_specialized", func_get_specialized, METH_VARARGS},
+    {"func_remove_specialized", func_remove_specialized, METH_VARARGS},
+    {"func_remove_all_specialized", func_remove_all_specialized, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -4828,6 +4900,118 @@ static PyTypeObject awaitType = {
 };
 
 
+/* PyGuard */
+
+static int
+pyguard_init(PyObject *self, PyObject* func)
+{
+    PyObject *res_obj;
+    int res;
+
+    res_obj = PyObject_CallMethod(self, "init", "O", func);
+    if (res_obj == NULL) {
+        return -1;
+    }
+
+    res = PyLong_AsLong(res_obj);
+    Py_DECREF(res_obj);
+    if (res == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+
+    return res;
+}
+
+static int
+pyguard_check(PyObject *self, PyObject** stack, Py_ssize_t nargs,
+              PyObject *kwnames)
+{
+    PyObject *meth, *res_obj;
+    int res;
+
+    meth = PyObject_GetAttrString(self, "check");
+    if (meth == NULL) {
+        return -1;
+    }
+
+    res_obj = _PyObject_FastCallKeywords(meth, stack, nargs, kwnames);
+    Py_DECREF(meth);
+    if (res_obj == NULL) {
+        return -1;
+    }
+
+    res = PyLong_AsLong(res_obj);
+    Py_DECREF(res_obj);
+    if (res == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+
+    return res;
+}
+
+static PyObject *
+pyguard_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *op;
+    PyFuncGuardObject *self;
+
+    op = PyFuncGuard_Type.tp_new(type, args, kwds);
+    if (op == NULL)
+        return NULL;
+
+    self = (PyFuncGuardObject *)op;
+    self->init = pyguard_init;
+    self->check = pyguard_check;
+
+    return op;
+}
+
+static PyTypeObject PyGuard_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "PyGuard",
+    sizeof(PyFuncGuardObject),
+    0,
+    0,         /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
+        | Py_TPFLAGS_HAVE_GC,                   /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    &PyFuncGuard_Type,                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    pyguard_new,                                /* tp_new */
+    0,                                          /* tp_free */
+};
+
+
+
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testcapi",
@@ -4868,6 +5052,14 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+
+    /* tp_traverse is not "inherited" with PyType_Ready(), it should be
+     * inherited explicitly. */
+    PyGuard_Type.tp_traverse = PyFuncGuard_Type.tp_traverse;
+    if (PyType_Ready(&PyGuard_Type) < 0)
+        return NULL;
+    Py_INCREF(&PyGuard_Type);
+    PyModule_AddObject(m, "PyGuard", (PyObject *)&PyGuard_Type);
 
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));

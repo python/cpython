@@ -294,23 +294,128 @@ function_code_fastcall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
 }
 
 
+static int
+function_call_specialized(PyFunctionObject *func, PyObject **stack,
+                          Py_ssize_t nargs, PyObject *kwnames,
+                          PyObject **spe_code)
+{
+    assert(!PyErr_Occurred());
+    /* for performance, this function must only be called if the called
+       function has specialized code */
+    assert(func->func_nb_specialized > 0);
+
+    for (Py_ssize_t i=0; i < func->func_nb_specialized; ) {
+        int res;
+        PySpecializedCode *spe;
+        Py_ssize_t j;
+
+        spe = &func->func_specialized[i];
+
+        /* initialized to make the compiler happy, but res is always set
+         * in the loop */
+        res = 0;
+        assert(spe->nb_guard >= 1);
+        for (j=0; j < spe->nb_guard; j++) {
+            PyFuncGuardObject *guard = (PyFuncGuardObject *)spe->guards[j];
+
+            res = guard->check((PyObject *)guard, stack, nargs, kwnames);
+            if (res)
+                break;
+        }
+
+        if (!res) {
+            /* all guards succeded: use this specialized code */
+            assert(!PyErr_Occurred());
+            *spe_code = spe->code;
+            return 0;
+        }
+
+        if (res == 2) {
+            /* a guard will always fail: remove the specialized code */
+            if (PyFunction_RemoveSpecialized((PyObject *)func, i) < 0) {
+                return -1;
+            }
+            continue;
+        }
+
+        if (res == -1) {
+            /* a guard raised an exception */
+            assert(PyErr_Occurred());
+            return -1;
+        }
+
+        if (res != 1) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "guard check result must be in the range -1..2, "
+                         "got %i", res);
+            return -1;
+        }
+
+        /* a guard failed temporarely: try the next specialized code */
+        i++;
+    }
+    assert(!PyErr_Occurred());
+
+    /* no specialized code was selected (all guards failed) */
+    *spe_code = NULL;
+    return 0;
+}
+
+
 PyObject *
-_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
+_PyFunction_FastCallDict(PyObject *ofunc, PyObject **args, Py_ssize_t nargs,
                          PyObject *kwargs)
 {
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
+    PyFunctionObject *func;
+    PyCodeObject *co;
+    PyObject *globals;
+    PyObject *argdefs;
     PyObject *kwdefs, *closure, *name, *qualname;
     PyObject *kwtuple, **k;
     PyObject **d;
     Py_ssize_t nd, nk;
     PyObject *result;
 
-    assert(func != NULL);
+    assert(ofunc != NULL);
     assert(nargs >= 0);
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
+
+    assert(PyFunction_Check(ofunc));
+    func = (PyFunctionObject *)ofunc;
+
+    co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    globals = PyFunction_GET_GLOBALS(func);
+    argdefs = PyFunction_GET_DEFAULTS(func);
+
+    if (func->func_nb_specialized) {
+        PyObject **stack;
+        PyObject *kwnames;
+        PyObject *spe_code;
+        int res;
+
+        if (_PyStack_UnpackDict(args, nargs, kwargs,
+                                &stack, &kwnames) < 0) {
+            return NULL;
+        }
+
+        res = function_call_specialized(func, stack, nargs, kwnames, &spe_code);
+        if (stack != args) {
+            PyMem_Free(stack);
+        }
+        Py_XDECREF(kwnames);
+
+        if (res < 0) {
+            return NULL;
+        }
+
+        if (spe_code) {
+            if (!PyCode_Check(spe_code)) {
+                return _PyObject_FastCallDict(spe_code, stack, nargs, kwargs);
+            }
+            co = (PyCodeObject *)spe_code;
+        }
+    }
 
     if (co->co_kwonlyargcount == 0 &&
         (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) &&
@@ -382,23 +487,49 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 }
 
 PyObject *
-_PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
+_PyFunction_FastCallKeywords(PyObject *ofunc, PyObject **stack,
                              Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
+    PyFunctionObject *func;
+    PyCodeObject *co;
+    PyObject *globals;
+    PyObject *argdefs;
     PyObject *kwdefs, *closure, *name, *qualname;
     PyObject **d;
-    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+    Py_ssize_t nkwargs;
     Py_ssize_t nd;
 
-    assert(PyFunction_Check(func));
+    assert(PyFunction_Check(ofunc));
+    func = (PyFunctionObject *)ofunc;
+
     assert(nargs >= 0);
     assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
+
+    nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
     assert((nargs == 0 && nkwargs == 0) || stack != NULL);
     /* kwnames must only contains str strings, no subclass, and all keys must
        be unique */
+
+    co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    globals = PyFunction_GET_GLOBALS(func);
+    argdefs = PyFunction_GET_DEFAULTS(func);
+
+    if (func->func_nb_specialized) {
+        PyObject *spe_code;
+
+        if (function_call_specialized(func, stack, nargs, kwnames,
+                                      &spe_code) < 0) {
+            return NULL;
+        }
+
+        if (spe_code) {
+            if (!PyCode_Check(spe_code)) {
+                return _PyObject_FastCallKeywords(spe_code,
+                                                  stack, nargs, kwnames);
+            }
+            co = (PyCodeObject *)spe_code;
+        }
+    }
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))

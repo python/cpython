@@ -1758,6 +1758,9 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyFrame_Type) < 0)
         Py_FatalError("Can't initialize frame type");
 
+    if (PyType_Ready(&PyFuncGuard_Type) < 0)
+        Py_FatalError("Can't initialize function guard");
+
     if (PyType_Ready(&PyCFunction_Type) < 0)
         Py_FatalError("Can't initialize builtin function type");
 

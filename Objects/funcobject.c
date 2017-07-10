@@ -5,6 +5,248 @@
 #include "code.h"
 #include "structmember.h"
 
+/* PyFuncGuard_Type */
+
+static int
+guard_check(PyObject *self, PyObject **args, Py_ssize_t nargs,
+            PyObject *kwnames)
+{
+    return 0;
+}
+
+static int
+guard_init(PyObject *self, PyObject *func)
+{
+    return 0;
+}
+
+static PyObject*
+guard_call(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyFuncGuardObject *guard = (PyFuncGuardObject *)self;
+    PyObject **args_stack, **stack;
+    Py_ssize_t nargs;
+    PyObject *kwnames;
+    int res;
+
+    assert(PyTuple_CheckExact(args));
+    args_stack = &PyTuple_GET_ITEM(args, 0);
+    nargs = PyTuple_GET_SIZE(args);
+    if (_PyStack_UnpackDict(args_stack, nargs, kwargs,
+                            &stack, &kwnames) < 0) {
+        return NULL;
+    }
+
+    res = guard->check(self, stack, nargs, kwnames);
+    if (stack != args_stack) {
+        PyMem_Free(stack);
+    }
+    Py_XDECREF(kwnames);
+
+    if (res < 0) {
+        return NULL;
+    }
+
+    if (res > 2) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "guard check result must be in the range -1..2, "
+                     "got %i", res);
+        return NULL;
+    }
+
+    return PyLong_FromLong(res);
+}
+
+static PyObject *
+guard_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyFuncGuardObject *self;
+
+    assert(type != NULL && type->tp_alloc != NULL);
+    self = (PyFuncGuardObject *)type->tp_alloc(type, 0);
+    if (self == NULL)
+        return NULL;
+
+    self->init = guard_init;
+    self->check = guard_check;
+
+    return (PyObject *)self;
+}
+
+static void
+guard_dealloc(PyFuncGuardObject *op)
+{
+    PyObject_GC_UnTrack(op);
+    Py_TYPE(op)->tp_free(op);
+}
+
+static int
+guard_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    return 0;
+}
+
+PyTypeObject PyFuncGuard_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "FuncGuard",
+    sizeof(PyFuncGuardObject),
+    0,
+    (destructor)guard_dealloc,                  /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    guard_call,                                 /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
+        | Py_TPFLAGS_HAVE_GC,                   /* tp_flags */
+    0,                                          /* tp_doc */
+    guard_traverse,                             /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    PyType_GenericAlloc,                        /* tp_alloc */
+    guard_new,                                  /* tp_new */
+    PyObject_GC_Del,                            /* tp_free */
+};
+
+/* PySpecializedCode */
+
+static void
+specode_guards_dealloc(Py_ssize_t nguard, PyObject **guards)
+{
+    Py_ssize_t i;
+    for (i=0; i < nguard; i++)
+        Py_DECREF(guards[i]);
+    PyMem_Free(guards);
+}
+
+static void
+specode_dealloc(PySpecializedCode *f)
+{
+    Py_CLEAR(f->code);
+    specode_guards_dealloc(f->nb_guard, f->guards);
+}
+
+static PyObject*
+specode_as_tuple(PySpecializedCode* spe)
+{
+    PyObject *guards = NULL, *tuple;
+    Py_ssize_t i;
+
+    guards = PyList_New(spe->nb_guard);
+    if (guards == NULL)
+        return NULL;
+
+    for (i=0; i<spe->nb_guard; i++) {
+        PyObject *guard = spe->guards[i];
+
+        Py_INCREF(guard);
+        PyList_SET_ITEM(guards, i, guard);
+    }
+
+    tuple = PyTuple_New(2);
+    if (tuple == NULL) {
+        Py_XDECREF(guards);
+        return NULL;
+    }
+
+    Py_INCREF(spe->code);
+    PyTuple_SET_ITEM(tuple, 0, spe->code);
+    PyTuple_SET_ITEM(tuple, 1, guards);
+    return tuple;
+}
+
+
+/* PyFunctionObject */
+
+static int
+func_remove_specialized(PyFunctionObject *op, Py_ssize_t index)
+{
+    Py_ssize_t size;
+    PySpecializedCode *specialized;
+
+    if (index >= op->func_nb_specialized) {
+        /* invalid index: do nothing */
+        return 0;
+    }
+
+    specode_dealloc(&op->func_specialized[index]);
+
+    op->func_nb_specialized--;
+    if (index < op->func_nb_specialized) {
+        size = (op->func_nb_specialized - index) * sizeof(op->func_specialized[0]);
+        memmove(&op->func_specialized[index], &op->func_specialized[index+1], size);
+    }
+
+    size = op->func_nb_specialized * sizeof(PySpecializedCode);
+    specialized = PyMem_Realloc(op->func_specialized, size);
+    if (specialized != NULL) {
+        op->func_specialized = specialized;
+    }
+    else {
+        /* shrinking a memory block is not supposed the fail, but it's
+         * doesn't matter if the array is a little bit larger if realloc
+         * failed. */
+    }
+    return 0;
+}
+
+int
+PyFunction_RemoveSpecialized(PyObject *func, Py_ssize_t index)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (index < 0) {
+        PyErr_SetString(PyExc_ValueError, "index must be >= 0");
+        return -1;
+    }
+    func_remove_specialized((PyFunctionObject *)func, index);
+    return 0;
+}
+
+static void
+func_remove_all_specialized(PyFunctionObject *func)
+{
+    Py_ssize_t i;
+
+    for (i=0; i < func->func_nb_specialized; i++)
+        specode_dealloc(&func->func_specialized[i]);
+    func->func_nb_specialized = 0;
+}
+
+int
+PyFunction_RemoveAllSpecialized(PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    func_remove_all_specialized((PyFunctionObject *)func);
+    return 0;
+}
+
 PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
@@ -60,6 +302,9 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     else
         op->func_qualname = op->func_name;
     Py_INCREF(op->func_qualname);
+
+    op->func_nb_specialized = 0;
+    op->func_specialized = NULL;
 
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
@@ -271,6 +516,7 @@ func_set_code(PyFunctionObject *op, PyObject *value)
     }
     Py_INCREF(value);
     Py_XSETREF(op->func_code, value);
+    func_remove_all_specialized(op);
     return 0;
 }
 
@@ -538,6 +784,8 @@ func_dealloc(PyFunctionObject *op)
     Py_XDECREF(op->func_closure);
     Py_XDECREF(op->func_annotations);
     Py_XDECREF(op->func_qualname);
+    func_remove_all_specialized(op);
+    PyMem_Free(op->func_specialized);
     PyObject_GC_Del(op);
 }
 
@@ -551,6 +799,8 @@ func_repr(PyFunctionObject *op)
 static int
 func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
+    Py_ssize_t i, j;
+
     Py_VISIT(f->func_code);
     Py_VISIT(f->func_globals);
     Py_VISIT(f->func_module);
@@ -562,6 +812,14 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
     Py_VISIT(f->func_closure);
     Py_VISIT(f->func_annotations);
     Py_VISIT(f->func_qualname);
+
+    for (i=0; i < f->func_nb_specialized; i++) {
+        PySpecializedCode *spe = &f->func_specialized[i];
+
+        Py_VISIT(spe->code);
+        for (j=0; j < spe->nb_guard; j++)
+            Py_VISIT(spe->guards[j]);
+    }
     return 0;
 }
 
@@ -586,6 +844,339 @@ func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
     }
     return PyMethod_New(func, obj);
 }
+
+
+static int
+func_guards_from_list(PyObject *self, PyObject *guard_list,
+                      Py_ssize_t *nb_guard, PyObject ***pguards)
+{
+    PyObject *seq, *item;
+    Py_ssize_t size, n, i;
+    PyObject **guards = NULL;
+    int res = 1;
+
+    *nb_guard = 0;
+    *pguards = NULL;
+
+    seq = PySequence_Fast(guard_list, "guards must be a iterable");
+    if (seq == NULL)
+        return -1;
+
+    n = PySequence_Fast_GET_SIZE(seq);
+    if (n == 0) {
+        PyErr_SetString(PyExc_ValueError, "need at least one guard");
+        goto error;
+    }
+
+    size = n * sizeof(guards[0]);
+    guards = PyMem_Malloc(size);
+    if (guards == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+
+    for (i=0; i<n; i++) {
+        PyFuncGuardObject *guard;
+        int init_res;
+
+        item = PySequence_Fast_GET_ITEM(seq, i);
+
+        if (!PyObject_TypeCheck(item, &PyFuncGuard_Type)) {
+            PyErr_Format(PyExc_TypeError, "guard must a Guard, got %s",
+                         Py_TYPE(item)->tp_name);
+            goto error;
+        }
+
+        guard = (PyFuncGuardObject *)item;
+
+        init_res = guard->init((PyObject *)guard, (PyObject *)self);
+        if (init_res == -1)
+            goto error;
+        if (init_res == 1)
+            goto cleanup;
+        if (init_res) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "guard init result must be in the range -1..1, "
+                         "got %i", res);
+            goto error;
+        }
+
+        Py_INCREF(guard);
+        guards[i] = (PyObject *)guard;
+        (*nb_guard)++;
+    }
+
+    Py_DECREF(seq);
+    *pguards = guards;
+    return 0;
+
+error:
+    res = -1;
+cleanup:
+    specode_guards_dealloc((*nb_guard), guards);
+    *nb_guard = 0;
+    Py_DECREF(seq);
+    return res;
+}
+
+static PyCodeObject*
+func_specialize_code(PyFunctionObject *self, PyObject *obj)
+{
+    PyFunctionObject *func = NULL, *self_func;
+    PyCodeObject *self_code, *code;
+    int equals;
+
+    self_func = (PyFunctionObject *)self;
+    self_code = (PyCodeObject*)self->func_code;
+
+    if (PyFunction_Check(obj)) {
+        func = (PyFunctionObject *)obj;
+        code = (PyCodeObject*)func->func_code;
+    }
+    else {
+        assert(PyCode_Check(obj));
+        code = (PyCodeObject *)obj;
+    }
+
+    /* check cell variables */
+    if (code->co_cellvars != self_code->co_cellvars
+        && (code->co_cellvars == NULL || self_code->co_cellvars == NULL)) {
+        equals = 0;
+    }
+    else {
+        equals = PyObject_RichCompareBool(code->co_cellvars,
+                                          self_code->co_cellvars,
+                                          Py_EQ);
+    }
+    if (equals == -1) {
+        return NULL;
+    }
+    if (!equals) {
+        PyErr_SetString(PyExc_ValueError,
+                        "specialized bytecode uses "
+                        "different cell variables");
+        return NULL;
+    }
+
+    /* check free variables */
+    if (code->co_freevars != self_code->co_freevars
+        && (code->co_freevars == NULL || self_code->co_freevars == NULL)) {
+        equals = 0;
+    }
+    else {
+        equals = PyObject_RichCompareBool(code->co_freevars,
+                                          self_code->co_freevars,
+                                          Py_EQ);
+    }
+    if (equals == -1) {
+        return NULL;
+    }
+    if (!equals) {
+        PyErr_SetString(PyExc_ValueError,
+                        "specialized bytecode uses "
+                        "different free variables");
+        return NULL;
+    }
+
+    /* check code */
+    if (code->co_argcount != self_code->co_argcount
+        || code->co_kwonlyargcount != self_code->co_kwonlyargcount)
+    {
+        PyErr_SetString(PyExc_ValueError,
+                        "specialized bytecode doesn't have "
+                        "the same number of parameters");
+        return NULL;
+    }
+
+    if (func != NULL) {
+        if ((PyObject *)func == (PyObject *)self) {
+            PyErr_SetString(PyExc_ValueError,
+                            "a function cannot specialize itself");
+            return NULL;
+        }
+
+        if (func->func_nb_specialized) {
+            PyErr_SetString(PyExc_ValueError,
+                            "cannot specialize a function with another "
+                            "function which is already specialized");
+            return NULL;
+        }
+
+        /* check func defaults */
+        if (func->func_defaults != self_func->func_defaults
+            && (func->func_defaults == NULL
+                || self_func->func_defaults == NULL)) {
+            equals = 0;
+        }
+        else {
+            equals = PyObject_RichCompareBool(func->func_defaults,
+                                              self_func->func_defaults,
+                                              Py_EQ);
+        }
+        if (equals == -1) {
+            return NULL;
+        }
+        if (!equals) {
+            PyErr_SetString(PyExc_ValueError,
+                            "specialized function doesn't have "
+                            "the same parameter defaults");
+            return NULL;
+        }
+
+        /* check func kwdefaults */
+        if (func->func_kwdefaults != self_func->func_kwdefaults
+            && (func->func_kwdefaults == NULL
+                || self_func->func_kwdefaults == NULL)) {
+            equals = 0;
+        }
+        else {
+            equals = PyObject_RichCompareBool(func->func_kwdefaults,
+                                              self_func->func_kwdefaults,
+                                              Py_EQ);
+        }
+        if (equals == -1) {
+            return NULL;
+        }
+        if (!equals) {
+            PyErr_SetString(PyExc_ValueError,
+                            "specialized function doesn't have "
+                            "the same keyword parameter defaults");
+            return NULL;
+        }
+    }
+
+    /* create a new code object to replace the code name and the first line
+     * number */
+    return PyCode_New(code->co_argcount,
+                      code->co_kwonlyargcount,
+                      code->co_nlocals,
+                      code->co_stacksize,
+                      code->co_flags,
+                      code->co_code,
+                      code->co_consts,
+                      code->co_names,
+                      code->co_varnames,
+                      code->co_freevars,
+                      code->co_cellvars,
+                      code->co_filename,
+                      self_code->co_name,         /* copy name */
+                      self_code->co_firstlineno,  /* copy first line number */
+                      code->co_lnotab);
+}
+
+int
+PyFunction_Specialize(PyObject *func, PyObject *obj, PyObject *guard_list)
+{
+    PyFunctionObject *self;
+    int res = -1;
+    Py_ssize_t nb_guard = 0;
+    PyObject **guards = NULL;
+    int get_res;
+    Py_ssize_t size;
+    PyObject *new_code = NULL, *code;
+    PySpecializedCode *specialized, *spefunc;
+
+    if (!PyFunction_Check(func)) {
+        PyErr_BadInternalCall();
+        goto exit;
+    }
+    self = (PyFunctionObject *)func;
+
+    nb_guard = 0;
+    guards = NULL;
+
+    if (PyFunction_Check(obj) || PyCode_Check(obj)) {
+        new_code = (PyObject *)func_specialize_code(self, obj);
+        if (new_code == NULL)
+            goto exit;
+        code = new_code;
+    }
+    else if (PyCallable_Check(obj)) {
+        code = obj;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError, "function or code expected, got %s",
+                     Py_TYPE(obj)->tp_name);
+        goto exit;
+    }
+
+    /* get guards */
+    get_res = func_guards_from_list((PyObject *)self, guard_list,
+                                    &nb_guard, &guards);
+    if (get_res < 0) {
+        goto exit;
+    }
+    if (get_res) {
+        /* a guard failed: ignore the specialization */
+        res = 0;
+        goto exit;
+    }
+
+    /* add specialized */
+    size = sizeof(PySpecializedCode);
+    if (self->func_nb_specialized > PY_SSIZE_T_MAX / size - 1) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+    size = (self->func_nb_specialized + 1) * size;
+
+    specialized = PyMem_Realloc(self->func_specialized, size);
+    if (specialized == NULL) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+    self->func_specialized = specialized;
+    spefunc = &specialized[self->func_nb_specialized];
+
+    /* set specialized attributes */
+    Py_INCREF(code);
+    spefunc->code = code;
+    Py_XDECREF(new_code);
+    spefunc->nb_guard = nb_guard;
+    spefunc->guards = guards;
+
+    self->func_nb_specialized++;
+    return 1;
+
+exit:
+    Py_XDECREF(new_code);
+    specode_guards_dealloc(nb_guard, guards);
+    return res;
+}
+
+
+PyObject *
+PyFunction_GetSpecializedCodes(PyObject *func)
+{
+    PyFunctionObject *op;
+    PyObject *list = NULL;
+    Py_ssize_t i;
+
+    if (!PyFunction_Check(func)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    op = (PyFunctionObject *)func;
+
+    list = PyList_New(op->func_nb_specialized);
+    if (list == NULL) {
+        return NULL;
+    }
+
+    for (i=0; i < op->func_nb_specialized; i++) {
+        PyObject *item;
+
+        item = specode_as_tuple(&op->func_specialized[i]);
+        if (item == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+
+        PyList_SET_ITEM(list, i, item);
+    }
+    return list;
+}
+
 
 PyTypeObject PyFunction_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
