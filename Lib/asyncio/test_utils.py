@@ -32,6 +32,7 @@ from . import selectors
 from . import tasks
 from .coroutines import coroutine
 from .log import logger
+from test import support
 
 
 if sys.platform == 'win32':  # pragma: no cover
@@ -454,6 +455,7 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         self._get_running_loop = events._get_running_loop
         events._get_running_loop = lambda: None
+        self._thread_cleanup = support.threading_setup()
 
     def tearDown(self):
         self.unpatch_get_running_loop()
@@ -463,6 +465,10 @@ class TestCase(unittest.TestCase):
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
         self.assertEqual(sys.exc_info(), (None, None, None))
+
+        self.doCleanups()
+        support.threading_cleanup(*self._thread_cleanup)
+        support.reap_children()
 
 
 @contextlib.contextmanager
