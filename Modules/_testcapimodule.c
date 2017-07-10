@@ -4272,6 +4272,13 @@ test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
     return _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
 }
 
+static PyObject*
+stack_pointer(PyObject *self, PyObject *args)
+{
+    int v = 5;
+    return PyLong_FromVoidPtr(&v);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -4485,6 +4492,7 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_fastcallkeywords", test_pyobject_fastcallkeywords, METH_VARARGS},
+    {"stack_pointer", stack_pointer, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
