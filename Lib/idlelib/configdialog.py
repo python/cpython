@@ -218,8 +218,6 @@ class ConfigDialog(Toplevel):
         self.custom_theme = StringVar(parent)
         self.fg_bg_toggle = BooleanVar(parent)
         self.colour = StringVar(parent)
-        # XXX - font_name is defined in create_page_font_tab.  Needed here too?
-        self.font_name = StringVar(parent)
         self.is_builtin_theme = BooleanVar(parent)
         self.highlight_target = StringVar(parent)
 
@@ -334,8 +332,6 @@ class ConfigDialog(Toplevel):
             keybinding: Action/key bindings.
         """
         parent = self.parent
-        # XXX - binding_target isn't used.
-        self.binding_target = StringVar(parent)
         self.builtin_keys = StringVar(parent)
         self.custom_keys = StringVar(parent)
         self.are_keys_builtin = BooleanVar(parent)
@@ -420,18 +416,12 @@ class ConfigDialog(Toplevel):
             win_height: Initial window height in characters.
             startup_edit: Selector for opening in editor or shell mode.
             autosave: Selector for save prompt popup when using Run.
-            encoding: ?
         """
         parent = self.parent
         self.win_width = StringVar(parent)
         self.win_height = StringVar(parent)
         self.startup_edit = IntVar(parent)
         self.autosave = IntVar(parent)
-        # XXX - encoding isn't on the screen to be set, but is saved to config.
-        self.encoding = StringVar(parent)
-        # XXX - user_help_browser and help_browser aren't used.
-        self.user_help_browser = BooleanVar(parent)
-        self.help_browser = StringVar(parent)
 
         #widget creation
         #body
@@ -538,7 +528,6 @@ class ConfigDialog(Toplevel):
         self.win_height.trace_add('write', self.var_changed_win_height)
         self.startup_edit.trace_add('write', self.var_changed_startup_edit)
         self.autosave.trace_add('write', self.var_changed_autosave)
-        self.encoding.trace_add('write', self.var_changed_encoding)
 
     def remove_var_callbacks(self):
         "Remove callbacks to prevent memory leaks."
@@ -548,7 +537,7 @@ class ConfigDialog(Toplevel):
                 self.custom_theme, self.is_builtin_theme, self.highlight_target,
                 self.keybinding, self.builtin_keys, self.custom_keys,
                 self.are_keys_builtin, self.win_width, self.win_height,
-                self.startup_edit, self.autosave, self.encoding,):
+                self.startup_edit, self.autosave,):
             var.trace_remove('write', var.trace_info()[0][1])
 
     def var_changed_font(self, *params):
@@ -691,11 +680,6 @@ class ConfigDialog(Toplevel):
         value = self.autosave.get()
         changes.add_option('main', 'General', 'autosave', value)
 
-    def var_changed_encoding(self, *params):
-        "Store change to encoding."
-        value = self.encoding.get()
-        changes.add_option('main', 'EditorWindow', 'encoding', value)
-
     def set_theme_type(self):
         "Set available screen options based on builtin or custom theme."
         if self.is_builtin_theme.get():
@@ -819,8 +803,6 @@ class ConfigDialog(Toplevel):
         An action/key binding can be selected to change the key binding.
         """
         reselect = 0
-        # XXX - new_keyset isn't used in this function.
-        new_keyset = 0
         if self.list_bindings.curselection():
             reselect = 1
             list_index = self.list_bindings.index(ANCHOR)
@@ -1234,9 +1216,6 @@ class ConfigDialog(Toplevel):
                 'main', 'EditorWindow', 'width', type='int'))
         self.win_height.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'height', type='int'))
-        # Set default source encoding.
-        self.encoding.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'encoding', default='none'))
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
         for help_item in self.user_helplist:
