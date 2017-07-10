@@ -10,7 +10,12 @@
     '2.7': '2.7',
   };
 
-  function build_select(current_version, current_release) {
+  var all_languages = {
+      'en': 'English',
+      'fr': 'Français',
+  };
+
+  function build_version_select(current_version, current_release) {
     var buf = ['<select>'];
 
     $.each(all_versions, function(version, title) {
@@ -25,43 +30,94 @@
     return buf.join('');
   }
 
-  function patch_url(url, new_version) {
-    var url_re = /\.org\/(\d|py3k|dev|((release\/)?\d\.\d[\w\d\.]*))\//,
-        new_url = url.replace(url_re, '.org/' + new_version + '/');
+  function build_language_select(current_language) {
+    var buf = ['<select>'];
 
-    if (new_url == url && !new_url.match(url_re)) {
-      // python 2 url without version?
-      new_url = url.replace(/\.org\//, '.org/' + new_version + '/');
-    }
-    return new_url;
+    $.each(all_languages, function(language, title) {
+      if (language == current_language)
+        buf.push('<option value="' + language + '" selected="selected">' +
+                 all_languages[current_language] + '</option>');
+      else
+        buf.push('<option value="' + language + '">' + title + '</option>');
+    });
+    buf.push('</select>');
+    return buf.join('');
   }
 
-  function on_switch() {
-    var selected = $(this).children('option:selected').attr('value');
+  function naviagate_if_exists(url, default_url) {
+    // check beforehand if url exists, else redirect to default_url.
+    $.ajax({
+      url: url,
+      success: function() {
+         window.location.href = url;
+      },
+      error: function() {
+         window.location.href = default_url;
+      }
+    });
+  }
 
-    var url = window.location.href,
-        new_url = patch_url(url, selected);
-
+  function on_version_switch() {
+    var selected_version = $(this).children('option:selected').attr('value') + '/';
+    var url = window.location.href;
+    var current_language = find_language_in_url(url);
+    var current_version = find_version_in_url(url);
+    var new_url = url.replace('.org/' + current_language + current_version,
+                              '.org/' + current_language + selected_version);
     if (new_url != url) {
-      // check beforehand if url exists, else redirect to version's start page
-      $.ajax({
-        url: new_url,
-        success: function() {
-           window.location.href = new_url;
-        },
-        error: function() {
-           window.location.href = 'https://docs.python.org/' + selected;
-        }
-      });
+      naviagate_if_exists(new_url, 'https://docs.python.org/' +
+                          current_language + selected_version);
     }
+  }
+
+  function on_language_switch() {
+    var selected_language = $(this).children('option:selected').attr('value') + '/';
+    var url = window.location.href;
+    var current_language = find_language_in_url(url);
+    var current_version = find_version_in_url(url);
+    if (selected_language == 'en/') // Special 'default' case for english.
+      selected_language = '';
+    var new_url = url.replace('.org/' + current_language + current_version,
+                              '.org/' + selected_language + current_version);
+    if (new_url != url) {
+      naviagate_if_exists(new_url, 'https://docs.python.org/' +
+                          selected_language + current_version);
+    }
+  }
+
+  // Returns the path segment as a string, like 'fr/' or '' if not found.
+  function find_language_in_url(url) {
+    var language_regexp = '\.org/(' + Object.keys(all_languages).join('|') + '/)';
+    var match = url.match(language_regexp);
+    if (match !== null)
+        return match[1];
+    return '';
+  }
+
+  // Returns the path segment as a string, like '3.6/' or '' if not found.
+  function find_version_in_url(url) {
+    var language_segment = '(?:(?:' + Object.keys(all_languages).join('|') + ')/)';
+    var version_segment = '(?:(?:\\d|py3k|dev|(?:(?:release/)?\\d\\.\\d[\\w\\d\\.]*))/)';
+    var version_regexp = '\\.org/' + language_segment + '?(' + version_segment + ')';
+    var match = url.match(version_regexp);
+    if (match !== null)
+      return match[1];
+    return ''
   }
 
   $(document).ready(function() {
     var release = DOCUMENTATION_OPTIONS.VERSION;
+    var current_language = find_language_in_url(window.location.href).replace(
+            /\/+$/g, '') || 'en';
     var version = release.substr(0, 3);
-    var select = build_select(version, release);
+    var version_select = build_version_select(version, release);
 
-    $('.version_switcher_placeholder').html(select);
-    $('.version_switcher_placeholder select').bind('change', on_switch);
+    $('.version_switcher_placeholder').html(version_select);
+    $('.version_switcher_placeholder select').bind('change', on_version_switch);
+
+    var language_select = build_language_select(current_language);
+
+    $('.language_switcher_placeholder').html(language_select);
+    $('.language_switcher_placeholder select').bind('change', on_language_switch);
   });
 })();
