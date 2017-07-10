@@ -26,6 +26,15 @@ from idlelib import query
 from idlelib import replace
 from idlelib import search
 from idlelib import windows
+from idlelib.autocomplete import AutoComplete
+from idlelib.autoexpand import AutoExpand
+from idlelib.calltips import CallTips
+from idlelib.codecontext import CodeContext
+from idlelib.paragraph import FormatParagraph
+from idlelib.parenmatch import ParenMatch
+from idlelib.rstrip import RstripExtension
+from idlelib.runscript import ScriptBinding
+from idlelib.zoomheight import ZoomHeight
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -269,6 +278,34 @@ class EditorWindow(object):
         self.askyesno = tkMessageBox.askyesno
         self.askinteger = tkSimpleDialog.askinteger
         self.showerror = tkMessageBox.showerror
+
+
+        #init merged extentions binds - needs to be done after color is set
+        self.insAutoComplete=AutoComplete(self)
+        self.insAutoExpand=AutoExpand(self)
+        self.insCallTips=CallTips(self)
+        self.insCodeContext=CodeContext(self)
+        self.insFormatParagraph=FormatParagraph(self)
+        self.insParenMatch=ParenMatch(self)
+        self.insRstripExtension=RstripExtension(self)
+        self.insScriptBinding=ScriptBinding(self)
+        self.insZoomHeight=ZoomHeight(self)
+
+        text.bind("<<autocomplete>>",self.insAutoComplete.autocomplete_event)
+        text.bind("<<try-open-completions>>", self.insAutoComplete.try_open_completions_event)
+        text.bind("<<force-open-completions>>",self.insAutoComplete.force_open_completions_event)
+        text.bind("<<expand-word>>",self.insAutoExpand.expand_word_event)
+        text.bind("<<toggle-code-context>>",self.insCodeContext.toggle_code_context_event)
+        text.bind("<<format-paragraph>>",self.insFormatParagraph.format_paragraph_event)
+        text.bind("<<flash-paren>>",self.insParenMatch.flash_paren_event)
+        text.bind("<<paren-closed>>",self.insParenMatch.paren_closed_event)
+        text.bind("<<run-module>>",self.insScriptBinding.run_module_event)
+        text.bind("<<check-module>>",self.insScriptBinding.check_module_event)
+        text.bind("<<zoom-height>>",self.insZoomHeight.zoom_height_event)
+        text.bind("<<do-rstrip>>",self.insRstripExtension.do_rstrip)
+        text.bind("<<try-open-calltip>>",self.insCallTips.try_open_calltip_event)
+        text.bind("<<refresh-calltip>>",self.insCallTips.refresh_calltip_event) #must come after paren-closed to work right
+        text.bind("<<force-open-calltip>>",self.insCallTips.force_open_calltip_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
@@ -981,17 +1018,7 @@ class EditorWindow(object):
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(editor_only=True)
 
-    extfiles = {  # map config-extension section names to new file names
-        'AutoComplete': 'autocomplete',
-        'AutoExpand': 'autoexpand',
-        'CallTips': 'calltips',
-        'CodeContext': 'codecontext',
-        'FormatParagraph': 'paragraph',
-        'ParenMatch': 'parenmatch',
-        'RstripExtension': 'rstrip',
-        'ScriptBinding': 'runscript',
-        'ZoomHeight': 'zoomheight',
-        }
+    extfiles = {  }
 
     def load_extension(self, name):
         fname = self.extfiles.get(name, name)

@@ -11,7 +11,7 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 from tkinter import (Toplevel, Frame, LabelFrame, Listbox, Label, Button,
                      Entry, Text, Scale, Radiobutton, Checkbutton, Canvas,
-                     StringVar, BooleanVar, IntVar, TRUE, FALSE,
+                     OptionMenu, StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
@@ -72,6 +72,8 @@ class ConfigDialog(Toplevel):
             'Shell Error Text': ('error', '11'),
             'Shell Stdout Text': ('stdout', '12'),
             'Shell Stderr Text': ('stderr', '13'),
+            'Code Context Text': ('codecontext', '14'),
+            'Matched Parenthetics': ('parenmatch', '15'),
             }
         self.create_widgets()
         self.resizable(height=FALSE, width=FALSE)
@@ -218,8 +220,23 @@ class ConfigDialog(Toplevel):
         self.custom_theme = StringVar(parent)
         self.fg_bg_toggle = BooleanVar(parent)
         self.colour = StringVar(parent)
+        self.font_name = StringVar(parent)
         self.is_builtin_theme = BooleanVar(parent)
         self.highlight_target = StringVar(parent)
+        
+        self.parenstyle = StringVar(parent)
+        self.parenstyle.set(idleConf.GetOption(
+            'main','Theme','parenstyle', default='opener'))
+        self.bell = BooleanVar(parent)
+        self.bell.set(idleConf.GetOption(
+            'main','Theme','bell', default=True))
+        
+        self.flash_delay = IntVar(parent)
+        self.flash_delay.set(idleConf.GetOption(
+            'main','Theme','flash-delay', default=500))
+        self.num_lines = IntVar(parent)
+        self.num_lines.set(idleConf.GetOption(
+            'main','Theme','numlines', default=3))
 
         ##widget creation
         #body frame
@@ -229,6 +246,10 @@ class ConfigDialog(Toplevel):
                                  text=' Custom Highlighting ')
         frame_theme = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                 text=' Highlighting Theme ')
+        frame_paren = LabelFrame(frame, borderwidth=2, relief=GROOVE,
+                                text=' Matched Parenthetics ')
+        frame_code = LabelFrame(frame, borderwidth=2, relief=GROOVE,
+                                text=' Code Context ')
         #frame_custom
         self.text_highlight_sample=Text(
                 frame_custom, relief=SOLID, borderwidth=1,
@@ -238,10 +259,12 @@ class ConfigDialog(Toplevel):
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         text_and_tags=(
+            ('Class CodeContext\n', 'codecontext'),
             ('#you can click here', 'comment'), ('\n', 'normal'),
             ('#to choose items', 'comment'), ('\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
+            ('(parenthetics)','parenmatch'),
             ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
             ("'string'", 'string'), ('\n  var1 = ', 'normal'),
             ("'selected'", 'hilite'), ('\n  var2 = ', 'normal'),
@@ -297,10 +320,28 @@ class ConfigDialog(Toplevel):
                 command=self.delete_custom_theme)
         self.new_custom_theme = Label(frame_theme, bd=2)
 
+        #frame_paren
+        self.opt_menu_pstyle = OptionMenu(
+                frame_paren, self.parenstyle, "opener","parens","expression")#todo: figure out how to make it work
+        
+        flash_label = Label(frame_paren, text='Time Displayed : \n(0 is until given input)')
+        
+        self.entry_flash = Entry(
+                frame_paren, textvariable=self.flash_delay, width=4)
+        self.check_bell = Checkbutton(
+                frame_paren, text="Bell", variable=self.bell)
+        #frame_code
+        lines_label = Label(frame_code, text='Lines : ')
+        self.entry_num_lines = Entry(
+                frame_code, textvariable=self.num_lines, width=3)
+        
         ##widget packing
         #body
         frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_theme.pack(side=LEFT, padx=5, pady=5, fill=Y)
+        frame_theme.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_paren.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_code.pack(side=TOP, padx=5, pady=5, fill=X)
+        
         #frame_custom
         self.frame_colour_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
         frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
@@ -320,6 +361,17 @@ class ConfigDialog(Toplevel):
         self.opt_menu_theme_custom.pack(side=TOP, fill=X, anchor=W, padx=5, pady=5)
         self.button_delete_custom_theme.pack(side=TOP, fill=X, padx=5, pady=5)
         self.new_custom_theme.pack(side=TOP, fill=X, pady=5)
+
+        #frame_paren
+        self.opt_menu_pstyle.pack(side=TOP,anchor=W,padx=5, fill=X)
+        self.check_bell.pack(side=TOP, anchor=W,padx=5)
+        flash_label.pack(side=LEFT, anchor=W, padx=5)
+        self.entry_flash.pack(side=LEFT, fill=X,anchor=W,padx=5)            
+        #frame_code
+        lines_label.pack(side=LEFT, anchor=W, padx=5)
+        self.entry_num_lines.pack(side=LEFT,anchor=W,padx=5)
+        
+        
         return frame
 
     def create_page_keys(self):
@@ -422,6 +474,12 @@ class ConfigDialog(Toplevel):
         self.win_height = StringVar(parent)
         self.startup_edit = IntVar(parent)
         self.autosave = IntVar(parent)
+        self.autocomplete_wait = IntVar(parent)
+        self.autocomplete_wait.set(idleConf.GetOption(
+            'main','General','autocomplete_wait', default=2000))
+        self.formatp_maxw = IntVar(parent)
+        self.formatp_maxw.set(idleConf.GetOption(
+            'main','General','formatp_maxw', default=72))
 
         #widget creation
         #body
@@ -432,6 +490,7 @@ class ConfigDialog(Toplevel):
         frame_save = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                text=' autosave Preferences ')
         frame_win_size = Frame(frame, borderwidth=2, relief=GROOVE)
+        frame_extras = Frame(frame, borderwidth=2, relief=GROOVE)
         frame_help = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                text=' Additional Help Sources ')
         #frame_run
@@ -459,6 +518,13 @@ class ConfigDialog(Toplevel):
         win_height_title = Label(frame_win_size, text='Height')
         self.entry_win_height = Entry(
                 frame_win_size, textvariable=self.win_height, width=3)
+        #frame extras
+        autocomplete_wait_title = Label(frame_extras, text='AutoComplete Popup Wait')
+        self.entry_autocomplete_wait = Entry(
+                frame_extras, textvariable=self.autocomplete_wait, width=6) 
+        formatp_maxw_title = Label(frame_extras, text='Format Paragraph Max Width')        
+        self.entry_formatp_maxw = Entry(
+                frame_extras, textvariable=self.formatp_maxw, width=3)  
         #frame_help
         frame_helplist = Frame(frame_help)
         frame_helplist_buttons = Frame(frame_helplist)
@@ -484,6 +550,7 @@ class ConfigDialog(Toplevel):
         frame_run.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_save.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_win_size.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_extras.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         #frame_run
         startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -499,6 +566,11 @@ class ConfigDialog(Toplevel):
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.entry_win_width.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        #frame extras
+        self.entry_autocomplete_wait.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        autocomplete_wait_title.pack(side=RIGHT, anchor=E, pady=5)
+        self.entry_formatp_maxw.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        formatp_maxw_title.pack(side=RIGHT, anchor=E, pady=5)
         #frame_help
         frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
@@ -529,6 +601,13 @@ class ConfigDialog(Toplevel):
         self.startup_edit.trace_add('write', self.var_changed_startup_edit)
         self.autosave.trace_add('write', self.var_changed_autosave)
 
+        self.parenstyle.trace_add('write', self.var_changed_parenstyle)
+        self.bell.trace_add('write', self.var_changed_bell)
+        self.flash_delay.trace_add('write', self.var_changed_flash_delay)
+        self.num_lines.trace_add('write', self.var_changed_num_lines)
+        self.formatp_maxw.trace_add('write', self.var_changed_formatp_maxw)
+        self.autocomplete_wait.trace_add('write',self.var_changed_autocomplete_wait)
+                
     def remove_var_callbacks(self):
         "Remove callbacks to prevent memory leaks."
         for var in (
@@ -537,7 +616,8 @@ class ConfigDialog(Toplevel):
                 self.custom_theme, self.is_builtin_theme, self.highlight_target,
                 self.keybinding, self.builtin_keys, self.custom_keys,
                 self.are_keys_builtin, self.win_width, self.win_height,
-                self.startup_edit, self.autosave,):
+                self.startup_edit, self.autosave,
+                self.parenstyle, self.bell, self.flash_delay, self.num_lines):
             var.trace_remove('write', var.trace_info()[0][1])
 
     def var_changed_font(self, *params):
@@ -670,6 +750,16 @@ class ConfigDialog(Toplevel):
         value = self.win_height.get()
         changes.add_option('main', 'EditorWindow', 'height', value)
 
+    def var_changed_formatp_maxw(self, *params):
+        "Store change to format paragraph max width."
+        value = self.formatp_maxw.get()
+        changes.add_option('main', 'General', 'formatp_maxw', value)
+
+    def var_changed_autocomplete_wait(self, *params):
+        "Store change to autocomplete popup wait time."
+        value = self.autocomplete_wait.get()
+        changes.add_option('main', 'General', 'autocomplete_wait', value)
+
     def var_changed_startup_edit(self, *params):
         "Store change to toggle for starting IDLE in the editor or shell."
         value = self.startup_edit.get()
@@ -680,6 +770,26 @@ class ConfigDialog(Toplevel):
         value = self.autosave.get()
         changes.add_option('main', 'General', 'autosave', value)
 
+    def var_changed_parenstyle(self, *params):
+        "Store change to parenthetics display style."
+        value=self.parenstyle.get()
+        self.add_changed_item('main', 'Theme', 'parenstyle', value)
+
+    def var_changed_bell(self, *params):
+        "Store change to parenthtics bell (on/off)."
+        value=self.bell.get()
+        self.add_changed_item('main', 'Theme', 'bell', value)
+
+    def var_changed_flash_delay(self, *params):
+        "Store change to parenthetics flash delay."
+        value=self.flash_delay.get()
+        self.add_changed_item('main', 'Theme', 'flash-delay', value)
+
+    def var_changed_num_lines(self, *params):
+        "Store change to code context - number of lines displayed."
+        value=self.num_lines.get()
+        self.add_changed_item('main', 'Theme', 'numlines', value)
+        
     def set_theme_type(self):
         "Set available screen options based on builtin or custom theme."
         if self.is_builtin_theme.get():
@@ -1276,6 +1386,9 @@ class ConfigDialog(Toplevel):
             instance.set_notabs_indentwidth()
             instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
+            instance.insParenMatch.reset()
+            instance.insCodeContext.reset()
+            instance.insAutoComplete.reset()
 
     def cancel(self):
         "Dismiss config dialog."
@@ -1476,34 +1589,7 @@ machine. Some do not take affect until IDLE is restarted.
 [Cancel] only cancels changes made since the last save.
 '''
 help_pages = {
-    'Highlighting': '''
-Highlighting:
-The IDLE Dark color theme is new in October 2015.  It can only
-be used with older IDLE releases if it is saved as a custom
-theme, with a different name.
-''',
-    'Keys': '''
-Keys:
-The IDLE Modern Unix key set is new in June 2016.  It can only
-be used with older IDLE releases if it is saved as a custom
-key set, with a different name.
-''',
-    'Extensions': '''
-Extensions:
-
-Autocomplete: Popupwait is milleseconds to wait after key char, without
-cursor movement, before popping up completion box.  Key char is '.' after
-identifier or a '/' (or '\\' on Windows) within a string.
-
-FormatParagraph: Max-width is max chars in lines after re-formatting.
-Use with paragraphs in both strings and comment blocks.
-
-ParenMatch: Style indicates what is highlighted when closer is entered:
-'opener' - opener '({[' corresponding to closer; 'parens' - both chars;
-'expression' (default) - also everything in between. Hilite determines
-what highlighting is used. Flash-delay is how long to highlight if cursor
-is not moved (0 means forever).
-'''
+    
 }
 
 

@@ -1,4 +1,4 @@
-"""ParenMatch -- An IDLE extension for parenthesis matching.
+"""ParenMatch -- for parenthesis matching.
 
 When you hit a right paren, the cursor should move briefly to the left
 paren.  Paren here is used generically; the matching applies to
@@ -30,21 +30,6 @@ class ParenMatch:
     - Highlight when cursor is moved to the right of a closer.
       This might be too expensive to check.
     """
-    menudefs = [
-        ('edit', [
-            ("Show surrounding parens", "<<flash-paren>>"),
-        ])
-    ]
-    STYLE = idleConf.GetOption(
-            'extensions','ParenMatch','style', default='expression')
-    FLASH_DELAY = idleConf.GetOption(
-            'extensions','ParenMatch','flash-delay', type='int',default=500)
-    BELL = idleConf.GetOption(
-            'extensions','ParenMatch','bell', type='bool',default=1)
-    HILITE_CONFIG = idleConf.GetHighlight(
-        idleConf.CurrentTheme(), idleConf.GetOption(
-            'extensions','ParenMatch','hilite', default='expression'))
-
 
     RESTORE_VIRTUAL_EVENT_NAME = "<<parenmatch-check-restore>>"
     # We want the restore event be called before the usual return and
@@ -60,9 +45,21 @@ class ParenMatch:
         # and deactivate_restore (which calls event_delete).
         editwin.text.bind(self.RESTORE_VIRTUAL_EVENT_NAME,
                           self.restore_event)
-        self.bell = self.text.bell if self.BELL else lambda: None
         self.counter = 0
         self.is_restore_active = 0
+        self.reset()
+
+    def reset(self):
+        self.STYLE = idleConf.GetOption(
+            'main','Theme','parenstyle', default='opener')
+        self.FLASH_DELAY = idleConf.GetOption(
+                'main','Theme','flash-delay', type='int',default=500)
+        if idleConf.GetOption(
+                'main','Theme','bell', type='bool',default=1):
+            self.bell=self.text.bell
+        else:
+            self.bell=lambda:None
+        self.HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(), 'parenmatch')
         self.set_style(self.STYLE)
 
     def activate_restore(self):

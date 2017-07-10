@@ -356,7 +356,12 @@ class IdleConf:
                 'stderr-foreground':'#000000',
                 'stderr-background':'#ffffff',
                 'console-foreground':'#000000',
-                'console-background':'#ffffff' }
+                'console-background':'#ffffff',
+                'codecontext-foreground':'#000000',
+                'codecontext-background':'#ffffff',
+                'parenmatch-foreground':'000000',
+                'parenmatch-background':'#ffffff',
+                }
         for element in theme:
             if not cfgParser.has_option(themeName, element):
                 # Print warning that will return a default color
@@ -660,7 +665,21 @@ class IdleConf:
             '<<toggle-tabs>>': ['<Alt-Key-t>'],
             '<<change-indentwidth>>': ['<Alt-Key-u>'],
             '<<del-word-left>>': ['<Control-Key-BackSpace>'],
-            '<<del-word-right>>': ['<Control-Key-Delete>']
+            '<<del-word-right>>': ['<Control-Key-Delete>'],
+            '<<autocomplete>>':['<Key-Tab'],
+            '<<try-open-completions>>':['<KeyRelease-period>', '<KeyRelease-slash>', '<KeyRelease-backslash>'],
+            '<<expand-word>>':['<Alt-Key-slash>'],
+            '<<try-open-calltip>>':['<KeyRelease-parenleft>'],
+            '<<refresh-calltip>>':['<KeyRelease-parenright>', '<KeyRelease-0>'],
+            '<<force-open-calltip>>':['<Control-Key-backslash>'],
+            '<<autocomplete>>':['<Control-Key-backslash>'],
+            '<<toggle-code-context>>':['<Control-Key-1>'],
+            '<<format-paragraph>>':['<Alt-Key-q>'],
+            '<<flash-paren>>':['<Control-Key-0>'],
+            '<<paren-closed>>':['<KeyRelease-parenright>', '<KeyRelease-bracketright>', '<KeyRelease-braceright>'],
+            '<<run-module>>':['<Key-F5>'],
+            '<<check-module>>':['<Alt-Key-x>'],
+            '<<zoom-height>>':['<Alt-Key-2>']
             }
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or

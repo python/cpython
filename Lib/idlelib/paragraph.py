@@ -1,4 +1,4 @@
-"""Extension to format a paragraph or selection to a max width.
+"""format a paragraph or selection to a max width.
 
 Does basic, standard text formatting, and also understands Python
 comment blocks. Thus, for editing Python source code, this
@@ -21,12 +21,6 @@ from idlelib.config import idleConf
 
 class FormatParagraph:
 
-    menudefs = [
-        ('format', [   # /s/edit/format   dscherer@cmu.edu
-            ('Format Paragraph', '<<format-paragraph>>'),
-         ])
-    ]
-
     def __init__(self, editwin):
         self.editwin = editwin
 
@@ -48,7 +42,7 @@ class FormatParagraph:
         if limit is None:
             # The default length limit is that defined by pep8
             limit = idleConf.GetOption(
-                'extensions', 'FormatParagraph', 'max-width',
+                'main', 'General', 'formatp_maxw',
                 type='int', default=72)
         text = self.editwin.text
         first, last = self.editwin.get_selection_indices()

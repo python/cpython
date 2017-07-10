@@ -1,4 +1,4 @@
-"""calltips.py - An IDLE Extension to Jog Your Memory
+"""
 
 Call Tips are floating windows which display function, class, and method
 parameter and docstring information when you type an opening parenthesis, and
@@ -16,12 +16,6 @@ from idlelib.hyperparser import HyperParser
 import __main__
 
 class CallTips:
-
-    menudefs = [
-        ('edit', [
-            ("Show call tip", "<<force-open-calltip>>"),
-        ])
-    ]
 
     def __init__(self, editwin=None):
         if editwin is None:  # subprocess and test

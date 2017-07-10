@@ -1,6 +1,5 @@
-"""autocomplete.py - An IDLE extension for automatically completing names.
-
-This extension can complete either attribute names or file names. It can pop
+"""
+This can complete either attribute names or file names. It can pop
 a window with all available names, for the user to select from.
 """
 import os
@@ -27,18 +26,10 @@ if os.altsep:  # e.g. '/' on Windows...
 
 class AutoComplete:
 
-    menudefs = [
-        ('edit', [
-            ("Show Completions", "<<force-open-completions>>"),
-        ])
-    ]
-
-    popupwait = idleConf.GetOption("extensions", "AutoComplete",
-                                   "popupwait", type="int", default=0)
-
     def __init__(self, editwin=None):
         self.editwin = editwin
         if editwin is not None:  # not in subprocess or test
+            self.reset()
             self.text = editwin.text
             self.autocompletewindow = None
             # id of delayed call, and the index of the text insert when
@@ -46,6 +37,10 @@ class AutoComplete:
             # None, there is no delayed call.
             self._delayed_completion_id = None
             self._delayed_completion_index = None
+
+    def reset(self):
+        self.popupwait = idleConf.GetOption("main", "EditorWindow",
+                                   "autocomplete_wait", type="int", default=0)
 
     def _make_autocomplete_window(self):
         return autocomplete_w.AutoCompleteWindow(self.text)

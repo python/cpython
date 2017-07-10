@@ -10,7 +10,6 @@ Changing the current text line or leaving the cursor in a different
 place before requesting the next selection causes AutoExpand to reset
 its state.
 
-This is an extension file and there is only one instance of AutoExpand.
 '''
 import re
 import string
@@ -20,13 +19,6 @@ import string
 ###$ unix <Alt-slash>
 
 class AutoExpand:
-
-    menudefs = [
-        ('edit', [
-            ('E_xpand Word', '<<expand-word>>'),
-         ]),
-    ]
-
     wordchars = string.ascii_letters + string.digits + "_"
 
     def __init__(self, editwin):

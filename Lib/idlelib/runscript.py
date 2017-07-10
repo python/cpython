@@ -1,4 +1,4 @@
-"""Extension to execute code outside the Python shell window.
+"""execute code outside the Python shell window.
 
 This adds the following commands:
 

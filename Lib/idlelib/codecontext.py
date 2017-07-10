@@ -1,4 +1,4 @@
-"""codecontext - Extension to display the block context above the edit window
+"""codecontext - display the block context above the edit window
 
 Once code has scrolled off the top of a window, it can be difficult to
 determine which block you are in.  This extension implements a pane at the top
@@ -26,13 +26,7 @@ getspacesfirstword =\
                    lambda s, c=re.compile(r"^(\s*)(\w*)"): c.match(s).groups()
 
 class CodeContext:
-    menudefs = [('options', [('!Code Conte_xt', '<<toggle-code-context>>')])]
-    context_depth = idleConf.GetOption("extensions", "CodeContext",
-                                       "numlines", type="int", default=3)
-    bgcolor = idleConf.GetOption("extensions", "CodeContext",
-                                 "bgcolor", type="str", default="LightGray")
-    fgcolor = idleConf.GetOption("extensions", "CodeContext",
-                                 "fgcolor", type="str", default="Black")
+    
     def __init__(self, editwin):
         self.editwin = editwin
         self.text = editwin.text
@@ -45,15 +39,28 @@ class CodeContext:
         # starts the toplevel 'block' of the module.
         self.info = [(0, -1, "", False)]
         self.topvisible = 1
-        visible = idleConf.GetOption("extensions", "CodeContext",
-                                     "visible", type="bool", default=False)
+        visible = idleConf.GetOption("main", "Theme",
+                                     "contexton", type="bool", default=False)
+        self.reset()
         if visible:
             self.toggle_code_context_event()
-            self.editwin.setvar('<<toggle-code-context>>', True)
+            
         # Start two update cycles, one for context lines, one for font changes.
         self.text.after(UPDATEINTERVAL, self.timer_event)
         self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
 
+    def reset(self):
+        self.menudefs = [('options', [('!Code Conte_xt', '<<toggle-code-context>>')])]
+        self.context_depth = idleConf.GetOption("main", "Theme",
+                                           "numlines", type="int", default=3)
+        highlight=idleConf.GetHighlight(idleConf.CurrentTheme(),'codecontext')
+        self.fgcolor = highlight['foreground']
+        self.bgcolor = highlight['background']
+        if self.topvisible:
+            #need to rebuild widget to change color
+            self.toggle_code_context_event()
+            self.toggle_code_context_event()
+        
     def toggle_code_context_event(self, event=None):
         if not self.label:
             # Calculate the border width and horizontal padding required to
@@ -86,7 +93,7 @@ class CodeContext:
         else:
             self.label.destroy()
             self.label = None
-        idleConf.SetOption("extensions", "CodeContext", "visible",
+        idleConf.SetOption("main", "Theme", "contexton",
                            str(self.label is not None))
         idleConf.SaveUserCfgFiles()
         return "break"
