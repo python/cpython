@@ -26,7 +26,7 @@ getspacesfirstword =\
                    lambda s, c=re.compile(r"^(\s*)(\w*)"): c.match(s).groups()
 
 class CodeContext:
-    
+
     def __init__(self, editwin):
         self.editwin = editwin
         self.text = editwin.text
@@ -44,7 +44,7 @@ class CodeContext:
         self.reset()
         if visible:
             self.toggle_code_context_event()
-            
+
         # Start two update cycles, one for context lines, one for font changes.
         self.text.after(UPDATEINTERVAL, self.timer_event)
         self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
@@ -60,7 +60,7 @@ class CodeContext:
             #need to rebuild widget to change color
             self.toggle_code_context_event()
             self.toggle_code_context_event()
-        
+
     def toggle_code_context_event(self, event=None):
         if not self.label:
             # Calculate the border width and horizontal padding required to

@@ -223,14 +223,14 @@ class ConfigDialog(Toplevel):
         self.font_name = StringVar(parent)
         self.is_builtin_theme = BooleanVar(parent)
         self.highlight_target = StringVar(parent)
-        
+
         self.parenstyle = StringVar(parent)
         self.parenstyle.set(idleConf.GetOption(
             'main','Theme','parenstyle', default='opener'))
         self.bell = BooleanVar(parent)
         self.bell.set(idleConf.GetOption(
             'main','Theme','bell', default=True))
-        
+
         self.flash_delay = IntVar(parent)
         self.flash_delay.set(idleConf.GetOption(
             'main','Theme','flash-delay', default=500))
@@ -323,9 +323,9 @@ class ConfigDialog(Toplevel):
         #frame_paren
         self.opt_menu_pstyle = OptionMenu(
                 frame_paren, self.parenstyle, "opener","parens","expression")#todo: figure out how to make it work
-        
+
         flash_label = Label(frame_paren, text='Time Displayed : \n(0 is until given input)')
-        
+
         self.entry_flash = Entry(
                 frame_paren, textvariable=self.flash_delay, width=4)
         self.check_bell = Checkbutton(
@@ -334,14 +334,14 @@ class ConfigDialog(Toplevel):
         lines_label = Label(frame_code, text='Lines : ')
         self.entry_num_lines = Entry(
                 frame_code, textvariable=self.num_lines, width=3)
-        
+
         ##widget packing
         #body
         frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_theme.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_paren.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_code.pack(side=TOP, padx=5, pady=5, fill=X)
-        
+
         #frame_custom
         self.frame_colour_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
         frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
@@ -366,12 +366,12 @@ class ConfigDialog(Toplevel):
         self.opt_menu_pstyle.pack(side=TOP,anchor=W,padx=5, fill=X)
         self.check_bell.pack(side=TOP, anchor=W,padx=5)
         flash_label.pack(side=LEFT, anchor=W, padx=5)
-        self.entry_flash.pack(side=LEFT, fill=X,anchor=W,padx=5)            
+        self.entry_flash.pack(side=LEFT, fill=X,anchor=W,padx=5)
         #frame_code
         lines_label.pack(side=LEFT, anchor=W, padx=5)
         self.entry_num_lines.pack(side=LEFT,anchor=W,padx=5)
-        
-        
+
+
         return frame
 
     def create_page_keys(self):
@@ -521,10 +521,10 @@ class ConfigDialog(Toplevel):
         #frame extras
         autocomplete_wait_title = Label(frame_extras, text='AutoComplete Popup Wait')
         self.entry_autocomplete_wait = Entry(
-                frame_extras, textvariable=self.autocomplete_wait, width=6) 
-        formatp_maxw_title = Label(frame_extras, text='Format Paragraph Max Width')        
+                frame_extras, textvariable=self.autocomplete_wait, width=6)
+        formatp_maxw_title = Label(frame_extras, text='Format Paragraph Max Width')
         self.entry_formatp_maxw = Entry(
-                frame_extras, textvariable=self.formatp_maxw, width=3)  
+                frame_extras, textvariable=self.formatp_maxw, width=3)
         #frame_help
         frame_helplist = Frame(frame_help)
         frame_helplist_buttons = Frame(frame_helplist)
@@ -607,7 +607,7 @@ class ConfigDialog(Toplevel):
         self.num_lines.trace_add('write', self.var_changed_num_lines)
         self.formatp_maxw.trace_add('write', self.var_changed_formatp_maxw)
         self.autocomplete_wait.trace_add('write',self.var_changed_autocomplete_wait)
-                
+
     def remove_var_callbacks(self):
         "Remove callbacks to prevent memory leaks."
         for var in (
@@ -773,23 +773,23 @@ class ConfigDialog(Toplevel):
     def var_changed_parenstyle(self, *params):
         "Store change to parenthetics display style."
         value=self.parenstyle.get()
-        self.add_changed_item('main', 'Theme', 'parenstyle', value)
+        changes.add_option('main', 'Theme', 'parenstyle', value)
 
     def var_changed_bell(self, *params):
         "Store change to parenthtics bell (on/off)."
         value=self.bell.get()
-        self.add_changed_item('main', 'Theme', 'bell', value)
+        changes.add_option('main', 'Theme', 'bell', value)
 
     def var_changed_flash_delay(self, *params):
         "Store change to parenthetics flash delay."
         value=self.flash_delay.get()
-        self.add_changed_item('main', 'Theme', 'flash-delay', value)
+        changes.add_option('main', 'Theme', 'flash-delay', value)
 
     def var_changed_num_lines(self, *params):
         "Store change to code context - number of lines displayed."
         value=self.num_lines.get()
-        self.add_changed_item('main', 'Theme', 'numlines', value)
-        
+        changes.add_option('main', 'Theme', 'numlines', value)
+
     def set_theme_type(self):
         "Set available screen options based on builtin or custom theme."
         if self.is_builtin_theme.get():
@@ -1589,7 +1589,7 @@ machine. Some do not take affect until IDLE is restarted.
 [Cancel] only cancels changes made since the last save.
 '''
 help_pages = {
-    
+
 }
 
 

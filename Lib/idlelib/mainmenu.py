@@ -56,7 +56,7 @@ menudefs = [
    ('E_xpand Word', '<<expand-word>>'),
    ('Show C_all Tip', '<<force-open-calltip>>'),
    ('Show Surrounding P_arens', '<<flash-paren>>'),
-   
+
   ]),
 ('format', [
    ('_Indent Region', '<<indent-region>>'),
