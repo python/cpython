@@ -5,15 +5,6 @@ extern "C" {
 #endif
 
 #ifndef Py_LIMITED_API
-struct _warnings_globals {
-    /* Both 'filters' and 'onceregistry' can be set in warnings.py;
-       get_warnings_attr() will reset these variables accordingly. */
-    PyObject *filters;  /* List */
-    PyObject *once_registry;  /* Dict */
-    PyObject *default_action; /* String */
-    long filters_version;
-};
-
 PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
 #endif
 

@@ -1,19 +1,20 @@
-#ifndef Py_GIL_H
-#define Py_GIL_H
+#ifndef _Py_GIL_H
+#define _Py_GIL_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#ifdef Py_BUILD_CORE
+#include "pyatomic.h"
 
 #include "Python/condvar.h"
 #ifndef Py_HAVE_CONDVAR
 #error You need either a POSIX-compatible or a Windows system!
 #endif
 
-
 /* Enable if you want to force the switching of threads at least
    every `interval`. */
 #undef FORCE_SWITCHING
 #define FORCE_SWITCHING
-
 
 struct _gil_globals {
     /* microseconds (the Python API uses seconds, though) */
@@ -41,6 +42,7 @@ struct _gil_globals {
 #endif /* WITH_THREAD */
 };
 
-#endif /* Py_BUILD_CORE */
-
-#endif /* !Py_GIL_H */
+#ifdef __cplusplus
+}
+#endif
+#endif /* !_Py_GIL_H */
