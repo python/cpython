@@ -60,7 +60,7 @@ class ClassBrowser:
         self.node.destroy()
 
     def init(self, flist):
-        """Create browser tkinter widgets, including the tree."""
+        "Create browser tkinter widgets, including the tree."
         self.flist = flist
         # reset pyclbr
         pyclbr._modules.clear()
