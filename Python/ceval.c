@@ -445,6 +445,12 @@ _PyEval_Initialize(struct _ceval_globals *globals)
 }
 
 int
+_PyEval_CheckRecursionLimit(void)
+{
+    return _PyRuntime.ceval.check_recursion_limit;
+}
+
+int
 Py_GetRecursionLimit(void)
 {
     return _PyRuntime.ceval.recursion_limit;
@@ -454,7 +460,7 @@ void
 Py_SetRecursionLimit(int new_limit)
 {
     _PyRuntime.ceval.recursion_limit = new_limit;
-    _Py_CheckRecursionLimit = _PyRuntime.ceval.recursion_limit;
+    _PyRuntime.ceval.check_recursion_limit = _PyRuntime.ceval.recursion_limit;
 }
 
 /* the macro Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
@@ -475,7 +481,7 @@ _Py_CheckRecursiveCall(const char *where)
         return -1;
     }
 #endif
-    _Py_CheckRecursionLimit = recursion_limit;
+    _PyRuntime.ceval.check_recursion_limit = recursion_limit;
     if (tstate->recursion_critical)
         /* Somebody asked that we don't check for recursion. */
         return 0;

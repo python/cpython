@@ -49,8 +49,8 @@
  *    in Proc. 1995 Int'l. Workshop on Memory Management, September 1995.
  */
 
-#ifndef Py_PYMALLOC_H
-#define Py_PYMALLOC_H
+#ifndef _Py_PYMALLOC_H
+#define _Py_PYMALLOC_H
 
 /* #undef WITH_MEMORY_LIMITS */         /* disable mem limit checks  */
 
@@ -439,4 +439,4 @@ currently in use isn't on either list.
  */
 #define INITIAL_ARENA_OBJECTS 16
 
-#endif /* Py_PYMALLOC_H */
+#endif /* _Py_PYMALLOC_H */

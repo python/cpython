@@ -5,73 +5,6 @@ extern "C" {
 #endif
 
 
-#ifndef Py_LIMITED_API
-
-#ifdef Py_BUILD_CORE
-#ifdef WITH_THREAD
-#include "pythread.h"
-#endif
-struct _pending_calls {
-    unsigned long main_thread;
-#ifdef WITH_THREAD
-    PyThread_type_lock lock;
-    /* Request for running pending calls. */
-    _Py_atomic_int calls_to_do;
-    /* Request for looking at the `async_exc` field of the current
-       thread state.
-       Guarded by the GIL. */
-    int async_exc;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
-    int first;
-    int last;
-#else /* ! WITH_THREAD */
-    _Py_atomic_int calls_to_do;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
-    volatile int first;
-    volatile int last;
-#endif /* WITH_THREAD */
-};
-#endif /* Py_BUILD_CORE */
-
-#ifdef Py_BUILD_CORE
-#include "gil.h"
-#endif
-
-struct _ceval_globals {
-    int recursion_limit;
-    int check_recursion_limit;
-    /* Records whether tracing is on for any thread.  Counts the number
-       of threads for which tstate->c_tracefunc is non-NULL, so if the
-       value is 0, we know we don't have to check this thread's
-       c_tracefunc.  This speeds up the if statement in
-       PyEval_EvalFrameEx() after fast_next_opcode. */
-    int tracing_possible;
-#ifdef Py_BUILD_CORE
-    /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
-    _Py_atomic_int eval_breaker;
-#ifdef WITH_THREAD
-    /* Request for dropping the GIL */
-    _Py_atomic_int gil_drop_request;
-#endif
-    struct _pending_calls pending;
-    struct _gil_globals gil;
-#endif /* Py_BUILD_CORE */
-};
-
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_globals *);
-#endif /* Py_BUILD_CORE */
-#endif /* ! Py_LIMITED_API */
-
 /* Interface to random parts in ceval.c */
 
 /* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
@@ -117,8 +50,6 @@ PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
    the corresponding compiler flags in cf->cf_flags.  Return 1 if any
    flag was set, else return 0. */
 #ifndef Py_LIMITED_API
-#include "compile.h"
-
 PyAPI_FUNC(int) PyEval_MergeCompilerFlags(PyCompilerFlags *cf);
 #endif
 
@@ -162,7 +93,12 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
       PyThreadState_GET()->overflowed = 0;  \
     } while(0)
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char *where);
+#ifdef Py_BUILD_CORE
 #define _Py_CheckRecursionLimit _PyRuntime.ceval.check_recursion_limit
+#else
+PyAPI_FUNC(int) _PyEval_CheckRecursionLimit(void);
+#define _Py_CheckRecursionLimit _PyEval_CheckRecursionLimit()
+#endif
 
 #ifdef USE_STACKCHECK
 /* With USE_STACKCHECK, we artificially decrement the recursion limit in order

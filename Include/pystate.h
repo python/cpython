@@ -8,12 +8,6 @@
 extern "C" {
 #endif
 
-#ifdef WITH_THREAD
-#ifdef Py_BUILD_CORE
-#include "pythread.h"
-#endif
-#endif
-
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
 #define MAX_CO_EXTRA_USERS 255
@@ -203,75 +197,6 @@ typedef struct _ts {
 } PyThreadState;
 #endif
 
-#ifndef Py_LIMITED_API
-
-typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
-
-struct _gilstate_globals {
-    int check_enabled;
-#ifdef Py_BUILD_CORE
-    /* Assuming the current thread holds the GIL, this is the
-       PyThreadState for the current thread. */
-    _Py_atomic_address tstate_current;
-#endif
-    PyThreadFrameGetter getframe;
-#ifdef WITH_THREAD
-    /* The single PyInterpreterState used by this process'
-       GILState implementation
-    */
-    /* TODO: Given interp_main, it may be possible to kill this ref */
-    PyInterpreterState *autoInterpreterState;
-    int autoTLSkey;
-#endif /* WITH_THREAD */
-};
-
-#include "warnings.h"
-#include "ceval.h"
-
-typedef struct pyruntimestate {
-    int initialized;
-    int core_initialized;
-    PyThreadState *finalizing;
-
-    struct pyinterpreters {
-#ifdef WITH_THREAD
-#ifdef Py_BUILD_CORE
-        PyThread_type_lock mutex;
-#endif
-#endif
-        PyInterpreterState *head;
-        PyInterpreterState *main;
-        /* _next_interp_id is an auto-numbered sequence of small
-           integers.  It gets initialized in _PyInterpreterState_Init(),
-           which is called in Py_Initialize(), and used in
-           PyInterpreterState_New().  A negative interpreter ID
-           indicates an error occurred.  The main interpreter will
-           always have an ID of 0.  Overflow results in a RuntimeError.
-           If that becomes a problem later then we can adjust, e.g. by
-           using a Python int. */
-        int64_t next_id;
-    } interpreters;
-
-#define NEXITFUNCS 32
-    void (*exitfuncs[NEXITFUNCS])(void);
-    int nexitfuncs;
-    void (*pyexitfunc)(void);
-
-#ifdef Py_BUILD_CORE
-    struct _pyobj_globals obj;
-    struct _gc_globals gc;
-    struct _pymem_globals mem;
-#endif
-    struct _warnings_globals warnings;
-    struct _ceval_globals ceval;
-    struct _gilstate_globals gilstate;
-
-    // XXX Consolidate globals found via the check-c-globals script.
-} _PyRuntimeState;
-
-PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(void) _PyRuntimeState_Initialize(_PyRuntimeState *);
-#endif /* !Py_LIMITED_API */
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyInterpreterState_Init(void);
@@ -386,10 +311,6 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 #ifndef Py_LIMITED_API
-/* Issue #26558: Flag to disable PyGILState_Check().
-   If set to non-zero, PyGILState_Check() always return 1. */
-#define _PyGILState_check_enabled _PyRuntime.gilstate.check_enabled
-
 /* Helper/diagnostic function - return 1 if the current thread
    currently holds the GIL, 0 otherwise.
 
@@ -420,11 +341,8 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
-#endif
 
-/* hook for PyEval_GetFrame(), requested for Psyco */
-#ifndef Py_LIMITED_API
-#define _PyThreadState_GetFrame _PyRuntime.gilstate.getframe
+typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 #endif
 
 #ifdef __cplusplus
