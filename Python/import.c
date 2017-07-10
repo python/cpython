@@ -1559,10 +1559,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
             if (initializing == -1)
                 PyErr_Clear();
             if (initializing > 0) {
-#ifdef WITH_THREAD
-                _PyImport_AcquireLock();
-#endif
-                /* _bootstrap._lock_unlock_module() releases the import lock */
                 value = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                                 &PyId__lock_unlock_module, abs_name,
                                                 NULL);
