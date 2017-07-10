@@ -39,6 +39,7 @@ def _new_module(name):
 # Module-level locking ########################################################
 
 # A dict mapping module names to weakrefs of _ModuleLock instances
+# Dictionary protected by the global import lock
 _module_locks = {}
 # A dict mapping thread ids to _ModuleLock instances
 _blocking_on = {}
@@ -144,10 +145,7 @@ class _ModuleLockManager:
         self._lock = None
 
     def __enter__(self):
-        try:
-            self._lock = _get_module_lock(self._name)
-        finally:
-            _imp.release_lock()
+        self._lock = _get_module_lock(self._name)
         self._lock.acquire()
 
     def __exit__(self, *args, **kwargs):
@@ -159,31 +157,37 @@ class _ModuleLockManager:
 def _get_module_lock(name):
     """Get or create the module lock for a given module name.
 
-    Should only be called with the import lock taken."""
-    lock = None
+    Acquire/release internally the global import lock to protect
+    _module_locks."""
+
+    _imp.acquire_lock()
     try:
-        lock = _module_locks[name]()
-    except KeyError:
-        pass
-    if lock is None:
-        if _thread is None:
-            lock = _DummyModuleLock(name)
-        else:
-            lock = _ModuleLock(name)
-        def cb(_):
-            del _module_locks[name]
-        _module_locks[name] = _weakref.ref(lock, cb)
+        try:
+            lock = _module_locks[name]()
+        except KeyError:
+            lock = None
+
+        if lock is None:
+            if _thread is None:
+                lock = _DummyModuleLock(name)
+            else:
+                lock = _ModuleLock(name)
+            def cb(_):
+                del _module_locks[name]
+            _module_locks[name] = _weakref.ref(lock, cb)
+    finally:
+        _imp.release_lock()
+
     return lock
 
+
 def _lock_unlock_module(name):
-    """Release the global import lock, and acquires then release the
-    module lock for a given module name.
+    """Acquires then releases the module lock for a given module name.
+
     This is used to ensure a module is completely initialized, in the
     event it is being imported by another thread.
-
-    Should only be called with the import lock taken."""
+    """
     lock = _get_module_lock(name)
-    _imp.release_lock()
     try:
         lock.acquire()
     except _DeadlockError:
@@ -587,7 +591,6 @@ def _module_repr_from_spec(spec):
 def _exec(spec, module):
     """Execute the spec's specified module in an existing module's namespace."""
     name = spec.name
-    _imp.acquire_lock()
     with _ModuleLockManager(name):
         if sys.modules.get(name) is not module:
             msg = 'module {!r} not in sys.modules'.format(name)
@@ -670,7 +673,6 @@ def _load(spec):
     clobbered.
 
     """
-    _imp.acquire_lock()
     with _ModuleLockManager(spec.name):
         return _load_unlocked(spec)
 
@@ -957,16 +959,16 @@ def _find_and_load_unlocked(name, import_):
 
 def _find_and_load(name, import_):
     """Find and load the module."""
-    _imp.acquire_lock()
-    if name not in sys.modules:
-        with _ModuleLockManager(name):
+    with _ModuleLockManager(name):
+        if name not in sys.modules:
             return _find_and_load_unlocked(name, import_)
+
     module = sys.modules[name]
     if module is None:
-        _imp.release_lock()
         message = ('import of {} halted; '
                    'None in sys.modules'.format(name))
         raise ModuleNotFoundError(message, name=name)
+
     _lock_unlock_module(name)
     return module
 
