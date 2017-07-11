@@ -1532,18 +1532,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     mod = PyDict_GetItem(interp->modules, abs_name);
-    if (mod == Py_None) {
-        PyObject *msg = PyUnicode_FromFormat("import of %R halted; "
-                                             "None in sys.modules", abs_name);
-        if (msg != NULL) {
-            PyErr_SetImportErrorSubclass(PyExc_ModuleNotFoundError, msg,
-                    abs_name, NULL);
-            Py_DECREF(msg);
-        }
-        mod = NULL;
-        goto error;
-    }
-    else if (mod != NULL) {
+    if (mod != NULL && mod != Py_None) {
         _Py_IDENTIFIER(__spec__);
         _Py_IDENTIFIER(_initializing);
         _Py_IDENTIFIER(_lock_unlock_module);
@@ -1584,10 +1573,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-#ifdef WITH_THREAD
-        _PyImport_AcquireLock();
-#endif
-        /* _bootstrap._find_and_load() releases the import lock */
         mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                             &PyId__find_and_load, abs_name,
                                             interp->import_func, NULL);

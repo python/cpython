@@ -215,7 +215,7 @@ class MethodBrowserTreeItem(TreeItem):
         edit = file_open(self.file)
         edit.gotoline(self.cl.methods[self.name])
 
-def _class_browser(parent): #Wrapper for htest
+def _class_browser(parent): # htest #
     try:
         file = __file__
     except NameError:
