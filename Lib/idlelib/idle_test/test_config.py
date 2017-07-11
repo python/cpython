@@ -188,6 +188,7 @@ class ChangesTest(unittest.TestCase):
         userkeys.remove_section('Ksec')
 
     def test_save_help(self):
+        # Any change to HelpFiles overwrites entire section.
         changes = self.changes
         changes.save_option('main', 'HelpFiles', 'IDLE', 'idledoc')
         changes.add_option('main', 'HelpFiles', 'ELDI', 'codeldi')
@@ -207,10 +208,12 @@ class ChangesTest(unittest.TestCase):
         changes.delete_section('main', 'fake')  # Test no exception.
         self.assertEqual(changes, self.loaded)  # Test nothing deleted.
         for cfgtype, section in (('main', 'Msec'), ('keys', 'Ksec')):
+            testcfg[cfgtype].SetOption(section, 'name', 'value')
             changes.delete_section(cfgtype, section)
             with self.assertRaises(KeyError):
-                changes[cfgtype][section]  # Test section gone.
-        # TODO Test change to userkeys and maybe save call.
+                changes[cfgtype][section]  # Test section gone from changes
+                testcfg[cfgtype][section]  # and from mock userCfg.
+        # TODO test for save call.
 
     def test_clear(self):
         changes = self.load()
