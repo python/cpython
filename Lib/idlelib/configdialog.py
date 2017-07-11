@@ -839,7 +839,7 @@ class ConfigDialog(Toplevel):
             return
         self.deactivate_current_config()
         # Remove key set from changes, config, and file.
-        changes.remove(keyset_name)
+        changes.delete_section('keys', keyset_name)
         # Reload user key set list.
         item_list = idleConf.GetSectionList('user', 'keys')
         item_list.sort()
@@ -873,7 +873,7 @@ class ConfigDialog(Toplevel):
             return
         self.deactivate_current_config()
         # Remove theme from changes, config, and file.
-        changes.delete_section('highlight')
+        changes.delete_section('highlight', theme_name)
         # Reload user theme list.
         item_list = idleConf.GetSectionList('user', 'highlight')
         item_list.sort()
