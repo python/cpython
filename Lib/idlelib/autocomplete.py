@@ -39,7 +39,7 @@ class AutoComplete:
             self._delayed_completion_index = None
 
     def reset(self):
-        self.popupwait = idleConf.GetOption("main", "EditorWindow",
+        self.popupwait = idleConf.GetOption("main", "General",
                                    "autocomplete_wait", type="int", default=0)
 
     def _make_autocomplete_window(self):

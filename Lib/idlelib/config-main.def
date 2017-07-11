@@ -82,59 +82,6 @@ name=
 name2=
 # name2 set in user config-main.cfg for keys added after 2016 July 1
 
-[AutoComplete]
-enable=True
-popupwait=2000
-[AutoComplete_cfgBindings]
-force-open-completions=<Control-Key-space>
-[AutoComplete_bindings]
-autocomplete=<Key-Tab>
-try-open-completions=<KeyRelease-period> <KeyRelease-slash> <KeyRelease-backslash>
-
-[AutoExpand]
-enable=True
-
-[CallTips]
-enable=True
-[CallTips_cfgBindings]
-force-open-calltip=<Control-Key-backslash>
-
-
-[CodeContext]
-enable=True
-enable_shell=False
-numlines=3
-visible=False
-bgcolor=LightGray
-fgcolor=Black
-
-
-[FormatParagraph]
-enable=True
-max-width=72
-
-
-[ParenMatch]
-enable=True
-style= expression
-hilite=hilite
-flash-delay= 500
-bell=True
-
-[RstripExtension]
-enable=True
-enable_shell=False
-enable_editor=True
-
-[ScriptBinding]
-enable=True
-enable_shell=False
-enable_editor=True
-
-[ZoomHeight]
-enable=True
-
-
 [History]
 cyclic=1
 
