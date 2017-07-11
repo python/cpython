@@ -157,7 +157,9 @@ class ConfigDialog(Toplevel):
                 frame_font_name, justify=LEFT, text='Font Face :')
         self.fontlist = Listbox(
                 frame_font_name, height=5, takefocus=FALSE, exportselection=FALSE)
-        self.fontlist.bind('<<ListboxSelect>>', self.on_fontlist_select)
+        self.fontlist.bind('<ButtonRelease-1>', self.on_fontlist_select)
+        self.fontlist.bind('<KeyRelease-Up>', self.on_fontlist_select)
+        self.fontlist.bind('<KeyRelease-Down>', self.on_fontlist_select)
         scroll_font = Scrollbar(frame_font_name)
         scroll_font.config(command=self.fontlist.yview)
         self.fontlist.config(yscrollcommand=scroll_font.set)
@@ -973,7 +975,8 @@ class ConfigDialog(Toplevel):
         Event can result from either mouse click or Up or Down key.
         Set font_name and example display to selection.
         """
-        font = self.fontlist.get(ANCHOR if event.type == 3 else ACTIVE)
+        font = self.fontlist.get(
+                ACTIVE if event.type.name == 'KeyRelease' else ANCHOR)
         self.font_name.set(font.lower())
         self.set_font_sample()
 
