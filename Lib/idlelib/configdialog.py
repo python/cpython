@@ -47,7 +47,7 @@ class ConfigDialog(Toplevel):
         self.parent = parent
         if _htest:
             parent.instance_dict = {}
-        self.withdraw()
+        self.wm_withdraw()
 
         self.configure(borderwidth=5)
         self.title(title or 'IDLE Preferences')
