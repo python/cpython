@@ -34,7 +34,7 @@ def setUpModule():
     global root, configure
     idleConf.userCfg = testcfg
     root = Tk()
-    root.withdraw()
+    # root.withdraw()    # Comment out, see issue 30870
     configure = TestDialog(root, 'Test', _utest=True)
 
 
@@ -75,6 +75,62 @@ class FontTabTest(unittest.TestCase):
                                      'font-size': '20',
                                      'font-bold': str(not default_bold)}}
         self.assertEqual(mainpage, expected)
+
+    def test_key_up_down_should_change_font_and_sample(self):
+        # Restore defalut value
+        # XXX: Can't direct un-tuple via idleConf, will get warning
+        dfont = idleConf.GetFont(root, 'main', 'EditorWindow')
+        dfont, dsize, dbold = dfont
+        configure.font_name.set(dfont)
+        configure.font_size.set(str(dsize))
+        configure.font_bold.set(bool(dbold == 'bold'))
+
+        # Save current font and sample font
+        font = configure.fontlist.get('active')
+        sample_font = configure.font_sample.cget('font')
+
+        # Key down
+        configure.fontlist.update()
+        configure.fontlist.event_generate('<Key-Down>')
+        configure.fontlist.event_generate('<KeyRelease-Down>')
+
+        down_font = configure.fontlist.get('active')
+        down_sample_font = configure.font_sample.cget('font')
+
+        self.assertNotEqual(down_font, font)
+        self.assertNotEqual(down_sample_font, sample_font)
+        self.assertEqual(configure.font_name.get(), down_font.lower())
+        self.assertIn(configure.font_name.get(), down_sample_font.lower())
+
+        # Key Up
+        configure.fontlist.update()
+        configure.fontlist.event_generate('<Key-Up>')
+        configure.fontlist.event_generate('<KeyRelease-Up>')
+        up_font = configure.fontlist.get('active')
+        up_sample_font = configure.font_sample.cget('font')
+
+        self.assertEqual(up_font, font)
+        self.assertEqual(up_sample_font, sample_font)
+        self.assertEqual(configure.font_name.get(), up_font.lower())
+        self.assertIn(configure.font_name.get(), up_sample_font.lower())
+
+    def test_select_font_list_should_change_font_and_sample(self):
+        font = configure.fontlist.get('anchor')
+        sample_font = configure.font_sample.cget('font')
+        index = configure.fontlist.index('anchor')
+        inc_index = index + 1
+
+        # Select next item in listbox
+        configure.fontlist.select_anchor(inc_index)
+        configure.fontlist.update()
+        configure.fontlist.event_generate('<ButtonRelease-1>')
+        select_font = configure.fontlist.get('anchor')
+        select_sample_font = configure.font_sample.cget('font')
+
+        self.assertNotEqual(select_font, font)
+        self.assertNotEqual(select_sample_font, sample_font)
+        self.assertEqual(configure.font_name.get(), select_font.lower())
+        self.assertIn(configure.font_name.get(), select_sample_font.lower())
 
     #def test_sample(self): pass  # TODO
 
