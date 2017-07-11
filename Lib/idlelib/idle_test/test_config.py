@@ -5,8 +5,7 @@ Coverage: 27%
 '''
 import os
 import tempfile
-from test import support
-from test.support import captured_stderr
+from test.support import captured_stderr, findfile
 import unittest
 from idlelib import config
 
@@ -48,16 +47,23 @@ class IdleConfParserTest(unittest.TestCase):
         parser = config.IdleConfParser('')
         parser.read_string(self.config)
 
-        self.assertEqual(parser.Get('one', 'one', type='bool'), False)
-        self.assertEqual(parser.Get('one', 'two', type='bool'), True)
-        self.assertEqual(parser.Get('one', 'three', type='int'), 10)
-        self.assertEqual(parser.Get('two', 'one'), 'a string')
-        self.assertEqual(parser.Get('two', 'two', type='bool'), True)
-        self.assertEqual(parser.Get('two', 'three', type='bool'), False)
-        self.assertEqual(parser.Get('two', 'two'), 'true')
-        self.assertEqual(parser.Get('two', 'three'), 'false')
-        self.assertEqual(parser.Get('not', 'exist'), None)
-        self.assertEqual(parser.Get('not', 'exist', default='DEFAULT'), 'DEFAULT')
+        eq = self.assertEqual
+
+        # Test with type
+        eq(parser.Get('one', 'one', type='bool'), False)
+        eq(parser.Get('one', 'two', type='bool'), True)
+        eq(parser.Get('one', 'three', type='int'), 10)
+        eq(parser.Get('two', 'one'), 'a string')
+        eq(parser.Get('two', 'two', type='bool'), True)
+        eq(parser.Get('two', 'three', type='bool'), False)
+
+        # Test without type should fallback to string
+        eq(parser.Get('two', 'two'), 'true')
+        eq(parser.Get('two', 'three'), 'false')
+
+        # If option not exist, should return None, or default
+        eq(parser.Get('not', 'exist'), None)
+        eq(parser.Get('not', 'exist', default='DEFAULT'), 'DEFAULT')
 
     def test_get_option_list(self):
         parser = config.IdleConfParser('')
@@ -68,7 +74,8 @@ class IdleConfParserTest(unittest.TestCase):
         self.assertEqual(parser.GetOptionList('not exist'), [])
 
     def test_load_file(self):
-        config_path = support.findfile('cfgparser.1')
+        # Test configfile 'cfgparser.1' borrow from test_configparser
+        config_path = findfile('cfgparser.1')
         parser = config.IdleConfParser(config_path)
         parser.Load()
 
