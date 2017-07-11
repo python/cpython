@@ -1,6 +1,15 @@
 (function() {
   'use strict';
 
+  // Parses versions in URL segments like:
+  // "/3", "/dev", "/release/2.7" or "/3.6rc2"
+  var version_regexs = [
+    '(?:\\d)',
+    '(?:\\d\\.\\d[\\w\\d\\.]*)',
+    '(?:py3k)',
+    '(?:dev)',
+    '(?:release/\\d.\\d[\\x\\d\\.]*)'];
+
   var all_versions = {
     '3.7': 'dev (3.7)',
     '3.6': '3.6',
@@ -97,7 +106,7 @@
   // Returns the path segment as a string, like '3.6/' or '' if not found.
   function find_version_in_url(url) {
     var language_segment = '(?:(?:' + Object.keys(all_languages).join('|') + ')/)';
-    var version_segment = '(?:(?:\\d|py3k|dev|(?:(?:release/)?\\d\\.\\d[\\w\\d\\.]*))/)';
+    var version_segment = '(?:(?:' + version_regexs.join('|') + ')/)';
     var version_regexp = '\\.org/' + language_segment + '?(' + version_segment + ')';
     var match = url.match(version_regexp);
     if (match !== null)
