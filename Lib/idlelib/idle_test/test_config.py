@@ -3,6 +3,9 @@
 Much is tested by opening config dialog live or in test_configdialog.
 Coverage: 27%
 '''
+import os
+import tempfile
+from test import support
 from test.support import captured_stderr
 import unittest
 from idlelib import config
@@ -24,6 +27,154 @@ def setUpModule():
 
 def tearDownModule():
     idleConf.userCfg = usercfg
+
+
+class IdleConfParserTest(unittest.TestCase):
+    """Test IdleConfParser works"""
+
+    config = """
+        [one]
+        one = false
+        two = true
+        three = 10
+
+        [two]
+        one = a string
+        two = true
+        three = false
+    """
+
+    def test_get(self):
+        parser = config.IdleConfParser('')
+        parser.read_string(self.config)
+
+        self.assertEqual(parser.Get('one', 'one', type='bool'), False)
+        self.assertEqual(parser.Get('one', 'two', type='bool'), True)
+        self.assertEqual(parser.Get('one', 'three', type='int'), 10)
+        self.assertEqual(parser.Get('two', 'one'), 'a string')
+        self.assertEqual(parser.Get('two', 'two', type='bool'), True)
+        self.assertEqual(parser.Get('two', 'three', type='bool'), False)
+        self.assertEqual(parser.Get('two', 'two'), 'true')
+        self.assertEqual(parser.Get('two', 'three'), 'false')
+        self.assertEqual(parser.Get('not', 'exist'), None)
+        self.assertEqual(parser.Get('not', 'exist', default='DEFAULT'), 'DEFAULT')
+
+    def test_get_option_list(self):
+        parser = config.IdleConfParser('')
+        parser.read_string(self.config)
+
+        self.assertEqual(parser.GetOptionList('one'), ['one', 'two', 'three'])
+        self.assertEqual(parser.GetOptionList('two'), ['one', 'two', 'three'])
+        self.assertEqual(parser.GetOptionList('not exist'), [])
+
+    def test_load_file(self):
+        config_path = support.findfile('cfgparser.1')
+        parser = config.IdleConfParser(config_path)
+        parser.Load()
+
+        self.assertEqual(parser.Get('Foo Bar', 'foo'), 'newbar')
+        self.assertEqual(parser.GetOptionList('Foo Bar'), ['foo'])
+
+
+class IdleUserConfParserTest(unittest.TestCase):
+    """Test IdleUserConfParser works"""
+
+    def new_parser(self, path=''):
+        return config.IdleUserConfParser(path)
+
+    def test_add_section(self):
+        parser = self.new_parser()
+        self.assertEqual(parser.sections(), [])
+
+        # Duplicate section should only add one time.
+        # In normal configparser, it will raise DuplicateError,
+        # IdleParser won't raise it
+        parser.AddSection('Foo')
+        parser.AddSection('Foo')
+        parser.AddSection('Bar')
+        s = parser.sections()
+        s.sort()
+        self.assertEqual(s, ['Bar', 'Foo'])
+
+    def test_remove_empty_sections(self):
+        parser = self.new_parser()
+
+        parser.AddSection('Foo')
+        parser.AddSection('Bar')
+        self.assertEqual(sorted(parser.sections()), ['Bar', 'Foo'])
+        parser.RemoveEmptySections()
+        self.assertEqual(parser.sections(), [])
+
+    def test_is_empty(self):
+        parser = self.new_parser()
+
+        parser.AddSection('Foo')
+        parser.AddSection('Bar')
+        self.assertEqual(parser.IsEmpty(), True)
+        self.assertEqual(parser.sections(), [])
+
+        parser.AddSection('Foo')
+        parser.AddSection('Bar')
+        parser.SetOption('Foo', 'bar', 'false')
+        self.assertEqual(parser.IsEmpty(), False)
+        self.assertEqual(parser.sections(), ['Foo'])
+
+    def test_set_options(self):
+        parser = self.new_parser()
+
+        parser.AddSection('Foo')
+
+        # Set option success should return True
+        self.assertEqual(parser.SetOption('Foo', 'bar', 'true'), True)
+
+        # Set duplicate option (with same value) should return False
+        self.assertEqual(parser.SetOption('Foo', 'bar', 'true'), False)
+
+        # Set option and change value should return True
+        self.assertEqual(parser.SetOption('Foo', 'bar', 'false'), True)
+
+        # Set option to not exist section should create section and return True
+        self.assertEqual(parser.SetOption('Bar', 'bar', 'true'), True)
+        self.assertEqual(sorted(parser.sections()), ['Bar', 'Foo'])
+
+    def test_remove_options(self):
+        parser = self.new_parser()
+
+        parser.AddSection('Foo')
+        parser.SetOption('Foo', 'bar', 'true')
+
+        self.assertEqual(parser.RemoveOption('Foo', 'bar'), True)
+        self.assertEqual(parser.RemoveOption('Foo', 'bar'), False)
+        self.assertEqual(parser.RemoveOption('Not', 'Exist'), False)
+
+    def test_remove_file(self):
+        with tempfile.TemporaryDirectory() as tdir:
+            path = os.path.join(tdir, 'test.cfg')
+            parser = self.new_parser(path)
+            parser.AddSection('Foo')
+            parser.SetOption('Foo', 'bar', 'true')
+
+            parser.Save()
+            self.assertTrue(os.path.exists(path))
+            parser.RemoveFile()
+            self.assertFalse(os.path.exists(path))
+
+    def test_save(self):
+        with tempfile.TemporaryDirectory() as tdir:
+            path = os.path.join(tdir, 'test.cfg')
+            parser = self.new_parser(path)
+            parser.AddSection('Foo')
+            parser.SetOption('Foo', 'bar', 'true')
+
+            # Should save to path when config is not empty
+            self.assertFalse(os.path.exists(path))
+            parser.Save()
+            self.assertTrue(os.path.exists(path))
+
+            # Should remove when config is empty
+            parser.remove_section('Foo')
+            parser.Save()
+            self.assertFalse(os.path.exists(path))
 
 
 class CurrentColorKeysTest(unittest.TestCase):
