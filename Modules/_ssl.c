@@ -138,10 +138,10 @@ struct py_ssl_library_code {
 #else /* OpenSSL < 1.1.0 */
 #if defined(WITH_THREAD)
 #define HAVE_OPENSSL_CRYPTO_LOCK
-/* For some reason, this function is not declared on OpenSSL's headers */
-void OPENSSL_cpuid_setup(void);
 #endif
 
+/* For some reason, this function is not declared on OpenSSL's headers */
+void OPENSSL_cpuid_setup(void);
 #define TLS_method SSLv23_method
 #define TLS_client_method SSLv23_client_method
 #define TLS_server_method SSLv23_server_method
