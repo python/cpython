@@ -200,7 +200,7 @@ class ClassBrowserTreeItem(TreeItem):
             self.isfunction: True if self.cl is a Function.
         """
         self.name = name
-        # XXX - does classes need to be an instance variable?
+        # XXX - Does classes need to be an instance variable?
         self.classes = classes
         self.file = file
         try:
@@ -291,7 +291,7 @@ class MethodBrowserTreeItem(TreeItem):
 
     def GetIconName(self):
         "Return the name of the icon to display."
-        return "python" # XXX
+        return "python"
 
     def IsExpandable(self):
         "Return False as there are no tree items after methods."
