@@ -794,7 +794,8 @@ class ConfigChanges(dict):
         add_option: Add option and value to changes.
         save_option: Save option and value to config parser.
         save_all: Save all the changes to the config parser and file.
-        delete_section: Delete section if it exists.
+        delete_section: If section exists,
+                        delete from changes, userCfg, and file.
         clear: Clear all changes by clearing each page.
     """
     def __init__(self):
