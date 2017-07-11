@@ -56,8 +56,9 @@ The :mod:`csv` module defines the following functions:
 .. function:: reader(csvfile, dialect='excel', **fmtparams)
 
    Return a reader object which will iterate over lines in the given *csvfile*.
-   *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
-   string each time its :meth:`!__next__` method is called --- :term:`file objects
+   *csvfile* can be any object which supports the :term:`iterable` protocol and returns an
+   iterator that returns a string each time its :term`iterator`'s :meth:`!__next__` method
+   is called when its :meth:`!__iter__` method is called --- :term:`file objects
    <file object>` and list objects are both suitable.   If *csvfile* is a file object,
    it should be opened with ``newline=''``. [1]_  An optional
    *dialect* parameter can be given which is used to define a set of parameters
@@ -416,7 +417,7 @@ Reader objects have the following public attributes:
 
 .. attribute:: csvreader.line_num
 
-   The number of lines read from the source iterator. This is not the same as the
+   The number of lines read from the source iterable. This is not the same as the
    number of records returned, as records can span multiple lines.
 
 
