@@ -2,6 +2,10 @@
 #ifndef Py_PYTHREAD_H
 #define Py_PYTHREAD_H
 
+#if !(defined(_POSIX_THREADS) || defined(NT_THREADS))
+#   error "Require native thread feature. See https://bugs.python.org/issue30832"
+#endif
+
 #include <stdbool.h>  /* necessary for TSS key */
 
 typedef void *PyThread_type_lock;
@@ -115,9 +119,6 @@ typedef struct _py_tss_t Py_tss_t;
        but hardcode the unsigned long to avoid errors for include directive.
     */
 #   define NATIVE_TSS_KEY_T     unsigned long
-#else
-    /* For the platform that has not supplied native TSS */
-#   define NATIVE_TSS_KEY_T     int
 #endif
 
 /* When Py_LIMITED_API is not defined, the type layout of Py_tss_t is in
