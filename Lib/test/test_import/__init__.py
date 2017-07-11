@@ -23,8 +23,9 @@ from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
     unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
-    temp_dir)
+    temp_dir, DirsOnSysPath)
 from test.support import script_helper
+from test.test_importlib.util import uncache
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -690,25 +691,18 @@ class RelativeImportTests(unittest.TestCase):
                       "implicit absolute import")
 
     def test_import_from_non_package(self):
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data', 'package2'))
-        try:
+        path = os.path.join(os.path.dirname(__file__), 'data', 'package2')
+        with uncache('submodule1', 'submodule2'), DirsOnSysPath(path):
             with self.assertRaises(ImportError):
                 import submodule1
             self.assertNotIn('submodule1', sys.modules)
             self.assertNotIn('submodule2', sys.modules)
-        finally:
-            del sys.path[0]
 
     def test_import_from_unloaded_package(self):
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
-        try:
+        with uncache('package2', 'package2.submodule1', 'package2.submodule2'), \
+             DirsOnSysPath(os.path.join(os.path.dirname(__file__), 'data')):
             import package2.submodule1
             package2.submodule1.submodule2
-        finally:
-            del sys.path[0]
-            del sys.modules['package2.submodule1']
-            del sys.modules['package2.submodule2']
-            del sys.modules['package2']
 
 
 class OverridingImportBuiltinTests(unittest.TestCase):
