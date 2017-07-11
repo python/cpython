@@ -21,10 +21,12 @@
 #include "node.h"
 #include "parsetok.h"
 #include "pgen.h"
+#include "internal/_mem.h"
 
 int Py_DebugFlag;
 int Py_VerboseFlag;
 int Py_IgnoreEnvironmentFlag;
+struct pyruntimestate _PyRuntime = {};
 
 /* Forward */
 grammar *getgrammar(const char *filename);
@@ -61,6 +63,8 @@ main(int argc, char **argv)
     filename = argv[1];
     graminit_h = argv[2];
     graminit_c = argv[3];
+    _PyObject_Initialize(&_PyRuntime.obj);
+    _PyMem_Initialize(&_PyRuntime.mem);
     g = getgrammar(filename);
     fp = fopen(graminit_c, "w");
     if (fp == NULL) {
