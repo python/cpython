@@ -6,7 +6,7 @@ extern "C" {
 
 #include "object.h"
 
-struct _warnings_globals {
+struct _warnings_runtime_state {
     /* Both 'filters' and 'onceregistry' can be set in warnings.py;
        get_warnings_attr() will reset these variables accordingly. */
     PyObject *filters;  /* List */

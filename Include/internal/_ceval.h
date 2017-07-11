@@ -43,7 +43,7 @@ struct _pending_calls {
 
 #include "_gil.h"
 
-struct _ceval_globals {
+struct _ceval_runtime_state {
     int recursion_limit;
     int check_recursion_limit;
     /* Records whether tracing is on for any thread.  Counts the number
@@ -60,10 +60,10 @@ struct _ceval_globals {
     _Py_atomic_int gil_drop_request;
 #endif
     struct _pending_calls pending;
-    struct _gil_globals gil;
+    struct _gil_runtime_state gil;
 };
 
-PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_globals *);
+PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
 
 #ifdef __cplusplus
 }

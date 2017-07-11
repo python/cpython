@@ -18,7 +18,7 @@ extern "C" {
 
 /* GIL state */
 
-struct _gilstate_globals {
+struct _gilstate_runtime_state {
     int check_enabled;
     /* Assuming the current thread holds the GIL, this is the
        PyThreadState for the current thread. */
@@ -71,12 +71,12 @@ typedef struct pyruntimestate {
     int nexitfuncs;
     void (*pyexitfunc)(void);
 
-    struct _pyobj_globals obj;
-    struct _gc_globals gc;
-    struct _pymem_globals mem;
-    struct _warnings_globals warnings;
-    struct _ceval_globals ceval;
-    struct _gilstate_globals gilstate;
+    struct _pyobj_runtime_state obj;
+    struct _gc_runtime_state gc;
+    struct _pymem_runtime_state mem;
+    struct _warnings_runtime_state warnings;
+    struct _ceval_runtime_state ceval;
+    struct _gilstate_runtime_state gilstate;
 
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;

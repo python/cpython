@@ -13,8 +13,8 @@ extern "C" {
 
 /* Low-level memory runtime state */
 
-struct _pymem_globals {
-    struct _allocator_globals {
+struct _pymem_runtime_state {
+    struct _allocator_runtime_state {
         PyMemAllocatorEx mem;
         PyMemAllocatorEx obj;
         PyMemAllocatorEx raw;
@@ -44,16 +44,16 @@ struct _pymem_globals {
 #endif /* WITH_PYMALLOC */
 };
 
-PyAPI_FUNC(void) _PyMem_Initialize(struct _pymem_globals *);
+PyAPI_FUNC(void) _PyMem_Initialize(struct _pymem_runtime_state *);
 
 
 /* High-level memory runtime state */
 
-struct _pyobj_globals {
+struct _pyobj_runtime_state {
     PyObjectArenaAllocator allocator_arenas;
 };
 
-PyAPI_FUNC(void) _PyObject_Initialize(struct _pyobj_globals *);
+PyAPI_FUNC(void) _PyObject_Initialize(struct _pyobj_runtime_state *);
 
 
 /* GC runtime state */
@@ -155,7 +155,7 @@ struct gc_generation_stats {
     Py_ssize_t uncollectable;
 };
 
-struct _gc_globals {
+struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
      * via their gc headers' gc_prev pointers.  */
     PyObject *trash_delete_later;
@@ -187,7 +187,7 @@ struct _gc_globals {
     Py_ssize_t long_lived_pending;
 };
 
-PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_globals *);
+PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_runtime_state *);
 
 #define _PyGC_generation0 _PyRuntime.gc.generation0
 

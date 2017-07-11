@@ -16,7 +16,7 @@ extern "C" {
 #undef FORCE_SWITCHING
 #define FORCE_SWITCHING
 
-struct _gil_globals {
+struct _gil_runtime_state {
     /* microseconds (the Python API uses seconds, though) */
     unsigned long interval;
     /* Last PyThreadState holding / having held the GIL. This helps us
