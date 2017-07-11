@@ -3642,8 +3642,8 @@ _posix_listdir(path_t *path, PyObject *list)
         char *name;
         if (path->narrow) {
             name = path->narrow;
-            /* only return bytes if they specified a bytes object */
-            return_str = !(PyBytes_Check(path->object));
+            /* only return bytes if they specified a bytes-like object */
+            return_str = !PyObject_CheckBuffer(path->object);
         }
         else {
             name = ".";
@@ -11960,7 +11960,7 @@ DirEntry_from_posix_info(path_t *path, char *name, Py_ssize_t name_len,
     if (!joined_path)
         goto error;
 
-    if (!path->narrow || !PyBytes_Check(path->object)) {
+    if (!path->narrow || !PyObject_CheckBuffer(path->object)) {
         entry->name = PyUnicode_DecodeFSDefaultAndSize(name, name_len);
         entry->path = PyUnicode_DecodeFSDefault(joined_path);
     }
