@@ -50,27 +50,27 @@ class IdleConfParserTest(unittest.TestCase):
         eq = self.assertEqual
 
         # Test with type
-        eq(parser.Get('one', 'one', type='bool'), False)
-        eq(parser.Get('one', 'two', type='bool'), True)
+        self.assertIs(parser.Get('one', 'one', type='bool'), False)
+        self.assertIs(parser.Get('one', 'two', type='bool'), True)
         eq(parser.Get('one', 'three', type='int'), 10)
         eq(parser.Get('two', 'one'), 'a string')
-        eq(parser.Get('two', 'two', type='bool'), True)
-        eq(parser.Get('two', 'three', type='bool'), False)
+        self.assertIs(parser.Get('two', 'two', type='bool'), True)
+        self.assertIs(parser.Get('two', 'three', type='bool'), False)
 
         # Test without type should fallback to string
         eq(parser.Get('two', 'two'), 'true')
         eq(parser.Get('two', 'three'), 'false')
 
         # If option not exist, should return None, or default
-        eq(parser.Get('not', 'exist'), None)
+        self.assertIsNone(parser.Get('not', 'exist'))
         eq(parser.Get('not', 'exist', default='DEFAULT'), 'DEFAULT')
 
     def test_get_option_list(self):
         parser = config.IdleConfParser('')
         parser.read_string(self.config)
 
-        self.assertEqual(parser.GetOptionList('one'), ['one', 'two', 'three'])
-        self.assertEqual(parser.GetOptionList('two'), ['one', 'two', 'three'])
+        self.assertCountEqual(parser.GetOptionList('one'), ['one', 'two', 'three'])
+        self.assertCountEqual(parser.GetOptionList('two'), ['one', 'two', 'three'])
         self.assertEqual(parser.GetOptionList('not exist'), [])
 
     def test_load_file(self):
@@ -99,16 +99,14 @@ class IdleUserConfParserTest(unittest.TestCase):
         parser.AddSection('Foo')
         parser.AddSection('Foo')
         parser.AddSection('Bar')
-        s = parser.sections()
-        s.sort()
-        self.assertEqual(s, ['Bar', 'Foo'])
+        self.assertCountEqual(parser.sections(), ['Bar', 'Foo'])
 
     def test_remove_empty_sections(self):
         parser = self.new_parser()
 
         parser.AddSection('Foo')
         parser.AddSection('Bar')
-        self.assertEqual(sorted(parser.sections()), ['Bar', 'Foo'])
+        self.assertCountEqual(parser.sections(), ['Bar', 'Foo'])
         parser.RemoveEmptySections()
         self.assertEqual(parser.sections(), [])
 
@@ -117,14 +115,14 @@ class IdleUserConfParserTest(unittest.TestCase):
 
         parser.AddSection('Foo')
         parser.AddSection('Bar')
-        self.assertEqual(parser.IsEmpty(), True)
+        self.assertTrue(parser.IsEmpty())
         self.assertEqual(parser.sections(), [])
 
         parser.AddSection('Foo')
         parser.AddSection('Bar')
         parser.SetOption('Foo', 'bar', 'false')
-        self.assertEqual(parser.IsEmpty(), False)
-        self.assertEqual(parser.sections(), ['Foo'])
+        self.assertFalse(parser.IsEmpty())
+        self.assertCountEqual(parser.sections(), ['Foo'])
 
     def test_set_options(self):
         parser = self.new_parser()
@@ -132,17 +130,17 @@ class IdleUserConfParserTest(unittest.TestCase):
         parser.AddSection('Foo')
 
         # Set option success should return True
-        self.assertEqual(parser.SetOption('Foo', 'bar', 'true'), True)
+        self.assertTrue(parser.SetOption('Foo', 'bar', 'true'))
 
         # Set duplicate option (with same value) should return False
-        self.assertEqual(parser.SetOption('Foo', 'bar', 'true'), False)
+        self.assertFalse(parser.SetOption('Foo', 'bar', 'true'))
 
         # Set option and change value should return True
-        self.assertEqual(parser.SetOption('Foo', 'bar', 'false'), True)
+        self.assertTrue(parser.SetOption('Foo', 'bar', 'false'))
 
         # Set option to not exist section should create section and return True
-        self.assertEqual(parser.SetOption('Bar', 'bar', 'true'), True)
-        self.assertEqual(sorted(parser.sections()), ['Bar', 'Foo'])
+        self.assertTrue(parser.SetOption('Bar', 'bar', 'true'))
+        self.assertCountEqual(parser.sections(), ['Bar', 'Foo'])
 
     def test_remove_options(self):
         parser = self.new_parser()
@@ -150,9 +148,9 @@ class IdleUserConfParserTest(unittest.TestCase):
         parser.AddSection('Foo')
         parser.SetOption('Foo', 'bar', 'true')
 
-        self.assertEqual(parser.RemoveOption('Foo', 'bar'), True)
-        self.assertEqual(parser.RemoveOption('Foo', 'bar'), False)
-        self.assertEqual(parser.RemoveOption('Not', 'Exist'), False)
+        self.assertTrue(parser.RemoveOption('Foo', 'bar'))
+        self.assertFalse(parser.RemoveOption('Foo', 'bar'))
+        self.assertFalse(parser.RemoveOption('Not', 'Exist'))
 
     def test_remove_file(self):
         with tempfile.TemporaryDirectory() as tdir:
