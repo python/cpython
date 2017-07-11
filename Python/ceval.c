@@ -437,11 +437,11 @@ error:
 #endif
 
 void
-_PyEval_Initialize(struct _ceval_globals *globals)
+_PyEval_Initialize(struct _ceval_runtime_state *state)
 {
-    globals->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
-    globals->check_recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
-    _gil_initialize(&globals->gil);
+    state->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
+    state->check_recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
+    _gil_initialize(&state->gil);
 }
 
 int

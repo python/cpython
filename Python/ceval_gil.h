@@ -91,11 +91,11 @@
 
 #define DEFAULT_INTERVAL 5000
 
-static void _gil_initialize(struct _gil_globals *globals)
+static void _gil_initialize(struct _gil_runtime_state *state)
 {
     _Py_atomic_int uninitialized = {-1};
-    globals->locked = uninitialized;
-    globals->interval = DEFAULT_INTERVAL;
+    state->locked = uninitialized;
+    state->interval = DEFAULT_INTERVAL;
 }
 
 static int gil_created(void)

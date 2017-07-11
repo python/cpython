@@ -282,17 +282,17 @@ static const PyObjectArenaAllocator _PyObject_Arena = {NULL,
     };
 
 void
-_PyObject_Initialize(struct _pyobj_globals *globals)
+_PyObject_Initialize(struct _pyobj_runtime_state *state)
 {
-    globals->allocator_arenas = _PyObject_Arena;
+    state->allocator_arenas = _PyObject_Arena;
 }
 
 void
-_PyMem_Initialize(struct _pymem_globals *globals)
+_PyMem_Initialize(struct _pymem_runtime_state *state)
 {
-    globals->allocators.raw = _pymem_raw;
-    globals->allocators.mem = _pymem;
-    globals->allocators.obj = _pyobject;
+    state->allocators.raw = _pymem_raw;
+    state->allocators.mem = _pymem;
+    state->allocators.obj = _pyobject;
 
 #ifdef WITH_PYMALLOC
     for (int i = 0; i < 8; i++) {
@@ -300,10 +300,10 @@ _PyMem_Initialize(struct _pymem_globals *globals)
             break;
         for (int j = 0; j < 8; j++) {
             int x = i * 8 + j;
-            poolp *addr = &(globals->usedpools[2*(x)]);
+            poolp *addr = &(state->usedpools[2*(x)]);
             poolp val = (poolp)((uint8_t *)addr - 2*sizeof(pyblock *));
-            globals->usedpools[x * 2] = val;
-            globals->usedpools[x * 2 + 1] = val;
+            state->usedpools[x * 2] = val;
+            state->usedpools[x * 2 + 1] = val;
         };
     };
 #endif /* WITH_PYMALLOC */
