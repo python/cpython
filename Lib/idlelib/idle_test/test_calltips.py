@@ -58,7 +58,7 @@ class Get_signatureTest(unittest.TestCase):
                'Create and return a new object.  See help(type) for accurate signature.')
         gtest(list.__init__,
                'Initialize self.  See help(type(self)) for accurate signature.')
-        append_doc =  "Append object to the end of the list."
+        append_doc =  "L.append(object) -> None -- append object to end"
         gtest(list.append, append_doc)
         gtest([].append, append_doc)
         gtest(List.append, append_doc)

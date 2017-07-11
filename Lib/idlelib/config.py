@@ -359,7 +359,7 @@ class IdleConf:
                 'console-background':'#ffffff',
                 'codecontext-foreground':'#000000',
                 'codecontext-background':'#ffffff',
-                'parenmatch-foreground':'000000',
+                'parenmatch-foreground':'#000000',
                 'parenmatch-background':'#ffffff',
                 }
         for element in theme:
