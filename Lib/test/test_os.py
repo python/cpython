@@ -3186,6 +3186,12 @@ class TestScandir(unittest.TestCase):
                          os.fsencode(os.path.join(self.path, 'file.txt')))
 
     def test_bytes_like(self):
+        if os.name == "nt":
+            # On Windows, os.scandir(bytes) must raise an exception
+            for cls in bytearray, memoryview:
+                self.assertRaises(TypeError, os.scandir, cls(b'.'))
+            return
+
         # Deprecated in 3.6.
         self.create_file("file.txt")
 
