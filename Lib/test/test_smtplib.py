@@ -577,8 +577,6 @@ class DebuggingServerTests(unittest.TestCase):
         self.assertRegex(debugout, Date)
 
 
-
-
 class NonConnectingTests(unittest.TestCase):
 
     def testNotConnected(self):
