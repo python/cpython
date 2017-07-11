@@ -264,12 +264,6 @@ xx_tss(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_get failed");
         return NULL;
     }
-    PyThread_tss_delete_value(tss_key);
-    if (PyThread_tss_get(tss_key) != NULL) {
-        PyThread_tss_free(tss_key);
-        PyErr_SetString(PyExc_RuntimeError, "TSS value is not deleted");
-        return NULL;
-    }
     PyThread_tss_delete(tss_key);
     PyThread_tss_free(tss_key);
     tss_key = NULL;

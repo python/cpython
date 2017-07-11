@@ -131,7 +131,7 @@ Use PyThread_tss_get(&thekey) to retrieve the void* value associated
 with thekey in the current thread.  This returns NULL if no value is
 associated with thekey in the current thread.
 
-Use PyThread_tss_delete_value(&thekey) to forget the current thread's associated
+Use PyThread_tss_set(&thekey, NULL) to forget the current thread's associated
 value for thekey.  PyThread_tss_delete(&thekey) forgets the values associated
 with thekey across *all* threads.
 

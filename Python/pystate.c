@@ -502,7 +502,7 @@ PyThreadState_Delete(PyThreadState *tstate)
         Py_FatalError("PyThreadState_Delete: tstate is still current");
 #ifdef WITH_THREAD
     if (autoInterpreterState && PyThread_tss_get(&autoTSSkey) == tstate) {
-        PyThread_tss_delete_value(&autoTSSkey);
+        PyThread_tss_set(&autoTSSkey, NULL);
     }
 #endif /* WITH_THREAD */
     tstate_delete_common(tstate);
@@ -519,7 +519,7 @@ PyThreadState_DeleteCurrent()
             "PyThreadState_DeleteCurrent: no current tstate");
     tstate_delete_common(tstate);
     if (autoInterpreterState && PyThread_tss_get(&autoTSSkey) == tstate) {
-        PyThread_tss_delete_value(&autoTSSkey);
+        PyThread_tss_set(&autoTSSkey, NULL);
     }
     SET_TSTATE(NULL);
     PyEval_ReleaseLock();

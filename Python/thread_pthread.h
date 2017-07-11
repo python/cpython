@@ -731,9 +731,3 @@ PyThread_tss_get(Py_tss_t *key)
 {
     return pthread_getspecific(key->_key);
 }
-
-void
-PyThread_tss_delete_value(Py_tss_t *key)
-{
-    pthread_setspecific(key->_key, NULL);
-}

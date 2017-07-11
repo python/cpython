@@ -466,12 +466,3 @@ PyThread_tss_get(Py_tss_t *key)
     SetLastError(error);
     return result;
 }
-
-void
-PyThread_tss_delete_value(Py_tss_t *key)
-{
-    /* NULL is used as "key missing", and it is also the default
-     * given by TlsGetValue() if nothing has been set yet.
-     */
-    TlsSetValue(key->_key, NULL);
-}

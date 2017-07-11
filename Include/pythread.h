@@ -140,7 +140,6 @@ PyAPI_FUNC(int) PyThread_tss_create(Py_tss_t *key);
 PyAPI_FUNC(void) PyThread_tss_delete(Py_tss_t *key);
 PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t *key, void *value);
 PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t *key);
-PyAPI_FUNC(void) PyThread_tss_delete_value(Py_tss_t *key);
 
 /* In the limited API, Py_tss_t value must be allocated through a pointer by
    PyThread_tss_alloc, and free by PyThread_tss_free at the life cycle end of

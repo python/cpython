@@ -4183,7 +4183,6 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
                                   "preserved after calling " #expr); }
     CHECK_TSS_API(PyThread_tss_set(&tss_key, NULL));
     CHECK_TSS_API(PyThread_tss_get(&tss_key));
-    CHECK_TSS_API(PyThread_tss_delete_value(&tss_key));
 #undef CHECK_TSS_API
     PyThread_tss_delete(&tss_key);
     if (PyThread_tss_is_created(&tss_key)) {

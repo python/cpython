@@ -573,7 +573,6 @@ EXPORTS
   PyThread_tss_alloc=python37.PyThread_tss_alloc
   PyThread_tss_create=python37.PyThread_tss_create
   PyThread_tss_delete=python37.PyThread_tss_delete
-  PyThread_tss_delete_value=python37.PyThread_tss_delete_value
   PyThread_tss_free=python37.PyThread_tss_free
   PyThread_tss_get=python37.PyThread_tss_get
   PyThread_tss_is_created=python37.PyThread_tss_is_created
