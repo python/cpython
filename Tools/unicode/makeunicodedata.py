@@ -23,6 +23,7 @@
 # 2008-06-11 gb   add PRINTABLE_MASK for Atsuo Ishimoto's ascii() patch
 # 2011-10-21 ezio add support for name aliases and named sequences
 # 2012-01    benjamin add full case mappings
+# 2017-06    vermeille add Grapheme_Cluster_Break property
 #
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
@@ -34,7 +35,7 @@ import zipfile
 from textwrap import dedent
 
 SCRIPT = sys.argv[0]
-VERSION = "3.2"
+VERSION = "3.3"
 
 # The Unicode Database
 # --------------------
@@ -54,6 +55,7 @@ NAME_ALIASES = "NameAliases%s.txt"
 NAMED_SEQUENCES = "NamedSequences%s.txt"
 SPECIAL_CASING = "SpecialCasing%s.txt"
 CASE_FOLDING = "CaseFolding%s.txt"
+GRAPHEME_CLUSTER_BREAK = "auxiliary/GraphemeBreakProperty%s.txt"
 
 # Private Use Areas -- in planes 1, 15, 16
 PUA_1 = range(0xE000, 0xF900)
@@ -74,6 +76,11 @@ CATEGORY_NAMES = [ "Cn", "Lu", "Ll", "Lt", "Mn", "Mc", "Me", "Nd",
 BIDIRECTIONAL_NAMES = [ "", "L", "LRE", "LRO", "R", "AL", "RLE", "RLO",
     "PDF", "EN", "ES", "ET", "AN", "CS", "NSM", "BN", "B", "S", "WS",
     "ON", "LRI", "RLI", "FSI", "PDI" ]
+
+GRAPHEME_CLUSTER_NAMES = [ 'CR', 'LF', 'Control', 'Extend', 'ZWJ',
+    'Regional_Indicator', 'Prepend', 'SpacingMark', 'L', 'V', 'T',
+    'LV', 'LVT', 'E_Base', 'E_Modifier', 'Glue_After_Zwj', 'E_Base_GAZ',
+    'Any' ]
 
 EASTASIANWIDTH_NAMES = [ "F", "H", "W", "Na", "A", "N" ]
 
@@ -131,7 +138,7 @@ def maketables(trace=0):
 
 def makeunicodedata(unicode, trace):
 
-    dummy = (0, 0, 0, 0, 0, 0)
+    dummy = (0, 0, 0, 0, 0, 0, 0)
     table = [dummy]
     cache = {0: dummy}
     index = [0] * len(unicode.chars)
@@ -152,9 +159,10 @@ def makeunicodedata(unicode, trace):
             mirrored = record[9] == "Y"
             eastasianwidth = EASTASIANWIDTH_NAMES.index(record[15])
             normalizationquickcheck = record[17]
+            graphemebreak = record[18]
             item = (
                 category, combining, bidirectional, mirrored, eastasianwidth,
-                normalizationquickcheck
+                normalizationquickcheck, graphemebreak
                 )
             # add entry to index and item tables
             i = cache.get(item)
@@ -266,7 +274,7 @@ def makeunicodedata(unicode, trace):
     print("/* a list of unique database records */", file=fp)
     print("const _PyUnicode_DatabaseRecord _PyUnicode_Database_Records[] = {", file=fp)
     for item in table:
-        print("    {%d, %d, %d, %d, %d, %d}," % item, file=fp)
+        print("    {%d, %d, %d, %d, %d, %d, %d}," % item, file=fp)
     print("};", file=fp)
     print(file=fp)
 
@@ -303,6 +311,12 @@ def makeunicodedata(unicode, trace):
 
     print("const char *_PyUnicode_EastAsianWidthNames[] = {", file=fp)
     for name in EASTASIANWIDTH_NAMES:
+        print("    \"%s\"," % name, file=fp)
+    print("    NULL", file=fp)
+    print("};", file=fp)
+
+    print("const char *_PyUnicode_GraphemeBreakProperty[] = {", file=fp)
+    for name in GRAPHEME_CLUSTER_NAMES:
         print("    \"%s\"," % name, file=fp)
     print("    NULL", file=fp)
     print("};", file=fp)
@@ -874,6 +888,10 @@ def merge_old_version(version, new, old):
                         # normalization quickchecks are not performed
                         # for older versions
                         pass
+                    elif k == 18:
+                        # grapheme cluster break property did not exist for
+                        # older versions
+                        pass
                     else:
                         class Difference(Exception):pass
                         raise Difference(hex(i), k, old.table[i], new.table[i])
@@ -884,7 +902,7 @@ def merge_old_version(version, new, old):
                         normalization_changes))
 
 def open_data(template, version):
-    local = template % ('-'+version,)
+    local = os.path.basename(template % ('-'+version,))
     if not os.path.exists(local):
         import urllib.request
         if version == '3.2.0':
@@ -892,6 +910,7 @@ def open_data(template, version):
             url = 'http://www.unicode.org/Public/3.2-Update/' + local
         else:
             url = ('http://www.unicode.org/Public/%s/ucd/'+template) % (version, '')
+        print(url)
         urllib.request.urlretrieve(url, filename=local)
     if local.endswith('.txt'):
         return open(local, encoding='utf-8')
@@ -910,7 +929,7 @@ class UnicodeData:
     # [ID, name, category, combining, bidi, decomp,  (6)
     #  decimal, digit, numeric, bidi-mirrored, Unicode-1-name, (11)
     #  ISO-comment, uppercase, lowercase, titlecase, ea-width, (16)
-    #  derived-props] (17)
+    #  derived-props, quickcheck, grapheme-cluster-break] (19)
 
     def __init__(self, version,
                  linebreakprops=False,
@@ -1068,7 +1087,8 @@ class UnicodeData:
                 else:
                     first, last = [int(c, 16) for c in s[0].split('..')]
                 for char in range(first, last+1):
-                    table[char][-1].add('Line_Break')
+                    if table[char]:
+                        table[char][-1].add('Line_Break')
 
         # We only want the quickcheck properties
         # Format: NF?_QC; Y(es)/N(o)/M(aybe)
@@ -1146,6 +1166,27 @@ class UnicodeData:
                     if data[1] in "CF":
                         c = int(data[0], 16)
                         cf[c] = [int(char, 16) for char in data[2].split()]
+
+        if version != "3.2.0":
+            for i in range(0, 0x110000):
+                if table[i] is not None:
+                    table[i].append(GRAPHEME_CLUSTER_NAMES.index('Any'))
+
+            with open_data(GRAPHEME_CLUSTER_BREAK, version) as file:
+                for s in file:
+                    s = s[:-1].split('#', 1)[0]
+                    if not s:
+                        continue
+                    code, prop = [x.strip() for x in s.split(";")]
+                    c = code.split("..")
+                    if len(c) > 1:
+                        for i in range(int(c[0], 16), int(c[1], 16) + 1):
+                            if table[i] is not None:
+                                table[i][-1] = GRAPHEME_CLUSTER_NAMES.index(prop)
+                    else:
+                        i = int(c[0], 16)
+                        if table[i] is not None:
+                            table[i][-1] = GRAPHEME_CLUSTER_NAMES.index(prop)
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1

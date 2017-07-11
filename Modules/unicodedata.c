@@ -37,6 +37,7 @@ typedef struct {
     const unsigned char east_asian_width;       /* index into
                                                    _PyUnicode_EastAsianWidth */
     const unsigned char normalization_quick_check; /* see is_normalized() */
+    const unsigned char grapheme_cluster_break;
 } _PyUnicode_DatabaseRecord;
 
 typedef struct change_record {
@@ -380,6 +381,26 @@ unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
             index = old->east_asian_width_changed;
     }
     return PyUnicode_FromString(_PyUnicode_EastAsianWidthNames[index]);
+}
+
+/*[clinic input]
+unicodedata.UCD.grapheme_cluster_break
+
+    self: self
+    chr: int(accept={str})
+    /
+
+Returns the east asian width assigned to the character chr as string.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD_grapheme_cluster_break_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=484e8537d9ee8197 input=c4854798aab026e0]*/
+{
+    int index;
+    Py_UCS4 c = (Py_UCS4)chr;
+    index = (int) _getrecord_ex(c)->grapheme_cluster_break;
+    return PyUnicode_FromString(_PyUnicode_GraphemeBreakProperty[index]);
 }
 
 /*[clinic input]
@@ -1264,6 +1285,7 @@ static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_UCD_COMBINING_METHODDEF
     UNICODEDATA_UCD_MIRRORED_METHODDEF
     UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
+    UNICODEDATA_UCD_GRAPHEME_CLUSTER_BREAK_METHODDEF
     UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
     UNICODEDATA_UCD_NAME_METHODDEF
     UNICODEDATA_UCD_LOOKUP_METHODDEF

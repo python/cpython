@@ -255,6 +255,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicodedata_UCD_grapheme_cluster_break__doc__,
+"grapheme_cluster_break($self, chr, /)\n"
+"--\n"
+"\n"
+"Returns the east asian width assigned to the character chr as string.");
+
+#define UNICODEDATA_UCD_GRAPHEME_CLUSTER_BREAK_METHODDEF    \
+    {"grapheme_cluster_break", (PyCFunction)unicodedata_UCD_grapheme_cluster_break, \
+        METH_O, unicodedata_UCD_grapheme_cluster_break__doc__},
+
+static PyObject *
+unicodedata_UCD_grapheme_cluster_break_impl(PyObject *self, int chr);
+
+static PyObject *
+unicodedata_UCD_grapheme_cluster_break(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int chr;
+
+    if (!PyArg_Parse(arg, "C:grapheme_cluster_break", &chr)) {
+        goto exit;
+    }
+    return_value = unicodedata_UCD_grapheme_cluster_break_impl(self, chr);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicodedata_UCD_decomposition__doc__,
 "decomposition($self, chr, /)\n"
 "--\n"
