@@ -90,6 +90,7 @@ class FontTabTest(unittest.TestCase):
         sample_font = configure.font_sample.cget('font')
 
         # Key down
+        configure.fontlist.focus_force()
         configure.fontlist.update()
         configure.fontlist.event_generate('<Key-Down>')
         configure.fontlist.event_generate('<KeyRelease-Down>')
@@ -103,6 +104,7 @@ class FontTabTest(unittest.TestCase):
         self.assertIn(configure.font_name.get(), down_sample_font.lower())
 
         # Key Up
+        configure.fontlist.focus_force()
         configure.fontlist.update()
         configure.fontlist.event_generate('<Key-Up>')
         configure.fontlist.event_generate('<KeyRelease-Up>')
@@ -121,6 +123,7 @@ class FontTabTest(unittest.TestCase):
         inc_index = index + 1
 
         # Select next item in listbox
+        configure.fontlist.focus_force()
         configure.fontlist.select_anchor(inc_index)
         configure.fontlist.update()
         configure.fontlist.event_generate('<ButtonRelease-1>')
