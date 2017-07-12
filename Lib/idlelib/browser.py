@@ -25,10 +25,17 @@ file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.
 
 
-def collect_children(d, name=None):
+def traverse_node(node, name=None):
+    """Return the immediate children for a node.
+
+    Node is the current node being traversed.  The return value is
+    a tuple with the first value being a dictionary of the
+    Class/Function instances of the node and the second is
+    a list of tuples with (lineno, name).
+    """
     items = []
     children = {}
-    for key, cl in d.items():
+    for key, cl in node.items():
         if name is None or cl.module == name:
             s = key
             if hasattr(cl, 'super') and cl.super:
@@ -117,6 +124,7 @@ class ClassBrowser:
         "Return a ModuleBrowserTreeItem as the root of the tree."
         return ModuleBrowserTreeItem(self.file)
 
+
 class ModuleBrowserTreeItem(TreeItem):
     """Browser tree for Python module.
 
@@ -140,7 +148,7 @@ class ModuleBrowserTreeItem(TreeItem):
         return "python"
 
     def GetSubList(self):
-        """Return the list of ClassBrowserTreeItem items.
+        """Return the list of ChildBrowserTreeItem items.
 
         Each item returned from listclasses is the first level of
         classes/functions within the module.
@@ -182,13 +190,13 @@ class ModuleBrowserTreeItem(TreeItem):
             tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:
             return []
-        self.classes, items = collect_children(tree, name)
+        self.classes, items = traverse_node(tree, name)
         items.sort()
         return [s for item, s in items]
 
 
 class ChildBrowserTreeItem(TreeItem):
-    """Browser tree for classes within a module.
+    """Browser tree for child nodes within the module.
 
     Uses TreeItem as the basis for the structure of the tree.
     """
@@ -239,10 +247,7 @@ class ChildBrowserTreeItem(TreeItem):
         return None
 
     def GetSubList(self):
-        """Return Class methods as a list of MethodBrowserTreeItem items.
-
-        Each item is a method within the class.
-        """
+        "Return recursive list of ChildBrowserTreeItem items."
         if not self.cl:
             return []
         sublist = []
@@ -262,12 +267,12 @@ class ChildBrowserTreeItem(TreeItem):
             edit.gotoline(lineno)
 
     def listchildren(self):
-        "Return list of methods within a class sorted by lineno."
+        "Return list of nested classes/functions sorted by lineno."
         if not self.cl:
             return []
         result = []
         for name, ob in self.cl.children.items():
-            classes, items = collect_children({name: ob})
+            classes, items = traverse_node({name: ob})
             result.append((ob.lineno, classes, items[0][1]))
         result.sort()
         return [item[1:] for item in result]
@@ -290,5 +295,7 @@ def _class_browser(parent): # htest #
     ClassBrowser(flist, name, [dir], _htest=True)
 
 if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_browser', verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
     run(_class_browser)
