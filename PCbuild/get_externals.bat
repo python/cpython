@@ -4,20 +4,25 @@ rem Simple script to fetch source for external libraries
 
 if "%PCBUILD%"=="" (set PCBUILD=%~dp0)
 if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%PCBUILD%\..\externals)
-if "%NUGET%"=="" (set NUGET=%EXTERNALS_DIR%\nuget.exe)
-if "%NUGET_URL%"=="" (set NUGET_URL=https://aka.ms/nugetclidl)
 
 set DO_FETCH=true
 set DO_CLEAN=false
+set IncludeTkinter=false
+set IncludeSSL=false
 
 :CheckOpts
-if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
-if "%~1"=="--no-openssl" (set IncludeSSL=false) & shift & goto CheckOpts
+if "%~1"=="--tkinter" (set IncludeTkinter=true) & shift & goto CheckOpts
+if "%~1"=="--openssl" (set IncludeSSL=true) & shift & goto CheckOpts
 if "%~1"=="--python" (set PYTHON_FOR_BUILD=%2) & shift & shift & goto CheckOpts
 if "%~1"=="--organization" (set ORG=%2) & shift & shift & goto CheckOpts
 if "%~1"=="-c" (set DO_CLEAN=true) & shift & goto CheckOpts
 if "%~1"=="--clean" (set DO_CLEAN=true) & shift & goto CheckOpts
 if "%~1"=="--clean-only" (set DO_FETCH=false) & goto clean
+
+rem Include old options for compatibility
+if "%~1"=="--no-tkinter" shift & goto CheckOpts
+if "%~1"=="--no-openssl" shift & goto CheckOpts
+
 if "x%~1" NEQ "x" goto usage
 
 if "%DO_CLEAN%"=="false" goto fetch
@@ -32,24 +37,7 @@ if "%DO_FETCH%"=="false" goto end
 :fetch
 
 if "%ORG%"=="" (set ORG=python)
-
-if "%PYTHON_FOR_BUILD%"=="" (
-    echo Checking for installed python...
-    py -3.6 -V >nul 2>&1 && (set PYTHON_FOR_BUILD=py -3.6)
-)
-if "%PYTHON_FOR_BUILD%"=="" (
-    if NOT exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
-    if NOT exist "%NUGET%" (
-        echo Downloading nuget...
-        rem NB: Must use single quotes around NUGET here, NOT double!
-        rem Otherwise, a space in the path would break things
-        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile '%NUGET%'
-    )
-    echo Installing Python via nuget...
-    "%NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%EXTERNALS_DIR%"
-    rem Quote it here; it's not quoted later because "py -3.6" wouldn't work
-    set PYTHON_FOR_BUILD="%EXTERNALS_DIR%\pythonx86\tools\python.exe"
-)
+call "%PCBUILD%find_python.bat" "%PYTHON%"
 
 echo.Fetching external libraries...
 
@@ -67,7 +55,7 @@ for %%e in (%libraries%) do (
         echo.%%e already exists, skipping.
     ) else (
         echo.Fetching %%e...
-        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -O %ORG% %%e
+        %PYTHON% "%PCBUILD%get_external.py" -O %ORG% %%e
     )
 )
 
@@ -82,7 +70,7 @@ for %%b in (%binaries%) do (
         echo.%%b already exists, skipping.
     ) else (
         echo.Fetching %%b...
-        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -b -O %ORG% %%b
+        %PYTHON% "%PCBUILD%get_external.py" -b -O %ORG% %%b
     )
 )
 

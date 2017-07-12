@@ -89,7 +89,7 @@ def create_asms(makefile, tmp_d):
 
 
 def copy_includes(makefile, suffix):
-    dir = 'include'+suffix+'\\openssl'
+    dir = 'inc'+suffix+'\\openssl'
     try:
         os.makedirs(dir)
     except OSError:
@@ -116,7 +116,7 @@ def run_configure(configure, do_script):
 
 
 def prep(arch):
-    makefile_template = "ms\\nt{}.mak"
+    makefile_template = "ms\\ntdll{}.mak"
     generated_makefile = makefile_template.format('')
     if arch == "x86":
         configure = "VC-WIN32"
@@ -143,7 +143,7 @@ def prep(arch):
     copy_includes(makefile, suffix)
 
     print('creating asms...')
-    create_asms(makefile, 'tmp'+suffix)
+    create_asms(makefile, 'tmp{}dll'.format(suffix))
 
 
 def main():
@@ -152,12 +152,17 @@ def main():
               "sources must be supplied")
         sys.exit(1)
 
-    if len(sys.argv) > 2:
+    if len(sys.argv) == 3 and sys.argv[2] not in ('x86', 'amd64'):
+        print("Second argument must be x86 or amd64")
+        sys.exit(1)
+
+    if len(sys.argv) > 3:
         print("Too many arguments supplied, all we need is the directory",
-              "containing OpenSSL sources")
+              "containing OpenSSL sources and optionally the architecture")
         sys.exit(1)
 
     ssl_dir = sys.argv[1]
+    arch = sys.argv[2] if len(sys.argv) >= 3 else None
 
     if not os.path.isdir(ssl_dir):
         print(ssl_dir, "is not an existing directory!")
@@ -191,8 +196,11 @@ def main():
     old_cwd = os.getcwd()
     try:
         os.chdir(ssl_dir)
-        for arch in ['amd64', 'x86']:
+        if arch:
             prep(arch)
+        else:
+            for arch in ['amd64', 'x86']:
+                prep(arch)
     finally:
         os.chdir(old_cwd)
 

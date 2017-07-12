@@ -81,12 +81,6 @@
       <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="tcl.vcxproj">
-      <Project>{b5fd6f1d-129e-4bff-9340-03606fac7283}</Project>
-    </ProjectReference>
-    <ProjectReference Include="tk.vcxproj">
-      <Project>{7e85eccf-a72c-4da4-9e52-884508e80ba1}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -64,7 +64,8 @@
       <AdditionalIncludeDirectories>$(opensslIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;crypt32.lib;$(OutDir)libeay$(PyDebugExt).lib;$(OutDir)ssleay$(PyDebugExt).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(opensslOutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -74,16 +75,12 @@
     <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
   <ItemGroup>
+    <SSLDLL Include="$(opensslOutDir)\libeay32.dll" />
+    <SSLDLL Include="$(opensslOutDir)\ssleay32.dll" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">
       <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="libeay.vcxproj">
-      <Project>{e5b04cc0-eb4c-42ab-b4dc-18ef95f864b0}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="ssleay.vcxproj">
-      <Project>{10615b24-73bf-4efa-93aa-236916321317}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="_socket.vcxproj">
@@ -94,4 +91,10 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="_CopySSLDLL" Inputs="@(SSLDLL)" Outputs="@(SSLDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
+    <Copy SourceFiles="@(SSLDLL)" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanSSLDLL" BeforeTargets="Clean">
+    <Delete Files="@(SSLDLL->'$(OutDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>

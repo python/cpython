@@ -4,11 +4,6 @@
     <ProjectGuid>{CC9B93A2-439D-4058-9D29-6DCF43774405}</ProjectGuid>
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
-    <IncludeExtensions Condition="'$(IncludeExtensions)' == ''">true</IncludeExtensions>
-    <IncludeExternals Condition="'$(IncludeExternals)' == ''">true</IncludeExternals>
-    <IncludeTests Condition="'$(IncludeTest)' == ''">true</IncludeTests>
-    <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
-    <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -32,44 +27,7 @@
     </Projects2>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <!-- pythonXY.dll -->
-    <!--
-    Parallel build is explicitly disabled for this project because it
-    causes many conflicts between pythoncore and projects that depend
-    on pythoncore. Once the core DLL has been built, subsequent
-    projects will be built in parallel.
-    -->
-    <Projects Include="pythoncore.vcxproj">
-      <BuildInParallel>false</BuildInParallel>
-    </Projects>
-    <!-- python3.dll -->
-    <Projects Include="python3dll.vcxproj" />
-    <!-- py[w].exe -->
-    <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
-    <!-- pyshellext.dll -->
-    <Projects Include="pyshellext.vcxproj" />
-    <!-- Extension modules -->
-    <ExtensionModules Include="_asyncio;_ctypes;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;select;unicodedata;winsound" />
-    <!-- Extension modules that require external sources -->
-    <ExternalModules Include="_bz2;_lzma;_sqlite3" />
-    <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
-    <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
-    <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
-    <ExternalModules Include="_tkinter" Condition="$(IncludeTkinter)" />
-    <ExtensionModules Include="@(ExternalModules->'%(Identity)')" Condition="$(IncludeExternals)" />
-    <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
-    <!-- Test modules -->
-    <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testembed;_testimportmultiple;_testmultiphase;_testconsole" />
-    <TestModules Include="xxlimited" Condition="'$(Configuration)' == 'Release'" />
-    <Projects Include="@(TestModules->'%(Identity).vcxproj')" Condition="$(IncludeTests)">
-      <!-- Disable parallel build for test modules -->
-      <BuildInParallel>false</BuildInParallel>
-    </Projects>
-    
-    <!-- _freeze_importlib -->
-    <Projects2 Include="_freeze_importlib.vcxproj" />
-    <!-- python[w].exe -->
-    <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
+    <!--<Projects Include="tcl.vcxproj;tk.vcxproj;tix.vcxproj" />-->
   </ItemGroup>
 
   <Target Name="Build">

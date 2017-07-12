@@ -40,39 +40,72 @@
 
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <Import Project="tcltk.props" />
   
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
-    <OutDir>$(tcltkDir)</OutDir>
-    <TargetPath>$(OutDir)bin\$(tclDLLName)</TargetPath>
+    <Bitness>32</Bitness>
+    <Bitness Condition="$(Platform) == 'x64'">64</Bitness>
+    <OutDir>out$(Bitness)dll</OutDir>
+    <ArchName>x86</ArchName>
+    <ArchName Condition="$(Platform) == 'x64'">amd64</ArchName>
   </PropertyGroup>
-  
+
+  <ItemGroup>
+    <PrepareSSL Include="prepare_ssl.py" />
+    <Perl Include="$(Perl)" />
+  </ItemGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  
+
   <PropertyGroup>
-    <TclOpts>msvcrt</TclOpts>
-    <TclOpts Condition="$(Configuration) == 'Debug'">symbols,msvcrt</TclOpts>
-    <TclDirs>INSTALLDIR="$(OutDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TclDirs>
-    <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUGFLAGS="-wd4456 -wd4457 -wd4458 -wd4459 -wd4996"</DebugFlags>
+    <MakeFile>ms\ntdll$(Bitness).mak</MakeFile>
+    <NMakeOptions>LIB_D="$(opensslOutDir.TrimEnd(`\`))" OUT_D=out$(Bitness)dll TMP_D=tmp$(Bitness)dll INC_D=inc$(Bitness) INCO_D=inc$(Bitness)\openssl</NMakeOptions>
     <NMakeBuildCommandLine>setlocal
+set PATH=%PATH%;$(nasmDir);@(Perl->'%(RootDir)%(Directory)',';')
 set VCINSTALLDIR=$(VCInstallDir)
-cd /D "$(tclDir)win"
-nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) core shell dlls
-nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) install-binaries install-libraries
+cd /D "$(opensslDir)"
+if not exist $(MakeFile) $(PYTHON) "@(PrepareSSL->'%(FullPath)')" "$(opensslDir.TrimEnd(`\`))" $(ArchName)
+if not exist "$(OutDir.TrimEnd('\'))" mkdir "$(OutDir.TrimEnd('\'))"
+if not exist "$(opensslOutDir.TrimEnd(`\`))" mkdir "$(opensslOutDir.TrimEnd(`\`))"
+nmake -f $(MakeFile) $(NMakeOptions)
 </NMakeBuildCommandLine>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  
-  <Target Name="CopyDll" Inputs="$(OutDir)\bin\$(tclDLLName)" Outputs="$(BuildPath)$(tclDLLName)" AfterTargets="Build">
-    <Copy SourceFiles="$(OutDir)\bin\$(tclDLLName)" DestinationFiles="$(BuildPath)$(tclDLLName)" />
+
+  <Target Name="SuppressOriginalBuildinfH" Condition="Exists('$(opensslDir)crypto\buildinf.h')" BeforeTargets="CreateBuildinfH">
+    <Move SourceFiles="$(opensslDir)crypto\buildinf.h" DestinationFiles="$(opensslDir)crypto\buildinf.h.orig" />
   </Target>
-  
+
+  <Target Name="_CopyIncludes" AfterTargets="Build">
+    <ItemGroup>
+      <Sources Include="$(opensslDir)inc$(Bitness)\**\*.h" />
+    </ItemGroup>
+    <Copy SourceFiles="%(Sources.FullPath)" DestinationFiles="$(opensslOutDir)\include\%(Sources.RecursiveDir)\%(Sources.Filename)%(Sources.Extension)" />
+  </Target>
+
+  <Target Name="SignFiles" AfterTargets="Build" Condition="$(_SignCommand) != ''">
+    <ItemGroup>
+      <FilesToSign Include="$(opensslOutDir)\libeay32.dll;$(opensslOutDir)\ssleay32.dll" />
+    </ItemGroup>
+    <Exec Command="$(_SignCommand) %(FilesToSign.FullPath)" ContinueOnError="true" />
+  </Target>
+
   <Target Name="Clean" />
   <Target Name="CleanAll">
     <Delete Files="$(TargetPath);$(BuildPath)$(tclDLLName)" />
     <RemoveDir Directories="$(IntDir)" />
+  </Target>
+  
+  <Target Name="LocateNMake">
+    <PropertyGroup>
+      <OutputFilename Condition="$(OutputFilename) == ''">$(Temp)\nmake.loc</OutputFilename>
+    </PropertyGroup>
+    <ItemGroup>
+      <_NMakeExe Include="$(VC_ExecutablePath_x86_x86)\nmake.exe" Condition="$(VC_ExecutablePath_x86_x86) != ''" />
+    </ItemGroup>
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName($(OutputFilename)))" />
+    <WriteLinesToFile File="$(OutputFilename)" Lines="@(_NMakeExe)" />
   </Target>
   
   <Target Name="ResolveAssemblyReferences" />

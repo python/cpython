@@ -49,10 +49,6 @@
     <TargetPath>$(tixDLLPath)</TargetPath>
   </PropertyGroup>
   
-  <ItemGroup>
-    <ExpectedOutputs Include="$(TargetPath)" />
-  </ItemGroup>
-  
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   
   <PropertyGroup>
@@ -61,10 +57,6 @@
     <DebugFlags Condition="'$(Configuration)' != 'Debug'">DEBUG=0 NODEBUG=1</DebugFlags>
     <CFlags>-c -W3 -nologo -MD -wd4028 -wd4090</CFlags>
     <NMakeBuildCommandLine>setlocal
-@(ExpectedOutputs->'if not exist "%(FullPath)" goto build','
-')
-goto :eof
-:build
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tixDir)win"
 nmake /nologo -f makefile.vc MACHINE=$(TclMachine) cflags="$(CFlags)" $(DebugFlags) $(TclShortVersions) $(TixDirs) all install
