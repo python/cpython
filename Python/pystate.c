@@ -60,7 +60,7 @@ _PyRuntimeState_Initialize(_PyRuntimeState *runtime)
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 
 void
-_PyInterpreterState_Init(void)
+_PyInterpreterState_Enable(void)
 {
     _PyRuntime.interpreters.next_id = 0;
 }
