@@ -18,7 +18,7 @@ static PyTypeObject PyEncoderType;
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
-    int strict;
+    char strict;
     PyObject *object_hook;
     PyObject *object_pairs_hook;
     PyObject *parse_float;
@@ -1189,6 +1189,7 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyScannerObject *s;
     PyObject *ctx;
     PyObject *strict;
+    int strict_temp;
     static char *kwlist[] = {"context", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:make_scanner", kwlist, &ctx))
@@ -1207,9 +1208,10 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     strict = PyObject_GetAttrString(ctx, "strict");
     if (strict == NULL)
         goto bail;
-    s->strict = PyObject_IsTrue(strict);
+    strict_temp = PyObject_IsTrue(strict);
+    s->strict = (char)strict_temp;
     Py_DECREF(strict);
-    if (s->strict < 0)
+    if (strict_temp < 0)
         goto bail;
     s->object_hook = PyObject_GetAttrString(ctx, "object_hook");
     if (s->object_hook == NULL)
