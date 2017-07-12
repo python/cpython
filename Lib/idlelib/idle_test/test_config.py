@@ -105,7 +105,7 @@ class IdleUserConfParserTest(unittest.TestCase):
         # Setting exiting option with new value should return True.
         self.assertTrue(parser.SetOption('Foo', 'bar', 'false'))
         self.assertEqual(parser.Get('Foo', 'bar'), 'false')
-        
+
         # Setting option in new section should create section and return True.
         self.assertTrue(parser.SetOption('Bar', 'bar', 'true'))
         self.assertCountEqual(parser.sections(), ['Bar', 'Foo'])
@@ -158,7 +158,7 @@ class IdleUserConfParserTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tdir:
             path = os.path.join(tdir, 'test.cfg')
             parser = self.new_parser(path)
-            parser.RemoveFile()  # should not raise
+            parser.RemoveFile()  # should not raise exception
 
             parser.AddSection('Foo')
             parser.SetOption('Foo', 'bar', 'true')
@@ -179,7 +179,7 @@ class IdleUserConfParserTest(unittest.TestCase):
             parser.Save()
             self.assertTrue(os.path.exists(path))
 
-            # Should remove when config is empty.
+            # Should remove the file from disk when config is empty.
             parser.remove_section('Foo')
             parser.Save()
             self.assertFalse(os.path.exists(path))
