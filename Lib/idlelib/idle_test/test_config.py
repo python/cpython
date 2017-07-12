@@ -338,12 +338,12 @@ class ChangesTest(unittest.TestCase):
 
     def test_save_added(self):
         changes = self.load()
-        assert(changes.save_all(), True)
+        self.assertTrue(changes.save_all())
         self.assertEqual(usermain['Msec']['mitem'], 'mval')
         self.assertEqual(userhigh['Hsec']['hitem'], 'hval')
         self.assertEqual(userkeys['Ksec']['kitem'], 'kval')
         changes.add_option('main', 'Msec', 'mitem', 'mval')
-        assert(changes.save_all(), False)
+        self.assertFalse(changes.save_all())
         usermain.remove_section('Msec')
         userhigh.remove_section('Hsec')
         userkeys.remove_section('Ksec')
