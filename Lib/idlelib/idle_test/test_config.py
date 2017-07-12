@@ -31,7 +31,7 @@ def tearDownModule():
 
 
 class IdleConfParserTest(unittest.TestCase):
-    """Test ththat IdleConfParser works"""
+    """Test that IdleConfParser works"""
 
     config = """
         [one]
@@ -158,7 +158,7 @@ class IdleUserConfParserTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tdir:
             path = os.path.join(tdir, 'test.cfg')
             parser = self.new_parser(path)
-            parser.RemoveFile()  # should not raise exception
+            parser.RemoveFile()  # Should not raise exception.
 
             parser.AddSection('Foo')
             parser.SetOption('Foo', 'bar', 'true')
