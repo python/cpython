@@ -23,8 +23,9 @@ from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
     unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
-    temp_dir)
+    temp_dir, DirsOnSysPath)
 from test.support import script_helper
+from test.test_importlib.util import uncache
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -670,11 +671,11 @@ class RelativeImportTests(unittest.TestCase):
 
         # Check relative import fails with only __package__ wrong
         ns = dict(__package__='foo', __name__='test.notarealmodule')
-        self.assertRaises(SystemError, check_relative)
+        self.assertRaises(ModuleNotFoundError, check_relative)
 
         # Check relative import fails with __package__ and __name__ wrong
         ns = dict(__package__='foo', __name__='notarealpkg.notarealmodule')
-        self.assertRaises(SystemError, check_relative)
+        self.assertRaises(ModuleNotFoundError, check_relative)
 
         # Check relative import fails with package set to a non-string
         ns = dict(__package__=object())
@@ -688,6 +689,20 @@ class RelativeImportTests(unittest.TestCase):
             from .os import sep
             self.fail("explicit relative import triggered an "
                       "implicit absolute import")
+
+    def test_import_from_non_package(self):
+        path = os.path.join(os.path.dirname(__file__), 'data', 'package2')
+        with uncache('submodule1', 'submodule2'), DirsOnSysPath(path):
+            with self.assertRaises(ImportError):
+                import submodule1
+            self.assertNotIn('submodule1', sys.modules)
+            self.assertNotIn('submodule2', sys.modules)
+
+    def test_import_from_unloaded_package(self):
+        with uncache('package2', 'package2.submodule1', 'package2.submodule2'), \
+             DirsOnSysPath(os.path.join(os.path.dirname(__file__), 'data')):
+            import package2.submodule1
+            package2.submodule1.submodule2
 
 
 class OverridingImportBuiltinTests(unittest.TestCase):

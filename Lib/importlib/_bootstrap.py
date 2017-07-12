@@ -919,10 +919,6 @@ def _sanity_check(name, package, level):
         elif not package:
             raise ImportError('attempted relative import with no known parent '
                               'package')
-        elif package not in sys.modules:
-            msg = ('Parent module {!r} not loaded, cannot perform relative '
-                   'import')
-            raise SystemError(msg.format(package))
     if not name and level == 0:
         raise ValueError('Empty module name')
 
