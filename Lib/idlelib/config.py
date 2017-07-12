@@ -829,9 +829,11 @@ class ConfigChanges(dict):
         """Save configuration changes to the user config file.
 
         Clear self in preparation for additional changes.
-        Return cfg_type_changed for testing.
+        Return changed for testing.
         """
         idleConf.userCfg['main'].Save()
+
+        changed = False
         for config_type in self:
             cfg_type_changed = False
             page = self[config_type]
@@ -844,13 +846,14 @@ class ConfigChanges(dict):
                         cfg_type_changed = True
             if cfg_type_changed:
                 idleConf.userCfg[config_type].Save()
+                changed = True
         for config_type in ['keys', 'highlight']:
             # Save these even if unchanged!
             idleConf.userCfg[config_type].Save()
         self.clear()
         # ConfigDialog caller must add the following call
         # self.save_all_changed_extensions()  # Uses a different mechanism.
-        return cfg_type_changed
+        return changed
 
     def delete_section(self, config_type, section):
         """Delete a section from self, userCfg, and file.
