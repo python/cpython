@@ -222,7 +222,7 @@ class Condition:
         self.release = lock.release
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
-        # release() and acquire() on the lock).  Ditto for _is_owned().
+        # release() and acquire() on the lock).
         try:
             self._release_save = lock._release_save
         except AttributeError:
@@ -231,10 +231,7 @@ class Condition:
             self._acquire_restore = lock._acquire_restore
         except AttributeError:
             pass
-        try:
-            self._is_owned = lock._is_owned
-        except AttributeError:
-            pass
+        self._is_owned = lock._is_owned
         self._waiters = _deque()
 
     def __enter__(self):
@@ -251,15 +248,6 @@ class Condition:
 
     def _acquire_restore(self, x):
         self._lock.acquire()           # Ignore saved state
-
-    def _is_owned(self):
-        # Return True if lock is owned by current_thread.
-        # This method is called only if _lock doesn't have _is_owned().
-        if self._lock.acquire(0):
-            self._lock.release()
-            return False
-        else:
-            return True
 
     def wait(self, timeout=None):
         """Wait until notified or until a timeout occurs.

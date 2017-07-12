@@ -25,7 +25,7 @@ typedef struct {
     PyObject_HEAD
     PyThread_type_lock lock_lock;
     PyObject *in_weakreflist;
-    char locked; /* for sanity checking */
+    long lock_owner; /* for sanity checking */
 } lockobject;
 
 static void
@@ -35,7 +35,7 @@ lock_dealloc(lockobject *self)
         PyObject_ClearWeakRefs((PyObject *) self);
     if (self->lock_lock != NULL) {
         /* Unlock the lock so it's safe to free it */
-        if (self->locked)
+        if (self->lock_owner)
             PyThread_release_lock(self->lock_lock);
         PyThread_free_lock(self->lock_lock);
     }
@@ -154,7 +154,7 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
     }
 
     if (r == PY_LOCK_ACQUIRED)
-        self->locked = 1;
+        self->lock_owner = PyThread_get_thread_ident();
     return PyBool_FromLong(r == PY_LOCK_ACQUIRED);
 }
 
@@ -173,13 +173,13 @@ static PyObject *
 lock_PyThread_release_lock(lockobject *self)
 {
     /* Sanity check: the lock must be locked */
-    if (!self->locked) {
+    if (!self->lock_owner) {
         PyErr_SetString(ThreadError, "release unlocked lock");
         return NULL;
     }
 
     PyThread_release_lock(self->lock_lock);
-    self->locked = 0;
+    self->lock_owner = 0;
     Py_RETURN_NONE;
 }
 
@@ -194,7 +194,7 @@ but it needn't be locked by the same thread that unlocks it.");
 static PyObject *
 lock_locked_lock(lockobject *self)
 {
-    return PyBool_FromLong((long)self->locked);
+    return PyBool_FromLong(self->lock_owner);
 }
 
 PyDoc_STRVAR(locked_doc,
@@ -206,9 +206,26 @@ Return whether the lock is in the locked state.");
 static PyObject *
 lock_repr(lockobject *self)
 {
-    return PyUnicode_FromFormat("<%s %s object at %p>",
-        self->locked ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
+    return PyUnicode_FromFormat("<%s %s object owner=%ld at %p>",
+        self->lock_owner ? "locked" : "unlocked", Py_TYPE(self)->tp_name,
+        self->lock_owner, self);
 }
+
+static PyObject *
+lock_is_owned(lockobject *self)
+{
+    long tid = PyThread_get_thread_ident();
+
+    if (self->lock_owner == tid) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+PyDoc_STRVAR(lock_is_owned_doc,
+"_is_owned() -> bool\n\
+\n\
+For internal use by `threading.Condition`.");
 
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock,
@@ -227,6 +244,8 @@ static PyMethodDef lock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
      METH_VARARGS, release_doc},
+    {"_is_owned",    (PyCFunction)lock_is_owned,
+     METH_NOARGS, lock_is_owned_doc},
     {NULL,           NULL}              /* sentinel */
 };
 
@@ -471,7 +490,6 @@ rlock_repr(rlockobject *self)
         self->rlock_count, self);
 }
 
-
 static PyMethodDef rlock_methods[] = {
     {"acquire",      (PyCFunction)rlock_acquire,
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
@@ -541,7 +559,7 @@ newlockobject(void)
     if (self == NULL)
         return NULL;
     self->lock_lock = PyThread_allocate_lock();
-    self->locked = 0;
+    self->lock_owner = 0;
     self->in_weakreflist = NULL;
     if (self->lock_lock == NULL) {
         Py_DECREF(self);
@@ -1185,9 +1203,9 @@ release_sentinel(void *wr)
     if (obj != Py_None) {
         assert(Py_TYPE(obj) == &Locktype);
         lock = (lockobject *) obj;
-        if (lock->locked) {
+        if (lock->lock_owner) {
             PyThread_release_lock(lock->lock_lock);
-            lock->locked = 0;
+            lock->lock_owner = 0;
         }
     }
     /* Deallocating a weakref with a NULL callback only calls
