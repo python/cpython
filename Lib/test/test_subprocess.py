@@ -609,24 +609,24 @@ class ProcessTestCase(BaseTestCase):
     def test_invalid_cmd(self):
         # null character in the command name
         cmd = sys.executable + '\0'
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, TypeError)):
             subprocess.Popen([cmd, "-c", "pass"])
 
         # null character in the command argument
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, TypeError)):
             subprocess.Popen([sys.executable, "-c", "pass#\0"])
 
     def test_invalid_env(self):
         # null character in the enviroment variable name
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, TypeError)):
             subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
 
         # null character in the enviroment variable value
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, TypeError)):
             subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
 
         # equal character in the enviroment variable name
