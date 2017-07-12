@@ -651,6 +651,26 @@ array_richcompare(PyObject *v, PyObject *w, int op)
     if (!array_Check(v) || !array_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
 
+    if (array_CheckExact(v) && v == w) {
+        /* comparison to self: identity implies equality for container elements */
+        switch (op) {
+        case Py_EQ:
+        case Py_LE:
+        case Py_GE:
+            res = Py_True;
+            break;
+        case Py_LT:
+        case Py_NE:
+        case Py_GT:
+            res = Py_False;
+            break;
+        default:
+            return NULL; /* cannot happen */
+        }
+        Py_INCREF(res);
+        return res;
+    }
+
     va = (arrayobject *)v;
     wa = (arrayobject *)w;
 
