@@ -1479,6 +1479,12 @@ class ReTests(unittest.TestCase):
     def test_locale_flag(self):
         import locale
         _, enc = locale.getlocale(locale.LC_CTYPE)
+        for loc in 'en_US.iso88591', 'en_US.utf8':
+            try:
+                locale.setlocale(locale.LC_CTYPE, loc)
+            except locale.Error:
+                # Unsupported locale on this system
+                self.skipTest('test needs %s locale' % loc)
         # Search non-ASCII letter
         for i in range(128, 256):
             try:
