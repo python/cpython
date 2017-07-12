@@ -26,15 +26,7 @@ from idlelib import query
 from idlelib import replace
 from idlelib import search
 from idlelib import windows
-from idlelib.autocomplete import AutoComplete
-from idlelib.autoexpand import AutoExpand
-from idlelib.calltips import CallTips
-from idlelib.codecontext import CodeContext
-from idlelib.paragraph import FormatParagraph
-from idlelib.parenmatch import ParenMatch
-from idlelib.rstrip import RstripExtension
-from idlelib.runscript import ScriptBinding
-from idlelib.zoomheight import ZoomHeight
+
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -66,6 +58,16 @@ class EditorWindow(object):
     help_url = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
+        from idlelib.autocomplete import AutoComplete
+        from idlelib.autoexpand import AutoExpand
+        from idlelib.calltips import CallTips
+        from idlelib.codecontext import CodeContext
+        from idlelib.paragraph import FormatParagraph
+        from idlelib.parenmatch import ParenMatch
+        from idlelib.rstrip import RstripExtension
+        from idlelib.runscript import ScriptBinding
+        from idlelib.zoomheight import ZoomHeight
+
         if EditorWindow.help_url is None:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
             if sys.platform.count('linux'):
