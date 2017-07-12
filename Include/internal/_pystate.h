@@ -85,7 +85,8 @@ typedef struct pyruntimestate {
 } _PyRuntimeState;
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(void) _PyRuntimeState_Initialize(_PyRuntimeState *);
+PyAPI_FUNC(void) _PyRuntimeState_Init(_PyRuntimeState *);
+PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
 
 #ifdef __cplusplus
 }
