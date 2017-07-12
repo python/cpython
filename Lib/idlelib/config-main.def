@@ -55,6 +55,7 @@ autosave= 0
 print-command-posix=lpr %%s
 print-command-win=start /min notepad /p %%s
 delete-exitfunc= 1
+autocomplete_wait= 0
 
 [EditorWindow]
 width= 80
@@ -74,6 +75,11 @@ num-spaces= 4
 default= 1
 name= IDLE Classic
 name2=
+contexton= 0
+numlines= 3
+parenstyle= opener
+flash-delay= 500
+bell= 1
 # name2 set in user config-main.cfg for themes added after 2015 Oct 1
 
 [Keys]
