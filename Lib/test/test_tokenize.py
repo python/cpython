@@ -1,7 +1,7 @@
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
-                     open as tokenize_open, Untokenizer)
+                     open as tokenize_open, Untokenizer, EXACT_TOKEN_TYPES)
 from io import BytesIO
 from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
@@ -1350,6 +1350,28 @@ class TestTokenize(TestCase):
                              tok_name[optypes[i]])
         self.assertEqual(tok_name[tokens[1 + num_optypes].exact_type],
                          tok_name[token.ENDMARKER])
+
+    def test_all_literal_tokens(self):
+        non_literals = {
+            token.ENDMARKER, token.NAME, token.NUMBER,
+            token.STRING, token.NEWLINE, token.INDENT,
+            token.DEDENT, token.OP, token.ERRORTOKEN,
+            token.AWAIT, token.ASYNC,
+            token.COMMENT, token.NL, token.ENCODING,
+            token.N_TOKENS, token.NT_OFFSET,
+        }
+
+        for tok in range(token.N_TOKENS):
+            if tok in non_literals:
+                continue
+            name = tok_name[tok]
+            with self.subTest(name=name):
+                self.assertIn(tok, EXACT_TOKEN_TYPES.values())
+
+        for tok in non_literals:
+            name = tok_name[tok]
+            with self.subTest(name=name):
+                self.assertNotIn(tok, EXACT_TOKEN_TYPES.values())
 
     def test_exact_type(self):
         self.assertExactTypeEqual('()', token.LPAR, token.RPAR)
