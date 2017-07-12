@@ -16,9 +16,6 @@ extern "C" {
 #include "_warnings.h"
 
 
-PyAPI_FUNC(void) _PyInterpreterState_Enable(void);
-
-
 /* GIL state */
 
 struct _gilstate_runtime_state {
@@ -87,6 +84,8 @@ typedef struct pyruntimestate {
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 PyAPI_FUNC(void) _PyRuntimeState_Init(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
+
+PyAPI_FUNC(void) _PyInterpreterState_Enable(_PyRuntimeState *);
 
 #ifdef __cplusplus
 }

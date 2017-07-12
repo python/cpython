@@ -48,16 +48,25 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     runtime->gilstate.check_enabled = 1;
     runtime->gilstate.autoTLSkey = -1;
 
+#ifdef WITH_THREAD
+    runtime->interpreters.mutex = PyThread_allocate_lock();
+    if (runtime->interpreters.mutex == NULL)
+        Py_FatalError("Can't initialize threads for interpreter");
+#endif
     runtime->interpreters.next_id = -1;
 }
 
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
+#ifdef WITH_THREAD
+    if (runtime->interpreters.mutex != NULL) {
+        PyThread_free_lock(runtime->interpreters.mutex);
+        runtime->interpreters.mutex = NULL;
+    }
+#endif
 }
 
-#define HEAD_INIT() (void)(_PyRuntime.interpreters.mutex || \
-        (_PyRuntime.interpreters.mutex = PyThread_allocate_lock()))
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
                                           WAIT_LOCK)
 #define HEAD_UNLOCK() PyThread_release_lock(_PyRuntime.interpreters.mutex)
@@ -65,9 +74,19 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 
 void
-_PyInterpreterState_Enable(void)
+_PyInterpreterState_Enable(_PyRuntimeState *runtime)
 {
-    _PyRuntime.interpreters.next_id = 0;
+    runtime->interpreters.next_id = 0;
+#ifdef WITH_THREAD
+    /* Since we only call _PyRuntimeState_Init() once per process
+       (see _PyRuntime_Initialize()), we make sure the mutex is
+       initialized here. */
+    if (runtime->interpreters.mutex == NULL) {
+        runtime->interpreters.mutex = PyThread_allocate_lock();
+        if (runtime->interpreters.mutex == NULL)
+            Py_FatalError("Can't initialize threads for interpreter");
+    }
+#endif
 }
 
 PyInterpreterState *
@@ -77,9 +96,6 @@ PyInterpreterState_New(void)
                                  PyMem_RawMalloc(sizeof(PyInterpreterState));
 
     if (interp != NULL) {
-        HEAD_INIT();
-        if (_PyRuntime.interpreters.mutex == NULL)
-            Py_FatalError("Can't initialize threads for interpreter");
         interp->modules_by_index = NULL;
         interp->sysdict = NULL;
         interp->builtins = NULL;
@@ -194,12 +210,6 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     }
     HEAD_UNLOCK();
     PyMem_RawFree(interp);
-    if (_PyRuntime.interpreters.head == NULL &&
-        _PyRuntime.interpreters.mutex != NULL)
-    {
-        PyThread_free_lock(_PyRuntime.interpreters.mutex);
-        _PyRuntime.interpreters.mutex = NULL;
-    }
 }
 
 
@@ -788,8 +798,9 @@ _PyGILState_Fini(void)
 void
 _PyGILState_Reinit(void)
 {
-    _PyRuntime.interpreters.mutex = NULL;
-    HEAD_INIT();
+    _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
+    if (_PyRuntime.interpreters.mutex == NULL)
+        Py_FatalError("Can't initialize threads for interpreter");
     PyThreadState *tstate = PyGILState_GetThisThreadState();
     PyThread_delete_key(_PyRuntime.gilstate.autoTLSkey);
     if ((_PyRuntime.gilstate.autoTLSkey = PyThread_create_key()) == -1)

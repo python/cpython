@@ -626,7 +626,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
         Py_HashRandomizationFlag = 1;
     }
 
-    _PyInterpreterState_Enable();
+    _PyInterpreterState_Enable(&_PyRuntime);
     interp = PyInterpreterState_New();
     if (interp == NULL)
         Py_FatalError("Py_InitializeCore: can't make main interpreter");
