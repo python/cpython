@@ -2324,6 +2324,27 @@ list_richcompare(PyObject *v, PyObject *w, int op)
     if (!PyList_Check(v) || !PyList_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
 
+    if (PyList_CheckExact(v) && v == w) {
+        /* comparison to self: identity implies equality for container elements */
+        PyObject *res;
+        switch (op) {
+        case Py_EQ:
+        case Py_LE:
+        case Py_GE:
+            res = Py_True;
+            break;
+        case Py_LT:
+        case Py_NE:
+        case Py_GT:
+            res = Py_False;
+            break;
+        default:
+            return NULL; /* cannot happen */
+        }
+        Py_INCREF(res);
+        return res;
+    }
+
     vl = (PyListObject *)v;
     wl = (PyListObject *)w;
 
