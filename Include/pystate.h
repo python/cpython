@@ -198,9 +198,6 @@ typedef struct _ts {
 #endif
 
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyInterpreterState_Init(void);
-#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);

@@ -16,6 +16,9 @@ extern "C" {
 #include "_warnings.h"
 
 
+PyAPI_FUNC(void) _PyInterpreterState_Enable(void);
+
+
 /* GIL state */
 
 struct _gilstate_runtime_state {
