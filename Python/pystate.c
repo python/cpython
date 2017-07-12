@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 void
-_PyRuntimeState_Initialize(_PyRuntimeState *runtime)
+_PyRuntimeState_Init(_PyRuntimeState *runtime)
 {
     _PyRuntimeState initial = {};
     *runtime = initial;
@@ -49,6 +49,11 @@ _PyRuntimeState_Initialize(_PyRuntimeState *runtime)
     runtime->gilstate.autoTLSkey = -1;
 
     runtime->interpreters.next_id = -1;
+}
+
+void
+_PyRuntimeState_Fini(_PyRuntimeState *runtime)
+{
 }
 
 #define HEAD_INIT() (void)(_PyRuntime.interpreters.mutex || \

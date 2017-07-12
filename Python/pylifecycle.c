@@ -90,7 +90,13 @@ _PyRuntime_Initialize(void)
     if (initialized)
         return;
     initialized = 1;
-    _PyRuntimeState_Initialize(&_PyRuntime);
+    _PyRuntimeState_Init(&_PyRuntime);
+}
+
+void
+_PyRuntime_Finalize(void)
+{
+    _PyRuntimeState_Fini(&_PyRuntime);
 }
 
 /* Global configuration variable declarations are in pydebug.h */
@@ -1120,6 +1126,7 @@ Py_FinalizeEx(void)
 #endif
 
     call_ll_exitfuncs();
+    _PyRuntime_Finalize();
     return status;
 }
 
