@@ -77,6 +77,10 @@
     <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
   <ItemGroup>
+    <_TclTkDLL Include="$(tcltkdir)\bin\$(tclDllName)" />
+    <_TclTkDLL Include="$(tcltkdir)\bin\$(tkDllName)" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">
       <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -85,4 +89,10 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="_CopyTclTkDLL" Inputs="@(_TclTkDLL)" Outputs="@(_TclTkDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
+    <Copy SourceFiles="@(_TclTkDLL)" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanTclTkDLL" BeforeTargets="Clean">
+    <Delete Files="@(_TclTkDLL->'$(OutDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>

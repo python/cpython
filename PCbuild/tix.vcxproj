@@ -37,6 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C5A3E7FB-9695-4B2E-960B-1D9F43F1E555}</ProjectGuid>
     <RootNamespace>tix</RootNamespace>
+    <SupportSigning>true</SupportSigning>
   </PropertyGroup>
 
   <Import Project="python.props" />
@@ -64,6 +65,14 @@ nmake /nologo -f makefile.vc MACHINE=$(TclMachine) cflags="$(CFlags)" $(DebugFla
     <NMakeCleanCommandLine>rmdir /q/s "$(OutDir.TrimEnd(`\`))"</NMakeCleanCommandLine>
   </PropertyGroup>
   
+  <Target Name="SignFiles" AfterTargets="Build" Condition="$(_SignCommand) != ''">
+    <ItemGroup>
+      <FilesToSign Include="$(OutDir)\bin\*.exe" />
+      <FilesToSign Include="$(OutDir)\bin\*.dll" />
+    </ItemGroup>
+    <Exec Command="$(_SignCommand) &quot;%(FilesToSign.FullPath)&quot;" ContinueOnError="true" />
+  </Target>
+
   <ItemGroup>
     <ProjectReference Include="tcl.vcxproj">
       <Project>{b5fd6f1d-129e-4bff-9340-03606fac7283}</Project>

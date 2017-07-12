@@ -64,16 +64,8 @@ nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFla
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  
-  <Target Name="CopyDll" Inputs="$(OutDir)\bin\$(tclDLLName)" Outputs="$(BuildPath)$(tclDLLName)" AfterTargets="Build">
-    <Copy SourceFiles="$(OutDir)\bin\$(tclDLLName)" DestinationFiles="$(BuildPath)$(tclDLLName)" />
-  </Target>
-  
+
   <Target Name="Clean" />
-  <Target Name="CleanAll">
-    <Delete Files="$(TargetPath);$(BuildPath)$(tclDLLName)" />
-    <RemoveDir Directories="$(IntDir)" />
-  </Target>
   
   <Target Name="ResolveAssemblyReferences" />
 </Project>

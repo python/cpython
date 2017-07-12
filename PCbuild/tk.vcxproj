@@ -71,15 +71,7 @@ nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   
-  <Target Name="CopyDll" Inputs="$(OutDir)\bin\$(tkDLLName)" Outputs="$(BuildPath)$(tkDLLName)" AfterTargets="Build">
-    <Copy SourceFiles="$(OutDir)\bin\$(tkDLLName)" DestinationFiles="$(BuildPath)$(tkDLLName)" />
-  </Target>
-  
   <Target Name="Clean" />
-  <Target Name="CleanAll">
-    <Delete Files="$(TargetPath);$(BuildPath)$(tkDLLName)" />
-    <RemoveDir Directories="$(IntDir)" />
-  </Target>
   
   <Target Name="ResolveAssemblyReferences" />
 </Project>

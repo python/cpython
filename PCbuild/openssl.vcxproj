@@ -45,9 +45,9 @@
     <ConfigurationType>Makefile</ConfigurationType>
     <Bitness>32</Bitness>
     <Bitness Condition="$(Platform) == 'x64'">64</Bitness>
-    <OutDir>out$(Bitness)dll</OutDir>
     <ArchName>x86</ArchName>
     <ArchName Condition="$(Platform) == 'x64'">amd64</ArchName>
+    <SupportSigning>true</SupportSigning>
   </PropertyGroup>
 
   <ItemGroup>
@@ -56,16 +56,20 @@
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="pyproject.props" />
 
   <PropertyGroup>
+    <IntDir>$(opensslDir)\tmp$(Bitness)dll</IntDir>
+    <OutDir>$(opensslDir)\out$(Bitness)dll</OutDir>
     <MakeFile>ms\ntdll$(Bitness).mak</MakeFile>
     <NMakeOptions>LIB_D="$(opensslOutDir.TrimEnd(`\`))" OUT_D=out$(Bitness)dll TMP_D=tmp$(Bitness)dll INC_D=inc$(Bitness) INCO_D=inc$(Bitness)\openssl</NMakeOptions>
     <NMakeBuildCommandLine>setlocal
 set PATH=%PATH%;$(nasmDir);@(Perl->'%(RootDir)%(Directory)',';')
 set VCINSTALLDIR=$(VCInstallDir)
-cd /D "$(opensslDir)"
-if not exist $(MakeFile) $(PYTHON) "@(PrepareSSL->'%(FullPath)')" "$(opensslDir.TrimEnd(`\`))" $(ArchName)
+cd /D "$(opensslDir.TrimEnd(`\`))"
+if not exist "$(IntDir.TrimEnd('\'))" mkdir "$(IntDir.TrimEnd('\'))"
 if not exist "$(OutDir.TrimEnd('\'))" mkdir "$(OutDir.TrimEnd('\'))"
+if not exist $(MakeFile) $(PYTHON) "@(PrepareSSL->'%(FullPath)')" "$(opensslDir.TrimEnd(`\`))" $(ArchName)
 if not exist "$(opensslOutDir.TrimEnd(`\`))" mkdir "$(opensslOutDir.TrimEnd(`\`))"
 nmake -f $(MakeFile) $(NMakeOptions)
 </NMakeBuildCommandLine>

@@ -8,6 +8,12 @@
             <Component Id="_tkinter.lib" Directory="libs" Guid="*">
                 <File Name="_tkinter.lib" KeyPath="yes" />
             </Component>
+            <Component Id="tcl86t.dll" Directory="DLLs" Guid="*">
+                <File Name="tcl86t.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="tk86t.dll" Directory="DLLs" Guid="*">
+                <File Name="tk86t.dll" KeyPath="yes" />
+            </Component>
         </ComponentGroup>
     </Fragment>
     

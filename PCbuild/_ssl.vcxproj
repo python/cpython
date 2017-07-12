@@ -54,18 +54,15 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="pyproject.props" />
+    <Import Project="openssl.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(opensslIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(opensslOutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;crypt32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -73,10 +70,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <SSLDLL Include="$(opensslOutDir)\libeay32.dll" />
-    <SSLDLL Include="$(opensslOutDir)\ssleay32.dll" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">
@@ -91,10 +84,4 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="_CopySSLDLL" Inputs="@(SSLDLL)" Outputs="@(SSLDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
-    <Copy SourceFiles="@(SSLDLL)" DestinationFolder="$(OutDir)" />
-  </Target>
-  <Target Name="_CleanSSLDLL" BeforeTargets="Clean">
-    <Delete Files="@(SSLDLL->'$(OutDir)%(Filename)%(Extension)')" />
-  </Target>
 </Project>
