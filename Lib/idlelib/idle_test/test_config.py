@@ -9,6 +9,7 @@ import os
 import tempfile
 from test.support import captured_stderr, findfile
 import unittest
+from unittest import mock
 from idlelib import config
 
 # Tests should not depend on fortuitous user configurations.
@@ -183,6 +184,288 @@ class IdleUserConfParserTest(unittest.TestCase):
             parser.remove_section('Foo')
             parser.Save()
             self.assertFalse(os.path.exists(path))
+
+
+class IdleConfTest(unittest.TestCase):
+    """Test for idleConf"""
+
+    def new_config(self, _utest=False):
+        return config.IdleConf(_utest=_utest)
+
+    def mock_config(self):
+        """Return a mocked idleConf
+
+        Both default and user config used the same config-*.def
+        """
+        import sys
+        conf = config.IdleConf(_utest=True)
+        if __name__ != '__main__':
+            idle_dir = os.path.dirname(__file__)
+        else:
+            idle_dir = os.path.abspath(sys.path[0])
+        for ctype in conf.config_types:
+            config_path = os.path.join(idle_dir, '../config-%s.def' % ctype)
+            conf.defaultCfg[ctype] = config.IdleConfParser(config_path)
+            conf.userCfg[ctype] = config.IdleUserConfParser(config_path)
+        conf.LoadCfgFiles()
+
+        return conf
+
+    def test_get_user_cfg_dir(self):
+        "Test to get user config directory"
+        conf = self.new_config(_utest=True)
+
+        # Check normal way should success
+        with mock.patch('os.path.expanduser', return_value='/home/foo'):
+            with mock.patch('os.path.exists', return_value=True):
+                self.assertEqual(conf.GetUserCfgDir(), '/home/foo/.idlerc')
+
+        # Check os.getcwd should success
+        with mock.patch('os.path.expanduser', return_value='~'):
+            with mock.patch('os.getcwd', return_value='/home/foo/cpython'):
+                with mock.patch('os.mkdir'):
+                    self.assertEqual(conf.GetUserCfgDir(),
+                                     '/home/foo/cpython/.idlerc')
+
+        # Check user dir not exists and created failed should raise SystemExit
+        with mock.patch('os.path.join', return_value='/path/not/exists'):
+            with self.assertRaises(SystemExit):
+                with self.assertRaises(FileNotFoundError):
+                    conf.GetUserCfgDir()
+
+    def test_create_config_handlers(self):
+        conf = self.new_config(_utest=True)
+
+        # Mock out idle_dir
+        idle_dir = '/home/foo'
+        with mock.patch.dict({'__name__': '__foo__'}):
+            with mock.patch('os.path.dirname', return_value=idle_dir):
+                conf.CreateConfigHandlers()
+
+        # Check keys are equal
+        self.assertCountEqual(conf.defaultCfg.keys(), conf.config_types)
+        self.assertCountEqual(conf.userCfg.keys(), conf.config_types)
+
+        # Check conf parser are correct type
+        for default_parser in conf.defaultCfg.values():
+            self.assertIsInstance(default_parser, config.IdleConfParser)
+        for user_parser in conf.userCfg.values():
+            self.assertIsInstance(user_parser, config.IdleUserConfParser)
+
+        # Check config path are correct
+        for config_type, parser in conf.defaultCfg.items():
+            self.assertEqual(parser.file,
+                             os.path.join(idle_dir, 'config-%s.def' % config_type))
+        for config_type, parser in conf.userCfg.items():
+            self.assertEqual(parser.file,
+                             os.path.join(conf.userdir, 'config-%s.cfg' % config_type))
+
+    def test_load_cfg_files(self):
+        conf = self.new_config(_utest=True)
+
+        # Borrow test/cfgparser.1 from test_configparser.
+        config_path = findfile('cfgparser.1')
+        conf.defaultCfg['foo'] = config.IdleConfParser(config_path)
+        conf.userCfg['foo'] = config.IdleUserConfParser(config_path)
+
+        # Load all config from path
+        conf.LoadCfgFiles()
+
+        eq = self.assertEqual
+
+        # Check defaultCfg is loaded
+        eq(conf.defaultCfg['foo'].Get('Foo Bar', 'foo'), 'newbar')
+        eq(conf.defaultCfg['foo'].GetOptionList('Foo Bar'), ['foo'])
+
+        # Check userCfg is loaded
+        eq(conf.userCfg['foo'].Get('Foo Bar', 'foo'), 'newbar')
+        eq(conf.userCfg['foo'].GetOptionList('Foo Bar'), ['foo'])
+
+    def test_get_section_list(self):
+        conf = self.mock_config()
+
+        self.assertCountEqual(
+            conf.GetSectionList('default', 'main'),
+            ['General', 'EditorWindow', 'Indent', 'Theme',
+             'Keys', 'History', 'HelpFiles'])
+        self.assertCountEqual(
+            conf.GetSectionList('user', 'main'),
+            ['General', 'EditorWindow', 'Indent', 'Theme',
+             'Keys', 'History', 'HelpFiles'])
+
+    def test_get_highlight(self):
+        conf = self.mock_config()
+
+        eq = self.assertEqual
+        eq(conf.GetHighlight('IDLE Classic', 'normal'), {'foreground': '#000000',
+                                                         'background': '#ffffff'})
+        eq(conf.GetHighlight('IDLE Classic', 'normal', 'fg'), '#000000')
+        eq(conf.GetHighlight('IDLE Classic', 'normal', 'bg'), '#ffffff')
+        with self.assertRaises(config.InvalidFgBg):
+            conf.GetHighlight('IDLE Classic', 'normal', 'fb')
+
+        # Test cursor (this background should be normal-background)
+        eq(conf.GetHighlight('IDLE Classic', 'cursor'), {'foreground': 'black',
+                                                         'background': '#ffffff'})
+
+    def test_get_theme_dict(self):
+        "XXX: NOT YET DONE"
+        conf = self.mock_config()
+
+        # These two should be the same
+        self.assertEqual(
+            conf.GetThemeDict('default', 'IDLE Classic'),
+            conf.GetThemeDict('user', 'IDLE Classic'))
+
+        with self.assertRaises(config.InvalidTheme):
+            conf.GetThemeDict('bad', 'IDLE Classic')
+
+    def test_current_colors_and_keys(self):
+        conf = self.mock_config()
+
+        self.assertEqual(conf.current_colors_and_keys('Theme'), 'IDLE Classic')
+
+    def test_default_keys(self):
+        import sys
+        current_platform = sys.platform
+        conf = self.new_config(_utest=True)
+
+        sys.platform = 'win'
+        self.assertEqual(conf.default_keys(), 'IDLE Classic Windows')
+
+        sys.platform = 'darwin'
+        self.assertEqual(conf.default_keys(), 'IDLE Classic OSX')
+
+        sys.platform = 'linux'
+        self.assertEqual(conf.default_keys(), 'IDLE Modern Unix')
+
+        # Restore platform
+        sys.platform = current_platform
+
+    def test_get_extensions(self):
+        conf = self.mock_config()
+
+        eq = self.assertEqual
+        eq(conf.GetExtensions(),
+           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
+            'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
+            'ZoomHeight'])
+        eq(conf.GetExtensions(active_only=False),
+            ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
+             'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
+             'ZoomHeight'])
+        eq(conf.GetExtensions(editor_only=True),
+           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
+            'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
+            'ZoomHeight'])
+        eq(conf.GetExtensions(shell_only=True),
+           ['AutoComplete', 'AutoExpand', 'CallTips', 'FormatParagraph',
+            'ParenMatch', 'ZoomHeight'])
+
+    def test_remove_key_bind_names(self):
+        conf = self.mock_config()
+
+        self.assertEqual(
+            conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
+            ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
+             'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
+             'ZoomHeight'])
+
+    def test_get_extn_name_for_event(self):
+        conf = self.mock_config()
+
+        eq = self.assertEqual
+        eq(conf.GetExtnNameForEvent('force-open-completions'), 'AutoComplete')
+        eq(conf.GetExtnNameForEvent('expand-word'), 'AutoExpand')
+        eq(conf.GetExtnNameForEvent('force-open-calltip'), 'CallTips')
+        eq(conf.GetExtnNameForEvent('zoom-height'), 'ZoomHeight')
+
+    def test_get_extension_keys(self):
+        conf = self.mock_config()
+
+        eq = self.assertEqual
+        eq(conf.GetExtensionKeys('AutoComplete'),
+           {'<<force-open-completions>>': ['<Control-Key-space>']})
+        eq(conf.GetExtensionKeys('ParenMatch'),
+           {'<<flash-paren>>': ['<Control-Key-0>']})
+        eq(conf.GetExtensionKeys('ZoomHeight'),
+           {'<<zoom-height>>': ['<Alt-Key-2>']})
+
+    def test_get_extension_bindings(self):
+        conf = self.mock_config()
+
+        self.assertEqual(conf.GetExtensionBindings('NotExists'), {})
+        self.assertEqual(
+            conf.GetExtensionBindings('ZoomHeight'),
+            {'<<zoom-height>>': ['<Alt-Key-2>']})
+
+    def test_get_current_keyset(self):
+        import sys
+        current_platform = sys.platform
+        conf = self.mock_config()
+
+        # Ensure that platform isn't darwin
+        sys.platform = 'linux'
+        self.assertEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
+
+        # This should not be the same, sicne replace <Alt- to <Option-
+        sys.platform = 'darwin'
+        self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
+
+        # Restore platform
+        sys.platform = current_platform
+
+    def test_is_core_binding(self):
+        # XXX: Should move out the core keys to config file or other place
+        conf = self.mock_config()
+
+        self.assertTrue(conf.IsCoreBinding('copy'))
+        self.assertTrue(conf.IsCoreBinding('cut'))
+        self.assertTrue(conf.IsCoreBinding('del-word-right'))
+        self.assertFalse(conf.IsCoreBinding('not-exists'))
+
+    def test_get_extra_help_source_list(self):
+        conf = self.mock_config()
+
+        self.assertEqual(conf.GetExtraHelpSourceList('default'), [])
+        self.assertEqual(conf.GetExtraHelpSourceList('user'), [])
+        with self.assertRaises(config.InvalidConfigSet):
+            self.assertEqual(conf.GetExtraHelpSourceList('bad'), [])
+
+    def test_get_all_extra_help_source_list(self):
+        conf = self.mock_config()
+
+        self.assertCountEqual(
+            conf.GetAllExtraHelpSourcesList(),
+            conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
+
+    def test_get_font(self):
+        from tkinter import Tk
+        from tkinter.font import Font
+        conf = self.mock_config()
+
+        root = Tk()
+        root.withdraw()
+        f = Font.actual(Font(name='TkFixedFont', exists=True, root=root))
+
+        self.assertEqual(
+            conf.GetFont(root, 'main', 'EditorWindow'),
+            (f['family'], 10 if f['size'] < 10 else f['size'], f['weight']))
+
+    def test_get_core_keys(self):
+        conf = self.mock_config()
+
+        eq = self.assertEqual
+        eq(conf.GetCoreKeys()['<<center-insert>>'], ['<Control-l>'])
+        eq(conf.GetCoreKeys()['<<copy>>'], ['<Control-c>', '<Control-C>'])
+        eq(conf.GetCoreKeys()['<<history-next>>'], ['<Alt-n>'])
+        eq(conf.GetCoreKeys('IDLE Classic Windows')['<<center-insert>>'],
+           ['<Control-Key-l>', '<Control-Key-L>'])
+        eq(conf.GetCoreKeys('IDLE Classic OSX')['<<copy>>'], ['<Command-Key-c>'])
+        eq(conf.GetCoreKeys('IDLE Classic Unix')['<<history-next>>'],
+           ['<Alt-Key-n>', '<Meta-Key-n>'])
+        eq(conf.GetCoreKeys('IDLE Modern Unix')['<<history-next>>'],
+            ['<Alt-Key-n>', '<Meta-Key-n>'])
 
 
 class CurrentColorKeysTest(unittest.TestCase):

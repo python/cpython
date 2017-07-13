@@ -159,14 +159,15 @@ class IdleConf:
         for config_type in self.config_types:
         (user home dir)/.idlerc/config-{config-type}.cfg
     """
-    def __init__(self):
+    def __init__(self, _utest=False):
         self.config_types = ('main', 'highlight', 'keys', 'extensions')
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
-        self.CreateConfigHandlers()
-        self.LoadCfgFiles()
 
+        if not _utest:
+            self.CreateConfigHandlers()
+            self.LoadCfgFiles()
 
     def CreateConfigHandlers(self):
         "Populate default and user config parser dictionaries."
@@ -463,16 +464,8 @@ class IdleConf:
 
     def RemoveKeyBindNames(self, extnNameList):
         "Return extnNameList with keybinding section names removed."
-        # TODO Easier to return filtered copy with list comp
-        names = extnNameList
-        kbNameIndicies = []
-        for name in names:
-            if name.endswith(('_bindings', '_cfgBindings')):
-                kbNameIndicies.append(names.index(name))
-        kbNameIndicies.sort(reverse=True)
-        for index in kbNameIndicies: #delete each keybinding section name
-            del(names[index])
-        return names
+        return sorted(
+            [n for n in extnNameList if not n.endswith(('_bindings', '_cfgBindings'))])
 
     def GetExtnNameForEvent(self, virtualEvent):
         """Return the name of the extension binding virtualEvent, or None.
