@@ -32,7 +32,6 @@
 
 @rem If py.exe finds a recent enough version, use that one
 @py -3.6 -V >nul 2>&1 && (set PYTHON=py -3.6) && (set _Py_Python_Source=found with py.exe) && goto :found
-)
 
 @if NOT exist "%_Py_EXTERNALS_DIR%" mkdir "%_Py_EXTERNALS_DIR%"
 @set _Py_NUGET=%NUGET%
