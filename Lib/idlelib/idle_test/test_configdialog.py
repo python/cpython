@@ -9,6 +9,7 @@ requires('gui')
 from tkinter import Tk
 import unittest
 import idlelib.config as config
+from idlelib.idle_test.mock_idle import Func
 
 # Tests should not depend on fortuitous user configurations.
 # They must not affect actual user .cfg files.
@@ -22,7 +23,7 @@ testcfg = {
 }
 
 root = None
-configure = None
+dialog = None
 mainpage = changes['main']
 highpage = changes['highlight']
 keyspage = changes['keys']
@@ -31,18 +32,18 @@ class TestDialog(ConfigDialog): pass  # Delete?
 
 
 def setUpModule():
-    global root, configure
+    global root, dialog
     idleConf.userCfg = testcfg
     root = Tk()
     # root.withdraw()    # Comment out, see issue 30870
-    configure = TestDialog(root, 'Test', _utest=True)
+    dialog = TestDialog(root, 'Test', _utest=True)
 
 
 def tearDownModule():
-    global root, configure
+    global root, dialog
     idleConf.userCfg = usercfg
-    configure.remove_var_callbacks()
-    del configure
+    dialog.remove_var_callbacks()
+    del dialog
     root.update_idletasks()
     root.destroy()
     del root
@@ -58,88 +59,101 @@ class FontTabTest(unittest.TestCase):
         default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
         default_size = str(default_font[1])
         default_bold = default_font[2] == 'bold'
-        configure.font_name.set('Test Font')
+        dialog.font_name.set('Test Font')
         expected = {'EditorWindow': {'font': 'Test Font',
                                      'font-size': default_size,
                                      'font-bold': str(default_bold)}}
         self.assertEqual(mainpage, expected)
         changes.clear()
-        configure.font_size.set(20)
+        dialog.font_size.set(20)
         expected = {'EditorWindow': {'font': 'Test Font',
                                      'font-size': '20',
                                      'font-bold': str(default_bold)}}
         self.assertEqual(mainpage, expected)
         changes.clear()
-        configure.font_bold.set(not default_bold)
+        dialog.font_bold.set(not default_bold)
         expected = {'EditorWindow': {'font': 'Test Font',
                                      'font-size': '20',
                                      'font-bold': str(not default_bold)}}
         self.assertEqual(mainpage, expected)
 
-    def test_key_up_down_should_change_font_and_sample(self):
-        # Restore defalut value
-        # XXX: Can't direct un-tuple via idleConf, will get warning
-        dfont = idleConf.GetFont(root, 'main', 'EditorWindow')
-        dfont, dsize, dbold = dfont
-        configure.font_name.set(dfont)
-        configure.font_size.set(str(dsize))
-        configure.font_bold.set(bool(dbold == 'bold'))
-
-        # Save current font and sample font
-        font = configure.fontlist.get('active')
-        sample_font = configure.font_sample.cget('font')
-
-        # Key down
-        configure.fontlist.focus_force()
-        configure.fontlist.update()
-        configure.fontlist.event_generate('<Key-Down>')
-        configure.fontlist.event_generate('<KeyRelease-Down>')
-
-        down_font = configure.fontlist.get('active')
-        down_sample_font = configure.font_sample.cget('font')
-
-        self.assertNotEqual(down_font, font)
-        self.assertNotEqual(down_sample_font, sample_font)
-        self.assertEqual(configure.font_name.get(), down_font.lower())
-        self.assertIn(configure.font_name.get(), down_sample_font.lower())
-
-        # Key Up
-        configure.fontlist.focus_force()
-        configure.fontlist.update()
-        configure.fontlist.event_generate('<Key-Up>')
-        configure.fontlist.event_generate('<KeyRelease-Up>')
-        up_font = configure.fontlist.get('active')
-        up_sample_font = configure.font_sample.cget('font')
-
-        self.assertEqual(up_font, font)
-        self.assertEqual(up_sample_font, sample_font)
-        self.assertEqual(configure.font_name.get(), up_font.lower())
-        self.assertIn(configure.font_name.get(), up_sample_font.lower())
-
-    def test_select_font_list_should_change_font_and_sample(self):
-        font = configure.fontlist.get('anchor')
-        sample_font = configure.font_sample.cget('font')
-        index = configure.fontlist.index('anchor')
-        inc_index = index + 1
-
-        # Select next item in listbox
-        configure.fontlist.focus_force()
-        configure.fontlist.select_anchor(inc_index)
-        configure.fontlist.update()
-        configure.fontlist.event_generate('<ButtonRelease-1>')
-        select_font = configure.fontlist.get('anchor')
-        select_sample_font = configure.font_sample.cget('font')
-
-        self.assertNotEqual(select_font, font)
-        self.assertNotEqual(select_sample_font, sample_font)
-        self.assertEqual(configure.font_name.get(), select_font.lower())
-        self.assertIn(configure.font_name.get(), select_sample_font.lower())
-
-    #def test_sample(self): pass  # TODO
+    def test_set_sample(self):
+        # Set_font_sample also sets highlight_sample.
+        pass
 
     def test_tabspace(self):
-        configure.space_num.set(6)
+        dialog.space_num.set(6)
         self.assertEqual(mainpage, {'Indent': {'num-spaces': '6'}})
+
+
+class FontSelectTest(unittest.TestCase):
+    # These two functions test that selecting a new font in the
+    # list of fonts changes font_name and calls set_font_sample.
+    # The fontlist widget and on_fontlist_select event handler
+    # are tested here together.
+
+    @classmethod
+    def setUpClass(cls):
+        if dialog.fontlist.size() < 2:
+            self.skipTest('need at least 2 fonts')
+        dialog.set_font_sample = Func()  # mask instance method
+
+    @classmethod
+    def tearDownClass(cls):
+        del dialog.set_font_sample  # unmask instance method
+
+    def setUp(self):
+        dialog.set_font_sample.called = 0
+
+
+    def test_select_font_key(self):
+        # Up and Down keys should select a new font.
+
+        fontlist = dialog.fontlist
+        fontlist.activate(0)
+        font = dialog.fontlist.get('active')
+
+        # Test Down key.
+        fontlist.focus_force()
+        fontlist.update()
+        fontlist.event_generate('<Key-Down>')
+        fontlist.event_generate('<KeyRelease-Down>')
+
+        down_font = fontlist.get('active')
+        self.assertNotEqual(down_font, font)
+        self.assertIn(dialog.font_name.get(), down_font.lower())
+        self.assertEqual(dialog.set_font_sample.called, 1)
+
+        # Test Up key.
+        fontlist.focus_force()
+        fontlist.update()
+        fontlist.event_generate('<Key-Up>')
+        fontlist.event_generate('<KeyRelease-Up>')
+
+        up_font = fontlist.get('active')
+        self.assertEqual(up_font, font)
+        self.assertIn(dialog.font_name.get(), up_font.lower())
+        self.assertEqual(dialog.set_font_sample.called, 2)
+
+    def test_select_font_mouse(self):
+        # Click on item should select that item.
+
+        fontlist = dialog.fontlist
+        fontlist.activate(0)
+
+      # Select next item in listbox
+        fontlist.focus_force()
+        fontlist.see(1)
+        fontlist.update()
+        x, y, dx, dy = fontlist.bbox(1)
+        fontlist.event_generate('<Button-1>', x=x+dx//2, y=y+dy//2)
+        fontlist.event_generate('<ButtonRelease-1>', x=x+dx//2, y=y+dy//2)
+
+        font1 = fontlist.get(1)
+        select_font = fontlist.get('anchor')
+        self.assertEqual(select_font, font1)
+        self.assertIn(dialog.font_name.get(), font1.lower())
+        self.assertEqual(dialog.set_font_sample.called, 1)
 
 
 class HighlightTest(unittest.TestCase):
@@ -162,19 +176,19 @@ class GeneralTest(unittest.TestCase):
         changes.clear()
 
     def test_startup(self):
-        configure.radio_startup_edit.invoke()
+        dialog.radio_startup_edit.invoke()
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '1'}})
 
     def test_autosave(self):
-        configure.radio_save_auto.invoke()
+        dialog.radio_save_auto.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '1'}})
 
     def test_editor_size(self):
-        configure.entry_win_height.insert(0, '1')
+        dialog.entry_win_height.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
         changes.clear()
-        configure.entry_win_width.insert(0, '1')
+        dialog.entry_win_width.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
 
     #def test_help_sources(self): pass  # TODO
