@@ -871,7 +871,8 @@ class ConfigChanges(dict):
 
 
 # TODO Revise test output, write expanded unittest
-def _dump():  # htest # (not really, but ignore in coverage)
+def _dump():  # pragma: no cover
+    # htest # (not really, but ignore in coverage)
     from zlib import crc32
     line, crc = 0, 0
 
@@ -900,7 +901,8 @@ def _dump():  # htest # (not really, but ignore in coverage)
     dumpCfg(idleConf.userCfg)
     print('\nlines = ', line, ', crc = ', crc, sep='')
 
-if __name__ == '__main__':
+
+if __name__ == '__main__':  # pragma: no cover
     import unittest
     unittest.main('idlelib.idle_test.test_config',
                   verbosity=2, exit=False)
