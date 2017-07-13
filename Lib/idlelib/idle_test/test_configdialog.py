@@ -28,7 +28,9 @@ mainpage = changes['main']
 highpage = changes['highlight']
 keyspage = changes['keys']
 
-class TestDialog(ConfigDialog): pass  # Delete?
+
+class TestDialog(ConfigDialog):
+    pass  # Delete?
 
 
 def setUpModule():
@@ -141,13 +143,13 @@ class FontSelectTest(unittest.TestCase):
         fontlist = dialog.fontlist
         fontlist.activate(0)
 
-      # Select next item in listbox
+        # Select next item in listbox
         fontlist.focus_force()
         fontlist.see(1)
         fontlist.update()
         x, y, dx, dy = fontlist.bbox(1)
-        fontlist.event_generate('<Button-1>', x=x+dx//2, y=y+dy//2)
-        fontlist.event_generate('<ButtonRelease-1>', x=x+dx//2, y=y+dy//2)
+        fontlist.event_generate('<Button-1>', x=x + dx // 2, y=y + dy // 2)
+        fontlist.event_generate('<ButtonRelease-1>', x=x + dx // 2, y=y + dy // 2)
 
         font1 = fontlist.get(1)
         select_font = fontlist.get('anchor')
