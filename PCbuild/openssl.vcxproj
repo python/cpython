@@ -69,9 +69,9 @@ set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(opensslDir.TrimEnd(`\`))"
 if not exist "$(IntDir.TrimEnd('\'))" mkdir "$(IntDir.TrimEnd('\'))"
 if not exist "$(OutDir.TrimEnd('\'))" mkdir "$(OutDir.TrimEnd('\'))"
-if not exist $(MakeFile) $(PYTHON) "@(PrepareSSL->'%(FullPath)')" "$(opensslDir.TrimEnd(`\`))" $(ArchName)
 if not exist "$(opensslOutDir.TrimEnd(`\`))" mkdir "$(opensslOutDir.TrimEnd(`\`))"
-nmake -f $(MakeFile) $(NMakeOptions)
+$(PYTHON) "@(PrepareSSL->'%(FullPath)')" "$(opensslDir.TrimEnd(`\`))" $(ArchName)
+nmake -f $(MakeFile) $(NMakeOptions) headers lib
 copy /y LICENSE "$(opensslOutDir)\LICENSE"
 </NMakeBuildCommandLine>
   </PropertyGroup>
@@ -85,6 +85,7 @@ copy /y LICENSE "$(opensslOutDir)\LICENSE"
   <Target Name="_CopyIncludes" AfterTargets="Build">
     <ItemGroup>
       <Sources Include="$(opensslDir)inc$(Bitness)\**\*.h" />
+      <Sources Include="$(opensslDir)ms\applink.c" />
     </ItemGroup>
     <Copy SourceFiles="%(Sources.FullPath)" DestinationFiles="$(opensslOutDir)\include\%(Sources.RecursiveDir)\%(Sources.Filename)%(Sources.Extension)" />
   </Target>

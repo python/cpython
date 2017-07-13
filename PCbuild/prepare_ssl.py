@@ -21,6 +21,7 @@
 from __future__ import print_function
 
 import os
+import re
 import sys
 import subprocess
 from shutil import copy
@@ -64,30 +65,6 @@ def find_working_perl(perls):
     print(" Please install ActivePerl and ensure it appears on your path")
 
 
-def create_asms(makefile, tmp_d):
-    #create a custom makefile out of the provided one
-    asm_makefile = os.path.splitext(makefile)[0] + '.asm.mak'
-    with open(makefile) as fin, open(asm_makefile, 'w') as fout:
-        for line in fin:
-            # Keep everything up to the install target (it's convenient)
-            if line.startswith('install: all'):
-                break
-            fout.write(line)
-        asms = []
-        for line in fin:
-            if '.asm' in line and line.strip().endswith('.pl'):
-                asms.append(line.split(':')[0])
-                while line.strip():
-                    fout.write(line)
-                    line = next(fin)
-                fout.write('\n')
-
-        fout.write('asms: $(TMP_D) ')
-        fout.write(' '.join(asms))
-        fout.write('\n')
-    os.system('nmake /f {} PERL=perl TMP_D={} asms'.format(asm_makefile, tmp_d))
-
-
 def copy_includes(makefile, suffix):
     dir = 'inc'+suffix+'\\openssl'
     try:
@@ -114,6 +91,26 @@ def run_configure(configure, do_script):
     print(do_script)
     os.system(do_script)
 
+def fix_uplink():
+    # uplink.c tries to find the OPENSSL_Applink function exported from the current
+    # executable. However, we export it from _ssl[_d].pyd instead. So we update the
+    # module name here before building.
+    with open('ms\\uplink.c', 'r', encoding='utf-8') as f1:
+        code = list(f1)
+    os.replace('ms\\uplink.c', 'ms\\uplink.c.orig')
+    already_patched = False
+    with open('ms\\uplink.c', 'w', encoding='utf-8') as f2:
+        for line in code:
+            if not already_patched:
+                if re.search('MODIFIED FOR CPYTHON _ssl MODULE', line):
+                    already_patched = True
+                elif re.match(r'^\s+if\s*\(\(h\s*=\s*GetModuleHandle[AW]?\(NULL\)\)\s*==\s*NULL\)', line):
+                    f2.write("/* MODIFIED FOR CPYTHON _ssl MODULE */\n")
+                    f2.write('if ((h = GetModuleHandleW(L"_ssl.pyd")) == NULL) if ((h = GetModuleHandleW(L"_ssl_d.pyd")) == NULL)\n')
+                    already_patched = True
+            f2.write(line)
+    if not already_patched:
+        print("WARN: failed to patch ms\\uplink.c")
 
 def prep(arch):
     makefile_template = "ms\\ntdll{}.mak"
@@ -126,13 +123,12 @@ def prep(arch):
         configure = "VC-WIN64A"
         do_script = "ms\\do_win64a"
         suffix = "64"
-        #os.environ["VSEXTCOMP_USECL"] = "MS_OPTERON"
     else:
         raise ValueError('Unrecognized platform: %s' % arch)
 
     print("Creating the makefiles...")
     sys.stdout.flush()
-    # run configure, copy includes, create asms
+    # run configure, copy includes, patch files
     run_configure(configure, do_script)
     makefile = makefile_template.format(suffix)
     try:
@@ -142,9 +138,8 @@ def prep(arch):
     os.rename(generated_makefile, makefile)
     copy_includes(makefile, suffix)
 
-    print('creating asms...')
-    create_asms(makefile, 'tmp{}dll'.format(suffix))
-
+    print('patching ms\\uplink.c...')
+    fix_uplink()
 
 def main():
     if len(sys.argv) == 1:
