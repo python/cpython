@@ -148,8 +148,10 @@ class FontSelectTest(unittest.TestCase):
         fontlist.see(1)
         fontlist.update()
         x, y, dx, dy = fontlist.bbox(1)
-        fontlist.event_generate('<Button-1>', x=x + dx // 2, y=y + dy // 2)
-        fontlist.event_generate('<ButtonRelease-1>', x=x + dx // 2, y=y + dy // 2)
+        x += dx // 2
+        y += dy // 2
+        fontlist.event_generate('<Button-1>', x=x, y=y)
+        fontlist.event_generate('<ButtonRelease-1>', x=x, y=y)
 
         font1 = fontlist.get(1)
         select_font = fontlist.get('anchor')
