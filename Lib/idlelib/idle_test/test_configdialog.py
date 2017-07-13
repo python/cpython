@@ -109,7 +109,7 @@ class FontSelectTest(unittest.TestCase):
         changes.clear()
 
     def test_select_font_key(self):
-        # Up and Down keys should select a new font.
+        "Up and Down keys should select a new font."
 
         fontlist = dialog.fontlist
         fontlist.activate(0)
@@ -138,7 +138,7 @@ class FontSelectTest(unittest.TestCase):
         self.assertEqual(dialog.set_font_sample.called, 2)
 
     def test_select_font_mouse(self):
-        # Click on item should select that item.
+        "Click on item should select that item."
 
         fontlist = dialog.fontlist
         fontlist.activate(0)
