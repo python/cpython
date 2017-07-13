@@ -2119,6 +2119,9 @@ class PyBuildExt(build_ext):
         else:
             raise DistutilsError("_decimal: unsupported architecture")
 
+        if 'gcc' in cc: # Suppressing the warnings in the source is too verbose.
+            extra_compile_args.append('-Wno-implicit-fallthrough')
+
         # Workarounds for toolchain bugs:
         if sysconfig.get_config_var('HAVE_IPA_PURE_CONST_BUG'):
             # Some versions of gcc miscompile inline asm:
