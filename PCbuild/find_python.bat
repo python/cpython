@@ -31,7 +31,7 @@
 @if exist "%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe" (set PYTHON="%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe") & (set _Py_Python_Source=found in externals directory) & goto :found
 
 @rem If py.exe finds a recent enough version, use that one
-@py -3.6 -V >nul 2>&1 && (set PYTHON=py -3.6) & (set _Py_Python_Source=found with py.exe) & goto :found
+@py -3.6 -V >nul 2>&1 && (set PYTHON=py -3.6) && (set _Py_Python_Source=found with py.exe) && goto :found
 )
 
 @if NOT exist "%_Py_EXTERNALS_DIR%" mkdir "%_Py_EXTERNALS_DIR%"
