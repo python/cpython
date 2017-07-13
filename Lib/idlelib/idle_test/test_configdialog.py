@@ -98,11 +98,11 @@ class FontSelectTest(unittest.TestCase):
     def setUpClass(cls):
         if dialog.fontlist.size() < 2:
             cls.skipTest('need at least 2 fonts')
-        dialog.set_font_sample = Func()  # mask instance method
+        dialog.set_font_sample = Func()  # Mask instance method
 
     @classmethod
     def tearDownClass(cls):
-        del dialog.set_font_sample  # unmask instance method
+        del dialog.set_font_sample  # Unmask instance method
 
     def setUp(self):
         dialog.set_font_sample.called = 0
