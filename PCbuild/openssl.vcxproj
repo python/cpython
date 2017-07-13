@@ -72,6 +72,7 @@ if not exist "$(OutDir.TrimEnd('\'))" mkdir "$(OutDir.TrimEnd('\'))"
 if not exist $(MakeFile) $(PYTHON) "@(PrepareSSL->'%(FullPath)')" "$(opensslDir.TrimEnd(`\`))" $(ArchName)
 if not exist "$(opensslOutDir.TrimEnd(`\`))" mkdir "$(opensslOutDir.TrimEnd(`\`))"
 nmake -f $(MakeFile) $(NMakeOptions)
+copy /y LICENSE "$(opensslOutDir)\LICENSE"
 </NMakeBuildCommandLine>
   </PropertyGroup>
 

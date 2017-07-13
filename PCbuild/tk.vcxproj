@@ -61,6 +61,7 @@ set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tkDir)win"
 nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) all
 nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) install-binaries install-libraries
+copy /Y ..\license.terms "$(OutDir)\tklicense.terms"
 </NMakeBuildCommandLine>
   </PropertyGroup>
   <ItemGroup>

@@ -61,6 +61,7 @@
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tixDir)win"
 nmake /nologo -f makefile.vc MACHINE=$(TclMachine) cflags="$(CFlags)" $(DebugFlags) $(TclShortVersions) $(TixDirs) all install
+copy /Y ..\license.terms "$(OutDir)\tixlicense.terms"
 </NMakeBuildCommandLine>
     <NMakeCleanCommandLine>rmdir /q/s "$(OutDir.TrimEnd(`\`))"</NMakeCleanCommandLine>
   </PropertyGroup>
