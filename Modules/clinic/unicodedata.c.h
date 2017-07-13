@@ -259,11 +259,10 @@ PyDoc_STRVAR(unicodedata_UCD_grapheme_cluster_break__doc__,
 "grapheme_cluster_break($self, chr, /)\n"
 "--\n"
 "\n"
-"Returns the east asian width assigned to the character chr as string.");
+"Returns the GraphemeBreakProperty assigned to the character chr as string.");
 
 #define UNICODEDATA_UCD_GRAPHEME_CLUSTER_BREAK_METHODDEF    \
-    {"grapheme_cluster_break", (PyCFunction)unicodedata_UCD_grapheme_cluster_break, \
-        METH_O, unicodedata_UCD_grapheme_cluster_break__doc__},
+    {"grapheme_cluster_break", (PyCFunction)unicodedata_UCD_grapheme_cluster_break, METH_O, unicodedata_UCD_grapheme_cluster_break__doc__},
 
 static PyObject *
 unicodedata_UCD_grapheme_cluster_break_impl(PyObject *self, int chr);
@@ -407,4 +406,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7ec9a3c8fbfd3c3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a14dae8898d6b123 input=a9049054013a1b77]*/

@@ -390,12 +390,12 @@ unicodedata.UCD.grapheme_cluster_break
     chr: int(accept={str})
     /
 
-Returns the east asian width assigned to the character chr as string.
+Returns the GraphemeBreakProperty assigned to the character chr as string.
 [clinic start generated code]*/
 
 static PyObject *
 unicodedata_UCD_grapheme_cluster_break_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=484e8537d9ee8197 input=c4854798aab026e0]*/
+/*[clinic end generated code: output=7c8f206a79cc1cd8 input=81f5a87218f8439e]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
