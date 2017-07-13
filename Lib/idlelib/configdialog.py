@@ -1816,10 +1816,10 @@ class ConfigDialog(Toplevel):
 
     def save_all_changed_extensions(self):
         """Save configuration changes to the user config file.
-        
+
         Attributes accessed:
             extensions
-        
+
         Methods:
             set_extension_value
         """
