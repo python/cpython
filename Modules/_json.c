@@ -18,7 +18,7 @@ static PyTypeObject PyEncoderType;
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
-    char strict;
+    signed char strict;
     PyObject *object_hook;
     PyObject *object_pairs_hook;
     PyObject *parse_float;
