@@ -104,7 +104,7 @@ class FontSelectTest(unittest.TestCase):
 
     def setUp(self):
         dialog.set_font_sample.called = 0
-
+        changes.clear()
 
     def test_select_font_key(self):
         # Up and Down keys should select a new font.
