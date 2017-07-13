@@ -281,6 +281,24 @@ class IdleConfTest(unittest.TestCase):
         eq(conf.userCfg['foo'].Get('Foo Bar', 'foo'), 'newbar')
         eq(conf.userCfg['foo'].GetOptionList('Foo Bar'), ['foo'])
 
+    def test_get_option(self):
+        conf = self.mock_config()
+
+        eq = self.assertEqual
+        eq(conf.GetOption('main', 'EditorWindow', 'width'), '80')
+        eq(conf.GetOption('main', 'EditorWindow', 'width', type='int'), 80)
+        with mock.patch('idlelib.config._warn') as _warn:
+            eq(conf.GetOption('main', 'EditorWindow', 'font', type='int'), None)
+            eq(conf.GetOption('main', 'EditorWindow', 'NotExists'), None)
+            eq(conf.GetOption('main', 'EditorWindow', 'NotExists', default='NE'), 'NE')
+            eq(_warn.call_count, 4)
+
+    def test_set_option(self):
+        conf = self.mock_config()
+
+        conf.SetOption('main', 'Foo', 'bar', 'newbar')
+        self.assertEqual(conf.GetOption('main', 'Foo', 'bar'), 'newbar')
+
     def test_get_section_list(self):
         conf = self.mock_config()
 
@@ -292,6 +310,11 @@ class IdleConfTest(unittest.TestCase):
             conf.GetSectionList('user', 'main'),
             ['General', 'EditorWindow', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
+
+        with self.assertRaises(config.InvalidConfigSet):
+            conf.GetSectionList('foobar', 'main')
+        with self.assertRaises(config.InvalidConfigType):
+            conf.GetSectionList('default', 'notexists')
 
     def test_get_highlight(self):
         conf = self.mock_config()
@@ -308,6 +331,13 @@ class IdleConfTest(unittest.TestCase):
         eq(conf.GetHighlight('IDLE Classic', 'cursor'), {'foreground': 'black',
                                                          'background': '#ffffff'})
 
+        # Test get user themes
+        conf.SetOption('highlight', 'Foobar', 'normal-foreground', '#747474')
+        conf.SetOption('highlight', 'Foobar', 'normal-background', '#171717')
+        with mock.patch('idlelib.config._warn'):
+            eq(conf.GetHighlight('Foobar', 'normal'), {'foreground': '#747474',
+                                                       'background': '#171717'})
+
     def test_get_theme_dict(self):
         "XXX: NOT YET DONE"
         conf = self.mock_config()
@@ -319,6 +349,12 @@ class IdleConfTest(unittest.TestCase):
 
         with self.assertRaises(config.InvalidTheme):
             conf.GetThemeDict('bad', 'IDLE Classic')
+
+    def test_get_current_theme_and_keys(self):
+        conf = self.mock_config()
+
+        self.assertEqual(conf.CurrentTheme(), conf.current_colors_and_keys('Theme'))
+        self.assertEqual(conf.CurrentKeys(), conf.current_colors_and_keys('Keys'))
 
     def test_current_colors_and_keys(self):
         conf = self.mock_config()
@@ -362,6 +398,13 @@ class IdleConfTest(unittest.TestCase):
            ['AutoComplete', 'AutoExpand', 'CallTips', 'FormatParagraph',
             'ParenMatch', 'ZoomHeight'])
 
+        # Add user extensions
+        conf.SetOption('extensions', 'Foobar', 'enable', 'True')
+        eq(conf.GetExtensions(),
+           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
+            'FormatParagraph', 'ParenMatch', 'RstripExtension',
+            'ScriptBinding', 'ZoomHeight', 'Foobar'])  # User extensions didn't sort
+
     def test_remove_key_bind_names(self):
         conf = self.mock_config()
 
@@ -399,6 +442,13 @@ class IdleConfTest(unittest.TestCase):
             conf.GetExtensionBindings('ZoomHeight'),
             {'<<zoom-height>>': ['<Alt-Key-2>']})
 
+        # Add non-configuarable bindings
+        conf.defaultCfg['extensions'].add_section('Foobar')
+        conf.defaultCfg['extensions'].add_section('Foobar_bindings')
+        conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
+        conf.defaultCfg['extensions'].set('Foobar_bindings', 'foobar', '<Key-F>')
+        self.assertEqual(conf.GetExtensionBindings('Foobar'), {'<<foobar>>': ['<Key-F>']})
+
     def test_get_current_keyset(self):
         import sys
         current_platform = sys.platform
@@ -415,6 +465,16 @@ class IdleConfTest(unittest.TestCase):
         # Restore platform
         sys.platform = current_platform
 
+    def test_get_keyset(self):
+        conf = self.mock_config()
+
+        # Conflic with key set, should be disable to ''
+        conf.defaultCfg['extensions'].add_section('Foobar')
+        conf.defaultCfg['extensions'].add_section('Foobar_cfgBindings')
+        conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
+        conf.defaultCfg['extensions'].set('Foobar_cfgBindings', 'newfoo', '<Key-F3>')
+        self.assertEqual(conf.GetKeySet('IDLE Modern Unix')['<<newfoo>>'], '')
+
     def test_is_core_binding(self):
         # XXX: Should move out the core keys to config file or other place
         conf = self.mock_config()
@@ -424,17 +484,25 @@ class IdleConfTest(unittest.TestCase):
         self.assertTrue(conf.IsCoreBinding('del-word-right'))
         self.assertFalse(conf.IsCoreBinding('not-exists'))
 
-    def test_get_extra_help_source_list(self):
+    def test_extra_help_source_list(self):
         conf = self.mock_config()
 
+        # Test default with no extra help source
         self.assertEqual(conf.GetExtraHelpSourceList('default'), [])
         self.assertEqual(conf.GetExtraHelpSourceList('user'), [])
         with self.assertRaises(config.InvalidConfigSet):
             self.assertEqual(conf.GetExtraHelpSourceList('bad'), [])
+        self.assertCountEqual(
+            conf.GetAllExtraHelpSourcesList(),
+            conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
 
-    def test_get_all_extra_help_source_list(self):
-        conf = self.mock_config()
-
+        # Add help source to user config
+        conf.userCfg['main'].SetOption('HelpFiles', '1', 'IDLE;C:/Programs/Python36/Lib/idlelib/help.html')
+        conf.userCfg['main'].SetOption('HelpFiles', '2', 'Pillow;https://pillow.readthedocs.io/en/latest/')
+        conf.userCfg['main'].SetOption('HelpFiles', '3', 'Python:https://python.org')
+        self.assertEqual(conf.GetExtraHelpSourceList('user'),
+                         [('IDLE', 'C:/Programs/Python36/Lib/idlelib/help.html', '1'),
+                          ('Pillow', 'https://pillow.readthedocs.io/en/latest/', '2')])
         self.assertCountEqual(
             conf.GetAllExtraHelpSourcesList(),
             conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
