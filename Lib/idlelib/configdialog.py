@@ -47,7 +47,8 @@ class ConfigDialog(Toplevel):
         self.parent = parent
         if _htest:
             parent.instance_dict = {}
-        self.withdraw()
+        if not _utest:
+            self.withdraw()
 
         self.configure(borderwidth=5)
         self.title(title or 'IDLE Preferences')
@@ -76,7 +77,6 @@ class ConfigDialog(Toplevel):
         self.create_widgets()
         self.resizable(height=FALSE, width=FALSE)
         self.transient(parent)
-        self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.fontlist.focus_set()
         # XXX Decide whether to keep or delete these key bindings.
@@ -88,6 +88,7 @@ class ConfigDialog(Toplevel):
         self.attach_var_callbacks()  # Avoid callbacks during load_configs.
 
         if not _utest:
+            self.grab_set()
             self.wm_deiconify()
             self.wait_window()
 
