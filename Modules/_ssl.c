@@ -21,7 +21,7 @@
 #ifdef WITH_THREAD
 #include "pythread.h"
 
-/* Potentially redefined below for Windows, after important #includes */
+/* Redefined below for Windows debug builds after important #includes */
 #define _PySSL_FIX_ERRNO
 
 #define PySSL_BEGIN_ALLOW_THREADS_S(save) \
