@@ -102,6 +102,9 @@
 
 /*==========================================================================*/
 
+#undef  uint
+#define uint    unsigned int    /* assuming >= 16 bits */
+
 /*
  * -- Main tunable settings section --
  */

@@ -111,6 +111,7 @@
     <ClInclude Include="..\Include\import.h" />
     <ClInclude Include="..\Include\internal\_Python.h" />
     <ClInclude Include="..\Include\internal\_ceval.h" />
+    <ClInclude Include="..\Include\internal\_condvar.h" />
     <ClInclude Include="..\Include\internal\_gil.h" />
     <ClInclude Include="..\Include\internal\_mem.h" />
     <ClInclude Include="..\Include\internal\_pymalloc.h" />

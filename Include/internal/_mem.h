@@ -11,6 +11,9 @@ extern "C" {
 #include "_pymalloc.h"
 #endif
 
+#undef  uint
+#define uint    unsigned int    /* assuming >= 16 bits */
+
 /* Low-level memory runtime state */
 
 struct _pymem_runtime_state {
