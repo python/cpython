@@ -38,10 +38,17 @@ class ConfigDialog(Toplevel):
     def __init__(self, parent, title='', _htest=False, _utest=False):
         """Show the tabbed dialog for user configuration.
 
-        parent - parent of this dialog
-        title - string which is the title of this popup dialog
-        _htest - bool, change box location when running htest
-        _utest - bool, don't wait_window when running unittest
+        Args:
+            parent - parent of this dialog
+            title - string which is the title of this popup dialog
+            _htest - bool, change box location when running htest
+            _utest - bool, don't wait_window when running unittest
+
+        Note: Focus set on font page fontlist.
+
+        Methods:
+            create_widgets
+            cancel: Bound to DELETE_WINDOW protocol.
         """
         Toplevel.__init__(self, parent)
         self.parent = parent
@@ -58,22 +65,6 @@ class ConfigDialog(Toplevel):
         # Each theme element key is its display name.
         # The first value of the tuple is the sample area tag name.
         # The second value is the display name list sort index.
-        self.theme_elements={
-            'Normal Text': ('normal', '00'),
-            'Python Keywords': ('keyword', '01'),
-            'Python Definitions': ('definition', '02'),
-            'Python Builtins': ('builtin', '03'),
-            'Python Comments': ('comment', '04'),
-            'Python Strings': ('string', '05'),
-            'Selected Text': ('hilite', '06'),
-            'Found Text': ('hit', '07'),
-            'Cursor': ('cursor', '08'),
-            'Editor Breakpoint': ('break', '09'),
-            'Shell Normal Text': ('console', '10'),
-            'Shell Error Text': ('error', '11'),
-            'Shell Stdout Text': ('stdout', '12'),
-            'Shell Stderr Text': ('stderr', '13'),
-            }
         self.create_widgets()
         self.resizable(height=FALSE, width=FALSE)
         self.transient(parent)
@@ -93,7 +84,23 @@ class ConfigDialog(Toplevel):
             self.wait_window()
 
     def create_widgets(self):
-        "Create and place widgets for tabbed dialog."
+        """Create and place widgets for tabbed dialog.
+
+        Widgets Bound to self:
+            tab_pages: TabbedPageSet
+
+        Methods:
+            create_page_font_tab
+            create_page_highlight
+            create_page_keys
+            create_page_general
+            create_page_extensions
+            create_action_buttons
+            load_configs: Load pages except for extensions.
+            attach_var_callbacks
+            remove_var_callbacks
+            activate_config_changes: Tell editors to reload.
+        """
         self.tab_pages = TabbedPageSet(self,
                 page_names=['Fonts/Tabs', 'Highlighting', 'Keys', 'General',
                             'Extensions'])
@@ -106,7 +113,23 @@ class ConfigDialog(Toplevel):
         self.create_action_buttons().pack(side=BOTTOM)
 
     def create_action_buttons(self):
-        "Return frame of action buttons for dialog."
+        """Return frame of action buttons for dialog.
+
+        Methods:
+            ok
+            apply
+            cancel
+            help
+
+        Widget Structure:
+            outer: Frame
+                buttons: Frame
+                    (no assignment): Button (ok)
+                    (no assignment): Button (apply)
+                    (no assignment): Button (cancel)
+                    (no assignment): Button (help)
+                (no assignment): Frame
+        """
         if macosx.isAquaTk():
             # Changing the default padding on OSX results in unreadable
             # text in the buttons.
@@ -130,12 +153,41 @@ class ConfigDialog(Toplevel):
     def create_page_font_tab(self):
         """Return frame of widgets for Font/Tabs tab.
 
-        Configuration attributes:
+        Tk Variables:
             font_size: Font size.
             font_bold: Select font bold or not.
             font_name: Font face.
+                Note: these 3 share var_changed_font callback.
             space_num: Indentation width.
+
+        Data Attribute:
             edit_font: Font widget with default font name, size, and weight.
+
+        Methods:
+            load_font_cfg: Set vars and fontlist.
+            on_fontlist_select: Bound to fontlist button release
+                or key release.
+            set_font_sample: Command for opt_menu_font_size and
+                check_font_bold.
+            load_tab_cfg: Get current.
+
+        Widget Structure:  (*) widgets bound to self
+            frame
+                frame_font: LabelFrame
+                    frame_font_name: Frame
+                        font_name_title: Label
+                        (*)fontlist: ListBox
+                        scroll_font: Scrollbar
+                    frame_font_param: Frame
+                        font_size_title: Label
+                        (*)opt_menu_font_size: DynOptionMenu - font_size
+                        check_font_bold: Checkbutton - font_bold
+                    frame_font_sample: Frame
+                        (*)font_sample: Label
+                frame_indent: LabelFrame
+                    frame_indent_size: Frame
+                        indent_size_title: Label
+                        (*)scale_indent_size: Scale - space_num
         """
         parent = self.parent
         self.font_size = StringVar(parent)
@@ -208,14 +260,71 @@ class ConfigDialog(Toplevel):
     def create_page_highlight(self):
         """Return frame of widgets for Highlighting tab.
 
-        Configuration attributes:
+        Tk Variables:
+            colour: Color of selected target.
             builtin_theme: Menu variable for built-in theme.
             custom_theme: Menu variable for custom theme.
             fg_bg_toggle: Toggle for foreground/background color.
-            colour: Color of selected target.
+                Note: this has no callback.
             is_builtin_theme: Selector for built-in or custom theme.
             highlight_target: Menu variable for the highlight tag target.
+
+        Instance Data Attributes:
+            theme_elements: Dictionary of tags for text highlighting.
+                The key is the display name and the value is a tuple of
+                (tag name, display sort order).
+
+        Methods [attachment]:
+            load_theme_cfg: Load current highlight colors.
+            get_colour: Invoke colorchooser [button_set_colour].
+            set_colour_sample_binding: Call set_colour_sample [fg_bg_toggle].
+            set_highlight_target: set fg_bg_toggle, set_color_sample().
+            set_colour_sample: Set frame background to target.
+            on_new_colour_set: Set new color and add option.
+            paint_theme_sample: Recolor sample.
+            get_new_theme_name: Get from popup.
+            create_new_theme: Combine theme with changes and save.
+            save_as_new_theme: Save [button_save_custom_theme].
+            set_theme_type: Command for [is_builtin_theme].
+            delete_custom_theme: Ativate default [button_delete_custom_theme].
+            save_new_theme: Save to userCfg['theme'] (is function).
+
+        Widget Structure:  (*) widgets bound to self
+            frame
+                frame_custom: LabelFrame
+                    (*)text_highlight_sample: Text
+                    (*)frame_colour_set: Frame
+                        button_set_colour: Button
+                        (*)opt_menu_highlight_target: DynOptionMenu - highlight_target
+                    frame_fg_bg_toggle: Frame
+                        (*)radio_fg: Radiobutton - fg_bg_toggle
+                        (*)radio_bg: Radiobutton - fg_bg_toggle
+                    button_save_custom_theme: Button
+                frame_theme: LabelFrame
+                    theme_type_title: Label
+                    (*)radio_theme_builtin: Radiobutton - is_builtin_theme
+                    (*)radio_theme_custom: Radiobutton - is_builtin_theme
+                    (*)opt_menu_theme_builtin: DynOptionMenu - builtin_theme
+                    (*)opt_menu_theme_custom: DynOptionMenu - custom_theme
+                    (*)button_delete_custom_theme: Button
+                    (*)new_custom_theme: Label
         """
+        self.theme_elements={
+            'Normal Text': ('normal', '00'),
+            'Python Keywords': ('keyword', '01'),
+            'Python Definitions': ('definition', '02'),
+            'Python Builtins': ('builtin', '03'),
+            'Python Comments': ('comment', '04'),
+            'Python Strings': ('string', '05'),
+            'Selected Text': ('hilite', '06'),
+            'Found Text': ('hit', '07'),
+            'Cursor': ('cursor', '08'),
+            'Editor Breakpoint': ('break', '09'),
+            'Shell Normal Text': ('console', '10'),
+            'Shell Error Text': ('error', '11'),
+            'Shell Stdout Text': ('stdout', '12'),
+            'Shell Stderr Text': ('stderr', '13'),
+            }
         parent = self.parent
         self.builtin_theme = StringVar(parent)
         self.custom_theme = StringVar(parent)
@@ -328,11 +437,44 @@ class ConfigDialog(Toplevel):
     def create_page_keys(self):
         """Return frame of widgets for Keys tab.
 
-        Configuration attributes:
+        Tk Variables:
             builtin_keys: Menu variable for built-in keybindings.
             custom_keys: Menu variable for custom keybindings.
             are_keys_builtin: Selector for built-in or custom keybindings.
             keybinding: Action/key bindings.
+
+        Methods:
+            load_key_config: Set table.
+            load_keys_list: Reload active set.
+            keybinding_selected: Bound to list_bindings button release.
+            get_new_keys: Command for button_new_keys.
+            get_new_keys_name: Call popup.
+            create_new_key_set: Combine active keyset and changes.
+            set_keys_type: Command for are_keys_builtin.
+            delete_custom_keys: Command for button_delete_custom_keys.
+            save_as_new_key_set: Command for button_save_custom_keys.
+            save_new_key_set: Save to idleConf.userCfg['keys'] (is function).
+            deactivate_current_config: Remove keys bindings in editors.
+
+        Widget Structure:  (*) widgets bound to self
+            frame
+                frame_custom: LabelFrame
+                    frame_target: Frame
+                        target_title: Label
+                        scroll_target_y: Scrollbar
+                        scroll_target_x: Scrollbar
+                        (*)list_bindings: ListBox
+                        (*)button_new_keys: Button
+                frame_key_sets: LabelFrame
+                    frames[0]: Frame
+                        (*)radio_keys_builtin: Radiobutton - are_keys_builtin
+                        (*)radio_keys_custom: Radiobutton - are_keys_builtin
+                        (*)opt_menu_keys_builtin: DynOptionMenu - builtin_keys
+                        (*)opt_menu_keys_custom: DynOptionMenu - custom_keys
+                        (*)new_custom_keys: Label
+                    frames[1]: Frame
+                        (*)button_delete_custom_keys: Button
+                        button_save_custom_keys: Button
         """
         parent = self.parent
         self.builtin_keys = StringVar(parent)
@@ -414,11 +556,45 @@ class ConfigDialog(Toplevel):
     def create_page_general(self):
         """Return frame of widgets for General tab.
 
-        Configuration attributes:
+        Tk Variables:
             win_width: Initial window width in characters.
             win_height: Initial window height in characters.
             startup_edit: Selector for opening in editor or shell mode.
             autosave: Selector for save prompt popup when using Run.
+
+        Methods:
+            load_general_config:
+            help_source_selected: Bound to list_help button release.
+            set_helplist_button_states: Toggle based on list.
+            helplist_item_edit: Command for button_helplist_edit.
+            helplist_item_add: Command for button_helplist_add.
+            helplist_item_remove: Command for button_helplist_remove.
+            update_user_help_changed_items: Fill in changes.
+
+        Widget Structure:  (*) widgets bound to self
+            frame
+                frame_run: LabelFrame
+                    startup_title: Label
+                    (*)radio_startup_edit: Radiobutton - startup_edit
+                    (*)radio_startup_shell: Radiobutton - startup_edit
+                frame_save: LabelFrame
+                    run_save_title: Label
+                    (*)radio_save_ask: Radiobutton - autosave
+                    (*)radio_save_auto: Radiobutton - autosave
+                frame_win_size: LabelFrame
+                    win_size_title: Label
+                    win_width_title: Label
+                    (*)entry_win_width: Entry - win_width
+                    win_height_title: Label
+                    (*)entry_win_height: Entry - win_height
+                frame_help: LabelFrame
+                    frame_helplist: Frame
+                        frame_helplist_buttons: Frame
+                            (*)button_helplist_edit
+                            (*)button_helplist_add
+                            (*)button_helplist_remove
+                        scroll_helplist: Scrollbar
+                        (*)list_help: ListBox
         """
         parent = self.parent
         self.win_width = StringVar(parent)
@@ -684,7 +860,23 @@ class ConfigDialog(Toplevel):
         changes.add_option('main', 'General', 'autosave', value)
 
     def set_theme_type(self):
-        "Set available screen options based on builtin or custom theme."
+        """Set available screen options based on builtin or custom theme.
+
+        Attributes accessed:
+            is_builtin_theme
+
+        Attributes updated:
+            opt_menu_theme_builtin
+            opt_menu_theme_custom
+            button_delete_custom_theme
+            radio_theme_custom
+
+        Called from:
+            handler for radio_theme_builtin and radio_theme_custom
+            delete_custom_theme
+            create_new_theme
+            load_theme_cfg
+        """
         if self.is_builtin_theme.get():
             self.opt_menu_theme_builtin.config(state=NORMAL)
             self.opt_menu_theme_custom.config(state=DISABLED)
@@ -866,6 +1058,21 @@ class ConfigDialog(Toplevel):
         The current theme is deactivated and the default theme is
         activated.  The custom theme is permanently removed from
         the config file.
+
+        Attributes accessed:
+            custom_theme
+
+        Attributes updated:
+            radio_theme_custom
+            opt_menu_theme_custom
+            is_builtin_theme
+            builtin_theme
+
+        Methods:
+            deactivate_current_config
+            save_all_changed_extensions
+            activate_config_changes
+            set_theme_type
         """
         theme_name = self.custom_theme.get()
         delmsg = 'Are you sure you wish to delete the theme %r ?'
@@ -897,6 +1104,18 @@ class ConfigDialog(Toplevel):
 
         If a new color is selected while using a builtin theme, a
         name must be supplied to create a custom theme.
+
+        Attributes accessed:
+            highlight_target
+            frame_colour_set
+            is_builtin_theme
+
+        Attributes updated:
+            colour
+
+        Methods:
+            get_new_theme_name
+            create_new_theme
         """
         target = self.highlight_target.get()
         prev_colour = self.frame_colour_set.cget('bg')
@@ -937,7 +1156,12 @@ class ConfigDialog(Toplevel):
         return new_theme
 
     def save_as_new_theme(self):
-        "Prompt for new theme name and create the theme."
+        """Prompt for new theme name and create the theme.
+
+        Methods:
+            get_new_theme_name
+            create_new_theme
+        """
         new_theme_name = self.get_new_theme_name('New Theme Name:')
         if new_theme_name:
             self.create_new_theme(new_theme_name)
@@ -948,6 +1172,18 @@ class ConfigDialog(Toplevel):
         Create the new theme based on the previously active theme
         with the current changes applied.  Once it is saved, then
         activate the new theme.
+
+        Attributes accessed:
+            builtin_theme
+            custom_theme
+
+        Attributes updated:
+            opt_menu_theme_custom
+            is_builtin_theme
+
+        Method:
+            save_new_theme
+            set_theme_type
         """
         if self.is_builtin_theme.get():
             theme_type = 'default'
@@ -975,6 +1211,12 @@ class ConfigDialog(Toplevel):
 
         Event can result from either mouse click or Up or Down key.
         Set font_name and example display to selection.
+
+        Attributes updated:
+            font_name: Set to name selected from fontlist.
+
+        Methods:
+            set_font_sample
         """
         font = self.fontlist.get(
                 ACTIVE if event.type.name == 'KeyRelease' else ANCHOR)
@@ -982,7 +1224,22 @@ class ConfigDialog(Toplevel):
         self.set_font_sample()
 
     def set_font_sample(self, event=None):
-        "Update the screen samples with the font settings from the dialog."
+        """Update the screen samples with the font settings from the dialog.
+
+        Attributes accessed:
+            font_name
+            font_bold
+            font_size
+
+        Attributes updated:
+            font_sample: Set to selected font name, size, and weight.
+            text_highlight_sample: Set to selected font name, size, and weight.
+
+        Called from:
+            handler for opt_menu_font_size and check_font_bold
+            on_fontlist_select
+            load_font_cfg
+        """
         font_name = self.font_name.get()
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
         new_font = (font_name, self.font_size.get(), font_weight)
@@ -990,7 +1247,23 @@ class ConfigDialog(Toplevel):
         self.text_highlight_sample.configure(font=new_font)
 
     def set_highlight_target(self):
-        "Set fg/bg toggle and color based on highlight tag target."
+        """Set fg/bg toggle and color based on highlight tag target.
+
+        Instance variables accessed:
+            highlight_target
+
+        Attributes updated:
+            radio_fg
+            radio_bg
+            fg_bg_toggle
+
+        Methods:
+            set_colour_sample
+
+        Called from:
+            var_changed_highlight_target
+            load_theme_cfg
+        """
         if self.highlight_target.get() == 'Cursor':  # bg not possible
             self.radio_fg.config(state=DISABLED)
             self.radio_bg.config(state=DISABLED)
@@ -1002,11 +1275,25 @@ class ConfigDialog(Toplevel):
         self.set_colour_sample()
 
     def set_colour_sample_binding(self, *args):
-        "Change color sample based on foreground/background toggle."
+        """Change color sample based on foreground/background toggle.
+
+        Methods:
+            set_colour_sample
+        """
         self.set_colour_sample()
 
     def set_colour_sample(self):
-        "Set the color of the frame background to reflect the selected target."
+        """Set the color of the frame background to reflect the selected target.
+
+        Instance variables accessed:
+            theme_elements
+            highlight_target
+            fg_bg_toggle
+            text_highlight_sample
+
+        Attributes updated:
+            frame_colour_set
+        """
         # Set the colour sample area.
         tag = self.theme_elements[self.highlight_target.get()][0]
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
@@ -1014,7 +1301,25 @@ class ConfigDialog(Toplevel):
         self.frame_colour_set.config(bg=colour)
 
     def paint_theme_sample(self):
-        "Apply the theme colors to each element tag in the sample text."
+        """Apply the theme colors to each element tag in the sample text.
+
+        Instance attributes accessed:
+            theme_elements
+            is_builtin_theme
+            builtin_theme
+            custom_theme
+
+        Attributes updated:
+            text_highlight_sample: Set the tag elements to the theme.
+
+        Methods:
+            set_colour_sample
+
+        Called from:
+            var_changed_builtin_theme
+            var_changed_custom_theme
+            load_theme_cfg
+        """
         if self.is_builtin_theme.get():  # Default theme
             theme = self.builtin_theme.get()
         else:  # User theme
@@ -1106,7 +1411,21 @@ class ConfigDialog(Toplevel):
                     ';'.join(self.user_helplist[num-1][:2]))
 
     def load_font_cfg(self):
-        "Load current configuration settings for the font options."
+        """Load current configuration settings for the font options.
+
+        Retrieve current font values from idleConf.GetFont to set
+        as initial values for font widgets.
+
+        Attributes updated:
+            fontlist: Populate with fonts from tkinter.font.
+            font_name: Set to current font.
+            opt_menu_font_size: Populate valid options tuple and set
+                to current size.
+            font_bold: Set to current font weight.
+
+        Methods:
+            set_font_sample
+        """
         # Set base editor font selection list.
         fonts = list(tkFont.families(self))
         fonts.sort()
@@ -1136,14 +1455,36 @@ class ConfigDialog(Toplevel):
         self.set_font_sample()
 
     def load_tab_cfg(self):
-        "Load current configuration settings for the tab options."
+        """Load current configuration settings for the tab options.
+
+        Attributes updated:
+            space_num: Set to value from idleConf.
+        """
         # Set indent sizes.
         space_num = idleConf.GetOption(
             'main', 'Indent', 'num-spaces', default=4, type='int')
         self.space_num.set(space_num)
 
     def load_theme_cfg(self):
-        "Load current configuration settings for the theme options."
+        """Load current configuration settings for the theme options.
+
+        Based on the is_builtin_theme toggle, the theme is set as
+        either builtin or custom and the initial widget values
+        reflect the current settings from idleConf.
+
+        Attributes updated:
+            is_builtin_theme: Set from idleConf.
+            opt_menu_theme_builtin: List of default themes from idleConf.
+            opt_menu_theme_custom: List of custom themes from idleConf.
+            radio_theme_custom: Disabled if there are no custom themes.
+            custom_theme: Message with additional information.
+            opt_menu_highlight_target: Create menu from self.theme_elements.
+
+        Methods:
+            set_theme_type
+            paint_theme_sample
+            set_highlight_target
+        """
         # Set current theme type radiobutton.
         self.is_builtin_theme.set(idleConf.GetOption(
                 'main', 'Theme', 'default', type='bool', default=1))
@@ -1231,6 +1572,13 @@ class ConfigDialog(Toplevel):
 
         Load configuration from default and user config files and populate
         the widgets on the config dialog pages.
+
+        Methods:
+            load_font_cfg
+            load_tab_cfg
+            load_theme_cfg
+            load_key_cfg
+            load_general_cfg
         """
         self.load_font_cfg()
         self.load_tab_cfg()
@@ -1252,7 +1600,7 @@ class ConfigDialog(Toplevel):
             idleConf.userCfg['keys'].SetOption(keyset_name, event, value)
 
     def save_new_theme(self, theme_name, theme):
-        """Save a newly created theme.
+        """Save a newly created theme to idleConf.
 
         theme_name - string, the name of the new theme
         theme - dictionary containing the new theme
@@ -1264,7 +1612,11 @@ class ConfigDialog(Toplevel):
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
 
     def deactivate_current_config(self):
-        "Remove current key bindings."
+        """Remove current key bindings.
+
+        Iterate over window instances defined in parent and remove
+        the keybindings.
+        """
         # Before a config is saved, some cleanup of current
         # config must be done - remove the previous keybindings.
         win_instances = self.parent.instance_dict.keys()
@@ -1272,7 +1624,11 @@ class ConfigDialog(Toplevel):
             instance.RemoveKeybindings()
 
     def activate_config_changes(self):
-        "Dynamically apply configuration changes"
+        """Apply configuration changes to current windows.
+
+        Dynamically update the current parent window instances
+        with some of the configuration changes.
+        """
         win_instances = self.parent.instance_dict.keys()
         for instance in win_instances:
             instance.ResetColorizer()
@@ -1282,23 +1638,45 @@ class ConfigDialog(Toplevel):
             instance.reset_help_menu_entries()
 
     def cancel(self):
-        "Dismiss config dialog."
+        """Dismiss config dialog.
+
+        Methods:
+            destroy: inherited
+        """
         self.destroy()
 
     def ok(self):
-        "Apply config changes, then dismiss dialog."
+        """Apply config changes, then dismiss dialog.
+
+        Methods:
+            apply
+            destroy: inherited
+        """
         self.apply()
         self.destroy()
 
     def apply(self):
-        "Apply config changes and leave dialog open."
+        """Apply config changes and leave dialog open.
+
+        Methods:
+            deactivate_current_config
+            save_all_changed_extensions
+            activate_config_changes
+        """
         self.deactivate_current_config()
         changes.save_all()
         self.save_all_changed_extensions()
         self.activate_config_changes()
 
     def help(self):
-        "Create textview for config dialog help."
+        """Create textview for config dialog help.
+
+        Attrbutes accessed:
+            tab_pages
+
+        Methods:
+            view_text: Method from textview module.
+        """
         page = self.tab_pages._current_page
         view_text(self, title='Help for IDLE preferences',
                  text=help_common+help_pages.get(page, ''))
@@ -1319,6 +1697,13 @@ class ConfigDialog(Toplevel):
         All values are treated as text, and it is up to the user to supply
         reasonable values. The only exception to this are the 'enable*' options,
         which are boolean, and can be toggled with a True/False button.
+
+        Methods:
+            load_extentions:
+            extension_selected: Handle selection from list.
+            create_extension_frame: Hold widgets for one extension.
+            set_extension_value: Set in userCfg['extensions'].
+            save_all_changed_extensions: Call extension page Save().
         """
         parent = self.parent
         frame = self.tab_pages.pages['Extensions'].frame
@@ -1460,7 +1845,14 @@ class ConfigDialog(Toplevel):
         return self.ext_userCfg.SetOption(section, name, value)
 
     def save_all_changed_extensions(self):
-        """Save configuration changes to the user config file."""
+        """Save configuration changes to the user config file.
+
+        Attributes accessed:
+            extensions
+
+        Methods:
+            set_extension_value
+        """
         has_changes = False
         for ext_name in self.extensions:
             options = self.extensions[ext_name]
