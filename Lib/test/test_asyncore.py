@@ -801,7 +801,6 @@ class BaseTestAPI:
             if t.is_alive():
                 self.fail("join() timed out")
 
-    @unittest.expectedFailure
     def test_map_altered_in_loop(self):
         family = self.family
         fail = self.fail

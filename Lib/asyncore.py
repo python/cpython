@@ -127,6 +127,8 @@ def poll(timeout=0.0, map=None):
         map = socket_map
     if map:
         r = []; w = []; e = []
+
+        pending = {}
         for fd, obj in list(map.items()):
             is_r = obj.readable()
             is_w = obj.writable()
@@ -136,6 +138,7 @@ def poll(timeout=0.0, map=None):
             if is_w and not obj.accepting:
                 w.append(fd)
             if is_r or is_w:
+                pending[fd] = obj
                 e.append(fd)
         if [] == r == w == e:
             time.sleep(timeout)
@@ -144,20 +147,20 @@ def poll(timeout=0.0, map=None):
         r, w, e = select.select(r, w, e, timeout)
 
         for fd in r:
-            obj = map.get(fd)
-            if obj is None:
+            obj = pending.get(fd)
+            if map.get(fd) is not obj:
                 continue
             read(obj)
 
         for fd in w:
-            obj = map.get(fd)
-            if obj is None:
+            obj = pending.get(fd)
+            if map.get(fd) is not obj:
                 continue
             write(obj)
 
         for fd in e:
-            obj = map.get(fd)
-            if obj is None:
+            obj = pending.get(fd)
+            if map.get(fd) is not obj:
                 continue
             _exception(obj)
 
@@ -170,6 +173,7 @@ def poll2(timeout=0.0, map=None):
         timeout = int(timeout*1000)
     pollster = select.poll()
     if map:
+        pending = {}
         for fd, obj in list(map.items()):
             flags = 0
             if obj.readable():
@@ -178,12 +182,13 @@ def poll2(timeout=0.0, map=None):
             if obj.writable() and not obj.accepting:
                 flags |= select.POLLOUT
             if flags:
+                pending[fd] = obj
                 pollster.register(fd, flags)
 
         r = pollster.poll(timeout)
         for fd, flags in r:
-            obj = map.get(fd)
-            if obj is None:
+            obj = pending.get(fd)
+            if map.get(fd) is not obj:
                 continue
             readwrite(obj, flags)
 
