@@ -6,7 +6,7 @@ extern "C" {
 
 #include "pyatomic.h"
 
-#include "Python/condvar.h"
+#include "internal/_condvar.h"
 #ifndef Py_HAVE_CONDVAR
 #error You need either a POSIX-compatible or a Windows system!
 #endif

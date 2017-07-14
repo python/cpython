@@ -52,6 +52,8 @@
      (Note: this mechanism is enabled with FORCE_SWITCHING above)
 */
 
+#include "condvar.h"
+
 #define MUTEX_INIT(mut) \
     if (PyMUTEX_INIT(&(mut))) { \
         Py_FatalError("PyMUTEX_INIT(" #mut ") failed"); };

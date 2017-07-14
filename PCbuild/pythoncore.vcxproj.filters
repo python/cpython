@@ -135,6 +135,9 @@
     <ClInclude Include="..\Include\internal\_ceval.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\_condvar.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\_gil.h">
       <Filter>Include</Filter>
     </ClInclude>
