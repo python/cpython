@@ -44,21 +44,11 @@ class ConfigDialog(Toplevel):
             _htest - bool, change box location when running htest
             _utest - bool, don't wait_window when running unittest
 
-        Instance Data Attributes:
-            parent: parent for dialog
-            title: Dialog title.
-            theme_elements: Dictionary of tags for text highlighting.
-                The key is the display name and the value is a tuple of
-                (tag name, display sort order).
-
-        Widgets Bound to self:
-            fontlist: Set focus.
+        Note: Focus set on font page fontlist.
 
         Methods:
             create_widgets
             cancel: Bound to DELETE_WINDOW protocol.
-            load_configs
-            attach_var_callbacks
         """
         Toplevel.__init__(self, parent)
         self.parent = parent
@@ -74,22 +64,6 @@ class ConfigDialog(Toplevel):
         # Each theme element key is its display name.
         # The first value of the tuple is the sample area tag name.
         # The second value is the display name list sort index.
-        self.theme_elements={
-            'Normal Text': ('normal', '00'),
-            'Python Keywords': ('keyword', '01'),
-            'Python Definitions': ('definition', '02'),
-            'Python Builtins': ('builtin', '03'),
-            'Python Comments': ('comment', '04'),
-            'Python Strings': ('string', '05'),
-            'Selected Text': ('hilite', '06'),
-            'Found Text': ('hit', '07'),
-            'Cursor': ('cursor', '08'),
-            'Editor Breakpoint': ('break', '09'),
-            'Shell Normal Text': ('console', '10'),
-            'Shell Error Text': ('error', '11'),
-            'Shell Stdout Text': ('stdout', '12'),
-            'Shell Stderr Text': ('stderr', '13'),
-            }
         self.create_widgets()
         self.resizable(height=FALSE, width=FALSE)
         self.transient(parent)
@@ -121,6 +95,10 @@ class ConfigDialog(Toplevel):
             create_page_general
             create_page_extensions
             create_action_buttons
+            load_configs: Load pages except for extensions.
+            attach_var_callbacks
+            remove_var_callbacks
+            activate_config_changes: Tell editors to reload.
         """
         self.tab_pages = TabbedPageSet(self,
                 page_names=['Fonts/Tabs', 'Highlighting', 'Keys', 'General',
@@ -178,14 +156,19 @@ class ConfigDialog(Toplevel):
             font_size: Font size.
             font_bold: Select font bold or not.
             font_name: Font face.
+                Note: these 3 share var_changed_font callback.
             space_num: Indentation width.
+
+        Data Attribute:
             edit_font: Font widget with default font name, size, and weight.
 
         Methods:
+            load_font_cfg: Set vars and fontlist.
             on_fontlist_select: Bound to fontlist button release
                 or key release.
             set_font_sample: Command for opt_menu_font_size and
                 check_font_bold.
+            load_tab_cfg: Get current.
 
         Widget Structure:  (*) widgets bound to self
             frame
@@ -277,19 +260,33 @@ class ConfigDialog(Toplevel):
         """Return frame of widgets for Highlighting tab.
 
         Tk Variables:
+            colour: Color of selected target.
             builtin_theme: Menu variable for built-in theme.
             custom_theme: Menu variable for custom theme.
             fg_bg_toggle: Toggle for foreground/background color.
-            colour: Color of selected target.
+                Note: this has no callback.
             is_builtin_theme: Selector for built-in or custom theme.
             highlight_target: Menu variable for the highlight tag target.
 
-        Methods:
-            get_colour: Command for button_set_colour.
-            set_colour_sample_binding: Command for fg_bg_toggle.
-            save_as_new_theme: Command for button_save_custom_theme.
-            set_theme_type: Command for is_builtin_theme.
-            delete_custom_theme: Command for button_delete_custom_theme.
+        Instance Data Attributes:
+            theme_elements: Dictionary of tags for text highlighting.
+                The key is the display name and the value is a tuple of
+                (tag name, display sort order).
+
+        Methods [attachment]:
+            load_theme_cfg: Load current highlight colors.
+            get_colour: Invoke colorchooser [button_set_colour].
+            set_colour_sample_binding: Call set_colour_sample [fg_bg_toggle].
+            set_highlight_target: set fg_bg_toggle, set_color_sample().
+            set_colour_sample: Set frame background to target.
+            on_new_colour_set: Set new color and add option.
+            paint_theme_sample: Recolor sample.
+            get_new_theme_name: Get from popup.
+            create_new_theme: Combine theme with changes and save.
+            save_as_new_theme: Save [button_save_custom_theme].
+            set_theme_type: Command for [is_builtin_theme].
+            delete_custom_theme: Ativate default [button_delete_custom_theme].
+            save_new_theme: Save to userCfg['theme'] (is function).
 
         Widget Structure:  (*) widgets bound to self
             frame
@@ -311,6 +308,22 @@ class ConfigDialog(Toplevel):
                     (*)button_delete_custom_theme: Button
                     (*)new_custom_theme: Label
         """
+        self.theme_elements={
+            'Normal Text': ('normal', '00'),
+            'Python Keywords': ('keyword', '01'),
+            'Python Definitions': ('definition', '02'),
+            'Python Builtins': ('builtin', '03'),
+            'Python Comments': ('comment', '04'),
+            'Python Strings': ('string', '05'),
+            'Selected Text': ('hilite', '06'),
+            'Found Text': ('hit', '07'),
+            'Cursor': ('cursor', '08'),
+            'Editor Breakpoint': ('break', '09'),
+            'Shell Normal Text': ('console', '10'),
+            'Shell Error Text': ('error', '11'),
+            'Shell Stdout Text': ('stdout', '12'),
+            'Shell Stderr Text': ('stderr', '13'),
+            }
         parent = self.parent
         self.builtin_theme = StringVar(parent)
         self.custom_theme = StringVar(parent)
@@ -430,11 +443,17 @@ class ConfigDialog(Toplevel):
             keybinding: Action/key bindings.
 
         Methods:
+            load_key_config: Set table.
+            load_keys_list: Reload active set.
             keybinding_selected: Bound to list_bindings button release.
             get_new_keys: Command for button_new_keys.
+            get_new_keys_name: Call popup.
+            create_new_key_set: Combine active keyset and changes.
             set_keys_type: Command for are_keys_builtin.
             delete_custom_keys: Command for button_delete_custom_keys.
             save_as_new_key_set: Command for button_save_custom_keys.
+            save_new_key_set: Save to idleConf.userCfg['keys'] (is function).
+            deactivate_current_config: Remove keys bindings in editors.
 
         Widget Structure:  (*) widgets bound to self
             frame
@@ -543,10 +562,13 @@ class ConfigDialog(Toplevel):
             autosave: Selector for save prompt popup when using Run.
 
         Methods:
+            load_general_config:
             help_source_selected: Bound to list_help button release.
+            set_helplist_button_states: Toggle based on list.
             helplist_item_edit: Command for button_helplist_edit.
             helplist_item_add: Command for button_helplist_add.
             helplist_item_remove: Command for button_helplist_remove.
+            update_user_help_changed_items: Fill in changes.
 
         Widget Structure:  (*) widgets bound to self
             frame
@@ -1674,6 +1696,13 @@ class ConfigDialog(Toplevel):
         All values are treated as text, and it is up to the user to supply
         reasonable values. The only exception to this are the 'enable*' options,
         which are boolean, and can be toggled with a True/False button.
+
+        Methods:
+            load_extentions:
+            extension_selected: Handle selection from list.
+            create_extension_frame: Hold widgets for one extension.
+            set_extension_value: Set in userCfg['extensions'].
+            save_all_changed_extensions: Call extension page Save().
         """
         parent = self.parent
         frame = self.tab_pages.pages['Extensions'].frame
