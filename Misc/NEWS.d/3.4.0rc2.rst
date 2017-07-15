@@ -1,0 +1,177 @@
+.. bpo: 20625
+.. date: 8341
+.. nonce: IA5Cu9
+.. release date: 2014-02-23
+.. section: Core and Builtins
+
+Parameter names in __annotations__ were not mangled properly. Discovered by
+Jonas Wielicki, patch by Yury Selivanov.
+
+..
+
+.. bpo: 20261
+.. date: 8340
+.. nonce: xyA9tG
+.. section: Core and Builtins
+
+In pickle, lookup __getnewargs__ and __getnewargs_ex__ on the type of the
+object.
+
+..
+
+.. bpo: 20619
+.. date: 8339
+.. nonce: GtdhSO
+.. section: Core and Builtins
+
+Give the AST nodes of keyword-only arguments a column and line number.
+
+..
+
+.. bpo: 20526
+.. date: 8338
+.. nonce: wZEy32
+.. section: Core and Builtins
+
+Revert changes of issue #19466 which introduces a regression: don't clear
+anymore the state of Python threads early during the Python shutdown.
+
+..
+
+.. bpo: 20710
+.. date: 8337
+.. nonce: byega8
+.. section: Library
+
+The pydoc summary line no longer displays the "self" parameter for bound
+methods.
+
+..
+
+.. bpo: 20566
+.. date: 8336
+.. nonce: R8yrPZ
+.. section: Library
+
+Change asyncio.as_completed() to use a Queue, to avoid O(N**2) behavior.
+
+..
+
+.. bpo: 20704
+.. date: 8335
+.. nonce: QQ4uy4
+.. section: Library
+
+Implement new debug API in asyncio. Add new methods
+BaseEventLoop.set_debug() and BaseEventLoop.get_debug(). Add support for
+setting 'asyncio.tasks._DEBUG' variable with 'PYTHONASYNCIODEBUG'
+environment variable.
+
+..
+
+.. bpo: 0
+.. date: 8334
+.. nonce: Ocnov-
+.. section: Library
+
+asyncio: Refactoring and fixes: BaseEventLoop.sock_connect() raises an error
+if the address is not resolved; use __slots__ in Handle and TimerHandle;
+as_completed() and wait() raise TypeError if the passed list of Futures is a
+single Future; call_soon() and other 'call_*()' functions raise TypeError if
+the passed callback is a coroutine function; _ProactorBasePipeTransport uses
+_FlowControlMixin; WriteTransport.set_write_buffer_size() calls
+_maybe_pause_protocol() to consider pausing receiving if the watermark
+limits have changed; fix _check_resolved_address() for IPv6 address; and
+other minor improvements, along with multiple documentation updates.
+
+..
+
+.. bpo: 20684
+.. date: 8333
+.. nonce: EArKf9
+.. section: Library
+
+Fix inspect.getfullargspec() to not to follow __wrapped__ chains. Make its
+behaviour consistent with bound methods first argument. Patch by Nick
+Coghlan and Yury Selivanov.
+
+..
+
+.. bpo: 20681
+.. date: 8332
+.. nonce: O8EUu8
+.. section: Library
+
+Add new error handling API in asyncio. New APIs:
+loop.set_exception_handler(), loop.default_exception_handler(), and
+loop.call_exception_handler().
+
+..
+
+.. bpo: 20673
+.. date: 8331
+.. nonce: bLJpSo
+.. section: Library
+
+Implement support for UNIX Domain Sockets in asyncio. New APIs:
+loop.create_unix_connection(), loop.create_unix_server(),
+streams.open_unix_connection(), and streams.start_unix_server().
+
+..
+
+.. bpo: 20616
+.. date: 8330
+.. nonce: 9fIygg
+.. section: Library
+
+Add a format() method to tracemalloc.Traceback.
+
+..
+
+.. bpo: 19744
+.. date: 8329
+.. nonce: fL4Brl
+.. section: Library
+
+the ensurepip installation step now just prints a warning to stderr rather
+than failing outright if SSL/TLS is unavailable. This allows local
+installation of POSIX builds without SSL/TLS support.
+
+..
+
+.. bpo: 20594
+.. date: 8328
+.. nonce: BVHxPd
+.. section: Library
+
+Avoid name clash with the libc function posix_close.
+
+..
+
+.. bpo: 20641
+.. date: 8327
+.. nonce: kAo-M-
+.. section: Build
+
+Run MSI custom actions (pip installation, pyc compilation) with the
+NoImpersonate flag, to support elevated execution (UAC).
+
+..
+
+.. bpo: 20221
+.. date: 8326
+.. nonce: _yAetK
+.. section: Build
+
+Removed conflicting (or circular) hypot definition when compiled with VS
+2010 or above.  Initial patch by Tabrez Mohammed.
+
+..
+
+.. bpo: 20609
+.. date: 8325
+.. nonce: IMbrDQ
+.. section: Build
+
+Restored the ability to build 64-bit Windows binaries on 32-bit Windows,
+which was broken by the change in issue #19788.

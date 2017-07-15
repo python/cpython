@@ -1,0 +1,1 @@
+Prevent crash when passing invalid arguments into msvcrt module.

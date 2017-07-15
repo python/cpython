@@ -1,0 +1,2 @@
+Fix a crash in itertools.chain.from_iterable when encountering long runs of
+empty iterables.

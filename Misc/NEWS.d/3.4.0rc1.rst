@@ -1,0 +1,715 @@
+.. bpo: 19255
+.. date: 8324
+.. nonce: eED7PV
+.. release date: 2014-02-10
+.. section: Core and Builtins
+
+The builtins module is restored to initial value before cleaning other
+modules.  The sys and builtins modules are cleaned last.
+
+..
+
+.. bpo: 20588
+.. date: 8323
+.. nonce: Yibtu_
+.. section: Core and Builtins
+
+Make Python-ast.c C89 compliant.
+
+..
+
+.. bpo: 20437
+.. date: 8322
+.. nonce: E8n1Y-
+.. section: Core and Builtins
+
+Fixed 22 potential bugs when deleting object references.
+
+..
+
+.. bpo: 20500
+.. date: 8321
+.. nonce: BJiIvW
+.. section: Core and Builtins
+
+Displaying an exception at interpreter shutdown no longer risks triggering
+an assertion failure in PyObject_Str.
+
+..
+
+.. bpo: 20538
+.. date: 8320
+.. nonce: 7FRDsi
+.. section: Core and Builtins
+
+UTF-7 incremental decoder produced inconsistent string when input was
+truncated in BASE64 section.
+
+..
+
+.. bpo: 20404
+.. date: 8319
+.. nonce: 9dU6on
+.. section: Core and Builtins
+
+io.TextIOWrapper (and hence the open() builtin) now uses the internal codec
+marking system added for issue #19619 to throw LookupError for known non-
+text encodings at stream construction time. The existing output type checks
+remain in place to deal with unmarked third party codecs.
+
+..
+
+.. bpo: 17162
+.. date: 8318
+.. nonce: p4Q-Hw
+.. section: Core and Builtins
+
+Add PyType_GetSlot.
+
+..
+
+.. bpo: 20162
+.. date: 8317
+.. nonce: u8qICT
+.. section: Core and Builtins
+
+Fix an alignment issue in the siphash24() hash function which caused a crash
+on PowerPC 64-bit (ppc64).
+
+..
+
+.. bpo: 20530
+.. date: 8316
+.. nonce: LXsfhK
+.. section: Library
+
+The signatures for slot builtins have been updated to reflect the fact that
+they only accept positional-only arguments.
+
+..
+
+.. bpo: 20517
+.. date: 8315
+.. nonce: 81zuY3
+.. section: Library
+
+Functions in the os module that accept two filenames now register both
+filenames in the exception on failure.
+
+..
+
+.. bpo: 20563
+.. date: 8314
+.. nonce: VTqHq5
+.. section: Library
+
+The ipaddress module API is now considered stable.
+
+..
+
+.. bpo: 14983
+.. date: 8313
+.. nonce: H_gs8w
+.. section: Library
+
+email.generator now always adds a line end after each MIME boundary marker,
+instead of doing so only when there is an epilogue.  This fixes an RFC
+compliance bug and solves an issue with signed MIME parts.
+
+..
+
+.. bpo: 20540
+.. date: 8312
+.. nonce: rhK6IW
+.. section: Library
+
+Fix a performance regression (vs. Python 3.2) when layering a
+multiprocessing Connection over a TCP socket.  For small payloads, Nagle's
+algorithm would introduce idle delays before the entire transmission of a
+message.
+
+..
+
+.. bpo: 16983
+.. date: 8311
+.. nonce: MoPgVQ
+.. section: Library
+
+the new email header parsing code will now decode encoded words that are
+(incorrectly) surrounded by quotes, and register a defect.
+
+..
+
+.. bpo: 19772
+.. date: 8310
+.. nonce: pRi-Hm
+.. section: Library
+
+email.generator no longer mutates the message object when doing a down-
+transform from 8bit to 7bit CTEs.
+
+..
+
+.. bpo: 20536
+.. date: 8309
+.. nonce: YWe5TG
+.. section: Library
+
+the statistics module now correctly handle Decimal instances with positive
+exponents
+
+..
+
+.. bpo: 18805
+.. date: 8308
+.. nonce: fBdyY2
+.. section: Library
+
+the netmask/hostmask parsing in ipaddress now more reliably filters out
+illegal values and correctly allows any valid prefix length.
+
+..
+
+.. bpo: 20481
+.. date: 8307
+.. nonce: ycaV9P
+.. section: Library
+
+For at least Python 3.4, the statistics module will require that all inputs
+for a single operation be of a single consistent type, or else a mixed of
+ints and a single other consistent type. This avoids some interoperability
+issues that arose with the previous approach of coercing to a suitable
+common type.
+
+..
+
+.. bpo: 20478
+.. date: 8306
+.. nonce: LVoG5Q
+.. section: Library
+
+the statistics module now treats collections.Counter inputs like any other
+iterable.
+
+..
+
+.. bpo: 17369
+.. date: 8305
+.. nonce: ZBFAd4
+.. section: Library
+
+get_filename was raising an exception if the filename parameter's RFC2231
+encoding was broken in certain ways.  This was a regression relative to
+python2.
+
+..
+
+.. bpo: 20013
+.. date: 8304
+.. nonce: erNy8V
+.. section: Library
+
+Some imap servers disconnect if the current mailbox is deleted, and imaplib
+did not handle that case gracefully.  Now it handles the 'bye' correctly.
+
+..
+
+.. bpo: 20531
+.. date: 8303
+.. nonce: yz_zOY
+.. section: Library
+
+Revert 3.4 version of fix for #19063, and apply the 3.3 version.  That is,
+do *not* raise an error if unicode is passed to
+email.message.Message.set_payload.
+
+..
+
+.. bpo: 20476
+.. date: 8302
+.. nonce: VhH-Lc
+.. section: Library
+
+If a non-compat32 policy is used with any of the email parsers, EmailMessage
+is now used as the factory class.  The factory class should really come from
+the policy; that will get fixed in 3.5.
+
+..
+
+.. bpo: 19920
+.. date: 8301
+.. nonce: _fEm-X
+.. section: Library
+
+TarFile.list() no longer fails when outputs a listing containing non-
+encodable characters.  Based on patch by Vajrasky Kok.
+
+..
+
+.. bpo: 20515
+.. date: 8300
+.. nonce: JrEnar
+.. section: Library
+
+Fix NULL pointer dereference introduced by issue #20368.
+
+..
+
+.. bpo: 19186
+.. date: 8299
+.. nonce: cuiicK
+.. section: Library
+
+Restore namespacing of expat symbols inside the pyexpat module.
+
+..
+
+.. bpo: 20053
+.. date: 8298
+.. nonce: vy5u-i
+.. section: Library
+
+ensurepip (and hence venv) are no longer affected by the settings in the
+default pip configuration file.
+
+..
+
+.. bpo: 20426
+.. date: 8297
+.. nonce: f0ozAP
+.. section: Library
+
+When passing the re.DEBUG flag, re.compile() displays the debug output every
+time it is called, regardless of the compilation cache.
+
+..
+
+.. bpo: 20368
+.. date: 8296
+.. nonce: I8sm7u
+.. section: Library
+
+The null character now correctly passed from Tcl to Python. Improved error
+handling in variables-related commands.
+
+..
+
+.. bpo: 20435
+.. date: 8295
+.. nonce: _UNhlH
+.. section: Library
+
+Fix _pyio.StringIO.getvalue() to take into account newline translation
+settings.
+
+..
+
+.. bpo: 0
+.. date: 8294
+.. nonce: 2Jcf1f
+.. section: Library
+
+tracemalloc: Fix slicing traces and fix slicing a traceback.
+
+..
+
+.. bpo: 20354
+.. date: 8293
+.. nonce: kn2Ns9
+.. section: Library
+
+Fix an alignment issue in the tracemalloc module on 64-bit platforms. Bug
+seen on 64-bit Linux when using "make profile-opt".
+
+..
+
+.. bpo: 17159
+.. date: 8292
+.. nonce: c2P911
+.. section: Library
+
+inspect.signature now accepts duck types of functions, which adds support
+for Cython functions. Initial patch by Stefan Behnel.
+
+..
+
+.. bpo: 18801
+.. date: 8291
+.. nonce: Tm4jxb
+.. section: Library
+
+Fix inspect.classify_class_attrs to correctly classify object.__new__ and
+object.__init__.
+
+..
+
+.. bpo: 0
+.. date: 8290
+.. nonce: 3eFjFu
+.. section: Library
+
+Fixed cmath.isinf's name in its argument parsing code.
+
+..
+
+.. bpo: 20311
+.. date: 8289
+.. nonce: f1lBLr
+.. section: Library
+
+poll and epoll now round the timeout away from zero, instead of rounding
+towards zero, in select and selectors modules: select.epoll.poll(),
+selectors.PollSelector.poll() and selectors.EpollSelector.poll(). For
+example, a timeout of one microsecond (1e-6) is now rounded to one
+millisecondi (1e-3), instead of being rounded to zero.  However, the
+granularity property and asyncio's resolution feature were removed again.
+(See also: bpo-20452)
+
+..
+
+.. bpo: 0
+.. date: 8288
+.. nonce: qcxztP
+.. section: Library
+
+asyncio: Some refactoring; various fixes; add write flow control to unix
+pipes; Future.set_exception() instantiates the exception argument if it is a
+class; improved proactor pipe transport; support wait_for(f, None); don't
+log broken/disconnected pipes; use ValueError instead of assert for
+forbidden subprocess_{shell,exec} arguments; added a convenience API for
+subprocess management; added StreamReader.at_eof(); properly handle
+duplicate coroutines/futures in gather(), wait(), as_completed(); use a
+bytearray for buffering in StreamReader; and more.
+
+..
+
+.. bpo: 20288
+.. date: 8287
+.. nonce: 6zUZe3
+.. section: Library
+
+fix handling of invalid numeric charrefs in HTMLParser.
+
+..
+
+.. bpo: 20424
+.. date: 8286
+.. nonce: deh6LJ
+.. section: Library
+
+Python implementation of io.StringIO now supports lone surrogates.
+
+..
+
+.. bpo: 20308
+.. date: 8285
+.. nonce: lquugc
+.. section: Library
+
+inspect.signature now works on classes without user-defined __init__ or
+__new__ methods.
+
+..
+
+.. bpo: 20372
+.. date: 8284
+.. nonce: Mn_S78
+.. section: Library
+
+inspect.getfile (and a bunch of other inspect functions that use it) doesn't
+crash with unexpected AttributeError on classes defined in C without
+__module__.
+
+..
+
+.. bpo: 20356
+.. date: 8283
+.. nonce: rD04St
+.. section: Library
+
+inspect.signature formatting uses '/' to separate positional-only parameters
+from others.
+
+..
+
+.. bpo: 20223
+.. date: 8282
+.. nonce: y3icbD
+.. section: Library
+
+inspect.signature now supports methods defined with
+functools.partialmethods.
+
+..
+
+.. bpo: 19456
+.. date: 8281
+.. nonce: 6HhsFx
+.. section: Library
+
+ntpath.join() now joins relative paths correctly when a drive is present.
+
+..
+
+.. bpo: 19077
+.. date: 8280
+.. nonce: xrOYHl
+.. section: Library
+
+tempfile.TemporaryDirectory cleanup no longer fails when called during
+shutdown.  Emitting resource warning in __del__ no longer fails. Original
+patch by Antoine Pitrou.
+
+..
+
+.. bpo: 20394
+.. date: 8279
+.. nonce: HzRZRc
+.. section: Library
+
+Silence Coverity warning in audioop module.
+
+..
+
+.. bpo: 20367
+.. date: 8278
+.. nonce: K0bFqf
+.. section: Library
+
+Fix behavior of concurrent.futures.as_completed() for duplicate arguments.
+Patch by Glenn Langford.
+
+..
+
+.. bpo: 8260
+.. date: 8277
+.. nonce: nf7gg9
+.. section: Library
+
+The read(), readline() and readlines() methods of codecs.StreamReader
+returned incomplete data when were called after readline() or read(size).
+Based on patch by Amaury Forgeot d'Arc.
+
+..
+
+.. bpo: 20105
+.. date: 8276
+.. nonce: foel6V
+.. section: Library
+
+the codec exception chaining now correctly sets the traceback of the
+original exception as its __traceback__ attribute.
+
+..
+
+.. bpo: 17481
+.. date: 8275
+.. nonce: RrGlJS
+.. section: Library
+
+inspect.getfullargspec() now uses inspect.signature() API.
+
+..
+
+.. bpo: 15304
+.. date: 8274
+.. nonce: GfZ2Sa
+.. section: Library
+
+concurrent.futures.wait() can block forever even if Futures have completed.
+Patch by Glenn Langford.
+
+..
+
+.. bpo: 14455
+.. date: 8273
+.. nonce: bk3GTQ
+.. section: Library
+
+plistlib: fix serializing integers in the range of an unsigned long long but
+outside of the range of signed long long for binary plist files.
+
+..
+
+.. bpo: 20406
+.. date: 8272
+.. nonce: AgBe_5
+.. section: IDLE
+
+Use Python application icons for Idle window title bars. Patch mostly by
+Serhiy Storchaka.
+
+..
+
+.. bpo: 0
+.. date: 8271
+.. nonce: FTwP_j
+.. section: IDLE
+
+Update the python.gif icon for the Idle classbrowser and pathbowser from the
+old green snake to the new blue and yellow snakes.
+
+..
+
+.. bpo: 17721
+.. date: 8270
+.. nonce: 8Jh8C1
+.. section: IDLE
+
+Remove non-functional configuration dialog help button until we make it
+actually gives some help when clicked. Patch by Guilherme Simões.
+
+..
+
+.. bpo: 20532
+.. date: 8269
+.. nonce: qsOt4d
+.. section: Tests
+
+Tests which use _testcapi now are marked as CPython only.
+
+..
+
+.. bpo: 19920
+.. date: 8268
+.. nonce: suOIC7
+.. section: Tests
+
+Added tests for TarFile.list().  Based on patch by Vajrasky Kok.
+
+..
+
+.. bpo: 19990
+.. date: 8267
+.. nonce: Lp1MVj
+.. section: Tests
+
+Added tests for the imghdr module.  Based on patch by Claudiu Popa.
+
+..
+
+.. bpo: 20474
+.. date: 8266
+.. nonce: Jm7xrk
+.. section: Tests
+
+Fix test_socket "unexpected success" failures on OS X 10.7+.
+
+..
+
+.. bpo: 20530
+.. date: 8265
+.. nonce: dqn540
+.. section: Tools/Demos
+
+Argument Clinic's signature format has been revised again. The new syntax is
+highly human readable while still preventing false positives.  The syntax
+also extends Python syntax to denote "self" and positional-only parameters,
+allowing inspect.Signature objects to be totally accurate for all supported
+builtins in Python 3.4.
+
+..
+
+.. bpo: 20456
+.. date: 8264
+.. nonce: RA_zxP
+.. section: Tools/Demos
+
+Argument Clinic now observes the C preprocessor conditional compilation
+statements of the C files it parses.  When a Clinic block is inside a
+conditional code, it adjusts its output to match, including automatically
+generating an empty methoddef macro.
+
+..
+
+.. bpo: 20456
+.. date: 8263
+.. nonce: tYeVw1
+.. section: Tools/Demos
+
+Cloned functions in Argument Clinic now use the correct name, not the name
+of the function they were cloned from, for text strings inside generated
+code.
+
+..
+
+.. bpo: 20456
+.. date: 8262
+.. nonce: vG6PXO
+.. section: Tools/Demos
+
+Fixed Argument Clinic's test suite and "--converters" feature.
+
+..
+
+.. bpo: 20456
+.. date: 8261
+.. nonce: E-qgFP
+.. section: Tools/Demos
+
+Argument Clinic now allows specifying different names for a parameter in
+Python and C, using "as" on the parameter line.
+
+..
+
+.. bpo: 20326
+.. date: 8260
+.. nonce: 1nRUAK
+.. section: Tools/Demos
+
+Argument Clinic now uses a simple, unique signature to annotate text
+signatures in docstrings, resulting in fewer false positives.  "self"
+parameters are also explicitly marked, allowing inspect.Signature() to
+authoritatively detect (and skip) said parameters.
+
+..
+
+.. bpo: 20326
+.. date: 8259
+.. nonce: eVlPqt
+.. section: Tools/Demos
+
+Argument Clinic now generates separate checksums for the input and output
+sections of the block, allowing external tools to verify that the input has
+not changed (and thus the output is not out-of-date).
+
+..
+
+.. bpo: 20465
+.. date: 8258
+.. nonce: 6xLtE3
+.. section: Build
+
+Update SQLite shipped with OS X installer to 3.8.3.
+
+..
+
+.. bpo: 20517
+.. date: 8257
+.. nonce: PHWtoF
+.. section: C API
+
+Added new functions allowing OSError exceptions to reference two filenames
+instead of one: PyErr_SetFromErrnoWithFilenameObjects() and
+PyErr_SetExcFromWindowsErrWithFilenameObjects().
+
+..
+
+.. bpo: 20488
+.. date: 8256
+.. nonce: csO04J
+.. section: Documentation
+
+Change wording to say importlib is *the* implementation of import instead of
+just *an* implementation.
+
+..
+
+.. bpo: 6386
+.. date: 8255
+.. nonce: TO2sFS
+.. section: Documentation
+
+Clarify in the tutorial that specifying a symlink to execute means the
+directory containing the executed script and not the symlink is added to
+sys.path.
