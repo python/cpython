@@ -1,0 +1,1 @@
+Fix possible integer overflow and heap corruption in zipimporter.get_data().

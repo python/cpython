@@ -1,0 +1,2 @@
+Fix possible null pointer dereference in list.sort in out of memory
+conditions.

@@ -1,0 +1,1 @@
+Fix possible crash in json.encode with poorly behaved dict subclasses.

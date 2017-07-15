@@ -1,0 +1,1 @@
+Fixed possible integer overflow in itertools.combinations.

@@ -1,0 +1,2 @@
+Changed test_ssl and test_httplib to use self-signed.pythontest.net.  This
+avoids relying on svn.python.org, which recently changed root certificate.
