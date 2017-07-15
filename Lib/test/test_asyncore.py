@@ -499,6 +499,12 @@ class BaseClient(BaseTestHandler):
         pass
 
 
+class SendHandler(BaseTestHandler):
+    def __init__(self, conn):
+        BaseTestHandler.__init__(self, conn)
+        self.send(b'x' * 1024)
+
+
 class BaseTestAPI:
 
     def tearDown(self):
@@ -576,12 +582,7 @@ class BaseTestAPI:
             def handle_read(self):
                 self.flag = True
 
-        class TestHandler(BaseTestHandler):
-            def __init__(self, conn):
-                BaseTestHandler.__init__(self, conn)
-                self.send(b'x' * 1024)
-
-        server = BaseServer(self.family, self.addr, TestHandler)
+        server = BaseServer(self.family, self.addr, SendHandler)
         client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
@@ -799,6 +800,45 @@ class BaseTestAPI:
             t.join(timeout=TIMEOUT)
             if t.is_alive():
                 self.fail("join() timed out")
+
+    @unittest.expectedFailure
+    def test_map_altered_in_loop(self):
+        family = self.family
+        fail = self.fail
+
+        class PoisonedClient(BaseClient):
+            """
+            This dispatcher is created after closing a writable one
+            """
+            def handle_write(self):
+                fail("Attempt to call handle_write on the wrong client")
+
+            # The dispatcher is not writable and therefore handle_write shouldn't be called
+            def writable(self):
+                return False
+
+        class ManagerClient(BaseClient):
+
+            def __init__(self, family, address):
+                BaseClient.__init__(self, family, address)
+                self.old_client = BaseClient(family, address)
+
+            def handle_write(self):
+                old_fd = self.old_client._fileno
+                self.old_client.close()
+                # This trusts that the fd of this client new
+                # will be the same to the one just closed
+                new_client = PoisonedClient(family, server.address)
+                if new_client._fileno != old_fd:
+                    raise unittest.SkipTest("The test is meaningful only if the fd for the old and "
+                                            "the new dispatcher are the same")
+
+                self.flag = True
+
+        server = BaseServer(self.family, self.addr, SendHandler)
+        manager = ManagerClient(self.family, server.address)
+        self.loop_waiting_for_flag(manager)
+
 
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
     family = socket.AF_INET
