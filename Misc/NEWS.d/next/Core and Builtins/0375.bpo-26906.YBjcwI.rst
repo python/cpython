@@ -1,0 +1,2 @@
+Resolving special methods of uninitialized type now causes implicit
+initialization of the type instead of a fail.

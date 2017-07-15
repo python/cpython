@@ -1,0 +1,2 @@
+Allowed calling the close() method of the zip entry writer object multiple
+times.  Writing to a closed writer now always produces a ValueError.

@@ -1,0 +1,1 @@
+re.escape() now escapes only regex special characters.
