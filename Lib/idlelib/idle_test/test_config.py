@@ -198,7 +198,6 @@ class IdleConfTest(unittest.TestCase):
 
         Both default and user config used the same config-*.def
         """
-        import sys
         conf = config.IdleConf(_utest=True)
         if __name__ != '__main__':
             idle_dir = os.path.dirname(__file__)
@@ -385,7 +384,6 @@ class IdleConfTest(unittest.TestCase):
         self.assertEqual(conf.current_colors_and_keys('Theme'), 'IDLE Classic')
 
     def test_default_keys(self):
-        import sys
         current_platform = sys.platform
         conf = self.new_config(_utest=True)
 
@@ -475,7 +473,6 @@ class IdleConfTest(unittest.TestCase):
         self.assertEqual(conf.GetExtensionBindings('Foobar'), {'<<foobar>>': ['<Key-F>']})
 
     def test_get_current_keyset(self):
-        import sys
         current_platform = sys.platform
         conf = self.mock_config()
 
