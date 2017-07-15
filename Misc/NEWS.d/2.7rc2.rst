@@ -1,0 +1,125 @@
+.. bpo: 9058
+.. date: 8091
+.. nonce: l34Hmg
+.. release date: 2010-06-20
+.. section: Core and Builtins
+
+Remove assertions about INT_MAX in UnicodeDecodeError.
+
+..
+
+.. bpo: 8202
+.. date: 8090
+.. nonce: D-a4-i
+.. section: Core and Builtins
+
+Previous change to ``sys.argv[0]`` handling for -m command line option
+reverted due to unintended side effects on handling of ``sys.path``. See
+tracker issue for details.
+
+..
+
+.. bpo: 8941
+.. date: 8089
+.. nonce: p6MUoO
+.. section: Core and Builtins
+
+decoding big endian UTF-32 data in UCS-2 builds could crash the interpreter
+with characters outside the Basic Multilingual Plane (higher than 0x10000).
+
+..
+
+.. bpo: 0
+.. date: 8088
+.. nonce: diKrLc
+.. section: Core and Builtins
+
+In the unicode/str.format(), raise a ValueError when indexes to arguments
+are too large.
+
+..
+
+.. bpo: 8854
+.. date: 8087
+.. nonce: gOjstX
+.. section: Build
+
+Fix finding Visual Studio 2008 on Windows x64.
+
+..
+
+.. bpo: 6589
+.. date: 8086
+.. nonce: nEjgGc
+.. section: Library
+
+cleanup asyncore.socket_map in case smtpd.SMTPServer constructor raises an
+exception.
+
+..
+
+.. bpo: 8959
+.. date: 8085
+.. nonce: lO7u2O
+.. section: Library
+
+fix regression caused by using unmodified libffi library on Windows.  ctypes
+does now again check the stack before and after calling foreign functions.
+
+..
+
+.. bpo: 8720
+.. date: 8084
+.. nonce: rgLhvU
+.. section: Library
+
+fix regression caused by fix for #4050 by making getsourcefile smart enough
+to find source files in the linecache.
+
+..
+
+.. bpo: 8986
+.. date: 8083
+.. nonce: f31LM5
+.. section: Library
+
+math.erfc was incorrectly raising OverflowError for values between -27.3 and
+-30.0 on some platforms.
+
+..
+
+.. bpo: 8924
+.. date: 8082
+.. nonce: ENI5YP
+.. section: Library
+
+logging: Improved error handling for Unicode in exception text.
+
+..
+
+.. bpo: 8948
+.. date: 8081
+.. nonce: BIIiQc
+.. section: Library
+
+cleanup functions and class / module setups and teardowns are now honored in
+unittest debug methods.
+
+..
+
+.. bpo: 8909
+.. date: 8080
+.. nonce: OfU6lI
+.. section: Documentation
+
+Added the size of the bitmap used in the installer created by distutils'
+bdist_wininst. Patch by Anatoly Techtonik.
+
+..
+
+.. bpo: 8362
+.. date: 8079
+.. nonce: KsG-3E
+.. section: Windows
+
+Add maintainers.rst: list of module maintainers

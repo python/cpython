@@ -1,0 +1,424 @@
+.. bpo: 3156
+.. date: 7059
+.. nonce: hdm5KM
+.. release date: 17-Jul-2008
+.. section: Core and Builtins
+
+Fix inconsistent behavior of the bytearray type: all its methods now allow
+for items objects that can be converted to an integer using
+operator.index().
+
+..
+
+.. bpo: 3360
+.. date: 7058
+.. nonce: IrjlMc
+.. section: Core and Builtins
+
+Fix incorrect parsing of '020000000000.0', which produced a ValueError
+instead of giving the correct float.
+
+..
+
+.. bpo: 3083
+.. date: 7057
+.. nonce: -lGbUY
+.. section: Core and Builtins
+
+Add alternate (#) formatting for bin, oct, hex output for str.format().
+This adds the prefix 0b, 0o, or 0x, respectively.
+
+..
+
+.. bpo: 3008
+.. date: 7056
+.. nonce: YsZO12
+.. section: Core and Builtins
+
+the float type has a new instance method 'float.hex' and a new class method
+'float.fromhex' to convert floating-point numbers to and from hexadecimal
+strings, respectively.
+
+..
+
+.. bpo: 2235
+.. date: 7055
+.. nonce: 8Brs_N
+.. section: Core and Builtins
+
+__hash__ is once again inherited by default. To allow collections.Hashable
+to remain meaningful in the presence of the default hash implementation
+(object.__hash__), it is now possible to explicit block inheritance of hash
+by setting __hash__=None at the Python level, or
+tp_hash=PyObject_HashNotImplemented at the C level.
+
+..
+
+.. bpo: 3221
+.. date: 7054
+.. nonce: -0HAEB
+.. section: Core and Builtins
+
+Issue a RuntimeWarning instead of raising SystemError if the parent module
+cannot be found while performing an absolute import. This means that an
+incorrectly defined __package__ attribute will now only prevent relative
+imports in that module rather than causing all imports from that module to
+fail.
+
+..
+
+.. bpo: 2517
+.. date: 7053
+.. nonce: YHwfKp
+.. section: Core and Builtins
+
+Allow unicode messages in Exceptions again by correctly bypassing the
+instance dictionary when looking up __unicode__ on new-style classes.
+
+..
+
+.. bpo: 3242
+.. date: 7052
+.. nonce: uFneM1
+.. section: Core and Builtins
+
+Fix a crash inside the print statement, if sys.stdout is set to a custom
+object whose write() method happens to install another file in sys.stdout.
+
+..
+
+.. bpo: 3088
+.. date: 7051
+.. nonce: bSHlNi
+.. section: Core and Builtins
+
+Corrected a race condition in classes derived from threading.local: the
+first member set by a thread could be saved in another thread's dictionary.
+
+..
+
+.. bpo: 3004
+.. date: 7050
+.. nonce: P4g_vU
+.. section: Core and Builtins
+
+Minor change to slice.indices(): the start and stop arguments are now
+treated identically, making the behaviour easier to describe and understand.
+For example, slice(None, -10, 1).indices(9) now returns (0, 0, 1) instead of
+(0, -1, 1), and slice(None, 10, -1).indices(10) returns (9, 9, -1) instead
+of (9, 10, -1).
+
+..
+
+.. bpo: 3219
+.. date: 7049
+.. nonce: 6awi9c
+.. section: Core and Builtins
+
+Calling a function with repeated keyword arguments, f(a=2, a=23), would not
+cause a syntax error.  This was a regression from 2.4 caused by the switch
+to the new compiler.
+
+..
+
+.. bpo: 2862
+.. date: 7048
+.. nonce: R-Avyy
+.. section: Core and Builtins
+
+Make int and float freelist management consistent with other freelists.
+Changes their CompactFreeList apis into ClearFreeList apis and calls them
+via gc.collect().
+
+..
+
+.. bpo: 3554
+.. date: 7047
+.. nonce: _5DO8B
+.. section: Library
+
+ctypes.string_at and ctypes.wstring_at did call Python api functions without
+holding the GIL, which could lead to a fatal error when they failed.
+
+..
+
+.. bpo: 799428
+.. date: 7046
+.. nonce: kA7sJS
+.. section: Library
+
+Fix Tkinter.Misc._nametowidget to unwrap Tcl command objects.
+
+..
+
+.. bpo: 3395
+.. date: 7045
+.. nonce: j6q9M6
+.. section: Library
+
+fix reference in test_multiprocessing to old debugInfo method
+
+..
+
+.. bpo: 3312
+.. date: 7044
+.. nonce: pGNZVY
+.. section: Library
+
+Fix two crashes in sqlite3.
+
+..
+
+.. bpo: 1608818
+.. date: 7043
+.. nonce: FtvGGk
+.. section: Library
+
+Fix misbehavior in os.listdir() if readdir() fails.
+
+..
+
+.. bpo: 3125
+.. date: 7042
+.. nonce: fEAPxY
+.. section: Library
+
+Remove copy_reg in multiprocessing and replace it with
+ForkingPickler.register() to resolve conflict with ctypes.
+
+..
+
+.. bpo: 3090
+.. date: 7041
+.. nonce: Dl5Ar4
+.. section: Library
+
+Fixed ARCHFLAGS parsing on OS/X
+
+..
+
+.. bpo: 3313
+.. date: 7040
+.. nonce: wvm6HP
+.. section: Library
+
+Fixed a crash when a failed dlopen() call does not set a valid dlerror()
+message.
+
+..
+
+.. bpo: 3258
+.. date: 7039
+.. nonce: JBBmgi
+.. section: Library
+
+Fixed a crash when a ctypes POINTER type to an incomplete structure was
+created.
+
+..
+
+.. bpo: 3339
+.. date: 7038
+.. nonce: L4Fn9f
+.. section: Library
+
+dummy_thread.acquire() should not return None.
+
+..
+
+.. bpo: 3285
+.. date: 7037
+.. nonce: 9B3FF_
+.. section: Library
+
+Fractions from_float() and from_decimal() accept Integral arguments.
+
+..
+
+.. bpo: 3301
+.. date: 7036
+.. nonce: 063oaQ
+.. section: Library
+
+Bisect module behaved badly when lo was negative.
+
+..
+
+.. bpo: 839496
+.. date: 7035
+.. nonce: pl02h-
+.. section: Library
+
+SimpleHTTPServer used to open text files in text mode. This is both
+unnecessary (HTTP allows text content to be sent in several forms) and wrong
+because the actual transmitted size could differ from the content-length.
+The problem had been corrected in the 2.4 branch, but never merged into
+trunk.
+
+..
+
+.. bpo: 2663
+.. date: 7034
+.. nonce: j037TB
+.. section: Library
+
+add filtering capability to shutil.copytree().
+
+..
+
+.. bpo: 1622
+.. date: 7033
+.. nonce: Yi7nBf
+.. section: Library
+
+Correct interpretation of various ZIP header fields.
+
+..
+
+.. bpo: 1526
+.. date: 7032
+.. nonce: GTmFzB
+.. section: Library
+
+Allow more than 64k files to be added to Zip64 file.
+
+..
+
+.. bpo: 1746
+.. date: 7031
+.. nonce: 9HT8Dq
+.. section: Library
+
+Correct handling of zipfile archive comments (previously archives with
+comments over 4k were flagged as invalid). Allow writing Zip files with
+archives by setting the 'comment' attribute of a ZipFile.
+
+..
+
+.. bpo: 449227
+.. date: 7030
+.. nonce: 5LsZeI
+.. section: Library
+
+The rlcompleter module now adds "(" to callable objects when completed.
+
+..
+
+.. bpo: 3190
+.. date: 7029
+.. nonce: VtDnou
+.. section: Library
+
+Pydoc now hides the automatic module attribute __package__ (the handling is
+now the same as that of other special attributes like __name__).
+
+..
+
+.. bpo: 2885
+.. date: 7028
+.. nonce: uiHEVr
+.. section: Library
+
+The urllib.urlopen() function has been deprecated for removal in Python 3.0
+in favor of urllib2.urlopen().
+
+..
+
+.. bpo: 2113
+.. date: 7027
+.. nonce: bYWyrt
+.. section: Library
+
+Fix error in subprocess.Popen if the select system call is interrupted by a
+signal.
+
+..
+
+.. bpo: 3309
+.. date: 7026
+.. nonce: Y7DVRF
+.. section: Library
+
+Fix bz2.BZFile iterator to release its internal lock properly when raising
+an exception due to the bz2file being closed. Prevents a deadlock.
+
+..
+
+.. bpo: 3094
+.. date: 7025
+.. nonce: DuUvkr
+.. section: Library
+
+httplib.HTTPSConnection Host: headers no longer include the redundant ":443"
+port number designation when the connection is using the default https port
+(443).
+
+..
+
+.. bpo: 874900
+.. date: 7024
+.. nonce: O4a6qo
+.. section: Library
+
+after an os.fork() call the threading module state is cleaned up in the
+child process to prevent deadlock and report proper thread counts if the new
+process uses the threading module.
+
+..
+
+.. bpo: 0
+.. date: 7023
+.. nonce: qnkMJb
+.. section: Tests
+
+test.test_support.catch_warning now keeps track of all warnings it sees and
+is now better documented. Explicit unit tests for this context manager have
+been added to test_warnings.
+
+..
+
+.. bpo: 3215
+.. date: 7022
+.. nonce: JA6IUI
+.. section: Build
+
+Build sqlite3 as sqlite3.dll, not sqlite3.pyd.
+
+..
+
+.. bpo: 0
+.. date: 7021
+.. nonce: A25wbC
+.. section: Documentation
+
+Document that robotparser has been renamed to urllib.robotparser in Python
+3.0.
+
+..
+
+.. bpo: 0
+.. date: 7020
+.. nonce: k24KZW
+.. section: Documentation
+
+Document that urlparse has been renamed to urllib.parse in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 7019
+.. nonce: wtGKB7
+.. section: Documentation
+
+Document that urllib2 is split across multiple modules and renamed in Python
+3.0.
+
+..
+
+.. bpo: 0
+.. date: 7018
+.. nonce: kWfaYS
+.. section: Documentation
+
+Document that urllib is split across multiple modules and renamed in Python
+3.0.

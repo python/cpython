@@ -1,0 +1,440 @@
+.. bpo: 7544
+.. date: 7892
+.. nonce: TTDd8s
+.. release date: 2010-03-06
+.. section: Core and Builtins
+
+Preallocate thread memory before creating the thread to avoid a fatal error
+in low memory condition.
+
+..
+
+.. bpo: 7820
+.. date: 7891
+.. nonce: hEaQ9f
+.. section: Core and Builtins
+
+The parser tokenizer restores all bytes in the right if the BOM check fails.
+
+..
+
+.. bpo: 7309
+.. date: 7890
+.. nonce: pAF_KB
+.. section: Core and Builtins
+
+Fix unchecked attribute access when converting UnicodeEncodeError,
+UnicodeDecodeError, and UnicodeTranslateError to strings.
+
+..
+
+.. bpo: 7649
+.. date: 7889
+.. nonce: KS0hoy
+.. section: Core and Builtins
+
+"u'%c' % char" now behaves like "u'%s' % char" and raises a
+UnicodeDecodeError if 'char' is a byte string that can't be decoded using
+the default encoding.
+
+..
+
+.. bpo: 6902
+.. date: 7888
+.. nonce: RDRX1R
+.. section: Core and Builtins
+
+Fix problem with built-in types format incorrectly with 0 padding.
+
+..
+
+.. bpo: 2560
+.. date: 7887
+.. nonce: kdK-75
+.. section: Core and Builtins
+
+Remove an unnecessary 'for' loop from ``my_fgets()`` in Parser/myreadline.c.
+
+..
+
+.. bpo: 7988
+.. date: 7886
+.. nonce: 9h758B
+.. section: Core and Builtins
+
+Fix default alignment to be right aligned for ``complex.__format__``.  Now
+it matches other numeric types.
+
+..
+
+.. bpo: 5211
+.. date: 7885
+.. nonce: bktLaF
+.. section: Core and Builtins
+
+The complex type no longer uses implicit coercion in mixed-type binary
+arithmetic operations.
+
+..
+
+.. bpo: 7904
+.. date: 7884
+.. nonce: fiQRfj
+.. section: Library
+
+Changes to urllib.parse.urlsplit to handle schemes as defined by RFC3986.
+Anything before :// is considered a scheme and is followed by an authority
+(or netloc) and by '/' led path, which is optional.
+
+..
+
+.. bpo: 1555570
+.. date: 7883
+.. nonce: ruR9CS
+.. section: Library
+
+email no longer inserts extra blank lines when a \r\n combo crosses an 8192
+byte boundary.
+
+..
+
+.. bpo: 6906
+.. date: 7882
+.. nonce: BJTdHl
+.. section: Library
+
+Tk should not set Unicode environment variables on Windows.
+
+..
+
+.. bpo: 1054943
+.. date: 7881
+.. nonce: uHWve2
+.. section: Library
+
+Fix ``unicodedata.normalize('NFC', text)`` for the Public Review Issue #29
+(http://unicode.org/review/pr-29.html).
+
+..
+
+.. bpo: 7494
+.. date: 7880
+.. nonce: ZnUIo2
+.. section: Library
+
+Fix a crash in ``_lsprof`` (cProfile) after clearing the profiler, reset
+also the pointer to the current pointer context.
+
+..
+
+.. bpo: 7232
+.. date: 7879
+.. nonce: dD983K
+.. section: Library
+
+Add support for the context management protocol to the ``tarfile.TarFile``
+class.
+
+..
+
+.. bpo: 7250
+.. date: 7878
+.. nonce: SqXm2h
+.. section: Library
+
+Fix info leak of os.environ across multi-run uses of
+``wsgiref.handlers.CGIHandler``.
+
+..
+
+.. bpo: 1729305
+.. date: 7877
+.. nonce: pRiKEW
+.. section: Library
+
+Fix doctest to handle encode error with "backslashreplace".
+
+..
+
+.. bpo: 691291
+.. date: 7876
+.. nonce: SkVfbl
+.. section: Library
+
+``codecs.open()`` should not convert end of lines on reading and writing.
+
+..
+
+.. bpo: 7975
+.. date: 7875
+.. nonce: lm8Hlp
+.. section: Library
+
+Correct regression in dict methods supported by bsddb.dbshelve.
+
+..
+
+.. bpo: 7959
+.. date: 7874
+.. nonce: 0Si0xg
+.. section: Library
+
+ctypes callback functions are now registered correctly with the cycle
+garbage collector.
+
+..
+
+.. bpo: 7970
+.. date: 7873
+.. nonce: zsdvhZ
+.. section: Library
+
+``email.Generator.flatten`` now correctly flattens message/rfc822 messages
+parsed by ``email.Parser.HeaderParser``.
+
+..
+
+.. bpo: 3426
+.. date: 7872
+.. nonce: bunX9f
+.. section: Library
+
+``os.path.abspath`` now returns unicode when its arg is unicode.
+
+..
+
+.. bpo: 7633
+.. date: 7871
+.. nonce: kpPZYL
+.. section: Library
+
+In the decimal module, ``Context`` class methods (with the exception of
+canonical and is_canonical) now accept instances of int and long wherever a
+Decimal instance is accepted, and implicitly convert that argument to
+Decimal.  Previously only some arguments were converted.
+
+..
+
+.. bpo: 6003
+.. date: 7870
+.. nonce: TAoZ-e
+.. section: Library
+
+Add an argument to ``zipfile.Zipfile.writestr`` to specify the compression
+type.
+
+..
+
+.. bpo: 7893
+.. date: 7869
+.. nonce: IFB3BV
+.. section: Library
+
+``unittest.TextTestResult`` is made public and a ``resultclass`` argument
+added to the TextTestRunner constructor allowing a different result class to
+be used without having to subclass.
+
+..
+
+.. bpo: 7588
+.. date: 7868
+.. nonce: rOCPeT
+.. section: Library
+
+``unittest.TextTestResult.getDescription`` now includes the test name in
+failure reports even if the test has a docstring.
+
+..
+
+.. bpo: 5801
+.. date: 7867
+.. nonce: eOropo
+.. section: Library
+
+Remove spurious empty lines in wsgiref.
+
+..
+
+.. bpo: 1537721
+.. date: 7866
+.. nonce: cM7u3p
+.. section: Library
+
+Add a ``writeheader()`` method to ``csv.DictWriter``.
+
+..
+
+.. bpo: 7427
+.. date: 7865
+.. nonce: c1z170
+.. section: Library
+
+Improve the representation of httplib.BadStatusLine exceptions.
+
+..
+
+.. bpo: 7481
+.. date: 7864
+.. nonce: FOM-ZK
+.. section: Library
+
+When a ``threading.Thread`` failed to start it would leave the instance
+stuck in initial state and present in ``threading.enumerate()``.
+
+..
+
+.. bpo: 1068268
+.. date: 7863
+.. nonce: GTy8EE
+.. section: Library
+
+The subprocess module now handles EINTR in internal ``os.waitpid()`` and
+``os.read()`` system calls where appropriate.
+
+..
+
+.. bpo: 6729
+.. date: 7862
+.. nonce: WSzBED
+.. section: Library
+
+Add ``ctypes.c_ssize_t`` to represent ssize_t.
+
+..
+
+.. bpo: 6247
+.. date: 7861
+.. nonce: qqe0rR
+.. section: Library
+
+The argparse module has been added to the standard library.
+
+..
+
+.. bpo: 0
+.. date: 7860
+.. nonce: sY1Wyi
+.. section: Library
+
+The sqlite3 module was updated to pysqlite 2.6.0.  This fixes several
+obscure bugs and allows loading SQLite extensions from shared libraries.
+
+..
+
+.. bpo: 7808
+.. date: 7859
+.. nonce: Onia6y
+.. section: Library
+
+Fix reference leaks in _bsddb and related tests.
+
+..
+
+.. bpo: 6544
+.. date: 7858
+.. nonce: NLvwqS
+.. section: Library
+
+Fix a reference leak in the kqueue implementation's error handling.
+
+..
+
+.. bpo: 0
+.. date: 7857
+.. nonce: yVX0tF
+.. section: Library
+
+Stop providing crtassem.h symbols when compiling with Visual Studio 2010, as
+msvcr100.dll is not a platform assembly anymore.
+
+..
+
+.. bpo: 7242
+.. date: 7856
+.. nonce: VzdbKI
+.. section: Library
+
+On Solaris 9 and earlier calling ``os.fork()`` from within a thread could
+raise an incorrect RuntimeError about not holding the import lock.  The
+import lock is now reinitialized after fork.
+
+..
+
+.. bpo: 7999
+.. date: 7855
+.. nonce: -6kN7B
+.. section: Library
+
+``os.setreuid()`` and ``os.setregid()`` would refuse to accept a -1
+parameter on some platforms such as OS X.
+
+..
+
+.. bpo: 7849
+.. date: 7854
+.. nonce: XQLva6
+.. section: Tests
+
+The utility ``test.test_support.check_warnings()`` verifies if warnings are
+effectively raised.  A new utility ``check_py3k_warnings()`` is available.
+
+..
+
+.. bpo: 0
+.. date: 7853
+.. nonce: iFGi5W
+.. section: Tests
+
+The four path modules (genericpath, macpath, ntpath, posixpath) share a
+common TestCase for some tests: test_genericpath.CommonTest.
+
+..
+
+.. bpo: 0
+.. date: 7852
+.. nonce: xd6x8Q
+.. section: Tests
+
+Print platform information when running the whole test suite, or using the
+``--verbose`` flag.
+
+..
+
+.. bpo: 767675
+.. date: 7851
+.. nonce: cR-mRY
+.. section: Tests
+
+Enable test_pep277 on POSIX platforms with Unicode-friendly filesystem
+encoding.
+
+..
+
+.. bpo: 6292
+.. date: 7850
+.. nonce: RJOYAi
+.. section: Tests
+
+For the moment at least, the test suite runs cleanly if python is run with
+the -OO flag.  Tests requiring docstrings are skipped.
+
+..
+
+.. bpo: 7712
+.. date: 7849
+.. nonce: Co5Xm7
+.. section: Tests
+
+test_support gained a new ``temp_cwd`` context manager which is now also
+used by regrtest to run all the tests in a temporary directory.  The
+original CWD is saved in ``test.test_support.SAVEDCWD``.  Thanks to Florent
+Xicluna who helped with the patch.
+
+..
+
+.. bpo: 3920
+.. date: 7848
+.. nonce: 5cWPGY
+.. section: Build
+
+Define _BSD_SOURCE on OpenBSD 4.4 through 4.9. (See also: bpo-7903)

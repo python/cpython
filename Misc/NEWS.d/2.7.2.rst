@@ -1,0 +1,16 @@
+.. bpo: 12009
+.. date: 8463
+.. nonce: nQPg8Y
+.. release date: 2011-06-11
+.. section: Library
+
+Fixed regression in netrc file comment handling.
+
+..
+
+.. bpo: 1221
+.. date: 8462
+.. nonce: vFJB6t
+.. section: Library
+
+Make pyexpat.__version__ equal to the Python version.

@@ -1,0 +1,1 @@
+_io._IOBase.readlines will check if it's closed first when hint is present.

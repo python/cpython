@@ -1,0 +1,26 @@
+.. bpo: 27641
+.. date: 9821
+.. nonce: Fhtvhi
+.. release date: 2016-06-25
+.. section: Build
+
+The configure script now inserts comments into the makefile to prevent the
+pgen executable from being cross-compiled.
+
+..
+
+.. bpo: 26930
+.. date: 9820
+.. nonce: 9JUeSD
+.. section: Build
+
+Update Windows builds to use OpenSSL 1.0.2h.
+
+..
+
+.. bpo: 27365
+.. date: 9819
+.. nonce: y8CVsn
+.. section: IDLE
+
+Fix about dialog.

@@ -1,0 +1,2 @@
+Fixed type.__setattr__() and type.__delattr__() for non-interned or unicode
+attribute names.  Based on patch by Eryk Sun.

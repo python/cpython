@@ -1,0 +1,510 @@
+.. bpo: 15535
+.. date: 9067
+.. nonce: UcBEvl
+.. release date: 2013-05-12
+.. section: Core and Builtins
+
+Fixed regression in the pickling of named tuples by removing the __dict__
+property introduced in 2.7.4.
+
+..
+
+.. bpo: 17857
+.. date: 9066
+.. nonce: 7cCKDk
+.. section: Core and Builtins
+
+Prevent build failures with pre-3.5.0 versions of sqlite3, such as was
+shipped with Centos 5 and Mac OS X 10.4.
+
+..
+
+.. bpo: 17703
+.. date: 9065
+.. nonce: eLf2tu
+.. section: Core and Builtins
+
+Fix a regression where an illegal use of Py_DECREF() after interpreter
+finalization can cause a crash.
+
+..
+
+.. bpo: 16447
+.. date: 9064
+.. nonce: Nqypja
+.. section: Core and Builtins
+
+Fixed potential segmentation fault when setting __name__ on a class.
+
+..
+
+.. bpo: 17610
+.. date: 9063
+.. nonce: QpIzEB
+.. section: Core and Builtins
+
+Don't rely on non-standard behavior of the C qsort() function.
+
+..
+
+.. bpo: 17979
+.. date: 9062
+.. nonce: l6BtNx
+.. section: Library
+
+Fixed the re module in build with --disable-unicode.
+
+..
+
+.. bpo: 17606
+.. date: 9061
+.. nonce: yNd47F
+.. section: Library
+
+Fixed support of encoded byte strings in the XMLGenerator .characters() and
+ignorableWhitespace() methods.  Original patch by Sebastian Ortiz Vasquez.
+
+..
+
+.. bpo: 16601
+.. date: 9060
+.. nonce: _FiBrB
+.. section: Library
+
+Restarting iteration over tarfile no more continues from where it left off.
+Patch by Michael Birtwell.
+
+..
+
+.. bpo: 16584
+.. date: 9059
+.. nonce: 6yyCuX
+.. section: Library
+
+in filecomp._cmp, catch IOError as well as os.error. Patch by Till Maas.
+
+..
+
+.. bpo: 17926
+.. date: 9058
+.. nonce: nv5fLf
+.. section: Library
+
+Fix dbm.__contains__ on 64-bit big-endian machines.
+
+..
+
+.. bpo: 19267
+.. date: 9057
+.. nonce: SXv-Bh
+.. section: Library
+
+Fix support of multibyte encoding (ex: UTF-16) in the logging module.
+
+..
+
+.. bpo: 17918
+.. date: 9056
+.. nonce: qtEN-L
+.. section: Library
+
+When using SSLSocket.accept(), if the SSL handshake failed on the new
+socket, the socket would linger indefinitely.  Thanks to Peter Saveliev for
+reporting.
+
+..
+
+.. bpo: 17289
+.. date: 9055
+.. nonce: NPHOks
+.. section: Library
+
+The readline module now plays nicer with external modules or applications
+changing the rl_completer_word_break_characters global variable.  Initial
+patch by Bradley Froehle.
+
+..
+
+.. bpo: 12181
+.. date: 9054
+.. nonce: Dq2moC
+.. section: Library
+
+select module: Fix struct kevent definition on OpenBSD 64-bit platforms.
+Patch by Federico Schwindt.
+
+..
+
+.. bpo: 14173
+.. date: 9053
+.. nonce: mZM9Pr
+.. section: Library
+
+Avoid crashing when reading a signal handler during interpreter shutdown.
+
+..
+
+.. bpo: 16316
+.. date: 9052
+.. nonce: AOkxPd
+.. section: Library
+
+mimetypes now recognizes the .xz and .txz (.tar.xz) extensions.
+
+..
+
+.. bpo: 17192
+.. date: 9051
+.. nonce: F-vIFl
+.. section: Library
+
+Restore the patch for Issue #10309 which was ommitted in 2.7.4 when updating
+the bundled version of libffi used by ctypes.
+
+..
+
+.. bpo: 17843
+.. date: 9050
+.. nonce: 9IBe9A
+.. section: Library
+
+Removed test data file that was triggering false-positive virus warnings
+with certain antivirus software.
+
+..
+
+.. bpo: 17353
+.. date: 9049
+.. nonce: 6Wiqfl
+.. section: Library
+
+Plistlib emitted empty data tags with deeply nested datastructures
+
+..
+
+.. bpo: 11714
+.. date: 9048
+.. nonce: EZxzYl
+.. section: Library
+
+Use 'with' statements to assure a Semaphore releases a condition variable.
+Original patch by Thomas Rachel.
+
+..
+
+.. bpo: 17795
+.. date: 9047
+.. nonce: IgVwMv
+.. section: Library
+
+Reverted backwards-incompatible change in SysLogHandler with Unix domain
+sockets.
+
+..
+
+.. bpo: 17555
+.. date: 9046
+.. nonce: 9klJCB
+.. section: Library
+
+Fix ForkAwareThreadLock so that size of after fork registry does not grow
+exponentially with generation of process.
+
+..
+
+.. bpo: 17710
+.. date: 9045
+.. nonce: p-amHh
+.. section: Library
+
+Fix cPickle raising a SystemError on bogus input.
+
+..
+
+.. bpo: 17341
+.. date: 9044
+.. nonce: DI-1AO
+.. section: Library
+
+Include the invalid name in the error messages from re about invalid group
+names.
+
+..
+
+.. bpo: 17016
+.. date: 9043
+.. nonce: lQnMI8
+.. section: Library
+
+Get rid of possible pointer wraparounds and integer overflows in the re
+module.  Patch by Nickolai Zeldovich.
+
+..
+
+.. bpo: 17536
+.. date: 9042
+.. nonce: E6rcrn
+.. section: Library
+
+Add to webbrowser's browser list: xdg-open, gvfs-open, www-browser, x-www-
+browser, chromium browsers, iceweasel, iceape.
+
+..
+
+.. bpo: 17656
+.. date: 9041
+.. nonce: wtQq2x
+.. section: Library
+
+Fix extraction of zip files with unicode member paths.
+
+..
+
+.. bpo: 17666
+.. date: 9040
+.. nonce: L8Gq8u
+.. section: Library
+
+Fix reading gzip files with an extra field.
+
+..
+
+.. bpo: 13150
+.. date: 9039
+.. nonce: fW-wYi
+.. section: Library
+
+sysconfig no longer parses the Makefile and config.h files when imported,
+instead doing it at build time.  This makes importing sysconfig faster and
+reduces Python startup time by 20%. (See also: bpo-17512)
+
+..
+
+.. bpo: 13163
+.. date: 9038
+.. nonce: oHSKa5
+.. section: Library
+
+Rename operands in smtplib.SMTP._get_socket to correct names; fixes
+otherwise misleading output in tracebacks and when when debug is on.
+
+..
+
+.. bpo: 17526
+.. date: 9037
+.. nonce: wiYvlk
+.. section: Library
+
+fix an IndexError raised while passing code without filename to
+inspect.findsource().  Initial patch by Tyler Doyle.
+
+..
+
+.. bpo: 17547
+.. date: 9036
+.. nonce: yVllRd
+.. section: Build
+
+In configure, explicitly pass -Wformat for the benefit for GCC 4.8.
+
+..
+
+.. bpo: 17682
+.. date: 9035
+.. nonce: UJyp1a
+.. section: Build
+
+Add the _io module to Modules/Setup.dist (commented out).
+
+..
+
+.. bpo: 17086
+.. date: 9034
+.. nonce: PPxAFs
+.. section: Build
+
+Search the include and library directories provided by the compiler.
+
+..
+
+.. bpo: 17928
+.. date: 9033
+.. nonce: y6tiT2
+.. section: Tests
+
+Fix test_structmembers on 64-bit big-endian machines.
+
+..
+
+.. bpo: 17883
+.. date: 9032
+.. nonce: SrO_uE
+.. section: Tests
+
+Fix buildbot testing of Tkinter on Windows. Patch by Zachary Ware.
+
+..
+
+.. bpo: 7855
+.. date: 9031
+.. nonce: ZbX91d
+.. section: Tests
+
+Add tests for ctypes/winreg for issues found in IronPython. Initial patch by
+Dino Viehland.
+
+..
+
+.. bpo: 17712
+.. date: 9030
+.. nonce: RqkHUB
+.. section: Tests
+
+Fix test_gdb failures on Ubuntu 13.04.
+
+..
+
+.. bpo: 17065
+.. date: 9029
+.. nonce: rql8lF
+.. section: Tests
+
+Use process-unique key for winreg tests to avoid failures if test is run
+multiple times in parallel (eg: on a buildbot host).
+
+..
+
+.. bpo: 17838
+.. date: 9028
+.. nonce: -DDdhT
+.. section: IDLE
+
+Allow sys.stdin to be reassigned.
+
+..
+
+.. bpo: 14735
+.. date: 9027
+.. nonce: lbbw49
+.. section: IDLE
+
+Update IDLE docs to omit "Control-z on Windows".
+
+..
+
+.. bpo: 17585
+.. date: 9026
+.. nonce: oXlcVX
+.. section: IDLE
+
+Fixed IDLE regression. Now closes when using exit() or quit().
+
+..
+
+.. bpo: 17657
+.. date: 9025
+.. nonce: rGfxNo
+.. section: IDLE
+
+Show full Tk version in IDLE's about dialog. Patch by Todd Rovito.
+
+..
+
+.. bpo: 17613
+.. date: 9024
+.. nonce: MfAJ31
+.. section: IDLE
+
+Prevent traceback when removing syntax colorizer in IDLE.
+
+..
+
+.. bpo: 1207589
+.. date: 9023
+.. nonce: wqzkjh
+.. section: IDLE
+
+Backwards-compatibility patch for right-click menu in IDLE.
+
+..
+
+.. bpo: 16887
+.. date: 9022
+.. nonce: -tb-0g
+.. section: IDLE
+
+IDLE now accepts Cancel in tabify/untabify dialog box.
+
+..
+
+.. bpo: 14254
+.. date: 9021
+.. nonce: heeMG-
+.. section: IDLE
+
+IDLE now handles readline correctly across shell restarts.
+
+..
+
+.. bpo: 17614
+.. date: 9020
+.. nonce: 9pmpYW
+.. section: IDLE
+
+IDLE no longer raises exception when quickly closing a file.
+
+..
+
+.. bpo: 6698
+.. date: 9019
+.. nonce: fXoiv2
+.. section: IDLE
+
+IDLE now opens just an editor window when configured to do so.
+
+..
+
+.. bpo: 8900
+.. date: 9018
+.. nonce: jkW99r
+.. section: IDLE
+
+Using keyboard shortcuts in IDLE to open a file no longer raises an
+exception.
+
+..
+
+.. bpo: 6649
+.. date: 9017
+.. nonce: uwGice
+.. section: IDLE
+
+Fixed missing exit status in IDLE. Patch by Guilherme Polo.
+
+..
+
+.. bpo: 17390
+.. date: 9016
+.. nonce: o3w4vc
+.. section: IDLE
+
+Display Python version on Idle title bar. Initial patch by Edmond Burnett.
+
+..
+
+.. bpo: 15940
+.. date: 9015
+.. nonce: XL62xu
+.. section: Documentation
+
+Specify effect of locale on time functions.
+
+..
+
+.. bpo: 6696
+.. date: 9014
+.. nonce: -aRVrf
+.. section: Documentation
+
+add documentation for the Profile objects, and improve profile/cProfile
+docs.  Patch by Tom Pinckney.

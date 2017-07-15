@@ -1,0 +1,5 @@
+Enhanced function swap_attr() in the test.test_support module. It now works
+when delete replaced attribute inside the with statement.  The old value of
+the attribute (or None if it doesn't exist) now will be assigned to the
+target of the "as" clause, if there is one. Also backported function
+swap_item().

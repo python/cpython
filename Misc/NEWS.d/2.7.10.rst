@@ -1,0 +1,7 @@
+.. bpo: 22931
+.. date: 9589
+.. nonce: 4CuWYD
+.. release date: 2015-05-23
+.. section: Library
+
+Allow '[' and ']' in cookie values.

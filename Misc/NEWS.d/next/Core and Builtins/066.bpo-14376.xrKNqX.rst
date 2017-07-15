@@ -1,0 +1,1 @@
+Allow sys.exit to accept longs as well as ints. Patch by Gareth Rees.

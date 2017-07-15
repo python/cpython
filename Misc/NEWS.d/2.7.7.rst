@@ -1,0 +1,16 @@
+.. bpo: 21462
+.. date: 9328
+.. nonce: Ee4oKH
+.. release date: 2014-05-31
+.. section: Build
+
+Build the Windows installers with OpenSSL 1.0.1g.
+
+..
+
+.. bpo: 19866
+.. date: 9327
+.. nonce: 15D08i
+.. section: Build
+
+Include some test data in the Windows installers, so tests don't fail.
