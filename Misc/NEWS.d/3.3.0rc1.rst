@@ -1,0 +1,411 @@
+.. bpo: 15573
+.. date: 7967
+.. nonce: 6-QAPO
+.. release date: 25-Aug-2012
+.. section: Core and Builtins
+
+memoryview comparisons are now performed by value with full support for any
+valid struct module format definition.
+
+..
+
+.. bpo: 15316
+.. date: 7966
+.. nonce: kFKLpQ
+.. section: Core and Builtins
+
+When an item in the fromlist for `__import__()` doesn't exist, don't raise
+an error, but if an exception is raised as part of an import do let that
+propagate.
+
+..
+
+.. bpo: 15778
+.. date: 7965
+.. nonce: URaMpQ
+.. section: Core and Builtins
+
+Ensure that ``str(ImportError(msg))`` returns a str even when msg isn't a
+str.
+
+..
+
+.. bpo: 2051
+.. date: 7964
+.. nonce: ATEUvX
+.. section: Core and Builtins
+
+Source file permission bits are once again correctly copied to the cached
+bytecode file. (The migration to importlib reintroduced this problem because
+these was no regression test. A test has been added as part of this patch)
+
+..
+
+.. bpo: 15761
+.. date: 7963
+.. nonce: PLrF5o
+.. section: Core and Builtins
+
+Fix crash when ``PYTHONEXECUTABLE`` is set on Mac OS X.
+
+..
+
+.. bpo: 15726
+.. date: 7962
+.. nonce: PC56aB
+.. section: Core and Builtins
+
+Fix incorrect bounds checking in PyState_FindModule.  Patch by Robin
+Schreiber.
+
+..
+
+.. bpo: 15604
+.. date: 7961
+.. nonce: SJAkFr
+.. section: Core and Builtins
+
+Update uses of `PyObject_IsTrue()` to check for and handle errors correctly.
+Patch by Serhiy Storchaka.
+
+..
+
+.. bpo: 14846
+.. date: 7960
+.. nonce: jI2Zl_
+.. section: Core and Builtins
+
+`importlib.FileFinder` now handles the case where the directory being
+searched is removed after a previous import attempt.
+
+..
+
+.. bpo: 13370
+.. date: 7959
+.. nonce: KobXSZ
+.. section: Library
+
+Ensure that ctypes works on Mac OS X when Python is compiled using the clang
+compiler.
+
+..
+
+.. bpo: 13072
+.. date: 7958
+.. nonce: HlsZI-
+.. section: Library
+
+The array module's 'u' format code is now deprecated and will be removed in
+Python 4.0.
+
+..
+
+.. bpo: 15544
+.. date: 7957
+.. nonce: 3QjWdU
+.. section: Library
+
+Fix Decimal.__float__ to work with payload-carrying NaNs.
+
+..
+
+.. bpo: 15776
+.. date: 7956
+.. nonce: --Euj0
+.. section: Library
+
+Allow pyvenv to work in existing directory with --clean.
+
+..
+
+.. bpo: 15249
+.. date: 7955
+.. nonce: ho-Io6
+.. section: Library
+
+email's BytesGenerator now correctly mangles From lines (when requested)
+even if the body contains undecodable bytes.
+
+..
+
+.. bpo: 15777
+.. date: 7954
+.. nonce: AVmvaJ
+.. section: Library
+
+Fix a refleak in _posixsubprocess.
+
+..
+
+.. bpo: 665194
+.. date: 7953
+.. nonce: AECTWV
+.. section: Library
+
+Update `email.utils.localtime` to use datetime.astimezone and correctly
+handle historic changes in UTC offsets.
+
+..
+
+.. bpo: 15199
+.. date: 7952
+.. nonce: iOOV1X
+.. section: Library
+
+Fix JavaScript's default MIME type to application/javascript. Patch by
+Bohuslav Kabrda.
+
+..
+
+.. bpo: 12643
+.. date: 7951
+.. nonce: Jy2fyw
+.. section: Library
+
+`code.InteractiveConsole` now respects `sys.excepthook` when displaying
+exceptions.  Patch by Aaron Iles.
+
+..
+
+.. bpo: 13579
+.. date: 7950
+.. nonce: SqZ8Sq
+.. section: Library
+
+`string.Formatter` now understands the 'a' conversion specifier.
+
+..
+
+.. bpo: 15595
+.. date: 7949
+.. nonce: dk1eKQ
+.. section: Library
+
+Fix ``subprocess.Popen(universal_newlines=True)`` for certain locales
+(utf-16 and utf-32 family). Patch by Chris Jerdonek.
+
+..
+
+.. bpo: 15477
+.. date: 7948
+.. nonce: 9gGqPw
+.. section: Library
+
+In cmath and math modules, add workaround for platforms whose system-
+supplied log1p function doesn't respect signs of zeros.
+
+..
+
+.. bpo: 15715
+.. date: 7947
+.. nonce: 3g_xGx
+.. section: Library
+
+`importlib.__import__()` will silence an ImportError when the use of
+fromlist leads to a failed import.
+
+..
+
+.. bpo: 14669
+.. date: 7946
+.. nonce: mVYj1T
+.. section: Library
+
+Fix pickling of connections and sockets on Mac OS X by sending/receiving an
+acknowledgment after file descriptor transfer. TestPicklingConnection has
+been reenabled for Mac OS X.
+
+..
+
+.. bpo: 11062
+.. date: 7945
+.. nonce: ZhTF21
+.. section: Library
+
+Fix adding a message from file to Babyl mailbox.
+
+..
+
+.. bpo: 15646
+.. date: 7944
+.. nonce: bzzL5z
+.. section: Library
+
+Prevent equivalent of a fork bomb when using `multiprocessing` on Windows
+without the ``if __name__ == '__main__'`` idiom.
+
+..
+
+.. bpo: 15678
+.. date: 7943
+.. nonce: Uq5eEl
+.. section: IDLE
+
+Fix IDLE menus when started from OS X command line (3.3.0b2 regression).
+
+..
+
+.. bpo: 0
+.. date: 7942
+.. nonce: 2necKS
+.. section: Documentation
+
+Touched up the Python 2 to 3 porting guide.
+
+..
+
+.. bpo: 14674
+.. date: 7941
+.. nonce: VC9ve3
+.. section: Documentation
+
+Add a discussion of the `json` module's standard compliance. Patch by Chris
+Rebert.
+
+..
+
+.. bpo: 0
+.. date: 7940
+.. nonce: BGYuhC
+.. section: Documentation
+
+Create a 'Concurrent Execution' section in the docs, and split up the
+'Optional Operating System Services' section to use a more user-centric
+classification scheme (splitting them across the new CE section, IPC and
+text processing). Operating system limitations can be reflected with the
+Sphinx ``:platform:`` tag, it doesn't make sense as part of the Table of
+Contents.
+
+..
+
+.. bpo: 4966
+.. date: 7939
+.. nonce: -5pabe
+.. section: Documentation
+
+Bring the sequence docs up to date for the Py3k transition and the many
+language enhancements since they were original written.
+
+..
+
+.. bpo: 0
+.. date: 7938
+.. nonce: jD4Bea
+.. section: Documentation
+
+The "path importer" misnomer has been replaced with Eric Snow's more-
+awkward-but-at-least-not-wrong suggestion of "path based finder" in the
+import system reference docs.
+
+..
+
+.. bpo: 15640
+.. date: 7937
+.. nonce: qijhlP
+.. section: Documentation
+
+Document `importlib.abc.Finder` as deprecated.
+
+..
+
+.. bpo: 15630
+.. date: 7936
+.. nonce: 1E1IGr
+.. section: Documentation
+
+Add an example for "continue" stmt in the tutorial.  Patch by Daniel Ellis.
+
+..
+
+.. bpo: 15747
+.. date: 7935
+.. nonce: An6Xbj
+.. section: Tests
+
+ZFS always returns EOPNOTSUPP when attempting to set the UF_IMMUTABLE flag
+(via either chflags or lchflags); refactor affected tests in test_posix.py
+to account for this.
+
+..
+
+.. bpo: 15285
+.. date: 7934
+.. nonce: rJh9vn
+.. section: Tests
+
+Refactor the approach for testing connect timeouts using two external hosts
+that have been configured specifically for this type of test.
+
+..
+
+.. bpo: 15743
+.. date: 7933
+.. nonce: k_VrGz
+.. section: Tests
+
+Remove the deprecated method usage in `urllib` tests. Patch by Jeff Knupp.
+
+..
+
+.. bpo: 15615
+.. date: 7932
+.. nonce: pjU4Wf
+.. section: Tests
+
+Add some tests for the `json` module's handling of invalid input data.
+Patch by Kushal Das.
+
+..
+
+.. bpo: 0
+.. date: 7931
+.. nonce: SVSrkA
+.. section: Build
+
+Output lib files for PGO build into PGO directory.
+
+..
+
+.. bpo: 0
+.. date: 7930
+.. nonce: KlXR19
+.. section: Build
+
+Pick up 32-bit launcher from PGO directory on 64-bit PGO build.
+
+..
+
+.. bpo: 0
+.. date: 7929
+.. nonce: rErpCh
+.. section: Build
+
+Drop ``PC\python_nt.h`` as it's not used.  Add input dependency on custom
+build step.
+
+..
+
+.. bpo: 15511
+.. date: 7928
+.. nonce: Fli23V
+.. section: Build
+
+Drop explicit dependency on pythonxy.lib from _decimal amd64 configuration.
+
+..
+
+.. bpo: 0
+.. date: 7927
+.. nonce: UI3Nwa
+.. section: Build
+
+Add missing PGI/PGO configurations for pywlauncher.
+
+..
+
+.. bpo: 15645
+.. date: 7926
+.. nonce: aLjenQ
+.. section: Build
+
+Ensure 2to3 grammar pickles are properly installed.

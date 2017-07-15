@@ -1,0 +1,122 @@
+.. bpo: 13992
+.. date: 7979
+.. nonce: NtESXo
+.. release date: 09-Sep-2012
+.. section: Core and Builtins
+
+The trashcan mechanism is now thread-safe.  This eliminates sporadic crashes
+in multi-thread programs when several long deallocator chains ran
+concurrently and involved subclasses of built-in container types.
+
+..
+
+.. bpo: 15784
+.. date: 7978
+.. nonce: zeVMus
+.. section: Core and Builtins
+
+Modify `OSError`.__str__() to better distinguish between errno error numbers
+and Windows error numbers.
+
+..
+
+.. bpo: 15781
+.. date: 7977
+.. nonce: kNkd0Y
+.. section: Core and Builtins
+
+Fix two small race conditions in import's module locking.
+
+..
+
+.. bpo: 17158
+.. date: 7976
+.. nonce: vU3389
+.. section: Library
+
+Add 'symbols' to help() welcome message; clarify 'modules spam' messages.
+
+..
+
+.. bpo: 15847
+.. date: 7975
+.. nonce: kB0FUD
+.. section: Library
+
+Fix a regression in argparse, which did not accept tuples as argument lists
+anymore.
+
+..
+
+.. bpo: 15828
+.. date: 7974
+.. nonce: EW3Br7
+.. section: Library
+
+Restore support for C extensions in `imp.load_module()`.
+
+..
+
+.. bpo: 15340
+.. date: 7973
+.. nonce: ThJxoy
+.. section: Library
+
+Fix importing the random module when ``/dev/urandom`` cannot be opened.
+This was a regression caused by the hash randomization patch.
+
+..
+
+.. bpo: 10650
+.. date: 7972
+.. nonce: FImkq4
+.. section: Library
+
+Deprecate the watchexp parameter of the `Decimal.quantize()` method.
+
+..
+
+.. bpo: 15785
+.. date: 7971
+.. nonce: VZfOJY
+.. section: Library
+
+Modify `window.get_wch()` API of the curses module: return a character for
+most keys, and an integer for special keys, instead of always returning an
+integer. So it is now possible to distinguish special keys like keypad keys.
+
+..
+
+.. bpo: 14223
+.. date: 7970
+.. nonce: oVuUDj
+.. section: Library
+
+Fix `window.addch()` of the curses module for special characters like
+curses.ACS_HLINE: the Python function addch(int) and addch(bytes) is now
+calling the C function waddch()/mvwaddch() (as it was done in Python 3.2),
+instead of wadd_wch()/mvwadd_wch(). The Python function addch(str) is still
+calling the C function wadd_wch()/mvwadd_wch() if the Python curses is
+linked to libncursesw.
+
+..
+
+.. bpo: 15822
+.. date: 7969
+.. nonce: SNlKd9
+.. section: Build
+
+Really ensure 2to3 grammar pickles are properly installed (replaces fixes
+for Issue #15645).
+
+..
+
+.. bpo: 15814
+.. date: 7968
+.. nonce: JleLly
+.. section: Documentation
+
+The memoryview enhancements in 3.3.0 accidentally permitted the hashing of
+multi-dimensional memorviews and memoryviews with multi-byte item formats.
+The intended restrictions have now been documented - they will be correctly
+enforced in 3.3.1.

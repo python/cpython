@@ -1,0 +1,665 @@
+.. bpo: 20189
+.. date: 9245
+.. nonce: OIbmmo
+.. release date: 2014-01-26
+.. section: Core and Builtins
+
+Four additional builtin types (PyTypeObject, PyMethodDescr_Type,
+_PyMethodWrapper_Type, and PyWrapperDescr_Type) have been modified to
+provide introspection information for builtins.
+
+..
+
+.. bpo: 17825
+.. date: 9244
+.. nonce: toRoZf
+.. section: Core and Builtins
+
+Cursor "^" is correctly positioned for SyntaxError and IndentationError.
+
+..
+
+.. bpo: 2382
+.. date: 9243
+.. nonce: kL_Sgg
+.. section: Core and Builtins
+
+SyntaxError cursor "^" is now written at correct position in most cases when
+multibyte characters are in line (before "^").  This still not works
+correctly with wide East Asian characters.
+
+..
+
+.. bpo: 18960
+.. date: 9242
+.. nonce: lhfZNw
+.. section: Core and Builtins
+
+The first line of Python script could be executed twice when the source
+encoding was specified on the second line.  Now the source encoding
+declaration on the second line isn't effective if the first line contains
+anything except a comment.  'python -x' works now again with files with the
+source encoding declarations, and can be used to make Python batch files on
+Windows.
+
+..
+
+.. bpo: 0
+.. date: 9241
+.. nonce: GB7eBz
+.. section: Library
+
+asyncio: Various improvements and small changes not all covered by issues
+listed below.  E.g. wait_for() now cancels the inner task if the timeout
+occcurs; tweaked the set of exported symbols; renamed Empty/Full to
+QueueEmpty/QueueFull; "with (yield from lock)" now uses a separate context
+manager; readexactly() raises if not enough data was read; PTY support
+tweaks.
+
+..
+
+.. bpo: 20311
+.. date: 9240
+.. nonce: -6LF_t
+.. section: Library
+
+asyncio: Add a granularity attribute to BaseEventLoop: maximum between the
+resolution of the BaseEventLoop.time() method and the resolution of the
+selector. The granuarility is used in the scheduler to round time and
+deadline.
+
+..
+
+.. bpo: 20311
+.. date: 9239
+.. nonce: JgE5j7
+.. section: Library
+
+selectors: Add a resolution attribute to BaseSelector.
+
+..
+
+.. bpo: 20189
+.. date: 9238
+.. nonce: L9IuSm
+.. section: Library
+
+unittest.mock now no longer assumes that any object for which it could get
+an inspect.Signature is a callable written in Python. Fix courtesy of
+Michael Foord.
+
+..
+
+.. bpo: 20317
+.. date: 9237
+.. nonce: 9JI93M
+.. section: Library
+
+ExitStack.__exit__ could create a self-referential loop if an exception
+raised by a cleanup operation already had its context set correctly (for
+example, by the @contextmanager decorator). The infinite loop this caused is
+now avoided by checking if the expected context is already set before trying
+to fix it.
+
+..
+
+.. bpo: 20374
+.. date: 9236
+.. nonce: EWofHb
+.. section: Library
+
+Fix build with GNU readline >= 6.3.
+
+..
+
+.. bpo: 20262
+.. date: 9235
+.. nonce: co0t1R
+.. section: Library
+
+Warnings are raised now when duplicate names are added in the ZIP file or
+too long ZIP file comment is truncated.
+
+..
+
+.. bpo: 20165
+.. date: 9234
+.. nonce: PyLZUR
+.. section: Library
+
+The unittest module no longer considers tests marked with @expectedFailure
+successful if they pass.
+
+..
+
+.. bpo: 18574
+.. date: 9233
+.. nonce: 28Z8aX
+.. section: Library
+
+Added missing newline in 100-Continue reply from
+http.server.BaseHTTPRequestHandler. Patch by Nikolaus Rath.
+
+..
+
+.. bpo: 20270
+.. date: 9232
+.. nonce: Z2Cks9
+.. section: Library
+
+urllib.urlparse now supports empty ports.
+
+..
+
+.. bpo: 20243
+.. date: 9231
+.. nonce: nApKCK
+.. section: Library
+
+TarFile no longer raise ReadError when opened in write mode.
+
+..
+
+.. bpo: 20238
+.. date: 9230
+.. nonce: qojq-l
+.. section: Library
+
+TarFile opened with external fileobj and "w:gz" mode didn't write complete
+output on close.
+
+..
+
+.. bpo: 20245
+.. date: 9229
+.. nonce: 93kf_h
+.. section: Library
+
+The open functions in the tarfile module now correctly handle empty mode.
+
+..
+
+.. bpo: 20242
+.. date: 9228
+.. nonce: yvmL9l
+.. section: Library
+
+Fixed basicConfig() format strings for the alternative formatting styles.
+Thanks to kespindler for the bug report and patch.
+
+..
+
+.. bpo: 20246
+.. date: 9227
+.. nonce: CC8uTq
+.. section: Library
+
+Fix buffer overflow in socket.recvfrom_into.
+
+..
+
+.. bpo: 20206
+.. date: 9226
+.. nonce: CtFEMz
+.. section: Library
+
+Fix edge case in email.quoprimime.encode where it truncated lines ending in
+a character needing encoding but no newline by using a more efficient
+algorithm that doesn't have the bug. (See also: bpo-5803)
+
+..
+
+.. bpo: 19082
+.. date: 9225
+.. nonce: idZnK7
+.. section: Library
+
+Working xmlrpc.server and xmlrpc.client examples. Both in modules and in
+documentation. Initial patch contributed by Vajrasky Kok.
+
+..
+
+.. bpo: 20138
+.. date: 9224
+.. nonce: A4c9qc
+.. section: Library
+
+The wsgiref.application_uri() and wsgiref.request_uri() functions now
+conform to PEP 3333 when handle non-ASCII URLs.
+
+..
+
+.. bpo: 19097
+.. date: 9223
+.. nonce: 5aGg0o
+.. section: Library
+
+Raise the correct Exception when cgi.FieldStorage is given an invalid
+fileobj.
+
+..
+
+.. bpo: 20152
+.. date: 9222
+.. nonce: eqfltY
+.. section: Library
+
+Ported Python/import.c over to Argument Clinic.
+
+..
+
+.. bpo: 13107
+.. date: 9221
+.. nonce: YgEEME
+.. section: Library
+
+argparse and optparse no longer raises an exception when output a help on
+environment with too small COLUMNS.  Based on patch by Elazar Gershuni.
+
+..
+
+.. bpo: 20207
+.. date: 9220
+.. nonce: ziIyF1
+.. section: Library
+
+Always disable SSLv2 except when PROTOCOL_SSLv2 is explicitly asked for.
+
+..
+
+.. bpo: 18960
+.. date: 9219
+.. nonce: _8qsXn
+.. section: Library
+
+The tokenize module now ignore the source encoding declaration on the second
+line if the first line contains anything except a comment.
+
+..
+
+.. bpo: 20078
+.. date: 9218
+.. nonce: 4FYvd_
+.. section: Library
+
+Reading malformed zipfiles no longer hangs with 100% CPU consumption.
+
+..
+
+.. bpo: 20113
+.. date: 9217
+.. nonce: T6DWMh
+.. section: Library
+
+os.readv() and os.writev() now raise an OSError exception on error instead
+of returning -1.
+
+..
+
+.. bpo: 19719
+.. date: 9216
+.. nonce: 1yF3Hm
+.. section: Library
+
+Make importlib.abc.MetaPathFinder.find_module(),
+PathEntryFinder.find_loader(), and Loader.load_module() use PEP 451 APIs to
+help with backwards-compatibility.
+
+..
+
+.. bpo: 20144
+.. date: 9215
+.. nonce: UDSyaK
+.. section: Library
+
+inspect.Signature now supports parsing simple symbolic constants as
+parameter default values in __text_signature__.
+
+..
+
+.. bpo: 20072
+.. date: 9214
+.. nonce: FzVG15
+.. section: Library
+
+Fixed multiple errors in tkinter with wantobjects is False.
+
+..
+
+.. bpo: 20229
+.. date: 9213
+.. nonce: WCDCjt
+.. section: Library
+
+Avoid plistlib deprecation warning in platform.mac_ver().
+
+..
+
+.. bpo: 14455
+.. date: 9212
+.. nonce: CDaul1
+.. section: Library
+
+Fix some problems with the new binary plist support in plistlib.
+
+..
+
+.. bpo: 17390
+.. date: 9211
+.. nonce: 9m6ZhV
+.. section: IDLE
+
+Add Python version to Idle editor window title bar. Original patches by
+Edmond Burnett and Kent Johnson.
+
+..
+
+.. bpo: 18960
+.. date: 9210
+.. nonce: d87SuA
+.. section: IDLE
+
+IDLE now ignores the source encoding declaration on the second line if the
+first line contains anything except a comment.
+
+..
+
+.. bpo: 20358
+.. date: 9209
+.. nonce: e2PP3S
+.. section: Tests
+
+Tests for curses.window.overlay and curses.window.overwrite no longer
+specify min{row,col} > max{row,col}.
+
+..
+
+.. bpo: 19804
+.. date: 9208
+.. nonce: xIHIl7
+.. section: Tests
+
+The test_find_mac test in test_uuid is now skipped if the ifconfig
+executable is not available.
+
+..
+
+.. bpo: 19886
+.. date: 9207
+.. nonce: nqDFRC
+.. section: Tests
+
+Use better estimated memory requirements for bigmem tests.
+
+..
+
+.. bpo: 20390
+.. date: 9206
+.. nonce: QXEDu6
+.. section: Tools/Demos
+
+Argument Clinic's "file" output preset now defaults to
+"{dirname}/clinic/{basename}.h".
+
+..
+
+.. bpo: 20390
+.. date: 9205
+.. nonce: 7f_5Hn
+.. section: Tools/Demos
+
+Argument Clinic's "class" directive syntax has been extended with two new
+required arguments: "typedef" and "type_object".
+
+..
+
+.. bpo: 20390
+.. date: 9204
+.. nonce: mDzhDq
+.. section: Tools/Demos
+
+Argument Clinic: If __new__ or __init__ functions didn't use kwargs (or
+args), the PyArg_NoKeywords (or PyArg_NoPositional) calls generated are only
+run when the type object is an exact match.
+
+..
+
+.. bpo: 20390
+.. date: 9203
+.. nonce: Feo6X8
+.. section: Tools/Demos
+
+Argument Clinic now fails if you have required parameters after optional
+parameters.
+
+..
+
+.. bpo: 20390
+.. date: 9202
+.. nonce: DrPQn0
+.. section: Tools/Demos
+
+Argument Clinic converters now have a new template they can inject code
+into: "modifiers".  Code put there is run in the parsing function after
+argument parsing but before the call to the impl.
+
+..
+
+.. bpo: 20376
+.. date: 9201
+.. nonce: Xq3E4A
+.. section: Tools/Demos
+
+Argument Clinic now escapes backslashes in docstrings.
+
+..
+
+.. bpo: 20381
+.. date: 9200
+.. nonce: _wqg4-
+.. section: Tools/Demos
+
+Argument Clinic now sanity checks the default argument when c_default is
+also specified, providing a nice failure message for disallowed values.
+
+..
+
+.. bpo: 20189
+.. date: 9199
+.. nonce: zdiKDh
+.. section: Tools/Demos
+
+Argument Clinic now ensures that parser functions for __new__ are always of
+type newfunc, the type of the tp_new slot. Similarly, parser functions for
+__init__ are now always of type initproc, the type of tp_init.
+
+..
+
+.. bpo: 20189
+.. date: 9198
+.. nonce: a1Tfvj
+.. section: Tools/Demos
+
+Argument Clinic now suppresses the docstring for __new__ and __init__
+functions if no docstring is provided in the input.
+
+..
+
+.. bpo: 20189
+.. date: 9197
+.. nonce: uWF8XZ
+.. section: Tools/Demos
+
+Argument Clinic now suppresses the "self" parameter in the impl for
+@staticmethod functions.
+
+..
+
+.. bpo: 20294
+.. date: 9196
+.. nonce: XeuO9b
+.. section: Tools/Demos
+
+Argument Clinic now supports argument parsing for __new__ and __init__
+functions.
+
+..
+
+.. bpo: 20299
+.. date: 9195
+.. nonce: yLslQI
+.. section: Tools/Demos
+
+Argument Clinic custom converters may now change the default value of
+c_default and py_default with a class member.
+
+..
+
+.. bpo: 20287
+.. date: 9194
+.. nonce: ACjrv7
+.. section: Tools/Demos
+
+Argument Clinic's output is now configurable, allowing delaying its output
+or even redirecting it to a separate file.
+
+..
+
+.. bpo: 20226
+.. date: 9193
+.. nonce: GKAbRe
+.. section: Tools/Demos
+
+Argument Clinic now permits simple expressions (e.g. "sys.maxsize - 1") as
+default values for parameters.
+
+..
+
+.. bpo: 19936
+.. date: 9192
+.. nonce: BLtXkq
+.. section: Tools/Demos
+
+Added executable bits or shebang lines to Python scripts which requires
+them.  Disable executable bits and shebang lines in test and benchmark files
+in order to prevent using a random system python, and in source files of
+modules which don't provide command line interface.  Fixed shebang lines in
+the unittestgui and checkpip scripts.
+
+..
+
+.. bpo: 20268
+.. date: 9191
+.. nonce: _-GWRe
+.. section: Tools/Demos
+
+Argument Clinic now supports cloning the parameters and return converter of
+existing functions.
+
+..
+
+.. bpo: 20228
+.. date: 9190
+.. nonce: pQeW8t
+.. section: Tools/Demos
+
+Argument Clinic now has special support for class special methods.
+
+..
+
+.. bpo: 20214
+.. date: 9189
+.. nonce: OoBv_8
+.. section: Tools/Demos
+
+Fixed a number of small issues and documentation errors in Argument Clinic
+(see issue for details).
+
+..
+
+.. bpo: 20196
+.. date: 9188
+.. nonce: BhK2gF
+.. section: Tools/Demos
+
+Fixed a bug where Argument Clinic did not generate correct parsing code for
+functions with positional-only parameters where all arguments are optional.
+
+..
+
+.. bpo: 18960
+.. date: 9187
+.. nonce: vONLqA
+.. section: Tools/Demos
+
+2to3 and the findnocoding.py script now ignore the source encoding
+declaration on the second line if the first line contains anything except a
+comment.
+
+..
+
+.. bpo: 19723
+.. date: 9186
+.. nonce: LApk5w
+.. section: Tools/Demos
+
+The marker comments Argument Clinic uses have been changed to improve
+readability.
+
+..
+
+.. bpo: 20157
+.. date: 9185
+.. nonce: SvrlOc
+.. section: Tools/Demos
+
+When Argument Clinic renames a parameter because its name collides with a C
+keyword, it no longer exposes that rename to PyArg_Parse.
+
+..
+
+.. bpo: 20141
+.. date: 9184
+.. nonce: uYixKR
+.. section: Tools/Demos
+
+Improved Argument Clinic's support for the PyArg_Parse "O!" format unit.
+
+..
+
+.. bpo: 20144
+.. date: 9183
+.. nonce: jUfrSz
+.. section: Tools/Demos
+
+Argument Clinic now supports simple symbolic constants as parameter default
+values.
+
+..
+
+.. bpo: 20143
+.. date: 9182
+.. nonce: XvGuQk
+.. section: Tools/Demos
+
+The line numbers reported in Argument Clinic errors are now more accurate.
+
+..
+
+.. bpo: 20142
+.. date: 9181
+.. nonce: FdECT9
+.. section: Tools/Demos
+
+Py_buffer variables generated by Argument Clinic are now initialized with a
+default value.
+
+..
+
+.. bpo: 12837
+.. date: 9180
+.. nonce: nsgduf
+.. section: Build
+
+Silence a tautological comparison warning on OS X under Clang in
+socketmodule.c.

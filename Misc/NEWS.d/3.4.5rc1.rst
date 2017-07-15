@@ -1,0 +1,101 @@
+.. bpo: 26478
+.. date: 9981
+.. nonce: n0dB8e
+.. release date: 2016-06-11
+.. section: Core and Builtins
+
+Fix semantic bugs when using binary operators with dictionary views and
+tuples.
+
+..
+
+.. bpo: 26171
+.. date: 9980
+.. nonce: 8SaQEa
+.. section: Core and Builtins
+
+Fix possible integer overflow and heap corruption in zipimporter.get_data().
+
+..
+
+.. bpo: 26556
+.. date: 9979
+.. nonce: v5j2uL
+.. section: Library
+
+Update expat to 2.1.1, fixes CVE-2015-1283.
+
+..
+
+.. bpo: 0
+.. date: 9978
+.. nonce: qP8WT-
+.. section: Library
+
+Fix TLS stripping vulnerability in smptlib, CVE-2016-0772.  Reported by Team
+Oststrom
+
+..
+
+.. bpo: 25939
+.. date: 9977
+.. nonce: I-qK2E
+.. section: Library
+
+On Windows open the cert store readonly in ssl.enum_certificates.
+
+..
+
+.. bpo: 26012
+.. date: 9976
+.. nonce: KC-JIr
+.. section: Library
+
+Don't traverse into symlinks for ** pattern in pathlib.Path.[r]glob().
+
+..
+
+.. bpo: 24120
+.. date: 9975
+.. nonce: Yiwa0h
+.. section: Library
+
+Ignore PermissionError when traversing a tree with pathlib.Path.[r]glob().
+Patch by Ulrich Petri.
+
+..
+
+.. bpo: 0
+.. date: 9974
+.. nonce: rtZyid
+.. section: Library
+
+Skip getaddrinfo if host is already resolved. Patch by A. Jesse Jiryu Davis.
+
+..
+
+.. bpo: 0
+.. date: 9973
+.. nonce: R3C9Tn
+.. section: Library
+
+Add asyncio.timeout() context manager.
+
+..
+
+.. bpo: 26050
+.. date: 9972
+.. nonce: sclyvk
+.. section: Library
+
+Add asyncio.StreamReader.readuntil() method. Patch by Марк Коренберг.
+
+..
+
+.. bpo: 25940
+.. date: 9971
+.. nonce: PgiLVN
+.. section: Tests
+
+Changed test_ssl to use self-signed.pythontest.net.  This avoids relying on
+svn.python.org, which recently changed root certificate.

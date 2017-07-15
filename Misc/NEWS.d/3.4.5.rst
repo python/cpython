@@ -1,0 +1,7 @@
+.. bpo: 26867
+.. date: 9982
+.. nonce: QPSyP5
+.. release date: 2016-06-26
+.. section: Tests
+
+Ubuntu's openssl OP_NO_SSLv3 is forced on by default; fix test.

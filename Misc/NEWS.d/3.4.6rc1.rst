@@ -1,0 +1,114 @@
+.. bpo: 28648
+.. date: 9994
+.. nonce: z7B52W
+.. release date: 2017-01-02
+.. section: Core and Builtins
+
+Fixed crash in Py_DecodeLocale() in debug build on Mac OS X when decode
+astral characters.  Patch by Xiang Zhang.
+
+..
+
+.. bpo: 28426
+.. date: 9993
+.. nonce: E_quyK
+.. section: Core and Builtins
+
+Fixed potential crash in PyUnicode_AsDecodedObject() in debug build.
+
+..
+
+.. bpo: 28563
+.. date: 9992
+.. nonce: iweEiw
+.. section: Library
+
+Fixed possible DoS and arbitrary code execution when handle plural form
+selections in the gettext module.  The expression parser now supports exact
+syntax supported by GNU gettext.
+
+..
+
+.. bpo: 0
+.. date: 9991
+.. nonce: Ny9oPv
+.. section: Library
+
+In the curses module, raise an error if window.getstr() or window.instr() is
+passed a negative value.
+
+..
+
+.. bpo: 27783
+.. date: 9990
+.. nonce: 6fCCY9
+.. section: Library
+
+Fix possible usage of uninitialized memory in operator.methodcaller.
+
+..
+
+.. bpo: 27774
+.. date: 9989
+.. nonce: FDcik1
+.. section: Library
+
+Fix possible Py_DECREF on unowned object in _sre.
+
+..
+
+.. bpo: 27760
+.. date: 9988
+.. nonce: gxMjp4
+.. section: Library
+
+Fix possible integer overflow in binascii.b2a_qp.
+
+..
+
+.. bpo: 27758
+.. date: 9987
+.. nonce: x9DC4R
+.. section: Library
+
+Fix possible integer overflow in the _csv module for large record lengths.
+
+..
+
+.. bpo: 27568
+.. date: 9986
+.. nonce: OnuO9s
+.. section: Library
+
+Prevent HTTPoxy attack (CVE-2016-1000110). Ignore the HTTP_PROXY variable
+when REQUEST_METHOD environment is set, which indicates that the script is
+in CGI mode.
+
+..
+
+.. bpo: 27759
+.. date: 9985
+.. nonce: qpMDGq
+.. section: Library
+
+Fix selectors incorrectly retain invalid file descriptors. Patch by Mark
+Williams.
+
+..
+
+.. bpo: 28248
+.. date: 9984
+.. nonce: RYLa4f
+.. section: Build
+
+Update Windows build to use OpenSSL 1.0.2j.
+
+..
+
+.. bpo: 27369
+.. date: 9983
+.. nonce: LG7U2D
+.. section: Tests
+
+In test_pyexpat, avoid testing an error message detail that changed in Expat
+2.2.0.

@@ -1,0 +1,27 @@
+.. bpo: 16046
+.. date: 7992
+.. nonce: 3_BLo_
+.. release date: 29-Sep-2012
+.. section: Core and Builtins
+
+Fix loading sourceless legacy .pyo files.
+
+..
+
+.. bpo: 16060
+.. date: 7991
+.. nonce: u00uiP
+.. section: Core and Builtins
+
+Fix refcounting bug when `__trunc__()` returns an object whose `__int__()`
+gives a non-integer.  Patch by Serhiy Storchaka.
+
+..
+
+.. bpo: 16012
+.. date: 7990
+.. nonce: A0Dlk_
+.. section: Library
+
+Fix a regression in pyexpat. The parser's `UseForeignDTD()` method doesn't
+require an argument again.

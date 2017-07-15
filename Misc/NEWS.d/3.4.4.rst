@@ -1,0 +1,7 @@
+.. bpo: 25844
+.. date: 9970
+.. nonce: 6W5geO
+.. release date: 2015/12/20
+.. section: Windows
+
+Corrected =/== typo potentially leading to crash in launcher.
