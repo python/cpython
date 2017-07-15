@@ -212,8 +212,8 @@ class IdleConfTest(unittest.TestCase):
 
         return conf
 
-    def test_get_user_cfg_dir(self):
-        "Test to get user config directory"
+    def test_get_user_cfg_dir_unix(self):
+        "Test to get user config directory under unix"
         conf = self.new_config(_utest=True)
 
         # Check normal way should success
@@ -227,6 +227,28 @@ class IdleConfTest(unittest.TestCase):
                 with mock.patch('os.mkdir'):
                     self.assertEqual(conf.GetUserCfgDir(),
                                      '/home/foo/cpython/.idlerc')
+
+        # Check user dir not exists and created failed should raise SystemExit
+        with mock.patch('os.path.join', return_value='/path/not/exists'):
+            with self.assertRaises(SystemExit):
+                with self.assertRaises(FileNotFoundError):
+                    conf.GetUserCfgDir()
+
+    def test_get_user_cfg_dir_windows(self):
+        "Test to get user config directory under windows"
+        conf = self.new_config(_utest=True)
+
+        # Check normal way should success
+        with mock.patch('os.path.expanduser', return_value='C:\\foo'):
+            with mock.patch('os.path.exists', return_value=True):
+                self.assertEqual(conf.GetUserCfgDir(), 'C:\\foo\\.idlerc')
+
+        # Check os.getcwd should success
+        with mock.patch('os.path.expanduser', return_value='~'):
+            with mock.patch('os.getcwd', return_value='C:\\foo\\cpython'):
+                with mock.patch('os.mkdir'):
+                    self.assertEqual(conf.GetUserCfgDir(),
+                                     'C:\\foo\\cpython\\.idlerc')
 
         # Check user dir not exists and created failed should raise SystemExit
         with mock.patch('os.path.join', return_value='/path/not/exists'):
