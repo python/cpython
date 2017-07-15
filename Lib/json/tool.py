@@ -22,27 +22,24 @@ def main():
                    'to validate and pretty-print JSON objects.')
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument('infile', nargs='?', type=argparse.FileType(),
+                        default=sys.stdin,
                         help='a JSON file to be validated or pretty-printed')
     parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
+                        default=sys.stdout,
                         help='write the output of infile to outfile')
-    parser.add_argument('--sort-keys', action='store_true', default=False,
-                        help='sort the output of dictionaries alphabetically by key')
+    parser.add_argument('--sort-keys', action='store_true',
+                        help='sort the output of dictionaries by key')
     options = parser.parse_args()
 
-    infile = options.infile or sys.stdin
-    outfile = options.outfile or sys.stdout
-    sort_keys = options.sort_keys
-    with infile:
+    hook = collections.OrderedDict if options.sort_keys else None
+    with options.infile as infile:
         try:
-            if sort_keys:
-                obj = json.load(infile)
-            else:
-                obj = json.load(infile,
-                                object_pairs_hook=collections.OrderedDict)
+            obj = json.load(infile, object_pairs_hook=hook)
         except ValueError as e:
             raise SystemExit(e)
-    with outfile:
-        json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
+
+    with options.outfile as outfile:
+        json.dump(obj, outfile, sort_keys=options.sort_keys, indent=4)
         outfile.write('\n')
 
 
