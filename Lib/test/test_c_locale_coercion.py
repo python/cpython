@@ -18,9 +18,9 @@ from test.support.script_helper import (
 # Set our expectation for the default encoding used in the C locale
 # for the filesystem encoding and the standard streams
 
-# AIX uses latin-1 in the C locale, other *nix platforms use ASCII
+# AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
 if sys.platform.startswith("aix"):
-    C_LOCALE_STREAM_ENCODING = "latin-1"
+    C_LOCALE_STREAM_ENCODING = "iso8859-1"
 else:
     C_LOCALE_STREAM_ENCODING = "ascii"
 
