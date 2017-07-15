@@ -538,11 +538,15 @@ class IdleConfTest(unittest.TestCase):
         requires('gui')
         root = Tk()
         root.withdraw()
-        f = Font.actual(Font(name='TkFixedFont', exists=True, root=root))
 
+        f = Font.actual(Font(name='TkFixedFont', exists=True, root=root))
         self.assertEqual(
             conf.GetFont(root, 'main', 'EditorWindow'),
             (f['family'], 10 if f['size'] < 10 else f['size'], f['weight']))
+
+        # Cleanup root
+        root.destroy()
+        del root
 
     def test_get_core_keys(self):
         conf = self.mock_config()
