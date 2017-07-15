@@ -13,9 +13,9 @@ ISSUE_URI = 'https://bugs.python.org/issue%s'
 SOURCE_URI = 'https://github.com/python/cpython/tree/2.7/%s'
 
 from docutils import nodes, utils
+from docutils.parsers.rst import Directive
 
 from sphinx.util.nodes import split_explicit_title
-from sphinx.util.compat import Directive
 from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.latex import LaTeXTranslator
 
