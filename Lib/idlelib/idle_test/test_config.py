@@ -5,6 +5,7 @@ Coverage: 46% (100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
 Much of IdleConf is exercised by ConfigDialog and test_configdialog,
 but it should be tested here.
 '''
+import sys
 import os
 import tempfile
 from test.support import captured_stderr, findfile
@@ -431,16 +432,18 @@ class IdleConfTest(unittest.TestCase):
            {'<<force-open-completions>>': ['<Control-Key-space>']})
         eq(conf.GetExtensionKeys('ParenMatch'),
            {'<<flash-paren>>': ['<Control-Key-0>']})
-        eq(conf.GetExtensionKeys('ZoomHeight'),
-           {'<<zoom-height>>': ['<Alt-Key-2>']})
+
+        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
+        eq(conf.GetExtensionKeys('ZoomHeight'), {'<<zoom-height>>': key})
 
     def test_get_extension_bindings(self):
         conf = self.mock_config()
 
         self.assertEqual(conf.GetExtensionBindings('NotExists'), {})
+
+        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
         self.assertEqual(
-            conf.GetExtensionBindings('ZoomHeight'),
-            {'<<zoom-height>>': ['<Alt-Key-2>']})
+            conf.GetExtensionBindings('ZoomHeight'), {'<<zoom-height>>': key})
 
         # Add non-configuarable bindings
         conf.defaultCfg['extensions'].add_section('Foobar')
