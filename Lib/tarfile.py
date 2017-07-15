@@ -402,6 +402,10 @@ class _Stream:
                 else:
                     self.cmp = lzma.LZMACompressor()
 
+            elif comptype == "custom":
+                raise ValueError("Custom compressors not supported in the "
+                        "streaming interface")
+
             elif comptype != "tar":
                 raise CompressionError("unknown compression type %r" % comptype)
 
@@ -1519,7 +1523,8 @@ class TarFile(object):
     # by adding it to the mapping in OPEN_METH.
 
     @classmethod
-    def open(cls, name=None, mode="r", fileobj=None, bufsize=RECORDSIZE, **kwargs):
+    def open(cls, name=None, mode="r", fileobj=None, bufsize=RECORDSIZE,
+            compressor=None, **kwargs):
         """Open a tar archive for reading, writing or appending. Return
            an appropriate TarFile class.
 
@@ -1529,11 +1534,15 @@ class TarFile(object):
            'r:gz'       open for reading with gzip compression
            'r:bz2'      open for reading with bzip2 compression
            'r:xz'       open for reading with lzma compression
+           'r:custom'   open for reading with custom compression, using the
+                        class specified by `compressor`
            'a' or 'a:'  open for appending, creating the file if necessary
            'w' or 'w:'  open for writing without compression
            'w:gz'       open for writing with gzip compression
            'w:bz2'      open for writing with bzip2 compression
            'w:xz'       open for writing with lzma compression
+           'w:custom'   open for writing with custom compression, using the
+                        class specified by `compressor`
 
            'x' or 'x:'  create a tarfile exclusively without compression, raise
                         an exception if the file is already created
@@ -1542,6 +1551,9 @@ class TarFile(object):
            'x:bz2'      create a bzip2 compressed tarfile, raise an exception
                         if the file is already created
            'x:xz'       create an lzma compressed tarfile, raise an exception
+                        if the file is already created
+           'x:custom'   create an custom-compressed tarfile using the class
+                        specified by `compressor`, raise an exception
                         if the file is already created
 
            'r|*'        open a stream of tar blocks with transparent compression
@@ -1581,7 +1593,12 @@ class TarFile(object):
 
             # Select the *open() function according to
             # given compression.
-            if comptype in cls.OPEN_METH:
+            if comptype == 'custom':
+                if compressor is None:
+                    raise ValueError(
+                        "Requested custom compressor but none specified")
+                func = compressor
+            elif comptype in cls.OPEN_METH:
                 func = getattr(cls, cls.OPEN_METH[comptype])
             else:
                 raise CompressionError("unknown compression type %r" % comptype)

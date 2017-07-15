@@ -48,6 +48,7 @@ class TarTest:
     suffix = ''
     open = io.FileIO
     taropen = tarfile.TarFile.taropen
+    compressor = None
 
     @property
     def mode(self):
@@ -59,6 +60,44 @@ class GzipTest:
     suffix = 'gz'
     open = gzip.GzipFile if gzip else None
     taropen = tarfile.TarFile.gzopen
+    compressor = None
+
+class CustomCompressor:
+
+    @classmethod
+    def gzip_compressor(cls, name, mode='r', fileobj=None, compresslevel=9, **kwargs):
+        # same as TarFile.gzopen
+        if mode not in ("r", "w", "x"):
+            raise ValueError("mode must be 'r', 'w' or 'x'")
+
+        try:
+            fileobj = gzip.GzipFile(name, mode + 'b', compresslevel, fileobj)
+        except OSError:
+            if fileobj is not None and mode == 'r':
+                raise tarfile.ReadError("not a gzip file")
+            raise
+
+        try:
+            t = tarfile.TarFile.taropen(name, mode, fileobj, **kwargs)
+        except OSError:
+            fileobj.close()
+            if fileobj is not None and mode == 'r':
+                raise tarfile.ReadError("not a gzip file")
+            raise
+        except:
+            fileobj.close()
+            raise
+
+        t._extfileobj = False
+        return t
+
+@support.requires_gzip
+class CustomGzipTest:
+    tarname = gzipname
+    suffix = 'custom'
+    open = gzip.GzipFile if gzip else None
+    taropen = tarfile.TarFile.gzopen
+    compressor = CustomCompressor.gzip_compressor
 
 @support.requires_bz2
 class Bz2Test:
@@ -66,6 +105,7 @@ class Bz2Test:
     suffix = 'bz2'
     open = bz2.BZ2File if bz2 else None
     taropen = tarfile.TarFile.bz2open
+    compressor = None
 
 @support.requires_lzma
 class LzmaTest:
@@ -73,6 +113,7 @@ class LzmaTest:
     suffix = 'xz'
     open = lzma.LZMAFile if lzma else None
     taropen = tarfile.TarFile.xzopen
+    compressor = None
 
 
 class ReadTest(TarTest):
@@ -81,7 +122,8 @@ class ReadTest(TarTest):
 
     def setUp(self):
         self.tar = tarfile.open(self.tarname, mode=self.mode,
-                                encoding="iso8859-1")
+                                encoding="iso8859-1",
+                                compressor=self.compressor)
 
     def tearDown(self):
         self.tar.close()
@@ -216,6 +258,9 @@ class UstarReadTest(ReadTest, unittest.TestCase):
 class GzipUstarReadTest(GzipTest, UstarReadTest):
     pass
 
+class CustomGzipUstarReadTest(CustomGzipTest, UstarReadTest):
+    pass
+
 class Bz2UstarReadTest(Bz2Test, UstarReadTest):
     pass
 
@@ -227,7 +272,8 @@ class ListTest(ReadTest, unittest.TestCase):
 
     # Override setUp to use default encoding (UTF-8)
     def setUp(self):
-        self.tar = tarfile.open(self.tarname, mode=self.mode)
+        self.tar = tarfile.open(self.tarname, mode=self.mode,
+                compressor=self.compressor)
 
     def test_list(self):
         tio = io.TextIOWrapper(io.BytesIO(), 'ascii', newline='\n')
@@ -307,6 +353,10 @@ class GzipListTest(GzipTest, ListTest):
     pass
 
 
+class CustomGzipListTest(CustomGzipTest, ListTest):
+    pass
+
+
 class Bz2ListTest(Bz2Test, ListTest):
     pass
 
@@ -322,10 +372,11 @@ class CommonReadTest(ReadTest):
         # This test checks if tarfile.open() is able to open an empty tar
         # archive successfully. Note that an empty tar archive is not the
         # same as an empty file!
-        with tarfile.open(tmpname, self.mode.replace("r", "w")):
+        with tarfile.open(tmpname, self.mode.replace("r", "w"),
+                compressor=self.compressor):
             pass
         try:
-            tar = tarfile.open(tmpname, self.mode)
+            tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
             tar.getnames()
         except tarfile.ReadError:
             self.fail("tarfile.open() failed on empty archive")
@@ -338,7 +389,7 @@ class CommonReadTest(ReadTest):
         # Test for issue11513: prevent non-existent gzipped tarfiles raising
         # multiple exceptions.
         with self.assertRaisesRegex(FileNotFoundError, "xxx"):
-            tarfile.open("xxx", self.mode)
+            tarfile.open("xxx", self.mode, compressor=self.compressor)
 
     def test_null_tarfile(self):
         # Test for issue6123: Allow opening empty archives.
@@ -346,8 +397,10 @@ class CommonReadTest(ReadTest):
         # file as an empty tar archive.
         with open(tmpname, "wb"):
             pass
-        self.assertRaises(tarfile.ReadError, tarfile.open, tmpname, self.mode)
-        self.assertRaises(tarfile.ReadError, tarfile.open, tmpname)
+        self.assertRaises(tarfile.ReadError, tarfile.open, tmpname, self.mode,
+                compressor=self.compressor)
+        self.assertRaises(tarfile.ReadError, tarfile.open, tmpname,
+                compressor=self.compressor)
 
     def test_ignore_zeros(self):
         # Test TarFile's ignore_zeros option.
@@ -403,7 +456,8 @@ class MiscReadTestBase(CommonReadTest):
         self.requires_name_attribute()
         with open(self.tarname, "rb") as fobj:
             self.assertIsInstance(fobj.name, str)
-            with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+            with tarfile.open(fileobj=fobj, mode=self.mode,
+                    compressor=self.compressor) as tar:
                 self.assertIsInstance(tar.name, str)
                 self.assertEqual(tar.name, os.path.abspath(fobj.name))
 
@@ -412,7 +466,8 @@ class MiscReadTestBase(CommonReadTest):
             data = fobj.read()
         fobj = io.BytesIO(data)
         self.assertRaises(AttributeError, getattr, fobj, "name")
-        tar = tarfile.open(fileobj=fobj, mode=self.mode)
+        tar = tarfile.open(fileobj=fobj, mode=self.mode,
+                compressor=self.compressor)
         self.assertIsNone(tar.name)
 
     def test_empty_name_attribute(self):
@@ -420,7 +475,8 @@ class MiscReadTestBase(CommonReadTest):
             data = fobj.read()
         fobj = io.BytesIO(data)
         fobj.name = ""
-        with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+        with tarfile.open(fileobj=fobj, mode=self.mode,
+                compressor=self.compressor) as tar:
             self.assertIsNone(tar.name)
 
     def test_int_name_attribute(self):
@@ -429,7 +485,8 @@ class MiscReadTestBase(CommonReadTest):
         fd = os.open(self.tarname, os.O_RDONLY)
         with open(fd, 'rb') as fobj:
             self.assertIsInstance(fobj.name, int)
-            with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+            with tarfile.open(fileobj=fobj, mode=self.mode,
+                    compressor=self.compressor) as tar:
                 self.assertIsNone(tar.name)
 
     def test_bytes_name_attribute(self):
@@ -437,19 +494,22 @@ class MiscReadTestBase(CommonReadTest):
         tarname = os.fsencode(self.tarname)
         with open(tarname, 'rb') as fobj:
             self.assertIsInstance(fobj.name, bytes)
-            with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+            with tarfile.open(fileobj=fobj, mode=self.mode,
+                    compressor=self.compressor) as tar:
                 self.assertIsInstance(tar.name, bytes)
                 self.assertEqual(tar.name, os.path.abspath(fobj.name))
 
     def test_pathlike_name(self):
         tarname = pathlib.Path(self.tarname)
-        with tarfile.open(tarname, mode=self.mode) as tar:
+        with tarfile.open(tarname, mode=self.mode, compressor=self.compressor
+                ) as tar:
             self.assertIsInstance(tar.name, str)
             self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
         with self.taropen(tarname) as tar:
             self.assertIsInstance(tar.name, str)
             self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
-        with tarfile.TarFile.open(tarname, mode=self.mode) as tar:
+        with tarfile.TarFile.open(tarname, mode=self.mode,
+                compressor=self.compressor) as tar:
             self.assertIsInstance(tar.name, str)
             self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
         if self.suffix == '':
@@ -470,7 +530,8 @@ class MiscReadTestBase(CommonReadTest):
     def test_fileobj_with_offset(self):
         # Skip the first member and store values from the second member
         # of the testtar.
-        tar = tarfile.open(self.tarname, mode=self.mode)
+        tar = tarfile.open(self.tarname, mode=self.mode,
+                compressor=self.compressor)
         try:
             tar.next()
             t = tar.next()
@@ -498,10 +559,12 @@ class MiscReadTestBase(CommonReadTest):
 
     def test_fail_comp(self):
         # For Gzip and Bz2 Tests: fail with a ReadError on an uncompressed file.
-        self.assertRaises(tarfile.ReadError, tarfile.open, tarname, self.mode)
+        self.assertRaises(tarfile.ReadError, tarfile.open, tarname, self.mode,
+                compressor=self.compressor)
         with open(tarname, "rb") as fobj:
             self.assertRaises(tarfile.ReadError, tarfile.open,
-                              fileobj=fobj, mode=self.mode)
+                              fileobj=fobj, mode=self.mode,
+                              compressor=self.compressor)
 
     def test_v7_dirtype(self):
         # Test old style dirtype member (bug #1336623):
@@ -652,6 +715,9 @@ class MiscReadTest(MiscReadTestBase, unittest.TestCase):
 class GzipMiscReadTest(GzipTest, MiscReadTestBase, unittest.TestCase):
     pass
 
+class CustomGzipMiscReadTest(CustomGzipTest, MiscReadTestBase, unittest.TestCase):
+    pass
+
 class Bz2MiscReadTest(Bz2Test, MiscReadTestBase, unittest.TestCase):
     def requires_name_attribute(self):
         self.skipTest("BZ2File have no name attribute")
@@ -735,7 +801,7 @@ class LzmaStreamReadTest(LzmaTest, StreamReadTest):
 class DetectReadTest(TarTest, unittest.TestCase):
     def _testfunc_file(self, name, mode):
         try:
-            tar = tarfile.open(name, mode)
+            tar = tarfile.open(name, mode, compressor=self.compressor)
         except tarfile.ReadError as e:
             self.fail()
         else:
@@ -744,7 +810,8 @@ class DetectReadTest(TarTest, unittest.TestCase):
     def _testfunc_fileobj(self, name, mode):
         try:
             with open(name, "rb") as f:
-                tar = tarfile.open(name, mode, fileobj=f)
+                tar = tarfile.open(name, mode, fileobj=f,
+                        compressor=self.compressor)
         except tarfile.ReadError as e:
             self.fail()
         else:
@@ -753,18 +820,25 @@ class DetectReadTest(TarTest, unittest.TestCase):
     def _test_modes(self, testfunc):
         if self.suffix:
             with self.assertRaises(tarfile.ReadError):
-                tarfile.open(tarname, mode="r:" + self.suffix)
+                tarfile.open(tarname, mode="r:" + self.suffix,
+                        compressor=self.compressor)
+            # streaming not supported with custom compressors
+            if self.suffix != 'custom':
+                with self.assertRaises(tarfile.ReadError):
+                    tarfile.open(tarname, mode="r|" + self.suffix)
             with self.assertRaises(tarfile.ReadError):
-                tarfile.open(tarname, mode="r|" + self.suffix)
-            with self.assertRaises(tarfile.ReadError):
-                tarfile.open(self.tarname, mode="r:")
-            with self.assertRaises(tarfile.ReadError):
-                tarfile.open(self.tarname, mode="r|")
+                tarfile.open(self.tarname, mode="r:", compressor=self.compressor)
+            # streaming not supported with custom compressors
+            if self.suffix != 'custom':
+                with self.assertRaises(tarfile.ReadError):
+                    tarfile.open(self.tarname, mode="r|")
         testfunc(self.tarname, "r")
         testfunc(self.tarname, "r:" + self.suffix)
         testfunc(self.tarname, "r:*")
-        testfunc(self.tarname, "r|" + self.suffix)
-        testfunc(self.tarname, "r|*")
+        # streaming not supported with custom compressors
+        if self.suffix != 'custom':
+            testfunc(self.tarname, "r|" + self.suffix)
+            testfunc(self.tarname, "r|*")
 
     def test_detect_file(self):
         self._test_modes(self._testfunc_file)
@@ -773,6 +847,9 @@ class DetectReadTest(TarTest, unittest.TestCase):
         self._test_modes(self._testfunc_fileobj)
 
 class GzipDetectReadTest(GzipTest, DetectReadTest):
+    pass
+
+class CustomGzipDetectReadTest(CustomGzipTest, DetectReadTest):
     pass
 
 class Bz2DetectReadTest(Bz2Test, DetectReadTest):
@@ -1037,7 +1114,8 @@ class WriteTestBase(TarTest):
 
     def test_fileobj_no_close(self):
         fobj = io.BytesIO()
-        tar = tarfile.open(fileobj=fobj, mode=self.mode)
+        tar = tarfile.open(fileobj=fobj, mode=self.mode,
+            compressor=self.compressor)
         tar.addfile(tarfile.TarInfo("foo"))
         tar.close()
         self.assertFalse(fobj.closed, "external fileobjs must never closed")
@@ -1053,7 +1131,8 @@ class WriteTestBase(TarTest):
         # tarfile insists on aligning archives to a 20 * 512 byte recordsize.
         # So, we create an archive that has exactly 10240 bytes without the
         # marker, and has 20480 bytes once the marker is written.
-        with tarfile.open(tmpname, self.mode) as tar:
+        with tarfile.open(tmpname, self.mode, compressor=self.compressor
+                ) as tar:
             t = tarfile.TarInfo("foo")
             t.size = tarfile.RECORDSIZE - tarfile.BLOCKSIZE
             tar.addfile(t, io.BytesIO(b"a" * t.size))
@@ -1072,7 +1151,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         # which implies that a string of exactly 100 chars is stored without
         # a trailing '\0'.
         name = "0123456789" * 10
-        tar = tarfile.open(tmpname, self.mode)
+        tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
         try:
             t = tarfile.TarInfo(name)
             tar.addfile(t)
@@ -1088,7 +1167,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
     def test_tar_size(self):
         # Test for bug #1013882.
-        tar = tarfile.open(tmpname, self.mode)
+        tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
         try:
             path = os.path.join(TEMPDIR, "file")
             with open(path, "wb") as fobj:
@@ -1101,7 +1180,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
     # The test_*_size tests test for bug #1167128.
     def test_file_size(self):
-        tar = tarfile.open(tmpname, self.mode)
+        tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
         try:
             path = os.path.join(TEMPDIR, "file")
             with open(path, "wb"):
@@ -1120,7 +1199,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         path = os.path.join(TEMPDIR, "directory")
         os.mkdir(path)
         try:
-            tar = tarfile.open(tmpname, self.mode)
+            tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
             try:
                 tarinfo = tar.gettarinfo(path)
                 self.assertEqual(tarinfo.size, 0)
@@ -1130,7 +1209,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             support.rmdir(path)
 
     def test_gettarinfo_pathlike_name(self):
-        with tarfile.open(tmpname, self.mode) as tar:
+        with tarfile.open(tmpname, self.mode, compressor=self.compressor,
+                ) as tar:
             path = pathlib.Path(TEMPDIR) / "file"
             with open(path, "wb") as fobj:
                 fobj.write(b"aaa")
@@ -1149,7 +1229,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             fobj.write(b"aaa")
         os.link(target, link)
         try:
-            tar = tarfile.open(tmpname, self.mode)
+            tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
             try:
                 # Record the link target in the inodes list.
                 tar.gettarinfo(target)
@@ -1166,7 +1246,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         path = os.path.join(TEMPDIR, "symlink")
         os.symlink("link_target", path)
         try:
-            tar = tarfile.open(tmpname, self.mode)
+            tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
             try:
                 tarinfo = tar.gettarinfo(path)
                 self.assertEqual(tarinfo.size, 0)
@@ -1178,7 +1258,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
     def test_add_self(self):
         # Test for #1257255.
         dstname = os.path.abspath(tmpname)
-        tar = tarfile.open(tmpname, self.mode)
+        tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
         try:
             self.assertEqual(tar.name, dstname,
                     "archive name must be absolute")
@@ -1208,7 +1288,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                 tarinfo.uname = "foo"
                 return tarinfo
 
-            tar = tarfile.open(tmpname, self.mode, encoding="iso8859-1")
+            tar = tarfile.open(tmpname, self.mode, encoding="iso8859-1",
+                               compressor=self.compressor)
             try:
                 tar.add(tempdir, arcname="empty_dir", filter=filter)
             finally:
@@ -1242,7 +1323,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         else:
             os.mkdir(foo)
 
-        tar = tarfile.open(tmpname, self.mode)
+        tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
         try:
             tar.add(foo, arcname=path)
         finally:
@@ -1318,7 +1399,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
     def test_cwd(self):
         # Test adding the current working directory.
         with support.change_cwd(TEMPDIR):
-            tar = tarfile.open(tmpname, self.mode)
+            tar = tarfile.open(tmpname, self.mode, compressor=self.compressor)
             try:
                 tar.add(".")
             finally:
@@ -1345,7 +1426,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             with self.assertRaises(exctype):
                 tar = tarfile.open(tmpname, self.mode, fileobj=f,
                                    format=tarfile.PAX_FORMAT,
-                                   pax_headers={'non': 'empty'})
+                                   pax_headers={'non': 'empty'},
+                                   compressor=self.compressor)
             self.assertFalse(f.closed)
 
 class GzipWriteTest(GzipTest, WriteTest):
@@ -1507,7 +1589,8 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         support.unlink(cls.file_path)
 
     def test_create(self):
-        with tarfile.open(tmpname, self.mode) as tobj:
+        with tarfile.open(tmpname, self.mode,
+                compressor=self.compressor) as tobj:
             tobj.add(self.file_path)
 
         with self.taropen(tmpname) as tobj:
@@ -1516,11 +1599,12 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         self.assertIn('spameggs42', names[0])
 
     def test_create_existing(self):
-        with tarfile.open(tmpname, self.mode) as tobj:
+        with tarfile.open(tmpname, self.mode,
+                compressor=self.compressor) as tobj:
             tobj.add(self.file_path)
 
         with self.assertRaises(FileExistsError):
-            tobj = tarfile.open(tmpname, self.mode)
+            tobj = tarfile.open(tmpname, self.mode, compressor=self.compressor)
 
         with self.taropen(tmpname) as tobj:
             names = tobj.getnames()
@@ -1550,7 +1634,8 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         self.assertIn("spameggs42", names[0])
 
     def test_create_pathlike_name(self):
-        with tarfile.open(pathlib.Path(tmpname), self.mode) as tobj:
+        with tarfile.open(pathlib.Path(tmpname), self.mode,
+                compressor=self.compressor) as tobj:
             self.assertIsInstance(tobj.name, str)
             self.assertEqual(tobj.name, os.path.abspath(tmpname))
             tobj.add(pathlib.Path(self.file_path))
@@ -1579,6 +1664,10 @@ class CreateTest(WriteTestBase, unittest.TestCase):
 
 
 class GzipCreateTest(GzipTest, CreateTest):
+    pass
+
+
+class CustomGzipCreateTest(CustomGzipTest, CreateTest):
     pass
 
 
@@ -1927,18 +2016,23 @@ class AppendTestBase:
         self.tarname = tmpname
         if os.path.exists(self.tarname):
             support.unlink(self.tarname)
+        # used when custom compressor is used
+        self.compressor = CustomCompressor.gzip_compressor
 
     def _create_testtar(self, mode="w:"):
-        with tarfile.open(tarname, encoding="iso8859-1") as src:
+        with tarfile.open(tarname, encoding="iso8859-1",
+                compressor=self.compressor) as src:
             t = src.getmember("ustar/regtype")
             t.name = "foo"
             with src.extractfile(t) as f:
-                with tarfile.open(self.tarname, mode) as tar:
+                with tarfile.open(self.tarname, mode,
+                        compressor=self.compressor) as tar:
                     tar.addfile(t, f)
 
     def test_append_compressed(self):
         self._create_testtar("w:" + self.suffix)
-        self.assertRaises(tarfile.ReadError, tarfile.open, tmpname, "a")
+        self.assertRaises(tarfile.ReadError, tarfile.open, tmpname, "a",
+                compressor=self.compressor)
 
 class AppendTest(AppendTestBase, unittest.TestCase):
     test_append_compressed = None
@@ -2005,6 +2099,9 @@ class AppendTest(AppendTestBase, unittest.TestCase):
         self._test_error(b"a" * 512)
 
 class GzipAppendTest(GzipTest, AppendTestBase, unittest.TestCase):
+    pass
+
+class CustomGzipAppendTest(CustomGzipTest, AppendTestBase, unittest.TestCase):
     pass
 
 class Bz2AppendTest(Bz2Test, AppendTestBase, unittest.TestCase):
@@ -2603,7 +2700,7 @@ def setUpModule():
         data = fobj.read()
 
     # Create compressed tarfiles.
-    for c in GzipTest, Bz2Test, LzmaTest:
+    for c in GzipTest, CustomGzipTest, Bz2Test, LzmaTest:
         if c.open:
             support.unlink(c.tarname)
             testtarnames.append(c.tarname)
