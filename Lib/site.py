@@ -452,7 +452,7 @@ def setcopyright():
     here = os.path.dirname(os.__file__)
     builtins.license = _Printer(
         "license",
-        "See http://www.python.org/download/releases/%.5s/license/" % sys.version,
+        "See https://www.python.org/psf/license/",
         ["LICENSE.txt", "LICENSE"],
         [os.path.join(here, os.pardir), here, os.curdir])
 
