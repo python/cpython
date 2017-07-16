@@ -1191,6 +1191,42 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_p = _complete_expression
     complete_pp = _complete_expression
 
+    def do_who(self, arg):
+        """who expression
+        Print a list of all user-defined variables
+        """
+        try:
+            self.message('\t'.join(set(list(self.curframe_locals.keys()) +
+                                       list(self.curframe.f_globals.keys())) -
+                                   set(self.curframe.f_builtins.keys()) -
+                                   {'__annotations__', '__builtins__',
+                                    '__return__', 'pdb'}))
+        except:
+            pass
+
+    def do_whos(self, arg):
+        """whos expression
+        Print a list of all user-defined variables includeing type and value
+        """
+
+        userdef_vars = set(list(self.curframe_locals.keys()) +
+                           list(self.curframe.f_globals.keys())) - \
+            set(self.curframe.f_builtins.keys()) - \
+            {'__annotations__', '__builtins__', '__return__', 'pdb'}
+
+        try:
+            output = "Variable\tType\tData/Info\n".expandtabs()
+            output += "-" * (len(output) - 1) + "\n"
+            for k, v in list(self.curframe_locals.items()) + \
+                    list(self.curframe.f_builtins.items()):
+                if k not in userdef_vars:
+                    continue
+                output += "{key}\t\t{type}\t{value}\n".format(
+                        key=k, type=type(v).__name__, value=v)
+            self.message(output)
+        except:
+            pass
+
     def do_list(self, arg):
         """l(ist) [first [,last] | .]
 
@@ -1555,8 +1591,8 @@ if __doc__ is not None:
         'help', 'where', 'down', 'up', 'break', 'tbreak', 'clear', 'disable',
         'enable', 'ignore', 'condition', 'commands', 'step', 'next', 'until',
         'jump', 'return', 'retval', 'run', 'continue', 'list', 'longlist',
-        'args', 'p', 'pp', 'whatis', 'source', 'display', 'undisplay',
-        'interact', 'alias', 'unalias', 'debug', 'quit',
+        'args', 'p', 'pp', 'who', 'whos', 'whatis', 'source', 'display',
+        'undisplay', 'interact', 'alias', 'unalias', 'debug', 'quit',
     ]
 
     for _command in _help_order:
