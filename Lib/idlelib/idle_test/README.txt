@@ -163,10 +163,11 @@ python -m idlelib.idle_test.htest
 
 5. Test Coverage
 
-(The following works for Windows.  Adjust for other systems.)
+Install the coverage package into your Python 3.6 site-packages
+directory.  (Its exact location depends on the OS). 
+> python3 -m pip install coverage
+(On Windows, replace 'python3 with 'py -3.6' or perhaps just 'python'.)
 
-Install coverage package into py3.6/Lib/site-packages with
-> py -3.6 -m pip install coverage
 The problem with running coverage with repository python is that
 coverage uses absolute imports for its submodules, hence it needs to be
 in a directory in sys.path.  One solution: copy the package to the
@@ -195,7 +196,7 @@ The additions for IDLE are 'branch = True', to test coverage both ways,
 and the last three exclude lines, to exclude things peculiar to IDLE
 that are not executed during tests.
 
-A script like the following cover.bat is very handy.
+A script like the following cover.bat (for Windows) is very handy.
 ---
 @echo off
 rem Usage: cover filename [test_ suffix] # proper case required by coverage
