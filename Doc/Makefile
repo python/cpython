@@ -38,6 +38,8 @@ help:
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
 build:
+	-mkdir build
+	blurb merge -f build/NEWS
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
@@ -107,7 +109,7 @@ clean:
 
 venv:
 	$(PYTHON) -m venv venv
-	./venv/bin/python3 -m pip install -U Sphinx
+	./venv/bin/python3 -m pip install -U Sphinx blurb
 
 dist:
 	rm -rf dist
