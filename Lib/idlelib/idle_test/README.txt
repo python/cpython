@@ -215,3 +215,16 @@ rem Above opens new report; htmlcov\index.html displays report index
 ---
 The second parameter was added for tests of module x not named test_x.
 (There were several before modules were renamed, now only one is left.)
+
+
+Coverage on Linux and MacOS
+---
+using command line to manipulate like this:
+
+$ cd cpython    # Goto cpython root directory
+$ ./python -m coverage run --source Lib/idlelib Lib/idlelib/idle_test/test_config.py
+$ ./python -m coverage report --show-missing
+$ ./python -m coverage html
+
+You can replace `test_config.py` to the test you want to mesure, and the source
+argument, you can set to specific file like `Lib/idlelib/config.py`.
