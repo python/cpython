@@ -1589,8 +1589,10 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
     items = PyMapping_Items(dct);
     if (items == NULL)
         goto bail;
-    if (s->sort_keys && PyList_Sort(items) < 0)
+    if (s->sort_keys && PyList_Sort(items) < 0) {
+        Py_DECREF(items);
         goto bail;
+    }
     it = PyObject_GetIter(items);
     Py_DECREF(items);
     if (it == NULL)
