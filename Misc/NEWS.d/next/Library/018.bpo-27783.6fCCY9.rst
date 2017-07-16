@@ -1,0 +1,1 @@
+Fix possible usage of uninitialized memory in operator.methodcaller.

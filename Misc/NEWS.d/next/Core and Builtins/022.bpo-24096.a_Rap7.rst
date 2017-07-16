@@ -1,0 +1,2 @@
+Make warnings.warn_explicit more robust against mutation of the
+warnings.filters list.

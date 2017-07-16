@@ -1,0 +1,1 @@
+Fix possible integer overflows in the pickle module.

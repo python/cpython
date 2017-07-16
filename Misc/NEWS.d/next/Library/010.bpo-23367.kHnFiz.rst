@@ -1,0 +1,1 @@
+Fix possible overflows in the unicodedata module.

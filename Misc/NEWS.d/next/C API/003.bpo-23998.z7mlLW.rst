@@ -1,0 +1,1 @@
+PyImport_ReInitLock() now checks for lock allocation error
