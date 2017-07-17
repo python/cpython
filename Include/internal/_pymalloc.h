@@ -102,9 +102,6 @@
 
 /*==========================================================================*/
 
-#undef  uint
-#define uint    unsigned int    /* assuming >= 16 bits */
-
 /*
  * -- Main tunable settings section --
  */
@@ -121,7 +118,7 @@
 #define ALIGNMENT_SHIFT         3
 
 /* Return the number of bytes in size class I, as a uint. */
-#define INDEX2SIZE(I) (((uint)(I) + 1) << ALIGNMENT_SHIFT)
+#define INDEX2SIZE(I) (((unsigned int)(I) + 1) << ALIGNMENT_SHIFT)
 
 /*
  * Max size threshold below which malloc requests are considered to be
@@ -229,14 +226,14 @@ typedef uint8_t pyblock;
 /* Pool for small blocks. */
 struct pool_header {
     union { pyblock *_padding;
-            uint count; } ref;          /* number of allocated blocks    */
+            unsigned int count; } ref;  /* number of allocated blocks    */
     pyblock *freeblock;                 /* pool's free list head         */
     struct pool_header *nextpool;       /* next pool of this size class  */
     struct pool_header *prevpool;       /* previous pool       ""        */
-    uint arenaindex;                    /* index into arenas of base adr */
-    uint szidx;                         /* block size class index        */
-    uint nextoffset;                    /* bytes to virgin block         */
-    uint maxnextoffset;                 /* largest valid nextoffset      */
+    unsigned int arenaindex;            /* index into arenas of base adr */
+    unsigned int szidx;                 /* block size class index        */
+    unsigned int nextoffset;            /* bytes to virgin block         */
+    unsigned int maxnextoffset;         /* largest valid nextoffset      */
 };
 
 typedef struct pool_header *poolp;
@@ -256,10 +253,10 @@ struct arena_object {
     /* The number of available pools in the arena:  free pools + never-
      * allocated pools.
      */
-    uint nfreepools;
+    unsigned int nfreepools;
 
     /* The total number of pools in the arena, whether or not available. */
-    uint ntotalpools;
+    unsigned int ntotalpools;
 
     /* Singly-linked list of available pools. */
     struct pool_header* freepools;
@@ -290,7 +287,8 @@ struct arena_object {
 #define POOL_ADDR(P) ((poolp)_Py_ALIGN_DOWN((P), POOL_SIZE))
 
 /* Return total number of blocks in pool of size index I, as a uint. */
-#define NUMBLOCKS(I) ((uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE(I))
+#define NUMBLOCKS(I) \
+    ((unsigned int)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE(I))
 
 /*==========================================================================*/
 
