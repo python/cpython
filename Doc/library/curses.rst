@@ -112,8 +112,8 @@ The module :mod:`curses` defines the following functions:
 .. function:: color_content(color_number)
 
    Return the intensity of the red, green, and blue (RGB) components in the color
-   *color_number*, which must be between ``0`` and :const:`COLORS`.  A 3-tuple is
-   returned, containing the R,G,B values for the given color, which will be between
+   *color_number*, which must be between ``0`` and :const:`COLORS`.  Return a 3-tuple,
+   containing the R,G,B values for the given color, which will be between
    ``0`` (no component) and ``1000`` (maximum amount of component).
 
 
@@ -128,8 +128,8 @@ The module :mod:`curses` defines the following functions:
 .. function:: curs_set(visibility)
 
    Set the cursor state.  *visibility* can be set to ``0``, ``1``, or ``2``, for invisible,
-   normal, or very visible.  If the terminal supports the visibility requested, the
-   previous cursor state is returned; otherwise, an exception is raised.  On many
+   normal, or very visible.  If the terminal supports the visibility requested, return the
+   previous cursor state; otherwise raise an exception.  On many
    terminals, the "visible" mode is an underline cursor and the "very visible" mode
    is a block cursor.
 
@@ -228,7 +228,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: getsyx()
 
    Return the current coordinates of the virtual screen cursor as a tuple
-   ``(y, x)``.  If **leaveok** is currently true, then ``(-1, -1)`` is returned.
+   ``(y, x)``.  If **leaveok** is currently true, then return ``(-1, -1)``.
 
 
 .. function:: getwin(file)
@@ -268,7 +268,7 @@ The module :mod:`curses` defines the following functions:
 
    Used for half-delay mode, which is similar to cbreak mode in that characters
    typed by the user are immediately available to the program. However, after
-   blocking for *tenths* tenths of seconds, an exception is raised if nothing has
+   blocking for *tenths* tenths of seconds, raise an exception if nothing has
    been typed.  The value of *tenths* must be a number between ``1`` and ``255``.  Use
    :func:`nocbreak` to leave half-delay mode.
 
@@ -345,8 +345,8 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: meta(flag)
 
-   If an argument is ``True``, allow 8-bit characters to be input.  If an
-   argument is ``False``,  allow only 7-bit chars.
+   If *flag* is ``True``, allow 8-bit characters to be input.  If
+   *flag* is ``False``,  allow only 7-bit chars.
 
 
 .. function:: mouseinterval(interval)
@@ -373,7 +373,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: newpad(nlines, ncols)
 
    Create and return a pointer to a new pad data structure with the given number
-   of lines and columns.  A pad is returned as a window object.
+   of lines and columns.  Return a pad as a window object.
 
    A pad is like a window, except that it is not restricted by the screen size, and
    is not necessarily associated with a particular part of the screen.  Pads can be
@@ -459,8 +459,8 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: qiflush([flag])
 
-   If an argument is ``False``, the effect is the same as calling :func:`noqiflush`. If
-   an argument is ``True``, or no argument is provided, the queues will be flushed when
+   If *flag* is ``False``, the effect is the same as calling :func:`noqiflush`. If
+   *flag* is ``True``, or no argument is provided, the queues will be flushed when
    these control characters are read.
 
 
@@ -556,7 +556,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: tigetflag(capname)
 
    Return the value of the Boolean capability corresponding to the terminfo
-   capability name *capname*.  The value ``-1`` is returned if *capname* is not a
+   capability name *capname*.  Return the value ``-1`` if *capname* is not a
    Boolean capability, or ``0`` if it is canceled or absent from the terminal
    description.
 
@@ -564,7 +564,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: tigetnum(capname)
 
    Return the value of the numeric capability corresponding to the terminfo
-   capability name *capname*.  The value ``-2`` is returned if *capname* is not a
+   capability name *capname*.  Return the value ``-2`` if *capname* is not a
    numeric capability, or ``-1`` if it is canceled or absent from the terminal
    description.
 
@@ -572,8 +572,9 @@ The module :mod:`curses` defines the following functions:
 .. function:: tigetstr(capname)
 
    Return the value of the string capability corresponding to the terminfo
-   capability name *capname* as a byte string.  ``None`` is returned if *capname* is not a string
-   capability, or is canceled or absent from the terminal description.
+   capability name *capname* as a byte string.  Return ``None`` if *capname*
+   is not a string capability, or is canceled or absent from the terminal
+   description.
 
 
 .. function:: tparm(str[, ...])
@@ -639,7 +640,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: use_env(flag)
 
    If used, this function should be called before :func:`initscr` or newterm are
-   called.  When an argument is ``False``, the values of lines and columns specified in the
+   called.  When *flag* is ``False``, the values of lines and columns specified in the
    terminfo database will be used, even if environment variables :envvar:`LINES`
    and :envvar:`COLUMNS` (used by default) are set, or if curses is running in a
    window (in which case default behavior would be to use the window size if
@@ -786,7 +787,7 @@ the following methods and attributes:
             window.chgat(y, x, num, attr)
 
    Set the attributes of *num* characters at the current cursor position, or at
-   position ``(y, x)`` if supplied. If no value of *num* is given or *num* = ``-1``,
+   position ``(y, x)`` if supplied. If no value of *num* is given or ``-1`` is given,
    the attribute will  be set on all the characters to the end of the line.  This
    function does not move the cursor. The changed line will be touched using the
    :meth:`touchline` method so that the contents will be redisplayed by the next
@@ -801,7 +802,7 @@ the following methods and attributes:
 
 .. method:: window.clearok(flag)
 
-   If an argument is ``True``, the next call to :meth:`refresh` will clear the window
+   If *flag* is ``True``, the next call to :meth:`refresh` will clear the window
    completely.
 
 
@@ -883,16 +884,16 @@ the following methods and attributes:
 .. method:: window.getch([y, x])
 
    Get a character. Note that the integer returned does *not* have to be in ASCII
-   range: function keys, keypad keys and so on return numbers higher than 256. In
-   no-delay mode, ``-1`` is returned if there is no input, else the function waits
-   until a key is pressed.
+   range: function keys, keypad keys and so are represented by numbers higher
+   than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
+   wait until a key is pressed.
 
 
 .. method:: window.get_wch([y, x])
 
    Get a wide character. Return a character for most keys, or an integer for
    function keys, keypad keys, and other special keys.
-   In no-delay mode, an exception is raised if there is no input.
+   In no-delay mode, raise an exception if there is no input.
 
    .. versionadded:: 3.3
 
@@ -901,7 +902,7 @@ the following methods and attributes:
 
    Get a character, returning a string instead of an integer, as :meth:`getch`
    does. Function keys, keypad keys and other special keys return a multibyte
-   string containing the key name.  In no-delay mode, an exception is raised if
+   string containing the key name.  In no-delay mode, raise an exception if
    there is no input.
 
 
@@ -940,21 +941,21 @@ the following methods and attributes:
 
 .. method:: window.idcok(flag)
 
-   If an argument is ``False``, curses no longer considers using the hardware insert/delete
-   character feature of the terminal; if an argument is ``True``, use of character insertion
+   If *flag* is ``False``, curses no longer considers using the hardware insert/delete
+   character feature of the terminal; if *flag* is ``True``, use of character insertion
    and deletion is enabled.  When curses is first initialized, use of character
    insert/delete is enabled by default.
 
 
 .. method:: window.idlok(flag)
 
-   If called with an argument equal to ``True``, :mod:`curses` will try and use hardware line
+   If *flag* is ``True``, :mod:`curses` will try and use hardware line
    editing facilities. Otherwise, line insertion/deletion are disabled.
 
 
 .. method:: window.immedok(flag)
 
-   If an argument is ``True``, any change in the window image automatically causes the
+   If *flag* is ``True``, any change in the window image automatically causes the
    window to be refreshed; you no longer have to call :meth:`refresh` yourself.
    However, it may degrade performance considerably, due to repeated calls to
    wrefresh.  This option is disabled by default.
@@ -1031,18 +1032,18 @@ the following methods and attributes:
 
 .. method:: window.keypad(flag)
 
-   If an argument is ``True``, escape sequences generated by some keys (keypad,  function keys)
-   will be interpreted by :mod:`curses`. If an argument is ``False``, escape sequences will be
+   If *flag* is ``True``, escape sequences generated by some keys (keypad,  function keys)
+   will be interpreted by :mod:`curses`. If *flag* is ``False``, escape sequences will be
    left as is in the input stream.
 
 
 .. method:: window.leaveok(flag)
 
-   If an argument is ``True``, cursor is left where it is on update, instead of being at "cursor
+   If *flag* is ``True``, cursor is left where it is on update, instead of being at "cursor
    position."  This reduces cursor movement where possible. If possible the cursor
    will be made invisible.
 
-   If an argument is ``False``, cursor will always be at "cursor position" after an update.
+   If *flag* is ``False``, cursor will always be at "cursor position" after an update.
 
 
 .. method:: window.move(new_y, new_x)
@@ -1064,14 +1065,14 @@ the following methods and attributes:
 
 .. method:: window.nodelay(flag)
 
-   If an argument is ``True``, :meth:`getch` will be non-blocking.
+   If *flag* is ``True``, :meth:`getch` will be non-blocking.
 
 
 .. method:: window.notimeout(flag)
 
-   If an argument is ``True``, escape sequences will not be timed out.
+   If *flag* is ``True``, escape sequences will not be timed out.
 
-   If an argument is ``False``, after a few milliseconds, an escape sequence will not be
+   If *flag* is ``False``, after a few milliseconds, an escape sequence will not be
    interpreted, and will be left in the input stream as is.
 
 
@@ -1160,8 +1161,8 @@ the following methods and attributes:
 
    Control what happens when the cursor of a window is moved off the edge of the
    window or scrolling region, either as a result of a newline action on the bottom
-   line, or typing the last character of the last line.  If an argument is ``False``, the
-   cursor is left on the bottom line.  If an argument is ``True``, the window is scrolled up
+   line, or typing the last character of the last line.  If *flag* is ``False``, the
+   cursor is left on the bottom line.  If *flag* is ``True``, the window is scrolled up
    one line.  Note that in order to get the physical scrolling effect on the
    terminal, it is also necessary to call :meth:`idlok`.
 
@@ -1209,7 +1210,7 @@ the following methods and attributes:
 
 .. method:: window.syncok(flag)
 
-   If called with ``True``, then :meth:`syncup` is called automatically
+   If *flag* is ``True``, then :meth:`syncup` is called automatically
    whenever there is a change in the window.
 
 
@@ -1223,8 +1224,8 @@ the following methods and attributes:
 
    Set blocking or non-blocking read behavior for the window.  If *delay* is
    negative, blocking read is used (which will wait indefinitely for input).  If
-   *delay* is zero, then non-blocking read is used, and ``-1`` will be returned by
-   :meth:`getch` if no input is waiting.  If *delay* is positive, then
+   *delay* is zero, then non-blocking read is used, and :meth:`getch` will
+   return ``-1`` if no input is waiting.  If *delay* is positive, then
    :meth:`getch` will block for *delay* milliseconds, and return ``-1`` if there is
    still no input at the end of that time.
 

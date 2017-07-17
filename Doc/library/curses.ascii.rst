@@ -179,7 +179,7 @@ C library:
 These functions accept either integers or single-character strings; when the argument is a
 string, it is first converted using the built-in function :func:`ord`.
 
-Note that all these functions check ordinal bit values derived from the  first
+Note that all these functions check ordinal bit values derived from the
 character of the string you pass in; they do not actually know anything about
 the host machine's character encoding.  For functions  that know about the
 character encoding (and handle internationalization properly) see the
