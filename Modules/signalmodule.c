@@ -93,7 +93,7 @@ static pid_t main_pid;
 #endif
 
 static volatile struct {
-    sig_atomic_t tripped;
+    _Py_atomic_int tripped;
     PyObject *func;
 } Handlers[NSIG];
 
@@ -113,7 +113,7 @@ static volatile sig_atomic_t wakeup_fd = -1;
 #endif
 
 /* Speed up sigcheck() when none tripped */
-static volatile sig_atomic_t is_tripped = 0;
+static _Py_atomic_int is_tripped;
 
 static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
@@ -240,11 +240,13 @@ trip_signal(int sig_num)
     int fd;
     Py_ssize_t rc;
 
-    Handlers[sig_num].tripped = 1;
+    _Py_atomic_store_relaxed(&Handlers[sig_num].tripped, 1);
 
     /* Set is_tripped after setting .tripped, as it gets
        cleared in PyErr_CheckSignals() before .tripped. */
-    is_tripped = 1;
+    _Py_atomic_store(&is_tripped, 1);
+
+    /* Notify ceval.c */
     _PyEval_SignalReceived();
 
     /* And then write to the wakeup fd *after* setting all the globals and
@@ -465,7 +467,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
         return NULL;
     }
     old_handler = Handlers[signalnum].func;
-    Handlers[signalnum].tripped = 0;
+    _Py_atomic_store_relaxed(&Handlers[signalnum].tripped, 0);
     Py_INCREF(handler);
     Handlers[signalnum].func = handler;
     if (old_handler != NULL)
@@ -1269,11 +1271,11 @@ PyInit__signal(void)
         goto finally;
     Py_INCREF(IntHandler);
 
-    Handlers[0].tripped = 0;
+    _Py_atomic_store_relaxed(&Handlers[0].tripped, 0);
     for (i = 1; i < NSIG; i++) {
         void (*t)(int);
         t = PyOS_getsig(i);
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         if (t == SIG_DFL)
             Handlers[i].func = DefaultHandler;
         else if (t == SIG_IGN)
@@ -1497,7 +1499,7 @@ finisignal(void)
 
     for (i = 1; i < NSIG; i++) {
         func = Handlers[i].func;
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         Handlers[i].func = NULL;
         if (i != SIGINT && func != NULL && func != Py_None &&
             func != DefaultHandler && func != IgnoreHandler)
@@ -1518,7 +1520,7 @@ PyErr_CheckSignals(void)
     int i;
     PyObject *f;
 
-    if (!is_tripped)
+    if (!_Py_atomic_load(&is_tripped))
         return 0;
 
 #ifdef WITH_THREAD
@@ -1540,16 +1542,16 @@ PyErr_CheckSignals(void)
      *       we receive a signal i after we zero is_tripped and before we
      *       check Handlers[i].tripped.
      */
-    is_tripped = 0;
+    _Py_atomic_store(&is_tripped, 0);
 
     if (!(f = (PyObject *)PyEval_GetFrame()))
         f = Py_None;
 
     for (i = 1; i < NSIG; i++) {
-        if (Handlers[i].tripped) {
+        if (_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
             PyObject *result = NULL;
             PyObject *arglist = Py_BuildValue("(iO)", i, f);
-            Handlers[i].tripped = 0;
+            _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
 
             if (arglist) {
                 result = PyEval_CallObject(Handlers[i].func,
@@ -1557,7 +1559,7 @@ PyErr_CheckSignals(void)
                 Py_DECREF(arglist);
             }
             if (!result) {
-                is_tripped = 1;
+                _Py_atomic_store(&is_tripped, 1);
                 return -1;
             }
 
@@ -1596,12 +1598,12 @@ PyOS_FiniInterrupts(void)
 int
 PyOS_InterruptOccurred(void)
 {
-    if (Handlers[SIGINT].tripped) {
+    if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
 #ifdef WITH_THREAD
         if (PyThread_get_thread_ident() != main_thread)
             return 0;
 #endif
-        Handlers[SIGINT].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
         return 1;
     }
     return 0;
@@ -1611,11 +1613,11 @@ static void
 _clear_pending_signals(void)
 {
     int i;
-    if (!is_tripped)
+    if (!_Py_atomic_load(&is_tripped))
         return;
-    is_tripped = 0;
+    _Py_atomic_store(&is_tripped, 0);
     for (i = 1; i < NSIG; ++i) {
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
     }
 }
 
