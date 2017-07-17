@@ -11,9 +11,6 @@ extern "C" {
 #include "_pymalloc.h"
 #endif
 
-#undef  uint
-#define uint    unsigned int    /* assuming >= 16 bits */
-
 /* Low-level memory runtime state */
 
 struct _pymem_runtime_state {
@@ -33,7 +30,7 @@ struct _pymem_runtime_state {
        available. */
     struct arena_object* usable_arenas;
     /* Number of slots currently allocated in the `arenas` vector. */
-    uint maxarenas;
+    unsigned int maxarenas;
     /* Number of arenas allocated that haven't been free()'d. */
     size_t narenas_currently_allocated;
     /* High water mark (max value ever seen) for
