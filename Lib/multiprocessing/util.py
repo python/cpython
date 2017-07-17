@@ -107,30 +107,11 @@ def log_to_stderr(level=None):
 #
 
 def get_temp_dir():
-    # Get name of a temp directory which will be automatically cleaned up.
-    # To improve performance of multiprocessing.heap.Arena, the returned
-    # directory should preferably not be backed by persistent storage.
+    # get name of a temp directory which will be automatically cleaned up
     tempdir = process.current_process()._config.get('tempdir')
     if tempdir is None:
         import shutil, tempfile
-        if os.name == 'posix':
-            # Typical tmpfs locations on modern Unix systems
-            basedir_candidates = ['/run/user/%d' % os.getuid(),
-                                  '/dev/shm']
-        else:
-            basedir_candidates = []
-
-        for basedir in basedir_candidates:
-            if os.path.exists(basedir):
-                try:
-                    tempdir = tempfile.mkdtemp(prefix='pymp-', dir=basedir)
-                except OSError:
-                    continue
-                else:
-                    break
-        else:
-            tempdir = tempfile.mkdtemp(prefix='pymp-')
-
+        tempdir = tempfile.mkdtemp(prefix='pymp-')
         info('created temp directory %s', tempdir)
         Finalize(None, shutil.rmtree, args=[tempdir], exitpriority=-100)
         process.current_process()._config['tempdir'] = tempdir
