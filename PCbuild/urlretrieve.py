@@ -20,7 +20,7 @@ except ImportError:
             sys.exit(2)
 else:
     USING = "requests.get"
-    
+
     def urlretrieve(url, filename):
         r = get(url, stream=True)
         r.raise_for_status()
