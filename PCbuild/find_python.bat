@@ -42,7 +42,8 @@
     @echo Downloading nuget...
     @rem NB: Must use single quotes around NUGET here, NOT double!
     @rem Otherwise, a space in the path would break things
-    @powershell.exe -Command Invoke-WebRequest %_Py_NUGET_URL% -OutFile '%_Py_NUGET%'
+    @rem If it fails, retry with any available copy of Python
+    @powershell.exe -Command Invoke-WebRequest %_Py_NUGET_URL% -OutFile '%_Py_NUGET%' || @py -c "%~dp0\urlretrieve.py" "%_Py_NUGET_URL%" "%_Py_NUGET%"
 )
 @echo Installing Python via nuget...
 @"%_Py_NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%_Py_EXTERNALS_DIR%"
