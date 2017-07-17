@@ -855,6 +855,11 @@ boolean {0[0]} NO
         self.assertEqual(cf.get('DEFAULT', 'test'), 'test')
         self.assertEqual(cf['DEFAULT']['test'], 'test')
 
+    def test_defaults_keyword(self):
+        # test that bpo-23835 is fixed
+        cf = self.newconfig(defaults={1:2.4})
+        cf = self.newconfig(defaults={"a":5.2})
+
 
 class StrictTestCase(BasicTestCase, unittest.TestCase):
     config_class = configparser.RawConfigParser
