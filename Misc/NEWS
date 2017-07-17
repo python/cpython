@@ -376,6 +376,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30879: os.listdir() and os.scandir() now emit bytes names when called
+  with bytes-like argument.
+
 - bpo-30746: Prohibited the '=' character in environment variable names in
   ``os.putenv()`` and ``os.spawn*()``.
 
