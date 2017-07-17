@@ -5,6 +5,7 @@ Coverage: 46% (100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
 Much of IdleConf is exercised by ConfigDialog and test_configdialog,
 but it should be tested here.
 '''
+import copy
 import sys
 import os
 import tempfile
@@ -190,14 +191,8 @@ class IdleUserConfParserTest(unittest.TestCase):
 class IdleConfTest(unittest.TestCase):
     """Test for idleConf"""
 
-    def new_config(self, _utest=False):
-        return config.IdleConf(_utest=_utest)
-
-    def mock_config(self):
-        """Return a mocked idleConf
-
-        Both default and user config used the same config-*.def
-        """
+    @classmethod
+    def setUpClass(cls):
         conf = config.IdleConf(_utest=True)
         if __name__ != '__main__':
             idle_dir = os.path.dirname(__file__)
@@ -208,6 +203,17 @@ class IdleConfTest(unittest.TestCase):
             conf.defaultCfg[ctype] = config.IdleConfParser(config_path)
             conf.userCfg[ctype] = config.IdleUserConfParser(config_path)
         conf.LoadCfgFiles()
+        cls.conf = conf
+
+    def new_config(self, _utest=False):
+        return config.IdleConf(_utest=_utest)
+
+    def mock_config(self):
+        """Return a mocked idleConf
+
+        Both default and user config used the same config-*.def
+        """
+        conf = copy.deepcopy(self.conf)
 
         return conf
 
