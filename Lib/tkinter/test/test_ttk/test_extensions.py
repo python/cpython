@@ -276,9 +276,30 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, optmenu['menu'].invoke, -1)
         self.assertEqual(optmenu._variable.get(), items[0])
 
+        optmenu.destroy()
+
+        # specifying a callback
+        success = []
+        def cb_test(item):
+            self.assertEqual(item, items[1])
+            success.append(True)
+        optmenu = ttk.OptionMenu(self.root, self.textvar, 'a', command=cb_test,
+            *items)
+        optmenu['menu'].invoke(1)
+        if not success:
+            self.fail("Menu callback not invoked")
+
+        optmenu.destroy()
+
+    def test_unique_radiobuttons(self):
         # check that radiobuttons are unique across instances (bpo25684)
+        items = ('a', 'b', 'c')
+        default = 'a'
+        optmenu = ttk.OptionMenu(self.root, self.textvar, default, *items)
         textvar2 = tkinter.StringVar(self.root)
         optmenu2 = ttk.OptionMenu(self.root, textvar2, default, *items)
+        optmenu.pack()
+        optmenu.wait_visibility()
         optmenu2.pack()
         optmenu2.wait_visibility()
         optmenu['menu'].invoke(1)
@@ -295,19 +316,6 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         optmenu.destroy()
         del textvar2, optmenu_radiobutton_name, optmenu2_radiobutton_name
         optmenu2.destroy()
-
-        # specifying a callback
-        success = []
-        def cb_test(item):
-            self.assertEqual(item, items[1])
-            success.append(True)
-        optmenu = ttk.OptionMenu(self.root, self.textvar, 'a', command=cb_test,
-            *items)
-        optmenu['menu'].invoke(1)
-        if not success:
-            self.fail("Menu callback not invoked")
-
-        optmenu.destroy()
 
 
 tests_gui = (LabeledScaleTest, OptionMenuTest)
