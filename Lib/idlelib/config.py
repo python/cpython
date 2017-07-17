@@ -81,31 +81,6 @@ class IdleUserConfParser(IdleConfParser):
     IdleConfigParser specialised for user configuration handling.
     """
 
-    def AddSection(self, section):
-        "If section doesn't exist, add it."
-        if not self.has_section(section):
-            self.add_section(section)
-
-    def RemoveEmptySections(self):
-        "Remove any sections that have no options."
-        for section in self.sections():
-            if not self.GetOptionList(section):
-                self.remove_section(section)
-
-    def IsEmpty(self):
-        "Return True if no sections after removing empty sections."
-        self.RemoveEmptySections()
-        return not self.sections()
-
-    def RemoveOption(self, section, option):
-        """Return True if option is removed from section, else False.
-
-        False if either section does not exist or did not have option.
-        """
-        if self.has_section(section):
-            return self.remove_option(section, option)
-        return False
-
     def SetOption(self, section, option, value):
         """Return True if option is added or changed to value, else False.
 
@@ -122,6 +97,31 @@ class IdleUserConfParser(IdleConfParser):
                 self.add_section(section)
             self.set(section, option, value)
             return True
+
+    def RemoveOption(self, section, option):
+        """Return True if option is removed from section, else False.
+
+        False if either section does not exist or did not have option.
+        """
+        if self.has_section(section):
+            return self.remove_option(section, option)
+        return False
+
+    def AddSection(self, section):
+        "If section doesn't exist, add it."
+        if not self.has_section(section):
+            self.add_section(section)
+
+    def RemoveEmptySections(self):
+        "Remove any sections that have no options."
+        for section in self.sections():
+            if not self.GetOptionList(section):
+                self.remove_section(section)
+
+    def IsEmpty(self):
+        "Return True if no sections after removing empty sections."
+        self.RemoveEmptySections()
+        return not self.sections()
 
     def RemoveFile(self):
         "Remove user config file self.file from disk if it exists."
@@ -794,7 +794,8 @@ class ConfigChanges(dict):
         add_option: Add option and value to changes.
         save_option: Save option and value to config parser.
         save_all: Save all the changes to the config parser and file.
-        delete_section: Delete section if it exists.
+        delete_section: If section exists,
+                        delete from changes, userCfg, and file.
         clear: Clear all changes by clearing each page.
     """
     def __init__(self):
@@ -828,9 +829,12 @@ class ConfigChanges(dict):
     def save_all(self):
         """Save configuration changes to the user config file.
 
-        Then clear self in preparation for additional changes.
+        Clear self in preparation for additional changes.
+        Return changed for testing.
         """
         idleConf.userCfg['main'].Save()
+
+        changed = False
         for config_type in self:
             cfg_type_changed = False
             page = self[config_type]
@@ -843,12 +847,14 @@ class ConfigChanges(dict):
                         cfg_type_changed = True
             if cfg_type_changed:
                 idleConf.userCfg[config_type].Save()
+                changed = True
         for config_type in ['keys', 'highlight']:
             # Save these even if unchanged!
             idleConf.userCfg[config_type].Save()
         self.clear()
         # ConfigDialog caller must add the following call
         # self.save_all_changed_extensions()  # Uses a different mechanism.
+        return changed
 
     def delete_section(self, config_type, section):
         """Delete a section from self, userCfg, and file.
