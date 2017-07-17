@@ -29,9 +29,10 @@ typedef struct {
     int use_hash_seed;
     unsigned long hash_seed;
     int _disable_importlib; /* Needed by freeze_importlib */
+    char *allocator;
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT {0, -1, 0, 0}
+#define _PyCoreConfig_INIT {0, -1, 0, 0, NULL}
 
 /* Placeholders while working on the new configuration API
  *

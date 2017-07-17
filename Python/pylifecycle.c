@@ -586,6 +586,13 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
      */
     _PyRuntime.finalizing = NULL;
 
+    if (_PyMem_SetupAllocators(core_config.allocator) < 0) {
+        fprintf(stderr,
+            "Error in PYTHONMALLOC: unknown allocator \"%s\"!\n",
+            core_config.allocator);
+        exit(1);
+    }
+
 #ifdef __ANDROID__
     /* Passing "" to setlocale() on Android requests the C locale rather
      * than checking environment variables, so request C.UTF-8 explicitly
