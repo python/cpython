@@ -10,8 +10,6 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
-- Issue #26617: Fix crash when GC runs during weakref callbacks.
-
 - bpo-27945: Fixed various segfaults with dict when input collections are
   mutated during searching, inserting or comparing.  Based on patches by
   Duane Griffin and Tim Mitchell.
