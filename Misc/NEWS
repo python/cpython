@@ -28,6 +28,14 @@ Library
   They now always return bytes.
 
 
+What's New in Python 3.6.2?
+===========================
+
+*Release date: 2017-07-17*
+
+- No changes since release candidate 2
+
+
 What's New in Python 3.6.2 release candidate 2?
 ===============================================
 
