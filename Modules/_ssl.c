@@ -21,11 +21,13 @@
 #ifdef WITH_THREAD
 #include "pythread.h"
 
+/* Redefined below for Windows debug builds after important #includes */
+#define _PySSL_FIX_ERRNO
 
 #define PySSL_BEGIN_ALLOW_THREADS_S(save) \
     do { if (_ssl_locks_count>0) { (save) = PyEval_SaveThread(); } } while (0)
 #define PySSL_END_ALLOW_THREADS_S(save) \
-    do { if (_ssl_locks_count>0) { PyEval_RestoreThread(save); } } while (0)
+    do { if (_ssl_locks_count>0) { PyEval_RestoreThread(save); } _PySSL_FIX_ERRNO; } while (0)
 #define PySSL_BEGIN_ALLOW_THREADS { \
             PyThreadState *_save = NULL;  \
             PySSL_BEGIN_ALLOW_THREADS_S(_save);
@@ -95,6 +97,40 @@ struct py_ssl_library_code {
     const char *library;
     int code;
 };
+
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
+/* Debug builds on Windows rely on getting errno directly from OpenSSL.
+ * However, because it uses a different CRT, we need to transfer the
+ * value of errno from OpenSSL into our debug CRT.
+ *
+ * Don't be fooled - this is horribly ugly code. The only reasonable
+ * alternative is to do both debug and release builds of OpenSSL, which
+ * requires much uglier code to transform their automatically generated
+ * makefile. This is the lesser of all the evils.
+ */
+
+static void _PySSLFixErrno(void) {
+    HMODULE ucrtbase = GetModuleHandleW(L"ucrtbase.dll");
+    if (!ucrtbase) {
+        /* If ucrtbase.dll is not loaded but the SSL DLLs are, we likely
+         * have a catastrophic failure, but this function is not the
+         * place to raise it. */
+        return;
+    }
+
+    typedef int *(__stdcall *errno_func)(void);
+    errno_func ssl_errno = (errno_func)GetProcAddress(ucrtbase, "_errno");
+    if (ssl_errno) {
+        errno = *ssl_errno();
+        *ssl_errno() = 0;
+    } else {
+        errno = ENOTRECOVERABLE;
+    }
+}
+
+#undef _PySSL_FIX_ERRNO
+#define _PySSL_FIX_ERRNO _PySSLFixErrno()
+#endif
 
 /* Include generated data (error codes) */
 #include "_ssl_data.h"

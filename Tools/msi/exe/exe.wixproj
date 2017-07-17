@@ -26,10 +26,10 @@
             <LicenseFiles Include="$(PySourcePath)LICENSE;
                                    crtlicense.txt;
                                    $(bz2Dir)LICENSE;
-                                   $(opensslDir)LICENSE;
-                                   $(tclDir)license.terms;
-                                   $(tkDir)license.terms;
-                                   $(tixDir)license.terms" />
+                                   $(opensslOutDir)LICENSE;
+                                   $(tcltkDir)tcllicense.terms;
+                                   $(tcltkDir)tklicense.terms;
+                                   $(tcltkDir)tixlicense.terms" />
             <_LicenseFiles Include="@(LicenseFiles)">
                 <Content>$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
             </_LicenseFiles>

@@ -5,8 +5,19 @@ pushd %~dp0
 
 set this=%~n0
 
-if "%SPHINXBUILD%" EQU "" set SPHINXBUILD=sphinx-build
+call ..\PCBuild\find_python.bat %PYTHON%
+if "%SPHINXBUILD%" EQU "" if "%PYTHON%" NEQ "" (
+    set SPHINXBUILD=%PYTHON%\..\Scripts\sphinx-build.exe
+    rem Cannot use %SPHINXBUILD% in the same block where we set it
+    if not exist "%PYTHON%\..\Scripts\sphinx-build.exe" (
+        echo Installing sphinx with %PYTHON%
+        "%PYTHON%" -m pip install sphinx
+        if errorlevel 1 exit /B
+    )
+)
+
 if "%PYTHON%" EQU "" set PYTHON=py
+if "%SPHINXBUILD%" EQU "" set SPHINXBUILD=sphinx-build
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
 if exist "%HTMLHELP%" goto :skiphhcsearch

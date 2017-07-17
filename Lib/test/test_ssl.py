@@ -1244,6 +1244,7 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(ctx.cert_store_stats(), {"crl": 0, "x509": 1, "x509_ca": 0})
 
     @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    @unittest.skipIf(hasattr(sys, "gettotalrefcount"), "Debug build does not share environment between CRTs")
     def test_load_default_certs_env_windows(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.load_default_certs()
