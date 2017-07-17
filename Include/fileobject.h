@@ -38,11 +38,7 @@ PyAPI_DATA(PyTypeObject) PyStdPrinter_Type;
 #endif /* Py_LIMITED_API */
 
 /* A routine to check if a file descriptor can be select()-ed. */
-#ifdef HAVE_SELECT
- #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
-#else
- #define _PyIsSelectable_fd(FD) (1)
-#endif /* HAVE_SELECT */
+#define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
 
 #ifdef __cplusplus
 }
