@@ -1,9 +1,8 @@
 '''Test idlelib.config.
 
-Coverage: 46% (100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
-* Except is OSError clause in Save method.
-Much of IdleConf is exercised by ConfigDialog and test_configdialog,
-but it should be tested here.
+Coverage: 96% (100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
+* Exception is OSError clause in Save method.
+Much of IdleConf is also exercised by ConfigDialog and test_configdialog.
 '''
 import copy
 import sys
@@ -12,7 +11,9 @@ import tempfile
 from test.support import captured_stderr, findfile
 import unittest
 from unittest import mock
+import idlelib
 from idlelib import config
+from idlelib.idle_test.mock_idle import Func
 
 # Tests should not depend on fortuitous user configurations.
 # They must not affect actual user .cfg files.
@@ -28,9 +29,11 @@ userkeys = testcfg['keys'] = config.IdleUserConfParser('')
 
 def setUpModule():
     idleConf.userCfg = testcfg
+    idlelib.testing = True
 
 def tearDownModule():
     idleConf.userCfg = usercfg
+    idlelib.testing = False
 
 
 class IdleConfParserTest(unittest.TestCase):
@@ -204,6 +207,12 @@ class IdleConfTest(unittest.TestCase):
             conf.userCfg[ctype] = config.IdleUserConfParser(config_path)
         conf.LoadCfgFiles()
         cls.conf = conf
+        cls.orig_warn = config._warn
+        config._warn = Func()
+
+    @classmethod
+    def tearDownClass(cls):
+        config._warn = cls.orig_warn
 
     def new_config(self, _utest=False):
         return config.IdleConf(_utest=_utest)
