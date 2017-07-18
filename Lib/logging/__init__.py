@@ -1562,12 +1562,12 @@ class Logger(Filterer):
         except KeyError:
             _acquireLock()
             if self.manager.disable >= level:
-                self._cache[level] = False
+                is_enabled = self._cache[level] = False
             else:
-                self._cache[level] = level >= self.getEffectiveLevel()
+                is_enabled = self._cache[level] = level >= self.getEffectiveLevel()
             _releaseLock()
 
-            return self._cache[level]
+            return is_enabled
 
     def getChild(self, suffix):
         """
