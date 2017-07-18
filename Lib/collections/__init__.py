@@ -303,12 +303,78 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
+# Used only for the _source attribute, not for creating namedtuple classes.
+_class_template = """\
+from builtins import property as _property, tuple as _tuple
+from operator import itemgetter as _itemgetter
+from collections import OrderedDict
+
+class {typename}(tuple):
+    '{typename}({arg_list})'
+
+    __slots__ = ()
+
+    _fields = {field_names!r}
+
+    def __new__(_cls, {arg_list}):
+        'Create new instance of {typename}({arg_list})'
+        return _tuple.__new__(_cls, ({arg_list}))
+
+    @classmethod
+    def _make(cls, iterable, new=tuple.__new__, len=len):
+        'Make a new {typename} object from a sequence or iterable'
+        result = new(cls, iterable)
+        if len(result) != {num_fields:d}:
+            raise TypeError('Expected {num_fields:d} arguments, got %d' % len(result))
+        return result
+
+    def _replace(_self, **kwds):
+        'Return a new {typename} object replacing specified fields with new values'
+        result = _self._make(map(kwds.pop, {field_names!r}, _self))
+        if kwds:
+            raise ValueError('Got unexpected field names: %r' % list(kwds))
+        return result
+
+    def __repr__(self):
+        'Return a nicely formatted representation string'
+        return self.__class__.__name__ + '({repr_fmt})' % self
+
+    def _asdict(self):
+        'Return a new OrderedDict which maps field names to their values.'
+        return OrderedDict(zip(self._fields, self))
+
+    def __getnewargs__(self):
+        'Return self as a plain tuple.  Used by copy and pickle.'
+        return tuple(self)
+
+{field_defs}
+"""
+_field_template = '''\
+    {name} = _property(_itemgetter({index:d}), doc='Alias for field number {index:d}')
+'''
 _repr_template = '{name}=%r'
 _new_template = '''
 def __new__(_cls, {arg_list}):
     'Create new instance of {typename}({arg_list})'
     return _tuple.__new__(_cls, ({arg_list}))
 '''
+
+
+class _source_descriptor:
+    """Descriptor for generating the _source attribute of a namedtuple."""
+    __slots__ = ()
+
+    def __get__(self, instance, owner):
+        class_definition = _class_template.format(
+            typename = owner.__name__,
+            field_names = owner._fields,
+            num_fields = owner._num_fields,
+            arg_list = repr(owner._fields).replace("'", "")[1:-1],
+            repr_fmt = owner._repr_fmt,
+            field_defs = '\n'.join(_field_template.format(index=index, name=name)
+                                   for index, name in enumerate(owner._fields))
+        )
+        return class_definition
 
 
 def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None):
@@ -423,12 +489,16 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
         '__getnewargs__': __getnewargs__,
         '_num_fields': len(field_names),
         '_repr_fmt': repr_fmt,
+        '_source': _source_descriptor(),
     }
     for index, name in enumerate(field_names):
         doc = 'Alias for field number {index:d}'.format(index=index)
         class_namespace[name] = property(_itemgetter(index), doc=doc)
 
     result = type(typename, (tuple,), class_namespace)
+
+    if verbose:
+        print(result._source)
 
     # For pickling to work, the __module__ variable needs to be set to the frame
     # where the named tuple is created.  Bypass this step in environments where
