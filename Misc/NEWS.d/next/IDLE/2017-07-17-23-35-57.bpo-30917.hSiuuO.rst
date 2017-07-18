@@ -1,0 +1,1 @@
+Add tests for idlelib.config.IdleConf. Patch by Louie Lu.
