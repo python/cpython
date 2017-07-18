@@ -515,6 +515,8 @@ class IdleConfTest(unittest.TestCase):
         self.assertFalse(conf.IsCoreBinding('not-exists'))
 
     def test_extra_help_source_list(self):
+        # Test GetExtraHelpSourceList and GetAllExtraHelpSourcesList in same
+        # place to prevent prepare input data twice.
         conf = self.mock_config()
 
         # Test default with no extra help source
