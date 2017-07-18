@@ -10,6 +10,8 @@ build_script:
 - cmd: PCbuild\python.exe -m test.pythoninfo
 test_script:
 - cmd: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest -j2
+environment:
+  HOST_PYTHON: C:\Python36\python.exe
 
 # Only trigger AppVeyor if actual code or its configuration changes
 only_commits:
