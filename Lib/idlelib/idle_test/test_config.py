@@ -452,7 +452,7 @@ class IdleConfTest(unittest.TestCase):
     def test_remove_key_bind_names(self):
         conf = self.mock_config()
 
-        self.assertEqual(
+        self.assertCountEqual(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
             ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
              'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
@@ -494,6 +494,23 @@ class IdleConfTest(unittest.TestCase):
         conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
         conf.defaultCfg['extensions'].set('Foobar_bindings', 'foobar', '<Key-F>')
         self.assertEqual(conf.GetExtensionBindings('Foobar'), {'<<foobar>>': ['<Key-F>']})
+
+    def test_get_keybinding(self):
+        conf = self.mock_config()
+
+        eq = self.assertEqual
+        eq(conf.GetKeyBinding('IDLE Modern Unix', '<<copy>>'),
+            ['<Control-Shift-Key-C>', '<Control-Key-Insert>'])
+        eq(conf.GetKeyBinding('IDLE Classic Unix', '<<copy>>'),
+            ['<Alt-Key-w>', '<Meta-Key-w>'])
+        eq(conf.GetKeyBinding('IDLE Classic Windows', '<<copy>>'),
+            ['<Control-Key-c>', '<Control-Key-C>'])
+        eq(conf.GetKeyBinding('IDLE Classic Mac', '<<copy>>'), ['<Command-Key-c>'])
+        eq(conf.GetKeyBinding('IDLE Classic OSX', '<<copy>>'), ['<Command-Key-c>'])
+
+        # Test keybinding not exists
+        eq(conf.GetKeyBinding('NOT EXISTS', '<<copy>>'), [])
+        eq(conf.GetKeyBinding('IDLE Modern Unix', 'NOT EXISTS'), [])
 
     def test_get_current_keyset(self):
         current_platform = sys.platform
