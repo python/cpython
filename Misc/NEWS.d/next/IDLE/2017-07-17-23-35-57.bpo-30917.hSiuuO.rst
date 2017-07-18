@@ -1,1 +1,3 @@
-Add tests for idlelib.config.IdleConf. Patch by Louie Lu.
+Add tests for idlelib.config.IdleConf.
+Increase coverage from 46% to 96%.
+Patch by Louie Lu.
