@@ -410,6 +410,9 @@ class IdleConfTest(unittest.TestCase):
     def test_get_extensions(self):
         conf = self.mock_config()
 
+        # Add disable extensions
+        conf.SetOption('extensions', 'DISABLE', 'enable', 'False')
+
         eq = self.assertEqual
         eq(conf.GetExtensions(),
            ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
@@ -418,7 +421,7 @@ class IdleConfTest(unittest.TestCase):
         eq(conf.GetExtensions(active_only=False),
             ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
              'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-             'ZoomHeight'])
+             'ZoomHeight', 'DISABLE'])
         eq(conf.GetExtensions(editor_only=True),
            ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
             'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
@@ -426,6 +429,14 @@ class IdleConfTest(unittest.TestCase):
         eq(conf.GetExtensions(shell_only=True),
            ['AutoComplete', 'AutoExpand', 'CallTips', 'FormatParagraph',
             'ParenMatch', 'ZoomHeight'])
+        eq(conf.GetExtensions(active_only=False, editor_only=True),
+           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
+            'FormatParagraph', 'ParenMatch', 'RstripExtension',
+            'ScriptBinding', 'ZoomHeight', 'DISABLE'])
+        eq(conf.GetExtensions(active_only=False, shell_only=True),
+           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
+            'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
+            'ZoomHeight', 'DISABLE'])
 
         # Add user extensions
         conf.SetOption('extensions', 'Foobar', 'enable', 'True')
@@ -433,6 +444,10 @@ class IdleConfTest(unittest.TestCase):
            ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
             'FormatParagraph', 'ParenMatch', 'RstripExtension',
             'ScriptBinding', 'ZoomHeight', 'Foobar'])  # User extensions didn't sort
+        eq(conf.GetExtensions(active_only=False),
+           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
+            'FormatParagraph', 'ParenMatch', 'RstripExtension',
+            'ScriptBinding', 'ZoomHeight', 'DISABLE', 'Foobar'])
 
     def test_remove_key_bind_names(self):
         conf = self.mock_config()
