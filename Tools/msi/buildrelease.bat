@@ -76,9 +76,6 @@ if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable &
 if "%SKIPBUILD%" EQU "1" goto skipdoc
 if "%SKIPDOC%" EQU "1" goto skipdoc
 
-if not defined PYTHON where py -q || echo Cannot find py on path and PYTHON is not set. && exit /B 1
-if not defined SPHINXBUILD where sphinx-build -q || echo Cannot find sphinx-build on path and SPHINXBUILD is not set. && exit /B 1
-
 call "%D%..\..\doc\make.bat" htmlhelp
 if errorlevel 1 goto :eof
 :skipdoc
