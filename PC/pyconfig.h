@@ -530,9 +530,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have readlink.  */
 /* #undef HAVE_READLINK */
 
-/* Define if you have select.  */
-/* #undef HAVE_SELECT */
-
 /* Define if you have setpgid.  */
 /* #undef HAVE_SETPGID */
 
