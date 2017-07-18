@@ -568,12 +568,14 @@ class IdleConfTest(unittest.TestCase):
             conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
 
         # Add help source to user config
-        conf.userCfg['main'].SetOption('HelpFiles', '1', 'IDLE;C:/Programs/Python36/Lib/idlelib/help.html')
+        conf.userCfg['main'].SetOption('HelpFiles', '4', 'Python;https://python.org')  # This is bad input
+        conf.userCfg['main'].SetOption('HelpFiles', '3', 'Python:https://python.org')  # This is bad input
         conf.userCfg['main'].SetOption('HelpFiles', '2', 'Pillow;https://pillow.readthedocs.io/en/latest/')
-        conf.userCfg['main'].SetOption('HelpFiles', '3', 'Python:https://python.org')
+        conf.userCfg['main'].SetOption('HelpFiles', '1', 'IDLE;C:/Programs/Python36/Lib/idlelib/help.html')
         self.assertEqual(conf.GetExtraHelpSourceList('user'),
                          [('IDLE', 'C:/Programs/Python36/Lib/idlelib/help.html', '1'),
-                          ('Pillow', 'https://pillow.readthedocs.io/en/latest/', '2')])
+                          ('Pillow', 'https://pillow.readthedocs.io/en/latest/', '2'),
+                          ('Python', 'https://python.org', '4')])
         self.assertCountEqual(
             conf.GetAllExtraHelpSourcesList(),
             conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
