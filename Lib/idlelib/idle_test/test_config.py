@@ -311,6 +311,13 @@ class IdleConfTest(unittest.TestCase):
         eq(conf.userCfg['foo'].Get('Foo Bar', 'foo'), 'newbar')
         eq(conf.userCfg['foo'].GetOptionList('Foo Bar'), ['foo'])
 
+    def test_save_user_cfg_files(self):
+        conf = self.mock_config()
+
+        with mock.patch('idlelib.config.IdleUserConfParser.Save') as m:
+            conf.SaveUserCfgFiles()
+            self.assertEqual(m.call_count, len(conf.userCfg))
+
     def test_get_option(self):
         conf = self.mock_config()
 
