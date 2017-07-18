@@ -601,7 +601,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    .. method:: kill()
 
       Same as :meth:`terminate()` but using the ``SIGKILL`` signal on Unix.
-      
+
       .. versionadded:: 3.7
 
    .. method:: close()
