@@ -30,6 +30,7 @@ import os
 import sys
 
 from tkinter.font import Font
+import idlelib
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
@@ -216,7 +217,8 @@ class IdleConf:
             except OSError:
                 warn = ('\n Warning: unable to create user config directory\n' +
                         userDir + '\n Check path and permissions.\n Exiting!\n')
-                print(warn, file=sys.stderr)
+                if not idlelib.testing:
+                    print(warn, file=sys.stderr)
                 raise SystemExit
         # TODO continue without userDIr instead of exit
         return userDir
