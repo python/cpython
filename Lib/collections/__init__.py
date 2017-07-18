@@ -370,35 +370,37 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
 
     arg_list = repr(tuple(field_names)).replace("'", "")[1:-1]
     num_fields = len(field_names)
-    repr_fmt = '(' + ', '.join(_repr_template.format(name=name) for name in field_names) + ')'
+    repr_fmt = '(' + ', '.join(_repr_template.format(name=name)
+                               for name in field_names) + ')'
 
     namespace = {'_tuple': tuple}
-    exec(_new_template.format(typename=typename, arg_list=arg_list), namespace)
+    new_source = _new_template.format(typename=typename, arg_list=arg_list)
+    exec(new_source, namespace)
     __new__ = namespace['__new__']
 
     @classmethod
     def _make(cls, iterable, new=tuple.__new__, len=len):
         result = new(cls, iterable)
-        if len(result) != num_fields:
-            raise TypeError('Expected %d arguments, got %d' % (num_fields, len(result)))
+        if len(result) != cls._num_fields:
+            raise TypeError('Expected %d arguments, got %d' %
+                            (cls._num_fields, len(result)))
         return result
 
-    _make.__func__.__doc__ = 'Make a new {typename} object from a sequence or iterable'.format(typename=typename)
+    _make.__func__.__doc__ = ('Make a new {typename} object from a sequence '
+                              'or iterable').format(typename=typename)
 
     def _replace(_self, **kwds):
-        result = _self._make(map(kwds.pop, field_names, _self))
+        result = _self._make(map(kwds.pop, _self._fields, _self))
         if kwds:
             raise ValueError('Got unexpected field names: %r' % list(kwds))
         return result
 
-    _replace.__doc__ = (
-        'Return a new {typename} object replacing specified fields with new values'.format(
-            typename=typename)
-    )
+    _replace.__doc__ = ('Return a new {typename} object replacing specified '
+                        'fields with new values').format(typename=typename)
 
     def __repr__(self):
         'Return a nicely formatted representation string'
-        return self.__class__.__name__ + repr_fmt % self
+        return self.__class__.__name__ + self._repr_fmt % self
 
     def _asdict(self):
         'Return a new OrderedDict which maps field names to their values.'
@@ -409,7 +411,8 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
         return tuple(self)
 
     class_namespace = {
-        '__doc__': '{typename}({arg_list})'.format(typename=typename, arg_list=arg_list),
+        '__doc__': '{typename}({arg_list})'.format(typename=typename,
+                                                   arg_list=arg_list),
         '__slots__': (),
         '_fields': tuple(field_names),
         '__new__': __new__,
@@ -418,6 +421,8 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
         '__repr__': __repr__,
         '_asdict': _asdict,
         '__getnewargs__': __getnewargs__,
+        '_num_fields': len(field_names),
+        '_repr_fmt': repr_fmt,
     }
     for index, name in enumerate(field_names):
         doc = 'Alias for field number {index:d}'.format(index=index)
