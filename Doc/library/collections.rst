@@ -880,12 +880,15 @@ field names, the method and attribute names start with an underscore.
 
 .. attribute:: somenamedtuple._source
 
-    A string with the pure Python source code used to create the named
-    tuple class.  The source makes the named tuple self-documenting.
-    It can be printed, executed using :func:`exec`, or saved to a file
-    and imported.
+    A string with pure Python source code that can be used to create an
+    equivalent named tuple class.  The source makes the named tuple
+    self-documenting. It can be printed, executed using :func:`exec`, or
+    saved to a file and imported.
 
     .. versionadded:: 3.3
+
+    .. versionchanged:: 3.7
+       ``_source`` is no longer used to created the named tuple class.
 
 .. attribute:: somenamedtuple._fields
 
