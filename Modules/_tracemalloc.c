@@ -1752,7 +1752,7 @@ _PyTraceMalloc_Init(void)
         if (key == NULL)
             return -1;
 
-        value = PyDict_GetItemWithError(xoptions, key);
+        value = PyDict_GetItemWithError(xoptions, key); /* borrowed */
         Py_DECREF(key);
         if (value == NULL) {
             if (PyErr_Occurred())
@@ -1763,7 +1763,6 @@ _PyTraceMalloc_Init(void)
         }
 
         nframe = parse_sys_xoptions(value);
-        Py_DECREF(value);
         if (nframe < 0) {
             Py_FatalError("-X tracemalloc=NFRAME: invalid number of frames");
         }
