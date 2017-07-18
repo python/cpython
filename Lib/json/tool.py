@@ -28,7 +28,7 @@ def main():
                         default=sys.stdout,
                         help='write the output of infile to outfile')
     parser.add_argument('--sort-keys', action='store_true',
-                        help='sort dictionaries output alphabetically by key')
+                        help='sort the output of dictionaries by key')
     options = parser.parse_args()
 
     # Read input JSON
