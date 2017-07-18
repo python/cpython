@@ -35,6 +35,7 @@
         <NugetArguments>$(NugetArguments) -NoPackageAnalysis -NonInteractive</NugetArguments>
         
         <Environment>set DOC_FILENAME=python$(PythonVersion).chm</Environment>
+        <Environment>$(Environment)%0D%0Aset PYTHONPATH=$(PySourcePath)Lib</Environment>
         <Environment Condition="Exists($(CRTRedist))">$(Environment)%0D%0Aset VCREDIST_PATH=$(CRTRedist)\$(Platform)</Environment>
     </PropertyGroup>
 
