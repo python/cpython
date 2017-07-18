@@ -402,13 +402,13 @@ class IdleConfTest(unittest.TestCase):
         current_platform = sys.platform
         conf = self.new_config(_utest=True)
 
-        sys.platform = 'win'
+        sys.platform = 'win32'
         self.assertEqual(conf.default_keys(), 'IDLE Classic Windows')
 
         sys.platform = 'darwin'
         self.assertEqual(conf.default_keys(), 'IDLE Classic OSX')
 
-        sys.platform = 'linux'
+        sys.platform = 'some-linux'
         self.assertEqual(conf.default_keys(), 'IDLE Modern Unix')
 
         # Restore platform
@@ -524,7 +524,7 @@ class IdleConfTest(unittest.TestCase):
         conf = self.mock_config()
 
         # Ensure that platform isn't darwin
-        sys.platform = 'linux'
+        sys.platform = 'some-linux'
         self.assertEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
 
         # This should not be the same, sicne replace <Alt- to <Option-
