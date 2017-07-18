@@ -4,6 +4,7 @@
         <ProjectGuid>{10487945-15D1-4092-A214-338395C4116B}</ProjectGuid>
         <OutputName>python</OutputName>
         <OutputName Condition="$(Platform) == 'x86'">$(OutputName)x86</OutputName>
+        <OutputName Condition="$(BuildForDaily) == 'true'">$(OutputName)daily</OutputName>
         <OutputSuffix></OutputSuffix>
         <SupportSigning>false</SupportSigning>
         <BuildForRelease Condition="$(BuildForRelease) == ''">true</BuildForRelease>
@@ -15,6 +16,7 @@
         <Nuget Condition="$(Nuget) == ''">$(ExternalsDir)\windows-installer\nuget\nuget.exe</Nuget>
         <NuspecVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</NuspecVersion>
         <NuspecVersion Condition="$(ReleaseLevelName) != ''">$(NuspecVersion)-$(ReleaseLevelName)</NuspecVersion>
+        <NuspecVersion Condition="$(BuildForDaily) == 'true'">$(MajorVersionNumber).$(MinorVersionNumber).$(DailyBuildVersion)</NuspecVersion>
         <SignOutput>false</SignOutput>
         <TargetName>$(OutputName).$(NuspecVersion)</TargetName>
         <TargetExt>.nupkg</TargetExt>
