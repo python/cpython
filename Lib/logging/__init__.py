@@ -1252,7 +1252,8 @@ class Manager(object):
 
         _acquireLock()
         for logger in self.loggerDict.values():
-            logger._cache.clear()
+            if isinstance(logger, Logger):
+                logger._cache.clear()
         _releaseLock()
 
 #---------------------------------------------------------------------------
@@ -1556,7 +1557,9 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
-        if level not in self._cache:
+        try:
+            return self._cache[level]
+        except KeyError:
             _acquireLock()
             if self.manager.disable >= level:
                 self._cache[level] = False
@@ -1564,7 +1567,7 @@ class Logger(Filterer):
                 self._cache[level] = level >= self.getEffectiveLevel()
             _releaseLock()
 
-        return self._cache[level]
+            return self._cache[level]
 
     def getChild(self, suffix):
         """
