@@ -466,8 +466,7 @@ class IdleConf:
 
     def RemoveKeyBindNames(self, extnNameList):
         "Return extnNameList with keybinding section names removed."
-        return sorted(
-            [n for n in extnNameList if not n.endswith(('_bindings', '_cfgBindings'))])
+        return [n for n in extnNameList if not n.endswith(('_bindings', '_cfgBindings'))]
 
     def GetExtnNameForEvent(self, virtualEvent):
         """Return the name of the extension binding virtualEvent, or None.
