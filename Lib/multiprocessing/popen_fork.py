@@ -49,15 +49,21 @@ class Popen(object):
             return self.poll(os.WNOHANG if timeout == 0.0 else 0)
         return self.returncode
 
-    def terminate(self):
+    def _send_signal(self, sig):
         if self.returncode is None:
             try:
-                os.kill(self.pid, signal.SIGTERM)
+                os.kill(self.pid, sig)
             except ProcessLookupError:
                 pass
             except OSError:
                 if self.wait(timeout=0.1) is None:
                     raise
+
+    def terminate(self):
+        self._send_signal(signal.SIGTERM)
+
+    def kill(self):
+        self._send_signal(signal.SIGKILL)
 
     def _launch(self, process_obj):
         code = 1
