@@ -313,14 +313,30 @@ class SimpleQueue(object):
     def __init__(self, *, ctx):
         self._reader, self._writer = connection.Pipe(duplex=False)
         self._rlock = ctx.Lock()
-        self._poll = self._reader.poll
         if sys.platform == 'win32':
             self._wlock = None
         else:
             self._wlock = ctx.Lock()
 
+    def _check_closed(self):
+        if self._reader is None:
+            raise ValueError("operation on closed queue")
+
+    def close(self):
+        try:
+            reader = self._reader
+            if reader is not None:
+                self._reader = None
+                reader.close()
+        finally:
+            writer = self._writer
+            if writer is not None:
+                self._writer = None
+                writer.close()
+
     def empty(self):
-        return not self._poll()
+        self._check_closed()
+        return not self._reader.poll()
 
     def __getstate__(self):
         context.assert_spawning(self)
@@ -328,15 +344,16 @@ class SimpleQueue(object):
 
     def __setstate__(self, state):
         (self._reader, self._writer, self._rlock, self._wlock) = state
-        self._poll = self._reader.poll
 
     def get(self):
+        self._check_closed()
         with self._rlock:
             res = self._reader.recv_bytes()
         # unserialize the data after having released the lock
         return _ForkingPickler.loads(res)
 
     def put(self, obj):
+        self._check_closed()
         # serialize the data before acquiring the lock
         obj = _ForkingPickler.dumps(obj)
         if self._wlock is None:

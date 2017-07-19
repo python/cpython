@@ -4236,6 +4236,22 @@ class TestSimpleQueue(unittest.TestCase):
 
         proc.join()
 
+    def test_close(self):
+        queue = multiprocessing.SimpleQueue()
+
+        queue.close()
+
+        # closing a queue twice should not fail
+        queue.close()
+
+        # operations on closed queue fail with ValueError
+        with self.assertRaises(ValueError):
+            queue.put("data")
+        with self.assertRaises(ValueError):
+            queue.get()
+        with self.assertRaises(ValueError):
+            queue.empty()
+
 #
 # Mixins
 #

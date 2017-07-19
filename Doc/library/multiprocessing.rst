@@ -862,6 +862,12 @@ For an example of the usage of queues for interprocess communication see
 
       Put *item* into the queue.
 
+   .. method:: close()
+
+      Close the queue.
+
+      .. versionadded:: 3.7
+
 
 .. class:: JoinableQueue([maxsize])
 

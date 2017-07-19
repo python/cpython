@@ -1,0 +1,2 @@
+Add a new close() method to multiprocessing.SimpleQueue to explicitly close
+the queue.
