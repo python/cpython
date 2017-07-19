@@ -11,7 +11,7 @@ set DO_CLEAN=false
 :CheckOpts
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
 if "%~1"=="--no-openssl" (set IncludeSSL=false) & shift & goto CheckOpts
-if "%~1"=="--python" (set PYTHON_FOR_BUILD=%2) & shift & shift & goto CheckOpts
+if "%~1"=="--python" (set PYTHON=%2) & shift & shift & goto CheckOpts
 if "%~1"=="--organization" (set ORG=%2) & shift & shift & goto CheckOpts
 if "%~1"=="-c" (set DO_CLEAN=true) & shift & goto CheckOpts
 if "%~1"=="--clean" (set DO_CLEAN=true) & shift & goto CheckOpts
@@ -56,7 +56,7 @@ for %%e in (%libraries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-source-deps --branch %%e "%EXTERNALS_DIR%\%%e"
     ) else (
         echo.Fetching %%e...
-        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -O %ORG% %%e
+        %PYTHON% "%PCBUILD%get_external.py" -O %ORG% %%e
     )
 )
 
@@ -74,7 +74,7 @@ for %%b in (%binaries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
     ) else (
         echo.Fetching %%b...
-        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -b -O %ORG% %%b
+        %PYTHON% "%PCBUILD%get_external.py" -b -O %ORG% %%b
     )
 )
 
