@@ -3488,6 +3488,32 @@ type_is_gc(PyTypeObject *type)
     return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
+static PyObject *
+generic_subscript(PyTypeObject *tp, PyObject *key)
+{
+    PyObject* stack[2] = {(PyObject *)tp, key};
+    PyObject *meth = PyObject_GetAttrString((PyObject *)tp, "__class_getitem__");
+    const char* msg = "'%.200s' object is not subscriptable";
+    if (meth){
+        return _PyObject_FastCall(meth, stack, 2);
+    }
+    else{
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)){
+            PyErr_Clear();
+            PyErr_Format(PyExc_TypeError, msg, ((PyObject *)tp)->ob_type->tp_name);
+            return NULL;
+        }
+        return NULL;
+    }
+    return NULL;
+}
+
+static PyMappingMethods generic_as_mapping = {
+    NULL, /*mp_length*/
+    (binaryfunc)generic_subscript, /*mp_subscript*/
+    NULL, /*mp_ass_subscript*/
+};
+
 PyTypeObject PyType_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "type",                                     /* tp_name */
@@ -3501,7 +3527,7 @@ PyTypeObject PyType_Type = {
     (reprfunc)type_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
+    &generic_as_mapping,                        /* tp_as_mapping */
     0,                                          /* tp_hash */
     (ternaryfunc)type_call,                     /* tp_call */
     0,                                          /* tp_str */
