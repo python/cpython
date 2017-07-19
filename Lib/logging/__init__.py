@@ -1254,6 +1254,7 @@ class Manager(object):
         for logger in self.loggerDict.values():
             if isinstance(logger, Logger):
                 logger._cache.clear()
+        self.root._cache.clear()
         _releaseLock()
 
 #---------------------------------------------------------------------------
