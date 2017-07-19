@@ -198,42 +198,89 @@ class dircmp:
         for sd in self.subdirs.values():
             sd.phase4_closure()
 
-    def report(self): # Print a report on the differences between a and b
+    def report(self, reportage={}): # Print a report on the differences between a and b
         # Output format is purposely lousy
         print('diff', self.left, self.right)
+        if 'left_only' not in reportage:
+            reportage['left_only'] = []
+        if 'right_only' not in reportage:
+            reportage['right_only'] = []
+        if 'left_same_files' not in reportage:
+            reportage['left_same_files'] = []
+        if 'right_same_files' not in reportage:
+            reportage['right_same_files'] = []
+        if 'left_diff_files' not in reportage:
+            reportage['left_diff_files'] = []
+        if 'right_diff_files' not in reportage:
+            reportage['right_diff_files'] = []
+        if 'left_funny_files' not in reportage:
+            reportage['left_funny_files'] = []
+        if 'right_funny_files' not in reportage:
+            reportage['right_funny_files'] = []
+        if 'left_common_dirs' not in reportage:
+            reportage['left_common_dirs'] = []
+        if 'right_common_dirs' not in reportage:
+            reportage['right_common_dirs'] = []
+        if 'left_common_funny' not in reportage:
+            reportage['left_common_funny'] = []
+        if 'right_common_funny' not in reportage:
+            reportage['right_common_funny'] = []
         if self.left_only:
             self.left_only.sort()
             print('Only in', self.left, ':', self.left_only)
+            for element in self.left_only:
+                reportage['left_only'].append(os.path.join(self.left, element))
         if self.right_only:
             self.right_only.sort()
             print('Only in', self.right, ':', self.right_only)
+            for element in self.right_only:
+                reportage['right_only'].append(os.path.join(self.right, element))
         if self.same_files:
             self.same_files.sort()
             print('Identical files :', self.same_files)
+            for element in self.same_files:
+                reportage['left_same_files'].append(os.path.join(self.left, element))
+                reportage['right_same_files'].append(os.path.join(self.right, element))
         if self.diff_files:
             self.diff_files.sort()
             print('Differing files :', self.diff_files)
+            for element in self.diff_files:
+                reportage['left_diff_files'].append(os.path.join(self.left, element))
+                reportage['right_diff_files'].append(os.path.join(self.right, element))
         if self.funny_files:
             self.funny_files.sort()
             print('Trouble with common files :', self.funny_files)
+            for element in self.funny_files:
+                reportage['left_funny_files'].append(os.path.join(self.left, element))
+                reportage['right_funny_files'].append(os.path.join(self.right, element))
         if self.common_dirs:
             self.common_dirs.sort()
             print('Common subdirectories :', self.common_dirs)
+            for element in self.common_dirs:
+                reportage['left_common_dirs'].append(os.path.join(self.left, element))
+                reportage['right_common_dirs'].append(os.path.join(self.right, element))
         if self.common_funny:
             self.common_funny.sort()
             print('Common funny cases :', self.common_funny)
+            for element in self.common_funny:
+                reportage['left_common_funny'].append(os.path.join(self.left, element))
+                reportage['right_common_funny'].append(os.path.join(self.right, element))
 
-    def report_partial_closure(self): # Print reports on self and on subdirs
-        self.report()
+        return reportage
+
+    def report_partial_closure(self, reportage={}): # Print reports on self and on subdirs
+        reportage = self.report(reportage)
         for sd in self.subdirs.values():
             print()
-            sd.report()
+            reportage = sd.report(reportage)
+        return reportage
 
-    def report_full_closure(self): # Report on self and subdirs recursively
-        self.report()
+    def report_full_closure(self, reportage={}): # Report on self and subdirs recursively
+        reportage = self.report(reportage)
         for sd in self.subdirs.values():
             print()
-            sd.report_full_closure()
+            reportage = sd.report_full_closure(reportage)
+        return reportage
 
     methodmap = dict(subdirs=phase4,
                      same_files=phase3, diff_files=phase3, funny_files=phase3,
