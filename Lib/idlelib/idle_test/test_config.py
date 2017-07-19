@@ -196,6 +196,8 @@ class IdleConfTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.config_string = {}
+
         conf = config.IdleConf(_utest=True)
         if __name__ != '__main__':
             idle_dir = os.path.dirname(__file__)
@@ -203,10 +205,9 @@ class IdleConfTest(unittest.TestCase):
             idle_dir = os.path.abspath(sys.path[0])
         for ctype in conf.config_types:
             config_path = os.path.join(idle_dir, '../config-%s.def' % ctype)
-            conf.defaultCfg[ctype] = config.IdleConfParser(config_path)
-            conf.userCfg[ctype] = config.IdleUserConfParser(config_path)
-        conf.LoadCfgFiles()
-        cls.conf = conf
+            with open(config_path, 'r') as f:
+                cls.config_string[ctype] = f.read()
+
         cls.orig_warn = config._warn
         config._warn = Func()
 
@@ -222,7 +223,12 @@ class IdleConfTest(unittest.TestCase):
 
         Both default and user config used the same config-*.def
         """
-        conf = copy.deepcopy(self.conf)
+        conf = config.IdleConf(_utest=True)
+        for ctype in conf.config_types:
+            conf.defaultCfg[ctype] = config.IdleConfParser('')
+            conf.defaultCfg[ctype].read_string(self.config_string[ctype])
+            conf.userCfg[ctype] = config.IdleUserConfParser('')
+            conf.userCfg[ctype].read_string(self.config_string[ctype])
 
         return conf
 
