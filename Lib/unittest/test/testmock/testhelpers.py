@@ -858,6 +858,19 @@ class SpecSignatureTest(unittest.TestCase):
         check_data_descriptor(foo.desc)
 
 
+    def test_autospec_on_bound_builtin_function(self):
+        meth = types.MethodType(time.ctime, time.time())
+        self.assertIsInstance(meth(), str)
+        mocked = create_autospec(meth)
+
+        # no signature, so no spec to check against
+        mocked()
+        mocked.assert_called_once_with()
+        mocked.reset_mock()
+        mocked(4, 5, 6)
+        mocked.assert_called_once_with(4, 5, 6)
+
+
 class TestCallList(unittest.TestCase):
 
     def test_args_list_contains_call_list(self):
@@ -883,19 +896,6 @@ class TestCallList(unittest.TestCase):
 
         self.assertNotIn(call('fish'), mock.call_args_list)
         self.assertNotIn([call('fish')], mock.call_args_list)
-
-
-    def test_autospec_on_bound_builtin_function(self):
-        meth = types.MethodType(time.ctime, time.time())
-        self.assertIsInstance(meth(), str)
-        mocked = create_autospec(meth)
-
-        # no signature, so no spec to check against
-        mocked()
-        mocked.assert_called_once_with()
-        mocked.reset_mock()
-        mocked(4, 5, 6)
-        mocked.assert_called_once_with(4, 5, 6)
 
 
     def test_call_list_str(self):
