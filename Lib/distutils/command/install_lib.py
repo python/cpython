@@ -140,18 +140,31 @@ class install_lib(Command):
 
     # -- Utility methods -----------------------------------------------
 
-    def _mutate_outputs(self, has_any, build_cmd, cmd_option, output_dir):
-        if not has_any:
+    def _pure_outputs(self):
+        if not self.distribution.has_pure_modules():
             return []
 
-        build_cmd = self.get_finalized_command(build_cmd)
+        build_cmd = self.get_finalized_command('build_py')
         build_files = build_cmd.get_outputs()
-        build_dir = getattr(build_cmd, cmd_option)
+        build_dir = getattr(build_cmd, 'build_lib')
 
         prefix_len = len(build_dir) + len(os.sep)
         outputs = []
         for file in build_files:
-            outputs.append(os.path.join(output_dir, file[prefix_len:]))
+            outputs.append(os.path.join(self.install_dir, file[prefix_len:]))
+
+        return outputs
+
+    def _ext_outputs(self):
+        if not self.distribution.has_ext_modules():
+            return []
+
+        build_cmd = self.get_finalized_command('build_ext')
+
+        outputs = []
+        for ext in build_cmd.extensions:
+            filename = build_cmd.get_ext_filename(ext.name)
+            outputs.append(os.path.join(self.install_dir, filename))
 
         return outputs
 
@@ -182,19 +195,14 @@ class install_lib(Command):
         were actually run.  Not affected by the "dry-run" flag or whether
         modules have actually been built yet.
         """
-        pure_outputs = \
-            self._mutate_outputs(self.distribution.has_pure_modules(),
-                                 'build_py', 'build_lib',
-                                 self.install_dir)
+        pure_outputs = self._pure_outputs()
+
         if self.compile:
             bytecode_outputs = self._bytecode_filenames(pure_outputs)
         else:
             bytecode_outputs = []
 
-        ext_outputs = \
-            self._mutate_outputs(self.distribution.has_ext_modules(),
-                                 'build_ext', 'build_lib',
-                                 self.install_dir)
+        ext_outputs = self._ext_outputs()
 
         return pure_outputs + bytecode_outputs + ext_outputs
 

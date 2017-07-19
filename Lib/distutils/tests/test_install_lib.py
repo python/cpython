@@ -6,6 +6,7 @@ import unittest
 
 from distutils.command.install_lib import install_lib
 from distutils.extension import Extension
+from distutils.sysconfig import get_config_var
 from distutils.tests import support
 from distutils.errors import DistutilsOptionError
 from test.support import run_unittest
@@ -69,6 +70,25 @@ class InstallLibTestCase(support.TempdirManager,
         # foo.import-tag-abiflags.so / foo.pyd
         outputs = cmd.get_outputs()
         self.assertEqual(len(outputs), 4, outputs)
+
+    def test_get_outputs_inplace_ext(self):
+        # ensure get_outputs() is correct with extensions built inplace
+        project_dir, dist = self.create_dist()
+        build_ext_cmd = dist.get_command_obj('build_ext')
+        build_ext_cmd.inplace = 1
+        os.chdir(project_dir)
+        cmd = install_lib(dist)
+
+        # setting up a dist environment
+        cmd.install_dir = self.mkdtemp()
+        cmd.distribution.ext_modules = [Extension('foo', ['xxx'])]
+        cmd.distribution.script_name = 'setup.py'
+
+        # get_outputs should return foo.import-tag-abiflags.so
+        actual = cmd.get_outputs()
+        expected = [os.path.join(cmd.install_dir,
+                                 'foo' + get_config_var('EXT_SUFFIX'))]
+        self.assertEqual(expected, actual)
 
     def test_get_inputs(self):
         project_dir, dist = self.create_dist()
