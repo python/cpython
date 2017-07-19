@@ -95,9 +95,9 @@ class dircmp:
 
     High level usage:
       x = dircmp(dir1, dir2)
-      x.report() -> prints and returns a report on the differences between dir1 and dir2
+      x.report() -> prints a report on the differences between dir1 and dir2
        or
-      x.report_partial_closure() -> prints and returns report on differences between dir1
+      x.report_partial_closure() -> prints report on differences between dir1
             and dir2, and reports on common immediate subdirectories.
       x.report_full_closure() -> like report_partial_closure,
             but fully recursive.
@@ -205,16 +205,26 @@ class dircmp:
             reportage['left_only'] = []
         if 'right_only' not in reportage:
             reportage['right_only'] = []
-        if 'same_files' not in reportage:
-            reportage['same_files'] = []
-        if 'diff_files' not in reportage:
-            reportage['diff_files'] = []
-        if 'funny_files' not in reportage:
-            reportage['funny_files'] = []
-        if 'common_dirs' not in reportage:
-            reportage['common_dirs'] = []
-        if 'common_funny' not in reportage:
-            reportage['common_funny'] = []
+        if 'left_same_files' not in reportage:
+            reportage['left_same_files'] = []
+        if 'right_same_files' not in reportage:
+            reportage['right_same_files'] = []
+        if 'left_diff_files' not in reportage:
+            reportage['left_diff_files'] = []
+        if 'right_diff_files' not in reportage:
+            reportage['right_diff_files'] = []
+        if 'left_funny_files' not in reportage:
+            reportage['left_funny_files'] = []
+        if 'right_funny_files' not in reportage:
+            reportage['right_funny_files'] = []
+        if 'left_common_dirs' not in reportage:
+            reportage['left_common_dirs'] = []
+        if 'right_common_dirs' not in reportage:
+            reportage['right_common_dirs'] = []
+        if 'left_common_funny' not in reportage:
+            reportage['left_common_funny'] = []
+        if 'right_common_funny' not in reportage:
+            reportage['right_common_funny'] = []
         if self.left_only:
             self.left_only.sort()
             print('Only in', self.left, ':', self.left_only)
@@ -229,27 +239,32 @@ class dircmp:
             self.same_files.sort()
             print('Identical files :', self.same_files)
             for element in self.same_files:
-                reportage['same_files'].append(os.path.join(self.left, element))
+                reportage['left_same_files'].append(os.path.join(self.left, element))
+                reportage['right_same_files'].append(os.path.join(self.right, element))
         if self.diff_files:
             self.diff_files.sort()
             print('Differing files :', self.diff_files)
             for element in self.diff_files:
-                reportage['diff_files'].append(os.path.join(self.left, element))
+                reportage['left_diff_files'].append(os.path.join(self.left, element))
+                reportage['right_diff_files'].append(os.path.join(self.right, element))
         if self.funny_files:
             self.funny_files.sort()
             print('Trouble with common files :', self.funny_files)
             for element in self.funny_files:
-                reportage['funny_files'].append(os.path.join(self.left, element))
+                reportage['left_funny_files'].append(os.path.join(self.left, element))
+                reportage['right_funny_files'].append(os.path.join(self.right, element))
         if self.common_dirs:
             self.common_dirs.sort()
             print('Common subdirectories :', self.common_dirs)
             for element in self.common_dirs:
-                reportage['common_dirs'].append(os.path.join(self.left, element))
+                reportage['left_common_dirs'].append(os.path.join(self.left, element))
+                reportage['right_common_dirs'].append(os.path.join(self.right, element))
         if self.common_funny:
             self.common_funny.sort()
             print('Common funny cases :', self.common_funny)
             for element in self.common_funny:
-                reportage['common_funny'].append(os.path.join(self.left, element))
+                reportage['left_common_funny'].append(os.path.join(self.left, element))
+                reportage['right_common_funny'].append(os.path.join(self.right, element))
 
         return reportage
 
