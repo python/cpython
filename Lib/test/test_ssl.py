@@ -60,7 +60,7 @@ BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
 
-DHFILE = data_file("dh512.pem")
+DHFILE = data_file("dh1024.pem")
 BYTES_DHFILE = os.fsencode(DHFILE)
 
 def handle_error(prefix):

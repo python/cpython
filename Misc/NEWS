@@ -37,7 +37,7 @@ Library
 
 - [Security] bpo-30585: Fix TLS stripping vulnerability in smptlib,
   CVE-2016-0772.  Reported by Team Oststrom
-
+  
 - [Security] bpo-30694: Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes
   of multiple security vulnerabilities including: CVE-2017-9233 (External
   entity infinite loop DoS), CVE-2016-9063 (Integer overflow, re-fix),
