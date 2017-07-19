@@ -127,7 +127,7 @@ def poll(timeout=0.0, map=None):
         map = socket_map
     if map:
         r = []; w = []; e = []
-        for fd, obj in list(map.items()):
+        for fd, obj in map.items():
             is_r = obj.readable()
             is_w = obj.writable()
             if is_r:
@@ -170,7 +170,7 @@ def poll2(timeout=0.0, map=None):
         timeout = int(timeout*1000)
     pollster = select.poll()
     if map:
-        for fd, obj in list(map.items()):
+        for fd, obj in map.items():
             flags = 0
             if obj.readable():
                 flags |= select.POLLIN | select.POLLPRI
