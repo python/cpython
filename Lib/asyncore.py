@@ -404,6 +404,8 @@ class dispatcher:
                     raise
 
     def fileno(self):
+        if self.socket is None:
+            raise socket.error(EBADF, 'Bad file descriptor')
         return self.socket.fileno()
 
     # log and log_info may be overridden to provide more sophisticated
@@ -649,6 +651,3 @@ if os.name == 'posix':
             self.socket = file_wrapper(fd)
             self._fileno = self.socket.fileno()
             self.add_channel()
-
-        def fileno(self):
-            return self.socket.fileno()
