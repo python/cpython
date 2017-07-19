@@ -53,7 +53,9 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
 {
     PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns;
     PyObject *cls = NULL, *cell = NULL;
+    PyObject *base_types;
     int isclass = 0;   /* initialize to prevent gcc warning */
+    int i, modified_bases = 0;
 
     if (nargs < 2) {
         PyErr_SetString(PyExc_TypeError,
@@ -75,6 +77,30 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
     bases = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
     if (bases == NULL)
         return NULL;
+
+    for (i = 2; i < nargs; i++){
+        PyObject *base, *new_base;
+        base  = args[i];
+        if PyType_Check(base){
+            continue;
+        }
+        new_base = PyObject_GetAttrString(base, "__base_subclass__");
+        if (new_base == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
+            else {
+                Py_DECREF(bases);
+                return NULL;
+            }
+        }
+        else {
+            Py_INCREF(new_base);
+            PyTuple_SET_ITEM(bases, i - 2, new_base);
+            Py_DECREF(base);
+            modified_bases = 1;
+        }
+    }
 
     if (kwnames == NULL) {
         meta = NULL;
@@ -168,6 +194,10 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
+        if (modified_bases){
+            base_types = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
+            PyMapping_SetItemString(ns, "__orig_bases__", base_types);
+        }
         PyObject *margs[3] = {name, bases, ns};
         cls = _PyObject_FastCallDict(meta, margs, 3, mkw);
         if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
