@@ -1,0 +1,1 @@
+Fix ``install_lib.get_outputs()`` for inplace extensions.
