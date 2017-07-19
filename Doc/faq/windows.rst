@@ -170,7 +170,7 @@ offender.
 How do I make an executable from a Python script?
 -------------------------------------------------
 
-The following 2 packages cx_Freeze and PyInstaller allow 
+The following 2 packages cx_Freeze and PyInstaller allow
 the creation of cross-platform stand-alone console and GUI executables:
 * http://cx-freeze.sourceforge.net/
 * http://www.pyinstaller.org/
