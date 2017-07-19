@@ -144,17 +144,17 @@ def poll(timeout=0.0, map=None):
         r, w, e = select.select(r, w, e, timeout)
 
         for obj in r:
-            if obj.fileno() is -1:
+            if obj.closing:
                 continue
             read(obj)
 
         for obj in w:
-            if obj.fileno() is -1:
+            if obj.closing:
                 continue
             write(obj)
 
         for obj in e:
-            if obj.fileno() is -1:
+            if obj.closing:
                 continue
             _exception(obj)
 
@@ -177,13 +177,13 @@ def poll2(timeout=0.0, map=None):
             if flags:
                 pollster.register(fd, flags)
 
-        ready = []
         r = pollster.poll(timeout)
+        ready = []
         for fd, flags in r:
             ready.append((map[fd], flags))
 
         for obj, flags in ready:
-            if obj.fileno() is not -1:
+            if not obj.closing:
                 readwrite(obj, flags)
 
 
@@ -388,20 +388,23 @@ class dispatcher:
                 raise
 
     def close(self):
+        if self.closing:
+            return
+        self.closing = True
+
         self.connected = False
         self.accepting = False
         self.connecting = False
         self.del_channel()
         if self.socket is not None:
             try:
-                self._fileno = -1
                 self.socket.close()
             except OSError as why:
                 if why.args[0] not in (ENOTCONN, EBADF):
                     raise
 
     def fileno(self):
-        return self._fileno
+        return self.socket.fileno()
 
     # log and log_info may be overridden to provide more sophisticated
     # logging and warning methods. In general, log is for 'hit' logging
@@ -648,4 +651,4 @@ if os.name == 'posix':
             self.add_channel()
 
         def fileno(self):
-            return self._fileno
+            return self.socket.fileno()
