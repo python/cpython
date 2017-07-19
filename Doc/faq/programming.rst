@@ -96,11 +96,7 @@ then compiles the generated C code and links it with the rest of the Python
 interpreter to form a self-contained binary which acts exactly like your script.
 
 Obviously, freeze requires a C compiler.  There are several other utilities
-which don't. One is Thomas Heller's py2exe (Windows only) at
-
-    http://www.py2exe.org/
-
-Another tool is Anthony Tuininga's `cx_Freeze <http://cx-freeze.sourceforge.net/>`_.
+which don't. Refer to Doc/faq/windows.rst.
 
 
 Are there coding standards or a style guide for Python programs?
