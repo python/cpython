@@ -204,9 +204,9 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.checkError([opt, 'foo'], 'invalid resource')
 
                 # all + a resource not part of "all"
-                ns = regrtest._parse_args([opt, 'all,tzdata'])
+                ns = regrtest._parse_args([opt, 'all,extralargefile'])
                 self.assertEqual(ns.use_resources,
-                                 list(regrtest.ALL_RESOURCES) + ['tzdata'])
+                                 list(regrtest.ALL_RESOURCES) + ['extralargefile'])
 
                 # test another resource which is not part of "all"
                 ns = regrtest._parse_args([opt, 'extralargefile'])
