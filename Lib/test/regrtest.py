@@ -214,10 +214,7 @@ ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
 #
 # - extralagefile (ex: test_zipfile64): really too slow to be enabled
 #   "by default"
-# - tzdata: while needed to validate fully test_datetime, it makes
-#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
-#   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile',)
 
 # When tests are run from the Python build directory, it is best practice
 # to keep the test files in a subfolder.  This eases the cleanup of leftover
