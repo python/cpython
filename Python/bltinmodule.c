@@ -74,6 +74,7 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                         "__build_class__: name is not a string");
         return NULL;
     }
+
     bases = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
     if (bases == NULL)
         return NULL;
@@ -96,31 +97,42 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
             }
         }
         else {
+            if (!PyCallable_Check(new_base_meth)) {
+                PyErr_Format(PyExc_TypeError,
+                             "attribute of type '%.200s' is not callable",
+                             Py_TYPE(new_base_meth)->tp_name);
+                Py_DECREF(bases);
+                return NULL;
+            }
             stack[0] = bases;
             new_base = _PyObject_FastCall(new_base_meth, stack, 1);
+            if (new_base == NULL){
+                Py_DECREF(bases);
+                return NULL;
+            }
             Py_INCREF(new_base);
-            PyTuple_SET_ITEM(bases, i - 2, new_base);
-            Py_DECREF(base);
+            args[i] = new_base;
             modified_bases = 1;
         }
     }
 
     if (modified_bases){
         int ind, tot_nones = 0;
-        for (i = 0; i < nargs - 2; i++){
-            if (PyTuple_GET_ITEM(bases, i) == Py_None){
+        for (i = 2; i < nargs; i++){
+            if (args[i] == Py_None){
                 tot_nones++;
             }
         }
+
         ind = 0;
         /* Remove all None's from base classes */
         new_bases = PyTuple_New(nargs - 2 - tot_nones);
-        for (i = 0; i < nargs - 2; i++){
-            PyObject* a_base;
-            a_base = PyTuple_GET_ITEM(bases, i);
-            if (a_base != Py_None){
-                Py_INCREF(a_base);
-                PyTuple_SET_ITEM(new_bases, ind, a_base);
+        for (i = 2; i < nargs; i++){
+            PyObject* base;
+            base = args[i];
+            if (base != Py_None){
+                Py_INCREF(base);
+                PyTuple_SET_ITEM(new_bases, ind, base);
                 ind++;
             }
         }
