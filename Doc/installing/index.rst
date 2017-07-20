@@ -210,10 +210,11 @@ is unexpectedly upgraded using ``pip``.
 On such systems, it is often better to use a virtual environment or a
 per-user installation when installing packages with ``pip``.
 
+
 Pip not installed
 -----------------
 
-It is possible that ``pip`` does not get installed by default. One potential fix for this is running::
+It is possible that ``pip`` does not get installed by default. One potential fix is::
 
 	python -m ensurepip --default-pip
 
