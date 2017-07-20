@@ -51,7 +51,7 @@ static PyObject *
 builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                         PyObject *kwnames)
 {
-    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns;
+    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *new_bases;
     PyObject *cls = NULL, *cell = NULL;
     PyObject *base_types;
     int isclass = 0;   /* initialize to prevent gcc warning */
@@ -79,13 +79,14 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
         return NULL;
 
     for (i = 2; i < nargs; i++){
-        PyObject *base, *new_base;
+        PyObject *base, *new_base, *new_base_meth;
+        PyObject* stack[1];
         base  = args[i];
         if PyType_Check(base){
             continue;
         }
-        new_base = PyObject_GetAttrString(base, "__base_subclass__");
-        if (new_base == NULL) {
+        new_base_meth = PyObject_GetAttrString(base, "__base_subclass__");
+        if (new_base_meth == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 PyErr_Clear();
             }
@@ -95,11 +96,36 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
             }
         }
         else {
+            stack[0] = bases;
+            new_base = _PyObject_FastCall(new_base_meth, stack, 1);
             Py_INCREF(new_base);
             PyTuple_SET_ITEM(bases, i - 2, new_base);
             Py_DECREF(base);
             modified_bases = 1;
         }
+    }
+
+    if (modified_bases){
+        int ind, tot_nones = 0;
+        for (i = 0; i < nargs - 2; i++){
+            if (PyTuple_GET_ITEM(bases, i) == Py_None){
+                tot_nones++;
+            }
+        }
+        ind = 0;
+        /* Remove all None's from base classes */
+        new_bases = PyTuple_New(nargs - 2 - tot_nones);
+        for (i = 0; i < nargs - 2; i++){
+            PyObject* a_base;
+            a_base = PyTuple_GET_ITEM(bases, i);
+            if (a_base != Py_None){
+                Py_INCREF(a_base);
+                PyTuple_SET_ITEM(new_bases, ind, a_base);
+                ind++;
+            }
+        }
+        Py_DECREF(bases);
+        bases = new_bases;
     }
 
     if (kwnames == NULL) {
