@@ -277,18 +277,18 @@ class _TestProcess(BaseTestCase):
         self.assertNotIn(p, self.active_children())
 
     @classmethod
-    def _test_terminate(cls):
+    def _sleep_some(cls):
         time.sleep(100)
 
     @classmethod
     def _test_sleep(cls, delay):
         time.sleep(delay)
 
-    def test_terminate(self):
+    def _kill_process(self, meth):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        p = self.Process(target=self._test_terminate)
+        p = self.Process(target=self._sleep_some)
         p.daemon = True
         p.start()
 
@@ -309,7 +309,7 @@ class _TestProcess(BaseTestCase):
         # XXX maybe terminating too soon causes the problems on Gentoo...
         time.sleep(1)
 
-        p.terminate()
+        meth(p)
 
         if hasattr(signal, 'alarm'):
             # On the Gentoo buildbot waitpid() often seems to block forever.
@@ -333,9 +333,17 @@ class _TestProcess(BaseTestCase):
 
         p.join()
 
-        # sometimes get p.exitcode == 0 on Windows ...
+        return p.exitcode
+
+    def test_terminate(self):
+        exitcode = self._kill_process(multiprocessing.Process.terminate)
         if os.name != 'nt':
-            self.assertEqual(p.exitcode, -signal.SIGTERM)
+            self.assertEqual(exitcode, -signal.SIGTERM)
+
+    def test_kill(self):
+        exitcode = self._kill_process(multiprocessing.Process.kill)
+        if os.name != 'nt':
+            self.assertEqual(exitcode, -signal.SIGKILL)
 
     def test_cpu_count(self):
         try:
@@ -462,7 +470,7 @@ class _TestProcess(BaseTestCase):
         for p in procs:
             self.assertEqual(p.exitcode, 0)
 
-        procs = [self.Process(target=self._test_terminate)
+        procs = [self.Process(target=self._sleep_some)
                  for i in range(N)]
         for p in procs:
             p.start()
