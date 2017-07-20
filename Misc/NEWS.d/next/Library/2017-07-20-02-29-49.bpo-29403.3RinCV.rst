@@ -1,0 +1,2 @@
+Fix ``unittest.mock``'s autospec to not fail on method-bound builtin
+functions.  Patch by Aaron Gallagher.
