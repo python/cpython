@@ -128,7 +128,7 @@ Pattern examples:
 
 
 ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'tzdata')
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui')
 
 # Other resources excluded from --use=all:
 #
