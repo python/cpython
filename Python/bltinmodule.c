@@ -59,7 +59,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         PyObject *base, *new_base, *new_base_meth;
         PyObject* stack[1];
         base  = args[i];
-        if PyType_Check(base){
+        if (PyType_Check(base)) {
             continue;
         }
         new_base_meth = PyObject_GetAttrString(base, "__base_subclass__");
@@ -93,18 +93,18 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         /* Find out have many bases wants to be removed to pre-allocate
            the tuple for new bases */
         tot_nones = 0;
-        for (i = 2; i < nargs; i++){
-            if (args[i] == Py_None){
+        for (i = 2; i < nargs; i++) {
+            if (args[i] == Py_None) {
                 tot_nones++;
             }
         }
         new_bases = PyTuple_New(nargs - 2 - tot_nones);
         /* Remove all None's from base classes */
         ind = 0;
-        for (i = 2; i < nargs; i++){
+        for (i = 2; i < nargs; i++) {
             PyObject* base;
             base = args[i];
-            if (base != Py_None){
+            if (base != Py_None) {
                 Py_INCREF(base);
                 PyTuple_SET_ITEM(new_bases, ind, base);
                 ind++;
@@ -112,7 +112,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         }
         return new_bases;
     }
-    else{
+    else {
         return bases;
     }
 }
@@ -146,17 +146,16 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                         "__build_class__: name is not a string");
         return NULL;
     }
-
     bases = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
     if (bases == NULL)
         return NULL;
 
     new_bases = update_bases(bases, args, nargs, &modified_bases);
-    if (new_bases == NULL){
+    if (new_bases == NULL) {
         Py_DECREF(bases);
         return NULL;
     }
-    else{
+    else {
         old_bases = bases;
         bases = new_bases;
     }
