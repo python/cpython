@@ -313,52 +313,57 @@ class SimpleQueue(object):
     def __init__(self, *, ctx):
         self._reader, self._writer = connection.Pipe(duplex=False)
         self._rlock = ctx.Lock()
-        if sys.platform == 'win32':
-            self._wlock = None
-        else:
-            self._wlock = ctx.Lock()
+        self._wlock = ctx.Lock()
 
-    def _check_closed(self):
-        if self._reader is None:
-            raise ValueError("operation on closed queue")
+    def _error_closed(self):
+        return ValueError("operation on closed queue")
 
     def close(self):
-        try:
-            reader = self._reader
-            if reader is not None:
-                self._reader = None
-                reader.close()
-        finally:
-            writer = self._writer
-            if writer is not None:
-                self._writer = None
-                writer.close()
+        with self._rlock, self._wlock:
+            try:
+                reader = self._reader
+                if reader is not None:
+                    self._reader = None
+                    reader.close()
+            finally:
+                writer = self._writer
+                if writer is not None:
+                    self._writer = None
+                    writer.close()
 
     def empty(self):
-        self._check_closed()
-        return not self._reader.poll()
+        with self._rlock:
+            if self._reader is None:
+                raise self._error_closed()
+            return not self._reader.poll()
 
     def __getstate__(self):
         context.assert_spawning(self)
-        return (self._reader, self._writer, self._rlock, self._wlock)
+        with self._rlock, self._wlock:
+            if self._reader is None:
+                raise self._error_closed()
+            return (self._reader, self._writer, self._rlock, self._wlock)
 
     def __setstate__(self, state):
+        # __setstate__() can be called before __init__(), so don't use _rlock
+        # nor _wlock
         (self._reader, self._writer, self._rlock, self._wlock) = state
 
     def get(self):
-        self._check_closed()
         with self._rlock:
+            if self._reader is None:
+                raise self._error_closed()
             res = self._reader.recv_bytes()
         # unserialize the data after having released the lock
         return _ForkingPickler.loads(res)
 
     def put(self, obj):
-        self._check_closed()
         # serialize the data before acquiring the lock
         obj = _ForkingPickler.dumps(obj)
-        if self._wlock is None:
-            # writes to a message oriented win32 pipe are atomic
+
+        # On Windows, while writing to a message oriented win32 pipe is atomic,
+        # wlock is still required to prevent race condition with close()
+        with self._wlock:
+            if self._writer is None:
+                raise self._error_closed()
             self._writer.send_bytes(obj)
-        else:
-            with self._wlock:
-                self._writer.send_bytes(obj)
