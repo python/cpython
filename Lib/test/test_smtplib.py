@@ -17,6 +17,7 @@ import errno
 import textwrap
 
 import unittest
+from unittest.mock import patch
 from test import support, mock_socket
 
 try:
@@ -549,7 +550,10 @@ class DebuggingServerTests(unittest.TestCase):
             smtp.send_message(m)
         smtp.close()
 
-    def testSendMessageAddDateIfMissing(self):
+    @patch('email.utils.formatdate')
+    def testSendMessageAddDateIfMissing(self, mocked_date_obj):
+        current_date = 'Thu, 1 Jan 1970 17:42:00 +0000'
+        mocked_date_obj.return_value = current_date
         m = email.mime.text.MIMEText('A test message')
         m['From'] = 'foo@bar.com'
         m['To'] = 'John'
@@ -572,8 +576,7 @@ class DebuggingServerTests(unittest.TestCase):
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
         self.assertEqual(self.output.getvalue(), mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
-        current_moment = email.utils.formatdate()
-        Date = re.compile(''.join(("\\\\nDate: ",current_moment[:16])),re.MULTILINE)
+        Date = re.compile(''.join(("\\\\nDate: ", current_date)), re.MULTILINE)
         self.assertRegex(debugout, Date)
 
 
