@@ -31,7 +31,6 @@ def main():
                         help='sort the output of dictionaries by key')
     options = parser.parse_args()
 
-    # Read input JSON
     hook = collections.OrderedDict if options.sort_keys else None
     with options.infile as infile:
         try:
@@ -39,7 +38,6 @@ def main():
         except ValueError as e:
             raise SystemExit(e)
 
-    # Output JSON
     with options.outfile as outfile:
         json.dump(obj, outfile, sort_keys=options.sort_keys, indent=4)
         outfile.write('\n')
