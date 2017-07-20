@@ -250,9 +250,15 @@ PROGRESS_UPDATE = 30.0   # seconds
 
 from test import test_support
 
-RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
-                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui',
-                  'xpickle')
+ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui',
+                 'xpickle')
+
+# Other resources excluded from --use=all:
+#
+# - extralagefile (ex: test_zipfile64): really too slow to be enabled
+#   "by default"
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile',)
 
 TEMPDIR = os.path.abspath(tempfile.gettempdir())
 
@@ -420,7 +426,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             u = [x.lower() for x in a.split(',')]
             for r in u:
                 if r == 'all':
-                    use_resources[:] = RESOURCE_NAMES
+                    use_resources[:] = ALL_RESOURCES
                     continue
                 remove = False
                 if r[0] == '-':
