@@ -183,7 +183,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: erasechar()
 
-   Return the user's current erase character as a one-byte byte string.  Under Unix operating systems this
+   Return the user's current erase character as a one-byte bytes object.  Under Unix operating systems this
    is a property of the controlling tty of the curses program, and is not set by
    the curses library itself.
 
@@ -192,8 +192,8 @@ The module :mod:`curses` defines the following functions:
 
    The :func:`.filter` routine, if used, must be called before :func:`initscr` is
    called.  The effect is that, during those calls, :envvar:`LINES` is set to ``1``; the
-   capabilities **clear**, **cup**, **cud**, **cud1**, **cuu1**, **cuu**, **vpa** are disabled; and the **home**
-   string is set to the value of **cr**. The effect is that the cursor is confined to
+   capabilities ``clear``, ``cup``, ``cud``, ``cud1``, ``cuu1``, ``cuu``, ``vpa`` are disabled; and the ``home``
+   string is set to the value of ``cr``. The effect is that the cursor is confined to
    the current line, and so are screen updates.  This may be used for enabling
    character-at-a-time  line editing without touching the rest of the screen.
 
@@ -228,7 +228,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: getsyx()
 
    Return the current coordinates of the virtual screen cursor as a tuple
-   ``(y, x)``.  If **leaveok** is currently true, then return ``(-1, -1)``.
+   ``(y, x)``.  If :meth:`leaveok <window.leaveok>` is currently ``True``, then return ``(-1, -1)``.
 
 
 .. function:: getwin(file)
@@ -321,24 +321,24 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: keyname(k)
 
-   Return the name of the key numbered *k* as a byte string.  The name of a key generating printable
+   Return the name of the key numbered *k* as a bytes object.  The name of a key generating printable
    ASCII character is the key's character.  The name of a control-key combination
-   is a two-byte byte string consisting of a caret (``b'^'``) followed by the corresponding
+   is a two-byte bytes object consisting of a caret (``b'^'``) followed by the corresponding
    printable ASCII character.  The name of an alt-key combination (128--255) is a
-   byte string consisting of the prefix ``b'M-'`` followed by the name of the corresponding
+   bytes object consisting of the prefix ``b'M-'`` followed by the name of the corresponding
    ASCII character.
 
 
 .. function:: killchar()
 
-   Return the user's current line kill character as a one-byte byte string. Under Unix operating systems
+   Return the user's current line kill character as a one-byte bytes object. Under Unix operating systems
    this is a property of the controlling tty of the curses program, and is not set
    by the curses library itself.
 
 
 .. function:: longname()
 
-   Return a byte string containing the terminfo long name field describing the current
+   Return a bytes object containing the terminfo long name field describing the current
    terminal.  The maximum length of a verbose description is 128 characters.  It is
    defined only after the call to :func:`initscr`.
 
@@ -427,9 +427,9 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: noqiflush()
 
-   When the :func:`noqiflush` routine is used, normal flush of input and output queues
-   associated with the INTR, QUIT and SUSP characters will not be done.  You may
-   want to call :func:`noqiflush` in a signal handler if you want output to
+   When the :func:`!noqiflush` routine is used, normal flush of input and output queues
+   associated with the ``INTR``, ``QUIT`` and ``SUSP`` characters will not be done.  You may
+   want to call :func:`!noqiflush` in a signal handler if you want output to
    continue as though the interrupt had not occurred, after the handler exits.
 
 
@@ -494,7 +494,7 @@ The module :mod:`curses` defines the following functions:
    Backend function used by :func:`resizeterm`, performing most of the work;
    when resizing the windows, :func:`resize_term` blank-fills the areas that are
    extended.  The calling application should fill in these areas with
-   appropriate data.  The :func:`resize_term` function attempts to resize all
+   appropriate data.  The :func:`!resize_term` function attempts to resize all
    windows.  However, due to the calling convention of pads, it is not possible
    to resize these without additional interaction with the application.
 
@@ -515,7 +515,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: setsyx(y, x)
 
    Set the virtual screen cursor to *y*, *x*. If *y* and *x* are both ``-1``, then
-   **leaveok** is set.
+   :meth:`leaveok <window.leaveok>` is set ``True``.
 
 
 .. function:: setupterm(term=None, fd=-1)
@@ -549,14 +549,14 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: termname()
 
-   Return the value of the environment variable :envvar:`TERM`, as a byte string,
+   Return the value of the environment variable :envvar:`TERM`, as a bytes object,
    truncated to 14 characters.
 
 
 .. function:: tigetflag(capname)
 
    Return the value of the Boolean capability corresponding to the terminfo
-   capability name *capname*.  Return the value ``-1`` if *capname* is not a
+   capability name *capname* as an integer.  Return the value ``-1`` if *capname* is not a
    Boolean capability, or ``0`` if it is canceled or absent from the terminal
    description.
 
@@ -564,7 +564,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: tigetnum(capname)
 
    Return the value of the numeric capability corresponding to the terminfo
-   capability name *capname*.  Return the value ``-2`` if *capname* is not a
+   capability name *capname* as an integer.  Return the value ``-2`` if *capname* is not a
    numeric capability, or ``-1`` if it is canceled or absent from the terminal
    description.
 
@@ -572,14 +572,14 @@ The module :mod:`curses` defines the following functions:
 .. function:: tigetstr(capname)
 
    Return the value of the string capability corresponding to the terminfo
-   capability name *capname* as a byte string.  Return ``None`` if *capname*
-   is not a string capability, or is canceled or absent from the terminal
-   description.
+   capability name *capname* as a bytes object.  Return ``None`` if *capname*
+   is not a terminfo "string capability", or is canceled or absent from the
+   terminal description.
 
 
 .. function:: tparm(str[, ...])
 
-   Instantiate the byte string *str* with the supplied parameters, where *str* should
+   Instantiate the bytes object *str* with the supplied parameters, where *str* should
    be a parameterized string obtained from the terminfo database.  E.g.
    ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
    result depending on terminal type.
@@ -599,7 +599,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: unctrl(ch)
 
-   Return a byte string which is a printable representation of the character *ch*.
+   Return a bytes object which is a printable representation of the character *ch*.
    Control characters are represented as a caret followed by the character, for
    example as ``b'^C'``. Printing characters are left as they are.
 
@@ -663,7 +663,7 @@ The module :mod:`curses` defines the following functions:
    this function will restore the terminal to a sane state before re-raising the
    exception and generating a traceback.  The callable object *func* is then passed
    the main window 'stdscr' as its first argument, followed by any other arguments
-   passed to :func:`wrapper`.  Before calling *func*, :func:`wrapper` turns on
+   passed to :func:`!wrapper`.  Before calling *func*, :func:`!wrapper` turns on
    cbreak mode, turns off echo, enables the terminal keypad, and initializes colors
    if the terminal has color support.  On exit (whether normally or by exception)
    it restores cooked mode, turns on echo, and disables the terminal keypad.
@@ -923,7 +923,7 @@ the following methods and attributes:
             window.getstr(y, x)
             window.getstr(y, x, n)
 
-   Read a byte string from the user, with primitive line editing capacity.
+   Read a bytes object from the user, with primitive line editing capacity.
 
 
 .. method:: window.getyx()
@@ -1011,7 +1011,7 @@ the following methods and attributes:
 .. method:: window.instr([n])
             window.instr(y, x[, n])
 
-   Return a byte string of characters, extracted from the window starting at the
+   Return a bytes object of characters, extracted from the window starting at the
    current cursor position, or at *y*, *x* if specified. Attributes are stripped
    from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
@@ -1276,7 +1276,7 @@ The :mod:`curses` module defines the following data members:
 
 .. data:: version
 
-   A byte string representing the current version of the module.  Also available as
+   A bytes object representing the current version of the module.  Also available as
    :const:`__version__`.
 
 Some constants are available to specify character cell attributes.
