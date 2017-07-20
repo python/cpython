@@ -319,6 +319,10 @@ class SimpleQueue(object):
         else:
             self._wlock = ctx.Lock()
 
+    def close(self):
+        self._reader.close()
+        self._writer.close()
+
     def empty(self):
         return not self._poll()
 

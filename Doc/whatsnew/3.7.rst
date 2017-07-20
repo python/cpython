@@ -210,6 +210,14 @@ math
 New :func:`~math.remainder` function, implementing the IEEE 754-style remainder
 operation. (Contributed by Mark Dickinson in :issue:`29962`.)
 
+
+multiprocessing
+---------------
+
+The :class:`multiprocessing.SimpleQueue` class has a new
+:meth:`~multiprocessing.SimpleQueue.close` method to explicitly close the
+queue.
+
 os
 --
 
