@@ -178,9 +178,7 @@ def poll2(timeout=0.0, map=None):
                 pollster.register(fd, flags)
 
         r = pollster.poll(timeout)
-        ready = []
-        for fd, flags in r:
-            ready.append((map[fd], flags))
+        ready = [(map[fd], flags) for fd, flags in r]
 
         for obj, flags in ready:
             if not obj.closing:
