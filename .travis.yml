@@ -23,15 +23,6 @@ matrix:
       # compiler here and the other to run the coverage build. Clang is preferred
       # in this instance for its better error messages.
       env: TESTING=cpython
-    - os: osx
-      language: c
-      compiler: clang
-      # Testing under macOS is optional until testing stability has been demonstrated.
-      env: OPTIONAL=true
-      before_install:
-        - brew install openssl xz
-        - export CPPFLAGS="-I$(brew --prefix openssl)/include"
-        - export LDFLAGS="-L$(brew --prefix openssl)/lib"
 
 # Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
