@@ -2,25 +2,26 @@
 # Unit tests for the multiprocessing package
 #
 
-import unittest
-import queue as pyqueue
-import time
+import array
+import errno
+import gc
 import io
 import itertools
-import sys
-import os
-import gc
-import errno
-import signal
-import array
-import socket
-import random
 import logging
-import struct
 import operator
-import weakref
-import test.support
+import os
+import pickle
+import queue as pyqueue
+import random
+import signal
+import socket
+import struct
+import sys
 import test.support.script_helper
+import time
+import unittest
+from unittest import mock
+import weakref
 
 
 # Skip tests if _multiprocessing wasn't built.
@@ -4238,7 +4239,6 @@ class TestSimpleQueue(unittest.TestCase):
 
     def test_close(self):
         queue = multiprocessing.SimpleQueue()
-
         queue.close()
 
         # closing a queue twice should not fail
@@ -4251,6 +4251,10 @@ class TestSimpleQueue(unittest.TestCase):
             queue.get()
         with self.assertRaises(ValueError):
             queue.empty()
+        with self.assertRaises(ValueError):
+            with mock.patch('multiprocessing.queues.context.assert_spawning'):
+                # Test SimpleQueue.__getstate__()
+                pickle.dumps(queue)
 
 #
 # Mixins
