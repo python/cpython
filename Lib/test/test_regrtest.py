@@ -192,14 +192,25 @@ class ParseArgsTestCase(unittest.TestCase):
             with self.subTest(opt=opt):
                 ns = regrtest._parse_args([opt, 'gui,network'])
                 self.assertEqual(ns.use_resources, ['gui', 'network'])
+
                 ns = regrtest._parse_args([opt, 'gui,none,network'])
                 self.assertEqual(ns.use_resources, ['network'])
-                expected = list(regrtest.RESOURCE_NAMES)
+
+                expected = list(regrtest.ALL_RESOURCES)
                 expected.remove('gui')
                 ns = regrtest._parse_args([opt, 'all,-gui'])
                 self.assertEqual(ns.use_resources, expected)
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid resource')
+
+                # all + a resource not part of "all"
+                ns = regrtest._parse_args([opt, 'all,tzdata'])
+                self.assertEqual(ns.use_resources,
+                                 list(regrtest.ALL_RESOURCES) + ['tzdata'])
+
+                # test another resource which is not part of "all"
+                ns = regrtest._parse_args([opt, 'extralargefile'])
+                self.assertEqual(ns.use_resources, ['extralargefile'])
 
     def test_memlimit(self):
         for opt in '-M', '--memlimit':
