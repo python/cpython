@@ -672,23 +672,5 @@ Extensions
 
 IDLE contains an extension facility.  Preferences for extensions can be
 changed with Configure Extensions. See the beginning of config-extensions.def
-in the idlelib directory for further information.  The default extensions
-are currently:
-
-* FormatParagraph
-
-* AutoExpand
-
-* ZoomHeight
-
-* ScriptBinding
-
-* CallTips
-
-* ParenMatch
-
-* AutoComplete
-
-* CodeContext
-
-* RstripExtension
+in the idlelib directory for further information.  There are currently no
+default extensions.
