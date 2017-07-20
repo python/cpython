@@ -46,16 +46,88 @@ _Py_IDENTIFIER(stderr);
 
 #include "clinic/bltinmodule.c.h"
 
+static PyObject*
+update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
+{
+    int i, ind, tot_nones;
+    PyObject *new_bases;
+    assert(PyTuple_Check(bases));
+
+    /* We have a separate cycle to calculate replacements with the idea that
+       most cases we just scroll quickly though it and return original bases */
+    for (i = 2; i < nargs; i++){
+        PyObject *base, *new_base, *new_base_meth;
+        PyObject* stack[1];
+        base  = args[i];
+        if PyType_Check(base){
+            continue;
+        }
+        new_base_meth = PyObject_GetAttrString(base, "__base_subclass__");
+        if (new_base_meth == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
+            else {
+                return NULL;
+            }
+        }
+        else {
+            if (!PyCallable_Check(new_base_meth)) {
+                PyErr_Format(PyExc_TypeError,
+                             "attribute of type '%.200s' is not callable",
+                             Py_TYPE(new_base_meth)->tp_name);
+                return NULL;
+            }
+            stack[0] = bases;
+            new_base = _PyObject_FastCall(new_base_meth, stack, 1);
+            if (new_base == NULL){
+                return NULL;
+            }
+            Py_INCREF(new_base);
+            args[i] = new_base;
+            *modified_bases = 1;
+        }
+    }
+
+    if (*modified_bases){
+        /* Find out have many bases wants to be removed to pre-allocate
+           the tuple for new bases */
+        tot_nones = 0;
+        for (i = 2; i < nargs; i++){
+            if (args[i] == Py_None){
+                tot_nones++;
+            }
+        }
+        new_bases = PyTuple_New(nargs - 2 - tot_nones);
+        /* Remove all None's from base classes */
+        ind = 0;
+        for (i = 2; i < nargs; i++){
+            PyObject* base;
+            base = args[i];
+            if (base != Py_None){
+                Py_INCREF(base);
+                PyTuple_SET_ITEM(new_bases, ind, base);
+                ind++;
+            }
+        }
+        return new_bases;
+    }
+    else{
+        return bases;
+    }
+}
+
+
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                         PyObject *kwnames)
 {
-    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *new_bases;
+    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns;
+    PyObject *new_bases, *old_bases = NULL;
     PyObject *cls = NULL, *cell = NULL;
-    PyObject *base_types;
     int isclass = 0;   /* initialize to prevent gcc warning */
-    int i, modified_bases = 0;
+    int modified_bases = 0;
 
     if (nargs < 2) {
         PyErr_SetString(PyExc_TypeError,
@@ -79,64 +151,13 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
     if (bases == NULL)
         return NULL;
 
-    for (i = 2; i < nargs; i++){
-        PyObject *base, *new_base, *new_base_meth;
-        PyObject* stack[1];
-        base  = args[i];
-        if PyType_Check(base){
-            continue;
-        }
-        new_base_meth = PyObject_GetAttrString(base, "__base_subclass__");
-        if (new_base_meth == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
-            }
-            else {
-                Py_DECREF(bases);
-                return NULL;
-            }
-        }
-        else {
-            if (!PyCallable_Check(new_base_meth)) {
-                PyErr_Format(PyExc_TypeError,
-                             "attribute of type '%.200s' is not callable",
-                             Py_TYPE(new_base_meth)->tp_name);
-                Py_DECREF(bases);
-                return NULL;
-            }
-            stack[0] = bases;
-            new_base = _PyObject_FastCall(new_base_meth, stack, 1);
-            if (new_base == NULL){
-                Py_DECREF(bases);
-                return NULL;
-            }
-            Py_INCREF(new_base);
-            args[i] = new_base;
-            modified_bases = 1;
-        }
-    }
-
-    if (modified_bases){
-        int ind, tot_nones = 0;
-        for (i = 2; i < nargs; i++){
-            if (args[i] == Py_None){
-                tot_nones++;
-            }
-        }
-
-        ind = 0;
-        /* Remove all None's from base classes */
-        new_bases = PyTuple_New(nargs - 2 - tot_nones);
-        for (i = 2; i < nargs; i++){
-            PyObject* base;
-            base = args[i];
-            if (base != Py_None){
-                Py_INCREF(base);
-                PyTuple_SET_ITEM(new_bases, ind, base);
-                ind++;
-            }
-        }
+    new_bases = update_bases(bases, args, nargs, &modified_bases);
+    if (new_bases == NULL){
         Py_DECREF(bases);
+        return NULL;
+    }
+    else{
+        old_bases = bases;
         bases = new_bases;
     }
 
@@ -233,8 +254,7 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                              PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
         if (modified_bases){
-            base_types = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
-            PyMapping_SetItemString(ns, "__orig_bases__", base_types);
+            PyMapping_SetItemString(ns, "__orig_bases__", old_bases);
         }
         PyObject *margs[3] = {name, bases, ns};
         cls = _PyObject_FastCallDict(meta, margs, 3, mkw);
