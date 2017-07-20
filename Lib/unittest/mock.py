@@ -165,7 +165,7 @@ def _set_signature(mock, original, instance=False):
     skipfirst = isinstance(original, type)
     result = _get_signature_object(original, instance, skipfirst)
     if result is None:
-        return
+        return mock
     func, sig = result
     def checksig(*args, **kwargs):
         sig.bind(*args, **kwargs)
