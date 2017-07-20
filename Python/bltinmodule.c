@@ -53,7 +53,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
     PyObject *new_bases;
     assert(PyTuple_Check(bases));
 
-    /* We have a separate cycle to calculate replacements with the idea that
+    /* We have a separate cycle to calculate replacements with the idea that in
        most cases we just scroll quickly though it and return original bases */
     for (i = 2; i < nargs; i++){
         PyObject *base, *new_base, *new_base_meth;
@@ -73,9 +73,8 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         }
         else {
             if (!PyCallable_Check(new_base_meth)) {
-                PyErr_Format(PyExc_TypeError,
-                             "attribute of type '%.200s' is not callable",
-                             Py_TYPE(new_base_meth)->tp_name);
+                PyErr_SetString(PyExc_TypeError,
+                                "__base_subclass__ must be callable");
                 return NULL;
             }
             stack[0] = bases;

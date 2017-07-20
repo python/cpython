@@ -3492,13 +3492,18 @@ static PyObject *
 generic_subscript(PyTypeObject *tp, PyObject *key)
 {
     PyObject* stack[2] = {(PyObject *)tp, key};
-    PyObject *meth = PyObject_GetAttrString((PyObject *)tp, "__class_getitem__");
     const char* msg = "'%.200s' object is not subscriptable";
-    if (meth){
+    PyObject *meth = PyObject_GetAttrString((PyObject *)tp, "__class_getitem__");
+    if (meth) {
+        if (!PyCallable_Check(meth)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "__class_getitem__ must be callable");
+            return NULL;
+        }
         return _PyObject_FastCall(meth, stack, 2);
     }
-    else{
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)){
+    else {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
             PyErr_Clear();
             PyErr_Format(PyExc_TypeError, msg, ((PyObject *)tp)->ob_type->tp_name);
             return NULL;
