@@ -576,7 +576,7 @@ class DebuggingServerTests(unittest.TestCase):
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
         self.assertEqual(self.output.getvalue(), mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
-        Date = re.compile(''.join(("\\\\nDate: ", current_date)), re.MULTILINE)
+        Date = re.compile(''.join(("\\nDate: ", current_date)), re.MULTILINE)
         self.assertRegex(debugout, Date)
 
 
