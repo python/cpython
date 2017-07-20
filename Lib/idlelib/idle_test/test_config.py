@@ -608,7 +608,7 @@ class IdleConfTest(unittest.TestCase):
         f = Font.actual(Font(name='TkFixedFont', exists=True, root=root))
         self.assertEqual(
             conf.GetFont(root, 'main', 'EditorWindow'),
-            (f['family'], 10 if f['size'] < 10 else f['size'], f['weight']))
+            (f['family'], 10 if f['size'] <= 0 else f['size'], f['weight']))
 
         # Cleanup root
         root.destroy()
