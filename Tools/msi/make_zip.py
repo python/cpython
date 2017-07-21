@@ -187,7 +187,7 @@ def main():
     parser.add_argument('-o', '--out', metavar='file', help='The name of the output archive', type=Path, default=None)
     parser.add_argument('-t', '--temp', metavar='dir', help='A directory to temporarily extract files into', type=Path, default=None)
     parser.add_argument('-e', '--embed', help='Create an embedding layout', action='store_true', default=False)
-    parser.add_argument('-a', '--arch', help='Specify the architecture to use (win32/amd64)', type=str, default="win32")
+    parser.add_argument('-a', '--arch', help='Specify the architecture to use', choices=['win32', 'amd64'], type=str, default="win32")
     ns = parser.parse_args()
 
     source = ns.source or (Path(__file__).resolve().parent.parent.parent)
