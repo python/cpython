@@ -61,8 +61,9 @@ class TestModule(unittest.TestCase):
         self.assertEqual(datetime.MAXYEAR, 9999)
 
     def test_name_cleanup(self):
-        if '_Fast' not in str(self):
-            return
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
         datetime = datetime_module
         names = set(name for name in dir(datetime)
                     if not name.startswith('__') and not name.endswith('__'))
@@ -72,8 +73,9 @@ class TestModule(unittest.TestCase):
         self.assertEqual(names - allowed, set([]))
 
     def test_divide_and_round(self):
-        if '_Fast' in str(self):
-            return
+        if '_Fast' in self.__class__.__name__:
+            self.skipTest('Only run for Pure Python implementation')
+
         dar = datetime_module._divide_and_round
 
         self.assertEqual(dar(-10, -3), 3)
@@ -2851,7 +2853,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(TypeError, t.strftime, "%Z")
 
         # Issue #6697:
-        if '_Fast' in str(self):
+        if '_Fast' in self.__class__.__name__:
             Badtzname.tz = '\ud800'
             self.assertRaises(ValueError, t.strftime, "%Z")
 
