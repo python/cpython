@@ -3510,7 +3510,6 @@ generic_subscript(PyTypeObject *tp, PyObject *key)
         }
         return NULL;
     }
-    return NULL;
 }
 
 static PyMappingMethods generic_as_mapping = {

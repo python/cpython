@@ -50,72 +50,61 @@ static PyObject*
 update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
 {
     int i, ind, tot_nones;
-    PyObject *new_bases;
+    PyObject *base, *new_base, *new_base_meth, *new_bases;
+    PyObject* stack[1] = {bases};
     assert(PyTuple_Check(bases));
 
     /* We have a separate cycle to calculate replacements with the idea that in
        most cases we just scroll quickly though it and return original bases */
     for (i = 2; i < nargs; i++){
-        PyObject *base, *new_base, *new_base_meth;
-        PyObject* stack[1];
         base  = args[i];
         if (PyType_Check(base)) {
             continue;
         }
         new_base_meth = PyObject_GetAttrString(base, "__base_subclass__");
-        if (new_base_meth == NULL) {
+        if (!new_base_meth) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 PyErr_Clear();
+                continue;
             }
-            else {
-                return NULL;
-            }
+            return NULL;
         }
-        else {
-            if (!PyCallable_Check(new_base_meth)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "__base_subclass__ must be callable");
-                return NULL;
-            }
-            stack[0] = bases;
-            new_base = _PyObject_FastCall(new_base_meth, stack, 1);
-            if (new_base == NULL){
-                return NULL;
-            }
-            Py_INCREF(new_base);
-            args[i] = new_base;
-            *modified_bases = 1;
+        if (!PyCallable_Check(new_base_meth)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "__base_subclass__ must be callable");
+            return NULL;
         }
+        new_base = _PyObject_FastCall(new_base_meth, stack, 1);
+        if (!new_base){
+            return NULL;
+        }
+        Py_INCREF(new_base);
+        args[i] = new_base;
+        *modified_bases = 1;
     }
-
-    if (*modified_bases){
-        /* Find out have many bases wants to be removed to pre-allocate
-           the tuple for new bases */
-        tot_nones = 0;
-        for (i = 2; i < nargs; i++) {
-            if (args[i] == Py_None) {
-                tot_nones++;
-            }
-        }
-        new_bases = PyTuple_New(nargs - 2 - tot_nones);
-        /* Remove all None's from base classes */
-        ind = 0;
-        for (i = 2; i < nargs; i++) {
-            PyObject* base;
-            base = args[i];
-            if (base != Py_None) {
-                Py_INCREF(base);
-                PyTuple_SET_ITEM(new_bases, ind, base);
-                ind++;
-            }
-        }
-        return new_bases;
-    }
-    else {
+    if (!*modified_bases){
         return bases;
     }
+    /* Find out have many bases wants to be removed to pre-allocate
+       the tuple for new bases, then keep only non-None's in bases.*/
+    tot_nones = 0;
+    for (i = 2; i < nargs; i++) {
+        if (args[i] == Py_None) {
+            tot_nones++;
+        }
+    }
+    new_bases = PyTuple_New(nargs - 2 - tot_nones);
+    ind = 0;
+    for (i = 2; i < nargs; i++) {
+        base = args[i];
+        if (base != Py_None) {
+            Py_INCREF(base);
+            PyTuple_SET_ITEM(new_bases, ind, base);
+            ind++;
+        }
+    }
+    return new_bases;
 }
-
 
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
