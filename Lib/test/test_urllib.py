@@ -426,6 +426,31 @@ Connection: close
         self.assertFalse(e.exception.filename)
         self.assertTrue(e.exception.reason)
 
+    def test_ftp_illegalhost(self):
+        # bpo-29606: reject newline character in FTP URL
+        illegal_ftp_urls = [
+            'ftp://foo:bar%0aINJECTED@example.net/file.png',
+            'ftp://foo:bar%0d%0aINJECTED@example.net/file.png',
+            ]
+
+        def check_exception_message(cmd):
+            msg = str(cm.exception)
+            self.assertTrue("ftp error: illegal newline character" in msg, msg)
+
+        for url in illegal_ftp_urls:
+            # test URLopener.open_ftp()
+            opener = urllib.request.URLopener()
+            with self.assertRaises(urllib.error.URLError) as cm:
+                opener.open_ftp(url)
+            check_exception_message(cm)
+
+            # test FTPHandler.ftp_open()
+            req = urllib.request.Request(url)
+            handler = urllib.request.FTPHandler()
+            with self.assertRaises(urllib.error.URLError) as cm:
+                handler.ftp_open(req)
+            check_exception_message(cm)
+
     @patch.object(urllib.request, 'MAXFTPCACHE', 0)
     def test_ftp_cache_pruning(self):
         self.fakeftp()
