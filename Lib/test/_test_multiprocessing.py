@@ -109,7 +109,7 @@ try:
     from ctypes import Structure, c_int, c_double, c_longlong
 except ImportError:
     Structure = object
-    c_int = c_double = None
+    c_int = c_double = c_longlong = None
 
 
 def check_enough_semaphores():
