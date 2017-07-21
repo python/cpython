@@ -30,6 +30,10 @@ The :mod:`shlex` module defines the following functions:
    in POSIX mode by default, but uses non-POSIX mode if the *posix* argument is
    false.
 
+   The returned tokens have attributes ``startline`` giving the line
+   number of the first character of the token, and ``endline`` giving
+   the line number of the last character of the token.
+
    .. note::
 
       Since the :func:`split` function instantiates a :class:`~shlex.shlex`
@@ -124,6 +128,10 @@ A :class:`~shlex.shlex` instance has the following methods:
    encounters an immediate end-of-file, :attr:`eof` is returned (the empty
    string (``''``) in non-POSIX mode, and ``None`` in POSIX mode).
 
+   Tokens read from the input stream have attributes ``startline`` giving the
+   line number of the first character of the token, and ``endline`` giving the
+   line number of the last character of the token.
+
 
 .. method:: shlex.push_token(str)
 
@@ -135,6 +143,10 @@ A :class:`~shlex.shlex` instance has the following methods:
    Read a raw token.  Ignore the pushback stack, and do not interpret source
    requests.  (This is not ordinarily a useful entry point, and is documented here
    only for the sake of completeness.)
+
+   The returned token has attributes ``startline`` giving the line
+   number of the first character of the token, and ``endline`` giving
+   the line number of the last character of the token.
 
 
 .. method:: shlex.sourcehook(filename)

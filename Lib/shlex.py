@@ -16,6 +16,18 @@ from io import StringIO
 
 __all__ = ["shlex", "split", "quote"]
 
+
+class Token(str):
+    "A string with startline and endline attributes."
+    __slots__ = ['startline', 'endline']
+
+    def __new__(cls, token, startline, endline):
+        self = super().__new__(cls, token)
+        self.startline = startline
+        self.endline = endline
+        return self
+
+
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
     def __init__(self, instream=None, infile=None, posix=False,
@@ -129,6 +141,18 @@ class shlex:
     def read_token(self):
         quoted = False
         escapedstate = ' '
+        startline = endline = self.lineno
+
+        def start_token(s):
+            self.token = s
+            nonlocal startline, endline
+            startline = endline = self.lineno
+
+        def continue_token(s):
+            self.token += s
+            nonlocal endline
+            endline = self.lineno
+
         while True:
             if self.punctuation_chars and self._pushback_chars:
                 nextchar = self._pushback_chars.pop()
@@ -140,7 +164,7 @@ class shlex:
                 print("shlex: in state %r I see character: %r" % (self.state,
                                                                   nextchar))
             if self.state is None:
-                self.token = ''        # past end of file
+                start_token('')        # past end of file
                 break
             elif self.state == ' ':
                 if not nextchar:
@@ -160,20 +184,20 @@ class shlex:
                     escapedstate = 'a'
                     self.state = nextchar
                 elif nextchar in self.wordchars:
-                    self.token = nextchar
+                    start_token(nextchar)
                     self.state = 'a'
                 elif nextchar in self.punctuation_chars:
-                    self.token = nextchar
+                    start_token(nextchar)
                     self.state = 'c'
                 elif nextchar in self.quotes:
                     if not self.posix:
-                        self.token = nextchar
+                        start_token(nextchar)
                     self.state = nextchar
                 elif self.whitespace_split:
-                    self.token = nextchar
+                    start_token(nextchar)
                     self.state = 'a'
                 else:
-                    self.token = nextchar
+                    start_token(nextchar)
                     if self.token or (self.posix and quoted):
                         break   # emit current token
                     else:
@@ -187,7 +211,7 @@ class shlex:
                     raise ValueError("No closing quotation")
                 if nextchar == self.state:
                     if not self.posix:
-                        self.token += nextchar
+                        continue_token(nextchar)
                         self.state = ' '
                         break
                     else:
@@ -197,7 +221,7 @@ class shlex:
                     escapedstate = self.state
                     self.state = nextchar
                 else:
-                    self.token += nextchar
+                    continue_token(nextchar)
             elif self.state in self.escape:
                 if not nextchar:      # end of file
                     if self.debug >= 2:
@@ -209,7 +233,7 @@ class shlex:
                 if (escapedstate in self.quotes and
                         nextchar != self.state and nextchar != escapedstate):
                     self.token += self.state
-                self.token += nextchar
+                continue_token(nextchar)
                 self.state = escapedstate
             elif self.state in ('a', 'c'):
                 if not nextchar:
@@ -234,7 +258,7 @@ class shlex:
                             continue
                 elif self.state == 'c':
                     if nextchar in self.punctuation_chars:
-                        self.token += nextchar
+                        continue_token(nextchar)
                     else:
                         if nextchar not in self.whitespace:
                             self._pushback_chars.append(nextchar)
@@ -247,7 +271,7 @@ class shlex:
                     self.state = nextchar
                 elif (nextchar in self.wordchars or nextchar in self.quotes
                       or self.whitespace_split):
-                    self.token += nextchar
+                    continue_token(nextchar)
                 else:
                     if self.punctuation_chars:
                         self._pushback_chars.append(nextchar)
@@ -264,6 +288,8 @@ class shlex:
         self.token = ''
         if self.posix and not quoted and result == '':
             result = None
+        else:
+            result = Token(result, startline, endline)
         if self.debug > 1:
             if result:
                 print("shlex: raw token=" + repr(result))
