@@ -715,6 +715,9 @@ class PyBuildExt(build_ext):
         # syslog daemon interface
         exts.append( Extension('syslog', ['syslogmodule.c']) )
 
+        # Fuzz tests.
+        exts.append( Extension('_fuzz', ['_fuzz/_fuzzmodule.c'], optional=False) )
+
         #
         # Here ends the simple stuff.  From here on, modules need certain
         # libraries, are platform-specific, or present other surprises.
