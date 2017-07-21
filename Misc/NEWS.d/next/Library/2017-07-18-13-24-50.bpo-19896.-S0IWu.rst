@@ -1,0 +1,1 @@
+Fix multiprocessing.sharedctypes to recognize typecodes ``'q'`` and ``'Q'``.
