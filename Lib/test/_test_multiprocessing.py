@@ -106,7 +106,7 @@ PRELOAD = ['__main__', 'test.test_multiprocessing_forkserver']
 #
 
 try:
-    from ctypes import Structure, c_int, c_double
+    from ctypes import Structure, c_int, c_double, c_longlong
 except ImportError:
     Structure = object
     c_int = c_double = None
@@ -1637,6 +1637,7 @@ class _TestValue(BaseTestCase):
         ('i', 4343, 24234),
         ('d', 3.625, -4.25),
         ('h', -232, 234),
+        ('q', 2 ** 33, 2 ** 34),
         ('c', latin('x'), latin('y'))
         ]
 
@@ -3179,7 +3180,8 @@ class _TestHeap(BaseTestCase):
 class _Foo(Structure):
     _fields_ = [
         ('x', c_int),
-        ('y', c_double)
+        ('y', c_double),
+        ('z', c_longlong,)
         ]
 
 class _TestSharedCTypes(BaseTestCase):
@@ -3191,9 +3193,10 @@ class _TestSharedCTypes(BaseTestCase):
             self.skipTest("requires multiprocessing.sharedctypes")
 
     @classmethod
-    def _double(cls, x, y, foo, arr, string):
+    def _double(cls, x, y, z, foo, arr, string):
         x.value *= 2
         y.value *= 2
+        z.value *= 2
         foo.x *= 2
         foo.y *= 2
         string.value *= 2
@@ -3203,18 +3206,20 @@ class _TestSharedCTypes(BaseTestCase):
     def test_sharedctypes(self, lock=False):
         x = Value('i', 7, lock=lock)
         y = Value(c_double, 1.0/3.0, lock=lock)
+        z = Value(c_longlong, 2 ** 33, lock=lock)
         foo = Value(_Foo, 3, 2, lock=lock)
         arr = self.Array('d', list(range(10)), lock=lock)
         string = self.Array('c', 20, lock=lock)
         string.value = latin('hello')
 
-        p = self.Process(target=self._double, args=(x, y, foo, arr, string))
+        p = self.Process(target=self._double, args=(x, y, z, foo, arr, string))
         p.daemon = True
         p.start()
         p.join()
 
         self.assertEqual(x.value, 14)
         self.assertAlmostEqual(y.value, 2.0/3.0)
+        self.assertEqual(z.value, 2 ** 34)
         self.assertEqual(foo.x, 6)
         self.assertAlmostEqual(foo.y, 4.0)
         for i in range(10):
@@ -3225,12 +3230,14 @@ class _TestSharedCTypes(BaseTestCase):
         self.test_sharedctypes(lock=True)
 
     def test_copy(self):
-        foo = _Foo(2, 5.0)
+        foo = _Foo(2, 5.0, 2 ** 33)
         bar = copy(foo)
         foo.x = 0
         foo.y = 0
+        foo.z = 0
         self.assertEqual(bar.x, 2)
         self.assertAlmostEqual(bar.y, 5.0)
+        self.assertEqual(bar.z, 2 ** 33)
 
 #
 #
