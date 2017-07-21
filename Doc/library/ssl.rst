@@ -1067,22 +1067,6 @@ SSL sockets also have the following additional methods and attributes:
 
 .. attribute:: SSLSocket.server_hostname
 
-   A ``bytes`` instance containing the ``'idna'`` encoded version of the
-   hostname specified in the *server_hostname* argument in
-   :meth:`SSLContext.wrap_socket`. If no *server_hostname* was specified, this
-   attribute will be ``None``.
-
-   .. versionadded:: 2.7.9
-
-.. attribute:: SSLSocket.server_side
-
-   A boolean which is ``True`` for server-side sockets and ``False`` for
-   client-side sockets.
-
-   .. versionadded:: 2.7.9
-
-.. attribute:: SSLSocket.server_hostname
-
    Hostname of the server: :class:`str` type, or ``None`` for server-side
    socket or if the hostname was not specified in the constructor.
 
