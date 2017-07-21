@@ -67,7 +67,7 @@ The module defines the following functions:
 
    This function prints a stack trace from its invocation point. The optional
    *f* argument can be used to specify an alternate stack frame to start. The
-   optional limit* and *file* arguments have the same meaning as for
+   optional *limit* and *file* arguments have the same meaning as for
    :func:`print_exception`.
 
 

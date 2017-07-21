@@ -597,7 +597,7 @@ class BasicTestCase(unittest.TestCase):
 
         d.put("abcde", "ABCDE");
         num = d.truncate()
-        self.assertTrue(num >= 1, "truncate returned <= 0 on non-empty database")
+        self.assertGreaterEqual(num, 1, "truncate returned <= 0 on non-empty database")
         num = d.truncate()
         self.assertEqual(num, 0,
                 "truncate on empty DB returned nonzero (%r)" % (num,))
@@ -616,9 +616,9 @@ class BasicTestCase(unittest.TestCase):
     if db.version() >= (4, 6):
         def test08_exists(self) :
             self.d.put("abcde", "ABCDE")
-            self.assertTrue(self.d.exists("abcde") == True,
+            self.assertEqual(self.d.exists("abcde"), True,
                     "DB->exists() returns wrong value")
-            self.assertTrue(self.d.exists("x") == False,
+            self.assertEqual(self.d.exists("x"), False,
                     "DB->exists() returns wrong value")
 
     #----------------------------------------
@@ -773,7 +773,7 @@ class BasicTransactionTestCase(BasicTestCase):
             if verbose:
                 print 'log file: ' + log
             logs = self.env.log_archive(db.DB_ARCH_REMOVE)
-            self.assertTrue(not logs)
+            self.assertFalse(logs)
 
         self.txn = self.env.txn_begin()
 
@@ -785,9 +785,9 @@ class BasicTransactionTestCase(BasicTestCase):
             self.d.put("abcde", "ABCDE", txn=txn)
             txn.commit()
             txn = self.env.txn_begin()
-            self.assertTrue(self.d.exists("abcde", txn=txn) == True,
+            self.assertEqual(self.d.exists("abcde", txn=txn), True,
                     "DB->exists() returns wrong value")
-            self.assertTrue(self.d.exists("x", txn=txn) == False,
+            self.assertEqual(self.d.exists("x", txn=txn), False,
                     "DB->exists() returns wrong value")
             txn.abort()
 
@@ -802,7 +802,7 @@ class BasicTransactionTestCase(BasicTestCase):
         d.put("abcde", "ABCDE");
         txn = self.env.txn_begin()
         num = d.truncate(txn)
-        self.assertTrue(num >= 1, "truncate returned <= 0 on non-empty database")
+        self.assertGreaterEqual(num, 1, "truncate returned <= 0 on non-empty database")
         num = d.truncate(txn)
         self.assertEqual(num, 0,
                 "truncate on empty DB returned nonzero (%r)" % (num,))
@@ -1086,7 +1086,7 @@ class PrivateObject(unittest.TestCase) :
         a = "example of private object"
         self.obj.set_private(a)
         b = self.obj.get_private()
-        self.assertTrue(a is b)  # Object identity
+        self.assertIs(a, b)  # Object identity
 
     def test03_leak_assignment(self) :
         a = "example of private object"

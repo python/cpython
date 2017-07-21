@@ -89,7 +89,7 @@ Extending :class:`JSONEncoder`::
     ...         # Let the base class default method raise the TypeError
     ...         return json.JSONEncoder.default(self, obj)
     ...
-    >>> dumps(2 + 1j, cls=ComplexEncoder)
+    >>> json.dumps(2 + 1j, cls=ComplexEncoder)
     '[2.0, 1.0]'
     >>> ComplexEncoder().encode(2 + 1j)
     '[2.0, 1.0]'
