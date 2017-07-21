@@ -27,6 +27,7 @@ for module, suffix in zip(test_modules, test_suffixes):
         if not (isinstance(cls, type) and issubclass(cls, unittest.TestCase)):
             continue
         cls.__name__ = name + suffix
+        cls.__qualname__ = name + suffix
         @classmethod
         def setUpClass(cls_, module=module):
             cls_._save_sys_modules = sys.modules.copy()
