@@ -1,0 +1,1 @@
+str.format_map() now passes key lookup exceptions through.
