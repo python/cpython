@@ -154,9 +154,9 @@ class ConfigDialog(Toplevel):
         """Return frame of widgets for Font/Tabs tab.
 
         Tk Variables:
+            font_name: Font face.
             font_size: Font size.
             font_bold: Select font bold or not.
-            font_name: Font face.
                 Note: these 3 share var_changed_font callback.
             space_num: Indentation width.
 
@@ -167,8 +167,7 @@ class ConfigDialog(Toplevel):
             load_font_cfg: Set vars and fontlist.
             on_fontlist_select: Bound to fontlist button release
                 or key release.
-            set_font_sample: Command for opt_menu_font_size and
-                check_font_bold.
+            set_samples: Notify both samples of any font change.
             load_tab_cfg: Get current.
 
         Widget Structure:  (*) widgets bound to self
@@ -181,7 +180,7 @@ class ConfigDialog(Toplevel):
                     frame_font_param: Frame
                         font_size_title: Label
                         (*)opt_menu_font_size: DynOptionMenu - font_size
-                        check_font_bold: Checkbutton - font_bold
+                        bold_toggle: Checkbutton - font_bold
                     frame_font_sample: Frame
                         (*)font_sample: Label
                 frame_indent: LabelFrame
@@ -190,9 +189,9 @@ class ConfigDialog(Toplevel):
                         (*)scale_indent_size: Scale - space_num
         """
         parent = self.parent
+        self.font_name = StringVar(parent)
         self.font_size = StringVar(parent)
         self.font_bold = BooleanVar(parent)
-        self.font_name = StringVar(parent)
         self.space_num = IntVar(parent)
         self.edit_font = tkFont.Font(parent, ('courier', 10, 'normal'))
 
@@ -218,10 +217,10 @@ class ConfigDialog(Toplevel):
         self.fontlist.config(yscrollcommand=scroll_font.set)
         font_size_title = Label(frame_font_param, text='Size :')
         self.opt_menu_font_size = DynOptionMenu(
-                frame_font_param, self.font_size, None, command=self.set_font_sample)
-        check_font_bold = Checkbutton(
+                frame_font_param, self.font_size, None, command=self.set_samples)
+        bold_toggle = Checkbutton(
                 frame_font_param, variable=self.font_bold, onvalue=1,
-                offvalue=0, text='Bold', command=self.set_font_sample)
+                offvalue=0, text='Bold', command=self.set_samples)
         frame_font_sample = Frame(frame_font, relief=SOLID, borderwidth=1)
         self.font_sample = Label(
                 frame_font_sample, justify=LEFT, font=self.edit_font,
@@ -247,7 +246,7 @@ class ConfigDialog(Toplevel):
         scroll_font.pack(side=LEFT, fill=Y)
         font_size_title.pack(side=LEFT, anchor=W)
         self.opt_menu_font_size.pack(side=LEFT, anchor=W)
-        check_font_bold.pack(side=LEFT, anchor=W, padx=20)
+        bold_toggle.pack(side=LEFT, anchor=W, padx=20)
         frame_font_sample.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         self.font_sample.pack(expand=TRUE, fill=BOTH)
         # frame_indent
@@ -292,7 +291,7 @@ class ConfigDialog(Toplevel):
         Widget Structure:  (*) widgets bound to self
             frame
                 frame_custom: LabelFrame
-                    (*)text_highlight_sample: Text
+                    (*)highlight_sample: Text
                     (*)frame_color_set: Frame
                         button_set_color: Button
                         (*)opt_menu_highlight_target: DynOptionMenu - highlight_target
@@ -342,11 +341,11 @@ class ConfigDialog(Toplevel):
         frame_theme = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                 text=' Highlighting Theme ')
         #frame_custom
-        self.text_highlight_sample=Text(
+        self.highlight_sample=Text(
                 frame_custom, relief=SOLID, borderwidth=1,
                 font=('courier', 12, ''), cursor='hand2', width=21, height=11,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
-        text=self.text_highlight_sample
+        text=self.highlight_sample
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         text_and_tags=(
@@ -416,7 +415,7 @@ class ConfigDialog(Toplevel):
         #frame_custom
         self.frame_color_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
         frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
-        self.text_highlight_sample.pack(
+        self.highlight_sample.pack(
                 side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         button_set_color.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=4)
         self.opt_menu_highlight_target.pack(
@@ -1142,7 +1141,7 @@ class ConfigDialog(Toplevel):
         self.frame_color_set.config(bg=new_color)  # Set sample.
         plane ='foreground' if self.fg_bg_toggle.get() else 'background'
         sample_element = self.theme_elements[self.highlight_target.get()][0]
-        self.text_highlight_sample.tag_config(sample_element, **{plane:new_color})
+        self.highlight_sample.tag_config(sample_element, **{plane:new_color})
         theme = self.custom_theme.get()
         theme_element = sample_element + '-' + plane
         changes.add_option('highlight', theme, theme_element, new_color)
@@ -1210,41 +1209,25 @@ class ConfigDialog(Toplevel):
         """Handle selecting a font from the list.
 
         Event can result from either mouse click or Up or Down key.
-        Set font_name and example display to selection.
-
-        Attributes updated:
-            font_name: Set to name selected from fontlist.
-
-        Methods:
-            set_font_sample
+        Set font_name and example displays to selection.
         """
         font = self.fontlist.get(
                 ACTIVE if event.type.name == 'KeyRelease' else ANCHOR)
         self.font_name.set(font.lower())
-        self.set_font_sample()
+        self.set_samples()
 
-    def set_font_sample(self, event=None):
-        """Update the screen samples with the font settings from the dialog.
+    def set_samples(self, event=None):
+        """Update update both screen samples with the font settings.
 
-        Attributes accessed:
-            font_name
-            font_bold
-            font_size
-
-        Attributes updated:
-            font_sample: Set to selected font name, size, and weight.
-            text_highlight_sample: Set to selected font name, size, and weight.
-
-        Called from:
-            handler for opt_menu_font_size and check_font_bold
-            on_fontlist_select
-            load_font_cfg
+        Called on font initialization and change events.
+        Accesses font_name, font_size, and font_bold Variables.
+        Updates font_sample and hightlight page highlight_sample.
         """
         font_name = self.font_name.get()
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
         new_font = (font_name, self.font_size.get(), font_weight)
-        self.font_sample.config(font=new_font)
-        self.text_highlight_sample.configure(font=new_font)
+        self.font_sample['font'] = new_font
+        self.highlight_sample['font'] = new_font
 
     def set_highlight_target(self):
         """Set fg/bg toggle and color based on highlight tag target.
@@ -1289,7 +1272,7 @@ class ConfigDialog(Toplevel):
             theme_elements
             highlight_target
             fg_bg_toggle
-            text_highlight_sample
+            highlight_sample
 
         Attributes updated:
             frame_color_set
@@ -1297,7 +1280,7 @@ class ConfigDialog(Toplevel):
         # Set the color sample area.
         tag = self.theme_elements[self.highlight_target.get()][0]
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
-        color = self.text_highlight_sample.tag_cget(tag, plane)
+        color = self.highlight_sample.tag_cget(tag, plane)
         self.frame_color_set.config(bg=color)
 
     def paint_theme_sample(self):
@@ -1310,7 +1293,7 @@ class ConfigDialog(Toplevel):
             custom_theme
 
         Attributes updated:
-            text_highlight_sample: Set the tag elements to the theme.
+            highlight_sample: Set the tag elements to the theme.
 
         Methods:
             set_color_sample
@@ -1337,7 +1320,7 @@ class ConfigDialog(Toplevel):
                     colors['foreground'] = theme_dict[element + '-foreground']
                 if element + '-background' in theme_dict:
                     colors['background'] = theme_dict[element + '-background']
-            self.text_highlight_sample.tag_config(element, **colors)
+            self.highlight_sample.tag_config(element, **colors)
         self.set_color_sample()
 
     def help_source_selected(self, event):
@@ -1424,7 +1407,7 @@ class ConfigDialog(Toplevel):
             font_bold: Set to current font weight.
 
         Methods:
-            set_font_sample
+            set_samples
         """
         # Set base editor font selection list.
         fonts = list(tkFont.families(self))
@@ -1452,7 +1435,7 @@ class ConfigDialog(Toplevel):
         # Set font weight.
         self.font_bold.set(font_bold)
         # Set font sample.
-        self.set_font_sample()
+        self.set_samples()
 
     def load_tab_cfg(self):
         """Load current configuration settings for the tab options.
