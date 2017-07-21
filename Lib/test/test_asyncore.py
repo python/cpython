@@ -431,8 +431,9 @@ class FileWrapperTest(unittest.TestCase):
     def test_close_twice(self):
         fd = os.open(support.TESTFN, os.O_RDONLY)
         f = asyncore.file_wrapper(fd)
-        os.close(f.fd)  # file_wrapper dupped fd
+        os.close(fd)
 
+        os.close(f.fd)  # file_wrapper dupped fd
         with self.assertRaises(OSError):
             f.close()
 
