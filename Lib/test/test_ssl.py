@@ -1757,17 +1757,17 @@ class NetworkedBIOTests(unittest.TestCase):
         return ret
 
     def test_handshake(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             sock = socket.socket(socket.AF_INET)
-            sock.connect(("svn.python.org", 443))
+            sock.connect((REMOTE_HOST, 443))
             incoming = ssl.MemoryBIO()
             outgoing = ssl.MemoryBIO()
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ctx.verify_mode = ssl.CERT_REQUIRED
-            ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+            ctx.load_verify_locations(REMOTE_ROOT_CERT)
             if ssl.HAS_SNI:
                 ctx.check_hostname = True
-                sslobj = ctx.wrap_bio(incoming, outgoing, False, 'svn.python.org')
+                sslobj = ctx.wrap_bio(incoming, outgoing, False, REMOTE_HOST)
             else:
                 ctx.check_hostname = False
                 sslobj = ctx.wrap_bio(incoming, outgoing, False)
@@ -1786,9 +1786,9 @@ class NetworkedBIOTests(unittest.TestCase):
             sock.close()
 
     def test_read_write_data(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             sock = socket.socket(socket.AF_INET)
-            sock.connect(("svn.python.org", 443))
+            sock.connect((REMOTE_HOST, 443))
             incoming = ssl.MemoryBIO()
             outgoing = ssl.MemoryBIO()
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
