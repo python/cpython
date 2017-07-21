@@ -2697,6 +2697,9 @@ dict_equal(PyDictObject *a, PyDictObject *b)
 {
     Py_ssize_t i;
 
+    if (PyDict_CheckExact(a) && a == b)
+        /* comparison to self: identity implies equality for container elements */
+        return 1;
     if (a->ma_used != b->ma_used)
         /* can't be equal if # of entries differ */
         return 0;
