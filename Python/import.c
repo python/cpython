@@ -1344,7 +1344,6 @@ resolve_name(PyObject *name, PyObject *globals, int level)
     PyObject *abs_name;
     PyObject *package = NULL;
     PyObject *spec;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
     Py_ssize_t last_dot;
     PyObject *base;
     int level_up;
@@ -1446,12 +1445,6 @@ resolve_name(PyObject *name, PyObject *globals, int level)
     if (last_dot == 0) {
         PyErr_SetString(PyExc_ImportError,
                 "attempted relative import with no known parent package");
-        goto error;
-    }
-    else if (PyDict_GetItem(interp->modules, package) == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                "Parent module %R not loaded, cannot perform relative "
-                "import", package);
         goto error;
     }
 
@@ -1559,10 +1552,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
             if (initializing == -1)
                 PyErr_Clear();
             if (initializing > 0) {
-#ifdef WITH_THREAD
-                _PyImport_AcquireLock();
-#endif
-                /* _bootstrap._lock_unlock_module() releases the import lock */
                 value = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                                 &PyId__lock_unlock_module, abs_name,
                                                 NULL);

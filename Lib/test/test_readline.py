@@ -9,13 +9,29 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from test.support import import_module, unlink, TESTFN
+from test.support import import_module, unlink, temp_dir, TESTFN, verbose
 from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
 readline = import_module('readline')
 
-is_editline = readline.__doc__ and "libedit" in readline.__doc__
+if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
+    is_editline = ("EditLine wrapper" in readline._READLINE_LIBRARY_VERSION)
+else:
+    is_editline = (readline.__doc__ and "libedit" in readline.__doc__)
+
+
+def setUpModule():
+    if verbose:
+        # Python implementations other than CPython may not have
+        # these private attributes
+        if hasattr(readline, "_READLINE_VERSION"):
+            print(f"readline version: {readline._READLINE_VERSION:#x}")
+            print(f"readline runtime version: {readline._READLINE_RUNTIME_VERSION:#x}")
+        if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
+            print(f"readline library version: {readline._READLINE_LIBRARY_VERSION!r}")
+        print(f"use libedit emulation? {is_editline}")
+
 
 @unittest.skipUnless(hasattr(readline, "clear_history"),
                      "The history update test cannot be run because the "
@@ -210,13 +226,57 @@ print("history", ascii(readline.get_history_item(1)))
         self.assertIn(b"result " + expected + b"\r\n", output)
         self.assertIn(b"history " + expected + b"\r\n", output)
 
+    # We have 2 reasons to skip this test:
+    # - readline: history size was added in 6.0
+    #   See https://cnswww.cns.cwru.edu/php/chet/readline/CHANGES
+    # - editline: history size is broken on OS X 10.11.6.
+    #   Newer versions were not tested yet.
+    @unittest.skipIf(readline._READLINE_VERSION < 0x600,
+                     "this readline version does not support history-size")
+    @unittest.skipIf(is_editline,
+                     "editline history size configuration is broken")
+    def test_history_size(self):
+        history_size = 10
+        with temp_dir() as test_dir:
+            inputrc = os.path.join(test_dir, "inputrc")
+            with open(inputrc, "wb") as f:
+                f.write(b"set history-size %d\n" % history_size)
 
-def run_pty(script, input=b"dummy input\r"):
+            history_file = os.path.join(test_dir, "history")
+            with open(history_file, "wb") as f:
+                # history_size * 2 items crashes readline
+                data = b"".join(b"item %d\n" % i
+                                for i in range(history_size * 2))
+                f.write(data)
+
+            script = """
+import os
+import readline
+
+history_file = os.environ["HISTORY_FILE"]
+readline.read_history_file(history_file)
+input()
+readline.write_history_file(history_file)
+"""
+
+            env = dict(os.environ)
+            env["INPUTRC"] = inputrc
+            env["HISTORY_FILE"] = history_file
+
+            run_pty(script, input=b"last input\r", env=env)
+
+            with open(history_file, "rb") as f:
+                lines = f.readlines()
+            self.assertEqual(len(lines), history_size)
+            self.assertEqual(lines[-1].strip(), b"last input")
+
+
+def run_pty(script, input=b"dummy input\r", env=None):
     pty = import_module('pty')
     output = bytearray()
     [master, slave] = pty.openpty()
     args = (sys.executable, '-c', script)
-    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave)
+    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave, env=env)
     os.close(slave)
     with ExitStack() as cleanup:
         cleanup.enter_context(proc)
