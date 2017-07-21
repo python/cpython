@@ -28,18 +28,12 @@ mainpage = changes['main']
 highpage = changes['highlight']
 keyspage = changes['keys']
 
-
-class TestDialog(ConfigDialog):
-    pass  # Delete?
-
-
 def setUpModule():
     global root, dialog
     idleConf.userCfg = testcfg
     root = Tk()
     # root.withdraw()    # Comment out, see issue 30870
-    dialog = TestDialog(root, 'Test', _utest=True)
-
+    dialog = ConfigDialog(root, 'Test', _utest=True)
 
 def tearDownModule():
     global root, dialog
@@ -56,7 +50,7 @@ class FontTabTest(unittest.TestCase):
     def setUp(self):
         changes.clear()
 
-    def test_font(self):
+    def test_font_set(self):
         # Set values guaranteed not to be defaults.
         default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
         default_size = str(default_font[1])
@@ -79,9 +73,22 @@ class FontTabTest(unittest.TestCase):
                                      'font-bold': str(not default_bold)}}
         self.assertEqual(mainpage, expected)
 
-    def test_set_sample(self):
-        # Set_font_sample also sets highlight_sample.
-        pass
+    def test_bold_toggle(self):
+        d = dialog
+        d.set_samples = Func()
+        d.bold_toggle.toggle()
+        self.assertEqual(d.set_samples.called, 1)
+
+    def test_set_samples(self):
+        d = dialog
+        d.font_sample, d.highlight_sample = {}, {}
+        d.font_name.set('test')
+        d.font_size.set('5')
+        d.font_bold.set(1)
+        d.set_samples()
+        expected = {'font': ('test', '5', 'bold')}
+        self.assertTrue(d.font_sample == d.highlight_sample == expected)
+        del d.font_sample, d.highlight_sample
 
     def test_tabspace(self):
         dialog.space_num.set(6)
@@ -90,7 +97,7 @@ class FontTabTest(unittest.TestCase):
 
 class FontSelectTest(unittest.TestCase):
     # These two functions test that selecting a new font in the
-    # list of fonts changes font_name and calls set_font_sample.
+    # list of fonts changes font_name and calls set_samples.
     # The fontlist widget and on_fontlist_select event handler
     # are tested here together.
 
@@ -98,14 +105,14 @@ class FontSelectTest(unittest.TestCase):
     def setUpClass(cls):
         if dialog.fontlist.size() < 2:
             cls.skipTest('need at least 2 fonts')
-        dialog.set_font_sample = Func()  # Mask instance method.
+        dialog.set_samples = Func()  # Mask instance method.
 
     @classmethod
     def tearDownClass(cls):
-        del dialog.set_font_sample  # Unmask instance method.
+        del dialog.set_samples  # Unmask instance method.
 
     def setUp(self):
-        dialog.set_font_sample.called = 0
+        dialog.set_samples.called = 0
         changes.clear()
 
     def test_select_font_key(self):
@@ -124,7 +131,7 @@ class FontSelectTest(unittest.TestCase):
         down_font = fontlist.get('active')
         self.assertNotEqual(down_font, font)
         self.assertIn(dialog.font_name.get(), down_font.lower())
-        self.assertEqual(dialog.set_font_sample.called, 1)
+        self.assertEqual(dialog.set_samples.called, 1)
 
         # Test Up key.
         fontlist.focus_force()
@@ -135,7 +142,7 @@ class FontSelectTest(unittest.TestCase):
         up_font = fontlist.get('active')
         self.assertEqual(up_font, font)
         self.assertIn(dialog.font_name.get(), up_font.lower())
-        self.assertEqual(dialog.set_font_sample.called, 2)
+        self.assertEqual(dialog.set_samples.called, 2)
 
     def test_select_font_mouse(self):
         # Click on item should select that item.
@@ -157,7 +164,7 @@ class FontSelectTest(unittest.TestCase):
         select_font = fontlist.get('anchor')
         self.assertEqual(select_font, font1)
         self.assertIn(dialog.font_name.get(), font1.lower())
-        self.assertEqual(dialog.set_font_sample.called, 1)
+        self.assertEqual(dialog.set_samples.called, 1)
 
 
 class HighlightTest(unittest.TestCase):
