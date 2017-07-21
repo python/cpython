@@ -6,8 +6,9 @@ Coverage: 46% just by creating dialog, 60% with current tests.
 from idlelib.configdialog import ConfigDialog, idleConf, changes
 from test.support import requires
 requires('gui')
-from tkinter import Tk
+from tkinter import Tk, BooleanVar
 import unittest
+from unittest import mock
 import idlelib.config as config
 from idlelib.idle_test.mock_idle import Func
 
@@ -45,7 +46,6 @@ def tearDownModule():
     del root
 
 
-@unittest.skip("skip failing tests until fixed")
 class FontTabTest(unittest.TestCase):
 
     def setUp(self):
@@ -75,11 +75,16 @@ class FontTabTest(unittest.TestCase):
         self.assertEqual(mainpage, expected)
 
     def test_bold_toggle(self):
-        d = dialog
-        d.set_samples = Func()
-        d.bold_toggle.toggle()
-        self.assertEqual(d.set_samples.called, 1)
-        del d.set_samples
+        bt = dialog.bold_toggle
+        mock_bold = bt['variable'] = BooleanVar()
+        mock_command = bt['command'] = Func()
+        bt.invoke()
+        self.assertEqual(mock_command.called, 1)
+        self.assertEqual(bt['onvalue'], mock_bold.get())
+        bt.invoke()
+        self.assertEqual(mock_command.called, 2)
+        self.assertEqual(bt['offvalue'], mock_bold.get())
+        del mock_command, mock_bold
 
     def test_set_samples(self):
         d = dialog
