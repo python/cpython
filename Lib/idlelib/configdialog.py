@@ -261,7 +261,7 @@ class ConfigDialog(Toplevel):
         """Return frame of widgets for Highlighting tab.
 
         Tk Variables:
-            colour: Color of selected target.
+            color: Color of selected target.
             builtin_theme: Menu variable for built-in theme.
             custom_theme: Menu variable for custom theme.
             fg_bg_toggle: Toggle for foreground/background color.
@@ -276,11 +276,11 @@ class ConfigDialog(Toplevel):
 
         Methods [attachment]:
             load_theme_cfg: Load current highlight colors.
-            get_colour: Invoke colorchooser [button_set_colour].
-            set_colour_sample_binding: Call set_colour_sample [fg_bg_toggle].
+            get_color: Invoke colorchooser [button_set_color].
+            set_color_sample_binding: Call set_color_sample [fg_bg_toggle].
             set_highlight_target: set fg_bg_toggle, set_color_sample().
-            set_colour_sample: Set frame background to target.
-            on_new_colour_set: Set new color and add option.
+            set_color_sample: Set frame background to target.
+            on_new_color_set: Set new color and add option.
             paint_theme_sample: Recolor sample.
             get_new_theme_name: Get from popup.
             create_new_theme: Combine theme with changes and save.
@@ -293,8 +293,8 @@ class ConfigDialog(Toplevel):
             frame
                 frame_custom: LabelFrame
                     (*)text_highlight_sample: Text
-                    (*)frame_colour_set: Frame
-                        button_set_colour: Button
+                    (*)frame_color_set: Frame
+                        button_set_color: Button
                         (*)opt_menu_highlight_target: DynOptionMenu - highlight_target
                     frame_fg_bg_toggle: Frame
                         (*)radio_fg: Radiobutton - fg_bg_toggle
@@ -329,7 +329,7 @@ class ConfigDialog(Toplevel):
         self.builtin_theme = StringVar(parent)
         self.custom_theme = StringVar(parent)
         self.fg_bg_toggle = BooleanVar(parent)
-        self.colour = StringVar(parent)
+        self.color = StringVar(parent)
         self.is_builtin_theme = BooleanVar(parent)
         self.highlight_target = StringVar(parent)
 
@@ -374,20 +374,20 @@ class ConfigDialog(Toplevel):
             text.tag_bind(
                     self.theme_elements[element][0], '<ButtonPress-1>', tem)
         text.config(state=DISABLED)
-        self.frame_colour_set = Frame(frame_custom, relief=SOLID, borderwidth=1)
+        self.frame_color_set = Frame(frame_custom, relief=SOLID, borderwidth=1)
         frame_fg_bg_toggle = Frame(frame_custom)
-        button_set_colour = Button(
-                self.frame_colour_set, text='Choose Colour for :',
-                command=self.get_colour, highlightthickness=0)
+        button_set_color = Button(
+                self.frame_color_set, text='Choose Color for :',
+                command=self.get_color, highlightthickness=0)
         self.opt_menu_highlight_target = DynOptionMenu(
-                self.frame_colour_set, self.highlight_target, None,
+                self.frame_color_set, self.highlight_target, None,
                 highlightthickness=0) #, command=self.set_highlight_targetBinding
         self.radio_fg = Radiobutton(
                 frame_fg_bg_toggle, variable=self.fg_bg_toggle, value=1,
-                text='Foreground', command=self.set_colour_sample_binding)
+                text='Foreground', command=self.set_color_sample_binding)
         self.radio_bg=Radiobutton(
                 frame_fg_bg_toggle, variable=self.fg_bg_toggle, value=0,
-                text='Background', command=self.set_colour_sample_binding)
+                text='Background', command=self.set_color_sample_binding)
         self.fg_bg_toggle.set(1)
         button_save_custom_theme = Button(
                 frame_custom, text='Save as New Custom Theme',
@@ -414,11 +414,11 @@ class ConfigDialog(Toplevel):
         frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_theme.pack(side=LEFT, padx=5, pady=5, fill=Y)
         #frame_custom
-        self.frame_colour_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
+        self.frame_color_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
         frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
         self.text_highlight_sample.pack(
                 side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        button_set_colour.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=4)
+        button_set_color.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=4)
         self.opt_menu_highlight_target.pack(
                 side=TOP, expand=TRUE, fill=X, padx=8, pady=3)
         self.radio_fg.pack(side=LEFT, anchor=E)
@@ -694,7 +694,7 @@ class ConfigDialog(Toplevel):
         self.font_name.trace_add('write', self.var_changed_font)
         self.font_bold.trace_add('write', self.var_changed_font)
         self.space_num.trace_add('write', self.var_changed_space_num)
-        self.colour.trace_add('write', self.var_changed_colour)
+        self.color.trace_add('write', self.var_changed_color)
         self.builtin_theme.trace_add('write', self.var_changed_builtin_theme)
         self.custom_theme.trace_add('write', self.var_changed_custom_theme)
         self.is_builtin_theme.trace_add('write', self.var_changed_is_builtin_theme)
@@ -712,7 +712,7 @@ class ConfigDialog(Toplevel):
         "Remove callbacks to prevent memory leaks."
         for var in (
                 self.font_size, self.font_name, self.font_bold,
-                self.space_num, self.colour, self.builtin_theme,
+                self.space_num, self.color, self.builtin_theme,
                 self.custom_theme, self.is_builtin_theme, self.highlight_target,
                 self.keybinding, self.builtin_keys, self.custom_keys,
                 self.are_keys_builtin, self.win_width, self.win_height,
@@ -738,9 +738,9 @@ class ConfigDialog(Toplevel):
         value = self.space_num.get()
         changes.add_option('main', 'Indent', 'num-spaces', value)
 
-    def var_changed_colour(self, *params):
+    def var_changed_color(self, *params):
         "Process change to color choice."
-        self.on_new_colour_set()
+        self.on_new_color_set()
 
     def var_changed_builtin_theme(self, *params):
         """Process new builtin theme selection.
@@ -1099,7 +1099,7 @@ class ConfigDialog(Toplevel):
         self.activate_config_changes()
         self.set_theme_type()
 
-    def get_colour(self):
+    def get_color(self):
         """Handle button to select a new color for the target tag.
 
         If a new color is selected while using a builtin theme, a
@@ -1107,23 +1107,23 @@ class ConfigDialog(Toplevel):
 
         Attributes accessed:
             highlight_target
-            frame_colour_set
+            frame_color_set
             is_builtin_theme
 
         Attributes updated:
-            colour
+            color
 
         Methods:
             get_new_theme_name
             create_new_theme
         """
         target = self.highlight_target.get()
-        prev_colour = self.frame_colour_set.cget('bg')
-        rgbTuplet, colour_string = tkColorChooser.askcolor(
-                parent=self, title='Pick new colour for : '+target,
-                initialcolor=prev_colour)
-        if colour_string and (colour_string != prev_colour):
-            # User didn't cancel and they chose a new colour.
+        prev_color = self.frame_color_set.cget('bg')
+        rgbTuplet, color_string = tkColorChooser.askcolor(
+                parent=self, title='Pick new color for : '+target,
+                initialcolor=prev_color)
+        if color_string and (color_string != prev_color):
+            # User didn't cancel and they chose a new color.
             if self.is_builtin_theme.get():  # Current theme is a built-in.
                 message = ('Your changes will be saved as a new Custom Theme. '
                            'Enter a name for your new Custom Theme below.')
@@ -1132,20 +1132,20 @@ class ConfigDialog(Toplevel):
                     return
                 else:  # Create new custom theme based on previously active theme.
                     self.create_new_theme(new_theme)
-                    self.colour.set(colour_string)
+                    self.color.set(color_string)
             else:  # Current theme is user defined.
-                self.colour.set(colour_string)
+                self.color.set(color_string)
 
-    def on_new_colour_set(self):
+    def on_new_color_set(self):
         "Display sample of new color selection on the dialog."
-        new_colour=self.colour.get()
-        self.frame_colour_set.config(bg=new_colour)  # Set sample.
+        new_color=self.color.get()
+        self.frame_color_set.config(bg=new_color)  # Set sample.
         plane ='foreground' if self.fg_bg_toggle.get() else 'background'
         sample_element = self.theme_elements[self.highlight_target.get()][0]
-        self.text_highlight_sample.tag_config(sample_element, **{plane:new_colour})
+        self.text_highlight_sample.tag_config(sample_element, **{plane:new_color})
         theme = self.custom_theme.get()
         theme_element = sample_element + '-' + plane
-        changes.add_option('highlight', theme, theme_element, new_colour)
+        changes.add_option('highlight', theme, theme_element, new_color)
 
     def get_new_theme_name(self, message):
         "Return name of new theme from query popup."
@@ -1258,7 +1258,7 @@ class ConfigDialog(Toplevel):
             fg_bg_toggle
 
         Methods:
-            set_colour_sample
+            set_color_sample
 
         Called from:
             var_changed_highlight_target
@@ -1272,17 +1272,17 @@ class ConfigDialog(Toplevel):
             self.radio_fg.config(state=NORMAL)
             self.radio_bg.config(state=NORMAL)
             self.fg_bg_toggle.set(1)
-        self.set_colour_sample()
+        self.set_color_sample()
 
-    def set_colour_sample_binding(self, *args):
+    def set_color_sample_binding(self, *args):
         """Change color sample based on foreground/background toggle.
 
         Methods:
-            set_colour_sample
+            set_color_sample
         """
-        self.set_colour_sample()
+        self.set_color_sample()
 
-    def set_colour_sample(self):
+    def set_color_sample(self):
         """Set the color of the frame background to reflect the selected target.
 
         Instance variables accessed:
@@ -1292,13 +1292,13 @@ class ConfigDialog(Toplevel):
             text_highlight_sample
 
         Attributes updated:
-            frame_colour_set
+            frame_color_set
         """
-        # Set the colour sample area.
+        # Set the color sample area.
         tag = self.theme_elements[self.highlight_target.get()][0]
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
-        colour = self.text_highlight_sample.tag_cget(tag, plane)
-        self.frame_colour_set.config(bg=colour)
+        color = self.text_highlight_sample.tag_cget(tag, plane)
+        self.frame_color_set.config(bg=color)
 
     def paint_theme_sample(self):
         """Apply the theme colors to each element tag in the sample text.
@@ -1313,7 +1313,7 @@ class ConfigDialog(Toplevel):
             text_highlight_sample: Set the tag elements to the theme.
 
         Methods:
-            set_colour_sample
+            set_color_sample
 
         Called from:
             var_changed_builtin_theme
@@ -1326,19 +1326,19 @@ class ConfigDialog(Toplevel):
             theme = self.custom_theme.get()
         for element_title in self.theme_elements:
             element = self.theme_elements[element_title][0]
-            colours = idleConf.GetHighlight(theme, element)
+            colors = idleConf.GetHighlight(theme, element)
             if element == 'cursor':  # Cursor sample needs special painting.
-                colours['background'] = idleConf.GetHighlight(
+                colors['background'] = idleConf.GetHighlight(
                         theme, 'normal', fgBg='bg')
             # Handle any unsaved changes to this theme.
             if theme in changes['highlight']:
                 theme_dict = changes['highlight'][theme]
                 if element + '-foreground' in theme_dict:
-                    colours['foreground'] = theme_dict[element + '-foreground']
+                    colors['foreground'] = theme_dict[element + '-foreground']
                 if element + '-background' in theme_dict:
-                    colours['background'] = theme_dict[element + '-background']
-            self.text_highlight_sample.tag_config(element, **colours)
-        self.set_colour_sample()
+                    colors['background'] = theme_dict[element + '-background']
+            self.text_highlight_sample.tag_config(element, **colors)
+        self.set_color_sample()
 
     def help_source_selected(self, event):
         "Handle event for selecting additional help."
