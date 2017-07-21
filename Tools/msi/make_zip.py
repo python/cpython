@@ -132,7 +132,7 @@ if os.getenv('VCREDIST_PATH'):
     FULL_LAYOUT.append(('/', os.getenv('VCREDIST_PATH'), 'vcruntime*.dll', None))
     EMBED_LAYOUT.append(('/', os.getenv('VCREDIST_PATH'), 'vcruntime*.dll', None))
 
-def copy_to_layout(target, rel_sources):
+def copy_to_layout(target, rel_sources, include_py=False):
     count = 0
 
     if target.suffix.lower() == '.zip':
@@ -149,6 +149,8 @@ def copy_to_layout(target, rel_sources):
                         except py_compile.PyCompileError:
                             f.write(str(s), str(rel))
                         else:
+                            if include_py:
+                                f.write(str(s), str(rel))
                             f.write(str(pyc), str(rel.with_suffix('.pyc')))
                     else:
                         f.write(str(s), str(rel))
@@ -188,6 +190,7 @@ def main():
     parser.add_argument('-t', '--temp', metavar='dir', help='A directory to temporarily extract files into', type=Path, default=None)
     parser.add_argument('-e', '--embed', help='Create an embedding layout', action='store_true', default=False)
     parser.add_argument('-a', '--arch', help='Specify the architecture to use (win32/amd64)', type=str, default="win32")
+    parser.add_argument('--include-py', help='Always include .py source files', action='store_true')
     ns = parser.parse_args()
 
     source = ns.source or (Path(__file__).resolve().parent.parent.parent)
@@ -226,7 +229,7 @@ def main():
                     source / 'tools' / 'msi' / 'distutils.command.bdist_wininst.py',
                     Path('distutils') / 'command' / 'bdist_wininst.py'
                 ))
-            copied = copy_to_layout(temp / t.rstrip('/'), chain(files, extra_files))
+            copied = copy_to_layout(temp / t.rstrip('/'), chain(files, extra_files), include_py=ns.include_py)
             print('Copied {} files'.format(copied))
 
         if ns.embed:
@@ -238,7 +241,7 @@ def main():
                 print('#import site', file=f)
 
         if out:
-            total = copy_to_layout(out, rglob(temp, '**/*', None))
+            total = copy_to_layout(out, rglob(temp, '**/*', None), include_py=ns.include_py)
             print('Wrote {} files to {}'.format(total, out))
     finally:
         if delete_temp:
