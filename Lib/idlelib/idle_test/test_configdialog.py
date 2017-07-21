@@ -8,7 +8,6 @@ from test.support import requires
 requires('gui')
 from tkinter import Tk, BooleanVar
 import unittest
-from unittest import mock
 import idlelib.config as config
 from idlelib.idle_test.mock_idle import Func
 
@@ -76,7 +75,7 @@ class FontTabTest(unittest.TestCase):
 
     def test_bold_toggle(self):
         bt = dialog.bold_toggle
-        mock_bold = bt['variable'] = BooleanVar()
+        mock_bold = bt['variable'] = BooleanVar(root)
         mock_command = bt['command'] = Func()
         bt.invoke()
         self.assertEqual(mock_command.called, 1)
