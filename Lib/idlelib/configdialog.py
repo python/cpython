@@ -153,6 +153,14 @@ class ConfigDialog(Toplevel):
     def create_page_font_tab(self):
         """Return frame of widgets for Font/Tabs tab.
 
+        Enable users to provisionally change font face, size, or
+        boldness and to see the consequence of proposed choices.  Each
+        action set 3 options in changes structuree and changes the
+        corresponding aspect of the font sample on this page and
+        highlight sample on highlight page.
+
+        Enable users to change spaces entered for indent tabs.
+
         Tk Variables:
             font_name: Font face.
             font_size: Font size.
@@ -161,7 +169,7 @@ class ConfigDialog(Toplevel):
             space_num: Indentation width.
 
         Data Attribute:
-            edit_font: Font widget with default font name, size, and weight.
+            edit_font: Font with default font name, size, and weight.
 
         Methods:
             load_font_cfg: Set vars and fontlist.
@@ -180,7 +188,7 @@ class ConfigDialog(Toplevel):
                     frame_font_param: Frame
                         font_size_title: Label
                         (*)opt_menu_font_size: DynOptionMenu - font_size
-                        bold_toggle: Checkbutton - font_bold
+                        (*)bold_toggle: Checkbutton - font_bold
                     frame_font_sample: Frame
                         (*)font_sample: Label
                 frame_indent: LabelFrame
@@ -218,7 +226,7 @@ class ConfigDialog(Toplevel):
         font_size_title = Label(frame_font_param, text='Size :')
         self.opt_menu_font_size = DynOptionMenu(
                 frame_font_param, self.font_size, None, command=self.set_samples)
-        bold_toggle = Checkbutton(
+        self.bold_toggle = Checkbutton(
                 frame_font_param, variable=self.font_bold, onvalue=1,
                 offvalue=0, text='Bold', command=self.set_samples)
         frame_font_sample = Frame(frame_font, relief=SOLID, borderwidth=1)
@@ -246,7 +254,7 @@ class ConfigDialog(Toplevel):
         scroll_font.pack(side=LEFT, fill=Y)
         font_size_title.pack(side=LEFT, anchor=W)
         self.opt_menu_font_size.pack(side=LEFT, anchor=W)
-        bold_toggle.pack(side=LEFT, anchor=W, padx=20)
+        self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
         frame_font_sample.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         self.font_sample.pack(expand=TRUE, fill=BOTH)
         # frame_indent
