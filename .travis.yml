@@ -43,6 +43,10 @@ matrix:
         # (Updating the version is fine as long as no warnings are raised by doing so.)
         - python -m pip install sphinx~=1.6.1
         - python -m pip install blurb
+        - git log --max-count=3
+        - git remote -v
+        - git branch -r
+        - git rev-list --max-parents=0 HEAD
         - git log -r 7f777ed95a19224294949e1b4ce56bbffcb1fe9f
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
