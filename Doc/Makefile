@@ -110,7 +110,7 @@ clean:
 
 venv:
 	$(PYTHON) -m venv venv
-	./venv/bin/python3 -m pip install -U Sphinx blurb
+	./venv/bin/python3 -m pip install -U Sphinx 'blurb>=1.0.3'
 
 dist:
 	rm -rf dist
