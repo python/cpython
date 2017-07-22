@@ -80,11 +80,9 @@
 #define classdef 333
 #define arglist 334
 #define argument 335
-#define comp_for_or_async 336
-#define comp_iter 337
-#define comp_async_for 338
-#define comp_for 339
-#define comp_if 340
-#define encoding_decl 341
-#define yield_expr 342
-#define yield_arg 343
+#define comp_iter 336
+#define comp_for 337
+#define comp_if 338
+#define encoding_decl 339
+#define yield_expr 340
+#define yield_arg 341

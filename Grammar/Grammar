@@ -108,7 +108,7 @@ atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dictorsetmaker] '}' |
        NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
-testlist_comp: (test|star_expr) ( comp_for | comp_async_for | (',' (test|star_expr))* [','] )
+testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
 subscript: test | [test] ':' [test] [sliceop]
@@ -116,9 +116,9 @@ sliceop: ':' [test]
 exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
 testlist: test (',' test)* [',']
 dictorsetmaker: ( ((test ':' test | '**' expr)
-                   (comp_for | comp_async_for | (',' (test ':' test | '**' expr))* [','])) |
+                   (comp_for | (',' (test ':' test | '**' expr))* [','])) |
                   ((test | star_expr)
-                   (comp_for | comp_async_for | (',' (test | star_expr))* [','])) )
+                   (comp_for | (',' (test | star_expr))* [','])) )
 
 classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 
@@ -133,15 +133,13 @@ arglist: argument (',' argument)*  [',']
 # Illegal combinations and orderings are blocked in ast.c:
 # multiple (test comp_for) arguments are blocked; keyword unpackings
 # that precede iterable unpackings are blocked; etc.
-argument: ( test [comp_for_or_async] |
+argument: ( test [comp_for] |
             test '=' test |
             '**' test |
             '*' test )
 
-comp_for_or_async: comp_async_for | comp_for
-comp_iter: comp_async_for | comp_for | comp_if
-comp_async_for: 'async' 'for' exprlist 'in' or_test [comp_iter]
-comp_for: 'for' exprlist 'in' or_test [comp_iter]
+comp_iter: comp_for | comp_if
+comp_for: ['async'] 'for' exprlist 'in' or_test [comp_iter]
 comp_if: 'if' test_nocond [comp_iter]
 
 # not used in grammar, but may appear in "node" passed from Parser to Compiler
