@@ -928,12 +928,12 @@ class DisplayName(Phrase):
         if res[0].token_type == 'cfws':
             res.pop(0)
         else:
-            if res[0][0].token_type == 'cfws':
+            if isinstance(res[0][0], TokenList) and res[0][0].token_type == 'cfws':
                 res[0] = TokenList(res[0][1:])
         if res[-1].token_type == 'cfws':
             res.pop()
         else:
-            if res[-1][-1].token_type == 'cfws':
+            if isinstance(res[-1][-1], TokenList) and res[-1][-1].token_type == 'cfws':
                 res[-1] = TokenList(res[-1][:-1])
         return res.value
 
