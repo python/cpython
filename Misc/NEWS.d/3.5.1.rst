@@ -1,5 +1,5 @@
 .. bpo: 25709
-.. date: 8114
+.. date: 8113
 .. nonce: OPX2TS
 .. release date: 2015-12-06
 .. section: Core and Builtins
@@ -9,7 +9,7 @@ Fixed problem with in-place string concatenation and utf-8 cache.
 ..
 
 .. bpo: 25715
-.. date: 8113
+.. date: 8112
 .. nonce: 3LLYLj
 .. section: Windows
 

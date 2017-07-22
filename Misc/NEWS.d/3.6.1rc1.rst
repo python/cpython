@@ -1,5 +1,5 @@
 .. bpo: 28932
-.. date: 9531
+.. date: 9530
 .. nonce: QnLx8A
 .. release date: XXXX-XX-XX
 .. section: Core and Builtins
@@ -9,7 +9,7 @@ Do not include <sys/random.h> if it does not exist.
 ..
 
 .. bpo: 25677
-.. date: 9530
+.. date: 9529
 .. nonce: RWhZrb
 .. section: Core and Builtins
 
@@ -19,7 +19,7 @@ Based on patch by Michael Layzell.
 ..
 
 .. bpo: 29000
-.. date: 9529
+.. date: 9528
 .. nonce: K6wQ-3
 .. section: Core and Builtins
 
@@ -28,7 +28,7 @@ Fixed bytes formatting of octals with zero padding in alternate form.
 ..
 
 .. bpo: 26919
-.. date: 9528
+.. date: 9527
 .. nonce: Cm7MSa
 .. section: Core and Builtins
 
@@ -39,7 +39,7 @@ os.fsencode() and os.fsdecode() which are already using UTF-8.
 ..
 
 .. bpo: 28991
-.. date: 9527
+.. date: 9526
 .. nonce: lGA0FK
 .. section: Core and Builtins
 
@@ -49,7 +49,7 @@ triggerable by a monkey-patched len() function.
 ..
 
 .. bpo: 28739
-.. date: 9526
+.. date: 9525
 .. nonce: w1fvhk
 .. section: Core and Builtins
 
@@ -59,7 +59,7 @@ ast.literal_eval() even if they do not include expressions.
 ..
 
 .. bpo: 28512
-.. date: 9525
+.. date: 9524
 .. nonce: i-pv6d
 .. section: Core and Builtins
 
@@ -69,7 +69,7 @@ PyErr_SyntaxLocationEx() and PyErr_SyntaxLocationObject().
 ..
 
 .. bpo: 28918
-.. date: 9524
+.. date: 9523
 .. nonce: SFVuPz
 .. section: Core and Builtins
 
@@ -79,7 +79,7 @@ Py_DEBUG defined.
 ..
 
 .. bpo: 28731
-.. date: 9523
+.. date: 9522
 .. nonce: oNF59u
 .. section: Core and Builtins
 
@@ -89,7 +89,7 @@ dict literal with constant keys up to 30%.
 ..
 
 .. bpo: 29085
-.. date: 9522
+.. date: 9521
 .. nonce: bm3gkx
 .. section: Library
 
@@ -99,7 +99,7 @@ pid and time.
 ..
 
 .. bpo: 28923
-.. date: 9521
+.. date: 9520
 .. nonce: naVULD
 .. section: Library
 
@@ -108,7 +108,7 @@ Remove editor artifacts from Tix.py.
 ..
 
 .. bpo: 29055
-.. date: 9520
+.. date: 9519
 .. nonce: -r_9jc
 .. section: Library
 
@@ -118,7 +118,7 @@ upstream exception.
 ..
 
 .. bpo: 28871
-.. date: 9519
+.. date: 9518
 .. nonce: cPMXCJ
 .. section: Library
 
@@ -127,7 +127,7 @@ Fixed a crash when deallocate deep ElementTree.
 ..
 
 .. bpo: 19542
-.. date: 9518
+.. date: 9517
 .. nonce: 5tCkaK
 .. section: Library
 
@@ -137,7 +137,7 @@ when a GC collection happens in another thread.
 ..
 
 .. bpo: 20191
-.. date: 9517
+.. date: 9516
 .. nonce: Q7uZCS
 .. section: Library
 
@@ -147,7 +147,7 @@ its elements as limits.
 ..
 
 .. bpo: 28779
-.. date: 9516
+.. date: 9515
 .. nonce: t-mjED
 .. section: Library
 
@@ -158,7 +158,7 @@ locks.
 ..
 
 .. bpo: 28847
-.. date: 9515
+.. date: 9514
 .. nonce: J7d3nG
 .. section: Library
 
@@ -168,7 +168,7 @@ file when it is not changed.
 ..
 
 .. bpo: 26937
-.. date: 9514
+.. date: 9513
 .. nonce: c9kgiA
 .. section: Library
 
@@ -178,7 +178,7 @@ grp module cannot be imported, as for example on Android platforms.
 ..
 
 .. bpo: 29326
-.. date: 9513
+.. date: 9512
 .. nonce: 4qDQzs
 .. section: Windows
 
@@ -187,7 +187,7 @@ Ignores blank lines in ._pth files (Patch by Alexey Izbyshev)
 ..
 
 .. bpo: 28164
-.. date: 9512
+.. date: 9511
 .. nonce: h4CFX8
 .. section: Windows
 
@@ -196,7 +196,7 @@ Correctly handle special console filenames (patch by Eryk Sun)
 ..
 
 .. bpo: 29409
-.. date: 9511
+.. date: 9510
 .. nonce: bhvrJ2
 .. section: Windows
 
@@ -205,7 +205,7 @@ Implement PEP 529 for io.FileIO (Patch by Eryk Sun)
 ..
 
 .. bpo: 29392
-.. date: 9510
+.. date: 9509
 .. nonce: OtqS5t
 .. section: Windows
 
@@ -214,7 +214,7 @@ Prevent crash when passing invalid arguments into msvcrt module.
 ..
 
 .. bpo: 25778
-.. date: 9509
+.. date: 9508
 .. nonce: 8uKJ82
 .. section: Windows
 
@@ -223,7 +223,7 @@ winreg does not truncate string correctly (Patch by Eryk Sun)
 ..
 
 .. bpo: 28896
-.. date: 9508
+.. date: 9507
 .. nonce: VMi9w0
 .. section: Windows
 
@@ -232,7 +232,7 @@ Deprecate WindowsRegistryFinder and disable it by default.
 ..
 
 .. bpo: 29349
-.. date: 9507
+.. date: 9506
 .. nonce: PjSo-t
 .. section: Documentation
 
@@ -241,7 +241,7 @@ Fix Python 2 syntax in code for building the documentation.
 ..
 
 .. bpo: 28950
-.. date: 9506
+.. date: 9505
 .. nonce: 1W8Glo
 .. section: Tests
 
@@ -250,7 +250,7 @@ Disallow -j0 to be combined with -T/-l in regrtest command line arguments.
 ..
 
 .. bpo: 28683
-.. date: 9505
+.. date: 9504
 .. nonce: Fp-Hdq
 .. section: Tests
 
@@ -260,7 +260,7 @@ for a non-root user.
 ..
 
 .. bpo: 26939
-.. date: 9504
+.. date: 9503
 .. nonce: 7j_W5R
 .. section: Tests
 
@@ -270,7 +270,7 @@ on the Android armv7 qemu emulator.
 ..
 
 .. bpo: 28762
-.. date: 9503
+.. date: 9502
 .. nonce: Ru0YN_
 .. section: Build
 
@@ -280,7 +280,7 @@ defined in android-ndk-r13.
 ..
 
 .. bpo: 28538
-.. date: 9502
+.. date: 9501
 .. nonce: FqtN7v
 .. section: Build
 
@@ -290,7 +290,7 @@ Android API level 24, but the if_nameindex structure is not defined.
 ..
 
 .. bpo: 20211
-.. date: 9501
+.. date: 9500
 .. nonce: gpNptI
 .. section: Build
 
@@ -301,7 +301,7 @@ Original patch by Thomas Petazzoni.
 ..
 
 .. bpo: 28849
-.. date: 9500
+.. date: 9499
 .. nonce: AzRRF5
 .. section: Build
 

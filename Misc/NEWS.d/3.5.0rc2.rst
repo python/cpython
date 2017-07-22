@@ -1,5 +1,5 @@
 .. bpo: 24769
-.. date: 7956
+.. date: 7955
 .. nonce: XgRA0n
 .. release date: 2015-08-25
 .. section: Core and Builtins
@@ -10,7 +10,7 @@ Petr Viktorin.
 ..
 
 .. bpo: 21167
-.. date: 7955
+.. date: 7954
 .. nonce: uom-Dq
 .. section: Core and Builtins
 
@@ -20,7 +20,7 @@ even if -fp-model strict is not specified.
 ..
 
 .. bpo: 24492
-.. date: 7954
+.. date: 7953
 .. nonce: LKDAIu
 .. section: Core and Builtins
 
@@ -31,7 +31,7 @@ AttributeError.
 ..
 
 .. bpo: 24847
-.. date: 7953
+.. date: 7952
 .. nonce: SHiiO_
 .. section: Library
 
@@ -40,7 +40,7 @@ Removes vcruntime140.dll dependency from Tcl/Tk.
 ..
 
 .. bpo: 24839
-.. date: 7952
+.. date: 7951
 .. nonce: 7_iQZl
 .. section: Library
 
@@ -49,7 +49,7 @@ platform._syscmd_ver raises DeprecationWarning
 ..
 
 .. bpo: 24867
-.. date: 7951
+.. date: 7950
 .. nonce: rxJIl7
 .. section: Library
 

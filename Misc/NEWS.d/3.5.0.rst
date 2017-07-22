@@ -1,5 +1,5 @@
 .. bpo: 25071
-.. date: 7967
+.. date: 7966
 .. nonce: EwjXl1
 .. release date: 2015-09-13
 .. section: Build
