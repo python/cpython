@@ -402,8 +402,6 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             compile("async = 1", "<test>", "exec")
 
     def test_badsyntax_4(self):
-        # Tests for issue 24619
-
         samples = [
             '''def foo(await):
                 async def foo(): pass

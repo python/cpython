@@ -1,1 +1,1 @@
-``async`` and ``await`` are now proper keywords, as specified in PEP 492.
+Make ``async`` and ``await`` proper keywords, as specified in PEP 492.
