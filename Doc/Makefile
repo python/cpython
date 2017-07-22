@@ -6,6 +6,7 @@
 # You can set these variables from the command line.
 PYTHON       = python3
 SPHINXBUILD  = sphinx-build
+BLURB = $(PYTHON) -m blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
@@ -38,6 +39,8 @@ help:
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
 build:
+	-mkdir -p build
+	$(BLURB) merge -f build/NEWS
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
@@ -107,7 +110,7 @@ clean:
 
 venv:
 	$(PYTHON) -m venv venv
-	./venv/bin/python3 -m pip install -U Sphinx
+	./venv/bin/python3 -m pip install -U Sphinx 'blurb>=1.0.3'
 
 dist:
 	rm -rf dist
@@ -189,3 +192,4 @@ autobuild-stable-html:
 		exit 1;; \
 	esac
 	@make autobuild-dev-html
+
