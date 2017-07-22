@@ -500,11 +500,15 @@ class _TestProcess(BaseTestCase):
         evt.wait()
 
     def test_child_fd_inflation(self):
+        # Number of fds in child processes should not grow with the
+        # number of running children.
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
         sm = multiprocessing.get_start_method()
         if sm == 'fork':
+            # The fork method by design inherits all fds from the parent,
+            # trying to go against it is a lost battle
             self.skipTest('test not appropriate for {}'.format(sm))
 
         N = 5
