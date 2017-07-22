@@ -107,7 +107,7 @@ __all__ = [
     "check_warnings", "check_no_resource_warning", "EnvironmentVarGuard",
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
-    "run_with_tz", "PGO", "missing_compiler_executable",
+    "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
     ]
 
 class Error(Exception):
@@ -2647,3 +2647,34 @@ def disable_faulthandler():
     finally:
         if is_enabled:
             faulthandler.enable(file=fd, all_threads=True)
+
+
+try:
+    MAXFD = os.sysconf("SC_OPEN_MAX")
+except Exception:
+    MAXFD = 256
+
+
+def fd_count():
+    """Count the number of open file descriptors.
+    """
+    if sys.platform.startswith(('linux', 'freebsd')):
+        try:
+            names = os.listdir("/proc/self/fd")
+            return len(names)
+        except FileNotFoundError:
+            pass
+
+    count = 0
+    for fd in range(MAXFD):
+        try:
+            # Prefer dup() over fstat(). fstat() can require input/output
+            # whereas dup() doesn't.
+            fd2 = os.dup(fd)
+        except OSError as e:
+            if e.errno != errno.EBADF:
+                raise
+        else:
+            os.close(fd2)
+            count += 1
+    return count

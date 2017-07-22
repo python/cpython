@@ -494,6 +494,40 @@ class _TestProcess(BaseTestCase):
         self.assertIs(wr(), None)
         self.assertEqual(q.get(), 5)
 
+    @classmethod
+    def _test_child_fd_inflation(self, evt, q):
+        q.put(test.support.fd_count())
+        evt.wait()
+
+    def test_child_fd_inflation(self):
+        # Number of fds in child processes should not grow with the
+        # number of running children.
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        sm = multiprocessing.get_start_method()
+        if sm == 'fork':
+            # The fork method by design inherits all fds from the parent,
+            # trying to go against it is a lost battle
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        N = 5
+        evt = self.Event()
+        q = self.Queue()
+
+        procs = [self.Process(target=self._test_child_fd_inflation, args=(evt, q))
+                 for i in range(N)]
+        for p in procs:
+            p.start()
+
+        try:
+            fd_counts = [q.get() for i in range(N)]
+            self.assertEqual(len(set(fd_counts)), 1, fd_counts)
+
+        finally:
+            evt.set()
+            for p in procs:
+                p.join()
 
 #
 #
