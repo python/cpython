@@ -237,7 +237,7 @@ class MSVCCompiler(CCompiler) :
             ldflags.extend(('/nodefaultlib:libucrt.lib', 'ucrt.lib'))
 
         ldflags_debug = [
-            '/nologo', '/INCREMENTAL:NO', '/LTCG', '/DEBUG:FULL'
+            '/nologo', '/INCREMENTAL:NO', '/DEBUG:FULL'
         ]
 
         self.ldflags_exe = [*ldflags, '/MANIFEST:EMBED,ID=1']
