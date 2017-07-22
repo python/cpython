@@ -6,6 +6,7 @@
 # You can set these variables from the command line.
 PYTHON       = python3
 SPHINXBUILD  = sphinx-build
+BLURB = $(PYTHON) -m blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
@@ -38,8 +39,8 @@ help:
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
 build:
-	-mkdir build
-	blurb merge -f build/NEWS
+	-mkdir -p build
+	$(BLURB) merge -f build/NEWS
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
