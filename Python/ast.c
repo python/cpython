@@ -2447,19 +2447,27 @@ ast_for_factor(struct compiling *c, const node *n)
 static expr_ty
 ast_for_atom_expr(struct compiling *c, const node *n)
 {
-    int i, nch;
+    int i, nch, start = 0;
     expr_ty e, tmp;
 
     REQ(n, atom_expr);
     nch = NCH(n);
 
-    e = ast_for_atom(c, CHILD(n, 0));
+    if (TYPE(CHILD(n, 0)) == NAME && strcmp(STR(CHILD(n, 0)), "await") == 0) {
+        start = 1;
+        assert(nch > 1);
+    }
+
+    e = ast_for_atom(c, CHILD(n, start));
     if (!e)
         return NULL;
     if (nch == 1)
         return e;
+    if (start && nch == 2) {
+        return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
+    }
 
-    for (i = 1; i < nch; i++) {
+    for (i = start + 1; i < nch; i++) {
         node *ch = CHILD(n, i);
         if (TYPE(ch) != trailer)
             break;
@@ -2471,30 +2479,11 @@ ast_for_atom_expr(struct compiling *c, const node *n)
         e = tmp;
     }
 
-    return e;
-}
-
-static expr_ty
-ast_for_await_expr(struct compiling* c, const node *n)
-{
-    int nch, start;
-    expr_ty e;
-
-    REQ(n, await_expr);
-    nch = NCH(n);
-
-    if (nch == 2) {
-        start = 1;
-    } else {
-        assert(nch == 1);
-        start = 0;
+    if (start) {
+        /* there was an AWAIT */
+        return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
     }
-    e = ast_for_atom_expr(c, CHILD(n, start));
-    if (!e)
-        return NULL;
-    if (nch == 1)
-        return e;
-    return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
+    return e;
 }
 
 static expr_ty
@@ -2504,7 +2493,7 @@ ast_for_power(struct compiling *c, const node *n)
      */
     expr_ty e;
     REQ(n, power);
-    e = ast_for_await_expr(c, CHILD(n, 0));
+    e = ast_for_atom_expr(c, CHILD(n, 0));
     if (!e)
         return NULL;
     if (NCH(n) == 1)
