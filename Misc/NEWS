@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-30119: ftplib.FTP.putline() now throws ValueError on commands that contains
+  CR or LF. Patch by Dong-hee Na
+
 - [Security] bpo-30730: Prevent environment variables injection in subprocess on
   Windows.  Prevent passing other invalid environment variables and command arguments.
 
