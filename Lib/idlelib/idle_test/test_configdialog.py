@@ -6,7 +6,7 @@ Coverage: 46% just by creating dialog, 60% with current tests.
 from idlelib.configdialog import ConfigDialog, idleConf, changes
 from test.support import requires
 requires('gui')
-from tkinter import Tk, BooleanVar
+from tkinter import Tk
 import unittest
 import idlelib.config as config
 from idlelib.idle_test.mock_idle import Func
@@ -46,12 +46,16 @@ def tearDownModule():
 
 
 class FontTabTest(unittest.TestCase):
+    "Test that font widget enable users to make font changes."
+
 
     def setUp(self):
         changes.clear()
 
     def test_font_set(self):
-        # Set values guaranteed not to be defaults.
+        # Test that setting a font Variable results in 3 provisional
+        # change entries. Use values sure to not be defaults.
+        # Other font tests verify that user actions set Variables.
         default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
         default_size = str(default_font[1])
         default_bold = default_font[2] == 'bold'
@@ -73,27 +77,29 @@ class FontTabTest(unittest.TestCase):
                                      'font-bold': str(not default_bold)}}
         self.assertEqual(mainpage, expected)
 
-    def test_bold_toggle(self):
-        bt = dialog.bold_toggle
-        mock_bold = bt['variable'] = BooleanVar(root)
-        mock_command = bt['command'] = Func()
-        bt.invoke()
-        self.assertEqual(mock_command.called, 1)
-        self.assertEqual(bt['onvalue'], mock_bold.get())
-        bt.invoke()
-        self.assertEqual(mock_command.called, 2)
-        self.assertEqual(bt['offvalue'], mock_bold.get())
-        del mock_command, mock_bold
-
-    def test_set_samples(self):
+    def test_set_samples_bold_toggle(self):
+        # Set up.
         d = dialog
-        d.font_sample, d.highlight_sample = {}, {}
+        d.font_sample, d.highlight_sample = {}, {}  # Must undo this.
         d.font_name.set('test')
         d.font_size.set('5')
         d.font_bold.set(1)
+        expected0 = {'font': ('test', '5', 'normal')}
+        expected1 = {'font': ('test', '5', 'bold')}
+
+        # Test set_samples.
         d.set_samples()
-        expected = {'font': ('test', '5', 'bold')}
-        self.assertTrue(d.font_sample == d.highlight_sample == expected)
+        self.assertTrue(d.font_sample == d.highlight_sample == expected1)
+
+        # Test bold_toggle.
+        d.bold_toggle.invoke()
+        self.assertFalse(d.font_bold.get())
+        self.assertTrue(d.font_sample == d.highlight_sample == expected0)
+        d.bold_toggle.invoke()
+        self.assertTrue(d.font_bold.get())
+        self.assertTrue(d.font_sample == d.highlight_sample == expected1)
+
+        #  Clean up.
         del d.font_sample, d.highlight_sample
 
     def test_tabspace(self):
