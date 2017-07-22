@@ -1167,6 +1167,26 @@ class TestAddressHeader(TestHeaderBase):
             'example.com',
             None),
 
+        'name_ending_with_dot_without_space':
+            ('John X.<jxd@example.com>',
+             [errors.ObsoleteHeaderDefect],
+             '"John X." <jxd@example.com>',
+             'John X.',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
+
+        'name_starting_with_dot':
+            ('. Doe <jxd@example.com>',
+             [errors.InvalidHeaderDefect, errors.ObsoleteHeaderDefect],
+             '". Doe" <jxd@example.com>',
+             '. Doe',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
+
         }
 
         # XXX: Need many more examples, and in particular some with names in
@@ -1224,7 +1244,7 @@ class TestAddressHeader(TestHeaderBase):
             'Harry W. Hastings')
 
     def test_complex_address_list(self):
-        examples = list(self.example_params.values())
+        examples = list(self.example_params.values())[:-1]
         source = ('dummy list:;, another: (empty);,' +
                  ', '.join([x[0] for x in examples[:4]]) + ', ' +
                  r'"A \"list\"": ' +
