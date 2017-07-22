@@ -959,3 +959,4 @@ PyObject_ClearWeakRefs(PyObject *object)
         PyErr_Restore(err_type, err_value, err_tb);
     }
 }
+
