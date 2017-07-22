@@ -1,0 +1,730 @@
+.. bpo: 14699
+.. date: 7633
+.. nonce: AuoeMs
+.. release date: 01-May-2012
+.. section: Core and Builtins
+
+Fix calling the classmethod descriptor directly.
+
+..
+
+.. bpo: 14433
+.. date: 7632
+.. nonce: HtSYT-
+.. section: Core and Builtins
+
+Prevent msvcrt crash in interactive prompt when stdin is closed.
+
+..
+
+.. bpo: 14521
+.. date: 7631
+.. nonce: JDzRE4
+.. section: Core and Builtins
+
+Make result of float('nan') and float('-nan') more consistent across
+platforms.
+
+..
+
+.. bpo: 14646
+.. date: 7630
+.. nonce: 19NogB
+.. section: Core and Builtins
+
+__import__() sets __loader__ if the loader did not.
+
+..
+
+.. bpo: 14605
+.. date: 7629
+.. nonce: Psk3ZV
+.. section: Core and Builtins
+
+No longer have implicit entries in sys.meta_path. If sys.meta_path is found
+to be empty, raise ImportWarning.
+
+..
+
+.. bpo: 14605
+.. date: 7628
+.. nonce: WVtAi5
+.. section: Core and Builtins
+
+No longer have implicit entries in sys.path_hooks. If sys.path_hooks is
+found to be empty, a warning will be raised. None is now inserted into
+sys.path_importer_cache if no finder was discovered. This also means
+imp.NullImporter is no longer implicitly used.
+
+..
+
+.. bpo: 13903
+.. date: 7627
+.. nonce: 4z4rf7
+.. section: Core and Builtins
+
+Implement PEP 412. Individual dictionary instances can now share their keys
+with other dictionaries. Classes take advantage of this to share their
+instance dictionary keys for improved memory and performance.
+
+..
+
+.. bpo: 11603
+.. date: 7626
+.. nonce: aGsFsn
+.. section: Core and Builtins
+
+Setting __repr__ to __str__ now raises a RuntimeError when repr() or str()
+is called on such an object.
+
+..
+
+.. bpo: 14658
+.. date: 7625
+.. nonce: jeSkqL
+.. section: Core and Builtins
+
+Fix binding a special method to a builtin implementation of a special method
+with a different name.
+
+..
+
+.. bpo: 14630
+.. date: 7624
+.. nonce: 0bHFSA
+.. section: Core and Builtins
+
+Fix a memory access bug for instances of a subclass of int with value 0.
+
+..
+
+.. bpo: 14339
+.. date: 7623
+.. nonce: QR-MDy
+.. section: Core and Builtins
+
+Speed improvements to bin, oct and hex functions.  Patch by Serhiy
+Storchaka.
+
+..
+
+.. bpo: 14385
+.. date: 7622
+.. nonce: FD63CN
+.. section: Core and Builtins
+
+It is now possible to use a custom type for the __builtins__ namespace,
+instead of a dict. It can be used for sandboxing for example. Raise also a
+NameError instead of ImportError if __build_class__ name if not found in
+__builtins__.
+
+..
+
+.. bpo: 12599
+.. date: 7621
+.. nonce: Iu99dL
+.. section: Core and Builtins
+
+Be more strict in accepting None compared to a false-like object for
+importlib.util.module_for_loader and importlib.machinery.PathFinder.
+
+..
+
+.. bpo: 14612
+.. date: 7620
+.. nonce: uTBlpg
+.. section: Core and Builtins
+
+Fix jumping around with blocks by setting f_lineno.
+
+..
+
+.. bpo: 14592
+.. date: 7619
+.. nonce: 7PB7Zk
+.. section: Core and Builtins
+
+Attempting a relative import w/o __package__ or __name__ set in globals
+raises a KeyError.
+
+..
+
+.. bpo: 14607
+.. date: 7618
+.. nonce: YEC4Eu
+.. section: Core and Builtins
+
+Fix keyword-only arguments which started with ``__``.
+
+..
+
+.. bpo: 10854
+.. date: 7617
+.. nonce: -vkFId
+.. section: Core and Builtins
+
+The ImportError raised when an extension module on Windows fails to import
+now uses the new path and name attributes from Issue #1559549.
+
+..
+
+.. bpo: 13889
+.. date: 7616
+.. nonce: 5jUbDL
+.. section: Core and Builtins
+
+Check and (if necessary) set FPU control word before calling any of the
+dtoa.c string <-> float conversion functions, on MSVC builds of Python.
+This fixes issues when embedding Python in a Delphi app.
+
+..
+
+.. bpo: 0
+.. date: 7615
+.. nonce: dHmS-L
+.. section: Core and Builtins
+
+__import__() now matches PEP 328 and documentation by defaulting 'index' to
+0 instead of -1 and removing support for negative values.
+
+..
+
+.. bpo: 2377
+.. date: 7614
+.. nonce: 0jsA57
+.. section: Core and Builtins
+
+Make importlib the implementation of __import__().
+
+..
+
+.. bpo: 1559549
+.. date: 7613
+.. nonce: krys02
+.. section: Core and Builtins
+
+ImportError now has 'name' and 'path' attributes that are set using keyword
+arguments to its constructor. They are currently not set by import as they
+are meant for use by importlib.
+
+..
+
+.. bpo: 14474
+.. date: 7612
+.. nonce: duWZWs
+.. section: Core and Builtins
+
+Save and restore exception state in thread.start_new_thread() while writing
+error message if the thread leaves a unhandled exception.
+
+..
+
+.. bpo: 13019
+.. date: 7611
+.. nonce: LYHgJO
+.. section: Core and Builtins
+
+Fix potential reference leaks in bytearray.extend().  Patch by Suman Saha.
+
+..
+
+.. bpo: 14768
+.. date: 7610
+.. nonce: NGBeVQ
+.. section: Library
+
+os.path.expanduser('~/a') doesn't works correctly when HOME is '/'.
+
+..
+
+.. bpo: 14371
+.. date: 7609
+.. nonce: w4YKgU
+.. section: Library
+
+Support bzip2 in zipfile module.  Patch by Serhiy Storchaka.
+
+..
+
+.. bpo: 13183
+.. date: 7608
+.. nonce: WXohoU
+.. section: Library
+
+Fix pdb skipping frames after hitting a breakpoint and running step.  Patch
+by Xavier de Gaye.
+
+..
+
+.. bpo: 14696
+.. date: 7607
+.. nonce: 6sKxyV
+.. section: Library
+
+Fix parser module to understand 'nonlocal' declarations.
+
+..
+
+.. bpo: 10941
+.. date: 7606
+.. nonce: T2_m5t
+.. section: Library
+
+Fix imaplib.Internaldate2tuple to produce correct result near the DST
+transition.  Patch by Joe Peterson.
+
+..
+
+.. bpo: 9154
+.. date: 7605
+.. nonce: l5Z37S
+.. section: Library
+
+Fix parser module to understand function annotations.
+
+..
+
+.. bpo: 6085
+.. date: 7604
+.. nonce: K59hDR
+.. section: Library
+
+In http.server.py SimpleHTTPServer.address_string returns the client ip
+address instead client hostname. Patch by Charles-François Natali.
+
+..
+
+.. bpo: 14309
+.. date: 7603
+.. nonce: 0TEhbF
+.. section: Library
+
+Deprecate time.clock(), use time.perf_counter() or time.process_time()
+instead.
+
+..
+
+.. bpo: 14428
+.. date: 7602
+.. nonce: HY9aE6
+.. section: Library
+
+Implement the PEP 418. Add time.get_clock_info(), time.perf_counter() and
+time.process_time() functions, and rename time.steady() to time.monotonic().
+
+..
+
+.. bpo: 14646
+.. date: 7601
+.. nonce: kSPenl
+.. section: Library
+
+importlib.util.module_for_loader() now sets __loader__ and __package__ (when
+possible).
+
+..
+
+.. bpo: 14664
+.. date: 7600
+.. nonce: pdyfQE
+.. section: Library
+
+It is now possible to use @unittest.skip{If,Unless} on a test class that
+doesn't inherit from TestCase (i.e. a mixin).
+
+..
+
+.. bpo: 4892
+.. date: 7599
+.. nonce: XAcc2_
+.. section: Library
+
+multiprocessing Connections can now be transferred over multiprocessing
+Connections.  Patch by Richard Oudkerk (sbt).
+
+..
+
+.. bpo: 14160
+.. date: 7598
+.. nonce: eP9a5e
+.. section: Library
+
+TarFile.extractfile() failed to resolve symbolic links when the links were
+not located in an archive subdirectory.
+
+..
+
+.. bpo: 14638
+.. date: 7597
+.. nonce: cfMimX
+.. section: Library
+
+pydoc now treats non-string __name__ values as if they were missing, instead
+of raising an error.
+
+..
+
+.. bpo: 13684
+.. date: 7596
+.. nonce: GMakQh
+.. section: Library
+
+Fix httplib tunnel issue of infinite loops for certain sites which send EOF
+without trailing \r\n.
+
+..
+
+.. bpo: 14605
+.. date: 7595
+.. nonce: 0oYc81
+.. section: Library
+
+Add importlib.abc.FileLoader, importlib.machinery.(FileFinder,
+SourceFileLoader, SourcelessFileLoader, ExtensionFileLoader).
+
+..
+
+.. bpo: 13959
+.. date: 7594
+.. nonce: q2O_A_
+.. section: Library
+
+imp.cache_from_source()/source_from_cache() now follow
+os.path.join()/split() semantics for path manipulation instead of its prior,
+custom semantics of caring the right-most path separator forward in path
+joining.
+
+..
+
+.. bpo: 2193
+.. date: 7593
+.. nonce: EwmaL0
+.. section: Library
+
+Allow ":" character in Cookie NAME values.
+
+..
+
+.. bpo: 14629
+.. date: 7592
+.. nonce: CT9YOf
+.. section: Library
+
+tokenizer.detect_encoding will specify the filename in the SyntaxError
+exception if found at readline.__self__.name.
+
+..
+
+.. bpo: 14629
+.. date: 7591
+.. nonce: NmM4VS
+.. section: Library
+
+Raise SyntaxError in tokenizer.detect_encoding if the first two lines have
+non-UTF-8 characters without an encoding declaration.
+
+..
+
+.. bpo: 14308
+.. date: 7590
+.. nonce: VI_YtW
+.. section: Library
+
+Fix an exception when a "dummy" thread is in the threading module's active
+list after a fork().
+
+..
+
+.. bpo: 11750
+.. date: 7589
+.. nonce: zqcMd9
+.. section: Library
+
+The Windows API functions scattered in the _subprocess and
+_multiprocessing.win32 modules now live in a single module "_winapi". Patch
+by sbt.
+
+..
+
+.. bpo: 14087
+.. date: 7588
+.. nonce: jLqw-6
+.. section: Library
+
+multiprocessing: add Condition.wait_for(). Patch by sbt.
+
+..
+
+.. bpo: 14538
+.. date: 7587
+.. nonce: l61eIV
+.. section: Library
+
+HTMLParser can now parse correctly start tags that contain a bare '/'.
+
+..
+
+.. bpo: 14452
+.. date: 7586
+.. nonce: TPNgz8
+.. section: Library
+
+SysLogHandler no longer inserts a UTF-8 BOM into the message.
+
+..
+
+.. bpo: 14386
+.. date: 7585
+.. nonce: 98-5AW
+.. section: Library
+
+Expose the dict_proxy internal type as types.MappingProxyType.
+
+..
+
+.. bpo: 13959
+.. date: 7584
+.. nonce: lhqW73
+.. section: Library
+
+Make imp.reload() always use a module's __loader__ to perform the reload.
+
+..
+
+.. bpo: 13959
+.. date: 7583
+.. nonce: -UuY7L
+.. section: Library
+
+Add imp.py and rename the built-in module to _imp, allowing for re-
+implementing parts of the module in pure Python.
+
+..
+
+.. bpo: 13496
+.. date: 7582
+.. nonce: ZTq6yk
+.. section: Library
+
+Fix potential overflow in bisect.bisect algorithm when applied to a
+collection of size > sys.maxsize / 2.
+
+..
+
+.. bpo: 0
+.. date: 7581
+.. nonce: bW_hJ4
+.. section: Library
+
+Have importlib take advantage of ImportError's new 'name' and 'path'
+attributes.
+
+..
+
+.. bpo: 14399
+.. date: 7580
+.. nonce: aGumG7
+.. section: Library
+
+zipfile now recognizes that the archive has been modified even if only the
+comment is changed.  In addition, the TypeError that results from trying to
+set a non-binary value as a comment is now raised at the time the comment is
+set rather than at the time the zipfile is written.
+
+..
+
+.. bpo: 0
+.. date: 7579
+.. nonce: hVFHSa
+.. section: Library
+
+trace.CoverageResults.is_ignored_filename() now ignores any name that starts
+with "<" and ends with ">" instead of special-casing "<string>" and
+"<doctest ".
+
+..
+
+.. bpo: 12537
+.. date: 7578
+.. nonce: IJxACy
+.. section: Library
+
+The mailbox module no longer depends on knowledge of internal implementation
+details of the email package Message object.
+
+..
+
+.. bpo: 7978
+.. date: 7577
+.. nonce: ULB0fY
+.. section: Library
+
+socketserver now restarts the select() call when EINTR is returned.  This
+avoids crashing the server loop when a signal is received. Patch by Jerzy
+Kozera.
+
+..
+
+.. bpo: 14522
+.. date: 7576
+.. nonce: ZFkCm3
+.. section: Library
+
+Avoid duplicating socket handles in multiprocessing.connection. Patch by
+sbt.
+
+..
+
+.. bpo: 0
+.. date: 7575
+.. nonce: jSwSmB
+.. section: Library
+
+Don't Py_DECREF NULL variable in io.IncrementalNewlineDecoder.
+
+..
+
+.. bpo: 3033
+.. date: 7574
+.. nonce: 4pfXoI
+.. section: Library
+
+Add displayof parameter to tkinter font. Patch by Guilherme Polo.
+
+..
+
+.. bpo: 14482
+.. date: 7573
+.. nonce: vPb000
+.. section: Library
+
+Raise a ValueError, not a NameError, when trying to create a multiprocessing
+Client or Listener with an AF_UNIX type address under Windows.  Patch by
+Popa Claudiu.
+
+..
+
+.. bpo: 802310
+.. date: 7572
+.. nonce: ko_Bca
+.. section: Library
+
+Generate always unique tkinter font names if not directly passed.
+
+..
+
+.. bpo: 14151
+.. date: 7571
+.. nonce: cy_gqr
+.. section: Library
+
+Raise a ValueError, not a NameError, when trying to create a multiprocessing
+Client or Listener with an AF_PIPE type address under non-Windows platforms.
+Patch by Popa Claudiu.
+
+..
+
+.. bpo: 14493
+.. date: 7570
+.. nonce: ubcGd5
+.. section: Library
+
+Use gvfs-open or xdg-open in webbrowser.
+
+..
+
+.. bpo: 0
+.. date: 7569
+.. nonce: E9EckD
+.. section: Build
+
+"make touch" will now touch generated files that are checked into Mercurial,
+after a "hg update" which failed to bring the timestamps into the right
+order.
+
+..
+
+.. bpo: 14026
+.. date: 7568
+.. nonce: M8IplH
+.. section: Tests
+
+In test_cmd_line_script, check that sys.argv is populated correctly for the
+various invocation approaches (Patch by Jason Yeo)
+
+..
+
+.. bpo: 14032
+.. date: 7567
+.. nonce: GigeG2
+.. section: Tests
+
+Fix incorrect variable name in test_cmd_line_script debugging message (Patch
+by Jason Yeo)
+
+..
+
+.. bpo: 14589
+.. date: 7566
+.. nonce: 9aNtuR
+.. section: Tests
+
+Update certificate chain for sha256.tbs-internet.com, fixing a test failure
+in test_ssl.
+
+..
+
+.. bpo: 14355
+.. date: 7565
+.. nonce: A4THFc
+.. section: Tests
+
+Regrtest now supports the standard unittest test loading, and will use it if
+a test file contains no `test_main` method.
+
+..
+
+.. bpo: 8515
+.. date: 7564
+.. nonce: wY13t0
+.. section: IDLE
+
+Set __file__ when run file in IDLE. Initial patch by Bruce Frederiksen.
+
+..
+
+.. bpo: 14496
+.. date: 7563
+.. nonce: qkJxeK
+.. section: IDLE
+
+Fix wrong name in idlelib/tabbedpages.py. Patch by Popa Claudiu.
+
+..
+
+.. bpo: 3561
+.. date: 7562
+.. nonce: ka-akT
+.. section: Tools/Demos
+
+The Windows installer now has an option, off by default, for placing the
+Python installation into the system "Path" environment variable.
+
+..
+
+.. bpo: 13165
+.. date: 7561
+.. nonce: j-kIjl
+.. section: Tools/Demos
+
+stringbench is now available in the Tools/stringbench folder. It used to
+live in its own SVN project.
+
+..
+
+.. bpo: 14098
+.. date: 7560
+.. nonce: hNJoW-
+.. section: C API
+
+New functions PyErr_GetExcInfo and PyErr_SetExcInfo. Patch by Stefan Behnel.

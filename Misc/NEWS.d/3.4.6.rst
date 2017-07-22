@@ -1,0 +1,7 @@
+.. bpo: 0
+.. date: 9995
+.. no changes: True
+.. nonce: 9jLltj
+.. release date: 2017-01-17
+
+There were no changes between 3.4.6rc1 and 3.4.6 final.

@@ -1,0 +1,77 @@
+.. bpo: 10510
+.. date: 9589
+.. nonce: N-ntcD
+.. release date: 2014-10-06
+.. section: Library
+
+distutils register and upload methods now use HTML standards compliant CRLF
+line endings.
+
+..
+
+.. bpo: 9850
+.. date: 9588
+.. nonce: D-UnVi
+.. section: Library
+
+Fixed macpath.join() for empty first component.  Patch by Oleg Oshmyan.
+
+..
+
+.. bpo: 22427
+.. date: 9587
+.. nonce: TZ5S_u
+.. section: Library
+
+TemporaryDirectory no longer attempts to clean up twice when used in the
+with statement in generator.
+
+..
+
+.. bpo: 20912
+.. date: 9586
+.. nonce: cAq3mZ
+.. section: Library
+
+Now directories added to ZIP file have correct Unix and MS-DOS directory
+attributes.
+
+..
+
+.. bpo: 21866
+.. date: 9585
+.. nonce: hSc4wM
+.. section: Library
+
+ZipFile.close() no longer writes ZIP64 central directory records if
+allowZip64 is false.
+
+..
+
+.. bpo: 22415
+.. date: 9584
+.. nonce: xJLAvI
+.. section: Library
+
+Fixed debugging output of the GROUPREF_EXISTS opcode in the re module.
+Removed trailing spaces in debugging output.
+
+..
+
+.. bpo: 22423
+.. date: 9583
+.. nonce: Rtb4oT
+.. section: Library
+
+Unhandled exception in thread no longer causes unhandled AttributeError when
+sys.stderr is None.
+
+..
+
+.. bpo: 21332
+.. date: 9582
+.. nonce: Gwxwlr
+.. section: Library
+
+Ensure that ``bufsize=1`` in subprocess.Popen() selects line buffering,
+rather than block buffering.  Patch by Akira Li.

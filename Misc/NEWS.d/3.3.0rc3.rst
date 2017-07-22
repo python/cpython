@@ -1,0 +1,98 @@
+.. bpo: 15900
+.. date: 7989
+.. nonce: yot4lz
+.. release date: 23-Sep-2012
+.. section: Core and Builtins
+
+Fix reference leak in `PyUnicode_TranslateCharmap()`.
+
+..
+
+.. bpo: 15926
+.. date: 7988
+.. nonce: g2IIQa
+.. section: Core and Builtins
+
+Fix crash after multiple reinitializations of the interpreter.
+
+..
+
+.. bpo: 15895
+.. date: 7987
+.. nonce: KirUDy
+.. section: Core and Builtins
+
+Fix FILE pointer leak in one error branch of `PyRun_SimpleFileExFlags()`
+when filename points to a pyc/pyo file, closeit is false an and
+set_main_loader() fails.
+
+..
+
+.. bpo: 0
+.. date: 7986
+.. nonce: MMXe9c
+.. section: Core and Builtins
+
+Fixes for a few crash and memory leak regressions found by Coverity.
+
+..
+
+.. bpo: 15882
+.. date: 7985
+.. nonce: tDRdOi
+.. section: Library
+
+Change `_decimal` to accept any coefficient tuple when constructing
+infinities. This is done for backwards compatibility with decimal.py:
+Infinity coefficients are undefined in _decimal (in accordance with the
+specification).
+
+..
+
+.. bpo: 15925
+.. date: 7984
+.. nonce: ar8SuV
+.. section: Library
+
+Fix a regression in `email.util` where the `parsedate()` and
+`parsedate_tz()` functions did not return None anymore when the argument
+could not be parsed.
+
+..
+
+.. bpo: 15973
+.. date: 7983
+.. nonce: y4zCIp
+.. section: Library
+
+Fix a segmentation fault when comparing datetime timezone objects.
+
+..
+
+.. bpo: 15977
+.. date: 7982
+.. nonce: TElugq
+.. section: Library
+
+Fix memory leak in Modules/_ssl.c when the function _set_npn_protocols() is
+called multiple times, thanks to Daniel Sommermann.
+
+..
+
+.. bpo: 15969
+.. date: 7981
+.. nonce: dX5BRm
+.. section: Library
+
+`faulthandler` module: rename dump_tracebacks_later() to
+dump_traceback_later() and cancel_dump_tracebacks_later() to
+cancel_dump_traceback_later().
+
+..
+
+.. bpo: 0
+.. date: 7980
+.. nonce: ZqEirp
+.. section: Library
+
+_decimal module: use only C 89 style comments.
