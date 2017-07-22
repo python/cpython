@@ -153,6 +153,14 @@ class ConfigDialog(Toplevel):
     def create_page_font_tab(self):
         """Return frame of widgets for Font/Tabs tab.
 
+        Enable users to provisionally change font face, size, or
+        boldness and to see the consequence of proposed choices.  Each
+        action set 3 options in changes structuree and changes the
+        corresponding aspect of the font sample on this page and
+        highlight sample on highlight page.
+
+        Enable users to change spaces entered for indent tabs.
+
         Tk Variables:
             font_name: Font face.
             font_size: Font size.
@@ -161,7 +169,7 @@ class ConfigDialog(Toplevel):
             space_num: Indentation width.
 
         Data Attribute:
-            edit_font: Font widget with default font name, size, and weight.
+            edit_font: Font with default font name, size, and weight.
 
         Methods:
             load_font_cfg: Set vars and fontlist.
