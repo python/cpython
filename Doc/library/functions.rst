@@ -1300,7 +1300,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: round(number, ndigits=None)
 
    Return *number* rounded to *ndigits* precision after the decimal
-   point.  If *ndigits* is omitted or is ``None``, it returns the
+   point.  If *ndigits* is omitted or ``None``, it returns the
    nearest integer to its input.
 
    For the built-in types supporting :func:`round`, values are rounded to the
