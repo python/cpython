@@ -1089,10 +1089,10 @@ def buildPythonDocs():
     docdir = os.path.join(rootDir, 'pydocs')
     curDir = os.getcwd()
     os.chdir(buildDir)
-    # The Doc build changed for 3.4 (technically, for 3.4.1) and for 2.7.9
     runCommand('make clean')
-    # Assume sphinx-build is on our PATH, checked in checkEnvironment
-    runCommand('make html')
+    # Create virtual environment for docs builds with blurb and sphinx
+    runCommand('make venv')
+    runCommand('make html PYTHON=venv/bin/python')
     os.chdir(curDir)
     if not os.path.exists(docdir):
         os.mkdir(docdir)
