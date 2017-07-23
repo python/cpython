@@ -848,7 +848,7 @@ compiler_next_instr(struct compiler *c, basicblock *b)
    - when entering a new scope
    - on each statement
    - on each expression that start a new line
-   - before the "except" clause
+   - before the "except" and "finally" clauses
    - before the "for" and "while" expressions
 */
 
@@ -2698,6 +2698,7 @@ static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
     basicblock *body, *final1, *final2, *exit;
+    int save_u_lineno_set;
 
     body = compiler_new_block(c);
     final1 = compiler_new_block(c);
@@ -2719,14 +2720,17 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     }
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
+    save_u_lineno_set = c->u->u_lineno_set;
 
     /* `finally` block for successful outcome */
     compiler_use_next_block(c, final1);
     if (!compiler_push_finally_end(c, final1))
         return 0;
+    c->u->u_lineno_set = 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, final1);
 
+    c->u->u_lineno_set = save_u_lineno_set;
     ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
 
     /* `finally` block for exceptional outcome */
@@ -2854,7 +2858,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP_JREL(c, JUMP_FORWARD, end);
 
             /* finally: */
-            ADDOP_O(c, LOAD_CONST, Py_None, consts);
             compiler_use_next_block(c, cleanup_end);
             if (!compiler_push_finally_end(c, cleanup_end))
                 return 0;
