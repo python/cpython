@@ -1,0 +1,4 @@
+Fix shared memory performance regression in multiprocessing in 3.x.
+
+Shared memory used anonymous memory mappings in 2.x, while 3.x mmaps actual
+files. Try to be careful to do as little disk I/O as possible.
