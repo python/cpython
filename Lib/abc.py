@@ -3,7 +3,7 @@
 
 """Abstract Base Classes (ABCs) according to PEP 3119."""
 
-from _weakrefset import WeakSet
+#from _weakrefset import WeakSet
 
 
 def abstractmethod(funcobj):
@@ -229,6 +229,9 @@ class ABCMeta(type):
         # No dice; update negative cache
         cls._abc_negative_cache.add(subclass)
         return False
+
+
+from _abc import ABCMeta
 
 
 class ABC(metaclass=ABCMeta):
