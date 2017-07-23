@@ -145,10 +145,10 @@ class FontTest(unittest.TestCase):
         self.assertFalse(d.font_bold.get())
 
     def test_font_set(self):
-
         # Test that setting a font Variable results in 3 provisional
         # change entries and a call to set_samples. Use values sure to
         # not be defaults.
+
         default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
         default_size = str(default_font[1])
         default_bold = default_font[2] == 'bold'
@@ -192,7 +192,6 @@ class FontTest(unittest.TestCase):
         # Test set_samples.
         d.set_samples()
         self.assertTrue(d.font_sample == d.highlight_sample == expected)
-
 
         del d.font_sample, d.highlight_sample
         d.set_samples = Func()  # Re-mask for other tests.
