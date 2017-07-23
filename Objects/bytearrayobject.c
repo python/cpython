@@ -2012,35 +2012,26 @@ bytearray_hex(PyBytesObject *self)
 static PyObject *
 _common_reduce(PyByteArrayObject *self, int proto)
 {
-    PyObject *dict;
-    _Py_IDENTIFIER(__dict__);
-    char *buf;
+    PyObject *state;
+    const char *buf;
 
-    dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
-    if (dict == NULL) {
-        PyErr_Clear();
-        dict = Py_None;
-        Py_INCREF(dict);
+    state = _PyObject_GetState((PyObject *)self);
+    if (state == NULL) {
+        return NULL;
     }
 
+    if (!Py_SIZE(self)) {
+        return Py_BuildValue("(O()N)", Py_TYPE(self), state);
+    }
     buf = PyByteArray_AS_STRING(self);
     if (proto < 3) {
         /* use str based reduction for backwards compatibility with Python 2.x */
-        PyObject *latin1;
-        if (Py_SIZE(self))
-            latin1 = PyUnicode_DecodeLatin1(buf, Py_SIZE(self), NULL);
-        else
-            latin1 = PyUnicode_FromString("");
-        return Py_BuildValue("(O(Ns)N)", Py_TYPE(self), latin1, "latin-1", dict);
+        PyObject *latin1 = PyUnicode_DecodeLatin1(buf, Py_SIZE(self), NULL);
+        return Py_BuildValue("(O(Ns)N)", Py_TYPE(self), latin1, "latin-1", state);
     }
     else {
         /* use more efficient byte based reduction */
-        if (Py_SIZE(self)) {
-            return Py_BuildValue("(O(y#)N)", Py_TYPE(self), buf, Py_SIZE(self), dict);
-        }
-        else {
-            return Py_BuildValue("(O()N)", Py_TYPE(self), dict);
-        }
+        return Py_BuildValue("(O(y#)N)", Py_TYPE(self), buf, Py_SIZE(self), state);
     }
 }
 

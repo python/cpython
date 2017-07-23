@@ -3978,149 +3978,175 @@ _PyType_GetSlotNames(PyTypeObject *cls)
 }
 
 static PyObject *
-_PyObject_GetState(PyObject *obj, int required)
+object_getstate_default(PyObject *obj, int required)
 {
     PyObject *state;
-    PyObject *getstate;
-    _Py_IDENTIFIER(__getstate__);
+    PyObject *slotnames;
 
-    getstate = _PyObject_GetAttrId(obj, &PyId___getstate__);
-    if (getstate == NULL) {
-        PyObject *slotnames;
+    if (required && obj->ob_type->tp_itemsize) {
+        PyErr_Format(PyExc_TypeError,
+                     "can't pickle %.200s objects",
+                     Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
 
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            return NULL;
+    {
+        PyObject **dict;
+        dict = _PyObject_GetDictPtr(obj);
+        /* It is possible that the object's dict is not initialized
+           yet. In this case, we will return None for the state.
+           We also return None if the dict is empty to make the behavior
+           consistent regardless whether the dict was initialized or not.
+           This make unit testing easier. */
+        if (dict != NULL && *dict != NULL && PyDict_GET_SIZE(*dict) > 0) {
+            state = *dict;
         }
-        PyErr_Clear();
+        else {
+            state = Py_None;
+        }
+        Py_INCREF(state);
+    }
 
-        if (required && obj->ob_type->tp_itemsize) {
+    slotnames = _PyType_GetSlotNames(Py_TYPE(obj));
+    if (slotnames == NULL) {
+        Py_DECREF(state);
+        return NULL;
+    }
+
+    assert(slotnames == Py_None || PyList_Check(slotnames));
+    if (required) {
+        Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
+        if (obj->ob_type->tp_dictoffset)
+            basicsize += sizeof(PyObject *);
+        if (obj->ob_type->tp_weaklistoffset)
+            basicsize += sizeof(PyObject *);
+        if (slotnames != Py_None)
+            basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
+        if (obj->ob_type->tp_basicsize > basicsize) {
+            Py_DECREF(slotnames);
+            Py_DECREF(state);
             PyErr_Format(PyExc_TypeError,
                          "can't pickle %.200s objects",
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
+    }
 
-        {
-            PyObject **dict;
-            dict = _PyObject_GetDictPtr(obj);
-            /* It is possible that the object's dict is not initialized
-               yet. In this case, we will return None for the state.
-               We also return None if the dict is empty to make the behavior
-               consistent regardless whether the dict was initialized or not.
-               This make unit testing easier. */
-            if (dict != NULL && *dict != NULL && PyDict_GET_SIZE(*dict)) {
-                state = *dict;
-            }
-            else {
-                state = Py_None;
-            }
-            Py_INCREF(state);
-        }
+    if (slotnames != Py_None && PyList_GET_SIZE(slotnames) > 0) {
+        PyObject *slots;
+        Py_ssize_t slotnames_size, i;
 
-        slotnames = _PyType_GetSlotNames(Py_TYPE(obj));
-        if (slotnames == NULL) {
+        slots = PyDict_New();
+        if (slots == NULL) {
+            Py_DECREF(slotnames);
             Py_DECREF(state);
             return NULL;
         }
 
-        assert(slotnames == Py_None || PyList_Check(slotnames));
-        if (required) {
-            Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
-            if (obj->ob_type->tp_dictoffset)
-                basicsize += sizeof(PyObject *);
-            if (obj->ob_type->tp_weaklistoffset)
-                basicsize += sizeof(PyObject *);
-            if (slotnames != Py_None)
-                basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
-            if (obj->ob_type->tp_basicsize > basicsize) {
-                Py_DECREF(slotnames);
-                Py_DECREF(state);
-                PyErr_Format(PyExc_TypeError,
-                             "can't pickle %.200s objects",
-                             Py_TYPE(obj)->tp_name);
-                return NULL;
-            }
-        }
+        slotnames_size = PyList_GET_SIZE(slotnames);
+        for (i = 0; i < slotnames_size; i++) {
+            PyObject *name, *value;
 
-        if (slotnames != Py_None && PyList_GET_SIZE(slotnames) > 0) {
-            PyObject *slots;
-            Py_ssize_t slotnames_size, i;
-
-            slots = PyDict_New();
-            if (slots == NULL) {
-                Py_DECREF(slotnames);
-                Py_DECREF(state);
-                return NULL;
-            }
-
-            slotnames_size = PyList_GET_SIZE(slotnames);
-            for (i = 0; i < slotnames_size; i++) {
-                PyObject *name, *value;
-
-                name = PyList_GET_ITEM(slotnames, i);
-                Py_INCREF(name);
-                value = PyObject_GetAttr(obj, name);
-                if (value == NULL) {
-                    Py_DECREF(name);
-                    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                        goto error;
-                    }
-                    /* It is not an error if the attribute is not present. */
-                    PyErr_Clear();
-                }
-                else {
-                    int err = PyDict_SetItem(slots, name, value);
-                    Py_DECREF(name);
-                    Py_DECREF(value);
-                    if (err) {
-                        goto error;
-                    }
-                }
-
-                /* The list is stored on the class so it may mutate while we
-                   iterate over it */
-                if (slotnames_size != PyList_GET_SIZE(slotnames)) {
-                    PyErr_Format(PyExc_RuntimeError,
-                                 "__slotsname__ changed size during iteration");
+            name = PyList_GET_ITEM(slotnames, i);
+            Py_INCREF(name);
+            value = PyObject_GetAttr(obj, name);
+            if (value == NULL) {
+                Py_DECREF(name);
+                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                     goto error;
                 }
-
-                /* We handle errors within the loop here. */
-                if (0) {
-                  error:
-                    Py_DECREF(slotnames);
-                    Py_DECREF(slots);
-                    Py_DECREF(state);
-                    return NULL;
+                /* It is not an error if the attribute is not present. */
+                PyErr_Clear();
+            }
+            else {
+                int err = PyDict_SetItem(slots, name, value);
+                Py_DECREF(name);
+                Py_DECREF(value);
+                if (err) {
+                    goto error;
                 }
             }
 
-            /* If we found some slot attributes, pack them in a tuple along
-               the original attribute dictionary. */
-            if (PyDict_GET_SIZE(slots) > 0) {
-                PyObject *state2;
+            /* The list is stored on the class so it may mutate while we
+               iterate over it */
+            if (slotnames_size != PyList_GET_SIZE(slotnames)) {
+                PyErr_Format(PyExc_RuntimeError,
+                             "__slotsname__ changed size during iteration");
+                goto error;
+            }
 
-                state2 = PyTuple_Pack(2, state, slots);
+            /* We handle errors within the loop here. */
+            if (0) {
+              error:
+                Py_DECREF(slotnames);
+                Py_DECREF(slots);
                 Py_DECREF(state);
-                if (state2 == NULL) {
-                    Py_DECREF(slotnames);
-                    Py_DECREF(slots);
-                    return NULL;
-                }
-                state = state2;
+                return NULL;
             }
-            Py_DECREF(slots);
         }
-        Py_DECREF(slotnames);
+
+        /* If we found some slot attributes, pack them in a tuple along
+           the original attribute dictionary. */
+        if (PyDict_GET_SIZE(slots) > 0) {
+            PyObject *state2;
+
+            state2 = PyTuple_Pack(2, state, slots);
+            Py_DECREF(state);
+            if (state2 == NULL) {
+                Py_DECREF(slotnames);
+                Py_DECREF(slots);
+                return NULL;
+            }
+            state = state2;
+        }
+        Py_DECREF(slots);
     }
-    else { /* getstate != NULL */
-        state = _PyObject_CallNoArg(getstate);
-        Py_DECREF(getstate);
-        if (state == NULL)
-            return NULL;
-    }
+    Py_DECREF(slotnames);
 
     return state;
+}
+
+static PyObject *
+object_getstate(PyObject *obj, int required)
+{
+    PyObject *getstate, *state;
+    _Py_IDENTIFIER(__getstate__);
+
+    getstate = _PyObject_GetAttrId(obj, &PyId___getstate__);
+    if (getstate == NULL) {
+        return NULL;
+    }
+    if (PyCFunction_Check(getstate) &&
+        PyCFunction_GET_SELF(getstate) == obj &&
+        PyCFunction_GET_FUNCTION(getstate) == object___getstate__)
+    {
+        /* If __getstate__ is not overriden pass the required argument. */
+        state = object_getstate_default(obj, required);
+    }
+    else {
+        state = _PyObject_CallNoArg(getstate);
+    }
+    Py_DECREF(getstate);
+    return state;
+}
+
+PyObject *
+_PyObject_GetState(PyObject *obj)
+{
+    return object_getstate(obj, 0);
+}
+
+/*[clinic input]
+object.__getstate__
+
+Helper for pickle.
+[clinic start generated code]*/
+
+static PyObject *
+object___getstate___impl(PyObject *self)
+/*[clinic end generated code: output=5a2500dcb6217e9e input=692314d8fbe194ee]*/
+{
+    return object_getstate_default(self, 0);
 }
 
 static int
@@ -4343,8 +4369,7 @@ reduce_newobj(PyObject *obj)
         return NULL;
     }
 
-    state = _PyObject_GetState(obj,
-                !hasargs && !PyList_Check(obj) && !PyDict_Check(obj));
+    state = object_getstate(obj, !(hasargs || PyList_Check(obj) || PyDict_Check(obj)));
     if (state == NULL) {
         Py_DECREF(newobj);
         Py_DECREF(newargs);
@@ -4591,6 +4616,7 @@ error:
 static PyMethodDef object_methods[] = {
     OBJECT___REDUCE_EX___METHODDEF
     OBJECT___REDUCE___METHODDEF
+    OBJECT___GETSTATE___METHODDEF
     {"__subclasshook__", object_subclasshook, METH_CLASS | METH_VARARGS,
      object_subclasshook_doc},
     {"__init_subclass__", object_init_subclass, METH_CLASS | METH_NOARGS,

@@ -1966,8 +1966,7 @@ If the element is not a member, do nothing.");
 static PyObject *
 set_reduce(PySetObject *so)
 {
-    PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
-    _Py_IDENTIFIER(__dict__);
+    PyObject *keys=NULL, *args=NULL, *result=NULL, *state=NULL;
 
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
@@ -1975,17 +1974,14 @@ set_reduce(PySetObject *so)
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    dict = _PyObject_GetAttrId((PyObject *)so, &PyId___dict__);
-    if (dict == NULL) {
-        PyErr_Clear();
-        dict = Py_None;
-        Py_INCREF(dict);
-    }
-    result = PyTuple_Pack(3, Py_TYPE(so), args, dict);
+    state = _PyObject_GetState((PyObject *)so);
+    if (state == NULL)
+        goto done;
+    result = PyTuple_Pack(3, Py_TYPE(so), args, state);
 done:
     Py_XDECREF(args);
     Py_XDECREF(keys);
-    Py_XDECREF(dict);
+    Py_XDECREF(state);
     return result;
 }
 

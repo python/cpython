@@ -130,6 +130,24 @@ type___sizeof__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
     return type___sizeof___impl(self);
 }
 
+PyDoc_STRVAR(object___getstate____doc__,
+"__getstate__($self, /)\n"
+"--\n"
+"\n"
+"Helper for pickle.");
+
+#define OBJECT___GETSTATE___METHODDEF    \
+    {"__getstate__", (PyCFunction)object___getstate__, METH_NOARGS, object___getstate____doc__},
+
+static PyObject *
+object___getstate___impl(PyObject *self);
+
+static PyObject *
+object___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return object___getstate___impl(self);
+}
+
 PyDoc_STRVAR(object___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -237,4 +255,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=8c4c856859564eaa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=40a42fe78d6ed60c input=a9049054013a1b77]*/

@@ -3153,9 +3153,8 @@ static PyObject *
 tzinfo_reduce(PyObject *self)
 {
     PyObject *args, *state;
-    PyObject *getinitargs, *getstate;
+    PyObject *getinitargs;
     _Py_IDENTIFIER(__getinitargs__);
-    _Py_IDENTIFIER(__getstate__);
 
     getinitargs = _PyObject_GetAttrId(self, &PyId___getinitargs__);
     if (getinitargs != NULL) {
@@ -3174,32 +3173,13 @@ tzinfo_reduce(PyObject *self)
         }
     }
 
-    getstate = _PyObject_GetAttrId(self, &PyId___getstate__);
-    if (getstate != NULL) {
-        state = _PyObject_CallNoArg(getstate);
-        Py_DECREF(getstate);
-        if (state == NULL) {
-            Py_DECREF(args);
-            return NULL;
-        }
-    }
-    else {
-        PyObject **dictptr;
-        PyErr_Clear();
-        state = Py_None;
-        dictptr = _PyObject_GetDictPtr(self);
-        if (dictptr && *dictptr && PyDict_GET_SIZE(*dictptr)) {
-            state = *dictptr;
-        }
-        Py_INCREF(state);
+    state = _PyObject_GetState(self);
+    if (state == NULL) {
+        Py_DECREF(args);
+        return NULL;
     }
 
-    if (state == Py_None) {
-        Py_DECREF(state);
-        return Py_BuildValue("(ON)", Py_TYPE(self), args);
-    }
-    else
-        return Py_BuildValue("(ONN)", Py_TYPE(self), args, state);
+    return Py_BuildValue("(ONN)", Py_TYPE(self), args, state);
 }
 
 static PyMethodDef tzinfo_methods[] = {
