@@ -2698,7 +2698,6 @@ static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
     basicblock *body, *final1, *final2, *exit;
-    int end_body_line;
 
     body = compiler_new_block(c);
     final1 = compiler_new_block(c);
@@ -2720,24 +2719,20 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     }
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
-    end_body_line = c->u->u_lineno_set;
 
     /* `finally` block for successful outcome */
     compiler_use_next_block(c, final1);
     if (!compiler_push_finally_end(c, final1))
         return 0;
-    c->u->u_lineno_set = 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, final1);
 
-    c->u->u_lineno_set = end_body_line;
     ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
 
     /* `finally` block for exceptional outcome */
     compiler_use_next_block(c, final2);
     if (!compiler_push_finally_end(c, final2))
         return 0;
-    c->u->u_lineno_set = 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, RERAISE);
     compiler_pop_fblock(c, FINALLY_END, final2);
