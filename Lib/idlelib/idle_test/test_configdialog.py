@@ -59,25 +59,28 @@ class FontTabTest(unittest.TestCase):
         default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
         default_size = str(default_font[1])
         default_bold = default_font[2] == 'bold'
-        dialog.font_name.set('Test Font')
+        d = dialog
+        d.font_name.set('Test Font')
+        d.font_size.set(default_size)
+        d.font_bold.set(default_bold)
         expected = {'EditorWindow': {'font': 'Test Font',
                                      'font-size': default_size,
                                      'font-bold': str(default_bold)}}
         self.assertEqual(mainpage, expected)
         changes.clear()
-        dialog.font_size.set(20)
+        d.font_size.set(20)
         expected = {'EditorWindow': {'font': 'Test Font',
                                      'font-size': '20',
                                      'font-bold': str(default_bold)}}
         self.assertEqual(mainpage, expected)
         changes.clear()
-        dialog.font_bold.set(not default_bold)
+        d.font_bold.set(not default_bold)
         expected = {'EditorWindow': {'font': 'Test Font',
                                      'font-size': '20',
                                      'font-bold': str(not default_bold)}}
         self.assertEqual(mainpage, expected)
 
-    def test_set_samples_bold_toggle(self):
+    def test_bold_toggle_set_samples(self):
         # Set up.
         d = dialog
         d.font_sample, d.highlight_sample = {}, {}  # Must undo this.
@@ -91,7 +94,7 @@ class FontTabTest(unittest.TestCase):
         d.set_samples()
         self.assertTrue(d.font_sample == d.highlight_sample == expected1)
 
-        # Test bold_toggle.
+        # Test bold_toggle.  If this fails, problem precedes set_samples.
         d.bold_toggle.invoke()
         self.assertFalse(d.font_bold.get())
         self.assertTrue(d.font_sample == d.highlight_sample == expected0)
@@ -102,9 +105,10 @@ class FontTabTest(unittest.TestCase):
         #  Clean up.
         del d.font_sample, d.highlight_sample
 
-    def test_tabspace(self):
-        dialog.space_num.set(6)
-        self.assertEqual(mainpage, {'Indent': {'num-spaces': '6'}})
+    def test_indent_scale(self):
+        dialog.indent_scale.set(26)
+        self.assertEqual(dialog.space_num.get(), 16)
+        self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
 
 
 class FontSelectTest(unittest.TestCase):

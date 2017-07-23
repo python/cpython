@@ -1,0 +1,6 @@
+IDLE - Improve configdialog font page and tests.
+
+* Document causal pathways in docstring. * Simplify some attribute names. *
+Rename test_bold_toggle_set_samples to make test_font_set fail. * Fix
+test_font_set so not order dependent. * Fix renamed test_indent_scale so it
+tests the widget.
