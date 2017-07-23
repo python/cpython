@@ -376,6 +376,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30119: ftplib.FTP.putline() now throws ValueError on commands that contains
+  CR or LF. Patch by Dong-hee Na.
+
 - bpo-30879: os.listdir() and os.scandir() now emit bytes names when called
   with bytes-like argument.
 

@@ -122,6 +122,13 @@ class BaseProcess(object):
         self._check_closed()
         self._popen.terminate()
 
+    def kill(self):
+        '''
+        Terminate process; sends SIGKILL signal or uses TerminateProcess()
+        '''
+        self._check_closed()
+        self._popen.kill()
+
     def join(self, timeout=None):
         '''
         Wait until child process terminates
