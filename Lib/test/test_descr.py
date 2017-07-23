@@ -1,5 +1,7 @@
 import __builtin__
+import copy
 import gc
+import pickle
 import sys
 import types
 import unittest
@@ -8,6 +10,10 @@ import weakref
 
 from copy import deepcopy
 from test import test_support
+
+
+def func(*args):
+    return args
 
 
 class OperatorsTest(unittest.TestCase):
@@ -1415,6 +1421,21 @@ order (MRO) for bases """
         else:
             self.fail("classmethod shouldn't accept keyword args")
 
+    @test_support.cpython_only
+    def test_classmethod_copy_pickle(self):
+        cm = classmethod(func)
+        with test_support.check_py3k_warnings(
+                (".*classmethod", DeprecationWarning)):
+            copy.copy(cm)
+        with test_support.check_py3k_warnings(
+                (".*classmethod", DeprecationWarning)):
+            copy.deepcopy(cm)
+        for proto in range(2):
+            self.assertRaises(TypeError, pickle.dumps, cm, proto)
+        with test_support.check_py3k_warnings(
+                (".*classmethod", DeprecationWarning)):
+            pickle.dumps(cm, 2)
+
     @test_support.impl_detail("the module 'xxsubtype' is internal")
     def test_classmethods_in_c(self):
         # Testing C-based class methods...
@@ -1462,6 +1483,21 @@ order (MRO) for bases """
         self.assertEqual(d.goo(1), (1,))
         self.assertEqual(d.foo(1), (d, 1))
         self.assertEqual(D.foo(d, 1), (d, 1))
+
+    @test_support.cpython_only
+    def test_staticmethod_copy_pickle(self):
+        sm = staticmethod(func)
+        with test_support.check_py3k_warnings(
+                (".*staticmethod", DeprecationWarning)):
+            copy.copy(sm)
+        with test_support.check_py3k_warnings(
+                (".*staticmethod", DeprecationWarning)):
+            copy.deepcopy(sm)
+        for proto in range(2):
+            self.assertRaises(TypeError, pickle.dumps, sm, proto)
+        with test_support.check_py3k_warnings(
+                (".*staticmethod", DeprecationWarning)):
+            pickle.dumps(sm, 2)
 
     @test_support.impl_detail("the module 'xxsubtype' is internal")
     def test_staticmethods_in_c(self):
@@ -2157,6 +2193,21 @@ order (MRO) for bases """
             pass
         else:
             self.fail("expected ZeroDivisionError from bad property")
+
+    @test_support.cpython_only
+    def test_property_copy_pickle(self):
+        p = property(func)
+        with test_support.check_py3k_warnings(
+                (".*property", DeprecationWarning)):
+            copy.copy(p)
+        with test_support.check_py3k_warnings(
+                (".*property", DeprecationWarning)):
+            copy.deepcopy(p)
+        for proto in range(2):
+            self.assertRaises(TypeError, pickle.dumps, p, proto)
+        with test_support.check_py3k_warnings(
+                (".*property", DeprecationWarning)):
+            pickle.dumps(p, 2)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
