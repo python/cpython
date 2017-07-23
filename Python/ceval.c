@@ -2991,7 +2991,6 @@ main_loop:
         TARGET(WITH_EXCEPT_FINISH) {
             PyObject *res = POP();
             PyObject *exc = POP();
-            PyObject *val, *tb;
             int err;
 
             if (exc != Py_None)
@@ -3019,6 +3018,7 @@ main_loop:
                     DISPATCH();
                 }
                 else {
+                    PyObject *val, *tb;
                     assert(TOP() == exc);
                     STACKADJ(-1);
                     val = POP();
