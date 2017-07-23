@@ -2964,7 +2964,6 @@ main_loop:
              * the end of a for-loop, to help identify blocks in the code.
              */
             JUMPTO(oparg);
-            PREDICT(FOR_ITER);
             DISPATCH();
         }
 
