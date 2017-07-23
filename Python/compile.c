@@ -1639,18 +1639,6 @@ compiler_push_with(struct compiler *c, basicblock *block)
 }
 
 
-/* Return true if there is a loop on the fblock stack. */
-// static int
-// compiler_in_loop(struct compiler *c) {
-//     int i;
-//     struct compiler_unit *u = c->u;
-//     for (i = 0; i < u->u_nfblocks; ++i) {
-//         if (u->u_fblock[i].fb_type == LOOP)
-//             return 1;
-//     }
-//     return 0;
-// }
-
 /* Compile a sequence of statements, checking for a docstring
    and for annotations. */
 
@@ -2488,7 +2476,6 @@ compiler_for(struct compiler *c, stmt_ty s)
     end = compiler_new_block(c);
     if (start == NULL || end == NULL || cleanup == NULL)
         return 0;
-//     ADDOP_JREL(c, SETUP_LOOP, end);
 
     if (!compiler_push_for_loop(c, start, end))
         return 0;
@@ -2501,7 +2488,6 @@ compiler_for(struct compiler *c, stmt_ty s)
     VISIT_SEQ(c, stmt, s->v.For.body);
     ADDOP_JABS(c, END_ITER, start);
     compiler_use_next_block(c, cleanup);
-//     ADDOP(c, POP_BLOCK);
 
     compiler_pop_fblock(c, LOOP, start);
 
@@ -3226,7 +3212,6 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Pass_kind:
         break;
     case Break_kind:
-//         if (!compiler_in_loop(c))
         if (compiler_unwind_fblock(c, LOOP, NO_TYPE, &found, 0) == 0)
             return 0;
         if (found == NULL)
@@ -3237,8 +3222,6 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
             if (res == 0)
                 return 0;
         }
-//         if (found->fb_datum)
-//             ADDOP(c, POP_TOP);
         ADDOP_JABS(c, JUMP_ABSOLUTE, found->fb_exit);
         break;
     case Continue_kind:
