@@ -555,7 +555,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     const _Py_CODEUNIT *next_instr;
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-    enum why_code why; /* Reason for block stack unwind */
     PyObject **fastlocals, **freevars;
     PyObject *retval = NULL;            /* Return value */
     PyThreadState *tstate = PyThreadState_GET();
@@ -913,8 +912,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
 #endif
 
-    why = WHY_NOT;
-
     if (throwflag) /* support for generator.throw() */
         goto error;
 
@@ -925,6 +922,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     assert(!PyErr_Occurred());
 #endif
 
+main_loop:
     for (;;) {
         assert(stack_pointer >= f->f_valuestack); /* else underflow */
         assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
@@ -1055,9 +1053,8 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         switch (opcode) {
 
         /* BEWARE!
-           It is essential that any operation that fails sets either
-           x to NULL, err to nonzero, or why to anything but WHY_NOT,
-           and that no operation that succeeds does this! */
+           It is essential that any operation that fails must goto error
+           and that all operation that succeed call [FAST_]DISPATCH() ! */
 
         TARGET(NOP)
             FAST_DISPATCH();
@@ -1111,6 +1108,18 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             SET_TOP(second);
             SET_SECOND(third);
             SET_THIRD(top);
+            FAST_DISPATCH();
+        }
+
+        TARGET(ROT_FOUR) {
+            PyObject *top = TOP();
+            PyObject *second = SECOND();
+            PyObject *third = THIRD();
+            PyObject *fourth = FOURTH();
+            SET_TOP(second);
+            SET_SECOND(third);
+            SET_THIRD(fourth);
+            SET_FOURTH(top);
             FAST_DISPATCH();
         }
 
@@ -1378,7 +1387,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_ABSOLUTE);
+            PREDICT(END_ITER);
             DISPATCH();
         }
 
@@ -1390,7 +1399,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_ABSOLUTE);
+            PREDICT(END_ITER);
             DISPATCH();
         }
 
@@ -1672,8 +1681,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 /* fall through */
             case 0:
                 if (do_raise(exc, cause)) {
-                    why = WHY_EXCEPTION;
-                    goto fast_block_end;
+                    goto exception_unwind;
                 }
                 break;
             default:
@@ -1686,8 +1694,8 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
         TARGET(RETURN_VALUE) {
             retval = POP();
-            why = WHY_RETURN;
-            goto fast_block_end;
+            assert(f->f_iblock == 0);
+            goto return_or_yield;
         }
 
         TARGET(GET_AITER) {
@@ -1848,11 +1856,10 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             }
             /* receiver remains on stack, retval is value to be yielded */
             f->f_stacktop = stack_pointer;
-            why = WHY_YIELD;
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
-            goto fast_yield;
+            goto return_or_yield;
         }
 
         TARGET(YIELD_VALUE) {
@@ -1869,67 +1876,46 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             }
 
             f->f_stacktop = stack_pointer;
-            why = WHY_YIELD;
-            goto fast_yield;
+            goto return_or_yield;
         }
 
         TARGET(POP_EXCEPT) {
+            PyObject *type, *value, *traceback;
+            _PyErr_StackItem *exc_info;
             PyTryBlock *b = PyFrame_BlockPop(f);
             if (b->b_type != EXCEPT_HANDLER) {
                 PyErr_SetString(PyExc_SystemError,
                                 "popped block is not an except handler");
                 goto error;
             }
-            UNWIND_EXCEPT_HANDLER(b);
+            assert(STACK_LEVEL() >= (b)->b_level + 3 &&
+                   STACK_LEVEL() <= (b)->b_level + 4);
+            exc_info = tstate->exc_info;
+            type = exc_info->exc_type;
+            value = exc_info->exc_value;
+            traceback = exc_info->exc_traceback;
+            exc_info->exc_type = POP();
+            exc_info->exc_value = POP();
+            exc_info->exc_traceback = POP();
+            Py_XDECREF(type);
+            Py_XDECREF(value);
+            Py_XDECREF(traceback);
             DISPATCH();
         }
 
         PREDICTED(POP_BLOCK);
         TARGET(POP_BLOCK) {
-            PyTryBlock *b = PyFrame_BlockPop(f);
-            UNWIND_BLOCK(b);
+            PyFrame_BlockPop(f);
             DISPATCH();
         }
 
-        PREDICTED(END_FINALLY);
-        TARGET(END_FINALLY) {
-            PyObject *status = POP();
-            if (PyLong_Check(status)) {
-                why = (enum why_code) PyLong_AS_LONG(status);
-                assert(why != WHY_YIELD && why != WHY_EXCEPTION);
-                if (why == WHY_RETURN ||
-                    why == WHY_CONTINUE)
-                    retval = POP();
-                if (why == WHY_SILENCED) {
-                    /* An exception was silenced by 'with', we must
-                    manually unwind the EXCEPT_HANDLER block which was
-                    created when the exception was caught, otherwise
-                    the stack will be in an inconsistent state. */
-                    PyTryBlock *b = PyFrame_BlockPop(f);
-                    assert(b->b_type == EXCEPT_HANDLER);
-                    UNWIND_EXCEPT_HANDLER(b);
-                    why = WHY_NOT;
-                    Py_DECREF(status);
-                    DISPATCH();
-                }
-                Py_DECREF(status);
-                goto fast_block_end;
-            }
-            else if (PyExceptionClass_Check(status)) {
-                PyObject *exc = POP();
-                PyObject *tb = POP();
-                PyErr_Restore(status, exc, tb);
-                why = WHY_EXCEPTION;
-                goto fast_block_end;
-            }
-            else if (status != Py_None) {
-                PyErr_SetString(PyExc_SystemError,
-                    "'finally' pops bad exception");
-                Py_DECREF(status);
-                goto error;
-            }
-            Py_DECREF(status);
-            DISPATCH();
+        TARGET(RERAISE) {
+            PyObject *exc = POP();
+            PyObject *val = POP();
+            PyObject *tb = POP();
+            assert(PyExceptionClass_Check(exc));
+            PyErr_Restore(exc, val, tb);
+            goto exception_unwind;
         }
 
         TARGET(LOAD_BUILD_CLASS) {
@@ -2604,7 +2590,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             Py_DECREF(key);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_ABSOLUTE);
+            PREDICT(END_ITER);
             DISPATCH();
         }
 
@@ -2784,7 +2770,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        PREDICTED(JUMP_ABSOLUTE);
         TARGET(JUMP_ABSOLUTE) {
             JUMPTO(oparg);
 #if FAST_LOOPS
@@ -2799,6 +2784,16 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #else
             DISPATCH();
 #endif
+        }
+
+        PREDICTED(END_ITER);
+        TARGET(END_ITER) {
+            /* This is a synonym for JUMP_ABSOLUTE.  It is used to mark
+             * the end of a for-loop, to help identify blocks in the code.
+             */
+            JUMPTO(oparg);
+            PREDICT(FOR_ITER);
+            DISPATCH();
         }
 
         TARGET(GET_ITER) {
@@ -2869,20 +2864,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        TARGET(BREAK_LOOP) {
-            why = WHY_BREAK;
-            goto fast_block_end;
-        }
-
-        TARGET(CONTINUE_LOOP) {
-            retval = PyLong_FromLong(oparg);
-            if (retval == NULL)
-                goto error;
-            why = WHY_CONTINUE;
-            goto fast_block_end;
-        }
-
-        TARGET(SETUP_LOOP)
         TARGET(SETUP_EXCEPT)
         TARGET(SETUP_FINALLY) {
             /* NOTE: If you add any new block-setup opcodes that
@@ -2919,19 +2900,13 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        TARGET(SETUP_ASYNC_WITH) {
-            PyObject *res = POP();
-            /* Setup the finally block before pushing the result
-               of __aenter__ on the stack. */
-            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
-                               STACK_LEVEL());
-            PUSH(res);
-            DISPATCH();
-        }
-
-        TARGET(SETUP_WITH) {
+        TARGET(ENTER_WITH) {
+            /* Replace TOP with TOP.__exit__ and push the result
+             * of calling TOP.__enter__()
+             */
             _Py_IDENTIFIER(__exit__);
             _Py_IDENTIFIER(__enter__);
+
             PyObject *mgr = TOP();
             PyObject *enter = special_lookup(mgr, &PyId___enter__), *exit;
             PyObject *res;
@@ -2948,110 +2923,75 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             Py_DECREF(enter);
             if (res == NULL)
                 goto error;
-            /* Setup the finally block before pushing the result
-               of __enter__ on the stack. */
-            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
-                               STACK_LEVEL());
-
             PUSH(res);
             DISPATCH();
         }
 
         TARGET(WITH_CLEANUP_START) {
-            /* At the top of the stack are 1-6 values indicating
-               how/why we entered the finally clause:
-               - TOP = None
-               - (TOP, SECOND) = (WHY_{RETURN,CONTINUE}), retval
-               - TOP = WHY_*; no retval below it
-               - (TOP, SECOND, THIRD) = exc_info()
-                 (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
-               Below them is EXIT, the context.__exit__ bound method.
-               In the last case, we must call
-                 EXIT(TOP, SECOND, THIRD)
-               otherwise we must call
-                 EXIT(None, None, None)
-
-               In the first three cases, we remove EXIT from the
-               stack, leaving the rest in the same order.  In the
-               fourth case, we shift the bottom 3 values of the
-               stack down, and replace the empty spot with NULL.
-
-               In addition, if the stack represents an exception,
-               *and* the function call returns a 'true' value, we
-               push WHY_SILENCED onto the stack.  END_FINALLY will
-               then not re-raise the exception.  (But non-local
-               gotos should still be resumed.)
-            */
-
-            PyObject* stack[3];
             PyObject *exit_func;
-            PyObject *exc, *val, *tb, *res;
+            PyObject *exit_stack[3];
+            PyObject *res;
 
-            val = tb = Py_None;
-            exc = TOP();
-            if (exc == Py_None) {
-                (void)POP();
-                exit_func = TOP();
-                SET_TOP(exc);
-            }
-            else if (PyLong_Check(exc)) {
-                STACKADJ(-1);
-                switch (PyLong_AsLong(exc)) {
-                case WHY_RETURN:
-                case WHY_CONTINUE:
-                    /* Retval in TOP. */
-                    exit_func = SECOND();
-                    SET_SECOND(TOP());
-                    SET_TOP(exc);
-                    break;
-                default:
-                    exit_func = TOP();
-                    SET_TOP(exc);
-                    break;
-                }
-                exc = Py_None;
-            }
-            else {
-                PyObject *tp2, *exc2, *tb2;
-                PyTryBlock *block;
-                val = SECOND();
-                tb = THIRD();
-                tp2 = FOURTH();
-                exc2 = PEEK(5);
-                tb2 = PEEK(6);
-                exit_func = PEEK(7);
-                SET_VALUE(7, tb2);
-                SET_VALUE(6, exc2);
-                SET_VALUE(5, tp2);
-                /* UNWIND_EXCEPT_HANDLER will pop this off. */
-                SET_FOURTH(NULL);
-                /* We just shifted the stack down, so we have
-                   to tell the except handler block that the
-                   values are lower than it expects. */
-                block = &f->f_blockstack[f->f_iblock - 1];
-                assert(block->b_type == EXCEPT_HANDLER);
-                block->b_level--;
-            }
-
-            stack[0] = exc;
-            stack[1] = val;
-            stack[2] = tb;
-            res = _PyObject_FastCall(exit_func, stack, 3);
-            Py_DECREF(exit_func);
+            exit_func = TOP();
+            exit_stack[0] = Py_None;
+            exit_stack[1] = Py_None;
+            exit_stack[2] = Py_None;
+            res = _PyObject_FastCall(exit_func, exit_stack, 3);
             if (res == NULL)
                 goto error;
 
-            Py_INCREF(exc); /* Duplicating the exception on the stack */
-            PUSH(exc);
-            PUSH(res);
+            SET_TOP(res);
+            Py_DECREF(exit_func);
             PREDICT(WITH_CLEANUP_FINISH);
             DISPATCH();
         }
 
         PREDICTED(WITH_CLEANUP_FINISH);
         TARGET(WITH_CLEANUP_FINISH) {
+            Py_DECREF(POP());
+            DISPATCH();
+        }
+
+        TARGET(WITH_EXCEPT_START) {
+            /* At the top of the stack are 7 values:
+               - (TOP, SECOND, THIRD) = exc_info()
+               - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
+               - SEVENTH: the context.__exit__ bound method
+
+               We call SEVENTH(TOP, SECOND, THIRD).
+               Then we push again the TOP exception and the __exit__
+               return value.
+            */
+            PyObject *exit_func;
+            PyObject *exit_stack[3];
+            PyObject *exc, *val, *tb, *res;
+
+            exc = TOP();
+            val = SECOND();
+            tb = THIRD();
+            assert(exc != Py_None);
+            assert(!PyLong_Check(exc));
+
+            exit_func = PEEK(7);
+            exit_stack[0] = exc;
+            exit_stack[1] = val;
+            exit_stack[2] = tb;
+            res = _PyObject_FastCall(exit_func, exit_stack, 3);
+            if (res == NULL)
+                goto error;
+
+            Py_INCREF(exc); /* Duplicating the exception on the stack (XXX: required?) */
+            PUSH(exc);
+            PUSH(res);
+            PREDICT(WITH_EXCEPT_FINISH);
+            DISPATCH();
+        }
+
+        PREDICTED(WITH_EXCEPT_FINISH);
+        TARGET(WITH_EXCEPT_FINISH) {
             PyObject *res = POP();
             PyObject *exc = POP();
+            PyObject *val, *tb;
             int err;
 
             if (exc != Py_None)
@@ -3064,11 +3004,29 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
             if (err < 0)
                 goto error;
-            else if (err > 0) {
-                /* There was an exception and a True return */
-                PUSH(PyLong_FromLong((long) WHY_SILENCED));
+            if (exc != Py_None) {
+                if (err > 0) {
+                    /* There was an exception and a True return.
+                     * We must manually unwind the EXCEPT_HANDLER block
+                     * which was created when the exception was caught,
+                     * otherwise the stack will be in an inconsisten state.
+                     */
+                    PyTryBlock *b = PyFrame_BlockPop(f);
+                    assert(b->b_type == EXCEPT_HANDLER);
+                    UNWIND_EXCEPT_HANDLER(b);
+                    /* The bound __exit__ method is still on top */
+                    Py_DECREF(POP());
+                    DISPATCH();
+                }
+                else {
+                    assert(TOP() == exc);
+                    STACKADJ(-1);
+                    val = POP();
+                    tb = POP();
+                    PyErr_Restore(exc, val, tb);
+                    goto error;
+                }
             }
-            PREDICT(END_FINALLY);
             DISPATCH();
         }
 
@@ -3376,10 +3334,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         Py_UNREACHABLE();
 
 error:
-
-        assert(why == WHY_NOT);
-        why = WHY_EXCEPTION;
-
         /* Double-check exception status. */
 #ifdef NDEBUG
         if (!PyErr_Occurred())
@@ -3396,36 +3350,18 @@ error:
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, f);
 
-fast_block_end:
-        assert(why != WHY_NOT);
-
-        /* Unwind stacks if a (pseudo) exception occurred */
-        while (why != WHY_NOT && f->f_iblock > 0) {
-            /* Peek at the current block. */
-            PyTryBlock *b = &f->f_blockstack[f->f_iblock - 1];
-
-            assert(why != WHY_YIELD);
-            if (b->b_type == SETUP_LOOP && why == WHY_CONTINUE) {
-                why = WHY_NOT;
-                JUMPTO(PyLong_AS_LONG(retval));
-                Py_DECREF(retval);
-                break;
-            }
-            /* Now we have to pop the block. */
-            f->f_iblock--;
+exception_unwind:
+        /* Unwind stacks if an exception occurred */
+        while (f->f_iblock > 0) {
+            /* Pop the current block. */
+            PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
 
             if (b->b_type == EXCEPT_HANDLER) {
                 UNWIND_EXCEPT_HANDLER(b);
                 continue;
             }
             UNWIND_BLOCK(b);
-            if (b->b_type == SETUP_LOOP && why == WHY_BREAK) {
-                why = WHY_NOT;
-                JUMPTO(b->b_handler);
-                break;
-            }
-            if (why == WHY_EXCEPTION && (b->b_type == SETUP_EXCEPT
-                || b->b_type == SETUP_FINALLY)) {
+            if ((b->b_type == SETUP_EXCEPT || b->b_type == SETUP_FINALLY)) {
                 PyObject *exc, *val, *tb;
                 int handler = b->b_handler;
                 _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -3462,70 +3398,38 @@ fast_block_end:
                 PUSH(tb);
                 PUSH(val);
                 PUSH(exc);
-                why = WHY_NOT;
                 JUMPTO(handler);
-                break;
-            }
-            if (b->b_type == SETUP_FINALLY) {
-                if (why & (WHY_RETURN | WHY_CONTINUE))
-                    PUSH(retval);
-                PUSH(PyLong_FromLong((long)why));
-                why = WHY_NOT;
-                JUMPTO(b->b_handler);
-                break;
+                /* Resume normal execution */
+                goto main_loop;
             }
         } /* unwind stack */
 
-        /* End the loop if we still have an error (or return) */
-
-        if (why != WHY_NOT)
-            break;
-
-        assert(!PyErr_Occurred());
-
+        /* End the loop as we still have an error */
+        break;
     } /* main loop */
 
-    assert(why != WHY_YIELD);
     /* Pop remaining stack entries. */
     while (!EMPTY()) {
         PyObject *o = POP();
         Py_XDECREF(o);
     }
 
-    if (why != WHY_RETURN)
-        retval = NULL;
+    retval = NULL;
 
     assert((retval != NULL) ^ (PyErr_Occurred() != NULL));
 
-fast_yield:
-
+return_or_yield:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
-            if (why == WHY_RETURN || why == WHY_YIELD) {
-                if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
-                               tstate, f,
-                               PyTrace_RETURN, retval)) {
-                    Py_CLEAR(retval);
-                    why = WHY_EXCEPTION;
-                }
-            }
-            else if (why == WHY_EXCEPTION) {
-                call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
-                                     tstate, f,
-                                     PyTrace_RETURN, NULL);
+            if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
+                                     tstate, f, PyTrace_RETURN, retval)) {
+                Py_CLEAR(retval);
             }
         }
         if (tstate->c_profilefunc) {
-            if (why == WHY_EXCEPTION)
-                call_trace_protected(tstate->c_profilefunc,
-                                     tstate->c_profileobj,
-                                     tstate, f,
-                                     PyTrace_RETURN, NULL);
-            else if (call_trace(tstate->c_profilefunc, tstate->c_profileobj,
-                                tstate, f,
-                                PyTrace_RETURN, retval)) {
+            if (call_trace_protected(tstate->c_profilefunc, tstate->c_profileobj,
+                                     tstate, f, PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
-                /* why = WHY_EXCEPTION; */
             }
         }
     }
