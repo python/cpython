@@ -176,7 +176,9 @@ class ConfigDialog(Toplevel):
         highlight_sample on the hightlight page.
 
         Tabs: Enable users to change spaces entered for indent tabs.
-        Changing indent_scale value with the mouse sets Var space_num.
+        Changing indent_scale value with the mouse sets Var space_num,
+        which invokes var_changed_space_num, which adds an entry to
+        changes.
 
         Load_font_cfg and load_tab_cfg initialize vars and widgets from
         idleConf entries.
