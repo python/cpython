@@ -5147,8 +5147,11 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 {
     int i, target_depth, effect;
     struct instr *instr;
-    if (b->b_seen || b->b_startdepth >= depth)
+
+    if (b->b_seen || b->b_startdepth >= depth) {
         return maxdepth;
+    }
+    /* Guard against infinite recursion */
     b->b_seen = 1;
     b->b_startdepth = depth;
     for (i = 0; i < b->b_iused; i++) {
@@ -5164,19 +5167,15 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
             maxdepth = depth;
         assert(depth >= 0); /* invalid code or bug in stackdepth() */
         if (instr->i_jrel || instr->i_jabs) {
+            /* Recursively inspect jump target */
             target_depth = depth;
             if (instr->i_opcode == FOR_ITER) {
                 target_depth = depth-2;
             }
-            else if (instr->i_opcode == SETUP_FINALLY ||
-                     instr->i_opcode == SETUP_EXCEPT) {
-                target_depth = depth+3;
-                if (target_depth > maxdepth)
-                    maxdepth = target_depth;
-            }
             else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
-                     instr->i_opcode == JUMP_IF_FALSE_OR_POP)
+                     instr->i_opcode == JUMP_IF_FALSE_OR_POP) {
                 depth = depth - 1;
+            }
             maxdepth = stackdepth_walk(c, instr->i_target,
                                        target_depth, maxdepth);
             if (instr->i_opcode == JUMP_ABSOLUTE ||
