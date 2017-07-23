@@ -665,8 +665,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case END_ITER:
             case SETUP_EXCEPT:
             case SETUP_FINALLY:
-//             case SETUP_WITH:
-//             case SETUP_ASYNC_WITH:
                 h = GETJUMPTGT(codestr, i);
                 tgt = find_op(codestr, h);
                 /* Replace JUMP_* to a RETURN into just a RETURN */
