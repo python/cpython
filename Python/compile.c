@@ -867,6 +867,7 @@ int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
     switch (opcode) {
+        /* Stack manipulation */
         case POP_TOP:
             return -1;
         case ROT_TWO:
@@ -878,11 +879,54 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case DUP_TOP_TWO:
             return 2;
 
+        /* Unary operators */
         case UNARY_POSITIVE:
         case UNARY_NEGATIVE:
         case UNARY_NOT:
         case UNARY_INVERT:
             return 0;
+
+        /* Binary operators */
+        case BINARY_POWER:
+        case BINARY_ADD:
+        case BINARY_SUBTRACT:
+        case BINARY_MULTIPLY:
+        case BINARY_MATRIX_MULTIPLY:
+        case BINARY_SUBSCR:
+        case BINARY_TRUE_DIVIDE:
+        case BINARY_FLOOR_DIVIDE:
+        case BINARY_MODULO:
+        case BINARY_LSHIFT:
+        case BINARY_RSHIFT:
+        case BINARY_AND:
+        case BINARY_XOR:
+        case BINARY_OR:
+            return -1;
+
+        case INPLACE_POWER:
+        case INPLACE_ADD:
+        case INPLACE_SUBTRACT:
+        case INPLACE_MULTIPLY:
+        case INPLACE_MATRIX_MULTIPLY:
+        case INPLACE_TRUE_DIVIDE:
+        case INPLACE_FLOOR_DIVIDE:
+        case INPLACE_MODULO:
+        case INPLACE_LSHIFT:
+        case INPLACE_RSHIFT:
+        case INPLACE_AND:
+        case INPLACE_XOR:
+        case INPLACE_OR:
+            return -1;
+
+        case COMPARE_OP:
+            return -1;
+
+        /* Construct builtins */
+        case BUILD_SLICE:
+            if (oparg == 3)
+                return -2;
+            else
+                return -1;
 
         case SET_ADD:
         case LIST_APPEND:
@@ -890,84 +934,91 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case MAP_ADD:
             return -2;
 
-        case BINARY_POWER:
-        case BINARY_MULTIPLY:
-        case BINARY_MATRIX_MULTIPLY:
-        case BINARY_MODULO:
-        case BINARY_ADD:
-        case BINARY_SUBTRACT:
-        case BINARY_SUBSCR:
-        case BINARY_FLOOR_DIVIDE:
-        case BINARY_TRUE_DIVIDE:
-            return -1;
-        case INPLACE_FLOOR_DIVIDE:
-        case INPLACE_TRUE_DIVIDE:
-            return -1;
+        case BUILD_TUPLE:
+        case BUILD_LIST:
+        case BUILD_SET:
+        case BUILD_STRING:
+            return 1 - oparg;
 
-        case INPLACE_ADD:
-        case INPLACE_SUBTRACT:
-        case INPLACE_MULTIPLY:
-        case INPLACE_MATRIX_MULTIPLY:
-        case INPLACE_MODULO:
-            return -1;
-        case STORE_SUBSCR:
-            return -3;
-        case DELETE_SUBSCR:
-            return -2;
+        case BUILD_LIST_UNPACK:
+        case BUILD_TUPLE_UNPACK:
+        case BUILD_TUPLE_UNPACK_WITH_CALL:
+        case BUILD_SET_UNPACK:
+        case BUILD_MAP_UNPACK:
+        case BUILD_MAP_UNPACK_WITH_CALL:
+            return 1 - oparg;
 
-        case BINARY_LSHIFT:
-        case BINARY_RSHIFT:
-        case BINARY_AND:
-        case BINARY_XOR:
-        case BINARY_OR:
-            return -1;
-        case INPLACE_POWER:
-            return -1;
-        case GET_ITER:
+        case BUILD_MAP:
+            return 1 - 2*oparg;
+        case BUILD_CONST_KEY_MAP:
+            return -oparg;
+
+        /* Jumps */
+        case JUMP_FORWARD:
+        case JUMP_ABSOLUTE:
+        case END_ITER:
             return 0;
+        case JUMP_IF_TRUE_OR_POP:
+        case JUMP_IF_FALSE_OR_POP:
+            /* -1 if jump not taken */
+            return 0;
+        case POP_JUMP_IF_FALSE:
+        case POP_JUMP_IF_TRUE:
+            return -1;
 
-        case PRINT_EXPR:
-            return -1;
-        case LOAD_BUILD_CLASS:
+        /* Exception handling */
+        case ENTER_WITH:
             return 1;
-        case INPLACE_LSHIFT:
-        case INPLACE_RSHIFT:
-        case INPLACE_AND:
-        case INPLACE_XOR:
-        case INPLACE_OR:
-            return -1;
         case WITH_CLEANUP_START:
             return 2;
         case WITH_CLEANUP_FINISH:
             return -6;
+        case POP_EXCEPT:
+            return -3;
+        case RERAISE:
+            return -3;
+        case SETUP_EXCEPT:
+        case SETUP_FINALLY:
+            return 0;
+
+        /* Other control flow */
         case RETURN_VALUE:
             return -1;
-        case IMPORT_STAR:
-            return -1;
-        case SETUP_ANNOTATIONS:
-            return 0;
         case YIELD_VALUE:
             return 0;
         case YIELD_FROM:
             return -1;
         case POP_BLOCK:
             return 0;
-        case POP_EXCEPT:
-            return 0;  /* -3 except if bad bytecode */
-        case RERAISE:
-            return -3;
+        case FOR_ITER:
+            return 1; /* or -1, at end of iterator */
 
-        case STORE_NAME:
+        case STORE_SUBSCR:
+            return -3;
+        case DELETE_SUBSCR:
+            return -2;
+
+        case PRINT_EXPR:
             return -1;
-        case DELETE_NAME:
+
+        case LOAD_BUILD_CLASS:
+            return 1;
+
+        case IMPORT_STAR:
+            return -1;
+        case SETUP_ANNOTATIONS:
             return 0;
+
         case UNPACK_SEQUENCE:
             return oparg-1;
         case UNPACK_EX:
             return (oparg&0xFF) + (oparg>>8);
-        case FOR_ITER:
-            return 1; /* or -1, at end of iterator */
 
+        /* Names and attributes */
+        case STORE_NAME:
+            return -1;
+        case DELETE_NAME:
+            return 0;
         case STORE_ATTR:
             return -2;
         case DELETE_ATTR:
@@ -978,53 +1029,15 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 0;
         case LOAD_CONST:
             return 1;
+        case LOAD_GLOBAL:
+            return 1;
         case LOAD_NAME:
             return 1;
-        case BUILD_TUPLE:
-        case BUILD_LIST:
-        case BUILD_SET:
-        case BUILD_STRING:
-            return 1-oparg;
-        case BUILD_LIST_UNPACK:
-        case BUILD_TUPLE_UNPACK:
-        case BUILD_TUPLE_UNPACK_WITH_CALL:
-        case BUILD_SET_UNPACK:
-        case BUILD_MAP_UNPACK:
-        case BUILD_MAP_UNPACK_WITH_CALL:
-            return 1 - oparg;
-        case BUILD_MAP:
-            return 1 - 2*oparg;
-        case BUILD_CONST_KEY_MAP:
-            return -oparg;
         case LOAD_ATTR:
             return 0;
-        case COMPARE_OP:
-            return -1;
         case IMPORT_NAME:
             return -1;
         case IMPORT_FROM:
-            return 1;
-
-        case JUMP_FORWARD:
-        case JUMP_IF_TRUE_OR_POP:  /* -1 if jump not taken */
-        case JUMP_IF_FALSE_OR_POP:  /*  "" */
-        case JUMP_ABSOLUTE:
-        case END_ITER:
-            return 0;
-
-        case POP_JUMP_IF_FALSE:
-        case POP_JUMP_IF_TRUE:
-            return -1;
-
-        case LOAD_GLOBAL:
-            return 1;
-
-        case SETUP_EXCEPT:
-        case SETUP_FINALLY:
-            return 6; /* can push 3 values for the new exception
-                        + 3 others for the previous exception state */
-
-        case ENTER_WITH:
             return 1;
 
         case LOAD_FAST:
@@ -1036,8 +1049,21 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case STORE_ANNOTATION:
             return -1;
 
-        case RAISE_VARARGS:
-            return -oparg;
+        /* Iterators and generators */
+        case GET_AWAITABLE:
+            return 0;
+        case BEFORE_ASYNC_WITH:
+            return 1;
+        case GET_AITER:
+            return 0;
+        case GET_ANEXT:
+            return 1;
+        case GET_YIELD_FROM_ITER:
+            return 0;
+        case GET_ITER:
+            return 0;
+
+        /* Functions and calls */
         case CALL_FUNCTION:
             return -oparg;
         case CALL_METHOD:
@@ -1049,12 +1075,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case MAKE_FUNCTION:
             return -1 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
                 ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
-        case BUILD_SLICE:
-            if (oparg == 3)
-                return -2;
-            else
-                return -1;
 
+        /* Closures */
         case LOAD_CLOSURE:
             return 1;
         case LOAD_DEREF:
@@ -1064,16 +1086,10 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -1;
         case DELETE_DEREF:
             return 0;
-        case GET_AWAITABLE:
-            return 0;
-        case BEFORE_ASYNC_WITH:
-            return 1;
-        case GET_AITER:
-            return 0;
-        case GET_ANEXT:
-            return 1;
-        case GET_YIELD_FROM_ITER:
-            return 0;
+
+        case RAISE_VARARGS:
+            return -oparg;
+
         case FORMAT_VALUE:
             /* If there's a fmt_spec on the stack, we go from 2->1,
                else 1->1. */
@@ -5103,14 +5119,15 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a)
 }
 
 static int
-stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
+stackdepth_walk(struct compiler *c, basicblock *b, int depth)
 {
-    int i, target_depth, effect;
+    int i, target_depth, maxdepth, effect;
     struct instr *instr;
 
     if (b->b_seen || b->b_startdepth >= depth) {
-        return maxdepth;
+        return 0;
     }
+    maxdepth = depth;
     /* Guard against infinite recursion */
     b->b_seen = 1;
     b->b_startdepth = depth;
@@ -5125,28 +5142,55 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 
         if (depth > maxdepth)
             maxdepth = depth;
-        assert(depth >= 0); /* invalid code or bug in stackdepth() */
+        if (depth < 0) {
+            /* Invalid code or bug in stackdepth() */
+            PySys_FormatStderr("negative depth %d in %S\n",
+                               depth, c->c_filename);
+            Py_FatalError("invalid bytecode or bug in stackdepth()");
+        }
+        assert(depth >= 0);
+        if (instr->i_opcode == RERAISE)
+            goto out;
         if (instr->i_jrel || instr->i_jabs) {
             /* Recursively inspect jump target */
             target_depth = depth;
             if (instr->i_opcode == FOR_ITER) {
-                target_depth = depth-2;
+                target_depth = depth - 2;
             }
             else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
                      instr->i_opcode == JUMP_IF_FALSE_OR_POP) {
                 depth = depth - 1;
             }
-            maxdepth = stackdepth_walk(c, instr->i_target,
-                                       target_depth, maxdepth);
-            if (instr->i_opcode == JUMP_ABSOLUTE ||
-                instr->i_opcode == JUMP_FORWARD ||
-                instr->i_opcode == END_ITER) {
-                goto out; /* remaining code is dead */
+            else if (instr->i_opcode == SETUP_EXCEPT ||
+                     instr->i_opcode == SETUP_FINALLY) {
+                /* An exception will first unwind this block
+                 * then push 3 values for the new exception
+                 * + 3 others for the previous exception state
+                 */
+                /* Note this will first walk the except/finally block
+                 * with pessimal stack effect, so any later jump
+                 * into that block with have a lower depth.
+                 */
+                target_depth = depth + 6;
             }
+            target_depth = stackdepth_walk(c, instr->i_target, target_depth);
+            if (target_depth > maxdepth)
+                maxdepth = target_depth;
+        }
+        if (instr->i_opcode == JUMP_ABSOLUTE ||
+            instr->i_opcode == JUMP_FORWARD ||
+            instr->i_opcode == END_ITER ||
+            instr->i_opcode == RETURN_VALUE ||
+            instr->i_opcode == RAISE_VARARGS) {
+            goto out; /* remaining code is dead */
         }
     }
-    if (b->b_next)
-        maxdepth = stackdepth_walk(c, b->b_next, depth, maxdepth);
+
+    if (b->b_next) {
+        depth = stackdepth_walk(c, b->b_next, depth);
+        if (depth > maxdepth)
+            maxdepth = depth;
+    }
 out:
     b->b_seen = 0;
     return maxdepth;
@@ -5167,7 +5211,7 @@ stackdepth(struct compiler *c)
     }
     if (!entryblock)
         return 0;
-    return stackdepth_walk(c, entryblock, 0, 0);
+    return stackdepth_walk(c, entryblock, 0);
 }
 
 static int
