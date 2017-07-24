@@ -281,7 +281,7 @@ whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/changelog,,:platform,:platform:
 whatsnew/changelog,,:gz,": TarFile opened with external fileobj and ""w:gz"" mode didn't"
-whatsnew/changelog,,:PythonCmd,"With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused"
+whatsnew/changelog,,:PythonCmd,"Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused IDLE to"
 whatsnew/changelog,,::,": Fix FTP tests for IPv6, bind to ""::1"" instead of ""localhost""."
 whatsnew/changelog,,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
 whatsnew/changelog,,:password,user:password
