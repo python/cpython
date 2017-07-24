@@ -55,6 +55,9 @@ compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
                        int first_addr, int second_addr,
                        int *first_setup_addr, int *second_setup_addr)
 {
+    /* Note this code is inherently delicate as it walks the bytecode
+     * in raw order without building the control flow graph.
+     */
     int blockstack[CO_MAXBLOCKS];
     int in_finally[CO_MAXBLOCKS];
     int blockstack_top = 0;
@@ -200,8 +203,9 @@ compute_for_loop_levels(unsigned char *code, Py_ssize_t code_len,
  *    they expect an exception to be on the top of the stack.
  *  o Lines that live in a 'finally' block can't be jumped from or to, since
  *    the RERAISE expects to clean up the stack after the 'try' block.
- *  o 'try'/'for'/'while' blocks can't be jumped into because the blockstack
- *    needs to be set up before their code runs, and for 'for' loops the
+ *  o 'try', 'with' and 'async with' blocks can't be jumped into because
+ *    the blockstack needs to be set up before their code runs.
+ *  o 'for' and 'async for' loops can't be jumped into because the
  *    iterator needs to be on the stack.
  */
 static int
@@ -322,7 +326,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     }
 
     /* You can't jump into or out of a 'finally' block because the 'try'
-     * block leaves something on the stack for the RETRY to clean up.
+     * block leaves something on the stack for the RERAISE to clean up.
      * So we walk the bytecode, maintaining a simulated blockstack.
      * When we reach the old or new address and it's in a 'finally' block
      * we note the address of the corresponding SETUP_FINALLY.  The jump
@@ -330,9 +334,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
      * they're both in the same one.  'blockstack' is a stack of the
      * bytecode addresses of the SETUP_X opcodes, and 'in_finally' tracks
      * whether we're in a 'finally' block at each blockstack level.
-     *
-     * Note this code is inherently delicate as it walks the bytecode
-     * in raw order without building the control flow graph.
      */
     compute_finally_blocks(code, code_len,
                            f->f_lasti, new_lasti,
