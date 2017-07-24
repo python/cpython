@@ -1127,6 +1127,10 @@
     <Compile Include="test\test_import\data\circular_imports\subpkg\subpackage2.py" />
     <Compile Include="test\test_import\data\circular_imports\subpkg\util.py" />
     <Compile Include="test\test_import\data\circular_imports\util.py" />
+    <Compile Include="test\test_import\data\package\__init__.py" />
+    <Compile Include="test\test_import\data\package\submodule.py" />
+    <Compile Include="test\test_import\data\package2\submodule1.py" />
+    <Compile Include="test\test_import\data\package2\submodule2.py" />
     <Compile Include="test\test_import\__init__.py" />
     <Compile Include="test\test_import\__main__.py" />
     <Compile Include="test\test_index.py" />
@@ -1786,6 +1790,8 @@
     <Folder Include="test\test_import\data\" />
     <Folder Include="test\test_import\data\circular_imports" />
     <Folder Include="test\test_import\data\circular_imports\subpkg" />
+    <Folder Include="test\test_import\data\package" />
+    <Folder Include="test\test_import\data\package2" />
     <Folder Include="test\test_json" />
     <Folder Include="test\test_tools" />
     <Folder Include="test\test_warnings" />
