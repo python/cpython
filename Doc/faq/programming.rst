@@ -803,7 +803,7 @@ the same sign as ``i``.
 There are few real use cases for ``i % j`` when ``j`` is negative.  When ``j``
 is positive, there are many, and in virtually all of them it's more useful for
 ``i % j`` to be ``>= 0``.  If the clock says 10 now, what did it say 200 hours
-ago?  ``-190 % 12 == 2`` is useful; ``-190 % 12 == -10`` is a bug waiting to
+ago?  ``-190 % 12 == 2`` is useful; ``-190 % -12 == -10`` is a bug waiting to
 bite.
 
 
