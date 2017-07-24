@@ -2676,15 +2676,12 @@ compiler_continue(struct compiler *c)
 
 
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
- * XXX update this
 
-        SETUP_FINALLY           F2
+        SETUP_FINALLY           F
         <code for body>
         POP_BLOCK
-    F1:
-        <code for finalbody>
-        JUMP_ABSOLUTE           EXIT
-    F2:
+        PUSH_NO_EXCEPT
+    F:
         <code for finalbody>
         RERAISE
     EXIT:
@@ -2855,13 +2852,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
+            ADDOP(c, PUSH_NO_EXCEPT);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
-
-            /* name = None; del name */
-            ADDOP_O(c, LOAD_CONST, Py_None, consts);
-            compiler_nameop(c, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, handler->v.ExceptHandler.name, Del);
-            ADDOP_JREL(c, JUMP_FORWARD, end);
 
             /* finally: */
             compiler_use_next_block(c, cleanup_end);
