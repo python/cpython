@@ -1512,7 +1512,7 @@ main_loop:
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(END_ITER);
+            PREDICT(JUMP_ABSOLUTE);
             DISPATCH();
         }
 
@@ -1524,7 +1524,7 @@ main_loop:
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(END_ITER);
+            PREDICT(JUMP_ABSOLUTE);
             DISPATCH();
         }
 
@@ -2783,7 +2783,7 @@ main_loop:
             Py_DECREF(key);
             if (err != 0)
                 goto error;
-            PREDICT(END_ITER);
+            PREDICT(JUMP_ABSOLUTE);
             DISPATCH();
         }
 
@@ -2963,6 +2963,7 @@ main_loop:
             DISPATCH();
         }
 
+        PREDICTED(JUMP_ABSOLUTE);
         TARGET(JUMP_ABSOLUTE) {
             JUMPTO(oparg);
 #if FAST_LOOPS
@@ -2977,15 +2978,6 @@ main_loop:
 #else
             DISPATCH();
 #endif
-        }
-
-        PREDICTED(END_ITER);
-        TARGET(END_ITER) {
-            /* This is a synonym for JUMP_ABSOLUTE.  It is used to mark
-             * the end of a for-loop, to help identify blocks in the code.
-             */
-            JUMPTO(oparg);
-            DISPATCH();
         }
 
         TARGET(GET_ITER) {

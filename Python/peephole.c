@@ -10,11 +10,10 @@
 #include "opcode.h"
 #include "wordcode_helpers.h"
 
-#define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==END_ITER || \
-                                 op==JUMP_FORWARD)
+#define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==JUMP_FORWARD)
 #define CONDITIONAL_JUMP(op) (op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
     || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)
-#define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE || op==END_ITER \
+#define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE \
     || op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
     || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)
 #define JUMPS_ON_TRUE(op) (op==POP_JUMP_IF_TRUE || op==JUMP_IF_TRUE_OR_POP)
@@ -389,7 +388,6 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             case JUMP_ABSOLUTE:
-            case END_ITER:
             case SETUP_EXCEPT:
             case SETUP_FINALLY:
                 j = GETJUMPTGT(code, i);
@@ -663,7 +661,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case FOR_ITER:
             case JUMP_FORWARD:
             case JUMP_ABSOLUTE:
-            case END_ITER:
             case SETUP_EXCEPT:
             case SETUP_FINALLY:
                 h = GETJUMPTGT(codestr, i);
@@ -736,7 +733,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case NOP:continue;
 
             case JUMP_ABSOLUTE:
-            case END_ITER:
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             case JUMP_IF_FALSE_OR_POP:
