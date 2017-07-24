@@ -94,7 +94,6 @@ extern "C" {
 #define POP_JUMP_IF_FALSE       114
 #define POP_JUMP_IF_TRUE        115
 #define LOAD_GLOBAL             116
-#define END_ITER                117
 #define SETUP_EXCEPT            121
 #define SETUP_FINALLY           122
 #define LOAD_FAST               124

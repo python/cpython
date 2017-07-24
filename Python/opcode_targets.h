@@ -116,7 +116,7 @@ static void *opcode_targets[256] = {
     &&TARGET_POP_JUMP_IF_FALSE,
     &&TARGET_POP_JUMP_IF_TRUE,
     &&TARGET_LOAD_GLOBAL,
-    &&TARGET_END_ITER,
+    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
