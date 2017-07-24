@@ -127,7 +127,7 @@ static void *opcode_targets[256] = {
     &&TARGET_STORE_FAST,
     &&TARGET_DELETE_FAST,
     &&TARGET_STORE_ANNOTATION,
-    &&TARGET_POP_MANY,
+    &&_unknown_opcode,
     &&_unknown_opcode,
     &&TARGET_RAISE_VARARGS,
     &&TARGET_CALL_FUNCTION,
