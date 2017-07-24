@@ -976,6 +976,9 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case POP_EXCEPT:
             return -3;
         case RERAISE:
+            /* Pops the 3 values of the pushed exception
+             * + the 3 values of the saved exception state
+             */
             return -6;
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
