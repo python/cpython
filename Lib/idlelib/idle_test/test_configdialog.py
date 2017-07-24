@@ -45,82 +45,15 @@ def tearDownModule():
     del root
 
 
-class FontTabTest(unittest.TestCase):
-    "Test that font widget enable users to make font changes."
+class FontTest(unittest.TestCase):
+    """Test that font widgets enable users to make font changes.
 
-
-    def setUp(self):
-        changes.clear()
-
-    def test_font_set(self):
-        # Test that setting a font Variable results in 3 provisional
-        # change entries. Use values sure to not be defaults.
-        # Other font tests verify that user actions set Variables.
-        default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
-        default_size = str(default_font[1])
-        default_bold = default_font[2] == 'bold'
-        d = dialog
-        d.font_name.set('Test Font')
-        d.font_size.set(default_size)
-        d.font_bold.set(default_bold)
-        expected = {'EditorWindow': {'font': 'Test Font',
-                                     'font-size': default_size,
-                                     'font-bold': str(default_bold)}}
-        self.assertEqual(mainpage, expected)
-        changes.clear()
-        d.font_size.set(20)
-        expected = {'EditorWindow': {'font': 'Test Font',
-                                     'font-size': '20',
-                                     'font-bold': str(default_bold)}}
-        self.assertEqual(mainpage, expected)
-        changes.clear()
-        d.font_bold.set(not default_bold)
-        expected = {'EditorWindow': {'font': 'Test Font',
-                                     'font-size': '20',
-                                     'font-bold': str(not default_bold)}}
-        self.assertEqual(mainpage, expected)
-
-    def test_bold_toggle_set_samples(self):
-        # Set up.
-        d = dialog
-        d.font_sample, d.highlight_sample = {}, {}  # Must undo this.
-        d.font_name.set('test')
-        d.font_size.set('5')
-        d.font_bold.set(1)
-        expected0 = {'font': ('test', '5', 'normal')}
-        expected1 = {'font': ('test', '5', 'bold')}
-
-        # Test set_samples.
-        d.set_samples()
-        self.assertTrue(d.font_sample == d.highlight_sample == expected1)
-
-        # Test bold_toggle.  If this fails, problem precedes set_samples.
-        d.bold_toggle.invoke()
-        self.assertFalse(d.font_bold.get())
-        self.assertTrue(d.font_sample == d.highlight_sample == expected0)
-        d.bold_toggle.invoke()
-        self.assertTrue(d.font_bold.get())
-        self.assertTrue(d.font_sample == d.highlight_sample == expected1)
-
-        #  Clean up.
-        del d.font_sample, d.highlight_sample
-
-    def test_indent_scale(self):
-        dialog.indent_scale.set(26)
-        self.assertEqual(dialog.space_num.get(), 16)
-        self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
-
-
-class FontSelectTest(unittest.TestCase):
-    # These two functions test that selecting a new font in the
-    # list of fonts changes font_name and calls set_samples.
-    # The fontlist widget and on_fontlist_select event handler
-    # are tested here together.
-
+    Test that widget actions set vars, that var changes add three
+    options to changes and call set_samples, and that set_samples
+    changes the font of both sample boxes.
+    """
     @classmethod
     def setUpClass(cls):
-        if dialog.fontlist.size() < 2:
-            cls.skipTest('need at least 2 fonts')
         dialog.set_samples = Func()  # Mask instance method.
 
     @classmethod
@@ -128,12 +61,27 @@ class FontSelectTest(unittest.TestCase):
         del dialog.set_samples  # Unmask instance method.
 
     def setUp(self):
-        dialog.set_samples.called = 0
         changes.clear()
 
-    def test_select_font_key(self):
+    def test_load_font_cfg(self):
+        # Leave widget load test to human visual check.
+        # TODO Improve checks when add IdleConf.get_font_values.
+        d = dialog
+        d.font_name.set('Fake')
+        d.font_size.set('1')
+        d.font_bold.set(True)
+        d.set_samples.called = 0
+        d.load_font_cfg()
+        self.assertNotEqual(d.font_name.get(), 'Fake')
+        self.assertNotEqual(d.font_size.get(), '1')
+        self.assertFalse(d.font_bold.get())
+        self.assertEqual(d.set_samples.called, 3)
+
+    def test_fontlist_key(self):
         # Up and Down keys should select a new font.
 
+        if dialog.fontlist.size() < 2:
+            cls.skipTest('need at least 2 fonts')
         fontlist = dialog.fontlist
         fontlist.activate(0)
         font = dialog.fontlist.get('active')
@@ -147,7 +95,6 @@ class FontSelectTest(unittest.TestCase):
         down_font = fontlist.get('active')
         self.assertNotEqual(down_font, font)
         self.assertIn(dialog.font_name.get(), down_font.lower())
-        self.assertEqual(dialog.set_samples.called, 1)
 
         # Test Up key.
         fontlist.focus_force()
@@ -158,11 +105,12 @@ class FontSelectTest(unittest.TestCase):
         up_font = fontlist.get('active')
         self.assertEqual(up_font, font)
         self.assertIn(dialog.font_name.get(), up_font.lower())
-        self.assertEqual(dialog.set_samples.called, 2)
 
-    def test_select_font_mouse(self):
+    def test_fontlist_mouse(self):
         # Click on item should select that item.
 
+        if dialog.fontlist.size() < 2:
+            cls.skipTest('need at least 2 fonts')
         fontlist = dialog.fontlist
         fontlist.activate(0)
 
@@ -180,15 +128,94 @@ class FontSelectTest(unittest.TestCase):
         select_font = fontlist.get('anchor')
         self.assertEqual(select_font, font1)
         self.assertIn(dialog.font_name.get(), font1.lower())
-        self.assertEqual(dialog.set_samples.called, 1)
+
+    def test_sizelist(self):
+        # Click on number shouod select that number
+        d = dialog
+        d.sizelist.variable.set(40)
+        self.assertEqual(d.font_size.get(), '40')
+
+    def test_bold_toggle(self):
+        # Click on checkbutton should invert it.
+        d = dialog
+        d.font_bold.set(False)
+        d.bold_toggle.invoke()
+        self.assertTrue(d.font_bold.get())
+        d.bold_toggle.invoke()
+        self.assertFalse(d.font_bold.get())
+
+    def test_font_set(self):
+        # Test that setting a font Variable results in 3 provisional
+        # change entries and a call to set_samples. Use values sure to
+        # not be defaults.
+
+        default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
+        default_size = str(default_font[1])
+        default_bold = default_font[2] == 'bold'
+        d = dialog
+        d.font_size.set(default_size)
+        d.font_bold.set(default_bold)
+        d.set_samples.called = 0
+
+        d.font_name.set('Test Font')
+        expected = {'EditorWindow': {'font': 'Test Font',
+                                     'font-size': default_size,
+                                     'font-bold': str(default_bold)}}
+        self.assertEqual(mainpage, expected)
+        self.assertEqual(d.set_samples.called, 1)
+        changes.clear()
+
+        d.font_size.set('20')
+        expected = {'EditorWindow': {'font': 'Test Font',
+                                     'font-size': '20',
+                                     'font-bold': str(default_bold)}}
+        self.assertEqual(mainpage, expected)
+        self.assertEqual(d.set_samples.called, 2)
+        changes.clear()
+
+        d.font_bold.set(not default_bold)
+        expected = {'EditorWindow': {'font': 'Test Font',
+                                     'font-size': '20',
+                                     'font-bold': str(not default_bold)}}
+        self.assertEqual(mainpage, expected)
+        self.assertEqual(d.set_samples.called, 3)
+
+    def test_set_samples(self):
+        d = dialog
+        del d.set_samples  # Unmask method for test
+        d.font_sample, d.highlight_sample = {}, {}
+        d.font_name.set('test')
+        d.font_size.set('5')
+        d.font_bold.set(1)
+        expected = {'font': ('test', '5', 'bold')}
+
+        # Test set_samples.
+        d.set_samples()
+        self.assertTrue(d.font_sample == d.highlight_sample == expected)
+
+        del d.font_sample, d.highlight_sample
+        d.set_samples = Func()  # Re-mask for other tests.
+
+
+class IndentTest(unittest.TestCase):
+
+    def test_load_tab_cfg(self):
+        d = dialog
+        d.space_num.set(16)
+        d.load_tab_cfg()
+        self.assertEqual(d.space_num.get(), 4)
+
+    def test_indent_scale(self):
+        changes.clear()
+        dialog.indent_scale.set(26)
+        self.assertEqual(dialog.space_num.get(), 16)
+        self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
 
 
 class HighlightTest(unittest.TestCase):
 
     def setUp(self):
         changes.clear()
-
-    #def test_colorchoose(self): pass  # TODO
 
 
 class KeysTest(unittest.TestCase):
