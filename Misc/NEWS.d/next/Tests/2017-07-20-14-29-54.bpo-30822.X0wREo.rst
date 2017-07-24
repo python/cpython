@@ -1,0 +1,5 @@
+regrtest: Exclude tzdata from regrtest --all. When running the test suite
+using --use=all / -u all, exclude tzdata since it makes test_datetime too
+slow (15-20 min on some buildbots) which then times out on some buildbots.
+Fix also regrtest command line parser to allow passing -u extralargefile to
+run test_zipfile64.

@@ -446,9 +446,6 @@ def spec_from_loader(name, loader, *, origin=None, is_package=None):
     return ModuleSpec(name, loader, origin=origin, is_package=is_package)
 
 
-_POPULATE = object()
-
-
 def _spec_from_module(module, loader=None, origin=None):
     # This function is meant for use in _setup().
     try:
@@ -953,13 +950,16 @@ def _find_and_load_unlocked(name, import_):
     return module
 
 
+_NEEDS_LOADING = object()
+
+
 def _find_and_load(name, import_):
     """Find and load the module."""
     with _ModuleLockManager(name):
-        if name not in sys.modules:
+        module = sys.modules.get(name, _NEEDS_LOADING)
+        if module is _NEEDS_LOADING:
             return _find_and_load_unlocked(name, import_)
 
-    module = sys.modules[name]
     if module is None:
         message = ('import of {} halted; '
                    'None in sys.modules'.format(name))

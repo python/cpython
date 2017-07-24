@@ -1,0 +1,5 @@
+IDLE - Improve configdialog font page and tests.
+
+In configdialog: Document causal pathways in create_font_tab docstring.  Simplify some attribute names. Move set_samples calls to var_changed_font (idea from Cheryl Sabella).  Move related functions to positions after the create widgets function.
+
+In test_configdialog: Fix test_font_set so not order dependent.  Fix renamed test_indent_scale so it tests the widget.  Adjust tests for movement of set_samples call.  Add tests for load functions.  Put all font tests in one class and tab indent tests in another.  Except for two lines, these tests completely cover the related functions.
