@@ -933,13 +933,9 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case INPLACE_OR:
             return -1;
         case WITH_CLEANUP_START:
-            return 0;
-        case WITH_CLEANUP_FINISH:
-            return -1;
-        case WITH_EXCEPT_START:
             return 2;
-        case WITH_EXCEPT_FINISH:
-            return -2;  /* XXX Sometimes more */
+        case WITH_CLEANUP_FINISH:
+            return -6;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -2652,6 +2648,7 @@ compiler_continue(struct compiler *c)
 
 
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
+ * XXX update this
 
         SETUP_FINALLY           F2
         <code for body>
@@ -2690,17 +2687,16 @@ compiler_continue(struct compiler *c)
 static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *final1, *final2, *exit;
-    int save_u_lineno_set;
+    basicblock *body, *final, *exit;
 
     body = compiler_new_block(c);
-//     final1 = compiler_new_block(c);
-    final2 = compiler_new_block(c);
+    final = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (body == NULL || /*final1 == NULL || */final2 == NULL || exit == NULL)
+    if (body == NULL || final == NULL || exit == NULL)
         return 0;
 
-    ADDOP_JREL(c, SETUP_FINALLY, final2);
+    /* `try` block */
+    ADDOP_JREL(c, SETUP_FINALLY, final);
     compiler_use_next_block(c, body);
     if (!compiler_push_finally_try(c, body, s->v.Try.finalbody))
         return 0;
@@ -2712,28 +2708,16 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         VISIT_SEQ(c, stmt, s->v.Try.body);
     }
     ADDOP(c, POP_BLOCK);
-    ADDOP_JREL(c, JUMP_FINALLY, final2);
+    ADDOP_JREL(c, JUMP_FINALLY, final);
     compiler_pop_fblock(c, FINALLY_TRY, body);
-    save_u_lineno_set = c->u->u_lineno_set;
 
-    /* `finally` block for successful outcome */
-//     compiler_use_next_block(c, final1);
-//     if (!compiler_push_finally_end(c, final1))
-//         return 0;
-//     c->u->u_lineno_set = 0;
-//     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-//     compiler_pop_fblock(c, FINALLY_END, final1);
-//
-//     c->u->u_lineno_set = save_u_lineno_set;
-//     ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
-
-    /* `finally` block for exceptional outcome */
-    compiler_use_next_block(c, final2);
-    if (!compiler_push_finally_end(c, final2))
+    /* `finally` block */
+    compiler_use_next_block(c, final);
+    if (!compiler_push_finally_end(c, final))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, RERAISE);
-    compiler_pop_fblock(c, FINALLY_END, final2);
+    compiler_pop_fblock(c, FINALLY_END, final);
 
     compiler_use_next_block(c, exit);
     return 1;
@@ -4435,16 +4419,16 @@ expr_constant(struct compiler *c, expr_ty e)
 static int
 compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *final1, *final2, *exit;
+    basicblock *block, *final1, /**final2, */*exit;
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
 
     block = compiler_new_block(c);
     final1 = compiler_new_block(c);
-    final2 = compiler_new_block(c);
+//     final2 = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (!block || !final1 || !final2 || !exit)
+    if (!block || !final1 /*|| !final2 */|| !exit)
         return 0;
 
     /* Evaluate EXPR */
@@ -4463,7 +4447,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         ADDOP(c, POP_TOP);
     }
 
-    ADDOP_JREL(c, SETUP_FINALLY, final2);
+    ADDOP_JREL(c, SETUP_FINALLY, final1);
     compiler_use_next_block(c, block);
     if (!compiler_push_async_with(c, block))
         return 0;
@@ -4477,11 +4461,10 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
+    ADDOP_JREL(c, JUMP_FINALLY, final1);
     compiler_pop_fblock(c, ASYNC_WITH, block);
 
-    /* `finally` block for successful outcome:
-     * await __exit__(None, None, None)
-     */
+    /* `finally` block: await __exit__(*exc_info) */
     compiler_use_next_block(c, final1);
     if (!compiler_push_finally_end(c, final1))
         return 0;
@@ -4493,21 +4476,8 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_CLEANUP_FINISH);
 
     compiler_pop_fblock(c, FINALLY_END, final1);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
+    ADDOP_JREL(c, JUMP_FORWARD, exit);
 
-
-    /* `finally` block for exceptional outcome */
-    compiler_use_next_block(c, final2);
-    if (!compiler_push_finally_end(c, final2))
-        return 0;
-
-    ADDOP(c, WITH_EXCEPT_START);
-    ADDOP(c, GET_AWAITABLE);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
-    ADDOP(c, YIELD_FROM);
-    ADDOP(c, WITH_EXCEPT_FINISH);
-
-    compiler_pop_fblock(c, FINALLY_END, final2);
 
     compiler_use_next_block(c, exit);
     return 1;
@@ -4540,16 +4510,15 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 static int
 compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *final1, *final2, *exit;
+    basicblock *block, *final, *exit;
     withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
 
     block = compiler_new_block(c);
-    final1 = compiler_new_block(c);
-    final2 = compiler_new_block(c);
+    final = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (!block || !final1 || !final2 || !exit)
+    if (!block || !final || !exit)
         return 0;
 
     /* Evaluate EXPR */
@@ -4565,7 +4534,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
         ADDOP(c, POP_TOP);
     }
 
-    ADDOP_JREL(c, SETUP_FINALLY, final2);
+    ADDOP_JREL(c, SETUP_FINALLY, final);
     compiler_use_next_block(c, block);
     if (!compiler_push_with(c, block))
         return 0;
@@ -4579,28 +4548,18 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     /* End of try block; start the finally blocks */
     ADDOP(c, POP_BLOCK);
+    ADDOP_JREL(c, JUMP_FINALLY, final);
     compiler_pop_fblock(c, WITH, block);
 
-    /* `finally` block for successful outcome:
-     * call __exit__(None, None, None)
-     */
-    compiler_use_next_block(c, final1);
-    if (!compiler_push_finally_end(c, final1))
+    /* `finally` block */
+    compiler_use_next_block(c, final);
+    if (!compiler_push_finally_end(c, final))
         return 0;
 
     ADDOP(c, WITH_CLEANUP_START);
     ADDOP(c, WITH_CLEANUP_FINISH);
-    compiler_pop_fblock(c, FINALLY_END, final1);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
-
-    /* `finally` block for exceptional outcome */
-    compiler_use_next_block(c, final2);
-    if (!compiler_push_finally_end(c, final2))
-        return 0;
-
-    ADDOP(c, WITH_EXCEPT_START);
-    ADDOP(c, WITH_EXCEPT_FINISH);
-    compiler_pop_fblock(c, FINALLY_END, final2);
+    compiler_pop_fblock(c, FINALLY_END, final);
+    ADDOP_JREL(c, JUMP_FORWARD, exit);
 
     compiler_use_next_block(c, exit);
     return 1;
