@@ -1913,8 +1913,13 @@ main_loop:
             PyObject *val = POP();
             PyObject *tb = POP();
             if (exc == NULL) {
+                int i;
                 assert(val == NULL);
                 assert(tb == NULL);
+                /* Unwind stored exception state */
+                for (i = 0; i < 3; i++) {
+                    Py_XDECREF(POP());
+                }
             }
             else {
                 assert(PyExceptionClass_Check(exc));
