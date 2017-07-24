@@ -599,10 +599,8 @@ class Pool(object):
         if pool and hasattr(pool[0], 'terminate'):
             util.debug('joining pool workers')
             for p in pool:
-                if p.is_alive():
-                    # worker has not yet exited
-                    util.debug('cleaning up worker %d' % p.pid)
-                    p.join()
+                util.debug('cleaning up worker %d' % p.pid)
+                p.join()
 
     def __enter__(self):
         return self
