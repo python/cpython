@@ -1080,6 +1080,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
             return 1;
+        case JUMP_FINALLY:
+            return 3;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -2692,10 +2694,10 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     int save_u_lineno_set;
 
     body = compiler_new_block(c);
-    final1 = compiler_new_block(c);
+//     final1 = compiler_new_block(c);
     final2 = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (body == NULL || final1 == NULL || final2 == NULL || exit == NULL)
+    if (body == NULL || /*final1 == NULL || */final2 == NULL || exit == NULL)
         return 0;
 
     ADDOP_JREL(c, SETUP_FINALLY, final2);
@@ -2710,19 +2712,20 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         VISIT_SEQ(c, stmt, s->v.Try.body);
     }
     ADDOP(c, POP_BLOCK);
+    ADDOP_JREL(c, JUMP_FINALLY, final2);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     save_u_lineno_set = c->u->u_lineno_set;
 
     /* `finally` block for successful outcome */
-    compiler_use_next_block(c, final1);
-    if (!compiler_push_finally_end(c, final1))
-        return 0;
-    c->u->u_lineno_set = 0;
-    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    compiler_pop_fblock(c, FINALLY_END, final1);
-
-    c->u->u_lineno_set = save_u_lineno_set;
-    ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
+//     compiler_use_next_block(c, final1);
+//     if (!compiler_push_finally_end(c, final1))
+//         return 0;
+//     c->u->u_lineno_set = 0;
+//     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+//     compiler_pop_fblock(c, FINALLY_END, final1);
+//
+//     c->u->u_lineno_set = save_u_lineno_set;
+//     ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
 
     /* `finally` block for exceptional outcome */
     compiler_use_next_block(c, final2);

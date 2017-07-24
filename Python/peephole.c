@@ -10,7 +10,8 @@
 #include "opcode.h"
 #include "wordcode_helpers.h"
 
-#define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==END_ITER || op==JUMP_FORWARD)
+#define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==END_ITER || \
+                                 op==JUMP_FORWARD || op==JUMP_FINALLY)
 #define CONDITIONAL_JUMP(op) (op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
     || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)
 #define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE || op==END_ITER \
@@ -383,6 +384,7 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
         switch (opcode) {
             case FOR_ITER:
             case JUMP_FORWARD:
+            case JUMP_FINALLY:
             case JUMP_IF_FALSE_OR_POP:
             case JUMP_IF_TRUE_OR_POP:
             case POP_JUMP_IF_FALSE:
@@ -745,6 +747,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
             case FOR_ITER:
             case JUMP_FORWARD:
+            case JUMP_FINALLY:
             case SETUP_EXCEPT:
             case SETUP_FINALLY:
                 j = blocks[j / sizeof(_Py_CODEUNIT) + i + 1] - blocks[i] - 1;

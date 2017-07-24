@@ -166,6 +166,7 @@ jabs_op('END_ITER', 117)        # Target byte offset from beginning of code
 
 jrel_op('SETUP_EXCEPT', 121)    # Distance to target address
 jrel_op('SETUP_FINALLY', 122)   # ""
+jrel_op('JUMP_FINALLY', 123)    # ""
 
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
