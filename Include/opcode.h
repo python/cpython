@@ -32,8 +32,6 @@ extern "C" {
 #define INPLACE_TRUE_DIVIDE      29
 #define WITH_CLEANUP_START       40
 #define WITH_CLEANUP_FINISH      41
-#define WITH_EXCEPT_START        42
-#define WITH_EXCEPT_FINISH       43
 #define GET_AITER                50
 #define GET_ANEXT                51
 #define BEFORE_ASYNC_WITH        52
