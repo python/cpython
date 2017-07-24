@@ -173,7 +173,6 @@ haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
 name_op('STORE_ANNOTATION', 127) # Index in name list
-def_op('POP_MANY', 128)         # Number of values to pop
 
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('CALL_FUNCTION', 131)    # #args

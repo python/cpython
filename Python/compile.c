@@ -874,8 +874,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 1;
         case DUP_TOP_TWO:
             return 2;
-        case POP_MANY:
-            return -oparg;
 
         /* Unary operators */
         case UNARY_POSITIVE:
@@ -2559,7 +2557,9 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
 
-    ADDOP_I(c, POP_MANY, 3);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
     ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
     ADDOP_JABS(c, JUMP_ABSOLUTE, after_loop_else);
 
@@ -2733,7 +2733,6 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, RERAISE);
-//     ADDOP_I(c, POP_MANY, 3);
     compiler_pop_fblock(c, FINALLY_END, final);
 
     compiler_use_next_block(c, exit);
@@ -4138,7 +4137,9 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
 
-    ADDOP_I(c, POP_MANY, 3);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
     ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
     ADDOP_JABS(c, JUMP_ABSOLUTE, anchor);
 

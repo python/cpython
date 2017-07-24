@@ -1093,16 +1093,6 @@ main_loop:
             FAST_DISPATCH();
         }
 
-        TARGET(POP_MANY) {
-            PyObject *value;
-            int i;
-            for (i = 0; i < oparg; i++) {
-                value = POP();
-                Py_XDECREF(value);
-            }
-            FAST_DISPATCH();
-        }
-
         TARGET(ROT_TWO) {
             PyObject *top = TOP();
             PyObject *second = SECOND();
