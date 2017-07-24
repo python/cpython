@@ -65,6 +65,7 @@ extern "C" {
 #define SETUP_ANNOTATIONS        85
 #define YIELD_VALUE              86
 #define POP_BLOCK                87
+#define PUSH_NO_EXCEPT           88
 #define POP_EXCEPT               89
 #define HAVE_ARGUMENT            90
 #define STORE_NAME               90
@@ -96,7 +97,6 @@ extern "C" {
 #define END_ITER                117
 #define SETUP_EXCEPT            121
 #define SETUP_FINALLY           122
-#define JUMP_FINALLY            123
 #define LOAD_FAST               124
 #define STORE_FAST              125
 #define DELETE_FAST             126

@@ -1898,6 +1898,15 @@ main_loop:
             DISPATCH();
         }
 
+        TARGET(PUSH_NO_EXCEPT) {
+            int i;
+            STACKADJ(6);
+            for (i = 1; i <= 6; i++) {
+                SET_VALUE(i, NULL);
+            }
+            FAST_DISPATCH();
+        }
+
         TARGET(RERAISE) {
             PyObject *exc = POP();
             PyObject *val = POP();
@@ -2669,15 +2678,6 @@ main_loop:
         }
 
         TARGET(JUMP_FORWARD) {
-            JUMPBY(oparg);
-            FAST_DISPATCH();
-        }
-
-        TARGET(JUMP_FINALLY) {
-            int i;
-            for (i = 0; i < 6; i++) {
-                PUSH(NULL);
-            }
             JUMPBY(oparg);
             FAST_DISPATCH();
         }
