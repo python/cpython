@@ -2938,37 +2938,16 @@ main_loop:
         }
 
         TARGET(WITH_CLEANUP_START) {
-            PyObject *exit_func;
-            PyObject *exit_stack[3];
-            PyObject *res;
+            /* At the top of the stack are 4 or 7 values:
+               Either:
+                - (TOP, SECOND, THIRD) = (None, None, None)
+                - FOURTH: the context.__exit__ bound method
+               or:
+                - (TOP, SECOND, THIRD) = exc_info()
+                - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
+                - SEVENTH: the context.__exit__ bound method
 
-            exit_func = TOP();
-            exit_stack[0] = Py_None;
-            exit_stack[1] = Py_None;
-            exit_stack[2] = Py_None;
-            res = _PyObject_FastCall(exit_func, exit_stack, 3);
-            if (res == NULL)
-                goto error;
-
-            SET_TOP(res);
-            Py_DECREF(exit_func);
-            PREDICT(WITH_CLEANUP_FINISH);
-            DISPATCH();
-        }
-
-        PREDICTED(WITH_CLEANUP_FINISH);
-        TARGET(WITH_CLEANUP_FINISH) {
-            Py_DECREF(POP());
-            DISPATCH();
-        }
-
-        TARGET(WITH_EXCEPT_START) {
-            /* At the top of the stack are 7 values:
-               - (TOP, SECOND, THIRD) = exc_info()
-               - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
-               - SEVENTH: the context.__exit__ bound method
-
-               We call SEVENTH(TOP, SECOND, THIRD).
+               We call context.__exit__(TOP, SECOND, THIRD).
                Then we push again the TOP exception and the __exit__
                return value.
             */
@@ -2979,10 +2958,19 @@ main_loop:
             exc = TOP();
             val = SECOND();
             tb = THIRD();
-            assert(exc != Py_None);
-            assert(!PyLong_Check(exc));
+            if (exc == Py_None) {
+                assert(val == Py_None);
+                assert(tb == Py_None);
+                exit_func = PEEK(4);
+            }
+            else {
+                assert(!PyLong_Check(exc));
+                exit_func = PEEK(7);
+                exit_stack[0] = exc;
+                exit_stack[1] = val;
+                exit_stack[2] = tb;
+            }
 
-            exit_func = PEEK(7);
             exit_stack[0] = exc;
             exit_stack[1] = val;
             exit_stack[2] = tb;
@@ -2993,12 +2981,12 @@ main_loop:
             Py_INCREF(exc); /* Duplicating the exception on the stack (XXX: required?) */
             PUSH(exc);
             PUSH(res);
-            PREDICT(WITH_EXCEPT_FINISH);
+            PREDICT(WITH_CLEANUP_FINISH);
             DISPATCH();
         }
 
-        PREDICTED(WITH_EXCEPT_FINISH);
-        TARGET(WITH_EXCEPT_FINISH) {
+        PREDICTED(WITH_CLEANUP_FINISH);
+        TARGET(WITH_CLEANUP_FINISH) {
             PyObject *res = POP();
             PyObject *exc = POP();
             int err;
@@ -3007,13 +2995,29 @@ main_loop:
                 err = PyObject_IsTrue(res);
             else
                 err = 0;
-
             Py_DECREF(res);
             Py_DECREF(exc);
-
             if (err < 0)
                 goto error;
-            if (exc != Py_None) {
+
+            if (exc == Py_None) {
+                /* At the top of the stack are 4 values:
+                    - (TOP, SECOND, THIRD) = (None, None, None)
+                    - FOURTH: the context.__exit__ bound method
+                */
+                int i;
+                for (i = 0; i < 4; i++) {
+                    /* Pop the 3 values pushed by JUMP_FINALLY +
+                     * the bound __exit__ method
+                     */
+                    Py_XDECREF(POP());
+                }
+            }
+            else {
+                /* The stack has the values pushed by the block which
+                 * errored out + the 7 values described in WITH_CLEANUP_START.
+                 * We will pop them all, one way or the other.
+                 */
                 if (err > 0) {
                     /* There was an exception and a True return.
                      * We must manually unwind the EXCEPT_HANDLER block

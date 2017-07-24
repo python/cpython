@@ -211,9 +211,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             assert(blockstack_top > 0);
             setup_op = code[blockstack[blockstack_top-1]];
             if (setup_op == SETUP_FINALLY) {
-                /* This is the start of the 'finally' block.
+                /* This is the start of a 'finally' block.
                  * It will end with RERAISE (if a 'try..finally' block)
-                 * or WITH_EXCEPT_FINISH (if a 'with' block).
+                 * or WITH_CLEANUP_FINISH (if a 'with' block).
                  */
                 in_finally[blockstack_top-1] = 1;
             }
@@ -226,14 +226,14 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             if (blockstack_top > 0) {
                 setup_op = code[blockstack[blockstack_top-1]];
                 if (setup_op == SETUP_FINALLY) {
-                    /* This is the end of the 'finally' block. */
+                    /* This is the end of a 'finally' block. */
                     blockstack_top--;
                 }
                 /* RERAISE is also used by SETUP_EXCEPT, but we don't care. */
             }
             break;
-        case WITH_EXCEPT_FINISH:
-            /* This is the end of the 'finally' block */
+        case WITH_CLEANUP_FINISH:
+            /* This is the end of a 'finally' block */
             assert(blockstack_top > 0);
             assert(code[blockstack[blockstack_top-1]] == SETUP_FINALLY);
             blockstack_top--;
