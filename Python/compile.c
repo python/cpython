@@ -878,6 +878,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 1;
         case DUP_TOP_TWO:
             return 2;
+        case POP_MANY:
+            return -oparg;
 
         /* Unary operators */
         case UNARY_POSITIVE:
@@ -980,6 +982,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
             return 0;
+        case JUMP_FINALLY:
+            return 6;
 
         /* Other control flow */
         case RETURN_VALUE:
@@ -1096,8 +1100,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
             return 1;
-        case JUMP_FINALLY:
-            return 3;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -2566,9 +2568,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
 
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
+    ADDOP_I(c, POP_MANY, 3);
     ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
     ADDOP_JABS(c, JUMP_ABSOLUTE, after_loop_else);
 
@@ -2742,6 +2742,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, RERAISE);
+    ADDOP_I(c, POP_MANY, 3);
     compiler_pop_fblock(c, FINALLY_END, final);
 
     compiler_use_next_block(c, exit);
@@ -4151,9 +4152,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
 
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
+    ADDOP_I(c, POP_MANY, 3);
     ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
     ADDOP_JABS(c, JUMP_ABSOLUTE, anchor);
 
@@ -4424,16 +4423,15 @@ expr_constant(struct compiler *c, expr_ty e)
 static int
 compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *final1, /**final2, */*exit;
+    basicblock *block, *final, *exit;
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
 
     block = compiler_new_block(c);
-    final1 = compiler_new_block(c);
-//     final2 = compiler_new_block(c);
+    final = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (!block || !final1 /*|| !final2 */|| !exit)
+    if (!block || !final || !exit)
         return 0;
 
     /* Evaluate EXPR */
@@ -4452,7 +4450,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         ADDOP(c, POP_TOP);
     }
 
-    ADDOP_JREL(c, SETUP_FINALLY, final1);
+    ADDOP_JREL(c, SETUP_FINALLY, final);
     compiler_use_next_block(c, block);
     if (!compiler_push_async_with(c, block))
         return 0;
@@ -4466,12 +4464,12 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
-    ADDOP_JREL(c, JUMP_FINALLY, final1);
+    ADDOP_JREL(c, JUMP_FINALLY, final);
     compiler_pop_fblock(c, ASYNC_WITH, block);
 
     /* `finally` block: await __exit__(*exc_info) */
-    compiler_use_next_block(c, final1);
-    if (!compiler_push_finally_end(c, final1))
+    compiler_use_next_block(c, final);
+    if (!compiler_push_finally_end(c, final))
         return 0;
 
     ADDOP(c, WITH_CLEANUP_START);
@@ -4480,7 +4478,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, YIELD_FROM);
     ADDOP(c, WITH_CLEANUP_FINISH);
 
-    compiler_pop_fblock(c, FINALLY_END, final1);
+    compiler_pop_fblock(c, FINALLY_END, final);
     ADDOP_JREL(c, JUMP_FORWARD, exit);
 
 
@@ -5149,8 +5147,6 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth)
             Py_FatalError("invalid bytecode or bug in stackdepth()");
         }
         assert(depth >= 0);
-        if (instr->i_opcode == RERAISE)
-            goto out;
         if (instr->i_jrel || instr->i_jabs) {
             /* Recursively inspect jump target */
             target_depth = depth;
@@ -5172,6 +5168,7 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth)
                  * into that block with have a lower depth.
                  */
                 target_depth = depth + 6;
+//                 PySys_FormatStderr("SETUP_FINALLY/EXCEPT
             }
             target_depth = stackdepth_walk(c, instr->i_target, target_depth);
             if (target_depth > maxdepth)

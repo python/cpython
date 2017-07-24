@@ -1082,6 +1082,16 @@ main_loop:
             FAST_DISPATCH();
         }
 
+        TARGET(POP_MANY) {
+            PyObject *value;
+            int i;
+            for (i = 0; i < oparg; i++) {
+                value = POP();
+                Py_XDECREF(value);
+            }
+            FAST_DISPATCH();
+        }
+
         TARGET(ROT_TWO) {
             PyObject *top = TOP();
             PyObject *second = SECOND();
@@ -1902,12 +1912,9 @@ main_loop:
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
-            if (exc == Py_None) {
-                assert(val == Py_None);
-                assert(tb == Py_None);
-                Py_DECREF(exc);
-                Py_DECREF(val);
-                Py_DECREF(tb);
+            if (exc == NULL) {
+                assert(val == NULL);
+                assert(tb == NULL);
             }
             else {
                 assert(PyExceptionClass_Check(exc));
@@ -2672,13 +2679,10 @@ main_loop:
         }
 
         TARGET(JUMP_FINALLY) {
-            PyObject *exc = Py_None;
-            Py_INCREF(exc);
-            Py_INCREF(exc);
-            Py_INCREF(exc);
-            PUSH(exc);
-            PUSH(exc);
-            PUSH(exc);
+            int i;
+            for (i = 0; i < 6; i++) {
+                PUSH(NULL);
+            }
             JUMPBY(oparg);
             FAST_DISPATCH();
         }
@@ -2940,8 +2944,8 @@ main_loop:
         TARGET(WITH_CLEANUP_START) {
             /* At the top of the stack are 4 or 7 values:
                Either:
-                - (TOP, SECOND, THIRD) = (None, None, None)
-                - FOURTH: the context.__exit__ bound method
+                - 6 NULLs
+                - SEVENTH: the context.__exit__ bound method
                or:
                 - (TOP, SECOND, THIRD) = exc_info()
                 - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
@@ -2958,10 +2962,13 @@ main_loop:
             exc = TOP();
             val = SECOND();
             tb = THIRD();
-            if (exc == Py_None) {
-                assert(val == Py_None);
-                assert(tb == Py_None);
-                exit_func = PEEK(4);
+            if (exc == NULL) {
+                assert(val == NULL);
+                assert(tb == NULL);
+                exit_func = PEEK(7);
+                exit_stack[0] = Py_None;
+                exit_stack[1] = Py_None;
+                exit_stack[2] = Py_None;
             }
             else {
                 assert(!PyLong_Check(exc));
@@ -2970,15 +2977,11 @@ main_loop:
                 exit_stack[1] = val;
                 exit_stack[2] = tb;
             }
-
-            exit_stack[0] = exc;
-            exit_stack[1] = val;
-            exit_stack[2] = tb;
             res = _PyObject_FastCall(exit_func, exit_stack, 3);
             if (res == NULL)
                 goto error;
 
-            Py_INCREF(exc); /* Duplicating the exception on the stack (XXX: required?) */
+            Py_XINCREF(exc); /* Duplicating the exception on the stack (XXX: required?) */
             PUSH(exc);
             PUSH(res);
             PREDICT(WITH_CLEANUP_FINISH);
@@ -2991,23 +2994,23 @@ main_loop:
             PyObject *exc = POP();
             int err;
 
-            if (exc != Py_None)
+            if (exc != NULL)
                 err = PyObject_IsTrue(res);
             else
                 err = 0;
             Py_DECREF(res);
-            Py_DECREF(exc);
+            Py_XDECREF(exc);
             if (err < 0)
                 goto error;
 
-            if (exc == Py_None) {
-                /* At the top of the stack are 4 values:
-                    - (TOP, SECOND, THIRD) = (None, None, None)
-                    - FOURTH: the context.__exit__ bound method
+            if (exc == NULL) {
+                /* At the top of the stack are 7 values:
+                    - 6 NULLs
+                    - SEVENTH: the context.__exit__ bound method
                 */
                 int i;
-                for (i = 0; i < 4; i++) {
-                    /* Pop the 3 values pushed by JUMP_FINALLY +
+                for (i = 0; i < 7; i++) {
+                    /* Pop the 6 values pushed by JUMP_FINALLY +
                      * the bound __exit__ method
                      */
                     Py_XDECREF(POP());
