@@ -570,6 +570,9 @@ extern __declspec(dllimport) char * __pioinfo[];
 int
 _PyVerify_fd(int fd)
 {
+#if (_MSC_VER >= 1900) //VS2015+
+    return 1; //rely on other error checking, as __pioinfo is no  longer exported
+#else
     const int i1 = fd >> IOINFO_L2E;
     const int i2 = fd & ((1 << IOINFO_L2E) - 1);
 
@@ -602,6 +605,7 @@ _PyVerify_fd(int fd)
   fail:
     errno = EBADF;
     return 0;
+#endif
 }
 
 /* the special case of checking dup2.  The target fd must be in a sensible range */

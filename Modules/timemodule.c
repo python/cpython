@@ -705,7 +705,18 @@ inittimezone(PyObject *m) {
 
     And I'm lazy and hate C so nyer.
      */
-#if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
+#if defined(HAVE_TZNAME) && (_MSC_VER >= 1900) //VS2015+
+    tzset();
+    PyModule_AddIntConstant(m, "timezone", _timezone);
+#ifdef HAVE_ALTZONE
+    PyModule_AddIntConstant(m, "altzone", altzone);
+#else
+    PyModule_AddIntConstant(m, "altzone", _timezone-3600);
+#endif
+    PyModule_AddIntConstant(m, "daylight", _daylight);
+    PyModule_AddObject(m, "tzname",
+                       Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
+#elif defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
     tzset();
 #ifdef PYOS_OS2
     PyModule_AddIntConstant(m, "timezone", _timezone);
