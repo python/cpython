@@ -1,0 +1,684 @@
+.. bpo: 1683368
+.. date: 7559
+.. nonce: 6VUt7_
+.. release date: 01-Apr-2012
+.. section: Core and Builtins
+
+object.__new__ and object.__init__ raise a TypeError if they are passed
+arguments and their complementary method is not overridden.
+
+..
+
+.. bpo: 14378
+.. date: 7558
+.. nonce: SYESoz
+.. section: Core and Builtins
+
+Fix compiling ast.ImportFrom nodes with a "__future__" string as the module
+name that was not interned.
+
+..
+
+.. bpo: 14331
+.. date: 7557
+.. nonce: xcTH6m
+.. section: Core and Builtins
+
+Use significantly less stack space when importing modules by allocating path
+buffers on the heap instead of the stack.
+
+..
+
+.. bpo: 14334
+.. date: 7556
+.. nonce: jfh6Id
+.. section: Core and Builtins
+
+Prevent in a segfault in type.__getattribute__ when it was not passed
+strings.
+
+..
+
+.. bpo: 1469629
+.. date: 7555
+.. nonce: ej86Z-
+.. section: Core and Builtins
+
+Allow cycles through an object's __dict__ slot to be collected. (For example
+if ``x.__dict__ is x``).
+
+..
+
+.. bpo: 14205
+.. date: 7554
+.. nonce: oOwD6n
+.. section: Core and Builtins
+
+dict lookup raises a RuntimeError if the dict is modified during a lookup.
+
+..
+
+.. bpo: 14220
+.. date: 7553
+.. nonce: jQUaQe
+.. section: Core and Builtins
+
+When a generator is delegating to another iterator with the yield from
+syntax, it needs to have its ``gi_running`` flag set to True.
+
+..
+
+.. bpo: 14435
+.. date: 7552
+.. nonce: fqTeXP
+.. section: Core and Builtins
+
+Remove dedicated block allocator from floatobject.c and rely on the
+PyObject_Malloc() api like all other objects.
+
+..
+
+.. bpo: 14471
+.. date: 7551
+.. nonce: NQQ20o
+.. section: Core and Builtins
+
+Fix a possible buffer overrun in the winreg module.
+
+..
+
+.. bpo: 14288
+.. date: 7550
+.. nonce: zU3alc
+.. section: Core and Builtins
+
+Allow the serialization of builtin iterators
+
+..
+
+.. bpo: 14300
+.. date: 7549
+.. nonce: EKXEH3
+.. section: Library
+
+Under Windows, sockets created using socket.dup() now allow overlapped I/O.
+Patch by sbt.
+
+..
+
+.. bpo: 13872
+.. date: 7548
+.. nonce: xHvdXX
+.. section: Library
+
+socket.detach() now marks the socket closed (as mirrored in the socket
+repr()).  Patch by Matt Joiner.
+
+..
+
+.. bpo: 14406
+.. date: 7547
+.. nonce: zdFILX
+.. section: Library
+
+Fix a race condition when using ``concurrent.futures.wait(
+return_when=ALL_COMPLETED)``.  Patch by Matt Joiner.
+
+..
+
+.. bpo: 5136
+.. date: 7546
+.. nonce: 7H2rv2
+.. section: Library
+
+deprecate old, unused functions from tkinter.
+
+..
+
+.. bpo: 14416
+.. date: 7545
+.. nonce: UuoZhW
+.. section: Library
+
+syslog now defines the LOG_ODELAY and LOG_AUTHPRIV constants if they are
+defined in <syslog.h>.
+
+..
+
+.. bpo: 14295
+.. date: 7544
+.. nonce: -_TkX_
+.. section: Library
+
+Add unittest.mock
+
+..
+
+.. bpo: 7652
+.. date: 7543
+.. nonce: iEr-y0
+.. section: Library
+
+Add --with-system-libmpdec option to configure for linking the _decimal
+module against an installed libmpdec.
+
+..
+
+.. bpo: 14380
+.. date: 7542
+.. nonce: vbD08Y
+.. section: Library
+
+MIMEText now defaults to utf-8 when passed non-ASCII unicode with no charset
+specified.
+
+..
+
+.. bpo: 10340
+.. date: 7541
+.. nonce: QZDDK-
+.. section: Library
+
+asyncore - properly handle EINVAL in dispatcher constructor on OSX; avoid to
+call handle_connect in case of a disconnected socket which was not meant to
+connect.
+
+..
+
+.. bpo: 14204
+.. date: 7540
+.. nonce: rzzuGo
+.. section: Library
+
+The ssl module now has support for the Next Protocol Negotiation extension,
+if available in the underlying OpenSSL library. Patch by Colin Marc.
+
+..
+
+.. bpo: 3035
+.. date: 7539
+.. nonce: 8RlPJT
+.. section: Library
+
+Unused functions from tkinter are marked as pending deprecated.
+
+..
+
+.. bpo: 12757
+.. date: 7538
+.. nonce: lfCCKo
+.. section: Library
+
+Fix the skipping of doctests when python is run with -OO so that it works in
+unittest's verbose mode as well as non-verbose mode.
+
+..
+
+.. bpo: 7652
+.. date: 7537
+.. nonce: 78v0L0
+.. section: Library
+
+Integrate the decimal floating point libmpdec library to speed up the
+decimal module. Performance gains of the new C implementation are between
+10x and 100x, depending on the application.
+
+..
+
+.. bpo: 14269
+.. date: 7536
+.. nonce: xxkPQ3
+.. section: Library
+
+SMTPD now conforms to the RFC and requires a HELO command before MAIL, RCPT,
+or DATA.
+
+..
+
+.. bpo: 13694
+.. date: 7535
+.. nonce: qresWC
+.. section: Library
+
+asynchronous connect in asyncore.dispatcher does not set addr attribute.
+
+..
+
+.. bpo: 14344
+.. date: 7534
+.. nonce: 10T1SA
+.. section: Library
+
+fixed the repr of email.policy objects.
+
+..
+
+.. bpo: 11686
+.. date: 7533
+.. nonce: KKCNSn
+.. section: Library
+
+Added missing entries to email package __all__ lists (mostly the new Bytes
+classes).
+
+..
+
+.. bpo: 14335
+.. date: 7532
+.. nonce: V2jcRC
+.. section: Library
+
+multiprocessing's custom Pickler subclass now inherits from the
+C-accelerated implementation.  Patch by sbt.
+
+..
+
+.. bpo: 10484
+.. date: 7531
+.. nonce: NgDSdJ
+.. section: Library
+
+Fix the CGIHTTPServer's PATH_INFO handling problem.
+
+..
+
+.. bpo: 11199
+.. date: 7530
+.. nonce: UMivCa
+.. section: Library
+
+Fix the with urllib which hangs on particular ftp urls.
+
+..
+
+.. bpo: 0
+.. date: 7529
+.. nonce: Z_Hbwr
+.. section: Library
+
+Improve the memory utilization and speed of functools.lru_cache.
+
+..
+
+.. bpo: 14222
+.. date: 7528
+.. nonce: ERgGnw
+.. section: Library
+
+Use the new time.steady() function instead of time.time() for timeout in
+queue and threading modules to not be affected of system time update.
+
+..
+
+.. bpo: 13248
+.. date: 7527
+.. nonce: QDAkYv
+.. section: Library
+
+Remove lib2to3.pytree.Base.get_prefix/set_prefix.
+
+..
+
+.. bpo: 14234
+.. date: 7526
+.. nonce: 3-5k8_
+.. section: Library
+
+CVE-2012-0876: Randomize hashes of xml attributes in the hash table internal
+to the pyexpat module's copy of the expat library to avoid a denial of
+service due to hash collisions.  Patch by David Malcolm with some
+modifications by the expat project.
+
+..
+
+.. bpo: 12818
+.. date: 7525
+.. nonce: phT2cB
+.. section: Library
+
+format address no longer needlessly \ escapes ()s in names when the name
+ends up being quoted.
+
+..
+
+.. bpo: 14062
+.. date: 7524
+.. nonce: da3P2T
+.. section: Library
+
+BytesGenerator now correctly folds Header objects, including using linesep
+when folding.
+
+..
+
+.. bpo: 13839
+.. date: 7523
+.. nonce: 2p10As
+.. section: Library
+
+When invoked on the command-line, the pstats module now accepts several
+filenames of profile stat files and merges them all. Patch by Matt Joiner.
+
+..
+
+.. bpo: 14291
+.. date: 7522
+.. nonce: RC5jhD
+.. section: Library
+
+Email now defaults to utf-8 for non-ASCII unicode headers instead of raising
+an error.  This fixes a regression relative to 2.7.
+
+..
+
+.. bpo: 989712
+.. date: 7521
+.. nonce: DK9VYH
+.. section: Library
+
+Support using Tk without a mainloop.
+
+..
+
+.. bpo: 3835
+.. date: 7520
+.. nonce: 2J2TSu
+.. section: Library
+
+Refuse to use unthreaded Tcl in threaded Python.
+
+..
+
+.. bpo: 2843
+.. date: 7519
+.. nonce: R6eFw1
+.. section: Library
+
+Add new Tk API to Tkinter.
+
+..
+
+.. bpo: 14184
+.. date: 7518
+.. nonce: 6AXV0T
+.. section: Library
+
+Increase the default stack size for secondary threads on Mac OS X to avoid
+interpreter crashes when using threads on 10.7.
+
+..
+
+.. bpo: 14180
+.. date: 7517
+.. nonce: 6RcdYN
+.. section: Library
+
+datetime.date.fromtimestamp(), datetime.datetime.fromtimestamp() and
+datetime.datetime.utcfromtimestamp() now raise an OSError instead of
+ValueError if localtime() or gmtime() failed.
+
+..
+
+.. bpo: 14180
+.. date: 7516
+.. nonce: qe2Eei
+.. section: Library
+
+time.ctime(), gmtime(), time.localtime(), datetime.date.fromtimestamp(),
+datetime.datetime.fromtimestamp() and datetime.datetime.utcfromtimestamp()
+now raises an OverflowError, instead of a ValueError, if the timestamp does
+not fit in time_t.
+
+..
+
+.. bpo: 14180
+.. date: 7515
+.. nonce: XzoCLE
+.. section: Library
+
+datetime.datetime.fromtimestamp() and datetime.datetime.utcfromtimestamp()
+now round microseconds towards zero instead of rounding to nearest with ties
+going away from zero.
+
+..
+
+.. bpo: 10543
+.. date: 7514
+.. nonce: hhj5c8
+.. section: Library
+
+Fix unittest test discovery with Jython bytecode files.
+
+..
+
+.. bpo: 1178863
+.. date: 7513
+.. nonce: qZwz1u
+.. section: Library
+
+Separate initialisation from setting when initializing Tkinter.Variables;
+harmonize exceptions to ValueError; only delete variables that have not been
+deleted; assert that variable names are strings.
+
+..
+
+.. bpo: 14104
+.. date: 7512
+.. nonce: OxYNl1
+.. section: Library
+
+Implement time.monotonic() on Mac OS X, patch written by Nicholas Riley.
+
+..
+
+.. bpo: 13394
+.. date: 7511
+.. nonce: 5-MRTZ
+.. section: Library
+
+the aifc module now uses warnings.warn() to signal warnings.
+
+..
+
+.. bpo: 14252
+.. date: 7510
+.. nonce: -5zjL9
+.. section: Library
+
+Fix subprocess.Popen.terminate() to not raise an error under Windows when
+the child process has already exited.
+
+..
+
+.. bpo: 14223
+.. date: 7509
+.. nonce: J3xsO9
+.. section: Library
+
+curses.addch() is no more limited to the range 0-255 when the Python curses
+is not linked to libncursesw. It was a regression introduced in Python
+3.3a1.
+
+..
+
+.. bpo: 14168
+.. date: 7508
+.. nonce: k48rkQ
+.. section: Library
+
+Check for presence of Element._attrs in minidom before accessing it.
+
+..
+
+.. bpo: 12328
+.. date: 7507
+.. nonce: 0ou86A
+.. section: Library
+
+Fix multiprocessing's use of overlapped I/O on Windows. Also, add a
+multiprocessing.connection.wait(rlist, timeout=None) function for polling
+multiple objects at once.  Patch by sbt.
+
+..
+
+.. bpo: 14007
+.. date: 7506
+.. nonce: QgHRiZ
+.. section: Library
+
+Accept incomplete TreeBuilder objects (missing start, end, data or close
+method) for the Python implementation as well. Drop the no-op
+TreeBuilder().xml() method from the C implementation.
+
+..
+
+.. bpo: 14210
+.. date: 7505
+.. nonce: PDzvZF
+.. section: Library
+
+pdb now has tab-completion not only for command names, but also for their
+arguments, wherever possible.
+
+..
+
+.. bpo: 14310
+.. date: 7504
+.. nonce: mho0IY
+.. section: Library
+
+Sockets can now be with other processes on Windows using the api
+socket.socket.share() and socket.fromshare().
+
+..
+
+.. bpo: 10576
+.. date: 7503
+.. nonce: hVfEHY
+.. section: Library
+
+The gc module now has a 'callbacks' member that will get called when garbage
+collection takes place.
+
+..
+
+.. bpo: 14557
+.. date: 7502
+.. nonce: UCbIq7
+.. section: Build
+
+Fix extensions build on HP-UX. Patch by Adi Roiban.
+
+..
+
+.. bpo: 14387
+.. date: 7501
+.. nonce: akFGpn
+.. section: Build
+
+Do not include accu.h from Python.h.
+
+..
+
+.. bpo: 14359
+.. date: 7500
+.. nonce: d8AJnN
+.. section: Build
+
+Only use O_CLOEXEC in _posixmodule.c if it is defined. Based on patch from
+Hervé Coatanhay.
+
+..
+
+.. bpo: 14321
+.. date: 7499
+.. nonce: 3fOzVM
+.. section: Build
+
+Do not run pgen during the build if files are up to date.
+
+..
+
+.. bpo: 14034
+.. date: 7498
+.. nonce: 34GDTv
+.. section: Documentation
+
+added the argparse tutorial.
+
+..
+
+.. bpo: 14324
+.. date: 7497
+.. nonce: njGV1Q
+.. section: Documentation
+
+Fix configure tests for cross builds.
+
+..
+
+.. bpo: 14327
+.. date: 7496
+.. nonce: F1iSk5
+.. section: Documentation
+
+Call AC_CANONICAL_HOST in configure.ac and check in config.{guess,sub}.
+Don't use uname calls for cross builds.
+
+..
+
+.. bpo: 9041
+.. date: 7495
+.. nonce: iLXuHK
+.. section: Library
+
+An issue in ctypes.c_longdouble, ctypes.c_double, and ctypes.c_float that
+caused an incorrect exception to be returned in the case of overflow has
+been fixed.
+
+..
+
+.. bpo: 14212
+.. date: 7494
+.. nonce: 78Bmn2
+.. section: Library
+
+The re module didn't retain a reference to buffers it was scanning,
+resulting in segfaults.
+
+..
+
+.. bpo: 14259
+.. date: 7493
+.. nonce: EG-kwB
+.. section: Library
+
+The finditer() method of re objects did not take any keyword arguments,
+contrary to the documentation.
+
+..
+
+.. bpo: 10142
+.. date: 7492
+.. nonce: iHMgqe
+.. section: Library
+
+Support for SEEK_HOLE/SEEK_DATA (for example, under ZFS).
+
+..
+
+.. bpo: 14442
+.. date: 7491
+.. nonce: 9ett0-
+.. section: Tests
+
+Add missing errno import in test_smtplib.
+
+..
+
+.. bpo: 8315
+.. date: 7490
+.. nonce: 2qXCkM
+.. section: Tests
+
+(partial fix) python -m unittest test.test_email now works.
