@@ -2443,6 +2443,7 @@ class TestSendfile(unittest.TestCase):
         self.client.close()
         if self.server.running:
             self.server.stop()
+        self.server = None
 
     def sendfile_wrapper(self, sock, file, offset, nbytes, headers=[], trailers=[]):
         """A higher level wrapper representing how an application is
