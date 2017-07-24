@@ -952,7 +952,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         /* Jumps */
         case JUMP_FORWARD:
         case JUMP_ABSOLUTE:
-        case END_ITER:
             return 0;
         case JUMP_IF_TRUE_OR_POP:
         case JUMP_IF_FALSE_OR_POP:
@@ -2494,7 +2493,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     ADDOP_JREL(c, FOR_ITER, cleanup);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
-    ADDOP_JABS(c, END_ITER, start);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, start);
     compiler_use_next_block(c, cleanup);
 
     compiler_pop_fblock(c, LOOP, start);
@@ -2573,7 +2572,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     /* Success block for __anext__ */
     compiler_use_next_block(c, after_try);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
-    ADDOP_JABS(c, END_ITER, try);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, try);
 
     compiler_pop_fblock(c, LOOP, try);
 
@@ -4060,7 +4059,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
         compiler_use_next_block(c, skip);
     }
     compiler_use_next_block(c, if_cleanup);
-    ADDOP_JABS(c, END_ITER, start);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, start);
     compiler_use_next_block(c, anchor);
 
     return 1;
@@ -4189,7 +4188,7 @@ compiler_async_comprehension_generator(struct compiler *c,
         compiler_use_next_block(c, skip);
     }
     compiler_use_next_block(c, if_cleanup);
-    ADDOP_JABS(c, END_ITER, try);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, try);
     compiler_use_next_block(c, anchor);
     ADDOP(c, POP_TOP);
 
@@ -5175,7 +5174,6 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth)
                  * into that block with have a lower depth.
                  */
                 target_depth = depth + 6;
-//                 PySys_FormatStderr("SETUP_FINALLY/EXCEPT
             }
             target_depth = stackdepth_walk(c, instr->i_target, target_depth);
             if (target_depth > maxdepth)
@@ -5183,7 +5181,6 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth)
         }
         if (instr->i_opcode == JUMP_ABSOLUTE ||
             instr->i_opcode == JUMP_FORWARD ||
-            instr->i_opcode == END_ITER ||
             instr->i_opcode == RETURN_VALUE ||
             instr->i_opcode == RAISE_VARARGS) {
             goto out; /* remaining code is dead */
