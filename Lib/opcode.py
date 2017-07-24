@@ -125,6 +125,7 @@ def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
 def_op('POP_BLOCK', 87)
+def_op('PUSH_NO_EXCEPT', 88)
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
@@ -164,7 +165,6 @@ jabs_op('END_ITER', 117)        # Target byte offset from beginning of code
 
 jrel_op('SETUP_EXCEPT', 121)    # Distance to target address
 jrel_op('SETUP_FINALLY', 122)   # ""
-jrel_op('JUMP_FINALLY', 123)    # ""
 
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
