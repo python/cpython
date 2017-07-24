@@ -1,0 +1,1 @@
+Locate msbuild.exe on Windows when building rather than vcvarsall.bat

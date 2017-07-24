@@ -1,0 +1,66 @@
+.. bpo: 20786
+.. date: 8348
+.. nonce: M_2OYE
+.. release date: 2014-03-09
+.. section: Core and Builtins
+
+Fix signatures for dict.__delitem__ and property.__delete__ builtins.
+
+..
+
+.. bpo: 20839
+.. date: 8347
+.. nonce: SNn1MY
+.. section: Library
+
+Don't trigger a DeprecationWarning in the still supported
+pkgutil.get_loader() API when __loader__ isn't set on a module (nor when
+pkgutil.find_loader() is called directly).
+
+..
+
+.. bpo: 14512
+.. date: 8346
+.. nonce: y7vmx3
+.. section: Build
+
+Launch pydoc -b instead of pydocgui.pyw on Windows.
+
+..
+
+.. bpo: 20748
+.. date: 8345
+.. nonce: HbDp_u
+.. section: Build
+
+Uninstalling pip does not leave behind the pyc of the uninstaller anymore.
+
+..
+
+.. bpo: 20568
+.. date: 8344
+.. nonce: ZvMU8d
+.. section: Build
+
+The Windows installer now installs the unversioned ``pip`` command in
+addition to the versioned ``pip3`` and ``pip3.4`` commands.
+
+..
+
+.. bpo: 20757
+.. date: 8343
+.. nonce: BGFT6U
+.. section: Build
+
+The ensurepip helper for the Windows uninstaller now skips uninstalling pip
+(rather than failing) if the user has updated pip to a different version
+from the one bundled with ensurepip.
+
+..
+
+.. bpo: 20465
+.. date: 8342
+.. nonce: iemVBC
+.. section: Build
+
+Update OS X and Windows installer builds to use SQLite 3.8.3.1.
