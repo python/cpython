@@ -173,6 +173,7 @@ haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
 name_op('STORE_ANNOTATION', 127) # Index in name list
+def_op('POP_MANY', 128)         # Number of values to pop
 
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('CALL_FUNCTION', 131)    # #args
@@ -190,15 +191,15 @@ hasfree.append(138)
 def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
+def_op('EXTENDED_ARG', 144)
+EXTENDED_ARG = 144
+
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
 
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
-
-def_op('EXTENDED_ARG', 144)
-EXTENDED_ARG = 144
 
 def_op('BUILD_LIST_UNPACK', 149)
 def_op('BUILD_MAP_UNPACK', 150)
