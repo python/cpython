@@ -1,0 +1,99 @@
+.. bpo: 29591
+.. date: 2017-07-11-22-26-48
+.. nonce: cOeMX-
+.. release date: 2017-07-23
+.. section: Security
+
+Update expat copy from 2.1.1 to 2.2.0 to get fixes of CVE-2016-0718 and
+CVE-2016-4472. See https://sourceforge.net/p/expat/bugs/537/ for more
+information.
+
+..
+
+.. bpo: 30694
+.. date: 2017-07-11-22-25-24
+.. nonce: oOf3Er
+.. section: Security
+
+Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes of multiple security
+vulnerabilities including: CVE-2017-9233 (External entity infinite loop
+DoS), CVE-2016-9063 (Integer overflow, re-fix), CVE-2016-0718 (Fix
+regression bugs from 2.2.0's fix to CVE-2016-0718) and CVE-2012-0876
+(Counter hash flooding with SipHash).  Note: the CVE-2016-5300 (Use os-
+specific entropy sources like getrandom) doesn't impact Python, since Python
+already gets entropy from the OS to set the expat secret using
+``XML_SetHashSalt()``.
+
+..
+
+.. bpo: 26657
+.. date: 2017-07-11-22-07-03
+.. nonce: wvpzFD
+.. section: Security
+
+Fix directory traversal vulnerability with http.server on Windows. This
+fixes a regression that was introduced in 3.3.4rc1 and 3.4.0rc1. Based on
+patch by Philipp Hagemeister.
+
+..
+
+.. bpo: 30500
+.. date: 2017-07-11-22-02-51
+.. nonce: wXUrkQ
+.. section: Security
+
+Fix urllib.parse.splithost() to correctly parse fragments. For example,
+``splithost('//127.0.0.1#@evil.com/')`` now correctly returns the
+``127.0.0.1`` host, instead of treating ``@evil.com`` as the host in an
+authentification (``login@host``).
+
+..
+
+.. bpo: 30730
+.. date: 02
+.. nonce: ZF8XGV
+.. original section: Library
+.. section: Security
+
+Prevent environment variables injection in subprocess on Windows.  Prevent
+passing other invalid environment variables and command arguments.
+
+..
+
+.. bpo: 26617
+.. date: 2017-07-15-13-55-22
+.. nonce: Gh5LvN
+.. section: Core and Builtins
+
+Fix crash when GC runs during weakref callbacks.
+
+..
+
+.. bpo: 27945
+.. date: 04
+.. nonce: p29r3O
+.. section: Core and Builtins
+
+Fixed various segfaults with dict when input collections are mutated during
+searching, inserting or comparing.  Based on patches by Duane Griffin and
+Tim Mitchell.
+
+..
+
+.. bpo: 27850
+.. date: 01
+.. nonce: kIVQ0m
+.. section: Library
+
+Remove 3DES from ssl module's default cipher list to counter measure sweet32
+attack (CVE-2016-2183).
+
+..
+
+.. bpo: 25008
+.. date: 03
+.. nonce: CeIzyU
+.. section: Documentation
+
+Document smtpd.py as effectively deprecated and add a pointer to aiosmtpd, a
+third-party asyncio-based replacement.

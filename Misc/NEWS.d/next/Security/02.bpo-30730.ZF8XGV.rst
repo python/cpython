@@ -1,4 +1,0 @@
-.. original section: Library
-
-Prevent environment variables injection in subprocess on Windows.  Prevent
-passing other invalid environment variables and command arguments.
