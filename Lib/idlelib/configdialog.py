@@ -165,7 +165,6 @@ class ConfigDialog(Toplevel):
 
         Fontlist: mouse button 1 click or up or down key invoke
         on_fontlist_select(), which sets var font_name.
-        set_samples.
 
         Sizelist: clicking the menubutton opens the dropdown menu. A
         mouse button 1 click or return key sets var font_size.
