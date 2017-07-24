@@ -150,6 +150,7 @@ class ConfigDialog(Toplevel):
         buttons.pack(side=BOTTOM)
         return outer
 
+
     def create_page_font_tab(self):
         """Return frame of widgets for Font/Tabs tab.
 
@@ -159,29 +160,26 @@ class ConfigDialog(Toplevel):
         corresponding aspect of the font sample on this page and
         highlight sample on highlight page.
 
+        Load_font_cfg initializes font vars and widgets from
+        idleConf entries and tk.
+
         Fontlist: mouse button 1 click or up or down key invoke
-        on_fontlist_select(), which sets Var font_name and calls
-        set_samples.
+        on_fontlist_select(), which sets var font_name.
 
         Sizelist: clicking the menubutton opens the dropdown menu. A
-        mouse button 1 click or return key invokes an internal command
-        which sets Var font_size and calls set_samples.
+        mouse button 1 click or return key sets var font_size.
 
-        Bold_toggle, clicking the box toggles font_bold and calls
-        set_samples.
+        Bold_toggle: clicking the box toggles var font_bold.
 
-        Setting any of the font vars invokes var_changed_font, which
-        adds all 3 font options to changes.  Set_samples applies a new
-        font constructed from the font vars to font_sample and
-        highlight_sample on the hightlight page.
+        Changing any of the font vars invokes var_changed_font, which
+        adds all 3 font options to changes and calls set_samples.
+        Set_samples applies a new font constructed from the font vars to
+        font_sample and to highlight_sample on the hightlight page.
 
         Tabs: Enable users to change spaces entered for indent tabs.
         Changing indent_scale value with the mouse sets Var space_num,
         which invokes var_changed_space_num, which adds an entry to
-        changes.
-
-        Load_font_cfg and load_tab_cfg initialize vars and widgets from
-        idleConf entries.
+        changes.  Load_tab_cfg initializes space_num to default.
 
         Widget Structure:  (*) widgets bound to self
             frame (of tab_pages)
@@ -227,11 +225,10 @@ class ConfigDialog(Toplevel):
         scroll_font.config(command=self.fontlist.yview)
         self.fontlist.config(yscrollcommand=scroll_font.set)
         font_size_title = Label(frame_font_param, text='Size :')
-        self.sizelist = DynOptionMenu(frame_font_param, self.font_size,
-                                      None, command=self.set_samples)
+        self.sizelist = DynOptionMenu(frame_font_param, self.font_size, None)
         self.bold_toggle = Checkbutton(
-                frame_font_param, variable=self.font_bold, onvalue=1,
-                offvalue=0, text='Bold', command=self.set_samples)
+                frame_font_param, variable=self.font_bold,
+                onvalue=1, offvalue=0, text='Bold')
         frame_font_sample = Frame(frame_font, relief=SOLID, borderwidth=1)
         temp_font = tkFont.Font(parent, ('courier', 10, 'normal'))
         self.font_sample = Label(
@@ -266,6 +263,96 @@ class ConfigDialog(Toplevel):
         self.indent_scale.pack(side=TOP, padx=5, fill=X)
 
         return frame
+
+    def load_font_cfg(self):
+        """Load current configuration settings for the font options.
+
+        Retrieve current font with idleConf.GetFont and font families
+        from tk. Setup fontlist and set font_name.  Setup sizelist,
+        which sets font_size.  Set font_bold.  Setting font variables
+        calls set_samples (thrice).
+        """
+        configured_font = idleConf.GetFont(self, 'main', 'EditorWindow')
+        font_name = configured_font[0].lower()
+        font_size = configured_font[1]
+        font_bold  = configured_font[2]=='bold'
+
+        # Set editor font selection list and font_name.
+        fonts = list(tkFont.families(self))
+        fonts.sort()
+        for font in fonts:
+            self.fontlist.insert(END, font)
+        self.font_name.set(font_name)
+        lc_fonts = [s.lower() for s in fonts]
+        try:
+            current_font_index = lc_fonts.index(font_name)
+            self.fontlist.see(current_font_index)
+            self.fontlist.select_set(current_font_index)
+            self.fontlist.select_anchor(current_font_index)
+            self.fontlist.activate(current_font_index)
+        except ValueError:
+            pass
+        # Set font size dropdown.
+        self.sizelist.SetMenu(('7', '8', '9', '10', '11', '12', '13', '14',
+                               '16', '18', '20', '22', '25', '29', '34', '40'),
+                              font_size)
+        # Set font weight.
+        self.font_bold.set(font_bold)
+
+    def on_fontlist_select(self, event):
+        """Handle selecting a font from the list.
+
+        Event can result from either mouse click or Up or Down key.
+        Set font_name and example displays to selection.
+        """
+        font = self.fontlist.get(
+                ACTIVE if event.type.name == 'KeyRelease' else ANCHOR)
+        self.font_name.set(font.lower())
+
+    def var_changed_font(self, *params):
+        """Store changes to font attributes.
+
+        When one font attribute changes, save them all, as they are
+        not independent from each other. In particular, when we are
+        overriding the default font, we need to write out everything.
+        """
+        value = self.font_name.get()
+        changes.add_option('main', 'EditorWindow', 'font', value)
+        value = self.font_size.get()
+        changes.add_option('main', 'EditorWindow', 'font-size', value)
+        value = self.font_bold.get()
+        changes.add_option('main', 'EditorWindow', 'font-bold', value)
+        self.set_samples()
+
+    def set_samples(self, event=None):
+        """Update update both screen samples with the font settings.
+
+        Called on font initialization and change events.
+        Accesses font_name, font_size, and font_bold Variables.
+        Updates font_sample and hightlight page highlight_sample.
+        """
+        font_name = self.font_name.get()
+        font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
+        new_font = (font_name, self.font_size.get(), font_weight)
+        self.font_sample['font'] = new_font
+        self.highlight_sample['font'] = new_font
+
+    def load_tab_cfg(self):
+        """Load current configuration settings for the tab options.
+
+        Attributes updated:
+            space_num: Set to value from idleConf.
+        """
+        # Set indent sizes.
+        space_num = idleConf.GetOption(
+            'main', 'Indent', 'num-spaces', default=4, type='int')
+        self.space_num.set(space_num)
+
+    def var_changed_space_num(self, *params):
+        "Store change to indentation size."
+        value = self.space_num.get()
+        changes.add_option('main', 'Indent', 'num-spaces', value)
+
 
     def create_page_highlight(self):
         """Return frame of widgets for Highlighting tab.
@@ -728,25 +815,6 @@ class ConfigDialog(Toplevel):
                 self.are_keys_builtin, self.win_width, self.win_height,
                 self.startup_edit, self.autosave,):
             var.trace_remove('write', var.trace_info()[0][1])
-
-    def var_changed_font(self, *params):
-        """Store changes to font attributes.
-
-        When one font attribute changes, save them all, as they are
-        not independent from each other. In particular, when we are
-        overriding the default font, we need to write out everything.
-        """
-        value = self.font_name.get()
-        changes.add_option('main', 'EditorWindow', 'font', value)
-        value = self.font_size.get()
-        changes.add_option('main', 'EditorWindow', 'font-size', value)
-        value = self.font_bold.get()
-        changes.add_option('main', 'EditorWindow', 'font-bold', value)
-
-    def var_changed_space_num(self, *params):
-        "Store change to indentation size."
-        value = self.space_num.get()
-        changes.add_option('main', 'Indent', 'num-spaces', value)
 
     def var_changed_color(self, *params):
         "Process change to color choice."
@@ -1216,30 +1284,6 @@ class ConfigDialog(Toplevel):
         self.is_builtin_theme.set(0)
         self.set_theme_type()
 
-    def on_fontlist_select(self, event):
-        """Handle selecting a font from the list.
-
-        Event can result from either mouse click or Up or Down key.
-        Set font_name and example displays to selection.
-        """
-        font = self.fontlist.get(
-                ACTIVE if event.type.name == 'KeyRelease' else ANCHOR)
-        self.font_name.set(font.lower())
-        self.set_samples()
-
-    def set_samples(self, event=None):
-        """Update update both screen samples with the font settings.
-
-        Called on font initialization and change events.
-        Accesses font_name, font_size, and font_bold Variables.
-        Updates font_sample and hightlight page highlight_sample.
-        """
-        font_name = self.font_name.get()
-        font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
-        new_font = (font_name, self.font_size.get(), font_weight)
-        self.font_sample['font'] = new_font
-        self.highlight_sample['font'] = new_font
-
     def set_highlight_target(self):
         """Set fg/bg toggle and color based on highlight tag target.
 
@@ -1403,61 +1447,6 @@ class ConfigDialog(Toplevel):
             changes.add_option(
                     'main', 'HelpFiles', str(num),
                     ';'.join(self.user_helplist[num-1][:2]))
-
-    def load_font_cfg(self):
-        """Load current configuration settings for the font options.
-
-        Retrieve current font values from idleConf.GetFont to set
-        as initial values for font widgets.
-
-        Attributes updated:
-            fontlist: Populate with fonts from tkinter.font.
-            font_name: Set to current font.
-            sizelist: Populate valid options tuple and set
-                to current size.
-            font_bold: Set to current font weight.
-
-        Methods:
-            set_samples
-        """
-        # Set base editor font selection list.
-        fonts = list(tkFont.families(self))
-        fonts.sort()
-        for font in fonts:
-            self.fontlist.insert(END, font)
-        configured_font = idleConf.GetFont(self, 'main', 'EditorWindow')
-        font_name = configured_font[0].lower()
-        font_size = configured_font[1]
-        font_bold  = configured_font[2]=='bold'
-        self.font_name.set(font_name)
-        lc_fonts = [s.lower() for s in fonts]
-        try:
-            current_font_index = lc_fonts.index(font_name)
-            self.fontlist.see(current_font_index)
-            self.fontlist.select_set(current_font_index)
-            self.fontlist.select_anchor(current_font_index)
-            self.fontlist.activate(current_font_index)
-        except ValueError:
-            pass
-        # Set font size dropdown.
-        self.sizelist.SetMenu(('7', '8', '9', '10', '11', '12', '13', '14',
-                               '16', '18', '20', '22', '25', '29', '34', '40'),
-                              font_size)
-        # Set font weight.
-        self.font_bold.set(font_bold)
-        # Set font sample.
-        self.set_samples()
-
-    def load_tab_cfg(self):
-        """Load current configuration settings for the tab options.
-
-        Attributes updated:
-            space_num: Set to value from idleConf.
-        """
-        # Set indent sizes.
-        space_num = idleConf.GetOption(
-            'main', 'Indent', 'num-spaces', default=4, type='int')
-        self.space_num.set(space_num)
 
     def load_theme_cfg(self):
         """Load current configuration settings for the theme options.
