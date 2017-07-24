@@ -442,6 +442,19 @@ class FileWrapperTest(unittest.TestCase):
         asyncore.loop(timeout=0.01, use_poll=True, count=2)
         self.assertEqual(b"".join(data), self.d)
 
+    def test_close_twice(self):
+        fd = os.open(TESTFN, os.O_RDONLY)
+        f = asyncore.file_wrapper(fd)
+        os.close(fd)
+
+        os.close(f.fd)  # file_wrapper dupped fd
+        with self.assertRaises(OSError):
+            f.close()
+
+        self.assertEqual(f.fd, -1)
+        # calling close twice should not fail
+        f.close()
+
 
 class BaseTestHandler(asyncore.dispatcher):
 
