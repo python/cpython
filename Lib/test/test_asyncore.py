@@ -7,6 +7,7 @@ import sys
 import time
 import errno
 import struct
+from unittest import mock
 
 from test import support
 from io import BytesIO
@@ -803,6 +804,7 @@ class BaseTestAPI:
             if t.is_alive():
                 self.fail("join() timed out")
 
+
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
     family = socket.AF_INET
     addr = (support.HOST, 0)
@@ -842,6 +844,89 @@ class TestAPI_UseUnixSocketsSelect(TestAPI_UseUnixSockets, unittest.TestCase):
 @unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
 class TestAPI_UseUnixSocketsPoll(TestAPI_UseUnixSockets, unittest.TestCase):
     use_poll = True
+
+
+class PollTests(unittest.TestCase):
+    def poll(self, testmap):
+        with mock.patch('asyncore.select.select') as mock_select:
+            mock_select.return_value = (list(testmap), [], [])
+            asyncore.poll(map=testmap)
+
+    def test_poll_close_dispatchers(self):
+        testmap = {}
+        read_calls = []
+
+        class Handler:
+            def __init__(self, fd):
+                self.fd = fd
+            def readable(self):
+                return True
+            def writable(self):
+                return False
+            def accepting(self):
+                return False
+            def handle_read_event(self):
+                read_calls.append(self.fd)
+                testmap.clear()
+
+        for fd in (1, 2):
+            testmap[fd] = Handler(fd)
+
+        # bpo-30931: There are two handlers, both are seen as ready. The
+        # handle_read_event() of the first handler clears the map, which means
+        # closing all dispatchers immediately. In this case, the
+        # handle_read_event() of the second dispatcher must not be called.
+        self.poll(testmap)
+        self.assertEqual(testmap, {})
+        self.assertEqual(read_calls, [1])
+
+    def test_poll_close_replace_dispatchers(self):
+        testmap = {}
+        read_calls = []
+
+        class Handler:
+            def __init__(self, fd):
+                self.fd = fd
+            def readable(self):
+                return True
+            def writable(self):
+                return False
+            def accepting(self):
+                return False
+            def handle_read_event(self):
+                read_calls.append(self)
+                testmap.update(newmap)
+
+        handler1 = Handler(1)
+        handler2 = Handler(2)
+        testmap = {1: handler1, 2: handler2}
+        handler3 = Handler(1)
+        handler4 = Handler(2)
+        newmap = {1: handler3, 2: handler4}
+
+        # bpo-30931: handler1 and handler2 are ready. First,
+        # handle_read_event() of handler1 is called, but this handler replaces
+        # map[2] by a new handler before handler2 is run. Replacing map[2]
+        # indirectly means that handler2 was closed and so must not be called.
+        self.poll(testmap)
+        self.assertEqual(testmap, newmap)
+        self.assertEqual(read_calls, [handler1])
+
+        # Just make sure that we call the two new dispatchers
+        self.poll(testmap)
+        self.assertEqual(testmap, newmap)
+        self.assertEqual(read_calls, [handler1, handler3, handler4])
+
+
+@unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
+class Poll2Tests(PollTests):
+    def poll(self, testmap):
+        flags = select.POLLIN
+        with mock.patch('asyncore.select.poll') as mock_poll:
+            pollster = mock_poll.return_value
+            pollster.poll.return_value = [(fd, flags) for fd in testmap]
+            asyncore.poll2(map=testmap)
+
 
 if __name__ == "__main__":
     unittest.main()

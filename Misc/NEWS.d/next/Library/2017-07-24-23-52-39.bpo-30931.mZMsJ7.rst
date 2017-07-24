@@ -1,0 +1,2 @@
+asyncore: poll() and poll2() now get objects from the asyncore map before
+calling handlers, since handlers can modify the map.

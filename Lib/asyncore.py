@@ -143,21 +143,25 @@ def poll(timeout=0.0, map=None):
 
         r, w, e = select.select(r, w, e, timeout)
 
-        for fd in r:
-            obj = map.get(fd)
-            if obj is None:
+        # bpo-30931: Get objects from map before calling handlers,
+        # since handlers can modify map
+        robjs = [(fd, map[fd]) for fd in r]
+        wobjs = [(fd, map[fd]) for fd in w]
+        eobjs = [(fd, map[fd]) for fd in e]
+
+        for fd, obj in robjs:
+            if map.get(fd) is not obj:
+                # bpo-30931: obj has been closed by a previously executed
+                # handler.  Its file descriptor may have been reused by new
+                # dispatcher registered later.
                 continue
             read(obj)
-
-        for fd in w:
-            obj = map.get(fd)
-            if obj is None:
+        for fd, obj in wobjs:
+            if map.get(fd) is not obj:
                 continue
             write(obj)
-
-        for fd in e:
-            obj = map.get(fd)
-            if obj is None:
+        for fd, obj in eobjs:
+            if map.get(fd) is not obj:
                 continue
             _exception(obj)
 
@@ -181,9 +185,16 @@ def poll2(timeout=0.0, map=None):
                 pollster.register(fd, flags)
 
         r = pollster.poll(timeout)
-        for fd, flags in r:
-            obj = map.get(fd)
-            if obj is None:
+
+        # bpo-30931: Get objects from map before calling handlers,
+        # since handlers can modify map
+        ready = [(fd, map[fd], flags) for fd, flags in r]
+
+        for fd, obj, flags in ready:
+            if map.get(fd) is not obj:
+                # bpo-30931: obj has been closed by a previously executed
+                # handler.  Its file descriptor may have been reused by new
+                # dispatcher registered later.
                 continue
             readwrite(obj, flags)
 
