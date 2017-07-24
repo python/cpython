@@ -1365,9 +1365,15 @@ class _ActionsContainer(object):
         self._actions.append(action)
         action.container = self
 
-        # index the action by any option strings it has
+        # Index the action by any option strings it has, doing some
+        # special preprocessing to ensure that dashes and underscores
+        # are equivalent for the purpose of recognizing options.
         for option_string in action.option_strings:
-            self._option_string_actions[option_string] = action
+            match = _re.match('(-*)(.*)', option_string)
+            dashes, name = match.groups()
+            for to_replace, replace_with in ['-_', '_-']:
+                new_string = dashes + name.replace(to_replace, replace_with)
+                self._option_string_actions[new_string] = action
 
         # set the flag if any option strings look like negative numbers
         for option_string in action.option_strings:
