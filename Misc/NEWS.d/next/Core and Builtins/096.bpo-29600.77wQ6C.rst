@@ -1,1 +1,0 @@
-Fix wrapping coroutine return values in StopIteration.

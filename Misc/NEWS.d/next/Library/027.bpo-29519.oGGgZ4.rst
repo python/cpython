@@ -1,2 +1,0 @@
-Fix weakref spewing exceptions during interpreter shutdown when used with a
-rare combination of multiprocessing and custom codecs.

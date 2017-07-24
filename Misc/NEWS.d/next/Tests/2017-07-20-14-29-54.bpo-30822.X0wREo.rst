@@ -1,2 +1,0 @@
-Fix regrtest command line parser to allow passing -u extralargefile to
-run test_zipfile64.
