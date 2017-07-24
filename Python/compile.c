@@ -974,7 +974,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case POP_EXCEPT:
             return -3;
         case RERAISE:
-            return -3;
+            return -6;
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
             return 0;
@@ -2733,7 +2733,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP(c, RERAISE);
-    ADDOP_I(c, POP_MANY, 3);
+//     ADDOP_I(c, POP_MANY, 3);
     compiler_pop_fblock(c, FINALLY_END, final);
 
     compiler_use_next_block(c, exit);
