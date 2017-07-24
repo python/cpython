@@ -1902,9 +1902,19 @@ main_loop:
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
-            assert(PyExceptionClass_Check(exc));
-            PyErr_Restore(exc, val, tb);
-            goto exception_unwind;
+            if (exc == Py_None) {
+                assert(val == Py_None);
+                assert(tb == Py_None);
+                Py_DECREF(exc);
+                Py_DECREF(val);
+                Py_DECREF(tb);
+            }
+            else {
+                assert(PyExceptionClass_Check(exc));
+                PyErr_Restore(exc, val, tb);
+                goto exception_unwind;
+            }
+            FAST_DISPATCH();
         }
 
         TARGET(LOAD_BUILD_CLASS) {
@@ -2657,6 +2667,18 @@ main_loop:
         }
 
         TARGET(JUMP_FORWARD) {
+            JUMPBY(oparg);
+            FAST_DISPATCH();
+        }
+
+        TARGET(JUMP_FINALLY) {
+            PyObject *exc = Py_None;
+            Py_INCREF(exc);
+            Py_INCREF(exc);
+            Py_INCREF(exc);
+            PUSH(exc);
+            PUSH(exc);
+            PUSH(exc);
             JUMPBY(oparg);
             FAST_DISPATCH();
         }
