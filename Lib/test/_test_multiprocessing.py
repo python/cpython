@@ -3469,16 +3469,18 @@ class _TestLogging(BaseTestCase):
 
         logger.setLevel(LEVEL1)
         p = self.Process(target=self._test_level, args=(writer,))
-        p.daemon = True
         p.start()
         self.assertEqual(LEVEL1, reader.recv())
+        p.join()
+        p.close()
 
         logger.setLevel(logging.NOTSET)
         root_logger.setLevel(LEVEL2)
         p = self.Process(target=self._test_level, args=(writer,))
-        p.daemon = True
         p.start()
         self.assertEqual(LEVEL2, reader.recv())
+        p.join()
+        p.close()
 
         root_logger.setLevel(root_level)
         logger.setLevel(level=LOG_LEVEL)
