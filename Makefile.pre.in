@@ -320,6 +320,7 @@ PYTHON_OBJS=	\
 		Python/Python-ast.o \
 		Python/asdl.o \
 		Python/ast.o \
+		Python/ast_opt.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
 		Python/compile.o \
@@ -799,6 +800,10 @@ regen-ast:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
 		-c $(srcdir)/Python \
 		$(srcdir)/Parser/Python.asdl
+	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_ct.py \
+		$(srcdir)/Parser/Python.asdl \
+		$(srcdir)/Python/ast_opt.ct \
+		$(srcdir)/Python/ast_opt.c
 
 .PHONY: regen-opcode
 regen-opcode:
