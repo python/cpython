@@ -256,9 +256,13 @@ class Regrtest:
             if isinstance(test, unittest.TestSuite):
                 self._list_cases(test)
             elif isinstance(test, unittest.TestCase):
-                print(test.id())
+                if support._match_test(test):
+                    print(test.id())
 
     def list_cases(self):
+        support.verbose = False
+        support.match_tests = self.ns.match_tests
+
         for test in self.selected:
             abstest = get_abs_module(self.ns, test)
             try:
@@ -411,6 +415,8 @@ class Regrtest:
                 yield test
                 if self.bad:
                     return
+                if self.ns.fail_env_changed and self.environment_changed:
+                    return
 
     def display_header(self):
         # Print basic platform information
@@ -474,6 +480,8 @@ class Regrtest:
             result = "FAILURE"
         elif self.interrupted:
             result = "INTERRUPTED"
+        elif self.ns.fail_env_changed and self.environment_changed:
+            result = "ENV CHANGED"
         else:
             result = "SUCCESS"
         print("Tests result: %s" % result)
@@ -534,7 +542,13 @@ class Regrtest:
             self.rerun_failed_tests()
 
         self.finalize()
-        sys.exit(len(self.bad) > 0 or self.interrupted)
+        if self.bad:
+            sys.exit(2)
+        if self.interrupted:
+            sys.exit(130)
+        if self.ns.fail_env_changed and self.environment_changed:
+            sys.exit(3)
+        sys.exit(0)
 
 
 def removepy(names):

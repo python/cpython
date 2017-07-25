@@ -1304,7 +1304,7 @@ class TestShutil(unittest.TestCase):
     @unittest.skipUnless(hasattr(shutil, 'disk_usage'),
                          "disk_usage not available on this platform")
     def test_disk_usage(self):
-        usage = shutil.disk_usage(os.getcwd())
+        usage = shutil.disk_usage(os.path.dirname(__file__))
         self.assertGreater(usage.total, 0)
         self.assertGreater(usage.used, 0)
         self.assertGreaterEqual(usage.free, 0)

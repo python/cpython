@@ -618,6 +618,14 @@ class StructTest(unittest.TestCase):
         # Shouldn't crash.
         self.assertEqual(struct.unpack(b'b', b'a'), (b'a'[0],))
 
+    def test_format_attr(self):
+        s = struct.Struct('=i2H')
+        self.assertEqual(s.format, '=i2H')
+
+        # use a bytes string
+        s2 = struct.Struct(s.format.encode())
+        self.assertEqual(s2.format, s.format)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """

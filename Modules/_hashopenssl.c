@@ -925,15 +925,11 @@ generate_hash_name_list(void)
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
-    EVP_new_ ## NAME (PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames) \
+    EVP_new_ ## NAME (PyObject *self, PyObject **args, Py_ssize_t nargs) \
     { \
         PyObject *data_obj = NULL; \
         Py_buffer view = { 0 }; \
         PyObject *ret_obj; \
-     \
-        if (!_PyArg_NoStackKeywords(#NAME, kwnames)) { \
-            return NULL; \
-        } \
      \
         if (!_PyArg_ParseStack(args, nargs, "|O:" #NAME , &data_obj)) { \
             return NULL; \

@@ -190,13 +190,13 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 {
     dl_funcptr p;
     char funcname[258], *import_python;
-    wchar_t *wpathname;
+    const wchar_t *wpathname;
 
 #ifndef _DEBUG
     _Py_CheckPython3();
 #endif
 
-    wpathname = PyUnicode_AsUnicode(pathname);
+    wpathname = _PyUnicode_AsUnicode(pathname);
     if (wpathname == NULL)
         return NULL;
 

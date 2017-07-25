@@ -355,6 +355,8 @@ AC_SUBST(FRAMEWORKPYTHONW)
 AC_SUBST(FRAMEWORKUNIXTOOLSPREFIX)
 AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 
+AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
+
 ##AC_ARG_WITH(dyld,
 ##            AS_HELP_STRING([--with-dyld],
 ##                           [Use (OpenStep|Rhapsody) dynamic linker]))
@@ -4783,11 +4785,6 @@ else
   AC_DEFINE(HAVE_LIBREADLINE, 1,
     [Define if you have the readline library (-lreadline).])
 fi
-
-# check for readline 2.1
-AC_CHECK_LIB(readline, rl_callback_handler_install,
-	AC_DEFINE(HAVE_RL_CALLBACK, 1,
-        [Define if you have readline 2.1]), ,$READLINE_LIBS)
 
 # check for readline 2.2
 AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],

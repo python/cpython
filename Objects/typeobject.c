@@ -3340,7 +3340,7 @@ static PyMethodDef type_methods[] = {
     TYPE_MRO_METHODDEF
     TYPE___SUBCLASSES___METHODDEF
     {"__prepare__", (PyCFunction)type_prepare,
-     METH_FASTCALL | METH_CLASS,
+     METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("__prepare__() -> dict\n"
                "used to create the namespace for the class statement")},
     TYPE___INSTANCECHECK___METHODDEF
