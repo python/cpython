@@ -1138,7 +1138,7 @@ Test cases
       Test that the multiline string *first* is equal to the string *second*.
       When not equal a diff of the two strings highlighting the differences
       will be included in the error message. This method is used by default
-      when comparing strings with :meth:`assertEqual`.
+      when comparing Unicode strings with :meth:`assertEqual`.
 
       .. versionadded:: 2.7
 
