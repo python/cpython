@@ -2665,7 +2665,9 @@ def fd_count():
         # on invalid file descriptor if Python is compiled in debug mode
         try:
             import msvcrt
-        except ImportError:
+            msvcrt.CrtSetReportMode
+        except (AttributeError, ImportError):
+            # no msvcrt or a release build
             pass
         else:
             old_modes = {}
