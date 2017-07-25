@@ -552,7 +552,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 class HTTPCompressionTestCase(BaseTestCase):
 
     class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
-        
+
         compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
             "text/javascript", "application/javascript", "application/json"]
 
