@@ -535,7 +535,7 @@ _Py_CoerceLegacyLocale(void)
  * safe to call without calling Py_Initialize first)
  */
 
-/* TODO: Progresively move functionality from Py_BeginInitialization to
+/* TODO: Progressively move functionality from Py_BeginInitialization to
  * Py_ReadConfig and Py_EndInitialization
  */
 
