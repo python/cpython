@@ -1980,6 +1980,9 @@ class SubprocessTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
     def test_subprocess_send_signal(self):
+        # bpo-31034: Make sure that we get the default signal handler (killing
+        # the process). The parent process may have decided to ignore SIGHUP,
+        # and signal handlers are inherited.
         old_handler = signal.signal(signal.SIGHUP, signal.SIG_DFL)
         try:
             prog = os.path.join(os.path.dirname(__file__), 'echo.py')
