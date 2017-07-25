@@ -283,6 +283,7 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(p.is_alive(), False)
         self.assertNotIn(p, self.active_children())
+        close_queue(q)
 
     @classmethod
     def _test_terminate(cls):
@@ -422,6 +423,7 @@ class _TestProcess(BaseTestCase):
         p.join()
         self.assertIs(wr(), None)
         self.assertEqual(q.get(), 5)
+        close_queue(q)
 
 
 #
@@ -608,6 +610,7 @@ class _TestQueue(BaseTestCase):
         self.assertEqual(queue_full(queue, MAXSIZE), False)
 
         proc.join()
+        close_queue(queue)
 
     @classmethod
     def _test_get(cls, queue, child_can_start, parent_can_continue):
@@ -670,6 +673,7 @@ class _TestQueue(BaseTestCase):
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT3)
 
         proc.join()
+        close_queue(queue)
 
     @classmethod
     def _test_fork(cls, queue):
@@ -705,6 +709,7 @@ class _TestQueue(BaseTestCase):
         self.assertRaises(pyqueue.Empty, queue.get, False)
 
         p.join()
+        close_queue(queue)
 
     def test_qsize(self):
         q = self.Queue()
@@ -748,6 +753,7 @@ class _TestQueue(BaseTestCase):
 
         for p in workers:
             p.join()
+        close_queue(queue)
 
     def test_no_import_lock_contention(self):
         with test.support.temp_cwd():
@@ -778,6 +784,7 @@ class _TestQueue(BaseTestCase):
         # Tolerate a delta of 30 ms because of the bad clock resolution on
         # Windows (usually 15.6 ms)
         self.assertGreaterEqual(delta, 0.170)
+        close_queue(q)
 
     def test_queue_feeder_donot_stop_onexc(self):
         # bpo-30414: verify feeder handles exceptions correctly
@@ -1336,6 +1343,7 @@ class _TestBarrier(BaseTestCase):
         self.run_threads(self._test_wait_return_f, (self.barrier, queue))
         results = [queue.get() for i in range(self.N)]
         self.assertEqual(results.count(0), 1)
+        close_queue(queue)
 
     @classmethod
     def _test_action_f(cls, barrier, results):
@@ -2990,6 +2998,8 @@ class _TestPicklingConnections(BaseTestCase):
         w.close()
         self.assertEqual(conn.recv(), 'foobar'*2)
 
+        p.join()
+
 #
 #
 #
@@ -3478,7 +3488,7 @@ def _this_sub_process(q):
     except pyqueue.Empty:
         pass
 
-def _test_process(q):
+def _test_process():
     queue = multiprocessing.Queue()
     subProc = multiprocessing.Process(target=_this_sub_process, args=(queue,))
     subProc.daemon = True
@@ -3518,8 +3528,7 @@ class _file_like(object):
 class TestStdinBadfiledescriptor(unittest.TestCase):
 
     def test_queue_in_process(self):
-        queue = multiprocessing.Queue()
-        proc = multiprocessing.Process(target=_test_process, args=(queue,))
+        proc = multiprocessing.Process(target=_test_process)
         proc.start()
         proc.join()
 
