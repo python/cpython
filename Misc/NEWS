@@ -35,9 +35,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #22928: Disabled HTTP header injections in http.client.
-  Original patch by Demian Brecht.
-
 - [Security] bpo-30730: Prevent environment variables injection in subprocess on
   Windows.  Prevent passing other invalid environment variables and command arguments.
 
