@@ -2284,21 +2284,50 @@ delta_bool(PyDateTime_Delta *self)
 static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
-    if (GET_TD_MICROSECONDS(self) != 0)
-        return PyUnicode_FromFormat("%s(%d, %d, %d)",
-                                    Py_TYPE(self)->tp_name,
-                                    GET_TD_DAYS(self),
-                                    GET_TD_SECONDS(self),
-                                    GET_TD_MICROSECONDS(self));
-    if (GET_TD_SECONDS(self) != 0)
-        return PyUnicode_FromFormat("%s(%d, %d)",
-                                    Py_TYPE(self)->tp_name,
-                                    GET_TD_DAYS(self),
-                                    GET_TD_SECONDS(self));
+    PyObject *args = PyUnicode_FromString("");
 
-    return PyUnicode_FromFormat("%s(%d)",
-                                Py_TYPE(self)->tp_name,
-                                GET_TD_DAYS(self));
+    if (args == NULL) {
+        return NULL;
+    }
+
+    const char *sep = "";
+
+    if (GET_TD_DAYS(self) != 0) {
+        Py_SETREF(args, PyUnicode_FromFormat("days=%d", GET_TD_DAYS(self)));
+        if (args == NULL) {
+            return NULL;
+        }
+        sep = ", ";
+    }
+
+    if (GET_TD_SECONDS(self) != 0) {
+        Py_SETREF(args, PyUnicode_FromFormat("%U%sseconds=%d", args, sep,
+                                             GET_TD_SECONDS(self)));
+        if (args == NULL) {
+            return NULL;
+        }
+        sep = ", ";
+    }
+
+    if (GET_TD_MICROSECONDS(self) != 0) {
+        Py_SETREF(args, PyUnicode_FromFormat("%U%smicroseconds=%d", args, sep,
+                                             GET_TD_MICROSECONDS(self)));
+        if (args == NULL) {
+            return NULL;
+        }
+    }
+
+    if (PyUnicode_GET_LENGTH(args) == 0) {
+        Py_SETREF(args, PyUnicode_FromString("0"));
+        if (args == NULL) {
+            return NULL;
+        }
+    }
+
+    PyObject *repr = PyUnicode_FromFormat("%s(%S)", Py_TYPE(self)->tp_name,
+                                          args);
+    Py_DECREF(args);
+    return repr;
 }
 
 static PyObject *
