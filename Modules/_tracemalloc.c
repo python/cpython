@@ -62,12 +62,15 @@ typedef struct
 #ifdef __GNUC__
 __attribute__((packed))
 #elif defined(_MSC_VER)
-_declspec(align(4))
+#pragma pack(push, 4)
 #endif
 {
     PyObject *filename;
     unsigned int lineno;
 } frame_t;
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 typedef struct {
     Py_uhash_t hash;
