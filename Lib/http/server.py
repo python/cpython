@@ -96,6 +96,7 @@ import io
 import mimetypes
 import os
 import gzip
+import zlib
 import posixpath
 import select
 import shutil
@@ -129,6 +130,63 @@ DEFAULT_ERROR_MESSAGE = """\
 """
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
+
+# List of commonly compressed content types, copied from
+# https://github.com/h5bp/server-configs-apache.
+# compressed_types is set to this list when the server is started with
+# command line option --gzip.
+commonly_compressed_types = [ "application/atom+xml",
+                              "application/javascript",
+                              "application/json",
+                              "application/ld+json",
+                              "application/manifest+json",
+                              "application/rdf+xml",
+                              "application/rss+xml",
+                              "application/schema+json",
+                              "application/vnd.geo+json",
+                              "application/vnd.ms-fontobject",
+                              "application/x-font-ttf",
+                              "application/x-javascript",
+                              "application/x-web-app-manifest+json",
+                              "application/xhtml+xml",
+                              "application/xml",
+                              "font/eot",
+                              "font/opentype",
+                              "image/bmp",
+                              "image/svg+xml",
+                              "image/vnd.microsoft.icon",
+                              "image/x-icon",
+                              "text/cache-manifest",
+                              "text/css",
+                              "text/html",
+                              "text/javascript",
+                              "text/plain",
+                              "text/vcard",
+                              "text/vnd.rim.location.xloc",
+                              "text/vtt",
+                              "text/x-component",
+                              "text/x-cross-domain-policy",
+                              "text/xml"
+                            ]
+
+def _gzip_producer(fileobj):
+    """Generator that yields chunks of gzipped data read from the file object
+    fileobj. The last chunk is b'' to generate the final 0-length HTTP chunk.
+    """
+    bufsize = 2 << 17
+    producer = zlib.compressobj(wbits=16 + 9)
+    with fileobj:
+        while True:
+            buf = fileobj.read(bufsize)
+            if not buf: # end of file
+                chunk = producer.flush()
+                if chunk:
+                    yield chunk
+                yield b''
+                return
+            chunk = producer.compress(buf)
+            if chunk:
+                yield chunk
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -637,15 +695,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "SimpleHTTP/" + __version__
 
-    # Content-Types that will be gzip-compressed. Set to [] to
-    # disable compression.
-    compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
-        "text/javascript", "application/javascript", "application/json"]
+    # List of Content Types that are returned with HTTP compression (gzip).
+    # Set to the empty list by default (no compression).
+    compressed_types = []
 
     def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
         self.directory = directory
+        self.chunked = False
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -653,7 +711,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         f = self.send_head()
         if f:
             try:
-                self.copyfile(f, self.wfile)
+                if not self.chunked:
+                    self.copyfile(f, self.wfile)
+                else:
+                    # Chunked Transfer Encoding (RFC 7230 section 4.1)
+                    # f is a generator of chunks. The last chunk is b''.
+                    for chunk in f:
+                        length = hex(len(chunk)).encode("ascii")
+                        self.wfile.write(length + b"\r\n")
+                        self.wfile.write(chunk + b"\r\n")
             finally:
                 f.close()
 
@@ -725,6 +791,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             fs.st_mtime, datetime.timezone.utc)
                         # remove microseconds, like in If-Modified-Since
                         last_modif = last_modif.replace(microsecond=0)
+
                         if last_modif <= ims:
                             self.send_response(HTTPStatus.NOT_MODIFIED)
                             self.end_headers()
@@ -749,25 +816,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 encodings.append(encoding if encoding != "*" else "gzip")
 
             if ctype in self.compressed_types and "gzip" in encodings:
+                self.send_header("Content-Encoding", "gzip")
                 if content_length < 2 << 18:
-                    # for small files, load content in memory
+                    # For small files, load content in memory
                     content = gzip.compress(f.read())
                     content_length = len(content)
                     f = io.BytesIO(content)
-                    self.send_header("Content-Encoding", "gzip")
                 else:
-                    # for large files, store zipped content in a
-                    # temporary file
-                    try:
-                        dest = tempfile.TemporaryFile()
-                        with gzip.GzipFile(fileobj=dest, mode="wb") as f_gz:
-                            shutil.copyfileobj(f, f_gz)
-                        content_length = dest.tell()
-                        f = dest
-                        f.seek(0)
-                        self.send_header("Content-Encoding", "gzip")
-                    except IOError:
-                        pass
+                    # For large files, use Chunked Transfer Encoding
+                    self.chunked = True
+                    self.send_header("Transfer-Encoding", "chunked")
+                    self.end_headers()
+                    return _gzip_producer(f)
+
             self.send_header("Content-Length", content_length)
             self.end_headers()
             return f
@@ -1048,6 +1109,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
             return True
         return False
 
+
     cgi_directories = ['/cgi-bin', '/htbin']
 
     def is_executable(self, path):
@@ -1283,6 +1345,8 @@ if __name__ == '__main__':
     parser.add_argument('--directory', '-d', default=os.getcwd(),
                         help='Specify alternative directory '
                         '[default:current directory]')
+    parser.add_argument('--gzip', action="store_true",
+                        help="Enable HTTP compression")
     parser.add_argument('port', action='store',
                         default=8000, type=int,
                         nargs='?',
@@ -1290,7 +1354,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
+    elif args.gzip:
+        class GzipHandler(SimpleHTTPRequestHandler):
+            compressed_types = commonly_compressed_types
+        handler_class = GzipHandler
     else:
         handler_class = partial(SimpleHTTPRequestHandler,
                                 directory=args.directory)
+
     test(HandlerClass=handler_class, port=args.port, bind=args.bind)

@@ -550,8 +550,11 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertIn(html_text.encode(enc), body)
 
 class HTTPCompressionTestCase(BaseTestCase):
+
     class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
-        pass
+        
+        compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
+            "text/javascript", "application/javascript", "application/json"]
 
     def setUp(self):
         BaseTestCase.setUp(self)
