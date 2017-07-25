@@ -9,7 +9,7 @@ class TestFuzz(unittest.TestCase):
 
         This isn't meaningful and only checks it doesn't crash.
         """
-        _fuzz._fuzz_run_all()
+        _fuzz.run()
 
 if __name__ == "__main__":
     support.run_unittest(TestFuzz)

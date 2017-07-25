@@ -716,7 +716,11 @@ class PyBuildExt(build_ext):
         exts.append( Extension('syslog', ['syslogmodule.c']) )
 
         # Fuzz tests.
-        exts.append( Extension('_fuzz', ['_fuzz/_fuzzmodule.c'], optional=False) )
+        exts.append( Extension(
+            '_fuzz',
+            ['_fuzz/_fuzzmodule.c', '_fuzz/fuzzer.c'],
+            optional=False)
+        )
 
         #
         # Here ends the simple stuff.  From here on, modules need certain

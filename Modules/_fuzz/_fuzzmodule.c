@@ -2,47 +2,24 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-// List all fuzz functions here, and in the _fuzz_run_all function.
-#include "fuzz_builtin_hash.inc"
-#include "fuzz_builtin_int.inc"
-#include "fuzz_builtin_float.inc"
-#include "fuzz_builtin_unicode.inc"
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 
-// Runs fuzzer and returns nonzero if an error occurred.
-int _run_fuzz(int(*fuzzer)(const char* , size_t)) {
-    int rv = fuzzer("", 0);
+static PyObject* _fuzz_run(PyObject* self) {
+    int rv = LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
     if (PyErr_Occurred()) {
-        return 1;
+        return NULL;
     }
     if (rv != 0) {
+        // Nonzero return codes are reserved for future use.
         PyErr_Format(
             PyExc_RuntimeError, "Nonzero return code from fuzzer: %d", rv);
-        return 1;
+        return NULL;
     }
-    return 0;
-}
-
-
-static PyObject* _fuzz_run_all(PyObject* self) {
-#define _Py_FUZZ_STRINGIZE(x) _Py_FUZZ_STRINGIZE2(x)
-#define _Py_FUZZ_STRINGIZE2(x) #x
-#define _Py_FUZZ_RUN(f) \
-        do {\
-            printf("%s()\n", _Py_FUZZ_STRINGIZE(f));\
-            if (_run_fuzz(f)) return NULL; \
-        } while (0)
-    _Py_FUZZ_RUN(fuzz_builtin_hash);
-    _Py_FUZZ_RUN(fuzz_builtin_int);
-    _Py_FUZZ_RUN(fuzz_builtin_float);
-    _Py_FUZZ_RUN(fuzz_builtin_unicode);
-#undef _Py_FUZZ_RUN
-#undef _Py_FUZZ_STRINGIZE
-#undef _Py_FUZZ_STRINGIZE2
     Py_RETURN_NONE;
 }
 
 static PyMethodDef module_methods[] = {
-    {"_fuzz_run_all", (PyCFunction)_fuzz_run_all, METH_NOARGS, ""},
+    {"run", (PyCFunction)_fuzz_run, METH_NOARGS, ""},
     {NULL},
 };
 
