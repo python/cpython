@@ -6,6 +6,8 @@
 Streams (coroutine based API)
 +++++++++++++++++++++++++++++
 
+**Source code:** :source:`Lib/asyncio/streams.py`
+
 Stream functions
 ================
 

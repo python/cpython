@@ -5,6 +5,8 @@
 Base Event Loop
 ===============
 
+**Source code:** :source:`Lib/asyncio/events.py`
+
 The event loop is the central execution device provided by :mod:`asyncio`.
 It provides multiple facilities, including:
 
