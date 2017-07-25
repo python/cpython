@@ -109,6 +109,11 @@ behavior of the module.
    When *strict* is ``True`` (the default), the mapping will be added to the
    official MIME types, otherwise to the non-standard ones.
 
+   .. note::
+
+        The *ext* argument should start with a dot ("``.``") for the
+        mapping to be used by other calls to ``mimetypes``.
+
 
 .. data:: inited
 
