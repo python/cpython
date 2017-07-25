@@ -785,6 +785,115 @@ class ConfigDialog(Toplevel):
         self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
         return frame
 
+    def load_general_cfg(self):
+        "Load current configuration settings for the general options."
+        # Set startup state.
+        self.startup_edit.set(idleConf.GetOption(
+                'main', 'General', 'editor-on-startup', default=1, type='bool'))
+        # Set autosave state.
+        self.autosave.set(idleConf.GetOption(
+                'main', 'General', 'autosave', default=0, type='bool'))
+        # Set initial window size.
+        self.win_width.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'width', type='int'))
+        self.win_height.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'height', type='int'))
+        # Set additional help sources.
+        self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
+        for help_item in self.user_helplist:
+            self.list_help.insert(END, help_item[0])
+        self.set_helplist_button_states()
+
+    def var_changed_win_width(self, *params):
+        "Store change to window width."
+        value = self.win_width.get()
+        changes.add_option('main', 'EditorWindow', 'width', value)
+
+    def var_changed_win_height(self, *params):
+        "Store change to window height."
+        value = self.win_height.get()
+        changes.add_option('main', 'EditorWindow', 'height', value)
+
+    def var_changed_startup_edit(self, *params):
+        "Store change to toggle for starting IDLE in the editor or shell."
+        value = self.startup_edit.get()
+        changes.add_option('main', 'General', 'editor-on-startup', value)
+
+    def var_changed_autosave(self, *params):
+        "Store change to autosave."
+        value = self.autosave.get()
+        changes.add_option('main', 'General', 'autosave', value)
+
+    def help_source_selected(self, event):
+        "Handle event for selecting additional help."
+        self.set_helplist_button_states()
+
+    def set_helplist_button_states(self):
+        "Toggle the state for the help list buttons based on list entries."
+        if self.list_help.size() < 1:  # No entries in list.
+            self.button_helplist_edit.config(state=DISABLED)
+            self.button_helplist_remove.config(state=DISABLED)
+        else:  # Some entries.
+            if self.list_help.curselection():  # There currently is a selection.
+                self.button_helplist_edit.config(state=NORMAL)
+                self.button_helplist_remove.config(state=NORMAL)
+            else:  # There currently is not a selection.
+                self.button_helplist_edit.config(state=DISABLED)
+                self.button_helplist_remove.config(state=DISABLED)
+
+    def helplist_item_add(self):
+        """Handle add button for the help list.
+
+        Query for name and location of new help sources and add
+        them to the list.
+        """
+        help_source = HelpSource(self, 'New Help Source',
+                                ).result
+        if help_source:
+            self.user_helplist.append((help_source[0], help_source[1]))
+            self.list_help.insert(END, help_source[0])
+            self.update_user_help_changed_items()
+        self.set_helplist_button_states()
+
+    def helplist_item_edit(self):
+        """Handle edit button for the help list.
+
+        Query with existing help source information and update
+        config if the values are changed.
+        """
+        item_index = self.list_help.index(ANCHOR)
+        help_source = self.user_helplist[item_index]
+        new_help_source = HelpSource(
+                self, 'Edit Help Source',
+                menuitem=help_source[0],
+                filepath=help_source[1],
+                ).result
+        if new_help_source and new_help_source != help_source:
+            self.user_helplist[item_index] = new_help_source
+            self.list_help.delete(item_index)
+            self.list_help.insert(item_index, new_help_source[0])
+            self.update_user_help_changed_items()
+            self.set_helplist_button_states()
+
+    def helplist_item_remove(self):
+        """Handle remove button for the help list.
+
+        Delete the help list item from config.
+        """
+        item_index = self.list_help.index(ANCHOR)
+        del(self.user_helplist[item_index])
+        self.list_help.delete(item_index)
+        self.update_user_help_changed_items()
+        self.set_helplist_button_states()
+
+    def update_user_help_changed_items(self):
+        "Clear and rebuild the HelpFiles section in changes"
+        changes['main']['HelpFiles'] = {}
+        for num in range(1, len(self.user_helplist) + 1):
+            changes.add_option(
+                    'main', 'HelpFiles', str(num),
+                    ';'.join(self.user_helplist[num-1][:2]))
+
     def attach_var_callbacks(self):
         "Attach callbacks to variables that can be changed."
         self.font_size.trace_add('write', self.var_changed_font)
@@ -916,26 +1025,6 @@ class ConfigDialog(Toplevel):
             self.var_changed_builtin_keys()
         else:
             self.var_changed_custom_keys()
-
-    def var_changed_win_width(self, *params):
-        "Store change to window width."
-        value = self.win_width.get()
-        changes.add_option('main', 'EditorWindow', 'width', value)
-
-    def var_changed_win_height(self, *params):
-        "Store change to window height."
-        value = self.win_height.get()
-        changes.add_option('main', 'EditorWindow', 'height', value)
-
-    def var_changed_startup_edit(self, *params):
-        "Store change to toggle for starting IDLE in the editor or shell."
-        value = self.startup_edit.get()
-        changes.add_option('main', 'General', 'editor-on-startup', value)
-
-    def var_changed_autosave(self, *params):
-        "Store change to autosave."
-        value = self.autosave.get()
-        changes.add_option('main', 'General', 'autosave', value)
 
     def set_theme_type(self):
         """Set available screen options based on builtin or custom theme.
@@ -1378,76 +1467,6 @@ class ConfigDialog(Toplevel):
             self.highlight_sample.tag_config(element, **colors)
         self.set_color_sample()
 
-    def help_source_selected(self, event):
-        "Handle event for selecting additional help."
-        self.set_helplist_button_states()
-
-    def set_helplist_button_states(self):
-        "Toggle the state for the help list buttons based on list entries."
-        if self.list_help.size() < 1:  # No entries in list.
-            self.button_helplist_edit.config(state=DISABLED)
-            self.button_helplist_remove.config(state=DISABLED)
-        else:  # Some entries.
-            if self.list_help.curselection():  # There currently is a selection.
-                self.button_helplist_edit.config(state=NORMAL)
-                self.button_helplist_remove.config(state=NORMAL)
-            else:  # There currently is not a selection.
-                self.button_helplist_edit.config(state=DISABLED)
-                self.button_helplist_remove.config(state=DISABLED)
-
-    def helplist_item_add(self):
-        """Handle add button for the help list.
-
-        Query for name and location of new help sources and add
-        them to the list.
-        """
-        help_source = HelpSource(self, 'New Help Source',
-                                ).result
-        if help_source:
-            self.user_helplist.append((help_source[0], help_source[1]))
-            self.list_help.insert(END, help_source[0])
-            self.update_user_help_changed_items()
-        self.set_helplist_button_states()
-
-    def helplist_item_edit(self):
-        """Handle edit button for the help list.
-
-        Query with existing help source information and update
-        config if the values are changed.
-        """
-        item_index = self.list_help.index(ANCHOR)
-        help_source = self.user_helplist[item_index]
-        new_help_source = HelpSource(
-                self, 'Edit Help Source',
-                menuitem=help_source[0],
-                filepath=help_source[1],
-                ).result
-        if new_help_source and new_help_source != help_source:
-            self.user_helplist[item_index] = new_help_source
-            self.list_help.delete(item_index)
-            self.list_help.insert(item_index, new_help_source[0])
-            self.update_user_help_changed_items()
-            self.set_helplist_button_states()
-
-    def helplist_item_remove(self):
-        """Handle remove button for the help list.
-
-        Delete the help list item from config.
-        """
-        item_index = self.list_help.index(ANCHOR)
-        del(self.user_helplist[item_index])
-        self.list_help.delete(item_index)
-        self.update_user_help_changed_items()
-        self.set_helplist_button_states()
-
-    def update_user_help_changed_items(self):
-        "Clear and rebuild the HelpFiles section in changes"
-        changes['main']['HelpFiles'] = {}
-        for num in range(1, len(self.user_helplist) + 1):
-            changes.add_option(
-                    'main', 'HelpFiles', str(num),
-                    ';'.join(self.user_helplist[num-1][:2]))
-
     def load_theme_cfg(self):
         """Load current configuration settings for the theme options.
 
@@ -1530,25 +1549,6 @@ class ConfigDialog(Toplevel):
         # Load keyset element list.
         keyset_name = idleConf.CurrentKeys()
         self.load_keys_list(keyset_name)
-
-    def load_general_cfg(self):
-        "Load current configuration settings for the general options."
-        # Set startup state.
-        self.startup_edit.set(idleConf.GetOption(
-                'main', 'General', 'editor-on-startup', default=1, type='bool'))
-        # Set autosave state.
-        self.autosave.set(idleConf.GetOption(
-                'main', 'General', 'autosave', default=0, type='bool'))
-        # Set initial window size.
-        self.win_width.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'width', type='int'))
-        self.win_height.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'height', type='int'))
-        # Set additional help sources.
-        self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
-        for help_item in self.user_helplist:
-            self.list_help.insert(END, help_item[0])
-        self.set_helplist_button_states()
 
     def load_configs(self):
         """Load configuration for each page.
