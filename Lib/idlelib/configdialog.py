@@ -653,14 +653,16 @@ class ConfigDialog(Toplevel):
     def create_page_general(self):
         """Return frame of widgets for General tab.
 
-        Tk Variables:
-            win_width: Initial window width in characters.
-            win_height: Initial window height in characters.
-            startup_edit: Selector for opening in editor or shell mode.
-            autosave: Selector for save prompt popup when using Run.
+        Enable user to set general options.  Load_general_cfg loads
+        current values.  Radiobuttons startup_shell_on and
+        startup_editor_on set var startup_edit. Radiobuttons save_ask_on
+        and save_auto_on set var autosave. Entry boxes win_width_int and
+        win_height_int set var win_width and win_height.  Setting vars
+        invokes var_changed_var_name callback that adds option to
+        changes.
+
 
         Methods:
-            load_general_config:
             help_source_selected: Bound to list_help button release.
             set_helplist_button_states: Toggle based on list.
             helplist_item_edit: Command for button_helplist_edit.
@@ -672,18 +674,18 @@ class ConfigDialog(Toplevel):
             frame
                 frame_run: LabelFrame
                     startup_title: Label
-                    (*)radio_startup_edit: Radiobutton - startup_edit
-                    (*)radio_startup_shell: Radiobutton - startup_edit
+                    (*)startup_editor_on: Radiobutton - startup_edit
+                    (*)startup_shell_on: Radiobutton - startup_edit
                 frame_save: LabelFrame
                     run_save_title: Label
-                    (*)radio_save_ask: Radiobutton - autosave
-                    (*)radio_save_auto: Radiobutton - autosave
+                    (*)save_ask_on: Radiobutton - autosave
+                    (*)save_auto_on: Radiobutton - autosave
                 frame_win_size: LabelFrame
                     win_size_title: Label
                     win_width_title: Label
-                    (*)entry_win_width: Entry - win_width
+                    (*)win_width_int: Entry - win_width
                     win_height_title: Label
-                    (*)entry_win_height: Entry - win_height
+                    (*)win_height_int: Entry - win_height
                 frame_help: LabelFrame
                     frame_helplist: Frame
                         frame_helplist_buttons: Frame
@@ -694,10 +696,10 @@ class ConfigDialog(Toplevel):
                         (*)list_help: ListBox
         """
         parent = self.parent
-        self.win_width = StringVar(parent)
-        self.win_height = StringVar(parent)
         self.startup_edit = IntVar(parent)
         self.autosave = IntVar(parent)
+        self.win_width = StringVar(parent)
+        self.win_height = StringVar(parent)
 
         #widget creation
         #body
@@ -712,18 +714,18 @@ class ConfigDialog(Toplevel):
                                text=' Additional Help Sources ')
         #frame_run
         startup_title = Label(frame_run, text='At Startup')
-        self.radio_startup_edit = Radiobutton(
+        self.startup_editor_on = Radiobutton(
                 frame_run, variable=self.startup_edit, value=1,
                 text="Open Edit Window")
-        self.radio_startup_shell = Radiobutton(
+        self.startup_shell_on = Radiobutton(
                 frame_run, variable=self.startup_edit, value=0,
                 text='Open Shell Window')
         #frame_save
         run_save_title = Label(frame_save, text='At Start of Run (F5)  ')
-        self.radio_save_ask = Radiobutton(
+        self.save_ask_on = Radiobutton(
                 frame_save, variable=self.autosave, value=0,
                 text="Prompt to Save")
-        self.radio_save_auto = Radiobutton(
+        self.save_auto_on = Radiobutton(
                 frame_save, variable=self.autosave, value=1,
                 text='No Prompt')
         #frame_win_size
@@ -763,12 +765,12 @@ class ConfigDialog(Toplevel):
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         #frame_run
         startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.radio_startup_shell.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        self.radio_startup_edit.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         #frame_save
         run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.radio_save_auto.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        self.radio_save_ask.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         #frame_win_size
         win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.entry_win_height.pack(side=RIGHT, anchor=E, padx=10, pady=5)
@@ -804,16 +806,6 @@ class ConfigDialog(Toplevel):
             self.list_help.insert(END, help_item[0])
         self.set_helplist_button_states()
 
-    def var_changed_win_width(self, *params):
-        "Store change to window width."
-        value = self.win_width.get()
-        changes.add_option('main', 'EditorWindow', 'width', value)
-
-    def var_changed_win_height(self, *params):
-        "Store change to window height."
-        value = self.win_height.get()
-        changes.add_option('main', 'EditorWindow', 'height', value)
-
     def var_changed_startup_edit(self, *params):
         "Store change to toggle for starting IDLE in the editor or shell."
         value = self.startup_edit.get()
@@ -823,6 +815,16 @@ class ConfigDialog(Toplevel):
         "Store change to autosave."
         value = self.autosave.get()
         changes.add_option('main', 'General', 'autosave', value)
+
+    def var_changed_win_width(self, *params):
+        "Store change to window width."
+        value = self.win_width.get()
+        changes.add_option('main', 'EditorWindow', 'width', value)
+
+    def var_changed_win_height(self, *params):
+        "Store change to window height."
+        value = self.win_height.get()
+        changes.add_option('main', 'EditorWindow', 'height', value)
 
     def help_source_selected(self, event):
         "Handle event for selecting additional help."

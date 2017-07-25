@@ -229,14 +229,23 @@ class GeneralTest(unittest.TestCase):
     def setUp(self):
         changes.clear()
 
+    def test_load_general(self):
+        pass
+
     def test_startup(self):
-        dialog.radio_startup_edit.invoke()
+        dialog.startup_editor_on.invoke()
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '1'}})
+        changes.clear()
+        dialog.startup_shell_on.invoke()
+        self.assertEqual(mainpage,
+                         {'General': {'editor-on-startup': '0'}})
 
     def test_autosave(self):
-        dialog.radio_save_auto.invoke()
+        dialog.save_auto_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '1'}})
+        dialog.save_ask_on.invoke()
+        self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
     def test_editor_size(self):
         dialog.entry_win_height.insert(0, '1')
