@@ -249,3 +249,5 @@ def get_cache_token():
     with every call to ``register()`` on any ABC.
     """
     return ABCMeta._abc_invalidation_counter
+
+from _abc import get_cache_token

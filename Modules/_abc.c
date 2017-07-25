@@ -1,5 +1,9 @@
 /* ABCMeta implementation */
 
+/* TODO: Global check where checks are needed, and where I made objects myself */
+/* In particular use capitals like PyList_GET_SIZE */
+/* Think (ask) about inlining some calls, like __subclasses__ */
+
 #include "Python.h"
 #include "structmember.h"
 
@@ -141,6 +145,14 @@ abcmeta_register(abc *self, PyObject *args)
         PyErr_SetString(PyExc_TypeError, "Can only register classes");
         return NULL;
     }
+    if (PyObject_IsSubclass(subclass, (PyObject *)self)) { /* TODO: Check for error here */
+        Py_INCREF(subclass);
+        return subclass;
+    }
+    if (PyObject_IsSubclass((PyObject *)self, subclass)) { /* TODO: Check for error here */
+        PyErr_SetString(PyExc_RuntimeError, "Refusing to create an inheritance cycle");
+        return NULL;
+    }
     if (PySet_Add(self->abc_registry, subclass) < 0) {
         return NULL;
     }
@@ -150,20 +162,26 @@ abcmeta_register(abc *self, PyObject *args)
 }
 
 static PyObject *
+abcmeta_subclasscheck(abc *self, PyObject *args); /* Forward */
+
+static PyObject *
 abcmeta_instancecheck(abc *self, PyObject *args)
 {
-    PyObject *instance = NULL;
+    PyObject *subclass, *instance = NULL;
     if (!PyArg_UnpackTuple(args, "__isinstance__", 1, 1, &instance)) {
         return NULL;
     }
-    Py_INCREF(Py_False);
-    return Py_False;
+    subclass = Py_TYPE(instance);
+    /* TODO: Use cache */
+    return abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass)); /* TODO: Refactor to avoid packing */
 }
 
 static PyObject *
 abcmeta_subclasscheck(abc *self, PyObject *args)
 {
-    PyObject *subclass = NULL;
+    PyObject *subclasses, *subclass = NULL;
+    PyObject *ok, *mro, *iter, *key;
+    Py_ssize_t pos;
     if (!PyArg_UnpackTuple(args, "__issubclass__", 1, 1, &subclass)) {
         return NULL;
     }
@@ -171,6 +189,38 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
        on iteration here (have a counter for this) */
     /* TODO: Reset caches every n-th succes/failure correspondingly
        so that they don't grow too large */
+    ok = PyObject_CallMethod(self, "__subclasshook__", "O", subclass);
+    if (ok == Py_True) {
+        Py_INCREF(Py_True);
+        return Py_True;
+    }
+    if (ok == Py_False) {
+        Py_INCREF(Py_False);
+        return Py_False;
+    }
+    mro = ((PyTypeObject *)subclass)->tp_mro;
+    for (pos = 0; pos < PyTuple_Size(mro); pos++) {
+        if (self == PyTuple_GetItem(mro, pos)) {
+            Py_INCREF(Py_True);
+            return Py_True;
+        }
+    }
+    iter = PyObject_GetIter(self->abc_registry);
+    while (key = PyIter_Next(iter)) {
+        if (PyObject_IsSubclass(subclass, key)) {
+            Py_INCREF(Py_True);
+            return Py_True;
+        }
+        Py_DECREF(key);
+    }
+    Py_DECREF(iter);
+    subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
+    for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
+        if (PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos))) {
+            Py_INCREF(Py_True);
+            return Py_True;
+        }
+    }
     Py_INCREF(Py_False);
     return Py_False;
 }
@@ -251,13 +301,30 @@ PyTypeObject ABCMeta = {
     0,                                          /* tp_is_gc */
 };
 
+PyDoc_STRVAR(_cache_token_doc,
+"Returns the current ABC cache token.\n\
+\n\
+The token is an opaque object (supporting equality testing) identifying the\n\
+current version of the ABC cache for virtual subclasses. The token changes\n\
+with every call to ``register()`` on any ABC.");
+
+static PyObject *
+get_cache_token(void)
+{
+    return PyLong_FromSsize_t(abc_invalidation_counter);
+}
+
+static struct PyMethodDef module_functions[] = {
+    {"get_cache_token", get_cache_token, METH_NOARGS, _cache_token_doc},
+    {NULL,       NULL}          /* sentinel */
+};
 
 static struct PyModuleDef _abcmodule = {
     PyModuleDef_HEAD_INIT,
     "_abc",
     _abc__doc__,
     -1,
-    NULL,
+    module_functions,
     NULL,
     NULL,
     NULL,
