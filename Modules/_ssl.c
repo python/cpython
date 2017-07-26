@@ -321,7 +321,7 @@ typedef struct {
 #endif
 #ifdef HAVE_ALPN
     unsigned char *alpn_protocols;
-    int alpn_protocols_len;
+    unsigned int alpn_protocols_len;
 #endif
 #ifndef OPENSSL_NO_TLSEXT
     PyObject *set_hostname;
@@ -1591,7 +1591,8 @@ cipher_to_dict(const SSL_CIPHER *cipher)
     cipher_protocol = SSL_CIPHER_get_version(cipher);
     cipher_id = SSL_CIPHER_get_id(cipher);
     SSL_CIPHER_description(cipher, buf, sizeof(buf) - 1);
-    len = strlen(buf);
+    /* Downcast to avoid a warning. Safe since buf is always 512 bytes */
+    len = (int)strlen(buf);
     if (len > 1 && buf[len-1] == '\n')
         buf[len-1] = '\0';
     strength_bits = SSL_CIPHER_get_bits(cipher, &alg_bits);
@@ -2975,12 +2976,18 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
 /*[clinic end generated code: output=87599a7f76651a9b input=9bba964595d519be]*/
 {
 #ifdef HAVE_ALPN
+    if (protos->len > UINT_MAX) {
+        PyErr_Format(PyExc_OverflowError,
+            "protocols longer than %d bytes", UINT_MAX);
+        return NULL;
+    }
+
     PyMem_FREE(self->alpn_protocols);
     self->alpn_protocols = PyMem_Malloc(protos->len);
     if (!self->alpn_protocols)
         return PyErr_NoMemory();
     memcpy(self->alpn_protocols, protos->buf, protos->len);
-    self->alpn_protocols_len = protos->len;
+    self->alpn_protocols_len = (unsigned int)protos->len;
 
     if (SSL_CTX_set_alpn_protos(self->ctx, self->alpn_protocols, self->alpn_protocols_len))
         return PyErr_NoMemory();
@@ -4109,7 +4116,7 @@ memory_bio_dealloc(PySSLMemoryBIO *self)
 static PyObject *
 memory_bio_get_pending(PySSLMemoryBIO *self, void *c)
 {
-    return PyLong_FromLong(BIO_ctrl_pending(self->bio));
+    return PyLong_FromSize_t(BIO_ctrl_pending(self->bio));
 }
 
 PyDoc_STRVAR(PySSL_memory_bio_pending_doc,
@@ -4145,7 +4152,7 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
     int avail, nbytes;
     PyObject *result;
 
-    avail = BIO_ctrl_pending(self->bio);
+    avail = (int)Py_MIN(BIO_ctrl_pending(self->bio), INT_MAX);
     if ((len < 0) || (len > avail))
         len = avail;
 
@@ -4191,7 +4198,7 @@ _ssl_MemoryBIO_write_impl(PySSLMemoryBIO *self, Py_buffer *b)
         return NULL;
     }
 
-    nbytes = BIO_write(self->bio, b->buf, b->len);
+    nbytes = BIO_write(self->bio, b->buf, (int)b->len);
     if (nbytes < 0) {
         _setSSLError(NULL, 0, __FILE__, __LINE__);
         return NULL;
