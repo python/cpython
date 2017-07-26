@@ -161,6 +161,13 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(self.db.guess_extension(
             type='image/jpg', strict=False), '.jpg')
 
+    def test_added_types_are_used(self):
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(None, mime_type)
+        mimetypes.add_type('testing/type', '.myext')
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual('testing/type', mime_type)
+
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
 class Win32MimeTypesTestCase(unittest.TestCase):
