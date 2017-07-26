@@ -1,5 +1,4 @@
 import unittest
-from test import support
 import _fuzz
 
 class TestFuzz(unittest.TestCase):
@@ -17,4 +16,4 @@ class TestFuzz(unittest.TestCase):
         _fuzz.run(b"1")
 
 if __name__ == "__main__":
-    support.run_unittest(TestFuzz)
+    unittest.main()
