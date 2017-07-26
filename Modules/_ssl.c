@@ -1555,6 +1555,7 @@ cipher_to_dict(const SSL_CIPHER *cipher)
     cipher_protocol = SSL_CIPHER_get_version(cipher);
     cipher_id = SSL_CIPHER_get_id(cipher);
     SSL_CIPHER_description(cipher, buf, sizeof(buf) - 1);
+    /* Downcast to avoid a warning. Safe since buf is always 512 bytes */
     len = (int)strlen(buf);
     if (len > 1 && buf[len-1] == '\n')
         buf[len-1] = '\0';
