@@ -480,6 +480,9 @@ class TestFTPClass(TestCase):
         self.assertEqual(self.client.sanitize('PASS 12345'), repr('PASS *****'))
 
     def test_exceptions(self):
+        self.assertRaises(ValueError, self.client.sendcmd, 'echo 40\r\n0')
+        self.assertRaises(ValueError, self.client.sendcmd, 'echo 40\n0')
+        self.assertRaises(ValueError, self.client.sendcmd, 'echo 40\r0')
         self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'echo 400')
         self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'echo 499')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'echo 500')
@@ -488,7 +491,8 @@ class TestFTPClass(TestCase):
 
     def test_all_errors(self):
         exceptions = (ftplib.error_reply, ftplib.error_temp, ftplib.error_perm,
-                      ftplib.error_proto, ftplib.Error, IOError, EOFError)
+                      ftplib.error_proto, ftplib.Error, OSError,
+                      EOFError)
         for x in exceptions:
             try:
                 raise x('exception not included in all_errors set')
