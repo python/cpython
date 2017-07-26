@@ -94,7 +94,7 @@ class Visitor:
         self.name = name
         self.types = types
         self.rules = {}
-        self._funcs = {}
+        self._funcs = OrderedDict()
 
     def add_rule(self, name, func, kind):
         "Add @kind(name, func) rule."
@@ -243,7 +243,7 @@ class Processor:
         if cmd in ('pre', 'post', 'just'):
             if len(args) != 3:
                 raise TypeError(cmd + ' expects 3 arguments')
-                
+
             v = self.visitors.setdefault(args[0],
                                          Visitor(args[0], self.mod.types))
             v.add_rule(args[1], args[2], cmd)
@@ -287,4 +287,3 @@ if __name__ == "__main__":
         sys.exit(1)
     p = Processor(args[1])
     p.process(args[2], args[3])
-
