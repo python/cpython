@@ -2,7 +2,7 @@
   'use strict';
 
   // Parses versions in URL segments like:
-  // "/3", "/dev", "/release/2.7" or "/3.6rc2"
+  // "3", "dev", "release/2.7" or "3.6rc2"
   var version_regexs = [
     '(?:\\d)',
     '(?:\\d\\.\\d[\\w\\d\\.]*)',
