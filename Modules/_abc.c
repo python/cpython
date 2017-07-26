@@ -9,7 +9,7 @@
 #include "structmember.h"
 
 PyDoc_STRVAR(_abc__doc__,
-"_abc module contains (presumably faster) implementation of ABCMeta");
+"Module contains faster C implementation of abc.ABCMeta");
 #define DEFERRED_ADDRESS(ADDR) 0
 
 _Py_IDENTIFIER(stdout);
@@ -325,17 +325,35 @@ abcmeta_dump(abc *self, PyObject *args)
     return Py_None;
 }
 
+PyDoc_STRVAR(_register_doc,
+"Register a virtual subclass of an ABC.\n\
+\n\
+Returns the subclass, to allow usage as a class decorator.");
+
 static PyMethodDef abcmeta_methods[] = {
     {"register", (PyCFunction)abcmeta_register, METH_VARARGS,
-        PyDoc_STR("register subclass")},
+        _register_doc},
     {"__instancecheck__", (PyCFunction)abcmeta_instancecheck, METH_VARARGS,
-        PyDoc_STR("check if instance is an instance of the class")},
+        PyDoc_STR("Override for isinstance(instance, cls).")},
     {"__subclasscheck__", (PyCFunction)abcmeta_subclasscheck, METH_VARARGS,
-        PyDoc_STR("check if subclass is a subclass of the class")},
+        PyDoc_STR("Override for issubclass(subclass, cls).")},
     {"_dump_registry", (PyCFunction)abcmeta_dump, METH_VARARGS,
-        PyDoc_STR("dump registry (private)")},
+        PyDoc_STR("Debug helper to print the ABC registry.")},
     {NULL,      NULL},
 };
+
+PyDoc_STRVAR(abcmeta_doc,
+ "Metaclass for defining Abstract Base Classes (ABCs).\n\
+\n\
+Use this metaclass to create an ABC.  An ABC can be subclassed\n\
+directly, and then acts as a mix-in class.  You can also register\n\
+unrelated concrete classes (even built-in classes) and unrelated\n\
+ABCs as 'virtual subclasses' -- these and their descendants will\n\
+be considered subclasses of the registering ABC by the built-in\n\
+issubclass() function, but the registering ABC won't show up in\n\
+their MRO (Method Resolution Order) nor will method\n\
+implementations defined by the registering ABC be callable (not\n\
+even via super()).");
 
 PyTypeObject ABCMeta = {
     PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
@@ -359,7 +377,7 @@ PyTypeObject ABCMeta = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_VERSION_TAG |
         Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TYPE_SUBCLASS,         /* tp_flags */
-    0,                                          /* tp_doc */
+    abcmeta_doc,                                /* tp_doc */
     abcmeta_traverse,                           /* tp_traverse */
     (inquiry)abcmeta_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
