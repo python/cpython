@@ -250,9 +250,6 @@ def _check_utc_offset(name, offset):
     if not isinstance(offset, timedelta):
         raise TypeError("tzinfo.%s() must return None "
                         "or timedelta, not '%s'" % (name, type(offset)))
-    if offset.microseconds:
-        raise ValueError("tzinfo.%s() must return a whole number "
-                         "of seconds, got %s" % (name, offset))
     if not -timedelta(1) < offset < timedelta(1):
         raise ValueError("%s()=%s, must be strictly between "
                          "-timedelta(hours=24) and timedelta(hours=24)" %
@@ -1962,9 +1959,6 @@ class timezone(tzinfo):
             raise ValueError("offset must be a timedelta "
                              "strictly between -timedelta(hours=24) and "
                              "timedelta(hours=24).")
-        if (offset.microseconds != 0 or offset.seconds % 60 != 0):
-            raise ValueError("offset must be a timedelta "
-                             "representing a whole number of minutes")
         return cls._create(offset, name)
 
     @classmethod
@@ -2053,7 +2047,15 @@ class timezone(tzinfo):
         else:
             sign = '+'
         hours, rest = divmod(delta, timedelta(hours=1))
-        minutes = rest // timedelta(minutes=1)
+        minutes, rest = divmod(rest, timedelta(minutes=1))
+        seconds = rest.seconds
+        microseconds = rest.microseconds
+        if microseconds:
+            return 'UTC{}{:02d}:{:02d}:{:02d}.{:06d}'.format(sign,
+                                 hours, minutes, seconds, microseconds)
+        if seconds:
+            return 'UTC{}{:02d}:{:02d}:{:02d}'.format(sign, hours,
+                                                      minutes, seconds)
         return 'UTC{}{:02d}:{:02d}'.format(sign, hours, minutes)
 
 timezone.utc = timezone._create(timedelta(0))

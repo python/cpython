@@ -255,14 +255,15 @@ class TestTimeZone(unittest.TestCase):
         self.assertEqual(timezone.min.utcoffset(None), -limit)
         self.assertEqual(timezone.max.utcoffset(None), limit)
 
-
     def test_constructor(self):
         self.assertIs(timezone.utc, timezone(timedelta(0)))
         self.assertIsNot(timezone.utc, timezone(timedelta(0), 'UTC'))
         self.assertEqual(timezone.utc, timezone(timedelta(0), 'UTC'))
+        for subminute in [timedelta(microseconds=1), timedelta(seconds=1)]:
+            tz = timezone(subminute)
+            self.assertNotEqual(tz.utcoffset(None) % timedelta(minutes=1), 0)
         # invalid offsets
-        for invalid in [timedelta(microseconds=1), timedelta(1, 1),
-                        timedelta(seconds=1), timedelta(1), -timedelta(1)]:
+        for invalid in [timedelta(1, 1), timedelta(1)]:
             self.assertRaises(ValueError, timezone, invalid)
             self.assertRaises(ValueError, timezone, -invalid)
 
@@ -300,6 +301,15 @@ class TestTimeZone(unittest.TestCase):
         self.assertEqual('UTC+09:30', timezone(9.5 * HOUR).tzname(None))
         self.assertEqual('UTC-00:01', timezone(timedelta(minutes=-1)).tzname(None))
         self.assertEqual('XYZ', timezone(-5 * HOUR, 'XYZ').tzname(None))
+
+        # Sub-minute offsets:
+        self.assertEqual('UTC+01:06:40', timezone(timedelta(0, 4000)).tzname(None))
+        self.assertEqual('UTC-01:06:40',
+                         timezone(-timedelta(0, 4000)).tzname(None))
+        self.assertEqual('UTC+01:06:40.000001',
+                         timezone(timedelta(0, 4000, 1)).tzname(None))
+        self.assertEqual('UTC-01:06:40.000001',
+                         timezone(-timedelta(0, 4000, 1)).tzname(None))
 
         with self.assertRaises(TypeError): self.EST.tzname('')
         with self.assertRaises(TypeError): self.EST.tzname(5)
@@ -2717,8 +2727,8 @@ class TZInfoBase:
             def utcoffset(self, dt): return timedelta(microseconds=61)
             def dst(self, dt): return timedelta(microseconds=-81)
         t = cls(1, 1, 1, tzinfo=C7())
-        self.assertRaises(ValueError, t.utcoffset)
-        self.assertRaises(ValueError, t.dst)
+        self.assertEqual(t.utcoffset(), timedelta(microseconds=61))
+        self.assertEqual(t.dst(), timedelta(microseconds=-81))
 
     def test_aware_compare(self):
         cls = self.theclass
