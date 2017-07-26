@@ -1502,6 +1502,8 @@ class FTPHandler(BaseHandler):
         host = req.host
         if not host:
             raise URLError('ftp error: no host given')
+        if '\n' in unquote(host):
+            raise URLError("ftp error: illegal newline character")
         host, port = splitport(host)
         if port is None:
             port = ftplib.FTP_PORT
@@ -2010,6 +2012,8 @@ class URLopener:
         if not isinstance(url, str):
             raise URLError('ftp error: proxy support for ftp protocol currently not implemented')
         import mimetypes
+        if '\n' in unquote(url):
+            raise URLError("ftp error: illegal newline character")
         host, path = splithost(url)
         if not host: raise URLError('ftp error: no host given')
         host, port = splitport(host)

@@ -1,0 +1,3 @@
+FTPHandler.ftp_open() and URLOpener.open_ftp() of urllib.request now
+raise an exception if the unquoted URL contains a newline character
+(U+000A, "\n").
