@@ -29,7 +29,7 @@ if 'silent' in sys.argv:  # take care of old flag, just in case
     sys.argv.remove('silent')
 
 # bpo-30778: test_bsddb3 crashs randomly on Windows XP
-if hasattr(sys, 'getwindowsversion') and sys.getwindowsversion()[:2] <= (6, 0):
+if hasattr(sys, 'getwindowsversion') and sys.getwindowsversion()[:2] < (6, 0):
     raise unittest.SkipTest("bpo-30778: skip tests on Windows XP")
 
 
