@@ -160,7 +160,7 @@ class ConfigDialog(Toplevel):
         corresponding aspect of the font sample on this page and
         highlight sample on highlight page.
 
-        Load_font_cfg initializes font vars and widgets from
+        Funtion load_font_cfg initializes font vars and widgets from
         idleConf entries and tk.
 
         Fontlist: mouse button 1 click or up or down key invoke
@@ -654,13 +654,13 @@ class ConfigDialog(Toplevel):
     def create_page_general(self):
         """Return frame of widgets for General tab.
 
-        Enable users to provisionally change general options.
-        Load_general_cfg loads current values.  Radiobuttons
-        startup_shell_on and startup_editor_on set var startup_edit.
-        Radiobuttons save_ask_on and save_auto_on set var autosave.
-        Entry boxes win_width_int and win_height_int set var win_width
-        and win_height.  Setting vars invokes var_changed_var_name
-        callback that adds option to changes.
+        Enable users to provisionally change general options. Function
+        load_general_cfg intializes tk variables and helplist using
+        idleConf.  Radiobuttons startup_shell_on and startup_editor_on
+        set var startup_edit. Radiobuttons save_ask_on and save_auto_on
+        set var autosave. Entry boxes win_width_int and win_height_int
+        set var win_width and win_height.  Setting var_name invokes the
+        var_changed_var_name callback that adds option to changes.
 
         Helplist: load_general_cfg loads list user_helplist with
         name, position pairs and copies names to listbox helplist.
