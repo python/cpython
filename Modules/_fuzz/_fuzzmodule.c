@@ -4,8 +4,13 @@
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 
-static PyObject* _fuzz_run(PyObject* self) {
-    int rv = LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
+static PyObject* _fuzz_run(PyObject* self, PyObject* args) {
+    const char* buf;
+    size_t size;
+    if (!PyArg_ParseTuple(args, "s#", &buf, &size)) {
+        return NULL;
+    }
+    int rv = LLVMFuzzerTestOneInput((const uint8_t*)buf, size);
     if (PyErr_Occurred()) {
         return NULL;
     }
@@ -19,7 +24,7 @@ static PyObject* _fuzz_run(PyObject* self) {
 }
 
 static PyMethodDef module_methods[] = {
-    {"run", (PyCFunction)_fuzz_run, METH_NOARGS, ""},
+    {"run", (PyCFunction)_fuzz_run, METH_VARARGS, ""},
     {NULL},
 };
 
