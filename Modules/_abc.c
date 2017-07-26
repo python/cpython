@@ -12,6 +12,8 @@ PyDoc_STRVAR(_abc__doc__,
 "_abc module contains (presumably faster) implementation of ABCMeta");
 #define DEFERRED_ADDRESS(ADDR) 0
 
+_Py_IDENTIFIER(stdout);
+
 static Py_ssize_t abc_invalidation_counter = 0;
 
 typedef struct {
@@ -230,20 +232,93 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     return Py_False;
 }
 
+int
+_print_message(PyObject *file, const char* message)
+{
+    PyObject *mo = PyUnicode_FromString(message);
+    if (!mo) {
+        return -1;
+    }
+    if (PyFile_WriteObject(mo, file, Py_PRINT_RAW)) {
+        return -1;
+    }
+    return 0;
+}
+
 static PyObject *
 abcmeta_dump(abc *self, PyObject *args)
 {
     PyObject *file = NULL;
-    PyObject* version = PyLong_FromSsize_t(self->abc_negative_cache_version);
-    int rv;
+    PyObject *sizeo, *version = PyLong_FromSsize_t(self->abc_negative_cache_version);
+    Py_ssize_t size;
     if (!PyArg_UnpackTuple(args, "_dump_registry", 0, 1, &file)) {
         return NULL;
     }
     if (!version) {
         return NULL;
     }
-    rv = PyObject_Print(version, stdout, 0);
-    if (rv < 0) {
+    if (file == NULL || file == Py_None) {
+        file = _PySys_GetObjectId(&PyId_stdout);
+        if (file == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+            return NULL;
+        }
+    }
+    /* Header */
+    if (_print_message(file, "Class: ")) {
+        return NULL;
+    }
+    if (_print_message(file, ((PyTypeObject *)self)->tp_name)) {
+        return NULL;
+    }
+    if (_print_message(file, "\n")) {
+        return NULL;
+    }
+    /* Registry */
+    if (_print_message(file, "Registry: ")) {
+        return NULL;
+    }
+    if (PyFile_WriteObject(self->abc_registry, file, Py_PRINT_RAW)) {
+        return NULL;
+    }
+    if (_print_message(file, "\n")) {
+        return NULL;
+    }
+    /* Postive cahce */
+    if (_print_message(file, "Positive cache: ")) {
+        return NULL;
+    }
+    size = PySet_GET_SIZE(self->abc_cache);
+    if (!(sizeo = PyLong_FromSsize_t(size))) {
+        return NULL;
+    }
+    if (PyFile_WriteObject(sizeo, file, Py_PRINT_RAW)) {
+        return NULL;
+    }
+    if (_print_message(file, " items\n")) {
+        return NULL;
+    }
+    /* Negative cahce */
+    if (_print_message(file, "Negative cache: ")) {
+        return NULL;
+    }
+    size = PySet_GET_SIZE(self->abc_cache);
+    if (!(sizeo = PyLong_FromSsize_t(size))) {
+        return NULL;
+    }
+    if (PyFile_WriteObject(sizeo, file, Py_PRINT_RAW)) {
+        return NULL;
+    }
+    if (_print_message(file, " items\n")) {
+        return NULL;
+    }
+    if (_print_message(file, "Negative cache version: ")) {
+        return NULL;
+    }
+    if (PyFile_WriteObject(version, file, Py_PRINT_RAW)) {
+        return NULL;
+    }
+    if (_print_message(file, "\n")) {
         return NULL;
     }
     Py_INCREF(Py_None);
