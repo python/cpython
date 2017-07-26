@@ -249,7 +249,7 @@ dqdvi1056 divideint  1e-277 -1e+311 -> -0
 dqdvi1057 divideint -1e-277  1e+311 -> -0
 dqdvi1058 divideint -1e-277 -1e+311 ->  0
 
--- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+-- 'subnormal' boundary (all hard underflow or overflow in base arithmetic)
 dqdvi1060 divideint 1e-291 1e+101 -> 0
 dqdvi1061 divideint 1e-291 1e+102 -> 0
 dqdvi1062 divideint 1e-291 1e+103 -> 0

@@ -3313,7 +3313,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                                     ^- (-oparg-1)
                              ^- (-oparg-2)
 
-                   `callable` will be POPed by call_funtion.
+                   `callable` will be POPed by call_function.
                    NULL will will be POPed manually later.
                 */
                 res = call_function(&sp, oparg, NULL);
