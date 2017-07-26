@@ -2,6 +2,7 @@
 "Generate code for AST visitors."
 
 import asdl
+from collections import OrderedDict
 import os
 import re
 import sys
@@ -225,7 +226,7 @@ class Visitor:
 class Processor:
     def __init__(self, asdl_name):
         self.mod = asdl.parse(asdl_name)
-        self.visitors = {}
+        self.visitors = OrderedDict()
 
     def process(self, infile, outfile):
         with open(infile) as f:
