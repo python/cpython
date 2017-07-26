@@ -228,9 +228,8 @@ class KeysTest(unittest.TestCase):
 class GeneralTest(unittest.TestCase):
     """Test that general tab widgets enable users to make changes.
 
-    Test that widget actions set vars, that var changes add three
-    options to changes and call set_samples, and that set_samples
-    changes the font of both sample boxes.
+    Test that widget actions set vars, that var changes add
+    options to changes and that helplist works correctly.   
     """
     @classmethod
     def setUpClass(cls):
