@@ -732,10 +732,10 @@ class ConfigDialog(Toplevel):
         win_size_title = Label(
                 frame_win_size, text='Initial Window Size  (in characters)')
         win_width_title = Label(frame_win_size, text='Width')
-        self.entry_win_width = Entry(
+        self.win_width_int = Entry(
                 frame_win_size, textvariable=self.win_width, width=3)
         win_height_title = Label(frame_win_size, text='Height')
-        self.entry_win_height = Entry(
+        self.win_height_int = Entry(
                 frame_win_size, textvariable=self.win_height, width=3)
         # frame_help.
         frame_helplist = Frame(frame_help)
@@ -773,9 +773,9 @@ class ConfigDialog(Toplevel):
         self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         # frame_win_size.
         win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.entry_win_height.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
-        self.entry_win_width.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
         # frame_help.
         frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)

@@ -285,10 +285,10 @@ class GeneralTest(unittest.TestCase):
         self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
     def test_editor_size(self):
-        dialog.entry_win_height.insert(0, '1')
+        dialog.win_height_int.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
         changes.clear()
-        dialog.entry_win_width.insert(0, '1')
+        dialog.win_width_int.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
 
     def test_source_selected(self):
