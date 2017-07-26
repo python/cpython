@@ -762,6 +762,18 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
+    def test_programmatic_function_from_list(self):
+        SummerMonth = Enum('SummerMonth', [])
+        lst = list(SummerMonth)
+        self.assertEqual(len(lst), len(SummerMonth))
+        self.assertEqual(len(SummerMonth), 0, SummerMonth)
+
+    def test_programmatic_function_from_empty_tuple(self):
+        SummerMonth = Enum('SummerMonth', ())
+        lst = list(SummerMonth)
+        self.assertEqual(len(lst), len(SummerMonth))
+        self.assertEqual(len(SummerMonth), 0, SummerMonth)
+
     def test_programmatic_function_type(self):
         SummerMonth = Enum('SummerMonth', 'june july august', type=int)
         lst = list(SummerMonth)
