@@ -4,6 +4,7 @@ import mimetypes
 import pathlib
 import sys
 import unittest
+import warnings
 
 from test import support
 from platform import win32_edition
@@ -167,6 +168,17 @@ class MimeTypesTestCase(unittest.TestCase):
         mimetypes.add_type('testing/type', '.myext')
         mime_type, _ = mimetypes.guess_type('test.myext')
         self.assertEqual('testing/type', mime_type)
+
+    def test_add_type_with_undotted_extension_raises_exception(self):
+        with self.assertRaises(ValueError):
+            mimetypes.add_type('testing/type', 'undotted')
+
+    def test_add_type_with_empty_extension_emits_warning(self):
+        with warnings.catch_warnings(record=True) as wlog:
+            mimetypes.add_type('testing/type', '')
+        self.assertEqual(1, len(wlog))
+        warning = wlog[0]
+        self.assertEqual('Empty extension specified', str(warning.message))
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")

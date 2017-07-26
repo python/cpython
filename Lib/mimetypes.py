@@ -27,6 +27,7 @@ import os
 import sys
 import posixpath
 import urllib.parse
+import warnings
 try:
     import winreg as _winreg
 except ImportError:
@@ -88,7 +89,15 @@ class MimeTypes:
         If strict is true, information will be added to
         list of standard types, else to the list of non-standard
         types.
+
+        Non-empty extensions that don't start with a '.' are not
+        valid, so a ValueError will be raised if they are
+        specified.
         """
+        if not ext:
+            warnings.warn('Empty extension specified')
+        elif not ext.startswith('.'):
+            raise ValueError("Extensions should start with a '.'")
         self.types_map[strict][ext] = type
         exts = self.types_map_inv[strict].setdefault(type, [])
         if ext not in exts:
