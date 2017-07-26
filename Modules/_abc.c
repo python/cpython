@@ -3,6 +3,7 @@
 /* TODO: Global check where checks are needed, and where I made objects myself */
 /* In particular use capitals like PyList_GET_SIZE */
 /* Think (ask) about inlining some calls, like __subclasses__ */
+/* Use PyId instead of string attrs */
 
 #include "Python.h"
 #include "structmember.h"
@@ -104,8 +105,8 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (!(iter = PyObject_GetIter(base_abstracts))) {
             return NULL;
         }
-        while (key = PyIter_Next(iter)) {
-            value = PyObject_GetAttr(result, key);
+        while ((key = PyIter_Next(iter))) {
+            value = PyObject_GetAttr((PyObject *)result, key);
             if (!value) {
                 if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                     return NULL;
@@ -171,9 +172,13 @@ abcmeta_instancecheck(abc *self, PyObject *args)
     if (!PyArg_UnpackTuple(args, "__isinstance__", 1, 1, &instance)) {
         return NULL;
     }
-    subclass = Py_TYPE(instance);
+    subclass = (PyObject *)Py_TYPE(instance);
     /* TODO: Use cache */
-    return abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass)); /* TODO: Refactor to avoid packing */
+    if (abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass)) == Py_True) { /* TODO: Refactor to avoid packing */
+        return Py_True;
+    }
+    subclass = PyObject_GetAttrString(instance, "__class__");
+    return abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass));
 }
 
 static PyObject *
@@ -189,7 +194,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
        on iteration here (have a counter for this) */
     /* TODO: Reset caches every n-th succes/failure correspondingly
        so that they don't grow too large */
-    ok = PyObject_CallMethod(self, "__subclasshook__", "O", subclass);
+    ok = PyObject_CallMethod((PyObject *)self, "__subclasshook__", "O", subclass);
     if (ok == Py_True) {
         Py_INCREF(Py_True);
         return Py_True;
@@ -200,13 +205,13 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     }
     mro = ((PyTypeObject *)subclass)->tp_mro;
     for (pos = 0; pos < PyTuple_Size(mro); pos++) {
-        if (self == PyTuple_GetItem(mro, pos)) {
+        if ((PyObject *)self == PyTuple_GetItem(mro, pos)) {
             Py_INCREF(Py_True);
             return Py_True;
         }
     }
     iter = PyObject_GetIter(self->abc_registry);
-    while (key = PyIter_Next(iter)) {
+    while ((key = PyIter_Next(iter))) {
         if (PyObject_IsSubclass(subclass, key)) {
             Py_INCREF(Py_True);
             return Py_True;
@@ -214,7 +219,7 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
         Py_DECREF(key);
     }
     Py_DECREF(iter);
-    subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
+    subclasses = PyObject_CallMethod((PyObject *)self, "__subclasses__", NULL);
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
         if (PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos))) {
             Py_INCREF(Py_True);
