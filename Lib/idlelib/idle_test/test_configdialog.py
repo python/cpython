@@ -3,11 +3,12 @@
 Half the class creates dialog, half works with user customizations.
 Coverage: 46% just by creating dialog, 60% with current tests.
 """
-from idlelib.configdialog import ConfigDialog, idleConf, changes
+from idlelib.configdialog import ConfigDialog, idleConf, changes, VarTrace
 from test.support import requires
 requires('gui')
-from tkinter import Tk
+from tkinter import Tk, IntVar, BooleanVar
 import unittest
+from unittest import mock
 import idlelib.config as config
 from idlelib.idle_test.mock_idle import Func
 
@@ -246,6 +247,95 @@ class GeneralTest(unittest.TestCase):
         self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
 
     #def test_help_sources(self): pass  # TODO
+
+
+class TestVarTrace(unittest.TestCase):
+
+    def setUp(self):
+        changes.clear()
+        self.v1 = IntVar(root)
+        self.v2 = BooleanVar(root)
+        self.called = 0
+        self.tracers = VarTrace()
+
+    def tearDown(self):
+        del self.v1, self.v2
+
+    def var_changed_increment(self, *params):
+        self.called += 13
+
+    def var_changed_boolean(self, *params):
+        pass
+
+    def test_init(self):
+        self.assertEqual(self.tracers.untraced, [])
+        self.assertEqual(self.tracers.traced, [])
+
+    def test_add(self):
+        tr = self.tracers
+        func = Func()
+        cb = tr.make_callback = mock.Mock(return_value=func)
+
+        v1 = tr.add(self.v1, self.var_changed_increment)
+        self.assertIsInstance(v1, IntVar)
+        v2 = tr.add(self.v2, self.var_changed_boolean)
+        self.assertIsInstance(v2, BooleanVar)
+
+        v3 = IntVar(root)
+        v3 = tr.add(v3, ('main', 'section', 'option'))
+        cb.assert_called_once()
+        cb.assert_called_with(v3, ('main', 'section', 'option'))
+
+        expected = [(v1, self.var_changed_increment),
+                    (v2, self.var_changed_boolean),
+                    (v3, func)]
+        self.assertEqual(tr.traced, [])
+        self.assertEqual(tr.untraced, expected)
+
+        del tr.make_callback
+
+    def test_make_callback(self):
+        tr = self.tracers
+        cb = tr.make_callback(self.v1, ('main', 'section', 'option'))
+        self.assertTrue(callable(cb))
+        self.v1.set(42)
+        # Not attached, so set didn't invoke the callback.
+        self.assertNotIn('section', changes['main'])
+        # Invoke callback manually.
+        cb()
+        self.assertIn('section', changes['main'])
+        self.assertEqual(changes['main']['section']['option'], '42')
+
+    def test_attach_detach(self):
+        tr = self.tracers
+        v1 = tr.add(self.v1, self.var_changed_increment)
+        v2 = tr.add(self.v2, self.var_changed_boolean)
+        expected = [(v1, self.var_changed_increment),
+                    (v2, self.var_changed_boolean)]
+
+        # Attach callbacks and test call increment.
+        tr.attach()
+        self.assertEqual(tr.untraced, [])
+        self.assertCountEqual(tr.traced, expected)
+        v1.set(1)
+        self.assertEqual(v1.get(), 1)
+        self.assertEqual(self.called, 13)
+
+        # Check that only one callback is attached to a variable.
+        # If more than one callback were attached, then var_changed_increment
+        # would be called twice and the counter would be 2.
+        self.called = 0
+        tr.attach()
+        v1.set(1)
+        self.assertEqual(self.called, 13)
+
+        # Detach callbacks.
+        self.called = 0
+        tr.detach()
+        self.assertEqual(tr.traced, [])
+        self.assertCountEqual(tr.untraced, expected)
+        v1.set(1)
+        self.assertEqual(self.called, 0)
 
 
 if __name__ == '__main__':

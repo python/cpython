@@ -1846,6 +1846,61 @@ class ConfigDialog(Toplevel):
             self.ext_userCfg.Save()
 
 
+class VarTrace:
+    """Maintain Tk variables trace state."""
+
+    def __init__(self):
+        """Store Tk variables and callbacks.
+
+        untraced: List of tuples (var, callback)
+            that do not have the callback attached
+            to the Tk var.
+        traced: List of tuples (var, callback) where
+            that callback has been attached to the var.
+        """
+        self.untraced = []
+        self.traced = []
+
+    def add(self, var, callback):
+        """Add (var, callback) tuple to untraced list.
+
+        Args:
+            var: Tk variable instance.
+            callback: Function to be used as a callback or
+                a tuple with IdleConf values for default
+                callback.
+
+        Return:
+            Tk variable instance.
+        """
+        if isinstance(callback, tuple):
+            callback = self.make_callback(var, callback)
+        self.untraced.append((var, callback))
+        return var
+
+    @staticmethod
+    def make_callback(var, config):
+        "Return default callback function to add values to changes instance."
+        def default_callback(*params):
+            "Add config values to changes instance."
+            changes.add_option(*config, var.get())
+        return default_callback
+
+    def attach(self):
+        "Attach callback to all vars that are not traced."
+        while self.untraced:
+            var, callback = self.untraced.pop()
+            var.trace_add('write', callback)
+            self.traced.append((var, callback))
+
+    def detach(self):
+        "Remove callback from traced vars."
+        while self.traced:
+            var, callback = self.traced.pop()
+            var.trace_remove('write', var.trace_info()[0][1])
+            self.untraced.append((var, callback))
+
+
 help_common = '''\
 When you click either the Apply or Ok buttons, settings in this
 dialog that are different from IDLE's default are saved in
