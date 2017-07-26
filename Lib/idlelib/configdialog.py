@@ -470,7 +470,7 @@ class ConfigDialog(Toplevel):
                 event.widget.winfo_toplevel().highlight_target.set(elem)
             text.tag_bind(
                     self.theme_elements[element][0], '<ButtonPress-1>', tem)
-        text.config(state=DISABLED)
+        text['state'] = DISABLED
         self.frame_color_set = Frame(frame_custom, relief=SOLID, borderwidth=1)
         frame_fg_bg_toggle = Frame(frame_custom)
         button_set_color = Button(
@@ -792,7 +792,7 @@ class ConfigDialog(Toplevel):
         "Load current configuration settings for the general options."
         # Set startup state.
         self.startup_edit.set(idleConf.GetOption(
-                'main', 'General', 'editor-on-startup', default=1, type='bool'))
+                'main', 'General', 'editor-on-startup', default=0, type='bool'))
         # Set autosave state.
         self.autosave.set(idleConf.GetOption(
                 'main', 'General', 'autosave', default=0, type='bool'))
@@ -803,6 +803,7 @@ class ConfigDialog(Toplevel):
                 'main', 'EditorWindow', 'height', type='int'))
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
+        self.helplist.delete(0, 'end')
         for help_item in self.user_helplist:
             self.helplist.insert(END, help_item[0])
         self.set_add_delete_state()
@@ -834,15 +835,15 @@ class ConfigDialog(Toplevel):
     def set_add_delete_state(self):
         "Toggle the state for the help list buttons based on list entries."
         if self.helplist.size() < 1:  # No entries in list.
-            self.button_helplist_edit.config(state=DISABLED)
-            self.button_helplist_remove.config(state=DISABLED)
+            self.button_helplist_edit['state'] = DISABLED
+            self.button_helplist_remove['state'] = DISABLED
         else:  # Some entries.
             if self.helplist.curselection():  # There currently is a selection.
-                self.button_helplist_edit.config(state=NORMAL)
-                self.button_helplist_remove.config(state=NORMAL)
+                self.button_helplist_edit['state'] = NORMAL
+                self.button_helplist_remove['state'] = NORMAL
             else:  # There currently is not a selection.
-                self.button_helplist_edit.config(state=DISABLED)
-                self.button_helplist_remove.config(state=DISABLED)
+                self.button_helplist_edit['state'] = DISABLED
+                self.button_helplist_remove['state'] = DISABLED
 
     def helplist_item_add(self):
         """Handle add button for the help list.
@@ -852,10 +853,9 @@ class ConfigDialog(Toplevel):
         """
         help_source = HelpSource(self, 'New Help Source').result
         if help_source:
-            self.user_helplist.append((help_source[0], help_source[1]))
+            self.user_helplist.append(help_source)
             self.helplist.insert(END, help_source[0])
             self.update_help_changes()
-        self.set_add_delete_state()
 
     def helplist_item_edit(self):
         """Handle edit button for the help list.
@@ -875,7 +875,7 @@ class ConfigDialog(Toplevel):
             self.helplist.delete(item_index)
             self.helplist.insert(item_index, new_help_source[0])
             self.update_help_changes()
-            self.set_add_delete_state()
+            self.set_add_delete_state()  # Selected will be un-selected
 
     def helplist_item_remove(self):
         """Handle remove button for the help list.
@@ -1048,26 +1048,26 @@ class ConfigDialog(Toplevel):
             load_theme_cfg
         """
         if self.is_builtin_theme.get():
-            self.opt_menu_theme_builtin.config(state=NORMAL)
-            self.opt_menu_theme_custom.config(state=DISABLED)
-            self.button_delete_custom_theme.config(state=DISABLED)
+            self.opt_menu_theme_builtin['state'] = NORMAL
+            self.opt_menu_theme_custom['state'] = DISABLED
+            self.button_delete_custom_theme['state'] = DISABLED
         else:
-            self.opt_menu_theme_builtin.config(state=DISABLED)
-            self.radio_theme_custom.config(state=NORMAL)
-            self.opt_menu_theme_custom.config(state=NORMAL)
-            self.button_delete_custom_theme.config(state=NORMAL)
+            self.opt_menu_theme_builtin['state'] = DISABLED
+            self.radio_theme_custom['state'] = NORMAL
+            self.opt_menu_theme_custom['state'] = NORMAL
+            self.button_delete_custom_theme['state'] = NORMAL
 
     def set_keys_type(self):
         "Set available screen options based on builtin or custom key set."
         if self.are_keys_builtin.get():
-            self.opt_menu_keys_builtin.config(state=NORMAL)
-            self.opt_menu_keys_custom.config(state=DISABLED)
-            self.button_delete_custom_keys.config(state=DISABLED)
+            self.opt_menu_keys_builtin['state'] = NORMAL
+            self.opt_menu_keys_custom['state'] = DISABLED
+            self.button_delete_custom_keys['state'] = DISABLED
         else:
-            self.opt_menu_keys_builtin.config(state=DISABLED)
-            self.radio_keys_custom.config(state=NORMAL)
-            self.opt_menu_keys_custom.config(state=NORMAL)
-            self.button_delete_custom_keys.config(state=NORMAL)
+            self.opt_menu_keys_builtin['state'] = DISABLED
+            self.radio_keys_custom['state'] = NORMAL
+            self.opt_menu_keys_custom['state'] = NORMAL
+            self.button_delete_custom_keys['state'] = NORMAL
 
     def get_new_keys(self):
         """Handle event to change key binding for selected line.
@@ -1129,7 +1129,7 @@ class ConfigDialog(Toplevel):
 
     def keybinding_selected(self, event):
         "Activate button to assign new keys to selected action."
-        self.button_new_keys.config(state=NORMAL)
+        self.button_new_keys['state'] = NORMAL
 
     def create_new_key_set(self, new_key_set_name):
         """Create a new custom key set with the given name.
@@ -1207,7 +1207,7 @@ class ConfigDialog(Toplevel):
         item_list = idleConf.GetSectionList('user', 'keys')
         item_list.sort()
         if not item_list:
-            self.radio_keys_custom.config(state=DISABLED)
+            self.radio_keys_custom['state'] = DISABLED
             self.opt_menu_keys_custom.SetMenu(item_list, '- no custom keys -')
         else:
             self.opt_menu_keys_custom.SetMenu(item_list, item_list[0])
@@ -1256,7 +1256,7 @@ class ConfigDialog(Toplevel):
         item_list = idleConf.GetSectionList('user', 'highlight')
         item_list.sort()
         if not item_list:
-            self.radio_theme_custom.config(state=DISABLED)
+            self.radio_theme_custom['state'] = DISABLED
             self.opt_menu_theme_custom.SetMenu(item_list, '- no custom themes -')
         else:
             self.opt_menu_theme_custom.SetMenu(item_list, item_list[0])
@@ -1395,12 +1395,12 @@ class ConfigDialog(Toplevel):
             load_theme_cfg
         """
         if self.highlight_target.get() == 'Cursor':  # bg not possible
-            self.radio_fg.config(state=DISABLED)
-            self.radio_bg.config(state=DISABLED)
+            self.radio_fg['state'] = DISABLED
+            self.radio_bg['state'] = DISABLED
             self.fg_bg_toggle.set(1)
         else:  # Both fg and bg can be set.
-            self.radio_fg.config(state=NORMAL)
-            self.radio_bg.config(state=NORMAL)
+            self.radio_fg['state'] = NORMAL
+            self.radio_bg['state'] = NORMAL
             self.fg_bg_toggle.set(1)
         self.set_color_sample()
 
@@ -1503,7 +1503,7 @@ class ConfigDialog(Toplevel):
             item_list = idleConf.GetSectionList('user', 'highlight')
             item_list.sort()
             if not item_list:
-                self.radio_theme_custom.config(state=DISABLED)
+                self.radio_theme_custom['state'] = DISABLED
                 self.custom_theme.set('- no custom themes -')
             else:
                 self.opt_menu_theme_custom.SetMenu(item_list, item_list[0])
@@ -1537,7 +1537,7 @@ class ConfigDialog(Toplevel):
             item_list = idleConf.GetSectionList('user', 'keys')
             item_list.sort()
             if not item_list:
-                self.radio_keys_custom.config(state=DISABLED)
+                self.radio_keys_custom['state'] = DISABLED
                 self.custom_keys.set('- no custom keys -')
             else:
                 self.opt_menu_keys_custom.SetMenu(item_list, item_list[0])
