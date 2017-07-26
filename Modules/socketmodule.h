@@ -91,6 +91,10 @@ typedef int socklen_t;
 #include <linux/can/bcm.h>
 #endif
 
+#ifdef HAVE_LINUX_CAN_ISOTP_H
+#include <linux/can/isotp.h>
+#endif
+
 #ifdef HAVE_SYS_SYS_DOMAIN_H
 #include <sys/sys_domain.h>
 #endif
