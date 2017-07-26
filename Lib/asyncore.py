@@ -191,12 +191,40 @@ def poll2(timeout=0.0, map=None):
         ready = [(fd, map[fd], flags) for fd, flags in r]
 
         for fd, obj, flags in ready:
-            if map.get(fd) is not obj:
-                # bpo-30931: obj has been closed by a previously executed
-                # handler.  Its file descriptor may have been reused by new
-                # dispatcher registered later.
-                continue
-            readwrite(obj, flags)
+            # similar to readwrite(), but check if the dispatcher was closed
+            # before calling each dispatcher
+            try:
+                if flags & select.POLLIN:
+                    if map.get(fd) is not obj:
+                        # bpo-30931: obj has been closed by a previously
+                        # executed handler.  Its file descriptor may have been
+                        # reused by new dispatcher registered later.
+                        continue
+                    obj.handle_read_event()
+
+                if flags & select.POLLOUT:
+                    if map.get(fd) is not obj:
+                        continue
+                    obj.handle_write_event()
+
+                if flags & select.POLLPRI:
+                    if map.get(fd) is not obj:
+                        continue
+                    obj.handle_expt_event()
+
+                if flags & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
+                    if map.get(fd) is not obj:
+                        continue
+                    obj.handle_close()
+            except OSError as e:
+                if e.args[0] not in _DISCONNECTED:
+                    obj.handle_error()
+                else:
+                    obj.handle_close()
+            except _reraised_exceptions:
+                raise
+            except:
+                obj.handle_error()
 
 poll3 = poll2                           # Alias for backward compatibility
 

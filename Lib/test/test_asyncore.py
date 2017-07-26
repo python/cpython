@@ -849,7 +849,14 @@ class TestAPI_UseUnixSocketsPoll(TestAPI_UseUnixSockets, unittest.TestCase):
 class PollTests(unittest.TestCase):
     def poll(self, testmap):
         with mock.patch('asyncore.select.select') as mock_select:
-            mock_select.return_value = (list(testmap), [], [])
+            rfds = []
+            wfds = []
+            for fd, obj in testmap.items():
+                if obj.readable():
+                    rfds.append(fd)
+                if obj.writable():
+                    wfds.append(fd)
+            mock_select.return_value = (rfds, wfds, [])
             asyncore.poll(map=testmap)
 
     def test_poll_close_dispatchers(self):
@@ -917,14 +924,52 @@ class PollTests(unittest.TestCase):
         self.assertEqual(testmap, newmap)
         self.assertEqual(read_calls, [handler1, handler3, handler4])
 
+    def test_poll_read_write_close(self):
+        testmap = {}
+        calls = []
+
+        class Handler:
+            def __init__(self, fd):
+                self.fd = fd
+            def readable(self):
+                return True
+            def writable(self):
+                return True
+            def accepting(self):
+                return False
+            def handle_read_event(self):
+                calls.append(('read', self))
+                # close the dispatcher: remove it from the map
+                testmap.pop(self.fd, None)
+            def handle_write_event(self):
+                calls.append(('write', self))
+
+        handler = Handler(1)
+        testmap = {1: handler}
+
+        # bpo-30931: handler is ready to read and ready to write, but the read
+        # handler closes the dispatcher. Make sure that the write handler is
+        # not called.
+        self.poll(testmap)
+        self.assertEqual(testmap, {})
+        self.assertEqual(calls, [('read', handler)])
+
 
 @unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
 class Poll2Tests(PollTests):
     def poll(self, testmap):
-        flags = select.POLLIN
+        def pollflags(obj):
+            flags = 0
+            if obj.readable():
+                flags |= select.POLLIN
+            if obj.writable():
+                flags |= select.POLLOUT
+            return flags
+
         with mock.patch('asyncore.select.poll') as mock_poll:
             pollster = mock_poll.return_value
-            pollster.poll.return_value = [(fd, flags) for fd in testmap]
+            pollster.poll.return_value = [(fd, pollflags(obj))
+                                          for fd, obj in testmap.items()]
             asyncore.poll2(map=testmap)
 
 
