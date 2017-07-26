@@ -1,0 +1,3 @@
+multiprocessing.Pool.terminate() now also joins "dead" processes even if
+their is_alive() method returns false. The change prevents leaking
+"dangling" processes.
