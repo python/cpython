@@ -372,7 +372,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     if (backtick && !bin_len)
         *ascii_data++ = '`';
     else
-        *ascii_data++ = ' ' + bin_len;
+        *ascii_data++ = ' ' + (unsigned char)bin_len;
 
     for( ; bin_len > 0 || leftbits != 0 ; bin_len--, bin_data++ ) {
         /* Shift the data (or padding) into our buffer */

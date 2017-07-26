@@ -56,7 +56,7 @@
     <TixDirs>BUILDDIRTOP="$(BuildDirTop)" TCL_DIR="$(tclDir.TrimEnd(`\`))" TK_DIR="$(tkDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TixDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUG=1 NODEBUG=0 TCL_DBGX=g TK_DBGX=g</DebugFlags>
     <DebugFlags Condition="'$(Configuration)' != 'Debug'">DEBUG=0 NODEBUG=1</DebugFlags>
-    <CFlags>-c -W3 -nologo -MD -wd4028 -wd4090</CFlags>
+    <CFlags>-c -W3 -nologo -MD -wd4028 -wd4090 -wd4244 -wd4267 -wd4312</CFlags>
     <NMakeBuildCommandLine>setlocal
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tixDir)win"
