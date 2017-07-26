@@ -1,7 +1,7 @@
 """Test idlelib.configdialog.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 46% just by creating dialog, 60% with current tests.
+Coverage: 63%.
 """
 from idlelib import configdialog
 from idlelib.configdialog import ConfigDialog, idleConf, changes
@@ -229,7 +229,7 @@ class GeneralTest(unittest.TestCase):
     """Test that general tab widgets enable users to make changes.
 
     Test that widget actions set vars, that var changes add
-    options to changes and that helplist works correctly.   
+    options to changes and that helplist works correctly.
     """
     @classmethod
     def setUpClass(cls):
