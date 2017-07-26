@@ -2055,7 +2055,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
 
     kwtuple = parser->kwtuple;
     pos = parser->pos;
-    len = pos + PyTuple_GET_SIZE(kwtuple);
+    len = pos + (int)PyTuple_GET_SIZE(kwtuple);
 
     if (len > STATIC_FREELIST_ENTRIES) {
         freelist.entries = PyMem_NEW(freelistentry_t, len);
