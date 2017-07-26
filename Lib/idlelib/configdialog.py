@@ -744,8 +744,8 @@ class ConfigDialog(Toplevel):
                 frame_helplist, height=5, takefocus=FALSE,
                 exportselection=FALSE)
         scroll_helplist = Scrollbar(frame_helplist)
-        scroll_helplist.config(command=self.helplist.yview)
-        self.helplist.config(yscrollcommand=scroll_helplist.set)
+        scroll_helplist['command'] = self.helplist.yview
+        self.helplist['yscrollcommand'] = scroll_helplist.set
         self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
         self.button_helplist_edit = Button(
                 frame_helplist_buttons, text='Edit', state=DISABLED,
