@@ -274,9 +274,9 @@ class NetworkedNNTPTestsMixin:
 NetworkedNNTPTestsMixin.wrap_methods()
 
 
-EOF_ERRORS = [EOFError]
+EOF_ERRORS = (EOFError,)
 if ssl is not None:
-    EOF_ERRORS.append(ssl.SSLEOFError)
+    EOF_ERRORS += (ssl.SSLEOFError,)
 
 
 class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
