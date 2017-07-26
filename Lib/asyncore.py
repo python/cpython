@@ -131,33 +131,30 @@ def poll(timeout=0.0, map=None):
             is_r = obj.readable()
             is_w = obj.writable()
             if is_r:
-                r.append(fd)
+                r.append(obj)
             # accepting sockets should not be writable
             if is_w and not obj.accepting:
-                w.append(fd)
+                w.append(obj)
             if is_r or is_w:
-                e.append(fd)
+                e.append(obj)
         if [] == r == w == e:
             time.sleep(timeout)
             return
 
         r, w, e = select.select(r, w, e, timeout)
 
-        for fd in r:
-            obj = map.get(fd)
-            if obj is None:
+        for obj in r:
+            if obj.closing:
                 continue
             read(obj)
 
-        for fd in w:
-            obj = map.get(fd)
-            if obj is None:
+        for obj in w:
+            if obj.closing:
                 continue
             write(obj)
 
-        for fd in e:
-            obj = map.get(fd)
-            if obj is None:
+        for obj in e:
+            if obj.closing:
                 continue
             _exception(obj)
 
@@ -181,11 +178,12 @@ def poll2(timeout=0.0, map=None):
                 pollster.register(fd, flags)
 
         r = pollster.poll(timeout)
-        for fd, flags in r:
-            obj = map.get(fd)
-            if obj is None:
-                continue
-            readwrite(obj, flags)
+        ready = [(map[fd], flags) for fd, flags in r]
+
+        for obj, flags in ready:
+            if not obj.closing:
+                readwrite(obj, flags)
+
 
 poll3 = poll2                           # Alias for backward compatibility
 
@@ -388,6 +386,10 @@ class dispatcher:
                 raise
 
     def close(self):
+        if self.closing:
+            return
+        self.closing = True
+
         self.connected = False
         self.accepting = False
         self.connecting = False
@@ -398,6 +400,11 @@ class dispatcher:
             except OSError as why:
                 if why.args[0] not in (ENOTCONN, EBADF):
                     raise
+
+    def fileno(self):
+        if self.socket is None:
+            raise socket.error(EBADF, 'Bad file descriptor')
+        return self.socket.fileno()
 
     # log and log_info may be overridden to provide more sophisticated
     # logging and warning methods. In general, log is for 'hit' logging
