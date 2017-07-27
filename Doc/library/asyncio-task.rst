@@ -3,6 +3,10 @@
 Tasks and coroutines
 ====================
 
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
 .. _coroutine:
 
 Coroutines

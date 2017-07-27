@@ -1204,6 +1204,8 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
 		test/test_import/data/circular_imports/subpkg \
+		test/test_import/data/package \
+		test/test_import/data/package2 \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
