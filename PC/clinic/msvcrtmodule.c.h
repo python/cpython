@@ -123,7 +123,7 @@ msvcrt_open_osfhandle(PyObject *module, PyObject **args, Py_ssize_t nargs)
     int flags;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, ""_Py_PARSE_INTPTR"i:open_osfhandle",
+    if (!_PyArg_ParseStack(args, nargs, ""_Py_PARSE_UINTPTR"i:open_osfhandle",
         &handle, &flags)) {
         goto exit;
     }
@@ -426,26 +426,26 @@ PyDoc_STRVAR(msvcrt_CrtSetReportFile__doc__,
 #define MSVCRT_CRTSETREPORTFILE_METHODDEF    \
     {"CrtSetReportFile", (PyCFunction)msvcrt_CrtSetReportFile, METH_FASTCALL, msvcrt_CrtSetReportFile__doc__},
 
-static long
-msvcrt_CrtSetReportFile_impl(PyObject *module, int type, int file);
+static void *
+msvcrt_CrtSetReportFile_impl(PyObject *module, int type, void *file);
 
 static PyObject *
 msvcrt_CrtSetReportFile(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int type;
-    int file;
-    long _return_value;
+    void *file;
+    void *_return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:CrtSetReportFile",
+    if (!_PyArg_ParseStack(args, nargs, "i"_Py_PARSE_UINTPTR":CrtSetReportFile",
         &type, &file)) {
         goto exit;
     }
     _return_value = msvcrt_CrtSetReportFile_impl(module, type, file);
-    if ((_return_value == -1) && PyErr_Occurred()) {
+    if ((_return_value == NULL || _return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromLong(_return_value);
+    return_value = PyLong_FromVoidPtr(_return_value);
 
 exit:
     return return_value;
@@ -569,4 +569,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=c3c7eb36093c0c17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=66787cb934b8a3c2 input=a9049054013a1b77]*/

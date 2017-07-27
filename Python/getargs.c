@@ -2055,7 +2055,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
 
     kwtuple = parser->kwtuple;
     pos = parser->pos;
-    len = pos + PyTuple_GET_SIZE(kwtuple);
+    len = pos + (int)PyTuple_GET_SIZE(kwtuple);
 
     if (len > STATIC_FREELIST_ENTRIES) {
         freelist.entries = PyMem_NEW(freelistentry_t, len);
@@ -2483,7 +2483,6 @@ _PyArg_UnpackStack(PyObject **args, Py_ssize_t nargs, const char *name,
 
 
 #undef _PyArg_NoKeywords
-#undef _PyArg_NoStackKeywords
 #undef _PyArg_NoPositional
 
 /* For type constructors that don't take keyword args
@@ -2502,23 +2501,6 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kwargs)
         return 0;
     }
     if (PyDict_GET_SIZE(kwargs) == 0) {
-        return 1;
-    }
-
-    PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                    funcname);
-    return 0;
-}
-
-
-int
-_PyArg_NoStackKeywords(const char *funcname, PyObject *kwnames)
-{
-    if (kwnames == NULL) {
-        return 1;
-    }
-    assert(PyTuple_CheckExact(kwnames));
-    if (PyTuple_GET_SIZE(kwnames) == 0) {
         return 1;
     }
 

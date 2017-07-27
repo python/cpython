@@ -236,8 +236,11 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                             code = 1
                             try:
                                 listener.close()
+                                selector.close()
+                                unused_fds = [alive_r, child_w, sig_r, sig_w]
+                                unused_fds.extend(pid_to_fd.values())
                                 code = _serve_one(child_r, fds,
-                                                  (alive_r, child_w, sig_r, sig_w),
+                                                  unused_fds,
                                                   old_handlers)
                             except Exception:
                                 sys.excepthook(*sys.exc_info())

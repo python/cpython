@@ -35,7 +35,7 @@
 /*[python input]
 class HANDLE_converter(CConverter):
     type = 'void *'
-    format_unit = '"_Py_PARSE_INTPTR"'
+    format_unit = '"_Py_PARSE_UINTPTR"'
 
 class HANDLE_return_converter(CReturnConverter):
     type = 'void *'
@@ -65,7 +65,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=2b25dc89e9e59534]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d102511df3cda2eb]*/
 
 /*[clinic input]
 module msvcrt
@@ -343,7 +343,7 @@ msvcrt_ungetch_impl(PyObject *module, char char_value)
 /*[clinic end generated code: output=c6942a0efa119000 input=22f07ee9001bbf0f]*/
 {
     int res;
-    
+
     _Py_BEGIN_SUPPRESS_IPH
     res = _ungetch(char_value);
     _Py_END_SUPPRESS_IPH
@@ -379,10 +379,10 @@ msvcrt_ungetwch_impl(PyObject *module, int unicode_char)
 
 #ifdef _DEBUG
 /*[clinic input]
-msvcrt.CrtSetReportFile -> long
+msvcrt.CrtSetReportFile -> HANDLE
 
     type: int
-    file: int
+    file: HANDLE
     /
 
 Wrapper around _CrtSetReportFile.
@@ -390,14 +390,14 @@ Wrapper around _CrtSetReportFile.
 Only available on Debug builds.
 [clinic start generated code]*/
 
-static long
-msvcrt_CrtSetReportFile_impl(PyObject *module, int type, int file)
-/*[clinic end generated code: output=df291c7fe032eb68 input=bb8f721a604fcc45]*/
+static void *
+msvcrt_CrtSetReportFile_impl(PyObject *module, int type, void *file)
+/*[clinic end generated code: output=9393e8c77088bbe9 input=290809b5f19e65b9]*/
 {
-    long res;
+    HANDLE res;
 
     _Py_BEGIN_SUPPRESS_IPH
-    res = (long)_CrtSetReportFile(type, (_HFILE)file);
+    res = _CrtSetReportFile(type, file);
     _Py_END_SUPPRESS_IPH
 
     return res;
@@ -530,6 +530,20 @@ insertint(PyObject *d, char *name, int value)
     }
 }
 
+static void
+insertptr(PyObject *d, char *name, void *value)
+{
+    PyObject *v = PyLong_FromVoidPtr(value);
+    if (v == NULL) {
+        /* Don't bother reporting this error */
+        PyErr_Clear();
+    }
+    else {
+        PyDict_SetItemString(d, name, v);
+        Py_DECREF(v);
+    }
+}
+
 PyMODINIT_FUNC
 PyInit_msvcrt(void)
 {
@@ -558,9 +572,9 @@ PyInit_msvcrt(void)
     insertint(d, "CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
     insertint(d, "CRTDBG_MODE_WNDW", _CRTDBG_MODE_WNDW);
     insertint(d, "CRTDBG_REPORT_MODE", _CRTDBG_REPORT_MODE);
-    insertint(d, "CRTDBG_FILE_STDERR", (int)_CRTDBG_FILE_STDERR);
-    insertint(d, "CRTDBG_FILE_STDOUT", (int)_CRTDBG_FILE_STDOUT);
-    insertint(d, "CRTDBG_REPORT_FILE", (int)_CRTDBG_REPORT_FILE);
+    insertptr(d, "CRTDBG_FILE_STDERR", _CRTDBG_FILE_STDERR);
+    insertptr(d, "CRTDBG_FILE_STDOUT", _CRTDBG_FILE_STDOUT);
+    insertptr(d, "CRTDBG_REPORT_FILE", _CRTDBG_REPORT_FILE);
 #endif
 
     /* constants for the crt versions */

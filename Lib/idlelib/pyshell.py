@@ -117,8 +117,8 @@ class PyShellEditorWindow(EditorWindow):
         self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
-        self.breakpointPath = os.path.join(idleConf.GetUserCfgDir(),
-                                           'breakpoints.lst')
+        self.breakpointPath = os.path.join(
+                idleConf.userdir, 'breakpoints.lst')
         # whenever a file is changed, restore breakpoints
         def filename_changed_hook(old_hook=self.io.filename_change_hook,
                                   self=self):
