@@ -473,6 +473,8 @@ class SSLProtocol(protocols.Protocol):
         if self._session_established:
             self._session_established = False
             self._loop.call_soon(self._app_protocol.connection_lost, exc)
+        else:
+            self._app_transport.close()
         self._transport = None
         self._app_transport = None
         self._wakeup_waiter(exc)
