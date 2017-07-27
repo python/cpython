@@ -498,8 +498,8 @@ or subtracting from an empty counter.
 
     .. method:: remove(value)
 
-        Remove the first occurrence of *value*.  If not found, raises a
-        :exc:`ValueError`.
+        Remove the first occurrence of *value* from the left side of deque. 
+        If not found, raises a :exc:`ValueError`.
 
 
     .. method:: reverse()
