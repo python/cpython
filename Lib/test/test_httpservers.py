@@ -76,6 +76,8 @@ class BaseTestCase(unittest.TestCase):
 
     def request(self, uri, method='GET', body=None, headers={}):
         self.connection = http.client.HTTPConnection(self.HOST, self.PORT)
+        if self.request_handler.protocol_version >= "HTTP/1.1":
+            headers['Connection'] = 'close'
         self.connection.request(method, uri, body, headers)
         return self.connection.getresponse()
 
@@ -627,7 +629,7 @@ class HTTPCompressionTestCase(BaseTestCase):
         self.assertEqual(response.read(), self.data)
 
     def test_header_set_supported_extension(self):
-        # Content-Encoding header set, compressible file extension
+        # Accept-Encoding header set, compressible file extension
         for ext in self.compressible_ext:
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip'})
@@ -636,17 +638,32 @@ class HTTPCompressionTestCase(BaseTestCase):
 
         # alternative Accept-Encoding syntax
         for ext in self.compressible_ext:
+
+            # x-gzip instead of gzip
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'x-gzip'})
+            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertEqual(gzip.decompress(response.read()), self.data)
+
+            # add quality
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip; q=1'})
             self.assertTrue('Content-Encoding' in response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
 
             response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip; q=0.1'})
+            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertEqual(gzip.decompress(response.read()), self.data)
+
+            # all encodings supported
+            response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': '*'})
             self.assertTrue('Content-Encoding' in response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
 
-        # same for big files
+        # For big files, with HTTP protocol set to HTTP/1.0, chunked
+        # transfer is not possible, so the file is sent uncompressed
         for ext in self.compressible_ext:
             response = self.request(self.base_url + '/test_big.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip'})
@@ -670,6 +687,26 @@ class HTTPCompressionTestCase(BaseTestCase):
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'deflate'})
             self.assertFalse('Content-Encoding' in response.headers)
+
+class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
+
+    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+
+        protocol_version = 'HTTP/1.1'
+        default_request_version = 'HTTP/1.1'
+
+        compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
+            "text/javascript", "application/javascript", "application/json"]
+
+    def test_header_set_supported_extension(self):
+        # with protocol set to HTTP/1.1, big files are sent with
+        # Chunked Tranfer Encoding
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test_big.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip', 'Connection': 'close'})
+            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertEqual(gzip.decompress(response.read()),
+                self.repeat * self.data)
 
 cgi_file1 = """\
 #!%s
@@ -1244,7 +1281,8 @@ def test_main(verbose=None):
             CGIHTTPServerTestCase,
             SimpleHTTPRequestHandlerTestCase,
             MiscTestCase,
-            HTTPCompressionTestCase
+            HTTPCompressionTestCase,
+            HTTPCompressionChunkedTransferTestCase
         )
     finally:
         os.chdir(cwd)
