@@ -3,6 +3,11 @@ Fuzz Tests for CPython
 
 These fuzz tests are designed to be included in Google's `oss-fuzz`_ project.
 
+oss-fuzz works against a library exposing a function of the form
+``int LLVMFuzzerTestOneInput(const uint8_t* data, size_t length)``. We provide
+that library (``fuzzer.cpp``), and include a ``_fuzz`` module for testing with
+some toy values -- no fuzzing occurs in Python's test suite.
+
 Adding a new fuzz test
 ----------------------
 
