@@ -35,7 +35,7 @@
 /*[python input]
 class HANDLE_converter(CConverter):
     type = 'void *'
-    format_unit = '"_Py_PARSE_INTPTR"'
+    format_unit = '"_Py_PARSE_UINTPTR"'
 
 class HANDLE_return_converter(CReturnConverter):
     type = 'void *'
@@ -65,7 +65,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=2b25dc89e9e59534]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d102511df3cda2eb]*/
 
 /*[clinic input]
 module msvcrt

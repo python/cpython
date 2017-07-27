@@ -123,7 +123,7 @@ msvcrt_open_osfhandle(PyObject *module, PyObject **args, Py_ssize_t nargs)
     int flags;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, ""_Py_PARSE_INTPTR"i:open_osfhandle",
+    if (!_PyArg_ParseStack(args, nargs, ""_Py_PARSE_UINTPTR"i:open_osfhandle",
         &handle, &flags)) {
         goto exit;
     }
@@ -437,7 +437,7 @@ msvcrt_CrtSetReportFile(PyObject *module, PyObject **args, Py_ssize_t nargs)
     void *file;
     void *_return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "i"_Py_PARSE_INTPTR":CrtSetReportFile",
+    if (!_PyArg_ParseStack(args, nargs, "i"_Py_PARSE_UINTPTR":CrtSetReportFile",
         &type, &file)) {
         goto exit;
     }
@@ -569,4 +569,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=e86cf578e7f1ffd2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=66787cb934b8a3c2 input=a9049054013a1b77]*/
