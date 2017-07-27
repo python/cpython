@@ -73,7 +73,7 @@ static int fuzz_builtin_unicode(const char* data, size_t size) {
 
 /* Run fuzzer and abort on failure. */
 static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* , size_t)) {
-    int rv = fuzzer(data, size);
+    int rv = fuzzer((const char*) data, size);
     if (PyErr_Occurred()) {
         /* Fuzz tests should handle expected errors for themselves. */
         PyErr_Print();
