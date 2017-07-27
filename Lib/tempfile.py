@@ -775,8 +775,8 @@ class SpooledTemporaryFile:
 
 
 class TemporaryDirectory(object):
-    """Create and return a temporary directory.  This has the same
-    behavior as mkdtemp but can be used as a context manager.  For
+    """Create a temporary directory, returning its name. This has the
+    same behavior as mkdtemp but can be used as a context manager.  For
     example:
 
         with TemporaryDirectory() as tmpdir:
