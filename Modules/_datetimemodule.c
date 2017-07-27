@@ -954,9 +954,9 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
  * result.  tzinfo must be an instance of the tzinfo class.  If utcoffset()
  * returns None, call_utcoffset returns 0 and sets *none to 1.  If uctoffset()
  * doesn't return None or timedelta, TypeError is raised and this returns -1.
- * If utcoffset() returns an invalid timedelta (out of range, or not a whole
- * # of minutes), ValueError is raised and this returns -1.  Else *none is
- * set to 0 and the offset is returned (as int # of minutes east of UTC).
+ * If utcoffset() returns an out of range timedelta,
+ * ValueError is raised and this returns -1.  Else *none is
+ * set to 0 and the offset is returned (as timedelta, positive east of UTC).
  */
 static PyObject *
 call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
@@ -967,10 +967,10 @@ call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
 /* Call tzinfo.dst(tzinfoarg), and extract an integer from the
  * result.  tzinfo must be an instance of the tzinfo class.  If dst()
  * returns None, call_dst returns 0 and sets *none to 1.  If dst()
- & doesn't return None or timedelta, TypeError is raised and this
+ * doesn't return None or timedelta, TypeError is raised and this
  * returns -1.  If dst() returns an invalid timedelta for a UTC offset,
  * ValueError is raised and this returns -1.  Else *none is set to 0 and
- * the offset is returned (as an int # of minutes east of UTC).
+ * the offset is returned (as timedelta, positive east of UTC).
  */
 static PyObject *
 call_dst(PyObject *tzinfo, PyObject *tzinfoarg)
@@ -1094,7 +1094,7 @@ static PyObject *delta_negative(PyDateTime_Delta *self);
  * *buf, and that's all.  Else the returned value is checked for sanity (an
  * integer in range), and if that's OK it's converted to an hours & minutes
  * string of the form
- *   sign HH sep MM
+ *   sign HH sep MM [sep SS [. UUUUUU]]
  * Returns 0 if everything is OK.  If the return value from utcoffset() is
  * bogus, an appropriate exception is set and -1 is returned.
  */
@@ -3236,7 +3236,7 @@ static PyMethodDef tzinfo_methods[] = {
            "values indicating West of UTC")},
 
     {"dst",             (PyCFunction)tzinfo_dst,                METH_O,
-     PyDoc_STR("datetime -> DST offset in minutes east of UTC.")},
+     PyDoc_STR("datetime -> DST offset as timedelta positive east of UTC.")},
 
     {"fromutc",         (PyCFunction)tzinfo_fromutc,            METH_O,
      PyDoc_STR("datetime in UTC -> datetime in local time.")},
