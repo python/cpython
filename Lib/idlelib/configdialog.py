@@ -30,7 +30,6 @@ from idlelib.textview import view_text
 
 changes = ConfigChanges()
 
-
 class ConfigDialog(Toplevel):
     """Config dialog for IDLE.
     """
@@ -111,6 +110,62 @@ class ConfigDialog(Toplevel):
         self.create_page_general()
         self.create_page_extensions()
         self.create_action_buttons().pack(side=BOTTOM)
+
+    def load_configs(self):
+        """Load configuration for each page.
+
+        Load configuration from default and user config files and populate
+        the widgets on the config dialog pages.
+
+        Methods:
+            load_font_cfg
+            load_tab_cfg
+            load_theme_cfg
+            load_key_cfg
+            load_general_cfg
+        """
+        self.load_font_cfg()
+        self.load_tab_cfg()
+        self.load_theme_cfg()
+        self.load_key_cfg()
+        self.load_general_cfg()
+        # note: extension page handled separately
+
+    def attach_var_callbacks(self):
+        "Attach callbacks to variables that can be changed."
+        self.font_size.trace_add('write', self.var_changed_font)
+        self.font_name.trace_add('write', self.var_changed_font)
+        self.font_bold.trace_add('write', self.var_changed_font)
+        self.space_num.trace_add('write', self.var_changed_space_num)
+        self.color.trace_add('write', self.var_changed_color)
+        self.builtin_theme.trace_add('write', self.var_changed_builtin_theme)
+        self.custom_theme.trace_add('write', self.var_changed_custom_theme)
+        self.is_builtin_theme.trace_add('write', self.var_changed_is_builtin_theme)
+        self.highlight_target.trace_add('write', self.var_changed_highlight_target)
+        self.keybinding.trace_add('write', self.var_changed_keybinding)
+        self.builtin_keys.trace_add('write', self.var_changed_builtin_keys)
+        self.custom_keys.trace_add('write', self.var_changed_custom_keys)
+        self.are_keys_builtin.trace_add('write', self.var_changed_are_keys_builtin)
+        self.win_width.trace_add('write', self.var_changed_win_width)
+        self.win_height.trace_add('write', self.var_changed_win_height)
+        self.startup_edit.trace_add('write', self.var_changed_startup_edit)
+        self.autosave.trace_add('write', self.var_changed_autosave)
+
+    def remove_var_callbacks(self):
+        "Remove callbacks to prevent memory leaks."
+        for var in (
+                self.font_size, self.font_name, self.font_bold,
+                self.space_num, self.color, self.builtin_theme,
+                self.custom_theme, self.is_builtin_theme, self.highlight_target,
+                self.keybinding, self.builtin_keys, self.custom_keys,
+                self.are_keys_builtin, self.win_width, self.win_height,
+                self.startup_edit, self.autosave,):
+            var.trace_remove('write', var.trace_info()[0][1])
+
+
+
+
+
 
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
@@ -1321,37 +1376,6 @@ class ConfigDialog(Toplevel):
                     ';'.join(self.user_helplist[num-1][:2]))
 
 
-    def attach_var_callbacks(self):
-        "Attach callbacks to variables that can be changed."
-        self.font_size.trace_add('write', self.var_changed_font)
-        self.font_name.trace_add('write', self.var_changed_font)
-        self.font_bold.trace_add('write', self.var_changed_font)
-        self.space_num.trace_add('write', self.var_changed_space_num)
-        self.color.trace_add('write', self.var_changed_color)
-        self.builtin_theme.trace_add('write', self.var_changed_builtin_theme)
-        self.custom_theme.trace_add('write', self.var_changed_custom_theme)
-        self.is_builtin_theme.trace_add('write', self.var_changed_is_builtin_theme)
-        self.highlight_target.trace_add('write', self.var_changed_highlight_target)
-        self.keybinding.trace_add('write', self.var_changed_keybinding)
-        self.builtin_keys.trace_add('write', self.var_changed_builtin_keys)
-        self.custom_keys.trace_add('write', self.var_changed_custom_keys)
-        self.are_keys_builtin.trace_add('write', self.var_changed_are_keys_builtin)
-        self.win_width.trace_add('write', self.var_changed_win_width)
-        self.win_height.trace_add('write', self.var_changed_win_height)
-        self.startup_edit.trace_add('write', self.var_changed_startup_edit)
-        self.autosave.trace_add('write', self.var_changed_autosave)
-
-    def remove_var_callbacks(self):
-        "Remove callbacks to prevent memory leaks."
-        for var in (
-                self.font_size, self.font_name, self.font_bold,
-                self.space_num, self.color, self.builtin_theme,
-                self.custom_theme, self.is_builtin_theme, self.highlight_target,
-                self.keybinding, self.builtin_keys, self.custom_keys,
-                self.are_keys_builtin, self.win_width, self.win_height,
-                self.startup_edit, self.autosave,):
-            var.trace_remove('write', var.trace_info()[0][1])
-
     def var_changed_keybinding(self, *params):
         "Store change to a keybinding."
         value = self.keybinding.get()
@@ -1593,26 +1617,6 @@ class ConfigDialog(Toplevel):
         self.save_all_changed_extensions()
         self.activate_config_changes()
         self.set_keys_type()
-
-    def load_configs(self):
-        """Load configuration for each page.
-
-        Load configuration from default and user config files and populate
-        the widgets on the config dialog pages.
-
-        Methods:
-            load_font_cfg
-            load_tab_cfg
-            load_theme_cfg
-            load_key_cfg
-            load_general_cfg
-        """
-        self.load_font_cfg()
-        self.load_tab_cfg()
-        self.load_theme_cfg()
-        self.load_key_cfg()
-        self.load_general_cfg()
-        # note: extension page handled separately
 
     def save_new_key_set(self, keyset_name, keyset):
         """Save a newly created core key set.
