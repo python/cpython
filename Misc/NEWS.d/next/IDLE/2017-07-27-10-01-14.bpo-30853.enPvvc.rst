@@ -1,0 +1,1 @@
+Add VarTrace class to configdialog.
