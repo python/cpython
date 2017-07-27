@@ -287,6 +287,10 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.minor)
         self.assertRaises((ValueError, OverflowError), posix.minor, -1)
 
+        if sys.platform.startswith('freebsd') and dev >= 0x100000000:
+            self.skipTest("bpo-31044: on FreeBSD CURRENT, minor() truncates "
+                          "64-bit dev to 32-bit")
+
         self.assertEqual(posix.makedev(major, minor), dev)
         self.assertEqual(posix.makedev(int(major), int(minor)), dev)
         self.assertEqual(posix.makedev(long(major), long(minor)), dev)
