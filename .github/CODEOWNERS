@@ -1,0 +1,11 @@
+Doc/library/hashlib.rst        @tiran
+Doc/library/ssl.rst            @tiran
+Lib/hashlib.py                 @tiran
+Lib/ssl.py                     @tiran
+Lib/test/test_hashlib.py       @tiran
+Lib/test/test_ssl.py           @tiran
+Modules/_hashopenssl.c         @tiran
+Modules/_ssl*                  @tiran
+Modules/hashlib.h              @tiran
+Python/pyhash.c                @tiran
+Include/pyhash.h               @tiran
