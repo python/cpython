@@ -531,6 +531,399 @@ class ConfigDialog(Toplevel):
         self.new_custom_theme.pack(side=TOP, fill=X, pady=5)
         return frame
 
+    def load_theme_cfg(self):
+        """Load current configuration settings for the theme options.
+
+        Based on the is_builtin_theme toggle, the theme is set as
+        either builtin or custom and the initial widget values
+        reflect the current settings from idleConf.
+
+        Attributes updated:
+            is_builtin_theme: Set from idleConf.
+            opt_menu_theme_builtin: List of default themes from idleConf.
+            opt_menu_theme_custom: List of custom themes from idleConf.
+            radio_theme_custom: Disabled if there are no custom themes.
+            custom_theme: Message with additional information.
+            opt_menu_highlight_target: Create menu from self.theme_elements.
+
+        Methods:
+            set_theme_type
+            paint_theme_sample
+            set_highlight_target
+        """
+        # Set current theme type radiobutton.
+        self.is_builtin_theme.set(idleConf.GetOption(
+                'main', 'Theme', 'default', type='bool', default=1))
+        # Set current theme.
+        current_option = idleConf.CurrentTheme()
+        # Load available theme option menus.
+        if self.is_builtin_theme.get():  # Default theme selected.
+            item_list = idleConf.GetSectionList('default', 'highlight')
+            item_list.sort()
+            self.opt_menu_theme_builtin.SetMenu(item_list, current_option)
+            item_list = idleConf.GetSectionList('user', 'highlight')
+            item_list.sort()
+            if not item_list:
+                self.radio_theme_custom['state'] = DISABLED
+                self.custom_theme.set('- no custom themes -')
+            else:
+                self.opt_menu_theme_custom.SetMenu(item_list, item_list[0])
+        else:  # User theme selected.
+            item_list = idleConf.GetSectionList('user', 'highlight')
+            item_list.sort()
+            self.opt_menu_theme_custom.SetMenu(item_list, current_option)
+            item_list = idleConf.GetSectionList('default', 'highlight')
+            item_list.sort()
+            self.opt_menu_theme_builtin.SetMenu(item_list, item_list[0])
+        self.set_theme_type()
+        # Load theme element option menu.
+        theme_names = list(self.theme_elements.keys())
+        theme_names.sort(key=lambda x: self.theme_elements[x][1])
+        self.opt_menu_highlight_target.SetMenu(theme_names, theme_names[0])
+        self.paint_theme_sample()
+        self.set_highlight_target()
+
+    def var_changed_color(self, *params):
+        "Process change to color choice."
+        self.on_new_color_set()
+
+    def var_changed_builtin_theme(self, *params):
+        """Process new builtin theme selection.
+
+        Add the changed theme's name to the changed_items and recreate
+        the sample with the values from the selected theme.
+        """
+        old_themes = ('IDLE Classic', 'IDLE New')
+        value = self.builtin_theme.get()
+        if value not in old_themes:
+            if idleConf.GetOption('main', 'Theme', 'name') not in old_themes:
+                changes.add_option('main', 'Theme', 'name', old_themes[0])
+            changes.add_option('main', 'Theme', 'name2', value)
+            self.new_custom_theme.config(text='New theme, see Help',
+                                         fg='#500000')
+        else:
+            changes.add_option('main', 'Theme', 'name', value)
+            changes.add_option('main', 'Theme', 'name2', '')
+            self.new_custom_theme.config(text='', fg='black')
+        self.paint_theme_sample()
+
+    def var_changed_custom_theme(self, *params):
+        """Process new custom theme selection.
+
+        If a new custom theme is selected, add the name to the
+        changed_items and apply the theme to the sample.
+        """
+        value = self.custom_theme.get()
+        if value != '- no custom themes -':
+            changes.add_option('main', 'Theme', 'name', value)
+            self.paint_theme_sample()
+
+    def var_changed_is_builtin_theme(self, *params):
+        """Process toggle between builtin and custom theme.
+
+        Update the default toggle value and apply the newly
+        selected theme type.
+        """
+        value = self.is_builtin_theme.get()
+        changes.add_option('main', 'Theme', 'default', value)
+        if value:
+            self.var_changed_builtin_theme()
+        else:
+            self.var_changed_custom_theme()
+
+    def var_changed_highlight_target(self, *params):
+        "Process selection of new target tag for highlighting."
+        self.set_highlight_target()
+
+    def set_theme_type(self):
+        """Set available screen options based on builtin or custom theme.
+
+        Attributes accessed:
+            is_builtin_theme
+
+        Attributes updated:
+            opt_menu_theme_builtin
+            opt_menu_theme_custom
+            button_delete_custom_theme
+            radio_theme_custom
+
+        Called from:
+            handler for radio_theme_builtin and radio_theme_custom
+            delete_custom_theme
+            create_new_theme
+            load_theme_cfg
+        """
+        if self.is_builtin_theme.get():
+            self.opt_menu_theme_builtin['state'] = NORMAL
+            self.opt_menu_theme_custom['state'] = DISABLED
+            self.button_delete_custom_theme['state'] = DISABLED
+        else:
+            self.opt_menu_theme_builtin['state'] = DISABLED
+            self.radio_theme_custom['state'] = NORMAL
+            self.opt_menu_theme_custom['state'] = NORMAL
+            self.button_delete_custom_theme['state'] = NORMAL
+
+    def delete_custom_theme(self):
+        """Handle event to delete custom theme.
+
+        The current theme is deactivated and the default theme is
+        activated.  The custom theme is permanently removed from
+        the config file.
+
+        Attributes accessed:
+            custom_theme
+
+        Attributes updated:
+            radio_theme_custom
+            opt_menu_theme_custom
+            is_builtin_theme
+            builtin_theme
+
+        Methods:
+            deactivate_current_config
+            save_all_changed_extensions
+            activate_config_changes
+            set_theme_type
+        """
+        theme_name = self.custom_theme.get()
+        delmsg = 'Are you sure you wish to delete the theme %r ?'
+        if not tkMessageBox.askyesno(
+                'Delete Theme',  delmsg % theme_name, parent=self):
+            return
+        self.deactivate_current_config()
+        # Remove theme from changes, config, and file.
+        changes.delete_section('highlight', theme_name)
+        # Reload user theme list.
+        item_list = idleConf.GetSectionList('user', 'highlight')
+        item_list.sort()
+        if not item_list:
+            self.radio_theme_custom['state'] = DISABLED
+            self.opt_menu_theme_custom.SetMenu(item_list, '- no custom themes -')
+        else:
+            self.opt_menu_theme_custom.SetMenu(item_list, item_list[0])
+        # Revert to default theme.
+        self.is_builtin_theme.set(idleConf.defaultCfg['main'].Get('Theme', 'default'))
+        self.builtin_theme.set(idleConf.defaultCfg['main'].Get('Theme', 'name'))
+        # User can't back out of these changes, they must be applied now.
+        changes.save_all()
+        self.save_all_changed_extensions()
+        self.activate_config_changes()
+        self.set_theme_type()
+
+    def get_color(self):
+        """Handle button to select a new color for the target tag.
+
+        If a new color is selected while using a builtin theme, a
+        name must be supplied to create a custom theme.
+
+        Attributes accessed:
+            highlight_target
+            frame_color_set
+            is_builtin_theme
+
+        Attributes updated:
+            color
+
+        Methods:
+            get_new_theme_name
+            create_new_theme
+        """
+        target = self.highlight_target.get()
+        prev_color = self.frame_color_set.cget('bg')
+        rgbTuplet, color_string = tkColorChooser.askcolor(
+                parent=self, title='Pick new color for : '+target,
+                initialcolor=prev_color)
+        if color_string and (color_string != prev_color):
+            # User didn't cancel and they chose a new color.
+            if self.is_builtin_theme.get():  # Current theme is a built-in.
+                message = ('Your changes will be saved as a new Custom Theme. '
+                           'Enter a name for your new Custom Theme below.')
+                new_theme = self.get_new_theme_name(message)
+                if not new_theme:  # User cancelled custom theme creation.
+                    return
+                else:  # Create new custom theme based on previously active theme.
+                    self.create_new_theme(new_theme)
+                    self.color.set(color_string)
+            else:  # Current theme is user defined.
+                self.color.set(color_string)
+
+    def on_new_color_set(self):
+        "Display sample of new color selection on the dialog."
+        new_color=self.color.get()
+        self.frame_color_set.config(bg=new_color)  # Set sample.
+        plane ='foreground' if self.fg_bg_toggle.get() else 'background'
+        sample_element = self.theme_elements[self.highlight_target.get()][0]
+        self.highlight_sample.tag_config(sample_element, **{plane:new_color})
+        theme = self.custom_theme.get()
+        theme_element = sample_element + '-' + plane
+        changes.add_option('highlight', theme, theme_element, new_color)
+
+    def get_new_theme_name(self, message):
+        "Return name of new theme from query popup."
+        used_names = (idleConf.GetSectionList('user', 'highlight') +
+                idleConf.GetSectionList('default', 'highlight'))
+        new_theme = SectionName(
+                self, 'New Custom Theme', message, used_names).result
+        return new_theme
+
+    def save_as_new_theme(self):
+        """Prompt for new theme name and create the theme.
+
+        Methods:
+            get_new_theme_name
+            create_new_theme
+        """
+        new_theme_name = self.get_new_theme_name('New Theme Name:')
+        if new_theme_name:
+            self.create_new_theme(new_theme_name)
+
+    def create_new_theme(self, new_theme_name):
+        """Create a new custom theme with the given name.
+
+        Create the new theme based on the previously active theme
+        with the current changes applied.  Once it is saved, then
+        activate the new theme.
+
+        Attributes accessed:
+            builtin_theme
+            custom_theme
+
+        Attributes updated:
+            opt_menu_theme_custom
+            is_builtin_theme
+
+        Method:
+            save_new_theme
+            set_theme_type
+        """
+        if self.is_builtin_theme.get():
+            theme_type = 'default'
+            theme_name = self.builtin_theme.get()
+        else:
+            theme_type = 'user'
+            theme_name = self.custom_theme.get()
+        new_theme = idleConf.GetThemeDict(theme_type, theme_name)
+        # Apply any of the old theme's unsaved changes to the new theme.
+        if theme_name in changes['highlight']:
+            theme_changes = changes['highlight'][theme_name]
+            for element in theme_changes:
+                new_theme[element] = theme_changes[element]
+        # Save the new theme.
+        self.save_new_theme(new_theme_name, new_theme)
+        # Change GUI over to the new theme.
+        custom_theme_list = idleConf.GetSectionList('user', 'highlight')
+        custom_theme_list.sort()
+        self.opt_menu_theme_custom.SetMenu(custom_theme_list, new_theme_name)
+        self.is_builtin_theme.set(0)
+        self.set_theme_type()
+
+    def set_highlight_target(self):
+        """Set fg/bg toggle and color based on highlight tag target.
+
+        Instance variables accessed:
+            highlight_target
+
+        Attributes updated:
+            radio_fg
+            radio_bg
+            fg_bg_toggle
+
+        Methods:
+            set_color_sample
+
+        Called from:
+            var_changed_highlight_target
+            load_theme_cfg
+        """
+        if self.highlight_target.get() == 'Cursor':  # bg not possible
+            self.radio_fg['state'] = DISABLED
+            self.radio_bg['state'] = DISABLED
+            self.fg_bg_toggle.set(1)
+        else:  # Both fg and bg can be set.
+            self.radio_fg['state'] = NORMAL
+            self.radio_bg['state'] = NORMAL
+            self.fg_bg_toggle.set(1)
+        self.set_color_sample()
+
+    def set_color_sample_binding(self, *args):
+        """Change color sample based on foreground/background toggle.
+
+        Methods:
+            set_color_sample
+        """
+        self.set_color_sample()
+
+    def set_color_sample(self):
+        """Set the color of the frame background to reflect the selected target.
+
+        Instance variables accessed:
+            theme_elements
+            highlight_target
+            fg_bg_toggle
+            highlight_sample
+
+        Attributes updated:
+            frame_color_set
+        """
+        # Set the color sample area.
+        tag = self.theme_elements[self.highlight_target.get()][0]
+        plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
+        color = self.highlight_sample.tag_cget(tag, plane)
+        self.frame_color_set.config(bg=color)
+
+    def paint_theme_sample(self):
+        """Apply the theme colors to each element tag in the sample text.
+
+        Instance attributes accessed:
+            theme_elements
+            is_builtin_theme
+            builtin_theme
+            custom_theme
+
+        Attributes updated:
+            highlight_sample: Set the tag elements to the theme.
+
+        Methods:
+            set_color_sample
+
+        Called from:
+            var_changed_builtin_theme
+            var_changed_custom_theme
+            load_theme_cfg
+        """
+        if self.is_builtin_theme.get():  # Default theme
+            theme = self.builtin_theme.get()
+        else:  # User theme
+            theme = self.custom_theme.get()
+        for element_title in self.theme_elements:
+            element = self.theme_elements[element_title][0]
+            colors = idleConf.GetHighlight(theme, element)
+            if element == 'cursor':  # Cursor sample needs special painting.
+                colors['background'] = idleConf.GetHighlight(
+                        theme, 'normal', fgBg='bg')
+            # Handle any unsaved changes to this theme.
+            if theme in changes['highlight']:
+                theme_dict = changes['highlight'][theme]
+                if element + '-foreground' in theme_dict:
+                    colors['foreground'] = theme_dict[element + '-foreground']
+                if element + '-background' in theme_dict:
+                    colors['background'] = theme_dict[element + '-background']
+            self.highlight_sample.tag_config(element, **colors)
+        self.set_color_sample()
+
+    def save_new_theme(self, theme_name, theme):
+        """Save a newly created theme to idleConf.
+
+        theme_name - string, the name of the new theme
+        theme - dictionary containing the new theme
+        """
+        if not idleConf.userCfg['highlight'].has_section(theme_name):
+            idleConf.userCfg['highlight'].add_section(theme_name)
+        for element in theme:
+            value = theme[element]
+            idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
+
+
     def create_page_keys(self):
         """Return frame of widgets for Keys tab.
 
@@ -649,6 +1042,37 @@ class ConfigDialog(Toplevel):
         frames[0].pack(side=TOP, fill=BOTH, expand=True)
         frames[1].pack(side=TOP, fill=X, expand=True, pady=2)
         return frame
+
+    def load_key_cfg(self):
+        "Load current configuration settings for the keybinding options."
+        # Set current keys type radiobutton.
+        self.are_keys_builtin.set(idleConf.GetOption(
+                'main', 'Keys', 'default', type='bool', default=1))
+        # Set current keys.
+        current_option = idleConf.CurrentKeys()
+        # Load available keyset option menus.
+        if self.are_keys_builtin.get():  # Default theme selected.
+            item_list = idleConf.GetSectionList('default', 'keys')
+            item_list.sort()
+            self.opt_menu_keys_builtin.SetMenu(item_list, current_option)
+            item_list = idleConf.GetSectionList('user', 'keys')
+            item_list.sort()
+            if not item_list:
+                self.radio_keys_custom['state'] = DISABLED
+                self.custom_keys.set('- no custom keys -')
+            else:
+                self.opt_menu_keys_custom.SetMenu(item_list, item_list[0])
+        else:  # User key set selected.
+            item_list = idleConf.GetSectionList('user', 'keys')
+            item_list.sort()
+            self.opt_menu_keys_custom.SetMenu(item_list, current_option)
+            item_list = idleConf.GetSectionList('default', 'keys')
+            item_list.sort()
+            self.opt_menu_keys_builtin.SetMenu(item_list, idleConf.default_keys())
+        self.set_keys_type()
+        # Load keyset element list.
+        keyset_name = idleConf.CurrentKeys()
+        self.load_keys_list(keyset_name)
 
 
     def create_page_general(self):
@@ -928,58 +1352,6 @@ class ConfigDialog(Toplevel):
                 self.startup_edit, self.autosave,):
             var.trace_remove('write', var.trace_info()[0][1])
 
-    def var_changed_color(self, *params):
-        "Process change to color choice."
-        self.on_new_color_set()
-
-    def var_changed_builtin_theme(self, *params):
-        """Process new builtin theme selection.
-
-        Add the changed theme's name to the changed_items and recreate
-        the sample with the values from the selected theme.
-        """
-        old_themes = ('IDLE Classic', 'IDLE New')
-        value = self.builtin_theme.get()
-        if value not in old_themes:
-            if idleConf.GetOption('main', 'Theme', 'name') not in old_themes:
-                changes.add_option('main', 'Theme', 'name', old_themes[0])
-            changes.add_option('main', 'Theme', 'name2', value)
-            self.new_custom_theme.config(text='New theme, see Help',
-                                         fg='#500000')
-        else:
-            changes.add_option('main', 'Theme', 'name', value)
-            changes.add_option('main', 'Theme', 'name2', '')
-            self.new_custom_theme.config(text='', fg='black')
-        self.paint_theme_sample()
-
-    def var_changed_custom_theme(self, *params):
-        """Process new custom theme selection.
-
-        If a new custom theme is selected, add the name to the
-        changed_items and apply the theme to the sample.
-        """
-        value = self.custom_theme.get()
-        if value != '- no custom themes -':
-            changes.add_option('main', 'Theme', 'name', value)
-            self.paint_theme_sample()
-
-    def var_changed_is_builtin_theme(self, *params):
-        """Process toggle between builtin and custom theme.
-
-        Update the default toggle value and apply the newly
-        selected theme type.
-        """
-        value = self.is_builtin_theme.get()
-        changes.add_option('main', 'Theme', 'default', value)
-        if value:
-            self.var_changed_builtin_theme()
-        else:
-            self.var_changed_custom_theme()
-
-    def var_changed_highlight_target(self, *params):
-        "Process selection of new target tag for highlighting."
-        self.set_highlight_target()
-
     def var_changed_keybinding(self, *params):
         "Store change to a keybinding."
         value = self.keybinding.get()
@@ -1221,337 +1593,6 @@ class ConfigDialog(Toplevel):
         self.save_all_changed_extensions()
         self.activate_config_changes()
         self.set_keys_type()
-
-    def delete_custom_theme(self):
-        """Handle event to delete custom theme.
-
-        The current theme is deactivated and the default theme is
-        activated.  The custom theme is permanently removed from
-        the config file.
-
-        Attributes accessed:
-            custom_theme
-
-        Attributes updated:
-            radio_theme_custom
-            opt_menu_theme_custom
-            is_builtin_theme
-            builtin_theme
-
-        Methods:
-            deactivate_current_config
-            save_all_changed_extensions
-            activate_config_changes
-            set_theme_type
-        """
-        theme_name = self.custom_theme.get()
-        delmsg = 'Are you sure you wish to delete the theme %r ?'
-        if not tkMessageBox.askyesno(
-                'Delete Theme',  delmsg % theme_name, parent=self):
-            return
-        self.deactivate_current_config()
-        # Remove theme from changes, config, and file.
-        changes.delete_section('highlight', theme_name)
-        # Reload user theme list.
-        item_list = idleConf.GetSectionList('user', 'highlight')
-        item_list.sort()
-        if not item_list:
-            self.radio_theme_custom['state'] = DISABLED
-            self.opt_menu_theme_custom.SetMenu(item_list, '- no custom themes -')
-        else:
-            self.opt_menu_theme_custom.SetMenu(item_list, item_list[0])
-        # Revert to default theme.
-        self.is_builtin_theme.set(idleConf.defaultCfg['main'].Get('Theme', 'default'))
-        self.builtin_theme.set(idleConf.defaultCfg['main'].Get('Theme', 'name'))
-        # User can't back out of these changes, they must be applied now.
-        changes.save_all()
-        self.save_all_changed_extensions()
-        self.activate_config_changes()
-        self.set_theme_type()
-
-    def get_color(self):
-        """Handle button to select a new color for the target tag.
-
-        If a new color is selected while using a builtin theme, a
-        name must be supplied to create a custom theme.
-
-        Attributes accessed:
-            highlight_target
-            frame_color_set
-            is_builtin_theme
-
-        Attributes updated:
-            color
-
-        Methods:
-            get_new_theme_name
-            create_new_theme
-        """
-        target = self.highlight_target.get()
-        prev_color = self.frame_color_set.cget('bg')
-        rgbTuplet, color_string = tkColorChooser.askcolor(
-                parent=self, title='Pick new color for : '+target,
-                initialcolor=prev_color)
-        if color_string and (color_string != prev_color):
-            # User didn't cancel and they chose a new color.
-            if self.is_builtin_theme.get():  # Current theme is a built-in.
-                message = ('Your changes will be saved as a new Custom Theme. '
-                           'Enter a name for your new Custom Theme below.')
-                new_theme = self.get_new_theme_name(message)
-                if not new_theme:  # User cancelled custom theme creation.
-                    return
-                else:  # Create new custom theme based on previously active theme.
-                    self.create_new_theme(new_theme)
-                    self.color.set(color_string)
-            else:  # Current theme is user defined.
-                self.color.set(color_string)
-
-    def on_new_color_set(self):
-        "Display sample of new color selection on the dialog."
-        new_color=self.color.get()
-        self.frame_color_set.config(bg=new_color)  # Set sample.
-        plane ='foreground' if self.fg_bg_toggle.get() else 'background'
-        sample_element = self.theme_elements[self.highlight_target.get()][0]
-        self.highlight_sample.tag_config(sample_element, **{plane:new_color})
-        theme = self.custom_theme.get()
-        theme_element = sample_element + '-' + plane
-        changes.add_option('highlight', theme, theme_element, new_color)
-
-    def get_new_theme_name(self, message):
-        "Return name of new theme from query popup."
-        used_names = (idleConf.GetSectionList('user', 'highlight') +
-                idleConf.GetSectionList('default', 'highlight'))
-        new_theme = SectionName(
-                self, 'New Custom Theme', message, used_names).result
-        return new_theme
-
-    def save_as_new_theme(self):
-        """Prompt for new theme name and create the theme.
-
-        Methods:
-            get_new_theme_name
-            create_new_theme
-        """
-        new_theme_name = self.get_new_theme_name('New Theme Name:')
-        if new_theme_name:
-            self.create_new_theme(new_theme_name)
-
-    def create_new_theme(self, new_theme_name):
-        """Create a new custom theme with the given name.
-
-        Create the new theme based on the previously active theme
-        with the current changes applied.  Once it is saved, then
-        activate the new theme.
-
-        Attributes accessed:
-            builtin_theme
-            custom_theme
-
-        Attributes updated:
-            opt_menu_theme_custom
-            is_builtin_theme
-
-        Method:
-            save_new_theme
-            set_theme_type
-        """
-        if self.is_builtin_theme.get():
-            theme_type = 'default'
-            theme_name = self.builtin_theme.get()
-        else:
-            theme_type = 'user'
-            theme_name = self.custom_theme.get()
-        new_theme = idleConf.GetThemeDict(theme_type, theme_name)
-        # Apply any of the old theme's unsaved changes to the new theme.
-        if theme_name in changes['highlight']:
-            theme_changes = changes['highlight'][theme_name]
-            for element in theme_changes:
-                new_theme[element] = theme_changes[element]
-        # Save the new theme.
-        self.save_new_theme(new_theme_name, new_theme)
-        # Change GUI over to the new theme.
-        custom_theme_list = idleConf.GetSectionList('user', 'highlight')
-        custom_theme_list.sort()
-        self.opt_menu_theme_custom.SetMenu(custom_theme_list, new_theme_name)
-        self.is_builtin_theme.set(0)
-        self.set_theme_type()
-
-    def set_highlight_target(self):
-        """Set fg/bg toggle and color based on highlight tag target.
-
-        Instance variables accessed:
-            highlight_target
-
-        Attributes updated:
-            radio_fg
-            radio_bg
-            fg_bg_toggle
-
-        Methods:
-            set_color_sample
-
-        Called from:
-            var_changed_highlight_target
-            load_theme_cfg
-        """
-        if self.highlight_target.get() == 'Cursor':  # bg not possible
-            self.radio_fg['state'] = DISABLED
-            self.radio_bg['state'] = DISABLED
-            self.fg_bg_toggle.set(1)
-        else:  # Both fg and bg can be set.
-            self.radio_fg['state'] = NORMAL
-            self.radio_bg['state'] = NORMAL
-            self.fg_bg_toggle.set(1)
-        self.set_color_sample()
-
-    def set_color_sample_binding(self, *args):
-        """Change color sample based on foreground/background toggle.
-
-        Methods:
-            set_color_sample
-        """
-        self.set_color_sample()
-
-    def set_color_sample(self):
-        """Set the color of the frame background to reflect the selected target.
-
-        Instance variables accessed:
-            theme_elements
-            highlight_target
-            fg_bg_toggle
-            highlight_sample
-
-        Attributes updated:
-            frame_color_set
-        """
-        # Set the color sample area.
-        tag = self.theme_elements[self.highlight_target.get()][0]
-        plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
-        color = self.highlight_sample.tag_cget(tag, plane)
-        self.frame_color_set.config(bg=color)
-
-    def paint_theme_sample(self):
-        """Apply the theme colors to each element tag in the sample text.
-
-        Instance attributes accessed:
-            theme_elements
-            is_builtin_theme
-            builtin_theme
-            custom_theme
-
-        Attributes updated:
-            highlight_sample: Set the tag elements to the theme.
-
-        Methods:
-            set_color_sample
-
-        Called from:
-            var_changed_builtin_theme
-            var_changed_custom_theme
-            load_theme_cfg
-        """
-        if self.is_builtin_theme.get():  # Default theme
-            theme = self.builtin_theme.get()
-        else:  # User theme
-            theme = self.custom_theme.get()
-        for element_title in self.theme_elements:
-            element = self.theme_elements[element_title][0]
-            colors = idleConf.GetHighlight(theme, element)
-            if element == 'cursor':  # Cursor sample needs special painting.
-                colors['background'] = idleConf.GetHighlight(
-                        theme, 'normal', fgBg='bg')
-            # Handle any unsaved changes to this theme.
-            if theme in changes['highlight']:
-                theme_dict = changes['highlight'][theme]
-                if element + '-foreground' in theme_dict:
-                    colors['foreground'] = theme_dict[element + '-foreground']
-                if element + '-background' in theme_dict:
-                    colors['background'] = theme_dict[element + '-background']
-            self.highlight_sample.tag_config(element, **colors)
-        self.set_color_sample()
-
-    def load_theme_cfg(self):
-        """Load current configuration settings for the theme options.
-
-        Based on the is_builtin_theme toggle, the theme is set as
-        either builtin or custom and the initial widget values
-        reflect the current settings from idleConf.
-
-        Attributes updated:
-            is_builtin_theme: Set from idleConf.
-            opt_menu_theme_builtin: List of default themes from idleConf.
-            opt_menu_theme_custom: List of custom themes from idleConf.
-            radio_theme_custom: Disabled if there are no custom themes.
-            custom_theme: Message with additional information.
-            opt_menu_highlight_target: Create menu from self.theme_elements.
-
-        Methods:
-            set_theme_type
-            paint_theme_sample
-            set_highlight_target
-        """
-        # Set current theme type radiobutton.
-        self.is_builtin_theme.set(idleConf.GetOption(
-                'main', 'Theme', 'default', type='bool', default=1))
-        # Set current theme.
-        current_option = idleConf.CurrentTheme()
-        # Load available theme option menus.
-        if self.is_builtin_theme.get():  # Default theme selected.
-            item_list = idleConf.GetSectionList('default', 'highlight')
-            item_list.sort()
-            self.opt_menu_theme_builtin.SetMenu(item_list, current_option)
-            item_list = idleConf.GetSectionList('user', 'highlight')
-            item_list.sort()
-            if not item_list:
-                self.radio_theme_custom['state'] = DISABLED
-                self.custom_theme.set('- no custom themes -')
-            else:
-                self.opt_menu_theme_custom.SetMenu(item_list, item_list[0])
-        else:  # User theme selected.
-            item_list = idleConf.GetSectionList('user', 'highlight')
-            item_list.sort()
-            self.opt_menu_theme_custom.SetMenu(item_list, current_option)
-            item_list = idleConf.GetSectionList('default', 'highlight')
-            item_list.sort()
-            self.opt_menu_theme_builtin.SetMenu(item_list, item_list[0])
-        self.set_theme_type()
-        # Load theme element option menu.
-        theme_names = list(self.theme_elements.keys())
-        theme_names.sort(key=lambda x: self.theme_elements[x][1])
-        self.opt_menu_highlight_target.SetMenu(theme_names, theme_names[0])
-        self.paint_theme_sample()
-        self.set_highlight_target()
-
-    def load_key_cfg(self):
-        "Load current configuration settings for the keybinding options."
-        # Set current keys type radiobutton.
-        self.are_keys_builtin.set(idleConf.GetOption(
-                'main', 'Keys', 'default', type='bool', default=1))
-        # Set current keys.
-        current_option = idleConf.CurrentKeys()
-        # Load available keyset option menus.
-        if self.are_keys_builtin.get():  # Default theme selected.
-            item_list = idleConf.GetSectionList('default', 'keys')
-            item_list.sort()
-            self.opt_menu_keys_builtin.SetMenu(item_list, current_option)
-            item_list = idleConf.GetSectionList('user', 'keys')
-            item_list.sort()
-            if not item_list:
-                self.radio_keys_custom['state'] = DISABLED
-                self.custom_keys.set('- no custom keys -')
-            else:
-                self.opt_menu_keys_custom.SetMenu(item_list, item_list[0])
-        else:  # User key set selected.
-            item_list = idleConf.GetSectionList('user', 'keys')
-            item_list.sort()
-            self.opt_menu_keys_custom.SetMenu(item_list, current_option)
-            item_list = idleConf.GetSectionList('default', 'keys')
-            item_list.sort()
-            self.opt_menu_keys_builtin.SetMenu(item_list, idleConf.default_keys())
-        self.set_keys_type()
-        # Load keyset element list.
-        keyset_name = idleConf.CurrentKeys()
-        self.load_keys_list(keyset_name)
 
     def load_configs(self):
         """Load configuration for each page.
