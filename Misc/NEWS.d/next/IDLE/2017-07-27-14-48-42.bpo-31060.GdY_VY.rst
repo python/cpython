@@ -1,0 +1,3 @@
+IDLE - Finish rearranging methods of ConfigDialog Grouping methods
+pertaining to each tab and the buttons will aid writing tests and improving
+the tabs and will enable splitting the groups into classes.
