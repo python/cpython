@@ -4,6 +4,9 @@
 /* In particular use capitals like PyList_GET_SIZE */
 /* Think (ask) about inlining some calls, like __subclasses__ */
 /* Use PyId instead of string attrs */
+/* Work on INCREF/DECREF */
+/* Be sure to return NULL where exception possible */
+/* Use macros */
 
 #include "Python.h"
 #include "structmember.h"
@@ -45,9 +48,15 @@ abcmeta_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 abcmeta_clear(abc *tp)
 {
-    PySet_Clear(tp->abc_registry);
-    PySet_Clear(tp->abc_cache);
-    PySet_Clear(tp->abc_negative_cache);
+    if (tp->abc_registry) { /* This may be because _abc_registry is writeable (and was shared by typing) */
+        PySet_Clear(tp->abc_registry);
+    }
+    if (tp->abc_cache) {
+        PySet_Clear(tp->abc_cache);
+    }
+    if (tp->abc_negative_cache) {
+        PySet_Clear(tp->abc_negative_cache);
+    }
     return PyType_Type.tp_clear((PyObject *)tp);
 }
 
@@ -58,7 +67,6 @@ abcmeta_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *ns, *bases, *items, *abstracts, *is_abstract, *base_abstracts;
     PyObject *key, *value, *item, *iter;
     Py_ssize_t pos = 0;
-
     result = (abc *)PyType_Type.tp_new(type, args, kwds);
     if (!result) {
         return NULL;
@@ -141,6 +149,7 @@ static PyObject *
 abcmeta_register(abc *self, PyObject *args)
 {
     PyObject *subclass = NULL;
+    int result;
     if (!PyArg_UnpackTuple(args, "register", 1, 1, &subclass)) {
         return NULL;
     }
@@ -148,12 +157,20 @@ abcmeta_register(abc *self, PyObject *args)
         PyErr_SetString(PyExc_TypeError, "Can only register classes");
         return NULL;
     }
-    if (PyObject_IsSubclass(subclass, (PyObject *)self)) { /* TODO: Check for error here */
+    result = PyObject_IsSubclass(subclass, (PyObject *)self);
+    if (result > 0) {
         Py_INCREF(subclass);
         return subclass;
     }
-    if (PyObject_IsSubclass((PyObject *)self, subclass)) { /* TODO: Check for error here */
+    if (result < 0) {
+        return NULL;
+    }
+    result = PyObject_IsSubclass((PyObject *)self, subclass);
+    if (result > 0) {
         PyErr_SetString(PyExc_RuntimeError, "Refusing to create an inheritance cycle");
+        return NULL;
+    }
+    if (result < 0) {
         return NULL;
     }
     if (PySet_Add(self->abc_registry, subclass) < 0) {
@@ -170,13 +187,17 @@ abcmeta_subclasscheck(abc *self, PyObject *args); /* Forward */
 static PyObject *
 abcmeta_instancecheck(abc *self, PyObject *args)
 {
-    PyObject *subclass, *instance = NULL;
-    if (!PyArg_UnpackTuple(args, "__isinstance__", 1, 1, &instance)) {
+    PyObject *result, *subclass, *instance = NULL;
+    if (!PyArg_UnpackTuple(args, "__instancecheck__", 1, 1, &instance)) {
         return NULL;
     }
     subclass = (PyObject *)Py_TYPE(instance);
     /* TODO: Use cache */
-    if (abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass)) == Py_True) { /* TODO: Refactor to avoid packing */
+    result = abcmeta_subclasscheck(self, PyTuple_Pack(1, subclass));
+    if (!result) {
+        return NULL;
+    }
+    if (result == Py_True) { /* TODO: Refactor to avoid packing */
         return Py_True;
     }
     subclass = PyObject_GetAttrString(instance, "__class__");
@@ -189,7 +210,8 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     PyObject *subclasses, *subclass = NULL;
     PyObject *ok, *mro, *iter, *key;
     Py_ssize_t pos;
-    if (!PyArg_UnpackTuple(args, "__issubclass__", 1, 1, &subclass)) {
+    int result;
+    if (!PyArg_UnpackTuple(args, "__subclasscheck__", 1, 1, &subclass)) {
         return NULL;
     }
     /* TODO: clear the registry from dead refs from time to time
@@ -197,6 +219,9 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     /* TODO: Reset caches every n-th succes/failure correspondingly
        so that they don't grow too large */
     ok = PyObject_CallMethod((PyObject *)self, "__subclasshook__", "O", subclass);
+    if (!ok) {
+        return NULL;
+    }
     if (ok == Py_True) {
         Py_INCREF(Py_True);
         return Py_True;
@@ -214,18 +239,26 @@ abcmeta_subclasscheck(abc *self, PyObject *args)
     }
     iter = PyObject_GetIter(self->abc_registry);
     while ((key = PyIter_Next(iter))) {
-        if (PyObject_IsSubclass(subclass, key)) {
+        result = PyObject_IsSubclass(subclass, key);
+        if (result > 0) {
             Py_INCREF(Py_True);
             return Py_True;
+        }
+        if (result < 0) {
+            return NULL;
         }
         Py_DECREF(key);
     }
     Py_DECREF(iter);
     subclasses = PyObject_CallMethod((PyObject *)self, "__subclasses__", NULL);
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
-        if (PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos))) {
+        result = PyObject_IsSubclass(subclass, PyList_GET_ITEM(subclasses, pos));
+        if (result > 0) {
             Py_INCREF(Py_True);
             return Py_True;
+        }
+        if (result < 0) {
+            return NULL;
         }
     }
     Py_INCREF(Py_False);
@@ -342,6 +375,18 @@ static PyMethodDef abcmeta_methods[] = {
     {NULL,      NULL},
 };
 
+static PyMemberDef abc_members[] = {
+    {"_abc_registry", T_OBJECT, offsetof(abc, abc_registry), 0, /* Maybe make these READONLY */
+     PyDoc_STR("ABC registry (private).")},
+    {"_abc_cache", T_OBJECT, offsetof(abc, abc_cache), 0,
+     PyDoc_STR("ABC positive cache (private).")},
+    {"_abc_negative_cache", T_OBJECT, offsetof(abc, abc_negative_cache), 0,
+     PyDoc_STR("ABC negative cache (private).")},
+    {"_abc_negative_cache_version", T_OBJECT, offsetof(abc, abc_negative_cache), 0,
+     PyDoc_STR("ABC negative cache version (private).")},
+    {NULL}
+};
+
 PyDoc_STRVAR(abcmeta_doc,
  "Metaclass for defining Abstract Base Classes (ABCs).\n\
 \n\
@@ -385,7 +430,7 @@ PyTypeObject ABCMeta = {
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     abcmeta_methods,                            /* tp_methods */
-    0,                                          /* tp_members */
+    abc_members,                                /* tp_members */
     0,                                          /* tp_getset */
     DEFERRED_ADDRESS(&PyType_Type),             /* tp_base */
     0,                                          /* tp_dict */
