@@ -1831,9 +1831,10 @@ class ConfigDialog(Toplevel):
 
 class FontPage:
 
-    def __init__(self, parent, tab_pages):
+    def __init__(self, parent, tab_pages, highlight_sample):
         self.parent = parent
         self.tab_pages = tab_pages
+        self.highlight_sample = highlight_sample
         self.create_page_font_tab()
         self.load_font_cfg()
         self.load_tab_cfg()
@@ -2022,7 +2023,7 @@ class FontPage:
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
         new_font = (font_name, self.font_size.get(), font_weight)
         self.font_sample['font'] = new_font
-        # self.highlight_sample['font'] = new_font
+        self.highlight_sample['font'] = new_font
 
     def load_tab_cfg(self):
         """Load current configuration settings for the tab options.
