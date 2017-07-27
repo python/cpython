@@ -206,10 +206,16 @@ def _wrap_strftime(object, format, timetuple):
                                 if offset.days < 0:
                                     offset = -offset
                                     sign = '-'
-                                h, m = divmod(offset, timedelta(hours=1))
-                                assert not m % timedelta(minutes=1), "whole minute"
-                                m //= timedelta(minutes=1)
-                                zreplace = '%c%02d%02d' % (sign, h, m)
+                                h, rest = divmod(offset, timedelta(hours=1))
+                                m, rest = divmod(rest, timedelta(minutes=1))
+                                s = rest.seconds
+                                u = offset.microseconds
+                                if u:
+                                    zreplace = '%c%02d%02d%02d.%06d' % (sign, h, m, s, u)
+                                elif s:
+                                    zreplace = '%c%02d%02d%02d' % (sign, h, m, s)
+                                else:
+                                    zreplace = '%c%02d%02d' % (sign, h, m)
                     assert '%' not in zreplace
                     newformat.append(zreplace)
                 elif ch == 'Z':

@@ -1088,7 +1088,7 @@ format_ctime(PyDateTime_Date *date, int hours, int minutes, int seconds)
 
 static PyObject *delta_negative(PyDateTime_Delta *self);
 
-/* Add an hours & minutes UTC offset string to buf.  buf has no more than
+/* Add formatted UTC offset string to buf.  buf has no more than
  * buflen bytes remaining.  The UTC offset is gotten by calling
  * tzinfo.uctoffset(tzinfoarg).  If that returns None, \0 is stored into
  * *buf, and that's all.  Else the returned value is checked for sanity (an
@@ -1103,7 +1103,7 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
                 PyObject *tzinfo, PyObject *tzinfoarg)
 {
     PyObject *offset;
-    int hours, minutes, seconds;
+    int hours, minutes, seconds, microseconds;
     char sign;
 
     assert(buflen >= 1);
@@ -1127,15 +1127,22 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
         sign = '+';
     }
     /* Offset is not negative here. */
+    microseconds = GET_TD_MICROSECONDS(offset);
     seconds = GET_TD_SECONDS(offset);
     Py_DECREF(offset);
     minutes = divmod(seconds, 60, &seconds);
     hours = divmod(minutes, 60, &minutes);
-    if (seconds == 0)
-        PyOS_snprintf(buf, buflen, "%c%02d%s%02d", sign, hours, sep, minutes);
-    else
+    if (microseconds) {
+        PyOS_snprintf(buf, buflen, "%c%02d%s%02d%s%02d.%06d", sign,
+                      hours, sep, minutes, sep, seconds, microseconds);
+        return 0;
+    }
+    if (seconds) {
         PyOS_snprintf(buf, buflen, "%c%02d%s%02d%s%02d", sign, hours,
                       sep, minutes, sep, seconds);
+        return 0;
+    }
+    PyOS_snprintf(buf, buflen, "%c%02d%s%02d", sign, hours, sep, minutes);
     return 0;
 }
 

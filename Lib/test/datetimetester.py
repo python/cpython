@@ -2162,6 +2162,9 @@ class TestDateTime(TestDate):
         t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
         self.assertEqual(t.strftime("%m %d %y %f %S %M %H %j"),
                                     "12 31 04 000047 33 22 06 366")
+        tz = timezone(-timedelta(hours=2, seconds=33, microseconds=123))
+        t = t.replace(tzinfo=tz)
+        self.assertEqual(t.strftime("%z"), "-020033.000123")
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -4307,7 +4310,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         self.assertEqual(gdt.strftime("%c %Z"),
                          'Mon Jun 23 22:00:00 1941 UTC')
 
-
     def test_constructors(self):
         t = time(0, fold=1)
         dt = datetime(1, 1, 1, fold=1)
@@ -4382,7 +4384,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         self.assertEqual(t0.fold, 0)
         self.assertEqual(t1.fold, 1)
 
-
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
     def test_timestamp(self):
         dt0 = datetime(2014, 11, 2, 1, 30)
@@ -4400,7 +4401,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         s1 = t.replace(fold=1).timestamp()
         self.assertEqual(s0 + 1800, s1)
 
-
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
     def test_astimezone(self):
         dt0 = datetime(2014, 11, 2, 1, 30)
@@ -4415,7 +4415,6 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         # Aware instances with fixed offset tzinfo's always have fold=0
         self.assertEqual(adt0.fold, 0)
         self.assertEqual(adt1.fold, 0)
-
 
     def test_pickle_fold(self):
         t = time(fold=1)
