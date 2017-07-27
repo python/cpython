@@ -1,16 +1,17 @@
 """Test idlelib.configdialog.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 46% just by creating dialog, 60% with current tests.
+Coverage: 63%.
 """
-from idlelib.configdialog import ConfigDialog, idleConf, changes, VarTrace
+from idlelib import configdialog
 from test.support import requires
 requires('gui')
-from tkinter import Tk, IntVar, BooleanVar
 import unittest
 from unittest import mock
-import idlelib.config as config
 from idlelib.idle_test.mock_idle import Func
+from tkinter import Tk, IntVar, BooleanVar, DISABLED, NORMAL
+from idlelib import config
+from idlelib.configdialog import ConfigDialog, idleConf, changes, VarTrace
 
 # Tests should not depend on fortuitous user configurations.
 # They must not affect actual user .cfg files.
@@ -226,27 +227,200 @@ class KeysTest(unittest.TestCase):
 
 
 class GeneralTest(unittest.TestCase):
+    """Test that general tab widgets enable users to make changes.
+
+    Test that widget actions set vars, that var changes add
+    options to changes and that helplist works correctly.
+    """
+    @classmethod
+    def setUpClass(cls):
+        # Mask instance methods used by help functions.
+        d = dialog
+        d.set = d.set_add_delete_state = Func()
+        d.upc = d.update_help_changes = Func()
+
+    @classmethod
+    def tearDownClass(cls):
+        d = dialog
+        del d.set, d.set_add_delete_state
+        del d.upc, d.update_help_changes
+        d.helplist.delete(0, 'end')
+        d.user_helplist.clear()
 
     def setUp(self):
         changes.clear()
 
+    def test_load_general_cfg(self):
+        # Set to wrong values, load, check right values.
+        eq = self.assertEqual
+        d = dialog
+        d.startup_edit.set(1)
+        d.autosave.set(1)
+        d.win_width.set(1)
+        d.win_height.set(1)
+        d.helplist.insert('end', 'bad')
+        d.user_helplist = ['bad', 'worse']
+        idleConf.SetOption('main', 'HelpFiles', '1', 'name;file')
+        d.load_general_cfg()
+        eq(d.startup_edit.get(), 0)
+        eq(d.autosave.get(), 0)
+        eq(d.win_width.get(), '80')
+        eq(d.win_height.get(), '40')
+        eq(d.helplist.get(0, 'end'), ('name',))
+        eq(d.user_helplist, [('name', 'file', '1')])
+
     def test_startup(self):
-        dialog.radio_startup_edit.invoke()
+        dialog.startup_editor_on.invoke()
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '1'}})
+        changes.clear()
+        dialog.startup_shell_on.invoke()
+        self.assertEqual(mainpage,
+                         {'General': {'editor-on-startup': '0'}})
 
     def test_autosave(self):
-        dialog.radio_save_auto.invoke()
+        dialog.save_auto_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '1'}})
+        dialog.save_ask_on.invoke()
+        self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
     def test_editor_size(self):
-        dialog.entry_win_height.insert(0, '1')
+        dialog.win_height_int.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
         changes.clear()
-        dialog.entry_win_width.insert(0, '1')
+        dialog.win_width_int.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
 
-    #def test_help_sources(self): pass  # TODO
+    def test_source_selected(self):
+        d = dialog
+        d.set = d.set_add_delete_state
+        d.upc = d.update_help_changes
+        helplist = d.helplist
+        helplist.insert(0, 'source')
+        helplist.activate(0)
+
+        helplist.focus_force()
+        helplist.see(0)
+        helplist.update()
+        x, y, dx, dy = helplist.bbox(0)
+        x += dx // 2
+        y += dy // 2
+        d.set.called = d.upc.called = 0
+        helplist.event_generate('<Button-1>', x=x, y=y)
+        helplist.event_generate('<ButtonRelease-1>', x=x, y=y)
+        self.assertEqual(helplist.get('anchor'), 'source')
+        self.assertTrue(d.set.called)
+        self.assertFalse(d.upc.called)
+
+    def test_set_add_delete_state(self):
+        # Call with 0 items, 1 unselected item, 1 selected item.
+        eq = self.assertEqual
+        d = dialog
+        del d.set_add_delete_state  # Unmask method.
+        sad = d.set_add_delete_state
+        h = d.helplist
+
+        h.delete(0, 'end')
+        sad()
+        eq(d.button_helplist_edit['state'], DISABLED)
+        eq(d.button_helplist_remove['state'], DISABLED)
+
+        h.insert(0, 'source')
+        sad()
+        eq(d.button_helplist_edit['state'], DISABLED)
+        eq(d.button_helplist_remove['state'], DISABLED)
+
+        h.selection_set(0)
+        sad()
+        eq(d.button_helplist_edit['state'], NORMAL)
+        eq(d.button_helplist_remove['state'], NORMAL)
+        d.set_add_delete_state = Func()  # Mask method.
+
+    def test_helplist_item_add(self):
+        # Call without and twice with HelpSource result.
+        # Double call enables check on order.
+        eq = self.assertEqual
+        orig_helpsource = configdialog.HelpSource
+        hs = configdialog.HelpSource = Func(return_self=True)
+        d = dialog
+        d.helplist.delete(0, 'end')
+        d.user_helplist.clear()
+        d.set.called = d.upc.called = 0
+
+        hs.result = ''
+        d.helplist_item_add()
+        self.assertTrue(list(d.helplist.get(0, 'end')) ==
+                        d.user_helplist == [])
+        self.assertFalse(d.upc.called)
+
+        hs.result = ('name1', 'file1')
+        d.helplist_item_add()
+        hs.result = ('name2', 'file2')
+        d.helplist_item_add()
+        eq(d.helplist.get(0, 'end'), ('name1', 'name2'))
+        eq(d.user_helplist, [('name1', 'file1'), ('name2', 'file2')])
+        eq(d.upc.called, 2)
+        self.assertFalse(d.set.called)
+
+        configdialog.HelpSource = orig_helpsource
+
+    def test_helplist_item_edit(self):
+        # Call without and with HelpSource change.
+        eq = self.assertEqual
+        orig_helpsource = configdialog.HelpSource
+        hs = configdialog.HelpSource = Func(return_self=True)
+        d = dialog
+        d.helplist.delete(0, 'end')
+        d.helplist.insert(0, 'name1')
+        d.helplist.selection_set(0)
+        d.helplist.selection_anchor(0)
+        d.user_helplist.clear()
+        d.user_helplist.append(('name1', 'file1'))
+        d.set.called = d.upc.called = 0
+
+        hs.result = ''
+        d.helplist_item_edit()
+        hs.result = ('name1', 'file1')
+        d.helplist_item_edit()
+        eq(d.helplist.get(0, 'end'), ('name1',))
+        eq(d.user_helplist, [('name1', 'file1')])
+        self.assertFalse(d.upc.called)
+
+        hs.result = ('name2', 'file2')
+        d.helplist_item_edit()
+        eq(d.helplist.get(0, 'end'), ('name2',))
+        eq(d.user_helplist, [('name2', 'file2')])
+        self.assertTrue(d.upc.called == d.set.called == 1)
+
+        configdialog.HelpSource = orig_helpsource
+
+    def test_helplist_item_remove(self):
+        eq = self.assertEqual
+        d = dialog
+        d.helplist.delete(0, 'end')
+        d.helplist.insert(0, 'name1')
+        d.helplist.selection_set(0)
+        d.helplist.selection_anchor(0)
+        d.user_helplist.clear()
+        d.user_helplist.append(('name1', 'file1'))
+        d.set.called = d.upc.called = 0
+
+        d.helplist_item_remove()
+        eq(d.helplist.get(0, 'end'), ())
+        eq(d.user_helplist, [])
+        self.assertTrue(d.upc.called == d.set.called == 1)
+
+    def test_update_help_changes(self):
+        d = dialog
+        del d.update_help_changes
+        d.user_helplist.clear()
+        d.user_helplist.append(('name1', 'file1'))
+        d.user_helplist.append(('name2', 'file2'))
+
+        d.update_help_changes()
+        self.assertEqual(mainpage['HelpFiles'],
+                        {'1': 'name1;file1', '2': 'name2;file2'})
+        d.update_help_changes = Func()
 
 
 class TestVarTrace(unittest.TestCase):
