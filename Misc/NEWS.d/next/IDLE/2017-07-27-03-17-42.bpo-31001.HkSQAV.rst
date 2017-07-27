@@ -1,0 +1,1 @@
+IDLE - Add tests for ConfigDialog highlight tab.
