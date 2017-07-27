@@ -1654,8 +1654,8 @@ Example:
    total offset from UTC; for example, if a :class:`tzinfo` object represents both
    time zone and DST adjustments, :meth:`utcoffset` should return their sum.  If
    the UTC offset isn't known, return ``None``.  Else the value returned must be a
-   :class:`timedelta` object specifying a whole number of minutes in the range
-   -1439 to 1439 inclusive (1440 = 24\*60; the magnitude of the offset must be less
+   :class:`timedelta` object strictly between ``-timedelta(hours=24)`` and
+  ``timedelta(hours=24)`` (the magnitude of the offset must be less
    than one day).  Most implementations of :meth:`utcoffset` will probably look
    like one of these two::
 
