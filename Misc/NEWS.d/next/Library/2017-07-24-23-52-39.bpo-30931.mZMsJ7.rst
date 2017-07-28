@@ -1,3 +1,3 @@
-asyncore: poll() and poll2() functions now check if a dispatcher was closed (if
-it's file descriptor is no more in the map) before calling its handlers:
-handlers of closed dispatchers are no more called.
+asyncore: poll() and poll2() functions now check before calling handlers if a
+dispatcher was closed and its file descriptor was reused by a newly registered
+dispatcher: handlers of closed dispatchers are no more called.
