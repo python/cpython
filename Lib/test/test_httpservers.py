@@ -338,9 +338,11 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.tempdir = tempfile.mkdtemp(dir=basetempdir)
         self.tempdir_name = os.path.basename(self.tempdir)
         self.base_url = '/' + self.tempdir_name
-        with open(os.path.join(self.tempdir, 'test'), 'wb') as temp:
+        tempname = os.path.join(self.tempdir, 'test')
+        with open(tempname, 'wb') as temp:
             temp.write(self.data)
-            mtime = os.fstat(temp.fileno()).st_mtime
+            temp.flush()
+        mtime = os.stat(tempname).st_mtime
         # compute last modification datetime for browser cache tests
         last_modif = datetime.datetime.fromtimestamp(mtime,
             datetime.timezone.utc)
