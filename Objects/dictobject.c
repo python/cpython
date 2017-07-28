@@ -615,6 +615,60 @@ new_dict_with_shared_keys(PyDictKeysObject *keys)
     return new_dict(keys, values);
 }
 
+
+static PyObject *
+clone_dict(PyObject *s)
+{
+    PyDictKeysObject *keys;
+    PyDictObject *new;
+    PyDictObject *ms;
+    Py_ssize_t i, n, keys_size;
+    PyDictKeyEntry *entry, *ep0;
+    PyObject *value;
+
+    assert(PyDict_CheckExact(s));
+    ms = (PyDictObject*)s;
+    assert(ms->ma_values == NULL);
+    assert(ms->ma_keys->dk_refcnt == 1);
+
+    keys_size = _PyDict_KeysSize(ms->ma_keys);
+    keys = PyObject_MALLOC(keys_size);
+    if (keys == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    memcpy(keys, ms->ma_keys, keys_size);
+
+    /* After copying key/value pairs, we need to inref all
+       keys and values and they are about to be co-owned by a
+       new dict object. */
+    ep0 = DK_ENTRIES(keys);
+    n = keys->dk_nentries;
+    for (i = 0; i < n; i++) {
+        entry = &ep0[i];
+        value = entry->me_value;
+        if (value != NULL) {
+            Py_INCREF(value);
+            Py_INCREF(entry->me_key);
+        }
+    }
+
+    new = (PyDictObject *)new_dict(keys, NULL);
+    if (new == NULL) {
+        /* In case of an error, `new_dict()` will take care of
+           cleaning up `keys`. */
+        return NULL;
+    }
+    new->ma_used = ms->ma_used;
+    assert(_PyDict_CheckConsistency(new));
+    if (_PyObject_GC_IS_TRACKED(s)) {
+        /* Maintain tracking. */
+        _PyObject_GC_TRACK(new);
+    }
+    return (PyObject *)new;
+}
+
 PyObject *
 PyDict_New(void)
 {
@@ -2510,13 +2564,20 @@ PyDict_Copy(PyObject *o)
             _PyObject_GC_TRACK(split_copy);
         return (PyObject *)split_copy;
     }
-    copy = PyDict_New();
-    if (copy == NULL)
+    if (PyDict_CheckExact(o) && mp->ma_values == NULL &&
+            mp->ma_keys->dk_refcnt == 1)
+    {
+        return clone_dict(o);
+    }
+    else {
+        copy = PyDict_New();
+        if (copy == NULL)
+            return NULL;
+        if (PyDict_Merge(copy, o, 1) == 0)
+            return copy;
+        Py_DECREF(copy);
         return NULL;
-    if (PyDict_Merge(copy, o, 1) == 0)
-        return copy;
-    Py_DECREF(copy);
-    return NULL;
+    }
 }
 
 Py_ssize_t
