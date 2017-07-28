@@ -1,0 +1,5 @@
+IDLE -- Factor a VarTrace class out of ConfigDialog.
+
+Instance tracers manages pairs consisting of a tk variable and a
+callback function.  When tracing is turned on, setting the variable
+calls the function.  Test coverage for the new class is 100%.
