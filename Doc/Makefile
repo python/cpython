@@ -40,7 +40,19 @@ help:
 
 build:
 	-mkdir -p build
-	$(BLURB) merge -f build/NEWS
+# Look first for a Misc/NEWS file (building from a source release tarball
+# or old repo) and use that, otherwise look for a Misc/NEWS.d directory
+# (building from a newer repo) and use blurb to generate the NEWS file.
+	@if [ -f  ../Misc/NEWS ] ; then \
+		echo "Using existing Misc/NEWS file"; \
+		cp ../Misc/NEWS build/NEWS; \
+	elif [ -d ../Misc/NEWS.d ]; then \
+		echo "Building NEWS from Misc/NEWS.d with blurb"; \
+		$(BLURB) merge -f build/NEWS; \
+	else \
+		echo "Neither Misc/NEWS.d nor Misc/NEWS found; cannot build docs"; \
+		exit 1; \
+	fi
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
