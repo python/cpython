@@ -135,7 +135,9 @@ class BaseTest(unittest.TestCase):
             logging._handlers.clear()
             logging._handlers.update(self.saved_handlers)
             logging._handlerList[:] = self.saved_handler_list
-            loggerDict = logging.getLogger().manager.loggerDict
+            manager = logging.getLogger().manager
+            manager.disable = 0
+            loggerDict = manager.loggerDict
             loggerDict.clear()
             loggerDict.update(self.saved_loggers)
             logger_states = self.logger_states
