@@ -176,71 +176,33 @@ commonly_compressed_types = [ "application/atom+xml",
                               "text/xml"
                             ]
 
-def _gzip_chunk_producer(fileobj):
-    """Generator that yields chunks of gzipped data read from the file object
-    fileobj. The last chunk is b'' to generate the final 0-length HTTP chunk.
+def _gzip_producer(fileobj, chunked):
+    """Generator that yields pieces of gzipped data read from the file object
+    fileobj.
+    If chunked is True, the pieces are formatted as chunks for Chunked Tranfer
+    Encoding.
     """
+    if chunked:
+        def make_chunk(data):
+            length = "{:X}".format(len(data)).encode("ascii")
+            return length + b"\r\n" + data + b"\r\n"
+    else:
+        make_chunk = lambda x:x
+
     bufsize = 2 << 17
-    producer = zlib.compressobj(wbits=16 + 9)
+    producer = zlib.compressobj(wbits=16 + 9) # gzip format
     with fileobj:
         while True:
             buf = fileobj.read(bufsize)
             if not buf: # end of file
-                chunk = producer.flush()
-                if chunk:
-                    yield chunk
-                yield b''
+                data = producer.flush()
+                if data:
+                    yield make_chunk(data)
+                yield make_chunk(b'')
                 return
-            chunk = producer.compress(buf)
-            if chunk:
-                yield chunk
-
-class _GzipProducer:
-    """File-like object to read data compressed from a file object."""
-
-    bufsize = 2 << 17
-
-    def __init__(self, fileobj):
-        self.producer = zlib.compressobj(wbits=16 + 9)
-        self.fileobj = fileobj
-        self.eof = False
-        self.output_buffer = b''
-
-    def read(self, nb):
-        """Read bytes from fileobj, compress them and add the result to the
-        output buffer until it has at least nb bytes, or there is nothing more
-        to compress.
-        """
-        if self.eof or len(self.output_buffer) >= nb:
-            return self._read_buf(nb)
-
-        buf = self.fileobj.read(self.bufsize)
-        if not buf: # end of file
-            self.eof = True
-            self.output_buffer += self.producer.flush()
-            return self._read_buf(nb)
-
-        self.output_buffer += self.producer.compress(buf)
-        while len(self.output_buffer) < nb:
-            buf = self.fileobj.read(self.bufsize)
-            if not buf: # end of file
-                self.eof = True
-                self.output_buffer += self.producer.flush()
-                return self._read_buf(nb)
-            self.output_buffer += self.producer.compress(buf)
-
-        return self._read_buf(nb)
-
-    def _read_buf(self, nb):
-        """Read at most nb bytes from the output buffer and reset it.
-        """
-        data, self.output_buffer = (self.output_buffer[:nb],
-            self.output_buffer[nb:])
-        return data
-
-    def close(self):
-        self.fileobj.close()
-
+            data = producer.compress(buf)
+            if data:
+                yield make_chunk(data)
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -757,7 +719,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if directory is None:
             directory = os.getcwd()
         self.directory = directory
-        self.chunked = False
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -765,15 +726,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         f = self.send_head()
         if f:
             try:
-                if not self.chunked:
+                if hasattr(f, "read"):
                     self.copyfile(f, self.wfile)
                 else:
-                    # Chunked Transfer Encoding (RFC 7230 section 4.1)
-                    # f is a generator of chunks. The last chunk is b''.
+                    # Generator for compressed data
                     for chunk in f:
-                        length = "{:X}".format(len(chunk)).encode("ascii")
-                        self.wfile.write(length + b"\r\n")
-                        self.wfile.write(chunk + b"\r\n")
+                        self.wfile.write(chunk)
             finally:
                 f.close()
 
@@ -858,9 +816,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
 
+            if not has_gzip or ctype not in self.compressed_types:
+                self.send_header("Content-Length", str(content_length))
+                self.end_headers()
+                return f
+
             # Use HTTP compression (gzip) if possible
+            # Get accepted encodings
             accept_encoding = self.headers.get_all("Accept-Encoding", ())
-            encodings = []
+            encodings = set()
             for accept in http.cookiejar.split_header_words(accept_encoding):
                 params = iter(accept)
                 encoding = next(params, ("", ""))[0]
@@ -871,10 +835,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     except ValueError:
                         # Invalid quality : ignore
                         pass
-                encodings.append(encoding if encoding != "*" else "gzip")
+                encodings.add(encoding)
 
-            if (has_gzip and ctype in self.compressed_types
-                    and any(key in encodings for key in ["gzip", "x-gzip"])):
+            # If gzip encoding is accepted, send gzipped data
+            if any(key in encodings for key in ["*", "gzip", "x-gzip"]):
                 self.send_header("Content-Encoding", "gzip")
                 if content_length < 2 << 18:
                     # For small files, load content in memory
@@ -882,33 +846,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                         content = gzip.compress(f.read())
                     content_length = len(content)
                     f = io.BytesIO(content)
-                elif self.protocol_version >= "HTTP/1.1":
-                    # For large files, use Chunked Transfer Encoding
-                    self.send_header("Transfer-Encoding", "chunked")
-                    self.end_headers()
-                    self.chunked = True
-                    return _gzip_chunk_producer(f)
                 else:
-                    # If chunked transfer can't be used, file content must be
-                    # gzipped twice : first to get the length of gzipped data,
-                    # then to send gzipped data to the client. Temporary
-                    # storage of data is not possible for security reasons.
-                    # See issue #30576.
-                    content_length = 0
-                    bufsize = 2 << 18
-                    producer = zlib.compressobj(wbits=16 + 9)
-                    while True:
-                        buf = f.read(bufsize)
-                        if not buf: # end of file
-                            content_length += len(producer.flush())
-                            break
-                        content_length += len(producer.compress(buf))
-                    # Set Content-Length header
-                    self.send_header("Content-Length", str(content_length))
+                    chunked = False
+                    if self.protocol_version >= "HTTP/1.1":
+                        # Use Chunked Transfer Encoding (RFC 7230 section 4.1)
+                        self.send_header("Transfer-Encoding", "chunked")
+                        chunked = True
                     self.end_headers()
-                    # Return a file-like object as source of gzipped data
-                    f.seek(0)
-                    return _GzipProducer(f)
+                    # Return a generator of pieces of compressed data
+                    return _gzip_producer(f, chunked)
 
             self.send_header("Content-Length", str(content_length))
             self.end_headers()
