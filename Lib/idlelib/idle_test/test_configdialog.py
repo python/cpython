@@ -11,7 +11,7 @@ from unittest import mock
 from idlelib.idle_test.mock_idle import Func
 from tkinter import Tk, IntVar, BooleanVar, DISABLED, NORMAL
 from idlelib import config
-from idlelib.configdialog import ConfigDialog, idleConf, changes, VarTrace
+from idlelib.configdialog import idleConf, changes, tracers
 
 # Tests should not depend on fortuitous user configurations.
 # They must not affect actual user .cfg files.
@@ -35,12 +35,12 @@ def setUpModule():
     idleConf.userCfg = testcfg
     root = Tk()
     # root.withdraw()    # Comment out, see issue 30870
-    dialog = ConfigDialog(root, 'Test', _utest=True)
+    dialog = configdialog.ConfigDialog(root, 'Test', _utest=True)
 
 def tearDownModule():
     global root, dialog
     idleConf.userCfg = usercfg
-    dialog.remove_var_callbacks()
+    tracers.detach()
     del dialog
     root.update_idletasks()
     root.destroy()
@@ -423,14 +423,14 @@ class GeneralTest(unittest.TestCase):
         d.update_help_changes = Func()
 
 
-class TestVarTrace(unittest.TestCase):
+class VarTraceTest(unittest.TestCase):
 
     def setUp(self):
         changes.clear()
+        tracers.clear()
         self.v1 = IntVar(root)
         self.v2 = BooleanVar(root)
         self.called = 0
-        self.tracers = VarTrace()
 
     def tearDown(self):
         del self.v1, self.v2
@@ -442,11 +442,19 @@ class TestVarTrace(unittest.TestCase):
         pass
 
     def test_init(self):
-        self.assertEqual(self.tracers.untraced, [])
-        self.assertEqual(self.tracers.traced, [])
+        tracers.__init__()
+        self.assertEqual(tracers.untraced, [])
+        self.assertEqual(tracers.traced, [])
+
+    def test_clear(self):
+        tracers.untraced.append(0)
+        tracers.traced.append(1)
+        tracers.clear()
+        self.assertEqual(tracers.untraced, [])
+        self.assertEqual(tracers.traced, [])
 
     def test_add(self):
-        tr = self.tracers
+        tr = tracers
         func = Func()
         cb = tr.make_callback = mock.Mock(return_value=func)
 
@@ -469,8 +477,7 @@ class TestVarTrace(unittest.TestCase):
         del tr.make_callback
 
     def test_make_callback(self):
-        tr = self.tracers
-        cb = tr.make_callback(self.v1, ('main', 'section', 'option'))
+        cb = tracers.make_callback(self.v1, ('main', 'section', 'option'))
         self.assertTrue(callable(cb))
         self.v1.set(42)
         # Not attached, so set didn't invoke the callback.
@@ -481,7 +488,7 @@ class TestVarTrace(unittest.TestCase):
         self.assertEqual(changes['main']['section']['option'], '42')
 
     def test_attach_detach(self):
-        tr = self.tracers
+        tr = tracers
         v1 = tr.add(self.v1, self.var_changed_increment)
         v2 = tr.add(self.v2, self.var_changed_boolean)
         expected = [(v1, self.var_changed_increment),
