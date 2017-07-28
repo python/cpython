@@ -455,6 +455,9 @@ Changes in the Python API
   :func:`socket.fromshare` a socket :func:`~socket.socket.share`-ed in older
   Python versions.
 
+* ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
+  in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
+
 
 CPython bytecode changes
 ------------------------
