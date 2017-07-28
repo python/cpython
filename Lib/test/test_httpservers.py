@@ -662,12 +662,13 @@ class HTTPCompressionTestCase(BaseTestCase):
             self.assertTrue('Content-Encoding' in response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
 
-        # For big files, with HTTP protocol set to HTTP/1.0, chunked
-        # transfer is not possible, so the file is sent uncompressed
+        # Big files
         for ext in self.compressible_ext:
             response = self.request(self.base_url + '/test_big.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip'})
             self.assertTrue('Content-Encoding' in response.headers)
+            # on HTTP/1.0 Chunked Tranfer Encoding is not supported
+            self.assertFalse('Transfer-Encoding' in response.headers)
             self.assertEqual(gzip.decompress(response.read()),
                 self.repeat * self.data)
 
@@ -705,6 +706,7 @@ class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
             response = self.request(self.base_url + '/test_big.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip', 'Connection': 'close'})
             self.assertTrue('Content-Encoding' in response.headers)
+            self.assertTrue('Transfer-Encoding' in response.headers)
             self.assertEqual(gzip.decompress(response.read()),
                 self.repeat * self.data)
 
