@@ -30,6 +30,7 @@ from idlelib.textview import view_text
 
 changes = ConfigChanges()
 
+
 class ConfigDialog(Toplevel):
     """Config dialog for IDLE.
     """
@@ -51,7 +52,6 @@ class ConfigDialog(Toplevel):
         """
         Toplevel.__init__(self, parent)
         self.parent = parent
-        self.tracers = VarTrace()
         if _htest:
             parent.instance_dict = {}
         if not _utest:
@@ -77,12 +77,13 @@ class ConfigDialog(Toplevel):
         # self.bind('<F1>', self.Help) #context help
         self.load_configs()
         self.attach_var_callbacks()  # Avoid callbacks during load_configs.
-        self.tracers.attach()
+        tracers.attach()
 
         if not _utest:
             self.grab_set()
             self.wm_deiconify()
             self.wait_window()
+
 
     def create_widgets(self):
         """Create and place widgets for tabbed dialog.
@@ -153,7 +154,8 @@ class ConfigDialog(Toplevel):
                 self.keybinding, self.builtin_keys, self.custom_keys,
                 self.are_keys_builtin,):
             var.trace_remove('write', var.trace_info()[0][1])
-        self.tracers.detach()
+        tracers.detach()
+
 
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
@@ -286,10 +288,10 @@ class ConfigDialog(Toplevel):
                         (*)indent_scale: Scale - space_num
         """
         parent = self.parent
-        self.font_name = self.tracers.add(StringVar(parent), self.var_changed_font)
-        self.font_size = self.tracers.add(StringVar(parent), self.var_changed_font)
-        self.font_bold = self.tracers.add(BooleanVar(parent), self.var_changed_font)
-        self.space_num = self.tracers.add(IntVar(parent), ('main', 'Indent', 'num-spaces'))
+        self.font_name = tracers.add(StringVar(parent), self.var_changed_font)
+        self.font_size = tracers.add(StringVar(parent), self.var_changed_font)
+        self.font_bold = tracers.add(BooleanVar(parent), self.var_changed_font)
+        self.space_num = tracers.add(IntVar(parent), ('main', 'Indent', 'num-spaces'))
 
         # Create widgets:
         # body and body section frames.
@@ -1155,9 +1157,6 @@ class ConfigDialog(Toplevel):
         keyset_name = idleConf.CurrentKeys()
         self.load_keys_list(keyset_name)
 
-
-
-
     def var_changed_builtin_keys(self, *params):
         "Process selection of builtin key set."
         old_keys = (
@@ -1456,13 +1455,13 @@ class ConfigDialog(Toplevel):
                         scroll_helplist: Scrollbar
         """
         parent = self.parent
-        self.startup_edit = self.tracers.add(
+        self.startup_edit = tracers.add(
                 IntVar(parent), ('main', 'General', 'editor-on-startup'))
-        self.autosave = self.tracers.add(
+        self.autosave = tracers.add(
                 IntVar(parent), ('main', 'General', 'autosave'))
-        self.win_width = self.tracers.add(
+        self.win_width = tracers.add(
                 StringVar(parent), ('main', 'EditorWindow', 'width'))
-        self.win_height = self.tracers.add(
+        self.win_height = tracers.add(
                 StringVar(parent), ('main', 'EditorWindow', 'height'))
 
         # Create widgets:
@@ -1897,6 +1896,8 @@ class VarTrace:
             var.trace_remove('write', var.trace_info()[0][1])
             self.untraced.append((var, callback))
 
+
+tracers = VarTrace()
 
 help_common = '''\
 When you click either the Apply or Ok buttons, settings in this
