@@ -15,7 +15,7 @@ from tkinter import (Toplevel, Frame, LabelFrame, Listbox, Label, Button,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
-from tkinter.ttk import Scrollbar
+from tkinter.ttk import Notebook, Scrollbar
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
 import tkinter.messagebox as tkMessageBox
@@ -101,15 +101,18 @@ class ConfigDialog(Toplevel):
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
         """
-        self.tab_pages = TabbedPageSet(self,
-                page_names=['Fonts/Tabs', 'Highlighting', 'Keys', 'General',
-                            'Extensions'])
-        self.tab_pages.pack(side=TOP, expand=TRUE, fill=BOTH)
-        self.create_page_font_tab()
-        self.create_page_highlight()
-        self.create_page_keys()
-        self.create_page_general()
-        self.create_page_extensions()
+        self.note = note = Notebook(self, width=450, height=550)
+        fontpage = self.create_page_font_tab()
+        highpage = self.create_page_highlight()
+        keyspage = self.create_page_keys()
+        genpage = self.create_page_general()
+        extpage = self.create_page_extensions()
+        note.add(fontpage, text='Fonts/Tabs')
+        note.add(highpage, text='Highlights')
+        note.add(keyspage, text=' Keys ')
+        note.add(genpage, text=' General ')
+        note.add(extpage, text='Extensions')
+        note.pack(side=TOP, expand=TRUE, fill=BOTH)
         self.create_action_buttons().pack(side=BOTTOM)
 
     def load_configs(self):
@@ -270,7 +273,7 @@ class ConfigDialog(Toplevel):
 
         # Create widgets:
         # body and body section frames.
-        frame = self.tab_pages.pages['Fonts/Tabs'].frame
+        frame = Frame(self.note)
         frame_font = LabelFrame(
                 frame, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
         frame_indent = LabelFrame(
@@ -493,10 +496,9 @@ class ConfigDialog(Toplevel):
         self.highlight_target = tracers.add(
                 StringVar(parent), self.var_changed_highlight_target)
 
-        ##widget creation
-        #body frame
-        frame = self.tab_pages.pages['Highlighting'].frame
-        #body section frames
+        # Widget creation:
+        # body frame and section frames
+        frame = Frame(self.note)
         frame_custom = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                  text=' Custom Highlighting ')
         frame_theme = LabelFrame(frame, borderwidth=2, relief=GROOVE,
@@ -1039,10 +1041,9 @@ class ConfigDialog(Toplevel):
         self.keybinding = tracers.add(
                 StringVar(parent), self.var_changed_keybinding)
 
-        ##widget creation
-        #body frame
-        frame = self.tab_pages.pages['Keys'].frame
-        #body section frames
+        # Widget creation:
+        # body and section frames.
+        frame = Frame(self.note)
         frame_custom = LabelFrame(
                 frame, borderwidth=2, relief=GROOVE,
                 text=' Custom Key Bindings ')
@@ -1449,9 +1450,8 @@ class ConfigDialog(Toplevel):
                 StringVar(parent), ('main', 'EditorWindow', 'height'))
 
         # Create widgets:
-        # body.
-        frame = self.tab_pages.pages['General'].frame
-        # body section frames.
+        # body and section frames.
+        frame = Frame(self.note)
         frame_run = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                               text=' Startup Preferences ')
         frame_save = LabelFrame(frame, borderwidth=2, relief=GROOVE,
@@ -1669,7 +1669,7 @@ class ConfigDialog(Toplevel):
             save_all_changed_extensions: Call extension page Save().
         """
         parent = self.parent
-        frame = self.tab_pages.pages['Extensions'].frame
+        frame = Frame(self.note)
         self.ext_defaultCfg = idleConf.defaultCfg['extensions']
         self.ext_userCfg = idleConf.userCfg['extensions']
         self.is_int = self.register(is_int)
@@ -1703,6 +1703,8 @@ class ConfigDialog(Toplevel):
         self.extension_names.set(ext_names)
         self.extension_list.selection_set(0)
         self.extension_selected(None)
+
+        return frame
 
     def load_extensions(self):
         "Fill self.extensions with data from the default and user configs."
