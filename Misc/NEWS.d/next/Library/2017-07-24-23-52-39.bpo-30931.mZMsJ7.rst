@@ -1,3 +1,3 @@
 asyncore: poll() and poll2() functions now check before calling handlers if a
 dispatcher was closed and its file descriptor was reused by a newly registered
-dispatcher: handlers of closed dispatchers are no more called.
+dispatcher: handlers of closed dispatchers are no longer called.
