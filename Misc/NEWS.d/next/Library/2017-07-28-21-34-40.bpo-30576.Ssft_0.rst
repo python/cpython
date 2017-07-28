@@ -1,0 +1,1 @@
+http.server supports HTTP compression (gzip).  Patch by Pierre Quentel.
