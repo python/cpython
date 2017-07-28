@@ -184,8 +184,12 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
 
     def test_get_path(self):
+        if sys.platform == 'darwin' and sys._framework:
+            scheme = 'osx_framework_user'
+        else:
+            scheme = os.name + '_user'
         self.assertEqual(site._get_path(site._getuserbase()),
-                         sysconfig.get_path('purelib', os.name + '_user'))
+                         sysconfig.get_path('purelib', scheme))
 
     @unittest.skipUnless(site.ENABLE_USER_SITE, "requires access to PEP 370 "
                           "user-site (site.ENABLE_USER_SITE)")
