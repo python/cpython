@@ -30,6 +30,7 @@ from idlelib.textview import view_text
 
 changes = ConfigChanges()
 
+
 class ConfigDialog(Toplevel):
     """Config dialog for IDLE.
     """
@@ -75,12 +76,14 @@ class ConfigDialog(Toplevel):
         # self.bind('<Alt-a>', self.Apply) #apply changes, save
         # self.bind('<F1>', self.Help) #context help
         self.load_configs()
-        self.attach_var_callbacks()  # Avoid callbacks during load_configs.
+        # Avoid callbacks during load_configs.
+        tracers.attach()
 
         if not _utest:
             self.grab_set()
             self.wm_deiconify()
             self.wait_window()
+
 
     def create_widgets(self):
         """Create and place widgets for tabbed dialog.
@@ -96,7 +99,6 @@ class ConfigDialog(Toplevel):
             create_page_extensions
             create_action_buttons
             load_configs: Load pages except for extensions.
-            attach_var_callbacks
             remove_var_callbacks
             activate_config_changes: Tell editors to reload.
         """
@@ -131,37 +133,9 @@ class ConfigDialog(Toplevel):
         self.load_general_cfg()
         # note: extension page handled separately
 
-    def attach_var_callbacks(self):
-        "Attach callbacks to variables that can be changed."
-        self.font_size.trace_add('write', self.var_changed_font)
-        self.font_name.trace_add('write', self.var_changed_font)
-        self.font_bold.trace_add('write', self.var_changed_font)
-        self.space_num.trace_add('write', self.var_changed_space_num)
-        self.color.trace_add('write', self.var_changed_color)
-        self.builtin_theme.trace_add('write', self.var_changed_builtin_theme)
-        self.custom_theme.trace_add('write', self.var_changed_custom_theme)
-        self.is_builtin_theme.trace_add('write', self.var_changed_is_builtin_theme)
-        self.highlight_target.trace_add('write', self.var_changed_highlight_target)
-        self.keybinding.trace_add('write', self.var_changed_keybinding)
-        self.builtin_keys.trace_add('write', self.var_changed_builtin_keys)
-        self.custom_keys.trace_add('write', self.var_changed_custom_keys)
-        self.are_keys_builtin.trace_add('write', self.var_changed_are_keys_builtin)
-        self.win_width.trace_add('write', self.var_changed_win_width)
-        self.win_height.trace_add('write', self.var_changed_win_height)
-        self.startup_edit.trace_add('write', self.var_changed_startup_edit)
-        self.autosave.trace_add('write', self.var_changed_autosave)
-
     def remove_var_callbacks(self):
         "Remove callbacks to prevent memory leaks."
-        for var in (
-                self.font_size, self.font_name, self.font_bold,
-                self.space_num, self.color, self.builtin_theme,
-                self.custom_theme, self.is_builtin_theme, self.highlight_target,
-                self.keybinding, self.builtin_keys, self.custom_keys,
-                self.are_keys_builtin, self.win_width, self.win_height,
-                self.startup_edit, self.autosave,):
-            var.trace_remove('write', var.trace_info()[0][1])
-
+        tracers.detach()
 
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
@@ -273,7 +247,7 @@ class ConfigDialog(Toplevel):
 
         Tabs: Enable users to change spaces entered for indent tabs.
         Changing indent_scale value with the mouse sets Var space_num,
-        which invokes var_changed_space_num, which adds an entry to
+        which invokes the default callback to add an entry to
         changes.  Load_tab_cfg initializes space_num to default.
 
         Widget Structure:  (*) widgets bound to self
@@ -294,10 +268,10 @@ class ConfigDialog(Toplevel):
                         (*)indent_scale: Scale - space_num
         """
         parent = self.parent
-        self.font_name = StringVar(parent)
-        self.font_size = StringVar(parent)
-        self.font_bold = BooleanVar(parent)
-        self.space_num = IntVar(parent)
+        self.font_name = tracers.add(StringVar(parent), self.var_changed_font)
+        self.font_size = tracers.add(StringVar(parent), self.var_changed_font)
+        self.font_bold = tracers.add(BooleanVar(parent), self.var_changed_font)
+        self.space_num = tracers.add(IntVar(parent), ('main', 'Indent', 'num-spaces'))
 
         # Create widgets:
         # body and body section frames.
@@ -443,12 +417,6 @@ class ConfigDialog(Toplevel):
             'main', 'Indent', 'num-spaces', default=4, type='int')
         self.space_num.set(space_num)
 
-    def var_changed_space_num(self, *params):
-        "Store change to indentation size."
-        value = self.space_num.get()
-        changes.add_option('main', 'Indent', 'num-spaces', value)
-
-
     def create_page_highlight(self):
         """Return frame of widgets for Highlighting tab.
 
@@ -518,12 +486,17 @@ class ConfigDialog(Toplevel):
             'Shell Stderr Text': ('stderr', '13'),
             }
         parent = self.parent
-        self.builtin_theme = StringVar(parent)
-        self.custom_theme = StringVar(parent)
+        self.builtin_theme = tracers.add(
+                StringVar(parent), self.var_changed_builtin_theme)
+        self.custom_theme = tracers.add(
+                StringVar(parent), self.var_changed_custom_theme)
         self.fg_bg_toggle = BooleanVar(parent)
-        self.color = StringVar(parent)
-        self.is_builtin_theme = BooleanVar(parent)
-        self.highlight_target = StringVar(parent)
+        self.color = tracers.add(
+                StringVar(parent), self.var_changed_color)
+        self.is_builtin_theme = tracers.add(
+                BooleanVar(parent), self.var_changed_is_builtin_theme)
+        self.highlight_target = tracers.add(
+                StringVar(parent), self.var_changed_highlight_target)
 
         ##widget creation
         #body frame
@@ -1062,10 +1035,14 @@ class ConfigDialog(Toplevel):
                         button_save_custom_keys: Button
         """
         parent = self.parent
-        self.builtin_keys = StringVar(parent)
-        self.custom_keys = StringVar(parent)
-        self.are_keys_builtin = BooleanVar(parent)
-        self.keybinding = StringVar(parent)
+        self.builtin_keys = tracers.add(
+                StringVar(parent), self.var_changed_builtin_keys)
+        self.custom_keys = tracers.add(
+                StringVar(parent), self.var_changed_custom_keys)
+        self.are_keys_builtin = tracers.add(
+                BooleanVar(parent), self.var_changed_are_keys_builtin)
+        self.keybinding = tracers.add(
+                StringVar(parent), self.var_changed_keybinding)
 
         ##widget creation
         #body frame
@@ -1168,9 +1145,6 @@ class ConfigDialog(Toplevel):
         # Load keyset element list.
         keyset_name = idleConf.CurrentKeys()
         self.load_keys_list(keyset_name)
-
-
-
 
     def var_changed_builtin_keys(self, *params):
         "Process selection of builtin key set."
@@ -1434,7 +1408,7 @@ class ConfigDialog(Toplevel):
         set var startup_edit. Radiobuttons save_ask_on and save_auto_on
         set var autosave. Entry boxes win_width_int and win_height_int
         set var win_width and win_height.  Setting var_name invokes the
-        var_changed_var_name callback that adds option to changes.
+        default callback that adds option to changes.
 
         Helplist: load_general_cfg loads list user_helplist with
         name, position pairs and copies names to listbox helplist.
@@ -1470,10 +1444,14 @@ class ConfigDialog(Toplevel):
                         scroll_helplist: Scrollbar
         """
         parent = self.parent
-        self.startup_edit = IntVar(parent)
-        self.autosave = IntVar(parent)
-        self.win_width = StringVar(parent)
-        self.win_height = StringVar(parent)
+        self.startup_edit = tracers.add(
+                IntVar(parent), ('main', 'General', 'editor-on-startup'))
+        self.autosave = tracers.add(
+                IntVar(parent), ('main', 'General', 'autosave'))
+        self.win_width = tracers.add(
+                StringVar(parent), ('main', 'EditorWindow', 'width'))
+        self.win_height = tracers.add(
+                StringVar(parent), ('main', 'EditorWindow', 'height'))
 
         # Create widgets:
         # body.
@@ -1873,9 +1851,9 @@ class VarTrace:
 
         Args:
             var: Tk variable instance.
-            callback: Function to be used as a callback or
-                a tuple with IdleConf values for default
-                callback.
+            callback: Either function name to be used as a callback
+                or a tuple with IdleConf config-type, section, and
+                option names used in the default callback.
 
         Return:
             Tk variable instance.
@@ -1907,6 +1885,8 @@ class VarTrace:
             var.trace_remove('write', var.trace_info()[0][1])
             self.untraced.append((var, callback))
 
+
+tracers = VarTrace()
 
 help_common = '''\
 When you click either the Apply or Ok buttons, settings in this
