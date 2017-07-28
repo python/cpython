@@ -99,7 +99,6 @@ class ConfigDialog(Toplevel):
             create_page_extensions
             create_action_buttons
             load_configs: Load pages except for extensions.
-            remove_var_callbacks
             activate_config_changes: Tell editors to reload.
         """
         self.tab_pages = TabbedPageSet(self,
@@ -132,10 +131,6 @@ class ConfigDialog(Toplevel):
         self.load_key_cfg()
         self.load_general_cfg()
         # note: extension page handled separately
-
-    def remove_var_callbacks(self):
-        "Remove callbacks to prevent memory leaks."
-        tracers.detach()
 
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
@@ -1845,6 +1840,11 @@ class VarTrace:
         """
         self.untraced = []
         self.traced = []
+
+    def clear(self):
+        "Clear lists (for tests)."
+        self.untraced.clear()
+        self.traced.clear()
 
     def add(self, var, callback):
         """Add (var, callback) tuple to untraced list.
