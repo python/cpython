@@ -4406,6 +4406,29 @@ class NTEventLogHandlerTest(BaseTest):
         self.assertTrue(found, msg=msg)
 
 
+class CachingTest(BaseTest):
+    def test_caching(self):
+        root = self.root_logger
+        level1 = logging.getLogger("abc")
+        level2 = logging.getLogger("abc.def")
+
+        root.setLevel(logging.ERROR)
+        self.assertEqual(level2._cache, {})  # Cache is empty
+
+        self.assertTrue(level2.isEnabledFor(logging.ERROR))
+        self.assertEqual(level2._cache, {logging.ERROR: True})  # Cache is populated
+        self.assertEqual(root._cache, {})  # Root cache is empty
+        self.assertTrue(level2.isEnabledFor(logging.ERROR))
+
+        level1.setLevel(logging.CRITICAL)
+        self.assertEqual(level2._cache, {})  # Cache is empty
+        self.assertEqual(root._cache, {})  # Root cache is empty
+
+        self.assertFalse(level2.isEnabledFor(logging.ERROR))
+        self.assertTrue(root.isEnabledFor(logging.ERROR))
+        self.assertEqual(root._cache, {logging.ERROR: True})  # Root cache is populated
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         blacklist = {'logThreads', 'logMultiprocessing',
