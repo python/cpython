@@ -76,7 +76,7 @@ class ConfigDialog(Toplevel):
         # self.bind('<Alt-a>', self.Apply) #apply changes, save
         # self.bind('<F1>', self.Help) #context help
         self.load_configs()
-        self.attach_var_callbacks()  # Avoid callbacks during load_configs.
+        # Avoid callbacks during load_configs.
         tracers.attach()
 
         if not _utest:
@@ -99,7 +99,6 @@ class ConfigDialog(Toplevel):
             create_page_extensions
             create_action_buttons
             load_configs: Load pages except for extensions.
-            attach_var_callbacks
             remove_var_callbacks
             activate_config_changes: Tell editors to reload.
         """
@@ -134,28 +133,9 @@ class ConfigDialog(Toplevel):
         self.load_general_cfg()
         # note: extension page handled separately
 
-    def attach_var_callbacks(self):
-        "Attach callbacks to variables that can be changed."
-        self.color.trace_add('write', self.var_changed_color)
-        self.builtin_theme.trace_add('write', self.var_changed_builtin_theme)
-        self.custom_theme.trace_add('write', self.var_changed_custom_theme)
-        self.is_builtin_theme.trace_add('write', self.var_changed_is_builtin_theme)
-        self.highlight_target.trace_add('write', self.var_changed_highlight_target)
-        self.keybinding.trace_add('write', self.var_changed_keybinding)
-        self.builtin_keys.trace_add('write', self.var_changed_builtin_keys)
-        self.custom_keys.trace_add('write', self.var_changed_custom_keys)
-        self.are_keys_builtin.trace_add('write', self.var_changed_are_keys_builtin)
-
     def remove_var_callbacks(self):
         "Remove callbacks to prevent memory leaks."
-        for var in (
-                self.color, self.builtin_theme,
-                self.custom_theme, self.is_builtin_theme, self.highlight_target,
-                self.keybinding, self.builtin_keys, self.custom_keys,
-                self.are_keys_builtin,):
-            var.trace_remove('write', var.trace_info()[0][1])
         tracers.detach()
-
 
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
@@ -506,12 +486,17 @@ class ConfigDialog(Toplevel):
             'Shell Stderr Text': ('stderr', '13'),
             }
         parent = self.parent
-        self.builtin_theme = StringVar(parent)
-        self.custom_theme = StringVar(parent)
+        self.builtin_theme = tracers.add(
+                StringVar(parent), self.var_changed_builtin_theme)
+        self.custom_theme = tracers.add(
+                StringVar(parent), self.var_changed_custom_theme)
         self.fg_bg_toggle = BooleanVar(parent)
-        self.color = StringVar(parent)
-        self.is_builtin_theme = BooleanVar(parent)
-        self.highlight_target = StringVar(parent)
+        self.color = tracers.add(
+                StringVar(parent), self.var_changed_color)
+        self.is_builtin_theme = tracers.add(
+                BooleanVar(parent), self.var_changed_is_builtin_theme)
+        self.highlight_target = tracers.add(
+                StringVar(parent), self.var_changed_highlight_target)
 
         ##widget creation
         #body frame
@@ -1050,10 +1035,14 @@ class ConfigDialog(Toplevel):
                         button_save_custom_keys: Button
         """
         parent = self.parent
-        self.builtin_keys = StringVar(parent)
-        self.custom_keys = StringVar(parent)
-        self.are_keys_builtin = BooleanVar(parent)
-        self.keybinding = StringVar(parent)
+        self.builtin_keys = tracers.add(
+                StringVar(parent), self.var_changed_builtin_keys)
+        self.custom_keys = tracers.add(
+                StringVar(parent), self.var_changed_custom_keys)
+        self.are_keys_builtin = tracers.add(
+                BooleanVar(parent), self.var_changed_are_keys_builtin)
+        self.keybinding = tracers.add(
+                StringVar(parent), self.var_changed_keybinding)
 
         ##widget creation
         #body frame
@@ -1862,9 +1851,9 @@ class VarTrace:
 
         Args:
             var: Tk variable instance.
-            callback: Function to be used as a callback or
-                a tuple with IdleConf values for default
-                callback.
+            callback: Either function name to be used as a callback
+                or a tuple with IdleConf config-type, section, and
+                option names used in the default callback.
 
         Return:
             Tk variable instance.
