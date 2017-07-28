@@ -313,7 +313,7 @@ Notes:
   unusual results for negative timedeltas.  For example:
 
   >>> timedelta(hours=-5)
-  datetime.timedelta(-1, 68400)
+  datetime.timedelta(days=-1, seconds=68400)
   >>> print(_)
   -1 day, 19:00:00
 
