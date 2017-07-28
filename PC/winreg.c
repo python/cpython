@@ -905,7 +905,7 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
     HKEY retKey;
     long rc;
 
-    rc = RegCreateKeyExW(key, sub_key, reserved, NULL, (DWORD)NULL,
+    rc = RegCreateKeyExW(key, sub_key, reserved, NULL, 0,
                          access, NULL, &retKey, NULL);
     if (rc != ERROR_SUCCESS) {
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
