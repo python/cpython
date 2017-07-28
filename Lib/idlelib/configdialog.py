@@ -1848,7 +1848,7 @@ class FontPage:
         corresponding aspect of the font sample on this page and
         highlight sample on highlight page.
 
-        Load_font_cfg initializes font vars and widgets from
+        Funtion load_font_cfg initializes font vars and widgets from
         idleConf entries and tk.
 
         Fontlist: mouse button 1 click or up or down key invoke
@@ -1866,7 +1866,7 @@ class FontPage:
 
         Tabs: Enable users to change spaces entered for indent tabs.
         Changing indent_scale value with the mouse sets Var space_num,
-        which invokes var_changed_space_num, which adds an entry to
+        which invokes the default callback to add an entry to
         changes.  Load_tab_cfg initializes space_num to default.
 
         Widget Structure:  (*) widgets bound to self
@@ -1887,10 +1887,10 @@ class FontPage:
                         (*)indent_scale: Scale - space_num
         """
         parent = self.parent
-        self.font_name = StringVar(parent)
-        self.font_size = StringVar(parent)
-        self.font_bold = BooleanVar(parent)
-        self.space_num = IntVar(parent)
+        self.font_name = tracers.add(StringVar(parent), self.var_changed_font)
+        self.font_size = tracers.add(StringVar(parent), self.var_changed_font)
+        self.font_bold = tracers.add(BooleanVar(parent), self.var_changed_font)
+        self.space_num = tracers.add(IntVar(parent), ('main', 'Indent', 'num-spaces'))
 
         # Create widgets:
         # body and body section frames.
@@ -1963,7 +1963,7 @@ class FontPage:
         configured_font = idleConf.GetFont(self.parent, 'main', 'EditorWindow')
         font_name = configured_font[0].lower()
         font_size = configured_font[1]
-        font_bold = configured_font[2]=='bold'
+        font_bold  = configured_font[2]=='bold'
 
         # Set editor font selection list and font_name.
         fonts = list(tkFont.families(self.parent))
@@ -1987,16 +1987,6 @@ class FontPage:
         # Set font weight.
         self.font_bold.set(font_bold)
 
-    def on_fontlist_select(self, event):
-        """Handle selecting a font from the list.
-
-        Event can result from either mouse click or Up or Down key.
-        Set font_name and example displays to selection.
-        """
-        font = self.fontlist.get(
-                ACTIVE if event.type.name == 'KeyRelease' else ANCHOR)
-        self.font_name.set(font.lower())
-
     def var_changed_font(self, *params):
         """Store changes to font attributes.
 
@@ -2011,6 +2001,16 @@ class FontPage:
         value = self.font_bold.get()
         changes.add_option('main', 'EditorWindow', 'font-bold', value)
         self.set_samples()
+
+    def on_fontlist_select(self, event):
+        """Handle selecting a font from the list.
+
+        Event can result from either mouse click or Up or Down key.
+        Set font_name and example displays to selection.
+        """
+        font = self.fontlist.get(
+                ACTIVE if event.type.name == 'KeyRelease' else ANCHOR)
+        self.font_name.set(font.lower())
 
     def set_samples(self, event=None):
         """Update update both screen samples with the font settings.
@@ -2035,11 +2035,6 @@ class FontPage:
         space_num = idleConf.GetOption(
             'main', 'Indent', 'num-spaces', default=4, type='int')
         self.space_num.set(space_num)
-
-    def var_changed_space_num(self, *params):
-        "Store change to indentation size."
-        value = self.space_num.get()
-        changes.add_option('main', 'Indent', 'num-spaces', value)
 
 
 class VarTrace:
