@@ -9,17 +9,32 @@
     :license: Python license.
 """
 
-ISSUE_URI = 'http://bugs.python.org/issue%s'
-SOURCE_URI = 'http://hg.python.org/cpython/file/3.3/%s'
+import re
+import codecs
+from os import path
+from time import asctime
+from pprint import pformat
+from docutils.io import StringOutput
+from docutils.parsers.rst import Directive
+from docutils.utils import new_document
 
 from docutils import nodes, utils
 
-import sphinx
+from sphinx import addnodes
+from sphinx.builders import Builder
 from sphinx.util.nodes import split_explicit_title
-from sphinx.util.compat import Directive
 from sphinx.writers.html import HTMLTranslator
+from sphinx.writers.text import TextWriter
 from sphinx.writers.latex import LaTeXTranslator
-from sphinx.locale import versionlabels
+from sphinx.domains.python import PyModulelevel, PyClassmember
+
+# Support for checking for suspicious markup
+
+import suspicious
+
+
+ISSUE_URI = 'https://bugs.python.org/issue%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.3/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -28,23 +43,12 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
-SPHINX11 = sphinx.__version__[:3] < '1.2'
-
-if SPHINX11:
-    # monkey-patch HTML translator to give versionmodified paragraphs a class
-    def new_visit_versionmodified(self, node):
-        self.body.append(self.starttag(node, 'p', CLASS=node['type']))
-        text = versionlabels[node['type']] % node['version']
-        if len(node):
-            text += ':'
-        else:
-            text += '.'
-        self.body.append('<span class="versionmodified">%s</span> ' % text)
-    HTMLTranslator.visit_versionmodified = new_visit_versionmodified
-
 # monkey-patch HTML and LaTeX translators to keep doctest blocks in the
 # doctest docs themselves
 orig_visit_literal_block = HTMLTranslator.visit_literal_block
+orig_depart_literal_block = LaTeXTranslator.depart_literal_block
+
+
 def new_visit_literal_block(self, node):
     meta = self.builder.env.metadata[self.builder.current_docname]
     old_trim_doctest_flags = self.highlighter.trim_doctest_flags
@@ -55,9 +59,7 @@ def new_visit_literal_block(self, node):
     finally:
         self.highlighter.trim_doctest_flags = old_trim_doctest_flags
 
-HTMLTranslator.visit_literal_block = new_visit_literal_block
 
-orig_depart_literal_block = LaTeXTranslator.depart_literal_block
 def new_depart_literal_block(self, node):
     meta = self.builder.env.metadata[self.curfilestack[-1]]
     old_trim_doctest_flags = self.highlighter.trim_doctest_flags
@@ -68,7 +70,10 @@ def new_depart_literal_block(self, node):
     finally:
         self.highlighter.trim_doctest_flags = old_trim_doctest_flags
 
+
+HTMLTranslator.visit_literal_block = new_visit_literal_block
 LaTeXTranslator.depart_literal_block = new_depart_literal_block
+
 
 # Support for marking up and linking to bugs.python.org issues
 
@@ -117,9 +122,6 @@ class ImplementationDetail(Directive):
 
 # Support for documenting decorators
 
-from sphinx import addnodes
-from sphinx.domains.python import PyModulelevel, PyClassmember
-
 class PyDecoratorMixin(object):
     def handle_signature(self, sig, signode):
         ret = super(PyDecoratorMixin, self).handle_signature(sig, signode)
@@ -129,13 +131,34 @@ class PyDecoratorMixin(object):
     def needs_arglist(self):
         return False
 
+
 class PyDecoratorFunction(PyDecoratorMixin, PyModulelevel):
     def run(self):
         # a decorator function is a function after all
         self.name = 'py:function'
         return PyModulelevel.run(self)
 
+
 class PyDecoratorMethod(PyDecoratorMixin, PyClassmember):
+    def run(self):
+        self.name = 'py:method'
+        return PyClassmember.run(self)
+
+
+class PyCoroutineMixin(object):
+    def handle_signature(self, sig, signode):
+        ret = super(PyCoroutineMixin, self).handle_signature(sig, signode)
+        signode.insert(0, addnodes.desc_annotation('coroutine ', 'coroutine '))
+        return ret
+
+
+class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
+    def run(self):
+        self.name = 'py:function'
+        return PyModulelevel.run(self)
+
+
+class PyCoroutineMethod(PyCoroutineMixin, PyClassmember):
     def run(self):
         self.name = 'py:method'
         return PyClassmember.run(self)
@@ -168,34 +191,30 @@ class DeprecatedRemoved(Directive):
             messages = []
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, node)
+        if len(node):
             if isinstance(node[0], nodes.paragraph) and node[0].rawsource:
                 content = nodes.inline(node[0].rawsource, translatable=True)
                 content.source = node[0].source
                 content.line = node[0].line
                 content += node[0].children
                 node[0].replace_self(nodes.paragraph('', '', content))
-            if not SPHINX11:
-                node[0].insert(0, nodes.inline('', '%s: ' % text,
-                                               classes=['versionmodified']))
-        elif not SPHINX11:
+            node[0].insert(0, nodes.inline('', '%s: ' % text,
+                                           classes=['versionmodified']))
+        else:
             para = nodes.paragraph('', '',
-                nodes.inline('', '%s.' % text, classes=['versionmodified']))
+                                   nodes.inline('', '%s.' % text,
+                                                classes=['versionmodified']))
             node.append(para)
         env = self.state.document.settings.env
         env.note_versionchange('deprecated', version[0], node, self.lineno)
         return [node] + messages
 
-# for Sphinx < 1.2
-versionlabels['deprecated-removed'] = DeprecatedRemoved._label
-
 
 # Support for including Misc/NEWS
 
-import re
-import codecs
-
 issue_re = re.compile('([Ii])ssue #([0-9]+)')
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
+
 
 class MiscNews(Directive):
     has_content = False
@@ -221,7 +240,7 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`\1ssue #\2 <http://bugs.python.org/\2>`__',
+        content = issue_re.sub(r'`\1ssue #\2 <https://bugs.python.org/\2>`__',
                                content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
@@ -250,15 +269,6 @@ pydoc_topic_labels = [
     'typesseq', 'typesseq-mutable', 'unary', 'while', 'with', 'yield'
 ]
 
-from os import path
-from time import asctime
-from pprint import pformat
-from docutils.io import StringOutput
-from docutils.utils import new_document
-
-from sphinx.builders import Builder
-from sphinx.writers.text import TextWriter
-
 
 class PydocTopicsBuilder(Builder):
     name = 'pydoc-topics'
@@ -286,28 +296,22 @@ class PydocTopicsBuilder(Builder):
             document.append(doctree.ids[labelid])
             destination = StringOutput(encoding='utf-8')
             writer.write(document, destination)
-            self.topics[label] = writer.output.encode('utf-8')
+            self.topics[label] = writer.output
 
     def finish(self):
-        f = open(path.join(self.outdir, 'topics.py'), 'w')
+        f = open(path.join(self.outdir, 'topics.py'), 'wb')
         try:
-            f.write('# -*- coding: utf-8 -*-\n')
-            f.write('# Autogenerated by Sphinx on %s\n' % asctime())
-            f.write('topics = ' + pformat(self.topics) + '\n')
+            f.write('# -*- coding: utf-8 -*-\n'.encode('utf-8'))
+            f.write(('# Autogenerated by Sphinx on %s\n' % asctime()).encode('utf-8'))
+            f.write(('topics = ' + pformat(self.topics) + '\n').encode('utf-8'))
         finally:
             f.close()
 
 
-# Support for checking for suspicious markup
-
-import suspicious
-
-
 # Support for documenting Opcodes
 
-import re
-
 opcode_sig_re = re.compile(r'(\w+(?:\+\d)?)(?:\s*\((.*)\))?')
+
 
 def parse_opcode_signature(env, sig, signode):
     """Transform an opcode signature into RST nodes."""
@@ -328,11 +332,12 @@ def parse_opcode_signature(env, sig, signode):
 pdbcmd_sig_re = re.compile(r'([a-z()!]+)\s*(.*)')
 
 # later...
-#pdbargs_tokens_re = re.compile(r'''[a-zA-Z]+  |  # identifiers
+# pdbargs_tokens_re = re.compile(r'''[a-zA-Z]+  |  # identifiers
 #                                   [.,:]+     |  # punctuation
 #                                   [\[\]()]   |  # parens
 #                                   \s+           # whitespace
 #                                   ''', re.X)
+
 
 def parse_pdb_command(env, sig, signode):
     """Transform a pdb command signature into RST nodes."""
@@ -361,4 +366,7 @@ def setup(app):
     app.add_description_unit('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
+    app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
+    app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
     app.add_directive('miscnews', MiscNews)
+    return {'version': '1.0', 'parallel_read_safe': True}
