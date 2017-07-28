@@ -492,9 +492,7 @@ class StartupImportTests(unittest.TestCase):
                            'heapq', 'itertools', 'keyword', 'operator',
                            'reprlib', 'types', 'weakref'
                           }.difference(sys.builtin_module_names)
-        # http://bugs.python.org/issue28095
-        if sys.platform != 'darwin':
-            self.assertFalse(modules.intersection(collection_mods), stderr)
+        self.assertFalse(modules.intersection(collection_mods), stderr)
 
     def test_startup_interactivehook(self):
         r = subprocess.Popen([sys.executable, '-c',
