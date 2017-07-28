@@ -887,7 +887,7 @@ class PollTests(unittest.TestCase):
         self.assertEqual(testmap, {})
         self.assertEqual(read_calls, [1])
 
-    def test_poll_close_replace_dispatchers(self):
+    def test_poll_close_reuse_fd(self):
         testmap = {}
         read_calls = []
 
