@@ -672,7 +672,7 @@ if 1:
         compile("42", PathLike("test_compile_pathlike"), "single")
 
 
-class TestStackSize(unittest.TestCase):
+class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
     # stays within reasonable bounds (see issue #21523 for an example
     # dysfunction).
@@ -708,6 +708,103 @@ class TestStackSize(unittest.TestCase):
         code = "def f(x):\n"
         code += "   x and x\n" * self.N
         self.check_stack_size(code)
+
+
+class TestStackSizeStability(unittest.TestCase):
+    # Check that repeating certain snippets doesn't increase the stack size
+    # beyond what a single snippet requires.
+
+    def check_stack_size(self, snippet):
+        sizes = []
+        for i in range(2, 5):
+            ns = {}
+            code = """def f():\n""" + i * snippet
+            code = compile(code, "<foo>", "exec")
+            exec(code, ns, ns)
+            sizes.append(ns['f'].__code__.co_stacksize)
+
+        self.assertEqual(len(set(sizes)), 1,
+                         "stack sizes diverge with # of consecutive snippets: %s" % (sizes,))
+
+    def test_if_else(self):
+        snippet = """
+            if x:
+                a
+            elif y:
+                b
+            else:
+                c
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_bare(self):
+        snippet = """
+            try:
+                a
+            except:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_qualified(self):
+        snippet = """
+            try:
+                a
+            except ImportError:
+                b
+            except:
+                c
+            else:
+                d
+            """
+        self.check_stack_size(snippet)
+
+    # This one unfortunately "leaks" a few stack slots for each snippet
+    @unittest.expectedFailure
+    def test_try_except_as(self):
+        snippet = """
+            try:
+                a
+            except ImportError as e:
+                b
+            except:
+                c
+            else:
+                d
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_finally(self):
+        snippet = """
+            try:
+                a
+            finally:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_for_else(self):
+        snippet = """
+            for x in y:
+                a
+            else:
+                b
+            """
+        self.check_stack_size(snippet)
+
+    def test_for_break_continue(self):
+        snippet = """
+            for x in y:
+                if z:
+                    break
+                elif u:
+                    continue
+                else:
+                    a
+            else:
+                b
+            """
+        self.check_stack_size(snippet)
 
 
 if __name__ == "__main__":
