@@ -207,7 +207,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         a = 'C\u0338' * 20  + 'C\u0327'
         b = 'C\u0338' * 20  + '\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
-    
+
     def test_issue29456(self):
         # Fix #29456
         u1176_str_a = '\u1100\u1176\u11a8'
