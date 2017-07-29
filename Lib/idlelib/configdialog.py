@@ -101,7 +101,7 @@ class ConfigDialog(Toplevel):
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
         """
-        self.note = note = Notebook(self, width=450, height=550)
+        self.note = note = Notebook(self, width=450, height=450)
         fontpage = self.create_page_font_tab()
         highpage = self.create_page_highlight()
         keyspage = self.create_page_keys()
@@ -284,7 +284,7 @@ class ConfigDialog(Toplevel):
         font_name_title = Label(
                 frame_font_name, justify=LEFT, text='Font Face :')
         self.fontlist = Listbox(frame_font_name, height=5,
-                                takefocus=FALSE, exportselection=FALSE)
+                                takefocus=True, exportselection=FALSE)
         self.fontlist.bind('<ButtonRelease-1>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Up>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Down>', self.on_fontlist_select)
@@ -300,7 +300,7 @@ class ConfigDialog(Toplevel):
         temp_font = tkFont.Font(parent, ('courier', 10, 'normal'))
         self.font_sample = Label(
                 frame_font_sample, justify=LEFT, font=temp_font,
-                text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]')
+                text='AaBbCcDdEe\nFfGgHhIiJj\n1234567890\n#:+=(){}[]')
         # frame_indent.
         indent_title = Label(
                 frame_indent, justify=LEFT,
@@ -506,12 +506,12 @@ class ConfigDialog(Toplevel):
         #frame_custom
         self.highlight_sample=Text(
                 frame_custom, relief=SOLID, borderwidth=1,
-                font=('courier', 12, ''), cursor='hand2', width=21, height=11,
+                font=('courier', 12, ''), cursor='hand2', width=21, height=13,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
         text=self.highlight_sample
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
-        text_and_tags=(
+        text_and_tags=(('\n', 'normal'),
             ('#you can click here', 'comment'), ('\n', 'normal'),
             ('#to choose items', 'comment'), ('\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
@@ -527,7 +527,7 @@ class ConfigDialog(Toplevel):
             ('cursor |', 'cursor'), ('\n ', 'normal'),
             ('shell', 'console'), (' ', 'normal'),
             ('stdout', 'stdout'), (' ', 'normal'),
-            ('stderr', 'stderr'), ('\n', 'normal'))
+            ('stderr', 'stderr'), ('\n\n', 'normal'))
         for texttag in text_and_tags:
             text.insert(END, texttag[0], texttag[1])
         for element in self.theme_elements:
@@ -1488,7 +1488,7 @@ class ConfigDialog(Toplevel):
         frame_helplist = Frame(frame_help)
         frame_helplist_buttons = Frame(frame_helplist)
         self.helplist = Listbox(
-                frame_helplist, height=5, takefocus=FALSE,
+                frame_helplist, height=5, takefocus=True,
                 exportselection=FALSE)
         scroll_helplist = Scrollbar(frame_helplist)
         scroll_helplist['command'] = self.helplist.yview
