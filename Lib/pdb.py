@@ -1100,6 +1100,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error(traceback.format_exception_only(*exc_info)[-1].strip())
             return
         p = Pdb(self.completekey, self.stdin, self.stdout)
+        p.use_rawinput = self.use_rawinput
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
         sys.call_tracing(p.run, (code, globals, locals))
