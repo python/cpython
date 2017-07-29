@@ -39,31 +39,26 @@ Truth Value Testing
    single: false
 
 Any object can be tested for truth value, for use in an :keyword:`if` or
-:keyword:`while` condition or as operand of the Boolean operations below. The
-following values are considered false:
-
-  .. index:: single: None (Built-in object)
-
-* ``None``
-
-  .. index:: single: False (Built-in object)
-
-* ``False``
-
-* zero of any numeric type, for example, ``0``, ``0.0``, ``0j``.
-
-* any empty sequence, for example, ``''``, ``()``, ``[]``.
-
-* any empty mapping, for example, ``{}``.
-
-* instances of user-defined classes, if the class defines a :meth:`__bool__` or
-  :meth:`__len__` method, when that method returns the integer zero or
-  :class:`bool` value ``False``. [1]_
+:keyword:`while` condition or as operand of the Boolean operations below.
 
 .. index:: single: true
 
-All other values are considered true --- so objects of many types are always
-true.
+By default, an object is considered true unless its class defines either a
+:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+returns zero, when called with the object. [1]_  Here are most of the built-in
+objects considered false:
+
+  .. index::
+     single: None (Built-in object)
+     single: False (Built-in object)
+
+* constants defined to be false: ``None`` and ``False``.
+
+* zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
+  ``Fraction(0, 1)``
+
+* empty sequences and collections: ``''``, ``()``, ``[]``, ``{}``, ``set()``,
+  ``range(0)``
 
 .. index::
    operator: or
