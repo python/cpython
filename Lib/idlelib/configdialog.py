@@ -112,6 +112,7 @@ class ConfigDialog(Toplevel):
         note.add(keyspage, text=' Keys ')
         note.add(genpage, text=' General ')
         note.add(extpage, text='Extensions')
+        note.enable_traversal()
         note.pack(side=TOP, expand=TRUE, fill=BOTH)
         self.create_action_buttons().pack(side=BOTTOM)
 
