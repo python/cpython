@@ -61,8 +61,9 @@ class TestModule(unittest.TestCase):
         self.assertEqual(datetime.MAXYEAR, 9999)
 
     def test_name_cleanup(self):
-        if '_Fast' not in str(self):
-            return
+        if '_Pure' in self.__class__.__name__:
+            self.skipTest('Only run for Fast C implementation')
+
         datetime = datetime_module
         names = set(name for name in dir(datetime)
                     if not name.startswith('__') and not name.endswith('__'))
@@ -72,8 +73,9 @@ class TestModule(unittest.TestCase):
         self.assertEqual(names - allowed, set([]))
 
     def test_divide_and_round(self):
-        if '_Fast' in str(self):
-            return
+        if '_Fast' in self.__class__.__name__:
+            self.skipTest('Only run for Pure Python implementation')
+
         dar = datetime_module._divide_and_round
 
         self.assertEqual(dar(-10, -3), 3)
@@ -656,11 +658,21 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
     def test_repr(self):
         name = 'datetime.' + self.theclass.__name__
         self.assertEqual(repr(self.theclass(1)),
-                         "%s(1)" % name)
+                         "%s(days=1)" % name)
         self.assertEqual(repr(self.theclass(10, 2)),
-                         "%s(10, 2)" % name)
+                         "%s(days=10, seconds=2)" % name)
         self.assertEqual(repr(self.theclass(-10, 2, 400000)),
-                         "%s(-10, 2, 400000)" % name)
+                         "%s(days=-10, seconds=2, microseconds=400000)" % name)
+        self.assertEqual(repr(self.theclass(seconds=60)),
+                         "%s(seconds=60)" % name)
+        self.assertEqual(repr(self.theclass()),
+                         "%s(0)" % name)
+        self.assertEqual(repr(self.theclass(microseconds=100)),
+                         "%s(microseconds=100)" % name)
+        self.assertEqual(repr(self.theclass(days=1, microseconds=100)),
+                         "%s(days=1, microseconds=100)" % name)
+        self.assertEqual(repr(self.theclass(seconds=1, microseconds=100)),
+                         "%s(seconds=1, microseconds=100)" % name)
 
     def test_roundtrip(self):
         for td in (timedelta(days=999999999, hours=23, minutes=59,
@@ -2851,7 +2863,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(TypeError, t.strftime, "%Z")
 
         # Issue #6697:
-        if '_Fast' in str(self):
+        if '_Fast' in self.__class__.__name__:
             Badtzname.tz = '\ud800'
             self.assertRaises(ValueError, t.strftime, "%Z")
 

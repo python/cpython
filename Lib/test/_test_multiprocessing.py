@@ -32,11 +32,12 @@ test.support.import_module('multiprocessing.synchronize')
 # without thread support.
 import threading
 
-import multiprocessing.dummy
 import multiprocessing.connection
-import multiprocessing.managers
+import multiprocessing.dummy
 import multiprocessing.heap
+import multiprocessing.managers
 import multiprocessing.pool
+import multiprocessing.queues
 
 from multiprocessing import util
 
@@ -63,6 +64,13 @@ except ImportError:
 
 def latin(s):
     return s.encode('latin')
+
+
+def close_queue(queue):
+    if isinstance(queue, multiprocessing.queues.Queue):
+        queue.close()
+        queue.join_thread()
+
 
 #
 # Constants
@@ -106,10 +114,10 @@ PRELOAD = ['__main__', 'test.test_multiprocessing_forkserver']
 #
 
 try:
-    from ctypes import Structure, c_int, c_double
+    from ctypes import Structure, c_int, c_double, c_longlong
 except ImportError:
     Structure = object
-    c_int = c_double = None
+    c_int = c_double = c_longlong = None
 
 
 def check_enough_semaphores():
@@ -275,20 +283,21 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(p.is_alive(), False)
         self.assertNotIn(p, self.active_children())
+        close_queue(q)
 
     @classmethod
-    def _test_terminate(cls):
+    def _sleep_some(cls):
         time.sleep(100)
 
     @classmethod
     def _test_sleep(cls, delay):
         time.sleep(delay)
 
-    def test_terminate(self):
+    def _kill_process(self, meth):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        p = self.Process(target=self._test_terminate)
+        p = self.Process(target=self._sleep_some)
         p.daemon = True
         p.start()
 
@@ -309,7 +318,7 @@ class _TestProcess(BaseTestCase):
         # XXX maybe terminating too soon causes the problems on Gentoo...
         time.sleep(1)
 
-        p.terminate()
+        meth(p)
 
         if hasattr(signal, 'alarm'):
             # On the Gentoo buildbot waitpid() often seems to block forever.
@@ -333,9 +342,17 @@ class _TestProcess(BaseTestCase):
 
         p.join()
 
-        # sometimes get p.exitcode == 0 on Windows ...
+        return p.exitcode
+
+    def test_terminate(self):
+        exitcode = self._kill_process(multiprocessing.Process.terminate)
         if os.name != 'nt':
-            self.assertEqual(p.exitcode, -signal.SIGTERM)
+            self.assertEqual(exitcode, -signal.SIGTERM)
+
+    def test_kill(self):
+        exitcode = self._kill_process(multiprocessing.Process.kill)
+        if os.name != 'nt':
+            self.assertEqual(exitcode, -signal.SIGKILL)
 
     def test_cpu_count(self):
         try:
@@ -445,6 +462,8 @@ class _TestProcess(BaseTestCase):
         gc.collect()
         self.assertIs(wr(), None)
 
+        close_queue(q)
+
     def test_many_processes(self):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -462,7 +481,7 @@ class _TestProcess(BaseTestCase):
         for p in procs:
             self.assertEqual(p.exitcode, 0)
 
-        procs = [self.Process(target=self._test_terminate)
+        procs = [self.Process(target=self._sleep_some)
                  for i in range(N)]
         for p in procs:
             p.start()
@@ -485,7 +504,43 @@ class _TestProcess(BaseTestCase):
         p.join()
         self.assertIs(wr(), None)
         self.assertEqual(q.get(), 5)
+        close_queue(q)
 
+    @classmethod
+    def _test_child_fd_inflation(self, evt, q):
+        q.put(test.support.fd_count())
+        evt.wait()
+
+    def test_child_fd_inflation(self):
+        # Number of fds in child processes should not grow with the
+        # number of running children.
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        sm = multiprocessing.get_start_method()
+        if sm == 'fork':
+            # The fork method by design inherits all fds from the parent,
+            # trying to go against it is a lost battle
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        N = 5
+        evt = self.Event()
+        q = self.Queue()
+
+        procs = [self.Process(target=self._test_child_fd_inflation, args=(evt, q))
+                 for i in range(N)]
+        for p in procs:
+            p.start()
+
+        try:
+            fd_counts = [q.get() for i in range(N)]
+            self.assertEqual(len(set(fd_counts)), 1, fd_counts)
+
+        finally:
+            evt.set()
+            for p in procs:
+                p.join()
+            close_queue(q)
 
 #
 #
@@ -671,6 +726,7 @@ class _TestQueue(BaseTestCase):
         self.assertEqual(queue_full(queue, MAXSIZE), False)
 
         proc.join()
+        close_queue(queue)
 
     @classmethod
     def _test_get(cls, queue, child_can_start, parent_can_continue):
@@ -733,6 +789,7 @@ class _TestQueue(BaseTestCase):
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT3)
 
         proc.join()
+        close_queue(queue)
 
     @classmethod
     def _test_fork(cls, queue):
@@ -768,6 +825,7 @@ class _TestQueue(BaseTestCase):
         self.assertRaises(pyqueue.Empty, queue.get, False)
 
         p.join()
+        close_queue(queue)
 
     def test_qsize(self):
         q = self.Queue()
@@ -783,6 +841,7 @@ class _TestQueue(BaseTestCase):
         self.assertEqual(q.qsize(), 1)
         q.get()
         self.assertEqual(q.qsize(), 0)
+        close_queue(q)
 
     @classmethod
     def _test_task_done(cls, q):
@@ -810,6 +869,7 @@ class _TestQueue(BaseTestCase):
 
         for p in workers:
             p.join()
+        close_queue(queue)
 
     def test_no_import_lock_contention(self):
         with test.support.temp_cwd():
@@ -840,6 +900,7 @@ class _TestQueue(BaseTestCase):
         # Tolerate a delta of 30 ms because of the bad clock resolution on
         # Windows (usually 15.6 ms)
         self.assertGreaterEqual(delta, 0.170)
+        close_queue(q)
 
     def test_queue_feeder_donot_stop_onexc(self):
         # bpo-30414: verify feeder handles exceptions correctly
@@ -855,6 +916,7 @@ class _TestQueue(BaseTestCase):
             q.put(True)
             # bpo-30595: use a timeout of 1 second for slow buildbots
             self.assertTrue(q.get(timeout=1.0))
+            close_queue(q)
 
 #
 #
@@ -978,10 +1040,12 @@ class _TestCondition(BaseTestCase):
         p = self.Process(target=self.f, args=(cond, sleeping, woken))
         p.daemon = True
         p.start()
+        self.addCleanup(p.join)
 
         p = threading.Thread(target=self.f, args=(cond, sleeping, woken))
         p.daemon = True
         p.start()
+        self.addCleanup(p.join)
 
         # wait for both children to start sleeping
         sleeping.acquire()
@@ -1024,11 +1088,13 @@ class _TestCondition(BaseTestCase):
                              args=(cond, sleeping, woken, TIMEOUT1))
             p.daemon = True
             p.start()
+            self.addCleanup(p.join)
 
             t = threading.Thread(target=self.f,
                                  args=(cond, sleeping, woken, TIMEOUT1))
             t.daemon = True
             t.start()
+            self.addCleanup(t.join)
 
         # wait for them all to sleep
         for i in range(6):
@@ -1047,10 +1113,12 @@ class _TestCondition(BaseTestCase):
             p = self.Process(target=self.f, args=(cond, sleeping, woken))
             p.daemon = True
             p.start()
+            self.addCleanup(p.join)
 
             t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
             t.daemon = True
             t.start()
+            self.addCleanup(t.join)
 
         # wait for them to all sleep
         for i in range(6):
@@ -1081,10 +1149,12 @@ class _TestCondition(BaseTestCase):
             p = self.Process(target=self.f, args=(cond, sleeping, woken))
             p.daemon = True
             p.start()
+            self.addCleanup(p.join)
 
             t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
             t.daemon = True
             t.start()
+            self.addCleanup(t.join)
 
         # wait for them to all sleep
         for i in range(6):
@@ -1267,6 +1337,7 @@ class _TestEvent(BaseTestCase):
         p.daemon = True
         p.start()
         self.assertEqual(wait(), True)
+        p.join()
 
 #
 # Tests for Barrier - adapted from tests in test/lock_tests.py
@@ -1442,6 +1513,7 @@ class _TestBarrier(BaseTestCase):
         self.run_threads(self._test_wait_return_f, (self.barrier, queue))
         results = [queue.get() for i in range(self.N)]
         self.assertEqual(results.count(0), 1)
+        close_queue(queue)
 
     @classmethod
     def _test_action_f(cls, barrier, results):
@@ -1612,6 +1684,7 @@ class _TestBarrier(BaseTestCase):
             p = self.Process(target=self._test_thousand_f,
                            args=(self.barrier, passes, child_conn, lock))
             p.start()
+            self.addCleanup(p.join)
 
         for i in range(passes):
             for j in range(self.N):
@@ -1629,6 +1702,7 @@ class _TestValue(BaseTestCase):
         ('i', 4343, 24234),
         ('d', 3.625, -4.25),
         ('h', -232, 234),
+        ('q', 2 ** 33, 2 ** 34),
         ('c', latin('x'), latin('y'))
         ]
 
@@ -3095,6 +3169,8 @@ class _TestPicklingConnections(BaseTestCase):
         w.close()
         self.assertEqual(conn.recv(), 'foobar'*2)
 
+        p.join()
+
 #
 #
 #
@@ -3171,7 +3247,8 @@ class _TestHeap(BaseTestCase):
 class _Foo(Structure):
     _fields_ = [
         ('x', c_int),
-        ('y', c_double)
+        ('y', c_double),
+        ('z', c_longlong,)
         ]
 
 class _TestSharedCTypes(BaseTestCase):
@@ -3183,9 +3260,10 @@ class _TestSharedCTypes(BaseTestCase):
             self.skipTest("requires multiprocessing.sharedctypes")
 
     @classmethod
-    def _double(cls, x, y, foo, arr, string):
+    def _double(cls, x, y, z, foo, arr, string):
         x.value *= 2
         y.value *= 2
+        z.value *= 2
         foo.x *= 2
         foo.y *= 2
         string.value *= 2
@@ -3195,18 +3273,20 @@ class _TestSharedCTypes(BaseTestCase):
     def test_sharedctypes(self, lock=False):
         x = Value('i', 7, lock=lock)
         y = Value(c_double, 1.0/3.0, lock=lock)
+        z = Value(c_longlong, 2 ** 33, lock=lock)
         foo = Value(_Foo, 3, 2, lock=lock)
         arr = self.Array('d', list(range(10)), lock=lock)
         string = self.Array('c', 20, lock=lock)
         string.value = latin('hello')
 
-        p = self.Process(target=self._double, args=(x, y, foo, arr, string))
+        p = self.Process(target=self._double, args=(x, y, z, foo, arr, string))
         p.daemon = True
         p.start()
         p.join()
 
         self.assertEqual(x.value, 14)
         self.assertAlmostEqual(y.value, 2.0/3.0)
+        self.assertEqual(z.value, 2 ** 34)
         self.assertEqual(foo.x, 6)
         self.assertAlmostEqual(foo.y, 4.0)
         for i in range(10):
@@ -3217,12 +3297,14 @@ class _TestSharedCTypes(BaseTestCase):
         self.test_sharedctypes(lock=True)
 
     def test_copy(self):
-        foo = _Foo(2, 5.0)
+        foo = _Foo(2, 5.0, 2 ** 33)
         bar = copy(foo)
         foo.x = 0
         foo.y = 0
+        foo.z = 0
         self.assertEqual(bar.x, 2)
         self.assertAlmostEqual(bar.y, 5.0)
+        self.assertEqual(bar.z, 2 ** 33)
 
 #
 #
@@ -3420,16 +3502,18 @@ class _TestLogging(BaseTestCase):
 
         logger.setLevel(LEVEL1)
         p = self.Process(target=self._test_level, args=(writer,))
-        p.daemon = True
         p.start()
         self.assertEqual(LEVEL1, reader.recv())
+        p.join()
+        p.close()
 
         logger.setLevel(logging.NOTSET)
         root_logger.setLevel(LEVEL2)
         p = self.Process(target=self._test_level, args=(writer,))
-        p.daemon = True
         p.start()
         self.assertEqual(LEVEL2, reader.recv())
+        p.join()
+        p.close()
 
         root_logger.setLevel(root_level)
         logger.setLevel(level=LOG_LEVEL)
@@ -3583,7 +3667,7 @@ def _this_sub_process(q):
     except pyqueue.Empty:
         pass
 
-def _test_process(q):
+def _test_process():
     queue = multiprocessing.Queue()
     subProc = multiprocessing.Process(target=_this_sub_process, args=(queue,))
     subProc.daemon = True
@@ -3623,8 +3707,7 @@ class _file_like(object):
 class TestStdinBadfiledescriptor(unittest.TestCase):
 
     def test_queue_in_process(self):
-        queue = multiprocessing.Queue()
-        proc = multiprocessing.Process(target=_test_process, args=(queue,))
+        proc = multiprocessing.Process(target=_test_process)
         proc.start()
         proc.join()
 
@@ -4232,7 +4315,32 @@ class TestSimpleQueue(unittest.TestCase):
 # Mixins
 #
 
-class ProcessesMixin(object):
+class BaseMixin(object):
+    @classmethod
+    def setUpClass(cls):
+        cls.dangling = (multiprocessing.process._dangling.copy(),
+                        threading._dangling.copy())
+
+    @classmethod
+    def tearDownClass(cls):
+        # bpo-26762: Some multiprocessing objects like Pool create reference
+        # cycles. Trigger a garbage collection to break these cycles.
+        test.support.gc_collect()
+
+        processes = set(multiprocessing.process._dangling) - set(cls.dangling[0])
+        if processes:
+            print('Warning -- Dangling processes: %s' % processes,
+                  file=sys.stderr)
+        processes = None
+
+        threads = set(threading._dangling) - set(cls.dangling[1])
+        if threads:
+            print('Warning -- Dangling threads: %s' % threads,
+                  file=sys.stderr)
+        threads = None
+
+
+class ProcessesMixin(BaseMixin):
     TYPE = 'processes'
     Process = multiprocessing.Process
     connection = multiprocessing.connection
@@ -4255,7 +4363,7 @@ class ProcessesMixin(object):
     RawArray = staticmethod(multiprocessing.RawArray)
 
 
-class ManagerMixin(object):
+class ManagerMixin(BaseMixin):
     TYPE = 'manager'
     Process = multiprocessing.Process
     Queue = property(operator.attrgetter('manager.Queue'))
@@ -4279,6 +4387,7 @@ class ManagerMixin(object):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         cls.manager = multiprocessing.Manager()
 
     @classmethod
@@ -4286,23 +4395,35 @@ class ManagerMixin(object):
         # only the manager process should be returned by active_children()
         # but this can take a bit on slow machines, so wait a few seconds
         # if there are other children too (see #17395)
+        start_time = time.monotonic()
         t = 0.01
-        while len(multiprocessing.active_children()) > 1 and t < 5:
+        while len(multiprocessing.active_children()) > 1:
             time.sleep(t)
             t *= 2
+            dt = time.monotonic() - start_time
+            if dt >= 5.0:
+                print("Warning -- multiprocessing.Manager still has %s active "
+                      "children after %s seconds"
+                      % (multiprocessing.active_children(), dt),
+                      file=sys.stderr)
+                break
+
         gc.collect()                       # do garbage collection
         if cls.manager._number_of_objects() != 0:
             # This is not really an error since some tests do not
             # ensure that all processes which hold a reference to a
             # managed object have been joined.
-            print('Shared objects which still exist at manager shutdown:')
+            print('Warning -- Shared objects which still exist at manager '
+                  'shutdown:')
             print(cls.manager._debug_info())
         cls.manager.shutdown()
         cls.manager.join()
         cls.manager = None
 
+        super().tearDownClass()
 
-class ThreadsMixin(object):
+
+class ThreadsMixin(BaseMixin):
     TYPE = 'threads'
     Process = multiprocessing.dummy.Process
     connection = multiprocessing.dummy.connection
@@ -4379,18 +4500,33 @@ def install_tests_in_module_dict(remote_globs, start_method):
         multiprocessing.get_logger().setLevel(LOG_LEVEL)
 
     def tearDownModule():
+        need_sleep = False
+
+        # bpo-26762: Some multiprocessing objects like Pool create reference
+        # cycles. Trigger a garbage collection to break these cycles.
+        test.support.gc_collect()
+
         multiprocessing.set_start_method(old_start_method[0], force=True)
         # pause a bit so we don't get warning about dangling threads/processes
-        time.sleep(0.5)
+        processes = set(multiprocessing.process._dangling) - set(dangling[0])
+        if processes:
+            need_sleep = True
+            print('Warning -- Dangling processes: %s' % processes,
+                  file=sys.stderr)
+        processes = None
+
+        threads = set(threading._dangling) - set(dangling[1])
+        if threads:
+            need_sleep = True
+            print('Warning -- Dangling threads: %s' % threads,
+                  file=sys.stderr)
+        threads = None
+
+        # Sleep 500 ms to give time to child processes to complete.
+        if need_sleep:
+            time.sleep(0.5)
         multiprocessing.process._cleanup()
-        gc.collect()
-        tmp = set(multiprocessing.process._dangling) - set(dangling[0])
-        if tmp:
-            print('Dangling processes:', tmp, file=sys.stderr)
-        del tmp
-        tmp = set(threading._dangling) - set(dangling[1])
-        if tmp:
-            print('Dangling threads:', tmp, file=sys.stderr)
+        test.support.gc_collect()
 
     remote_globs['setUpModule'] = setUpModule
     remote_globs['tearDownModule'] = tearDownModule

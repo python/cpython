@@ -287,10 +287,11 @@ Supported operations:
 |                                | ``[D day[s], ][H]H:MM:SS[.UUUUUU]``, where D  |
 |                                | is negative for negative ``t``. (5)           |
 +--------------------------------+-----------------------------------------------+
-| ``repr(t)``                    | Returns a string in the form                  |
-|                                | ``datetime.timedelta(D[, S[, U]])``, where D  |
-|                                | is negative for negative ``t``. (5)           |
+| ``repr(t)``                    | Returns a string representation of the        |
+|                                | :class:`timedelta` object as a constructor    |
+|                                | call with canonical attribute values.         |
 +--------------------------------+-----------------------------------------------+
+
 
 Notes:
 
@@ -312,7 +313,7 @@ Notes:
   unusual results for negative timedeltas.  For example:
 
   >>> timedelta(hours=-5)
-  datetime.timedelta(-1, 68400)
+  datetime.timedelta(days=-1, seconds=68400)
   >>> print(_)
   -1 day, 19:00:00
 
