@@ -69,7 +69,7 @@ class ConfigDialog(Toplevel):
         self.resizable(height=FALSE, width=FALSE)
         self.transient(parent)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
-        self.fontlist.focus_set()
+        self.fontpage.fontlist.focus_set()
         # XXX Decide whether to keep or delete these key bindings.
         # Key bindings for this dialog.
         # self.bind('<Escape>', self.Cancel) #dismiss dialog, no save
@@ -102,17 +102,16 @@ class ConfigDialog(Toplevel):
             activate_config_changes: Tell editors to reload.
         """
         self.note = note = Notebook(self, width=450, height=450)
-        # self.highpage is temporary for independent test of FontPage
-        self.highpage = highpage = self.create_page_highlight()
-        fontpage = self.create_page_font_tab()
-        keyspage = self.create_page_keys()
-        genpage = self.create_page_general()
-        extpage = self.create_page_extensions()
-        note.add(fontpage, text='Fonts/Tabs')
-        note.add(highpage, text='Highlights')
-        note.add(keyspage, text=' Keys ')
-        note.add(genpage, text=' General ')
-        note.add(extpage, text='Extensions')
+        self.highpage = self.create_page_highlight()
+        self.fontpage = FontPage(note, self.highpage)
+        self.keyspage = self.create_page_keys()
+        self.genpage = self.create_page_general()
+        self.extpage = self.create_page_extensions()
+        note.add(self.fontpage, text='Fonts/Tabs')
+        note.add(self.highpage, text='Highlights')
+        note.add(self.keyspage, text=' Keys ')
+        note.add(self.genpage, text=' General ')
+        note.add(self.extpage, text='Extensions')
         note.enable_traversal()
         note.pack(side=TOP, expand=TRUE, fill=BOTH)
         self.create_action_buttons().pack(side=BOTTOM)
@@ -130,8 +129,8 @@ class ConfigDialog(Toplevel):
             load_key_cfg
             load_general_cfg
         """
-        self.load_font_cfg()
-        self.load_tab_cfg()
+        #self.load_font_cfg()
+        #self.load_tab_cfg()
         self.load_theme_cfg()
         self.load_key_cfg()
         self.load_general_cfg()
