@@ -102,7 +102,8 @@ class ConfigDialog(Toplevel):
             activate_config_changes: Tell editors to reload.
         """
         self.note = note = Notebook(self, width=450, height=450)
-        highpage = self.create_page_highlight()
+        # self.highpage is temporary for independent test of FontPage
+        self.highpage = highpage = self.create_page_highlight()
         fontpage = self.create_page_font_tab()
         keyspage = self.create_page_keys()
         genpage = self.create_page_general()
@@ -416,6 +417,12 @@ class ConfigDialog(Toplevel):
             'main', 'Indent', 'num-spaces', default=4, type='int')
         self.space_num.set(space_num)
 
+    def var_changed_space_num(self, *params):
+        "Store change to indentation size."
+        value = self.space_num.get()
+        changes.add_option('main', 'Indent', 'num-spaces', value)
+
+
     def create_page_highlight(self):
         """Return frame of widgets for Highlighting tab.
 
@@ -505,7 +512,7 @@ class ConfigDialog(Toplevel):
         frame_theme = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                 text=' Highlighting Theme ')
         #frame_custom
-        self.highlight_sample=Text(
+        text = self.highlight_sample = frame.highlight_sample = Text(
                 frame_custom, relief=SOLID, borderwidth=1,
                 font=('courier', 12, ''), cursor='hand2', width=21, height=13,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
@@ -1890,11 +1897,11 @@ class FontPage(Frame):
         self.font_name = tracers.add(StringVar(parent), self.var_changed_font)
         self.font_size = tracers.add(StringVar(parent), self.var_changed_font)
         self.font_bold = tracers.add(BooleanVar(parent), self.var_changed_font)
-        self.space_num = tracers.add(IntVar(parent), ('main', 'Indent', 'num-spaces'))
+        self.space_num = tracers.add(IntVar(self), ('main', 'Indent', 'num-spaces'))
 
         # Create widgets:
         # body and body section frames.
-        frame = Frame(self.parent)
+        frame = self
         frame_font = LabelFrame(
                 frame, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
         frame_indent = LabelFrame(
@@ -2035,6 +2042,11 @@ class FontPage(Frame):
         space_num = idleConf.GetOption(
             'main', 'Indent', 'num-spaces', default=4, type='int')
         self.space_num.set(space_num)
+
+    def var_changed_space_num(self, *params):
+        "Store change to indentation size."
+        value = self.space_num.get()
+        changes.add_option('main', 'Indent', 'num-spaces', value)
 
 
 class VarTrace:

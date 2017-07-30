@@ -57,12 +57,10 @@ class FontTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         dialog.set_samples = Func()  # Mask instance method.
-        tracers.attach()
 
     @classmethod
     def tearDownClass(cls):
         del dialog.set_samples  # Unmask instance method.
-        tracers.detach()
 
     def setUp(self):
         changes.clear()
@@ -210,16 +208,17 @@ class FontPageTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        hp = mock.Mock()
-        hp.highlight_sample = {}
-        cls.page = configdialog.FontPage(root, hp)
+        page = cls.page = configdialog.FontPage(dialog.note, dialog.highpage)
+        dialog.note.insert(0, page, text='copy')
+        #dialog.note.add(page, text='copyfgfg')
+        dialog.note.select(page)
         cls.page.set_samples = Func()  # Mask instance method.
         tracers.attach()
 
     @classmethod
     def tearDownClass(cls):
         del cls.page.set_samples  # Unmask instance method.
-        tracers.detach()
+        cls.page.destroy()  # delete when live
 
     def setUp(self):
         changes.clear()
@@ -227,6 +226,7 @@ class FontPageTest(unittest.TestCase):
     def test_load_font_cfg(self):
         # Leave widget load test to human visual check.
         # TODO Improve checks when add IdleConf.get_font_values.
+        tracers.detach()
         d = self.page
         d.font_name.set('Fake')
         d.font_size.set('1')
@@ -236,7 +236,8 @@ class FontPageTest(unittest.TestCase):
         self.assertNotEqual(d.font_name.get(), 'Fake')
         self.assertNotEqual(d.font_size.get(), '1')
         self.assertFalse(d.font_bold.get())
-        self.assertEqual(d.set_samples.called, 4)
+        self.assertEqual(d.set_samples.called, 1)
+        tracers.attach()
 
     def test_fontlist_key(self):
         # Up and Down keys should select a new font.
@@ -360,14 +361,6 @@ class FontPageTest(unittest.TestCase):
 
 class IndentTest(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        tracers.attach()
-
-    @classmethod
-    def tearDownClass(cls):
-        tracers.detach()
-
     def test_load_tab_cfg(self):
         d = dialog
         d.space_num.set(16)
@@ -385,16 +378,12 @@ class IndentOptionTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        hp = mock.Mock()
-        hp.highlight_sample = {}
-        cls.page = configdialog.FontPage(root, hp)
-        cls.page.set_samples = Func()  # Mask instance method.
+        cls.page = configdialog.FontPage(dialog.note, dialog.highpage)
         tracers.attach()
 
     @classmethod
     def tearDownClass(cls):
-        del cls.page.set_samples
-        tracers.detach()
+        cls.page.destroy()
 
     def test_load_tab_cfg(self):
         d = self.page
@@ -405,7 +394,7 @@ class IndentOptionTest(unittest.TestCase):
     def test_indent_scale(self):
         d = self.page
         changes.clear()
-        d.indent_scale.set(26)
+        d.indent_scale.set(20)
         self.assertEqual(d.space_num.get(), 16)
         self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
 
@@ -430,11 +419,12 @@ class GeneralTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        # Mask instance methods used by help functions.
         d = dialog
+        # Select General tab so can force focus on helplist.
+        d.note.select(3)
+        # Mask instance methods used by help functions.
         d.set = d.set_add_delete_state = Func()
         d.upc = d.update_help_changes = Func()
-        tracers.attach()
 
     @classmethod
     def tearDownClass(cls):
@@ -443,7 +433,6 @@ class GeneralTest(unittest.TestCase):
         del d.upc, d.update_help_changes
         d.helplist.delete(0, 'end')
         d.user_helplist.clear()
-        tracers.detach()
 
     def setUp(self):
         changes.clear()
@@ -509,9 +498,8 @@ class GeneralTest(unittest.TestCase):
         helplist.event_generate('<Motion>', x=x, y=y)
         helplist.event_generate('<Button-1>', x=x, y=y)
         helplist.event_generate('<ButtonRelease-1>', x=x, y=y)
-        # The following fail after the switch to
-        # self.assertEqual(helplist.get('anchor'), 'source')
-        # self.assertTrue(d.set.called)
+        self.assertEqual(helplist.get('anchor'), 'source')
+        self.assertTrue(d.set.called)
         self.assertFalse(d.upc.called)
 
     def test_set_add_delete_state(self):
