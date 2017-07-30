@@ -3,6 +3,44 @@ Released on 2018-06-18?
 ========================
 
 
+bpo-30781: IDLE - Use ttk Notebook in ConfigDialog.
+Patch by Terry Jan Reedy.
+
+bpo-31060: IDLE - Finish rearranging methods of ConfigDialog.
+Grouping methods pertaining to each tab and the buttons will aid
+writing tests and improving the tabs and will enable splitting the
+groups into classes.
+Patch by Terry Jan Reedy.
+
+bpo-30853: IDLE -- Factor a VarTrace class out of ConfigDialog.
+Instance tracers manages pairs consisting of a tk variable and a
+callback function.  When tracing is turned on, setting the variable
+calls the function.  Test coverage for the new class is 100%.
+Patch by Terry Jan Reedy.
+
+bpo-31003: IDLE: Add more tests for General tab.
+Patch by Terry Jan Reedy.
+
+bpo-30993: IDLE - Improve configdialog font page and tests.
+*In configdialog: Document causal pathways in create_font_tab
+docstring.  Simplify some attribute names. Move set_samples calls to
+var_changed_font (idea from Cheryl Sabella).  Move related functions to
+positions after the create widgets function.
+* In test_configdialog: Fix test_font_set so not order dependent.  Fix
+renamed test_indent_scale so it tests the widget.  Adjust tests for
+movement of set_samples call.  Add tests for load functions.  Put all
+font tests in one class and tab indent tests in another.  Except for
+two lines, these tests completely cover the related functions.
+Patch by Terry Jan Reedy.
+
+bpo-30981: IDLE -- Add more configdialog font page tests.
+
+bpo-28523: IDLE: replace 'colour' with 'color' in configdialog.
+
+bpo-30917: Add tests for idlelib.config.IdleConf.
+Increase coverage from 46% to 96%.
+Patch by Louie Lu.
+
 bpo-30913: Document ConfigDialog tk Vars, methods, and widgets in docstrings
 This will facilitate improving the dialog and splitting up the class.
 Original patch by Cheryl Sabella.
@@ -11,7 +49,7 @@ bpo-30899: Add tests for ConfigParser subclasses in config.
 Coverage is 100% for those classes and ConfigChanges.
 Patch by Louie Lu.
 
-bpo-30881: Add docstrings to browser.py. 
+bpo-30881: Add docstrings to browser.py.
 Patch by Cheryl Sabella.
 
 bpo-30851: Remove unused tk variables in configdialog.
@@ -48,7 +86,7 @@ bp0-30723: Make several improvements to parenmatch.
 * Make 'default' style, which is not default, a synonym for 'opener'.
 * Make time-delay work the same with all styles.
 * Add help for config dialog extensions tab, including parenmatch.
-* Add new tests. 
+* Add new tests.
 Original patch by Charles Wohlganger.  Revisions by Terry Jan Reedy
 
 bpo-30674: Grep -- Add docstrings.  Patch by Cheryl Sabella.
