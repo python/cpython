@@ -1,0 +1,4 @@
+IDLE - Factor FontPage(Frame) class from ConfigDialog.
+
+Slightly modified tests continue to pass. Fix General tests. Patch mostly by
+Cheryl Sabella.
