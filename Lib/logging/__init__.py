@@ -1729,9 +1729,7 @@ class LoggerAdapter(object):
         """
         Is this logger enabled for level 'level'?
         """
-        if self.logger.manager.disable >= level:
-            return False
-        return level >= self.getEffectiveLevel()
+        return self.logger.isEnabledFor(level)
 
     def setLevel(self, level):
         """
