@@ -1244,6 +1244,19 @@ class Manager(object):
                 alogger.parent = c.parent
                 c.parent = alogger
 
+    def _clear_cache(self):
+        """
+        Clear the cache for all loggers in loggerDict
+        Called when level changes are made
+        """
+
+        _acquireLock()
+        for logger in self.loggerDict.values():
+            if isinstance(logger, Logger):
+                logger._cache.clear()
+        self.root._cache.clear()
+        _releaseLock()
+
 #---------------------------------------------------------------------------
 #   Logger classes and functions
 #---------------------------------------------------------------------------
@@ -1274,12 +1287,14 @@ class Logger(Filterer):
         self.propagate = True
         self.handlers = []
         self.disabled = False
+        self._cache = {}
 
     def setLevel(self, level):
         """
         Set the logging level of this logger.  level must be an int or a str.
         """
         self.level = _checkLevel(level)
+        self.manager._clear_cache()
 
     def debug(self, msg, *args, **kwargs):
         """
@@ -1543,9 +1558,17 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
-        if self.manager.disable >= level:
-            return False
-        return level >= self.getEffectiveLevel()
+        try:
+            return self._cache[level]
+        except KeyError:
+            _acquireLock()
+            if self.manager.disable >= level:
+                is_enabled = self._cache[level] = False
+            else:
+                is_enabled = self._cache[level] = level >= self.getEffectiveLevel()
+            _releaseLock()
+
+            return is_enabled
 
     def getChild(self, suffix):
         """
@@ -1910,6 +1933,7 @@ def disable(level=CRITICAL):
     Disable all logging calls of severity 'level' and below.
     """
     root.manager.disable = level
+    root.manager._clear_cache()
 
 def shutdown(handlerList=_handlerList):
     """
