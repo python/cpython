@@ -52,15 +52,20 @@
     return buf.join('');
   }
 
-  function naviagate_if_exists(url, default_url) {
-    // check beforehand if url exists, else redirect to default_url.
+  function navigate_to_first_existing(urls) {
+    // Navigate to the first existing URL in urls.
+    var url = urls.shift();
+    if (urls.length == 0) {
+      window.location.href = url;
+      return;
+    }
     $.ajax({
       url: url,
       success: function() {
-         window.location.href = url;
+        window.location.href = url;
       },
       error: function() {
-         window.location.href = default_url;
+        navigate_to_first_existing(urls);
       }
     });
   }
@@ -73,8 +78,14 @@
     var new_url = url.replace('.org/' + current_language + current_version,
                               '.org/' + current_language + selected_version);
     if (new_url != url) {
-      naviagate_if_exists(new_url, 'https://docs.python.org/' +
-                          current_language + selected_version);
+      navigate_to_first_existing([
+        new_url,
+        url.replace('.org/' + current_language + current_version,
+                    '.org/' + selected_version),
+        'https://docs.python.org/' + current_language + selected_version,
+        'https://docs.python.org/' + selected_version,
+        'https://docs.python.org/'
+      ]);
     }
   }
 
@@ -88,8 +99,10 @@
     var new_url = url.replace('.org/' + current_language + current_version,
                               '.org/' + selected_language + current_version);
     if (new_url != url) {
-      naviagate_if_exists(new_url, 'https://docs.python.org/' +
-                          selected_language + current_version);
+      navigate_to_first_existing([
+        new_url,
+        'https://docs.python.org/'
+      ]);
     }
   }
 
