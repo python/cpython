@@ -304,17 +304,16 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         optmenu2.wait_visibility()
         optmenu['menu'].invoke(1)
         optmenu2['menu'].invoke(2)
-        optmenu_radiobutton_name = optmenu['menu'].entrycget(0, 'variable')
-        optmenu2_radiobutton_name = optmenu2['menu'].entrycget(0, 'variable')
-        self.assertNotEqual(optmenu_radiobutton_name,
-                            optmenu2_radiobutton_name)
-        self.assertEqual(self.root.tk.globalgetvar(optmenu_radiobutton_name),
+        optmenu_stringvar_name = optmenu['menu'].entrycget(0, 'variable')
+        optmenu2_stringvar_name = optmenu2['menu'].entrycget(0, 'variable')
+        self.assertNotEqual(optmenu_stringvar_name,
+                            optmenu2_stringvar_name)
+        self.assertEqual(self.root.tk.globalgetvar(optmenu_stringvar_name),
                          items[1])
-        self.assertEqual(self.root.tk.globalgetvar(optmenu2_radiobutton_name),
+        self.assertEqual(self.root.tk.globalgetvar(optmenu2_stringvar_name),
                          items[2])
 
         optmenu.destroy()
-        del textvar2, optmenu_radiobutton_name, optmenu2_radiobutton_name
         optmenu2.destroy()
 
 
