@@ -252,10 +252,11 @@ class GenPageTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.page.set, cls.page.set_add_delete_state
-        del cls.page.upc, cls.page.update_help_changes
-        cls.page.helplist.delete(0, 'end')
-        cls.page.user_helplist.clear()
+        page = cls.page
+        del page.set, page.set_add_delete_state
+        del page.upc, page.update_help_changes
+        page.helplist.delete(0, 'end')
+        page.user_helplist.clear()
 
     def setUp(self):
         changes.clear()
