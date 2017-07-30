@@ -997,6 +997,26 @@ class StreamHandler(Handler):
         except Exception:
             self.handleError(record)
 
+    def setStream(self, stream):
+        """
+        Sets the StreamHandler's stream to the specified value,
+        if it is different.
+
+        Returns the old stream, if the stream was changed, or None
+        if it wasn't.
+        """
+        if stream is self.stream:
+            result = None
+        else:
+            result = self.stream
+            self.acquire()
+            try:
+                self.flush()
+                self.stream = stream
+            finally:
+                self.release()
+        return result
+
     def __repr__(self):
         level = getLevelName(self.level)
         name = getattr(self.stream, 'name', '')

@@ -698,6 +698,20 @@ class StreamHandlerTest(BaseTest):
         finally:
             logging.raiseExceptions = old_raise
 
+    def test_stream_setting(self):
+        """
+        Test setting the handler's stream
+        """
+        h = logging.StreamHandler()
+        stream = io.StringIO()
+        old = h.setStream(stream)
+        self.assertIs(old, sys.stderr)
+        actual = h.setStream(old)
+        self.assertIs(actual, stream)
+        # test that setting to existing value returns None
+        actual = h.setStream(old)
+        self.assertIsNone(actual)
+
 # -- The following section could be moved into a server_helper.py module
 # -- if it proves to be of wider utility than just test_logging
 
