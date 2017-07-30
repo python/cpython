@@ -4151,61 +4151,6 @@ dict_get_version(PyObject *self, PyObject *args)
     return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)version);
 }
 
-#ifdef WITH_THREAD
-static PyObject *
-test_pythread_tss_key_state(PyObject *self, PyObject *args)
-{
-    Py_tss_t tss_key = Py_tss_NEEDS_INIT;
-    if (PyThread_tss_is_created(&tss_key)) {
-        return raiseTestError("test_pythread_tss_key_state",
-                              "TSS key not in an uninitialized state at "
-                              "creation time");
-    }
-    if (PyThread_tss_create(&tss_key) != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_create failed");
-        return NULL;
-    }
-    if (!PyThread_tss_is_created(&tss_key)) {
-        return raiseTestError("test_pythread_tss_key_state",
-                              "PyThread_tss_create succeeded, "
-                              "but with TSS key in an uninitialized state");
-    }
-    if (PyThread_tss_create(&tss_key) != 0) {
-        return raiseTestError("test_pythread_tss_key_state",
-                              "PyThread_tss_create unsuccessful with "
-                              "an already initialized key");
-    }
-#define CHECK_TSS_API(expr) \
-        (void)(expr); \
-        if (!PyThread_tss_is_created(&tss_key)) { \
-            return raiseTestError("test_pythread_tss_key_state", \
-                                  "TSS key initialization state was not " \
-                                  "preserved after calling " #expr); }
-    CHECK_TSS_API(PyThread_tss_set(&tss_key, NULL));
-    CHECK_TSS_API(PyThread_tss_get(&tss_key));
-#undef CHECK_TSS_API
-    PyThread_tss_delete(&tss_key);
-    if (PyThread_tss_is_created(&tss_key)) {
-        return raiseTestError("test_pythread_tss_key_state",
-                              "PyThread_tss_delete called, but did not "
-                              "set the key state to uninitialized");
-    }
-
-    Py_tss_t *ptr_key = PyThread_tss_alloc();
-    if (ptr_key == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_alloc failed");
-        return NULL;
-    }
-    if (PyThread_tss_is_created(ptr_key)) {
-        return raiseTestError("test_pythread_tss_key_state",
-                              "TSS key not in an uninitialized state at "
-                              "allocation time");
-    }
-    PyThread_tss_free(ptr_key);
-    ptr_key = NULL;
-    Py_RETURN_NONE;
-}
-#endif
 
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
@@ -4333,6 +4278,63 @@ stack_pointer(PyObject *self, PyObject *args)
     int v = 5;
     return PyLong_FromVoidPtr(&v);
 }
+
+
+#ifdef WITH_THREAD
+static PyObject *
+test_pythread_tss_key_state(PyObject *self, PyObject *args)
+{
+    Py_tss_t tss_key = Py_tss_NEEDS_INIT;
+    if (PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "TSS key not in an uninitialized state at "
+                              "creation time");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_create failed");
+        return NULL;
+    }
+    if (!PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create succeeded, "
+                              "but with TSS key in an uninitialized state");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create unsuccessful with "
+                              "an already initialized key");
+    }
+#define CHECK_TSS_API(expr) \
+        (void)(expr); \
+        if (!PyThread_tss_is_created(&tss_key)) { \
+            return raiseTestError("test_pythread_tss_key_state", \
+                                  "TSS key initialization state was not " \
+                                  "preserved after calling " #expr); }
+    CHECK_TSS_API(PyThread_tss_set(&tss_key, NULL));
+    CHECK_TSS_API(PyThread_tss_get(&tss_key));
+#undef CHECK_TSS_API
+    PyThread_tss_delete(&tss_key);
+    if (PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_delete called, but did not "
+                              "set the key state to uninitialized");
+    }
+
+    Py_tss_t *ptr_key = PyThread_tss_alloc();
+    if (ptr_key == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_alloc failed");
+        return NULL;
+    }
+    if (PyThread_tss_is_created(ptr_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "TSS key not in an uninitialized state at "
+                              "allocation time");
+    }
+    PyThread_tss_free(ptr_key);
+    ptr_key = NULL;
+    Py_RETURN_NONE;
+}
+#endif
 
 
 static PyMethodDef TestMethods[] = {
