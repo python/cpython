@@ -62,10 +62,14 @@ and :meth:`flush` methods).
    .. method:: setStream(stream)
 
       Sets the instance's stream to the specified value, if it is different.
+      The old stream is flushed before the new stream is set.
 
       :param stream: The stream that the handler should use.
 
       :return: the old stream, if the stream was changed, or *None* if it wasn't.
+
+   .. versionadded:: 3.7
+
 
 .. versionchanged:: 3.2
    The ``StreamHandler`` class now has a ``terminator`` attribute, default
@@ -73,9 +77,6 @@ and :meth:`flush` methods).
    record to a stream. If you don't want this newline termination, you can
    set the handler instance's ``terminator`` attribute to the empty string.
    In earlier versions, the terminator was hardcoded as ``'\n'``.
-
-.. versionchanged:: 3.7
-   The *setStream* method was added.
 
 
 .. _file-handler:
