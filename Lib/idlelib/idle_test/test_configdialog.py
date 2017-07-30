@@ -9,7 +9,7 @@ requires('gui')
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
-from tkinter import Tk, IntVar, BooleanVar, DISABLED, NORMAL
+from tkinter import Tk, Frame, IntVar, BooleanVar, DISABLED, NORMAL
 from idlelib import config
 from idlelib.configdialog import idleConf, changes, tracers
 
@@ -57,10 +57,12 @@ class FontTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         dialog.set_samples = Func()  # Mask instance method.
+        tracers.attach()
 
     @classmethod
     def tearDownClass(cls):
         del dialog.set_samples  # Unmask instance method.
+        tracers.detach()
 
     def setUp(self):
         changes.clear()
@@ -77,7 +79,7 @@ class FontTest(unittest.TestCase):
         self.assertNotEqual(d.font_name.get(), 'Fake')
         self.assertNotEqual(d.font_size.get(), '1')
         self.assertFalse(d.font_bold.get())
-        self.assertEqual(d.set_samples.called, 3)
+        self.assertEqual(d.set_samples.called, 4)
 
     def test_fontlist_key(self):
         # Up and Down keys should select a new font.
@@ -208,11 +210,16 @@ class FontPageTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        dialog.set_samples = Func()  # Mask instance method.
+        hp = mock.Mock()
+        hp.highlight_sample = {}
+        cls.page = configdialog.FontPage(root, hp)
+        cls.page.set_samples = Func()  # Mask instance method.
+        tracers.attach()
 
     @classmethod
     def tearDownClass(cls):
-        del dialog.set_samples  # Unmask instance method.
+        del cls.page.set_samples  # Unmask instance method.
+        tracers.detach()
 
     def setUp(self):
         changes.clear()
@@ -220,7 +227,7 @@ class FontPageTest(unittest.TestCase):
     def test_load_font_cfg(self):
         # Leave widget load test to human visual check.
         # TODO Improve checks when add IdleConf.get_font_values.
-        d = dialog
+        d = self.page
         d.font_name.set('Fake')
         d.font_size.set('1')
         d.font_bold.set(True)
@@ -229,16 +236,16 @@ class FontPageTest(unittest.TestCase):
         self.assertNotEqual(d.font_name.get(), 'Fake')
         self.assertNotEqual(d.font_size.get(), '1')
         self.assertFalse(d.font_bold.get())
-        self.assertEqual(d.set_samples.called, 3)
+        self.assertEqual(d.set_samples.called, 4)
 
     def test_fontlist_key(self):
         # Up and Down keys should select a new font.
-
-        if dialog.fontlist.size() < 2:
-            cls.skipTest('need at least 2 fonts')
-        fontlist = dialog.fontlist
+        d = self.page
+        if d.fontlist.size() < 2:
+            self.skipTest('need at least 2 fonts')
+        fontlist = d.fontlist
         fontlist.activate(0)
-        font = dialog.fontlist.get('active')
+        font = d.fontlist.get('active')
 
         # Test Down key.
         fontlist.focus_force()
@@ -248,7 +255,7 @@ class FontPageTest(unittest.TestCase):
 
         down_font = fontlist.get('active')
         self.assertNotEqual(down_font, font)
-        self.assertIn(dialog.font_name.get(), down_font.lower())
+        self.assertIn(d.font_name.get(), down_font.lower())
 
         # Test Up key.
         fontlist.focus_force()
@@ -258,14 +265,14 @@ class FontPageTest(unittest.TestCase):
 
         up_font = fontlist.get('active')
         self.assertEqual(up_font, font)
-        self.assertIn(dialog.font_name.get(), up_font.lower())
+        self.assertIn(d.font_name.get(), up_font.lower())
 
     def test_fontlist_mouse(self):
         # Click on item should select that item.
-
-        if dialog.fontlist.size() < 2:
+        d = self.page
+        if d.fontlist.size() < 2:
             cls.skipTest('need at least 2 fonts')
-        fontlist = dialog.fontlist
+        fontlist = d.fontlist
         fontlist.activate(0)
 
         # Select next item in listbox
@@ -281,17 +288,17 @@ class FontPageTest(unittest.TestCase):
         font1 = fontlist.get(1)
         select_font = fontlist.get('anchor')
         self.assertEqual(select_font, font1)
-        self.assertIn(dialog.font_name.get(), font1.lower())
+        self.assertIn(d.font_name.get(), font1.lower())
 
     def test_sizelist(self):
         # Click on number shouod select that number
-        d = dialog
+        d = self.page
         d.sizelist.variable.set(40)
         self.assertEqual(d.font_size.get(), '40')
 
     def test_bold_toggle(self):
         # Click on checkbutton should invert it.
-        d = dialog
+        d = self.page
         d.font_bold.set(False)
         d.bold_toggle.invoke()
         self.assertTrue(d.font_bold.get())
@@ -306,7 +313,7 @@ class FontPageTest(unittest.TestCase):
         default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
         default_size = str(default_font[1])
         default_bold = default_font[2] == 'bold'
-        d = dialog
+        d = self.page
         d.font_size.set(default_size)
         d.font_bold.set(default_bold)
         d.set_samples.called = 0
@@ -335,7 +342,7 @@ class FontPageTest(unittest.TestCase):
         self.assertEqual(d.set_samples.called, 3)
 
     def test_set_samples(self):
-        d = dialog
+        d = self.page
         del d.set_samples  # Unmask method for test
         d.font_sample, d.highlight_sample = {}, {}
         d.font_name.set('test')
@@ -353,6 +360,14 @@ class FontPageTest(unittest.TestCase):
 
 class IndentTest(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        tracers.attach()
+
+    @classmethod
+    def tearDownClass(cls):
+        tracers.detach()
+
     def test_load_tab_cfg(self):
         d = dialog
         d.space_num.set(16)
@@ -368,16 +383,30 @@ class IndentTest(unittest.TestCase):
 
 class IndentOptionTest(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        hp = mock.Mock()
+        hp.highlight_sample = {}
+        cls.page = configdialog.FontPage(root, hp)
+        cls.page.set_samples = Func()  # Mask instance method.
+        tracers.attach()
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.page.set_samples
+        tracers.detach()
+
     def test_load_tab_cfg(self):
-        d = dialog
+        d = self.page
         d.space_num.set(16)
         d.load_tab_cfg()
         self.assertEqual(d.space_num.get(), 4)
 
     def test_indent_scale(self):
+        d = self.page
         changes.clear()
-        dialog.indent_scale.set(26)
-        self.assertEqual(dialog.space_num.get(), 16)
+        d.indent_scale.set(26)
+        self.assertEqual(d.space_num.get(), 16)
         self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
 
 
@@ -405,6 +434,7 @@ class GeneralTest(unittest.TestCase):
         d = dialog
         d.set = d.set_add_delete_state = Func()
         d.upc = d.update_help_changes = Func()
+        tracers.attach()
 
     @classmethod
     def tearDownClass(cls):
@@ -413,6 +443,7 @@ class GeneralTest(unittest.TestCase):
         del d.upc, d.update_help_changes
         d.helplist.delete(0, 'end')
         d.user_helplist.clear()
+        tracers.detach()
 
     def setUp(self):
         changes.clear()

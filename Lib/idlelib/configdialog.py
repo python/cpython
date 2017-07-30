@@ -102,8 +102,8 @@ class ConfigDialog(Toplevel):
             activate_config_changes: Tell editors to reload.
         """
         self.note = note = Notebook(self, width=450, height=450)
-        fontpage = self.create_page_font_tab()
         highpage = self.create_page_highlight()
+        fontpage = self.create_page_font_tab()
         keyspage = self.create_page_keys()
         genpage = self.create_page_general()
         extpage = self.create_page_extensions()
@@ -228,7 +228,7 @@ class ConfigDialog(Toplevel):
         corresponding aspect of the font sample on this page and
         highlight sample on highlight page.
 
-        Funtion load_font_cfg initializes font vars and widgets from
+        Function load_font_cfg initializes font vars and widgets from
         idleConf entries and tk.
 
         Fontlist: mouse button 1 click or up or down key invoke
@@ -337,8 +337,7 @@ class ConfigDialog(Toplevel):
 
         Retrieve current font with idleConf.GetFont and font families
         from tk. Setup fontlist and set font_name.  Setup sizelist,
-        which sets font_size.  Set font_bold.  Setting font variables
-        calls set_samples (thrice).
+        which sets font_size.  Set font_bold.  Call set_samples.
         """
         configured_font = idleConf.GetFont(self, 'main', 'EditorWindow')
         font_name = configured_font[0].lower()
@@ -366,6 +365,7 @@ class ConfigDialog(Toplevel):
                               font_size)
         # Set font weight.
         self.font_bold.set(font_bold)
+        self.set_samples()
 
     def var_changed_font(self, *params):
         """Store changes to font attributes.
@@ -1829,12 +1829,12 @@ class ConfigDialog(Toplevel):
             self.ext_userCfg.Save()
 
 
-class FontPage:
+class FontPage(Frame):
 
-    def __init__(self, parent, tab_pages, highlight_sample):
+    def __init__(self, parent, highpage):
+        super().__init__(parent)
         self.parent = parent
-        self.tab_pages = tab_pages
-        self.highlight_sample = highlight_sample
+        self.highlight_sample = highpage.highlight_sample
         self.create_page_font_tab()
         self.load_font_cfg()
         self.load_tab_cfg()
@@ -1848,7 +1848,7 @@ class FontPage:
         corresponding aspect of the font sample on this page and
         highlight sample on highlight page.
 
-        Funtion load_font_cfg initializes font vars and widgets from
+        Function load_font_cfg initializes font vars and widgets from
         idleConf entries and tk.
 
         Fontlist: mouse button 1 click or up or down key invoke
@@ -1894,7 +1894,8 @@ class FontPage:
 
         # Create widgets:
         # body and body section frames.
-        frame = self.tab_pages.pages['Fonts/Tabs'].frame
+        # frame = self.tab_pages.pages['Fonts/Tabs'].frame
+        frame = self.parent
         frame_font = LabelFrame(
                 frame, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
         frame_indent = LabelFrame(
@@ -1957,8 +1958,7 @@ class FontPage:
 
         Retrieve current font with idleConf.GetFont and font families
         from tk. Setup fontlist and set font_name.  Setup sizelist,
-        which sets font_size.  Set font_bold.  Setting font variables
-        calls set_samples (thrice).
+        which sets font_size.  Set font_bold.  Call set_samples.
         """
         configured_font = idleConf.GetFont(self.parent, 'main', 'EditorWindow')
         font_name = configured_font[0].lower()
@@ -1986,6 +1986,7 @@ class FontPage:
                               font_size)
         # Set font weight.
         self.font_bold.set(font_bold)
+        self.set_samples()
 
     def var_changed_font(self, *params):
         """Store changes to font attributes.
