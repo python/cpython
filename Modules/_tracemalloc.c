@@ -167,9 +167,8 @@ tracemalloc_error(const char *format, ...)
 #if defined(WITH_THREAD) && defined(TRACE_RAW_MALLOC)
 #define REENTRANT_THREADLOCAL
 
-/* If your OS does not provide native thread local storage, you can implement
-   it manually using a lock. Functions of thread.c cannot be used because
-   they use PyMem_RawMalloc() which leads to a reentrant call. */
+/* If your OS does not provide native thread local storage, CPython
+   which is compiled with thread support does not provide tracemalloc. */
 #if !(defined(_POSIX_THREADS) || defined(NT_THREADS))
 #  error "need native thread local storage (TLS)"
 #endif

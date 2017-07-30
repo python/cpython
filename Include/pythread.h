@@ -87,9 +87,9 @@ PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
 /* Thread Local Storage (TLS) API
    TLS API is DEPRECATED.  Use Thread Specific Storage (TSS) API.
 
-   Since existing TLS API has assumed the thread key type to int, but it is
-   not compatible with POSIX (see PEP 539).  Therefore, new TSS API uses
-   opaque data type for the thread key to ensure cross-platform.
+   The existing TLS API has used int to represent TLS keys across all
+   platforms, but it is not POSIX-compliant.  Therefore, the new TSS API uses
+   opaque data type to represent TSS keys to be compatible (see PEP 539).
 */
 PyAPI_FUNC(int) PyThread_create_key(void) Py_DEPRECATED(3.7);
 PyAPI_FUNC(void) PyThread_delete_key(int key) Py_DEPRECATED(3.7);
@@ -122,7 +122,7 @@ typedef struct _py_tss_t Py_tss_t;
 #endif
 
 /* When Py_LIMITED_API is not defined, the type layout of Py_tss_t is in
-   public to allow for static declarations in API clients.  Even in this case,
+   public to allow static allocation in the API clients.  Even in this case,
    you must handle TSS key through API functions due to compatibility.
 */
 typedef struct _py_tss_t {
@@ -132,7 +132,7 @@ typedef struct _py_tss_t {
 
 #undef NATIVE_TSS_KEY_T
 
-/* In static declaration, you must initialize with Py_tss_NEEDS_INIT. */
+/* When static allocation, you must initialize with Py_tss_NEEDS_INIT. */
 #define Py_tss_NEEDS_INIT   {._is_initialized = false}
 #endif
 
@@ -141,14 +141,13 @@ PyAPI_FUNC(void) PyThread_tss_delete(Py_tss_t *key);
 PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t *key, void *value);
 PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t *key);
 
-/* In the limited API, Py_tss_t value must be allocated through a pointer by
-   PyThread_tss_alloc, and free by PyThread_tss_free at the life cycle end of
-   the CPython interpreter.
+/* In the limited API, Py_tss_t value must be allocated by PyThread_tss_alloc,
+   and free by PyThread_tss_free at the life cycle end of the CPython
+   interpreter.
 */
 PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
 PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
 
-/* When you'd check whether the key is created, use PyThread_tss_is_created. */
 PyAPI_FUNC(bool) PyThread_tss_is_created(Py_tss_t *key);
 
 #ifdef __cplusplus

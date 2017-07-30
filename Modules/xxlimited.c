@@ -224,7 +224,7 @@ PyDoc_STRVAR(xx_tss_doc,
 \n\
 TSS API test in the limited API.");
 
-/* In the limited API, Py_tss_t value cannot be statically initialized.
+/* In the limited API, Py_tss_t value cannot be statically allocated.
 static Py_tss_t tss_key = Py_tss_NEEDS_INIT;
 */
 static Py_tss_t *tss_key;
