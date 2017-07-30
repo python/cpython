@@ -135,7 +135,9 @@ class BaseTest(unittest.TestCase):
             logging._handlers.clear()
             logging._handlers.update(self.saved_handlers)
             logging._handlerList[:] = self.saved_handler_list
-            loggerDict = logging.getLogger().manager.loggerDict
+            manager = logging.getLogger().manager
+            manager.disable = 0
+            loggerDict = manager.loggerDict
             loggerDict.clear()
             loggerDict.update(self.saved_loggers)
             logger_states = self.logger_states
@@ -4093,6 +4095,62 @@ class LoggerTest(BaseTest):
                 s = pickle.dumps(logger, proto)
                 unpickled = pickle.loads(s)
                 self.assertIs(unpickled, logger)
+
+    def test_caching(self):
+        root = self.root_logger
+        logger1 = logging.getLogger("abc")
+        logger2 = logging.getLogger("abc.def")
+
+        # Set root logger level and ensure cache is empty
+        root.setLevel(logging.ERROR)
+        self.assertEqual(logger2.getEffectiveLevel(), logging.ERROR)
+        self.assertEqual(logger2._cache, {})
+
+        # Ensure cache is populated and calls are consistent
+        self.assertTrue(logger2.isEnabledFor(logging.ERROR))
+        self.assertFalse(logger2.isEnabledFor(logging.DEBUG))
+        self.assertEqual(logger2._cache, {logging.ERROR: True, logging.DEBUG: False})
+        self.assertEqual(root._cache, {})
+        self.assertTrue(logger2.isEnabledFor(logging.ERROR))
+
+        # Ensure root cache gets populated
+        self.assertEqual(root._cache, {})
+        self.assertTrue(root.isEnabledFor(logging.ERROR))
+        self.assertEqual(root._cache, {logging.ERROR: True})
+
+        # Set parent logger level and ensure caches are emptied
+        logger1.setLevel(logging.CRITICAL)
+        self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)
+        self.assertEqual(logger2._cache, {})
+
+        # Ensure logger2 uses parent logger's effective level
+        self.assertFalse(logger2.isEnabledFor(logging.ERROR))
+
+        # Set level to NOTSET and ensure caches are empty
+        logger2.setLevel(logging.NOTSET)
+        self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)
+        self.assertEqual(logger2._cache, {})
+        self.assertEqual(logger1._cache, {})
+        self.assertEqual(root._cache, {})
+
+        # Verify logger2 follows parent and not root
+        self.assertFalse(logger2.isEnabledFor(logging.ERROR))
+        self.assertTrue(logger2.isEnabledFor(logging.CRITICAL))
+        self.assertFalse(logger1.isEnabledFor(logging.ERROR))
+        self.assertTrue(logger1.isEnabledFor(logging.CRITICAL))
+        self.assertTrue(root.isEnabledFor(logging.ERROR))
+
+        # Disable logging in manager and ensure caches are clear
+        logging.disable()
+        self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)
+        self.assertEqual(logger2._cache, {})
+        self.assertEqual(logger1._cache, {})
+        self.assertEqual(root._cache, {})
+
+        # Ensure no loggers are enabled
+        self.assertFalse(logger1.isEnabledFor(logging.CRITICAL))
+        self.assertFalse(logger2.isEnabledFor(logging.CRITICAL))
+        self.assertFalse(root.isEnabledFor(logging.CRITICAL))
 
 
 class BaseFileTest(BaseTest):
