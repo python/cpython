@@ -1894,8 +1894,7 @@ class FontPage(Frame):
 
         # Create widgets:
         # body and body section frames.
-        # frame = self.tab_pages.pages['Fonts/Tabs'].frame
-        frame = self.parent
+        frame = Frame(self.parent)
         frame_font = LabelFrame(
                 frame, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
         frame_indent = LabelFrame(
@@ -1906,7 +1905,7 @@ class FontPage(Frame):
         font_name_title = Label(
                 frame_font_name, justify=LEFT, text='Font Face :')
         self.fontlist = Listbox(frame_font_name, height=5,
-                                takefocus=FALSE, exportselection=FALSE)
+                                takefocus=True, exportselection=FALSE)
         self.fontlist.bind('<ButtonRelease-1>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Up>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Down>', self.on_fontlist_select)
@@ -1922,7 +1921,7 @@ class FontPage(Frame):
         temp_font = tkFont.Font(parent, ('courier', 10, 'normal'))
         self.font_sample = Label(
                 frame_font_sample, justify=LEFT, font=temp_font,
-                text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]')
+                text='AaBbCcDdEe\nFfGgHhIiJj\n1234567890\n#:+=(){}[]')
         # frame_indent.
         indent_title = Label(
                 frame_indent, justify=LEFT,
@@ -1960,13 +1959,13 @@ class FontPage(Frame):
         from tk. Setup fontlist and set font_name.  Setup sizelist,
         which sets font_size.  Set font_bold.  Call set_samples.
         """
-        configured_font = idleConf.GetFont(self.parent, 'main', 'EditorWindow')
+        configured_font = idleConf.GetFont(self, 'main', 'EditorWindow')
         font_name = configured_font[0].lower()
         font_size = configured_font[1]
         font_bold  = configured_font[2]=='bold'
 
         # Set editor font selection list and font_name.
-        fonts = list(tkFont.families(self.parent))
+        fonts = list(tkFont.families(self))
         fonts.sort()
         for font in fonts:
             self.fontlist.insert(END, font)
