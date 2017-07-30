@@ -237,7 +237,7 @@ class KeysTest(unittest.TestCase):
         changes.clear()
 
 
-class GeneralTest(unittest.TestCase):
+class GenPageTest(unittest.TestCase):
     """Test that general tab widgets enable users to make changes.
 
     Test that widget actions set vars, that var changes add
@@ -245,20 +245,18 @@ class GeneralTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        d = dialog
-        # Select General tab so can force focus on helplist.
-        d.note.select(d.genpage)
-        # Mask instance methods used by help functions.
-        d.set = d.set_add_delete_state = Func()
-        d.upc = d.update_help_changes = Func()
+        page = cls.page = dialog.genpage
+        dialog.note.select(page)
+        page.set = page.set_add_delete_state = Func()
+        page.upc = page.update_help_changes = Func()
 
     @classmethod
     def tearDownClass(cls):
-        d = dialog
-        del d.set, d.set_add_delete_state
-        del d.upc, d.update_help_changes
-        d.helplist.delete(0, 'end')
-        d.user_helplist.clear()
+        page = cls.page
+        del page.set, page.set_add_delete_state
+        del page.upc, page.update_help_changes
+        page.helplist.delete(0, 'end')
+        page.user_helplist.clear()
 
     def setUp(self):
         changes.clear()
@@ -266,7 +264,7 @@ class GeneralTest(unittest.TestCase):
     def test_load_general_cfg(self):
         # Set to wrong values, load, check right values.
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         d.startup_edit.set(1)
         d.autosave.set(1)
         d.win_width.set(1)
@@ -283,29 +281,32 @@ class GeneralTest(unittest.TestCase):
         eq(d.user_helplist, [('name', 'file', '1')])
 
     def test_startup(self):
-        dialog.startup_editor_on.invoke()
+        d = self.page
+        d.startup_editor_on.invoke()
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '1'}})
         changes.clear()
-        dialog.startup_shell_on.invoke()
+        d.startup_shell_on.invoke()
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '0'}})
 
     def test_autosave(self):
-        dialog.save_auto_on.invoke()
+        d = self.page
+        d.save_auto_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '1'}})
-        dialog.save_ask_on.invoke()
+        d.save_ask_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
     def test_editor_size(self):
-        dialog.win_height_int.insert(0, '1')
+        d = self.page
+        d.win_height_int.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
         changes.clear()
-        dialog.win_width_int.insert(0, '1')
+        d.win_width_int.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
 
     def test_source_selected(self):
-        d = dialog
+        d = self.page
         d.set = d.set_add_delete_state
         d.upc = d.update_help_changes
         helplist = d.helplist
@@ -331,7 +332,7 @@ class GeneralTest(unittest.TestCase):
     def test_set_add_delete_state(self):
         # Call with 0 items, 1 unselected item, 1 selected item.
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         del d.set_add_delete_state  # Unmask method.
         sad = d.set_add_delete_state
         h = d.helplist
@@ -358,7 +359,7 @@ class GeneralTest(unittest.TestCase):
         eq = self.assertEqual
         orig_helpsource = configdialog.HelpSource
         hs = configdialog.HelpSource = Func(return_self=True)
-        d = dialog
+        d = self.page
         d.helplist.delete(0, 'end')
         d.user_helplist.clear()
         d.set.called = d.upc.called = 0
@@ -385,7 +386,7 @@ class GeneralTest(unittest.TestCase):
         eq = self.assertEqual
         orig_helpsource = configdialog.HelpSource
         hs = configdialog.HelpSource = Func(return_self=True)
-        d = dialog
+        d = self.page
         d.helplist.delete(0, 'end')
         d.helplist.insert(0, 'name1')
         d.helplist.selection_set(0)
@@ -412,7 +413,7 @@ class GeneralTest(unittest.TestCase):
 
     def test_helplist_item_remove(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         d.helplist.delete(0, 'end')
         d.helplist.insert(0, 'name1')
         d.helplist.selection_set(0)
@@ -427,7 +428,7 @@ class GeneralTest(unittest.TestCase):
         self.assertTrue(d.upc.called == d.set.called == 1)
 
     def test_update_help_changes(self):
-        d = dialog
+        d = self.page
         del d.update_help_changes
         d.user_helplist.clear()
         d.user_helplist.append(('name1', 'file1'))
@@ -435,7 +436,7 @@ class GeneralTest(unittest.TestCase):
 
         d.update_help_changes()
         self.assertEqual(mainpage['HelpFiles'],
-                        {'1': 'name1;file1', '2': 'name2;file2'})
+                         {'1': 'name1;file1', '2': 'name2;file2'})
         d.update_help_changes = Func()
 
 
