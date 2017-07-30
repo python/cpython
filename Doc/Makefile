@@ -124,6 +124,7 @@ clean:
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
 	./$(VENVDIR)/bin/python3 -m pip install -U Sphinx
+	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
 	rm -rf dist
