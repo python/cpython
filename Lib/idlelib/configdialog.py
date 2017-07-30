@@ -89,14 +89,14 @@ class ConfigDialog(Toplevel):
         """Create and place widgets for tabbed dialog.
 
         Widgets Bound to self:
-            tab_pages: TabbedPageSet
+            note: Notebook
+            highpage: self.create_page_highlight
+            fontpage: FontPage
+            keyspage: self.create_page_keys
+            genpage: GenPage
+            extpageL self.create_page_extensions
 
         Methods:
-            create_page_font_tab
-            create_page_highlight
-            create_page_keys
-            create_page_general
-            create_page_extensions
             create_action_buttons
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
@@ -105,7 +105,7 @@ class ConfigDialog(Toplevel):
         self.highpage = self.create_page_highlight()
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = self.create_page_keys()
-        self.genpage = self.create_page_general()
+        self.genpage = GenPage(note)
         self.extpage = self.create_page_extensions()
         note.add(self.fontpage, text='Fonts/Tabs')
         note.add(self.highpage, text='Highlights')
@@ -133,7 +133,7 @@ class ConfigDialog(Toplevel):
         #self.load_tab_cfg()
         self.load_theme_cfg()
         self.load_key_cfg()
-        self.load_general_cfg()
+        # self.load_general_cfg()
         # note: extension page handled separately
 
     def create_action_buttons(self):
@@ -1198,256 +1198,6 @@ class ConfigDialog(Toplevel):
             instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
 
-
-    def create_page_general(self):
-        """Return frame of widgets for General tab.
-
-        Enable users to provisionally change general options. Function
-        load_general_cfg intializes tk variables and helplist using
-        idleConf.  Radiobuttons startup_shell_on and startup_editor_on
-        set var startup_edit. Radiobuttons save_ask_on and save_auto_on
-        set var autosave. Entry boxes win_width_int and win_height_int
-        set var win_width and win_height.  Setting var_name invokes the
-        default callback that adds option to changes.
-
-        Helplist: load_general_cfg loads list user_helplist with
-        name, position pairs and copies names to listbox helplist.
-        Clicking a name invokes help_source selected. Clicking
-        button_helplist_name invokes helplist_item_name, which also
-        changes user_helplist.  These functions all call
-        set_add_delete_state. All but load call update_help_changes to
-        rewrite changes['main']['HelpFiles'].
-
-        Widget Structure:  (*) widgets bound to self
-            frame
-                frame_run: LabelFrame
-                    startup_title: Label
-                    (*)startup_editor_on: Radiobutton - startup_edit
-                    (*)startup_shell_on: Radiobutton - startup_edit
-                frame_save: LabelFrame
-                    run_save_title: Label
-                    (*)save_ask_on: Radiobutton - autosave
-                    (*)save_auto_on: Radiobutton - autosave
-                frame_win_size: LabelFrame
-                    win_size_title: Label
-                    win_width_title: Label
-                    (*)win_width_int: Entry - win_width
-                    win_height_title: Label
-                    (*)win_height_int: Entry - win_height
-                frame_help: LabelFrame
-                    frame_helplist: Frame
-                        frame_helplist_buttons: Frame
-                            (*)button_helplist_edit
-                            (*)button_helplist_add
-                            (*)button_helplist_remove
-                        (*)helplist: ListBox
-                        scroll_helplist: Scrollbar
-        """
-        parent = self.parent
-        self.startup_edit = tracers.add(
-                IntVar(parent), ('main', 'General', 'editor-on-startup'))
-        self.autosave = tracers.add(
-                IntVar(parent), ('main', 'General', 'autosave'))
-        self.win_width = tracers.add(
-                StringVar(parent), ('main', 'EditorWindow', 'width'))
-        self.win_height = tracers.add(
-                StringVar(parent), ('main', 'EditorWindow', 'height'))
-
-        # Create widgets:
-        # body and section frames.
-        frame = Frame(self.note)
-        frame_run = LabelFrame(frame, borderwidth=2, relief=GROOVE,
-                              text=' Startup Preferences ')
-        frame_save = LabelFrame(frame, borderwidth=2, relief=GROOVE,
-                               text=' autosave Preferences ')
-        frame_win_size = Frame(frame, borderwidth=2, relief=GROOVE)
-        frame_help = LabelFrame(frame, borderwidth=2, relief=GROOVE,
-                               text=' Additional Help Sources ')
-        # frame_run.
-        startup_title = Label(frame_run, text='At Startup')
-        self.startup_editor_on = Radiobutton(
-                frame_run, variable=self.startup_edit, value=1,
-                text="Open Edit Window")
-        self.startup_shell_on = Radiobutton(
-                frame_run, variable=self.startup_edit, value=0,
-                text='Open Shell Window')
-        # frame_save.
-        run_save_title = Label(frame_save, text='At Start of Run (F5)  ')
-        self.save_ask_on = Radiobutton(
-                frame_save, variable=self.autosave, value=0,
-                text="Prompt to Save")
-        self.save_auto_on = Radiobutton(
-                frame_save, variable=self.autosave, value=1,
-                text='No Prompt')
-        # frame_win_size.
-        win_size_title = Label(
-                frame_win_size, text='Initial Window Size  (in characters)')
-        win_width_title = Label(frame_win_size, text='Width')
-        self.win_width_int = Entry(
-                frame_win_size, textvariable=self.win_width, width=3)
-        win_height_title = Label(frame_win_size, text='Height')
-        self.win_height_int = Entry(
-                frame_win_size, textvariable=self.win_height, width=3)
-        # frame_help.
-        frame_helplist = Frame(frame_help)
-        frame_helplist_buttons = Frame(frame_helplist)
-        self.helplist = Listbox(
-                frame_helplist, height=5, takefocus=True,
-                exportselection=FALSE)
-        scroll_helplist = Scrollbar(frame_helplist)
-        scroll_helplist['command'] = self.helplist.yview
-        self.helplist['yscrollcommand'] = scroll_helplist.set
-        self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
-        self.button_helplist_edit = Button(
-                frame_helplist_buttons, text='Edit', state=DISABLED,
-                width=8, command=self.helplist_item_edit)
-        self.button_helplist_add = Button(
-                frame_helplist_buttons, text='Add',
-                width=8, command=self.helplist_item_add)
-        self.button_helplist_remove = Button(
-                frame_helplist_buttons, text='Remove', state=DISABLED,
-                width=8, command=self.helplist_item_remove)
-
-        # Pack widgets:
-        # body.
-        frame_run.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_save.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_win_size.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        # frame_run.
-        startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        # frame_save.
-        run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        # frame_win_size.
-        win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
-        win_height_title.pack(side=RIGHT, anchor=E, pady=5)
-        self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
-        win_width_title.pack(side=RIGHT, anchor=E, pady=5)
-        # frame_help.
-        frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
-        frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
-        self.helplist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
-        self.button_helplist_edit.pack(side=TOP, anchor=W, pady=5)
-        self.button_helplist_add.pack(side=TOP, anchor=W)
-        self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
-
-        return frame
-
-    def load_general_cfg(self):
-        "Load current configuration settings for the general options."
-        # Set startup state.
-        self.startup_edit.set(idleConf.GetOption(
-                'main', 'General', 'editor-on-startup', default=0, type='bool'))
-        # Set autosave state.
-        self.autosave.set(idleConf.GetOption(
-                'main', 'General', 'autosave', default=0, type='bool'))
-        # Set initial window size.
-        self.win_width.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'width', type='int'))
-        self.win_height.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'height', type='int'))
-        # Set additional help sources.
-        self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
-        self.helplist.delete(0, 'end')
-        for help_item in self.user_helplist:
-            self.helplist.insert(END, help_item[0])
-        self.set_add_delete_state()
-
-    def var_changed_startup_edit(self, *params):
-        "Store change to toggle for starting IDLE in the editor or shell."
-        value = self.startup_edit.get()
-        changes.add_option('main', 'General', 'editor-on-startup', value)
-
-    def var_changed_autosave(self, *params):
-        "Store change to autosave."
-        value = self.autosave.get()
-        changes.add_option('main', 'General', 'autosave', value)
-
-    def var_changed_win_width(self, *params):
-        "Store change to window width."
-        value = self.win_width.get()
-        changes.add_option('main', 'EditorWindow', 'width', value)
-
-    def var_changed_win_height(self, *params):
-        "Store change to window height."
-        value = self.win_height.get()
-        changes.add_option('main', 'EditorWindow', 'height', value)
-
-    def help_source_selected(self, event):
-        "Handle event for selecting additional help."
-        self.set_add_delete_state()
-
-    def set_add_delete_state(self):
-        "Toggle the state for the help list buttons based on list entries."
-        if self.helplist.size() < 1:  # No entries in list.
-            self.button_helplist_edit['state'] = DISABLED
-            self.button_helplist_remove['state'] = DISABLED
-        else:  # Some entries.
-            if self.helplist.curselection():  # There currently is a selection.
-                self.button_helplist_edit['state'] = NORMAL
-                self.button_helplist_remove['state'] = NORMAL
-            else:  # There currently is not a selection.
-                self.button_helplist_edit['state'] = DISABLED
-                self.button_helplist_remove['state'] = DISABLED
-
-    def helplist_item_add(self):
-        """Handle add button for the help list.
-
-        Query for name and location of new help sources and add
-        them to the list.
-        """
-        help_source = HelpSource(self, 'New Help Source').result
-        if help_source:
-            self.user_helplist.append(help_source)
-            self.helplist.insert(END, help_source[0])
-            self.update_help_changes()
-
-    def helplist_item_edit(self):
-        """Handle edit button for the help list.
-
-        Query with existing help source information and update
-        config if the values are changed.
-        """
-        item_index = self.helplist.index(ANCHOR)
-        help_source = self.user_helplist[item_index]
-        new_help_source = HelpSource(
-                self, 'Edit Help Source',
-                menuitem=help_source[0],
-                filepath=help_source[1],
-                ).result
-        if new_help_source and new_help_source != help_source:
-            self.user_helplist[item_index] = new_help_source
-            self.helplist.delete(item_index)
-            self.helplist.insert(item_index, new_help_source[0])
-            self.update_help_changes()
-            self.set_add_delete_state()  # Selected will be un-selected
-
-    def helplist_item_remove(self):
-        """Handle remove button for the help list.
-
-        Delete the help list item from config.
-        """
-        item_index = self.helplist.index(ANCHOR)
-        del(self.user_helplist[item_index])
-        self.helplist.delete(item_index)
-        self.update_help_changes()
-        self.set_add_delete_state()
-
-    def update_help_changes(self):
-        "Clear and rebuild the HelpFiles section in changes"
-        changes['main']['HelpFiles'] = {}
-        for num in range(1, len(self.user_helplist) + 1):
-            changes.add_option(
-                    'main', 'HelpFiles', str(num),
-                    ';'.join(self.user_helplist[num-1][:2]))
-
-
     def create_page_extensions(self):
         """Part of the config dialog used for configuring IDLE extensions.
 
@@ -1843,6 +1593,238 @@ class FontPage(Frame):
         "Store change to indentation size."
         value = self.space_num.get()
         changes.add_option('main', 'Indent', 'num-spaces', value)
+
+
+class GenPage(Frame):
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.create_page_general()
+        self.load_general_cfg()
+
+    def create_page_general(self):
+        """Return frame of widgets for General tab.
+
+        Enable users to provisionally change general options. Function
+        load_general_cfg intializes tk variables and helplist using
+        idleConf.  Radiobuttons startup_shell_on and startup_editor_on
+        set var startup_edit. Radiobuttons save_ask_on and save_auto_on
+        set var autosave. Entry boxes win_width_int and win_height_int
+        set var win_width and win_height.  Setting var_name invokes the
+        default callback that adds option to changes.
+
+        Helplist: load_general_cfg loads list user_helplist with
+        name, position pairs and copies names to listbox helplist.
+        Clicking a name invokes help_source selected. Clicking
+        button_helplist_name invokes helplist_item_name, which also
+        changes user_helplist.  These functions all call
+        set_add_delete_state. All but load call update_help_changes to
+        rewrite changes['main']['HelpFiles'].
+
+        Widget Structure:  (*) widgets bound to self
+            frame
+                frame_run: LabelFrame
+                    startup_title: Label
+                    (*)startup_editor_on: Radiobutton - startup_edit
+                    (*)startup_shell_on: Radiobutton - startup_edit
+                frame_save: LabelFrame
+                    run_save_title: Label
+                    (*)save_ask_on: Radiobutton - autosave
+                    (*)save_auto_on: Radiobutton - autosave
+                frame_win_size: LabelFrame
+                    win_size_title: Label
+                    win_width_title: Label
+                    (*)win_width_int: Entry - win_width
+                    win_height_title: Label
+                    (*)win_height_int: Entry - win_height
+                frame_help: LabelFrame
+                    frame_helplist: Frame
+                        frame_helplist_buttons: Frame
+                            (*)button_helplist_edit
+                            (*)button_helplist_add
+                            (*)button_helplist_remove
+                        (*)helplist: ListBox
+                        scroll_helplist: Scrollbar
+        """
+        self.startup_edit = tracers.add(
+                IntVar(self), ('main', 'General', 'editor-on-startup'))
+        self.autosave = tracers.add(
+                IntVar(self), ('main', 'General', 'autosave'))
+        self.win_width = tracers.add(
+                StringVar(self), ('main', 'EditorWindow', 'width'))
+        self.win_height = tracers.add(
+                StringVar(self), ('main', 'EditorWindow', 'height'))
+
+        # Create widgets:
+        # Section frames.
+        frame_run = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                              text=' Startup Preferences ')
+        frame_save = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                               text=' autosave Preferences ')
+        frame_win_size = Frame(self, borderwidth=2, relief=GROOVE)
+        frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                               text=' Additional Help Sources ')
+        # frame_run.
+        startup_title = Label(frame_run, text='At Startup')
+        self.startup_editor_on = Radiobutton(
+                frame_run, variable=self.startup_edit, value=1,
+                text="Open Edit Window")
+        self.startup_shell_on = Radiobutton(
+                frame_run, variable=self.startup_edit, value=0,
+                text='Open Shell Window')
+        # frame_save.
+        run_save_title = Label(frame_save, text='At Start of Run (F5)  ')
+        self.save_ask_on = Radiobutton(
+                frame_save, variable=self.autosave, value=0,
+                text="Prompt to Save")
+        self.save_auto_on = Radiobutton(
+                frame_save, variable=self.autosave, value=1,
+                text='No Prompt')
+        # frame_win_size.
+        win_size_title = Label(
+                frame_win_size, text='Initial Window Size  (in characters)')
+        win_width_title = Label(frame_win_size, text='Width')
+        self.win_width_int = Entry(
+                frame_win_size, textvariable=self.win_width, width=3)
+        win_height_title = Label(frame_win_size, text='Height')
+        self.win_height_int = Entry(
+                frame_win_size, textvariable=self.win_height, width=3)
+        # frame_help.
+        frame_helplist = Frame(frame_help)
+        frame_helplist_buttons = Frame(frame_helplist)
+        self.helplist = Listbox(
+                frame_helplist, height=5, takefocus=True,
+                exportselection=FALSE)
+        scroll_helplist = Scrollbar(frame_helplist)
+        scroll_helplist['command'] = self.helplist.yview
+        self.helplist['yscrollcommand'] = scroll_helplist.set
+        self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
+        self.button_helplist_edit = Button(
+                frame_helplist_buttons, text='Edit', state=DISABLED,
+                width=8, command=self.helplist_item_edit)
+        self.button_helplist_add = Button(
+                frame_helplist_buttons, text='Add',
+                width=8, command=self.helplist_item_add)
+        self.button_helplist_remove = Button(
+                frame_helplist_buttons, text='Remove', state=DISABLED,
+                width=8, command=self.helplist_item_remove)
+
+        # Pack widgets:
+        # body.
+        frame_run.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_save.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_win_size.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        # frame_run.
+        startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        # frame_save.
+        run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        # frame_win_size.
+        win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        win_height_title.pack(side=RIGHT, anchor=E, pady=5)
+        self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        # frame_help.
+        frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
+        frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
+        self.helplist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
+        self.button_helplist_edit.pack(side=TOP, anchor=W, pady=5)
+        self.button_helplist_add.pack(side=TOP, anchor=W)
+        self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
+
+    def load_general_cfg(self):
+        "Load current configuration settings for the general options."
+        # Set startup state.
+        self.startup_edit.set(idleConf.GetOption(
+                'main', 'General', 'editor-on-startup', default=0, type='bool'))
+        # Set autosave state.
+        self.autosave.set(idleConf.GetOption(
+                'main', 'General', 'autosave', default=0, type='bool'))
+        # Set initial window size.
+        self.win_width.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'width', type='int'))
+        self.win_height.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'height', type='int'))
+        # Set additional help sources.
+        self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
+        self.helplist.delete(0, 'end')
+        for help_item in self.user_helplist:
+            self.helplist.insert(END, help_item[0])
+        self.set_add_delete_state()
+
+    def help_source_selected(self, event):
+        "Handle event for selecting additional help."
+        self.set_add_delete_state()
+
+    def set_add_delete_state(self):
+        "Toggle the state for the help list buttons based on list entries."
+        if self.helplist.size() < 1:  # No entries in list.
+            self.button_helplist_edit['state'] = DISABLED
+            self.button_helplist_remove['state'] = DISABLED
+        else:  # Some entries.
+            if self.helplist.curselection():  # There currently is a selection.
+                self.button_helplist_edit['state'] = NORMAL
+                self.button_helplist_remove['state'] = NORMAL
+            else:  # There currently is not a selection.
+                self.button_helplist_edit['state'] = DISABLED
+                self.button_helplist_remove['state'] = DISABLED
+
+    def helplist_item_add(self):
+        """Handle add button for the help list.
+
+        Query for name and location of new help sources and add
+        them to the list.
+        """
+        help_source = HelpSource(self, 'New Help Source').result
+        if help_source:
+            self.user_helplist.append(help_source)
+            self.helplist.insert(END, help_source[0])
+            self.update_help_changes()
+
+    def helplist_item_edit(self):
+        """Handle edit button for the help list.
+
+        Query with existing help source information and update
+        config if the values are changed.
+        """
+        item_index = self.helplist.index(ANCHOR)
+        help_source = self.user_helplist[item_index]
+        new_help_source = HelpSource(
+                self, 'Edit Help Source',
+                menuitem=help_source[0],
+                filepath=help_source[1],
+                ).result
+        if new_help_source and new_help_source != help_source:
+            self.user_helplist[item_index] = new_help_source
+            self.helplist.delete(item_index)
+            self.helplist.insert(item_index, new_help_source[0])
+            self.update_help_changes()
+            self.set_add_delete_state()  # Selected will be un-selected
+
+    def helplist_item_remove(self):
+        """Handle remove button for the help list.
+
+        Delete the help list item from config.
+        """
+        item_index = self.helplist.index(ANCHOR)
+        del(self.user_helplist[item_index])
+        self.helplist.delete(item_index)
+        self.update_help_changes()
+        self.set_add_delete_state()
+
+    def update_help_changes(self):
+        "Clear and rebuild the HelpFiles section in changes"
+        changes['main']['HelpFiles'] = {}
+        for num in range(1, len(self.user_helplist) + 1):
+            changes.add_option(
+                    'main', 'HelpFiles', str(num),
+                    ';'.join(self.user_helplist[num-1][:2]))
 
 
 class VarTrace:
