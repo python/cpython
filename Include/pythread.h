@@ -106,10 +106,9 @@ PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
 /* Py_tss_t is an opaque data type the definition of which depends on the
    underlying TSS implementation.
 */
-#ifdef Py_LIMITED_API
-typedef struct _py_tss_t Py_tss_t;
-#else
+typedef struct _Py_tss_t Py_tss_t;
 
+#ifndef Py_LIMITED_API
 #if defined(_POSIX_THREADS)
     /* Darwin needs pthread.h to know type name the pthread_key_t. */
 #   include <pthread.h>
@@ -125,16 +124,16 @@ typedef struct _py_tss_t Py_tss_t;
    public to allow static allocation in the API clients.  Even in this case,
    you must handle TSS key through API functions due to compatibility.
 */
-typedef struct _py_tss_t {
+struct _Py_tss_t {
     bool _is_initialized;
     NATIVE_TSS_KEY_T _key;
-} Py_tss_t;
+};
 
 #undef NATIVE_TSS_KEY_T
 
 /* When static allocation, you must initialize with Py_tss_NEEDS_INIT. */
 #define Py_tss_NEEDS_INIT   {._is_initialized = false}
-#endif
+#endif  /* !Py_LIMITED_API */
 
 PyAPI_FUNC(int) PyThread_tss_create(Py_tss_t *key);
 PyAPI_FUNC(void) PyThread_tss_delete(Py_tss_t *key);
