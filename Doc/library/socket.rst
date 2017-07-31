@@ -103,7 +103,7 @@ created.  Socket addresses are represented as follows:
   ``'can0'``. The network interface name ``''`` can be used to receive packets
   from all network interfaces of this family.
 
-  - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)`` 
+  - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)``
     where both additional parameters are unsigned long integer that represent a
     CAN identifier (standard or extended).
 
