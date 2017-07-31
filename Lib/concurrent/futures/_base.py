@@ -41,20 +41,25 @@ _STATE_TO_DESCRIPTION_MAP = {
 # Logger for internal use by the futures package.
 LOGGER = logging.getLogger("concurrent.futures")
 
+
 class Error(Exception):
     """Base class for all future-related exceptions."""
     pass
+
 
 class CancelledError(Error):
     """The Future was cancelled."""
     pass
 
+
 class TimeoutError(Error):
     """The operation exceeded the given deadline."""
     pass
 
+
 class _Waiter(object):
     """Provides the event that wait() and as_completed() block on."""
+
     def __init__(self):
         self.event = threading.Event()
         self.finished_futures = []
@@ -67,6 +72,7 @@ class _Waiter(object):
 
     def add_cancelled(self, future):
         self.finished_futures.append(future)
+
 
 class _AsCompletedWaiter(_Waiter):
     """Used by as_completed()."""
@@ -90,6 +96,7 @@ class _AsCompletedWaiter(_Waiter):
             super(_AsCompletedWaiter, self).add_cancelled(future)
             self.event.set()
 
+
 class _FirstCompletedWaiter(_Waiter):
     """Used by wait(return_when=FIRST_COMPLETED)."""
 
@@ -104,6 +111,7 @@ class _FirstCompletedWaiter(_Waiter):
     def add_cancelled(self, future):
         super().add_cancelled(future)
         self.event.set()
+
 
 class _AllCompletedWaiter(_Waiter):
     """Used by wait(return_when=FIRST_EXCEPTION and ALL_COMPLETED)."""
@@ -135,6 +143,7 @@ class _AllCompletedWaiter(_Waiter):
         super().add_cancelled(future)
         self._decrement_pending_calls()
 
+
 class _AcquireFutures(object):
     """A context manager that does an ordered acquire of Future conditions."""
 
@@ -149,6 +158,7 @@ class _AcquireFutures(object):
         for future in self.futures:
             future._condition.release()
 
+
 def _create_and_install_waiters(fs, return_when):
     if return_when == _AS_COMPLETED:
         waiter = _AsCompletedWaiter()
@@ -156,7 +166,7 @@ def _create_and_install_waiters(fs, return_when):
         waiter = _FirstCompletedWaiter()
     else:
         pending_count = sum(
-                f._state not in [CANCELLED_AND_NOTIFIED, FINISHED] for f in fs)
+            f._state not in [CANCELLED_AND_NOTIFIED, FINISHED] for f in fs)
 
         if return_when == FIRST_EXCEPTION:
             waiter = _AllCompletedWaiter(pending_count, stop_on_exception=True)
@@ -169,6 +179,7 @@ def _create_and_install_waiters(fs, return_when):
         f._waiters.append(waiter)
 
     return waiter
+
 
 def as_completed(fs, timeout=None):
     """An iterator over the given futures that yields each as it completes.
@@ -194,8 +205,8 @@ def as_completed(fs, timeout=None):
     fs = set(fs)
     with _AcquireFutures(fs):
         finished = set(
-                f for f in fs
-                if f._state in [CANCELLED_AND_NOTIFIED, FINISHED])
+            f for f in fs
+            if f._state in [CANCELLED_AND_NOTIFIED, FINISHED])
         pending = fs - finished
         waiter = _create_and_install_waiters(fs, _AS_COMPLETED)
 
@@ -209,7 +220,7 @@ def as_completed(fs, timeout=None):
                 wait_timeout = end_time - time.time()
                 if wait_timeout < 0:
                     raise TimeoutError(
-                            '%d (of %d) futures unfinished' % (
+                        '%d (of %d) futures unfinished' % (
                             len(pending), len(fs)))
 
             waiter.event.wait(wait_timeout)
@@ -228,8 +239,11 @@ def as_completed(fs, timeout=None):
             with f._condition:
                 f._waiters.remove(waiter)
 
+
 DoneAndNotDoneFutures = collections.namedtuple(
-        'DoneAndNotDoneFutures', 'done not_done')
+    'DoneAndNotDoneFutures', 'done not_done')
+
+
 def wait(fs, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the futures in the given sequence to complete.
 
@@ -279,6 +293,7 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
     done.update(waiter.finished_futures)
     return DoneAndNotDoneFutures(done, set(fs) - done)
 
+
 class Future(object):
     """Represents the result of an asynchronous computation."""
 
@@ -314,9 +329,9 @@ class Future(object):
                         _STATE_TO_DESCRIPTION_MAP[self._state],
                         self._result.__class__.__name__)
             return '<%s at %#x state=%s>' % (
-                    self.__class__.__name__,
-                    id(self),
-                   _STATE_TO_DESCRIPTION_MAP[self._state])
+                self.__class__.__name__,
+                id(self),
+                _STATE_TO_DESCRIPTION_MAP[self._state])
 
     def cancel(self):
         """Cancel the future if possible.
@@ -506,6 +521,7 @@ class Future(object):
             self._condition.notify_all()
         self._invoke_callbacks()
 
+
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
@@ -559,6 +575,7 @@ class Executor(object):
             finally:
                 for future in fs:
                     future.cancel()
+
         return result_iterator()
 
     def shutdown(self, wait=True):
