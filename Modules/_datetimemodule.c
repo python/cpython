@@ -3401,13 +3401,15 @@ timezone_str(PyDateTime_TimeZone *self)
     Py_DECREF(offset);
     minutes = divmod(seconds, 60, &seconds);
     hours = divmod(minutes, 60, &minutes);
-    if (microseconds != 0)
+    if (microseconds != 0) {
         return PyUnicode_FromFormat("UTC%c%02d:%02d:%02d.%06d",
                                     sign, hours, minutes,
                                     seconds, microseconds);
-    if (seconds != 0)
+    }
+    if (seconds != 0) {
         return PyUnicode_FromFormat("UTC%c%02d:%02d:%02d",
                                     sign, hours, minutes, seconds);
+    }
     return PyUnicode_FromFormat("UTC%c%02d:%02d", sign, hours, minutes);
 }
 

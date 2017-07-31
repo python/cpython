@@ -2057,12 +2057,11 @@ class timezone(tzinfo):
         seconds = rest.seconds
         microseconds = rest.microseconds
         if microseconds:
-            return 'UTC{}{:02d}:{:02d}:{:02d}.{:06d}'.format(sign,
-                                 hours, minutes, seconds, microseconds)
+            return (f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
+                    f'.{microseconds:06d}')
         if seconds:
-            return 'UTC{}{:02d}:{:02d}:{:02d}'.format(sign, hours,
-                                                      minutes, seconds)
-        return 'UTC{}{:02d}:{:02d}'.format(sign, hours, minutes)
+            return f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
+        return f'UTC{sign}{hours:02d}:{minutes:02d}'
 
 timezone.utc = timezone._create(timedelta(0))
 timezone.min = timezone._create(timezone._minoffset)

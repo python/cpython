@@ -2161,13 +2161,15 @@ Notes:
 
    ``%z``
       :meth:`utcoffset` is transformed into a string of the form
-      ±HHMM[SS], where HH is a 2-digit string giving the number of UTC
+      ±HHMM[SS[.uuuuuu]], where HH is a 2-digit string giving the number of UTC
       offset hours, and MM is a 2-digit string giving the number of UTC offset
-      minutes, and SS is a string giving the number of UTC offset
-      seconds.  The SS part is omitted when the offset is a whole number of
-      minutes.  For example, if :meth:`utcoffset` returns
-      ``timedelta(hours=-3, minutes=-30)``, ``%z`` is replaced with the string
-      ``'-0330'``.
+      minutes, SS is a 2-digit string string giving the number of UTC offset
+      seconds and uuuuuu is a 2-digit string string giving the number of UTC
+      offset microseconds.  The uuuuuu part is omitted when the offset is a
+      whole number of minutes and both the uuuuuu and the SS parts are omitted
+      when the offset is a whole number of minutes.  For example, if
+      :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``, ``%z`` is
+      replaced with the string ``'-0330'``.
 
    .. versionchanged:: 3.7
       The UTC offset is not restricted to a whole number of minutes.
