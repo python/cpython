@@ -336,7 +336,8 @@ class _Stream:
        _Stream is intended to be used only internally.
     """
 
-    def __init__(self, name, mode, comptype, fileobj, bufsize):
+    def __init__(self, name, mode, comptype, fileobj, bufsize,
+                 compresslevel=9):
         """Construct a _Stream object.
         """
         self._extfileobj = True
@@ -350,14 +351,15 @@ class _Stream:
             fileobj = _StreamProxy(fileobj)
             comptype = fileobj.getcomptype()
 
-        self.name     = name or ""
-        self.mode     = mode
+        self.name = name or ""
+        self.mode = mode
         self.comptype = comptype
-        self.fileobj  = fileobj
-        self.bufsize  = bufsize
-        self.buf      = b""
-        self.pos      = 0
-        self.closed   = False
+        self.fileobj = fileobj
+        self.bufsize = bufsize
+        self.compresslevel = compresslevel
+        self.buf = b""
+        self.pos = 0
+        self.closed = False
 
         try:
             if comptype == "gz":
@@ -383,7 +385,7 @@ class _Stream:
                     self.cmp = bz2.BZ2Decompressor()
                     self.exception = OSError
                 else:
-                    self.cmp = bz2.BZ2Compressor()
+                    self.cmp = bz2.BZ2Compressor(self.compresslevel)
 
             elif comptype == "xz":
                 try:
@@ -413,10 +415,11 @@ class _Stream:
     def _init_write_gz(self):
         """Initialize for writing with gzip compression.
         """
-        self.cmp = self.zlib.compressobj(9, self.zlib.DEFLATED,
-                                            -self.zlib.MAX_WBITS,
-                                            self.zlib.DEF_MEM_LEVEL,
-                                            0)
+        self.cmp = self.zlib.compressobj(self.compresslevel,
+                                         self.zlib.DEFLATED,
+                                         -self.zlib.MAX_WBITS,
+                                         self.zlib.DEF_MEM_LEVEL,
+                                         0)
         timestamp = struct.pack("<L", int(time.time()))
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
@@ -1649,7 +1652,9 @@ class TarFile(object):
             if filemode not in ("r", "w"):
                 raise ValueError("mode must be 'r' or 'w'")
 
-            stream = _Stream(name, filemode, comptype, fileobj, bufsize)
+            compresslevel = kwargs.pop("compresslevel", 9)
+            stream = _Stream(name, filemode, comptype, fileobj, bufsize,
+                             compresslevel)
             try:
                 t = cls(name, filemode, stream, **kwargs)
             except:
