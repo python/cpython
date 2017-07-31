@@ -820,7 +820,7 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
 
-        if (op_slot == 96 && \
+        if (op_slot == NB_SLOT(nb_rshift) && \
                 strcmp(v->ob_type->tp_name, "builtin_function_or_method") == 0) {
 
             PyErr_Format(PyExc_TypeError,
