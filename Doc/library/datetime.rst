@@ -1655,7 +1655,7 @@ Example:
    time zone and DST adjustments, :meth:`utcoffset` should return their sum.  If
    the UTC offset isn't known, return ``None``.  Else the value returned must be a
    :class:`timedelta` object strictly between ``-timedelta(hours=24)`` and
-  ``timedelta(hours=24)`` (the magnitude of the offset must be less
+   ``timedelta(hours=24)`` (the magnitude of the offset must be less
    than one day).  Most implementations of :meth:`utcoffset` will probably look
    like one of these two::
 
