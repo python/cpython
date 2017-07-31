@@ -378,6 +378,7 @@ class ThreadableISOTPTest(unittest.TestCase, ThreadableTest):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self,*args, **kwargs)
         ThreadableTest.__init__(self)
+        self.test_opts = {}
         (self.cli_addr, self.srv_addr) = ThreadableISOTPTest.getAddressPair()
 
     @classmethod
@@ -392,6 +393,7 @@ class ThreadableISOTPTest(unittest.TestCase, ThreadableTest):
 
     def clientSetUp(self):
         try:
+            self.opts = self.test_opts[self._testMethodName] if self._testMethodName in self.test_opts else {}
             self.cli = socket.socket(socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP)
             if 'cli' in self.opts:
                 for opt_const in self.opts['cli']:
@@ -1860,28 +1862,25 @@ class BasicISOTPTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN_ISOTP, 'CAN ISOTP required for this test.')
+@unittest.skipUnless(hasattr(socket, "SOL_CAN_ISOTP"),
+                     'socket.SOL_CAN_ISOTP is required for this test')
+@unittest.skipUnless(hasattr(socket, "CAN_ISOTP_RECV_FC"),
+                     'socket.CAN_ISOTP_RECV_FC is required for this test')
 class ISOTPTest(ThreadableISOTPTest):
-
-    test_opts = {
-        'testTiming' : {
-            'cli' : {
-                socket.CAN_ISOTP_RECV_FC : struct.pack("=BBB",10, 0x7F, 10) # bs, stmin, wftmax
-            },
-            'serv' : {
-
-            }
-        }
-    }
 
     def __init__(self, methodName='runTest', *args, **kwargs):
         ThreadableISOTPTest.__init__(self,methodName, *args, **kwargs)
-        if methodName in ISOTPTest.test_opts:
-            self.opts = ISOTPTest.test_opts[methodName]
-        else:
-            self.opts = {}
 
     def setUp(self, *args, **kwargs):
+        self.test_opts['testTiming'] = {
+            'cli' : {
+                socket.CAN_ISOTP_RECV_FC : struct.pack("=BBB",10, 0x7F, 10) # bs, stmin, wftmax
+            },
+            'serv' : {}
+        }
+
         self.serv = socket.socket(socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP)
+        self.opts = self.test_opts[self._testMethodName] if self._testMethodName in self.test_opts else {}
         try:
             if 'serv' in self.opts:
                 for opt_const in self.opts['serv']:
@@ -1910,14 +1909,10 @@ class ISOTPTest(ThreadableISOTPTest):
         self.assertEqual(bindata, self.bindata)
 
     def _testTiming(self):
-        self.bindata2 = self.makeRandomData(150)
+        self.bindata2 = self.makeRandomData(512)
         self.tic = time.time()
         self.cli.send(self.bindata2)
 
-    @unittest.skipUnless(hasattr(socket, "SOL_CAN_ISOTP"),
-                         'socket.SOL_CAN_ISOTP is required for this test')
-    @unittest.skipUnless(hasattr(socket, "CAN_ISOTP_RECV_FC"),
-                         'socket.CAN_ISOTP_RECV_FC is required for this test')
     def testTiming(self):
         """
          The main goal of this test is to validate that the driver correctly receive options via setsockopt.
@@ -1929,7 +1924,7 @@ class ISOTPTest(ThreadableISOTPTest):
         self.assertEqual(bindata2, self.bindata2)
         measured_time = math.ceil(self.toc-self.tic)
         min_time = math.floor(self.calcFrameCnt(len(self.bindata2))*0.127)
-        self.assertGreater(measured_time, min_time)
+        self.assertGreaterEqual(measured_time, min_time)
 
     def calcFrameCnt(self, size):
         if size < 1 or size > 4095:
