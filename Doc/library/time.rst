@@ -679,17 +679,6 @@ These constants are used as parameters for :func:`clock_getres` and
    .. versionadded:: 3.3
 
 
-.. data:: CLOCK_REALTIME
-
-   System-wide real-time clock.  This constant is the only parameter
-   that can be sent to :func:`clock_settime`; setting this clock requires
-   appropriate privileges.
-
-   Availability: Unix.
-
-   .. versionadded:: 3.3
-
-
 .. data:: CLOCK_THREAD_CPUTIME_ID
 
    Thread-specific CPU-time clock.
@@ -699,9 +688,22 @@ These constants are used as parameters for :func:`clock_getres` and
    .. versionadded:: 3.3
 
 
-.. _time-time-zone-constants:
+The following constant is the only parameter that can be sent to
+:func:`clock_settime`.
 
-Time Zone Constants
+.. data:: CLOCK_REALTIME
+
+   System-wide real-time clock.  Setting this clock requires appropriate
+   privileges.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. _time-timezone-constants:
+
+Timezone Constants
 -------------------
 
 .. data:: altzone
@@ -727,7 +729,7 @@ Time Zone Constants
 
 .. note::
 
-   For the above Time Zone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
+   For the above Timezone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
    and :data:`tzname`), the value is determined by the timezone rules in effect
    at module load time or the last time :func:`tzset` is called and may be incorrect
    for times in the past.  It is recommended to use the :attr:`tm_gmtoff` and
