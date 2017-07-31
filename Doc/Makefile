@@ -5,7 +5,7 @@
 
 # You can set these variables from the command line.
 PYTHON       = python3
-VENVDIR      = env
+VENVDIR      = venv
 SPHINXBUILD  = sphinx-build
 BLURB = $(PYTHON) -m blurb
 PAPER        =
