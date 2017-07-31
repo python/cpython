@@ -103,6 +103,10 @@ created.  Socket addresses are represented as follows:
   ``'can0'``. The network interface name ``''`` can be used to receive packets
   from all network interfaces of this family.
 
+  - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)`` 
+    where both additional parameters are unsigned long integer that represent a
+    CAN identifier (standard or extended).
+
 - A string or a tuple ``(id, unit)`` is used for the :const:`SYSPROTO_CONTROL`
   protocol of the :const:`PF_SYSTEM` family. The string is the name of a
   kernel control using a dynamically-assigned ID. The tuple can be used if ID
@@ -341,6 +345,17 @@ Constants
 
    .. versionadded:: 3.5
 
+.. data:: CAN_ISOTP
+
+   CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
+   ISO-TP constants, documented in the Linux documentation, are also
+   defined in the socket module.
+
+   Availability: Linux >= 2.6.25
+
+   .. versionadded:: 3.7
+
+
 .. data:: AF_RDS
           PF_RDS
           SOL_RDS
@@ -427,7 +442,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
    constants. The protocol number is usually zero and may be omitted or in the
    case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW` or :const:`CAN_BCM`.  If *fileno* is specified, the other
+   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.  If *fileno* is specified, the other
    arguments are ignored, causing the socket with the specified file descriptor
    to return.  Unlike :func:`socket.fromfd`, *fileno* will return the same
    socket and not a duplicate. This may help close a detached socket using
@@ -445,6 +460,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.4
       The returned socket is now non-inheritable.
 
+   .. versionchanged:: 3.7
+       The CAN_ISOTP protocol was added.
 
 .. function:: socketpair([family[, type[, proto]]])
 
@@ -1661,7 +1678,7 @@ the interface::
    # disabled promiscuous mode
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
 
-The last example shows how to use the socket interface to communicate to a CAN
+The next example shows how to use the socket interface to communicate to a CAN
 network using the raw socket protocol. To use CAN with the broadcast
 manager protocol instead, open a socket with::
 
@@ -1728,6 +1745,44 @@ There is a :mod:`socket` flag to set, in order to prevent this,
 
 the :data:`SO_REUSEADDR` flag tells the kernel to reuse a local socket in
 ``TIME_WAIT`` state, without waiting for its natural timeout to expire.
+
+The last example shows how to use the socket interface to communicate to a CAN
+network using the ISO-TP protocol. Altough Linux defines the required interface
+in <linux/can.h>, it does not support a native implementation of the protocol.
+The appropriate module must be loaded in the kernel.
+
+   modprobe can-isotp
+
+If the system does not support ISO-TP protocol, creating the socket might return::
+
+  OSError: [Errno 93] Protocol not supported
+
+This example might require special privileges::
+
+   import socket
+   import struct
+
+   # create a iso-tp socket and bind it to the 'vcan0' interface, with rx_addr = 0x123 and tx_addr=0x456
+   s1 = socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP)
+   s2 = socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP)
+
+   # set socket some options before binding to the interface.
+   stmin = 0x32 # Minimum Separation Time : 50 milliseconds between each CAN frame. See ISO 15765-2 for acceptables values.
+   bs = 3       # Block Size : sends a FlowControl frame every 3 Consecutive Frames
+   wftmax = 5   # Maximum Wait Frame Transmission - Maximum number of consecutive Wait Frame.
+   s2.setsockopt(socket.SOL_CAN_ISOTP, socket.CAN_ISOTP_RECV_FC, struct.pack("=BBB", bs, stmin, wftmax))
+
+   s1.bind(('vcan0',0x123, 0x456))
+   s2.bind(('vcan0',0x456, 0x123))
+
+   data = b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10"
+   s1.send(data)
+   s2.recv(len(data))
+
+   # The following transmission will occur
+   # vcan0  456   [8]  10 0A 01 02 03 04 05 06
+   # vcan0  123   [3]  30 03 32
+   # vcan0  456   [5]  21 07 08 09 10
 
 
 .. seealso::
