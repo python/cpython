@@ -6,7 +6,7 @@
 # You can set these variables from the command line.
 PYTHON       = python3
 VENVDIR      = venv
-SPHINXBUILD  = sphinx-build
+SPHINXBUILD  = $(PYTHON) -m sphinx
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
