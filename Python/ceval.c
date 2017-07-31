@@ -4220,7 +4220,8 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
 {
     return _PyEval_EvalCodeWithName(_co, globals, locals,
                                     args, argcount,
-                                    kws, kws + 1, kwcount, 2,
+                                    kws, kws != NULL ? kws + 1 : NULL,
+                                    kwcount, 2,
                                     defs, defcount,
                                     kwdefs, closure,
                                     NULL, NULL);
