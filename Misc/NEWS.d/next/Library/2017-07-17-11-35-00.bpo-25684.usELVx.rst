@@ -1,0 +1,2 @@
+Change ``ttk.OptionMenu`` radiobuttons to be unique across instances of
+``OptionMenu``.
