@@ -337,7 +337,7 @@ class _Stream:
     """
 
     def __init__(self, name, mode, comptype, fileobj, bufsize,
-                 compresslevel=9):
+                 compresslevel):
         """Construct a _Stream object.
         """
         self._extfileobj = True
@@ -351,15 +351,14 @@ class _Stream:
             fileobj = _StreamProxy(fileobj)
             comptype = fileobj.getcomptype()
 
-        self.name = name or ""
-        self.mode = mode
+        self.name     = name or ""
+        self.mode     = mode
         self.comptype = comptype
-        self.fileobj = fileobj
-        self.bufsize = bufsize
-        self.compresslevel = compresslevel
-        self.buf = b""
-        self.pos = 0
-        self.closed = False
+        self.fileobj  = fileobj
+        self.bufsize  = bufsize
+        self.buf      = b""
+        self.pos      = 0
+        self.closed   = False
 
         try:
             if comptype == "gz":
@@ -373,7 +372,7 @@ class _Stream:
                     self._init_read_gz()
                     self.exception = zlib.error
                 else:
-                    self._init_write_gz()
+                    self._init_write_gz(compresslevel)
 
             elif comptype == "bz2":
                 try:
@@ -385,7 +384,7 @@ class _Stream:
                     self.cmp = bz2.BZ2Decompressor()
                     self.exception = OSError
                 else:
-                    self.cmp = bz2.BZ2Compressor(self.compresslevel)
+                    self.cmp = bz2.BZ2Compressor(compresslevel)
 
             elif comptype == "xz":
                 try:
@@ -412,10 +411,10 @@ class _Stream:
         if hasattr(self, "closed") and not self.closed:
             self.close()
 
-    def _init_write_gz(self):
+    def _init_write_gz(self, compresslevel):
         """Initialize for writing with gzip compression.
         """
-        self.cmp = self.zlib.compressobj(self.compresslevel,
+        self.cmp = self.zlib.compressobj(compresslevel,
                                          self.zlib.DEFLATED,
                                          -self.zlib.MAX_WBITS,
                                          self.zlib.DEF_MEM_LEVEL,

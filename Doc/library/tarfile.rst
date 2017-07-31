@@ -152,6 +152,9 @@ Some facts and figures:
    .. versionchanged:: 3.6
       The *name* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.7
+      The *compresslevel* keyword argument also works for streams.
+
 
 .. class:: TarFile
    :noindex:
