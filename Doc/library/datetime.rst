@@ -1071,16 +1071,20 @@ Instance methods:
 
    If :attr:`.tzinfo` is ``None``, returns ``None``, else returns
    ``self.tzinfo.utcoffset(self)``, and raises an exception if the latter doesn't
-   return ``None``, or a :class:`timedelta` object representing a whole number of
-   minutes with magnitude less than one day.
+   return ``None`` or a :class:`timedelta` object with magnitude less than one day.
+
+   .. versionchanged:: 3.7
+      The UTC offset is not restricted to a whole number of minutes.
 
 
 .. method:: datetime.dst()
 
    If :attr:`.tzinfo` is ``None``, returns ``None``, else returns
    ``self.tzinfo.dst(self)``, and raises an exception if the latter doesn't return
-   ``None``, or a :class:`timedelta` object representing a whole number of minutes
-   with magnitude less than one day.
+   ``None`` or a :class:`timedelta` object with magnitude less than one day.
+
+   .. versionchanged:: 3.7
+      The DST offset is not restricted to a whole number of minutes.
 
 
 .. method:: datetime.tzname()
@@ -1562,17 +1566,20 @@ Instance methods:
 
    If :attr:`.tzinfo` is ``None``, returns ``None``, else returns
    ``self.tzinfo.utcoffset(None)``, and raises an exception if the latter doesn't
-   return ``None`` or a :class:`timedelta` object representing a whole number of
-   minutes with magnitude less than one day.
+   return ``None`` or a :class:`timedelta` object with magnitude less than one day.
+
+   .. versionchanged:: 3.7
+      The UTC offset is not restricted to a whole number of minutes.
 
 
 .. method:: time.dst()
 
    If :attr:`.tzinfo` is ``None``, returns ``None``, else returns
    ``self.tzinfo.dst(None)``, and raises an exception if the latter doesn't return
-   ``None``, or a :class:`timedelta` object representing a whole number of minutes
-   with magnitude less than one day.
+   ``None``, or a :class:`timedelta` object with magnitude less than one day.
 
+   .. versionchanged:: 3.7
+      The DST offset is not restricted to a whole number of minutes.
 
 .. method:: time.tzname()
 
@@ -1641,13 +1648,14 @@ Example:
 
 .. method:: tzinfo.utcoffset(dt)
 
-   Return offset of local time from UTC, in minutes east of UTC.  If local time is
+   Return offset of local time from UTC, as a :class:`timedelta` object that is
+   positive east of UTC.  If local time is
    west of UTC, this should be negative.  Note that this is intended to be the
    total offset from UTC; for example, if a :class:`tzinfo` object represents both
    time zone and DST adjustments, :meth:`utcoffset` should return their sum.  If
    the UTC offset isn't known, return ``None``.  Else the value returned must be a
-   :class:`timedelta` object specifying a whole number of minutes in the range
-   -1439 to 1439 inclusive (1440 = 24\*60; the magnitude of the offset must be less
+   :class:`timedelta` object strictly between ``-timedelta(hours=24)`` and
+   ``timedelta(hours=24)`` (the magnitude of the offset must be less
    than one day).  Most implementations of :meth:`utcoffset` will probably look
    like one of these two::
 
@@ -1660,10 +1668,14 @@ Example:
    The default implementation of :meth:`utcoffset` raises
    :exc:`NotImplementedError`.
 
+   .. versionchanged:: 3.7
+      The UTC offset is not restricted to a whole number of minutes.
+
 
 .. method:: tzinfo.dst(dt)
 
-   Return the daylight saving time (DST) adjustment, in minutes east of UTC, or
+   Return the daylight saving time (DST) adjustment, as a :class:`timedelta`
+   object or
    ``None`` if DST information isn't known.  Return ``timedelta(0)`` if DST is not
    in effect. If DST is in effect, return the offset as a :class:`timedelta` object
    (see :meth:`utcoffset` for details). Note that DST offset, if applicable, has
@@ -1707,6 +1719,9 @@ Example:
               return timedelta(0)
 
    The default implementation of :meth:`dst` raises :exc:`NotImplementedError`.
+
+   .. versionchanged:: 3.7
+      The DST offset is not restricted to a whole number of minutes.
 
 
 .. method:: tzinfo.tzname(dt)
@@ -1887,13 +1902,16 @@ made to civil time.
   The *offset* argument must be specified as a :class:`timedelta`
   object representing the difference between the local time and UTC.  It must
   be strictly between ``-timedelta(hours=24)`` and
-  ``timedelta(hours=24)`` and represent a whole number of minutes,
-  otherwise :exc:`ValueError` is raised.
+  ``timedelta(hours=24)``, otherwise :exc:`ValueError` is raised.
 
   The *name* argument is optional.  If specified it must be a string that
   will be used as the value returned by the :meth:`datetime.tzname` method.
 
   .. versionadded:: 3.2
+
+  .. versionchanged:: 3.7
+     The UTC offset is not restricted to a whole number of minutes.
+
 
 .. method:: timezone.utcoffset(dt)
 
@@ -1901,6 +1919,9 @@ made to civil time.
   constructed.  The *dt* argument is ignored.  The return value is a
   :class:`timedelta` instance equal to the difference between the
   local time and UTC.
+
+  .. versionchanged:: 3.7
+     The UTC offset is not restricted to a whole number of minutes.
 
 .. method:: timezone.tzname(dt)
 
@@ -2025,8 +2046,8 @@ format codes.
 |           | number, zero-padded on the     | 999999                 |       |
 |           | left.                          |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form +HHMM   | (empty), +0000, -0400, | \(6)  |
-|           | or -HHMM (empty string if the  | +1030                  |       |
+| ``%z``    | UTC offset in the form         | (empty), +0000, -0400, | \(6)  |
+|           | ±HHMM[SS] (empty string if the | +1030                  |       |
 |           | object is naive).              |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
@@ -2139,12 +2160,19 @@ Notes:
    For an aware object:
 
    ``%z``
-      :meth:`utcoffset` is transformed into a 5-character string of the form
-      +HHMM or -HHMM, where HH is a 2-digit string giving the number of UTC
+      :meth:`utcoffset` is transformed into a string of the form
+      ±HHMM[SS[.uuuuuu]], where HH is a 2-digit string giving the number of UTC
       offset hours, and MM is a 2-digit string giving the number of UTC offset
-      minutes.  For example, if :meth:`utcoffset` returns
-      ``timedelta(hours=-3, minutes=-30)``, ``%z`` is replaced with the string
-      ``'-0330'``.
+      minutes, SS is a 2-digit string string giving the number of UTC offset
+      seconds and uuuuuu is a 2-digit string string giving the number of UTC
+      offset microseconds.  The uuuuuu part is omitted when the offset is a
+      whole number of minutes and both the uuuuuu and the SS parts are omitted
+      when the offset is a whole number of minutes.  For example, if
+      :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``, ``%z`` is
+      replaced with the string ``'-0330'``.
+
+   .. versionchanged:: 3.7
+      The UTC offset is not restricted to a whole number of minutes.
 
    ``%Z``
       If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty
