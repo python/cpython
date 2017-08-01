@@ -1372,13 +1372,14 @@ class QueueHandler(logging.Handler):
         of the record while leaving the original intact.
         """
         # The format operation gets traceback text into record.exc_text
-        # (if there's exception data), and also puts the message into
-        # record.message. We can then use this to replace the original
+        # (if there's exception data), and also returns the formatted
+        # message. We can then use this to replace the original
         # msg + args, as these might be unpickleable. We also zap the
         # exc_info attribute, as it's no longer needed and, if not None,
         # will typically not be pickleable.
-        self.format(record)
-        record.msg = record.message
+        msg = self.format(record)
+        record.message = msg
+        record.msg = msg
         record.args = None
         record.exc_info = None
         return record
