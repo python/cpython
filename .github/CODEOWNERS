@@ -8,5 +8,8 @@
 **/*hashlib*                  @tiran
 **/*pyhash*                   @tiran
 
+# Import (including importlib)
+**/*import*                   @brettcannon
+
 # SSL
 **/*ssl*                      @tiran
