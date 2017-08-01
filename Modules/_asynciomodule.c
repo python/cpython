@@ -962,18 +962,18 @@ FutureObj_dealloc(PyObject *self)
 {
     FutureObj *fut = (FutureObj *)self;
 
-    PyObject_GC_UnTrack(self);
+    _PyObject_GC_UNTRACK(self);
 
     if (Future_CheckExact(fut)) {
         /* When fut is subclass of Future, finalizer is called from
          * subtype_dealloc.
          */
-         PyObject_GC_Track(self);
+         _PyObject_GC_TRACK(self);
         if (PyObject_CallFinalizerFromDealloc(self) < 0) {
             // resurrected.
             return;
         }
-        PyObject_GC_UnTrack(self);
+        _PyObject_GC_UNTRACK(self);
     }
 
     if (fut->fut_weakreflist != NULL) {
@@ -995,7 +995,7 @@ typedef struct {
 static void
 FutureIter_dealloc(futureiterobject *it)
 {
-    PyObject_GC_UnTrack(it);
+    _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->future);
     PyObject_GC_Del(it);
 }
@@ -1151,7 +1151,7 @@ future_new_iter(PyObject *fut)
     }
     Py_INCREF(fut);
     it->future = (FutureObj*)fut;
-    PyObject_GC_Track(it);
+    _PyObject_GC_TRACK(it);
     return (PyObject*)it;
 }
 
@@ -1183,7 +1183,7 @@ TaskSendMethWrapper_clear(TaskSendMethWrapper *o)
 static void
 TaskSendMethWrapper_dealloc(TaskSendMethWrapper *o)
 {
-    PyObject_GC_UnTrack(o);
+    _PyObject_GC_UNTRACK(o);
     (void)TaskSendMethWrapper_clear(o);
     Py_TYPE(o)->tp_free(o);
 }
@@ -1248,7 +1248,7 @@ TaskSendMethWrapper_new(TaskObj *task, PyObject *arg)
     Py_XINCREF(arg);
     o->sw_arg = arg;
 
-    PyObject_GC_Track(o);
+    _PyObject_GC_TRACK(o);
     return (PyObject*) o;
 }
 
@@ -1285,7 +1285,7 @@ TaskWakeupMethWrapper_traverse(TaskWakeupMethWrapper *o,
 static void
 TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
 {
-    PyObject_GC_UnTrack(o);
+    _PyObject_GC_UNTRACK(o);
     (void)TaskWakeupMethWrapper_clear(o);
     Py_TYPE(o)->tp_free(o);
 }
@@ -1315,7 +1315,7 @@ TaskWakeupMethWrapper_new(TaskObj *task)
     Py_INCREF(task);
     o->ww_task = task;
 
-    PyObject_GC_Track(o);
+    _PyObject_GC_TRACK(o);
     return (PyObject*) o;
 }
 
@@ -1840,18 +1840,18 @@ TaskObj_dealloc(PyObject *self)
 {
     TaskObj *task = (TaskObj *)self;
 
-    PyObject_GC_UnTrack(self);
+    _PyObject_GC_UNTRACK(self);
 
     if (Task_CheckExact(self)) {
         /* When fut is subclass of Task, finalizer is called from
          * subtype_dealloc.
          */
-         PyObject_GC_Track(self);
+        _PyObject_GC_TRACK(self);
         if (PyObject_CallFinalizerFromDealloc(self) < 0) {
             // resurrected.
             return;
         }
-        PyObject_GC_UnTrack(self);
+        _PyObject_GC_UNTRACK(self);
     }
 
     if (task->task_weakreflist != NULL) {
