@@ -3373,7 +3373,7 @@ reduce_2(PyObject *obj)
             if (obj->ob_type->tp_weaklistoffset)
                 basicsize += sizeof(PyObject *);
             if (names != Py_None)
-                basicsize += sizeof(PyObject *) * Py_SIZE(names);
+                basicsize += sizeof(PyObject *) * PyList_GET_SIZE(names);
             if (obj->ob_type->tp_basicsize > basicsize) {
                 PyObject *msg = PyString_FromFormat(
                             "can't pickle %.200s objects",
