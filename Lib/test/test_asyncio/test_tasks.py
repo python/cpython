@@ -3,8 +3,8 @@
 import collections
 import contextlib
 import functools
-import io
 import gc
+import io
 import os
 import re
 import sys
