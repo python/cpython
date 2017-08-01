@@ -3126,6 +3126,7 @@ class QueueHandlerTest(BaseTest):
         BaseTest.setUp(self)
         self.queue = queue.Queue(-1)
         self.que_hdlr = logging.handlers.QueueHandler(self.queue)
+        self.name = 'que'
         self.que_logger = logging.getLogger('que')
         self.que_logger.propagate = False
         self.que_logger.setLevel(logging.WARNING)
@@ -3146,6 +3147,19 @@ class QueueHandlerTest(BaseTest):
         self.assertTrue(isinstance(data, logging.LogRecord))
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
+
+    def test_formatting(self):
+        msg = self.next_message()
+        levelname = logging.getLevelName(logging.WARNING)
+        log_format_str = '{name} -> {levelname}: {message}'
+        formatted_msg = log_format_str.format(name=self.name,
+                                              levelname=levelname, message=msg)
+        formatter = logging.Formatter(self.log_format)
+        self.que_hdlr.setFormatter(formatter)
+        self.que_logger.warning(msg)
+        log_record = self.queue.get_nowait()
+        self.assertEqual(formatted_msg, log_record.msg)
+        self.assertEqual(formatted_msg, log_record.message)
 
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
