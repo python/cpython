@@ -1503,13 +1503,13 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
             }
         }
         newobj = PyObject_CallFunctionObjArgs(s->defaultfn, obj, NULL);
-		if (newobj != NULL && Py_TYPE(newobj) == Py_TYPE(obj)) {
-			PyErr_SetString(PyExc_TypeError, "Default serialization function 
-							returning same type");
-			Py_DECREF(newobj);
-			Py_XDECREF(ident);
-			return -1;
-		}
+        if (newobj != NULL && Py_TYPE(newobj) == Py_TYPE(obj)) {
+            PyErr_SetString(PyExc_TypeError, "Default serialization function "
+                            "returning same type");
+            Py_DECREF(newobj);
+            Py_XDECREF(ident);
+            return -1;
+        }
 
         if (newobj == NULL) {
             Py_XDECREF(ident);
