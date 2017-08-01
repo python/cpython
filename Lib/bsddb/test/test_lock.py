@@ -2,6 +2,7 @@
 TestCases for testing the locking sub-system.
 """
 
+import sys
 import time
 
 import unittest
@@ -10,7 +11,6 @@ from test_all import db, test_support, verbose, have_threads, \
 
 if have_threads :
     from threading import Thread
-    import sys
     if sys.version_info[0] < 3 :
         from threading import currentThread
     else :
@@ -129,7 +129,14 @@ class LockingTestCase(unittest.TestCase):
         end_time=time.time()
         deadlock_detection.end=True
         # Floating point rounding
-        self.assertGreaterEqual(end_time-start_time, 0.0999)
+        if sys.platform == 'win32':
+            # bpo-30850: On Windows, tolerate 50 ms whereas 100 ms is expected.
+            # The lock sometimes times out after only 58 ms. Windows clocks
+            # have a bad resolution and bad accuracy.
+            min_dt = 0.050
+        else:
+            min_dt = 0.0999
+        self.assertGreaterEqual(end_time-start_time, min_dt)
         self.env.lock_put(lock)
         t.join()
 
