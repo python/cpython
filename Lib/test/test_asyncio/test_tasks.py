@@ -104,7 +104,7 @@ class BaseTaskTests:
         self.loop.run_until_complete(
             asyncio.gather(*[
                 self.new_task(self.loop, run()) for _ in range(100)
-            ]), loop=self.loop)
+            ], loop=self.loop))
 
     def test_other_loop_future(self):
         other_loop = asyncio.new_event_loop()
