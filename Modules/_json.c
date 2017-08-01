@@ -656,6 +656,7 @@ static void
 scanner_dealloc(PyObject *self)
 {
     /* Deallocate scanner object */
+    PyObject_GC_UnTrack(self);
     scanner_clear(self);
     Py_TYPE(self)->tp_free(self);
 }
@@ -1779,6 +1780,7 @@ static void
 encoder_dealloc(PyObject *self)
 {
     /* Deallocate Encoder */
+    PyObject_GC_UnTrack(self);
     encoder_clear(self);
     Py_TYPE(self)->tp_free(self);
 }

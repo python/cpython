@@ -1589,6 +1589,7 @@ typedef struct {
 static void
 unpackiter_dealloc(unpackiterobject *self)
 {
+    PyObject_GC_UnTrack(self);
     Py_XDECREF(self->so);
     PyBuffer_Release(&self->buf);
     PyObject_GC_Del(self);

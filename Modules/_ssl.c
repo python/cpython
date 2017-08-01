@@ -2778,6 +2778,7 @@ context_clear(PySSLContext *self)
 static void
 context_dealloc(PySSLContext *self)
 {
+    PyObject_GC_UnTrack(self);
     context_clear(self);
     SSL_CTX_free(self->ctx);
 #ifdef OPENSSL_NPN_NEGOTIATED

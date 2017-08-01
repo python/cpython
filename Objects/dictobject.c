@@ -3407,6 +3407,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 static void
 dictiter_dealloc(dictiterobject *di)
 {
+    _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_dict);
     Py_XDECREF(di->di_result);
     PyObject_GC_Del(di);
@@ -3766,6 +3767,7 @@ dictiter_reduce(dictiterobject *di)
 static void
 dictview_dealloc(_PyDictViewObject *dv)
 {
+    _PyObject_GC_UNTRACK(dv);
     Py_XDECREF(dv->dv_dict);
     PyObject_GC_Del(dv);
 }

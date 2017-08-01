@@ -809,6 +809,7 @@ typedef struct {
 static void
 setiter_dealloc(setiterobject *si)
 {
+    _PyObject_GC_UNTRACK(si);
     Py_XDECREF(si->si_set);
     PyObject_GC_Del(si);
 }
