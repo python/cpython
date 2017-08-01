@@ -1381,12 +1381,25 @@ class ConfigDialog(Toplevel):
         if has_changes:
             self.ext_userCfg.Save()
 
+#
+# The page tabs follow this abstract template:
+#
+# class TabPage(Frame):
+#     def __init__(self, master):
+#         super().__init__(master)
+#         self.create_page_tab()
+#         self.load_tab_cfg()
+#     def create_page_tab(self):
+#         pass
+#     def load_tab_cfg(self):
+#         pass
+#
+
 
 class FontPage(Frame):
 
-    def __init__(self, parent, highpage):
-        super().__init__(parent)
-        self.parent = parent
+    def __init__(self, master, highpage):
+        super().__init__(master)
         self.highlight_sample = highpage.highlight_sample
         self.create_page_font_tab()
         self.load_font_cfg()
@@ -1439,19 +1452,17 @@ class FontPage(Frame):
                         indent_title: Label
                         (*)indent_scale: Scale - space_num
         """
-        parent = self.parent
-        self.font_name = tracers.add(StringVar(parent), self.var_changed_font)
-        self.font_size = tracers.add(StringVar(parent), self.var_changed_font)
-        self.font_bold = tracers.add(BooleanVar(parent), self.var_changed_font)
+        self.font_name = tracers.add(StringVar(self), self.var_changed_font)
+        self.font_size = tracers.add(StringVar(self), self.var_changed_font)
+        self.font_bold = tracers.add(BooleanVar(self), self.var_changed_font)
         self.space_num = tracers.add(IntVar(self), ('main', 'Indent', 'num-spaces'))
 
         # Create widgets:
         # body and body section frames.
-        frame = self
         frame_font = LabelFrame(
-                frame, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
+                self, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
         frame_indent = LabelFrame(
-                frame, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
+                self, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
         # frame_font.
         frame_font_name = Frame(frame_font)
         frame_font_param = Frame(frame_font)
@@ -1471,7 +1482,7 @@ class FontPage(Frame):
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
         frame_font_sample = Frame(frame_font, relief=SOLID, borderwidth=1)
-        temp_font = tkFont.Font(parent, ('courier', 10, 'normal'))
+        temp_font = tkFont.Font(self, ('courier', 10, 'normal'))
         self.font_sample = Label(
                 frame_font_sample, justify=LEFT, font=temp_font,
                 text='AaBbCcDdEe\nFfGgHhIiJj\n1234567890\n#:+=(){}[]')
@@ -1502,8 +1513,6 @@ class FontPage(Frame):
         frame_indent.pack(side=TOP, fill=X)
         indent_title.pack(side=TOP, anchor=W, padx=5)
         self.indent_scale.pack(side=TOP, padx=5, fill=X)
-
-        return frame
 
     def load_font_cfg(self):
         """Load current configuration settings for the font options.
@@ -1597,8 +1606,8 @@ class FontPage(Frame):
 
 class GenPage(Frame):
 
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, master):
+        super().__init__(master)
         self.create_page_general()
         self.load_general_cfg()
 
