@@ -962,19 +962,17 @@ FutureObj_dealloc(PyObject *self)
 {
     FutureObj *fut = (FutureObj *)self;
 
-    PyObject_GC_UnTrack(self);
-
     if (Future_CheckExact(fut)) {
         /* When fut is subclass of Future, finalizer is called from
          * subtype_dealloc.
          */
-         PyObject_GC_Track(self);
         if (PyObject_CallFinalizerFromDealloc(self) < 0) {
             // resurrected.
             return;
         }
-        PyObject_GC_UnTrack(self);
     }
+
+    PyObject_GC_UnTrack(self);
 
     if (fut->fut_weakreflist != NULL) {
         PyObject_ClearWeakRefs(self);
@@ -1840,19 +1838,17 @@ TaskObj_dealloc(PyObject *self)
 {
     TaskObj *task = (TaskObj *)self;
 
-    PyObject_GC_UnTrack(self);
-
     if (Task_CheckExact(self)) {
         /* When fut is subclass of Task, finalizer is called from
          * subtype_dealloc.
          */
-        PyObject_GC_Track(self);
         if (PyObject_CallFinalizerFromDealloc(self) < 0) {
             // resurrected.
             return;
         }
-        PyObject_GC_UnTrack(self);
     }
+
+    PyObject_GC_UnTrack(self);
 
     if (task->task_weakreflist != NULL) {
         PyObject_ClearWeakRefs(self);

@@ -333,6 +333,10 @@ PyAPI_FUNC(PyObject *) _PyObject_GC_Calloc(size_t size);
 #endif /* !Py_LIMITED_API */
 PyAPI_FUNC(PyObject *) _PyObject_GC_New(PyTypeObject *);
 PyAPI_FUNC(PyVarObject *) _PyObject_GC_NewVar(PyTypeObject *, Py_ssize_t);
+
+/*
+   See description in Doc/c-api/gcsupport.rst
+*/
 PyAPI_FUNC(void) PyObject_GC_Track(void *);
 PyAPI_FUNC(void) PyObject_GC_UnTrack(void *);
 PyAPI_FUNC(void) PyObject_GC_Del(void *);
