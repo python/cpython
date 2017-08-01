@@ -1,0 +1,12 @@
+# See https://help.github.com/articles/about-codeowners/
+# for more info about CODEOWNERS file
+
+# It uses the same pattern rule for gitignore file
+# https://git-scm.com/docs/gitignore#_pattern_format
+
+# Hashing
+**/*hashlib*                  @tiran
+**/*pyhash*                   @tiran
+
+# SSL
+**/*ssl*                      @tiran
