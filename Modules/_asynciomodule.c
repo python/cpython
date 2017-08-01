@@ -968,12 +968,12 @@ FutureObj_dealloc(PyObject *self)
         /* When fut is subclass of Future, finalizer is called from
          * subtype_dealloc.
          */
-         _PyObject_GC_TRACK(self);
+         PyObject_GC_TRACK(self);
         if (PyObject_CallFinalizerFromDealloc(self) < 0) {
             // resurrected.
             return;
         }
-        _PyObject_GC_UNTRACK(self);
+        PyObject_GC_UNTRACK(self);
     }
 
     if (fut->fut_weakreflist != NULL) {
@@ -1846,12 +1846,12 @@ TaskObj_dealloc(PyObject *self)
         /* When fut is subclass of Task, finalizer is called from
          * subtype_dealloc.
          */
-         _PyObject_GC_TRACK(self);
+         PyObject_GC_TRACK(self);
         if (PyObject_CallFinalizerFromDealloc(self) < 0) {
             // resurrected.
             return;
         }
-        _PyObject_GC_UNTRACK(self);
+        PyObject_GC_UNTRACK(self);
     }
 
     if (task->task_weakreflist != NULL) {
