@@ -1,0 +1,2 @@
+IDLE - Add an outline of a TabPage class in configdialog. Initial patch by
+Cheryl Sabella.
