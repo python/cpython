@@ -4,6 +4,12 @@
 # It uses the same pattern rule for gitignore file
 # https://git-scm.com/docs/gitignore#_pattern_format
 
+# asyncio
+**/*asyncio*                  @1st1
+
+# Core
+**/*genobject*                @1st1
+
 # Hashing
 **/*hashlib*                  @tiran
 **/*pyhash*                   @tiran
