@@ -1329,6 +1329,27 @@ class Path(PurePath):
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
 
+    def is_mount(self):
+        """
+        Check if this path is a POSIX mount point
+        """
+        # Need to exist and be a dir
+        if not self.exists() or not self.is_dir():
+            return False
+
+        parent = Path(self.parent)
+        try:
+            parent_dev = parent.stat().st_dev
+        except OSError:
+            return False
+
+        dev = self.stat().st_dev
+        if dev != parent_dev:
+            return True
+        ino = self.stat().st_ino
+        parent_ino = parent.stat().st_ino
+        return ino == parent_ino
+
     def is_symlink(self):
         """
         Whether this path is a symbolic link.
@@ -1416,3 +1437,6 @@ class WindowsPath(Path, PureWindowsPath):
 
     def group(self):
         raise NotImplementedError("Path.group() is unsupported on this system")
+
+    def is_mount(self):
+        raise NotImplementedError("Path.is_mount() is unsupported on this system")
