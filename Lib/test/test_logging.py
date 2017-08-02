@@ -1273,7 +1273,7 @@ class ConfigFileTest(BaseTest):
     datefmt=
     """
 
-    # config7 adds a compiler logger.
+    # config7 adds a compiler logger, and uses kwargs instead of args.
     config7 = """
     [loggers]
     keys=root,parser,compiler
@@ -1304,7 +1304,7 @@ class ConfigFileTest(BaseTest):
     class=StreamHandler
     level=NOTSET
     formatter=form1
-    args=(sys.stdout,)
+    kwargs={'stream': sys.stdout,}
 
     [formatter_form1]
     format=%(levelname)s ++ %(message)s
