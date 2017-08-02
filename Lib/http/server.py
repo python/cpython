@@ -113,9 +113,8 @@ from http import HTTPStatus
 try:
     import gzip
     import zlib
-    has_gzip = True
 except ImportError:
-    has_gzip = False
+    gzip = None
 
 
 # Default error message template
@@ -184,8 +183,7 @@ def _gzip_producer(fileobj, chunked):
     """
     if chunked:
         def make_chunk(data):
-            length = "{:X}".format(len(data)).encode("ascii")
-            return length + b"\r\n" + data + b"\r\n"
+            return f"{len(data):X}".encode("ascii") + b"\r\n" + data + b"\r\n"
     else:
         make_chunk = lambda x:x
 
@@ -816,7 +814,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
 
-            if not has_gzip or ctype not in self.compressed_types:
+            if not gzip or ctype not in self.compressed_types:
                 self.send_header("Content-Length", str(content_length))
                 self.end_headers()
                 return f
