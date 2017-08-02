@@ -123,6 +123,8 @@ _MAX_LINES = 5  # enough for bytes
 _INDENT = ' '*4  # for wrapped signatures
 _first_param = re.compile(r'(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
+_invalid_method = "invalid method signature"
+_argument_positional = "('/' marks preceding arguments as positional-only)"
 
 
 def get_argspec(ob):
@@ -139,17 +141,31 @@ def get_argspec(ob):
         ob_call = ob.__call__
     except BaseException:
         return argspec
-    if isinstance(ob, type):
-        fob = ob.__init__
-    elif isinstance(ob_call, types.MethodType):
+    if isinstance(ob_call, types.MethodType):
         fob = ob_call
     else:
         fob = ob
-    if isinstance(fob, (types.FunctionType, types.MethodType)):
-        argspec = inspect.formatargspec(*inspect.getfullargspec(fob))
-        if (isinstance(ob, (type, types.MethodType)) or
-                isinstance(ob_call, types.MethodType)):
-            argspec = _first_param.sub("", argspec)
+
+    try:
+        argspec = str(inspect.signature(fob))
+    except ValueError as err:
+        msg = str(err)
+        if msg.startswith(_invalid_method):
+            argspec = _invalid_method
+            return argspec
+        elif msg.startswith('no signature found for'):
+            """If no signature found for function or method"""
+            pass
+        else:
+            """Callable is not supported by signature"""
+            pass
+
+    if '/' in argspec:
+        """Using AC's positional argument should add the explain"""
+        argspec = '\n'.join([argspec, _argument_positional])
+    if isinstance(fob, type) and argspec == '()':
+        """fob with no argument, use default callable argspec"""
+        argspec = _default_callable_argspec
 
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
