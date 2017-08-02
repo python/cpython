@@ -19,3 +19,10 @@
 
 # SSL
 **/*ssl*                      @tiran
+
+# Email and related
+**/*mail*                     @bitdancer
+**/*smtp*                     @bitdancer
+**/*mime*                     @bitdancer
+**/*imap*                     @bitdancer
+**/*poplib*                   @bitdancer
