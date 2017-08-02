@@ -1,6 +1,7 @@
 """Tests for futures.py."""
 
 import concurrent.futures
+import gc
 import re
 import sys
 import threading
@@ -19,8 +20,10 @@ except ImportError:
 def _fakefunc(f):
     return f
 
+
 def first_cb():
     pass
+
 
 def last_cb():
     pass
@@ -482,6 +485,15 @@ class BaseFutureTests:
         self.assertRaises(TypeError, fi.throw,
                           Exception("elephant"), Exception("elephant"))
         self.assertRaises(TypeError, fi.throw, list)
+
+    def test_future_del_collect(self):
+        class Evil:
+            def __del__(self):
+                gc.collect()
+
+        for i in range(100):
+            fut = self._new_future(loop=self.loop)
+            fut.set_result(Evil())
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
