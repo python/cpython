@@ -2011,6 +2011,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     msg = _('one of the arguments %s is required')
                     self.error(msg % ' '.join(names))
 
+        if(positionals):
+            self.error(_('too few arguments'))
+
         # return the updated namespace and the extra arguments
         return namespace, extras
 
