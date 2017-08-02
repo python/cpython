@@ -339,6 +339,9 @@ def normpath(path):
         path.startswith('//') and not path.startswith('///')):
         initial_slashes = 2
     comps = path.split('/')
+    # Preserve URL (if path is a URL)
+    if comps[0] in ['http:', 'https:']:
+        comps[0] += '/'
     new_comps = []
     for comp in comps:
         if comp in ('', '.'):
