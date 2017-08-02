@@ -805,6 +805,13 @@ object::
     3
     >>> p.assert_called_once_with()
 
+.. note::
+
+    Only use `type(m).foo = ...` with Mock objects! Mock objects create a separate
+    type per instance, so patching the type doesn't impact other Mock objects. If
+    you want to apply a PropertyMock to a non-mock instance, use `patch` as shown
+    above, to ensure the PropertyMock is cleaned up and doesn't leak to other tests. 
+
 
 Calling
 ~~~~~~~
