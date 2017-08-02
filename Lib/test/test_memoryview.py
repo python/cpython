@@ -12,6 +12,7 @@ from test import test_support
 import io
 import copy
 import pickle
+import warnings
 
 
 class AbstractMemoryTests:
@@ -359,15 +360,20 @@ class BytesMemorySliceSliceTest(unittest.TestCase,
 class OtherTest(unittest.TestCase):
     def test_copy(self):
         m = memoryview(b'abc')
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError), warnings.catch_warnings():
+            warnings.filterwarnings('ignore', ".*memoryview", DeprecationWarning)
             copy.copy(m)
 
-    # See issue #22995
-    ## def test_pickle(self):
-    ##     m = memoryview(b'abc')
-    ##     for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-    ##         with self.assertRaises(TypeError):
-    ##             pickle.dumps(m, proto)
+    @test_support.cpython_only
+    def test_pickle(self):
+        m = memoryview(b'abc')
+        for proto in range(2):
+            with self.assertRaises(TypeError):
+                pickle.dumps(m, proto)
+        with test_support.check_py3k_warnings(
+                (".*memoryview", DeprecationWarning)):
+            pickle.dumps(m, 2)
+
 
 
 def test_main():

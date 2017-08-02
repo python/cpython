@@ -1,0 +1,4 @@
+Py3k deprecation warning now is emitted when pickling or copying some builtin
+and extension objects that don't support pickling explicitly and are pickled
+incorrectly by default (like memoryview or staticmethod).  This is a
+TypeError in Python 3.6.
