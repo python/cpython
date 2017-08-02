@@ -682,6 +682,8 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
           i + 1 < len &&
           VBase <= PyUnicode_READ(kind, data, i+1) &&
           PyUnicode_READ(kind, data, i+1) < (VBase+VCount)) {
+          /* check L character is a modern leading consonant (0x1100 ~ 0x1112)
+             and V character is a modern vowel (0x1161 ~ 0x1175). */
           int LIndex, VIndex;
           LIndex = code - LBase;
           VIndex = PyUnicode_READ(kind, data, i+1) - VBase;
@@ -690,6 +692,8 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
           if (i < len &&
               TBase < PyUnicode_READ(kind, data, i) &&
               PyUnicode_READ(kind, data, i) < (TBase+TCount)) {
+              /* check T character is a modern trailing consonant
+                 (0x11A8 ~ 0x11C2). */
               code += PyUnicode_READ(kind, data, i)-TBase;
               i++;
           }
