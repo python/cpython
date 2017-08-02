@@ -997,6 +997,26 @@ class StreamHandler(Handler):
         except Exception:
             self.handleError(record)
 
+    def setStream(self, stream):
+        """
+        Sets the StreamHandler's stream to the specified value,
+        if it is different.
+
+        Returns the old stream, if the stream was changed, or None
+        if it wasn't.
+        """
+        if stream is self.stream:
+            result = None
+        else:
+            result = self.stream
+            self.acquire()
+            try:
+                self.flush()
+                self.stream = stream
+            finally:
+                self.release()
+        return result
+
     def __repr__(self):
         level = getLevelName(self.level)
         name = getattr(self.stream, 'name', '')
@@ -1244,6 +1264,19 @@ class Manager(object):
                 alogger.parent = c.parent
                 c.parent = alogger
 
+    def _clear_cache(self):
+        """
+        Clear the cache for all loggers in loggerDict
+        Called when level changes are made
+        """
+
+        _acquireLock()
+        for logger in self.loggerDict.values():
+            if isinstance(logger, Logger):
+                logger._cache.clear()
+        self.root._cache.clear()
+        _releaseLock()
+
 #---------------------------------------------------------------------------
 #   Logger classes and functions
 #---------------------------------------------------------------------------
@@ -1274,12 +1307,14 @@ class Logger(Filterer):
         self.propagate = True
         self.handlers = []
         self.disabled = False
+        self._cache = {}
 
     def setLevel(self, level):
         """
         Set the logging level of this logger.  level must be an int or a str.
         """
         self.level = _checkLevel(level)
+        self.manager._clear_cache()
 
     def debug(self, msg, *args, **kwargs):
         """
@@ -1543,9 +1578,17 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
-        if self.manager.disable >= level:
-            return False
-        return level >= self.getEffectiveLevel()
+        try:
+            return self._cache[level]
+        except KeyError:
+            _acquireLock()
+            if self.manager.disable >= level:
+                is_enabled = self._cache[level] = False
+            else:
+                is_enabled = self._cache[level] = level >= self.getEffectiveLevel()
+            _releaseLock()
+
+            return is_enabled
 
     def getChild(self, suffix):
         """
@@ -1686,9 +1729,7 @@ class LoggerAdapter(object):
         """
         Is this logger enabled for level 'level'?
         """
-        if self.logger.manager.disable >= level:
-            return False
-        return level >= self.getEffectiveLevel()
+        return self.logger.isEnabledFor(level)
 
     def setLevel(self, level):
         """
@@ -1910,6 +1951,7 @@ def disable(level=CRITICAL):
     Disable all logging calls of severity 'level' and below.
     """
     root.manager.disable = level
+    root.manager._clear_cache()
 
 def shutdown(handlerList=_handlerList):
     """

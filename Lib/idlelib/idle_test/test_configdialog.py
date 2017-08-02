@@ -9,9 +9,9 @@ requires('gui')
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
-from tkinter import Tk, IntVar, BooleanVar, DISABLED, NORMAL
+from tkinter import Tk, Frame, IntVar, BooleanVar, DISABLED, NORMAL
 from idlelib import config
-from idlelib.configdialog import ConfigDialog, idleConf, changes, VarTrace
+from idlelib.configdialog import idleConf, changes, tracers
 
 # Tests should not depend on fortuitous user configurations.
 # They must not affect actual user .cfg files.
@@ -35,19 +35,19 @@ def setUpModule():
     idleConf.userCfg = testcfg
     root = Tk()
     # root.withdraw()    # Comment out, see issue 30870
-    dialog = ConfigDialog(root, 'Test', _utest=True)
+    dialog = configdialog.ConfigDialog(root, 'Test', _utest=True)
 
 def tearDownModule():
     global root, dialog
     idleConf.userCfg = usercfg
-    dialog.remove_var_callbacks()
+    tracers.detach()
     del dialog
     root.update_idletasks()
     root.destroy()
     del root
 
 
-class FontTest(unittest.TestCase):
+class FontPageTest(unittest.TestCase):
     """Test that font widgets enable users to make font changes.
 
     Test that widget actions set vars, that var changes add three
@@ -56,11 +56,15 @@ class FontTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        dialog.set_samples = Func()  # Mask instance method.
+        page = cls.page = dialog.fontpage
+        #dialog.note.insert(0, page, text='copy')
+        #dialog.note.add(page, text='copyfgfg')
+        dialog.note.select(page)
+        page.set_samples = Func()  # Mask instance method.
 
     @classmethod
     def tearDownClass(cls):
-        del dialog.set_samples  # Unmask instance method.
+        del cls.page.set_samples  # Unmask instance method.
 
     def setUp(self):
         changes.clear()
@@ -68,7 +72,8 @@ class FontTest(unittest.TestCase):
     def test_load_font_cfg(self):
         # Leave widget load test to human visual check.
         # TODO Improve checks when add IdleConf.get_font_values.
-        d = dialog
+        tracers.detach()
+        d = self.page
         d.font_name.set('Fake')
         d.font_size.set('1')
         d.font_bold.set(True)
@@ -77,16 +82,17 @@ class FontTest(unittest.TestCase):
         self.assertNotEqual(d.font_name.get(), 'Fake')
         self.assertNotEqual(d.font_size.get(), '1')
         self.assertFalse(d.font_bold.get())
-        self.assertEqual(d.set_samples.called, 3)
+        self.assertEqual(d.set_samples.called, 1)
+        tracers.attach()
 
     def test_fontlist_key(self):
         # Up and Down keys should select a new font.
-
-        if dialog.fontlist.size() < 2:
-            cls.skipTest('need at least 2 fonts')
-        fontlist = dialog.fontlist
+        d = self.page
+        if d.fontlist.size() < 2:
+            self.skipTest('need at least 2 fonts')
+        fontlist = d.fontlist
         fontlist.activate(0)
-        font = dialog.fontlist.get('active')
+        font = d.fontlist.get('active')
 
         # Test Down key.
         fontlist.focus_force()
@@ -96,7 +102,7 @@ class FontTest(unittest.TestCase):
 
         down_font = fontlist.get('active')
         self.assertNotEqual(down_font, font)
-        self.assertIn(dialog.font_name.get(), down_font.lower())
+        self.assertIn(d.font_name.get(), down_font.lower())
 
         # Test Up key.
         fontlist.focus_force()
@@ -106,14 +112,14 @@ class FontTest(unittest.TestCase):
 
         up_font = fontlist.get('active')
         self.assertEqual(up_font, font)
-        self.assertIn(dialog.font_name.get(), up_font.lower())
+        self.assertIn(d.font_name.get(), up_font.lower())
 
     def test_fontlist_mouse(self):
         # Click on item should select that item.
-
-        if dialog.fontlist.size() < 2:
+        d = self.page
+        if d.fontlist.size() < 2:
             cls.skipTest('need at least 2 fonts')
-        fontlist = dialog.fontlist
+        fontlist = d.fontlist
         fontlist.activate(0)
 
         # Select next item in listbox
@@ -129,17 +135,17 @@ class FontTest(unittest.TestCase):
         font1 = fontlist.get(1)
         select_font = fontlist.get('anchor')
         self.assertEqual(select_font, font1)
-        self.assertIn(dialog.font_name.get(), font1.lower())
+        self.assertIn(d.font_name.get(), font1.lower())
 
     def test_sizelist(self):
         # Click on number shouod select that number
-        d = dialog
+        d = self.page
         d.sizelist.variable.set(40)
         self.assertEqual(d.font_size.get(), '40')
 
     def test_bold_toggle(self):
         # Click on checkbutton should invert it.
-        d = dialog
+        d = self.page
         d.font_bold.set(False)
         d.bold_toggle.invoke()
         self.assertTrue(d.font_bold.get())
@@ -154,7 +160,7 @@ class FontTest(unittest.TestCase):
         default_font = idleConf.GetFont(root, 'main', 'EditorWindow')
         default_size = str(default_font[1])
         default_bold = default_font[2] == 'bold'
-        d = dialog
+        d = self.page
         d.font_size.set(default_size)
         d.font_bold.set(default_bold)
         d.set_samples.called = 0
@@ -183,7 +189,7 @@ class FontTest(unittest.TestCase):
         self.assertEqual(d.set_samples.called, 3)
 
     def test_set_samples(self):
-        d = dialog
+        d = self.page
         del d.set_samples  # Unmask method for test
         d.font_sample, d.highlight_sample = {}, {}
         d.font_name.set('test')
@@ -201,16 +207,21 @@ class FontTest(unittest.TestCase):
 
 class IndentTest(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.page = dialog.fontpage
+
     def test_load_tab_cfg(self):
-        d = dialog
+        d = self.page
         d.space_num.set(16)
         d.load_tab_cfg()
         self.assertEqual(d.space_num.get(), 4)
 
     def test_indent_scale(self):
+        d = self.page
         changes.clear()
-        dialog.indent_scale.set(26)
-        self.assertEqual(dialog.space_num.get(), 16)
+        d.indent_scale.set(20)
+        self.assertEqual(d.space_num.get(), 16)
         self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
 
 
@@ -226,7 +237,7 @@ class KeysTest(unittest.TestCase):
         changes.clear()
 
 
-class GeneralTest(unittest.TestCase):
+class GenPageTest(unittest.TestCase):
     """Test that general tab widgets enable users to make changes.
 
     Test that widget actions set vars, that var changes add
@@ -234,18 +245,18 @@ class GeneralTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        # Mask instance methods used by help functions.
-        d = dialog
-        d.set = d.set_add_delete_state = Func()
-        d.upc = d.update_help_changes = Func()
+        page = cls.page = dialog.genpage
+        dialog.note.select(page)
+        page.set = page.set_add_delete_state = Func()
+        page.upc = page.update_help_changes = Func()
 
     @classmethod
     def tearDownClass(cls):
-        d = dialog
-        del d.set, d.set_add_delete_state
-        del d.upc, d.update_help_changes
-        d.helplist.delete(0, 'end')
-        d.user_helplist.clear()
+        page = cls.page
+        del page.set, page.set_add_delete_state
+        del page.upc, page.update_help_changes
+        page.helplist.delete(0, 'end')
+        page.user_helplist.clear()
 
     def setUp(self):
         changes.clear()
@@ -253,7 +264,7 @@ class GeneralTest(unittest.TestCase):
     def test_load_general_cfg(self):
         # Set to wrong values, load, check right values.
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         d.startup_edit.set(1)
         d.autosave.set(1)
         d.win_width.set(1)
@@ -270,42 +281,48 @@ class GeneralTest(unittest.TestCase):
         eq(d.user_helplist, [('name', 'file', '1')])
 
     def test_startup(self):
-        dialog.startup_editor_on.invoke()
+        d = self.page
+        d.startup_editor_on.invoke()
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '1'}})
         changes.clear()
-        dialog.startup_shell_on.invoke()
+        d.startup_shell_on.invoke()
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '0'}})
 
     def test_autosave(self):
-        dialog.save_auto_on.invoke()
+        d = self.page
+        d.save_auto_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '1'}})
-        dialog.save_ask_on.invoke()
+        d.save_ask_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
     def test_editor_size(self):
-        dialog.win_height_int.insert(0, '1')
+        d = self.page
+        d.win_height_int.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
         changes.clear()
-        dialog.win_width_int.insert(0, '1')
+        d.win_width_int.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
 
     def test_source_selected(self):
-        d = dialog
+        d = self.page
         d.set = d.set_add_delete_state
         d.upc = d.update_help_changes
         helplist = d.helplist
-        helplist.insert(0, 'source')
-        helplist.activate(0)
+        dex = 'end'
+        helplist.insert(dex, 'source')
+        helplist.activate(dex)
 
         helplist.focus_force()
-        helplist.see(0)
+        helplist.see(dex)
         helplist.update()
-        x, y, dx, dy = helplist.bbox(0)
+        x, y, dx, dy = helplist.bbox(dex)
         x += dx // 2
         y += dy // 2
         d.set.called = d.upc.called = 0
+        helplist.event_generate('<Enter>', x=0, y=0)
+        helplist.event_generate('<Motion>', x=x, y=y)
         helplist.event_generate('<Button-1>', x=x, y=y)
         helplist.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.assertEqual(helplist.get('anchor'), 'source')
@@ -315,7 +332,7 @@ class GeneralTest(unittest.TestCase):
     def test_set_add_delete_state(self):
         # Call with 0 items, 1 unselected item, 1 selected item.
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         del d.set_add_delete_state  # Unmask method.
         sad = d.set_add_delete_state
         h = d.helplist
@@ -342,7 +359,7 @@ class GeneralTest(unittest.TestCase):
         eq = self.assertEqual
         orig_helpsource = configdialog.HelpSource
         hs = configdialog.HelpSource = Func(return_self=True)
-        d = dialog
+        d = self.page
         d.helplist.delete(0, 'end')
         d.user_helplist.clear()
         d.set.called = d.upc.called = 0
@@ -369,7 +386,7 @@ class GeneralTest(unittest.TestCase):
         eq = self.assertEqual
         orig_helpsource = configdialog.HelpSource
         hs = configdialog.HelpSource = Func(return_self=True)
-        d = dialog
+        d = self.page
         d.helplist.delete(0, 'end')
         d.helplist.insert(0, 'name1')
         d.helplist.selection_set(0)
@@ -396,7 +413,7 @@ class GeneralTest(unittest.TestCase):
 
     def test_helplist_item_remove(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         d.helplist.delete(0, 'end')
         d.helplist.insert(0, 'name1')
         d.helplist.selection_set(0)
@@ -411,7 +428,7 @@ class GeneralTest(unittest.TestCase):
         self.assertTrue(d.upc.called == d.set.called == 1)
 
     def test_update_help_changes(self):
-        d = dialog
+        d = self.page
         del d.update_help_changes
         d.user_helplist.clear()
         d.user_helplist.append(('name1', 'file1'))
@@ -419,18 +436,18 @@ class GeneralTest(unittest.TestCase):
 
         d.update_help_changes()
         self.assertEqual(mainpage['HelpFiles'],
-                        {'1': 'name1;file1', '2': 'name2;file2'})
+                         {'1': 'name1;file1', '2': 'name2;file2'})
         d.update_help_changes = Func()
 
 
-class TestVarTrace(unittest.TestCase):
+class VarTraceTest(unittest.TestCase):
 
     def setUp(self):
         changes.clear()
+        tracers.clear()
         self.v1 = IntVar(root)
         self.v2 = BooleanVar(root)
         self.called = 0
-        self.tracers = VarTrace()
 
     def tearDown(self):
         del self.v1, self.v2
@@ -442,11 +459,19 @@ class TestVarTrace(unittest.TestCase):
         pass
 
     def test_init(self):
-        self.assertEqual(self.tracers.untraced, [])
-        self.assertEqual(self.tracers.traced, [])
+        tracers.__init__()
+        self.assertEqual(tracers.untraced, [])
+        self.assertEqual(tracers.traced, [])
+
+    def test_clear(self):
+        tracers.untraced.append(0)
+        tracers.traced.append(1)
+        tracers.clear()
+        self.assertEqual(tracers.untraced, [])
+        self.assertEqual(tracers.traced, [])
 
     def test_add(self):
-        tr = self.tracers
+        tr = tracers
         func = Func()
         cb = tr.make_callback = mock.Mock(return_value=func)
 
@@ -469,8 +494,7 @@ class TestVarTrace(unittest.TestCase):
         del tr.make_callback
 
     def test_make_callback(self):
-        tr = self.tracers
-        cb = tr.make_callback(self.v1, ('main', 'section', 'option'))
+        cb = tracers.make_callback(self.v1, ('main', 'section', 'option'))
         self.assertTrue(callable(cb))
         self.v1.set(42)
         # Not attached, so set didn't invoke the callback.
@@ -481,7 +505,7 @@ class TestVarTrace(unittest.TestCase):
         self.assertEqual(changes['main']['section']['option'], '42')
 
     def test_attach_detach(self):
-        tr = self.tracers
+        tr = tracers
         v1 = tr.add(self.v1, self.var_changed_increment)
         v2 = tr.add(self.v2, self.var_changed_boolean)
         expected = [(v1, self.var_changed_increment),
