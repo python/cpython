@@ -19,6 +19,9 @@ class WithPrivate(object):
 class _WithLeadingUnderscoreAndPrivate(object):
     __slots__ = ('__spam',)
 
+class ___(object):
+    __slots__ = ('__spam',)
+
 class WithSingleString(object):
     __slots__ = 'spam'
 
@@ -110,6 +113,7 @@ class CopyRegTestCase(unittest.TestCase):
         expected = ['_WithLeadingUnderscoreAndPrivate__spam']
         self.assertEqual(copyreg._slotnames(_WithLeadingUnderscoreAndPrivate),
                          expected)
+        self.assertEqual(copyreg._slotnames(___), ['__spam'])
         self.assertEqual(copyreg._slotnames(WithSingleString), ['spam'])
         expected = ['eggs', 'spam']
         expected.sort()
