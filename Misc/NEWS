@@ -454,7 +454,7 @@ Library
   Rodola'.
 
 - bpo-30595: multiprocessing.Queue.get() with a timeout now polls its reader in
-  non-blocking mode if it succeeded to aquire the lock but the acquire took
+  non-blocking mode if it succeeded to acquire the lock but the acquire took
   longer than the timeout.
 
 - bpo-28556: Updates to typing module: Add generic AsyncContextManager, add
@@ -892,7 +892,7 @@ Library
   re.sub() replacement templates regular expressions now are errors.
 
 - Issue #28835: Fix a regression introduced in warnings.catch_warnings():
-  call warnings.showwarning() if it was overriden inside the context manager.
+  call warnings.showwarning() if it was overridden inside the context manager.
 
 - Issue #27172: To assist with upgrades from 2.7, the previously documented
   deprecation of ``inspect.getfullargspec()`` has been reversed. This decision
@@ -1680,7 +1680,7 @@ Library
   again.  But they still are deprecated and will be disabled in 3.7.
 
 - Issue #28835: Fix a regression introduced in warnings.catch_warnings():
-  call warnings.showwarning() if it was overriden inside the context manager.
+  call warnings.showwarning() if it was overridden inside the context manager.
 
 - Issue #27172: To assist with upgrades from 2.7, the previously documented
   deprecation of ``inspect.getfullargspec()`` has been reversed. This decision
