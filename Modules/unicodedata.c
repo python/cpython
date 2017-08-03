@@ -1280,40 +1280,48 @@ typedef struct {
     Py_ssize_t pos;
 } GraphemeClusterIterator;
 
-void GCI_Del(PyObject* x)
+static void
+GCI_dealloc(GraphemeClusterIterator *it)
 {
-    GraphemeClusterIterator *i = (GraphemeClusterIterator *)x;
-    Py_DECREF(i->str);
-    PyObject_Del(x);
+    PyObject_GC_UnTrack(it);
+    Py_DECREF(it->str);
+    PyObject_GC_Del(it);
 }
 
-static PyObject* GCI_iter(PyObject *self)
+static int
+GCI_traverse(GraphemeClusterIterator *it, visitproc visit, void *arg) {
+    Py_VISIT(it->str);
+    return 0;
+}
+
+static int
+GCI_clear(GraphemeClusterIterator *self)
 {
-    Py_INCREF(self);
-    return self;
+    Py_CLEAR(self->str);
+    return 0;
 }
 
 #include "grapheme_cluster_break_automaton.h"
 
-PyObject* GCI_iternext(PyObject *self)
+static PyObject *
+GCI_iternext(GraphemeClusterIterator *self)
 {
-    GraphemeClusterIterator *p = (GraphemeClusterIterator *)self;
-    int kind = PyUnicode_KIND(p->str);
-    void *pstr = PyUnicode_DATA(p->str);
-    if (PyUnicode_READ(kind, pstr, p->pos)) {
-        int start = p->pos;
+    int kind = PyUnicode_KIND(self->str);
+    void *pstr = PyUnicode_DATA(self->str);
+    if (PyUnicode_READ(kind, pstr, self->pos)) {
+        int start = self->pos;
         GCBState s = STATE_sot;
         while (1) {
-            if (!PyUnicode_READ(kind, pstr, p->pos)) {
-                return PyUnicode_Substring(p->str, start, p->pos);
+            if (!PyUnicode_READ(kind, pstr, self->pos)) {
+                return PyUnicode_Substring(self->str, start, self->pos);
             }
-            Py_UCS4 chr = PyUnicode_READ(kind, pstr, p->pos);
+            Py_UCS4 chr = PyUnicode_READ(kind, pstr, self->pos);
             int prop = _getrecord_ex(chr)->grapheme_cluster_break;
             s = GRAPH_CLUSTER_AUTOMATON[s][prop];
             if (s == STATE_BREAK) {
-                return PyUnicode_Substring(p->str, start, p->pos);
+                return PyUnicode_Substring(self->str, start, self->pos);
             }
-            ++p->pos;
+            ++self->pos;
         }
     } else {
         return NULL;
@@ -1324,11 +1332,13 @@ static PyTypeObject GraphemeClusterIteratorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "unicodedata.GraphemeClusterIterator",
     .tp_basicsize = sizeof(GraphemeClusterIterator),
-    .tp_dealloc = (destructor)GCI_Del,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_dealloc = (destructor)GCI_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_doc = "Internal grapheme cluster iterator object.",
-    .tp_iter = GCI_iter,
-    .tp_iternext = GCI_iternext
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)GCI_iternext,
+    .tp_traverse = (traverseproc)GCI_traverse,
+    .tp_clear = (inquiry)GCI_clear
 };
 
 /*[clinic input]
@@ -1347,7 +1357,7 @@ static PyObject *
 unicodedata_UCD_iter_graphemes_impl(PyObject *self, PyObject *unistr)
 /*[clinic end generated code: output=92374c1d94db4165 input=59c4794a7f2e6742]*/
 {
-    GraphemeClusterIterator *gci = PyObject_New(GraphemeClusterIterator,
+    GraphemeClusterIterator *gci = PyObject_GC_New(GraphemeClusterIterator,
             &GraphemeClusterIteratorType);
 
     if (!gci)
@@ -1355,6 +1365,7 @@ unicodedata_UCD_iter_graphemes_impl(PyObject *self, PyObject *unistr)
 
     gci->str = unistr;
     Py_INCREF(unistr);
+    PyObject_GC_Track(gci);
     gci->pos = 0;
     return (PyObject*)gci;
 }
