@@ -5,7 +5,7 @@ These fuzz tests are designed to be included in Google's `oss-fuzz`_ project.
 
 oss-fuzz works against a library exposing a function of the form
 ``int LLVMFuzzerTestOneInput(const uint8_t* data, size_t length)``. We provide
-that library (``fuzzer.cpp``), and include a ``_fuzz`` module for testing with
+that library (``fuzzer.c``), and include a ``_fuzz`` module for testing with
 some toy values -- no fuzzing occurs in Python's test suite.
 
 Adding a new fuzz test
@@ -13,7 +13,7 @@ Adding a new fuzz test
 
 Add the test name on a new line in ``fuzz_tests.txt``.
 
-In ``fuzzer.cpp``, add a function to be run::
+In ``fuzzer.c``, add a function to be run::
 
     int $test_name (const char* data, size_t size) {
         ...

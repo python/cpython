@@ -84,7 +84,7 @@ static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* 
 }
 
 /* CPython generates a lot of leak warnings for whatever reason. */
-extern "C" int __lsan_is_turned_off(void) { return 1; }
+int __lsan_is_turned_off(void) { return 1; }
 
 /* Fuzz test interface.
    This returns the bitwise or of all fuzz test's return values.
@@ -93,7 +93,7 @@ extern "C" int __lsan_is_turned_off(void) { return 1; }
    future use -- we propagate the return values for that future case.
    (And we bitwise or when running multiple tests to verify that normally we
    only return 0.) */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     if (!Py_IsInitialized()) {
         /* LLVMFuzzerTestOneInput is called repeatedly from the same process,
            with no separate initialization phase, sadly, so we need to
