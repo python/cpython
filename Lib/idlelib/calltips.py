@@ -136,29 +136,19 @@ def get_argspec(ob):
     empty line or _MAX_LINES.    For builtins, this typically includes
     the arguments in addition to the return value.
     '''
-    argspec = ""
+    argspec = default = ""
     try:
         ob_call = ob.__call__
     except BaseException:
-        return argspec
-    if isinstance(ob_call, types.MethodType):
-        fob = ob_call
-    else:
-        fob = ob
+        return default
+
+    fob = ob_call if isinstance(ob_call, types.MethodType) else ob
 
     try:
         argspec = str(inspect.signature(fob))
     except ValueError as err:
         msg = str(err)
-        if msg.startswith(_invalid_method):
-            argspec = _invalid_method
-            return argspec
-        elif msg.startswith('no signature found for'):
-            """If no signature found for function or method"""
-            pass
-        else:
-            """Callable is not supported by signature"""
-            pass
+        return _invalid_method if msg.startswith(_invalid_method) else default
 
     if '/' in argspec:
         """Using AC's positional argument should add the explain"""
