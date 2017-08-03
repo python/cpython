@@ -1277,7 +1277,7 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
 typedef struct {
     PyObject_HEAD
     PyObject* str;
-    int pos;
+    Py_ssize_t pos;
 } GraphemeClusterIterator;
 
 void GCI_Del(PyObject* x)
@@ -1322,36 +1322,17 @@ PyObject* GCI_iternext(PyObject *self)
 
 static PyTypeObject GraphemeClusterIteratorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "unicodedata.GraphemeClusterIterator", /*tp_name*/
-    sizeof(GraphemeClusterIterator),       /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor)GCI_Del,       /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,
-    "Internal grapheme cluster iterator object.",           /* tp_doc */
-    0,  /* tp_traverse */
-    0,  /* tp_clear */
-    0,  /* tp_richcompare */
-    0,  /* tp_weaklistoffset */
-    GCI_iter,  /* tp_iter: __iter__() method */
-    GCI_iternext  /* tp_iternext: next() method */
+    .tp_name = "unicodedata.GraphemeClusterIterator",
+    .tp_basicsize = sizeof(GraphemeClusterIterator),
+    .tp_dealloc = (destructor)GCI_Del,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_doc = "Internal grapheme cluster iterator object.",
+    .tp_iter = GCI_iter,
+    .tp_iternext = GCI_iternext
 };
 
 /*[clinic input]
-unicodedata.UCD.break_graphemes
+unicodedata.UCD.iter_graphemes
 
     self: self
     unistr: unicode
@@ -1363,8 +1344,8 @@ It uses extended grapheme cluster rules from TR29.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_break_graphemes_impl(PyObject *self, PyObject *unistr)
-/*[clinic end generated code: output=3da536db1b0e5b12 input=d054bb6f190f6dc8]*/
+unicodedata_UCD_iter_graphemes_impl(PyObject *self, PyObject *unistr)
+/*[clinic end generated code: output=92374c1d94db4165 input=59c4794a7f2e6742]*/
 {
     GraphemeClusterIterator *gci = PyObject_New(GraphemeClusterIterator,
             &GraphemeClusterIteratorType);
@@ -1394,7 +1375,7 @@ static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_UCD_NAME_METHODDEF
     UNICODEDATA_UCD_LOOKUP_METHODDEF
     UNICODEDATA_UCD_NORMALIZE_METHODDEF
-    UNICODEDATA_UCD_BREAK_GRAPHEMES_METHODDEF
+    UNICODEDATA_UCD_ITER_GRAPHEMES_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 
