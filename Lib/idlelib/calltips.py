@@ -158,7 +158,7 @@ def get_argspec(ob):
         argspec = _default_callable_argspec
 
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
-            if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
+             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
 
     if isinstance(ob_call, types.MethodType):
         doc = ob_call.__doc__
@@ -176,6 +176,7 @@ def get_argspec(ob):
     if not argspec:
         argspec = _default_callable_argspec
     return argspec
+
 
 if __name__ == '__main__':
     from unittest import main
