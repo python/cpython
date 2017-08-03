@@ -52,7 +52,7 @@ Cancellation
 ------------
 
 Cancellation of tasks is not common in classic programming. In asynchronous
-programming, not only it is something common, but you have to prepare your
+programming, not only is it something common, but you have to prepare your
 code to handle it.
 
 Futures and tasks can be cancelled explicitly with their :meth:`Future.cancel`
