@@ -1598,19 +1598,19 @@ class ExecTests(unittest.TestCase):
     def test_execve_invalid_env(self):
         args = [sys.executable, '-c', 'pass']
 
-        # null character in the enviroment variable name
+        # null character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
-        # null character in the enviroment variable value
+        # null character in the environment variable value
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
-        # equal character in the enviroment variable name
+        # equal character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT=ORANGE"] = "lemon"
         with self.assertRaises(ValueError):
@@ -2430,7 +2430,7 @@ class SpawnTests(unittest.TestCase):
     def _test_invalid_env(self, spawn):
         args = [sys.executable, '-c', 'pass']
 
-        # null character in the enviroment variable name
+        # null character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
         try:
@@ -2440,7 +2440,7 @@ class SpawnTests(unittest.TestCase):
         else:
             self.assertEqual(exitcode, 127)
 
-        # null character in the enviroment variable value
+        # null character in the environment variable value
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
         try:
@@ -2450,7 +2450,7 @@ class SpawnTests(unittest.TestCase):
         else:
             self.assertEqual(exitcode, 127)
 
-        # equal character in the enviroment variable name
+        # equal character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT=ORANGE"] = "lemon"
         try:
@@ -2460,7 +2460,7 @@ class SpawnTests(unittest.TestCase):
         else:
             self.assertEqual(exitcode, 127)
 
-        # equal character in the enviroment variable value
+        # equal character in the environment variable value
         filename = support.TESTFN
         self.addCleanup(support.unlink, filename)
         with open(filename, "w") as fp:

@@ -347,7 +347,7 @@ ddmul756 multiply  1e-277 -1e-311 -> -0E-398 Underflow Subnormal Inexact Rounded
 ddmul757 multiply -1e-277  1e-311 -> -0E-398 Underflow Subnormal Inexact Rounded Clamped
 ddmul758 multiply -1e-277 -1e-311 ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
 
--- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+-- 'subnormal' boundary (all hard underflow or overflow in base arithmetic)
 ddmul760 multiply 1e-291 1e-101 -> 1E-392 Subnormal
 ddmul761 multiply 1e-291 1e-102 -> 1E-393 Subnormal
 ddmul762 multiply 1e-291 1e-103 -> 1E-394 Subnormal

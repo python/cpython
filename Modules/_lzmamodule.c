@@ -824,7 +824,7 @@ PyDoc_STRVAR(Compressor_doc,
 "be FORMAT_XZ (default), FORMAT_ALONE, or FORMAT_RAW.\n"
 "\n"
 "check specifies the integrity check to use. For FORMAT_XZ, the default\n"
-"is CHECK_CRC64. FORMAT_ALONE and FORMAT_RAW do not suport integrity\n"
+"is CHECK_CRC64. FORMAT_ALONE and FORMAT_RAW do not support integrity\n"
 "checks; for these formats, check must be omitted, or be CHECK_NONE.\n"
 "\n"
 "The settings used by the compressor can be specified either as a\n"

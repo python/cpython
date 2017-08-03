@@ -1227,7 +1227,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_Encode(
 /* Encodes a Unicode object and returns the result as Python
    object.
 
-   This API is DEPRECATED.  It is superceeded by PyUnicode_AsEncodedString()
+   This API is DEPRECATED.  It is superseded by PyUnicode_AsEncodedString()
    since all standard encodings (except rot13) encode str to bytes.
    Use PyCodec_Encode() for encoding with rot13 and non-standard codecs
    that encode form str to non-bytes. */
