@@ -410,6 +410,7 @@ zipimport.zipimporter.find_module
 
     fullname: unicode
     path: object = None
+    /
 
 Search for a module specified by 'fullname'.
 
@@ -423,7 +424,7 @@ with the importer protocol.
 static PyObject *
 zipimport_zipimporter_find_module_impl(ZipImporter *self, PyObject *fullname,
                                        PyObject *path)
-/*[clinic end generated code: output=506087f609466dc7 input=055d020601e2f0f2]*/
+/*[clinic end generated code: output=506087f609466dc7 input=e3528520e075063f]*/
 {
     PyObject *namespace_portion = NULL;
     PyObject *result = NULL;
@@ -455,6 +456,7 @@ zipimport.zipimporter.find_loader
 
     fullname: unicode
     path: object = None
+    /
 
 Search for a module specified by 'fullname'.
 
@@ -470,7 +472,7 @@ there for compatibility with the importer protocol.
 static PyObject *
 zipimport_zipimporter_find_loader_impl(ZipImporter *self, PyObject *fullname,
                                        PyObject *path)
-/*[clinic end generated code: output=601599a43bc0f49a input=00f8324806b63cea]*/
+/*[clinic end generated code: output=601599a43bc0f49a input=77c1391f92186397]*/
 {
     PyObject *result = NULL;
     PyObject *namespace_portion = NULL;
@@ -499,6 +501,7 @@ zipimport_zipimporter_find_loader_impl(ZipImporter *self, PyObject *fullname,
 zipimport.zipimporter.load_module
 
     fullname: unicode
+    /
 
 Load the module specified by 'fullname'.
 
@@ -509,7 +512,7 @@ imported module, or raises ZipImportError if it wasn't found.
 
 static PyObject *
 zipimport_zipimporter_load_module_impl(ZipImporter *self, PyObject *fullname)
-/*[clinic end generated code: output=7303cebf88d47953 input=4f501c45d49fdc7e]*/
+/*[clinic end generated code: output=7303cebf88d47953 input=c236e2e8621f04ef]*/
 {
     PyObject *code = NULL, *mod, *dict;
     PyObject *modpath = NULL;
@@ -576,6 +579,7 @@ error:
 zipimport.zipimporter.get_filename
 
     fullname: unicode
+    /
 
 Return the filename for the specified module.
 [clinic start generated code]*/
@@ -583,7 +587,7 @@ Return the filename for the specified module.
 static PyObject *
 zipimport_zipimporter_get_filename_impl(ZipImporter *self,
                                         PyObject *fullname)
-/*[clinic end generated code: output=c5b92b58bea86506 input=65c22eeec704b116]*/
+/*[clinic end generated code: output=c5b92b58bea86506 input=28d2eb57e4f25c8a]*/
 {
     PyObject *code, *modpath;
     int ispackage;
@@ -602,6 +606,7 @@ zipimport_zipimporter_get_filename_impl(ZipImporter *self,
 zipimport.zipimporter.is_package
 
     fullname: unicode
+    /
 
 Return True if the module specified by fullname is a package.
 
@@ -611,7 +616,7 @@ Raise ZipImportError if the module couldn't be found.
 
 static PyObject *
 zipimport_zipimporter_is_package_impl(ZipImporter *self, PyObject *fullname)
-/*[clinic end generated code: output=c32958c2a5216ae6 input=6bfc4d21ddab5349]*/
+/*[clinic end generated code: output=c32958c2a5216ae6 input=a7ba752f64345062]*/
 {
     enum zi_module_info mi;
 
@@ -630,6 +635,7 @@ zipimport_zipimporter_is_package_impl(ZipImporter *self, PyObject *fullname)
 zipimport.zipimporter.get_data
 
     pathname: unicode
+    /
 
 Return the data associated with 'pathname'.
 
@@ -639,7 +645,7 @@ Raise OSError if the file was not found.
 
 static PyObject *
 zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *pathname)
-/*[clinic end generated code: output=60ac5738d2301ab4 input=6473ff31b436a5f3]*/
+/*[clinic end generated code: output=60ac5738d2301ab4 input=284503685aac3c03]*/
 {
     PyObject *key;
     PyObject *toc_entry;
@@ -685,6 +691,7 @@ zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *pathname)
 zipimport.zipimporter.get_code
 
     fullname: unicode
+    /
 
 Return the code object for the specified module.
 
@@ -694,7 +701,7 @@ Raise ZipImportError if the module couldn't be found.
 
 static PyObject *
 zipimport_zipimporter_get_code_impl(ZipImporter *self, PyObject *fullname)
-/*[clinic end generated code: output=b923c37fa99cbac4 input=661c5acb51f85de3]*/
+/*[clinic end generated code: output=b923c37fa99cbac4 input=2761412bc37f3549]*/
 {
     return get_module_code(self, fullname, NULL, NULL);
 }
@@ -703,6 +710,7 @@ zipimport_zipimporter_get_code_impl(ZipImporter *self, PyObject *fullname)
 zipimport.zipimporter.get_source
 
     fullname: unicode
+    /
 
 Return the source code for the specified module.
 
@@ -713,7 +721,7 @@ archive does contain the module, but has no source for it.
 
 static PyObject *
 zipimport_zipimporter_get_source_impl(ZipImporter *self, PyObject *fullname)
-/*[clinic end generated code: output=bc059301b0c33729 input=4482096413fa1c81]*/
+/*[clinic end generated code: output=bc059301b0c33729 input=4e4b186f2e690716]*/
 {
     PyObject *toc_entry;
     PyObject *subname, *path, *fullpath;

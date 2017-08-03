@@ -47,7 +47,7 @@ exit:
 }
 
 PyDoc_STRVAR(zipimport_zipimporter_find_module__doc__,
-"find_module($self, /, fullname, path=None)\n"
+"find_module($self, fullname, path=None, /)\n"
 "--\n"
 "\n"
 "Search for a module specified by \'fullname\'.\n"
@@ -58,22 +58,20 @@ PyDoc_STRVAR(zipimport_zipimporter_find_module__doc__,
 "with the importer protocol.");
 
 #define ZIPIMPORT_ZIPIMPORTER_FIND_MODULE_METHODDEF    \
-    {"find_module", (PyCFunction)zipimport_zipimporter_find_module, METH_FASTCALL|METH_KEYWORDS, zipimport_zipimporter_find_module__doc__},
+    {"find_module", (PyCFunction)zipimport_zipimporter_find_module, METH_FASTCALL, zipimport_zipimporter_find_module__doc__},
 
 static PyObject *
 zipimport_zipimporter_find_module_impl(ZipImporter *self, PyObject *fullname,
                                        PyObject *path);
 
 static PyObject *
-zipimport_zipimporter_find_module(ZipImporter *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zipimport_zipimporter_find_module(ZipImporter *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"fullname", "path", NULL};
-    static _PyArg_Parser _parser = {"U|O:find_module", _keywords, 0};
     PyObject *fullname;
     PyObject *path = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, "U|O:find_module",
         &fullname, &path)) {
         goto exit;
     }
@@ -84,7 +82,7 @@ exit:
 }
 
 PyDoc_STRVAR(zipimport_zipimporter_find_loader__doc__,
-"find_loader($self, /, fullname, path=None)\n"
+"find_loader($self, fullname, path=None, /)\n"
 "--\n"
 "\n"
 "Search for a module specified by \'fullname\'.\n"
@@ -97,22 +95,20 @@ PyDoc_STRVAR(zipimport_zipimporter_find_loader__doc__,
 "there for compatibility with the importer protocol.");
 
 #define ZIPIMPORT_ZIPIMPORTER_FIND_LOADER_METHODDEF    \
-    {"find_loader", (PyCFunction)zipimport_zipimporter_find_loader, METH_FASTCALL|METH_KEYWORDS, zipimport_zipimporter_find_loader__doc__},
+    {"find_loader", (PyCFunction)zipimport_zipimporter_find_loader, METH_FASTCALL, zipimport_zipimporter_find_loader__doc__},
 
 static PyObject *
 zipimport_zipimporter_find_loader_impl(ZipImporter *self, PyObject *fullname,
                                        PyObject *path);
 
 static PyObject *
-zipimport_zipimporter_find_loader(ZipImporter *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zipimport_zipimporter_find_loader(ZipImporter *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"fullname", "path", NULL};
-    static _PyArg_Parser _parser = {"U|O:find_loader", _keywords, 0};
     PyObject *fullname;
     PyObject *path = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, "U|O:find_loader",
         &fullname, &path)) {
         goto exit;
     }
@@ -123,7 +119,7 @@ exit:
 }
 
 PyDoc_STRVAR(zipimport_zipimporter_load_module__doc__,
-"load_module($self, /, fullname)\n"
+"load_module($self, fullname, /)\n"
 "--\n"
 "\n"
 "Load the module specified by \'fullname\'.\n"
@@ -132,21 +128,18 @@ PyDoc_STRVAR(zipimport_zipimporter_load_module__doc__,
 "imported module, or raises ZipImportError if it wasn\'t found.");
 
 #define ZIPIMPORT_ZIPIMPORTER_LOAD_MODULE_METHODDEF    \
-    {"load_module", (PyCFunction)zipimport_zipimporter_load_module, METH_FASTCALL|METH_KEYWORDS, zipimport_zipimporter_load_module__doc__},
+    {"load_module", (PyCFunction)zipimport_zipimporter_load_module, METH_O, zipimport_zipimporter_load_module__doc__},
 
 static PyObject *
 zipimport_zipimporter_load_module_impl(ZipImporter *self, PyObject *fullname);
 
 static PyObject *
-zipimport_zipimporter_load_module(ZipImporter *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zipimport_zipimporter_load_module(ZipImporter *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"fullname", NULL};
-    static _PyArg_Parser _parser = {"U:load_module", _keywords, 0};
     PyObject *fullname;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fullname)) {
+    if (!PyArg_Parse(arg, "U:load_module", &fullname)) {
         goto exit;
     }
     return_value = zipimport_zipimporter_load_module_impl(self, fullname);
@@ -156,28 +149,25 @@ exit:
 }
 
 PyDoc_STRVAR(zipimport_zipimporter_get_filename__doc__,
-"get_filename($self, /, fullname)\n"
+"get_filename($self, fullname, /)\n"
 "--\n"
 "\n"
 "Return the filename for the specified module.");
 
 #define ZIPIMPORT_ZIPIMPORTER_GET_FILENAME_METHODDEF    \
-    {"get_filename", (PyCFunction)zipimport_zipimporter_get_filename, METH_FASTCALL|METH_KEYWORDS, zipimport_zipimporter_get_filename__doc__},
+    {"get_filename", (PyCFunction)zipimport_zipimporter_get_filename, METH_O, zipimport_zipimporter_get_filename__doc__},
 
 static PyObject *
 zipimport_zipimporter_get_filename_impl(ZipImporter *self,
                                         PyObject *fullname);
 
 static PyObject *
-zipimport_zipimporter_get_filename(ZipImporter *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zipimport_zipimporter_get_filename(ZipImporter *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"fullname", NULL};
-    static _PyArg_Parser _parser = {"U:get_filename", _keywords, 0};
     PyObject *fullname;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fullname)) {
+    if (!PyArg_Parse(arg, "U:get_filename", &fullname)) {
         goto exit;
     }
     return_value = zipimport_zipimporter_get_filename_impl(self, fullname);
@@ -187,7 +177,7 @@ exit:
 }
 
 PyDoc_STRVAR(zipimport_zipimporter_is_package__doc__,
-"is_package($self, /, fullname)\n"
+"is_package($self, fullname, /)\n"
 "--\n"
 "\n"
 "Return True if the module specified by fullname is a package.\n"
@@ -195,21 +185,18 @@ PyDoc_STRVAR(zipimport_zipimporter_is_package__doc__,
 "Raise ZipImportError if the module couldn\'t be found.");
 
 #define ZIPIMPORT_ZIPIMPORTER_IS_PACKAGE_METHODDEF    \
-    {"is_package", (PyCFunction)zipimport_zipimporter_is_package, METH_FASTCALL|METH_KEYWORDS, zipimport_zipimporter_is_package__doc__},
+    {"is_package", (PyCFunction)zipimport_zipimporter_is_package, METH_O, zipimport_zipimporter_is_package__doc__},
 
 static PyObject *
 zipimport_zipimporter_is_package_impl(ZipImporter *self, PyObject *fullname);
 
 static PyObject *
-zipimport_zipimporter_is_package(ZipImporter *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zipimport_zipimporter_is_package(ZipImporter *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"fullname", NULL};
-    static _PyArg_Parser _parser = {"U:is_package", _keywords, 0};
     PyObject *fullname;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fullname)) {
+    if (!PyArg_Parse(arg, "U:is_package", &fullname)) {
         goto exit;
     }
     return_value = zipimport_zipimporter_is_package_impl(self, fullname);
@@ -219,7 +206,7 @@ exit:
 }
 
 PyDoc_STRVAR(zipimport_zipimporter_get_data__doc__,
-"get_data($self, /, pathname)\n"
+"get_data($self, pathname, /)\n"
 "--\n"
 "\n"
 "Return the data associated with \'pathname\'.\n"
@@ -227,21 +214,18 @@ PyDoc_STRVAR(zipimport_zipimporter_get_data__doc__,
 "Raise OSError if the file was not found.");
 
 #define ZIPIMPORT_ZIPIMPORTER_GET_DATA_METHODDEF    \
-    {"get_data", (PyCFunction)zipimport_zipimporter_get_data, METH_FASTCALL|METH_KEYWORDS, zipimport_zipimporter_get_data__doc__},
+    {"get_data", (PyCFunction)zipimport_zipimporter_get_data, METH_O, zipimport_zipimporter_get_data__doc__},
 
 static PyObject *
 zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *pathname);
 
 static PyObject *
-zipimport_zipimporter_get_data(ZipImporter *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zipimport_zipimporter_get_data(ZipImporter *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"pathname", NULL};
-    static _PyArg_Parser _parser = {"U:get_data", _keywords, 0};
     PyObject *pathname;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &pathname)) {
+    if (!PyArg_Parse(arg, "U:get_data", &pathname)) {
         goto exit;
     }
     return_value = zipimport_zipimporter_get_data_impl(self, pathname);
@@ -251,7 +235,7 @@ exit:
 }
 
 PyDoc_STRVAR(zipimport_zipimporter_get_code__doc__,
-"get_code($self, /, fullname)\n"
+"get_code($self, fullname, /)\n"
 "--\n"
 "\n"
 "Return the code object for the specified module.\n"
@@ -259,21 +243,18 @@ PyDoc_STRVAR(zipimport_zipimporter_get_code__doc__,
 "Raise ZipImportError if the module couldn\'t be found.");
 
 #define ZIPIMPORT_ZIPIMPORTER_GET_CODE_METHODDEF    \
-    {"get_code", (PyCFunction)zipimport_zipimporter_get_code, METH_FASTCALL|METH_KEYWORDS, zipimport_zipimporter_get_code__doc__},
+    {"get_code", (PyCFunction)zipimport_zipimporter_get_code, METH_O, zipimport_zipimporter_get_code__doc__},
 
 static PyObject *
 zipimport_zipimporter_get_code_impl(ZipImporter *self, PyObject *fullname);
 
 static PyObject *
-zipimport_zipimporter_get_code(ZipImporter *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zipimport_zipimporter_get_code(ZipImporter *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"fullname", NULL};
-    static _PyArg_Parser _parser = {"U:get_code", _keywords, 0};
     PyObject *fullname;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fullname)) {
+    if (!PyArg_Parse(arg, "U:get_code", &fullname)) {
         goto exit;
     }
     return_value = zipimport_zipimporter_get_code_impl(self, fullname);
@@ -283,7 +264,7 @@ exit:
 }
 
 PyDoc_STRVAR(zipimport_zipimporter_get_source__doc__,
-"get_source($self, /, fullname)\n"
+"get_source($self, fullname, /)\n"
 "--\n"
 "\n"
 "Return the source code for the specified module.\n"
@@ -292,21 +273,18 @@ PyDoc_STRVAR(zipimport_zipimporter_get_source__doc__,
 "archive does contain the module, but has no source for it.");
 
 #define ZIPIMPORT_ZIPIMPORTER_GET_SOURCE_METHODDEF    \
-    {"get_source", (PyCFunction)zipimport_zipimporter_get_source, METH_FASTCALL|METH_KEYWORDS, zipimport_zipimporter_get_source__doc__},
+    {"get_source", (PyCFunction)zipimport_zipimporter_get_source, METH_O, zipimport_zipimporter_get_source__doc__},
 
 static PyObject *
 zipimport_zipimporter_get_source_impl(ZipImporter *self, PyObject *fullname);
 
 static PyObject *
-zipimport_zipimporter_get_source(ZipImporter *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zipimport_zipimporter_get_source(ZipImporter *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"fullname", NULL};
-    static _PyArg_Parser _parser = {"U:get_source", _keywords, 0};
     PyObject *fullname;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fullname)) {
+    if (!PyArg_Parse(arg, "U:get_source", &fullname)) {
         goto exit;
     }
     return_value = zipimport_zipimporter_get_source_impl(self, fullname);
@@ -314,4 +292,4 @@ zipimport_zipimporter_get_source(ZipImporter *self, PyObject **args, Py_ssize_t 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=92fd0e12af4e36e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=28b69ff37d9f68b5 input=a9049054013a1b77]*/
