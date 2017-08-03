@@ -2895,27 +2895,29 @@ static int
 listiter_contains(listiterobject *it, PyObject *el)
 {
     PyListObject *seq;
-    Py_ssize_t i;
+    PyObject *item;
     int cmp;
 
     assert(it != NULL);
     seq = it->it_seq;
     if (seq == NULL)
         return 0;
-    assert(PyList_Check(seq));
+    assert(PyList_Check(it->it_seq));
 
-    for (i = it->it_index, cmp = 0 ; cmp == 0 && i < Py_SIZE(seq); ++i)
-        cmp = PyObject_RichCompareBool(el, PyList_GET_ITEM(seq, i),
-                                           Py_EQ);
-    if (i < Py_SIZE(seq)) {
-        it->it_index = i;
-    }
-    else {
-        it->it_seq = NULL;
-        Py_DECREF(seq);
-    }
-
-    return cmp;
+    do {
+        item = PyList_GET_ITEM(seq, it->it_index);
+        ++it->it_index;
+        if (it->it_index >= Py_SIZE(seq)) {
+            it->it_seq = NULL;
+            cmp = PyObject_RichCompareBool(el, item, Py_EQ);
+            Py_DECREF(seq);
+            return cmp;
+        }
+        cmp = PyObject_RichCompareBool(el, item, Py_EQ);
+        if (cmp != 0)
+            return cmp;
+    } while(it->it_seq != NULL);
+    return 0;
 }
 
 /*********************** List Reverse Iterator **************************/
