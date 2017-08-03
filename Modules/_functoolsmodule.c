@@ -1073,8 +1073,10 @@ lru_cache_clear_list(lru_list_elem *link)
 static void
 lru_cache_dealloc(lru_cache_object *obj)
 {
-    _PyObject_GC_UNTRACK(obj);
-    lru_list_elem *list = lru_cache_unlink_list(obj);
+    lru_list_elem *list;
+    PyObject_GC_UnTrack(obj);
+
+    list = lru_cache_unlink_list(obj);
     Py_XDECREF(obj->maxsize_O);
     Py_XDECREF(obj->func);
     Py_XDECREF(obj->cache);

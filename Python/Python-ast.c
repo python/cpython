@@ -520,7 +520,7 @@ typedef struct {
 static void
 ast_dealloc(AST_object *self)
 {
-    _PyObject_GC_UNTRACK(self);
+    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->dict);
     Py_TYPE(self)->tp_free(self);
 }
