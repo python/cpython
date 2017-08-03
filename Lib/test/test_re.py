@@ -468,7 +468,7 @@ class ReTests(unittest.TestCase):
             m[(0,)]
         with self.assertRaisesRegex(IndexError, 'no such group'):
             m[(0, 1)]
-        with self.assertRaisesRegex(KeyError, 'a2'):
+        with self.assertRaisesRegex(IndexError, 'no such group'):
             'a1={a2}'.format_map(m)
 
         m = pat.match('ac')
