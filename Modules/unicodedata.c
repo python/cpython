@@ -1316,8 +1316,6 @@ PyObject* GCI_iternext(PyObject *self)
             ++p->pos;
         }
     } else {
-        /* Raising of standard StopIteration exception with empty value. */
-        PyErr_SetNone(PyExc_StopIteration);
         return NULL;
     }
 }

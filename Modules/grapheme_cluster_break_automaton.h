@@ -38,7 +38,7 @@ typedef enum {
     STATE_Any,
 } GCBState;
 
-static GCBState GRAPH_CLUSTER_AUTOMATON[15][20] = {
+static const GCBState GRAPH_CLUSTER_AUTOMATON[15][19] = {
         [STATE_BREAK] = {STATE_BREAK,
                          STATE_BREAK,
                          STATE_BREAK,

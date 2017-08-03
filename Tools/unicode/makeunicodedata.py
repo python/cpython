@@ -910,7 +910,6 @@ def open_data(template, version):
             url = 'http://www.unicode.org/Public/3.2-Update/' + local
         else:
             url = ('http://www.unicode.org/Public/%s/ucd/'+template) % (version, '')
-        print(url)
         urllib.request.urlretrieve(url, filename=local)
     if local.endswith('.txt'):
         return open(local, encoding='utf-8')
