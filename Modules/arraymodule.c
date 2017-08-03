@@ -1090,7 +1090,7 @@ array_array_index(arrayobject *self, PyObject *v)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "array.index(x): x not in list");
+    PyErr_SetString(PyExc_ValueError, "array.index(x): x not in array");
     return NULL;
 }
 
@@ -1142,7 +1142,7 @@ array_array_remove(arrayobject *self, PyObject *v)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in list");
+    PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in array");
     return NULL;
 }
 
@@ -2568,7 +2568,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *initial = NULL, *it = NULL;
     const struct arraydescr *descr;
 
-    if (type == &Arraytype && !_PyArg_NoKeywords("array.array()", kwds))
+    if (type == &Arraytype && !_PyArg_NoKeywords("array.array", kwds))
         return NULL;
 
     if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))

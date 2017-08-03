@@ -47,6 +47,7 @@ class CallTips:
     def force_open_calltip_event(self, event):
         "The user selected the menu entry or hotkey, open the tip."
         self.open_calltip(True)
+        return "break"
 
     def try_open_calltip_event(self, event):
         """Happens when it would be nice to open a CallTip, but not really

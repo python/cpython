@@ -1,0 +1,3 @@
+IDLE: Verify user-entered key sequences by trying to bind them with tk. Add
+tests for all 3 validation functions. Original patch by G Polo.  Tests added
+by Cheryl Sabella.

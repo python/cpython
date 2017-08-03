@@ -6,7 +6,7 @@ import sys
 from unittest import TestCase, main, skipUnless, SkipTest
 from copy import copy, deepcopy
 
-from typing import Any
+from typing import Any, NoReturn
 from typing import TypeVar, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional
@@ -102,15 +102,45 @@ class AnyTests(BaseTestCase):
         with self.assertRaises(TypeError):
             type(Any)()
 
-    def test_cannot_subscript(self):
-        with self.assertRaises(TypeError):
-            Any[int]
-
     def test_any_works_with_alias(self):
         # These expressions must simply not fail.
         typing.Match[Any]
         typing.Pattern[Any]
         typing.IO[Any]
+
+
+class NoReturnTests(BaseTestCase):
+
+    def test_noreturn_instance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance(42, NoReturn)
+
+    def test_noreturn_subclass_type_error(self):
+        with self.assertRaises(TypeError):
+            issubclass(Employee, NoReturn)
+        with self.assertRaises(TypeError):
+            issubclass(NoReturn, Employee)
+
+    def test_repr(self):
+        self.assertEqual(repr(NoReturn), 'typing.NoReturn')
+
+    def test_not_generic(self):
+        with self.assertRaises(TypeError):
+            NoReturn[int]
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class A(NoReturn):
+                pass
+        with self.assertRaises(TypeError):
+            class A(type(NoReturn)):
+                pass
+
+    def test_cannot_instantiate(self):
+        with self.assertRaises(TypeError):
+            NoReturn()
+        with self.assertRaises(TypeError):
+            type(NoReturn)()
 
 
 class TypeVarTests(BaseTestCase):
@@ -1522,6 +1552,12 @@ class AsyncIteratorWrapper(typing.AsyncIterator[T_a]):
             return data
         else:
             raise StopAsyncIteration
+
+class ACM:
+    async def __aenter__(self) -> int:
+        return 42
+    async def __aexit__(self, etype, eval, tb):
+        return None
 """
 
 if ASYNCIO:
@@ -1532,12 +1568,13 @@ if ASYNCIO:
 else:
     # fake names for the sake of static analysis
     asyncio = None
-    AwaitableWrapper = AsyncIteratorWrapper = object
+    AwaitableWrapper = AsyncIteratorWrapper = ACM = object
 
 PY36 = sys.version_info[:2] >= (3, 6)
 
 PY36_TESTS = """
 from test import ann_module, ann_module2, ann_module3
+from typing import AsyncContextManager
 
 class A:
     y: float
@@ -1574,6 +1611,16 @@ class XRepr(NamedTuple):
         return f'{self.x} -> {self.y}'
     def __add__(self, other):
         return 0
+
+async def g_with(am: AsyncContextManager[int]):
+    x: int
+    async with am as x:
+        return x
+
+try:
+    g_with(ACM()).send(None)
+except StopIteration as e:
+    assert e.args[0] == 42
 """
 
 if PY36:
@@ -2126,8 +2173,6 @@ class CollectionsAbcTests(BaseTestCase):
 
 class OtherABCTests(BaseTestCase):
 
-    @skipUnless(hasattr(typing, 'ContextManager'),
-                'requires typing.ContextManager')
     def test_contextmanager(self):
         @contextlib.contextmanager
         def manager():
@@ -2136,6 +2181,24 @@ class OtherABCTests(BaseTestCase):
         cm = manager()
         self.assertIsInstance(cm, typing.ContextManager)
         self.assertNotIsInstance(42, typing.ContextManager)
+
+    @skipUnless(ASYNCIO, 'Python 3.5 required')
+    def test_async_contextmanager(self):
+        class NotACM:
+            pass
+        self.assertIsInstance(ACM(), typing.AsyncContextManager)
+        self.assertNotIsInstance(NotACM(), typing.AsyncContextManager)
+        @contextlib.contextmanager
+        def manager():
+            yield 42
+
+        cm = manager()
+        self.assertNotIsInstance(cm, typing.AsyncContextManager)
+        self.assertEqual(typing.AsyncContextManager[int].__args__, (int,))
+        with self.assertRaises(TypeError):
+            isinstance(42, typing.AsyncContextManager[int])
+        with self.assertRaises(TypeError):
+            typing.AsyncContextManager[int, str]
 
 
 class TypeTests(BaseTestCase):
@@ -2271,6 +2334,14 @@ class XMethBad(NamedTuple):
     x: int
     def _fields(self):
         return 'no chance for this'
+""")
+
+        with self.assertRaises(AttributeError):
+            exec("""
+class XMethBad2(NamedTuple):
+    x: int
+    def _source(self):
+        return 'no chance for this as well'
 """)
 
     @skipUnless(PY36, 'Python 3.6 required')
@@ -2420,6 +2491,9 @@ class AllTests(BaseTestCase):
         self.assertNotIn('sys', a)
         # Check that Text is defined.
         self.assertIn('Text', a)
+        # Check previously missing classes.
+        self.assertIn('SupportsBytes', a)
+        self.assertIn('SupportsComplex', a)
 
 
 if __name__ == '__main__':

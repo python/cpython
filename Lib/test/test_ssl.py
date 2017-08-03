@@ -1244,6 +1244,7 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(ctx.cert_store_stats(), {"crl": 0, "x509": 1, "x509_ca": 0})
 
     @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    @unittest.skipIf(hasattr(sys, "gettotalrefcount"), "Debug build does not share environment between CRTs")
     def test_load_default_certs_env_windows(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.load_default_certs()
@@ -1393,6 +1394,16 @@ class SSLErrorTests(unittest.TestCase):
                 # For compatibility
                 self.assertEqual(cm.exception.errno, ssl.SSL_ERROR_WANT_READ)
 
+    def test_bad_idna_in_server_hostname(self):
+        # Note: this test is testing some code that probably shouldn't exist
+        # in the first place, so if it starts failing at some point because
+        # you made the ssl module stop doing IDNA decoding then please feel
+        # free to remove it. The test was mainly added because this case used
+        # to cause memory corruption (see bpo-30594).
+        ctx = ssl.create_default_context()
+        with self.assertRaises(UnicodeError):
+            ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                         server_hostname="xn--.com")
 
 class MemoryBIOTests(unittest.TestCase):
 
@@ -2064,7 +2075,7 @@ if _have_threads:
 
         class EchoServer (asyncore.dispatcher):
 
-            class ConnectionHandler (asyncore.dispatcher_with_send):
+            class ConnectionHandler(asyncore.dispatcher_with_send):
 
                 def __init__(self, conn, certfile):
                     self.socket = test_wrap_socket(conn, server_side=True,
@@ -2155,6 +2166,8 @@ if _have_threads:
             self.join()
             if support.verbose:
                 sys.stdout.write(" cleanup: successfully joined.\n")
+            # make sure that ConnectionHandler is removed from socket_map
+            asyncore.close_all(ignore_all=True)
 
         def start (self, flag=None):
             self.flag = flag

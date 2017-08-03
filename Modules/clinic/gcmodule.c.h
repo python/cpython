@@ -79,7 +79,7 @@ PyDoc_STRVAR(gc_collect__doc__,
 "The number of unreachable objects is returned.");
 
 #define GC_COLLECT_METHODDEF    \
-    {"collect", (PyCFunction)gc_collect, METH_FASTCALL, gc_collect__doc__},
+    {"collect", (PyCFunction)gc_collect, METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
 
 static Py_ssize_t
 gc_collect_impl(PyObject *module, int generation);
@@ -255,4 +255,4 @@ PyDoc_STRVAR(gc_is_tracked__doc__,
 
 #define GC_IS_TRACKED_METHODDEF    \
     {"is_tracked", (PyCFunction)gc_is_tracked, METH_O, gc_is_tracked__doc__},
-/*[clinic end generated code: output=8f487abc53fe4161 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a58583f00ab018e input=a9049054013a1b77]*/

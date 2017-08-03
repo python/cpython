@@ -38,7 +38,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
-                  shell=False, timeout=None, check=False, \
+                  shell=False, cwd=None, timeout=None, check=False, \
                   encoding=None, errors=None)
 
    Run the command described by *args*.  Wait for command to complete, then
@@ -855,7 +855,7 @@ Prior to Python 3.5, these three functions comprised the high level API to
 subprocess. You can now use :func:`run` in many cases, but lots of existing code
 calls these functions.
 
-.. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False, timeout=None)
+.. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
@@ -881,7 +881,7 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
-.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False, timeout=None)
+.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
 
    Run command with arguments.  Wait for command to complete. If the return
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
@@ -911,7 +911,7 @@ calls these functions.
 
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
-                           encoding=None, errors=None, \
+                           cwd=None, encoding=None, errors=None, \
                            universal_newlines=False, timeout=None)
 
    Run command with arguments and return its output.

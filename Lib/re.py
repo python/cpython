@@ -268,9 +268,7 @@ _MAXCACHE = 512
 def _compile(pattern, flags):
     # internal: compile pattern
     try:
-        p, loc = _cache[type(pattern), pattern, flags]
-        if loc is None or loc == _locale.setlocale(_locale.LC_CTYPE):
-            return p
+        return _cache[type(pattern), pattern, flags]
     except KeyError:
         pass
     if isinstance(pattern, _pattern_type):
@@ -284,13 +282,7 @@ def _compile(pattern, flags):
     if not (flags & DEBUG):
         if len(_cache) >= _MAXCACHE:
             _cache.clear()
-        if p.flags & LOCALE:
-            if not _locale:
-                return p
-            loc = _locale.setlocale(_locale.LC_CTYPE)
-        else:
-            loc = None
-        _cache[type(pattern), pattern, flags] = p, loc
+        _cache[type(pattern), pattern, flags] = p
     return p
 
 @functools.lru_cache(_MAXCACHE)

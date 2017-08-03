@@ -290,8 +290,8 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: initscr()
 
-   Initialize the library. Return a :class:`WindowObject` which represents the
-   whole screen.
+   Initialize the library. Return a :ref:`window <curses-window-objects>` object
+   which represents the whole screen.
 
    .. note::
 
@@ -383,8 +383,8 @@ The module :mod:`curses` defines the following functions:
 .. function:: newwin(nlines, ncols)
               newwin(nlines, ncols, begin_y, begin_x)
 
-   Return a new window, whose left-upper corner is at  ``(begin_y, begin_x)``, and
-   whose height/width is  *nlines*/*ncols*.
+   Return a new :ref:`window <curses-window-objects>`, whose left-upper corner
+   is at  ``(begin_y, begin_x)``, and whose height/width is  *nlines*/*ncols*.
 
    By default, the window will extend from the  specified position to the lower
    right corner of the screen.
@@ -1271,33 +1271,69 @@ The :mod:`curses` module defines the following data members:
    A string representing the current version of the module.  Also available as
    :const:`__version__`.
 
-Several constants are available to specify character cell attributes:
+Some constants are available to specify character cell attributes.
+The exact constants available are system dependent.
 
 +------------------+-------------------------------+
 | Attribute        | Meaning                       |
 +==================+===============================+
-| ``A_ALTCHARSET`` | Alternate character set mode. |
+| ``A_ALTCHARSET`` | Alternate character set mode  |
 +------------------+-------------------------------+
-| ``A_BLINK``      | Blink mode.                   |
+| ``A_BLINK``      | Blink mode                    |
 +------------------+-------------------------------+
-| ``A_BOLD``       | Bold mode.                    |
+| ``A_BOLD``       | Bold mode                     |
 +------------------+-------------------------------+
-| ``A_ITALIC``     | Italic mode.                  |
+| ``A_DIM``        | Dim mode                      |
 +------------------+-------------------------------+
-| ``A_DIM``        | Dim mode.                     |
+| ``A_INVIS``      | Invisible or blank mode       |
 +------------------+-------------------------------+
-| ``A_NORMAL``     | Normal attribute.             |
+| ``A_ITALIC``     | Italic mode                   |
++------------------+-------------------------------+
+| ``A_NORMAL``     | Normal attribute              |
++------------------+-------------------------------+
+| ``A_PROTECT``    | Protected mode                |
 +------------------+-------------------------------+
 | ``A_REVERSE``    | Reverse background and        |
-|                  | foreground colors.            |
+|                  | foreground colors             |
 +------------------+-------------------------------+
-| ``A_STANDOUT``   | Standout mode.                |
+| ``A_STANDOUT``   | Standout mode                 |
 +------------------+-------------------------------+
-| ``A_UNDERLINE``  | Underline mode.               |
+| ``A_UNDERLINE``  | Underline mode                |
++------------------+-------------------------------+
+| ``A_HORIZONTAL`` | Horizontal highlight          |
++------------------+-------------------------------+
+| ``A_LEFT``       | Left highlight                |
++------------------+-------------------------------+
+| ``A_LOW``        | Low highlight                 |
++------------------+-------------------------------+
+| ``A_RIGHT``      | Right highlight               |
++------------------+-------------------------------+
+| ``A_TOP``        | Top highlight                 |
++------------------+-------------------------------+
+| ``A_VERTICAL``   | Vertical highlight            |
++------------------+-------------------------------+
+| ``A_CHARTEXT``   | Bit-mask to extract a         |
+|                  | character                     |
 +------------------+-------------------------------+
 
 .. versionadded:: 3.7
    ``A_ITALIC`` was added.
+
+Several constants are available to extract corresponding attributes returned
+by some methods.
+
++------------------+-------------------------------+
+| Bit-mask         | Meaning                       |
++==================+===============================+
+| ``A_ATTRIBUTES`` | Bit-mask to extract           |
+|                  | attributes                    |
++------------------+-------------------------------+
+| ``A_CHARTEXT``   | Bit-mask to extract a         |
+|                  | character                     |
++------------------+-------------------------------+
+| ``A_COLOR``      | Bit-mask to extract           |
+|                  | color-pair field information  |
++------------------+-------------------------------+
 
 Keys are referred to by integer constants with names starting with  ``KEY_``.
 The exact keycaps available are system dependent.
@@ -1684,10 +1720,10 @@ You can instantiate a :class:`Textbox` object as follows:
 .. class:: Textbox(win)
 
    Return a textbox widget object.  The *win* argument should be a curses
-   :class:`WindowObject` in which the textbox is to be contained. The edit cursor
-   of the textbox is initially located at the upper left hand corner of the
-   containing window, with coordinates ``(0, 0)``. The instance's
-   :attr:`stripspaces` flag is initially on.
+   :ref:`window <curses-window-objects>` object in which the textbox is to
+   be contained. The edit cursor of the textbox is initially located at the
+   upper left hand corner of the containing window, with coordinates ``(0, 0)``.
+   The instance's :attr:`stripspaces` flag is initially on.
 
    :class:`Textbox` objects have the following methods:
 

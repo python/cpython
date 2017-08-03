@@ -827,11 +827,26 @@ class SysLogHandler(logging.Handler):
             self.unixsocket = False
             if socktype is None:
                 socktype = socket.SOCK_DGRAM
-            self.socket = socket.socket(socket.AF_INET, socktype)
-            if socktype == socket.SOCK_STREAM:
-                self.socket.connect(address)
+            host, port = address
+            ress = socket.getaddrinfo(host, port, 0, socktype)
+            if not ress:
+                raise OSError("getaddrinfo returns an empty list")
+            for res in ress:
+                af, socktype, proto, _, sa = res
+                err = sock = None
+                try:
+                    sock = socket.socket(af, socktype, proto)
+                    if socktype == socket.SOCK_STREAM:
+                        sock.connect(sa)
+                    break
+                except OSError as exc:
+                    err = exc
+                    if sock is not None:
+                        sock.close()
+            if err is not None:
+                raise err
+            self.socket = sock
             self.socktype = socktype
-        self.formatter = None
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
@@ -870,7 +885,7 @@ class SysLogHandler(logging.Handler):
             priority = self.priority_names[priority]
         return (facility << 3) | priority
 
-    def close (self):
+    def close(self):
         """
         Closes the socket.
         """
@@ -1357,13 +1372,14 @@ class QueueHandler(logging.Handler):
         of the record while leaving the original intact.
         """
         # The format operation gets traceback text into record.exc_text
-        # (if there's exception data), and also puts the message into
-        # record.message. We can then use this to replace the original
+        # (if there's exception data), and also returns the formatted
+        # message. We can then use this to replace the original
         # msg + args, as these might be unpickleable. We also zap the
         # exc_info attribute, as it's no longer needed and, if not None,
         # will typically not be pickleable.
-        self.format(record)
-        record.msg = record.message
+        msg = self.format(record)
+        record.message = msg
+        record.msg = msg
         record.args = None
         record.exc_info = None
         return record

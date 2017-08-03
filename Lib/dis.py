@@ -31,7 +31,7 @@ def _try_compile(source, name):
         c = compile(source, name, 'exec')
     return c
 
-def dis(x=None, *, file=None):
+def dis(x=None, *, file=None, depth=None):
     """Disassemble classes, methods, functions, generators, or code.
 
     With no argument, disassemble the last traceback.
@@ -52,16 +52,16 @@ def dis(x=None, *, file=None):
             if isinstance(x1, _have_code):
                 print("Disassembly of %s:" % name, file=file)
                 try:
-                    dis(x1, file=file)
+                    dis(x1, file=file, depth=depth)
                 except TypeError as msg:
                     print("Sorry:", msg, file=file)
                 print(file=file)
     elif hasattr(x, 'co_code'): # Code object
-        disassemble(x, file=file)
+        _disassemble_recursive(x, file=file, depth=depth)
     elif isinstance(x, (bytes, bytearray)): # Raw bytecode
         _disassemble_bytes(x, file=file)
     elif isinstance(x, str):    # Source code
-        _disassemble_str(x, file=file)
+        _disassemble_str(x, file=file, depth=depth)
     else:
         raise TypeError("don't know how to disassemble %s objects" %
                         type(x).__name__)
@@ -338,6 +338,17 @@ def disassemble(co, lasti=-1, *, file=None):
     _disassemble_bytes(co.co_code, lasti, co.co_varnames, co.co_names,
                        co.co_consts, cell_names, linestarts, file=file)
 
+def _disassemble_recursive(co, *, file=None, depth=None):
+    disassemble(co, file=file)
+    if depth is None or depth > 0:
+        if depth is not None:
+            depth = depth - 1
+        for x in co.co_consts:
+            if hasattr(x, 'co_code'):
+                print(file=file)
+                print("Disassembly of %r:" % (x,), file=file)
+                _disassemble_recursive(x, file=file, depth=depth)
+
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None, cells=None, linestarts=None,
                        *, file=None, line_offset=0):
@@ -368,9 +379,9 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
 
-def _disassemble_str(source, *, file=None):
+def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
-    disassemble(_try_compile(source, '<dis>'), file=file)
+    _disassemble_recursive(_try_compile(source, '<dis>'), **kwargs)
 
 disco = disassemble                     # XXX For backwards compatibility
 

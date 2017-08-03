@@ -38,29 +38,37 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "DefragResult", "ParseResult", "SplitResult",
            "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
 
-# A classification of schemes ('' means apply by default)
-uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap',
+# A classification of schemes.
+# The empty string classifies URLs with no scheme specified,
+# being the default value returned by “urlsplit” and “urlparse”.
+
+uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
-                 'prospero', 'rtsp', 'rtspu', '', 'sftp',
+                 'prospero', 'rtsp', 'rtspu', 'sftp',
                  'svn', 'svn+ssh', 'ws', 'wss']
-uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
+
+uses_netloc = ['', 'ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
-               'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
+               'snews', 'prospero', 'rtsp', 'rtspu', 'rsync',
                'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh',
                'ws', 'wss']
-uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
+
+uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
                'https', 'shttp', 'rtsp', 'rtspu', 'sip', 'sips',
-               'mms', '', 'sftp', 'tel']
+               'mms', 'sftp', 'tel']
 
 # These are not actually used anymore, but should stay for backwards
 # compatibility.  (They are undocumented, but have a public-looking name.)
+
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news',
                     'telnet', 'wais', 'imap', 'snews', 'sip', 'sips']
-uses_query = ['http', 'wais', 'imap', 'https', 'shttp', 'mms',
-              'gopher', 'rtsp', 'rtspu', 'sip', 'sips', '']
-uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news',
+
+uses_query = ['', 'http', 'wais', 'imap', 'https', 'shttp', 'mms',
+              'gopher', 'rtsp', 'rtspu', 'sip', 'sips']
+
+uses_fragment = ['', 'ftp', 'hdl', 'http', 'gopher', 'news',
                  'nntp', 'wais', 'https', 'shttp', 'snews',
-                 'file', 'prospero', '']
+                 'file', 'prospero']
 
 # Characters valid in scheme names
 scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
@@ -939,7 +947,7 @@ def splithost(url):
     """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
     global _hostprog
     if _hostprog is None:
-        _hostprog = re.compile('//([^/?]*)(.*)', re.DOTALL)
+        _hostprog = re.compile('//([^/#?]*)(.*)', re.DOTALL)
 
     match = _hostprog.match(url)
     if match:

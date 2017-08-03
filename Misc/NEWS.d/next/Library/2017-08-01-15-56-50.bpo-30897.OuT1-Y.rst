@@ -1,0 +1,3 @@
+``pathlib.Path`` objects now include an ``is_mount()`` method (only
+implemented on POSIX).  This is similar to ``os.path.ismount(p)``. Patch by
+Cooper Ry Lees.

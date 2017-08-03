@@ -143,9 +143,11 @@ def _install_handlers(cp, formatters):
             klass = eval(klass, vars(logging))
         except (AttributeError, NameError):
             klass = _resolve(klass)
-        args = section["args"]
+        args = section.get("args", '()')
         args = eval(args, vars(logging))
-        h = klass(*args)
+        kwargs = section.get("kwargs", '{}')
+        kwargs = eval(kwargs, vars(logging))
+        h = klass(*args, **kwargs)
         if "level" in section:
             level = section["level"]
             h.setLevel(level)
@@ -463,7 +465,7 @@ class BaseConfigurator(object):
             c = self.resolve(c)
         props = config.pop('.', None)
         # Check for valid identifiers
-        kwargs = dict([(k, config[k]) for k in config if valid_ident(k)])
+        kwargs = dict((k, config[k]) for k in config if valid_ident(k))
         result = c(**kwargs)
         if props:
             for name, value in props.items():
@@ -726,7 +728,7 @@ class DictConfigurator(BaseConfigurator):
                 config['address'] = self.as_tuple(config['address'])
             factory = klass
         props = config.pop('.', None)
-        kwargs = dict([(k, config[k]) for k in config if valid_ident(k)])
+        kwargs = dict((k, config[k]) for k in config if valid_ident(k))
         try:
             result = factory(**kwargs)
         except TypeError as te:

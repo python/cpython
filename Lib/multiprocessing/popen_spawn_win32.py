@@ -56,7 +56,7 @@ class Popen(object):
             self.returncode = None
             self._handle = hp
             self.sentinel = int(hp)
-            util.Finalize(self, _winapi.CloseHandle, (self.sentinel,))
+            self.finalizer = util.Finalize(self, _winapi.CloseHandle, (self.sentinel,))
 
             # send information to child
             set_spawning_popen(self)
@@ -96,3 +96,8 @@ class Popen(object):
             except OSError:
                 if self.wait(timeout=1.0) is None:
                     raise
+
+    kill = terminate
+
+    def close(self):
+        self.finalizer()

@@ -693,6 +693,26 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         info->adjustable = 0;
     }
 
+#elif defined(__hpux)
+    hrtime_t time;
+
+    time = gethrtime();
+    if (time == -1) {
+        if (raise) {
+            PyErr_SetFromErrno(PyExc_OSError);
+        }
+        return -1;
+    }
+
+    *tp = time;
+
+    if (info) {
+        info->implementation = "gethrtime()";
+        info->resolution = 1e-9;
+        info->monotonic = 1;
+        info->adjustable = 0;
+    }
+
 #else
     struct timespec ts;
 #ifdef CLOCK_HIGHRES

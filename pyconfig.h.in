@@ -733,9 +733,6 @@
 /* Define if readline supports append_history */
 #undef HAVE_RL_APPEND_HISTORY
 
-/* Define if you have readline 2.1 */
-#undef HAVE_RL_CALLBACK
-
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
 
@@ -777,9 +774,6 @@
 
 /* Define to 1 if you have the `sched_setscheduler' function. */
 #undef HAVE_SCHED_SETSCHEDULER
-
-/* Define to 1 if you have the `select' function. */
-#undef HAVE_SELECT
 
 /* Define to 1 if you have the `sem_getvalue' function. */
 #undef HAVE_SEM_GETVALUE
@@ -1247,8 +1241,14 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
+/* Define if you want to coerce the C locale to a UTF-8 based locale */
+#undef PY_COERCE_C_LOCALE
+
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
+
+/* Define to emit a locale compatibility warning in the C locale */
+#undef PY_WARN_ON_C_LOCALE
 
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
@@ -1454,6 +1454,9 @@
 
 /* Define if you have POSIX threads, and your system does not define that. */
 #undef _POSIX_THREADS
+
+/* framework name */
+#undef _PYTHONFRAMEWORK
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

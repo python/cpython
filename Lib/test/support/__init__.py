@@ -107,7 +107,7 @@ __all__ = [
     "check_warnings", "check_no_resource_warning", "EnvironmentVarGuard",
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
-    "run_with_tz", "PGO", "missing_compiler_executable",
+    "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
     ]
 
 class Error(Exception):
@@ -1905,6 +1905,23 @@ def _run_suite(suite):
         raise TestFailed(err)
 
 
+def _match_test(test):
+    global match_tests
+
+    if match_tests is None:
+        return True
+    test_id = test.id()
+
+    for match_test in match_tests:
+        if fnmatch.fnmatchcase(test_id, match_test):
+            return True
+
+        for name in test_id.split("."):
+            if fnmatch.fnmatchcase(name, match_test):
+                return True
+    return False
+
+
 def run_unittest(*classes):
     """Run tests from unittest.TestCase-derived classes."""
     valid_types = (unittest.TestSuite, unittest.TestCase)
@@ -1919,14 +1936,7 @@ def run_unittest(*classes):
             suite.addTest(cls)
         else:
             suite.addTest(unittest.makeSuite(cls))
-    def case_pred(test):
-        if match_tests is None:
-            return True
-        for name in test.id().split("."):
-            if fnmatch.fnmatchcase(name, match_tests):
-                return True
-        return False
-    _filter_suite(suite, case_pred)
+    _filter_suite(suite, _match_test)
     _run_suite(suite)
 
 #=======================================================================
@@ -2001,6 +2011,14 @@ def modules_cleanup(oldmodules):
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
 
+# Flag used by saved_test_environment of test.libregrtest.save_env,
+# to check if a test modified the environment. The flag should be set to False
+# before running a new test.
+#
+# For example, threading_cleanup() sets the flag is the function fails
+# to cleanup threads.
+environment_altered = False
+
 # NOTE: we use thread._count() rather than threading.enumerate() (or the
 # moral equivalent thereof) because a threading.Thread object is still alive
 # until its __bootstrap() method has returned, even after it has been
@@ -2016,6 +2034,8 @@ def threading_setup():
         return 1, ()
 
 def threading_cleanup(*original_values):
+    global environment_altered
+
     if not _thread:
         return
     _MAX_COUNT = 100
@@ -2027,6 +2047,8 @@ def threading_cleanup(*original_values):
         time.sleep(0.01)
         gc_collect()
     else:
+        environment_altered = True
+
         dt = time.monotonic() - t0
         print("Warning -- threading_cleanup() failed to cleanup %s threads "
               "after %.0f sec (count: %s, dangling: %s)"
@@ -2057,7 +2079,6 @@ def reap_children():
     stick around to hog resources and create problems when looking
     for refleaks.
     """
-
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
     if hasattr(os, 'waitpid'):
@@ -2068,6 +2089,8 @@ def reap_children():
                 pid, status = os.waitpid(any_process, os.WNOHANG)
                 if pid == 0:
                     break
+                print("Warning -- reap_children() reaped child process %s"
+                      % pid, file=sys.stderr)
             except:
                 break
 
@@ -2624,3 +2647,60 @@ def disable_faulthandler():
     finally:
         if is_enabled:
             faulthandler.enable(file=fd, all_threads=True)
+
+
+def fd_count():
+    """Count the number of open file descriptors.
+    """
+    if sys.platform.startswith(('linux', 'freebsd')):
+        try:
+            names = os.listdir("/proc/self/fd")
+            return len(names)
+        except FileNotFoundError:
+            pass
+
+    old_modes = None
+    if sys.platform == 'win32':
+        # bpo-25306, bpo-31009: Call CrtSetReportMode() to not kill the process
+        # on invalid file descriptor if Python is compiled in debug mode
+        try:
+            import msvcrt
+            msvcrt.CrtSetReportMode
+        except (AttributeError, ImportError):
+            # no msvcrt or a release build
+            pass
+        else:
+            old_modes = {}
+            for report_type in (msvcrt.CRT_WARN,
+                                msvcrt.CRT_ERROR,
+                                msvcrt.CRT_ASSERT):
+                old_modes[report_type] = msvcrt.CrtSetReportMode(report_type, 0)
+
+    MAXFD = 256
+    if hasattr(os, 'sysconf'):
+        try:
+            MAXFD = os.sysconf("SC_OPEN_MAX")
+        except OSError:
+            pass
+
+    try:
+        count = 0
+        for fd in range(MAXFD):
+            try:
+                # Prefer dup() over fstat(). fstat() can require input/output
+                # whereas dup() doesn't.
+                fd2 = os.dup(fd)
+            except OSError as e:
+                if e.errno != errno.EBADF:
+                    raise
+            else:
+                os.close(fd2)
+                count += 1
+    finally:
+        if old_modes is not None:
+            for report_type in (msvcrt.CRT_WARN,
+                                msvcrt.CRT_ERROR,
+                                msvcrt.CRT_ASSERT):
+                msvcrt.CrtSetReportMode(report_type, old_modes[report_type])
+
+    return count

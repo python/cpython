@@ -492,16 +492,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         in_consts = 0;
 
         switch (opcode) {
-            /* Replace UNARY_NOT POP_JUMP_IF_FALSE
-               with    POP_JUMP_IF_TRUE */
-            case UNARY_NOT:
-                if (nextop != POP_JUMP_IF_FALSE
-                    || !ISBASICBLOCK(blocks, op_start, i + 1))
-                    break;
-                fill_nops(codestr, op_start, i + 1);
-                codestr[nexti] = PACKOPARG(POP_JUMP_IF_TRUE, _Py_OPARG(codestr[nexti]));
-                break;
-
                 /* not a is b -->  a is not b
                    not a in b -->  a not in b
                    not a is not b -->  a is b
@@ -626,10 +616,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                    result of the first test implies the success of a similar
                    test or the failure of the opposite test.
                    Arises in code like:
-                   "if a and b:"
-                   "if a or b:"
                    "a and b or c"
                    "(a and b) and c"
+                   "(a or b) or c"
+                   "(a or b) and c"
                    x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_FALSE_OR_POP z
                       -->  x:JUMP_IF_FALSE_OR_POP z
                    x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_TRUE_OR_POP z

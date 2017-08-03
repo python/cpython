@@ -1,6 +1,7 @@
 "Test posix functions"
 
 from test import support
+from test.support.script_helper import assert_python_ok
 android_not_root = support.android_not_root
 
 # Skip these tests if there is no posix module.
@@ -186,6 +187,67 @@ class PosixTester(unittest.TestCase):
         else:
             res = posix.waitid(posix.P_PID, pid, posix.WEXITED)
             self.assertEqual(pid, res.si_pid)
+
+    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    def test_register_at_fork(self):
+        with self.assertRaises(TypeError, msg="Positional args not allowed"):
+            os.register_at_fork(lambda: None)
+        with self.assertRaises(TypeError, msg="Args must be callable"):
+            os.register_at_fork(before=2)
+        with self.assertRaises(TypeError, msg="Args must be callable"):
+            os.register_at_fork(after_in_child="three")
+        with self.assertRaises(TypeError, msg="Args must be callable"):
+            os.register_at_fork(after_in_parent=b"Five")
+        with self.assertRaises(TypeError, msg="Args must not be None"):
+            os.register_at_fork(before=None)
+        with self.assertRaises(TypeError, msg="Args must not be None"):
+            os.register_at_fork(after_in_child=None)
+        with self.assertRaises(TypeError, msg="Args must not be None"):
+            os.register_at_fork(after_in_parent=None)
+        with self.assertRaises(TypeError, msg="Invalid arg was allowed"):
+            # Ensure a combination of valid and invalid is an error.
+            os.register_at_fork(before=None, after_in_parent=lambda: 3)
+        with self.assertRaises(TypeError, msg="Invalid arg was allowed"):
+            # Ensure a combination of valid and invalid is an error.
+            os.register_at_fork(before=lambda: None, after_in_child='')
+        # We test actual registrations in their own process so as not to
+        # pollute this one.  There is no way to unregister for cleanup.
+        code = """if 1:
+            import os
+
+            r, w = os.pipe()
+            fin_r, fin_w = os.pipe()
+
+            os.register_at_fork(before=lambda: os.write(w, b'A'))
+            os.register_at_fork(after_in_parent=lambda: os.write(w, b'C'))
+            os.register_at_fork(after_in_child=lambda: os.write(w, b'E'))
+            os.register_at_fork(before=lambda: os.write(w, b'B'),
+                                after_in_parent=lambda: os.write(w, b'D'),
+                                after_in_child=lambda: os.write(w, b'F'))
+
+            pid = os.fork()
+            if pid == 0:
+                # At this point, after-forkers have already been executed
+                os.close(w)
+                # Wait for parent to tell us to exit
+                os.read(fin_r, 1)
+                os._exit(0)
+            else:
+                try:
+                    os.close(w)
+                    with open(r, "rb") as f:
+                        data = f.read()
+                        assert len(data) == 6, data
+                        # Check before-fork callbacks
+                        assert data[:2] == b'BA', data
+                        # Check after-fork callbacks
+                        assert sorted(data[2:]) == list(b'CDEF'), data
+                        assert data.index(b'C') < data.index(b'D'), data
+                        assert data.index(b'E') < data.index(b'F'), data
+                finally:
+                    os.write(fin_w, b'!')
+            """
+        assert_python_ok('-c', code)
 
     @unittest.skipUnless(hasattr(posix, 'lockf'), "test needs posix.lockf()")
     def test_lockf(self):
@@ -478,6 +540,10 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.minor)
         self.assertRaises((ValueError, OverflowError), posix.minor, -1)
 
+        if sys.platform.startswith('freebsd') and dev >= 0x1_0000_0000:
+            self.skipTest("bpo-31044: on FreeBSD CURRENT, minor() truncates "
+                          "64-bit dev to 32-bit")
+
         self.assertEqual(posix.makedev(major, minor), dev)
         self.assertRaises(TypeError, posix.makedev, float(major), minor)
         self.assertRaises(TypeError, posix.makedev, major, float(minor))
@@ -581,17 +647,25 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OSError, posix.chdir, support.TESTFN)
 
     def test_listdir(self):
-        self.assertTrue(support.TESTFN in posix.listdir(os.curdir))
+        self.assertIn(support.TESTFN, posix.listdir(os.curdir))
 
     def test_listdir_default(self):
         # When listdir is called without argument,
         # it's the same as listdir(os.curdir).
-        self.assertTrue(support.TESTFN in posix.listdir())
+        self.assertIn(support.TESTFN, posix.listdir())
 
     def test_listdir_bytes(self):
         # When listdir is called with a bytes object,
         # the returned strings are of type bytes.
-        self.assertTrue(os.fsencode(support.TESTFN) in posix.listdir(b'.'))
+        self.assertIn(os.fsencode(support.TESTFN), posix.listdir(b'.'))
+
+    def test_listdir_bytes_like(self):
+        for cls in bytearray, memoryview:
+            with self.assertWarns(DeprecationWarning):
+                names = posix.listdir(cls(b'.'))
+            self.assertIn(os.fsencode(support.TESTFN), names)
+            for name in names:
+                self.assertIs(type(name), bytes)
 
     @unittest.skipUnless(posix.listdir in os.supports_fd,
                          "test needs fd support for posix.listdir()")
@@ -750,6 +824,21 @@ class PosixTester(unittest.TestCase):
         for k, v in posix.environ.items():
             self.assertEqual(type(k), item_type)
             self.assertEqual(type(v), item_type)
+
+    @unittest.skipUnless(hasattr(os, "putenv"), "requires os.putenv()")
+    def test_putenv(self):
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT\0VEGETABLE', 'cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv(b'FRUIT\0VEGETABLE', b'cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT', 'orange\0VEGETABLE=cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv(b'FRUIT', b'orange\0VEGETABLE=cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT=ORANGE', 'lemon')
+        with self.assertRaises(ValueError):
+            os.putenv(b'FRUIT=ORANGE', b'lemon')
 
     @unittest.skipUnless(hasattr(posix, 'getcwd'), 'test needs posix.getcwd()')
     def test_getcwd_long_pathnames(self):
