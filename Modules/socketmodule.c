@@ -7042,6 +7042,8 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, CAN_SFF_MASK);
     PyModule_AddIntMacro(m, CAN_EFF_MASK);
     PyModule_AddIntMacro(m, CAN_ERR_MASK);
+
+    PyModule_AddIntMacro(m, CAN_ISOTP);
 #endif
 #ifdef HAVE_LINUX_CAN_RAW_H
     PyModule_AddIntMacro(m, CAN_RAW_FILTER);
@@ -7066,25 +7068,6 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "CAN_BCM_RX_STATUS", RX_STATUS);
     PyModule_AddIntConstant(m, "CAN_BCM_RX_TIMEOUT", RX_TIMEOUT);
     PyModule_AddIntConstant(m, "CAN_BCM_RX_CHANGED", RX_CHANGED);
-#endif
-#ifdef HAVE_LINUX_CAN_ISOTP_H
-    PyModule_AddIntMacro(m, SOL_CAN_ISOTP);
-    PyModule_AddIntMacro(m, CAN_ISOTP);
-    PyModule_AddIntMacro(m, CAN_ISOTP_OPTS);
-    PyModule_AddIntMacro(m, CAN_ISOTP_RECV_FC);
-    PyModule_AddIntMacro(m, CAN_ISOTP_TX_STMIN);
-    PyModule_AddIntMacro(m, CAN_ISOTP_RX_STMIN);
-    PyModule_AddIntMacro(m, CAN_ISOTP_LL_OPTS);
-    PyModule_AddIntMacro(m, CAN_ISOTP_LISTEN_MODE);
-    PyModule_AddIntMacro(m, CAN_ISOTP_EXTEND_ADDR);
-    PyModule_AddIntMacro(m, CAN_ISOTP_TX_PADDING);
-    PyModule_AddIntMacro(m, CAN_ISOTP_RX_PADDING);
-    PyModule_AddIntMacro(m, CAN_ISOTP_CHK_PAD_LEN);
-    PyModule_AddIntMacro(m, CAN_ISOTP_CHK_PAD_DATA);
-    PyModule_AddIntMacro(m, CAN_ISOTP_HALF_DUPLEX);
-    PyModule_AddIntMacro(m, CAN_ISOTP_FORCE_TXSTMIN);
-    PyModule_AddIntMacro(m, CAN_ISOTP_FORCE_RXSTMIN);
-    PyModule_AddIntMacro(m, CAN_ISOTP_RX_EXT_ADDR);
 #endif
 #ifdef SOL_RDS
     PyModule_AddIntMacro(m, SOL_RDS);

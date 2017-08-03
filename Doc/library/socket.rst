@@ -348,8 +348,7 @@ Constants
 .. data:: CAN_ISOTP
 
    CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
-   ISO-TP constants, documented in the Linux documentation, are also
-   defined in the socket module.
+   ISO-TP constants, documented in the Linux documentation.
 
    Availability: Linux >= 2.6.25
 
@@ -1688,7 +1687,7 @@ After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, yo
 can use the :meth:`socket.send`, and the :meth:`socket.recv` operations (and
 their counterparts) on the socket object as usual.
 
-This example might require special privileges::
+This last example might require special privileges::
 
    import socket
    import struct
@@ -1745,44 +1744,6 @@ There is a :mod:`socket` flag to set, in order to prevent this,
 
 the :data:`SO_REUSEADDR` flag tells the kernel to reuse a local socket in
 ``TIME_WAIT`` state, without waiting for its natural timeout to expire.
-
-The last example shows how to use the socket interface to communicate to a CAN
-network using the ISO-TP protocol. Altough Linux defines the required interface
-in <linux/can.h>, it does not support a native implementation of the protocol.
-The appropriate module must be loaded in the kernel.
-
-   modprobe can-isotp
-
-If the system does not support ISO-TP protocol, creating the socket might return::
-
-  OSError: [Errno 93] Protocol not supported
-
-This example might require special privileges::
-
-   import socket
-   import struct
-
-   # create a iso-tp socket and bind it to the 'vcan0' interface, with rx_addr = 0x123 and tx_addr=0x456
-   s1 = socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP)
-   s2 = socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP)
-
-   # set socket some options before binding to the interface.
-   stmin = 0x32 # Minimum Separation Time : 50 milliseconds between each CAN frame. See ISO 15765-2 for acceptables values.
-   bs = 3       # Block Size : sends a FlowControl frame every 3 Consecutive Frames
-   wftmax = 5   # Maximum Wait Frame Transmission - Maximum number of consecutive Wait Frame.
-   s2.setsockopt(socket.SOL_CAN_ISOTP, socket.CAN_ISOTP_RECV_FC, struct.pack("=BBB", bs, stmin, wftmax))
-
-   s1.bind(('vcan0',0x123, 0x456))
-   s2.bind(('vcan0',0x456, 0x123))
-
-   data = b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10"
-   s1.send(data)
-   s2.recv(len(data))
-
-   # The following transmission will occur
-   # vcan0  456   [8]  10 0A 01 02 03 04 05 06
-   # vcan0  123   [3]  30 03 32
-   # vcan0  456   [5]  21 07 08 09 10
 
 
 .. seealso::
