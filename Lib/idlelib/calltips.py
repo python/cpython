@@ -148,7 +148,8 @@ def get_argspec(ob):
         argspec = str(inspect.signature(fob))
     except ValueError as err:
         msg = str(err)
-        return _invalid_method if msg.startswith(_invalid_method) else default
+        if msg.startswith(_invalid_method):
+            return _invalid_method
 
     if '/' in argspec:
         """Using AC's positional argument should add the explain"""
