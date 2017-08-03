@@ -66,6 +66,8 @@ static void format_exc_unbound(PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
                                       PyFrameObject *, const _Py_CODEUNIT *);
 static PyObject * special_lookup(PyObject *, _Py_Identifier *);
+static int check_args_iterable(PyObject *func, PyObject *vararg);
+static void format_kwargs_mapping_error(PyObject *func, PyObject *kwargs);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -2512,14 +2514,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 none_val = _PyList_Extend((PyListObject *)sum, PEEK(i));
                 if (none_val == NULL) {
                     if (opcode == BUILD_TUPLE_UNPACK_WITH_CALL &&
-                        PyErr_ExceptionMatches(PyExc_TypeError)) {
-                        PyObject *func = PEEK(1 + oparg);
-                        PyErr_Format(PyExc_TypeError,
-                                "%.200s%.200s argument after * "
-                                "must be an iterable, not %.200s",
-                                PyEval_GetFuncName(func),
-                                PyEval_GetFuncDesc(func),
-                                PEEK(i)->ob_type->tp_name);
+                        PyErr_ExceptionMatches(PyExc_TypeError))
+                    {
+                        check_args_iterable(PEEK(1 + oparg), PEEK(i));
                     }
                     Py_DECREF(sum);
                     goto error;
@@ -2732,12 +2729,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 if (_PyDict_MergeEx(sum, arg, 2) < 0) {
                     PyObject *func = PEEK(2 + oparg);
                     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                        PyErr_Format(PyExc_TypeError,
-                                "%.200s%.200s argument after ** "
-                                "must be a mapping, not %.200s",
-                                PyEval_GetFuncName(func),
-                                PyEval_GetFuncDesc(func),
-                                arg->ob_type->tp_name);
+                        format_kwargs_mapping_error(func, arg);
                     }
                     else if (PyErr_ExceptionMatches(PyExc_KeyError)) {
                         PyObject *exc, *val, *tb;
@@ -3390,13 +3382,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                          * is not a mapping.
                          */
                         if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                            func = SECOND();
-                            PyErr_Format(PyExc_TypeError,
-                                         "%.200s%.200s argument after ** "
-                                         "must be a mapping, not %.200s",
-                                         PyEval_GetFuncName(func),
-                                         PyEval_GetFuncDesc(func),
-                                         kwargs->ob_type->tp_name);
+                            format_kwargs_mapping_error(SECOND(), kwargs);
                         }
                         Py_DECREF(kwargs);
                         goto error;
@@ -3409,14 +3395,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             callargs = POP();
             func = TOP();
             if (!PyTuple_CheckExact(callargs)) {
-                if (Py_TYPE(callargs)->tp_iter == NULL &&
-                        !PySequence_Check(callargs)) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "%.200s%.200s argument after * "
-                                 "must be an iterable, not %.200s",
-                                 PyEval_GetFuncName(func),
-                                 PyEval_GetFuncDesc(func),
-                                 callargs->ob_type->tp_name);
+                if (check_args_iterable(func, callargs) < 0) {
                     Py_DECREF(callargs);
                     goto error;
                 }
@@ -5177,6 +5156,32 @@ import_all_from(PyObject *locals, PyObject *v)
     }
     Py_DECREF(all);
     return err;
+}
+
+static int
+check_args_iterable(PyObject *func, PyObject *args)
+{
+    if (args->ob_type->tp_iter == NULL && !PySequence_Check(args)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s%.200s argument after * "
+                     "must be an iterable, not %.200s",
+                     PyEval_GetFuncName(func),
+                     PyEval_GetFuncDesc(func),
+                     args->ob_type->tp_name);
+        return -1;
+    }
+    return 0;
+}
+
+static void
+format_kwargs_mapping_error(PyObject *func, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError,
+                 "%.200s%.200s argument after ** "
+                 "must be a mapping, not %.200s",
+                 PyEval_GetFuncName(func),
+                 PyEval_GetFuncDesc(func),
+                 kwargs->ob_type->tp_name);
 }
 
 static void
