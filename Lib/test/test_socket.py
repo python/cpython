@@ -1724,6 +1724,10 @@ class CANTest(ThreadedCANSocketTest):
 @unittest.skipUnless(HAVE_SOCKET_CAN_ISOTP, 'CAN ISOTP required for this test.')
 class ISOTPTest(unittest.TestCase):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.interface = "vcan0"
+
     def testCrucialConstants(self):
         socket.AF_CAN
         socket.PF_CAN
@@ -1749,12 +1753,15 @@ class ISOTPTest(unittest.TestCase):
     def testBind(self):
         try:
             with socket.socket(socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP) as s:
-                s.bind(("vcan0",1,2))
-
+                addr = (self.interface,0x123,0x456)
+                s.bind(addr)
+                self.assertEqual(s.getsockname(), addr)
         except OSError as e:
-            if e.errno not in [errno.ENODEV, errno.EPROTONOSUPPORT]:
+            if e.errno == errno.ENODEV:
+                self.skipTest('network interface `%s` does not exist' %
+                           self.interface)
+            else:
                 raise
-
 
 
 @unittest.skipUnless(HAVE_SOCKET_RDS, 'RDS sockets required for this test.')
