@@ -309,7 +309,7 @@ class ConfigDialog(Toplevel):
         self.highlight_target = tracers.add(
                 StringVar(parent), self.var_changed_highlight_target)
 
-        
+
         self.parenstyle = tracers.add(
                 StringVar(parent), self.var_changed_parenstyle)
         self.bell = tracers.add(
@@ -327,7 +327,7 @@ class ConfigDialog(Toplevel):
             'main','Theme','flash-delay', default=500))
         self.num_lines.set(idleConf.GetOption(
             'main','Theme','numlines', default=3))
-                          
+
         # Widget creation:
         # body frame and section frames
         frame = Frame(self.note)
@@ -336,12 +336,12 @@ class ConfigDialog(Toplevel):
                                  text=' Custom Highlighting ')
         frame_theme = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                 text=' Highlighting Theme ')
-        
+
         frame_paren = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                 text=' Matched Parenthetics ')
         frame_code = LabelFrame(frame, borderwidth=2, relief=GROOVE,
                                 text=' Code Context ')
-        
+
         #frame_custom
         text = self.highlight_sample = frame.highlight_sample = Text(
                 frame_custom, relief=SOLID, borderwidth=1,
@@ -580,7 +580,7 @@ class ConfigDialog(Toplevel):
         self.num_lines = tracers.add(
                 StringVar(parent), self.var_changed_num_lines)
 
-        
+
     def var_changed_highlight_target(self, *params):
         "Process selection of new target tag for highlighting."
         self.set_highlight_target()
