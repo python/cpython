@@ -417,9 +417,11 @@ Miscellaneous options
 
    Warn about Python 3.x possible incompatibilities by emitting a
    :exc:`DeprecationWarning` for features that are removed or significantly
-   changed in Python 3.
+   changed in Python 3 and can't be detected using static code analysis.
 
    .. versionadded:: 2.6
+
+   See :doc:`/howto/pyporting` for more details.
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
