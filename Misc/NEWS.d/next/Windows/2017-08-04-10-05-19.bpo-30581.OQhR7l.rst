@@ -1,0 +1,2 @@
+The behavior of os.cpu_count() has changed on Windows. Windows will never
+return, nor have access to, more than 32 CPUs on a 32 bit build of Python.
