@@ -230,6 +230,12 @@ class ConfigDialog(Toplevel):
                 Note: this has no callback.
             is_builtin_theme: Selector for built-in or custom theme.
             highlight_target: Menu variable for the highlight tag target.
+            parenstyle: Menu option for style of paren highlight used.
+            bell: Menu variable for whether parens bells on error.
+            flash_delay: Menu variable for length of time paren
+                highlights display.
+            num_lines: Menu variable for number of lines  Code Context
+                displays.
 
         Instance Data Attributes:
             theme_elements: Dictionary of tags for text highlighting.
