@@ -7,7 +7,6 @@
 /* Standard definitions */
 #include "Python.h"
 #include <stddef.h>
-#include <setjmp.h>
 #include <signal.h>
 #include <errno.h>
 #include <sys/time.h>
@@ -1180,10 +1179,7 @@ setup_readline(readlinestate *mod_state)
 
 /* Wrapper around GNU readline that handles signals differently. */
 
-
-#if defined(HAVE_RL_CALLBACK) && defined(HAVE_SELECT)
-
-static  char *completed_input_string;
+static char *completed_input_string;
 static void
 rlhandler(char *text)
 {
@@ -1262,47 +1258,6 @@ readline_until_enter_or_signal(const char *prompt, int *signal)
 }
 
 
-#else
-
-/* Interrupt handler */
-
-static jmp_buf jbuf;
-
-/* ARGSUSED */
-static void
-onintr(int sig)
-{
-    longjmp(jbuf, 1);
-}
-
-
-static char *
-readline_until_enter_or_signal(const char *prompt, int *signal)
-{
-    PyOS_sighandler_t old_inthandler;
-    char *p;
-
-    *signal = 0;
-
-    old_inthandler = PyOS_setsig(SIGINT, onintr);
-    if (setjmp(jbuf)) {
-#ifdef HAVE_SIGRELSE
-        /* This seems necessary on SunOS 4.1 (Rasmus Hahn) */
-        sigrelse(SIGINT);
-#endif
-        PyOS_setsig(SIGINT, old_inthandler);
-        *signal = 1;
-        return NULL;
-    }
-    rl_event_hook = PyOS_InputHook;
-    p = readline(prompt);
-    PyOS_setsig(SIGINT, old_inthandler);
-
-    return p;
-}
-#endif /*defined(HAVE_RL_CALLBACK) && defined(HAVE_SELECT) */
-
-
 static char *
 call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
@@ -1347,15 +1302,17 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     if (should_auto_add_history && n > 0) {
         const char *line;
         int length = _py_get_history_length();
-        if (length > 0)
+        if (length > 0) {
+            HIST_ENTRY *hist_ent;
 #ifdef __APPLE__
             if (using_libedit_emulation) {
                 /* handle older 0-based or newer 1-based indexing */
-                line = (const char *)history_get(length + libedit_history_start - 1)->line;
+                hist_ent = history_get(length + libedit_history_start - 1);
             } else
 #endif /* __APPLE__ */
-            line = (const char *)history_get(length)->line;
-        else
+                hist_ent = history_get(length);
+            line = hist_ent ? hist_ent->line : "";
+        } else
             line = "";
         if (strcmp(p, line))
             add_history(p);
@@ -1425,6 +1382,7 @@ PyInit_readline(void)
 
     PyModule_AddIntConstant(m, "_READLINE_VERSION", RL_READLINE_VERSION);
     PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION", rl_readline_version);
+    PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION", rl_library_version);
 
     return m;
 }

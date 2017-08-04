@@ -1,0 +1,1 @@
+Clarify doc on truth value testing. Original patch by Peter Thomassen.
