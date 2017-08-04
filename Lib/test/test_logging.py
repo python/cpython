@@ -135,7 +135,9 @@ class BaseTest(unittest.TestCase):
             logging._handlers.clear()
             logging._handlers.update(self.saved_handlers)
             logging._handlerList[:] = self.saved_handler_list
-            loggerDict = logging.getLogger().manager.loggerDict
+            manager = logging.getLogger().manager
+            manager.disable = 0
+            loggerDict = manager.loggerDict
             loggerDict.clear()
             loggerDict.update(self.saved_loggers)
             logger_states = self.logger_states
@@ -695,6 +697,20 @@ class StreamHandlerTest(BaseTest):
                 self.assertEqual('', stderr.getvalue())
         finally:
             logging.raiseExceptions = old_raise
+
+    def test_stream_setting(self):
+        """
+        Test setting the handler's stream
+        """
+        h = logging.StreamHandler()
+        stream = io.StringIO()
+        old = h.setStream(stream)
+        self.assertIs(old, sys.stderr)
+        actual = h.setStream(old)
+        self.assertIs(actual, stream)
+        # test that setting to existing value returns None
+        actual = h.setStream(old)
+        self.assertIsNone(actual)
 
 # -- The following section could be moved into a server_helper.py module
 # -- if it proves to be of wider utility than just test_logging
@@ -1257,7 +1273,7 @@ class ConfigFileTest(BaseTest):
     datefmt=
     """
 
-    # config7 adds a compiler logger.
+    # config7 adds a compiler logger, and uses kwargs instead of args.
     config7 = """
     [loggers]
     keys=root,parser,compiler
@@ -1288,7 +1304,7 @@ class ConfigFileTest(BaseTest):
     class=StreamHandler
     level=NOTSET
     formatter=form1
-    args=(sys.stdout,)
+    kwargs={'stream': sys.stdout,}
 
     [formatter_form1]
     format=%(levelname)s ++ %(message)s
@@ -3110,6 +3126,7 @@ class QueueHandlerTest(BaseTest):
         BaseTest.setUp(self)
         self.queue = queue.Queue(-1)
         self.que_hdlr = logging.handlers.QueueHandler(self.queue)
+        self.name = 'que'
         self.que_logger = logging.getLogger('que')
         self.que_logger.propagate = False
         self.que_logger.setLevel(logging.WARNING)
@@ -3130,6 +3147,19 @@ class QueueHandlerTest(BaseTest):
         self.assertTrue(isinstance(data, logging.LogRecord))
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
+
+    def test_formatting(self):
+        msg = self.next_message()
+        levelname = logging.getLevelName(logging.WARNING)
+        log_format_str = '{name} -> {levelname}: {message}'
+        formatted_msg = log_format_str.format(name=self.name,
+                                              levelname=levelname, message=msg)
+        formatter = logging.Formatter(self.log_format)
+        self.que_hdlr.setFormatter(formatter)
+        self.que_logger.warning(msg)
+        log_record = self.queue.get_nowait()
+        self.assertEqual(formatted_msg, log_record.msg)
+        self.assertEqual(formatted_msg, log_record.message)
 
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
@@ -4093,6 +4123,62 @@ class LoggerTest(BaseTest):
                 s = pickle.dumps(logger, proto)
                 unpickled = pickle.loads(s)
                 self.assertIs(unpickled, logger)
+
+    def test_caching(self):
+        root = self.root_logger
+        logger1 = logging.getLogger("abc")
+        logger2 = logging.getLogger("abc.def")
+
+        # Set root logger level and ensure cache is empty
+        root.setLevel(logging.ERROR)
+        self.assertEqual(logger2.getEffectiveLevel(), logging.ERROR)
+        self.assertEqual(logger2._cache, {})
+
+        # Ensure cache is populated and calls are consistent
+        self.assertTrue(logger2.isEnabledFor(logging.ERROR))
+        self.assertFalse(logger2.isEnabledFor(logging.DEBUG))
+        self.assertEqual(logger2._cache, {logging.ERROR: True, logging.DEBUG: False})
+        self.assertEqual(root._cache, {})
+        self.assertTrue(logger2.isEnabledFor(logging.ERROR))
+
+        # Ensure root cache gets populated
+        self.assertEqual(root._cache, {})
+        self.assertTrue(root.isEnabledFor(logging.ERROR))
+        self.assertEqual(root._cache, {logging.ERROR: True})
+
+        # Set parent logger level and ensure caches are emptied
+        logger1.setLevel(logging.CRITICAL)
+        self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)
+        self.assertEqual(logger2._cache, {})
+
+        # Ensure logger2 uses parent logger's effective level
+        self.assertFalse(logger2.isEnabledFor(logging.ERROR))
+
+        # Set level to NOTSET and ensure caches are empty
+        logger2.setLevel(logging.NOTSET)
+        self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)
+        self.assertEqual(logger2._cache, {})
+        self.assertEqual(logger1._cache, {})
+        self.assertEqual(root._cache, {})
+
+        # Verify logger2 follows parent and not root
+        self.assertFalse(logger2.isEnabledFor(logging.ERROR))
+        self.assertTrue(logger2.isEnabledFor(logging.CRITICAL))
+        self.assertFalse(logger1.isEnabledFor(logging.ERROR))
+        self.assertTrue(logger1.isEnabledFor(logging.CRITICAL))
+        self.assertTrue(root.isEnabledFor(logging.ERROR))
+
+        # Disable logging in manager and ensure caches are clear
+        logging.disable()
+        self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)
+        self.assertEqual(logger2._cache, {})
+        self.assertEqual(logger1._cache, {})
+        self.assertEqual(root._cache, {})
+
+        # Ensure no loggers are enabled
+        self.assertFalse(logger1.isEnabledFor(logging.CRITICAL))
+        self.assertFalse(logger2.isEnabledFor(logging.CRITICAL))
+        self.assertFalse(root.isEnabledFor(logging.CRITICAL))
 
 
 class BaseFileTest(BaseTest):

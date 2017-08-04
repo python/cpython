@@ -972,6 +972,8 @@ FutureObj_dealloc(PyObject *self)
         }
     }
 
+    PyObject_GC_UnTrack(self);
+
     if (fut->fut_weakreflist != NULL) {
         PyObject_ClearWeakRefs(self);
     }
@@ -1845,6 +1847,8 @@ TaskObj_dealloc(PyObject *self)
             return;
         }
     }
+
+    PyObject_GC_UnTrack(self);
 
     if (task->task_weakreflist != NULL) {
         PyObject_ClearWeakRefs(self);
