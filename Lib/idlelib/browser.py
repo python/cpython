@@ -19,13 +19,12 @@ from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 from idlelib.windows import ListedToplevel
 
-__all__ = ['ClassBrowser']
 
 file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.
 
 
-def traverse_node(node, name=None):
+def _traverse_node(node, name=None):
     """Return the immediate children for a node.
 
     Node is the current node being traversed.  The return value is
@@ -46,9 +45,9 @@ def traverse_node(node, name=None):
                     else:
                         sname = sup.name
                         if sup.module != cl.module:
-                            sname = "%s.%s" % (sup.module, sname)
+                            sname = f'{sup.module}.{sname}'
                     supers.append(sname)
-                s = s + "(%s)" % ", ".join(supers)
+                s += '({})'.format(', '.join(supers))
             items.append((cl.lineno, s))
             children[s] = cl
     return children, items
@@ -58,7 +57,7 @@ class ClassBrowser:
     """Browse module classes and functions in IDLE.
     """
 
-    def __init__(self, flist, name, path, _htest=False):
+    def __init__(self, flist, name, path, _htest=False, _utest=False):
         # XXX This API should change, if the file doesn't end in ".py"
         # XXX the code here is bogus!
         """Create a window for browsing a module's structure.
@@ -79,11 +78,12 @@ class ClassBrowser:
                 the tree and subsequently in the children.
         """
         global file_open
-        if not _htest:
+        if not (_htest or _utest):
             file_open = pyshell.flist.open
         self.name = name
         self.file = os.path.join(path[0], self.name + ".py")
         self._htest = _htest
+        self._utest = _utest
         self.init(flist)
 
     def close(self, event=None):
@@ -112,8 +112,9 @@ class ClassBrowser:
         sc.frame.pack(expand=1, fill="both")
         item = self.rootnode()
         self.node = node = TreeNode(sc.canvas, None, item)
-        node.update()
-        node.expand()
+        if not self._utest:
+            node.update()
+            node.expand()
 
     def settitle(self):
         "Set the window title."
@@ -165,7 +166,7 @@ class ModuleBrowserTreeItem(TreeItem):
             return
         if not os.path.exists(self.file):
             return
-        pyshell.flist.open(self.file)
+        file_open(self.file)
 
     def IsExpandable(self):
         "Return True if Python (.py) file."
@@ -190,7 +191,7 @@ class ModuleBrowserTreeItem(TreeItem):
             tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:
             return []
-        self.classes, items = traverse_node(tree, name)
+        self.classes, items = _traverse_node(tree, name)
         items.sort()
         return [s for item, s in items]
 
@@ -272,7 +273,7 @@ class ChildBrowserTreeItem(TreeItem):
             return []
         result = []
         for name, ob in self.cl.children.items():
-            classes, items = traverse_node({name: ob})
+            classes, items = _traverse_node({name: ob})
             result.append((ob.lineno, classes, items[0][1]))
         result.sort()
         return [item[1:] for item in result]
