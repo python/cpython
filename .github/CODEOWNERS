@@ -26,3 +26,6 @@
 **/*mime*                     @bitdancer
 **/*imap*                     @bitdancer
 **/*poplib*                   @bitdancer
+
+# subprocess
+**/*subprocess*               @gpshead
