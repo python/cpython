@@ -1,4 +1,6 @@
 import unittest
+from test.support import bigmemtest, _2G
+import sys
 from ctypes import *
 
 from ctypes.test import need_symbol
@@ -180,6 +182,11 @@ class ArrayTestCase(unittest.TestCase):
             class T(Array):
                 _type_ = c_int
                 _length_ = 1.87
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=_2G, memuse=1, dry_run=False)
+    def test_large_array(self, size):
+        c_char * size
 
 if __name__ == '__main__':
     unittest.main()
