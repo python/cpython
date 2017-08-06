@@ -768,7 +768,7 @@ static int devpoll_flush(devpollObject *self)
         ** the wild.
         ** See http://bugs.python.org/issue6397.
         */
-        PyErr_Format(PyExc_IOError, "failed to write all pollfds. "
+        PyErr_Format(PyExc_OSError, "failed to write all pollfds. "
                 "Please, report at http://bugs.python.org/. "
                 "Data to report: Size tried: %d, actual size written: %d.",
                 size, n);
@@ -948,7 +948,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
     } while (1);
 
     if (poll_result < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -2021,8 +2021,8 @@ newKqueue_Object(PyTypeObject *type, SOCKET fd)
 static PyObject *
 kqueue_queue_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if ((args != NULL && PyObject_Size(args)) ||
-                    (kwds != NULL && PyObject_Size(kwds))) {
+    if (PyTuple_GET_SIZE(args) ||
+                    (kwds != NULL && PyDict_GET_SIZE(kwds))) {
         PyErr_SetString(PyExc_ValueError,
                         "select.kqueue doesn't accept arguments");
         return NULL;

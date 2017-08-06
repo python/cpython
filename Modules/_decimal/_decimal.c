@@ -2242,7 +2242,7 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     }
     if (!PyFloat_Check(v)) {
         PyErr_SetString(PyExc_TypeError,
-            "argument must be int of float");
+            "argument must be int or float");
         return NULL;
     }
 

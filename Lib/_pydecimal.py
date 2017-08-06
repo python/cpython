@@ -1674,13 +1674,13 @@ class Decimal(object):
 
     __trunc__ = __int__
 
+    @property
     def real(self):
         return self
-    real = property(real)
 
+    @property
     def imag(self):
         return Decimal(0)
-    imag = property(imag)
 
     def conjugate(self):
         return self

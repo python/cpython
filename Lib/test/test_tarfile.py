@@ -2167,6 +2167,16 @@ class CommandLineTest(unittest.TestCase):
             for tardata in files:
                 tf.add(tardata, arcname=os.path.basename(tardata))
 
+    def test_bad_use(self):
+        rc, out, err = self.tarfilecmd_failure()
+        self.assertEqual(out, b'')
+        self.assertIn(b'usage', err.lower())
+        self.assertIn(b'error', err.lower())
+        self.assertIn(b'required', err.lower())
+        rc, out, err = self.tarfilecmd_failure('-l', '')
+        self.assertEqual(out, b'')
+        self.assertNotEqual(err.strip(), b'')
+
     def test_test_command(self):
         for tar_name in testtarnames:
             for opt in '-t', '--test':

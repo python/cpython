@@ -139,7 +139,10 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
             process = MUNCH_SIZE;
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
-        EVP_DigestUpdate(self->ctx, (const void*)cp, process);
+        if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
+            _setException(PyExc_ValueError);
+            break;
+        }
         len -= process;
         cp += process;
     }
@@ -209,7 +212,10 @@ EVP_digest(EVPobject *self, PyObject *unused)
         return _setException(PyExc_ValueError);
     }
     digest_size = EVP_MD_CTX_size(temp_ctx);
-    EVP_DigestFinal(temp_ctx, digest, NULL);
+    if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
+        _setException(PyExc_ValueError);
+        return NULL;
+    }
 
     retval = PyBytes_FromStringAndSize((const char *)digest, digest_size);
     EVP_MD_CTX_free(temp_ctx);
@@ -237,7 +243,10 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
         return _setException(PyExc_ValueError);
     }
     digest_size = EVP_MD_CTX_size(temp_ctx);
-    EVP_DigestFinal(temp_ctx, digest, NULL);
+    if (!EVP_DigestFinal(temp_ctx, digest, NULL)) {
+        _setException(PyExc_ValueError);
+        return NULL;
+    }
 
     EVP_MD_CTX_free(temp_ctx);
 
@@ -362,7 +371,12 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
             PyBuffer_Release(&view);
         return -1;
     }
-    EVP_DigestInit(self->ctx, digest);
+    if (!EVP_DigestInit(self->ctx, digest)) {
+        _setException(PyExc_ValueError);
+        if (data_obj)
+            PyBuffer_Release(&view);
+        return -1;
+    }
 
     self->name = name_obj;
     Py_INCREF(self->name);
@@ -461,7 +475,11 @@ EVPnew(PyObject *name_obj,
     if (initial_ctx) {
         EVP_MD_CTX_copy(self->ctx, initial_ctx);
     } else {
-        EVP_DigestInit(self->ctx, digest);
+        if (!EVP_DigestInit(self->ctx, digest)) {
+            _setException(PyExc_ValueError);
+            Py_DECREF(self);
+            return NULL;
+        }
     }
 
     if (cp && len) {
@@ -902,10 +920,12 @@ generate_hash_name_list(void)
  *  the generic one passing it a python string and are noticeably
  *  faster than calling a python new() wrapper.  Thats important for
  *  code that wants to make hashes of a bunch of small strings.
+ *  The first call will lazy-initialize, which reports an exception
+ *  if initialization fails.
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
-    EVP_new_ ## NAME (PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames) \
+    EVP_new_ ## NAME (PyObject *self, PyObject **args, Py_ssize_t nargs) \
     { \
         PyObject *data_obj = NULL; \
         Py_buffer view = { 0 }; \
@@ -915,8 +935,15 @@ generate_hash_name_list(void)
             return NULL; \
         } \
      \
-        if (!_PyArg_NoStackKeywords(#NAME, kwnames)) { \
-            return NULL; \
+        if (CONST_new_ ## NAME ## _ctx_p == NULL) { \
+            EVP_MD_CTX *ctx_p = EVP_MD_CTX_new(); \
+            if (!EVP_get_digestbyname(#NAME) || \
+                !EVP_DigestInit(ctx_p, EVP_get_digestbyname(#NAME))) { \
+                _setException(PyExc_ValueError); \
+                EVP_MD_CTX_free(ctx_p); \
+                return NULL; \
+            } \
+            CONST_new_ ## NAME ## _ctx_p = ctx_p; \
         } \
      \
         if (data_obj) \
@@ -946,10 +973,6 @@ generate_hash_name_list(void)
 #define INIT_CONSTRUCTOR_CONSTANTS(NAME)  do { \
     if (CONST_ ## NAME ## _name_obj == NULL) { \
         CONST_ ## NAME ## _name_obj = PyUnicode_FromString(#NAME); \
-        if (EVP_get_digestbyname(#NAME)) { \
-            CONST_new_ ## NAME ## _ctx_p = EVP_MD_CTX_new(); \
-            EVP_DigestInit(CONST_new_ ## NAME ## _ctx_p, EVP_get_digestbyname(#NAME)); \
-        } \
     } \
 } while (0);
 

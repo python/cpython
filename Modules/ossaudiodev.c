@@ -128,13 +128,13 @@ newossobject(PyObject *arg)
        expected write() semantics. */
     if (fcntl(fd, F_SETFL, 0) == -1) {
         close(fd);
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, devicename);
         return NULL;
     }
 
     if (ioctl(fd, SNDCTL_DSP_GETFMTS, &afmts) == -1) {
         close(fd);
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, devicename);
         return NULL;
     }
     /* Create and initialize the object */
@@ -253,7 +253,7 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
         return NULL;
 
     if (ioctl(fd, cmd, &arg) == -1)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     return PyLong_FromLong(arg);
 }
 
@@ -278,7 +278,7 @@ _do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
         return NULL;
 
     if (ioctl(fd, cmd, &arg) == -1)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     return PyLong_FromLong(arg);
 }
 
@@ -306,7 +306,7 @@ _do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
     Py_END_ALLOW_THREADS
 
     if (rv == -1)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 
@@ -324,7 +324,7 @@ oss_nonblock(oss_audio_t *self, PyObject *unused)
     /* Hmmm: it doesn't appear to be possible to return to blocking
        mode once we're in non-blocking mode! */
     if (ioctl(self->fd, SNDCTL_DSP_NONBLOCK, NULL) == -1)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 
@@ -346,7 +346,7 @@ oss_getfmts(oss_audio_t *self, PyObject *unused)
         return NULL;
 
     if (ioctl(self->fd, SNDCTL_DSP_GETFMTS, &mask) == -1)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     return PyLong_FromLong(mask);
 }
 
@@ -491,7 +491,7 @@ oss_writeall(oss_audio_t *self, PyObject *args)
         assert(select_rv != 0);   /* no timeout, can't expire */
         if (select_rv == -1) {
             PyBuffer_Release(&data);
-            return PyErr_SetFromErrno(PyExc_IOError);
+            return PyErr_SetFromErrno(PyExc_OSError);
         }
 
         rv = _Py_write(self->fd, cp, Py_MIN(size, INT_MAX));
@@ -575,7 +575,7 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
 
     fmt = wanted_fmt;
     if (ioctl(self->fd, SNDCTL_DSP_SETFMT, &fmt) == -1) {
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     }
     if (strict && fmt != wanted_fmt) {
         return PyErr_Format
@@ -586,7 +586,7 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
 
     channels = wanted_channels;
     if (ioctl(self->fd, SNDCTL_DSP_CHANNELS, &channels) == -1) {
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     }
     if (strict && channels != wanted_channels) {
         return PyErr_Format
@@ -597,7 +597,7 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
 
     rate = wanted_rate;
     if (ioctl(self->fd, SNDCTL_DSP_SPEED, &rate) == -1) {
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     }
     if (strict && rate != wanted_rate) {
         return PyErr_Format
@@ -656,11 +656,11 @@ oss_bufsize(oss_audio_t *self, PyObject *unused)
         return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0 || !nchannels || !ssize) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     if (ioctl(self->fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     return PyLong_FromLong((ai.fragstotal * ai.fragsize) / (nchannels * ssize));
@@ -678,11 +678,11 @@ oss_obufcount(oss_audio_t *self, PyObject *unused)
         return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0 || !nchannels || !ssize) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     if (ioctl(self->fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     return PyLong_FromLong((ai.fragstotal * ai.fragsize - ai.bytes) /
@@ -701,11 +701,11 @@ oss_obuffree(oss_audio_t *self, PyObject *unused)
         return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0 || !nchannels || !ssize) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     if (ioctl(self->fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     return PyLong_FromLong(ai.bytes / (ssize * nchannels));
@@ -725,7 +725,7 @@ oss_getptr(oss_audio_t *self, PyObject *unused)
     else
         req = SNDCTL_DSP_GETOPTR;
     if (ioctl(self->fd, req, &info) == -1) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     return Py_BuildValue("iii", info.bytes, info.blocks, info.ptr);
@@ -805,7 +805,7 @@ oss_mixer_get(oss_mixer_t *self, PyObject *args)
     }
 
     if (ioctl(self->fd, MIXER_READ(channel), &volume) == -1)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     return Py_BuildValue("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
 }
@@ -835,7 +835,7 @@ oss_mixer_set(oss_mixer_t *self, PyObject *args)
     volume = (rightVol << 8) | leftVol;
 
     if (ioctl(self->fd, MIXER_WRITE(channel), &volume) == -1)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     return Py_BuildValue("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
 }

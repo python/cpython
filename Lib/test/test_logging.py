@@ -135,7 +135,9 @@ class BaseTest(unittest.TestCase):
             logging._handlers.clear()
             logging._handlers.update(self.saved_handlers)
             logging._handlerList[:] = self.saved_handler_list
-            loggerDict = logging.getLogger().manager.loggerDict
+            manager = logging.getLogger().manager
+            manager.disable = 0
+            loggerDict = manager.loggerDict
             loggerDict.clear()
             loggerDict.update(self.saved_loggers)
             logger_states = self.logger_states
@@ -619,6 +621,7 @@ class HandlerTest(BaseTest):
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):
@@ -694,6 +697,20 @@ class StreamHandlerTest(BaseTest):
                 self.assertEqual('', stderr.getvalue())
         finally:
             logging.raiseExceptions = old_raise
+
+    def test_stream_setting(self):
+        """
+        Test setting the handler's stream
+        """
+        h = logging.StreamHandler()
+        stream = io.StringIO()
+        old = h.setStream(stream)
+        self.assertIs(old, sys.stderr)
+        actual = h.setStream(old)
+        self.assertIs(actual, stream)
+        # test that setting to existing value returns None
+        actual = h.setStream(old)
+        self.assertIsNone(actual)
 
 # -- The following section could be moved into a server_helper.py module
 # -- if it proves to be of wider utility than just test_logging
@@ -776,7 +793,10 @@ if threading:
             """
             self.close()
             self._thread.join(timeout)
+            alive = self._thread.is_alive()
             self._thread = None
+            if alive:
+                self.fail("join() timed out")
 
     class ControlMixin(object):
         """
@@ -827,7 +847,10 @@ if threading:
             self.shutdown()
             if self._thread is not None:
                 self._thread.join(timeout)
+                alive = self._thread.is_alive()
                 self._thread = None
+                if alive:
+                    self.fail("join() timed out")
             self.server_close()
             self.ready.clear()
 
@@ -962,6 +985,8 @@ if threading:
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPHandlerTest(BaseTest):
     TIMEOUT = 8.0
+
+    @support.reap_threads
     def test_basic(self):
         sockmap = {}
         server = TestSMTPServer((support.HOST, 0), self.process_message, 0.001,
@@ -1248,7 +1273,7 @@ class ConfigFileTest(BaseTest):
     datefmt=
     """
 
-    # config7 adds a compiler logger.
+    # config7 adds a compiler logger, and uses kwargs instead of args.
     config7 = """
     [loggers]
     keys=root,parser,compiler
@@ -1279,7 +1304,7 @@ class ConfigFileTest(BaseTest):
     class=StreamHandler
     level=NOTSET
     formatter=form1
-    args=(sys.stdout,)
+    kwargs={'stream': sys.stdout,}
 
     [formatter_form1]
     format=%(levelname)s ++ %(message)s
@@ -1669,7 +1694,7 @@ class SysLogHandlerTest(BaseTest):
         server.ready.wait()
         hcls = logging.handlers.SysLogHandler
         if isinstance(server.server_address, tuple):
-            self.sl_hdlr = hcls(('localhost', server.port))
+            self.sl_hdlr = hcls((server.server_address[0], server.port))
         else:
             self.sl_hdlr = hcls(server.server_address)
         self.log_output = ''
@@ -1729,6 +1754,24 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         SysLogHandlerTest.tearDown(self)
         support.unlink(self.address)
 
+@unittest.skipUnless(support.IPV6_ENABLED,
+                     'IPv6 support required for this test.')
+@unittest.skipUnless(threading, 'Threading required for this test.')
+class IPv6SysLogHandlerTest(SysLogHandlerTest):
+
+    """Test for SysLogHandler with IPv6 host."""
+
+    server_class = TestUDPServer
+    address = ('::1', 0)
+
+    def setUp(self):
+        self.server_class.address_family = socket.AF_INET6
+        super(IPv6SysLogHandlerTest, self).setUp()
+
+    def tearDown(self):
+        self.server_class.address_family = socket.AF_INET
+        super(IPv6SysLogHandlerTest, self).tearDown()
+
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class HTTPHandlerTest(BaseTest):
     """Test for HTTPHandler."""
@@ -1752,6 +1795,7 @@ class HTTPHandlerTest(BaseTest):
         request.end_headers()
         self.handled.set()
 
+    @support.reap_threads
     def test_output(self):
         # The log message sent to the HTTPHandler is properly received.
         logger = logging.getLogger("http")
@@ -2863,8 +2907,11 @@ class ConfigDictTest(BaseTest):
             t.ready.wait(2.0)
             logging.config.stopListening()
             t.join(2.0)
+            if t.is_alive():
+                self.fail("join() timed out")
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
@@ -2885,6 +2932,7 @@ class ConfigDictTest(BaseTest):
             ], stream=output)
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
     def test_listen_config_1_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
@@ -2900,6 +2948,7 @@ class ConfigDictTest(BaseTest):
             self.assert_log_lines([])
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
     def test_listen_verify(self):
 
         def verify_fail(stuff):
@@ -3077,6 +3126,7 @@ class QueueHandlerTest(BaseTest):
         BaseTest.setUp(self)
         self.queue = queue.Queue(-1)
         self.que_hdlr = logging.handlers.QueueHandler(self.queue)
+        self.name = 'que'
         self.que_logger = logging.getLogger('que')
         self.que_logger.propagate = False
         self.que_logger.setLevel(logging.WARNING)
@@ -3097,6 +3147,19 @@ class QueueHandlerTest(BaseTest):
         self.assertTrue(isinstance(data, logging.LogRecord))
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
+
+    def test_formatting(self):
+        msg = self.next_message()
+        levelname = logging.getLevelName(logging.WARNING)
+        log_format_str = '{name} -> {levelname}: {message}'
+        formatted_msg = log_format_str.format(name=self.name,
+                                              levelname=levelname, message=msg)
+        formatter = logging.Formatter(self.log_format)
+        self.que_hdlr.setFormatter(formatter)
+        self.que_logger.warning(msg)
+        log_record = self.queue.get_nowait()
+        self.assertEqual(formatted_msg, log_record.msg)
+        self.assertEqual(formatted_msg, log_record.message)
 
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
@@ -3169,6 +3232,7 @@ if hasattr(logging.handlers, 'QueueListener'):
             handler.close()
 
         @patch.object(logging.handlers.QueueListener, 'handle')
+        @support.reap_threads
         def test_handle_called_with_queue_queue(self, mock_handle):
             for i in range(self.repeat):
                 log_queue = queue.Queue()
@@ -3178,10 +3242,13 @@ if hasattr(logging.handlers, 'QueueListener'):
 
         @support.requires_multiprocessing_queue
         @patch.object(logging.handlers.QueueListener, 'handle')
+        @support.reap_threads
         def test_handle_called_with_mp_queue(self, mock_handle):
             for i in range(self.repeat):
                 log_queue = multiprocessing.Queue()
                 self.setup_and_log(log_queue, '%s_%s' % (self.id(), i))
+                log_queue.close()
+                log_queue.join_thread()
             self.assertEqual(mock_handle.call_count, 5 * self.repeat,
                              'correct number of handled log messages')
 
@@ -3194,6 +3261,7 @@ if hasattr(logging.handlers, 'QueueListener'):
                 return []
 
         @support.requires_multiprocessing_queue
+        @support.reap_threads
         def test_no_messages_in_queue_after_stop(self):
             """
             Five messages are logged then the QueueListener is stopped. This
@@ -3206,6 +3274,9 @@ if hasattr(logging.handlers, 'QueueListener'):
                 self.setup_and_log(queue, '%s_%s' %(self.id(), i))
                 # time.sleep(1)
                 items = list(self.get_all_from_queue(queue))
+                queue.close()
+                queue.join_thread()
+
                 expected = [[], [logging.handlers.QueueListener._sentinel]]
                 self.assertIn(items, expected,
                               'Found unexpected messages in queue: %s' % (
@@ -4045,6 +4116,70 @@ class LoggerTest(BaseTest):
         self.assertRaises(TypeError, logging.getLogger, any)
         self.assertRaises(TypeError, logging.getLogger, b'foo')
 
+    def test_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for name in ('', 'root', 'foo', 'foo.bar', 'baz.bar'):
+                logger = logging.getLogger(name)
+                s = pickle.dumps(logger, proto)
+                unpickled = pickle.loads(s)
+                self.assertIs(unpickled, logger)
+
+    def test_caching(self):
+        root = self.root_logger
+        logger1 = logging.getLogger("abc")
+        logger2 = logging.getLogger("abc.def")
+
+        # Set root logger level and ensure cache is empty
+        root.setLevel(logging.ERROR)
+        self.assertEqual(logger2.getEffectiveLevel(), logging.ERROR)
+        self.assertEqual(logger2._cache, {})
+
+        # Ensure cache is populated and calls are consistent
+        self.assertTrue(logger2.isEnabledFor(logging.ERROR))
+        self.assertFalse(logger2.isEnabledFor(logging.DEBUG))
+        self.assertEqual(logger2._cache, {logging.ERROR: True, logging.DEBUG: False})
+        self.assertEqual(root._cache, {})
+        self.assertTrue(logger2.isEnabledFor(logging.ERROR))
+
+        # Ensure root cache gets populated
+        self.assertEqual(root._cache, {})
+        self.assertTrue(root.isEnabledFor(logging.ERROR))
+        self.assertEqual(root._cache, {logging.ERROR: True})
+
+        # Set parent logger level and ensure caches are emptied
+        logger1.setLevel(logging.CRITICAL)
+        self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)
+        self.assertEqual(logger2._cache, {})
+
+        # Ensure logger2 uses parent logger's effective level
+        self.assertFalse(logger2.isEnabledFor(logging.ERROR))
+
+        # Set level to NOTSET and ensure caches are empty
+        logger2.setLevel(logging.NOTSET)
+        self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)
+        self.assertEqual(logger2._cache, {})
+        self.assertEqual(logger1._cache, {})
+        self.assertEqual(root._cache, {})
+
+        # Verify logger2 follows parent and not root
+        self.assertFalse(logger2.isEnabledFor(logging.ERROR))
+        self.assertTrue(logger2.isEnabledFor(logging.CRITICAL))
+        self.assertFalse(logger1.isEnabledFor(logging.ERROR))
+        self.assertTrue(logger1.isEnabledFor(logging.CRITICAL))
+        self.assertTrue(root.isEnabledFor(logging.ERROR))
+
+        # Disable logging in manager and ensure caches are clear
+        logging.disable()
+        self.assertEqual(logger2.getEffectiveLevel(), logging.CRITICAL)
+        self.assertEqual(logger2._cache, {})
+        self.assertEqual(logger1._cache, {})
+        self.assertEqual(root._cache, {})
+
+        # Ensure no loggers are enabled
+        self.assertFalse(logger1.isEnabledFor(logging.CRITICAL))
+        self.assertFalse(logger2.isEnabledFor(logging.CRITICAL))
+        self.assertFalse(root.isEnabledFor(logging.CRITICAL))
+
 
 class BaseFileTest(BaseTest):
     "Base class for handler tests that write log files"
@@ -4381,7 +4516,7 @@ def test_main():
         QueueHandlerTest, ShutdownTest, ModuleLevelMiscTest, BasicConfigTest,
         LoggerAdapterTest, LoggerTest, SMTPHandlerTest, FileHandlerTest,
         RotatingFileHandlerTest,  LastResortTest, LogRecordTest,
-        ExceptionTest, SysLogHandlerTest, HTTPHandlerTest,
+        ExceptionTest, SysLogHandlerTest, IPv6SysLogHandlerTest, HTTPHandlerTest,
         NTEventLogHandlerTest, TimedRotatingFileHandlerTest,
         UnixSocketHandlerTest, UnixDatagramHandlerTest, UnixSysLogHandlerTest,
         MiscTestCase

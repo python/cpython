@@ -771,9 +771,9 @@ they add the ability to access fields by name instead of position index.
     helpful docstring (with typename and field_names) and a helpful :meth:`__repr__`
     method which lists the tuple contents in a ``name=value`` format.
 
-    The *field_names* are a single string with each fieldname separated by whitespace
-    and/or commas, for example ``'x y'`` or ``'x, y'``.  Alternatively, *field_names*
-    can be a sequence of strings such as ``['x', 'y']``.
+    The *field_names* are a sequence of strings such as ``['x', 'y']``.
+    Alternatively, *field_names* can be a single string with each fieldname
+    separated by whitespace and/or commas, for example ``'x y'`` or ``'x, y'``.
 
     Any valid Python identifier may be used for a fieldname except for names
     starting with an underscore.  Valid identifiers consist of letters, digits,
@@ -866,7 +866,7 @@ field names, the method and attribute names start with an underscore.
     .. versionchanged:: 3.1
         Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
 
-.. method:: somenamedtuple._replace(kwargs)
+.. method:: somenamedtuple._replace(**kwargs)
 
     Return a new instance of the named tuple replacing specified fields with new
     values::

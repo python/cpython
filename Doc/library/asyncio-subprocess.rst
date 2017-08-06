@@ -5,6 +5,8 @@
 Subprocess
 ==========
 
+**Source code:** :source:`Lib/asyncio/subprocess.py`
+
 Windows event loop
 ------------------
 

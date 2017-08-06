@@ -128,5 +128,33 @@ class TestPrint(unittest.TestCase):
                 raise RuntimeError
         self.assertRaises(RuntimeError, print, 1, file=noflush(), flush=True)
 
+
+class TestPy2MigrationHint(unittest.TestCase):
+    """Test that correct hint is produced analogous to Python3 syntax,
+    if print statement is executed as in Python 2.
+    """
+
+    def test_normal_string(self):
+        python2_print_str = 'print "Hello World"'
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print("Hello World")', str(context.exception))
+
+    def test_string_with_soft_space(self):
+        python2_print_str = 'print "Hello World",'
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print("Hello World", end=" ")', str(context.exception))
+
+    def test_string_with_excessive_whitespace(self):
+        python2_print_str = 'print  "Hello World", '
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('print("Hello World", end=" ")', str(context.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

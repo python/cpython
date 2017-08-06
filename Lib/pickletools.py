@@ -493,35 +493,6 @@ bytes1 = ArgumentDescriptor(
               doc="""A counted bytes string.
 
               The first argument is a 1-byte unsigned int giving the number
-              of bytes in the string, and the second argument is that many
-              bytes.
-              """)
-
-
-def read_bytes1(f):
-    r"""
-    >>> import io
-    >>> read_bytes1(io.BytesIO(b"\x00"))
-    b''
-    >>> read_bytes1(io.BytesIO(b"\x03abcdef"))
-    b'abc'
-    """
-
-    n = read_uint1(f)
-    assert n >= 0
-    data = f.read(n)
-    if len(data) == n:
-        return data
-    raise ValueError("expected %d bytes in a bytes1, but only %d remain" %
-                     (n, len(data)))
-
-bytes1 = ArgumentDescriptor(
-              name="bytes1",
-              n=TAKEN_FROM_ARGUMENT1,
-              reader=read_bytes1,
-              doc="""A counted bytes string.
-
-              The first argument is a 1-byte unsigned int giving the number
               of bytes, and the second argument is that many bytes.
               """)
 

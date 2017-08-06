@@ -2,6 +2,28 @@
 preserve
 [clinic start generated code]*/
 
+static PyObject *
+long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase);
+
+static PyObject *
+long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "base", NULL};
+    static _PyArg_Parser _parser = {"|OO:int", _keywords, 0};
+    PyObject *x = NULL;
+    PyObject *obase = NULL;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &x, &obase)) {
+        goto exit;
+    }
+    return_value = long_new_impl(type, x, obase);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(int___getnewargs____doc__,
 "__getnewargs__($self, /)\n"
 "--\n"
@@ -117,7 +139,7 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "    is raised.");
 
 #define INT_TO_BYTES_METHODDEF    \
-    {"to_bytes", (PyCFunction)int_to_bytes, METH_FASTCALL, int_to_bytes__doc__},
+    {"to_bytes", (PyCFunction)int_to_bytes, METH_FASTCALL|METH_KEYWORDS, int_to_bytes__doc__},
 
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
@@ -164,7 +186,7 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    Indicates whether two\'s complement is used to represent the integer.");
 
 #define INT_FROM_BYTES_METHODDEF    \
-    {"from_bytes", (PyCFunction)int_from_bytes, METH_FASTCALL|METH_CLASS, int_from_bytes__doc__},
+    {"from_bytes", (PyCFunction)int_from_bytes, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, int_from_bytes__doc__},
 
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
@@ -189,4 +211,4 @@ int_from_bytes(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a9bae2fd016e7b85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9adfdc329651cc4 input=a9049054013a1b77]*/

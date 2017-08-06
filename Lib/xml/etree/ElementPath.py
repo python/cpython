@@ -80,7 +80,7 @@ def xpath_tokenizer(pattern, namespaces=None):
                     raise KeyError
                 yield token[0], "{%s}%s" % (namespaces[prefix], uri)
             except KeyError:
-                raise SyntaxError("prefix %r not found in prefix map" % prefix)
+                raise SyntaxError("prefix %r not found in prefix map" % prefix) from None
         else:
             yield token
 

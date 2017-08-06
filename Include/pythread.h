@@ -17,10 +17,14 @@ typedef enum PyLockStatus {
     PY_LOCK_INTR
 } PyLockStatus;
 
+#ifndef Py_LIMITED_API
+#define PYTHREAD_INVALID_THREAD_ID ((unsigned long)-1)
+#endif
+
 PyAPI_FUNC(void) PyThread_init_thread(void);
-PyAPI_FUNC(long) PyThread_start_new_thread(void (*)(void *), void *);
+PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
 PyAPI_FUNC(void) PyThread_exit_thread(void);
-PyAPI_FUNC(long) PyThread_get_thread_ident(void);
+PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
 PyAPI_FUNC(PyThread_type_lock) PyThread_allocate_lock(void);
 PyAPI_FUNC(void) PyThread_free_lock(PyThread_type_lock);

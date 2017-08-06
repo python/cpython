@@ -20,6 +20,10 @@ interpreter.
    between versions of Python.  Use of this module should not be considered to
    work across Python VMs or Python releases.
 
+   .. versionchanged:: 3.6
+      Use 2 bytes for each instruction. Previously the number of bytes varied
+      by instruction.
+
 
 Example: Given the function :func:`myfunc`::
 
@@ -134,22 +138,31 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None)
+.. function:: dis(x=None, *, file=None, depth=None)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, a code object, a string of source code or
    a byte sequence of raw bytecode.  For a module, it disassembles all functions.
    For a class, it disassembles all methods (including class and static methods).
    For a code object or sequence of raw bytecode, it prints one line per bytecode
-   instruction.  Strings are first compiled to code objects with the :func:`compile`
+   instruction.  It also recursively disassembles nested code objects (the code
+   of comprehensions, generator expressions and nested functions, and the code
+   used for building nested classes).
+   Strings are first compiled to code objects with the :func:`compile`
    built-in function before being disassembled.  If no object is provided, this
    function disassembles the last traceback.
 
    The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
+   The maximal depth of recursion is limited by *depth* unless it is ``None``.
+   ``depth=0`` means no recursion.
+
    .. versionchanged:: 3.4
       Added *file* parameter.
+
+   .. versionchanged:: 3.7
+      Implemented recursive disassembling and added *depth* parameter.
 
 
 .. function:: distb(tb=None, *, file=None)
@@ -210,6 +223,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    This generator function uses the ``co_firstlineno`` and ``co_lnotab``
    attributes of the code object *code* to find the offsets which are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
+   See :source:`Objects/lnotab_notes.txt` for the ``co_lnotab`` format and
+   how to decode it.
+
+   .. versionchanged:: 3.6
+      Line numbers can be decreasing. Before, they were always increasing.
 
 
 .. function:: findlabels(code)
@@ -1127,8 +1145,13 @@ All of the following opcodes use their arguments.
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
-   opcodes which don't take arguments ``< HAVE_ARGUMENT`` and those which do
-   ``>= HAVE_ARGUMENT``.
+   opcodes which don't use their argument and those that do
+   (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
+
+   .. versionchanged:: 3.6
+      Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
+      ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
+
 
 .. _opcode_collections:
 

@@ -8,6 +8,7 @@
 
 import sys, os, time
 sys.path.append(os.path.abspath('tools/extensions'))
+sys.path.append(os.path.abspath('includes'))
 
 # General configuration
 # ---------------------

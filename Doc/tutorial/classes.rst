@@ -4,6 +4,12 @@
 Classes
 *******
 
+Classes provide a means of bundling data and functionality together.  Creating
+a new class creates a new *type* of object, allowing new *instances* of that
+type to be made.  Each class instance can have attributes attached to it for
+maintaining its state.  Class instances can also have methods (defined by its
+class) for modifying its state.
+
 Compared with other programming languages, Python's class mechanism adds classes
 with a minimum of new syntax and semantics.  It is a mixture of the class
 mechanisms found in C++ and Modula-3.  Python classes provide all the standard
@@ -784,7 +790,7 @@ using the :func:`next` built-in function; this example shows how it all works::
    'c'
    >>> next(it)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
        next(it)
    StopIteration
 

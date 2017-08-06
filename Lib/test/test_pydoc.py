@@ -1,6 +1,5 @@
 import os
 import sys
-import builtins
 import contextlib
 import importlib.util
 import inspect
@@ -361,7 +360,7 @@ def get_pydoc_html(module):
 def get_pydoc_link(module):
     "Returns a documentation web link of a module"
     dirname = os.path.dirname
-    basedir = dirname(dirname(__file__))
+    basedir = dirname(dirname(os.path.realpath(__file__)))
     doc = pydoc.TextDoc()
     loc = doc.getdocloc(module, basedir=basedir)
     return loc

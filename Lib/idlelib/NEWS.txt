@@ -1,6 +1,147 @@
-What's New in IDLE 3.6.0?
-===========================
-*Release date: 2016-12-16?*
+What's New in IDLE 3.7.0
+Released on 2018-06-18?
+========================
+
+
+bpo-30781: IDLE - Use ttk Notebook in ConfigDialog.
+Patch by Terry Jan Reedy.
+
+bpo-31060: IDLE - Finish rearranging methods of ConfigDialog.
+Grouping methods pertaining to each tab and the buttons will aid
+writing tests and improving the tabs and will enable splitting the
+groups into classes.
+Patch by Terry Jan Reedy.
+
+bpo-30853: IDLE -- Factor a VarTrace class out of ConfigDialog.
+Instance tracers manages pairs consisting of a tk variable and a
+callback function.  When tracing is turned on, setting the variable
+calls the function.  Test coverage for the new class is 100%.
+Patch by Terry Jan Reedy.
+
+bpo-31003: IDLE: Add more tests for General tab.
+Patch by Terry Jan Reedy.
+
+bpo-30993: IDLE - Improve configdialog font page and tests.
+*In configdialog: Document causal pathways in create_font_tab
+docstring.  Simplify some attribute names. Move set_samples calls to
+var_changed_font (idea from Cheryl Sabella).  Move related functions to
+positions after the create widgets function.
+* In test_configdialog: Fix test_font_set so not order dependent.  Fix
+renamed test_indent_scale so it tests the widget.  Adjust tests for
+movement of set_samples call.  Add tests for load functions.  Put all
+font tests in one class and tab indent tests in another.  Except for
+two lines, these tests completely cover the related functions.
+Patch by Terry Jan Reedy.
+
+bpo-30981: IDLE -- Add more configdialog font page tests.
+
+bpo-28523: IDLE: replace 'colour' with 'color' in configdialog.
+
+bpo-30917: Add tests for idlelib.config.IdleConf.
+Increase coverage from 46% to 96%.
+Patch by Louie Lu.
+
+bpo-30913: Document ConfigDialog tk Vars, methods, and widgets in docstrings
+This will facilitate improving the dialog and splitting up the class.
+Original patch by Cheryl Sabella.
+
+bpo-30899: Add tests for ConfigParser subclasses in config.
+Coverage is 100% for those classes and ConfigChanges.
+Patch by Louie Lu.
+
+bpo-30881: Add docstrings to browser.py.
+Patch by Cheryl Sabella.
+
+bpo-30851: Remove unused tk variables in configdialog.
+One is a duplicate, one is set but cannot be altered by users.
+Patch by Cheryl Sabella.
+
+bpo-30870: Select font option with Up and Down keys, as well as with mouse.
+Added test increases configdialog coverage to 60%
+Patches mostly by Louie Lu.
+
+bpo-8231: Call config.IdleConf.GetUserCfgDir only once per process.
+
+bpo-30779: Factor ConfigChanges class from configdialog, put in config; test.
+* In config, put dump test code in a function; run it and unittest in
+  'if __name__ == '__main__'.
+* Add class config.ConfigChanges based on changes_class_v4.py on bpo issue.
+* Add class test_config.ChangesTest, partly using configdialog_tests_v1.py.
+* Revise configdialog to use ConfigChanges; see tracker msg297804.
+* Revise test_configdialog to match configdialog changes.
+* Remove configdialog functions unused or moved to ConfigChanges.
+Cheryl Sabella contributed parts of the patch.
+
+bpo-30777: Configdialog - add docstrings and improve comments.
+Patch by Cheryl Sabella.
+
+bpo-30495: Improve textview with docstrings, PEP8 names, and more tests.
+Split TextViewer class into ViewWindow, ViewFrame, and TextFrame classes
+so that instances of the latter two can be placed with other widgets
+within a multiframe window.
+Patches by Cheryl Sabella and Terry Jan Reedy.
+
+bp0-30723: Make several improvements to parenmatch.
+* Add 'parens' style to highlight both opener and closer.
+* Make 'default' style, which is not default, a synonym for 'opener'.
+* Make time-delay work the same with all styles.
+* Add help for config dialog extensions tab, including parenmatch.
+* Add new tests.
+Original patch by Charles Wohlganger.  Revisions by Terry Jan Reedy
+
+bpo-30674: Grep -- Add docstrings.  Patch by Cheryl Sabella.
+
+bpo-21519: IDLE's basic custom key entry dialog now detects
+duplicates properly. Original patch by Saimadhav Heblikar.
+
+bpo-29910: IDLE no longer deletes a character after commenting out a
+region by a key shortcut.  Add "return 'break'" for this and other
+potential conflicts between IDLE and default key bindings.
+Patch by Serhiy Storchaka.
+
+bpo-30728: Modernize idlelib.configdialog:
+* replace import * with specific imports;
+* lowercase method and attribute lines.
+Patch by Cheryl Sabella.
+
+bpo-6739: Verify user-entered key sequences by trying to bind them
+with to a tk widget.  Add tests for all 3 validation functions.
+Original patch by G Polo.  Tests added by Cheryl Sabella.
+Code revised and more tests added by Terry Jan Reedy
+
+bpo-24813: Add icon to help_about and make other changes.
+
+bpo-15786: Fix several problems with IDLE's autocompletion box.
+The following should now work: clicking on selection box items;
+using the scrollbar; selecting an item by hitting Return.
+Hangs on MacOSX should no longer happen. Patch by Louie Lu.
+
+bpo-25514: Add doc subsubsection about IDLE failure to start.
+Popup no-connection message directs users to this section.
+
+bpo-30642: Fix reference leaks in IDLE tests.
+Patches by Louie Lu and Terry Jan Reedy.
+
+bpo-30495: Add docstrings for textview.py and use PEP8 names.
+Patches by Cheryl Sabella and Terry Jan Reedy.
+
+bpo-30290: Help-about: use pep8 names and add tests.
+Increase coverage to 100%.
+Patches by Louie Lu, Cheryl Sabella, and Terry Jan Reedy.
+
+bpo-30303: Add _utest option to textview; add new tests.
+Increase coverage to 100%.
+Patches by Louie Lu and Terry Jan Reedy.
+
+Issue #29071: IDLE colors f-string prefixes but not invalid ur prefixes.
+
+Issue #28572: Add 10% to coverage of IDLE's test_configdialog.
+Update and augment description of the configuration system.
+
+
+What's New in IDLE 3.6.0
+Released on 2016-12-23
+========================
 
 - Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
   Patch by Roger Serwy, updated by Bayard Randel.

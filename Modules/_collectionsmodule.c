@@ -912,14 +912,10 @@ done:
 }
 
 static PyObject *
-deque_rotate(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
-             PyObject *kwnames)
+deque_rotate(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
 {
     Py_ssize_t n=1;
 
-    if (!_PyArg_NoStackKeywords("rotate", kwnames)) {
-        return NULL;
-    }
     if (!_PyArg_ParseStack(args, nargs, "|n:rotate", &n)) {
         return NULL;
     }
@@ -1052,8 +1048,7 @@ deque_len(dequeobject *deque)
 }
 
 static PyObject *
-deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
-            PyObject *kwnames)
+deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
 {
     Py_ssize_t i, n, start=0, stop=Py_SIZE(deque);
     PyObject *v, *item;
@@ -1062,12 +1057,9 @@ deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
     size_t start_state = deque->state;
     int cmp;
 
-    if (!_PyArg_NoStackKeywords("index", kwnames)) {
-        return NULL;
-    }
     if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index", &v,
-                           _PyEval_SliceIndex, &start,
-                           _PyEval_SliceIndex, &stop)) {
+                           _PyEval_SliceIndexNotNone, &start,
+                           _PyEval_SliceIndexNotNone, &stop)) {
         return NULL;
     }
 
@@ -1133,17 +1125,13 @@ PyDoc_STRVAR(index_doc,
 */
 
 static PyObject *
-deque_insert(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
-             PyObject *kwnames)
+deque_insert(dequeobject *deque, PyObject **args, Py_ssize_t nargs)
 {
     Py_ssize_t index;
     Py_ssize_t n = Py_SIZE(deque);
     PyObject *value;
     PyObject *rv;
 
-    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
-        return NULL;
-    }
     if (!_PyArg_ParseStack(args, nargs, "nO:insert", &index, &value)) {
         return NULL;
     }
@@ -2267,8 +2255,6 @@ _count_elements(PyObject *self, PyObject *args)
     PyObject *it, *iterable, *mapping, *oldval;
     PyObject *newval = NULL;
     PyObject *key = NULL;
-    PyObject *zero = NULL;
-    PyObject *one = NULL;
     PyObject *bound_get = NULL;
     PyObject *mapping_get;
     PyObject *dict_get;
@@ -2281,10 +2267,6 @@ _count_elements(PyObject *self, PyObject *args)
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
-
-    one = PyLong_FromLong(1);
-    if (one == NULL)
-        goto done;
 
     /* Only take the fast path when get() and __setitem__()
      * have not been overridden.
@@ -2325,10 +2307,10 @@ _count_elements(PyObject *self, PyObject *args)
             if (oldval == NULL) {
                 if (PyErr_Occurred())
                     goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
+                if (_PyDict_SetItem_KnownHash(mapping, key, _PyLong_One, hash) < 0)
                     goto done;
             } else {
-                newval = PyNumber_Add(oldval, one);
+                newval = PyNumber_Add(oldval, _PyLong_One);
                 if (newval == NULL)
                     goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
@@ -2342,18 +2324,14 @@ _count_elements(PyObject *self, PyObject *args)
         if (bound_get == NULL)
             goto done;
 
-        zero = PyLong_FromLong(0);
-        if (zero == NULL)
-            goto done;
-
         while (1) {
             key = PyIter_Next(it);
             if (key == NULL)
                 break;
-            oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
+            oldval = PyObject_CallFunctionObjArgs(bound_get, key, _PyLong_Zero, NULL);
             if (oldval == NULL)
                 break;
-            newval = PyNumber_Add(oldval, one);
+            newval = PyNumber_Add(oldval, _PyLong_One);
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;
@@ -2369,8 +2347,6 @@ done:
     Py_XDECREF(key);
     Py_XDECREF(newval);
     Py_XDECREF(bound_get);
-    Py_XDECREF(zero);
-    Py_XDECREF(one);
     if (PyErr_Occurred())
         return NULL;
     Py_RETURN_NONE;

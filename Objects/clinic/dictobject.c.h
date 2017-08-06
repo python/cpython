@@ -15,7 +15,7 @@ static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
 
 static PyObject *
-dict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -24,10 +24,6 @@ dict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *k
     if (!_PyArg_UnpackStack(args, nargs, "fromkeys",
         1, 2,
         &iterable, &value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("fromkeys", kwnames)) {
         goto exit;
     }
     return_value = dict_fromkeys_impl(type, iterable, value);
@@ -58,7 +54,7 @@ static PyObject *
 dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value);
 
 static PyObject *
-dict_get(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dict_get(PyDictObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -67,10 +63,6 @@ dict_get(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     if (!_PyArg_UnpackStack(args, nargs, "get",
         1, 2,
         &key, &default_value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("get", kwnames)) {
         goto exit;
     }
     return_value = dict_get_impl(self, key, default_value);
@@ -95,7 +87,7 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
                      PyObject *default_value);
 
 static PyObject *
-dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -106,13 +98,9 @@ dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject 
         &key, &default_value)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("setdefault", kwnames)) {
-        goto exit;
-    }
     return_value = dict_setdefault_impl(self, key, default_value);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4d57df133cf66e53 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d09902e60b7ab02 input=a9049054013a1b77]*/

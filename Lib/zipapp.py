@@ -36,9 +36,7 @@ class ZipAppError(ValueError):
 
 @contextlib.contextmanager
 def _maybe_open(archive, mode):
-    if isinstance(archive, pathlib.Path):
-        archive = str(archive)
-    if isinstance(archive, str):
+    if isinstance(archive, (str, os.PathLike)):
         with open(archive, mode) as f:
             yield f
     else:
@@ -135,10 +133,9 @@ def create_archive(source, target=None, interpreter=None, main=None):
     with _maybe_open(target, 'wb') as fd:
         _write_file_prefix(fd, interpreter)
         with zipfile.ZipFile(fd, 'w') as z:
-            root = pathlib.Path(source)
-            for child in root.rglob('*'):
-                arcname = str(child.relative_to(root))
-                z.write(str(child), arcname)
+            for child in source.rglob('*'):
+                arcname = child.relative_to(source).as_posix()
+                z.write(child, arcname)
             if main_py:
                 z.writestr('__main__.py', main_py.encode('utf-8'))
 

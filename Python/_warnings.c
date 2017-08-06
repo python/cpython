@@ -287,20 +287,15 @@ static int
 update_registry(PyObject *registry, PyObject *text, PyObject *category,
                 int add_zero)
 {
-    PyObject *altkey, *zero = NULL;
+    PyObject *altkey;
     int rc;
 
-    if (add_zero) {
-        zero = PyLong_FromLong(0);
-        if (zero == NULL)
-            return -1;
-        altkey = PyTuple_Pack(3, text, category, zero);
-    }
+    if (add_zero)
+        altkey = PyTuple_Pack(3, text, category, _PyLong_Zero);
     else
         altkey = PyTuple_Pack(2, text, category);
 
     rc = already_warned(registry, altkey, 1);
-    Py_XDECREF(zero);
     Py_XDECREF(altkey);
     return rc;
 }
@@ -1130,7 +1125,6 @@ create_filter(PyObject *category, const char *action)
     static PyObject *default_str = NULL;
     static PyObject *always_str = NULL;
     PyObject *action_obj = NULL;
-    PyObject *lineno, *result;
 
     if (!strcmp(action, "ignore")) {
         if (ignore_str == NULL) {
@@ -1169,12 +1163,7 @@ create_filter(PyObject *category, const char *action)
     }
 
     /* This assumes the line number is zero for now. */
-    lineno = PyLong_FromLong(0);
-    if (lineno == NULL)
-        return NULL;
-    result = PyTuple_Pack(5, action_obj, Py_None, category, Py_None, lineno);
-    Py_DECREF(lineno);
-    return result;
+    return PyTuple_Pack(5, action_obj, Py_None, category, Py_None, _PyLong_Zero);
 }
 
 static PyObject *

@@ -3,7 +3,6 @@
 import collections
 import copy
 import doctest
-import inspect
 import keyword
 import operator
 import pickle

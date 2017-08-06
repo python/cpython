@@ -1577,18 +1577,15 @@ class LabeledScale(Frame):
         self.label['text'] = newval
         self.after_idle(adjust_label)
 
-
-    def _get_value(self):
+    @property
+    def value(self):
         """Return current scale value."""
         return self._variable.get()
 
-
-    def _set_value(self, val):
+    @value.setter
+    def value(self, val):
         """Set new scale value."""
         self._variable.set(val)
-
-
-    value = property(_get_value, _set_value)
 
 
 class OptionMenu(Menubutton):
@@ -1638,7 +1635,8 @@ class OptionMenu(Menubutton):
         menu.delete(0, 'end')
         for val in values:
             menu.add_radiobutton(label=val,
-                command=tkinter._setit(self._variable, val, self._callback))
+                command=tkinter._setit(self._variable, val, self._callback),
+                variable=self._variable)
 
         if default:
             self._variable.set(default)

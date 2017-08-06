@@ -1,5 +1,5 @@
 import decimal
-from io import StringIO, BytesIO
+from io import StringIO
 from collections import OrderedDict
 from test.test_json import PyTest, CTest
 

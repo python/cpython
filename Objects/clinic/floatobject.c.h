@@ -53,7 +53,7 @@ static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits);
 
 static PyObject *
-float___round__(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+float___round__(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *o_ndigits = NULL;
@@ -61,10 +61,6 @@ float___round__(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     if (!_PyArg_UnpackStack(args, nargs, "__round__",
         0, 1,
         &o_ndigits)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("__round__", kwnames)) {
         goto exit;
     }
     return_value = float___round___impl(self, o_ndigits);
@@ -158,6 +154,36 @@ float_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(ignored))
     return float_as_integer_ratio_impl(self);
 }
 
+PyDoc_STRVAR(float_new__doc__,
+"float(x=0, /)\n"
+"--\n"
+"\n"
+"Convert a string or number to a floating point number, if possible.");
+
+static PyObject *
+float_new_impl(PyTypeObject *type, PyObject *x);
+
+static PyObject *
+float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x = _PyLong_Zero;
+
+    if ((type == &PyFloat_Type) &&
+        !_PyArg_NoKeywords("float", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_UnpackTuple(args, "float",
+        0, 1,
+        &x)) {
+        goto exit;
+    }
+    return_value = float_new_impl(type, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(float___getnewargs____doc__,
 "__getnewargs__($self, /)\n"
 "--\n"
@@ -237,7 +263,7 @@ float___set_format___impl(PyTypeObject *type, const char *typestr,
                           const char *fmt);
 
 static PyObject *
-float___set_format__(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+float___set_format__(PyTypeObject *type, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *typestr;
@@ -245,10 +271,6 @@ float___set_format__(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyOb
 
     if (!_PyArg_ParseStack(args, nargs, "ss:__set_format__",
         &typestr, &fmt)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("__set_format__", kwnames)) {
         goto exit;
     }
     return_value = float___set_format___impl(type, typestr, fmt);
@@ -283,4 +305,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9257442b321d6a8b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90c06ea9d72130cc input=a9049054013a1b77]*/

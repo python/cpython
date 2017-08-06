@@ -46,8 +46,8 @@
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
     <opensslDir>$(ExternalsDir)openssl-1.0.2k\</opensslDir>
-    <opensslIncludeDir>$(opensslDir)include32</opensslIncludeDir>
-    <opensslIncludeDir Condition="'$(ArchName)' == 'amd64'">$(opensslDir)include64</opensslIncludeDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.0.2k\$(ArchName)\</opensslOutDir>
+    <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     
     <!-- Suffix for all binaries when building for debug -->
@@ -61,6 +61,23 @@
     
     <!-- Full path of the resulting python.exe binary -->
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="$(DefaultWindowsSDKVersion) == ''">
+    <!--
+    Attempt to select the latest installed WinSDK. If we don't find any, then we will
+    let the MSBuild targets determine which one it wants to use (typically the earliest
+    possible version). Since we limit WINVER to Windows 7 anyway, it doesn't really
+    matter which WinSDK version we use.
+    -->
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(OverrideVersion)' == ''">

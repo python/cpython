@@ -1,5 +1,6 @@
 """Thread module emulating a subset of Java's threading model."""
 
+import os as _os
 import sys as _sys
 import _thread
 
@@ -943,6 +944,7 @@ class Thread:
                                     exc_tb.tb_frame.f_code.co_name)), file=self._stderr)
                             exc_tb = exc_tb.tb_next
                         print(("%s: %s" % (exc_type, exc_value)), file=self._stderr)
+                        self._stderr.flush()
                     # Make sure that exc_tb gets deleted since it is a memory
                     # hog; deleting everything else is just for thoroughness
                     finally:
@@ -993,14 +995,14 @@ class Thread:
         #
         # Must take care to not raise an exception if _dummy_thread is being
         # used (and thus this module is being used as an instance of
-        # dummy_threading).  _dummy_thread.get_ident() always returns -1 since
+        # dummy_threading).  _dummy_thread.get_ident() always returns 1 since
         # there is only one thread if _dummy_thread is being used.  Thus
         # len(_active) is always <= 1 here, and any Thread instance created
         # overwrites the (if any) thread currently registered in _active.
         #
         # An instance of _MainThread is always created by 'threading'.  This
         # gets overwritten the instant an instance of Thread is created; both
-        # threads return -1 from _dummy_thread.get_ident() and thus have the
+        # threads return 1 from _dummy_thread.get_ident() and thus have the
         # same key in the dict.  So when the _MainThread instance created by
         # 'threading' tries to clean itself up when atexit calls this method
         # it gets a KeyError if another Thread instance was created.
@@ -1319,10 +1321,9 @@ except ImportError:
 
 
 def _after_fork():
-    # This function is called by Python/ceval.c:PyEval_ReInitThreads which
-    # is called from PyOS_AfterFork.  Here we cleanup threading module state
-    # that should not exist after a fork.
-
+    """
+    Cleanup threading module state that should not exist after a fork.
+    """
     # Reset _active_limbo_lock, in case we forked while the lock was held
     # by another (non-forked) thread.  http://bugs.python.org/issue874900
     global _active_limbo_lock, _main_thread
@@ -1356,3 +1357,7 @@ def _after_fork():
         _active.clear()
         _active.update(new_active)
         assert len(_active) == 1
+
+
+if hasattr(_os, "register_at_fork"):
+    _os.register_at_fork(after_in_child=_after_fork)

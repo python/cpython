@@ -2,7 +2,6 @@ import os
 import sys
 import ssl
 import pprint
-import socket
 import urllib.parse
 # Rename HTTPServer to _HTTPServer so as to avoid confusion with HTTPSServer.
 from http.server import (HTTPServer as _HTTPServer,

@@ -39,6 +39,7 @@ def _new_module(name):
 # Module-level locking ########################################################
 
 # A dict mapping module names to weakrefs of _ModuleLock instances
+# Dictionary protected by the global import lock
 _module_locks = {}
 # A dict mapping thread ids to _ModuleLock instances
 _blocking_on = {}
@@ -144,10 +145,7 @@ class _ModuleLockManager:
         self._lock = None
 
     def __enter__(self):
-        try:
-            self._lock = _get_module_lock(self._name)
-        finally:
-            _imp.release_lock()
+        self._lock = _get_module_lock(self._name)
         self._lock.acquire()
 
     def __exit__(self, *args, **kwargs):
@@ -159,31 +157,37 @@ class _ModuleLockManager:
 def _get_module_lock(name):
     """Get or create the module lock for a given module name.
 
-    Should only be called with the import lock taken."""
-    lock = None
+    Acquire/release internally the global import lock to protect
+    _module_locks."""
+
+    _imp.acquire_lock()
     try:
-        lock = _module_locks[name]()
-    except KeyError:
-        pass
-    if lock is None:
-        if _thread is None:
-            lock = _DummyModuleLock(name)
-        else:
-            lock = _ModuleLock(name)
-        def cb(_):
-            del _module_locks[name]
-        _module_locks[name] = _weakref.ref(lock, cb)
+        try:
+            lock = _module_locks[name]()
+        except KeyError:
+            lock = None
+
+        if lock is None:
+            if _thread is None:
+                lock = _DummyModuleLock(name)
+            else:
+                lock = _ModuleLock(name)
+            def cb(_):
+                del _module_locks[name]
+            _module_locks[name] = _weakref.ref(lock, cb)
+    finally:
+        _imp.release_lock()
+
     return lock
 
+
 def _lock_unlock_module(name):
-    """Release the global import lock, and acquires then release the
-    module lock for a given module name.
+    """Acquires then releases the module lock for a given module name.
+
     This is used to ensure a module is completely initialized, in the
     event it is being imported by another thread.
-
-    Should only be called with the import lock taken."""
+    """
     lock = _get_module_lock(name)
-    _imp.release_lock()
     try:
         lock.acquire()
     except _DeadlockError:
@@ -442,9 +446,6 @@ def spec_from_loader(name, loader, *, origin=None, is_package=None):
     return ModuleSpec(name, loader, origin=origin, is_package=is_package)
 
 
-_POPULATE = object()
-
-
 def _spec_from_module(module, loader=None, origin=None):
     # This function is meant for use in _setup().
     try:
@@ -587,7 +588,6 @@ def _module_repr_from_spec(spec):
 def _exec(spec, module):
     """Execute the spec's specified module in an existing module's namespace."""
     name = spec.name
-    _imp.acquire_lock()
     with _ModuleLockManager(name):
         if sys.modules.get(name) is not module:
             msg = 'module {!r} not in sys.modules'.format(name)
@@ -670,7 +670,6 @@ def _load(spec):
     clobbered.
 
     """
-    _imp.acquire_lock()
     with _ModuleLockManager(spec.name):
         return _load_unlocked(spec)
 
@@ -917,10 +916,6 @@ def _sanity_check(name, package, level):
         elif not package:
             raise ImportError('attempted relative import with no known parent '
                               'package')
-        elif package not in sys.modules:
-            msg = ('Parent module {!r} not loaded, cannot perform relative '
-                   'import')
-            raise SystemError(msg.format(package))
     if not name and level == 0:
         raise ValueError('Empty module name')
 
@@ -955,10 +950,23 @@ def _find_and_load_unlocked(name, import_):
     return module
 
 
+_NEEDS_LOADING = object()
+
+
 def _find_and_load(name, import_):
-    """Find and load the module, and release the import lock."""
+    """Find and load the module."""
     with _ModuleLockManager(name):
-        return _find_and_load_unlocked(name, import_)
+        module = sys.modules.get(name, _NEEDS_LOADING)
+        if module is _NEEDS_LOADING:
+            return _find_and_load_unlocked(name, import_)
+
+    if module is None:
+        message = ('import of {} halted; '
+                   'None in sys.modules'.format(name))
+        raise ModuleNotFoundError(message, name=name)
+
+    _lock_unlock_module(name)
+    return module
 
 
 def _gcd_import(name, package=None, level=0):
@@ -973,17 +981,7 @@ def _gcd_import(name, package=None, level=0):
     _sanity_check(name, package, level)
     if level > 0:
         name = _resolve_name(name, package, level)
-    _imp.acquire_lock()
-    if name not in sys.modules:
-        return _find_and_load(name, _gcd_import)
-    module = sys.modules[name]
-    if module is None:
-        _imp.release_lock()
-        message = ('import of {} halted; '
-                   'None in sys.modules'.format(name))
-        raise ModuleNotFoundError(message, name=name)
-    _lock_unlock_module(name)
-    return module
+    return _find_and_load(name, _gcd_import)
 
 
 def _handle_fromlist(module, fromlist, import_):
@@ -1134,12 +1132,15 @@ def _setup(sys_module, _imp_module):
 
 
 def _install(sys_module, _imp_module):
-    """Install importlib as the implementation of import."""
+    """Install importers for builtin and frozen modules"""
     _setup(sys_module, _imp_module)
 
     sys.meta_path.append(BuiltinImporter)
     sys.meta_path.append(FrozenImporter)
 
+
+def _install_external_importers():
+    """Install importers that require external filesystem access"""
     global _bootstrap_external
     import _frozen_importlib_external
     _bootstrap_external = _frozen_importlib_external

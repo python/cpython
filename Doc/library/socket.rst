@@ -303,6 +303,9 @@ Constants
       ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``,
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
+   .. versionchanged:: 3.7
+      ``TCP_NOTSENT_LOWAT`` was added.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*

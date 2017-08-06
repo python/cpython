@@ -124,13 +124,13 @@ class MultiprocessThread(threading.Thread):
         finally:
             self.current_test = None
 
-        stdout, _, result = stdout.strip().rpartition("\n")
         if retcode != 0:
             result = (CHILD_ERROR, "Exit code %s" % retcode)
             self.output.put((test, stdout.rstrip(), stderr.rstrip(),
                              result))
             return False
 
+        stdout, _, result = stdout.strip().rpartition("\n")
         if not result:
             self.output.put((None, None, None, None))
             return True

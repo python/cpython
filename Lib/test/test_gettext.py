@@ -1,6 +1,7 @@
 import os
 import base64
 import gettext
+import locale
 import unittest
 
 from test import support
@@ -455,6 +456,122 @@ class PluralFormsTestCase(GettextBaseTest):
         self.assertRaises(TypeError, f, object())
 
 
+class LGettextTestCase(GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        self.mofile = MOFILE
+
+    def test_lgettext(self):
+        lgettext = gettext.lgettext
+        ldgettext = gettext.ldgettext
+        self.assertEqual(lgettext('mullusk'), b'bacon')
+        self.assertEqual(lgettext('spam'), b'spam')
+        self.assertEqual(ldgettext('gettext', 'mullusk'), b'bacon')
+        self.assertEqual(ldgettext('gettext', 'spam'), b'spam')
+
+    def test_lgettext_2(self):
+        with open(self.mofile, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+        lgettext = t.lgettext
+        self.assertEqual(lgettext('mullusk'), b'bacon')
+        self.assertEqual(lgettext('spam'), b'spam')
+
+    def test_lgettext_bind_textdomain_codeset(self):
+        lgettext = gettext.lgettext
+        ldgettext = gettext.ldgettext
+        saved_codeset = gettext.bind_textdomain_codeset('gettext')
+        try:
+            gettext.bind_textdomain_codeset('gettext', 'utf-16')
+            self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
+            self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
+            self.assertEqual(ldgettext('gettext', 'mullusk'), 'bacon'.encode('utf-16'))
+            self.assertEqual(ldgettext('gettext', 'spam'), 'spam'.encode('utf-16'))
+        finally:
+            del gettext._localecodesets['gettext']
+            gettext.bind_textdomain_codeset('gettext', saved_codeset)
+
+    def test_lgettext_output_encoding(self):
+        with open(self.mofile, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+        lgettext = t.lgettext
+        t.set_output_charset('utf-16')
+        self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
+        self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
+
+    def test_lngettext(self):
+        lngettext = gettext.lngettext
+        ldngettext = gettext.ldngettext
+        x = lngettext('There is %s file', 'There are %s files', 1)
+        self.assertEqual(x, b'Hay %s fichero')
+        x = lngettext('There is %s file', 'There are %s files', 2)
+        self.assertEqual(x, b'Hay %s ficheros')
+        x = lngettext('There is %s directory', 'There are %s directories', 1)
+        self.assertEqual(x, b'There is %s directory')
+        x = lngettext('There is %s directory', 'There are %s directories', 2)
+        self.assertEqual(x, b'There are %s directories')
+        x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
+        self.assertEqual(x, b'Hay %s fichero')
+        x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
+        self.assertEqual(x, b'Hay %s ficheros')
+        x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
+        self.assertEqual(x, b'There is %s directory')
+        x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
+        self.assertEqual(x, b'There are %s directories')
+
+    def test_lngettext_2(self):
+        with open(self.mofile, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+        lngettext = t.lngettext
+        x = lngettext('There is %s file', 'There are %s files', 1)
+        self.assertEqual(x, b'Hay %s fichero')
+        x = lngettext('There is %s file', 'There are %s files', 2)
+        self.assertEqual(x, b'Hay %s ficheros')
+        x = lngettext('There is %s directory', 'There are %s directories', 1)
+        self.assertEqual(x, b'There is %s directory')
+        x = lngettext('There is %s directory', 'There are %s directories', 2)
+        self.assertEqual(x, b'There are %s directories')
+
+    def test_lngettext_bind_textdomain_codeset(self):
+        lngettext = gettext.lngettext
+        ldngettext = gettext.ldngettext
+        saved_codeset = gettext.bind_textdomain_codeset('gettext')
+        try:
+            gettext.bind_textdomain_codeset('gettext', 'utf-16')
+            x = lngettext('There is %s file', 'There are %s files', 1)
+            self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
+            x = lngettext('There is %s file', 'There are %s files', 2)
+            self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
+            x = lngettext('There is %s directory', 'There are %s directories', 1)
+            self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
+            x = lngettext('There is %s directory', 'There are %s directories', 2)
+            self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
+            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
+            self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
+            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
+            self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
+            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
+            self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
+            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
+            self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
+        finally:
+            del gettext._localecodesets['gettext']
+            gettext.bind_textdomain_codeset('gettext', saved_codeset)
+
+    def test_lngettext_output_encoding(self):
+        with open(self.mofile, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+        lngettext = t.lngettext
+        t.set_output_charset('utf-16')
+        x = lngettext('There is %s file', 'There are %s files', 1)
+        self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
+        x = lngettext('There is %s file', 'There are %s files', 2)
+        self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
+        x = lngettext('There is %s directory', 'There are %s directories', 1)
+        self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
+        x = lngettext('There is %s directory', 'There are %s directories', 2)
+        self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
+
+
 class GNUTranslationParsingTest(GettextBaseTest):
     def test_plural_form_error_issue17898(self):
         with open(MOFILE, 'wb') as fp:
@@ -472,13 +589,10 @@ class UnicodeTranslationsTest(GettextBaseTest):
         self._ = self.t.gettext
 
     def test_unicode_msgid(self):
-        unless = self.assertTrue
-        unless(isinstance(self._(''), str))
-        unless(isinstance(self._(''), str))
+        self.assertIsInstance(self._(''), str)
 
     def test_unicode_msgstr(self):
-        eq = self.assertEqual
-        eq(self._('ab\xde'), '\xa4yz')
+        self.assertEqual(self._('ab\xde'), '\xa4yz')
 
 
 class WeirdMetadataTest(GettextBaseTest):
@@ -547,7 +661,7 @@ if __name__ == '__main__':
 # The original version was automatically generated from the sources with
 # pygettext. Later it was manually modified to add plural forms support.
 
-'''
+b'''
 # Dummy translation for the Python test_gettext.py module.
 # Copyright (C) 2001 Python Software Foundation
 # Barry Warsaw <barry@python.org>, 2000.
@@ -607,7 +721,7 @@ msgstr[1] "Hay %s ficheros"
 # Here's the second example po file example, used to generate the UMO_DATA
 # containing utf-8 encoded Unicode strings
 
-'''
+b'''
 # Dummy translation for the Python test_gettext.py module.
 # Copyright (C) 2001 Python Software Foundation
 # Barry Warsaw <barry@python.org>, 2000.
@@ -630,7 +744,7 @@ msgstr "\xc2\xa4yz"
 
 # Here's the third example po file, used to generate MMO_DATA
 
-'''
+b'''
 msgid ""
 msgstr ""
 "Project-Id-Version: No Project 0.0\n"
@@ -649,7 +763,7 @@ msgstr ""
 # messages.po, used for bug 17898
 #
 
-'''
+b'''
 # test file for http://bugs.python.org/issue17898
 msgid ""
 msgstr ""

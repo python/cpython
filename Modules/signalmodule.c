@@ -88,12 +88,12 @@ module signal
 #ifdef WITH_THREAD
 #include <sys/types.h> /* For pid_t */
 #include "pythread.h"
-static long main_thread;
+static unsigned long main_thread;
 static pid_t main_pid;
 #endif
 
 static volatile struct {
-    sig_atomic_t tripped;
+    _Py_atomic_int tripped;
     PyObject *func;
 } Handlers[NSIG];
 
@@ -113,7 +113,7 @@ static volatile sig_atomic_t wakeup_fd = -1;
 #endif
 
 /* Speed up sigcheck() when none tripped */
-static volatile sig_atomic_t is_tripped = 0;
+static _Py_atomic_int is_tripped;
 
 static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
@@ -139,6 +139,10 @@ timeval_from_double(double d, struct timeval *tv)
 {
     tv->tv_sec = floor(d);
     tv->tv_usec = fmod(d, 1.0) * 1000000.0;
+    /* Don't disable the timer if the computation above rounds down to zero. */
+    if (d > 0.0 && tv->tv_sec == 0 && tv->tv_usec == 0) {
+        tv->tv_usec = 1;
+    }
 }
 
 Py_LOCAL_INLINE(double)
@@ -189,12 +193,6 @@ It raises KeyboardInterrupt.");
 
 
 static int
-checksignals_witharg(void * unused)
-{
-    return PyErr_CheckSignals();
-}
-
-static int
 report_wakeup_write_error(void *data)
 {
     int save_errno = errno;
@@ -242,7 +240,33 @@ trip_signal(int sig_num)
     int fd;
     Py_ssize_t rc;
 
-    Handlers[sig_num].tripped = 1;
+    _Py_atomic_store_relaxed(&Handlers[sig_num].tripped, 1);
+
+    /* Set is_tripped after setting .tripped, as it gets
+       cleared in PyErr_CheckSignals() before .tripped. */
+    _Py_atomic_store(&is_tripped, 1);
+
+    /* Notify ceval.c */
+    _PyEval_SignalReceived();
+
+    /* And then write to the wakeup fd *after* setting all the globals and
+       doing the _PyEval_SignalReceived. We used to write to the wakeup fd
+       and then set the flag, but this allowed the following sequence of events
+       (especially on windows, where trip_signal may run in a new thread):
+
+       - main thread blocks on select([wakeup_fd], ...)
+       - signal arrives
+       - trip_signal writes to the wakeup fd
+       - the main thread wakes up
+       - the main thread checks the signal flags, sees that they're unset
+       - the main thread empties the wakeup fd
+       - the main thread goes back to sleep
+       - trip_signal sets the flags to request the Python-level signal handler
+         be run
+       - the main thread doesn't notice, because it's asleep
+
+       See bpo-30038 for more details.
+    */
 
 #ifdef MS_WINDOWS
     fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
@@ -263,6 +287,8 @@ trip_signal(int sig_num)
                 wakeup.send_err_set = 1;
                 wakeup.send_errno = errno;
                 wakeup.send_win_error = GetLastError();
+                /* Py_AddPendingCall() isn't signal-safe, but we
+                   still use it for this exceptional case. */
                 Py_AddPendingCall(report_wakeup_send_error, NULL);
             }
         }
@@ -276,17 +302,12 @@ trip_signal(int sig_num)
             rc = _Py_write_noraise(fd, &byte, 1);
 
             if (rc < 0) {
+                /* Py_AddPendingCall() isn't signal-safe, but we
+                   still use it for this exceptional case. */
                 Py_AddPendingCall(report_wakeup_write_error,
                                   (void *)(intptr_t)errno);
             }
         }
-    }
-
-    if (!is_tripped) {
-        /* Set is_tripped after setting .tripped, as it gets
-           cleared in PyErr_CheckSignals() before .tripped. */
-        is_tripped = 1;
-        Py_AddPendingCall(checksignals_witharg, NULL);
     }
 }
 
@@ -446,7 +467,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
         return NULL;
     }
     old_handler = Handlers[signalnum].func;
-    Handlers[signalnum].tripped = 0;
+    _Py_atomic_store_relaxed(&Handlers[signalnum].tripped, 0);
     Py_INCREF(handler);
     Handlers[signalnum].func = handler;
     if (old_handler != NULL)
@@ -1088,7 +1109,7 @@ signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
 /*[clinic input]
 signal.pthread_kill
 
-    thread_id:  long
+    thread_id:  unsigned_long(bitwise=True)
     signalnum:  int
     /
 
@@ -1096,8 +1117,9 @@ Send a signal to a thread.
 [clinic start generated code]*/
 
 static PyObject *
-signal_pthread_kill_impl(PyObject *module, long thread_id, int signalnum)
-/*[clinic end generated code: output=2a09ce41f1c4228a input=77ed6a3b6f2a8122]*/
+signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
+                         int signalnum)
+/*[clinic end generated code: output=7629919b791bc27f input=1d901f2c7bb544ff]*/
 {
     int err;
 
@@ -1249,11 +1271,11 @@ PyInit__signal(void)
         goto finally;
     Py_INCREF(IntHandler);
 
-    Handlers[0].tripped = 0;
+    _Py_atomic_store_relaxed(&Handlers[0].tripped, 0);
     for (i = 1; i < NSIG; i++) {
         void (*t)(int);
         t = PyOS_getsig(i);
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         if (t == SIG_DFL)
             Handlers[i].func = DefaultHandler;
         else if (t == SIG_IGN)
@@ -1437,7 +1459,7 @@ PyInit__signal(void)
 
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
-            PyExc_IOError, NULL);
+            PyExc_OSError, NULL);
     if (ItimerError != NULL)
         PyDict_SetItemString(d, "ItimerError", ItimerError);
 #endif
@@ -1477,7 +1499,7 @@ finisignal(void)
 
     for (i = 1; i < NSIG; i++) {
         func = Handlers[i].func;
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         Handlers[i].func = NULL;
         if (i != SIGINT && func != NULL && func != Py_None &&
             func != DefaultHandler && func != IgnoreHandler)
@@ -1498,7 +1520,7 @@ PyErr_CheckSignals(void)
     int i;
     PyObject *f;
 
-    if (!is_tripped)
+    if (!_Py_atomic_load(&is_tripped))
         return 0;
 
 #ifdef WITH_THREAD
@@ -1520,24 +1542,26 @@ PyErr_CheckSignals(void)
      *       we receive a signal i after we zero is_tripped and before we
      *       check Handlers[i].tripped.
      */
-    is_tripped = 0;
+    _Py_atomic_store(&is_tripped, 0);
 
     if (!(f = (PyObject *)PyEval_GetFrame()))
         f = Py_None;
 
     for (i = 1; i < NSIG; i++) {
-        if (Handlers[i].tripped) {
+        if (_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
             PyObject *result = NULL;
             PyObject *arglist = Py_BuildValue("(iO)", i, f);
-            Handlers[i].tripped = 0;
+            _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
 
             if (arglist) {
                 result = PyEval_CallObject(Handlers[i].func,
                                            arglist);
                 Py_DECREF(arglist);
             }
-            if (!result)
+            if (!result) {
+                _Py_atomic_store(&is_tripped, 1);
                 return -1;
+            }
 
             Py_DECREF(result);
         }
@@ -1574,12 +1598,12 @@ PyOS_FiniInterrupts(void)
 int
 PyOS_InterruptOccurred(void)
 {
-    if (Handlers[SIGINT].tripped) {
+    if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
 #ifdef WITH_THREAD
         if (PyThread_get_thread_ident() != main_thread)
             return 0;
 #endif
-        Handlers[SIGINT].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
         return 1;
     }
     return 0;
@@ -1589,30 +1613,24 @@ static void
 _clear_pending_signals(void)
 {
     int i;
-    if (!is_tripped)
+    if (!_Py_atomic_load(&is_tripped))
         return;
-    is_tripped = 0;
+    _Py_atomic_store(&is_tripped, 0);
     for (i = 1; i < NSIG; ++i) {
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
     }
 }
 
 void
-PyOS_AfterFork(void)
+_PySignal_AfterFork(void)
 {
     /* Clear the signal flags after forking so that they aren't handled
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
 #ifdef WITH_THREAD
-    /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
-     * can be called safely. */
-    PyThread_ReInitTLS();
-    _PyGILState_Reinit();
-    PyEval_ReInitThreads();
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
-    _PyImport_ReInitLock();
 #endif
 }
 

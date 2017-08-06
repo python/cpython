@@ -320,6 +320,11 @@ Glossary
       A module written in C or C++, using Python's C API to interact with the
       core and with user code.
 
+   f-string
+      String literals prefixed with ``'f'`` or ``'F'`` are commonly called
+      "f-strings" which is short for
+      :ref:`formatted string literals <f-strings>`.  See also :pep:`498`.
+
    file object
       An object exposing a file-oriented API (with methods such as
       :meth:`read()` or :meth:`write()`) to an underlying resource.  Depending
@@ -462,9 +467,9 @@ Glossary
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      All of Python's immutable built-in objects are hashable, while no mutable
-      containers (such as lists or dictionaries) are.  Objects which are
-      instances of user-defined classes are hashable by default; they all
+      All of Python's immutable built-in objects are hashable; mutable
+      containers (such as lists or dictionaries) are not.  Objects which are
+      instances of user-defined classes are hashable by default.  They all
       compare unequal (except with themselves), and their hash value is derived
       from their :func:`id`.
 

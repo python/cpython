@@ -434,7 +434,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     PyDict_SetItemString(dict, "OptimizedUnicode", (PyObject*)&PyUnicode_Type);
 
     /* Set integer constants */
-    for (i = 0; _int_constants[i].constant_name != 0; i++) {
+    for (i = 0; _int_constants[i].constant_name != NULL; i++) {
         tmp_obj = PyLong_FromLong(_int_constants[i].constant_value);
         if (!tmp_obj) {
             goto error;

@@ -111,8 +111,7 @@ class MiscTests(unittest.TestCase):
     def test_ident(self):
         self.assertIsInstance(_thread.get_ident(), int,
                               "_thread.get_ident() returned a non-integer")
-        self.assertNotEqual(_thread.get_ident(), 0,
-                        "_thread.get_ident() returned 0")
+        self.assertGreater(_thread.get_ident(), 0)
 
     def test_LockType(self):
         self.assertIsInstance(_thread.allocate_lock(), _thread.LockType,

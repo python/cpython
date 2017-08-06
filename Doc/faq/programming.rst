@@ -1849,7 +1849,7 @@ containing statements like ::
 will continue to work with the old version of the imported objects.  If the
 module contains class definitions, existing class instances will *not* be
 updated to use the new class definition.  This can result in the following
-paradoxical behaviour:
+paradoxical behaviour::
 
    >>> import importlib
    >>> import cls
@@ -1860,7 +1860,7 @@ paradoxical behaviour:
    False
 
 The nature of the problem is made clear if you print out the "identity" of the
-class objects:
+class objects::
 
    >>> hex(id(c.__class__))
    '0x7352a0'

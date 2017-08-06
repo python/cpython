@@ -1,0 +1,2 @@
+IDLE: Improve textview with docstrings, PEP8 names, and more tests. Patch by
+Cheryl Sabella.

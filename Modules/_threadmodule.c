@@ -267,7 +267,7 @@ static PyTypeObject Locktype = {
 typedef struct {
     PyObject_HEAD
     PyThread_type_lock rlock_lock;
-    long rlock_owner;
+    unsigned long rlock_owner;
     unsigned long rlock_count;
     PyObject *in_weakreflist;
 } rlockobject;
@@ -293,7 +293,7 @@ static PyObject *
 rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 {
     _PyTime_t timeout;
-    long tid;
+    unsigned long tid;
     PyLockStatus r = PY_LOCK_ACQUIRED;
 
     if (lock_acquire_parse_args(args, kwds, &timeout) < 0)
@@ -342,7 +342,7 @@ the lock is taken and its internal counter initialized to 1.");
 static PyObject *
 rlock_release(rlockobject *self)
 {
-    long tid = PyThread_get_thread_ident();
+    unsigned long tid = PyThread_get_thread_ident();
 
     if (self->rlock_count == 0 || self->rlock_owner != tid) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -371,11 +371,11 @@ to be available for other threads.");
 static PyObject *
 rlock_acquire_restore(rlockobject *self, PyObject *args)
 {
-    long owner;
+    unsigned long owner;
     unsigned long count;
     int r = 1;
 
-    if (!PyArg_ParseTuple(args, "(kl):_acquire_restore", &count, &owner))
+    if (!PyArg_ParseTuple(args, "(kk):_acquire_restore", &count, &owner))
         return NULL;
 
     if (!PyThread_acquire_lock(self->rlock_lock, 0)) {
@@ -401,7 +401,7 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_release_save(rlockobject *self)
 {
-    long owner;
+    unsigned long owner;
     unsigned long count;
 
     if (self->rlock_count == 0) {
@@ -415,7 +415,7 @@ rlock_release_save(rlockobject *self)
     self->rlock_count = 0;
     self->rlock_owner = 0;
     PyThread_release_lock(self->rlock_lock);
-    return Py_BuildValue("kl", count, owner);
+    return Py_BuildValue("kk", count, owner);
 }
 
 PyDoc_STRVAR(rlock_release_save_doc,
@@ -427,7 +427,7 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_is_owned(rlockobject *self)
 {
-    long tid = PyThread_get_thread_ident();
+    unsigned long tid = PyThread_get_thread_ident();
 
     if (self->rlock_count > 0 && self->rlock_owner == tid) {
         Py_RETURN_TRUE;
@@ -1031,7 +1031,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
     PyObject *func, *args, *keyw = NULL;
     struct bootstate *boot;
-    long ident;
+    unsigned long ident;
 
     if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
                            &func, &args, &keyw))
@@ -1068,7 +1068,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     Py_XINCREF(keyw);
     PyEval_InitThreads(); /* Start the interpreter's thread-awareness */
     ident = PyThread_start_new_thread(t_bootstrap, (void*) boot);
-    if (ident == -1) {
+    if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "can't start new thread");
         Py_DECREF(func);
         Py_DECREF(args);
@@ -1077,7 +1077,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         PyMem_DEL(boot);
         return NULL;
     }
-    return PyLong_FromLong(ident);
+    return PyLong_FromUnsignedLong(ident);
 }
 
 PyDoc_STRVAR(start_new_doc,
@@ -1137,13 +1137,12 @@ information about locks.");
 static PyObject *
 thread_get_ident(PyObject *self)
 {
-    long ident;
-    ident = PyThread_get_thread_ident();
-    if (ident == -1) {
+    unsigned long ident = PyThread_get_thread_ident();
+    if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "no current thread ident");
         return NULL;
     }
-    return PyLong_FromLong(ident);
+    return PyLong_FromUnsignedLong(ident);
 }
 
 PyDoc_STRVAR(get_ident_doc,

@@ -103,11 +103,11 @@ The module defines two convenience functions:
    Create an application archive from *source*.  The source can be any
    of the following:
 
-   * The name of a directory, or a :class:`pathlib.Path` object referring
+   * The name of a directory, or a :term:`path-like object` referring
      to a directory, in which case a new application archive will be
      created from the content of that directory.
-   * The name of an existing application archive file, or a :class:`pathlib.Path`
-     object referring to such a file, in which case the file is copied to
+   * The name of an existing application archive file, or a :term:`path-like object`
+     referring to such a file, in which case the file is copied to
      the target (modifying it to reflect the value given for the *interpreter*
      argument).  The file name should include the ``.pyz`` extension, if required.
    * A file object open for reading in bytes mode.  The content of the
@@ -117,7 +117,7 @@ The module defines two convenience functions:
    The *target* argument determines where the resulting archive will be
    written:
 
-   * If it is the name of a file, or a :class:`pathlb.Path` object,
+   * If it is the name of a file, or a :term:`path-like object`,
      the archive will be written to that file.
    * If it is an open file object, the archive will be written to that
      file object, which must be open for writing in bytes mode.
