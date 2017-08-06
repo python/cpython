@@ -297,6 +297,16 @@ string
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 
+ssl
+---
+
+Added support for validating server certificates containing
+internationalized domain names (IDNs). As part of this change, the
+:attr:`ssl.SSLSocket.server_hostname` attribute now stores the
+expected hostname in A-label form (``"xn--pythn-mua.org"``), rather
+than the U-label form (``"pythön.org"``). (Contributed by
+Nathaniel J. Smith in :issue:`28414`.)
+
 unittest.mock
 -------------
 
