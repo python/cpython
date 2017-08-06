@@ -2162,7 +2162,7 @@ def apropos(key):
 
 # --------------------------------------- enhanced Web browser interface
 
-def _start_server(urlhandler, port):
+def _start_server(urlhandler, hostname, port):
     """Start an HTTP server thread on a specific port.
 
     Start an HTML/text server thread, so HTML or text documents can be
@@ -2247,8 +2247,8 @@ def _start_server(urlhandler, port):
 
     class DocServer(http.server.HTTPServer):
 
-        def __init__(self, port, callback):
-            self.host = 'localhost'
+        def __init__(self, host, port, callback):
+            self.host = host
             self.address = (self.host, port)
             self.callback = callback
             self.base.__init__(self, self.address, self.handler)
@@ -2268,8 +2268,9 @@ def _start_server(urlhandler, port):
 
     class ServerThread(threading.Thread):
 
-        def __init__(self, urlhandler, port):
+        def __init__(self, urlhandler, host, port):
             self.urlhandler = urlhandler
+            self.host = host
             self.port = int(port)
             threading.Thread.__init__(self)
             self.serving = False
@@ -2282,7 +2283,7 @@ def _start_server(urlhandler, port):
                 DocServer.handler = DocHandler
                 DocHandler.MessageClass = email.message.Message
                 DocHandler.urlhandler = staticmethod(self.urlhandler)
-                docsvr = DocServer(self.port, self.ready)
+                docsvr = DocServer(self.host, self.port, self.ready)
                 self.docserver = docsvr
                 docsvr.serve_until_quit()
             except Exception as e:
@@ -2300,7 +2301,7 @@ def _start_server(urlhandler, port):
             self.serving = False
             self.url = None
 
-    thread = ServerThread(urlhandler, port)
+    thread = ServerThread(urlhandler, hostname, port)
     thread.start()
     # Wait until thread.serving is True to make sure we are
     # really up before returning.
@@ -2564,14 +2565,14 @@ def _url_handler(url, content_type="text/html"):
     raise TypeError('unknown content type %r for url %s' % (content_type, url))
 
 
-def browse(port=0, *, open_browser=True):
+def browse(port=0, *, open_browser=True, hostname='localhost'):
     """Start the enhanced pydoc Web server and open a Web browser.
 
     Use port '0' to start the server on an arbitrary port.
     Set open_browser to False to suppress opening a browser.
     """
     import webbrowser
-    serverthread = _start_server(_url_handler, port)
+    serverthread = _start_server(_url_handler, hostname, port)
     if serverthread.error:
         print(serverthread.error)
         return
@@ -2618,11 +2619,12 @@ def cli():
         sys.path.insert(0, '.')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'bk:p:w')
+        opts, args = getopt.getopt(sys.argv[1:], 'bk:h:p:w')
         writing = False
         start_server = False
         open_browser = False
-        port = None
+        port = 0
+        hostname = 'localhost'
         for opt, val in opts:
             if opt == '-b':
                 start_server = True
@@ -2635,11 +2637,12 @@ def cli():
                 port = val
             if opt == '-w':
                 writing = True
+            if opt == '-h':
+                start_server = True
+                hostname = val
 
         if start_server:
-            if port is None:
-                port = 0
-            browse(port, open_browser=open_browser)
+            browse(port, hostname=hostname, open_browser=open_browser)
             return
 
         if not args: raise BadUsage
@@ -2674,6 +2677,9 @@ def cli():
 
 {cmd} -k <keyword>
     Search for a keyword in the synopsis lines of all available modules.
+
+{cmd} -h <hostname>
+    Start an HTTP server with the given hostname.(default: localhost)
 
 {cmd} -p <port>
     Start an HTTP server on the given port on the local machine.  Port

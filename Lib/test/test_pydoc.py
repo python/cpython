@@ -913,7 +913,7 @@ class PydocServerTest(unittest.TestCase):
             text = 'the URL sent was: (%s, %s)' % (url, content_type)
             return text
 
-        serverthread = pydoc._start_server(my_url_handler, port=0)
+        serverthread = pydoc._start_server(my_url_handler, hostname='localhost', port=0)
         self.assertIn('localhost', serverthread.docserver.address)
 
         starttime = time.time()
