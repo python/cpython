@@ -4014,7 +4014,10 @@ _servername_callback(SSL *s, int *al, void *args)
             PyErr_WriteUnraisable((PyObject *) ssl_ctx);
             goto error;
         }
-        servername_idna = PyUnicode_FromEncodedObject(servername_o, "idna", NULL);
+        /* server_hostname was encoded to an A-label by our caller; put it
+         * back into a str object, but still as an A-label (bpo-28414)
+         */
+        servername_idna = PyUnicode_FromEncodedObject(servername_o, "ascii", NULL);
         if (servername_idna == NULL) {
             PyErr_WriteUnraisable(servername_o);
             Py_DECREF(servername_o);
