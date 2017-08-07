@@ -4902,22 +4902,25 @@ struct assembler {
 };
 
 static void
-dfs(struct compiler *c, basicblock *b, struct assembler *a)
+dfs(struct compiler *c, basicblock *b, struct assembler *a, int nblocks)
 {
-    int i;
-    struct instr *instr = NULL;
+    int i, j;
 
-    if (b->b_seen)
-        return;
-    b->b_seen = 1;
-    if (b->b_next != NULL)
-        dfs(c, b->b_next, a);
-    for (i = 0; i < b->b_iused; i++) {
-        instr = &b->b_instr[i];
-        if (instr->i_jrel || instr->i_jabs)
-            dfs(c, instr->i_target, a);
+    /* Get rid of recursion for normal control flow. */
+    for (j = nblocks; b && !b->b_seen; b = b->b_next) {
+        b->b_seen = 1;
+        assert(a->a_nblocks < j);
+        a->a_postorder[--j] = b;
     }
-    a->a_postorder[a->a_nblocks++] = b;
+    while (j < nblocks) {
+        b = a->a_postorder[j++];
+        for (i = 0; i < b->b_iused; i++) {
+            struct instr *instr = instr = &b->b_instr[i];
+            if (instr->i_jrel || instr->i_jabs)
+                dfs(c, instr->i_target, a, j);
+        }
+        a->a_postorder[a->a_nblocks++] = b;
+    }
 }
 
 static int
@@ -5424,7 +5427,7 @@ assemble(struct compiler *c, int addNone)
     }
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
         goto error;
-    dfs(c, entryblock, &a);
+    dfs(c, entryblock, &a, nblocks);
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);

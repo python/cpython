@@ -670,6 +670,11 @@ if 1:
 
         compile("42", PathLike("test_compile_pathlike"), "single")
 
+    def test_dfs_next(self):
+        # Issue #31113: Stack overflow when compile a long sequence of
+        # complex statements.
+        compile("if a: b\n"*100000, "<dummy>", "exec")
+
 
 class TestStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
