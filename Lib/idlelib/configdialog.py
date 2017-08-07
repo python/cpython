@@ -1856,6 +1856,7 @@ class VarTrace:
 
     def clear(self):
         "Clear lists (for tests)."
+        # Call after all tests in a module to avoid memory leaks.
         self.untraced.clear()
         self.traced.clear()
 
