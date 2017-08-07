@@ -510,7 +510,8 @@ class ExtendedInterpolation(Interpolation):
                         option, section, rawval, ":".join(path)) from None
                 if "$" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
-                                           dict(parser.items(sect, raw=True)),
+                                           dict(parser.section_items(
+                                               sect, raw=True)),
                                            depth + 1)
                 else:
                     accum.append(v)
