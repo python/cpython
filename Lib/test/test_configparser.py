@@ -93,6 +93,10 @@ class BasicTestCase(CfgParserTestCaseClass):
         L = cf.section_items('Spacey Bar From The Beginning')
         L.sort()
         eq(L, F)
+        with self.assertWarns(DeprecationWarning):
+            L = cf.items('Spacey Bar From The Beginning')
+        L.sort()
+        eq(L, F)
 
         # mapping access
         L = [section for section in cf]
@@ -781,6 +785,14 @@ boolean {0[0]} NO
         with self.assertRaises(configparser.NoSectionError):
             cf.section_items("no such section")
 
+        with self.assertWarns(DeprecationWarning):
+            L = list(cf.items("section", vars={'value': 'value'}))
+        L.sort()
+        self.assertEqual(L, expected)
+        with self.assertRaises(configparser.NoSectionError):
+            with self.assertWarns(DeprecationWarning):
+                cf.section_items("no such section")
+
     def test_popitem(self):
         cf = self.fromstring("""
             [section1]
@@ -1325,6 +1337,11 @@ class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
         self.assertEqual(len(cf.section_items('another one!')), 5)
         with self.assertRaises(configparser.InterpolationMissingOptionError):
             cf.section_items('no values here')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(len(cf.items('another one!')), 5)
+        with self.assertRaises(configparser.InterpolationMissingOptionError):
+            with self.assertWarns(DeprecationWarning):
+                cf.section_items('no values here')
         self.assertEqual(cf.get('tricky interpolation', 'lets'), 'do this')
         self.assertEqual(cf.get('tricky interpolation', 'lets'),
                          cf.get('tricky interpolation', 'go'))
