@@ -104,18 +104,18 @@ class ParenMatch:
         # If user bound non-closer to <<paren-closed>>, quit.
         closer = self.text.get("insert-1c")
         if closer not in _openers:
-            return "break"
+            return
         hp = HyperParser(self.editwin, "insert-1c")
         if not hp.is_in_code():
-            return "break"
+            return
         indices = hp.get_surrounding_brackets(_openers[closer], True)
         if indices is None:
             self.bell()
-            return "break"
+            return
         self.activate_restore()
         self.create_tag(indices)
         self.set_timeout()
-        return "break"
+        return
 
     def restore_event(self, event=None):
         "Remove effect of doing match."
