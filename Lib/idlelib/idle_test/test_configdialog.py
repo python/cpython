@@ -41,6 +41,7 @@ def tearDownModule():
     global root, dialog
     idleConf.userCfg = usercfg
     tracers.detach()
+    tracers.clear()
     del dialog
     root.update_idletasks()
     root.destroy()
@@ -444,6 +445,7 @@ class VarTraceTest(unittest.TestCase):
 
     def setUp(self):
         changes.clear()
+        tracers.detach()
         tracers.clear()
         self.v1 = IntVar(root)
         self.v2 = BooleanVar(root)
