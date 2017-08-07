@@ -155,9 +155,35 @@ class TestPy2MigrationHint(unittest.TestCase):
 
         self.assertIn('print("Hello World", end=" ")', str(context.exception))
 
-    def test_string_with_stream_redirection(self):
+    def test_print_string_with_stream_redirection(self):
         import sys
         python2_print_str = 'print >> sys.stderr, "message"'
+        with self.assertRaises(TypeError) as context:
+            exec(python2_print_str)
+
+        self.assertIn('Did you mean "print(<message>, '
+                'file=<output_stream>)', str(context.exception))
+
+    def test_print_with_stream_redirection_using_max(self):
+        import sys
+        python2_print_str = 'max >> sys.stderr'
+        with self.assertRaises(TypeError) as context:
+            exec(python2_print_str)
+
+        self.assertNotIn('Did you mean "print(<message>, '
+                'file=<output_stream>)', str(context.exception))
+
+    def test_print_with_stream_redirection_using_rrshift(self):
+        import sys
+
+        class OverrideRRShift:
+
+            def __rrshift__(self, lhs):
+                return 0 # Force result independent of LHS
+
+        self.assertEqual(print >> OverrideRRShift(), 0)
+
+        python2_print_str = 'print >> 42'
         with self.assertRaises(TypeError) as context:
             exec(python2_print_str)
 
