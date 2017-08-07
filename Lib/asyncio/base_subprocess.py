@@ -2,7 +2,6 @@ import collections
 import subprocess
 import warnings
 
-from . import compat
 from . import protocols
 from . import transports
 from .coroutines import coroutine
@@ -121,15 +120,11 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
             # Don't clear the _proc reference yet: _post_init() may still run
 
-    # On Python 3.3 and older, objects with a destructor part of a reference
-    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
-    # to the PEP 442.
-    if compat.PY34:
-        def __del__(self):
-            if not self._closed:
-                warnings.warn("unclosed transport %r" % self, ResourceWarning,
-                              source=self)
-                self.close()
+    def __del__(self):
+        if not self._closed:
+            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+                          source=self)
+            self.close()
 
     def get_pid(self):
         return self._pid

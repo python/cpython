@@ -23,12 +23,28 @@ file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.
 
 class ClassBrowser:
+    """Browse module classes and functions in IDLE.
+    """
 
     def __init__(self, flist, name, path, _htest=False):
         # XXX This API should change, if the file doesn't end in ".py"
         # XXX the code here is bogus!
-        """
-        _htest - bool, change box when location running htest.
+        """Create a window for browsing a module's structure.
+
+        Args:
+            flist: filelist.FileList instance used as the root for the window.
+            name: Python module to parse.
+            path: Module search path.
+            _htest - bool, change box when location running htest.
+
+        Global variables:
+            file_open: Function used for opening a file.
+
+        Instance variables:
+            name: Module name.
+            file: Full path and module with .py extension.  Used in
+                creating ModuleBrowserTreeItem as the rootnode for
+                the tree and subsequently in the children.
         """
         global file_open
         if not _htest:
@@ -39,10 +55,12 @@ class ClassBrowser:
         self.init(flist)
 
     def close(self, event=None):
+        "Dismiss the window and the tree nodes."
         self.top.destroy()
         self.node.destroy()
 
     def init(self, flist):
+        "Create browser tkinter widgets, including the tree."
         self.flist = flist
         # reset pyclbr
         pyclbr._modules.clear()
@@ -66,24 +84,42 @@ class ClassBrowser:
         node.expand()
 
     def settitle(self):
+        "Set the window title."
         self.top.wm_title("Class Browser - " + self.name)
         self.top.wm_iconname("Class Browser")
 
     def rootnode(self):
+        "Return a ModuleBrowserTreeItem as the root of the tree."
         return ModuleBrowserTreeItem(self.file)
 
 class ModuleBrowserTreeItem(TreeItem):
+    """Browser tree for Python module.
+
+    Uses TreeItem as the basis for the structure of the tree.
+    """
 
     def __init__(self, file):
+        """Create a TreeItem for the file.
+
+        Args:
+            file: Full path and module name.
+        """
         self.file = file
 
     def GetText(self):
+        "Return the module name as the text string to display."
         return os.path.basename(self.file)
 
     def GetIconName(self):
+        "Return the name of the icon to display."
         return "python"
 
     def GetSubList(self):
+        """Return the list of ClassBrowserTreeItem items.
+
+        Each item returned from listclasses is the first level of
+        classes/functions within the module.
+        """
         sublist = []
         for name in self.listclasses():
             item = ClassBrowserTreeItem(name, self.classes, self.file)
@@ -91,6 +127,7 @@ class ModuleBrowserTreeItem(TreeItem):
         return sublist
 
     def OnDoubleClick(self):
+        "Open a module in an editor window when double clicked."
         if os.path.normcase(self.file[-3:]) != ".py":
             return
         if not os.path.exists(self.file):
@@ -98,9 +135,20 @@ class ModuleBrowserTreeItem(TreeItem):
         pyshell.flist.open(self.file)
 
     def IsExpandable(self):
+        "Return True if Python (.py) file."
         return os.path.normcase(self.file[-3:]) == ".py"
 
     def listclasses(self):
+        """Return list of classes and functions in the module.
+
+        The dictionary output from pyclbr is re-written as a
+        list of tuples in the form (lineno, name) and
+        then sorted so that the classes and functions are
+        processed in line number order.  The returned list only
+        contains the name and not the line number.  An instance
+        variable self.classes contains the pyclbr dictionary values,
+        which are instances of Class and Function.
+        """
         dir, file = os.path.split(self.file)
         name, ext = os.path.splitext(file)
         if os.path.normcase(ext) != ".py":
@@ -134,9 +182,25 @@ class ModuleBrowserTreeItem(TreeItem):
         return list
 
 class ClassBrowserTreeItem(TreeItem):
+    """Browser tree for classes within a module.
+
+    Uses TreeItem as the basis for the structure of the tree.
+    """
 
     def __init__(self, name, classes, file):
+        """Create a TreeItem for the class/function.
+
+        Args:
+            name: Name of the class/function.
+            classes: Dictonary of Class/Function instances from pyclbr.
+            file: Full path and module name.
+
+        Instance variables:
+            self.cl: Class/Function instance for the class/function name.
+            self.isfunction: True if self.cl is a Function.
+        """
         self.name = name
+        # XXX - Does classes need to be an instance variable?
         self.classes = classes
         self.file = file
         try:
@@ -146,25 +210,33 @@ class ClassBrowserTreeItem(TreeItem):
         self.isfunction = isinstance(self.cl, pyclbr.Function)
 
     def GetText(self):
+        "Return the name of the function/class to display."
         if self.isfunction:
             return "def " + self.name + "(...)"
         else:
             return "class " + self.name
 
     def GetIconName(self):
+        "Return the name of the icon to display."
         if self.isfunction:
             return "python"
         else:
             return "folder"
 
     def IsExpandable(self):
+        "Return True if this class has methods."
         if self.cl:
             try:
                 return not not self.cl.methods
             except AttributeError:
                 return False
+        return None
 
     def GetSubList(self):
+        """Return Class methods as a list of MethodBrowserTreeItem items.
+
+        Each item is a method within the class.
+        """
         if not self.cl:
             return []
         sublist = []
@@ -174,6 +246,7 @@ class ClassBrowserTreeItem(TreeItem):
         return sublist
 
     def OnDoubleClick(self):
+        "Open module with file_open and position to lineno, if it exists."
         if not os.path.exists(self.file):
             return
         edit = file_open(self.file)
@@ -182,6 +255,7 @@ class ClassBrowserTreeItem(TreeItem):
             edit.gotoline(lineno)
 
     def listmethods(self):
+        "Return list of methods within a class sorted by lineno."
         if not self.cl:
             return []
         items = []
@@ -194,28 +268,43 @@ class ClassBrowserTreeItem(TreeItem):
         return list
 
 class MethodBrowserTreeItem(TreeItem):
+    """Browser tree for methods within a class.
+
+    Uses TreeItem as the basis for the structure of the tree.
+    """
 
     def __init__(self, name, cl, file):
+        """Create a TreeItem for the methods.
+
+        Args:
+            name: Name of the class/function.
+            cl: pyclbr.Class instance for name.
+            file: Full path and module name.
+        """
         self.name = name
         self.cl = cl
         self.file = file
 
     def GetText(self):
+        "Return the method name to display."
         return "def " + self.name + "(...)"
 
     def GetIconName(self):
-        return "python" # XXX
+        "Return the name of the icon to display."
+        return "python"
 
     def IsExpandable(self):
-        return 0
+        "Return False as there are no tree items after methods."
+        return False
 
     def OnDoubleClick(self):
+        "Open module with file_open and position at the method start."
         if not os.path.exists(self.file):
             return
         edit = file_open(self.file)
         edit.gotoline(self.cl.methods[self.name])
 
-def _class_browser(parent): #Wrapper for htest
+def _class_browser(parent): # htest #
     try:
         file = __file__
     except NameError:

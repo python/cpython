@@ -36,7 +36,7 @@ implement import semantics.
 
 When a module is first imported, Python searches for the module and if found,
 it creates a module object [#fnmo]_, initializing it.  If the named module
-cannot be found, an :exc:`ModuleNotFoundError` is raised.  Python implements various
+cannot be found, a :exc:`ModuleNotFoundError` is raised.  Python implements various
 strategies to search for the named module when the import machinery is
 invoked.  These strategies can be modified and extended by using various hooks
 described in the sections below.
@@ -167,7 +167,7 @@ arguments to the :keyword:`import` statement, or from the parameters to the
 This name will be used in various phases of the import search, and it may be
 the dotted path to a submodule, e.g. ``foo.bar.baz``.  In this case, Python
 first tries to import ``foo``, then ``foo.bar``, and finally ``foo.bar.baz``.
-If any of the intermediate imports fail, an :exc:`ModuleNotFoundError` is raised.
+If any of the intermediate imports fail, a :exc:`ModuleNotFoundError` is raised.
 
 
 The module cache
@@ -185,7 +185,7 @@ object.
 
 During import, the module name is looked up in :data:`sys.modules` and if
 present, the associated value is the module satisfying the import, and the
-process completes.  However, if the value is ``None``, then an
+process completes.  However, if the value is ``None``, then a
 :exc:`ModuleNotFoundError` is raised.  If the module name is missing, Python will
 continue searching for the module.
 
@@ -194,7 +194,7 @@ associated module (as other modules may hold references to it),
 but it will invalidate the cache entry for the named module, causing
 Python to search anew for the named module upon its next
 import. The key can also be assigned to ``None``, forcing the next import
-of the module to result in an :exc:`ModuleNotFoundError`.
+of the module to result in a :exc:`ModuleNotFoundError`.
 
 Beware though, as if you keep a reference to the module object,
 invalidate its cache entry in :data:`sys.modules`, and then re-import the
@@ -298,7 +298,7 @@ The second argument is the path entries to use for the module search.  For
 top-level modules, the second argument is ``None``, but for submodules or
 subpackages, the second argument is the value of the parent package's
 ``__path__`` attribute. If the appropriate ``__path__`` attribute cannot
-be accessed, an :exc:`ModuleNotFoundError` is raised.  The third argument
+be accessed, a :exc:`ModuleNotFoundError` is raised.  The third argument
 is an existing module object that will be the target of loading later.
 The import system passes in a target module only during reload.
 
@@ -616,7 +616,7 @@ the module.
 module.__path__
 ---------------
 
-By definition, if a module has an ``__path__`` attribute, it is a package,
+By definition, if a module has a ``__path__`` attribute, it is a package,
 regardless of its value.
 
 A package's ``__path__`` attribute is used during imports of its subpackages.
@@ -890,7 +890,7 @@ import statements within that module.
 
 To selectively prevent import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),
-it is sufficient to raise :exc:`ModuleNoFoundError` directly from
+it is sufficient to raise :exc:`ModuleNotFoundError` directly from
 :meth:`~importlib.abc.MetaPathFinder.find_spec` instead of returning
 ``None``. The latter indicates that the meta path search should continue,
 while raising an exception terminates it immediately.

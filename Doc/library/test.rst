@@ -570,7 +570,8 @@ The :mod:`test.support` module defines the following functions:
       def load_tests(*args):
           return load_package_tests(os.path.dirname(__file__), *args)
 
-.. function:: detect_api_mismatch(ref_api, other_api, *, ignore=()):
+
+.. function:: detect_api_mismatch(ref_api, other_api, *, ignore=())
 
    Returns the set of attributes, functions or methods of *ref_api* not
    found on *other_api*, except for a defined list of items to be

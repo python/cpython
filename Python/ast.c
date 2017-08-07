@@ -4197,9 +4197,11 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
     while (s < end) {
         if (*s == '\\') {
             *p++ = *s++;
-            if (*s & 0x80) {
+            if (s >= end || *s & 0x80) {
                 strcpy(p, "u005c");
                 p += 5;
+                if (s >= end)
+                    break;
             }
         }
         if (*s & 0x80) { /* XXX inefficient */
@@ -4272,49 +4274,32 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
                      struct compiling *c, const node *n)
 
 {
-    int all_whitespace = 1;
-    int kind;
-    void *data;
     PyCompilerFlags cf;
     mod_ty mod;
     char *str;
-    PyObject *o;
     Py_ssize_t len;
-    Py_ssize_t i;
+    const char *s;
 
     assert(expr_end >= expr_start);
     assert(*(expr_start-1) == '{');
     assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
 
-    /* We know there are no escapes here, because backslashes are not allowed,
-       and we know it's utf-8 encoded (per PEP 263).  But, in order to check
-       that each char is not whitespace, we need to decode it to unicode.
-       Which is unfortunate, but such is life. */
-
     /* If the substring is all whitespace, it's an error.  We need to catch
        this here, and not when we call PyParser_ASTFromString, because turning
        the expression '' in to '()' would go from being invalid to valid. */
-    /* Note that this code says an empty string is all whitespace.  That's
-       important.  There's a test for it: f'{}'. */
-    o = PyUnicode_DecodeUTF8(expr_start, expr_end-expr_start, NULL);
-    if (o == NULL)
-        return NULL;
-    len = PyUnicode_GET_LENGTH(o);
-    kind = PyUnicode_KIND(o);
-    data = PyUnicode_DATA(o);
-    for (i = 0; i < len; i++) {
-        if (!Py_UNICODE_ISSPACE(PyUnicode_READ(kind, data, i))) {
-            all_whitespace = 0;
+    for (s = expr_start; s != expr_end; s++) {
+        char c = *s;
+        /* The Python parser ignores only the following whitespace
+           characters (\r already is converted to \n). */
+        if (!(c == ' ' || c == '\t' || c == '\n' || c == '\f')) {
             break;
         }
     }
-    Py_DECREF(o);
-    if (all_whitespace) {
+    if (s == expr_end) {
         ast_error(c, n, "f-string: empty expression not allowed");
         return NULL;
     }
 
-    /* Reuse len to be the length of the utf-8 input string. */
     len = expr_end - expr_start;
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
     str = PyMem_RawMalloc(len + 3);
@@ -4352,30 +4337,37 @@ fstring_find_literal(const char **str, const char *end, int raw,
        brace (which isn't part of a unicode name escape such as
        "\N{EULER CONSTANT}"), or the end of the string. */
 
-    const char *literal_start = *str;
-    const char *literal_end;
-    int in_named_escape = 0;
+    const char *s = *str;
+    const char *literal_start = s;
     int result = 0;
 
     assert(*literal == NULL);
-    for (; *str < end; (*str)++) {
-        char ch = **str;
-        if (!in_named_escape && ch == '{' && (*str)-literal_start >= 2 &&
-            *(*str-2) == '\\' && *(*str-1) == 'N') {
-            in_named_escape = 1;
-        } else if (in_named_escape && ch == '}') {
-            in_named_escape = 0;
-        } else if (ch == '{' || ch == '}') {
+    while (s < end) {
+        char ch = *s++;
+        if (!raw && ch == '\\' && s < end) {
+            ch = *s++;
+            if (ch == 'N') {
+                if (s < end && *s++ == '{') {
+                    while (s < end && *s++ != '}') {
+                    }
+                    continue;
+                }
+                break;
+            }
+            if (ch == '{' && warn_invalid_escape_sequence(c, n, ch) < 0) {
+                return -1;
+            }
+        }
+        if (ch == '{' || ch == '}') {
             /* Check for doubled braces, but only at the top level. If
                we checked at every level, then f'{0:{3}}' would fail
                with the two closing braces. */
             if (recurse_lvl == 0) {
-                if (*str+1 < end && *(*str+1) == ch) {
+                if (s < end && *s == ch) {
                     /* We're going to tell the caller that the literal ends
                        here, but that they should continue scanning. But also
                        skip over the second brace when we resume scanning. */
-                    literal_end = *str+1;
-                    *str += 2;
+                    *str = s + 1;
                     result = 1;
                     goto done;
                 }
@@ -4383,6 +4375,7 @@ fstring_find_literal(const char **str, const char *end, int raw,
                 /* Where a single '{' is the start of a new expression, a
                    single '}' is not allowed. */
                 if (ch == '}') {
+                    *str = s - 1;
                     ast_error(c, n, "f-string: single '}' is not allowed");
                     return -1;
                 }
@@ -4390,21 +4383,22 @@ fstring_find_literal(const char **str, const char *end, int raw,
             /* We're either at a '{', which means we're starting another
                expression; or a '}', which means we're at the end of this
                f-string (for a nested format_spec). */
+            s--;
             break;
         }
     }
-    literal_end = *str;
-    assert(*str <= end);
-    assert(*str == end || **str == '{' || **str == '}');
+    *str = s;
+    assert(s <= end);
+    assert(s == end || *s == '{' || *s == '}');
 done:
-    if (literal_start != literal_end) {
+    if (literal_start != s) {
         if (raw)
             *literal = PyUnicode_DecodeUTF8Stateful(literal_start,
-                                                    literal_end-literal_start,
+                                                    s - literal_start,
                                                     NULL, NULL);
         else
             *literal = decode_unicode_with_escapes(c, n, literal_start,
-                                                   literal_end-literal_start);
+                                                   s - literal_start);
         if (!*literal)
             return -1;
     }
@@ -4920,6 +4914,8 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
             /* Do nothing. Just leave last_str alone (and possibly
                NULL). */
         } else if (!state->last_str) {
+            /*  Note that the literal can be zero length, if the
+                input string is "\\\n" or "\\\r", among others. */
             state->last_str = literal;
             literal = NULL;
         } else {
@@ -4929,8 +4925,6 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
                 return -1;
             literal = NULL;
         }
-        assert(!state->last_str ||
-               PyUnicode_GET_LENGTH(state->last_str) != 0);
 
         /* We've dealt with the literal now. It can't be leaked on further
            errors. */

@@ -142,7 +142,7 @@ PyZlib_Free(voidpf ctx, void *ptr)
 static void
 arrange_input_buffer(z_stream *zst, Py_ssize_t *remains)
 {
-    zst->avail_in = Py_MIN((size_t)*remains, UINT_MAX);
+    zst->avail_in = (uInt)Py_MIN((size_t)*remains, UINT_MAX);
     *remains -= zst->avail_in;
 }
 
@@ -177,7 +177,7 @@ arrange_output_buffer_with_maximum(z_stream *zst, PyObject **buffer,
         }
     }
 
-    zst->avail_out = Py_MIN((size_t)(length - occupied), UINT_MAX);
+    zst->avail_out = (uInt)Py_MIN((size_t)(length - occupied), UINT_MAX);
     zst->next_out = (Byte *)PyBytes_AS_STRING(*buffer) + occupied;
 
     return length;

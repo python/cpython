@@ -14,7 +14,7 @@ import sys
 import encodings
 import encodings.aliases
 import re
-import collections
+import collections.abc
 from builtins import str as _builtin_str
 import functools
 import warnings
@@ -215,7 +215,7 @@ def format_string(f, val, grouping=False, monetary=False):
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 
-    if isinstance(val, collections.Mapping):
+    if isinstance(val, collections.abc.Mapping):
         new_val = []
         for perc in percents:
             if perc.group()[-1]=='%':

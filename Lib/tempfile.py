@@ -133,21 +133,32 @@ def _sanitize_params(prefix, suffix, dir):
     return prefix, suffix, dir, output_type
 
 
-def _RandomNameSequence():
-    """Generate an endless sequence of unpredictable strings which
-    can safely be incorporated into file names.  Each string is 8
-    characters long.  Multiple threads and forked processes can
-    safely use the same instance at the same time."""
+class _RandomNameSequence:
+    """An instance of _RandomNameSequence generates an endless
+    sequence of unpredictable strings which can safely be incorporated
+    into file names.  Each string is six characters long.  Multiple
+    threads can safely use the same instance at the same time.
+
+    _RandomNameSequence is an iterator."""
 
     characters = "abcdefghijklmnopqrstuvwxyz0123456789_"
-    rng_pid = None
-    while True:
+
+    @property
+    def rng(self):
         cur_pid = _os.getpid()
-        if cur_pid != rng_pid:
-            choose = _Random().choice
-            rng_pid = cur_pid
-        letters = [choose(characters) for dummy in range(8)]
-        yield ''.join(letters)
+        if cur_pid != getattr(self, '_rng_pid', None):
+            self._rng = _Random()
+            self._rng_pid = cur_pid
+        return self._rng
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        c = self.characters
+        choose = self.rng.choice
+        letters = [choose(c) for dummy in range(8)]
+        return ''.join(letters)
 
 def _candidate_tempdir_list():
     """Generate a list of candidate temporary directories which

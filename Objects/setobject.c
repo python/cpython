@@ -1083,7 +1083,7 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL, *result;
 
-    if (type == &PyFrozenSet_Type && !_PyArg_NoKeywords("frozenset()", kwds))
+    if (type == &PyFrozenSet_Type && !_PyArg_NoKeywords("frozenset", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable))
@@ -1546,20 +1546,26 @@ set_difference(PySetObject *so, PyObject *other)
     PyObject *key;
     Py_hash_t hash;
     setentry *entry;
-    Py_ssize_t pos = 0;
+    Py_ssize_t pos = 0, other_size;
     int rv;
 
     if (PySet_GET_SIZE(so) == 0) {
         return set_copy(so);
     }
 
-    if (!PyAnySet_Check(other)  && !PyDict_CheckExact(other)) {
+    if (PyAnySet_Check(other)) {
+        other_size = PySet_GET_SIZE(other);
+    }
+    else if (PyDict_CheckExact(other)) {
+        other_size = PyDict_GET_SIZE(other);
+    }
+    else {
         return set_copy_and_difference(so, other);
     }
 
     /* If len(so) much more than len(other), it's more efficient to simply copy
      * so and then iterate other looking for common elements. */
-    if ((PySet_GET_SIZE(so) >> 2) > PyObject_Size(other)) {
+    if ((PySet_GET_SIZE(so) >> 2) > other_size) {
         return set_copy_and_difference(so, other);
     }
 
@@ -2000,7 +2006,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL;
 
-    if (!_PyArg_NoKeywords("set()", kwds))
+    if (!_PyArg_NoKeywords("set", kwds))
         return -1;
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;

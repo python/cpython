@@ -372,7 +372,7 @@ also send your request step by step, by using the four functions below.
    Section 3.3.1.  How the data is encoded is dependent on the type of
    *message_body*.  If *message_body* implements the :ref:`buffer interface
    <bufferobjects>` the encoding will result in a single chunk.
-   If *message_body* is a :class:`collections.Iterable`, each iteration
+   If *message_body* is a :class:`collections.abc.Iterable`, each iteration
    of *message_body* will result in a chunk.  If *message_body* is a
    :term:`file object`, each call to ``.read()`` will result in a chunk.
    The method automatically signals the end of the chunk-encoded data

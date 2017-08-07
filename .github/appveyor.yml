@@ -1,9 +1,16 @@
 version: 3.7.0a0.{build}
 clone_depth: 5
+branches:
+  only:
+    - master
+    - /\d\.\d/
+    - buildbot-custom
 build_script:
 - cmd: PCbuild\build.bat -e
 test_script:
-- cmd: PCbuild\rt.bat -q -uall -rwW --slowest --timeout=1200 -j0
+- cmd: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 --fail-env-changed -j0
+environment:
+  HOST_PYTHON: C:\Python36\python.exe
 
 # Only trigger AppVeyor if actual code or its configuration changes
 only_commits:

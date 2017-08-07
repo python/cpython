@@ -159,15 +159,20 @@ serve:
 	../Tools/scripts/serve.py build/html
 
 # Targets for daily automated doc build
+# By default, Sphinx only rebuilds pages where the page content has changed.
+# This means it doesn't always pick up changes to preferred link targets, etc
+# To ensure such changes are picked up, we build the published docs with
+# `-E` (to ignore the cached environment) and `-a` (to ignore already existing
+# output files)
 
 # for development releases: always build
 autobuild-dev:
-	make dist SPHINXOPTS='$(SPHINXOPTS) -A daily=1 -A versionswitcher=1'
+	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A switchers=1'
 	-make suspicious
 
 # for quick rebuilds (HTML only)
 autobuild-dev-html:
-	make html SPHINXOPTS='$(SPHINXOPTS) -A daily=1 -A versionswitcher=1'
+	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A switchers=1'
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage

@@ -203,6 +203,9 @@ Functions
    classes.
 
    .. versionadded:: 3.4
+   .. versionchanged:: 3.7
+       :exc:`ModuleNotFoundError` is raised when the module being reloaded lacks
+       a :class:`ModuleSpec`.
 
 
 :mod:`importlib.abc` -- Abstract base classes related to import
@@ -1211,6 +1214,11 @@ an :term:`importer`.
    **name** and **package** work the same as for :func:`import_module`.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.7
+      Raises :exc:`ModuleNotFoundError` instead of :exc:`AttributeError` if
+      **package** is in fact not a package (i.e. lacks a :attr:`__path__`
+      attribute).
 
 .. function:: module_from_spec(spec)
 

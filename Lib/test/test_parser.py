@@ -1,4 +1,6 @@
+import copy
 import parser
+import pickle
 import unittest
 import operator
 import struct
@@ -424,6 +426,52 @@ class IllegalSyntaxTestCase(unittest.TestCase):
         # not even remotely valid:
         self.check_bad_tree((1, 2, 3), "<junk>")
 
+    def test_illegal_terminal(self):
+        tree = \
+            (257,
+             (269,
+              (270,
+               (271,
+                (277,
+                 (1,))),
+               (4, ''))),
+             (4, ''),
+             (0, ''))
+        self.check_bad_tree(tree, "too small items in terminal node")
+        tree = \
+            (257,
+             (269,
+              (270,
+               (271,
+                (277,
+                 (1, b'pass'))),
+               (4, ''))),
+             (4, ''),
+             (0, ''))
+        self.check_bad_tree(tree, "non-string second item in terminal node")
+        tree = \
+            (257,
+             (269,
+              (270,
+               (271,
+                (277,
+                 (1, 'pass', '0', 0))),
+               (4, ''))),
+             (4, ''),
+             (0, ''))
+        self.check_bad_tree(tree, "non-integer third item in terminal node")
+        tree = \
+            (257,
+             (269,
+              (270,
+               (271,
+                (277,
+                 (1, 'pass', 0, 0))),
+               (4, ''))),
+             (4, ''),
+             (0, ''))
+        self.check_bad_tree(tree, "too many items in terminal node")
+
     def test_illegal_yield_1(self):
         # Illegal yield statement: def f(): return 1; yield 1
         tree = \
@@ -628,6 +676,24 @@ class IllegalSyntaxTestCase(unittest.TestCase):
              (4, ''), (0, ''))
         self.check_bad_tree(tree, "from import fred")
 
+    def test_illegal_encoding(self):
+        # Illegal encoding declaration
+        tree = \
+            (339,
+             (257, (0, '')))
+        self.check_bad_tree(tree, "missed encoding")
+        tree = \
+            (339,
+             (257, (0, '')),
+              b'iso-8859-1')
+        self.check_bad_tree(tree, "non-string encoding")
+        tree = \
+            (339,
+             (257, (0, '')),
+              '\udcff')
+        with self.assertRaises(UnicodeEncodeError):
+            parser.sequence2st(tree)
+
 
 class CompileTestCase(unittest.TestCase):
 
@@ -771,6 +837,21 @@ class STObjectTestCase(unittest.TestCase):
         self.assertRaises(TypeError, operator.le, False, st1)
         self.assertRaises(TypeError, operator.lt, st1, 1815)
         self.assertRaises(TypeError, operator.gt, b'waterloo', st2)
+
+    def test_copy_pickle(self):
+        sts = [
+            parser.expr('2 + 3'),
+            parser.suite('x = 2; y = x + 3'),
+            parser.expr('list(x**3 for x in range(20))')
+        ]
+        for st in sts:
+            st_copy = copy.copy(st)
+            self.assertEqual(st_copy.totuple(), st.totuple())
+            st_copy = copy.deepcopy(st)
+            self.assertEqual(st_copy.totuple(), st.totuple())
+            for proto in range(pickle.HIGHEST_PROTOCOL+1):
+                st_copy = pickle.loads(pickle.dumps(st, proto))
+                self.assertEqual(st_copy.totuple(), st.totuple())
 
     check_sizeof = support.check_sizeof
 

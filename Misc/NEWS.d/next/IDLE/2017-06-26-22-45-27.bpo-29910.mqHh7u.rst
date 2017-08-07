@@ -1,0 +1,3 @@
+IDLE no longer deletes a character after commenting out a region by a key
+shortcut.  Add ``return 'break'`` for this and other potential conflicts
+between IDLE and default key bindings.

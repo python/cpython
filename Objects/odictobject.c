@@ -546,7 +546,7 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
     Py_ssize_t ix;
 
-    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value, NULL);
+    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value);
     if (ix == DKIX_EMPTY) {
         return keys->dk_nentries;  /* index of new entry */
     }
@@ -1519,7 +1519,7 @@ odict_repr(PyODictObject *self)
             count++;
         }
         if (count < PyList_GET_SIZE(pieces))
-            PyList_GET_SIZE(pieces) = count;
+            Py_SIZE(pieces) = count;
     }
     else {
         PyObject *items = _PyObject_CallMethodIdObjArgs((PyObject *)self,
