@@ -9,7 +9,7 @@ requires('gui')
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
-from tkinter import Tk, Frame, IntVar, BooleanVar, DISABLED, NORMAL
+from tkinter import Tk, Frame, StringVar, IntVar, BooleanVar, DISABLED, NORMAL
 from idlelib import config
 from idlelib.configdialog import idleConf, changes, tracers
 
@@ -41,6 +41,8 @@ def tearDownModule():
     global root, dialog
     idleConf.userCfg = usercfg
     tracers.detach()
+    tracers.clear()
+    changes.clear()
     del dialog
     root.update_idletasks()
     root.destroy()
@@ -442,15 +444,19 @@ class GenPageTest(unittest.TestCase):
 
 class VarTraceTest(unittest.TestCase):
 
-    def setUp(self):
-        changes.clear()
-        tracers.clear()
-        self.v1 = IntVar(root)
-        self.v2 = BooleanVar(root)
-        self.called = 0
+    @classmethod
+    def setUpClass(cls):
+        cls.tracers = configdialog.VarTrace()
+        cls.iv = IntVar(root)
+        cls.bv = BooleanVar(root)
 
-    def tearDown(self):
-        del self.v1, self.v2
+    @classmethod
+    def tearDownClass(cls):
+        del cls.tracers, cls.iv, cls.bv
+
+    def setUp(self):
+        self.tracers.clear()
+        self.called = 0
 
     def var_changed_increment(self, *params):
         self.called += 13
@@ -459,64 +465,68 @@ class VarTraceTest(unittest.TestCase):
         pass
 
     def test_init(self):
-        tracers.__init__()
-        self.assertEqual(tracers.untraced, [])
-        self.assertEqual(tracers.traced, [])
+        tr = self.tracers
+        tr.__init__()
+        self.assertEqual(tr.untraced, [])
+        self.assertEqual(tr.traced, [])
 
     def test_clear(self):
-        tracers.untraced.append(0)
-        tracers.traced.append(1)
-        tracers.clear()
-        self.assertEqual(tracers.untraced, [])
-        self.assertEqual(tracers.traced, [])
+        tr = self.tracers
+        tr.untraced.append(0)
+        tr.traced.append(1)
+        tr.clear()
+        self.assertEqual(tr.untraced, [])
+        self.assertEqual(tr.traced, [])
 
     def test_add(self):
-        tr = tracers
+        tr = self.tracers
         func = Func()
         cb = tr.make_callback = mock.Mock(return_value=func)
 
-        v1 = tr.add(self.v1, self.var_changed_increment)
-        self.assertIsInstance(v1, IntVar)
-        v2 = tr.add(self.v2, self.var_changed_boolean)
-        self.assertIsInstance(v2, BooleanVar)
+        iv = tr.add(self.iv, self.var_changed_increment)
+        self.assertIs(iv, self.iv)
+        bv = tr.add(self.bv, self.var_changed_boolean)
+        self.assertIs(bv, self.bv)
 
-        v3 = IntVar(root)
-        v3 = tr.add(v3, ('main', 'section', 'option'))
+        sv = StringVar(root)
+        sv2 = tr.add(sv, ('main', 'section', 'option'))
+        self.assertIs(sv2, sv)
         cb.assert_called_once()
-        cb.assert_called_with(v3, ('main', 'section', 'option'))
+        cb.assert_called_with(sv, ('main', 'section', 'option'))
 
-        expected = [(v1, self.var_changed_increment),
-                    (v2, self.var_changed_boolean),
-                    (v3, func)]
+        expected = [(iv, self.var_changed_increment),
+                    (bv, self.var_changed_boolean),
+                    (sv, func)]
         self.assertEqual(tr.traced, [])
         self.assertEqual(tr.untraced, expected)
 
         del tr.make_callback
 
     def test_make_callback(self):
-        cb = tracers.make_callback(self.v1, ('main', 'section', 'option'))
+        cb = self.tracers.make_callback(self.iv, ('main', 'section', 'option'))
         self.assertTrue(callable(cb))
-        self.v1.set(42)
+        self.iv.set(42)
         # Not attached, so set didn't invoke the callback.
         self.assertNotIn('section', changes['main'])
         # Invoke callback manually.
         cb()
         self.assertIn('section', changes['main'])
         self.assertEqual(changes['main']['section']['option'], '42')
+        changes.clear()
 
     def test_attach_detach(self):
-        tr = tracers
-        v1 = tr.add(self.v1, self.var_changed_increment)
-        v2 = tr.add(self.v2, self.var_changed_boolean)
-        expected = [(v1, self.var_changed_increment),
-                    (v2, self.var_changed_boolean)]
+        tr = self.tracers
+        iv = tr.add(self.iv, self.var_changed_increment)
+        bv = tr.add(self.bv, self.var_changed_boolean)
+        expected = [(iv, self.var_changed_increment),
+                    (bv, self.var_changed_boolean)]
 
         # Attach callbacks and test call increment.
         tr.attach()
         self.assertEqual(tr.untraced, [])
         self.assertCountEqual(tr.traced, expected)
-        v1.set(1)
-        self.assertEqual(v1.get(), 1)
+        iv.set(1)
+        self.assertEqual(iv.get(), 1)
         self.assertEqual(self.called, 13)
 
         # Check that only one callback is attached to a variable.
@@ -524,7 +534,7 @@ class VarTraceTest(unittest.TestCase):
         # would be called twice and the counter would be 2.
         self.called = 0
         tr.attach()
-        v1.set(1)
+        iv.set(1)
         self.assertEqual(self.called, 13)
 
         # Detach callbacks.
@@ -532,7 +542,7 @@ class VarTraceTest(unittest.TestCase):
         tr.detach()
         self.assertEqual(tr.traced, [])
         self.assertCountEqual(tr.untraced, expected)
-        v1.set(1)
+        iv.set(1)
         self.assertEqual(self.called, 0)
 
 
