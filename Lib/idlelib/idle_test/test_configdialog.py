@@ -41,6 +41,7 @@ def tearDownModule():
     global root, dialog
     idleConf.userCfg = usercfg
     tracers.detach()
+    tracers.clear()
     del dialog
     root.update_idletasks()
     root.destroy()
