@@ -118,10 +118,13 @@ ConfigParser -- responsible for parsing a list of
         insensitively defined as 0, false, no, off for False, and 1, true,
         yes, on for True).  Returns False or True.
 
-    items(section=_UNSET, raw=False, vars=None)
-        If section is given, return a list of tuples with (name, value) for
-        each option in the section. Otherwise, return a list of tuples with
-        (section_name, section_proxy) for each section, including DEFAULTSECT.
+    items()
+        Return a list of tuples with (section_name, section_proxy) for each
+        section, including DEFAULTSECT.
+
+    section_items(section, raw=False, vars=None)
+        Return a list of tuples with (name, value) for each option in the
+        section.
 
     remove_section(section)
         Remove the given file section and all its options.
@@ -828,7 +831,15 @@ class RawConfigParser(MutableMapping):
         return self._get_conv(section, option, self._convert_to_boolean,
                               raw=raw, vars=vars, fallback=fallback, **kwargs)
 
-    def items(self, section=_UNSET, raw=False, vars=None):
+    def items(self, *args, **kwargs):
+        if len(args) != 0 or len(kwargs) != 0:
+            warnings.warn("Calling the 'items' method with arguments is"
+                          " deprecated, use 'section_items' instead",
+                          DeprecationWarning, stacklevel=2)
+            return self.section_items(*args, **kwargs)
+        return super().items()
+
+    def section_items(self, section, raw=False, vars=None):
         """Return a list of (name, value) tuples for each option in a section.
 
         All % interpolations are expanded in the return values, based on the
@@ -839,8 +850,6 @@ class RawConfigParser(MutableMapping):
 
         The section DEFAULT is special.
         """
-        if section is _UNSET:
-            return super().items()
         d = self._defaults.copy()
         try:
             d.update(self._sections[section])
