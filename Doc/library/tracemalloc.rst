@@ -30,8 +30,118 @@ frame (1 frame). To store 25 frames at startup: set the
 :option:`-X` ``tracemalloc=25`` command line option.
 
 
-Examples
---------
+Quickstart Tutorial
+-------------------
+
+Essential :mod:`tracemalloc` API
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Using :func:`start` to enable tracemalloc::
+
+   >>> import tracemalloc
+   >>> tracemalloc.start()
+
+Disable tracemalloc by :func:`stop`::
+
+   >>> tracemalloc.stop()
+
+Capture current memory block usage using :func:`take_snapshot`::
+
+   >>> snapshot = tracemalloc.take_snapshot()
+
+
+Display the memory usage
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+We can use helper function ``allocate_bytes`` to simulate memory allocate,
+we can print the snapshot result by using :func:`statistics`::
+
+   # tm_snap_stats.py
+
+   import sys
+   import tracemalloc
+
+   # Simulate memory allocate by creating bytes
+   EMPTY_BYTES_SIZE = sys.getsizeof(b'')
+   def allocate_bytes(size):
+      bytes_len = (size - EMPTY_BYTES_SIZE)
+      return b'x' * bytes_len
+
+   tracemalloc.start()
+
+   # Allocate 1024 KiB memory block
+   b = allocate_bytes(1024 * 1024)
+
+   snapshot = tracemalloc.take_snapshot()
+   stats = snapshot.statistics('lineno')
+   for stat in stats:
+      print(stat)
+
+
+Output of the ``tm_snap_stats.py``::
+
+   tm_snap_stats.py:10: size=1024 KiB, count=1, average=1024 KiB
+
+The output shows that at ``tm_snap_stats.py`` line 10, Pyhton allocate one block
+of memory, the block size is 1024 KiB. Since there have only one block, the
+average size of the memory block is 1024 KiB, too.
+
+
+What is traceback of a memory block?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You may wondering why the output of ``tm_snap_stats`` indicate line 10 doing
+allocate memory job, not line 15 where we call `allocate_bytes`? It is because
+the actual allocate is done at line 10. But if we want to know were it is be
+called, we will need to use traceback. :mod:`tracemalloc` can store memory
+traceback information, the maximum record of the traceback was limited
+by :func:`start`, for example, if we want to store 10 traceback::
+
+   # tm_snap_traceback.py
+
+   import sys
+   import tracemalloc
+
+   # Simulate memory allocate by creating bytes
+   EMPTY_BYTES_SIZE = sys.getsizeof(b'')
+   def allocate_bytes(size):
+      bytes_len = (size - EMPTY_BYTES_SIZE)
+      return b'x' * bytes_len
+
+   # Store 10 frames
+   tracemalloc.start(10)
+
+   # Allocate 1024 Kib memory block
+   b = allocate_bytes(1024 * 1024)
+
+   snapshot = tracemalloc.take_snapshot()
+   stats = snapshot.statistics('traceback')
+
+   # pick the biggest memory block
+   stat = stats[0]
+   for line in stat.traceback.format():
+      print(line)
+
+
+Output will take 2 traceback::
+
+   File "tm_snap_traceback.py", line 10
+      return b'x' * bytes_len
+   File "tm_snap_traceback.py", line 16
+      b = allocate_bytes(1024 * 1024)
+
+You can try to change the numer in :func:`start` to 1, then you will get a
+different output::
+
+   File "tm_snap_traceback.py", line 10
+      return b'x' * bytes_len
+
+This is because :mod:`tracemalloc` now only store 1 frame, so the output of
+traceback will only record the most recent call.
+
+
+How-To Guides
+-------------
 
 Display the top 10
 ^^^^^^^^^^^^^^^^^^
