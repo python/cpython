@@ -330,7 +330,7 @@ class EnumMeta(type):
         # special processing needed for names?
         if isinstance(names, str):
             names = names.replace(',', ' ').split()
-        if isinstance(names, (tuple, list)) and isinstance(names[0], str):
+        if isinstance(names, (tuple, list)) and names and isinstance(names[0], str):
             names = [(e, i) for (i, e) in enumerate(names, start)]
 
         # Here, names is either an iterable of (name, value) or a mapping.
