@@ -1066,7 +1066,7 @@ class _SubParsersAction(Action):
                  prog,
                  parser_class,
                  dest=SUPPRESS,
-                 required=False,
+                 required=True,
                  help=None,
                  metavar=None):
 

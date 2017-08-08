@@ -1807,7 +1807,7 @@ class TestAddSubparsers(TestCase):
             'bar', type=float, help='bar help')
 
         # check that only one subparsers argument can be added
-        subparsers_kwargs = {}
+        subparsers_kwargs = {'required': False}
         if aliases:
             subparsers_kwargs['metavar'] = 'COMMAND'
             subparsers_kwargs['title'] = 'commands'
@@ -1926,6 +1926,19 @@ class TestAddSubparsers(TestCase):
         subparsers = parser.add_subparsers(dest='command', required=True)
         subparsers.add_parser('run')
         self._test_required_subparsers(parser)
+
+    def test_required_subparsers_default(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(dest='command')
+        subparsers.add_parser('run')
+        self._test_required_subparsers(parser)
+
+    def test_optional_subparsers(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(dest='command', required=False)
+        subparsers.add_parser('run')
+        ret = parser.parse_args(())
+        self.assertIsNone(ret.command)
 
     def test_help(self):
         self.assertEqual(self.parser.format_usage(),
