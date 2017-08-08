@@ -15,7 +15,7 @@
 **/*pyhash*                   @tiran
 
 # Import (including importlib)
-**/*import*                   @brettcannon
+**/*import*                   @python/import-team
 
 # SSL
 **/*ssl*                      @tiran
@@ -26,3 +26,6 @@
 **/*mime*                     @bitdancer
 **/*imap*                     @bitdancer
 **/*poplib*                   @bitdancer
+
+# subprocess
+**/*subprocess*               @gpshead
