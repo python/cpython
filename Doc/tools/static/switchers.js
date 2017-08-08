@@ -21,6 +21,7 @@
   var all_languages = {
       'en': 'English',
       'fr': 'Français',
+      'ja': 'Japanese',
   };
 
   function build_version_select(current_version, current_release) {
