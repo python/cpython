@@ -56,26 +56,26 @@ Display the memory usage
 We can use helper function ``allocate_bytes`` to simulate memory allocate,
 we can print the snapshot result by using :func:`statistics`::
 
-   # tm_snap_stats.py
+    # tm_snap_stats.py
 
-   import sys
-   import tracemalloc
+    import sys
+    import tracemalloc
 
-   # Simulate memory allocate by creating bytes
-   EMPTY_BYTES_SIZE = sys.getsizeof(b'')
-   def allocate_bytes(size):
-      bytes_len = (size - EMPTY_BYTES_SIZE)
-      return b'x' * bytes_len
+    # Simulate memory allocate by creating bytes
+    EMPTY_BYTES_SIZE = sys.getsizeof(b'')
+    def allocate_bytes(size):
+       bytes_len = (size - EMPTY_BYTES_SIZE)
+       return b'x' * bytes_len
 
-   tracemalloc.start()
+    tracemalloc.start()
 
-   # Allocate 1024 KiB memory block
-   b = allocate_bytes(1024 * 1024)
+    # Allocate 1024 KiB memory block
+    b = allocate_bytes(1024 * 1024)
 
-   snapshot = tracemalloc.take_snapshot()
-   stats = snapshot.statistics('lineno')
-   for stat in stats:
-      print(stat)
+    snapshot = tracemalloc.take_snapshot()
+    stats = snapshot.statistics('lineno')
+    for stat in stats:
+       print(stat)
 
 
 Output of the ``tm_snap_stats.py``::
@@ -97,30 +97,30 @@ called, we will need to use traceback. :mod:`tracemalloc` can store memory
 traceback information, the maximum record of the traceback was limited
 by :func:`start`, for example, if we want to store 10 traceback::
 
-   # tm_snap_traceback.py
+    # tm_snap_traceback.py
 
-   import sys
-   import tracemalloc
+    import sys
+    import tracemalloc
 
-   # Simulate memory allocate by creating bytes
-   EMPTY_BYTES_SIZE = sys.getsizeof(b'')
-   def allocate_bytes(size):
-      bytes_len = (size - EMPTY_BYTES_SIZE)
-      return b'x' * bytes_len
+    # Simulate memory allocate by creating bytes
+    EMPTY_BYTES_SIZE = sys.getsizeof(b'')
+    def allocate_bytes(size):
+        bytes_len = (size - EMPTY_BYTES_SIZE)
+        return b'x' * bytes_len
 
-   # Store 10 frames
-   tracemalloc.start(10)
+    # Store 10 frames
+    tracemalloc.start(10)
 
-   # Allocate 1024 Kib memory block
-   b = allocate_bytes(1024 * 1024)
+    # Allocate 1024 Kib memory block
+    b = allocate_bytes(1024 * 1024)
 
-   snapshot = tracemalloc.take_snapshot()
-   stats = snapshot.statistics('traceback')
+    snapshot = tracemalloc.take_snapshot()
+    stats = snapshot.statistics('traceback')
 
-   # pick the biggest memory block
-   stat = stats[0]
-   for line in stat.traceback.format():
-      print(line)
+    # pick the biggest memory block
+    stat = stats[0]
+    for line in stat.traceback.format():
+        print(line)
 
 
 Output will take 2 traceback::
