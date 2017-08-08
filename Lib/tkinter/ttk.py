@@ -1543,11 +1543,12 @@ class LabeledScale(Frame):
         try:
             self._variable.trace_vdelete('w', self.__tracecb)
         except AttributeError:
-            # widget has been destroyed already
             pass
         else:
             del self._variable
-            Frame.destroy(self)
+        super().destroy()
+        self.label = None
+        self.scale = None
 
 
     def _adjust(self, *args):
@@ -1644,5 +1645,8 @@ class OptionMenu(Menubutton):
 
     def destroy(self):
         """Destroy this widget and its associated variable."""
-        del self._variable
-        Menubutton.destroy(self)
+        try:
+            del self._variable
+        except AttributeError:
+            pass
+        super().destroy()
