@@ -1,13 +1,22 @@
 #! /bin/sh
-# Build a Makefile to be used to build Python and to run Python on the Android
-# emulator.
+# Build a Makefile which is to be used to:
+#   * If DEVICE_PREFIXES is not empty, build Python and make a distribution
+#     to be copied to an Android device on an existing Android application.
+#   * Or build Python and run Python on the Android emulator.
 
-makefile_header ()
+device_header ()
 {
-	cat > $makefile <<-EOF
-	# Makefile for Android API $ANDROID_API and architecture $ANDROID_ARCH.
-	# Generated automatically by Android/makesetup.
+	cat >> $makefile <<-EOF
+	DEVICE_PREFIXES := $DEVICE_PREFIXES
+	export SYS_PREFIX := $SYS_PREFIX
+	export SYS_EXEC_PREFIX := $SYS_EXEC_PREFIX
 
+	EOF
+}
+
+emulator_header ()
+{
+	cat >> $makefile <<-EOF
 	# Variables defining where Python is installed on Android.
 	#   1. Machine-specific binaries are installed in the Android application
 	#      directory on /data. We do not build an Android application (this
@@ -23,13 +32,14 @@ makefile_header ()
 	EOF
 }
 
-makefile_footer ()
+footer ()
 {
 	cat >> $makefile <<-EOF
 
 	config_args := $@
 	py_srcdir := $PY_SRCDIR
 	makefile := $makefile
+	py_version := $py_version
 	include \$(py_srcdir)/Android/build.mk
 	EOF
 }
@@ -51,7 +61,35 @@ fi
 rm -f Makefile
 
 # Build the Makefile.
-makefile_header
+cat > $makefile <<EOF
+# Makefile for Android API $ANDROID_API and architecture $ANDROID_ARCH.
+# Generated automatically by Android/makesetup.
+
+EOF
+
+config_args="$@"
+if test -n "$DEVICE_PREFIXES"; then
+    save_IFS=$IFS; IFS=':'
+    set $DEVICE_PREFIXES
+    SYS_PREFIX=$1
+    SYS_EXEC_PREFIX=$2
+    IFS=$save_IFS
+    test -z "$SYS_EXEC_PREFIX" && SYS_EXEC_PREFIX="$SYS_PREFIX"
+    exec_prefix=/data/data/
+    case $SYS_EXEC_PREFIX in
+        $exec_prefix*)
+            ;;
+        *)
+            echo "Error: architecture-dependent files must be installed under $exec_prefix" >&2
+            exit 2
+            ;;
+    esac
+
+    device_header
+else
+    emulator_header
+fi
+
 for var in $defined_variables; do
     eval value=\$$var
     echo "$var := $value" >> $makefile
@@ -60,7 +98,14 @@ for var in $exported_variables; do
     eval value=\$$var
     echo "export $var := $value" >> $makefile
 done
-makefile_footer "$@"
+
+py_version=$(cat $PY_SRCDIR/configure | \
+    sed -e "s/^PACKAGE_VERSION=['\"]*\([0-9]*\.[0-9]*\)['\"]*$\|^.*$/\1/" -e "/^$/d")
+footer "$config_args"
 
 ln -s $makefile Makefile
 echo "Makefile and $makefile built successfully."
+if test -n "$DEVICE_PREFIXES"; then
+    echo -n "The distribution directory (DESTDIR) is "
+    echo "build/python$py_version-install-android-$ANDROID_API-$ANDROID_ARCH"
+fi

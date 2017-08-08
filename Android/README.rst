@@ -7,17 +7,32 @@ Python on Android README
 This document provides a quick overview of the Python build system for Android
 on a **linux platform** [1]_.
 
-It consists of two scripts:
+
+The ``configure-android`` and ``makesetup`` scripts
+===================================================
 
 - The ``configure-android`` script is a wrapper around Python ``configure`` that
   sets variables for the cross-compilation and runs the Python ``configure``
-  script.
+  script. It accepts the same command line arguments as ``configure``.
 
-- The ``Android/makesetup`` script creates a Makefile. The targets of this
-  Makefile allow to:
+- The ``Android/makesetup`` script creates a Makefile and accepts the same
+  command line arguments as ``configure`` except ``--prefix`` and
+  ``--exec-prefix``. The script is meant to be run out of the Python source tree
+  (**must be a clean** source tree). One may run ``makesetup`` for multiple
+  (api, architecture) tuples in the same directory.
+
+  The Makefile is used to build a Python distribution for an Android device when
+  the environment variable ``DEVICE_PREFIXES`` was set at the time the Makefile
+  was generated, or to build Python and run it on the Android emulator
+  otherwise.
+
+  Depending on whether ``DEVICE_PREFIXES`` was set at the time the Makefile was
+  generated, the targets of this Makefile allow to:
 
   - Cross-compile Python with external libraries.
-  - Run the python interpreter on the Android emulator using an adb_ shell, the
+  - Build a distribution to be copied on an Android device on an existing
+    Android application.
+  - Run the Python interpreter on the Android emulator using an adb_ shell, the
     interpreter runs with readline enabled.
   - Run a python command on the Android emulator, this may be a command to run
     the Python test suite for example.
@@ -37,7 +52,17 @@ Both scripts use the following environment variables:
   also the architecture of the AVD. It may be arm, armv7, arm64, x86 or x86_64.
   The default value is x86_64.
 
-In addition, ``makesetup`` uses the following environment variable:
+When building for a device, the following environment variable is used by
+``makesetup``:
+
+- ``DEVICE_PREFIXES`` is specified as <prefix[:exec-prefix]> where <prefix> is
+  the directory on Android where the platform independent Python files are
+  installed and <exec-prefix> is the directory where the platform dependent
+  files are installed. When ``DEVICE_PREFIXES`` is set to a single directory,
+  its value replaces both <prefix> and <exec-prefix>.
+
+When building for the emulator, the following environment variable is used by
+``makesetup``:
 
 - ``ANDROID_SDK_ROOT``, the location where the Android SDK has been installed.
   The default location is /opt/android-sdk.
@@ -49,12 +74,11 @@ these environment variables at the time they have been generated.
 Cross-compilation with ``configure-android``
 ============================================
 The ``configure-android`` script is a wrapper around Python ``configure`` that
-sets variables for the cross-compilation and runs ``configure``. It accepts the
-same command line arguments as ``configure``. For example::
+sets variables for the cross-compilation and runs ``configure``. For example::
 
     $ ./configure-android --with-pydebug && make
 
-``configure-android`` can be run out of the source tree.
+``configure-android`` may be run out of the source tree.
 
 Requirements
 ^^^^^^^^^^^^
@@ -62,24 +86,104 @@ Requirements
 - Android NDK [3]_.
 - The cross-compilation of Python requires that a native python program must be
   found in ``$PATH`` on the build platform and that its major.minor version
-  matches the version of the source being compiled.  This requirement does not
-  apply to ``makesetup`` as a native python is built and used by the Makefile
-  created by this script.
+  matches the version of the source being compiled. Note that this requirement
+  does not apply to ``makesetup`` as a native python is built and used by the
+  Makefile created by this script.
 
 
-Build and run Python on the emulator with ``makesetup``
-=======================================================
-The ``makesetup`` script creates a Makefile. Running the Makefile
-requires that both the NDK and the SDK be installed (see `Installation of the
-SDK`_).  It accepts the same command line arguments as ``configure``. For
-example::
+Build for a device with ``makesetup``
+=====================================
+Set the ``DEVICE_PREFIXES`` environment variable to the directories where Python
+will be installed on the device and run ``makesetup`` to create the Makefile and
+to print the name of the distribution directory (DESTDIR) on the build platform,
+where the distribution will be installed. Then run ``make dist`` to build this
+distribution, that is all.
+
+The remaining part of this section uses the `termux`_ Android application as an
+example:
+
+termux initial setup
+^^^^^^^^^^^^^^^^^^^^
+1. Install `termux`_ and install the ``openssh`` and ``rsync`` termux packages.
+2. Connect the device to the linux box through usb tethering and note
+   the ip addresses of both endpoints using the ``ip add`` command on termux and
+   on linux.
+3. Assuming that the ssh server is already running on linux and that the linux
+   user public key is ~/.ssh/id_rsa.pub, setup ssh and start the ssh server on
+   the device with the following commands on termux::
+
+     $ mkdir .ssh
+     $ ssh <linux_user>@<linux_ip_address> "cat .ssh/id_rsa.pub" >> .ssh/authorized_keys
+     $ chmod 700 .ssh; chmod 600 .ssh/authorized_keys
+     $ sshd
+
+   In order to be able to use rsync from linux, add the following lines to
+   ~/.ssh/config on linux::
+
+     Host <device_ip_address>
+       port 8022
+
+4. Get the values of ``ANDROID_API`` and ``ANDROID_ARCH`` by running the
+   following commands on termux::
+
+     $ getprop | grep sdk
+     [ro.build.version.sdk]: [22]
+     $ getprop | grep abi
+     [ro.product.cpu.abi2]: [armeabi]
+     [ro.product.cpu.abi]: [armeabi-v7a]
+     [ro.product.cpu.abilist32]: [armeabi-v7a,armeabi]
+     [ro.product.cpu.abilist64]: []
+     [ro.product.cpu.abilist]: [armeabi-v7a,armeabi]
+
+Build and run on termux
+^^^^^^^^^^^^^^^^^^^^^^^
+1. Build the Makefile::
+
+     $ ANDROID_API=22 ANDROID_ARCH=armv7 DEVICE_PREFIXES=/data/data/com.termux/files/usr/local makesetup
+     Makefile and Makefile-android-21-armv7 built successfully.
+     The distribution directory (DESTDIR) is build/python3.7-install-android-21-armv7
+
+   The NDK for API 22 was never released and the build is done for API 21
+   as indicated by the name of DESTDIR.
+
+2. Build the distribution with the ``make dist`` command.
+3. Copy the distribution to the device::
+
+     $ rsync -av --no-perms --omit-dir-times --keep-dirlinks build/python3.7-install-android-21-armv7/ <device_ip_address>:/
+
+   The copy is done from DESTDIR to the device (note the trailing slash after
+   DESTDIR, meaning: "copy  the  contents of this directory" as opposed to "copy
+   the directory by name"). The ``--no-perms`` and ``--omit-dir-times`` rsync
+   options prevent rsync from attempting (and failing) to change the permissions
+   and times of the directories in the /data/data/ path.
+
+4. Run the Python interpreter on termux::
+
+     $ export SYS_EXEC_PREFIX=/data/data/com.termux/files/usr/local
+     $ export TERM=linux
+     $ export TERMINFO=$SYS_EXEC_PREFIX/share/terminfo
+     $ LD_LIBRARY_PATH=$SYS_EXEC_PREFIX/lib:$LD_LIBRARY_PATH $SYS_EXEC_PREFIX/bin/python3
+
+Requirements
+^^^^^^^^^^^^
+
+- Android NDK [3]_.
+- GNU make, find, xargs.
+- The native compiler of the build platform to build the native Python.
+- wget or curl for downloading the external libraries unless those files are
+  downloaded by other means and copied by hand to build/external-libraries.
+
+
+Build for the emulator with ``makesetup``
+=========================================
+The ``makesetup`` script creates a Makefile. Running the Makefile requires that
+both the NDK and the SDK be installed (see `Installation of the SDK`_).  The
+`Makefile targets`_ section below lists the available targets. For example,
+to build Python and install it on the emulator::
 
     $ /path/to/python_src/Android/makesetup --with-pydebug && make install
 
-``makesetup`` is meant to be run out of the source tree (a **clean** source
-tree). One may run ``makesetup`` for multiple (api, architecture) tuples in the
-same directory. The Makefile targets are listed below. A typical usage would be,
-for example after a change to the socket module::
+Another example, testing the socket module::
 
     $ /path/to/python_src/Android/makesetup && make python PYTHON_ARGS="-m test test_socket"
 
@@ -103,106 +207,6 @@ are much faster. The external libraries do not have to be rebuilt again, the AVD
 is already created and if there is no change in the source code then the native
 Python and Python on Android do not have to be rebuilt, but all the other steps
 enumerated above are run again except the Makefile creation.
-
-Makefile targets
-^^^^^^^^^^^^^^^^
-*build*
-    Compile the native Python interpreter. Cross-compile the external libraries
-    and Python. This is the default target.
-
-*dist*
-    Make a distribution consisting of:
-
-    - The machine-specific Python library zip file.
-    - The Python standard library zip file.
-
-*distclean*
-    Make things clean, before making a distribution. This also removes the
-    ``PY_DESTDIR`` directory where the external libraries have been installed
-    and where the cross-compiled Python has been installed by the command ``make
-    DESTDIR=$(PY_DESTDIR) install`` run on Python own Makefile. As a side effect
-    the external libraries will be rebuilt on the next make invocation.
-
-*clean*
-    Remove everything for the given (api, architecture) except the AVD.
-
-*install*
-    Make a distribution, create the AVD if it does not exist, start the emulator
-    and install the content of the two zip files on the emulator. Then start an
-    adb_ shell (see the ``adb_shell`` target description below).
-
-    Run ``make distclean install`` to get an install from scratch.
-
-*python*
-    Make a distribution, create the AVD if it does not exist, start the
-    emulator, install python and run the python command defined by
-    ``PYTHON_ARGS``.  This variable is set on make command line or as an
-    environment variable. It must be defined and not empty, to start an
-    interactive python interpreter one must run the ``install``, ``adb_shell``
-    or ``emulator`` target instead. Quotes in the command are interpreted both
-    by the shell when interpreting the make command line and by make itself, so
-    they must be escaped properly such as in this example::
-
-        $ make python PYTHON_ARGS="-c 'print(\\\"Hello world.\\\")'"
-
-*emulator*
-    Create the AVD if it does not exist, start the emulator ensuring first
-    that there is no other emulator running [4]_ and start and adb_ shell (see
-    the ``adb_shell`` target description below).
-
-    When the AVD is being created, it is not necessary to answer the following
-    question printed on the screen at that time::
-
-        Do you wish to create a custom hardware profile? [no]
-
-*kill_emulator*
-    Kill the emulator. Useful when the emulator refuses to be shutdown from its
-    GUI.
-
-*adb_shell*
-    Create an adb_ shell on the emulator.
-
-    At the first shell prompt a message is printed giving the shell command to
-    run, to source a shell script that sets the environment variables needed to
-    run the python interpreter. The script does:
-
-    - Set ``PATH`` and ``LD_LIBRARY_PATH``.
-    - Set ``HOME`` to the parent directory of ``sys.exec_prefix``, a writable
-      part of Android that is not set as noexec [5]_.
-    - Set miscellaneous stuff such as the terminal type, the terminal width and
-      the readline inputrc configuration file.
-    - Change the current directory to ``$HOME``.
-
-    After sourcing this script one can run the Python interpreter.
-
-*avdclean*
-    Remove the AVD. This is the proper way to remove an AVD, do not just remove
-    the corresponding directory in the avd/ directory because Android maintains
-    also some information on the AVD in  ~/.android/avd.
-
-*gdb*
-    Start a gdb remote debugging session of a python process running on the
-    emulator. There must be a unique python process running on the emulator.
-
-    This requires that Python 2 is installed on the build platform and that
-    ``python2`` is found in the ``$PATH``.
-
-    The debugging session can be customized with the following variables set
-    on the command line (or as environment variables) to the value ``yes``
-    (for example ``GDB_PYTHON=yes make gdb``):
-
-    - ``GDB_PYTHON=yes``
-        Import the `libpython module`_ in gdb and get detailed information of
-        the PyObject(s) at the cost of speed.
-
-    - ``GDB_LOGGING=yes``
-        Setup logging in gdb and have the output of all the gdb commands also
-        redirected to ./gdb.log.
-
-    - ``GDB_SIGILL=yes``
-        Work around the problem that gdb fails with SIGILL in
-        ``__dl_notify_gdb_of_libraries()`` whenever a library is loaded when
-        debugging on both arm and armv7 platforms.
 
 Installation of the SDK
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -287,9 +291,119 @@ Requirements
   space.
 - Java JRE to run the ``sdkmanager`` tool.
 - GNU make, find, xargs, zip and unzip.
-- The native compiler of the build platform to build the native python.
+- The native compiler of the build platform to build the native Python.
 - wget or curl for downloading the external libraries unless those files are
   downloaded by other means and copied by hand to build/external-libraries.
+
+
+Makefile targets
+================
+Common Makefile targets
+^^^^^^^^^^^^^^^^^^^^^^^
+*build*
+    Compile the native Python interpreter. Cross-compile the external libraries
+    and Python. This is the default target.
+
+*dist*
+    When building for a device, this target runs ``make install`` on the Python
+    Makefile and Python is installed on DESTDIR.
+
+    When building for the emulator, this target makes a distribution consisting
+    of:
+
+    - The machine-specific Python library zip file.
+    - The Python standard library zip file.
+
+*distclean*
+    Make things clean, before making a distribution. This also removes the
+    ``PY_DESTDIR`` directory where the external libraries have been installed
+    and where the cross-compiled Python has been installed by the command ``make
+    DESTDIR=$(PY_DESTDIR) install`` run on Python own Makefile. As a side effect
+    the external libraries will be rebuilt on the next make invocation.
+
+*clean*
+    Remove everything for the given (api, architecture) except the AVD.
+
+Emulator Makefile targets
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*install*
+    Make a distribution, create the AVD if it does not exist, start the emulator
+    and install the content of the two zip files on the emulator. Then start an
+    adb_ shell (see the ``adb_shell`` target description below).
+
+    Run ``make distclean install`` to get an install from scratch.
+
+*python*
+    Make a distribution, create the AVD if it does not exist, start the
+    emulator, install Python and run the python command defined by
+    ``PYTHON_ARGS``.  This variable is set on make command line or as an
+    environment variable. It must be defined and not empty, to start an
+    interactive Python interpreter one must run the ``install``, ``adb_shell``
+    or ``emulator`` target instead. Quotes in the command are interpreted both
+    by the shell when interpreting the make command line and by make itself, so
+    they must be escaped properly such as in this example::
+
+        $ make python PYTHON_ARGS="-c 'print(\\\"Hello world.\\\")'"
+
+*emulator*
+    Create the AVD if it does not exist, start the emulator ensuring first
+    that there is no other emulator running [4]_ and start and adb_ shell (see
+    the ``adb_shell`` target description below).
+
+    When the AVD is being created, it is not necessary to answer the following
+    question printed on the screen at that time::
+
+        Do you wish to create a custom hardware profile? [no]
+
+*kill_emulator*
+    Kill the emulator. Useful when the emulator refuses to be shutdown from its
+    GUI.
+
+*adb_shell*
+    Create an adb_ shell on the emulator.
+
+    At the first shell prompt a message is printed giving the shell command to
+    run, to source a shell script that sets the environment variables needed to
+    run the Python interpreter. The script does:
+
+    - Set ``PATH`` and ``LD_LIBRARY_PATH``.
+    - Set ``HOME`` to the parent directory of ``sys.exec_prefix``, a writable
+      part of Android that is not set as noexec [5]_.
+    - Set miscellaneous stuff such as the terminal type, the terminal width and
+      the readline inputrc configuration file.
+    - Change the current directory to ``$HOME``.
+
+    After sourcing this script one can run the Python interpreter.
+
+*avdclean*
+    Remove the AVD. This is the proper way to remove an AVD, do not just remove
+    the corresponding directory in the avd/ directory because Android maintains
+    also some information on the AVD in  ~/.android/avd.
+
+*gdb*
+    Start a gdb remote debugging session of a python process running on the
+    emulator. There must be a unique python process running on the emulator.
+
+    This requires that Python 2 is installed on the build platform and that
+    ``python2`` is found in the ``$PATH``.
+
+    The debugging session can be customized with the following variables set
+    on the command line (or as environment variables) to the value ``yes``
+    (for example ``GDB_PYTHON=yes make gdb``):
+
+    - ``GDB_PYTHON=yes``
+        Import the `libpython module`_ in gdb and get detailed information of
+        the PyObject(s) at the cost of speed.
+
+    - ``GDB_LOGGING=yes``
+        Setup logging in gdb and have the output of all the gdb commands also
+        redirected to ./gdb.log.
+
+    - ``GDB_SIGILL=yes``
+        Work around the problem that gdb fails with SIGILL in
+        ``__dl_notify_gdb_of_libraries()`` whenever a library is loaded when
+        debugging on both arm and armv7 platforms.
 
 
 .. [1] A 64-bit linux distribution capable of running 32-bit applications with
@@ -314,6 +428,8 @@ Requirements
    the reason why the script sets the ``HOME`` variable to the parent directory
    of ``sys.exec_prefix``.
 
+
+.. _termux: https://termux.com/
 .. _adb: https://developer.android.com/studio/command-line/adb.html
 .. _`libpython module`: https://github.com/python/cpython/blob/master/Tools/gdb/libpython.py
 .. _`NDK downloads`: https://developer.android.com/ndk/downloads/index.html

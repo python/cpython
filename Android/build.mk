@@ -5,8 +5,6 @@ export BUILD_DIR := $(CURDIR)/build
 export DIST_DIR := $(CURDIR)/dist
 avd_dir := $(CURDIR)/avd
 native_build_dir := $(BUILD_DIR)/python-native
-py_version := $(shell echo $$(cat $(py_srcdir)/configure | \
-    sed -e "s/^PACKAGE_VERSION=['\"]*\([0-9]*\.[0-9]*\)['\"]*$$\|^.*$$/\1/" -e "/^$$/d"))
 py_name := python$(py_version)
 export BUILD_TYPE := android-$(ANDROID_API)-$(ANDROID_ARCH)
 py_host_dir := $(BUILD_DIR)/$(py_name)-$(BUILD_TYPE)
@@ -26,9 +24,15 @@ export PY_STDLIB_ZIP := $(DIST_DIR)/$(py_name)-$(BUILD_TYPE)-stdlib.zip
 
 # Rules.
 build: $(python)
+ifdef DEVICE_PREFIXES
+dist: python_dist
+else
 dist: $(PYTHON_ZIP) $(PY_STDLIB_ZIP)
+endif
 
-include $(py_srcdir)/Android/emulator.mk
+ifndef DEVICE_PREFIXES
+    include $(py_srcdir)/Android/emulator.mk
+endif
 
 $(native_build_dir)/Modules/Setup: $(py_srcdir)/Modules/Setup.dist
 	cp $(py_srcdir)/Modules/Setup.dist $(native_build_dir)/Modules/Setup
@@ -114,6 +118,10 @@ host:
 python_dist: $(python)
 	@echo "---> Install Python for $(BUILD_TYPE)."
 	$(MAKE) DESTDIR=$(PY_DESTDIR) -C $(py_host_dir) install
+ifdef DEVICE_PREFIXES
+	# This won't be needed anymore when issue 31046 is fixed.
+	rm -rf $(PY_DESTDIR)/usr
+endif
 
 $(PYTHON_ZIP): python_dist
 	@echo "---> Zip the machine-specific Python library."
