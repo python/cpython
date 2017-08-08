@@ -573,40 +573,6 @@ PyDoc_STRVAR(builtin_repr__doc__,
 #define BUILTIN_REPR_METHODDEF    \
     {"repr", (PyCFunction)builtin_repr, METH_O, builtin_repr__doc__},
 
-PyDoc_STRVAR(builtin_sum__doc__,
-"sum($module, iterable, start=0, /)\n"
-"--\n"
-"\n"
-"Return the sum of a \'start\' value (default: 0) plus an iterable of numbers\n"
-"\n"
-"When the iterable is empty, return the start value.\n"
-"This function is intended specifically for use with numeric values and may\n"
-"reject non-numeric types.");
-
-#define BUILTIN_SUM_METHODDEF    \
-    {"sum", (PyCFunction)builtin_sum, METH_FASTCALL, builtin_sum__doc__},
-
-static PyObject *
-builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start);
-
-static PyObject *
-builtin_sum(PyObject *module, PyObject **args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *iterable;
-    PyObject *start = NULL;
-
-    if (!_PyArg_UnpackStack(args, nargs, "sum",
-        1, 2,
-        &iterable, &start)) {
-        goto exit;
-    }
-    return_value = builtin_sum_impl(module, iterable, start);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(builtin_isinstance__doc__,
 "isinstance($module, obj, class_or_tuple, /)\n"
 "--\n"
