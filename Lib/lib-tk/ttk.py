@@ -1521,7 +1521,9 @@ class LabeledScale(Frame, object):
             pass
         else:
             del self._variable
-            Frame.destroy(self)
+        Frame.destroy(self)
+        self.label = None
+        self.scale = None
 
 
     def _adjust(self, *args):
@@ -1620,5 +1622,8 @@ class OptionMenu(Menubutton):
 
     def destroy(self):
         """Destroy this widget and its associated variable."""
-        del self._variable
+        try:
+            del self._variable
+        except AttributeError:
+            pass
         Menubutton.destroy(self)
