@@ -65,7 +65,7 @@ typedef struct basicblock_ {
        block reached by normal control flow. */
     struct basicblock_ *b_next;
     /* b_seen is used to perform a DFS of basicblocks. */
-    unsigned b_seen : 1;
+    unsigned b_seen : 2;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
@@ -4926,54 +4926,16 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
     }
 }
 
-static int
-stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
+Py_LOCAL_INLINE(void)
+stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 {
-    int i, target_depth, effect;
-    struct instr *instr;
-    if (b->b_seen || b->b_startdepth >= depth)
-        return maxdepth;
-    b->b_seen = 1;
-    b->b_startdepth = depth;
-    for (i = 0; i < b->b_iused; i++) {
-        instr = &b->b_instr[i];
-        effect = PyCompile_OpcodeStackEffect(instr->i_opcode, instr->i_oparg);
-        if (effect == PY_INVALID_STACK_EFFECT) {
-            fprintf(stderr, "opcode = %d\n", instr->i_opcode);
-            Py_FatalError("PyCompile_OpcodeStackEffect()");
-        }
-        depth += effect;
-
-        if (depth > maxdepth)
-            maxdepth = depth;
-        assert(depth >= 0); /* invalid code or bug in stackdepth() */
-        if (instr->i_jrel || instr->i_jabs) {
-            target_depth = depth;
-            if (instr->i_opcode == FOR_ITER) {
-                target_depth = depth-2;
-            }
-            else if (instr->i_opcode == SETUP_FINALLY ||
-                     instr->i_opcode == SETUP_EXCEPT) {
-                target_depth = depth+3;
-                if (target_depth > maxdepth)
-                    maxdepth = target_depth;
-            }
-            else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
-                     instr->i_opcode == JUMP_IF_FALSE_OR_POP)
-                depth = depth - 1;
-            maxdepth = stackdepth_walk(c, instr->i_target,
-                                       target_depth, maxdepth);
-            if (instr->i_opcode == JUMP_ABSOLUTE ||
-                instr->i_opcode == JUMP_FORWARD) {
-                goto out; /* remaining code is dead */
-            }
+    if (b->b_startdepth < depth) {
+        b->b_startdepth = depth;
+        if (!b->b_seen) {
+            b->b_seen = 1;
+            *(*sp)++ = b;
         }
     }
-    if (b->b_next)
-        maxdepth = stackdepth_walk(c, b->b_next, depth, maxdepth);
-out:
-    b->b_seen = 0;
-    return maxdepth;
 }
 
 /* Find the flow path that needs the largest stack.  We assume that
@@ -4982,16 +4944,79 @@ out:
 static int
 stackdepth(struct compiler *c)
 {
-    basicblock *b, *entryblock;
-    entryblock = NULL;
+    basicblock *b, *entryblock = NULL;
+    basicblock **stack, **sp;
+    int nblocks = 0, depth = 0, maxdepth = 0;
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
         b->b_seen = 0;
         b->b_startdepth = INT_MIN;
         entryblock = b;
+        nblocks++;
     }
     if (!entryblock)
         return 0;
-    return stackdepth_walk(c, entryblock, 0, 0);
+    stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
+    if (!stack) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    sp = stack;
+    stackdepth_push(&sp, entryblock, 0);
+    while (sp != stack) {
+        int i;
+        basicblock *next;
+        b = sp[-1];
+        if (b->b_seen == 2) {
+            b->b_seen = 0;
+            --sp;
+            continue;
+        }
+        b->b_seen = 2;
+        depth = b->b_startdepth;
+        next = b->b_next;
+        for (i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            int effect = PyCompile_OpcodeStackEffect(instr->i_opcode, instr->i_oparg);
+            if (effect == PY_INVALID_STACK_EFFECT) {
+                fprintf(stderr, "opcode = %d\n", instr->i_opcode);
+                Py_FatalError("PyCompile_OpcodeStackEffect()");
+            }
+            depth += effect;
+
+            if (depth > maxdepth)
+                maxdepth = depth;
+            assert(depth >= 0); /* invalid code or bug in stackdepth() */
+            if (instr->i_jrel || instr->i_jabs) {
+                int target_depth = depth;
+                if (instr->i_opcode == FOR_ITER) {
+                    target_depth = depth-2;
+                }
+                else if (instr->i_opcode == SETUP_FINALLY ||
+                         instr->i_opcode == SETUP_EXCEPT) {
+                    target_depth = depth+3;
+                    if (target_depth > maxdepth)
+                        maxdepth = target_depth;
+                }
+                else if (instr->i_opcode == JUMP_IF_TRUE_OR_POP ||
+                         instr->i_opcode == JUMP_IF_FALSE_OR_POP)
+                    depth = depth - 1;
+                stackdepth_push(&sp, instr->i_target, target_depth);
+                if (instr->i_opcode == JUMP_ABSOLUTE ||
+                    instr->i_opcode == JUMP_FORWARD)
+                {
+                    /* remaining code is dead */
+                    next = NULL;
+                    break;
+                }
+            }
+        }
+        if (next != NULL) {
+            stackdepth_push(&sp, next, depth);
+        }
+    }
+    PyObject_Free(stack);
+    return maxdepth;
 }
 
 static int
@@ -5302,7 +5327,7 @@ makecode(struct compiler *c, struct assembler *a)
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
-    int argcount, kwonlyargcount;
+    int argcount, kwonlyargcount, maxdepth;
 
     tmp = dict_keys_inorder(c->u->u_consts, 0);
     if (!tmp)
@@ -5342,8 +5367,12 @@ makecode(struct compiler *c, struct assembler *a)
 
     argcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
+    maxdepth = stackdepth(c);
+    if (maxdepth < 0) {
+        goto error;
+    }
     co = PyCode_New(argcount, kwonlyargcount,
-                    nlocals_int, stackdepth(c), flags,
+                    nlocals_int, maxdepth, flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
                     c->c_filename, c->u->u_name,
