@@ -54,17 +54,17 @@ class Get_signatureTest(unittest.TestCase):
             self.assertEqual(signature(obj), out)
 
         if List.__doc__ is not None:
-            gtest(List, '(iterable=(), /)\n' + ct._argument_positional + '\n' +
+            gtest(List, '(iterable=(), /)' + ct._argument_positional + '\n' +
                   List.__doc__)
         gtest(list.__new__,
                '(*args, **kwargs)\nCreate and return a new object.  See help(type) for accurate signature.')
         gtest(list.__init__,
-               '(self, /, *args, **kwargs)\n' + ct._argument_positional + '\n' +
+               '(self, /, *args, **kwargs)' + ct._argument_positional + '\n' +
                'Initialize self.  See help(type(self)) for accurate signature.')
-        append_doc = ct._argument_positional + '\n' + "Append object to the end of the list."
-        gtest(list.append, '(self, object, /)\n' + append_doc)
-        gtest(List.append, '(self, object, /)\n' + append_doc)
-        gtest([].append, '(object, /)\n' + append_doc)
+        append_doc = ct._argument_positional + "\nAppend object to the end of the list."
+        gtest(list.append, '(self, object, /)' + append_doc)
+        gtest(List.append, '(self, object, /)' + append_doc)
+        gtest([].append, '(object, /)' + append_doc)
 
         gtest(types.MethodType, "method(function, instance)")
         gtest(SB(), default_tip)
