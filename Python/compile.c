@@ -4902,20 +4902,23 @@ struct assembler {
 };
 
 static void
-dfs(struct compiler *c, basicblock *b, struct assembler *a, int nblocks)
+dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
 {
     int i, j;
 
-    /* Get rid of recursion for normal control flow. */
-    for (j = nblocks; b && !b->b_seen; b = b->b_next) {
+    /* Get rid of recursion for normal control flow.
+       Since the number of blocks is limited, unused space in a_postorder
+       (from a_nblocks to end) can be used as a stack for still not ordered
+       blocks. */
+    for (j = end; b && !b->b_seen; b = b->b_next) {
         b->b_seen = 1;
         assert(a->a_nblocks < j);
         a->a_postorder[--j] = b;
     }
-    while (j < nblocks) {
+    while (j < end) {
         b = a->a_postorder[j++];
         for (i = 0; i < b->b_iused; i++) {
-            struct instr *instr = instr = &b->b_instr[i];
+            struct instr *instr = &b->b_instr[i];
             if (instr->i_jrel || instr->i_jabs)
                 dfs(c, instr->i_target, a, j);
         }
