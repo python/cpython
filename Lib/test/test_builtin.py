@@ -1569,8 +1569,8 @@ class PtyTests(unittest.TestCase):
                       % (len(lines), child_output))
         os.close(fd)
 
-        pid, status = os.waitpid(pid, 0)
-        self.assertEqual(status, 0)
+        # Wait until the child process completes
+        os.waitpid(pid, 0)
 
         return lines
 
