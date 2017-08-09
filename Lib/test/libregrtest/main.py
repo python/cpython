@@ -51,6 +51,27 @@ def format_duration(seconds):
     return '%.0f min %.0f sec' % (minutes, seconds)
 
 
+def run_bisect_in_subprocess(testname):
+    from subprocess import Popen, PIPE
+    import json
+
+    cmd = [sys.executable, *support.args_from_interpreter_flags(),
+           '-u',    # Unbuffered stdout and stderr
+           '-m', 'test.bisect',
+           '--fail-env-changed',
+           testname]
+
+    # Running the child from the same working directory as regrtest's original
+    # invocation ensures that TEMPDIR for the child is the same when
+    # sysconfig.is_python_build() is true. See issue 15300.
+    popen = Popen(cmd,
+                  close_fds=(os.name != 'nt'),
+                  cwd=support.SAVEDCWD)
+    with popen:
+        retcode = popen.wait()
+    return retcode
+
+
 class Regrtest:
     """Execute a test suite.
 
@@ -276,26 +297,27 @@ class Regrtest:
             print(count(len(self.skipped), "test"), "skipped:", file=sys.stderr)
             printlist(self.skipped, file=sys.stderr)
 
-    def rerun_failed_tests(self):
+    def rerun_failed_tests(self, tests):
         self.ns.verbose = True
         self.ns.failfast = False
         self.ns.verbose3 = False
         self.ns.match_tests = None
 
-        print("Re-running failed tests in verbose mode")
-        for test in self.bad[:]:
-            print("Re-running test %r in verbose mode" % test, flush=True)
+        print("Run bisection on failed tests")
+        for test in tests:
+            print("Bisect test %r" % test, flush=True)
             try:
                 self.ns.verbose = True
-                ok = runtest(self.ns, test)
+                retcode = run_bisect_in_subprocess(test)
             except KeyboardInterrupt:
                 self.interrupted = True
                 # print a newline separate from the ^C
                 print()
                 break
             else:
-                if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
-                    self.bad.remove(test)
+                pass
+                #if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
+                #    self.bad.remove(test)
         else:
             if self.bad:
                 print(count(len(self.bad), 'test'), "failed again:")
@@ -538,8 +560,12 @@ class Regrtest:
         self.run_tests()
         self.display_result()
 
-        if self.ns.verbose2 and self.bad:
-            self.rerun_failed_tests()
+        tests = self.bad
+        for test in self.environment_changed:
+            if test not in tests:
+                tests.append(test)
+        if self.ns.verbose2 and tests:
+            self.rerun_failed_tests(tests)
 
         self.finalize()
         if self.bad:
