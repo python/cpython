@@ -1056,7 +1056,7 @@ class ZipFile:
     fp = None                   # Set here since __del__ checks it
     _windows_illegal_name_trans_table = None
 
-    def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True):
+    def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True, ignoreFilenameMismatch=False):
         """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
         or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
@@ -1066,6 +1066,7 @@ class ZipFile:
 
         self._allowZip64 = allowZip64
         self._didModify = False
+        self._ignoreFilenameMismatch = ignoreFilenameMismatch
         self.debug = 0  # Level of printing: 0 through 3
         self.NameToInfo = {}    # Find file info given name
         self.filelist = []      # List of ZipInfo instances for archive
@@ -1389,7 +1390,7 @@ class ZipFile:
             else:
                 fname_str = fname.decode("cp437")
 
-            if fname_str != zinfo.orig_filename:
+            if fname_str != zinfo.orig_filename and not self._ignoreFilenameMismatch:
                 raise BadZipFile(
                     'File name in directory %r and header %r differ.'
                     % (zinfo.orig_filename, fname))
