@@ -907,7 +907,9 @@ class TestModule(unittest.TestCase):
     def test_after_fork(self):
         # Test the global Random instance gets reseeded in child
         r, w = os.pipe()
-        if os.fork() == 0:
+        pid = os.fork()
+        if pid == 0:
+            # child process
             try:
                 val = random.getrandbits(128)
                 with open(w, "w") as f:
@@ -915,11 +917,15 @@ class TestModule(unittest.TestCase):
             finally:
                 os._exit(0)
         else:
+            # parent process
             os.close(w)
             val = random.getrandbits(128)
             with open(r, "r") as f:
                 child_val = eval(f.read())
             self.assertNotEqual(val, child_val)
+
+            pid, status = os.waitpid(pid, 0)
+            self.assertEqual(status, 0)
 
 
 if __name__ == "__main__":
