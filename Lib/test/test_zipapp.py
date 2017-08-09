@@ -63,7 +63,7 @@ class ZipAppTest(unittest.TestCase):
         (source / 'test.py').touch()
         (source / 'test.pyc').touch()
         target = self.tmpdir / 'source.pyz'
-        
+
         zipapp.create_archive(source, target, include_file=skip_pyc_files)
         with zipfile.ZipFile(target, 'r') as z:
             self.assertIn('__main__.py', z.namelist())
