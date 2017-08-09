@@ -172,8 +172,18 @@ def _get_module_lock(name):
                 lock = _DummyModuleLock(name)
             else:
                 lock = _ModuleLock(name)
-            def cb(_):
-                del _module_locks[name]
+
+            def cb(ref, name=name):
+                _imp.acquire_lock()
+                try:
+                    # bpo-31070: Check if another thread created a new lock
+                    # after the previous lock was destroyed
+                    # but before the weakref callback was called.
+                    if _module_locks.get(name) is ref:
+                        del _module_locks[name]
+                finally:
+                    _imp.release_lock()
+
             _module_locks[name] = _weakref.ref(lock, cb)
     finally:
         _imp.release_lock()
