@@ -4947,6 +4947,10 @@ stackdepth(struct compiler *c)
     basicblock *b, *entryblock = NULL;
     basicblock **stack, **sp;
     int nblocks = 0, depth = 0, maxdepth = 0;
+    /* b_seen = 0 -- not on the stack;
+       b_seen = 1 -- on the stack, queued for processing;
+       b_seen = 2 -- on the stack, already processed.
+     */
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
         b->b_seen = 0;
         b->b_startdepth = INT_MIN;
