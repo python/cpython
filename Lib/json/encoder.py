@@ -256,8 +256,32 @@ class JSONEncoder(object):
                 self.skipkeys, _one_shot)
         return _iterencode(o, 0)
 
+def _get_sequence_types():
+    """Non-iterator sequence types that should be encoded as a json array"""
+    # FIXME: there are a bunch of other sequences in the Python standard library,
+    # such as an array.array, queue.Queue, collections.deque.
+    return (list, tuple, set, frozenset, bytearray)
+    
+def _get_iterator_types():
+    """Iterator types that should be encoded as a json array"""
+    # FIXME: Are these types defined in builtins or the standard library somewhere?
+    str_iterator   = type(iter( str()    ))
+    list_iterator  = type(iter( list()   ))
+    tuple_iterator = type(iter( tuple()  ))
+    range_iterator = type(iter( range(0) ))
+    list_reverseiterator = type(reversed( list()  )) 
+    reverseiterator      = type(reversed( tuple() )) #same as <class 'reversed'>
+    
+    return (str_iterator, list_iterator, tuple_iterator, range_iterator,
+                      list_reverseiterator, reverseiterator)
+
+def _get_iterable_types():
+    """Returns a tuple of all types that should be encoded as a json array"""
+    return _get_sequence_types() + _get_iterator_types()
+
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
+        iterable_types=_get_iterable_types(),
         ## HACK: hand-optimized bytecode; turn globals into locals
         ValueError=ValueError,
         dict=dict,
@@ -316,7 +340,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 yield buf + _floatstr(value)
             else:
                 yield buf
-                if isinstance(value, (list, tuple)):
+                if isinstance(value, iterable_types):
                     chunks = _iterencode_list(value, _current_indent_level)
                 elif isinstance(value, dict):
                     chunks = _iterencode_dict(value, _current_indent_level)
@@ -395,7 +419,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 # see comment for int/float in _make_iterencode
                 yield _floatstr(value)
             else:
-                if isinstance(value, (list, tuple)):
+                if isinstance(value, iterable_types):
                     chunks = _iterencode_list(value, _current_indent_level)
                 elif isinstance(value, dict):
                     chunks = _iterencode_dict(value, _current_indent_level)
@@ -424,7 +448,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         elif isinstance(o, float):
             # see comment for int/float in _make_iterencode
             yield _floatstr(o)
-        elif isinstance(o, (list, tuple)):
+        elif isinstance(o, iterable_types):
             yield from _iterencode_list(o, _current_indent_level)
         elif isinstance(o, dict):
             yield from _iterencode_dict(o, _current_indent_level)
