@@ -74,7 +74,7 @@ def _copy_archive(archive, new_archive, interpreter=None):
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
-include_file=None):
+                   include_file=None):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -135,8 +135,8 @@ include_file=None):
         _write_file_prefix(fd, interpreter)
         with zipfile.ZipFile(fd, 'w') as z:
             for child in source.rglob('*'):
-                if include_file is None or include_file(pathlib.Path(child)):
-                    arcname = child.relative_to(source).as_posix()
+                arcname = child.relative_to(source).as_posix()
+                if include_file is None or include_file(pathlib.Path(arcname)):
                     z.write(child, arcname)
             if main_py:
                 z.writestr('__main__.py', main_py.encode('utf-8'))

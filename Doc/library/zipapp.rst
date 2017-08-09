@@ -98,7 +98,8 @@ Python API
 The module defines two convenience functions:
 
 
-.. function:: create_archive(source, target=None, interpreter=None, main=None)
+.. function:: create_archive(source, target=None, interpreter=None, main=None,
+                             include_file=None)
 
    Create an application archive from *source*.  The source can be any
    of the following:
@@ -142,6 +143,10 @@ The module defines two convenience functions:
    is an error to omit *main* if the source is a directory and does not
    contain a ``__main__.py`` file, as otherwise the resulting archive
    would not be executable.
+
+   The *include_file* argument specifies a callback function that is passed the
+   relative path to the file in order to determine which files to store when
+   being called against a directory.
 
    If a file object is specified for *source* or *target*, it is the
    caller's responsibility to close it after calling create_archive.
