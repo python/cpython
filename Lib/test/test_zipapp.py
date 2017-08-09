@@ -53,6 +53,23 @@ class ZipAppTest(unittest.TestCase):
             self.assertIn('foo/', z.namelist())
             self.assertIn('bar/', z.namelist())
 
+    def test_create_archive_with_include_file(self):
+        # Test packing a directory and using include_file to specify which files to include.
+        def skip_pyc_files(file):
+            return '.pyc' not in str(file)
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        (source / 'test.py').touch()
+        (source / 'test.pyc').touch()
+        target = self.tmpdir / 'source.pyz'
+
+        zipapp.create_archive(source, target, include_file=skip_pyc_files)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertIn('__main__.py', z.namelist())
+            self.assertIn('test.py', z.namelist())
+            self.assertNotIn('test.pyc', z.namelist())
+
     def test_create_archive_default_target(self):
         # Test packing a directory to the default name.
         source = self.tmpdir / 'source'
