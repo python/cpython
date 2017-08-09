@@ -2088,6 +2088,10 @@ def reap_children():
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
 
+    # XXX: give 1 second to child processes to complete
+    # XXX: temporary change to detect bugs
+    time.sleep(1.0)
+
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
     while True:
