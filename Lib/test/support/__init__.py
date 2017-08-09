@@ -282,6 +282,7 @@ max_memuse = 0           # Disable bigmem tests (they will still be run with
 real_max_memuse = 0
 failfast = False
 match_tests = None
+_match_tests_pattern = None
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
 # This may be "the real" stdout, or IDLE's emulation of stdout, or whatever.
@@ -1906,20 +1907,21 @@ def _run_suite(suite):
 
 
 def _match_test(test):
-    global match_tests
+    global match_tests, _match_tests_pattern
 
     if match_tests is None:
         return True
     test_id = test.id()
 
-    for match_test in match_tests:
-        if fnmatch.fnmatchcase(test_id, match_test):
-            return True
+    if _match_tests_pattern is None or _match_tests_pattern[0] != match_tests:
+        patterns = [fnmatch.translate(pattern) for pattern in match_tests]
+        regex = '(?:%s)' % '|'.join(patterns)
+        match = re.compile(regex).match
+        _match_tests_pattern = (match_tests, match)
+    else:
+        match = _match_tests_pattern[1]
 
-        for name in test_id.split("."):
-            if fnmatch.fnmatchcase(name, match_test):
-                return True
-    return False
+    return (match(test_id) is not None)
 
 
 def run_unittest(*classes):
