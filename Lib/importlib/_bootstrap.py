@@ -152,6 +152,11 @@ class _ModuleLockManager:
         self._lock.release()
 
 
+def _remove_module_lock(name):
+    item_lock, lock_wr = _module_locks.pop(name)
+    item_lock.release()
+
+
 # The following two functions are for consumption by Python/import.c.
 
 def _get_module_lock(name):
@@ -159,22 +164,38 @@ def _get_module_lock(name):
 
     Acquire/release internally the global import lock to protect
     _module_locks."""
-
     _imp.acquire_lock()
     try:
         try:
-            lock = _module_locks[name]()
+            item_lock, lock_wr = _module_locks[name]
         except KeyError:
+            lock_wr = None
+
+        if lock_wr is not None:
+            lock = lock_wr()
+
+            if lock is None:
+                # Current thread sees that a module lock was created, is now
+                # destroyed, but its weak reference callback was not called
+                # yet. Wait until _module_locks[name] is deleted.
+                item_lock.acquire()
+                item_lock.release()
+        else:
             lock = None
 
         if lock is None:
             if _thread is None:
                 lock = _DummyModuleLock(name)
+                item_lock = _DummyModuleLock(name)
             else:
                 lock = _ModuleLock(name)
+                item_lock = _thread.allocate_lock()
+            item_lock.acquire()
+
             def cb(_):
-                del _module_locks[name]
-            _module_locks[name] = _weakref.ref(lock, cb)
+                _remove_module_lock(name)
+            lock_wr = _weakref.ref(lock, cb)
+            _module_locks[name] = (item_lock, lock_wr)
     finally:
         _imp.release_lock()
 
