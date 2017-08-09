@@ -110,7 +110,7 @@
   // Returns the path segment of the language as a string, like 'fr/'
   // or '' if not found.
   function language_segment_from_url(url) {
-    var language_regexp = '\.org/(' + Object.keys(all_languages).join('|') + '/)';
+    var language_regexp = '\.org/([a-z]{2}(?:-[a-z]{2})?/)';
     var match = url.match(language_regexp);
     if (match !== null)
         return match[1];
@@ -120,7 +120,7 @@
   // Returns the path segment of the version as a string, like '3.6/'
   // or '' if not found.
   function version_segment_in_url(url) {
-    var language_segment = '(?:(?:' + Object.keys(all_languages).join('|') + ')/)';
+    var language_segment = '(?:[a-z]{2}(?:-[a-z]{2})?/)';
     var version_segment = '(?:(?:' + version_regexs.join('|') + ')/)';
     var version_regexp = '\\.org/' + language_segment + '?(' + version_segment + ')';
     var match = url.match(version_regexp);
