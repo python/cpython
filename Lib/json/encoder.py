@@ -261,19 +261,19 @@ def _get_sequence_types():
     # FIXME: there are a bunch of other sequences in the Python standard library,
     # such as an array.array, queue.Queue, collections.deque.
     return (list, tuple, set, frozenset, bytearray)
-    
+
 def _get_iterator_types():
     """Iterator types that should be encoded as a json array"""
     # FIXME: Are these types defined in builtins or the standard library somewhere?
-    str_iterator   = type(iter( str()    ))
-    list_iterator  = type(iter( list()   ))
-    tuple_iterator = type(iter( tuple()  ))
-    range_iterator = type(iter( range(0) ))
-    list_reverseiterator = type(reversed( list()  )) 
-    reverseiterator      = type(reversed( tuple() )) #same as <class 'reversed'>
-    
+    str_iterator   = type(iter(str()))
+    list_iterator  = type(iter(list()))
+    tuple_iterator = type(iter(tuple()))
+    range_iterator = type(iter(range(0)))
+    list_reverseiterator = type(reversed(list()))
+    # same as <class 'reversed'>
+    reverseiterator      = type(reversed(tuple())
     return (str_iterator, list_iterator, tuple_iterator, range_iterator,
-                      list_reverseiterator, reverseiterator)
+            list_reverseiterator, reverseiterator)
 
 def _get_iterable_types():
     """Returns a tuple of all types that should be encoded as a json array"""
