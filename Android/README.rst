@@ -159,9 +159,8 @@ Build and run on termux
 
 4. Run the Python interpreter on termux::
 
+     $ export TERM=linux; export TERMINFO=$HOME/../usr/lib/terminfo
      $ export SYS_EXEC_PREFIX=/data/data/com.termux/files/usr/local
-     $ export TERM=linux
-     $ export TERMINFO=$SYS_EXEC_PREFIX/share/terminfo
      $ LD_LIBRARY_PATH=$SYS_EXEC_PREFIX/lib:$LD_LIBRARY_PATH $SYS_EXEC_PREFIX/bin/python3
 
 Requirements
@@ -316,10 +315,10 @@ Common Makefile targets
 
 *distclean*
     Make things clean, before making a distribution. This also removes the
-    ``PY_DESTDIR`` directory where the external libraries have been installed
+    DESTDIR directory where the external libraries have been copied
     and where the cross-compiled Python has been installed by the command ``make
-    DESTDIR=$(PY_DESTDIR) install`` run on Python own Makefile. As a side effect
-    the external libraries will be rebuilt on the next make invocation.
+    DESTDIR=$(PY_DESTDIR) install`` run on Python own Makefile. The external
+    libraries will not be rebuilt on the next make invocation.
 
 *clean*
     Remove everything for the given (api, architecture) except the AVD.

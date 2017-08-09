@@ -6,7 +6,7 @@ SQLITE := sqlite3
 SQLITE_FNAME := sqlite-autoconf-3080803
 LIBFFI := libffi-3.2.1
 BUILD_DIR := $(BUILD_DIR)/external-libraries
-py_install_dir := $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)
+py_install_dir := $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)
 
 all: $(py_install_dir)/lib/libncursesw.a $(py_install_dir)/lib/libreadline.a \
         $(py_install_dir)/lib/libsqlite3.a $(py_install_dir)/lib/libffi.a

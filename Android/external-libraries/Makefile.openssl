@@ -14,7 +14,7 @@ export HOSTCC := gcc
 export CROSS_COMPILE := $(ANDROID_HOST)-
 
 BUILD_DIR := $(BUILD_DIR)/external-libraries
-py_install_dir := $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)
+py_install_dir := $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)
 BUILD_OPENSSL := $(py_install_dir)/lib/libcrypto.so
 ifeq ($(ANDROID_ARCH), x86)
     export MACHINE := i686

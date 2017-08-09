@@ -8,7 +8,8 @@ native_build_dir := $(BUILD_DIR)/python-native
 py_name := python$(py_version)
 export BUILD_TYPE := android-$(ANDROID_API)-$(ANDROID_ARCH)
 py_host_dir := $(BUILD_DIR)/$(py_name)-$(BUILD_TYPE)
-export PY_DESTDIR := $(BUILD_DIR)/$(py_name)-install-$(BUILD_TYPE)
+export PY_EXTDIR := $(BUILD_DIR)/$(py_name)-extlibs-$(BUILD_TYPE)
+PY_DESTDIR := $(BUILD_DIR)/$(py_name)-install-$(BUILD_TYPE)
 abiflags = $(shell echo $$(cat $(py_host_dir)/Makefile | \
     sed -e "s/^ABIFLAGS[= \t]*\(.*\)[ \t]*$$\|^.*$$/\1/" -e "/^$$/d"))
 py_fullname = python$(py_version)$(abiflags)
@@ -59,8 +60,8 @@ native_python: $(native_build_dir)/config.status $(native_build_dir)/Modules/Set
 	$(MAKE) -C $(native_build_dir)
 
 # Target-specific exported variables.
-$(config_status):           export CPPFLAGS := -I$(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/include
-$(config_status):           export LDFLAGS := -L$(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib
+$(config_status):           export CPPFLAGS := -I$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/include
+$(config_status):           export LDFLAGS := -L$(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib
 build configure host python_dist: \
                             export PATH := $(native_build_dir):$(PATH)
 external_libraries:         export CC := $(CC)
@@ -118,6 +119,8 @@ host:
 python_dist: $(python)
 	@echo "---> Install Python for $(BUILD_TYPE)."
 	$(MAKE) DESTDIR=$(PY_DESTDIR) -C $(py_host_dir) install
+	cp --no-dereference $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib/*.so* $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib
+	chmod u+w $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib/*.so*
 ifdef DEVICE_PREFIXES
 	# This won't be needed anymore when issue 31046 is fixed.
 	rm -rf $(PY_DESTDIR)/usr
@@ -184,6 +187,7 @@ clean: distclean
 	rm -rf $(py_host_dir)
 	rm -rf $(BUILD_DIR)/external-libraries/*-$(BUILD_TYPE)
 	-rmdir $(BUILD_DIR)/external-libraries
+	rm -rf $(PY_EXTDIR)
 	-rmdir $(BUILD_DIR)
 	-rmdir $(avd_dir)
 	rm -rf $(DIST_DIR)/gdb/android-$(ANDROID_API)-$(ANDROID_ARCH)
