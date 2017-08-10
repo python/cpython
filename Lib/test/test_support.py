@@ -1,12 +1,15 @@
+import contextlib
+import errno
 import importlib
+import io
+import os
 import shutil
+import socket
 import stat
 import sys
-import os
-import unittest
-import socket
 import tempfile
-import errno
+import time
+import unittest
 from test import support
 
 TESTFN = support.TESTFN
@@ -378,6 +381,51 @@ class TestSupport(unittest.TestCase):
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
+    @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
+                         'need os.waitpid() and os.WNOHANG')
+    def test_reap_children(self):
+        # Make sure that there is no other pending child process
+        support.reap_children()
+
+        # Create a child process
+        pid = os.fork()
+        if pid == 0:
+            # child process: do nothing, just exit
+            os._exit(0)
+
+        t0 = time.monotonic()
+        deadline = time.monotonic() + 60.0
+
+        was_altered = support.environment_altered
+        try:
+            support.environment_altered = False
+            stderr = io.StringIO()
+
+            while True:
+                if time.monotonic() > deadline:
+                    self.fail("timeout")
+
+                with contextlib.redirect_stderr(stderr):
+                    support.reap_children()
+
+                # Use environment_altered to check if reap_children() found
+                # the child process
+                if support.environment_altered:
+                    break
+
+                # loop until the child process completed
+                time.sleep(0.100)
+
+            msg = "Warning -- reap_children() reaped child process %s" % pid
+            self.assertIn(msg, stderr.getvalue())
+            self.assertTrue(support.environment_altered)
+        finally:
+            support.environment_altered = was_altered
+
+        # Just in case, check again that there is no other
+        # pending child process
+        support.reap_children()
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
@@ -398,7 +446,6 @@ class TestSupport(unittest.TestCase):
     # run_doctest
     # threading_cleanup
     # reap_threads
-    # reap_children
     # strip_python_stderr
     # args_from_interpreter_flags
     # can_symlink
