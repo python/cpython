@@ -82,7 +82,7 @@ class ExecutorMixin:
         self.assertLess(dt, 60, "synchronization issue: test lasted too long")
 
         test.support.threading_cleanup(*self._thread_cleanup)
-        test.support.reap_children()
+        #test.support.reap_children()
 
     def _prime_executor(self):
         # Make sure that the executor is ready to do work before running the

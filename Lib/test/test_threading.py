@@ -79,7 +79,7 @@ class BaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         test.support.threading_cleanup(*self._threads)
-        test.support.reap_children()
+        #test.support.reap_children()
 
 
 class ThreadTests(BaseTestCase):

@@ -79,7 +79,7 @@ class SocketServerTest(unittest.TestCase):
 
     def tearDown(self):
         signal_alarm(0)  # Didn't deadlock.
-        reap_children()
+        #reap_children()
 
         for fn in self.test_files:
             try:

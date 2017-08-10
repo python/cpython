@@ -1082,7 +1082,8 @@ class StressTest(unittest.TestCase):
 
 
 def tearDownModule():
-    support.reap_children()
+    #support.reap_children()
+    pass
 
 if __name__ == "__main__":
     unittest.main()

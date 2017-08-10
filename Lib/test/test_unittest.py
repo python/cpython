@@ -6,7 +6,7 @@ from test import support
 def test_main():
     # used by regrtest
     support.run_unittest(unittest.test.suite())
-    support.reap_children()
+    #support.reap_children()
 
 def load_tests(*_):
     # used by unittest

@@ -33,7 +33,8 @@ class Wait4Test(ForkWait):
         self.assertTrue(rusage)
 
 def tearDownModule():
-    reap_children()
+    #reap_children()
+    pass
 
 if __name__ == "__main__":
     unittest.main()

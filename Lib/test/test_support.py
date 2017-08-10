@@ -385,7 +385,7 @@ class TestSupport(unittest.TestCase):
                          'need os.waitpid() and os.WNOHANG')
     def test_reap_children(self):
         # Make sure that there is no other pending child process
-        support.reap_children()
+        #support.reap_children()
 
         # Create a child process
         pid = os.fork()
@@ -424,7 +424,7 @@ class TestSupport(unittest.TestCase):
 
         # Just in case, check again that there is no other
         # pending child process
-        support.reap_children()
+        #support.reap_children()
 
     # XXX -follows a list of untested API
     # make_legacy_pyc
