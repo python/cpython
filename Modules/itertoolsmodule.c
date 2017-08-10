@@ -1739,7 +1739,7 @@ static PyMethodDef starmap_methods[] = {
 };
 
 PyDoc_STRVAR(starmap_doc,
-"starmap(function, iter) --> starmap object\n\
+"starmap(function, iterable) --> starmap object\n\
 \n\
 Return an iterator whose values are returned from the function evaluated\n\
 with an argument tuple taken from the given sequence.");
@@ -3535,7 +3535,7 @@ static PyMethodDef accumulate_methods[] = {
 };
 
 PyDoc_STRVAR(accumulate_doc,
-"accumulate(iterable, func=None) --> accumulate object\n\
+"accumulate(iterable[, func]) --> accumulate object\n\
 \n\
 Return series of accumulated sums (or other binary function results).");
 
@@ -4585,7 +4585,7 @@ cycle(p) --> p0, p1, ... plast, p0, p1, ...\n\
 repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
-accumulate(p, func=None) --> p0, p0+p1, p0+p1+p2\n\
+accumulate(p[, func]) --> p0, p0+p1, p0+p1+p2\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
 chain.from_iterable([p, q, ...]) --> p0, p1, ... plast, q0, q1, ... \n\
 compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
@@ -4594,14 +4594,14 @@ groupby(iterable, key=None[, keyfunc]) --> sub-iterators grouped by value of key
 filterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
-starmap(fun, iter) --> fun(*seq[0]), fun(*seq[1]), ...\n\
+starmap(fun, iterable) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
 zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
 \n\
 Combinatoric generators:\n\
 product(p, q, ... [repeat=1]) --> cartesian product\n\
-permutations(p[, r])\n\
+permutations(p[, r])\n
 combinations(p, r)\n\
 combinations_with_replacement(p, r)\n\
 ");
