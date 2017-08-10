@@ -15,6 +15,10 @@
 #  include <crtdbg.h>
 #endif
 
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>           /* For W_STOPCODE */
+#endif
+
 #ifdef WITH_THREAD
 #include "pythread.h"
 #endif /* WITH_THREAD */
@@ -2523,6 +2527,7 @@ msvcrt_CrtSetReportMode(PyObject* self, PyObject *args)
     return PyInt_FromLong(res);
 }
 
+
 static PyObject*
 msvcrt_CrtSetReportFile(PyObject* self, PyObject *args)
 {
@@ -2536,6 +2541,20 @@ msvcrt_CrtSetReportFile(PyObject* self, PyObject *args)
     res = (long)_CrtSetReportFile(type, (_HFILE)file);
 
     return PyInt_FromLong(res);
+}
+#endif
+
+
+#ifdef W_STOPCODE
+static PyObject*
+py_w_stopcode(PyObject *self, PyObject *args)
+{
+    int sig, status;
+    if (!PyArg_ParseTuple(args, "i", &sig)) {
+        return NULL;
+    }
+    status = W_STOPCODE(sig);
+    return PyLong_FromLong(status);
 }
 #endif
 
@@ -2655,6 +2674,9 @@ static PyMethodDef TestMethods[] = {
 #ifdef MS_WINDOWS
     {"CrtSetReportMode", (PyCFunction)msvcrt_CrtSetReportMode, METH_VARARGS},
     {"CrtSetReportFile", (PyCFunction)msvcrt_CrtSetReportFile, METH_VARARGS},
+#endif
+#ifdef W_STOPCODE
+    {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
     {NULL, NULL} /* sentinel */
 };
