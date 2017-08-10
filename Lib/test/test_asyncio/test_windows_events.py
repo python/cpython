@@ -118,7 +118,9 @@ class ProactorTests(test_utils.TestCase):
 
         self.assertEqual(done, False)
         self.assertFalse(fut.result())
-        self.assertTrue(0.48 < elapsed < 0.9, elapsed)
+        # bpo-31008: Tolerate only 450 ms (at least 500 ms expected),
+        # because of bad clock resolution on Windows
+        self.assertTrue(0.45 <= elapsed <= 0.9, elapsed)
 
         _overlapped.SetEvent(event)
 
