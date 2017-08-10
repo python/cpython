@@ -24,23 +24,23 @@ PyDoc_STRVAR(zipimport_zipimporter___init____doc__,
 "zipfile targeted.");
 
 static int
-zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *archivepath);
+zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *path);
 
 static int
 zipimport_zipimporter___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    PyObject *archivepath;
+    PyObject *path;
 
     if ((Py_TYPE(self) == &ZipImporter_Type) &&
         !_PyArg_NoKeywords("zipimporter", kwargs)) {
         goto exit;
     }
     if (!PyArg_ParseTuple(args, "O&:zipimporter",
-        PyUnicode_FSDecoder, &archivepath)) {
+        PyUnicode_FSDecoder, &path)) {
         goto exit;
     }
-    return_value = zipimport_zipimporter___init___impl((ZipImporter *)self, archivepath);
+    return_value = zipimport_zipimporter___init___impl((ZipImporter *)self, path);
 
 exit:
     return return_value;
@@ -217,18 +217,18 @@ PyDoc_STRVAR(zipimport_zipimporter_get_data__doc__,
     {"get_data", (PyCFunction)zipimport_zipimporter_get_data, METH_O, zipimport_zipimporter_get_data__doc__},
 
 static PyObject *
-zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *pathname);
+zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *path);
 
 static PyObject *
 zipimport_zipimporter_get_data(ZipImporter *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *pathname;
+    PyObject *path;
 
-    if (!PyArg_Parse(arg, "U:get_data", &pathname)) {
+    if (!PyArg_Parse(arg, "U:get_data", &path)) {
         goto exit;
     }
-    return_value = zipimport_zipimporter_get_data_impl(self, pathname);
+    return_value = zipimport_zipimporter_get_data_impl(self, path);
 
 exit:
     return return_value;
@@ -292,4 +292,4 @@ zipimport_zipimporter_get_source(ZipImporter *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=28b69ff37d9f68b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f69c4e0d0ad1f700 input=a9049054013a1b77]*/

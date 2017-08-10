@@ -74,7 +74,7 @@ class zipimport.zipimporter "ZipImporter *" "&ZipImporter_Type"
 /*[clinic input]
 zipimport.zipimporter.__init__
 
-    archivepath: object(converter="PyUnicode_FSDecoder")
+    archivepath as path: object(converter="PyUnicode_FSDecoder")
         A path-like object to a zipfile, or to a specific path inside
         a zipfile.
     /
@@ -95,31 +95,31 @@ zipfile targeted.
 [clinic start generated code]*/
 
 static int
-zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *archivepath)
-/*[clinic end generated code: output=31f3a271ab82b43c input=b32d5bdf33b5b2d9]*/
+zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *path)
+/*[clinic end generated code: output=141558fefdb46dc8 input=bfe717d047d8b91e]*/
 {
     PyObject *files, *tmp;
     PyObject *filename = NULL;
     Py_ssize_t len, flen;
 
-    if (PyUnicode_READY(archivepath) == -1)
+    if (PyUnicode_READY(path) == -1)
         return -1;
 
-    len = PyUnicode_GET_LENGTH(archivepath);
+    len = PyUnicode_GET_LENGTH(path);
     if (len == 0) {
         PyErr_SetString(ZipImportError, "archive path is empty");
         goto error;
     }
 
 #ifdef ALTSEP
-    tmp = _PyObject_CallMethodId(archivepath, &PyId_replace, "CC", ALTSEP, SEP);
+    tmp = _PyObject_CallMethodId(path, &PyId_replace, "CC", ALTSEP, SEP);
     if (!tmp)
         goto error;
-    Py_DECREF(archivepath);
-    archivepath = tmp;
+    Py_DECREF(path);
+    path = tmp;
 #endif
 
-    filename = archivepath;
+    filename = path;
     Py_INCREF(filename);
     flen = len;
     for (;;) {
@@ -138,10 +138,10 @@ zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *archivepath)
         }
         Py_CLEAR(filename);
         /* back up one path element */
-        flen = PyUnicode_FindChar(archivepath, SEP, 0, flen, -1);
+        flen = PyUnicode_FindChar(path, SEP, 0, flen, -1);
         if (flen == -1)
             break;
-        filename = PyUnicode_Substring(archivepath, 0, flen);
+        filename = PyUnicode_Substring(path, 0, flen);
         if (filename == NULL)
             goto error;
     }
@@ -171,12 +171,12 @@ zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *archivepath)
 
     /* Check if there is a prefix directory following the filename. */
     if (flen != len) {
-        tmp = PyUnicode_Substring(archivepath, flen+1,
-                                  PyUnicode_GET_LENGTH(archivepath));
+        tmp = PyUnicode_Substring(path, flen+1,
+                                  PyUnicode_GET_LENGTH(path));
         if (tmp == NULL)
             goto error;
         self->prefix = tmp;
-        if (PyUnicode_READ_CHAR(archivepath, len-1) != SEP) {
+        if (PyUnicode_READ_CHAR(path, len-1) != SEP) {
             /* add trailing SEP */
             tmp = PyUnicode_FromFormat("%U%c", self->prefix, SEP);
             if (tmp == NULL)
@@ -186,11 +186,11 @@ zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *archivepath)
     }
     else
         self->prefix = PyUnicode_New(0, 0);
-    Py_DECREF(archivepath);
+    Py_DECREF(path);
     return 0;
 
 error:
-    Py_DECREF(archivepath);
+    Py_DECREF(path);
     Py_XDECREF(filename);
     return -1;
 }
@@ -634,7 +634,7 @@ zipimport_zipimporter_is_package_impl(ZipImporter *self, PyObject *fullname)
 /*[clinic input]
 zipimport.zipimporter.get_data
 
-    pathname: unicode
+    pathname as path: unicode
     /
 
 Return the data associated with 'pathname'.
@@ -644,33 +644,33 @@ Raise OSError if the file was not found.
 [clinic start generated code]*/
 
 static PyObject *
-zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *pathname)
-/*[clinic end generated code: output=60ac5738d2301ab4 input=284503685aac3c03]*/
+zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *path)
+/*[clinic end generated code: output=65dc506aaa268436 input=fa6428b74843c4ae]*/
 {
     PyObject *key;
     PyObject *toc_entry;
     Py_ssize_t path_start, path_len, len;
 
 #ifdef ALTSEP
-    pathname = _PyObject_CallMethodId(pathname, &PyId_replace, "CC", ALTSEP, SEP);
-    if (!pathname)
+    path = _PyObject_CallMethodId(path, &PyId_replace, "CC", ALTSEP, SEP);
+    if (!path)
         return NULL;
 #else
-    Py_INCREF(pathname);
+    Py_INCREF(path);
 #endif
-    if (PyUnicode_READY(pathname) == -1)
+    if (PyUnicode_READY(path) == -1)
         goto error;
 
-    path_len = PyUnicode_GET_LENGTH(pathname);
+    path_len = PyUnicode_GET_LENGTH(path);
 
     len = PyUnicode_GET_LENGTH(self->archive);
     path_start = 0;
-    if (PyUnicode_Tailmatch(pathname, self->archive, 0, len, -1)
-        && PyUnicode_READ_CHAR(pathname, len) == SEP) {
+    if (PyUnicode_Tailmatch(path, self->archive, 0, len, -1)
+        && PyUnicode_READ_CHAR(path, len) == SEP) {
         path_start = len + 1;
     }
 
-    key = PyUnicode_Substring(pathname, path_start, path_len);
+    key = PyUnicode_Substring(path, path_start, path_len);
     if (key == NULL)
         goto error;
     toc_entry = PyDict_GetItem(self->files, key);
@@ -680,10 +680,10 @@ zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *pathname)
         goto error;
     }
     Py_DECREF(key);
-    Py_DECREF(pathname);
+    Py_DECREF(path);
     return get_data(self->archive, toc_entry);
   error:
-    Py_DECREF(pathname);
+    Py_DECREF(path);
     return NULL;
 }
 
