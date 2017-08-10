@@ -144,6 +144,10 @@ class SocketServerTest(unittest.TestCase):
         t.join()
         server.server_close()
         self.assertEqual(-1, server.socket.fileno())
+        if HAVE_FORKING and isinstance(server, socketserver.ForkingMixIn):
+            # bpo-31151: Check that ForkingMixIn.server_close() waits until
+            # all children completed
+            self.assertFalse(server.active_children)
         if verbose: print("done")
 
     def stream_examine(self, proto, addr):
@@ -371,10 +375,7 @@ class ThreadingErrorTestServer(socketserver.ThreadingMixIn,
 
 if HAVE_FORKING:
     class ForkingErrorTestServer(socketserver.ForkingMixIn, BaseErrorTestServer):
-        def wait_done(self):
-            [child] = self.active_children
-            os.waitpid(child, 0)
-            self.active_children.clear()
+        pass
 
 
 class SocketWriterTest(unittest.TestCase):

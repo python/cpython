@@ -547,7 +547,7 @@ if hasattr(os, "fork"):
         active_children = None
         max_children = 40
 
-        def collect_children(self):
+        def collect_children(self, *, blocking=False):
             """Internal routine to wait for children that have exited."""
             if self.active_children is None:
                 return
@@ -571,7 +571,8 @@ if hasattr(os, "fork"):
             # Now reap all defunct children.
             for pid in self.active_children.copy():
                 try:
-                    pid, _ = os.waitpid(pid, os.WNOHANG)
+                    flags = 0 if blocking else os.WNOHANG
+                    pid, _ = os.waitpid(pid, flags)
                     # if the child hasn't exited yet, pid will be 0 and ignored by
                     # discard() below
                     self.active_children.discard(pid)
@@ -619,6 +620,10 @@ if hasattr(os, "fork"):
                         self.shutdown_request(request)
                     finally:
                         os._exit(status)
+
+        def server_close(self):
+            super().server_close()
+            self.collect_children(blocking=True)
 
 
 class ThreadingMixIn:
