@@ -88,7 +88,7 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(mimetypes.guess_extension('foo/bar'), None)
 
     def test_preferred_extension(self):
-        def check_extensions():        
+        def check_extensions():
             self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
             self.assertEqual(mimetypes.guess_extension('application/postscript'), '.ps')
             self.assertEqual(mimetypes.guess_extension('application/vnd.apple.mpegurl'), '.m3u')
