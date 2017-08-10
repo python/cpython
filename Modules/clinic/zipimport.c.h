@@ -17,10 +17,10 @@ PyDoc_STRVAR(zipimport_zipimporter___init____doc__,
 "\'/tmp/myimport.zip/mydirectory\', if mydirectory is a valid directory inside\n"
 "the archive.\n"
 "\n"
-"\'ZipImportError is raised if \'archivepath\' doesn\'t point to a valid Zip\n"
+"\'ZipImportError\' is raised if \'archivepath\' doesn\'t point to a valid Zip\n"
 "archive.\n"
 "\n"
-"The \'archive\' attribute of zipimporter objects contains the name of the\n"
+"The \'archive\' attribute of the zipimporter object contains the name of the\n"
 "zipfile targeted.");
 
 static int
@@ -87,9 +87,8 @@ PyDoc_STRVAR(zipimport_zipimporter_find_loader__doc__,
 "\n"
 "Search for a module specified by \'fullname\'.\n"
 "\n"
-"\'fullname\' must be the\n"
-"fully qualified (dotted) module name. It returns the zipimporter\n"
-"instance itself if the module was found, a string containing the\n"
+"\'fullname\' must be the fully qualified (dotted) module name. It returns the\n"
+"zipimporter instance itself if the module was found, a string containing the\n"
 "full path name if it\'s possibly a portion of a namespace package,\n"
 "or None otherwise. The optional \'path\' argument is ignored -- it\'s\n"
 "there for compatibility with the importer protocol.");
@@ -292,4 +291,4 @@ zipimport_zipimporter_get_source(ZipImporter *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f69c4e0d0ad1f700 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bac6c9144950eaec input=a9049054013a1b77]*/

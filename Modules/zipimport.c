@@ -86,17 +86,17 @@ inside a zipfile. For example, it can be '/tmp/myimport.zip', or
 '/tmp/myimport.zip/mydirectory', if mydirectory is a valid directory inside
 the archive.
 
-'ZipImportError is raised if 'archivepath' doesn't point to a valid Zip
+'ZipImportError' is raised if 'archivepath' doesn't point to a valid Zip
 archive.
 
-The 'archive' attribute of zipimporter objects contains the name of the
+The 'archive' attribute of the zipimporter object contains the name of the
 zipfile targeted.
 
 [clinic start generated code]*/
 
 static int
 zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *path)
-/*[clinic end generated code: output=141558fefdb46dc8 input=bfe717d047d8b91e]*/
+/*[clinic end generated code: output=141558fefdb46dc8 input=92b9ebeed1f6a704]*/
 {
     PyObject *files, *tmp;
     PyObject *filename = NULL;
@@ -460,9 +460,8 @@ zipimport.zipimporter.find_loader
 
 Search for a module specified by 'fullname'.
 
-'fullname' must be the
-fully qualified (dotted) module name. It returns the zipimporter
-instance itself if the module was found, a string containing the
+'fullname' must be the fully qualified (dotted) module name. It returns the
+zipimporter instance itself if the module was found, a string containing the
 full path name if it's possibly a portion of a namespace package,
 or None otherwise. The optional 'path' argument is ignored -- it's
 there for compatibility with the importer protocol.
@@ -472,7 +471,7 @@ there for compatibility with the importer protocol.
 static PyObject *
 zipimport_zipimporter_find_loader_impl(ZipImporter *self, PyObject *fullname,
                                        PyObject *path)
-/*[clinic end generated code: output=601599a43bc0f49a input=77c1391f92186397]*/
+/*[clinic end generated code: output=601599a43bc0f49a input=dc73f275b0d5be23]*/
 {
     PyObject *result = NULL;
     PyObject *namespace_portion = NULL;
