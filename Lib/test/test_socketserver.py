@@ -144,7 +144,7 @@ class SocketServerTest(unittest.TestCase):
         t.join()
         server.server_close()
         self.assertEqual(-1, server.socket.fileno())
-        if isinstance(server, socketserver.ForkingMixIn):
+        if HAVE_FORKING and isinstance(server, socketserver.ForkingMixIn):
             # bpo-31151: Check that ForkingMixIn.server_close() waits until
             # all children completed
             self.assertFalse(server.active_children)
