@@ -46,18 +46,17 @@ This has consequences:
   signal handlers will be called when the calculation finishes.
 
 
-.. _signals-and-threads:
-
-
 Signals and threads
 ^^^^^^^^^^^^^^^^^^^
 
-Python signal handlers are always executed in the main Python thread,
-even if the signal was received in another thread.  This means that signals
-can't be used as a means of inter-thread communication.  You can use
-the synchronization primitives from the :mod:`threading` module instead.
+Only the main thread is allowed to set a new signal handler.
 
-Besides, only the main thread is allowed to set a new signal handler.
+You can use the synchronization primitives from the :mod:`threading` module
+instead.
+
+.. versionchanged:: 3.7
+   Python signal handlers can now be executed in threads other than the main
+   Python thread.
 
 
 Module contents
@@ -221,11 +220,7 @@ The :mod:`signal` module defines the following functions:
 
    Send the signal *signalnum* to the thread *thread_id*, another thread in the
    same process as the caller.  The target thread can be executing any code
-   (Python or not).  However, if the target thread is executing the Python
-   interpreter, the Python signal handlers will be :ref:`executed by the main
-   thread <signals-and-threads>`.  Therefore, the only point of sending a
-   signal to a particular Python thread would be to force a running system call
-   to fail with :exc:`InterruptedError`.
+   (Python or not).
 
    Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
    attribute of :class:`threading.Thread` objects to get a suitable value
