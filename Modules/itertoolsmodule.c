@@ -4590,7 +4590,7 @@ chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
 chain.from_iterable([p, q, ...]) --> p0, p1, ... plast, q0, q1, ... \n\
 compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
 dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
-groupby(iterable, key=None) --> sub-iterators grouped by value of keyfunc(v)\n\
+groupby(iterable, key=None) --> sub-iterators grouped by value of key(v)\n\
 filterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
