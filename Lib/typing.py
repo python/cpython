@@ -10,6 +10,8 @@ try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # Fallback for PY3.2.
+if sys.version_info[:2] >= (3, 6):
+    import _collections_abc  # Needed for private function _check_methods # noqa
 try:
     from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType
 except ImportError:
@@ -37,6 +39,7 @@ __all__ = [
                     # for 'Generic' and ABCs below.
     'ByteString',
     'Container',
+    'ContextManager',
     'Hashable',
     'ItemsView',
     'Iterable',
@@ -57,8 +60,8 @@ __all__ = [
     # AsyncIterable,
     # Coroutine,
     # Collection,
-    # ContextManager,
     # AsyncGenerator,
+    # AsyncContextManager
 
     # Structural checks, a.k.a. protocols.
     'Reversible',
@@ -1949,7 +1952,61 @@ class ValuesView(MappingView[VT_co], extra=collections_abc.ValuesView):
 if hasattr(contextlib, 'AbstractContextManager'):
     class ContextManager(Generic[T_co], extra=contextlib.AbstractContextManager):
         __slots__ = ()
-    __all__.append('ContextManager')
+else:
+    class ContextManager(Generic[T_co]):
+        __slots__ = ()
+
+        def __enter__(self):
+            return self
+
+        @abc.abstractmethod
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+        @classmethod
+        def __subclasshook__(cls, C):
+            if cls is ContextManager:
+                # In Python 3.6+, it is possible to set a method to None to
+                # explicitly indicate that the class does not implement an ABC
+                # (https://bugs.python.org/issue25958), but we do not support
+                # that pattern here because this fallback class is only used
+                # in Python 3.5 and earlier.
+                if (any("__enter__" in B.__dict__ for B in C.__mro__) and
+                    any("__exit__" in B.__dict__ for B in C.__mro__)):
+                    return True
+            return NotImplemented
+
+
+if hasattr(contextlib, 'AbstractAsyncContextManager'):
+    class AsyncContextManager(Generic[T_co],
+                              extra=contextlib.AbstractAsyncContextManager):
+        __slots__ = ()
+
+    __all__.append('AsyncContextManager')
+elif sys.version_info[:2] >= (3, 5):
+    exec("""
+class AsyncContextManager(Generic[T_co]):
+    __slots__ = ()
+
+    async def __aenter__(self):
+        return self
+
+    @abc.abstractmethod
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        return None
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is AsyncContextManager:
+            if sys.version_info[:2] >= (3, 6):
+                return _collections_abc._check_methods(C, "__aenter__", "__aexit__")
+            if (any("__aenter__" in B.__dict__ for B in C.__mro__) and
+                    any("__aexit__" in B.__dict__ for B in C.__mro__)):
+                return True
+        return NotImplemented
+
+__all__.append('AsyncContextManager')
+""")
 
 
 class Dict(dict, MutableMapping[KT, VT], extra=dict):

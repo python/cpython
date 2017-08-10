@@ -105,7 +105,10 @@ static const char usage_6[] =
 "   predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
-"   hooks.\n";
+"   hooks.\n"
+"PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
+"   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
+"   locale coercion and locale compatibility warnings on stderr.\n";
 
 static int
 usage(int exitcode, const wchar_t* program)
@@ -343,61 +346,44 @@ run_file(FILE *fp, const wchar_t *filename, PyCompilerFlags *p_cf)
 
 /* Main program */
 
-int
-Py_Main(int argc, wchar_t **argv)
+/*TODO: Add arg processing to PEP 432 as a new configuration setup API
+ */
+typedef struct {
+    wchar_t *filename;           /* Trailing arg without -c or -m */
+    wchar_t *command;            /* -c argument */
+    wchar_t *module;             /* -m argument */
+    PyObject *warning_options;   /* -W options */
+    PyObject *extra_options;     /* -X options */
+    int print_help;              /* -h, -? options */
+    int print_version;           /* -V option */
+    int bytes_warning;           /* Py_BytesWarningFlag */
+    int debug;                   /* Py_DebugFlag */
+    int inspect;                 /* Py_InspectFlag */
+    int interactive;             /* Py_InteractiveFlag */
+    int isolated;                /* Py_IsolatedFlag */
+    int optimization_level;      /* Py_OptimizeFlag */
+    int dont_write_bytecode;     /* Py_DontWriteBytecodeFlag */
+    int no_user_site_directory;  /* Py_NoUserSiteDirectory */
+    int no_site_import;          /* Py_NoSiteFlag */
+    int use_unbuffered_io;       /* Py_UnbufferedStdioFlag */
+    int verbosity;               /* Py_VerboseFlag */
+    int quiet_flag;              /* Py_QuietFlag */
+    int skip_first_line;         /* -x option */
+} _Py_CommandLineDetails;
+
+#define _Py_CommandLineDetails_INIT \
+            {NULL, NULL, NULL, NULL, NULL, \
+             0, 0, 0, 0, 0, 0, 0, 0, \
+             0, 0, 0, 0, 0, 0, 0}
+
+static int
+read_command_line(int argc, wchar_t **argv, _Py_CommandLineDetails *cmdline)
 {
-    int c;
-    int sts;
-    wchar_t *command = NULL;
-    wchar_t *filename = NULL;
-    wchar_t *module = NULL;
-    FILE *fp = stdin;
-    char *p;
-#ifdef MS_WINDOWS
-    wchar_t *wp;
-#endif
-    int skipfirstline = 0;
-    int stdin_is_interactive = 0;
-    int help = 0;
-    int version = 0;
-    int saw_unbuffered_flag = 0;
-    char *opt;
-    PyCompilerFlags cf;
-    PyObject *main_importer_path = NULL;
     PyObject *warning_option = NULL;
-    PyObject *warning_options = NULL;
+    wchar_t *command = NULL;
+    wchar_t *module = NULL;
+    int c;
 
-    cf.cf_flags = 0;
-
-    orig_argc = argc;           /* For Py_GetArgcArgv() */
-    orig_argv = argv;
-
-    /* Hash randomization needed early for all string operations
-       (including -W and -X options). */
-    _PyOS_opterr = 0;  /* prevent printing the error in 1st pass */
-    while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
-        if (c == 'm' || c == 'c') {
-            /* -c / -m is the last option: following arguments are
-               not interpreter options. */
-            break;
-        }
-        if (c == 'E') {
-            Py_IgnoreEnvironmentFlag++;
-            break;
-        }
-    }
-
-    opt = Py_GETENV("PYTHONMALLOC");
-    if (_PyMem_SetupAllocators(opt) < 0) {
-        fprintf(stderr,
-                "Error in PYTHONMALLOC: unknown allocator \"%s\"!\n", opt);
-        exit(1);
-    }
-
-    Py_HashRandomizationFlag = 1;
-    _PyRandom_Init();
-
-    PySys_ResetWarnOptions();
     _PyOS_ResetGetOpt();
 
     while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
@@ -415,6 +401,7 @@ Py_Main(int argc, wchar_t **argv)
             wcscpy(command, _PyOS_optarg);
             command[len - 2] = '\n';
             command[len - 1] = 0;
+            cmdline->command = command;
             break;
         }
 
@@ -423,49 +410,49 @@ Py_Main(int argc, wchar_t **argv)
                that look like options are left for the
                module to interpret. */
             module = _PyOS_optarg;
+            cmdline->module = module;
             break;
         }
 
         switch (c) {
         case 'b':
-            Py_BytesWarningFlag++;
+            cmdline->bytes_warning++;
             break;
 
         case 'd':
-            Py_DebugFlag++;
+            cmdline->debug++;
             break;
 
         case 'i':
-            Py_InspectFlag++;
-            Py_InteractiveFlag++;
+            cmdline->inspect++;
+            cmdline->interactive++;
             break;
 
         case 'I':
-            Py_IsolatedFlag++;
-            Py_NoUserSiteDirectory++;
-            Py_IgnoreEnvironmentFlag++;
+            cmdline->isolated++;
+            cmdline->no_user_site_directory++;
             break;
 
         /* case 'J': reserved for Jython */
 
         case 'O':
-            Py_OptimizeFlag++;
+            cmdline->optimization_level++;
             break;
 
         case 'B':
-            Py_DontWriteBytecodeFlag++;
+            cmdline->dont_write_bytecode++;
             break;
 
         case 's':
-            Py_NoUserSiteDirectory++;
+            cmdline->no_user_site_directory++;
             break;
 
         case 'S':
-            Py_NoSiteFlag++;
+            cmdline->no_site_import++;
             break;
 
         case 'E':
-            /* Already handled above */
+            /* Handled prior to core initialization */
             break;
 
         case 't':
@@ -473,46 +460,46 @@ Py_Main(int argc, wchar_t **argv)
             break;
 
         case 'u':
-            Py_UnbufferedStdioFlag = 1;
-            saw_unbuffered_flag = 1;
+            cmdline->use_unbuffered_io = 1;
             break;
 
         case 'v':
-            Py_VerboseFlag++;
+            cmdline->verbosity++;
             break;
 
         case 'x':
-            skipfirstline = 1;
+            cmdline->skip_first_line = 1;
             break;
 
         case 'h':
         case '?':
-            help++;
+            cmdline->print_help++;
             break;
 
         case 'V':
-            version++;
+            cmdline->print_version++;
             break;
 
         case 'W':
-            if (warning_options == NULL)
-                warning_options = PyList_New(0);
-            if (warning_options == NULL)
+            if (cmdline->warning_options == NULL)
+                cmdline->warning_options = PyList_New(0);
+            if (cmdline->warning_options == NULL)
                 Py_FatalError("failure in handling of -W argument");
             warning_option = PyUnicode_FromWideChar(_PyOS_optarg, -1);
             if (warning_option == NULL)
                 Py_FatalError("failure in handling of -W argument");
-            if (PyList_Append(warning_options, warning_option) == -1)
+            if (PyList_Append(cmdline->warning_options, warning_option) == -1)
                 Py_FatalError("failure in handling of -W argument");
             Py_DECREF(warning_option);
             break;
 
         case 'X':
+            /* TODO: Delay addition of X options to sys module */
             PySys_AddXOption(_PyOS_optarg);
             break;
 
         case 'q':
-            Py_QuietFlag++;
+            cmdline->quiet_flag++;
             break;
 
         case 'R':
@@ -522,30 +509,123 @@ Py_Main(int argc, wchar_t **argv)
         /* This space reserved for other options */
 
         default:
-            return usage(2, argv[0]);
+            return -1;
             /*NOTREACHED*/
 
         }
     }
 
-    if (help)
-        return usage(0, argv[0]);
+    if (command == NULL && module == NULL && _PyOS_optind < argc &&
+        wcscmp(argv[_PyOS_optind], L"-") != 0)
+    {
+        cmdline->filename = argv[_PyOS_optind];
+    }
+    return 0;
+}
 
-    if (version) {
-        printf("Python %s\n", version >= 2 ? Py_GetVersion() : PY_VERSION);
+static int
+apply_command_line_and_environment(_Py_CommandLineDetails *cmdline)
+{
+    char *p;
+    Py_BytesWarningFlag = cmdline->bytes_warning;
+    Py_DebugFlag = cmdline->debug;
+    Py_InspectFlag = cmdline->inspect;
+    Py_InteractiveFlag = cmdline->interactive;
+    Py_IsolatedFlag = cmdline->isolated;
+    Py_OptimizeFlag = cmdline->optimization_level;
+    Py_DontWriteBytecodeFlag = cmdline->dont_write_bytecode;
+    Py_NoUserSiteDirectory = cmdline->no_user_site_directory;
+    Py_NoSiteFlag = cmdline->no_site_import;
+    Py_UnbufferedStdioFlag = cmdline->use_unbuffered_io;
+    Py_VerboseFlag = cmdline->verbosity;
+    Py_QuietFlag = cmdline->quiet_flag;
+
+    if (!Py_InspectFlag &&
+        (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0') {
+        Py_InspectFlag = 1;
+        cmdline->inspect = 1;
+    }
+    if (!cmdline->use_unbuffered_io &&
+        (p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0') {
+        Py_UnbufferedStdioFlag = 1;
+        cmdline->use_unbuffered_io = 1;
+    }
+
+    if (!Py_NoUserSiteDirectory &&
+        (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0') {
+        Py_NoUserSiteDirectory = 1;
+        cmdline->no_user_site_directory = 1;
+    }
+
+    /* TODO: Apply PYTHONWARNINGS & -W options to sys module here */
+    /* TODO: Apply -X options to sys module here */
+    return 0;
+}
+
+int
+Py_Main(int argc, wchar_t **argv)
+{
+    int c;
+    int sts;
+    FILE *fp = stdin;
+    char *p;
+#ifdef MS_WINDOWS
+    wchar_t *wp;
+#endif
+    int stdin_is_interactive = 0;
+    _Py_CommandLineDetails cmdline = _Py_CommandLineDetails_INIT;
+    _PyCoreConfig core_config = _PyCoreConfig_INIT;
+    PyCompilerFlags cf;
+    PyObject *main_importer_path = NULL;
+
+    cf.cf_flags = 0;
+
+    orig_argc = argc;           /* For Py_GetArgcArgv() */
+    orig_argv = argv;
+
+    /* Hash randomization needed early for all string operations
+       (including -W and -X options). */
+    _PyOS_opterr = 0;  /* prevent printing the error in 1st pass */
+    while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
+        if (c == 'm' || c == 'c') {
+            /* -c / -m is the last option: following arguments are
+               not interpreter options. */
+            break;
+        }
+        if (c == 'E' || c == 'I') {
+            core_config.ignore_environment++;
+            break;
+        }
+    }
+
+    char *pymalloc = Py_GETENV("PYTHONMALLOC");
+    if (_PyMem_SetupAllocators(pymalloc) < 0) {
+        fprintf(stderr,
+            "Error in PYTHONMALLOC: unknown allocator \"%s\"!\n", pymalloc);
+        exit(1);
+    }
+
+    /* Initialize the core language runtime */
+    Py_IgnoreEnvironmentFlag = core_config.ignore_environment;
+    core_config._disable_importlib = 0;
+    _Py_InitializeCore(&core_config);
+
+    /* Reprocess the command line with the language runtime available */
+    if (read_command_line(argc, argv, &cmdline)) {
+        return usage(2, argv[0]);
+    }
+
+    if (cmdline.print_help) {
+        return usage(0, argv[0]);
+    }
+
+    if (cmdline.print_version) {
+        printf("Python %s\n", cmdline.print_version >= 2 ? Py_GetVersion() : PY_VERSION);
         return 0;
     }
 
-    if (!Py_InspectFlag &&
-        (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
-        Py_InspectFlag = 1;
-    if (!saw_unbuffered_flag &&
-        (p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0')
-        Py_UnbufferedStdioFlag = 1;
-
-    if (!Py_NoUserSiteDirectory &&
-        (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
-        Py_NoUserSiteDirectory = 1;
+    PySys_ResetWarnOptions();
+    apply_command_line_and_environment(&cmdline);
 
 #ifdef MS_WINDOWS
     if (!Py_IgnoreEnvironmentFlag && (wp = _wgetenv(L"PYTHONWARNINGS")) &&
@@ -598,17 +678,12 @@ Py_Main(int argc, wchar_t **argv)
         PyMem_RawFree(buf);
     }
 #endif
-    if (warning_options != NULL) {
+    if (cmdline.warning_options != NULL) {
         Py_ssize_t i;
-        for (i = 0; i < PyList_GET_SIZE(warning_options); i++) {
-            PySys_AddWarnOptionUnicode(PyList_GET_ITEM(warning_options, i));
+        for (i = 0; i < PyList_GET_SIZE(cmdline.warning_options); i++) {
+            PySys_AddWarnOptionUnicode(PyList_GET_ITEM(cmdline.warning_options, i));
         }
-    }
-
-    if (command == NULL && module == NULL && _PyOS_optind < argc &&
-        wcscmp(argv[_PyOS_optind], L"-") != 0)
-    {
-        filename = argv[_PyOS_optind];
+        Py_DECREF(cmdline.warning_options);
     }
 
     stdin_is_interactive = Py_FdIsInteractive(stdin, (char *)0);
@@ -696,32 +771,47 @@ Py_Main(int argc, wchar_t **argv)
 #else
     Py_SetProgramName(argv[0]);
 #endif
-    Py_Initialize();
-    Py_XDECREF(warning_options);
+    /* Replaces previous call to Py_Initialize()
+     *
+     * TODO: Move environment queries (etc) into Py_ReadConfig
+     */
+    {
+        _PyMainInterpreterConfig config = _PyMainInterpreterConfig_INIT;
 
+        /* TODO: Moar config options! */
+        config.install_signal_handlers = 1;
+        /* TODO: Print any exceptions raised by these operations */
+        if (_Py_ReadMainInterpreterConfig(&config))
+            Py_FatalError("Py_Main: Py_ReadMainInterpreterConfig failed");
+        if (_Py_InitializeMainInterpreter(&config))
+            Py_FatalError("Py_Main: Py_InitializeMainInterpreter failed");
+    }
+
+    /* TODO: Move this to _PyRun_PrepareMain */
     if (!Py_QuietFlag && (Py_VerboseFlag ||
-                        (command == NULL && filename == NULL &&
-                         module == NULL && stdin_is_interactive))) {
+                        (cmdline.command == NULL && cmdline.filename == NULL &&
+                         cmdline.module == NULL && stdin_is_interactive))) {
         fprintf(stderr, "Python %s on %s\n",
             Py_GetVersion(), Py_GetPlatform());
         if (!Py_NoSiteFlag)
             fprintf(stderr, "%s\n", COPYRIGHT);
     }
 
-    if (command != NULL) {
+    /* TODO: Move this to _Py_InitializeMainInterpreter */
+    if (cmdline.command != NULL) {
         /* Backup _PyOS_optind and force sys.argv[0] = '-c' */
         _PyOS_optind--;
         argv[_PyOS_optind] = L"-c";
     }
 
-    if (module != NULL) {
+    if (cmdline.module != NULL) {
         /* Backup _PyOS_optind and force sys.argv[0] = '-m'*/
         _PyOS_optind--;
         argv[_PyOS_optind] = L"-m";
     }
 
-    if (filename != NULL) {
-        main_importer_path = AsImportPathEntry(filename);
+    if (cmdline.filename != NULL) {
+        main_importer_path = AsImportPathEntry(cmdline.filename);
     }
 
     if (main_importer_path != NULL) {
@@ -732,9 +822,11 @@ Py_Main(int argc, wchar_t **argv)
         PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
     }
 
-    if ((Py_InspectFlag || (command == NULL && filename == NULL && module == NULL)) &&
-        isatty(fileno(stdin)) &&
-        !Py_IsolatedFlag) {
+    if ((Py_InspectFlag || (cmdline.command == NULL &&
+                            cmdline.filename == NULL &&
+                            cmdline.module == NULL)) &&
+                            isatty(fileno(stdin)) &&
+                            !Py_IsolatedFlag) {
         PyObject *v;
         v = PyImport_ImportModule("readline");
         if (v == NULL)
@@ -743,15 +835,15 @@ Py_Main(int argc, wchar_t **argv)
             Py_DECREF(v);
     }
 
-    if (command) {
-        sts = run_command(command, &cf);
-        PyMem_RawFree(command);
-    } else if (module) {
-        sts = (RunModule(module, 1) != 0);
+    if (cmdline.command) {
+        sts = run_command(cmdline.command, &cf);
+        PyMem_RawFree(cmdline.command);
+    } else if (cmdline.module) {
+        sts = (RunModule(cmdline.module, 1) != 0);
     }
     else {
 
-        if (filename == NULL && stdin_is_interactive) {
+        if (cmdline.filename == NULL && stdin_is_interactive) {
             Py_InspectFlag = 0; /* do exit on SystemExit */
             RunStartupFile(&cf);
             RunInteractiveHook();
@@ -764,13 +856,13 @@ Py_Main(int argc, wchar_t **argv)
             sts = RunMainFromImporter(main_importer_path);
         }
 
-        if (sts==-1 && filename != NULL) {
-            fp = _Py_wfopen(filename, L"r");
+        if (sts==-1 && cmdline.filename != NULL) {
+            fp = _Py_wfopen(cmdline.filename, L"r");
             if (fp == NULL) {
                 char *cfilename_buffer;
                 const char *cfilename;
                 int err = errno;
-                cfilename_buffer = Py_EncodeLocale(filename, NULL);
+                cfilename_buffer = Py_EncodeLocale(cmdline.filename, NULL);
                 if (cfilename_buffer != NULL)
                     cfilename = cfilename_buffer;
                 else
@@ -781,7 +873,7 @@ Py_Main(int argc, wchar_t **argv)
                     PyMem_Free(cfilename_buffer);
                 return 2;
             }
-            else if (skipfirstline) {
+            else if (cmdline.skip_first_line) {
                 int ch;
                 /* Push back first newline so line numbers
                    remain the same */
@@ -798,7 +890,7 @@ Py_Main(int argc, wchar_t **argv)
                     S_ISDIR(sb.st_mode)) {
                     fprintf(stderr,
                             "%ls: '%ls' is a directory, cannot continue\n",
-                            argv[0], filename);
+                            argv[0], cmdline.filename);
                     fclose(fp);
                     return 1;
                 }
@@ -806,7 +898,7 @@ Py_Main(int argc, wchar_t **argv)
         }
 
         if (sts == -1)
-            sts = run_file(fp, filename, &cf);
+            sts = run_file(fp, cmdline.filename, &cf);
     }
 
     /* Check this environment variable at the end, to give programs the
@@ -819,7 +911,7 @@ Py_Main(int argc, wchar_t **argv)
     }
 
     if (Py_InspectFlag && stdin_is_interactive &&
-        (filename != NULL || command != NULL || module != NULL)) {
+        (cmdline.filename != NULL || cmdline.command != NULL || cmdline.module != NULL)) {
         Py_InspectFlag = 0;
         RunInteractiveHook();
         /* XXX */

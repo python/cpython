@@ -973,10 +973,10 @@ sys_getwindowsversion(PyObject *self)
         }
         PyMem_RawFree(verblock);
     }
-    PyStructSequence_SET_ITEM(version, pos++, PyTuple_Pack(3,
-        PyLong_FromLong(realMajor),
-        PyLong_FromLong(realMinor),
-        PyLong_FromLong(realBuild)
+    PyStructSequence_SET_ITEM(version, pos++, Py_BuildValue("(kkk)",
+        realMajor,
+        realMinor,
+        realBuild
     ));
 
     if (PyErr_Occurred()) {
@@ -1900,16 +1900,7 @@ static struct PyModuleDef sysmodule = {
     NULL
 };
 
-PyObject *
-_PySys_Init(void)
-{
-    PyObject *m, *sysdict, *version_info;
-    int res;
-
-    m = PyModule_Create(&sysmodule);
-    if (m == NULL)
-        return NULL;
-    sysdict = PyModule_GetDict(m);
+/* Updating the sys namespace, returning NULL pointer on error */
 #define SET_SYS_FROM_STRING_BORROW(key, value)             \
     do {                                                   \
         PyObject *v = (value);                             \
@@ -1931,6 +1922,17 @@ _PySys_Init(void)
             return NULL;                                   \
         }                                                  \
     } while (0)
+
+PyObject *
+_PySys_BeginInit(void)
+{
+    PyObject *m, *sysdict, *version_info;
+    int res;
+
+    m = PyModule_Create(&sysmodule);
+    if (m == NULL)
+        return NULL;
+    sysdict = PyModule_GetDict(m);
 
     /* Check that stdin is not a directory
     Using shell redirection, you can redirect stdin to a directory,
@@ -1963,25 +1965,13 @@ _PySys_Init(void)
     SET_SYS_FROM_STRING("_git",
                         Py_BuildValue("(szz)", "CPython", _Py_gitidentifier(),
                                       _Py_gitversion()));
-    SET_SYS_FROM_STRING("dont_write_bytecode",
-                         PyBool_FromLong(Py_DontWriteBytecodeFlag));
+    SET_SYS_FROM_STRING("_framework", PyUnicode_FromString(_PYTHONFRAMEWORK));
     SET_SYS_FROM_STRING("api_version",
                         PyLong_FromLong(PYTHON_API_VERSION));
     SET_SYS_FROM_STRING("copyright",
                         PyUnicode_FromString(Py_GetCopyright()));
     SET_SYS_FROM_STRING("platform",
                         PyUnicode_FromString(Py_GetPlatform()));
-    SET_SYS_FROM_STRING("executable",
-                        PyUnicode_FromWideChar(
-                               Py_GetProgramFullPath(), -1));
-    SET_SYS_FROM_STRING("prefix",
-                        PyUnicode_FromWideChar(Py_GetPrefix(), -1));
-    SET_SYS_FROM_STRING("exec_prefix",
-                        PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
-    SET_SYS_FROM_STRING("base_prefix",
-                        PyUnicode_FromWideChar(Py_GetPrefix(), -1));
-    SET_SYS_FROM_STRING("base_exec_prefix",
-                        PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
     SET_SYS_FROM_STRING("maxsize",
                         PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     SET_SYS_FROM_STRING("float_info",
@@ -2017,17 +2007,6 @@ _PySys_Init(void)
     SET_SYS_FROM_STRING("abiflags",
                         PyUnicode_FromString(ABIFLAGS));
 #endif
-    if (warnoptions == NULL) {
-        warnoptions = PyList_New(0);
-        if (warnoptions == NULL)
-            return NULL;
-    }
-    else {
-        Py_INCREF(warnoptions);
-    }
-    SET_SYS_FROM_STRING_BORROW("warnoptions", warnoptions);
-
-    SET_SYS_FROM_STRING_BORROW("_xoptions", get_xoptions());
 
     /* version_info */
     if (VersionInfoType.tp_name == NULL) {
@@ -2052,13 +2031,8 @@ _PySys_Init(void)
         if (PyStructSequence_InitType2(&FlagsType, &flags_desc) < 0)
             return NULL;
     }
+    /* Set flags to their default values */
     SET_SYS_FROM_STRING("flags", make_flags());
-    /* prevent user from creating new instances */
-    FlagsType.tp_init = NULL;
-    FlagsType.tp_new = NULL;
-    res = PyDict_DelItemString(FlagsType.tp_dict, "__new__");
-    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-        PyErr_Clear();
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2095,12 +2069,88 @@ _PySys_Init(void)
         }
     }
 
-#undef SET_SYS_FROM_STRING
-#undef SET_SYS_FROM_STRING_BORROW
     if (PyErr_Occurred())
         return NULL;
     return m;
 }
+
+#undef SET_SYS_FROM_STRING
+#undef SET_SYS_FROM_STRING_BORROW
+
+/* Updating the sys namespace, returning integer error codes */
+#define SET_SYS_FROM_STRING_BORROW_INT_RESULT(key, value)  \
+    do {                                                   \
+        PyObject *v = (value);                             \
+        if (v == NULL)                                     \
+            return -1;                                     \
+        res = PyDict_SetItemString(sysdict, key, v);       \
+        if (res < 0) {                                     \
+            return res;                                    \
+        }                                                  \
+    } while (0)
+#define SET_SYS_FROM_STRING_INT_RESULT(key, value)         \
+    do {                                                   \
+        PyObject *v = (value);                             \
+        if (v == NULL)                                     \
+            return -1;                                     \
+        res = PyDict_SetItemString(sysdict, key, v);       \
+        Py_DECREF(v);                                      \
+        if (res < 0) {                                     \
+            return res;                                    \
+        }                                                  \
+    } while (0)
+
+int
+_PySys_EndInit(PyObject *sysdict)
+{
+    int res;
+
+    /* Set flags to their final values */
+    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
+    /* prevent user from creating new instances */
+    FlagsType.tp_init = NULL;
+    FlagsType.tp_new = NULL;
+    res = PyDict_DelItemString(FlagsType.tp_dict, "__new__");
+    if (res < 0) {
+        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+            return res;
+        }
+        PyErr_Clear();
+    }
+
+    SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
+                         PyBool_FromLong(Py_DontWriteBytecodeFlag));
+    SET_SYS_FROM_STRING_INT_RESULT("executable",
+                        PyUnicode_FromWideChar(
+                               Py_GetProgramFullPath(), -1));
+    SET_SYS_FROM_STRING_INT_RESULT("prefix",
+                        PyUnicode_FromWideChar(Py_GetPrefix(), -1));
+    SET_SYS_FROM_STRING_INT_RESULT("exec_prefix",
+                        PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
+    SET_SYS_FROM_STRING_INT_RESULT("base_prefix",
+                        PyUnicode_FromWideChar(Py_GetPrefix(), -1));
+    SET_SYS_FROM_STRING_INT_RESULT("base_exec_prefix",
+                        PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
+
+    if (warnoptions == NULL) {
+        warnoptions = PyList_New(0);
+        if (warnoptions == NULL)
+            return -1;
+    }
+
+    SET_SYS_FROM_STRING_INT_RESULT("warnoptions",
+                                   PyList_GetSlice(warnoptions,
+                                                   0, Py_SIZE(warnoptions)));
+
+    SET_SYS_FROM_STRING_BORROW_INT_RESULT("_xoptions", get_xoptions());
+
+    if (PyErr_Occurred())
+        return -1;
+    return 0;
+}
+
+#undef SET_SYS_FROM_STRING_INT_RESULT
+#undef SET_SYS_FROM_STRING_BORROW_INT_RESULT
 
 static PyObject *
 makepathobject(const wchar_t *path, wchar_t delim)

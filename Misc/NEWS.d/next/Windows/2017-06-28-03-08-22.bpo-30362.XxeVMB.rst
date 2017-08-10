@@ -1,0 +1,1 @@
+Adds list options (-0, -0p) to py.exe launcher. Contributed by Steve Barnes.

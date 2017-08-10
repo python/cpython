@@ -683,8 +683,8 @@ class HTTPRedirectHandler(BaseHandler):
         newurl = newurl.replace(' ', '%20')
 
         CONTENT_HEADERS = ("content-length", "content-type")
-        newheaders = dict((k, v) for k, v in req.headers.items()
-                          if k.lower() not in CONTENT_HEADERS)
+        newheaders = {k: v for k, v in req.headers.items()
+                      if k.lower() not in CONTENT_HEADERS}
         return Request(newurl,
                        headers=newheaders,
                        origin_req_host=req.origin_req_host,
@@ -845,7 +845,7 @@ class HTTPPasswordMgr:
             self.passwd[realm] = {}
         for default_port in True, False:
             reduced_uri = tuple(
-                [self.reduce_uri(u, default_port) for u in uri])
+                self.reduce_uri(u, default_port) for u in uri)
             self.passwd[realm][reduced_uri] = (user, passwd)
 
     def find_user_password(self, realm, authuri):
@@ -1286,8 +1286,7 @@ class AbstractHTTPHandler(BaseHandler):
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.unredirected_hdrs)
-        headers.update(dict((k, v) for k, v in req.headers.items()
-                            if k not in headers))
+        headers.update((k, v) for k, v in req.headers.items() if k not in headers)
 
         # TODO(jhylton): Should this be redesigned to handle
         # persistent connections?
@@ -1299,7 +1298,7 @@ class AbstractHTTPHandler(BaseHandler):
         # So make sure the connection gets closed after the (only)
         # request.
         headers["Connection"] = "close"
-        headers = dict((name.title(), val) for name, val in headers.items())
+        headers = {name.title(): val for name, val in headers.items()}
 
         if req._tunnel_host:
             tunnel_headers = {}

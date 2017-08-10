@@ -1943,7 +1943,6 @@ class TextIOWrapper(TextIOBase):
                 raise ValueError("invalid errors: %r" % errors)
 
         self._buffer = buffer
-        self._line_buffering = line_buffering
         self._encoding = encoding
         self._errors = errors
         self._readuniversal = not newline
@@ -1968,6 +1967,12 @@ class TextIOWrapper(TextIOBase):
                 except LookupError:
                     # Sometimes the encoder doesn't exist
                     pass
+
+        self._configure(line_buffering, write_through)
+
+    def _configure(self, line_buffering=False, write_through=False):
+        self._line_buffering = line_buffering
+        self._write_through = write_through
 
     # self._snapshot is either None, or a tuple (dec_flags, next_input)
     # where dec_flags is the second (integer) item of the decoder state
@@ -2008,8 +2013,24 @@ class TextIOWrapper(TextIOBase):
         return self._line_buffering
 
     @property
+    def write_through(self):
+        return self._write_through
+
+    @property
     def buffer(self):
         return self._buffer
+
+    def reconfigure(self, *, line_buffering=None, write_through=None):
+        """Reconfigure the text stream with new parameters.
+
+        This also flushes the stream.
+        """
+        if line_buffering is None:
+            line_buffering = self.line_buffering
+        if write_through is None:
+            write_through = self.write_through
+        self.flush()
+        self._configure(line_buffering, write_through)
 
     def seekable(self):
         if self.closed:

@@ -229,11 +229,14 @@ class PyBuildExt(build_ext):
         headers = [sysconfig.get_config_h_filename()]
         headers += glob(os.path.join(sysconfig.get_path('include'), "*.h"))
 
-        # The sysconfig variable built by makesetup, listing the already
-        # built modules as configured by the Setup files.
-        modnames = sysconfig.get_config_var('MODNAMES').split()
+        # The sysconfig variables built by makesetup that list the already
+        # built modules and the disabled modules as configured by the Setup
+        # files.
+        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
+        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
 
-        removed_modules = []
+        mods_built = []
+        mods_disabled = []
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
@@ -245,14 +248,22 @@ class PyBuildExt(build_ext):
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
-            # If a module has already been built by the Makefile,
-            # don't build it here.
-            if ext.name in modnames:
-                removed_modules.append(ext)
+            # If a module has already been built or has been disabled in the
+            # Setup files, don't build it here.
+            if ext.name in sysconf_built:
+                mods_built.append(ext)
+            if ext.name in sysconf_dis:
+                mods_disabled.append(ext)
 
-        if removed_modules:
+        mods_configured = mods_built + mods_disabled
+        if mods_configured:
             self.extensions = [x for x in self.extensions if x not in
-                               removed_modules]
+                               mods_configured]
+            # Remove the shared libraries built by a previous build.
+            for ext in mods_configured:
+                fullpath = self.get_ext_fullpath(ext.name)
+                if os.path.exists(fullpath):
+                    os.unlink(fullpath)
 
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
@@ -295,12 +306,22 @@ class PyBuildExt(build_ext):
                   " detect_modules() for the module's name.")
             print()
 
-        if removed_modules:
+        if mods_built:
+            print()
             print("The following modules found by detect_modules() in"
             " setup.py, have been")
             print("built by the Makefile instead, as configured by the"
             " Setup files:")
-            print_three_column([ext.name for ext in removed_modules])
+            print_three_column([ext.name for ext in mods_built])
+            print()
+
+        if mods_disabled:
+            print()
+            print("The following modules found by detect_modules() in"
+            " setup.py have not")
+            print("been built, they are *disabled* in the Setup files:")
+            print_three_column([ext.name for ext in mods_disabled])
+            print()
 
         if self.failed:
             failed = self.failed[:]
@@ -2097,6 +2118,9 @@ class PyBuildExt(build_ext):
                 define_macros = config['ansi32']
         else:
             raise DistutilsError("_decimal: unsupported architecture")
+
+        if 'gcc' in cc: # Suppressing the warnings in the source is too verbose.
+            extra_compile_args.append('-Wno-implicit-fallthrough')
 
         # Workarounds for toolchain bugs:
         if sysconfig.get_config_var('HAVE_IPA_PURE_CONST_BUG'):

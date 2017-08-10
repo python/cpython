@@ -189,6 +189,8 @@ class FileInput:
                  mode="r", openhook=None):
         if isinstance(files, str):
             files = (files,)
+        elif isinstance(files, os.PathLike):
+            files = (os.fspath(files), )
         else:
             if files is None:
                 files = sys.argv[1:]

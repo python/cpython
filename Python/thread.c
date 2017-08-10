@@ -81,14 +81,14 @@ PyThread_init_thread(void)
    or the size specified by the THREAD_STACK_SIZE macro. */
 static size_t _pythread_stacksize = 0;
 
-#ifdef _POSIX_THREADS
-#define PYTHREAD_NAME "pthread"
-#include "thread_pthread.h"
-#endif
-
-#ifdef NT_THREADS
-#define PYTHREAD_NAME "nt"
-#include "thread_nt.h"
+#if defined(_POSIX_THREADS)
+#   define PYTHREAD_NAME "pthread"
+#   include "thread_pthread.h"
+#elif defined(NT_THREADS)
+#   define PYTHREAD_NAME "nt"
+#   include "thread_nt.h"
+#else
+#   error "Require native thread feature. See https://bugs.python.org/issue30832"
 #endif
 
 
@@ -114,13 +114,7 @@ PyThread_set_stacksize(size_t size)
 #endif
 }
 
-#ifndef Py_HAVE_NATIVE_TLS
-/* If the platform has not supplied a platform specific
-   TLS implementation, provide our own.
 
-   This code stolen from "thread_sgi.h", where it was the only
-   implementation of an existing Python TLS API.
-*/
 /* ------------------------------------------------------------------------
 Per-thread data ("key") support.
 
@@ -157,205 +151,6 @@ any of the other functions are called.  There's also a hidden assumption
 that calls to PyThread_create_key() are serialized externally.
 ------------------------------------------------------------------------ */
 
-/* A singly-linked list of struct key objects remembers all the key->value
- * associations.  File static keyhead heads the list.  keymutex is used
- * to enforce exclusion internally.
- */
-struct key {
-    /* Next record in the list, or NULL if this is the last record. */
-    struct key *next;
-
-    /* The thread id, according to PyThread_get_thread_ident(). */
-    unsigned long id;
-
-    /* The key and its associated value. */
-    int key;
-    void *value;
-};
-
-static struct key *keyhead = NULL;
-static PyThread_type_lock keymutex = NULL;
-static int nkeys = 0;  /* PyThread_create_key() hands out nkeys+1 next */
-
-/* Internal helper.
- * If the current thread has a mapping for key, the appropriate struct key*
- * is returned.  NB:  value is ignored in this case!
- * If there is no mapping for key in the current thread, then:
- *     If value is NULL, NULL is returned.
- *     Else a mapping of key to value is created for the current thread,
- *     and a pointer to a new struct key* is returned; except that if
- *     malloc() can't find room for a new struct key*, NULL is returned.
- * So when value==NULL, this acts like a pure lookup routine, and when
- * value!=NULL, this acts like dict.setdefault(), returning an existing
- * mapping if one exists, else creating a new mapping.
- *
- * Caution:  this used to be too clever, trying to hold keymutex only
- * around the "p->next = keyhead; keyhead = p" pair.  That allowed
- * another thread to mutate the list, via key deletion, concurrent with
- * find_key() crawling over the list.  Hilarity ensued.  For example, when
- * the for-loop here does "p = p->next", p could end up pointing at a
- * record that PyThread_delete_key_value() was concurrently free()'ing.
- * That could lead to anything, from failing to find a key that exists, to
- * segfaults.  Now we lock the whole routine.
- */
-static struct key *
-find_key(int set_value, int key, void *value)
-{
-    struct key *p, *prev_p;
-    unsigned long id = PyThread_get_thread_ident();
-
-    if (!keymutex)
-        return NULL;
-    PyThread_acquire_lock(keymutex, 1);
-    prev_p = NULL;
-    for (p = keyhead; p != NULL; p = p->next) {
-        if (p->id == id && p->key == key) {
-            if (set_value)
-                p->value = value;
-            goto Done;
-        }
-        /* Sanity check.  These states should never happen but if
-         * they do we must abort.  Otherwise we'll end up spinning
-         * in a tight loop with the lock held.  A similar check is done
-         * in pystate.c tstate_delete_common().  */
-        if (p == prev_p)
-            Py_FatalError("tls find_key: small circular list(!)");
-        prev_p = p;
-        if (p->next == keyhead)
-            Py_FatalError("tls find_key: circular list(!)");
-    }
-    if (!set_value && value == NULL) {
-        assert(p == NULL);
-        goto Done;
-    }
-    p = (struct key *)PyMem_RawMalloc(sizeof(struct key));
-    if (p != NULL) {
-        p->id = id;
-        p->key = key;
-        p->value = value;
-        p->next = keyhead;
-        keyhead = p;
-    }
- Done:
-    PyThread_release_lock(keymutex);
-    return p;
-}
-
-/* Return a new key.  This must be called before any other functions in
- * this family, and callers must arrange to serialize calls to this
- * function.  No violations are detected.
- */
-int
-PyThread_create_key(void)
-{
-    /* All parts of this function are wrong if it's called by multiple
-     * threads simultaneously.
-     */
-    if (keymutex == NULL)
-        keymutex = PyThread_allocate_lock();
-    return ++nkeys;
-}
-
-/* Forget the associations for key across *all* threads. */
-void
-PyThread_delete_key(int key)
-{
-    struct key *p, **q;
-
-    PyThread_acquire_lock(keymutex, 1);
-    q = &keyhead;
-    while ((p = *q) != NULL) {
-        if (p->key == key) {
-            *q = p->next;
-            PyMem_RawFree((void *)p);
-            /* NB This does *not* free p->value! */
-        }
-        else
-            q = &p->next;
-    }
-    PyThread_release_lock(keymutex);
-}
-
-int
-PyThread_set_key_value(int key, void *value)
-{
-    struct key *p;
-
-    p = find_key(1, key, value);
-    if (p == NULL)
-        return -1;
-    else
-        return 0;
-}
-
-/* Retrieve the value associated with key in the current thread, or NULL
- * if the current thread doesn't have an association for key.
- */
-void *
-PyThread_get_key_value(int key)
-{
-    struct key *p = find_key(0, key, NULL);
-
-    if (p == NULL)
-        return NULL;
-    else
-        return p->value;
-}
-
-/* Forget the current thread's association for key, if any. */
-void
-PyThread_delete_key_value(int key)
-{
-    unsigned long id = PyThread_get_thread_ident();
-    struct key *p, **q;
-
-    PyThread_acquire_lock(keymutex, 1);
-    q = &keyhead;
-    while ((p = *q) != NULL) {
-        if (p->key == key && p->id == id) {
-            *q = p->next;
-            PyMem_RawFree((void *)p);
-            /* NB This does *not* free p->value! */
-            break;
-        }
-        else
-            q = &p->next;
-    }
-    PyThread_release_lock(keymutex);
-}
-
-/* Forget everything not associated with the current thread id.
- * This function is called from PyOS_AfterFork().  It is necessary
- * because other thread ids which were in use at the time of the fork
- * may be reused for new threads created in the forked process.
- */
-void
-PyThread_ReInitTLS(void)
-{
-    unsigned long id = PyThread_get_thread_ident();
-    struct key *p, **q;
-
-    if (!keymutex)
-        return;
-
-    /* As with interpreter_lock in PyEval_ReInitThreads()
-       we just create a new lock without freeing the old one */
-    keymutex = PyThread_allocate_lock();
-
-    /* Delete all keys which do not match the current thread id */
-    q = &keyhead;
-    while ((p = *q) != NULL) {
-        if (p->id != id) {
-            *q = p->next;
-            PyMem_RawFree((void *)p);
-            /* NB This does *not* free p->value! */
-        }
-        else
-            q = &p->next;
-    }
-}
-
-#endif /* Py_HAVE_NATIVE_TLS */
 
 PyDoc_STRVAR(threadinfo__doc__,
 "sys.thread_info\n\

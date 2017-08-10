@@ -1398,29 +1398,23 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
         return type_is_subtype_base_chain(a, b);
 }
 
-/* Internal routines to do a method lookup in the type
-   without looking in the instance dictionary
-   (so we can't use PyObject_GetAttr) but still binding
-   it to the instance.  The arguments are the object,
-   the method name as a C string, and the address of a
-   static variable used to cache the interned Python string.
+/* Routines to do a method lookup in the type without looking in the
+   instance dictionary (so we can't use PyObject_GetAttr) but still
+   binding it to the instance.
 
    Variants:
 
-   - lookup_maybe() returns NULL without raising an exception
+   - _PyObject_LookupSpecial() returns NULL without raising an exception
      when the _PyType_Lookup() call fails;
 
-   - lookup_maybe_method() and lookup_method() are similar to
-     lookup_maybe(), but can return unbound PyFunction
+   - lookup_maybe_method() and lookup_method() are internal routines similar
+     to _PyObject_LookupSpecial(), but can return unbound PyFunction
      to avoid temporary method object. Pass self as first argument when
      unbound == 1.
-
-   - _PyObject_LookupSpecial() expose lookup_maybe for the benefit of
-     other places.
 */
 
-static PyObject *
-lookup_maybe(PyObject *self, _Py_Identifier *attrid)
+PyObject *
+_PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
 {
     PyObject *res;
 
@@ -1471,12 +1465,6 @@ lookup_method(PyObject *self, _Py_Identifier *attrid, int *unbound)
     return res;
 }
 
-PyObject *
-_PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
-{
-    return lookup_maybe(self, attrid);
-}
-
 static PyObject*
 call_unbound(int unbound, PyObject *func, PyObject *self,
              PyObject **args, Py_ssize_t nargs)
@@ -1501,9 +1489,8 @@ call_unbound_noarg(int unbound, PyObject *func, PyObject *self)
     }
 }
 
-/* A variation of PyObject_CallMethodObjArgs that uses lookup_maybe_method()
-   instead of PyObject_GetAttrString().  This uses the same convention
-   as lookup_maybe_method to cache the interned name string object. */
+/* A variation of PyObject_CallMethod* that uses lookup_maybe_method()
+   instead of PyObject_GetAttrString(). */
 static PyObject *
 call_method(PyObject *obj, _Py_Identifier *name,
             PyObject **args, Py_ssize_t nargs)
@@ -1511,13 +1498,10 @@ call_method(PyObject *obj, _Py_Identifier *name,
     int unbound;
     PyObject *func, *retval;
 
-    func = lookup_maybe_method(obj, name, &unbound);
+    func = lookup_method(obj, name, &unbound);
     if (func == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_SetObject(PyExc_AttributeError, name->object);
         return NULL;
     }
-
     retval = call_unbound(unbound, func, obj, args, nargs);
     Py_DECREF(func);
     return retval;
@@ -3138,10 +3122,35 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             type->tp_name);
         return -1;
     }
-    if (_PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL) < 0)
-        return -1;
-    res = update_slot(type, name);
-    assert(_PyType_CheckConsistency(type));
+    if (PyUnicode_Check(name)) {
+        if (PyUnicode_CheckExact(name)) {
+            if (PyUnicode_READY(name) == -1)
+                return -1;
+            Py_INCREF(name);
+        }
+        else {
+            name = _PyUnicode_Copy(name);
+            if (name == NULL)
+                return -1;
+        }
+        PyUnicode_InternInPlace(&name);
+        if (!PyUnicode_CHECK_INTERNED(name)) {
+            PyErr_SetString(PyExc_MemoryError,
+                            "Out of memory interning an attribute name");
+            Py_DECREF(name);
+            return -1;
+        }
+    }
+    else {
+        /* Will fail in _PyObject_GenericSetAttrWithDict. */
+        Py_INCREF(name);
+    }
+    res = _PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL);
+    if (res == 0) {
+        res = update_slot(type, name);
+        assert(_PyType_CheckConsistency(type));
+    }
+    Py_DECREF(name);
     return res;
 }
 
@@ -3331,7 +3340,7 @@ static PyMethodDef type_methods[] = {
     TYPE_MRO_METHODDEF
     TYPE___SUBCLASSES___METHODDEF
     {"__prepare__", (PyCFunction)type_prepare,
-     METH_FASTCALL | METH_CLASS,
+     METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("__prepare__() -> dict\n"
                "used to create the namespace for the class statement")},
     TYPE___INSTANCECHECK___METHODDEF
@@ -5935,45 +5944,19 @@ slot_sq_length(PyObject *self)
     return len;
 }
 
-/* Super-optimized version of slot_sq_item.
-   Other slots could do the same... */
 static PyObject *
 slot_sq_item(PyObject *self, Py_ssize_t i)
 {
-    PyObject *func, *ival = NULL, *retval = NULL;
-    descrgetfunc f;
-
-    func = _PyType_LookupId(Py_TYPE(self), &PyId___getitem__);
-    if (func == NULL) {
-        PyObject *getitem_str = _PyUnicode_FromId(&PyId___getitem__);
-        PyErr_SetObject(PyExc_AttributeError, getitem_str);
+    PyObject *retval;
+    PyObject *args[1];
+    PyObject *ival = PyLong_FromSsize_t(i);
+    if (ival == NULL) {
         return NULL;
     }
-
-    f = Py_TYPE(func)->tp_descr_get;
-    if (f == NULL) {
-        Py_INCREF(func);
-    }
-    else {
-        func = f(func, self, (PyObject *)(Py_TYPE(self)));
-        if (func == NULL) {
-            return NULL;
-        }
-    }
-
-    ival = PyLong_FromSsize_t(i);
-    if (ival == NULL) {
-        goto error;
-    }
-
-    retval = PyObject_CallFunctionObjArgs(func, ival, NULL);
-    Py_DECREF(func);
+    args[0] = ival;
+    retval = call_method(self, &PyId___getitem__, args, 1);
     Py_DECREF(ival);
     return retval;
-
-error:
-    Py_DECREF(func);
-    return NULL;
 }
 
 static int
@@ -6198,7 +6181,7 @@ slot_tp_repr(PyObject *self)
     _Py_IDENTIFIER(__repr__);
     int unbound;
 
-    func = lookup_method(self, &PyId___repr__, &unbound);
+    func = lookup_maybe_method(self, &PyId___repr__, &unbound);
     if (func != NULL) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
@@ -6218,7 +6201,7 @@ slot_tp_hash(PyObject *self)
     Py_ssize_t h;
     int unbound;
 
-    func = lookup_method(self, &PyId___hash__, &unbound);
+    func = lookup_maybe_method(self, &PyId___hash__, &unbound);
 
     if (func == Py_None) {
         Py_DECREF(func);
@@ -6397,7 +6380,7 @@ slot_tp_richcompare(PyObject *self, PyObject *other, int op)
     int unbound;
     PyObject *func, *res;
 
-    func = lookup_method(self, &name_op[op], &unbound);
+    func = lookup_maybe_method(self, &name_op[op], &unbound);
     if (func == NULL) {
         PyErr_Clear();
         Py_RETURN_NOTIMPLEMENTED;
@@ -6416,7 +6399,7 @@ slot_tp_iter(PyObject *self)
     PyObject *func, *res;
     _Py_IDENTIFIER(__iter__);
 
-    func = lookup_method(self, &PyId___iter__, &unbound);
+    func = lookup_maybe_method(self, &PyId___iter__, &unbound);
     if (func == Py_None) {
         Py_DECREF(func);
         PyErr_Format(PyExc_TypeError,
@@ -6432,7 +6415,7 @@ slot_tp_iter(PyObject *self)
     }
 
     PyErr_Clear();
-    func = lookup_method(self, &PyId___getitem__, &unbound);
+    func = lookup_maybe_method(self, &PyId___getitem__, &unbound);
     if (func == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object is not iterable",
@@ -6572,7 +6555,7 @@ slot_am_await(PyObject *self)
     PyObject *func, *res;
     _Py_IDENTIFIER(__await__);
 
-    func = lookup_method(self, &PyId___await__, &unbound);
+    func = lookup_maybe_method(self, &PyId___await__, &unbound);
     if (func != NULL) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
@@ -6591,7 +6574,7 @@ slot_am_aiter(PyObject *self)
     PyObject *func, *res;
     _Py_IDENTIFIER(__aiter__);
 
-    func = lookup_method(self, &PyId___aiter__, &unbound);
+    func = lookup_maybe_method(self, &PyId___aiter__, &unbound);
     if (func != NULL) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
@@ -6610,7 +6593,7 @@ slot_am_anext(PyObject *self)
     PyObject *func, *res;
     _Py_IDENTIFIER(__anext__);
 
-    func = lookup_method(self, &PyId___anext__, &unbound);
+    func = lookup_maybe_method(self, &PyId___anext__, &unbound);
     if (func != NULL) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
@@ -7065,7 +7048,7 @@ init_slotdefs(void)
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
         assert(!p[1].name || p->offset <= p[1].offset);
         p->name_strobj = PyUnicode_InternFromString(p->name);
-        if (!p->name_strobj)
+        if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj))
             Py_FatalError("Out of memory interning slotdef names");
     }
     slotdefs_initialized = 1;
@@ -7090,6 +7073,9 @@ update_slot(PyTypeObject *type, PyObject *name)
     slotdef **pp;
     int offset;
 
+    assert(PyUnicode_CheckExact(name));
+    assert(PyUnicode_CHECK_INTERNED(name));
+
     /* Clear the VALID_VERSION flag of 'type' and all its
        subclasses.  This could possibly be unified with the
        update_subclasses() recursion below, but carefully:
@@ -7100,7 +7086,6 @@ update_slot(PyTypeObject *type, PyObject *name)
     init_slotdefs();
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
-        /* XXX assume name is interned! */
         if (p->name_strobj == name)
             *pp++ = p;
     }
@@ -7155,7 +7140,7 @@ set_names(PyTypeObject *type)
         return -1;
 
     while (PyDict_Next(names_to_set, &i, &key, &value)) {
-        set_name = lookup_maybe(value, &PyId___set_name__);
+        set_name = _PyObject_LookupSpecial(value, &PyId___set_name__);
         if (set_name != NULL) {
             tmp = PyObject_CallFunctionObjArgs(set_name, type, key, NULL);
             Py_DECREF(set_name);
