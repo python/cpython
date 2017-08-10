@@ -4594,7 +4594,7 @@ groupby(iterable, key=None) --> sub-iterators grouped by value of keyfunc(v)\n\
 filterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
-starmap(fun, iterable) --> fun(*seq[0]), fun(*seq[1]), ...\n\
+starmap(fun, iterable) --> fun(*iterable[0]), fun(*iterable[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
 zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
