@@ -132,8 +132,9 @@ class Regrtest:
 
         # "[ 51/405/1] test_tcl passed"
         line = f"{test_index:{self.test_count_width}}{self.test_count}"
-        if self.bad and not self.ns.pgo:
-            line = f"{line}/{len(self.bad)}"
+        fails = len(self.bad) + len(self.environment_changed)
+        if fails and not self.ns.pgo:
+            line = f"{line}/{fails}"
         line = f"[{line}] {test}"
 
         # add the system load prefix: "load avg: 1.80 "
