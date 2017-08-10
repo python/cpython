@@ -141,12 +141,15 @@ class test__RandomNameSequence(TC):
         try:
             pid = os.fork()
             if not pid:
+                # child process
                 os.close(read_fd)
                 os.write(write_fd, next(self.r).encode("ascii"))
                 os.close(write_fd)
                 # bypass the normal exit handlers- leave those to
                 # the parent.
                 os._exit(0)
+
+            # parent process
             parent_value = next(self.r)
             child_value = os.read(read_fd, len(parent_value)).decode("ascii")
         finally:
@@ -157,6 +160,10 @@ class test__RandomNameSequence(TC):
                     os.kill(pid, signal.SIGKILL)
                 except EnvironmentError:
                     pass
+
+                # Read the process exit status to avoid zombie process
+                os.waitpid(pid, 0)
+
             os.close(read_fd)
             os.close(write_fd)
         self.assertNotEqual(child_value, parent_value)

@@ -1172,6 +1172,9 @@ class saved_test_environment:
         return False
 
 
+def post_test_cleanup():
+    test_support.reap_children()
+
 def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=None):
     test_support.unload(test)
     if verbose:
@@ -1205,6 +1208,7 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
                     refleak = dash_R(the_module, test, indirect_test,
                         huntrleaks)
                 test_time = time.time() - start_time
+            post_test_cleanup()
         finally:
             sys.stdout = save_stdout
     except test_support.ResourceDenied, msg:
