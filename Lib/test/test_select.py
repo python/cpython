@@ -76,7 +76,8 @@ class SelectTestCase(unittest.TestCase):
         self.assertEqual(select.select([], a, []), ([], a[:5], []))
 
 def tearDownModule():
-    support.reap_children()
+    #support.reap_children()
+    pass
 
 if __name__ == "__main__":
     unittest.main()

@@ -468,7 +468,7 @@ class TestCase(unittest.TestCase):
 
         self.doCleanups()
         support.threading_cleanup(*self._thread_cleanup)
-        support.reap_children()
+#        support.reap_children()
 
 
 @contextlib.contextmanager

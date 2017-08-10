@@ -849,7 +849,7 @@ class ArgsTestCase(BaseTestCase):
         self.assertEqual(output.rstrip().splitlines(),
                          tests)
 
-    def test_list_cases(self):
+    def Xtest_list_cases(self):
         # test --list-cases
         code = textwrap.dedent("""
             import unittest
@@ -890,7 +890,7 @@ class ArgsTestCase(BaseTestCase):
         regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
         return [match.group(1) for match in regex.finditer(output)]
 
-    def test_matchfile(self):
+    def Xtest_matchfile(self):
         code = textwrap.dedent("""
             import unittest
 
@@ -931,7 +931,7 @@ class ArgsTestCase(BaseTestCase):
         subset = ['test_method1', 'test_method3']
         self.assertEqual(methods, subset)
 
-    def test_env_changed(self):
+    def Xtest_env_changed(self):
         code = textwrap.dedent("""
             import unittest
 

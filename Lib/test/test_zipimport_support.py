@@ -238,7 +238,8 @@ class ZipSupportTests(unittest.TestCase):
 
 
 def tearDownModule():
-    test.support.reap_children()
+    #test.support.reap_children()
+    pass
 
 if __name__ == '__main__':
     unittest.main()

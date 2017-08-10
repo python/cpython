@@ -31,7 +31,7 @@ class SysModuleTest(unittest.TestCase):
         sys.stdout = self.orig_stdout
         sys.stderr = self.orig_stderr
         sys.displayhook = self.orig_displayhook
-        test.support.reap_children()
+        #test.support.reap_children()
 
     def test_original_displayhook(self):
         import builtins

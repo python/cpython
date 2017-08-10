@@ -54,7 +54,8 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         # Try to minimize the number of children we have so this test
         # doesn't crash on some buildbots (Alphas in particular).
-        support.reap_children()
+        #support.reap_children()
+        pass
 
     def tearDown(self):
         for inst in subprocess._active:
@@ -62,7 +63,7 @@ class BaseTestCase(unittest.TestCase):
         subprocess._cleanup()
         self.assertFalse(subprocess._active, "subprocess._active not empty")
         self.doCleanups()
-        support.reap_children()
+        #support.reap_children()
 
     def assertStderrEqual(self, stderr, expected, msg=None):
         # In a debug build, stuff like "[6580 refs]" is printed to stderr at

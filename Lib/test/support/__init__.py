@@ -282,6 +282,7 @@ max_memuse = 0           # Disable bigmem tests (they will still be run with
 real_max_memuse = 0
 failfast = False
 match_tests = None
+_match_tests_pattern = None
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
 # This may be "the real" stdout, or IDLE's emulation of stdout, or whatever.
@@ -1906,20 +1907,21 @@ def _run_suite(suite):
 
 
 def _match_test(test):
-    global match_tests
+    global match_tests, _match_tests_pattern
 
     if match_tests is None:
         return True
     test_id = test.id()
 
-    for match_test in match_tests:
-        if fnmatch.fnmatchcase(test_id, match_test):
-            return True
+    if _match_tests_pattern is None or _match_tests_pattern[0] != match_tests:
+        patterns = [fnmatch.translate(pattern) for pattern in match_tests]
+        regex = '(?:%s)' % '|'.join(patterns)
+        match = re.compile(regex).match
+        _match_tests_pattern = (match_tests, match)
+    else:
+        match = _match_tests_pattern[1]
 
-        for name in test_id.split("."):
-            if fnmatch.fnmatchcase(name, match_test):
-                return True
-    return False
+    return (match(test_id) is not None)
 
 
 def run_unittest(*classes):
@@ -2073,26 +2075,39 @@ def reap_threads(func):
             threading_cleanup(*key)
     return decorator
 
+
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
     are started.  This will help ensure that no extra children (zombies)
     stick around to hog resources and create problems when looking
     for refleaks.
     """
+    global environment_altered
+
+    # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
+    if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
+        return
+
+    # XXX: give 1 second to child processes to complete
+    # XXX: temporary change to detect bugs
+    time.sleep(1.0)
+
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
-    if hasattr(os, 'waitpid'):
-        any_process = -1
-        while True:
-            try:
-                # This will raise an exception on Windows.  That's ok.
-                pid, status = os.waitpid(any_process, os.WNOHANG)
-                if pid == 0:
-                    break
-                print("Warning -- reap_children() reaped child process %s"
-                      % pid, file=sys.stderr)
-            except:
-                break
+    while True:
+        try:
+            # Read the exit status of any child process which already completed
+            pid, status = os.waitpid(-1, os.WNOHANG)
+        except OSError:
+            break
+
+        if pid == 0:
+            break
+
+        print("Warning -- reap_children() reaped child process %s"
+              % pid, file=sys.stderr)
+        environment_altered = True
+
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
