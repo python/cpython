@@ -29,12 +29,10 @@ if sys.platform == 'win32':
 
     class Arena(object):
 
-        _rand = tempfile._RandomNameSequence()
-
         def __init__(self, size):
             self.size = size
             for i in range(100):
-                name = 'pym-%d-%s' % (os.getpid(), next(self._rand))
+                name = 'pym-%d-%s' % (os.getpid(), tempfile._random_name())
                 buf = mmap.mmap(-1, size, tagname=name)
                 if _winapi.GetLastError() == 0:
                     break

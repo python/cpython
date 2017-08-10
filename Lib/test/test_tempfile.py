@@ -1,13 +1,14 @@
 # tempfile.py unit tests.
-import tempfile
+import collections.abc
+import contextlib
 import errno
 import io
 import os
+import re
 import signal
 import sys
-import re
+import tempfile
 import warnings
-import contextlib
 import weakref
 from unittest import mock
 
@@ -141,38 +142,24 @@ class TestExports(BaseTestCase):
                         "unexpected keys: %s" % unexp)
 
 
-class TestRandomNameSequence(BaseTestCase):
-    """Test the internal iterator object _RandomNameSequence."""
-
-    def setUp(self):
-        self.r = tempfile._RandomNameSequence()
-        super().setUp()
+@support.cpython_only
+class TestRandomName(BaseTestCase):
+    """Test the private _random_name() function."""
 
     def test_get_six_char_str(self):
-        # _RandomNameSequence returns a six-character string
-        s = next(self.r)
+        # _random_name() returns a six-character string
+        s = tempfile._random_name()
         self.nameCheck(s, '', '', '')
 
     def test_many(self):
-        # _RandomNameSequence returns no duplicate strings (stochastic)
+        # _random_name() returns no duplicate strings (stochastic)
 
         dict = {}
-        r = self.r
         for i in range(TEST_FILES):
-            s = next(r)
+            s = tempfile._random_name()
             self.nameCheck(s, '', '', '')
             self.assertNotIn(s, dict)
             dict[s] = 1
-
-    def supports_iter(self):
-        # _RandomNameSequence supports the iterator protocol
-
-        i = 0
-        r = self.r
-        for s in r:
-            i += 1
-            if i == 20:
-                break
 
     @unittest.skipUnless(hasattr(os, 'fork'),
         "os.fork is required for this test")
@@ -185,12 +172,13 @@ class TestRandomNameSequence(BaseTestCase):
             pid = os.fork()
             if not pid:
                 os.close(read_fd)
-                os.write(write_fd, next(self.r).encode("ascii"))
+                name = tempfile._random_name()
+                os.write(write_fd, name.encode("ascii"))
                 os.close(write_fd)
                 # bypass the normal exit handlers- leave those to
                 # the parent.
                 os._exit(0)
-            parent_value = next(self.r)
+            parent_value = tempfile._random_name()
             child_value = os.read(read_fd, len(parent_value)).decode("ascii")
         finally:
             if pid:
@@ -285,22 +273,6 @@ class TestGetDefaultTempdir(BaseTestCase):
                     self.assertEqual(os.listdir(our_temp_directory), [])
 
 
-class TestGetCandidateNames(BaseTestCase):
-    """Test the internal function _get_candidate_names."""
-
-    def test_retval(self):
-        # _get_candidate_names returns a _RandomNameSequence object
-        obj = tempfile._get_candidate_names()
-        self.assertIsInstance(obj, tempfile._RandomNameSequence)
-
-    def test_same_thing(self):
-        # _get_candidate_names always returns the same object
-        a = tempfile._get_candidate_names()
-        b = tempfile._get_candidate_names()
-
-        self.assertTrue(a is b)
-
-
 @contextlib.contextmanager
 def _inside_empty_temp_dir():
     dir = tempfile.mkdtemp()
@@ -312,9 +284,10 @@ def _inside_empty_temp_dir():
 
 
 def _mock_candidate_names(*names):
+    random_name = iter(names).__next__
     return support.swap_attr(tempfile,
-                             '_get_candidate_names',
-                             lambda: iter(names))
+                             '_random_name',
+                             random_name)
 
 
 class TestBadTempdir:
