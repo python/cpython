@@ -270,10 +270,14 @@ def _get_iterator_types():
     tuple_iterator = type(iter(tuple()))
     range_iterator = type(iter(range(0)))
     list_reverseiterator = type(reversed(list()))
-    # same as <class 'reversed'>
-    reverseiterator      = type(reversed(tuple())
+    # reverseiterator is same as <class 'reversed'>
+    reverseiterator      = type(reversed(tuple()))
+    dict_keyiterator = type(iter(dict().keys()))
+    dict_valueiterator = type(iter(dict().values()))
+    dict_itemiterator = type(iter(dict().items()))
     return (str_iterator, list_iterator, tuple_iterator, range_iterator,
-            list_reverseiterator, reverseiterator)
+            list_reverseiterator, reverseiterator,
+           dict_keyiterator, dict_valueiterator, dict_itemiterator)
 
 def _get_iterable_types():
     """Returns a tuple of all types that should be encoded as a json array"""
