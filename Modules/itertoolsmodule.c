@@ -4601,7 +4601,7 @@ zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
 \n\
 Combinatoric generators:\n\
 product(p, q, ... [repeat=1]) --> cartesian product\n\
-permutations(p[, r])\n
+permutations(p[, r])\n\
 combinations(p, r)\n\
 combinations_with_replacement(p, r)\n\
 ");
