@@ -45,6 +45,16 @@ def normalize_output(data):
     return data
 
 
+def write_all(fd, data):
+    # bpo-31158: When writing to a disk, os.write() likely writes all data.
+    # But when writing into a PTY, os.write() can be partial.
+    while data:
+        written = os.write(fd, data)
+        if written < 1:
+            raise RuntimeError("os.write() wrote %s byte" % written)
+        data = data[written:]
+
+
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
 # because pty code is not too portable.
 # XXX(nnorwitz):  these tests leak fds when there is an error.
@@ -97,14 +107,14 @@ class PtyTest(unittest.TestCase):
             os.set_blocking(master_fd, blocking)
 
         debug("Writing to slave_fd")
-        os.write(slave_fd, TEST_STRING_1)
+        write_all(slave_fd, TEST_STRING_1)
         s1 = os.read(master_fd, 1024)
         self.assertEqual(b'I wish to buy a fish license.\n',
                          normalize_output(s1))
 
         debug("Writing chunked output")
-        os.write(slave_fd, TEST_STRING_2[:5])
-        os.write(slave_fd, TEST_STRING_2[5:])
+        write_all(slave_fd, TEST_STRING_2[:5])
+        write_all(slave_fd, TEST_STRING_2[5:])
         s2 = os.read(master_fd, 1024)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
@@ -250,8 +260,8 @@ class SmallPtyTests(unittest.TestCase):
         masters = [s.fileno() for s in socketpair]
 
         # Feed data.  Smaller than PIPEBUF.  These writes will not block.
-        os.write(masters[1], b'from master')
-        os.write(write_to_stdin_fd, b'from stdin')
+        write_all(masters[1], b'from master')
+        write_all(write_to_stdin_fd, b'from stdin')
 
         # Expect two select calls, the last one will cause IndexError
         pty.select = self._mock_select
