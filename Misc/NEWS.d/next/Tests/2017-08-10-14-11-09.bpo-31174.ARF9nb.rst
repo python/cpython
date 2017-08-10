@@ -1,0 +1,2 @@
+regrtest now reseeds the random RNG before each test file. Use also more
+entropy for the seed: 2**32 (32 bits) rather than 10_000_000 (24 bits).

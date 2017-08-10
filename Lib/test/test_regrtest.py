@@ -950,6 +950,32 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname], env_changed=testname,
                                   fail_env_changed=True)
 
+    def test_random_reseed(self):
+        # bpo-31174: Each test file should be run with the same random seed
+        code = textwrap.dedent("""
+            import random
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_random(self):
+                    print("Rand1000: %s" % random.randint(0, 1000))
+        """)
+        testname = self.create_test(code=code)
+
+        tests = [testname] * 3
+        output = self.run_tests(*tests)
+        self.check_executed_tests(output, tests)
+
+        # Get random numbers
+        numbers = (line for line in output.splitlines()
+                   if line.startswith("Rand1000:"))
+        numbers = (line[9:].strip() for line in numbers)
+        numbers = map(int, numbers)
+
+        # All "random" numbers must be the same
+        numbers = set(numbers)
+        self.assertEqual(len(numbers), 1, numbers)
+
 
 if __name__ == '__main__':
     unittest.main()
