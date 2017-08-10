@@ -18,6 +18,10 @@
 #  include <winsock2.h>         /* struct timeval */
 #endif
 
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>           /* For W_STOPCODE */
+#endif
+
 #ifdef WITH_THREAD
 #include "pythread.h"
 #endif /* WITH_THREAD */
@@ -4272,12 +4276,27 @@ test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
     return _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
 }
 
+
 static PyObject*
 stack_pointer(PyObject *self, PyObject *args)
 {
     int v = 5;
     return PyLong_FromVoidPtr(&v);
 }
+
+
+#ifdef W_STOPCODE
+static PyObject*
+py_w_stopcode(PyObject *self, PyObject *args)
+{
+    int sig, status;
+    if (!PyArg_ParseTuple(args, "i", &sig)) {
+        return NULL;
+    }
+    status = W_STOPCODE(sig);
+    return PyLong_FromLong(status);
+}
+#endif
 
 
 static PyMethodDef TestMethods[] = {
@@ -4493,6 +4512,9 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_fastcallkeywords", test_pyobject_fastcallkeywords, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
+#ifdef W_STOPCODE
+    {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
