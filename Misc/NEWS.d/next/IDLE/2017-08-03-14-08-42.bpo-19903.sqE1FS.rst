@@ -1,0 +1,3 @@
+IDLE: Calltips use `inspect.signature` instead of `inspect.getfullargspec`.
+This improves calltips for builtins converted to use Argument Clinic.
+Patch by Louie Lu.
