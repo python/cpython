@@ -4329,12 +4329,14 @@ class BaseMixin(object):
 
         processes = set(multiprocessing.process._dangling) - set(cls.dangling[0])
         if processes:
+            test.support.environment_altered = True
             print('Warning -- Dangling processes: %s' % processes,
                   file=sys.stderr)
         processes = None
 
         threads = set(threading._dangling) - set(cls.dangling[1])
         if threads:
+            test.support.environment_altered = True
             print('Warning -- Dangling threads: %s' % threads,
                   file=sys.stderr)
         threads = None
@@ -4402,6 +4404,7 @@ class ManagerMixin(BaseMixin):
             t *= 2
             dt = time.monotonic() - start_time
             if dt >= 5.0:
+                test.support.environment_altered = True
                 print("Warning -- multiprocessing.Manager still has %s active "
                       "children after %s seconds"
                       % (multiprocessing.active_children(), dt),
@@ -4413,6 +4416,7 @@ class ManagerMixin(BaseMixin):
             # This is not really an error since some tests do not
             # ensure that all processes which hold a reference to a
             # managed object have been joined.
+            test.support.environment_altered = True
             print('Warning -- Shared objects which still exist at manager '
                   'shutdown:')
             print(cls.manager._debug_info())
@@ -4511,6 +4515,7 @@ def install_tests_in_module_dict(remote_globs, start_method):
         processes = set(multiprocessing.process._dangling) - set(dangling[0])
         if processes:
             need_sleep = True
+            test.support.environment_altered = True
             print('Warning -- Dangling processes: %s' % processes,
                   file=sys.stderr)
         processes = None
@@ -4518,6 +4523,7 @@ def install_tests_in_module_dict(remote_globs, start_method):
         threads = set(threading._dangling) - set(dangling[1])
         if threads:
             need_sleep = True
+            test.support.environment_altered = True
             print('Warning -- Dangling threads: %s' % threads,
                   file=sys.stderr)
         threads = None
