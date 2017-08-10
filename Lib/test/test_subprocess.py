@@ -29,6 +29,11 @@ try:
 except ImportError:
     threading = None
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
@@ -2565,42 +2570,24 @@ class POSIXProcessTestCase(BaseTestCase):
             proc.communicate(timeout=999)
             mock_proc_stdin.close.assert_called_once_with()
 
-    @unittest.skipIf(not ctypes, 'ctypes module required')
-    @unittest.skipIf(not sys.executable, 'Test requires sys.executable')
-    def test_child_terminated_in_stopped_state(self):
+    @unittest.skipUnless(_testcapi is not None
+                         and hasattr(_testcapi, 'W_STOPCODE'),
+                         'need _testcapi.W_STOPCODE')
+    def test_stopped(self):
         """Test wait() behavior when waitpid returns WIFSTOPPED; issue29335."""
-        PTRACE_TRACEME = 0  # From glibc and MacOS (PT_TRACE_ME).
-        libc_name = ctypes.util.find_library('c')
-        libc = ctypes.CDLL(libc_name)
-        if not hasattr(libc, 'ptrace'):
-            raise unittest.SkipTest('ptrace() required')
+        args = [sys.executable, '-c', 'pass']
+        proc = subprocess.Popen(args)
 
-        code = textwrap.dedent(f"""
-             import ctypes
-             import faulthandler
-             from test.support import SuppressCrashReport
+        # Wait until the real process completes to avoid zombie process
+        pid = proc.pid
+        pid, status = os.waitpid(pid, 0)
+        self.assertEqual(status, 0)
 
-             libc = ctypes.CDLL({libc_name!r})
-             libc.ptrace({PTRACE_TRACEME}, 0, 0)
-        """)
+        status = _testcapi.W_STOPCODE(3)
+        with mock.patch('subprocess.os.waitpid', return_value=(pid, status)):
+            returncode = proc.wait()
 
-        child = subprocess.Popen([sys.executable, '-c', code])
-        if child.wait() != 0:
-            raise unittest.SkipTest('ptrace() failed - unable to test')
-
-        code += textwrap.dedent(f"""
-             with SuppressCrashReport():
-                # Crash the process
-                faulthandler._sigsegv()
-        """)
-        child = subprocess.Popen([sys.executable, '-c', code])
-        try:
-            returncode = child.wait()
-        except:
-            child.kill()  # Clean up the hung stopped process.
-            raise
-        self.assertNotEqual(0, returncode)
-        self.assertLess(returncode, 0)  # signal death, likely SIGSEGV.
+        self.assertEqual(returncode, -3)
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
