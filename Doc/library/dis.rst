@@ -146,7 +146,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    method, a function, a generator, an asynchronous generator, a couroutine,
    a code object, a string of source code or a byte sequence of raw bytecode.
    For a module, it disassembles all functions. For a class, it disassembles
-   all methods (including class and static methods). For a code object or 
+   all methods (including class and static methods). For a code object or
    sequence of raw bytecode, it prints one line per bytecode instruction.
    It also recursively disassembles nested code objects (the code of
    comprehensions, generator expressions and nested functions, and the code

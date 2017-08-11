@@ -32,7 +32,7 @@ def _try_compile(source, name):
     return c
 
 def dis(x=None, *, file=None, depth=None):
-    """Disassemble classes, methods, functions, generators, 
+    """Disassemble classes, methods, functions, generators,
        asynchronous generators, coroutines, or code.
 
     With no argument, disassemble the last traceback.
@@ -112,7 +112,7 @@ def pretty_flags(flags):
     return ", ".join(names)
 
 def _get_code_object(x):
-    """Helper to handle methods, functions, generators, 
+    """Helper to handle methods, functions, generators,
        asynchronous generators, coroutines, strings and
        raw code objects"""
     if hasattr(x, '__func__'): # Method

@@ -332,10 +332,10 @@ dis_fstring = """\
 
 def _g(x):
     yield x
-    
+
 async def _ag(x):
     yield x
-    
+
 async def _co(x):
     await _ag(x)
 
@@ -409,7 +409,7 @@ def ignore_coroutine_never_awaited_warnings():
     (a) when expected they're clutter, (b) on CPython 3.5.x where x < 3, this
     warning can trigger a segfault if we run with warnings turned into errors:
     https://bugs.python.org/issue27811.
-    
+
     (Adapted from python-trio/trio/.../test_run.py)
     """
     with warnings.catch_warnings():
@@ -433,7 +433,7 @@ def ignore_coroutine_never_awaited_warnings():
             # to make sure.
             for _ in range(4):
                 gc.collect()
-        
+
 class DisTests(unittest.TestCase):
 
     maxDiff = None
@@ -578,12 +578,12 @@ class DisTests(unittest.TestCase):
         gen_func_disas = self.get_disassembly(_g)  # Disassemble generator function
         gen_disas = self.get_disassembly(_g(1))  # Disassemble generator itself
         self.assertEqual(gen_disas, gen_func_disas)
-        
+
     def test_disassemble_async_generator(self):
         agen_func_disas = self.get_disassembly(_ag) # Disassemble async generator function
         agen_disas = self.get_disassembly(_ag(1)) # Disassemble async generator itself
         self.assertEqual(agen_disas, agen_func_disas)
-        
+
     def test_disassemble_coroutine(self):
         coro_func_disas = self.get_disassembly(_co) # Disassemble coroutine function
         with ignore_coroutine_never_awaited_warnings():
