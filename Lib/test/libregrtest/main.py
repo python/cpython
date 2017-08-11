@@ -5,6 +5,7 @@ import os
 import platform
 import random
 import re
+import subprocess
 import sys
 import sysconfig
 import tempfile
@@ -433,6 +434,23 @@ class Regrtest:
         print("== encodings: locale=%s, FS=%s"
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
+        rl_version_cmd = textwrap.dedent("""
+            import sys
+            try:
+                import readline
+            except ImportError:
+                sys.exit(1)
+            else:
+                def get_rl_info():
+                    is_editline = readline.__doc__ and "libedit" in readline.__doc__
+                    return f"{readline._READLINE_VERSION:#06x}", "editline" if is_editline else "GNU readline"
+                rl_version, rl_implementation = get_rl_info()
+                print(f"== readline: version {rl_version} ({rl_implementation})", end="")
+        """)
+        rl_output = subprocess.run([sys.executable, "-c", rl_version_cmd],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if rl_output.returncode == 0:
+            print(rl_output.stdout.decode())
         print("Testing with flags:", sys.flags)
 
     def run_tests(self):
