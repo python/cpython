@@ -86,7 +86,7 @@ def convert_to_error(kind, result):
         return result
     elif kind in ('#TRACEBACK', '#UNSERIALIZABLE'):
         if not isinstance(result, str):
-            raise SystemError(
+            raise TypeError(
                 "Result {0!r} (kind '{1}') type is {2}, not str".format(
                     result, kind, type(result)))
         if kind == '#UNSERIALIZABLE':
