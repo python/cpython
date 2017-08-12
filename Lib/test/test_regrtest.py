@@ -191,14 +191,25 @@ class ParseArgsTestCase(unittest.TestCase):
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt, 'gui,network'])
                 self.assertEqual(ns.use_resources, ['gui', 'network'])
+
                 ns = libregrtest._parse_args([opt, 'gui,none,network'])
                 self.assertEqual(ns.use_resources, ['network'])
-                expected = list(libregrtest.RESOURCE_NAMES)
+
+                expected = list(libregrtest.ALL_RESOURCES)
                 expected.remove('gui')
                 ns = libregrtest._parse_args([opt, 'all,-gui'])
                 self.assertEqual(ns.use_resources, expected)
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid resource')
+
+                # all + a resource not part of "all"
+                ns = libregrtest._parse_args([opt, 'all,tzdata'])
+                self.assertEqual(ns.use_resources,
+                                 list(libregrtest.ALL_RESOURCES) + ['tzdata'])
+
+                # test another resource which is not part of "all"
+                ns = libregrtest._parse_args([opt, 'extralargefile'])
+                self.assertEqual(ns.use_resources, ['extralargefile'])
 
     def test_memlimit(self):
         for opt in '-M', '--memlimit':
@@ -824,22 +835,10 @@ class ArgsTestCase(BaseTestCase):
             import os
             import unittest
 
-            # Issue #25306: Disable popups and logs to stderr on assertion
-            # failures in MSCRT
-            try:
-                import msvcrt
-                msvcrt.CrtSetReportMode
-            except (ImportError, AttributeError):
-                # no Windows, o release build
-                pass
-            else:
-                for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                    msvcrt.CrtSetReportMode(m, 0)
-
             class FDLeakTest(unittest.TestCase):
                 def test_leak(self):
                     fd = os.open(__file__, os.O_RDONLY)
-                    # bug: never cloes the file descriptor
+                    # bug: never close the file descriptor
         """)
         self.check_leak(code, 'file descriptors')
 

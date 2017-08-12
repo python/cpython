@@ -1,0 +1,1 @@
+IDLE - Use ttk Notebook in ConfigDialog
