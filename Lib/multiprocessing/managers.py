@@ -94,7 +94,7 @@ def convert_to_error(kind, result):
         else:
             return RemoteError(result)
     else:
-        return ValueError('Unrecognized message type')
+        return ValueError('Unrecognized message type {!r}'.format(kind))
 
 class RemoteError(Exception):
     def __str__(self):
