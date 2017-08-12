@@ -359,14 +359,14 @@ Socket Option            Linux        FreeBSD      Windows
    bound to. When a socket shuts down, whether by virtue of the program
    exiting or an explicit call to shut it down, it takes the OS some time
    to terminate existing connections and perform the proper shut down
-   procedure. SO_REUSEADDR allows bypassing of this behavior and permits
+   procedure. ``SO_REUSEADDR`` allows bypassing of this behavior and permits
    another socket to be able to bind to the address.
 
 ..   Availability: Linux, Windows
 
 .. data:: SO_EXCLUSIVEADDRUSE
 
-   Allows overriding SO_REUSEADDR behavior for exclusive access to an
+   Allows overriding ``SO_REUSEADDR`` behavior for exclusive access to an
    address and port for high availability services.
 
    .. seealso::
@@ -386,7 +386,7 @@ Socket Option            Linux        FreeBSD      Windows
 .. data:: SO_DONTROUTE
 
    Indicates that packets sent through this socket should be routed
-   through the interface its bound to.
+   through the interface it is bound to.
 
 ..   Availability: Linux, Windows `(non functional) <https://msdn.microsoft.com/en-us/library/windows/desktop/ms740532(v=vs.85).aspx>`_
 
@@ -404,8 +404,8 @@ Socket Option            Linux        FreeBSD      Windows
 
 .. data:: SO_LINGER
 
-   When a socket is set to linger. A call to :meth:`socket.close` or
-   :meth:`socket.shutdown` will not return until all queued messages
+   When a socket is set to linger, a call to :meth:`~socket.close` or
+   :meth:`~socket.shutdown` will not return until all queued messages
    for the socket have been successfully sent or the linger timeout
    is reached. If the socket is closed due to the program exiting, it
    will linger in the background.
@@ -443,25 +443,26 @@ Socket Option            Linux        FreeBSD      Windows
           SO_RCVLOWAT
           SO_SNDLOWAT
 
-   SO_RCVLOWAT sets the minimum number of bytes that must be present in
-   the socket's internal receive buffer before they are passed on to able
-   read call. SO_SNDLOWAT similiary sets the minimum bytes before data is
+   ``SO_RCVLOWAT`` sets the minimum number of bytes that must be present in
+   the socket's internal receive buffer before they are returned by a
+   read call. ``SO_SNDLOWAT`` similiary sets the minimum bytes before data is
    sent from the send buffer to the socket protocol.
 
    SO_SNDLOWAT is read-only on Linux and SO_RCVLOWAT is read-only on
    Linux versions below 2.4.
-
-   Both these values default to 1.
 
 ..   Availability: Linux, Windows `(non functional) <https://msdn.microsoft.com/en-us/library/windows/desktop/ms740532(v=vs.85).aspx>`_
 
 .. data:: SO_RCVTIMEO
           SO_SNDTIMEO
 
-   Specifies the amount of time send and receive calls for this socket willl
-   block before timing out. The default timeout of zero means that operations
-   will never time out. On Linux this is a `struct timeval`, on Windows this
-   is the time in milliseconds.
+   Specifies the amount of time send and receive calls for this socket will
+   block before timing out. The default timeout of zero means that operations 
+   will never time out.
+
+   This is independent of :meth:`~socket.settimeout`.
+   
+   On Linux this is a `struct timeval`, on Windows this is an integer.
 
 ..   Availability: Linux, Windows
 
@@ -490,8 +491,8 @@ Socket Option            Linux        FreeBSD      Windows
 .. data:: SO_PASSCRED
           SO_PEERCRED
 
-   Allows for the passing of SCM credentials over unix sockets.
-   See the end of :func:`socket.recvmsg` for details.
+   Allows for the passing of SCM credentials over unix sockets. These
+   are passed as ancillary messages which can be received using :func:`~socket.recvmsg`
 
    .. versionadded:: 3.3
 
@@ -512,7 +513,7 @@ Socket Option            Linux        FreeBSD      Windows
    When bound, only packets received from that particular device are
    processsed by the socket.
 
-   .. versionadded:: 3.1
+   .. versionadded:: 3.3
 
 ..   Availability: Linux
 
@@ -538,12 +539,16 @@ Socket Option            Linux        FreeBSD      Windows
 .. data:: SO_DOMAIN
           SO_PROTOCOL
 
-   Passing ``SO_DOMAIN`` to :meth:`socket.getsockopt` allows for the retrival
+   Passing ``SO_DOMAIN`` to :meth:`~socket.getsockopt` allows for the retrival
    of the ``family`` value as defined in the :func:`socket.socket` function.
-   ``SO_PROTOCOL`` returns the ``proto`` value. Both these options are read only.
+   ``SO_PROTOCOL`` returns the ``proto`` value. The protocol value can be the
+   exact protocol used such as ``IPPROTO_TCP`` even if 0 was passed in to specify 
+   the default protocol.
+   
+   Both these options are read only.
 
-   The value returned for the ``family`` is an integer and not one of the
-   friendly constants above like :const:`AF_INET`. In order to get a constant
+   The value returned for the ``family`` is an integer which is the value of 
+   the constants above like :const:`AF_INET`. In order to get the const name
    value back you can use the AddressFamily enum. ::
 
       >>> family = s.getsockopt(socket.SOL_SOCKET, socket.SO_DOMAIN)
