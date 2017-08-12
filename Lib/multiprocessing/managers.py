@@ -23,7 +23,7 @@ from time import time as _time
 from traceback import format_exc
 
 from . import connection
-from .context import reduction, get_spawning_popen
+from .context import reduction, get_spawning_popen, ProcessError
 from . import pool
 from . import process
 from . import util
@@ -133,7 +133,10 @@ class Server(object):
               'debug_info', 'number_of_objects', 'dummy', 'incref', 'decref']
 
     def __init__(self, registry, address, authkey, serializer):
-        assert isinstance(authkey, bytes)
+        if not isinstance(authkey, bytes):
+            raise TypeError(
+                "Authkey {0!r} is type {1!s}, not bytes".format(
+                    authkey, type(authkey)))
         self.registry = registry
         self.authkey = process.AuthenticationString(authkey)
         Listener, Client = listener_client[serializer]
@@ -163,7 +166,7 @@ class Server(object):
             except (KeyboardInterrupt, SystemExit):
                 pass
         finally:
-            if sys.stdout != sys.__stdout__:
+            if sys.stdout != sys.__stdout__: # what about stderr?
                 util.debug('resetting stdout, stderr')
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
@@ -312,7 +315,7 @@ class Server(object):
     def dummy(self, c):
         pass
 
-    def debug_info(self, c):
+    def debug_info(self, c): # c is unused?
         '''
         Return some info --- useful to spot problems with refcounting
         '''
@@ -356,7 +359,9 @@ class Server(object):
                       self.registry[typeid]
 
             if callable is None:
-                assert len(args) == 1 and not kwds
+                if kwds or (len(args) != 1):
+                    raise ValueError(
+                        "Without callable, must have one non-keyword argument")
                 obj = args[0]
             else:
                 obj = callable(*args, **kwds)
@@ -364,7 +369,10 @@ class Server(object):
             if exposed is None:
                 exposed = public_methods(obj)
             if method_to_typeid is not None:
-                assert type(method_to_typeid) is dict
+                if not isinstance(method_to_typeid, dict):
+                    raise TypeError(
+                        "Method_to_typeid {0!r}: type {1!s}, not dict".format(
+                            method_to_typeid, type(method_to_typeid)))
                 exposed = list(exposed) + list(method_to_typeid)
 
             ident = '%x' % id(obj)  # convert to string because xmlrpclib
@@ -417,7 +425,11 @@ class Server(object):
             return
 
         with self.mutex:
-            assert self.id_to_refcount[ident] >= 1
+            if self.id_to_refcount[ident] <= 0:
+                raise ProcessError(
+                    "Id {0!s} ({1!r}) has refcount {2:n}, not 1+".format(
+                        ident, self.id_to_obj[ident],
+                        self.id_to_refcount[ident]))
             self.id_to_refcount[ident] -= 1
             if self.id_to_refcount[ident] == 0:
                 del self.id_to_refcount[ident]
@@ -480,7 +492,14 @@ class BaseManager(object):
         '''
         Return server object with serve_forever() method and address attribute
         '''
-        assert self._state.value == State.INITIAL
+        if self._state.value != State.INITIAL:
+            if self._state.value == State.STARTED:
+                raise ProcessError("Already started server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
         return Server(self._registry, self._address,
                       self._authkey, self._serializer)
 
@@ -497,7 +516,14 @@ class BaseManager(object):
         '''
         Spawn a server process for this manager object
         '''
-        assert self._state.value == State.INITIAL
+        if self._state.value != State.INITIAL:
+            if self._state.value == State.STARTED:
+                raise ProcessError("Already started server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
 
         if initializer is not None and not callable(initializer):
             raise TypeError('initializer must be a callable')
@@ -593,7 +619,14 @@ class BaseManager(object):
     def __enter__(self):
         if self._state.value == State.INITIAL:
             self.start()
-        assert self._state.value == State.STARTED
+        if self._state.value != State.STARTED:
+            if self._state.value == State.INITIAL:
+                raise ProcessError("Unable to start server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -654,8 +687,8 @@ class BaseManager(object):
 
         if method_to_typeid:
             for key, value in list(method_to_typeid.items()):
-                assert type(key) is str, '%r is not a string' % key
-                assert type(value) is str, '%r is not a string' % value
+                assert isinstance(key, str), '%r is not a string' % key
+                assert isinstance(value, str), '%r is not a string' % value
 
         cls._registry[typeid] = (
             callable, exposed, method_to_typeid, proxytype
