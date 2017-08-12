@@ -2447,6 +2447,19 @@ open = TarFile.open
 
 def main():
     import argparse
+    compressions = {
+        # gz
+        '.gz': 'gz',
+        '.tgz': 'gz',
+        # xz
+        '.xz': 'xz',
+        '.txz': 'xz',
+        # bz2
+        '.bz2': 'bz2',
+        '.tbz': 'bz2',
+        '.tbz2': 'bz2',
+        '.tb2': 'bz2',
+    }
 
     description = 'A simple command-line interface for tarfile module.'
     parser = argparse.ArgumentParser(description=description)
@@ -2458,9 +2471,11 @@ def main():
     group.add_argument('-e', '--extract', nargs='+',
                        metavar=('<tarfile>', '<output_dir>'),
                        help='Extract tarfile into target dir')
-    group.add_argument('-c', '--create', nargs='+',
-                       metavar=('<name>', '<file>'),
-                       help='Create tarfile from sources')
+    group.add_argument(
+        '-c', '--create', nargs='+',
+        metavar=('<name>', '<file>'),
+        help='Create tarfile from sources, compressing if <name>.ext is one of:'
+        ' %s.' % ', '.join(compressions.keys()))
     group.add_argument('-t', '--test', metavar='<tarfile>',
                        help='Test if a tarfile is valid')
     args = parser.parse_args()
@@ -2509,19 +2524,6 @@ def main():
     elif args.create is not None:
         tar_name = args.create.pop(0)
         _, ext = os.path.splitext(tar_name)
-        compressions = {
-            # gz
-            '.gz': 'gz',
-            '.tgz': 'gz',
-            # xz
-            '.xz': 'xz',
-            '.txz': 'xz',
-            # bz2
-            '.bz2': 'bz2',
-            '.tbz': 'bz2',
-            '.tbz2': 'bz2',
-            '.tb2': 'bz2',
-        }
         tar_mode = 'w:' + compressions[ext] if ext in compressions else 'w'
         tar_files = args.create
 
