@@ -314,8 +314,8 @@ Socket Option            Linux        FreeBSD      Windows
 **SO_SETFIB**                         ✓ >= 7.1
 **SO_PASSCRED**          ✓
 **SO_PEERCRED**          ✓
-**SO_PASSSEC**           ✓ >= 2.6.18
-**SO_PEERSEC**           ✓ >= 2.6.18
+**SO_PASSSEC**           ✓ >= 2.6.2
+**SO_PEERSEC**           ✓ >= 2.6.2
 **SO_BINDTODEVICE**      ✓
 **SO_PRIORITY**          ✓
 **SO_MARK**              ✓ >= 2.6.25
@@ -457,11 +457,11 @@ Socket Option            Linux        FreeBSD      Windows
           SO_SNDTIMEO
 
    Specifies the amount of time send and receive calls for this socket will
-   block before timing out. The default timeout of zero means that operations 
+   block before timing out. The default timeout of zero means that operations
    will never time out.
 
    This is independent of :meth:`~socket.settimeout`.
-   
+
    On Linux this is a `struct timeval`, on Windows this is an integer.
 
 ..   Availability: Linux, Windows
@@ -505,7 +505,7 @@ Socket Option            Linux        FreeBSD      Windows
 
    .. versionadded:: 3.6
 
-..   Availability: Linux >= 2.6.13
+..   Availability: Linux >= 2.6.2
 
 .. data:: SO_BINDTODEVICE
 
@@ -542,12 +542,12 @@ Socket Option            Linux        FreeBSD      Windows
    Passing ``SO_DOMAIN`` to :meth:`~socket.getsockopt` allows for the retrival
    of the ``family`` value as defined in the :func:`socket.socket` function.
    ``SO_PROTOCOL`` returns the ``proto`` value. The protocol value can be the
-   exact protocol used such as ``IPPROTO_TCP`` even if 0 was passed in to specify 
+   exact protocol used such as ``IPPROTO_TCP`` even if 0 was passed in to specify
    the default protocol.
-   
+
    Both these options are read only.
 
-   The value returned for the ``family`` is an integer which is the value of 
+   The value returned for the ``family`` is an integer which is the value of
    the constants above like :const:`AF_INET`. In order to get the const name
    value back you can use the AddressFamily enum. ::
 
