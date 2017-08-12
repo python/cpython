@@ -787,7 +787,7 @@ the following methods and attributes:
             window.chgat(y, x, num, attr)
 
    Set the attributes of *num* characters at the current cursor position, or at
-   position ``(y, x)`` if supplied. If no value of *num* is given or ``-1`` is given,
+   position ``(y, x)`` if supplied. If no value of *num* is given or *num* = ``-1``,
    the attribute will  be set on all the characters to the end of the line.  This
    function does not move the cursor. The changed line will be touched using the
    :meth:`touchline` method so that the contents will be redisplayed by the next
@@ -884,7 +884,7 @@ the following methods and attributes:
 .. method:: window.getch([y, x])
 
    Get a character. Note that the integer returned does *not* have to be in ASCII
-   range: function keys, keypad keys and so are represented by numbers higher
+   range: function keys, keypad keys and so on are represented by numbers higher
    than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
    wait until a key is pressed.
 
