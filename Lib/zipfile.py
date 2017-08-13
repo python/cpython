@@ -2004,7 +2004,9 @@ def main(args=None):
     description = 'A simple command-line interface for zipfile module.'
     epilog = ' '.join([
         'If a directory is passed as a parameter to create or append',
-        'it will be recursively added.'
+        'it will be recursively added. Wildcards are supported, glob style,',
+        'and a wildcard such as **/*.py will recurse.  All recursion will',
+        'skip any directories starting with . such as .git, etc.'
     ])
     parser = argparse.ArgumentParser(description=description, epilog=epilog)
     parser.add_argument('-v', '--verbose', action='count')
@@ -2061,17 +2063,23 @@ def main(args=None):
             print('Add to {!r}:'.format(zip_name))
 
     if mode and zip_name:  # Create or append files
+        import glob
         def addToZip(zf, path, zippath):
             if os.path.isfile(path):
                 if args.verbose:
                     print("Add: {!r}".format(zippath))
                 zf.write(path, zippath, ZIP_DEFLATED)
             elif os.path.isdir(path):
-                if zippath:
-                    zf.write(path, zippath)
-                for nm in os.listdir(path):
-                    addToZip(zf,
-                             os.path.join(path, nm), os.path.join(zippath, nm))
+                if not os.path.split(path)[-1].startswith('.'):
+                    if zippath:
+                        zf.write(path, zippath)
+                    for nm in os.listdir(path):
+                        addToZip(zf,
+                                 os.path.join(path, nm), os.path.join(zippath, nm))
+            else:
+                matches = glob.iglob(path)  # Might be a just wildcard
+                for nm in matches:  # if not then this will have no entries.
+                    addToZip(zf, nm, nm)
             # else: ignore
         if len(files):
             with ZipFile(zip_name, mode) as zf:
