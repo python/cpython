@@ -32,11 +32,13 @@ def _try_compile(source, name):
     return c
 
 def dis(x=None, *, file=None, depth=None):
-    """Disassemble classes, methods, functions, generators,
-       asynchronous generators, coroutines, or code.
+    """Disassemble classes, methods, functions, other compiled objects, or code.
 
-    With no argument, disassemble the last traceback.
+       With no argument, disassemble the last traceback.
 
+       Compiled objects currently include generator objects, async generator
+       objects, and coroutine objects, all of which store their code object
+       in a special attribute.
     """
     if x is None:
         distb(file=file)
@@ -112,9 +114,7 @@ def pretty_flags(flags):
     return ", ".join(names)
 
 def _get_code_object(x):
-    """Helper to handle methods, functions, generators,
-       asynchronous generators, coroutines, strings and
-       raw code objects"""
+    """Helper to handle methods, compiled or raw code objects, and strings."""
     if hasattr(x, '__func__'): # Method
         x = x.__func__
     if hasattr(x, '__code__'): # Function
