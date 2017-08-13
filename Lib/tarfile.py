@@ -2468,8 +2468,10 @@ def main():
     epilog= ' '.join([
         'When creating compression is determined by a tarfile',
         'final extention of any of %s. ' % ', '.join(compressions.keys()),
-        'If any of the arguments to create or add are directory names',
-        'those directories will be added recursively.'
+        'If a directory is passed as a parameter to create or append',
+        'it will be recursively added. Wildcards are supported, glob style,',
+        'and a wildcard such as **/*.py will recurse, this recursion will',
+        'skip any directories starting with . such as .git, etc.'
     ])
     parser = argparse.ArgumentParser(
         description=description,
@@ -2563,13 +2565,23 @@ def main():
                     tar_name))
 
     if tar_name and tar_mode:  # Add or Create so add files
+        import glob
         if len(tar_files):
-            count = 0
             with TarFile.open(tar_name, tar_mode) as tf:
                 for file_name in tar_files:
                     if args.verbose:
                         print('  Add: {!r}'.format(file_name))
-                    tf.add(file_name)
+                    if os.path.exists(file_name):
+                        tf.add(file_name)
+                    else:
+                        # Not a file or dir so possible wildcard
+                        if args.verbose:
+                            print("Possible  Wildcard Add!", file_name)
+                        for file_name in glob.glob(file_name):
+                            if args.verbose:
+                                print('  Add: {!r}'.format(file_name))
+                            tf.add(file_name)
+
             if args.verbose:
                 print('Files added to {!r}.'.format(tar_name))
         else:
