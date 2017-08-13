@@ -1353,7 +1353,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(info);
 
         /*
-         * Issue #21669: Custom error for 'print' & 'exec' as statements 
+         * Issue #21669: Custom error for 'print' & 'exec' as statements
          *
          * Only applies to SyntaxError instances, not to subclasses such
          * as TabError or IndentationError (see issue #31161)
