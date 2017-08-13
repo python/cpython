@@ -87,11 +87,14 @@ code.
 
       Return a formatted view of the bytecode operations (the same as printed by
       :func:`dis.dis`, but returned as a multi-line string).
-
+      
    .. method:: info()
 
       Return a formatted multi-line string with detailed information about the
       code object, like :func:`code_info`.
+
+   .. versionchanged:: 3.7
+      This can now handle asynchronous generator and coroutine objects.
 
 Example::
 
@@ -123,6 +126,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    releases.
 
    .. versionadded:: 3.2
+   
+   .. versionchanged:: 3.7
+      This can now handle asynchronous generator and coroutine objects.
 
 
 .. function:: show_code(x, *, file=None)
@@ -166,6 +172,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
    .. versionchanged:: 3.7
       Implemented recursive disassembling and added *depth* parameter.
+      
+   .. versionchanged:: 3.7
+      This can now handle asynchronous generator and coroutine objects.
 
 
 .. function:: distb(tb=None, *, file=None)
