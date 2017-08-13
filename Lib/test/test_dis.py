@@ -9,8 +9,6 @@ import io
 import re
 import types
 import contextlib
-import warnings
-import gc
 
 def get_tb():
     def _error():
@@ -399,41 +397,6 @@ Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
 )
 
 
-
-@contextlib.contextmanager
-def ignore_coroutine_never_awaited_warnings():
-    """
-    The coroutine test leaks a coroutine, and thus triggers the
-    "RuntimeWarning: coroutine '...' was never awaited" message. This context
-    manager should be used anywhere this happens to hide those messages, because
-    (a) when expected they're clutter, (b) on CPython 3.5.x where x < 3, this
-    warning can trigger a segfault if we run with warnings turned into errors:
-    https://bugs.python.org/issue27811.
-
-    (Adapted from python-trio/trio/.../test_run.py)
-    """
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", message="coroutine '.*' was never awaited"
-        )
-        try:
-            yield
-        finally:
-            # Make sure to trigger any coroutine __del__ methods now, before
-            # we leave the context manager.
-
-            # In the test suite we sometimes want to call gc.collect() to make sure
-            # that any objects with noisy __del__ methods (e.g. unawaited coroutines)
-            # get collected before we continue, so their noise doesn't leak into
-            # unrelated tests.
-            #
-            # On PyPy, coroutine objects (for example) can survive at least 1 round of
-            # garbage collection, because executing their __del__ method to print the
-            # warning can cause them to be resurrected. So we call collect a few times
-            # to make sure.
-            for _ in range(4):
-                gc.collect()
-
 class DisTests(unittest.TestCase):
 
     maxDiff = None
@@ -575,19 +538,20 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(_C.cm, dis_c_class_method)
 
     def test_disassemble_generator(self):
-        gen_func_disas = self.get_disassembly(_g)  # Disassemble generator function
-        gen_disas = self.get_disassembly(_g(1))  # Disassemble generator itself
+        gen_func_disas = self.get_disassembly(_g)  # Generator function
+        gen_disas = self.get_disassembly(_g(1))  # Generator object
         self.assertEqual(gen_disas, gen_func_disas)
 
     def test_disassemble_async_generator(self):
-        agen_func_disas = self.get_disassembly(_ag) # Disassemble async generator function
-        agen_disas = self.get_disassembly(_ag(1)) # Disassemble async generator itself
+        agen_func_disas = self.get_disassembly(_ag)  # Async generator function
+        agen_disas = self.get_disassembly(_ag(1))  # Async generator object
         self.assertEqual(agen_disas, agen_func_disas)
 
     def test_disassemble_coroutine(self):
-        coro_func_disas = self.get_disassembly(_co) # Disassemble coroutine function
-        with ignore_coroutine_never_awaited_warnings():
-            coro_disas = self.get_disassembly(_co(1)) # Disassemble coroutine itself
+        coro_func_disas = self.get_disassembly(_co)  # Coroutine function
+        coro = _co(1)  # Coroutine object
+        coro.close()  # Avoid a RuntimeWarning (never awaited)
+        coro_disas = self.get_disassembly(coro)
         self.assertEqual(coro_disas, coro_func_disas)
 
     def test_disassemble_fstring(self):
@@ -1105,14 +1069,12 @@ class BytecodeTests(unittest.TestCase):
         self.assertEqual(list(actual), expected_opinfo_outer)
 
     def test_source_line_in_disassembly(self):
-        # Use the line in the source code
-        actual = dis.Bytecode(simple).dis()
-        actual = actual.lstrip(" ").partition(" ")[0]  # extract the line num
-        expected = str(simple.__code__.co_firstlineno)
+        # Use the line in the source code (split extracts the line no)
+        actual = dis.Bytecode(simple).dis().split(" ")[0]
+        expected = "{:>3}".format(simple.__code__.co_firstlineno)
         self.assertEqual(actual, expected)
         # Use an explicit first line number (split extracts the line no)
-        actual = dis.Bytecode(simple, first_line=350).dis()
-        actual = actual.lstrip(" ").partition(" ")[0]  # extract the line num
+        actual = dis.Bytecode(simple, first_line=350).dis().split(" ")[0]
         self.assertEqual(actual, "350")
 
     def test_info(self):
