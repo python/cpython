@@ -43,16 +43,19 @@ def dis(x=None, *, file=None, depth=None):
     if x is None:
         distb(file=file)
         return
-    if hasattr(x, '__func__'):  # Method
+    # Extract functions from methods.
+    if hasattr(x, '__func__'):
         x = x.__func__
-    if hasattr(x, '__code__'):  # Function
+    # Extract compiled code objects from...
+    if hasattr(x, '__code__'):  # ...a function, or
         x = x.__code__
-    if hasattr(x, 'gi_code'):  # Generator
+    elif hasattr(x, 'gi_code'):  #...a generator object, or
         x = x.gi_code
-    if hasattr(x, 'ag_code'):  # Async generator
+    elif hasattr(x, 'ag_code'):  #...an asynchronous generator object, or
         x = x.ag_code
-    if hasattr(x, 'cr_code'):  # Coroutine
+    elif hasattr(x, 'cr_code'):  #...a coroutine.
         x = x.cr_code
+    # Perform the disassembly.
     if hasattr(x, '__dict__'):  # Class or module
         items = sorted(x.__dict__.items())
         for name, x1 in items:
@@ -115,19 +118,23 @@ def pretty_flags(flags):
 
 def _get_code_object(x):
     """Helper to handle methods, compiled or raw code objects, and strings."""
-    if hasattr(x, '__func__'): # Method
+    # Extract functions from methods.
+    if hasattr(x, '__func__'):
         x = x.__func__
-    if hasattr(x, '__code__'): # Function
+    # Extract compiled code objects from...
+    if hasattr(x, '__code__'):  # ...a function, or
         x = x.__code__
-    if hasattr(x, 'gi_code'):  # Generator
+    elif hasattr(x, 'gi_code'):  #...a generator object, or
         x = x.gi_code
-    if hasattr(x, 'ag_code'):  # Async generator
+    elif hasattr(x, 'ag_code'):  #...an asynchronous generator object, or
         x = x.ag_code
-    if hasattr(x, 'cr_code'):  # Coroutine
+    elif hasattr(x, 'cr_code'):  #...a coroutine.
         x = x.cr_code
-    if isinstance(x, str):     # Source code
+    # Handle source code.
+    if isinstance(x, str):
         x = _try_compile(x, "<disassembly>")
-    if hasattr(x, 'co_code'):  # Code object
+    # By now, if we don't have a code object, we can't disassemble x.
+    if hasattr(x, 'co_code'):
         return x
     raise TypeError("don't know how to disassemble %s objects" %
                     type(x).__name__)
