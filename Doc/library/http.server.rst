@@ -335,6 +335,15 @@ of which this module provides three different variants:
       "text/javascript", "application/javascript", "application/json"]``. To
       disable compression, set the attribute to the empty list.
 
+   .. attribute:: compressions
+
+      A mapping between compression encodings (eg. "gzip") and a generator
+      that takes a file object as argument and yields data read from the file
+      object, compressed with the encoding. By default, "gzip" and "deflate"
+      compressions are supported. To support other algorithms,
+      :attr:`compressions` can be extended ; see :func:`_gzip_producer` in
+      the source code for an example of a compressed data generator.
+
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
    .. method:: do_HEAD()

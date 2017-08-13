@@ -175,32 +175,38 @@ commonly_compressed_types = [ "application/atom+xml",
                               "text/xml"
                             ]
 
-def _gzip_producer(fileobj, chunked):
-    """Generator that yields pieces of gzipped data read from the file object
-    fileobj.
-    If chunked is True, the pieces are formatted as chunks for Chunked Tranfer
-    Encoding.
-    """
-    if chunked:
-        def make_chunk(data):
-            return f"{len(data):X}".encode("ascii") + b"\r\n" + data + b"\r\n"
-    else:
-        make_chunk = lambda x:x
+# Generators for HTTP compression
 
+def _zlib_producer(fileobj, wbits):
+    """Generator that yields pieces of compressed data read from the file
+    object fileobj, using the zlib library.
+    It yields non-empty bytes objects and ends by yielding b'', for compliance
+    with the Chunked Transfer Encoding protocol.
+    wbits is the same argument as for zlib.compressobj.
+    """
     bufsize = 2 << 17
-    producer = zlib.compressobj(wbits=16 + 9) # gzip format
+    producer = zlib.compressobj(wbits=wbits)
     with fileobj:
         while True:
             buf = fileobj.read(bufsize)
             if not buf: # end of file
                 data = producer.flush()
                 if data:
-                    yield make_chunk(data)
-                yield make_chunk(b'')
+                    yield data
+                yield b''
                 return
             data = producer.compress(buf)
             if data:
-                yield make_chunk(data)
+                yield data
+
+def _gzip_producer(fileobj):
+    """Generator for gzip compression."""
+    return _zlib_producer(fileobj, 25)
+
+def _deflate_producer(fileobj):
+    """Generator for deflage compression."""
+    return _zlib_producer(fileobj, 15)
+
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -713,6 +719,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     # Set to the empty list by default (no compression).
     compressed_types = []
 
+    # Dictionary mapping an encoding (in an Accept-Encoding header) to a
+    # generator of compressed data. By default, the only supported encoding is
+    # gzip. Override if a subclass wants to use another compression algorithm.
+    compressions = {
+        'deflate': _deflate_producer,
+        'gzip': _gzip_producer,
+        'x-gzip': _gzip_producer
+    }
+
     def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
@@ -728,17 +743,23 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     self.copyfile(f, self.wfile)
                 else:
                     # Generator for compressed data
-                    for chunk in f:
-                        self.wfile.write(chunk)
+                    if self.protocol_version >= "HTTP/1.1":
+                        for data in f:
+                            self.wfile.write(self._make_chunk(data))
+                    else:
+                        for data in f:
+                            self.wfile.write(data)
             finally:
                 f.close()
-
 
     def do_HEAD(self):
         """Serve a HEAD request."""
         f = self.send_head()
         if f:
             f.close()
+
+    def _make_chunk(self, data):
+        return f"{len(data):X}".encode("ascii") + b"\r\n" + data + b"\r\n"
 
     def send_head(self):
         """Common code for GET and HEAD commands.
@@ -820,39 +841,56 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 return f
 
             # Use HTTP compression (gzip) if possible
-            # Get accepted encodings
+
+            # Get accepted encodings ; "encodings" is a dictionary mapping
+            # encodings to their quality ; eg for header "gzip; q=0.8",
+            # encodings["gzip"] is set to 0.8
             accept_encoding = self.headers.get_all("Accept-Encoding", ())
-            encodings = set()
+            encodings = {}
             for accept in http.cookiejar.split_header_words(accept_encoding):
                 params = iter(accept)
                 encoding = next(params, ("", ""))[0]
                 quality, value = next(params, ("", ""))
                 if quality == "q" and value:
                     try:
-                        encoding = encoding if float(value) else ""
+                        q = float(value)
                     except ValueError:
-                        # Invalid quality : ignore
-                        pass
-                encodings.add(encoding)
+                        # Invalid quality : ignore encoding
+                        q = 0
+                else:
+                    q = 1 # quality default to 1
+                if q:
+                    encodings[encoding] = max(encodings.get(encoding, 0), q)
 
-            # If gzip encoding is accepted, send gzipped data
-            if any(key in encodings for key in ["*", "gzip", "x-gzip"]):
-                self.send_header("Content-Encoding", "gzip")
+            compressions = set(encodings).intersection(self.compressions)
+            compression = None
+            if compressions:
+                # Take the encoding with highest quality
+                compression = sorted((encodings[enc], enc)
+                    for enc in compressions)[-1][1]
+            elif '*' in encodings:
+                # If no specified encoding is supported but "*" is accepted,
+                # use gzip.
+                compression = "gzip"
+            if compression:
+                # If at least one encoding is accepted, send data compressed
+                # with the selected compression algorithm.
+                producer = self.compressions[compression]
+                self.send_header("Content-Encoding", compression)
                 if content_length < 2 << 18:
                     # For small files, load content in memory
                     with f:
-                        content = gzip.compress(f.read())
+                        content = b''.join(producer(f))
                     content_length = len(content)
                     f = io.BytesIO(content)
                 else:
-                    chunked = False
-                    if self.protocol_version >= "HTTP/1.1":
+                    chunked = self.protocol_version >= "HTTP/1.1"
+                    if chunked:
                         # Use Chunked Transfer Encoding (RFC 7230 section 4.1)
                         self.send_header("Transfer-Encoding", "chunked")
-                        chunked = True
                     self.end_headers()
                     # Return a generator of pieces of compressed data
-                    return _gzip_producer(f, chunked)
+                    return producer(f)
 
             self.send_header("Content-Length", str(content_length))
             self.end_headers()

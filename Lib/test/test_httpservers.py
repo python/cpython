@@ -13,6 +13,7 @@ import sys
 import re
 import base64
 import gzip
+import zlib
 import ntpath
 import shutil
 import email.message
@@ -560,6 +561,8 @@ class HTTPCompressionTestCase(BaseTestCase):
         compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
             "text/javascript", "application/javascript", "application/json"]
 
+    compressible_ext = ["txt", "js", "html", "css"]
+
     def setUp(self):
         BaseTestCase.setUp(self)
         self.cwd = os.getcwd()
@@ -575,8 +578,6 @@ class HTTPCompressionTestCase(BaseTestCase):
 
         with open(os.path.join(self.tempdir, 'test.abc'), 'wb') as temp:
             temp.write(self.data)
-
-        self.compressible_ext = ["txt", "js", "html", "css"]
 
         for ext in self.compressible_ext:
             path = os.path.join(self.tempdir, 'test.{}'.format(ext))
@@ -638,6 +639,13 @@ class HTTPCompressionTestCase(BaseTestCase):
             self.assertTrue('Content-Encoding' in response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
 
+        # test with encoding "deflate" instead of "gzip"
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'deflate'})
+            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertEqual(zlib.decompress(response.read()), self.data)
+
         # alternative Accept-Encoding syntax
         for ext in self.compressible_ext:
 
@@ -688,7 +696,7 @@ class HTTPCompressionTestCase(BaseTestCase):
             self.assertFalse('Content-Encoding' in response.headers)
 
             response = self.request(self.base_url + '/test.{}'.format(ext),
-                headers={'Accept-Encoding': 'deflate'})
+                headers={'Accept-Encoding': 'dummy'})
             self.assertFalse('Content-Encoding' in response.headers)
 
 class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
