@@ -323,6 +323,7 @@ class KeyTest(unittest.TestCase):
     def test_builtin_name(self):
         eq = self.assertEqual
         d = dialog
+        idleConf.userCfg['main'].remove_section('Keys')
         item_list = ['IDLE Classic Windows', 'IDLE Classic OSX', 'IDLE Modern UNIX']
 
         # Not in old_keys, defaults name to first item.
@@ -573,6 +574,8 @@ class KeyTest(unittest.TestCase):
         eq(b.get('anchor'), 'spam - <Shift-Key-a>')
         eq(b.curselection(), (2, ))
         d.load_keys_list = Func()
+
+        del idleConf.GetKeySet
 
     def test_delete_custom_keys(self):
         eq = self.assertEqual
