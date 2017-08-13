@@ -2462,7 +2462,16 @@ def main():
     }
 
     description = 'A simple command-line interface for tarfile module.'
-    parser = argparse.ArgumentParser(description=description)
+    epilog= ' '.join([
+        'When creating compression is determined by a tarfile',
+        'final extention of any of %s. ' % ', '.join(compressions.keys()),
+        'If any of the arguments to create or add are directory names',
+        'those directories will be added recursively.'
+    ])
+    parser = argparse.ArgumentParser(
+        description=description,
+        epilog=epilog,
+    )
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help='Verbose output')
     group = parser.add_mutually_exclusive_group(required=True)
@@ -2470,12 +2479,13 @@ def main():
                        help='Show listing of a tarfile')
     group.add_argument('-e', '--extract', nargs='+',
                        metavar=('<tarfile>', '<output_dir>'),
-                       help='Extract tarfile into target dir')
-    group.add_argument(
-        '-c', '--create', nargs='+',
-        metavar=('<name>', '<file>'),
-        help='Create tarfile from sources, compressing if <name>.ext is one of:'
-        ' %s.' % ', '.join(compressions.keys()))
+                       help='Extract tarfile into single target dir')
+    group.add_argument('-c', '--create', nargs='+',
+                       metavar=('<name>', '<file|dir>'),
+                       help='Create tarfile from files.')
+    group.add_argument('-a', '--add', nargs='+',
+                       metavar=('<name>', '<file|dir>'),
+                       help='Append files to a tarfile, (.tar only).')
     group.add_argument('-t', '--test', metavar='<tarfile>',
                        help='Test if a tarfile is valid')
     args = parser.parse_args()
@@ -2526,13 +2536,41 @@ def main():
         _, ext = os.path.splitext(tar_name)
         tar_mode = 'w:' + compressions[ext] if ext in compressions else 'w'
         tar_files = args.create
+        if args.verbose:
+            print('Create {!r}:'.format(tar_name))
 
         with TarFile.open(tar_name, tar_mode) as tf:
             for file_name in tar_files:
+                if args.verbose:
+                    print('  Add: {!r}'.format(file_name))
+                tf.add(file_name)
+
+    elif args.add is not None:
+        tar_name = args.add.pop(0)
+        _, ext = os.path.splitext(tar_name)
+        if ext in compressions:
+            parser.exit(
+                1,
+                "Error: Add is not a supported operation for compressed tar files")
+
+        if os.path.exists(tar_name) and not is_tarfile(tar_name):
+            parser.exit(
+                1,
+                "Error: {!r} exists but is not a tar file so cannot add".format(tar_name))
+
+        tar_mode = 'a'
+        tar_files = args.add
+        if args.verbose:
+            print('Add to {!r}:'.format(tar_name))
+
+        with TarFile.open(tar_name, tar_mode) as tf:
+            for file_name in tar_files:
+                if args.verbose:
+                    print('  Add: {!r}'.format(file_name))
                 tf.add(file_name)
 
         if args.verbose:
-            print('{!r} file created.'.format(tar_name))
+            print('{!r} file added to.'.format(tar_name))
 
 if __name__ == '__main__':
     main()
