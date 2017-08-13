@@ -1358,7 +1358,6 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
          * Only applies to SyntaxError instances, not to subclasses such
          * as TabError or IndentationError (see issue #31161)
          */
-        /* Issue #21669: Custom error for 'print' & 'exec' as statements */
         if ((PyObject*)Py_TYPE(self) == PyExc_SyntaxError &&
                 self->text && PyUnicode_Check(self->text) &&
                 _report_missing_parentheses(self) < 0) {
