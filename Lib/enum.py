@@ -840,7 +840,7 @@ def _decompose(flag, value):
     not_covered = value
     negative = value < 0
     # issue29167: wrap accesses to _value2member_map_ in a list to avoid race
-    #             conditions between iterating over it and having more psuedo-
+    #             conditions between iterating over it and having more pseudo-
     #             members added to it
     if negative:
         # only check for named flags

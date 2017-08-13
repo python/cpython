@@ -1216,7 +1216,7 @@ class ConfigDialog(Toplevel):
         which are boolean, and can be toggled with a True/False button.
 
         Methods:
-            load_extentions:
+            load_extensions:
             extension_selected: Handle selection from list.
             create_extension_frame: Hold widgets for one extension.
             set_extension_value: Set in userCfg['extensions'].
@@ -1856,6 +1856,7 @@ class VarTrace:
 
     def clear(self):
         "Clear lists (for tests)."
+        # Call after all tests in a module to avoid memory leaks.
         self.untraced.clear()
         self.traced.clear()
 

@@ -610,7 +610,7 @@ always available.
    :class:`~collections.namedtuple` of the form `(firstiter, finalizer)`,
    where *firstiter* and *finalizer* are expected to be either ``None`` or
    functions which take an :term:`asynchronous generator iterator` as an
-   argument, and are used to schedule finalization of an asychronous
+   argument, and are used to schedule finalization of an asynchronous
    generator by an event loop.
 
    .. versionadded:: 3.6

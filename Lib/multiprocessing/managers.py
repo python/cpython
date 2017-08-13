@@ -84,14 +84,17 @@ def dispatch(c, id, methodname, args=(), kwds={}):
 def convert_to_error(kind, result):
     if kind == '#ERROR':
         return result
-    elif kind == '#TRACEBACK':
-        assert type(result) is str
-        return  RemoteError(result)
-    elif kind == '#UNSERIALIZABLE':
-        assert type(result) is str
-        return RemoteError('Unserializable message: %s\n' % result)
+    elif kind in ('#TRACEBACK', '#UNSERIALIZABLE'):
+        if not isinstance(result, str):
+            raise TypeError(
+                "Result {0!r} (kind '{1}') type is {2}, not str".format(
+                    result, kind, type(result)))
+        if kind == '#UNSERIALIZABLE':
+            return RemoteError('Unserializable message: %s\n' % result)
+        else:
+            return RemoteError(result)
     else:
-        return ValueError('Unrecognized message type')
+        return ValueError('Unrecognized message type {!r}'.format(kind))
 
 class RemoteError(Exception):
     def __str__(self):

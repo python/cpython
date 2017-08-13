@@ -1,0 +1,2 @@
+Add a non-dummy implementation of _Py_atomic_store and _Py_atomic_load on
+MSVC.
