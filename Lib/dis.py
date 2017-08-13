@@ -461,8 +461,8 @@ def findlinestarts(code):
 class Bytecode:
     """The bytecode operations of a piece of code
 
-    Instantiate this with a function, method, string of code, or a code object
-    (as returned by compile()).
+    Instantiate this with a function, method, other compiled object, string of
+    code, or a code object (as returned by compile()).
 
     Iterating over this yields the bytecode operations as Instruction instances.
     """
