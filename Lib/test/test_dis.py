@@ -335,7 +335,8 @@ async def _ag(x):
     yield x
 
 async def _co(x):
-    await _ag(x)
+    async for item in _ag(x):
+        pass
 
 def _h(y):
     def foo(x):
