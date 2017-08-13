@@ -1250,14 +1250,42 @@ class ZipFile:
         archive."""
         return self.filelist
 
-    def printdir(self, file=None):
-        """Print a table of contents for the zip file."""
-        print("%-46s %19s %12s" % ("File Name", "Modified    ", "Size"),
-              file=file)
+    def printdir(self, file=None, verbose=1):  # N.B. Verbose 1 is as original
+        """
+        Print a table of contents for the zip file.
+        :param file: Output file descriptor
+        :param verbose: How much detail to output"
+        """
+        formatinfo = [
+            # (Title, Width, Fmt) In order of verbosity
+            ("Name", 46, "{z.filename:46s}"),  # verbose = 0
+            ("Modified    ", 23,
+             "{z.date_time[0]:4d}-{z.date_time[1]:02d}-{z.date_time[2]:02d} "
+             "{z.date_time[3]:02d}:{z.date_time[4]:02d}:{z.date_time[5]:02d}"),  # verbose = 1
+            ("Size", 12, "{z.file_size:>12d}"),  # verbose = 1
+            ("Comp", 12, "{z.compress_size:>12d}"),  # verbose = 1
+            ("%", 7, "{percent:>8}"),   # verbose = 2
+            ("CRC", 12, "{z.CRC:12}"),  # verbose = 3
+            ("Method", 11, "{compression:>11}"),  # verbose = 3
+        ]
+        elsement_dict = {0:1, 1:4, 2:5, 3:7,}
+        fieldcount = elsement_dict.get(verbose, len(formatinfo))
+        fields = formatinfo[:fieldcount]
+        # Print the title
+        print(' '.join(['{0:^{1}}'.format(*field) for field in fields]))
+        linefmt = ' '.join([field[2] for field in fields])
         for zinfo in self.filelist:
-            date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time[:6]
-            print("%-46s %s %12d" % (zinfo.filename, date, zinfo.file_size),
-                  file=file)
+            if zinfo.file_size:
+                percent = "%3.1f%%" % (
+                    100.0 * zinfo.compress_size / zinfo.file_size)
+            else:
+                percent = " " * 5
+            compression = compressor_names.get(zinfo.compress_type, '???')
+            if zinfo.is_dir():
+                print(zinfo.filename, file=file)
+            else:
+                print(linefmt.format(compression=compression, percent=percent,
+                                     z=zinfo), file=file)
 
     def testzip(self):
         """Read all the files and check the CRC."""
@@ -2008,26 +2036,10 @@ def main(args=None):
 
     elif args.list is not None:
         src = args.list
+        if args.verbose is None:
+            args.verbose = 0
         with ZipFile(src, 'r') as zf:
-            if args.verbose is None or args.verbose == 0:
-                print('\n'.join(zf.namelist()))
-            elif args.verbose == 1:
-                zf.printdir()
-            else:
-                print("%-46s %19s %12s %12s %8s" % (
-                    "File Name", "Modified    ", "Size", "Compressed Size",
-                    "Percent"))
-                for zinfo in zf.filelist:
-                    if not zinfo.is_dir():
-                        date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time[:6]
-                        if zinfo.file_size:
-                            percent = "%3.1f%%" % (
-                                100.0 * zinfo.compress_size / zinfo.file_size)
-                        else:
-                            percent = ""
-                        print("%-46s %s %12d %12d %s" % (
-                            zinfo.filename, date, zinfo.file_size,
-                            zinfo.compress_size, percent))
+            zf.printdir(verbose=args.verbose)
 
     elif args.extract is not None:
         src, curdir = args.extract
