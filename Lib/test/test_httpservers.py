@@ -562,7 +562,7 @@ class HTTPCompressionTestCase(BaseTestCase):
 
         compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
             "text/javascript", "application/javascript", "application/json"]
-            
+
     compressible_ext = ["txt", "js", "html", "css"]
 
     def setUp(self):
