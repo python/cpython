@@ -1966,25 +1966,40 @@ class PyZipFile(ZipFile):
 
 
 def main(args=None):
+    """ Command line operation."""
     import argparse
 
+    zip_name = None
+    files = []
+    mode = None
+
     description = 'A simple command-line interface for zipfile module.'
-    parser = argparse.ArgumentParser(description=description)
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-l', '--list', metavar='<zipfile>',
-                       help='Show listing of a zipfile')
-    group.add_argument('-e', '--extract', nargs=2,
-                       metavar=('<zipfile>', '<output_dir>'),
-                       help='Extract zipfile into target dir')
-    group.add_argument('-c', '--create', nargs='+',
-                       metavar=('<name>', '<file>'),
-                       help='Create zipfile from sources')
-    group.add_argument('-t', '--test', metavar='<zipfile>',
-                       help='Test if a zipfile is valid')
+    epilog = ' '.join([
+        'If a directory is passed as a parameter to create or append',
+        'it will be recursively added.'
+    ])
+    parser = argparse.ArgumentParser(description=description, epilog=epilog)
+    parser.add_argument('-v', '--verbose', action='count')
+    operation = parser.add_mutually_exclusive_group(required=True)
+    operation.add_argument('-l', '--list', metavar='<zipfile>',
+                           help='Show listing of a zipfile')
+    operation.add_argument('-e', '--extract', nargs=2,
+                           metavar=('<zipfile>', '<output_dir>'),
+                           help='Extract zipfile into target dir')
+    operation.add_argument('-c', '--create', nargs='+',
+                           metavar=('<name>', '<file>'),
+                           help='Create zipfile from files')
+    operation.add_argument('-a', '--append', nargs='+',
+                           metavar=('<name>', '<file>'),
+                           help='Append files to zipfile')
+    operation.add_argument('-t', '--test', metavar='<zipfile>',
+                           help='Test if a zipfile is valid')
     args = parser.parse_args(args)
 
     if args.test is not None:
         src = args.test
+        if args.verbose:
+            print("Testing: {!r}".format(src))
         with ZipFile(src, 'r') as zf:
             badfile = zf.testzip()
         if badfile:
@@ -1994,7 +2009,25 @@ def main(args=None):
     elif args.list is not None:
         src = args.list
         with ZipFile(src, 'r') as zf:
-            zf.printdir()
+            if args.verbose is None or args.verbose == 0:
+                print('\n'.join(zf.namelist()))
+            elif args.verbose == 1:
+                zf.printdir()
+            else:
+                print("%-46s %19s %12s %12s %8s" % (
+                    "File Name", "Modified    ", "Size", "Compressed Size",
+                    "Percent"))
+                for zinfo in zf.filelist:
+                    if not zinfo.is_dir():
+                        date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time[:6]
+                        if zinfo.file_size:
+                            percent = "%3.1f%%" % (
+                                100.0 * zinfo.compress_size / zinfo.file_size)
+                        else:
+                            percent = ""
+                        print("%-46s %s %12d %12d %s" % (
+                            zinfo.filename, date, zinfo.file_size,
+                            zinfo.compress_size, percent))
 
     elif args.extract is not None:
         src, curdir = args.extract
@@ -2004,9 +2037,22 @@ def main(args=None):
     elif args.create is not None:
         zip_name = args.create.pop(0)
         files = args.create
+        mode = 'w'
+        if args.verbose:
+            print('Create {!r}:'.format(zip_name))
 
+    elif args.append is not None:
+        zip_name = args.append.pop(0)
+        files = args.append
+        mode = 'a'
+        if args.verbose:
+            print('Add to {!r}:'.format(zip_name))
+
+    if mode and zip_name:  # Create or append files
         def addToZip(zf, path, zippath):
             if os.path.isfile(path):
+                if args.verbose:
+                    print("Add: {!r}".format(zippath))
                 zf.write(path, zippath, ZIP_DEFLATED)
             elif os.path.isdir(path):
                 if zippath:
@@ -2015,15 +2061,17 @@ def main(args=None):
                     addToZip(zf,
                              os.path.join(path, nm), os.path.join(zippath, nm))
             # else: ignore
-
-        with ZipFile(zip_name, 'w') as zf:
-            for path in files:
-                zippath = os.path.basename(path)
-                if not zippath:
-                    zippath = os.path.basename(os.path.dirname(path))
-                if zippath in ('', os.curdir, os.pardir):
-                    zippath = ''
-                addToZip(zf, path, zippath)
+        if len(files):
+            with ZipFile(zip_name, mode) as zf:
+                for path in files:
+                    zippath = os.path.basename(path)
+                    if not zippath:
+                        zippath = os.path.basename(os.path.dirname(path))
+                    if zippath in ('', os.curdir, os.pardir):
+                        zippath = ''
+                    addToZip(zf, path, zippath)
+        else:
+            print("Nothing to do!")
 
 if __name__ == "__main__":
     main()
