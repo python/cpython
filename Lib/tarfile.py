@@ -1875,7 +1875,7 @@ class TarFile(object):
         """
         self._check()
 
-        if members is None:
+        if members is None or len(members) == 0:  # None or empty list
             members = self
         for tarinfo in members:
             if verbose:
@@ -2460,6 +2460,9 @@ def main():
         '.tbz2': 'bz2',
         '.tb2': 'bz2',
     }
+    tar_files = []
+    tar_name = None
+    tar_mode = None
 
     description = 'A simple command-line interface for tarfile module.'
     epilog= ' '.join([
@@ -2538,16 +2541,16 @@ def main():
         tar_files = args.create
         if args.verbose:
             print('Create {!r}:'.format(tar_name))
-
-        with TarFile.open(tar_name, tar_mode) as tf:
-            for file_name in tar_files:
-                if args.verbose:
-                    print('  Add: {!r}'.format(file_name))
-                tf.add(file_name)
-
+        # Actual adding files is done later.
     elif args.add is not None:
         tar_name = args.add.pop(0)
         _, ext = os.path.splitext(tar_name)
+
+        tar_mode = 'a'
+        tar_files = args.add
+        if args.verbose:
+            print('Add to {!r}:'.format(tar_name))
+
         if ext in compressions:
             parser.exit(
                 1,
@@ -2556,21 +2559,21 @@ def main():
         if os.path.exists(tar_name) and not is_tarfile(tar_name):
             parser.exit(
                 1,
-                "Error: {!r} exists but is not a tar file so cannot add".format(tar_name))
+                "Error: {!r} exists but is not a tar file so cannot add".format(
+                    tar_name))
 
-        tar_mode = 'a'
-        tar_files = args.add
-        if args.verbose:
-            print('Add to {!r}:'.format(tar_name))
-
-        with TarFile.open(tar_name, tar_mode) as tf:
-            for file_name in tar_files:
-                if args.verbose:
-                    print('  Add: {!r}'.format(file_name))
-                tf.add(file_name)
-
-        if args.verbose:
-            print('{!r} file added to.'.format(tar_name))
+    if tar_name and tar_mode:  # Add or Create so add files
+        if len(tar_files):
+            count = 0
+            with TarFile.open(tar_name, tar_mode) as tf:
+                for file_name in tar_files:
+                    if args.verbose:
+                        print('  Add: {!r}'.format(file_name))
+                    tf.add(file_name)
+            if args.verbose:
+                print('Files added to {!r}.'.format(tar_name))
+        else:
+            print("Nothing to do!")
 
 if __name__ == '__main__':
     main()
