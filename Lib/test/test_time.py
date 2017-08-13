@@ -489,6 +489,10 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(OSError, time.localtime, invalid_time_t)
         self.assertRaises(OSError, time.ctime, invalid_time_t)
 
+        # Issue #26669: check for localtime() failure
+        self.assertRaises(ValueError, time.localtime, float("nan"))
+        self.assertRaises(ValueError, time.ctime, float("nan"))
+
     def test_get_clock_info(self):
         clocks = ['clock', 'perf_counter', 'process_time', 'time']
         if hasattr(time, 'monotonic'):

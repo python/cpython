@@ -155,6 +155,10 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         volatile double d;
 
         d = PyFloat_AsDouble(obj);
+        if (isnan(d)) {
+            PyErr_SetString(PyExc_ValueError, "Invalid Value");
+            return -1;
+        }
         d = _PyTime_Round(d, round);
         (void)modf(d, &intpart);
 
