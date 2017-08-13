@@ -14,6 +14,7 @@ import re
 import base64
 import gzip
 import zlib
+import bz2
 import ntpath
 import shutil
 import email.message
@@ -554,13 +555,14 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         html_text = '>%s<' % html.escape(filename, quote=False)
         self.assertIn(html_text.encode(enc), body)
 
+
 class HTTPCompressionTestCase(BaseTestCase):
 
     class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
 
         compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
             "text/javascript", "application/javascript", "application/json"]
-
+            
     compressible_ext = ["txt", "js", "html", "css"]
 
     def setUp(self):
@@ -699,6 +701,35 @@ class HTTPCompressionTestCase(BaseTestCase):
                 headers={'Accept-Encoding': 'dummy'})
             self.assertFalse('Content-Encoding' in response.headers)
 
+    def test_user_defined_compressions(self):
+        # test with encoding "bzip2" instead of "gzip"
+
+        # Write a generator for (non-standard) bzip2 compression encoding.
+        def _bzip2_producer(fileobj):
+            bufsize = 2 << 17
+            producer = bz2.BZ2Compressor()
+            with fileobj:
+                while True:
+                    buf = fileobj.read(bufsize)
+                    if not buf: # end of file
+                        data = producer.flush()
+                        if data:
+                            yield data
+                        yield b''
+                        return
+                    data = producer.compress(buf)
+                    if data:
+                        yield data
+
+        # update dictionary "compressions" to support bzip2
+        self.request_handler.compressions.update(bzip2=_bzip2_producer)
+
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'bzip2'})
+            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertEqual(bz2.decompress(response.read()), self.data)
+
 class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
 
     class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
@@ -719,6 +750,7 @@ class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
             self.assertTrue('Transfer-Encoding' in response.headers)
             self.assertEqual(gzip.decompress(response.read()),
                 self.repeat * self.data)
+
 
 cgi_file1 = """\
 #!%s
