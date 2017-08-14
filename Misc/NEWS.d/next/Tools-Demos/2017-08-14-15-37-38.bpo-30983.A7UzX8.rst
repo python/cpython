@@ -1,0 +1,4 @@
+With PEP 523, gdb's Python integration stopped working properly for frames
+using the ``_PyEval_EvalFrameDefault`` function.  Affected functionality
+included `py-list` and `py-bt`.  This is now fixed.  Patch by Bruno "Polaco"
+Penteado.
