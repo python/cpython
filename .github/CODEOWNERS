@@ -29,3 +29,11 @@
 
 # subprocess
 **/*subprocess*               @gpshead
+
+# Windows
+/PC/                          @zooba
+/PCBuild/                     @zooba
+
+# Windows installer packages
+/Tools/msi/                   @zooba
+/Tools/nuget/                 @zooba
