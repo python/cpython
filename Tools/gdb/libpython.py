@@ -1502,8 +1502,10 @@ class Frame(object):
         return False
 
     def is_evalframeex(self):
-        '''Is this a PyEval_EvalFrameEx frame?'''
-        if self._gdbframe.name() == 'PyEval_EvalFrameEx':
+        '''Is this a PyEval_EvalFrameEx or _PyEval_EvalFrameDefault (PEP 0523)
+        frame?'''
+        if self._gdbframe.name() in ('PyEval_EvalFrameEx',
+                                     '_PyEval_EvalFrameDefault'):
             '''
             I believe we also need to filter on the inline
             struct frame_id.inline_depth, only regarding frames with
