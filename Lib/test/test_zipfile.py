@@ -2203,14 +2203,16 @@ class CommandLineTest(unittest.TestCase):
 
     def test_list_command(self):
         zip_name = findfile('zipdir.zip')
-        t = io.StringIO()
-        with zipfile.ZipFile(zip_name, 'r') as tf:
-            tf.printdir(t)
-        expected = t.getvalue().encode('ascii', 'backslashreplace')
-        for opt in '-l', '--list':
-            out = self.zipfilecmd(opt, zip_name,
-                                  PYTHONIOENCODING='ascii:backslashreplace')
-            self.assertEqual(out, expected)
+        for verbosity in range(1, 4):
+            t = io.StringIO()
+            vstr = ['-v'] * verbosity
+            with zipfile.ZipFile(zip_name, 'r') as tf:
+                tf.printdir(t, verbose=verbosity)
+            expected = t.getvalue().encode('ascii', 'backslashreplace')
+            for opt in '-l', '--list':
+                out = self.zipfilecmd(*vstr, opt, zip_name,
+                                      PYTHONIOENCODING='ascii:backslashreplace')
+                self.assertEqual(out, expected)
 
     @requires_zlib
     def test_create_command(self):

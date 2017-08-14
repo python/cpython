@@ -1258,7 +1258,7 @@ class ZipFile:
         """
         formatinfo = [
             # (Title, Width, Fmt) In order of verbosity
-            ("Name", 46, "{z.filename:46s}"),  # verbose = 0
+            ("File Name", 46, "{z.filename:46s}"),  # verbose = 0
             ("Modified    ", 23,
              "{z.date_time[0]:4d}-{z.date_time[1]:02d}-{z.date_time[2]:02d} "
              "{z.date_time[3]:02d}:{z.date_time[4]:02d}:{z.date_time[5]:02d}"),  # verbose = 1
@@ -1268,11 +1268,12 @@ class ZipFile:
             ("CRC", 12, "{z.CRC:12}"),  # verbose = 3
             ("Method", 11, "{compression:>11}"),  # verbose = 3
         ]
-        elsement_dict = {0:1, 1:4, 2:5, 3:7,}
+        elsement_dict = {0:1, 1:3, 2:4, 3:5, 4:6,}
         fieldcount = elsement_dict.get(verbose, len(formatinfo))
         fields = formatinfo[:fieldcount]
         # Print the title
-        print(' '.join(['{0:^{1}}'.format(*field) for field in fields]))
+        print(' '.join(['{0:^{1}}'.format(*field) for field in fields]),
+              file=file)
         linefmt = ' '.join([field[2] for field in fields])
         for zinfo in self.filelist:
             if zinfo.file_size:
