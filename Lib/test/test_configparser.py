@@ -90,7 +90,11 @@ class BasicTestCase(CfgParserTestCaseClass):
         L.sort()
         eq = self.assertEqual
         eq(L, E)
-        L = cf.items('Spacey Bar From The Beginning')
+        L = cf.section_items('Spacey Bar From The Beginning')
+        L.sort()
+        eq(L, F)
+        with self.assertWarns(DeprecationWarning):
+            L = cf.items('Spacey Bar From The Beginning')
         L.sort()
         eq(L, F)
 
@@ -775,11 +779,19 @@ boolean {0[0]} NO
             key{0[1]} |%(name)s|
             getdefault{0[1]} |%(default)s|
         """.format(self.delimiters), defaults={"default": "<default>"})
-        L = list(cf.items("section", vars={'value': 'value'}))
+        L = list(cf.section_items("section", vars={'value': 'value'}))
         L.sort()
         self.assertEqual(L, expected)
         with self.assertRaises(configparser.NoSectionError):
-            cf.items("no such section")
+            cf.section_items("no such section")
+
+        with self.assertWarns(DeprecationWarning):
+            L = list(cf.items("section", vars={'value': 'value'}))
+        L.sort()
+        self.assertEqual(L, expected)
+        with self.assertRaises(configparser.NoSectionError):
+            with self.assertWarns(DeprecationWarning):
+                cf.section_items("no such section")
 
     def test_popitem(self):
         cf = self.fromstring("""
@@ -1321,10 +1333,15 @@ class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
         longname = 'yeah, sections can be indented as well'
         self.assertFalse(cf.getboolean(longname, 'are they subsections'))
         self.assertEqual(cf.get(longname, 'lets use some Unicode'), '片仮名')
-        self.assertEqual(len(cf.items('another one!')), 5) # 4 in section and
-                                                           # `go` from DEFAULT
+        # 4 in section and `go` from DEFAULT
+        self.assertEqual(len(cf.section_items('another one!')), 5)
         with self.assertRaises(configparser.InterpolationMissingOptionError):
-            cf.items('no values here')
+            cf.section_items('no values here')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(len(cf.items('another one!')), 5)
+        with self.assertRaises(configparser.InterpolationMissingOptionError):
+            with self.assertWarns(DeprecationWarning):
+                cf.section_items('no values here')
         self.assertEqual(cf.get('tricky interpolation', 'lets'), 'do this')
         self.assertEqual(cf.get('tricky interpolation', 'lets'),
                          cf.get('tricky interpolation', 'go'))
