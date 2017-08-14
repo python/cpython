@@ -2236,6 +2236,38 @@ class CommandLineTest(unittest.TestCase):
             finally:
                 unlink(TESTFN2)
 
+    @requires_zlib
+    def test_append_command(self):
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, 'w') as f:
+            f.write('test 1')
+        with open(TESTFN, 'w') as f:
+            f.write('test 1')
+        os.mkdir(TESTFNDIR)
+        self.addCleanup(rmtree, TESTFNDIR)
+        with open(os.path.join(TESTFNDIR, 'file.txt'), 'w') as f:
+            f.write('test 2')
+        files = [TESTFN, TESTFNDIR]
+        namelist = [TESTFN, TESTFNDIR + '/', TESTFNDIR + '/file.txt']
+        for opt in '-a', '--append':
+            try:
+                out = self.zipfilecmd(opt, TESTFN2, *files)
+                self.assertEqual(out, b'')
+                with zipfile.ZipFile(TESTFN2) as zf:
+                    self.assertEqual(zf.namelist(), namelist)
+                    self.assertEqual(zf.read(namelist[0]), b'test 1')
+                    self.assertEqual(zf.read(namelist[2]), b'test 2')
+                testfn3 = "Spam.txt"
+                with open(testfn3, 'w') as f:
+                    f.write('Spam Test!')
+                self.addCleanup(unlink, testfn3)
+                out = self.zipfilecmd('-v', opt, TESTFN2, testfn3)
+                with zipfile.ZipFile(TESTFN2) as zf:
+                    self.assertEqual(zf.read(testfn3), b"Spam Test!")
+                os.unlink(TESTFN2)
+            finally:
+                unlink(TESTFN2)
+
     def test_extract_command(self):
         zip_name = findfile('zipdir.zip')
         for opt in '-e', '--extract':
