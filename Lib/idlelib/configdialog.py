@@ -251,25 +251,24 @@ class ConfigDialog(Toplevel):
             delete_custom_theme: Ativate default [button_delete_custom_theme].
             save_new_theme: Save to userCfg['theme'] (is function).
 
-        Widget Structure:  (*) widgets bound to self
-            frame
-                frame_custom: LabelFrame
-                    (*)highlight_sample: Text
-                    (*)frame_color_set: Frame
-                        button_set_color: Button
-                        (*)opt_menu_highlight_target: DynOptionMenu - highlight_target
-                    frame_fg_bg_toggle: Frame
-                        (*)radio_fg: Radiobutton - fg_bg_toggle
-                        (*)radio_bg: Radiobutton - fg_bg_toggle
-                    button_save_custom_theme: Button
-                frame_theme: LabelFrame
-                    theme_type_title: Label
-                    (*)radio_theme_builtin: Radiobutton - is_builtin_theme
-                    (*)radio_theme_custom: Radiobutton - is_builtin_theme
-                    (*)opt_menu_theme_builtin: DynOptionMenu - builtin_theme
-                    (*)opt_menu_theme_custom: DynOptionMenu - custom_theme
-                    (*)button_delete_custom_theme: Button
-                    (*)new_custom_theme: Label
+        Widgets of highlights page frame:  (*) widgets bound to self
+            frame_custom: LabelFrame
+                (*)highlight_sample: Text
+                (*)frame_color_set: Frame
+                    button_set_color: Button
+                    (*)opt_menu_highlight_target: DynOptionMenu - highlight_target
+                frame_fg_bg_toggle: Frame
+                    (*)radio_fg: Radiobutton - fg_bg_toggle
+                    (*)radio_bg: Radiobutton - fg_bg_toggle
+                button_save_custom_theme: Button
+            frame_theme: LabelFrame
+                theme_type_title: Label
+                (*)radio_theme_builtin: Radiobutton - is_builtin_theme
+                (*)radio_theme_custom: Radiobutton - is_builtin_theme
+                (*)opt_menu_theme_builtin: DynOptionMenu - builtin_theme
+                (*)opt_menu_theme_custom: DynOptionMenu - custom_theme
+                (*)button_delete_custom_theme: Button
+                (*)new_custom_theme: Label
         """
         self.theme_elements={
             'Normal Text': ('normal', '00'),
@@ -796,20 +795,19 @@ class ConfigDialog(Toplevel):
     def create_page_keys(self):
         """Return frame of widgets for Keys tab.
 
-        Enable users to provisionally change keybindings (shortcut keys).
-        Keybindings are stored in sets and each set is a complete set of
-        keybindings.  The keybinding sets are called keysets and come in
-        two varieties - builtin (default) or custom (user).  The builtin
-        keysets and the keybindings contained within them are defined in
-        IDLE and cannot be modified in-place nor can new builtin keysets be
-        created.  If a keybinding is modified, then a custom keyset must
-        be defined for that modification to be used and stored.
+        Enable users to provisionally change both individual and sets of
+        keybindings (shortcut keys). Except for features implemented as
+        extensions, keybindings are stored in complete sets called
+        keysets. Built-in keysets in idlelib/config-keys.def are fixed
+        as far as the dialog is concerned. Any keyset can be used as the
+        base for a new custom keyset, stored in .idlerc/config-keys.cfg.
 
-        Function load_key_cfg() initializes tk variables from idleConf
-        entries.  Radiobuttons builtin_keyset_on and custom_keyset_on toggle
-        var keyset_source, which controls if the current set of keybindings
-        are from a builtin or custom keyset.  DynOptionMenus builtinlist and
-        customlist contain lists of the builtin and custom keysets,
+        Function load_key_cfg() initializes tk variables and keyset
+        lists and calls load_keys_list for the current keyset.
+        Radiobuttons builtin_keyset_on and custom_keyset_on toggle var
+        keyset_source, which controls if the current set of keybindings
+        are from a builtin or custom keyset. DynOptionMenus builtinlist
+        and customlist contain lists of the builtin and custom keysets,
         respectively, and the current item from each list is stored in
         vars builtin_name and custom_name.
 
@@ -845,45 +843,36 @@ class ConfigDialog(Toplevel):
         the callback function, var_changed_keybinding, to add the change to
         the 'keys' or 'extensions' changes tracker based on the binding type.
 
-
         Tk Variables:
-            builtin_name: Menu variable for built-in keybindings.
-            custom_name: Menu variable for custom keybindings.
-            keyset_source: Selector for built-in or custom keybindings.
             keybinding: Action/key bindings.
 
         Methods:
-            load_key_config: Set table.
             load_keys_list: Reload active set.
-            keybinding_selected: Bound to bindingslist button release.
-            get_new_keys: Command for button_new_keys.
-            get_new_keys_name: Call popup.
             create_new_key_set: Combine active keyset and changes.
             set_keys_type: Command for keyset_source.
-            delete_custom_keys: Command for button_delete_custom_keys.
-            save_as_new_key_set: Command for button_save_custom_keys.
             save_new_key_set: Save to idleConf.userCfg['keys'] (is function).
             deactivate_current_config: Remove keys bindings in editors.
 
-        Widget Structure:  (*) widgets bound to self
-            frame
-                frame_key_sets: LabelFrame
-                    frames[0]: Frame
-                        (*)builtin_keyset_on: Radiobutton - keyset_source
-                        (*)custom_keyset_on: Radiobutton - keyset_source
-                        (*)builtinlist: DynOptionMenu - builtin_name
-                        (*)customlist: DynOptionMenu - custom_name
-                        (*)keys_message: Label
-                    frames[1]: Frame
-                        (*)button_delete_custom_keys: Button
-                        (*)button_save_custom_keys: Button
-                frame_custom: LabelFrame
-                    frame_target: Frame
-                        target_title: Label
-                        scroll_target_y: Scrollbar
-                        scroll_target_x: Scrollbar
-                        (*)bindingslist: ListBox
-                        (*)button_new_keys: Button
+        Widgets for keys page frame:  (*) widgets bound to self
+            frame_key_sets: LabelFrame
+                frames[0]: Frame
+                    (*)builtin_keyset_on: Radiobutton - var keyset_source
+                    (*)custom_keyset_on: Radiobutton - var keyset_source
+                    (*)builtinlist: DynOptionMenu - var builtin_name,
+                            func keybinding_selected
+                    (*)customlist: DynOptionMenu - var custom_name,
+                            func keybinding_selected
+                    (*)keys_message: Label
+                frames[1]: Frame
+                    (*)button_delete_custom_keys: Button - delete_custom_keys
+                    (*)button_save_custom_keys: Button -  save_as_new_key_set
+            frame_custom: LabelFrame
+                frame_target: Frame
+                    target_title: Label
+                    scroll_target_y: Scrollbar
+                    scroll_target_x: Scrollbar
+                    (*)bindingslist: ListBox - on_bindingslist_select
+                    (*)button_new_keys: Button - get_new_keys & ..._name
         """
         parent = self.parent
         self.builtin_name = tracers.add(
@@ -1493,22 +1482,21 @@ class FontPage(Frame):
         which invokes the default callback to add an entry to
         changes.  Load_tab_cfg initializes space_num to default.
 
-        Widget Structure:  (*) widgets bound to self
-            frame (of tab_pages)
-                frame_font: LabelFrame
-                    frame_font_name: Frame
-                        font_name_title: Label
-                        (*)fontlist: ListBox - font_name
-                        scroll_font: Scrollbar
-                    frame_font_param: Frame
-                        font_size_title: Label
-                        (*)sizelist: DynOptionMenu - font_size
-                        (*)bold_toggle: Checkbutton - font_bold
-                    frame_font_sample: Frame
-                        (*)font_sample: Label
-                frame_indent: LabelFrame
-                        indent_title: Label
-                        (*)indent_scale: Scale - space_num
+        Widgets for FontPage(Frame):  (*) widgets bound to self
+            frame_font: LabelFrame
+                frame_font_name: Frame
+                    font_name_title: Label
+                    (*)fontlist: ListBox - font_name
+                    scroll_font: Scrollbar
+                frame_font_param: Frame
+                    font_size_title: Label
+                    (*)sizelist: DynOptionMenu - font_size
+                    (*)bold_toggle: Checkbutton - font_bold
+                frame_font_sample: Frame
+                    (*)font_sample: Label
+            frame_indent: LabelFrame
+                    indent_title: Label
+                    (*)indent_scale: Scale - space_num
         """
         self.font_name = tracers.add(StringVar(self), self.var_changed_font)
         self.font_size = tracers.add(StringVar(self), self.var_changed_font)
@@ -1688,30 +1676,29 @@ class GenPage(Frame):
         set_add_delete_state. All but load call update_help_changes to
         rewrite changes['main']['HelpFiles'].
 
-        Widget Structure:  (*) widgets bound to self
-            frame
-                frame_run: LabelFrame
-                    startup_title: Label
-                    (*)startup_editor_on: Radiobutton - startup_edit
-                    (*)startup_shell_on: Radiobutton - startup_edit
-                frame_save: LabelFrame
-                    run_save_title: Label
-                    (*)save_ask_on: Radiobutton - autosave
-                    (*)save_auto_on: Radiobutton - autosave
-                frame_win_size: LabelFrame
-                    win_size_title: Label
-                    win_width_title: Label
-                    (*)win_width_int: Entry - win_width
-                    win_height_title: Label
-                    (*)win_height_int: Entry - win_height
-                frame_help: LabelFrame
-                    frame_helplist: Frame
-                        frame_helplist_buttons: Frame
-                            (*)button_helplist_edit
-                            (*)button_helplist_add
-                            (*)button_helplist_remove
-                        (*)helplist: ListBox
-                        scroll_helplist: Scrollbar
+        Widgets for GenPage(Frame):  (*) widgets bound to self
+            frame_run: LabelFrame
+                startup_title: Label
+                (*)startup_editor_on: Radiobutton - startup_edit
+                (*)startup_shell_on: Radiobutton - startup_edit
+            frame_save: LabelFrame
+                run_save_title: Label
+                (*)save_ask_on: Radiobutton - autosave
+                (*)save_auto_on: Radiobutton - autosave
+            frame_win_size: LabelFrame
+                win_size_title: Label
+                win_width_title: Label
+                (*)win_width_int: Entry - win_width
+                win_height_title: Label
+                (*)win_height_int: Entry - win_height
+            frame_help: LabelFrame
+                frame_helplist: Frame
+                    frame_helplist_buttons: Frame
+                        (*)button_helplist_edit
+                        (*)button_helplist_add
+                        (*)button_helplist_remove
+                    (*)helplist: ListBox
+                    scroll_helplist: Scrollbar
         """
         self.startup_edit = tracers.add(
                 IntVar(self), ('main', 'General', 'editor-on-startup'))
