@@ -1875,7 +1875,7 @@ class TarFile(object):
         """
         self._check()
 
-        if members is None or len(members) == 0:  # None or empty list
+        if members is None or members == []:  # None or empty list
             members = self
         for tarinfo in members:
             if verbose:
@@ -2583,7 +2583,7 @@ def main():
                             tf.add(file_name)
 
             if args.verbose:
-                print('Files added to {!r}.'.format(tar_name))
+                print('{!r} file created.'.format(tar_name))
         else:
             print("Nothing to do!")
 
