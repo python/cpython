@@ -837,7 +837,7 @@ Overlapped_WriteFile(OverlappedObject *self, PyObject *args)
 #if SIZEOF_SIZE_T > SIZEOF_LONG
     if (self->write_buffer.len > (Py_ssize_t)ULONG_MAX) {
         PyBuffer_Release(&self->write_buffer);
-        PyErr_SetString(PyExc_ValueError, "buffer to large");
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
         return NULL;
     }
 #endif
@@ -893,7 +893,7 @@ Overlapped_WSASend(OverlappedObject *self, PyObject *args)
 #if SIZEOF_SIZE_T > SIZEOF_LONG
     if (self->write_buffer.len > (Py_ssize_t)ULONG_MAX) {
         PyBuffer_Release(&self->write_buffer);
-        PyErr_SetString(PyExc_ValueError, "buffer to large");
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
         return NULL;
     }
 #endif
