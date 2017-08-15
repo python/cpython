@@ -1,0 +1,2 @@
+IDLE: Factor KeysPage(Frame) class from ConfigDialog.  The slightly
+modified tests continue to pass.  Patch by Cheryl Sabella.

@@ -232,22 +232,27 @@ class HighlightTest(unittest.TestCase):
         changes.clear()
 
 
-class KeyTest(unittest.TestCase):
+class KeysPageTest(unittest.TestCase):
+    """Test that keys tab widgets enable users to make changes.
+
+    Test that widget actions set vars, that var changes add
+    options to changes and that key sets works correctly.
+    """
 
     @classmethod
     def setUpClass(cls):
-        d = dialog
-        dialog.note.select(d.keyspage)
-        d.set_keys_type = Func()
-        d.load_keys_list = Func()
+        page = cls.page = dialog.keyspage
+        dialog.note.select(page)
+        page.set_keys_type = Func()
+        page.load_keys_list = Func()
 
     @classmethod
     def tearDownClass(cls):
-        d = dialog
-        del d.set_keys_type, d.load_keys_list
+        page = cls.page
+        del page.set_keys_type, page.load_keys_list
 
     def setUp(self):
-        d = dialog
+        d = self.page
         # The following is needed for test_load_key_cfg, _delete_custom_keys.
         # This may indicate a defect in some test or function.
         for section in idleConf.GetSectionList('user', 'keys'):
@@ -258,7 +263,7 @@ class KeyTest(unittest.TestCase):
 
     def test_load_key_cfg(self):
         tracers.detach()
-        d = dialog
+        d = self.page
         eq = self.assertEqual
 
         # Use builtin keyset with no user keysets created.
@@ -300,7 +305,7 @@ class KeyTest(unittest.TestCase):
 
     def test_keyset_source(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         # Test these separately.
         d.var_changed_builtin_name = Func()
         d.var_changed_custom_name = Func()
@@ -321,7 +326,7 @@ class KeyTest(unittest.TestCase):
 
     def test_builtin_name(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         idleConf.userCfg['main'].remove_section('Keys')
         item_list = ['IDLE Classic Windows', 'IDLE Classic OSX',
                      'IDLE Modern UNIX']
@@ -352,7 +357,7 @@ class KeyTest(unittest.TestCase):
         eq(d.load_keys_list.args, ('IDLE Classic OSX', ))
 
     def test_custom_name(self):
-        d = dialog
+        d = self.page
 
         # If no selections, doesn't get added.
         d.customlist.SetMenu([], '- no custom keys -')
@@ -366,7 +371,7 @@ class KeyTest(unittest.TestCase):
         self.assertEqual(d.load_keys_list.called, 1)
 
     def test_keybinding(self):
-        d = dialog
+        d = self.page
         d.custom_name.set('my custom keys')
         d.bindingslist.delete(0, 'end')
         d.bindingslist.insert(0, 'copy')
@@ -386,7 +391,7 @@ class KeyTest(unittest.TestCase):
 
     def test_set_keys_type(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         del d.set_keys_type
 
         # Builtin keyset selected.
@@ -407,7 +412,7 @@ class KeyTest(unittest.TestCase):
 
     def test_get_new_keys(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         orig_getkeysdialog = configdialog.GetKeysDialog
         gkd = configdialog.GetKeysDialog = Func(return_self=True)
         gnkn = d.get_new_keys_name = Func()
@@ -456,7 +461,7 @@ class KeyTest(unittest.TestCase):
     def test_get_new_keys_name(self):
         orig_sectionname = configdialog.SectionName
         sn = configdialog.SectionName = Func(return_self=True)
-        d = dialog
+        d = self.page
 
         sn.result = 'New Keys'
         self.assertEqual(d.get_new_keys_name(''), 'New Keys')
@@ -464,7 +469,7 @@ class KeyTest(unittest.TestCase):
         configdialog.SectionName = orig_sectionname
 
     def test_save_as_new_key_set(self):
-        d = dialog
+        d = self.page
         gnkn = d.get_new_keys_name = Func()
         d.keyset_source.set(True)
 
@@ -482,7 +487,7 @@ class KeyTest(unittest.TestCase):
         del d.get_new_keys_name
 
     def test_on_bindingslist_select(self):
-        d = dialog
+        d = self.page
         b = d.bindingslist
         b.delete(0, 'end')
         b.insert(0, 'copy')
@@ -504,7 +509,7 @@ class KeyTest(unittest.TestCase):
 
     def test_create_new_key_set_and_save_new_key_set(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
 
         # Use default as previously active keyset.
         d.keyset_source.set(True)
@@ -535,7 +540,7 @@ class KeyTest(unittest.TestCase):
 
     def test_load_keys_list(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         gks = idleConf.GetKeySet = Func()
         del d.load_keys_list
         b = d.bindingslist
@@ -578,11 +583,11 @@ class KeyTest(unittest.TestCase):
 
     def test_delete_custom_keys(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         d.button_delete_custom_keys['state'] = NORMAL
         yesno = configdialog.tkMessageBox.askyesno = Func()
-        d.deactivate_current_config = Func()
-        d.activate_config_changes = Func()
+        dialog.deactivate_current_config = Func()
+        dialog.activate_config_changes = Func()
 
         keyset_name = 'spam key set'
         idleConf.userCfg['keys'].SetOption(keyset_name, 'name', 'value')
@@ -598,8 +603,8 @@ class KeyTest(unittest.TestCase):
         eq(yesno.called, 1)
         eq(keyspage[keyset_name], {'option': 'True'})
         eq(idleConf.GetSectionList('user', 'keys'), ['spam key set'])
-        eq(d.deactivate_current_config.called, 0)
-        eq(d.activate_config_changes.called, 0)
+        eq(dialog.deactivate_current_config.called, 0)
+        eq(dialog.activate_config_changes.called, 0)
         eq(d.set_keys_type.called, 0)
 
         # Confirm deletion.
@@ -610,11 +615,11 @@ class KeyTest(unittest.TestCase):
         eq(idleConf.GetSectionList('user', 'keys'), [])
         eq(d.custom_keyset_on['state'], DISABLED)
         eq(d.custom_name.get(), '- no custom keys -')
-        eq(d.deactivate_current_config.called, 1)
-        eq(d.activate_config_changes.called, 1)
+        eq(dialog.deactivate_current_config.called, 1)
+        eq(dialog.activate_config_changes.called, 1)
         eq(d.set_keys_type.called, 1)
 
-        del d.activate_config_changes, d.deactivate_current_config
+        del dialog.activate_config_changes, dialog.deactivate_current_config
         del configdialog.tkMessageBox.askyesno
 
 

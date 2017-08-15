@@ -92,9 +92,9 @@ class ConfigDialog(Toplevel):
             note: Notebook
             highpage: self.create_page_highlight
             fontpage: FontPage
-            keyspage: self.create_page_keys
+            keyspage: KeysPage
             genpage: GenPage
-            extpageL self.create_page_extensions
+            extpage: self.create_page_extensions
 
         Methods:
             create_action_buttons
@@ -104,7 +104,7 @@ class ConfigDialog(Toplevel):
         self.note = note = Notebook(self, width=450, height=450)
         self.highpage = self.create_page_highlight()
         self.fontpage = FontPage(note, self.highpage)
-        self.keyspage = self.create_page_keys()
+        self.keyspage = KeysPage(note)
         self.genpage = GenPage(note)
         self.extpage = self.create_page_extensions()
         note.add(self.fontpage, text='Fonts/Tabs')
@@ -132,7 +132,7 @@ class ConfigDialog(Toplevel):
         #self.load_font_cfg()
         #self.load_tab_cfg()
         self.load_theme_cfg()
-        self.load_key_cfg()
+        # self.load_key_cfg()
         # self.load_general_cfg()
         # note: extension page handled separately
 
@@ -791,431 +791,6 @@ class ConfigDialog(Toplevel):
         self.activate_config_changes()
         self.set_theme_type()
 
-
-    def create_page_keys(self):
-        """Return frame of widgets for Keys tab.
-
-        Enable users to provisionally change both individual and sets of
-        keybindings (shortcut keys). Except for features implemented as
-        extensions, keybindings are stored in complete sets called
-        keysets. Built-in keysets in idlelib/config-keys.def are fixed
-        as far as the dialog is concerned. Any keyset can be used as the
-        base for a new custom keyset, stored in .idlerc/config-keys.cfg.
-
-        Function load_key_cfg() initializes tk variables and keyset
-        lists and calls load_keys_list for the current keyset.
-        Radiobuttons builtin_keyset_on and custom_keyset_on toggle var
-        keyset_source, which controls if the current set of keybindings
-        are from a builtin or custom keyset. DynOptionMenus builtinlist
-        and customlist contain lists of the builtin and custom keysets,
-        respectively, and the current item from each list is stored in
-        vars builtin_name and custom_name.
-
-        Button delete_custom_keys invokes delete_custom_keys() to delete
-        a custom keyset from idleConf.userCfg['keys'] and changes.  Button
-        save_custom_keys invokes save_as_new_key_set() which calls
-        get_new_keys_name() and create_new_key_set() to save a custom keyset
-        and its keybindings to idleConf.userCfg['keys'].
-
-        Listbox bindingslist contains all of the keybindings for the
-        selected keyset.  The keybindings are loaded in load_keys_list()
-        and are pairs of (event, [keys]) where keys can be a list
-        of one or more key combinations to bind to the same event.
-        Mouse button 1 click invokes on_bindingslist_select(), which
-        allows button_new_keys to be clicked.
-
-        So, an item is selected in listbindings, which activates
-        button_new_keys, and clicking button_new_keys calls function
-        get_new_keys().  Function get_new_keys() gets the key mappings from the
-        current keyset for the binding event item that was selected.  The
-        function then displays another dialog, GetKeysDialog, with the
-        selected binding event and current keys and always new key sequences
-        to be entered for that binding event.  If the keys aren't
-        changed, nothing happens.  If the keys are changed and the keyset
-        is a builtin, function get_new_keys_name() will be called
-        for input of a custom keyset name.  If no name is given, then the
-        change to the keybinding will abort and no updates will be made.  If
-        a custom name is entered in the prompt or if the current keyset was
-        already custom (and thus didn't require a prompt), then
-        idleConf.userCfg['keys'] is updated in function create_new_key_set()
-        with the change to the event binding.  The item listing in bindingslist
-        is updated with the new keys.  Var keybinding is also set which invokes
-        the callback function, var_changed_keybinding, to add the change to
-        the 'keys' or 'extensions' changes tracker based on the binding type.
-
-        Tk Variables:
-            keybinding: Action/key bindings.
-
-        Methods:
-            load_keys_list: Reload active set.
-            create_new_key_set: Combine active keyset and changes.
-            set_keys_type: Command for keyset_source.
-            save_new_key_set: Save to idleConf.userCfg['keys'] (is function).
-            deactivate_current_config: Remove keys bindings in editors.
-
-        Widgets for keys page frame:  (*) widgets bound to self
-            frame_key_sets: LabelFrame
-                frames[0]: Frame
-                    (*)builtin_keyset_on: Radiobutton - var keyset_source
-                    (*)custom_keyset_on: Radiobutton - var keyset_source
-                    (*)builtinlist: DynOptionMenu - var builtin_name,
-                            func keybinding_selected
-                    (*)customlist: DynOptionMenu - var custom_name,
-                            func keybinding_selected
-                    (*)keys_message: Label
-                frames[1]: Frame
-                    (*)button_delete_custom_keys: Button - delete_custom_keys
-                    (*)button_save_custom_keys: Button -  save_as_new_key_set
-            frame_custom: LabelFrame
-                frame_target: Frame
-                    target_title: Label
-                    scroll_target_y: Scrollbar
-                    scroll_target_x: Scrollbar
-                    (*)bindingslist: ListBox - on_bindingslist_select
-                    (*)button_new_keys: Button - get_new_keys & ..._name
-        """
-        parent = self.parent
-        self.builtin_name = tracers.add(
-                StringVar(parent), self.var_changed_builtin_name)
-        self.custom_name = tracers.add(
-                StringVar(parent), self.var_changed_custom_name)
-        self.keyset_source = tracers.add(
-                BooleanVar(parent), self.var_changed_keyset_source)
-        self.keybinding = tracers.add(
-                StringVar(parent), self.var_changed_keybinding)
-
-        # Widget creation:
-        # body and section frames.
-        frame = Frame(self.note)
-        frame_custom = LabelFrame(
-                frame, borderwidth=2, relief=GROOVE,
-                text=' Custom Key Bindings ')
-        frame_key_sets = LabelFrame(
-                frame, borderwidth=2, relief=GROOVE, text=' Key Set ')
-        #frame_custom
-        frame_target = Frame(frame_custom)
-        target_title = Label(frame_target, text='Action - Key(s)')
-        scroll_target_y = Scrollbar(frame_target)
-        scroll_target_x = Scrollbar(frame_target, orient=HORIZONTAL)
-        self.bindingslist = Listbox(
-                frame_target, takefocus=FALSE, exportselection=FALSE)
-        self.bindingslist.bind('<ButtonRelease-1>',
-                               self.on_bindingslist_select)
-        scroll_target_y['command'] = self.bindingslist.yview
-        scroll_target_x['command'] = self.bindingslist.xview
-        self.bindingslist['yscrollcommand'] = scroll_target_y.set
-        self.bindingslist['xscrollcommand'] = scroll_target_x.set
-        self.button_new_keys = Button(
-                frame_custom, text='Get New Keys for Selection',
-                command=self.get_new_keys, state=DISABLED)
-        #frame_key_sets
-        frames = [Frame(frame_key_sets, padx=2, pady=2, borderwidth=0)
-                  for i in range(2)]
-        self.builtin_keyset_on = Radiobutton(
-                frames[0], variable=self.keyset_source, value=1,
-                command=self.set_keys_type, text='Use a Built-in Key Set')
-        self.custom_keyset_on = Radiobutton(
-                frames[0], variable=self.keyset_source, value=0,
-                command=self.set_keys_type, text='Use a Custom Key Set')
-        self.builtinlist = DynOptionMenu(
-                frames[0], self.builtin_name, None, command=None)
-        self.customlist = DynOptionMenu(
-                frames[0], self.custom_name, None, command=None)
-        self.button_delete_custom_keys = Button(
-                frames[1], text='Delete Custom Key Set',
-                command=self.delete_custom_keys)
-        self.button_save_custom_keys = Button(
-                frames[1], text='Save as New Custom Key Set',
-                command=self.save_as_new_key_set)
-        self.keys_message = Label(frames[0], bd=2)
-
-        ##widget packing
-        #body
-        frame_custom.pack(side=BOTTOM, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_key_sets.pack(side=BOTTOM, padx=5, pady=5, fill=BOTH)
-        #frame_custom
-        self.button_new_keys.pack(side=BOTTOM, fill=X, padx=5, pady=5)
-        frame_target.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        #frame target
-        frame_target.columnconfigure(0, weight=1)
-        frame_target.rowconfigure(1, weight=1)
-        target_title.grid(row=0, column=0, columnspan=2, sticky=W)
-        self.bindingslist.grid(row=1, column=0, sticky=NSEW)
-        scroll_target_y.grid(row=1, column=1, sticky=NS)
-        scroll_target_x.grid(row=2, column=0, sticky=EW)
-        #frame_key_sets
-        self.builtin_keyset_on.grid(row=0, column=0, sticky=W+NS)
-        self.custom_keyset_on.grid(row=1, column=0, sticky=W+NS)
-        self.builtinlist.grid(row=0, column=1, sticky=NSEW)
-        self.customlist.grid(row=1, column=1, sticky=NSEW)
-        self.keys_message.grid(row=0, column=2, sticky=NSEW, padx=5, pady=5)
-        self.button_delete_custom_keys.pack(side=LEFT, fill=X, expand=True, padx=2)
-        self.button_save_custom_keys.pack(side=LEFT, fill=X, expand=True, padx=2)
-        frames[0].pack(side=TOP, fill=BOTH, expand=True)
-        frames[1].pack(side=TOP, fill=X, expand=True, pady=2)
-        return frame
-
-    def load_key_cfg(self):
-        "Load current configuration settings for the keybinding options."
-        # Set current keys type radiobutton.
-        self.keyset_source.set(idleConf.GetOption(
-                'main', 'Keys', 'default', type='bool', default=1))
-        # Set current keys.
-        current_option = idleConf.CurrentKeys()
-        # Load available keyset option menus.
-        if self.keyset_source.get():  # Default theme selected.
-            item_list = idleConf.GetSectionList('default', 'keys')
-            item_list.sort()
-            self.builtinlist.SetMenu(item_list, current_option)
-            item_list = idleConf.GetSectionList('user', 'keys')
-            item_list.sort()
-            if not item_list:
-                self.custom_keyset_on['state'] = DISABLED
-                self.custom_name.set('- no custom keys -')
-            else:
-                self.customlist.SetMenu(item_list, item_list[0])
-        else:  # User key set selected.
-            item_list = idleConf.GetSectionList('user', 'keys')
-            item_list.sort()
-            self.customlist.SetMenu(item_list, current_option)
-            item_list = idleConf.GetSectionList('default', 'keys')
-            item_list.sort()
-            self.builtinlist.SetMenu(item_list, idleConf.default_keys())
-        self.set_keys_type()
-        # Load keyset element list.
-        keyset_name = idleConf.CurrentKeys()
-        self.load_keys_list(keyset_name)
-
-    def var_changed_builtin_name(self, *params):
-        "Process selection of builtin key set."
-        old_keys = (
-            'IDLE Classic Windows',
-            'IDLE Classic Unix',
-            'IDLE Classic Mac',
-            'IDLE Classic OSX',
-        )
-        value = self.builtin_name.get()
-        if value not in old_keys:
-            if idleConf.GetOption('main', 'Keys', 'name') not in old_keys:
-                changes.add_option('main', 'Keys', 'name', old_keys[0])
-            changes.add_option('main', 'Keys', 'name2', value)
-            self.keys_message['text'] = 'New key set, see Help'
-            self.keys_message['fg'] = '#500000'
-        else:
-            changes.add_option('main', 'Keys', 'name', value)
-            changes.add_option('main', 'Keys', 'name2', '')
-            self.keys_message['text'] = ''
-            self.keys_message['fg'] = 'black'
-        self.load_keys_list(value)
-
-    def var_changed_custom_name(self, *params):
-        "Process selection of custom key set."
-        value = self.custom_name.get()
-        if value != '- no custom keys -':
-            changes.add_option('main', 'Keys', 'name', value)
-            self.load_keys_list(value)
-
-    def var_changed_keyset_source(self, *params):
-        "Process toggle between builtin key set and custom key set."
-        value = self.keyset_source.get()
-        changes.add_option('main', 'Keys', 'default', value)
-        if value:
-            self.var_changed_builtin_name()
-        else:
-            self.var_changed_custom_name()
-
-    def var_changed_keybinding(self, *params):
-        "Store change to a keybinding."
-        value = self.keybinding.get()
-        key_set = self.custom_name.get()
-        event = self.bindingslist.get(ANCHOR).split()[0]
-        if idleConf.IsCoreBinding(event):
-            changes.add_option('keys', key_set, event, value)
-        else:  # Event is an extension binding.
-            ext_name = idleConf.GetExtnNameForEvent(event)
-            ext_keybind_section = ext_name + '_cfgBindings'
-            changes.add_option('extensions', ext_keybind_section, event, value)
-
-    def set_keys_type(self):
-        "Set available screen options based on builtin or custom key set."
-        if self.keyset_source.get():
-            self.builtinlist['state'] = NORMAL
-            self.customlist['state'] = DISABLED
-            self.button_delete_custom_keys['state'] = DISABLED
-        else:
-            self.builtinlist['state'] = DISABLED
-            self.custom_keyset_on['state'] = NORMAL
-            self.customlist['state'] = NORMAL
-            self.button_delete_custom_keys['state'] = NORMAL
-
-    def get_new_keys(self):
-        """Handle event to change key binding for selected line.
-
-        A selection of a key/binding in the list of current
-        bindings pops up a dialog to enter a new binding.  If
-        the current key set is builtin and a binding has
-        changed, then a name for a custom key set needs to be
-        entered for the change to be applied.
-        """
-        list_index = self.bindingslist.index(ANCHOR)
-        binding = self.bindingslist.get(list_index)
-        bind_name = binding.split()[0]
-        if self.keyset_source.get():
-            current_key_set_name = self.builtin_name.get()
-        else:
-            current_key_set_name = self.custom_name.get()
-        current_bindings = idleConf.GetCurrentKeySet()
-        if current_key_set_name in changes['keys']:  # unsaved changes
-            key_set_changes = changes['keys'][current_key_set_name]
-            for event in key_set_changes:
-                current_bindings[event] = key_set_changes[event].split()
-        current_key_sequences = list(current_bindings.values())
-        new_keys = GetKeysDialog(self, 'Get New Keys', bind_name,
-                current_key_sequences).result
-        if new_keys:
-            if self.keyset_source.get():  # Current key set is a built-in.
-                message = ('Your changes will be saved as a new Custom Key Set.'
-                           ' Enter a name for your new Custom Key Set below.')
-                new_keyset = self.get_new_keys_name(message)
-                if not new_keyset:  # User cancelled custom key set creation.
-                    self.bindingslist.select_set(list_index)
-                    self.bindingslist.select_anchor(list_index)
-                    return
-                else:  # Create new custom key set based on previously active key set.
-                    self.create_new_key_set(new_keyset)
-            self.bindingslist.delete(list_index)
-            self.bindingslist.insert(list_index, bind_name+' - '+new_keys)
-            self.bindingslist.select_set(list_index)
-            self.bindingslist.select_anchor(list_index)
-            self.keybinding.set(new_keys)
-        else:
-            self.bindingslist.select_set(list_index)
-            self.bindingslist.select_anchor(list_index)
-
-    def get_new_keys_name(self, message):
-        "Return new key set name from query popup."
-        used_names = (idleConf.GetSectionList('user', 'keys') +
-                idleConf.GetSectionList('default', 'keys'))
-        new_keyset = SectionName(
-                self, 'New Custom Key Set', message, used_names).result
-        return new_keyset
-
-    def save_as_new_key_set(self):
-        "Prompt for name of new key set and save changes using that name."
-        new_keys_name = self.get_new_keys_name('New Key Set Name:')
-        if new_keys_name:
-            self.create_new_key_set(new_keys_name)
-
-    def on_bindingslist_select(self, event):
-        "Activate button to assign new keys to selected action."
-        self.button_new_keys['state'] = NORMAL
-
-    def create_new_key_set(self, new_key_set_name):
-        """Create a new custom key set with the given name.
-
-        Copy the bindings/keys from the previously active keyset
-        to the new keyset and activate the new custom keyset.
-        """
-        if self.keyset_source.get():
-            prev_key_set_name = self.builtin_name.get()
-        else:
-            prev_key_set_name = self.custom_name.get()
-        prev_keys = idleConf.GetCoreKeys(prev_key_set_name)
-        new_keys = {}
-        for event in prev_keys:  # Add key set to changed items.
-            event_name = event[2:-2]  # Trim off the angle brackets.
-            binding = ' '.join(prev_keys[event])
-            new_keys[event_name] = binding
-        # Handle any unsaved changes to prev key set.
-        if prev_key_set_name in changes['keys']:
-            key_set_changes = changes['keys'][prev_key_set_name]
-            for event in key_set_changes:
-                new_keys[event] = key_set_changes[event]
-        # Save the new key set.
-        self.save_new_key_set(new_key_set_name, new_keys)
-        # Change GUI over to the new key set.
-        custom_key_list = idleConf.GetSectionList('user', 'keys')
-        custom_key_list.sort()
-        self.customlist.SetMenu(custom_key_list, new_key_set_name)
-        self.keyset_source.set(0)
-        self.set_keys_type()
-
-    def load_keys_list(self, keyset_name):
-        """Reload the list of action/key binding pairs for the active key set.
-
-        An action/key binding can be selected to change the key binding.
-        """
-        reselect = False
-        if self.bindingslist.curselection():
-            reselect = True
-            list_index = self.bindingslist.index(ANCHOR)
-        keyset = idleConf.GetKeySet(keyset_name)
-        bind_names = list(keyset.keys())
-        bind_names.sort()
-        self.bindingslist.delete(0, END)
-        for bind_name in bind_names:
-            key = ' '.join(keyset[bind_name])
-            bind_name = bind_name[2:-2]  # Trim off the angle brackets.
-            if keyset_name in changes['keys']:
-                # Handle any unsaved changes to this key set.
-                if bind_name in changes['keys'][keyset_name]:
-                    key = changes['keys'][keyset_name][bind_name]
-            self.bindingslist.insert(END, bind_name+' - '+key)
-        if reselect:
-            self.bindingslist.see(list_index)
-            self.bindingslist.select_set(list_index)
-            self.bindingslist.select_anchor(list_index)
-
-    def save_new_key_set(self, keyset_name, keyset):
-        """Save a newly created core key set.
-
-        Add keyset to idleConf.userCfg['keys'], not to disk.
-        If the keyset doesn't exist, it is created.  The
-        binding/keys are taken from the keyset argument.
-
-        keyset_name - string, the name of the new key set
-        keyset - dictionary containing the new keybindings
-        """
-        if not idleConf.userCfg['keys'].has_section(keyset_name):
-            idleConf.userCfg['keys'].add_section(keyset_name)
-        for event in keyset:
-            value = keyset[event]
-            idleConf.userCfg['keys'].SetOption(keyset_name, event, value)
-
-    def delete_custom_keys(self):
-        """Handle event to delete a custom key set.
-
-        Applying the delete deactivates the current configuration and
-        reverts to the default.  The custom key set is permanently
-        deleted from the config file.
-        """
-        keyset_name=self.custom_name.get()
-        delmsg = 'Are you sure you wish to delete the key set %r ?'
-        if not tkMessageBox.askyesno(
-                'Delete Key Set',  delmsg % keyset_name, parent=self):
-            return
-        self.deactivate_current_config()
-        # Remove key set from changes, config, and file.
-        changes.delete_section('keys', keyset_name)
-        # Reload user key set list.
-        item_list = idleConf.GetSectionList('user', 'keys')
-        item_list.sort()
-        if not item_list:
-            self.custom_keyset_on['state'] = DISABLED
-            self.customlist.SetMenu(item_list, '- no custom keys -')
-        else:
-            self.customlist.SetMenu(item_list, item_list[0])
-        # Revert to default key set.
-        self.keyset_source.set(idleConf.defaultCfg['main']
-                                .Get('Keys', 'default'))
-        self.builtin_name.set(idleConf.defaultCfg['main'].Get('Keys', 'name')
-                             or idleConf.default_keys())
-        # User can't back out of these changes, they must be applied now.
-        changes.save_all()
-        self.save_all_changed_extensions()
-        self.activate_config_changes()
-        self.set_keys_type()
-
     def deactivate_current_config(self):
         """Remove current key bindings.
 
@@ -1648,6 +1223,437 @@ class FontPage(Frame):
         "Store change to indentation size."
         value = self.space_num.get()
         changes.add_option('main', 'Indent', 'num-spaces', value)
+
+
+class KeysPage(Frame):
+
+    def __init__(self, master):
+        super().__init__(master)
+        self.cd = master.master
+        self.create_page_keys()
+        self.load_key_cfg()
+
+    def create_page_keys(self):
+        """Return frame of widgets for Keys tab.
+
+        Enable users to provisionally change both individual and sets of
+        keybindings (shortcut keys). Except for features implemented as
+        extensions, keybindings are stored in complete sets called
+        keysets. Built-in keysets in idlelib/config-keys.def are fixed
+        as far as the dialog is concerned. Any keyset can be used as the
+        base for a new custom keyset, stored in .idlerc/config-keys.cfg.
+
+        Function load_key_cfg() initializes tk variables and keyset
+        lists and calls load_keys_list for the current keyset.
+        Radiobuttons builtin_keyset_on and custom_keyset_on toggle var
+        keyset_source, which controls if the current set of keybindings
+        are from a builtin or custom keyset. DynOptionMenus builtinlist
+        and customlist contain lists of the builtin and custom keysets,
+        respectively, and the current item from each list is stored in
+        vars builtin_name and custom_name.
+
+        Button delete_custom_keys invokes delete_custom_keys() to delete
+        a custom keyset from idleConf.userCfg['keys'] and changes.  Button
+        save_custom_keys invokes save_as_new_key_set() which calls
+        get_new_keys_name() and create_new_key_set() to save a custom keyset
+        and its keybindings to idleConf.userCfg['keys'].
+
+        Listbox bindingslist contains all of the keybindings for the
+        selected keyset.  The keybindings are loaded in load_keys_list()
+        and are pairs of (event, [keys]) where keys can be a list
+        of one or more key combinations to bind to the same event.
+        Mouse button 1 click invokes on_bindingslist_select(), which
+        allows button_new_keys to be clicked.
+
+        So, an item is selected in listbindings, which activates
+        button_new_keys, and clicking button_new_keys calls function
+        get_new_keys().  Function get_new_keys() gets the key mappings from the
+        current keyset for the binding event item that was selected.  The
+        function then displays another dialog, GetKeysDialog, with the
+        selected binding event and current keys and always new key sequences
+        to be entered for that binding event.  If the keys aren't
+        changed, nothing happens.  If the keys are changed and the keyset
+        is a builtin, function get_new_keys_name() will be called
+        for input of a custom keyset name.  If no name is given, then the
+        change to the keybinding will abort and no updates will be made.  If
+        a custom name is entered in the prompt or if the current keyset was
+        already custom (and thus didn't require a prompt), then
+        idleConf.userCfg['keys'] is updated in function create_new_key_set()
+        with the change to the event binding.  The item listing in bindingslist
+        is updated with the new keys.  Var keybinding is also set which invokes
+        the callback function, var_changed_keybinding, to add the change to
+        the 'keys' or 'extensions' changes tracker based on the binding type.
+
+        Tk Variables:
+            keybinding: Action/key bindings.
+
+        Methods:
+            load_keys_list: Reload active set.
+            create_new_key_set: Combine active keyset and changes.
+            set_keys_type: Command for keyset_source.
+            save_new_key_set: Save to idleConf.userCfg['keys'] (is function).
+            deactivate_current_config: Remove keys bindings in editors.
+
+        Widgets for KeysPage(frame):  (*) widgets bound to self
+            frame_key_sets: LabelFrame
+                frames[0]: Frame
+                    (*)builtin_keyset_on: Radiobutton - var keyset_source
+                    (*)custom_keyset_on: Radiobutton - var keyset_source
+                    (*)builtinlist: DynOptionMenu - var builtin_name,
+                            func keybinding_selected
+                    (*)customlist: DynOptionMenu - var custom_name,
+                            func keybinding_selected
+                    (*)keys_message: Label
+                frames[1]: Frame
+                    (*)button_delete_custom_keys: Button - delete_custom_keys
+                    (*)button_save_custom_keys: Button -  save_as_new_key_set
+            frame_custom: LabelFrame
+                frame_target: Frame
+                    target_title: Label
+                    scroll_target_y: Scrollbar
+                    scroll_target_x: Scrollbar
+                    (*)bindingslist: ListBox - on_bindingslist_select
+                    (*)button_new_keys: Button - get_new_keys & ..._name
+        """
+        self.builtin_name = tracers.add(
+                StringVar(self), self.var_changed_builtin_name)
+        self.custom_name = tracers.add(
+                StringVar(self), self.var_changed_custom_name)
+        self.keyset_source = tracers.add(
+                BooleanVar(self), self.var_changed_keyset_source)
+        self.keybinding = tracers.add(
+                StringVar(self), self.var_changed_keybinding)
+
+        # Create widgets:
+        # body and section frames.
+        frame_custom = LabelFrame(
+                self, borderwidth=2, relief=GROOVE,
+                text=' Custom Key Bindings ')
+        frame_key_sets = LabelFrame(
+                self, borderwidth=2, relief=GROOVE, text=' Key Set ')
+        # frame_custom.
+        frame_target = Frame(frame_custom)
+        target_title = Label(frame_target, text='Action - Key(s)')
+        scroll_target_y = Scrollbar(frame_target)
+        scroll_target_x = Scrollbar(frame_target, orient=HORIZONTAL)
+        self.bindingslist = Listbox(
+                frame_target, takefocus=FALSE, exportselection=FALSE)
+        self.bindingslist.bind('<ButtonRelease-1>',
+                               self.on_bindingslist_select)
+        scroll_target_y['command'] = self.bindingslist.yview
+        scroll_target_x['command'] = self.bindingslist.xview
+        self.bindingslist['yscrollcommand'] = scroll_target_y.set
+        self.bindingslist['xscrollcommand'] = scroll_target_x.set
+        self.button_new_keys = Button(
+                frame_custom, text='Get New Keys for Selection',
+                command=self.get_new_keys, state=DISABLED)
+        # frame_key_sets.
+        frames = [Frame(frame_key_sets, padx=2, pady=2, borderwidth=0)
+                  for i in range(2)]
+        self.builtin_keyset_on = Radiobutton(
+                frames[0], variable=self.keyset_source, value=1,
+                command=self.set_keys_type, text='Use a Built-in Key Set')
+        self.custom_keyset_on = Radiobutton(
+                frames[0], variable=self.keyset_source, value=0,
+                command=self.set_keys_type, text='Use a Custom Key Set')
+        self.builtinlist = DynOptionMenu(
+                frames[0], self.builtin_name, None, command=None)
+        self.customlist = DynOptionMenu(
+                frames[0], self.custom_name, None, command=None)
+        self.button_delete_custom_keys = Button(
+                frames[1], text='Delete Custom Key Set',
+                command=self.delete_custom_keys)
+        self.button_save_custom_keys = Button(
+                frames[1], text='Save as New Custom Key Set',
+                command=self.save_as_new_key_set)
+        self.keys_message = Label(frames[0], bd=2)
+
+        # Pack widgets:
+        # body.
+        frame_custom.pack(side=BOTTOM, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_key_sets.pack(side=BOTTOM, padx=5, pady=5, fill=BOTH)
+        # frame_custom.
+        self.button_new_keys.pack(side=BOTTOM, fill=X, padx=5, pady=5)
+        frame_target.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        # frame_target.
+        frame_target.columnconfigure(0, weight=1)
+        frame_target.rowconfigure(1, weight=1)
+        target_title.grid(row=0, column=0, columnspan=2, sticky=W)
+        self.bindingslist.grid(row=1, column=0, sticky=NSEW)
+        scroll_target_y.grid(row=1, column=1, sticky=NS)
+        scroll_target_x.grid(row=2, column=0, sticky=EW)
+        # frame_key_sets.
+        self.builtin_keyset_on.grid(row=0, column=0, sticky=W+NS)
+        self.custom_keyset_on.grid(row=1, column=0, sticky=W+NS)
+        self.builtinlist.grid(row=0, column=1, sticky=NSEW)
+        self.customlist.grid(row=1, column=1, sticky=NSEW)
+        self.keys_message.grid(row=0, column=2, sticky=NSEW, padx=5, pady=5)
+        self.button_delete_custom_keys.pack(side=LEFT, fill=X, expand=True, padx=2)
+        self.button_save_custom_keys.pack(side=LEFT, fill=X, expand=True, padx=2)
+        frames[0].pack(side=TOP, fill=BOTH, expand=True)
+        frames[1].pack(side=TOP, fill=X, expand=True, pady=2)
+
+    def load_key_cfg(self):
+        "Load current configuration settings for the keybinding options."
+        # Set current keys type radiobutton.
+        self.keyset_source.set(idleConf.GetOption(
+                'main', 'Keys', 'default', type='bool', default=1))
+        # Set current keys.
+        current_option = idleConf.CurrentKeys()
+        # Load available keyset option menus.
+        if self.keyset_source.get():  # Default theme selected.
+            item_list = idleConf.GetSectionList('default', 'keys')
+            item_list.sort()
+            self.builtinlist.SetMenu(item_list, current_option)
+            item_list = idleConf.GetSectionList('user', 'keys')
+            item_list.sort()
+            if not item_list:
+                self.custom_keyset_on['state'] = DISABLED
+                self.custom_name.set('- no custom keys -')
+            else:
+                self.customlist.SetMenu(item_list, item_list[0])
+        else:  # User key set selected.
+            item_list = idleConf.GetSectionList('user', 'keys')
+            item_list.sort()
+            self.customlist.SetMenu(item_list, current_option)
+            item_list = idleConf.GetSectionList('default', 'keys')
+            item_list.sort()
+            self.builtinlist.SetMenu(item_list, idleConf.default_keys())
+        self.set_keys_type()
+        # Load keyset element list.
+        keyset_name = idleConf.CurrentKeys()
+        self.load_keys_list(keyset_name)
+
+    def var_changed_builtin_name(self, *params):
+        "Process selection of builtin key set."
+        old_keys = (
+            'IDLE Classic Windows',
+            'IDLE Classic Unix',
+            'IDLE Classic Mac',
+            'IDLE Classic OSX',
+        )
+        value = self.builtin_name.get()
+        if value not in old_keys:
+            if idleConf.GetOption('main', 'Keys', 'name') not in old_keys:
+                changes.add_option('main', 'Keys', 'name', old_keys[0])
+            changes.add_option('main', 'Keys', 'name2', value)
+            self.keys_message['text'] = 'New key set, see Help'
+            self.keys_message['fg'] = '#500000'
+        else:
+            changes.add_option('main', 'Keys', 'name', value)
+            changes.add_option('main', 'Keys', 'name2', '')
+            self.keys_message['text'] = ''
+            self.keys_message['fg'] = 'black'
+        self.load_keys_list(value)
+
+    def var_changed_custom_name(self, *params):
+        "Process selection of custom key set."
+        value = self.custom_name.get()
+        if value != '- no custom keys -':
+            changes.add_option('main', 'Keys', 'name', value)
+            self.load_keys_list(value)
+
+    def var_changed_keyset_source(self, *params):
+        "Process toggle between builtin key set and custom key set."
+        value = self.keyset_source.get()
+        changes.add_option('main', 'Keys', 'default', value)
+        if value:
+            self.var_changed_builtin_name()
+        else:
+            self.var_changed_custom_name()
+
+    def var_changed_keybinding(self, *params):
+        "Store change to a keybinding."
+        value = self.keybinding.get()
+        key_set = self.custom_name.get()
+        event = self.bindingslist.get(ANCHOR).split()[0]
+        if idleConf.IsCoreBinding(event):
+            changes.add_option('keys', key_set, event, value)
+        else:  # Event is an extension binding.
+            ext_name = idleConf.GetExtnNameForEvent(event)
+            ext_keybind_section = ext_name + '_cfgBindings'
+            changes.add_option('extensions', ext_keybind_section, event, value)
+
+    def set_keys_type(self):
+        "Set available screen options based on builtin or custom key set."
+        if self.keyset_source.get():
+            self.builtinlist['state'] = NORMAL
+            self.customlist['state'] = DISABLED
+            self.button_delete_custom_keys['state'] = DISABLED
+        else:
+            self.builtinlist['state'] = DISABLED
+            self.custom_keyset_on['state'] = NORMAL
+            self.customlist['state'] = NORMAL
+            self.button_delete_custom_keys['state'] = NORMAL
+
+    def get_new_keys(self):
+        """Handle event to change key binding for selected line.
+
+        A selection of a key/binding in the list of current
+        bindings pops up a dialog to enter a new binding.  If
+        the current key set is builtin and a binding has
+        changed, then a name for a custom key set needs to be
+        entered for the change to be applied.
+        """
+        list_index = self.bindingslist.index(ANCHOR)
+        binding = self.bindingslist.get(list_index)
+        bind_name = binding.split()[0]
+        if self.keyset_source.get():
+            current_key_set_name = self.builtin_name.get()
+        else:
+            current_key_set_name = self.custom_name.get()
+        current_bindings = idleConf.GetCurrentKeySet()
+        if current_key_set_name in changes['keys']:  # unsaved changes
+            key_set_changes = changes['keys'][current_key_set_name]
+            for event in key_set_changes:
+                current_bindings[event] = key_set_changes[event].split()
+        current_key_sequences = list(current_bindings.values())
+        new_keys = GetKeysDialog(self, 'Get New Keys', bind_name,
+                current_key_sequences).result
+        if new_keys:
+            if self.keyset_source.get():  # Current key set is a built-in.
+                message = ('Your changes will be saved as a new Custom Key Set.'
+                           ' Enter a name for your new Custom Key Set below.')
+                new_keyset = self.get_new_keys_name(message)
+                if not new_keyset:  # User cancelled custom key set creation.
+                    self.bindingslist.select_set(list_index)
+                    self.bindingslist.select_anchor(list_index)
+                    return
+                else:  # Create new custom key set based on previously active key set.
+                    self.create_new_key_set(new_keyset)
+            self.bindingslist.delete(list_index)
+            self.bindingslist.insert(list_index, bind_name+' - '+new_keys)
+            self.bindingslist.select_set(list_index)
+            self.bindingslist.select_anchor(list_index)
+            self.keybinding.set(new_keys)
+        else:
+            self.bindingslist.select_set(list_index)
+            self.bindingslist.select_anchor(list_index)
+
+    def get_new_keys_name(self, message):
+        "Return new key set name from query popup."
+        used_names = (idleConf.GetSectionList('user', 'keys') +
+                idleConf.GetSectionList('default', 'keys'))
+        new_keyset = SectionName(
+                self, 'New Custom Key Set', message, used_names).result
+        return new_keyset
+
+    def save_as_new_key_set(self):
+        "Prompt for name of new key set and save changes using that name."
+        new_keys_name = self.get_new_keys_name('New Key Set Name:')
+        if new_keys_name:
+            self.create_new_key_set(new_keys_name)
+
+    def on_bindingslist_select(self, event):
+        "Activate button to assign new keys to selected action."
+        self.button_new_keys['state'] = NORMAL
+
+    def create_new_key_set(self, new_key_set_name):
+        """Create a new custom key set with the given name.
+
+        Copy the bindings/keys from the previously active keyset
+        to the new keyset and activate the new custom keyset.
+        """
+        if self.keyset_source.get():
+            prev_key_set_name = self.builtin_name.get()
+        else:
+            prev_key_set_name = self.custom_name.get()
+        prev_keys = idleConf.GetCoreKeys(prev_key_set_name)
+        new_keys = {}
+        for event in prev_keys:  # Add key set to changed items.
+            event_name = event[2:-2]  # Trim off the angle brackets.
+            binding = ' '.join(prev_keys[event])
+            new_keys[event_name] = binding
+        # Handle any unsaved changes to prev key set.
+        if prev_key_set_name in changes['keys']:
+            key_set_changes = changes['keys'][prev_key_set_name]
+            for event in key_set_changes:
+                new_keys[event] = key_set_changes[event]
+        # Save the new key set.
+        self.save_new_key_set(new_key_set_name, new_keys)
+        # Change GUI over to the new key set.
+        custom_key_list = idleConf.GetSectionList('user', 'keys')
+        custom_key_list.sort()
+        self.customlist.SetMenu(custom_key_list, new_key_set_name)
+        self.keyset_source.set(0)
+        self.set_keys_type()
+
+    def load_keys_list(self, keyset_name):
+        """Reload the list of action/key binding pairs for the active key set.
+
+        An action/key binding can be selected to change the key binding.
+        """
+        reselect = False
+        if self.bindingslist.curselection():
+            reselect = True
+            list_index = self.bindingslist.index(ANCHOR)
+        keyset = idleConf.GetKeySet(keyset_name)
+        bind_names = list(keyset.keys())
+        bind_names.sort()
+        self.bindingslist.delete(0, END)
+        for bind_name in bind_names:
+            key = ' '.join(keyset[bind_name])
+            bind_name = bind_name[2:-2]  # Trim off the angle brackets.
+            if keyset_name in changes['keys']:
+                # Handle any unsaved changes to this key set.
+                if bind_name in changes['keys'][keyset_name]:
+                    key = changes['keys'][keyset_name][bind_name]
+            self.bindingslist.insert(END, bind_name+' - '+key)
+        if reselect:
+            self.bindingslist.see(list_index)
+            self.bindingslist.select_set(list_index)
+            self.bindingslist.select_anchor(list_index)
+
+    @staticmethod
+    def save_new_key_set(keyset_name, keyset):
+        """Save a newly created core key set.
+
+        Add keyset to idleConf.userCfg['keys'], not to disk.
+        If the keyset doesn't exist, it is created.  The
+        binding/keys are taken from the keyset argument.
+
+        keyset_name - string, the name of the new key set
+        keyset - dictionary containing the new keybindings
+        """
+        if not idleConf.userCfg['keys'].has_section(keyset_name):
+            idleConf.userCfg['keys'].add_section(keyset_name)
+        for event in keyset:
+            value = keyset[event]
+            idleConf.userCfg['keys'].SetOption(keyset_name, event, value)
+
+    def delete_custom_keys(self):
+        """Handle event to delete a custom key set.
+
+        Applying the delete deactivates the current configuration and
+        reverts to the default.  The custom key set is permanently
+        deleted from the config file.
+        """
+        keyset_name = self.custom_name.get()
+        delmsg = 'Are you sure you wish to delete the key set %r ?'
+        if not tkMessageBox.askyesno(
+                'Delete Key Set',  delmsg % keyset_name, parent=self):
+            return
+        self.cd.deactivate_current_config()
+        # Remove key set from changes, config, and file.
+        changes.delete_section('keys', keyset_name)
+        # Reload user key set list.
+        item_list = idleConf.GetSectionList('user', 'keys')
+        item_list.sort()
+        if not item_list:
+            self.custom_keyset_on['state'] = DISABLED
+            self.customlist.SetMenu(item_list, '- no custom keys -')
+        else:
+            self.customlist.SetMenu(item_list, item_list[0])
+        # Revert to default key set.
+        self.keyset_source.set(idleConf.defaultCfg['main']
+                                .Get('Keys', 'default'))
+        self.builtin_name.set(idleConf.defaultCfg['main'].Get('Keys', 'name')
+                             or idleConf.default_keys())
+        # User can't back out of these changes, they must be applied now.
+        changes.save_all()
+        self.cd.save_all_changed_extensions()
+        self.cd.activate_config_changes()
+        self.set_keys_type()
 
 
 class GenPage(Frame):
