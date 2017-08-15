@@ -94,7 +94,7 @@ code.
       code object, like :func:`code_info`.
 
    .. versionchanged:: 3.7
-      This can now handle asynchronous generator and coroutine objects.
+      This can now handle coroutine and asynchronous generator objects.
 
 Example::
 
@@ -128,7 +128,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.7
-      This can now handle asynchronous generator and coroutine objects.
+      This can now handle coroutine and asynchronous generator objects.
 
 
 .. function:: show_code(x, *, file=None)
@@ -174,7 +174,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Implemented recursive disassembling and added *depth* parameter.
 
    .. versionchanged:: 3.7
-      This can now handle asynchronous generator and coroutine objects.
+      This can now handle coroutine and asynchronous generator objects.
 
 
 .. function:: distb(tb=None, *, file=None)

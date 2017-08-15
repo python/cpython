@@ -540,12 +540,12 @@ class DisTests(unittest.TestCase):
 
     def test_disassemble_generator(self):
         gen_func_disas = self.get_disassembly(_g)  # Generator function
-        gen_disas = self.get_disassembly(_g(1))  # Generator object
+        gen_disas = self.get_disassembly(_g(1))  # Generator iterator
         self.assertEqual(gen_disas, gen_func_disas)
 
     def test_disassemble_async_generator(self):
         agen_func_disas = self.get_disassembly(_ag)  # Async generator function
-        agen_disas = self.get_disassembly(_ag(1))  # Async generator object
+        agen_disas = self.get_disassembly(_ag(1))  # Async generator iterator
         self.assertEqual(agen_disas, agen_func_disas)
 
     def test_disassemble_coroutine(self):

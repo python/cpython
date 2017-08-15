@@ -32,7 +32,7 @@ def _try_compile(source, name):
     return c
 
 def dis(x=None, *, file=None, depth=None):
-    """Disassemble classes, methods, functions, other compiled objects, or code.
+    """Disassemble classes, methods, functions, and other compiled objects.
 
        With no argument, disassemble the last traceback.
 
