@@ -3268,8 +3268,9 @@ if _have_threads:
                 except ssl.SSLError as e:
                     stats = e
 
-                if expected is None and IS_OPENSSL_1_1:
-                    # OpenSSL 1.1.0 raises handshake error
+                if (expected is None and IS_OPENSSL_1_1
+                        and ssl.OPENSSL_VERSION_INFO < (1, 1, 0, 6)):
+                    # OpenSSL 1.1.0 to 1.1.0e raises handshake error
                     self.assertIsInstance(stats, ssl.SSLError)
                 else:
                     msg = "failed trying %s (s) and %s (c).\n" \
