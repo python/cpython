@@ -1,7 +1,7 @@
 """Test idlelib.configdialog.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 63%.
+Coverage: 81%.
 """
 from idlelib import configdialog
 from test.support import requires
@@ -60,8 +60,6 @@ class FontPageTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         page = cls.page = dialog.fontpage
-        #dialog.note.insert(0, page, text='copy')
-        #dialog.note.add(page, text='copyfgfg')
         dialog.note.select(page)
         page.set_samples = Func()  # Mask instance method.
 
@@ -239,7 +237,7 @@ class KeyTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         d = dialog
-        dialog.note.select(2)
+        dialog.note.select(d.keyspage)
         d.set_keys_type = Func()
         d.load_keys_list = Func()
 
@@ -250,6 +248,8 @@ class KeyTest(unittest.TestCase):
 
     def setUp(self):
         d = dialog
+        # The following is needed for test_load_key_cfg, _delete_custom_keys.
+        # This may indicate a defect in some test or function.
         for section in idleConf.GetSectionList('user', 'keys'):
             idleConf.userCfg['keys'].remove_section(section)
         changes.clear()
@@ -261,9 +261,8 @@ class KeyTest(unittest.TestCase):
         d = dialog
         eq = self.assertEqual
 
-        idleConf.CurrentKeys = mock.Mock(return_value='IDLE Classic OSX')
-
         # Use builtin keyset with no user keysets created.
+        idleConf.CurrentKeys = mock.Mock(return_value='IDLE Classic OSX')
         d.load_key_cfg()
         self.assertTrue(d.keyset_source.get())
         # builtinlist sets variable builtin_name to the CurrentKeys default.
@@ -324,7 +323,8 @@ class KeyTest(unittest.TestCase):
         eq = self.assertEqual
         d = dialog
         idleConf.userCfg['main'].remove_section('Keys')
-        item_list = ['IDLE Classic Windows', 'IDLE Classic OSX', 'IDLE Modern UNIX']
+        item_list = ['IDLE Classic Windows', 'IDLE Classic OSX',
+                     'IDLE Modern UNIX']
 
         # Not in old_keys, defaults name to first item.
         d.builtinlist.SetMenu(item_list, 'IDLE Modern UNIX')
