@@ -1,0 +1,1 @@
+Add tests for configdialog keys tab. Patch by Cheryl Sabella.
