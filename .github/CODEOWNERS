@@ -31,9 +31,9 @@
 **/*subprocess*               @gpshead
 
 # Windows
-/PC/                          @zooba
-/PCBuild/                     @zooba
+/PC/                          @python/windows-team
+/PCBuild/                     @python/windows-team
 
 # Windows installer packages
-/Tools/msi/                   @zooba
-/Tools/nuget/                 @zooba
+/Tools/msi/                   @python/windows-team
+/Tools/nuget/                 @python/windows-team
