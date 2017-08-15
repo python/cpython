@@ -94,7 +94,7 @@ class ConfigDialog(Toplevel):
             fontpage: FontPage
             keyspage: KeysPage
             genpage: GenPage
-            extpageL self.create_page_extensions
+            extpage: self.create_page_extensions
 
         Methods:
             create_action_buttons
@@ -1294,7 +1294,7 @@ class KeysPage(Frame):
             save_new_key_set: Save to idleConf.userCfg['keys'] (is function).
             deactivate_current_config: Remove keys bindings in editors.
 
-        Widgets for keys page frame:  (*) widgets bound to self
+        Widgets for KeysPage(frame):  (*) widgets bound to self
             frame_key_sets: LabelFrame
                 frames[0]: Frame
                     (*)builtin_keyset_on: Radiobutton - var keyset_source
