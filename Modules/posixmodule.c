@@ -8917,11 +8917,16 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
-    } while (result != 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    if (result != 0)
-        return (!async_err) ? posix_error() : NULL;
-    Py_RETURN_NONE;
+    } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (result == 0)
+        Py_RETURN_NONE;
+
+    if (async_err)
+        return NULL;
+
+    errno = result;
+    return posix_error();
 }
 #endif /* HAVE_POSIX_FALLOCATE) && !POSIX_FADVISE_AIX_BUG */
 
@@ -8959,11 +8964,16 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
-    } while (result != 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    if (result != 0)
-        return (!async_err) ? posix_error() : NULL;
-    Py_RETURN_NONE;
+    } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (result == 0)
+        Py_RETURN_NONE;
+
+    if (async_err)
+        return NULL;
+
+    errno = result;
+    return posix_error();
 }
 #endif /* HAVE_POSIX_FADVISE && !POSIX_FADVISE_AIX_BUG */
 

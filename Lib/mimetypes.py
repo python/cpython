@@ -413,6 +413,7 @@ def _default_mime_types():
     # appears before any others of the same mimetype.
     types_map = _types_map_default = OrderedDict([
         ('.js'     , 'application/javascript'),
+        ('.json'   , 'application/json'),
         ('.doc'    , 'application/msword'),
         ('.dot'    , 'application/msword'),
         ('.wiz'    , 'application/msword'),
