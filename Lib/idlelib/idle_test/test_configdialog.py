@@ -407,13 +407,12 @@ class KeyTest(unittest.TestCase):
 
     def test_get_new_keys(self):
         eq = self.assertEqual
+        d = dialog
         orig_getkeysdialog = configdialog.GetKeysDialog
         gkd = configdialog.GetKeysDialog = Func(return_self=True)
-
-        d = dialog
-        # Activate button.
-        d.button_new_keys['state'] = NORMAL
         gnkn = d.get_new_keys_name = Func()
+
+        d.button_new_keys['state'] = NORMAL
         d.bindingslist.delete(0, 'end')
         d.bindingslist.insert(0, 'copy - <Control-Shift-Key-C>')
         d.bindingslist.selection_set(0)
@@ -580,7 +579,6 @@ class KeyTest(unittest.TestCase):
     def test_delete_custom_keys(self):
         eq = self.assertEqual
         d = dialog
-        # Activate button.
         d.button_delete_custom_keys['state'] = NORMAL
         yesno = configdialog.tkMessageBox.askyesno = Func()
         d.deactivate_current_config = Func()
