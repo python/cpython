@@ -1,7 +1,7 @@
 """Test idlelib.configdialog.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 63%.
+Coverage: 81%.
 """
 from idlelib import configdialog
 from test.support import requires
@@ -29,6 +29,7 @@ dialog = None
 mainpage = changes['main']
 highpage = changes['highlight']
 keyspage = changes['keys']
+extpage = changes['extensions']
 
 def setUpModule():
     global root, dialog
@@ -59,8 +60,6 @@ class FontPageTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         page = cls.page = dialog.fontpage
-        #dialog.note.insert(0, page, text='copy')
-        #dialog.note.add(page, text='copyfgfg')
         dialog.note.select(page)
         page.set_samples = Func()  # Mask instance method.
 
@@ -120,7 +119,7 @@ class FontPageTest(unittest.TestCase):
         # Click on item should select that item.
         d = self.page
         if d.fontlist.size() < 2:
-            cls.skipTest('need at least 2 fonts')
+            self.skipTest('need at least 2 fonts')
         fontlist = d.fontlist
         fontlist.activate(0)
 
@@ -233,10 +232,390 @@ class HighlightTest(unittest.TestCase):
         changes.clear()
 
 
-class KeysTest(unittest.TestCase):
+class KeyTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        d = dialog
+        dialog.note.select(d.keyspage)
+        d.set_keys_type = Func()
+        d.load_keys_list = Func()
+
+    @classmethod
+    def tearDownClass(cls):
+        d = dialog
+        del d.set_keys_type, d.load_keys_list
 
     def setUp(self):
+        d = dialog
+        # The following is needed for test_load_key_cfg, _delete_custom_keys.
+        # This may indicate a defect in some test or function.
+        for section in idleConf.GetSectionList('user', 'keys'):
+            idleConf.userCfg['keys'].remove_section(section)
         changes.clear()
+        d.set_keys_type.called = 0
+        d.load_keys_list.called = 0
+
+    def test_load_key_cfg(self):
+        tracers.detach()
+        d = dialog
+        eq = self.assertEqual
+
+        # Use builtin keyset with no user keysets created.
+        idleConf.CurrentKeys = mock.Mock(return_value='IDLE Classic OSX')
+        d.load_key_cfg()
+        self.assertTrue(d.keyset_source.get())
+        # builtinlist sets variable builtin_name to the CurrentKeys default.
+        eq(d.builtin_name.get(), 'IDLE Classic OSX')
+        eq(d.custom_name.get(), '- no custom keys -')
+        eq(d.custom_keyset_on['state'], DISABLED)
+        eq(d.set_keys_type.called, 1)
+        eq(d.load_keys_list.called, 1)
+        eq(d.load_keys_list.args, ('IDLE Classic OSX', ))
+
+        # Builtin keyset with non-empty user keyset list.
+        idleConf.SetOption('keys', 'test1', 'option', 'value')
+        idleConf.SetOption('keys', 'test2', 'option2', 'value2')
+        d.load_key_cfg()
+        eq(d.builtin_name.get(), 'IDLE Classic OSX')
+        eq(d.custom_name.get(), 'test1')
+        eq(d.set_keys_type.called, 2)
+        eq(d.load_keys_list.called, 2)
+        eq(d.load_keys_list.args, ('IDLE Classic OSX', ))
+
+        # Use custom keyset.
+        idleConf.CurrentKeys = mock.Mock(return_value='test2')
+        idleConf.default_keys = mock.Mock(return_value='IDLE Modern Unix')
+        idleConf.SetOption('main', 'Keys', 'default', '0')
+        d.load_key_cfg()
+        self.assertFalse(d.keyset_source.get())
+        eq(d.builtin_name.get(), 'IDLE Modern Unix')
+        eq(d.custom_name.get(), 'test2')
+        eq(d.set_keys_type.called, 3)
+        eq(d.load_keys_list.called, 3)
+        eq(d.load_keys_list.args, ('test2', ))
+
+        del idleConf.CurrentKeys, idleConf.default_keys
+        tracers.attach()
+
+    def test_keyset_source(self):
+        eq = self.assertEqual
+        d = dialog
+        # Test these separately.
+        d.var_changed_builtin_name = Func()
+        d.var_changed_custom_name = Func()
+        # Builtin selected.
+        d.builtin_keyset_on.invoke()
+        eq(mainpage, {'Keys': {'default': 'True'}})
+        eq(d.var_changed_builtin_name.called, 1)
+        eq(d.var_changed_custom_name.called, 0)
+        changes.clear()
+
+        # Custom selected.
+        d.custom_keyset_on['state'] = NORMAL
+        d.custom_keyset_on.invoke()
+        self.assertEqual(mainpage, {'Keys': {'default': 'False'}})
+        eq(d.var_changed_builtin_name.called, 1)
+        eq(d.var_changed_custom_name.called, 1)
+        del d.var_changed_builtin_name, d.var_changed_custom_name
+
+    def test_builtin_name(self):
+        eq = self.assertEqual
+        d = dialog
+        idleConf.userCfg['main'].remove_section('Keys')
+        item_list = ['IDLE Classic Windows', 'IDLE Classic OSX',
+                     'IDLE Modern UNIX']
+
+        # Not in old_keys, defaults name to first item.
+        d.builtinlist.SetMenu(item_list, 'IDLE Modern UNIX')
+        eq(mainpage, {'Keys': {'name': 'IDLE Classic Windows',
+                               'name2': 'IDLE Modern UNIX'}})
+        eq(d.keys_message['text'], 'New key set, see Help')
+        eq(d.load_keys_list.called, 1)
+        eq(d.load_keys_list.args, ('IDLE Modern UNIX', ))
+
+        # Not in old keys - uses name2.
+        changes.clear()
+        idleConf.SetOption('main', 'Keys', 'name', 'IDLE Classic Unix')
+        d.builtinlist.SetMenu(item_list, 'IDLE Modern UNIX')
+        eq(mainpage, {'Keys': {'name2': 'IDLE Modern UNIX'}})
+        eq(d.keys_message['text'], 'New key set, see Help')
+        eq(d.load_keys_list.called, 2)
+        eq(d.load_keys_list.args, ('IDLE Modern UNIX', ))
+
+        # Builtin name in old_keys.
+        changes.clear()
+        d.builtinlist.SetMenu(item_list, 'IDLE Classic OSX')
+        eq(mainpage, {'Keys': {'name': 'IDLE Classic OSX', 'name2': ''}})
+        eq(d.keys_message['text'], '')
+        eq(d.load_keys_list.called, 3)
+        eq(d.load_keys_list.args, ('IDLE Classic OSX', ))
+
+    def test_custom_name(self):
+        d = dialog
+
+        # If no selections, doesn't get added.
+        d.customlist.SetMenu([], '- no custom keys -')
+        self.assertNotIn('Keys', mainpage)
+        self.assertEqual(d.load_keys_list.called, 0)
+
+        # Custom name selected.
+        changes.clear()
+        d.customlist.SetMenu(['a', 'b', 'c'], 'c')
+        self.assertEqual(mainpage, {'Keys': {'name': 'c'}})
+        self.assertEqual(d.load_keys_list.called, 1)
+
+    def test_keybinding(self):
+        d = dialog
+        d.custom_name.set('my custom keys')
+        d.bindingslist.delete(0, 'end')
+        d.bindingslist.insert(0, 'copy')
+        d.bindingslist.insert(1, 'expand-word')
+        d.bindingslist.selection_set(0)
+        d.bindingslist.selection_anchor(0)
+        # Core binding - adds to keys.
+        d.keybinding.set('<Key-F11>')
+        self.assertEqual(keyspage,
+                         {'my custom keys': {'copy': '<Key-F11>'}})
+        # Not a core binding - adds to extensions.
+        d.bindingslist.selection_set(1)
+        d.bindingslist.selection_anchor(1)
+        d.keybinding.set('<Key-F11>')
+        self.assertEqual(extpage,
+                         {'AutoExpand_cfgBindings': {'expand-word': '<Key-F11>'}})
+
+    def test_set_keys_type(self):
+        eq = self.assertEqual
+        d = dialog
+        del d.set_keys_type
+
+        # Builtin keyset selected.
+        d.keyset_source.set(True)
+        d.set_keys_type()
+        eq(d.builtinlist['state'], NORMAL)
+        eq(d.customlist['state'], DISABLED)
+        eq(d.button_delete_custom_keys['state'], DISABLED)
+
+        # Custom keyset selected.
+        d.keyset_source.set(False)
+        d.set_keys_type()
+        eq(d.builtinlist['state'], DISABLED)
+        eq(d.custom_keyset_on['state'], NORMAL)
+        eq(d.customlist['state'], NORMAL)
+        eq(d.button_delete_custom_keys['state'], NORMAL)
+        d.set_keys_type = Func()
+
+    def test_get_new_keys(self):
+        eq = self.assertEqual
+        d = dialog
+        orig_getkeysdialog = configdialog.GetKeysDialog
+        gkd = configdialog.GetKeysDialog = Func(return_self=True)
+        gnkn = d.get_new_keys_name = Func()
+
+        d.button_new_keys['state'] = NORMAL
+        d.bindingslist.delete(0, 'end')
+        d.bindingslist.insert(0, 'copy - <Control-Shift-Key-C>')
+        d.bindingslist.selection_set(0)
+        d.bindingslist.selection_anchor(0)
+        d.keybinding.set('Key-a')
+        d.keyset_source.set(True)  # Default keyset.
+
+        # Default keyset; no change to binding.
+        gkd.result = ''
+        d.button_new_keys.invoke()
+        eq(d.bindingslist.get('anchor'), 'copy - <Control-Shift-Key-C>')
+        # Keybinding isn't changed when there isn't a change entered.
+        eq(d.keybinding.get(), 'Key-a')
+
+        # Default keyset; binding changed.
+        gkd.result = '<Key-F11>'
+        # No keyset name selected therefore binding not saved.
+        gnkn.result = ''
+        d.button_new_keys.invoke()
+        eq(gnkn.called, 1)
+        eq(d.bindingslist.get('anchor'), 'copy - <Control-Shift-Key-C>')
+        # Keyset name selected.
+        gnkn.result = 'My New Key Set'
+        d.button_new_keys.invoke()
+        eq(d.custom_name.get(), gnkn.result)
+        eq(d.bindingslist.get('anchor'), 'copy - <Key-F11>')
+        eq(d.keybinding.get(), '<Key-F11>')
+
+        # User keyset; binding changed.
+        d.keyset_source.set(False)  # Custom keyset.
+        gnkn.called = 0
+        gkd.result = '<Key-p>'
+        d.button_new_keys.invoke()
+        eq(gnkn.called, 0)
+        eq(d.bindingslist.get('anchor'), 'copy - <Key-p>')
+        eq(d.keybinding.get(), '<Key-p>')
+
+        del d.get_new_keys_name
+        configdialog.GetKeysDialog = orig_getkeysdialog
+
+    def test_get_new_keys_name(self):
+        orig_sectionname = configdialog.SectionName
+        sn = configdialog.SectionName = Func(return_self=True)
+        d = dialog
+
+        sn.result = 'New Keys'
+        self.assertEqual(d.get_new_keys_name(''), 'New Keys')
+
+        configdialog.SectionName = orig_sectionname
+
+    def test_save_as_new_key_set(self):
+        d = dialog
+        gnkn = d.get_new_keys_name = Func()
+        d.keyset_source.set(True)
+
+        # No name entered.
+        gnkn.result = ''
+        d.button_save_custom_keys.invoke()
+
+        # Name entered.
+        gnkn.result = 'my new key set'
+        gnkn.called = 0
+        self.assertNotIn(gnkn.result, idleConf.userCfg['keys'])
+        d.button_save_custom_keys.invoke()
+        self.assertIn(gnkn.result, idleConf.userCfg['keys'])
+
+        del d.get_new_keys_name
+
+    def test_on_bindingslist_select(self):
+        d = dialog
+        b = d.bindingslist
+        b.delete(0, 'end')
+        b.insert(0, 'copy')
+        b.insert(1, 'find')
+        b.activate(0)
+
+        b.focus_force()
+        b.see(1)
+        b.update()
+        x, y, dx, dy = b.bbox(1)
+        x += dx // 2
+        y += dy // 2
+        b.event_generate('<Enter>', x=0, y=0)
+        b.event_generate('<Motion>', x=x, y=y)
+        b.event_generate('<Button-1>', x=x, y=y)
+        b.event_generate('<ButtonRelease-1>', x=x, y=y)
+        self.assertEqual(b.get('anchor'), 'find')
+        self.assertEqual(d.button_new_keys['state'], NORMAL)
+
+    def test_create_new_key_set_and_save_new_key_set(self):
+        eq = self.assertEqual
+        d = dialog
+
+        # Use default as previously active keyset.
+        d.keyset_source.set(True)
+        d.builtin_name.set('IDLE Classic Windows')
+        first_new = 'my new custom key set'
+        second_new = 'my second custom keyset'
+
+        # No changes, so keysets are an exact copy.
+        self.assertNotIn(first_new, idleConf.userCfg)
+        d.create_new_key_set(first_new)
+        eq(idleConf.GetSectionList('user', 'keys'), [first_new])
+        eq(idleConf.GetKeySet('IDLE Classic Windows'),
+           idleConf.GetKeySet(first_new))
+        eq(d.custom_name.get(), first_new)
+        self.assertFalse(d.keyset_source.get())  # Use custom set.
+        eq(d.set_keys_type.called, 1)
+
+        # Test that changed keybindings are in new keyset.
+        changes.add_option('keys', first_new, 'copy', '<Key-F11>')
+        self.assertNotIn(second_new, idleConf.userCfg)
+        d.create_new_key_set(second_new)
+        eq(idleConf.GetSectionList('user', 'keys'), [first_new, second_new])
+        self.assertNotEqual(idleConf.GetKeySet(first_new),
+                            idleConf.GetKeySet(second_new))
+        # Check that difference in keysets was in option `copy` from `changes`.
+        idleConf.SetOption('keys', first_new, 'copy', '<Key-F11>')
+        eq(idleConf.GetKeySet(first_new), idleConf.GetKeySet(second_new))
+
+    def test_load_keys_list(self):
+        eq = self.assertEqual
+        d = dialog
+        gks = idleConf.GetKeySet = Func()
+        del d.load_keys_list
+        b = d.bindingslist
+
+        b.delete(0, 'end')
+        b.insert(0, '<<find>>')
+        b.insert(1, '<<help>>')
+        gks.result = {'<<copy>>': ['<Control-Key-c>', '<Control-Key-C>'],
+                      '<<force-open-completions>>': ['<Control-Key-space>'],
+                      '<<spam>>': ['<Key-F11>']}
+        changes.add_option('keys', 'my keys', 'spam', '<Shift-Key-a>')
+        expected = ('copy - <Control-Key-c> <Control-Key-C>',
+                    'force-open-completions - <Control-Key-space>',
+                    'spam - <Shift-Key-a>')
+
+        # No current selection.
+        d.load_keys_list('my keys')
+        eq(b.get(0, 'end'), expected)
+        eq(b.get('anchor'), '')
+        eq(b.curselection(), ())
+
+        # Check selection.
+        b.selection_set(1)
+        b.selection_anchor(1)
+        d.load_keys_list('my keys')
+        eq(b.get(0, 'end'), expected)
+        eq(b.get('anchor'), 'force-open-completions - <Control-Key-space>')
+        eq(b.curselection(), (1, ))
+
+        # Change selection.
+        b.selection_set(2)
+        b.selection_anchor(2)
+        d.load_keys_list('my keys')
+        eq(b.get(0, 'end'), expected)
+        eq(b.get('anchor'), 'spam - <Shift-Key-a>')
+        eq(b.curselection(), (2, ))
+        d.load_keys_list = Func()
+
+        del idleConf.GetKeySet
+
+    def test_delete_custom_keys(self):
+        eq = self.assertEqual
+        d = dialog
+        d.button_delete_custom_keys['state'] = NORMAL
+        yesno = configdialog.tkMessageBox.askyesno = Func()
+        d.deactivate_current_config = Func()
+        d.activate_config_changes = Func()
+
+        keyset_name = 'spam key set'
+        idleConf.userCfg['keys'].SetOption(keyset_name, 'name', 'value')
+        keyspage[keyset_name] = {'option': 'True'}
+
+        # Force custom keyset.
+        d.keyset_source.set(False)
+        d.custom_name.set(keyset_name)
+
+        # Cancel deletion.
+        yesno.result = False
+        d.button_delete_custom_keys.invoke()
+        eq(yesno.called, 1)
+        eq(keyspage[keyset_name], {'option': 'True'})
+        eq(idleConf.GetSectionList('user', 'keys'), ['spam key set'])
+        eq(d.deactivate_current_config.called, 0)
+        eq(d.activate_config_changes.called, 0)
+        eq(d.set_keys_type.called, 0)
+
+        # Confirm deletion.
+        yesno.result = True
+        d.button_delete_custom_keys.invoke()
+        eq(yesno.called, 2)
+        self.assertNotIn(keyset_name, keyspage)
+        eq(idleConf.GetSectionList('user', 'keys'), [])
+        eq(d.custom_keyset_on['state'], DISABLED)
+        eq(d.custom_name.get(), '- no custom keys -')
+        eq(d.deactivate_current_config.called, 1)
+        eq(d.activate_config_changes.called, 1)
+        eq(d.set_keys_type.called, 1)
+
+        del d.activate_config_changes, d.deactivate_current_config
+        del configdialog.tkMessageBox.askyesno
 
 
 class GenPageTest(unittest.TestCase):
