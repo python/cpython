@@ -77,17 +77,33 @@ openssl:                    export ANDROID_ARCH := $(ANDROID_ARCH)
 openssl:                    export ANDROID_API := android-$(ANDROID_API)
 
 external_libraries:
-	@echo "---> Build the external libraries."
 	mkdir -p $(BUILD_DIR)/external-libraries
-	$(MAKE) -C $(py_srcdir)/Android/external-libraries
+ifdef WITH_LIBFFI
+	@echo "---> Build the libffi external library."
+	$(MAKE) -C $(py_srcdir)/Android/external-libraries libffi
+endif
+ifdef WITH_NCURSES
+	@echo "---> Build the ncurses external library."
+	$(MAKE) -C $(py_srcdir)/Android/external-libraries ncurses
+endif
+ifdef WITH_READLINE
+	@echo "---> Build the readline external library."
+	$(MAKE) -C $(py_srcdir)/Android/external-libraries readline
+endif
+ifdef WITH_SQLITE
+	@echo "---> Build the sqlite external library."
+	$(MAKE) -C $(py_srcdir)/Android/external-libraries sqlite
+endif
 
 openssl:
-ifneq ($(ANDROID_ARCH), x86_64)
-  ifneq ($(ANDROID_ARCH), arm64)
-	@echo "---> Build openssl."
-	mkdir -p $(BUILD_DIR)/external-libraries
-	$(MAKE) -C $(py_srcdir)/Android/external-libraries -f Makefile.openssl
-  endif
+ifdef WITH_OPENSSL
+    ifneq ($(ANDROID_ARCH), x86_64)
+      ifneq ($(ANDROID_ARCH), arm64)
+	    @echo "---> Build openssl."
+	    mkdir -p $(BUILD_DIR)/external-libraries
+	    $(MAKE) -C $(py_srcdir)/Android/external-libraries -f Makefile.openssl
+      endif
+    endif
 endif
 
 $(config_status): $(makefile) $(py_srcdir)/configure
@@ -170,7 +186,7 @@ $(PY_STDLIB_ZIP): python_dist
 	        -x \*.so \*.pyo \*opt-\*.pyc \*README
 
 # Make things clean, before making a distribution.
-distclean:
+distclean: hostclean
 	rm -f $(PYTHON_ZIP)
 	rm -f $(PY_STDLIB_ZIP)
 	rm -f $(DIST_DIR)/*.sh

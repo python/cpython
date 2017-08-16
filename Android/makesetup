@@ -67,6 +67,7 @@ cat > $makefile <<EOF
 
 EOF
 
+# Parse the DEVICE_PREFIXES environment variable.
 config_args="$@"
 if test -n "$DEVICE_PREFIXES"; then
     save_IFS=$IFS; IFS=':'
@@ -75,12 +76,12 @@ if test -n "$DEVICE_PREFIXES"; then
     SYS_EXEC_PREFIX=$2
     IFS=$save_IFS
     test -z "$SYS_EXEC_PREFIX" && SYS_EXEC_PREFIX="$SYS_PREFIX"
-    exec_prefix=/data/data/
+    data_data=/data/data/
     case $SYS_EXEC_PREFIX in
-        $exec_prefix*)
+        $data_data*)
             ;;
         *)
-            echo "Error: architecture-dependent files must be installed under $exec_prefix" >&2
+            echo "Error: architecture-dependent files must be installed under $data_data." >&2
             exit 2
             ;;
     esac
@@ -90,6 +91,32 @@ else
     emulator_header
 fi
 
+# Parse the WITH_LIBRARIES environment variable.
+with_libraries=""
+if test -n "$WITH_LIBRARIES"; then
+    save_IFS=$IFS; IFS=','
+    set $WITH_LIBRARIES
+    for opt; do
+        case $opt in
+            libffi) with_libraries="$with_libraries WITH_LIBFFI" ;;
+            ncurses) with_libraries="$with_libraries WITH_NCURSES" ;;
+            openssl) with_libraries="$with_libraries WITH_OPENSSL" ;;
+            readline) with_libraries="$with_libraries WITH_READLINE" ;;
+            sqlite) with_libraries="$with_libraries WITH_SQLITE" ;;
+            *)
+                echo "Error: '$opt' is an unknown library name."
+                echo "The available libraries are libffi, ncurses, openssl, readline and sqlite."
+                exit 2 ;;
+        esac
+    done
+    IFS=$save_IFS
+else
+    with_libraries="WITH_NCURSES WITH_READLINE"
+fi
+
+for var in $with_libraries; do
+    echo "export $var := 1" >> $makefile
+done
 for var in $defined_variables; do
     eval value=\$$var
     echo "$var := $value" >> $makefile

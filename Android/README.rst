@@ -52,6 +52,13 @@ Both scripts use the following environment variables:
   also the architecture of the AVD. It may be arm, armv7, arm64, x86 or x86_64.
   The default value is x86_64.
 
+The ``WITH_LIBRARIES`` variable is a comma separated list of the external
+libraries that are linked with extension modules when the build is done with the
+Makefile built by ``makesetup``. This list may include the libffi, ncurses,
+openssl, readline or sqlite library. When this environment variable is not set
+the readline and ncurses libraries are used. To build Python without any of
+those libraries, use ``configure-android`` instead.
+
 When building for a device, the following environment variable is used by
 ``makesetup``:
 
@@ -190,13 +197,13 @@ The first execution of this statement takes quite a while. It creates the
 Makefile for the given (api, architecture), as set by the ``$ANDROID_API`` and
 ``$ANDROID_ARCH`` environment variables, builds a native Python interpreter if
 it does not exist yet (used later for the cross-compilation of Python on
-Android) and builds few external libraries (libffi, ncurses, openssl, readline,
-sqlite) for Android.  It then cross-compiles Python for Android, linking
-extension modules with the external libraries and builds the zip distributions,
-creates an AVD, starts the emulator, installs the Python distribution on the
-emulator and finally runs the python command. Note that the Android emulators
-are very slow except for the x86 and x86_64 architectures when the processor of
-the build platform is itself of the x86 family.
+Android) and builds the readline and ncurses external libraries for Android. It
+then cross-compiles Python for Android, linking extension modules with the
+external libraries and builds the zip distributions, creates an AVD, starts the
+emulator, installs the Python distribution on the emulator and finally runs the
+python command. Note that the Android emulators are very slow except for the x86
+and x86_64 architectures when the processor of the build platform is itself of
+the x86 family.
 
 The next runs of::
 
