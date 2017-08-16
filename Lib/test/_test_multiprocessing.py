@@ -542,6 +542,32 @@ class _TestProcess(BaseTestCase):
                 p.join()
             close_queue(q)
 
+    @classmethod
+    def _test_wait_for_threads(self, evt):
+        def func1():
+            time.sleep(0.5)
+            evt.set()
+
+        def func2():
+            time.sleep(20)
+            evt.clear()
+
+        threading.Thread(target=func1).start()
+        threading.Thread(target=func2, daemon=True).start()
+
+    def test_wait_for_threads(self):
+        # A child process should wait for non-daemonic threads to end
+        # before exiting
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        evt = self.Event()
+        proc = self.Process(target=self._test_wait_for_threads, args=(evt,))
+        proc.start()
+        proc.join()
+        self.assertTrue(evt.is_set())
+
+
 #
 #
 #
