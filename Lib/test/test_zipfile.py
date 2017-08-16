@@ -2278,7 +2278,7 @@ class CommandLineTest(unittest.TestCase):
         opt = '-c'
         for pat, expect in [('{}.?', 3), ('**/{}*.a*', 4), ('**/*.a*', 4),
                             ('{}.[ab]*', 6), ('**/{}*.[ab]*', 6),
-                            ('**/*.[ab]*', 12)]:
+                            ('**/*.[ab]*', 6)]:
             try:
                 #print("Pattern", pat.format(TESTFN))
                 out = self.zipfilecmd('-v', opt, TESTFN2, pat.format(TESTFN))
