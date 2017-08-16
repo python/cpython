@@ -225,6 +225,8 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Add a build infrastructure for Android, see :issue:`30386`.
+
 * A full copy of libffi is no longer bundled for use when building the
   :mod:`_ctypes <ctypes>` module on non-OSX UNIX platforms.  An installed copy
   of libffi is now required when building ``_ctypes`` on such platforms.
