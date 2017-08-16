@@ -1583,12 +1583,13 @@ class _TestManagerRestart(BaseTestCase):
         manager.start()
 
         p = self.Process(target=self._putter, args=(manager.address, authkey))
-        p.daemon = True
         p.start()
+        p.join()
         queue = manager.get_queue()
         self.assertEqual(queue.get(), 'hello world')
         del queue
         manager.shutdown()
+
         manager = QueueManager(
             address=addr, authkey=authkey, serializer=SERIALIZER)
         manager.start()
