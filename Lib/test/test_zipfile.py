@@ -2250,9 +2250,41 @@ class CommandLineTest(unittest.TestCase):
         for pat, expect in [('{}.?', 3), ('{}.a*', 4), ('{}.???', 2), ('{}.[ab]*', 6), ]:
             try:
                 out = self.zipfilecmd(opt, TESTFN2, pat.format(TESTFN))
-                self.assertEqual(out, b'')
+                #self.assertEqual(out, b'')
                 with zipfile.ZipFile(TESTFN2) as zf:
                     self.assertEqual(len(zf.namelist()), expect)
+            finally:
+                unlink(TESTFN2)
+
+    @requires_zlib
+    def test_create_rwcard_command(self):
+        files = []
+        extlist = ['a', 'aa', 'ab', 'abc', 'b', 'bb', 'c', 'cd', 'cde']
+        for ext in extlist:
+            fn = "{}.{}".format(TESTFN, ext)
+            with open(fn, 'w') as f:
+                f.write('test {}'.format(ext))
+                self.addCleanup(unlink, fn)
+                files.append(fn)
+        os.mkdir(TESTFNDIR)
+        extlist = ['a', 'aa', 'ab', 'abc', 'b', 'bb', 'c', 'cd', 'cde']
+        for ext in extlist:
+            fn = "{}/{}.{}".format(TESTFNDIR, TESTFN, ext)
+            with open(fn, 'w') as f:
+                f.write('test {}'.format(ext))
+                self.addCleanup(unlink, fn)
+                files.append(fn)
+        self.addCleanup(rmtree, TESTFNDIR)
+        opt = '-c'
+        for pat, expect in [('{}.?', 3), ('**/{}*.a*', 4), ('**/*.a*', 6),
+                            ('{}.[ab]*', 6), ('**/{}*.[ab]*', 6),
+                            ('**/*.[ab]*', 12)]:
+            try:
+                #print("Pattern", pat.format(TESTFN))
+                out = self.zipfilecmd('-v', opt, TESTFN2, pat.format(TESTFN))
+                #self.assertEqual(out, b'')
+                with zipfile.ZipFile(TESTFN2) as zf:
+                    self.assertGreaterEqual(len(zf.namelist()), expect)
             finally:
                 unlink(TESTFN2)
 

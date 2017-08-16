@@ -2066,23 +2066,30 @@ def main(args=None):
     if mode and zip_name:  # Create or append files
         import glob
         def addToZip(zf, path, zippath):
+            count = 0
             if os.path.isfile(path):
                 if args.verbose:
                     print("Add: {!r}".format(zippath))
                 zf.write(path, zippath, ZIP_DEFLATED)
+                count += 1
             elif os.path.isdir(path):
                 if not os.path.split(path)[-1].startswith('.'):
                     if zippath:
                         zf.write(path, zippath)
                     for nm in os.listdir(path):
-                        addToZip(zf,
-                                 os.path.join(path, nm), os.path.join(zippath, nm))
+                        count += addToZip(zf,
+                                          os.path.join(path, nm),
+                                          os.path.join(zippath, nm))
             else:
+                if args.verbose:
+                    print("Looking for wildcard matches to", path)
                 matches = glob.iglob(path)  # Might be a just wildcard
                 for nm in matches:  # if not then this will have no entries.
-                    addToZip(zf, nm, nm)
+                    count += addToZip(zf, nm, nm)
             # else: ignore
+            return count
         if len(files):
+            count = 0
             with ZipFile(zip_name, mode) as zf:
                 for path in files:
                     zippath = os.path.basename(path)
@@ -2090,7 +2097,9 @@ def main(args=None):
                         zippath = os.path.basename(os.path.dirname(path))
                     if zippath in ('', os.curdir, os.pardir):
                         zippath = ''
-                    addToZip(zf, path, zippath)
+                    count += addToZip(zf, path, zippath)
+            if args.verbose:
+                print(count, "Entries added.")
         else:
             print("Nothing to do!")
 
