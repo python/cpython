@@ -2276,7 +2276,7 @@ class CommandLineTest(unittest.TestCase):
                 files.append(fn)
         self.addCleanup(rmtree, TESTFNDIR)
         opt = '-c'
-        for pat, expect in [('{}.?', 3), ('**/{}*.a*', 4), ('**/*.a*', 6),
+        for pat, expect in [('{}.?', 3), ('**/{}*.a*', 4), ('**/*.a*', 4),
                             ('{}.[ab]*', 6), ('**/{}*.[ab]*', 6),
                             ('**/*.[ab]*', 12)]:
             try:
@@ -2284,7 +2284,8 @@ class CommandLineTest(unittest.TestCase):
                 out = self.zipfilecmd('-v', opt, TESTFN2, pat.format(TESTFN))
                 #self.assertEqual(out, b'')
                 with zipfile.ZipFile(TESTFN2) as zf:
-                    self.assertGreaterEqual(len(zf.namelist()), expect)
+                    self.assertGreaterEqual(len(zf.namelist()), expect,
+                                            "Testing Pattern %s" % pat.format(TESTFN))
             finally:
                 unlink(TESTFN2)
 
