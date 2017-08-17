@@ -1027,8 +1027,9 @@ Overlapped_ConnectEx(OverlappedObject *self, PyObject *args)
     DWORD err;
 
     if (!PyArg_ParseTuple(args, F_HANDLE "O!:ConnectEx", &ConnectSocket,
-                          &PyTuple_Type, &AddressObj))
+                          &PyTuple_Type, &AddressObj)) {
         return NULL;
+    }
 
     if (self->type != TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation already attempted");
