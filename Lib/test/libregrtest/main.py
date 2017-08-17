@@ -424,8 +424,6 @@ class Regrtest:
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
-        print("== hash algorithm:", sys.hash_info.algorithm,
-              "64bit" if sys.maxsize > 2**32 else "32bit")
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:
@@ -433,7 +431,6 @@ class Regrtest:
         print("== encodings: locale=%s, FS=%s"
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
-        print("Testing with flags:", sys.flags)
 
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
