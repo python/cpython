@@ -950,7 +950,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname], env_changed=testname,
                                   fail_env_changed=True)
 
-    def test_random_reseed(self):
+    def check_random_reseed(self, parallel):
         # bpo-31174: Each test file should be run with the same random seed
         code = textwrap.dedent("""
             import random
@@ -963,7 +963,10 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         tests = [testname] * 3
-        output = self.run_tests(*tests)
+        if parallel:
+            output = self.run_tests("-j3", *tests)
+        else:
+            output = self.run_tests(*tests)
         self.check_executed_tests(output, tests)
 
         # Get random numbers
@@ -975,6 +978,12 @@ class ArgsTestCase(BaseTestCase):
         # All "random" numbers must be the same
         numbers = set(numbers)
         self.assertEqual(len(numbers), 1, numbers)
+
+    def test_random_reseed_sequential(self):
+        self.check_random_reseed(False)
+
+    def test_random_reseed_parallel(self):
+        self.check_random_reseed(True)
 
 
 if __name__ == '__main__':
