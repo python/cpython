@@ -615,7 +615,6 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     PyObject *msg = NULL;
     PyObject *name = NULL;
     PyObject *path = NULL;
-    Py_ssize_t num_kwds;
 
     if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1)
         return -1;
@@ -625,12 +624,6 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
         return -1;
     if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OO:ImportError", kwlist,
                                      &name, &path)) {
-        num_kwds = PyDict_GET_SIZE(kwds);
-        if (num_kwds > 2) {
-            PyErr_Format(PyExc_TypeError,
-                         "ImportError() takes at most 2 keyword arguments "
-                         "(%zd given)", num_kwds);
-        }
         Py_DECREF(empty_tuple);
         return -1;
     }

@@ -1510,7 +1510,6 @@ min_max(PyObject *args, PyObject *kwds, int op)
     const char *name = op == Py_LT ? "min" : "max";
     const int positional = PyTuple_Size(args) > 1;
     int ret;
-    Py_ssize_t num_kwds;
 
     if (positional)
         v = args;
@@ -1523,15 +1522,8 @@ min_max(PyObject *args, PyObject *kwds, int op)
     ret = PyArg_ParseTupleAndKeywords(emptytuple, kwds, "|$OO", kwlist,
                                       &keyfunc, &defaultval);
     Py_DECREF(emptytuple);
-    if (!ret) {
-        num_kwds = PyDict_GET_SIZE(kwds);
-        if (num_kwds > 2) {
-            PyErr_Format(PyExc_TypeError,
-                         "%s() takes at most 2 keyword arguments (%zd given)",
-                         name, num_kwds);
-        }
+    if (!ret)
         return NULL;
-    }
 
     if (positional && defaultval != NULL) {
         PyErr_Format(PyExc_TypeError,
@@ -1749,16 +1741,10 @@ builtin_print(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     static struct _PyArg_Parser _parser = {"|OOOO:print", _keywords, 0};
     PyObject *sep = NULL, *end = NULL, *file = NULL, *flush = NULL;
     int i, err;
-    Py_ssize_t num_kwnames;
 
     if (kwnames != NULL &&
             !_PyArg_ParseStackAndKeywords(args + nargs, 0, kwnames, &_parser,
                                           &sep, &end, &file, &flush)) {
-        num_kwnames = PyTuple_GET_SIZE(kwnames);
-        if (num_kwnames > 4) {
-            PyErr_Format(PyExc_TypeError, "print() takes at most 4 keyword "
-                                          "arguments (%zd given)", num_kwnames);
-        }
         return NULL;
     }
 

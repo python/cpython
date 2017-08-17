@@ -1026,7 +1026,7 @@ Overlapped_ConnectEx(OverlappedObject *self, PyObject *args)
     BOOL ret;
     DWORD err;
 
-    if (!PyArg_ParseTuple(args, F_HANDLE "O!", &ConnectSocket,
+    if (!PyArg_ParseTuple(args, F_HANDLE "O!:ConnectEx", &ConnectSocket,
                           &PyTuple_Type, &AddressObj))
         return NULL;
 
