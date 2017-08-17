@@ -1621,8 +1621,8 @@ class ZipFile:
 
         # Skip if somebody tries to archive the archive...
         if self.filename is not None and os.path.abspath(
-            filename) == self.filename:
-            print("zipfile: Skipped %r" % filename)
+            filename) == os.path.abspath(self.filename):
+            print("zipfile: Skipped adding %r as not good to zip self!" % filename)
             return
 
         zinfo = ZipInfo.from_file(filename, arcname)
