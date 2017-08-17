@@ -20,7 +20,7 @@
 
   var all_languages = {
       'en': 'English',
-      'fr': 'Français',
+      'fr': 'French',
       'ja': 'Japanese',
   };
 
