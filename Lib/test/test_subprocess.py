@@ -1505,7 +1505,7 @@ class POSIXProcessTestCase(BaseTestCase):
         fork_exec.side_effect = proper_error
 
         with self.assertRaises(IsADirectoryError):
-            subprocess.Popen(["cmd"])
+            subprocess.Popen(["non_existent_command"])
 
     @mock.patch.object(subprocess.Popen, "__del__")
     @mock.patch("subprocess._posixsubprocess.fork_exec")
@@ -1524,7 +1524,7 @@ class POSIXProcessTestCase(BaseTestCase):
         fork_exec.side_effect = bad_error
 
         with self.assertRaises(subprocess.SubprocessError) as e:
-            subprocess.Popen(["cmd"])
+            subprocess.Popen(["non_existent_command"])
 
         self.assertIn(repr(error_data), str(e.exception))
 

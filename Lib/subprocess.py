@@ -1311,10 +1311,10 @@ class Popen(object):
                     # written in by the subprocess implementations
                     # like _posixsubprocess
                     err_msg = err_msg.decode()
-                except (ValueError, UnicodeError):
+                except ValueError:
                     exception_name = b'SubprocessError'
                     hex_errno = b'0'
-                    err_msg = "Bad exception data from child: {!r}".format(
+                    err_msg = 'Bad exception data from child: {!r}'.format(
                                   bytes(errpipe_data))
                 child_exception_type = getattr(
                         builtins, exception_name.decode('ascii'),
