@@ -345,6 +345,26 @@ def collect_zlib(info_add):
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
 
 
+def collect_expat(info_add):
+    try:
+        from xml.parsers import expat
+    except ImportError:
+        return
+
+    attributes = ('EXPAT_VERSION',)
+    copy_attributes(info_add, expat, 'expat.%s', attributes)
+
+
+def collect_decimal(info_add):
+    try:
+        import _decimal
+    except ImportError:
+        return
+
+    attributes = ('__libmpdec_version__',)
+    copy_attributes(info_add, _decimal, '_decimal.%s', attributes)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -365,6 +385,8 @@ def collect_info(info):
         collect_time,
         collect_tkinter,
         collect_zlib,
+        collect_expat,
+        collect_decimal,
     ):
         try:
             collect_func(info_add)
