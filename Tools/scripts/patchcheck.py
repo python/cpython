@@ -11,7 +11,15 @@ import reindent
 import untabify
 
 
+# Excluded directories which are copies of external libraries:
+# don't check their coding style
+EXCLUDE_DIRS = [os.path.join('Modules', '_ctypes', 'libffi_osx'),
+                os.path.join('Modules', '_ctypes', 'libffi_msvc'),
+                os.path.join('Modules', '_decimal', 'libmpdec'),
+                os.path.join('Modules', 'expat'),
+                os.path.join('Modules', 'zlib')]
 SRCDIR = sysconfig.get_config_var('srcdir')
+
 
 def n_files_str(count):
     """Return 'N file(s)' with the proper plurality on 'file'."""
@@ -98,7 +106,7 @@ def changed_files(base_branch=None):
         if mq_patches_applied():
             cmd += ' --rev qparent'
         with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
-            return [x.decode().rstrip() for x in st.stdout]
+            filenames = [x.decode().rstrip() for x in st.stdout]
     elif os.path.exists(os.path.join(SRCDIR, '.git')):
         # We just use an existence check here as:
         #  directory = normal git checkout/clone
@@ -120,9 +128,19 @@ def changed_files(base_branch=None):
                     # file is renamed
                     filename = filename.split(' -> ', 2)[1].strip()
                 filenames.append(filename)
-        return filenames
     else:
         sys.exit('need a Mercurial or git checkout to get modified files')
+
+    filenames2 = []
+    for filename in filenames:
+        # Normalize the path to be able to match using .startswith()
+        filename = os.path.normpath(filename)
+        if any(filename.startswith(path) for path in EXCLUDE_DIRS):
+            # Exclude the file
+            continue
+        filenames2.append(filename)
+
+    return filenames2
 
 
 def report_modified_files(file_paths):
