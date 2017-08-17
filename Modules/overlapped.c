@@ -980,11 +980,6 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
 
     memset(Address, 0, Length);
 
-    if (!PyTuple_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "ConnectEx(): bytes_as_address "
-                                         "argument must be a tuple");
-        return -1;
-    }
     if (PyArg_ParseTuple(obj, "uH", &Host, &Port))
     {
         Address->sa_family = AF_INET;
@@ -1031,7 +1026,8 @@ Overlapped_ConnectEx(OverlappedObject *self, PyObject *args)
     BOOL ret;
     DWORD err;
 
-    if (!PyArg_ParseTuple(args, F_HANDLE "O", &ConnectSocket, &AddressObj))
+    if (!PyArg_ParseTuple(args, F_HANDLE "O!", &ConnectSocket,
+                          &PyTuple_Type, &AddressObj))
         return NULL;
 
     if (self->type != TYPE_NONE) {
