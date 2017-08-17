@@ -361,7 +361,7 @@ def collect_decimal(info_add):
     except ImportError:
         return
 
-    attributes = ('__version__', '__libmpdec_version__')
+    attributes = ('__libmpdec_version__',)
     copy_attributes(info_add, _decimal, '_decimal.%s', attributes)
 
 
