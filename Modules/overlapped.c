@@ -980,6 +980,11 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
 
     memset(Address, 0, Length);
 
+    if (!PyTuple_CheckExact(obj)) {
+        PyErr_SetString(PyExc_TypeError, "ConnectEx(): bytes_as_address "
+                                         "argument must be a tuple");
+        return -1;
+    }
     if (PyArg_ParseTuple(obj, "uH", &Host, &Port))
     {
         Address->sa_family = AF_INET;
@@ -990,7 +995,9 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
         ((SOCKADDR_IN*)Address)->sin_port = htons(Port);
         return Length;
     }
-    else if (PyArg_ParseTuple(obj, "uHkk", &Host, &Port, &FlowInfo, &ScopeId))
+    else if (PyArg_ParseTuple(obj,
+                              "uHkk;ConnectEx(): illegal address_as_bytes "
+                              "argument", &Host, &Port, &FlowInfo, &ScopeId))
     {
         PyErr_Clear();
         Address->sa_family = AF_INET6;

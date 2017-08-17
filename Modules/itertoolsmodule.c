@@ -2027,7 +2027,7 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t nargs, npools, repeat=1;
     PyObject *pools = NULL;
     Py_ssize_t *indices = NULL;
-    Py_ssize_t i;
+    Py_ssize_t i, num_kwds;
 
     if (kwds != NULL) {
         char *kwlist[] = {"repeat", 0};
@@ -2036,6 +2036,12 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|n:product",
                                          kwlist, &repeat)) {
+            num_kwds = PyDict_GET_SIZE(kwds);
+            if (num_kwds > 1) {
+                PyErr_Format(PyExc_TypeError,
+                             "product() takes at most 1 keyword argument "
+                             "(%zd given)", num_kwds);
+            }
             Py_DECREF(tmpargs);
             return NULL;
         }

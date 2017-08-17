@@ -562,8 +562,11 @@ _io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
     PyObject *buffer;
     unsigned long long flag;
 
-    if (!PyArg_ParseTuple(state, "OK", &buffer, &flag))
+    if (!PyArg_ParseTuple(state,
+                          "OK;IncrementalNewlineDecoder.setstate(): illegal "
+                          "state argument", &buffer, &flag)) {
         return NULL;
+    }
 
     self->pendingcr = (int) (flag & 1);
     flag >>= 1;
