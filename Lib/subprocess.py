@@ -1307,7 +1307,10 @@ class Popen(object):
                 try:
                     exception_name, hex_errno, err_msg = (
                             errpipe_data.split(b':', 2))
-                    err_msg = err_msg.decode(errors="surrogatepass")
+                    # The encoding here should match the encoding
+                    # written in by the subprocess implementations
+                    # like _posixsubprocess
+                    err_msg = err_msg.decode()
                 except ValueError:
                     exception_name = b'SubprocessError'
                     hex_errno = b'0'
