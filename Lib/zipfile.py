@@ -1619,6 +1619,12 @@ class ZipFile:
                 "Can't write to ZIP archive while an open writing handle exists"
             )
 
+        # Skip if somebody tries to archive the archive...
+        if self.filename is not None and os.path.abspath(
+            filename) == self.filename:
+            print("zipfile: Skipped %r" % filename)
+            return
+
         zinfo = ZipInfo.from_file(filename, arcname)
 
         if zinfo.is_dir():
