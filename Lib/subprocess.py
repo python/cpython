@@ -1314,7 +1314,7 @@ class Popen(object):
                 except ValueError:
                     exception_name = b'SubprocessError'
                     hex_errno = b'0'
-                    err_msg = "Bad exception data from child: {!s}".format(
+                    err_msg = "Bad exception data from child: {!r}".format(
                                   bytes(errpipe_data))
                 child_exception_type = getattr(
                         builtins, exception_name.decode('ascii'),
