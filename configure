@@ -6017,6 +6017,10 @@ then
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
         esac
+        case $(uname -m) in
+            ppc64le) OPT="$OPT -fexceptions"
+            ;;
+        esac
 	;;
 
     *)
