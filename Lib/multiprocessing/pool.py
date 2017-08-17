@@ -92,7 +92,14 @@ class MaybeEncodingError(Exception):
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
            wrap_exception=False):
-    assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
+    if maxtasks is not None:
+        if not isinstance(maxtasks, int):
+            raise TypeError(
+                "Type of maxtasks ({0!r}) should be int, not {1!s}".format(
+                    maxtasks, type(maxtasks)))
+        if maxtasks <= 0:
+            raise ValueError(
+                "Maxtasks must be 1+ (or None), not {0:n}".format(maxtasks))
     put = outqueue.put
     get = inqueue.get
     if hasattr(inqueue, '_writer'):
@@ -255,7 +262,8 @@ class Pool(object):
         '''
         Equivalent of `func(*args, **kwds)`.
         '''
-        assert self._state == RUN
+        if self._state != RUN:
+            raise ValueError("Pool not running")
         return self.apply_async(func, args, kwds).get()
 
     def map(self, func, iterable, chunksize=None):
@@ -334,6 +342,9 @@ class Pool(object):
                 ))
             return result
         else:
+            if chunksize < 1:
+                raise ValueError(
+                    "Chunksize must be 1+, not {0!r}".format(chunksize))
             assert chunksize > 1
             task_batches = Pool._get_tasks(func, iterable, chunksize)
             result = IMapUnorderedIterator(self._cache)
@@ -542,7 +553,10 @@ class Pool(object):
 
     def join(self):
         util.debug('joining pool')
-        assert self._state in (CLOSE, TERMINATE)
+        if self._state == RUN:
+            raise ValueError("Pool is still running")
+        elif self._state not in (CLOSE, TERMINATE):
+            raise ValueError("In unknown state")
         self._worker_handler.join()
         self._task_handler.join()
         self._result_handler.join()
@@ -570,7 +584,10 @@ class Pool(object):
         util.debug('helping task handler/workers to finish')
         cls._help_stuff_finish(inqueue, task_handler, len(pool))
 
-        assert result_handler.is_alive() or len(cache) == 0
+        if not result_handler.is_alive():
+            if len(cache) != 0:
+                raise ValueError(
+                    "Cannot have cache with result_hander not alive")
 
         result_handler._state = TERMINATE
         outqueue.put(None)                  # sentinel
