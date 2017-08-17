@@ -15,7 +15,6 @@ import untabify
 EXCLUDE_DIRS = [os.path.join('Modules', '_ctypes', 'libffi'),
                 os.path.join('Modules', '_ctypes', 'libffi_osx'),
                 os.path.join('Modules', '_ctypes', 'libffi_msvc'),
-                os.path.join('Modules', '_decimal', 'libmpdec'),
                 os.path.join('Modules', 'expat'),
                 os.path.join('Modules', 'zlib')]
 SRCDIR = sysconfig.get_config_var('srcdir')
