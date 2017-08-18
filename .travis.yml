@@ -88,7 +88,7 @@ before_script:
         echo "$changes"
         exit 1
       fi
-      ./python -m test.pythoninfo
+      make pythoninfo
 
 script:
   # Using the built Python as patchcheck.py is built around the idea of using
