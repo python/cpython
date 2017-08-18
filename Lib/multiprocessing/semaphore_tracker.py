@@ -81,7 +81,7 @@ class SemaphoreTracker(object):
             raise ValueError('name too long')
         nbytes = os.write(self._fd, msg)
         assert nbytes == len(msg), "nbytes {0:n} but len(msg) {1:n}".format(
-            nbytes, len(msg)
+            nbytes, len(msg))
 
 
 _semaphore_tracker = SemaphoreTracker()
