@@ -1290,6 +1290,649 @@ class FontPage(Frame):
         changes.add_option('main', 'Indent', 'num-spaces', value)
 
 
+class HighPage(Frame):
+
+    def __init__(self, master):
+        super().__init__(master)
+        self.cd = master.master
+        self.create_page_highlight()
+        self.load_theme_cfg()
+
+    def create_page_highlight(self):
+        """Return frame of widgets for Highlighting tab.
+
+        Enable users to provisionally change foreground and background
+        colors applied to textual tags.  Color mappings are stored in
+        complete listings called themes.  Built-in themes in
+        idlelib/config-highlight.def are fixed as far as the dialog is
+        concerned. Any theme can be used as the base for a new custom
+        theme, stored in .idlerc/config-highlight.cfg.
+
+        Function load_theme_cfg() initializes tk variables and theme
+        lists and calls paint_theme_sample() and set_highlight_target()
+        for the current theme.  Radiobuttons builtin_theme_on and
+        custom_theme_on toggle var theme_source, which controls if the
+        current set of colors are from a builtin or custom theme.
+        DynOptionMenus builtinlist and customlist contain lists of the
+        builtin and custom themes, respectively, and the current item
+        from each list is stored in vars builtin_name and custom_name.
+
+        Function paint_theme_sample() applies the colors from the theme
+        to the tags in text widget highlight_sample and then invokes
+        set_color_sample().  Function set_highlight_target() sets the state
+        of the radiobuttons fg_on and bg_on based on the tag and it also
+        invokes set_color_sample().
+
+        Function set_color_sample() sets the background color for the frame
+        holding the color selector.  This provides a larger visual of the
+        color for the current tag and plane (foreground/background).
+
+        Note: set_color_sample() is called from many places and is often
+        called more than once when a change is made.  It is invoked when
+        foreground or background is selected (radiobuttons), from
+        paint_theme_sample() (theme is changed or load_cfg is called), and
+        from set_highlight_target() (target tag is changed or load_cfg called).
+
+        Button delete_custom invokes delete_custom() to delete
+        a custom theme from idleConf.userCfg['highlight'] and changes.
+        Button save_custom invokes save_as_new_theme() which calls
+        get_new_theme_name() and create_new() to save a custom theme
+        and its colors to idleConf.userCfg['highlight'].
+
+        Radiobuttons fg_on and bg_on toggle var fg_bg_toggle to control
+        if the current selected color for a tag is for the foreground or
+        background.
+
+        DynOptionMenu targetlist contains a readable description of the
+        tags applied to Python source within IDLE.  Selecting one of the
+        tags from this list populates highlight_target, which has a callback
+        function set_highlight_target().
+
+        Text widget highlight_sample displays a block of text (which is
+        mock Python code) in which is embedded the defined tags and reflects
+        the color attributes of the current theme and changes for those tags.
+        Mouse button 1 allows for selection of a tag and updates
+        highlight_target with that tag value.
+
+        Note: The font in highlight_sample is set through the config in
+        the fonts tab.
+
+        In other words, a tag can be selected either from targetlist or
+        by clicking on the sample text within highlight_sample.  The
+        plane (foreground/background) is selected via the radiobutton.
+        Together, these two (tag and plane) control what color is
+        shown in set_color_sample() for the current theme.  Button set_color
+        invokes get_color() which displays a ColorChooser to change the
+        color for the selected tag/plane.  If a new color is picked,
+        it will be saved to changes and the highlight_sample and
+        frame background will be updated.
+
+        Tk Variables:
+            color: Color of selected target.
+            builtin_name: Menu variable for built-in theme.
+            custom_name: Menu variable for custom theme.
+            fg_bg_toggle: Toggle for foreground/background color.
+                Note: this has no callback.
+            theme_source: Selector for built-in or custom theme.
+            highlight_target: Menu variable for the highlight tag target.
+
+        Instance Data Attributes:
+            theme_elements: Dictionary of tags for text highlighting.
+                The key is the display name and the value is a tuple of
+                (tag name, display sort order).
+
+        Methods [attachment]:
+            load_theme_cfg: Load current highlight colors.
+            get_color: Invoke colorchooser [button_set_color].
+            set_color_sample_binding: Call set_color_sample [fg_bg_toggle].
+            set_highlight_target: set fg_bg_toggle, set_color_sample().
+            set_color_sample: Set frame background to target.
+            on_new_color_set: Set new color and add option.
+            paint_theme_sample: Recolor sample.
+            get_new_theme_name: Get from popup.
+            create_new: Combine theme with changes and save.
+            save_as_new_theme: Save [button_save_custom].
+            set_theme_type: Command for [theme_source].
+            delete_custom: Activate default [button_delete_custom].
+            save_new: Save to userCfg['theme'] (is function).
+
+        Widgets of highlights page frame:  (*) widgets bound to self
+            frame_custom: LabelFrame
+                (*)highlight_sample: Text
+                (*)frame_color_set: Frame
+                    (*)button_set_color: Button
+                    (*)targetlist: DynOptionMenu - highlight_target
+                frame_fg_bg_toggle: Frame
+                    (*)fg_on: Radiobutton - fg_bg_toggle
+                    (*)bg_on: Radiobutton - fg_bg_toggle
+                (*)button_save_custom: Button
+            frame_theme: LabelFrame
+                theme_type_title: Label
+                (*)builtin_theme_on: Radiobutton - theme_source
+                (*)custom_theme_on: Radiobutton - theme_source
+                (*)builtinlist: DynOptionMenu - builtin_name
+                (*)customlist: DynOptionMenu - custom_name
+                (*)button_delete_custom: Button
+                (*)theme_message: Label
+        """
+        self.theme_elements = {
+            'Normal Text': ('normal', '00'),
+            'Python Keywords': ('keyword', '01'),
+            'Python Definitions': ('definition', '02'),
+            'Python Builtins': ('builtin', '03'),
+            'Python Comments': ('comment', '04'),
+            'Python Strings': ('string', '05'),
+            'Selected Text': ('hilite', '06'),
+            'Found Text': ('hit', '07'),
+            'Cursor': ('cursor', '08'),
+            'Editor Breakpoint': ('break', '09'),
+            'Shell Normal Text': ('console', '10'),
+            'Shell Error Text': ('error', '11'),
+            'Shell Stdout Text': ('stdout', '12'),
+            'Shell Stderr Text': ('stderr', '13'),
+            }
+        self.builtin_name = tracers.add(
+                StringVar(self), self.var_changed_builtin_name)
+        self.custom_name = tracers.add(
+                StringVar(self), self.var_changed_custom_name)
+        self.fg_bg_toggle = BooleanVar(self)
+        self.color = tracers.add(
+                StringVar(self), self.var_changed_color)
+        self.theme_source = tracers.add(
+                BooleanVar(self), self.var_changed_theme_source)
+        self.highlight_target = tracers.add(
+                StringVar(self), self.var_changed_highlight_target)
+
+        # Create widgets:
+        # body frame and section frames.
+        frame_custom = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Custom Highlighting ')
+        frame_theme = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                 text=' Highlighting Theme ')
+        # frame_custom.
+        text = self.highlight_sample = Text(
+                frame_custom, relief=SOLID, borderwidth=1,
+                font=('courier', 12, ''), cursor='hand2', width=21, height=13,
+                takefocus=FALSE, highlightthickness=0, wrap=NONE)
+        text.bind('<Double-Button-1>', lambda e: 'break')
+        text.bind('<B1-Motion>', lambda e: 'break')
+        text_and_tags=(('\n', 'normal'),
+            ('#you can click here', 'comment'), ('\n', 'normal'),
+            ('#to choose items', 'comment'), ('\n', 'normal'),
+            ('def', 'keyword'), (' ', 'normal'),
+            ('func', 'definition'), ('(param):\n  ', 'normal'),
+            ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
+            ("'string'", 'string'), ('\n  var1 = ', 'normal'),
+            ("'selected'", 'hilite'), ('\n  var2 = ', 'normal'),
+            ("'found'", 'hit'), ('\n  var3 = ', 'normal'),
+            ('list', 'builtin'), ('(', 'normal'),
+            ('None', 'keyword'), (')\n', 'normal'),
+            ('  breakpoint("line")', 'break'), ('\n\n', 'normal'),
+            (' error ', 'error'), (' ', 'normal'),
+            ('cursor |', 'cursor'), ('\n ', 'normal'),
+            ('shell', 'console'), (' ', 'normal'),
+            ('stdout', 'stdout'), (' ', 'normal'),
+            ('stderr', 'stderr'), ('\n\n', 'normal'))
+        for texttag in text_and_tags:
+            text.insert(END, texttag[0], texttag[1])
+        for element in self.theme_elements:
+            def tem(event, elem=element):
+                event.widget.winfo_toplevel().highlight_target.set(elem)
+            text.tag_bind(
+                    self.theme_elements[element][0], '<ButtonPress-1>', tem)
+        text['state'] = DISABLED
+        self.frame_color_set = Frame(frame_custom, relief=SOLID, borderwidth=1)
+        frame_fg_bg_toggle = Frame(frame_custom)
+        self.button_set_color = Button(
+                self.frame_color_set, text='Choose Color for :',
+                command=self.get_color, highlightthickness=0)
+        self.targetlist = DynOptionMenu(
+                self.frame_color_set, self.highlight_target, None,
+                highlightthickness=0) #, command=self.set_highlight_targetBinding
+        self.fg_on = Radiobutton(
+                frame_fg_bg_toggle, variable=self.fg_bg_toggle, value=1,
+                text='Foreground', command=self.set_color_sample_binding)
+        self.bg_on = Radiobutton(
+                frame_fg_bg_toggle, variable=self.fg_bg_toggle, value=0,
+                text='Background', command=self.set_color_sample_binding)
+        self.fg_bg_toggle.set(1)
+        self.button_save_custom = Button(
+                frame_custom, text='Save as New Custom Theme',
+                command=self.save_as_new_theme)
+        # frame_theme.
+        theme_type_title = Label(frame_theme, text='Select : ')
+        self.builtin_theme_on = Radiobutton(
+                frame_theme, variable=self.theme_source, value=1,
+                command=self.set_theme_type, text='a Built-in Theme')
+        self.custom_theme_on = Radiobutton(
+                frame_theme, variable=self.theme_source, value=0,
+                command=self.set_theme_type, text='a Custom Theme')
+        self.builtinlist = DynOptionMenu(
+                frame_theme, self.builtin_name, None, command=None)
+        self.customlist = DynOptionMenu(
+                frame_theme, self.custom_name, None, command=None)
+        self.button_delete_custom = Button(
+                frame_theme, text='Delete Custom Theme',
+                command=self.delete_custom)
+        self.theme_message = Label(frame_theme, bd=2)
+
+        # Pack widgets:
+        # body.
+        frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_theme.pack(side=LEFT, padx=5, pady=5, fill=Y)
+        # frame_custom.
+        self.frame_color_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
+        frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
+        self.highlight_sample.pack(
+                side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        self.button_set_color.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=4)
+        self.targetlist.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=3)
+        self.fg_on.pack(side=LEFT, anchor=E)
+        self.bg_on.pack(side=RIGHT, anchor=W)
+        self.button_save_custom.pack(side=BOTTOM, fill=X, padx=5, pady=5)
+        # frame_theme.
+        theme_type_title.pack(side=TOP, anchor=W, padx=5, pady=5)
+        self.builtin_theme_on.pack(side=TOP, anchor=W, padx=5)
+        self.custom_theme_on.pack(side=TOP, anchor=W, padx=5, pady=2)
+        self.builtinlist.pack(side=TOP, fill=X, padx=5, pady=5)
+        self.customlist.pack(side=TOP, fill=X, anchor=W, padx=5, pady=5)
+        self.button_delete_custom.pack(side=TOP, fill=X, padx=5, pady=5)
+        self.theme_message.pack(side=TOP, fill=X, pady=5)
+
+    def load_theme_cfg(self):
+        """Load current configuration settings for the theme options.
+
+        Based on the theme_source toggle, the theme is set as
+        either builtin or custom and the initial widget values
+        reflect the current settings from idleConf.
+
+        Attributes updated:
+            theme_source: Set from idleConf.
+            builtinlist: List of default themes from idleConf.
+            customlist: List of custom themes from idleConf.
+            custom_theme_on: Disabled if there are no custom themes.
+            custom_theme: Message with additional information.
+            targetlist: Create menu from self.theme_elements.
+
+        Methods:
+            set_theme_type
+            paint_theme_sample
+            set_highlight_target
+        """
+        # Set current theme type radiobutton.
+        self.theme_source.set(idleConf.GetOption(
+                'main', 'Theme', 'default', type='bool', default=1))
+        # Set current theme.
+        current_option = idleConf.CurrentTheme()
+        # Load available theme option menus.
+        if self.theme_source.get():  # Default theme selected.
+            item_list = idleConf.GetSectionList('default', 'highlight')
+            item_list.sort()
+            self.builtinlist.SetMenu(item_list, current_option)
+            item_list = idleConf.GetSectionList('user', 'highlight')
+            item_list.sort()
+            if not item_list:
+                self.custom_theme_on['state'] = DISABLED
+                self.custom_name.set('- no custom themes -')
+            else:
+                self.customlist.SetMenu(item_list, item_list[0])
+        else:  # User theme selected.
+            item_list = idleConf.GetSectionList('user', 'highlight')
+            item_list.sort()
+            self.customlist.SetMenu(item_list, current_option)
+            item_list = idleConf.GetSectionList('default', 'highlight')
+            item_list.sort()
+            self.builtinlist.SetMenu(item_list, item_list[0])
+        self.set_theme_type()
+        # Load theme element option menu.
+        theme_names = list(self.theme_elements.keys())
+        theme_names.sort(key=lambda x: self.theme_elements[x][1])
+        self.targetlist.SetMenu(theme_names, theme_names[0])
+        self.paint_theme_sample()
+        self.set_highlight_target()
+
+    def var_changed_builtin_name(self, *params):
+        """Process new builtin theme selection.
+
+        Add the changed theme's name to the changed_items and recreate
+        the sample with the values from the selected theme.
+        """
+        old_themes = ('IDLE Classic', 'IDLE New')
+        value = self.builtin_name.get()
+        if value not in old_themes:
+            if idleConf.GetOption('main', 'Theme', 'name') not in old_themes:
+                changes.add_option('main', 'Theme', 'name', old_themes[0])
+            changes.add_option('main', 'Theme', 'name2', value)
+            self.theme_message['text'] = 'New theme, see Help'
+            self.theme_message['fg'] = '#500000'
+        else:
+            changes.add_option('main', 'Theme', 'name', value)
+            changes.add_option('main', 'Theme', 'name2', '')
+            self.theme_message['text'] = ''
+            self.theme_message['fg'] = 'black'
+        self.paint_theme_sample()
+
+    def var_changed_custom_name(self, *params):
+        """Process new custom theme selection.
+
+        If a new custom theme is selected, add the name to the
+        changed_items and apply the theme to the sample.
+        """
+        value = self.custom_name.get()
+        if value != '- no custom themes -':
+            changes.add_option('main', 'Theme', 'name', value)
+            self.paint_theme_sample()
+
+    def var_changed_theme_source(self, *params):
+        """Process toggle between builtin and custom theme.
+
+        Update the default toggle value and apply the newly
+        selected theme type.
+        """
+        value = self.theme_source.get()
+        changes.add_option('main', 'Theme', 'default', value)
+        if value:
+            self.var_changed_builtin_name()
+        else:
+            self.var_changed_custom_name()
+
+    def var_changed_color(self, *params):
+        "Process change to color choice."
+        self.on_new_color_set()
+
+    def var_changed_highlight_target(self, *params):
+        "Process selection of new target tag for highlighting."
+        self.set_highlight_target()
+
+    def set_theme_type(self):
+        """Set available screen options based on builtin or custom theme.
+
+        Attributes accessed:
+            theme_source
+
+        Attributes updated:
+            builtinlist
+            customlist
+            button_delete_custom
+            custom_theme_on
+
+        Called from:
+            handler for builtin_theme_on and custom_theme_on
+            delete_custom
+            create_new
+            load_theme_cfg
+        """
+        if self.theme_source.get():
+            self.builtinlist['state'] = NORMAL
+            self.customlist['state'] = DISABLED
+            self.button_delete_custom['state'] = DISABLED
+        else:
+            self.builtinlist['state'] = DISABLED
+            self.custom_theme_on['state'] = NORMAL
+            self.customlist['state'] = NORMAL
+            self.button_delete_custom['state'] = NORMAL
+
+    def get_color(self):
+        """Handle button to select a new color for the target tag.
+
+        If a new color is selected while using a builtin theme, a
+        name must be supplied to create a custom theme.
+
+        Attributes accessed:
+            highlight_target
+            frame_color_set
+            theme_source
+
+        Attributes updated:
+            color
+
+        Methods:
+            get_new_theme_name
+            create_new
+        """
+        target = self.highlight_target.get()
+        prev_color = self.frame_color_set.cget('bg')
+        rgbTuplet, color_string = tkColorChooser.askcolor(
+                parent=self, title='Pick new color for : '+target,
+                initialcolor=prev_color)
+        if color_string and (color_string != prev_color):
+            # User didn't cancel and they chose a new color.
+            if self.theme_source.get():  # Current theme is a built-in.
+                message = ('Your changes will be saved as a new Custom Theme. '
+                           'Enter a name for your new Custom Theme below.')
+                new_theme = self.get_new_theme_name(message)
+                if not new_theme:  # User cancelled custom theme creation.
+                    return
+                else:  # Create new custom theme based on previously active theme.
+                    self.create_new(new_theme)
+                    self.color.set(color_string)
+            else:  # Current theme is user defined.
+                self.color.set(color_string)
+
+    def on_new_color_set(self):
+        "Display sample of new color selection on the dialog."
+        new_color = self.color.get()
+        self.frame_color_set['bg'] = new_color  # Set sample.
+        plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
+        sample_element = self.theme_elements[self.highlight_target.get()][0]
+        self.highlight_sample.tag_config(sample_element, **{plane: new_color})
+        theme = self.custom_name.get()
+        theme_element = sample_element + '-' + plane
+        changes.add_option('highlight', theme, theme_element, new_color)
+
+    def get_new_theme_name(self, message):
+        "Return name of new theme from query popup."
+        used_names = (idleConf.GetSectionList('user', 'highlight') +
+                idleConf.GetSectionList('default', 'highlight'))
+        new_theme = SectionName(
+                self, 'New Custom Theme', message, used_names).result
+        return new_theme
+
+    def save_as_new_theme(self):
+        """Prompt for new theme name and create the theme.
+
+        Methods:
+            get_new_theme_name
+            create_new
+        """
+        new_theme_name = self.get_new_theme_name('New Theme Name:')
+        if new_theme_name:
+            self.create_new(new_theme_name)
+
+    def create_new(self, new_theme_name):
+        """Create a new custom theme with the given name.
+
+        Create the new theme based on the previously active theme
+        with the current changes applied.  Once it is saved, then
+        activate the new theme.
+
+        Attributes accessed:
+            builtin_name
+            custom_name
+
+        Attributes updated:
+            customlist
+            theme_source
+
+        Method:
+            save_new
+            set_theme_type
+        """
+        if self.theme_source.get():
+            theme_type = 'default'
+            theme_name = self.builtin_name.get()
+        else:
+            theme_type = 'user'
+            theme_name = self.custom_name.get()
+        new_theme = idleConf.GetThemeDict(theme_type, theme_name)
+        # Apply any of the old theme's unsaved changes to the new theme.
+        if theme_name in changes['highlight']:
+            theme_changes = changes['highlight'][theme_name]
+            for element in theme_changes:
+                new_theme[element] = theme_changes[element]
+        # Save the new theme.
+        self.save_new(new_theme_name, new_theme)
+        # Change GUI over to the new theme.
+        custom_theme_list = idleConf.GetSectionList('user', 'highlight')
+        custom_theme_list.sort()
+        self.customlist.SetMenu(custom_theme_list, new_theme_name)
+        self.theme_source.set(0)
+        self.set_theme_type()
+
+    def set_highlight_target(self):
+        """Set fg/bg toggle and color based on highlight tag target.
+
+        Instance variables accessed:
+            highlight_target
+
+        Attributes updated:
+            fg_on
+            bg_on
+            fg_bg_toggle
+
+        Methods:
+            set_color_sample
+
+        Called from:
+            var_changed_highlight_target
+            load_theme_cfg
+        """
+        if self.highlight_target.get() == 'Cursor':  # bg not possible
+            self.fg_on['state'] = DISABLED
+            self.bg_on['state'] = DISABLED
+            self.fg_bg_toggle.set(1)
+        else:  # Both fg and bg can be set.
+            self.fg_on['state'] = NORMAL
+            self.bg_on['state'] = NORMAL
+            self.fg_bg_toggle.set(1)
+        self.set_color_sample()
+
+    def set_color_sample_binding(self, *args):
+        """Change color sample based on foreground/background toggle.
+
+        Methods:
+            set_color_sample
+        """
+        self.set_color_sample()
+
+    def set_color_sample(self):
+        """Set the color of the frame background to reflect the selected target.
+
+        Instance variables accessed:
+            theme_elements
+            highlight_target
+            fg_bg_toggle
+            highlight_sample
+
+        Attributes updated:
+            frame_color_set
+        """
+        # Set the color sample area.
+        tag = self.theme_elements[self.highlight_target.get()][0]
+        plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
+        color = self.highlight_sample.tag_cget(tag, plane)
+        self.frame_color_set['bg'] = color
+
+    def paint_theme_sample(self):
+        """Apply the theme colors to each element tag in the sample text.
+
+        Instance attributes accessed:
+            theme_elements
+            theme_source
+            builtin_name
+            custom_name
+
+        Attributes updated:
+            highlight_sample: Set the tag elements to the theme.
+
+        Methods:
+            set_color_sample
+
+        Called from:
+            var_changed_builtin_name
+            var_changed_custom_name
+            load_theme_cfg
+        """
+        if self.theme_source.get():  # Default theme
+            theme = self.builtin_name.get()
+        else:  # User theme
+            theme = self.custom_name.get()
+        for element_title in self.theme_elements:
+            element = self.theme_elements[element_title][0]
+            colors = idleConf.GetHighlight(theme, element)
+            if element == 'cursor':  # Cursor sample needs special painting.
+                colors['background'] = idleConf.GetHighlight(
+                        theme, 'normal', fgBg='bg')
+            # Handle any unsaved changes to this theme.
+            if theme in changes['highlight']:
+                theme_dict = changes['highlight'][theme]
+                if element + '-foreground' in theme_dict:
+                    colors['foreground'] = theme_dict[element + '-foreground']
+                if element + '-background' in theme_dict:
+                    colors['background'] = theme_dict[element + '-background']
+            self.highlight_sample.tag_config(element, **colors)
+        self.set_color_sample()
+
+    def save_new(self, theme_name, theme):
+        """Save a newly created theme to idleConf.
+
+        theme_name - string, the name of the new theme
+        theme - dictionary containing the new theme
+        """
+        if not idleConf.userCfg['highlight'].has_section(theme_name):
+            idleConf.userCfg['highlight'].add_section(theme_name)
+        for element in theme:
+            value = theme[element]
+            idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
+
+    def delete_custom(self):
+        """Handle event to delete custom theme.
+
+        The current theme is deactivated and the default theme is
+        activated.  The custom theme is permanently removed from
+        the config file.
+
+        Attributes accessed:
+            custom_name
+
+        Attributes updated:
+            custom_theme_on
+            customlist
+            theme_source
+            builtin_name
+
+        Methods:
+            deactivate_current_config
+            save_all_changed_extensions
+            activate_config_changes
+            set_theme_type
+        """
+        theme_name = self.custom_name.get()
+        delmsg = 'Are you sure you wish to delete the theme %r ?'
+        if not tkMessageBox.askyesno(
+                'Delete Theme',  delmsg % theme_name, parent=self):
+            return
+        cd.deactivate_current_config()
+        # Remove theme from changes, config, and file.
+        changes.delete_section('highlight', theme_name)
+        # Reload user theme list.
+        item_list = idleConf.GetSectionList('user', 'highlight')
+        item_list.sort()
+        if not item_list:
+            self.custom_theme_on['state'] = DISABLED
+            self.customlist.SetMenu(item_list, '- no custom themes -')
+        else:
+            self.customlist.SetMenu(item_list, item_list[0])
+        # Revert to default theme.
+        self.theme_source.set(idleConf.defaultCfg['main'].Get('Theme', 'default'))
+        self.builtin_name.set(idleConf.defaultCfg['main'].Get('Theme', 'name'))
+        # User can't back out of these changes, they must be applied now.
+        changes.save_all()
+        cd.save_all_changed_extensions()
+        cd.activate_config_changes()
+        self.set_theme_type()
+
+
 class KeysPage(Frame):
 
     def __init__(self, master):
