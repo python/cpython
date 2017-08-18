@@ -1070,12 +1070,14 @@ class BytecodeTests(unittest.TestCase):
         self.assertEqual(list(actual), expected_opinfo_outer)
 
     def test_source_line_in_disassembly(self):
-        # Use the line in the source code (split extracts the line no)
-        actual = dis.Bytecode(simple).dis().split(" ")[0]
-        expected = "{:>3}".format(simple.__code__.co_firstlineno)
+        # Use the line in the source code
+        actual = dis.Bytecode(simple).dis()
+        actual = actual.strip().partition(" ")[0]  # extract the line no
+        expected = str(simple.__code__.co_firstlineno)
         self.assertEqual(actual, expected)
-        # Use an explicit first line number (split extracts the line no)
-        actual = dis.Bytecode(simple, first_line=350).dis().split(" ")[0]
+        # Use an explicit first line number
+        actual = dis.Bytecode(simple, first_line=350).dis()
+        actual = actual.strip().partition(" ")[0]  # extract the line no
         self.assertEqual(actual, "350")
 
     def test_info(self):

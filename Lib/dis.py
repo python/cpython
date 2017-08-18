@@ -34,11 +34,11 @@ def _try_compile(source, name):
 def dis(x=None, *, file=None, depth=None):
     """Disassemble classes, methods, functions, and other compiled objects.
 
-       With no argument, disassemble the last traceback.
+    With no argument, disassemble the last traceback.
 
-       Compiled objects currently include generator objects, async generator
-       objects, and coroutine objects, all of which store their code object
-       in a special attribute.
+    Compiled objects currently include generator objects, async generator
+    objects, and coroutine objects, all of which store their code object
+    in a special attribute.
     """
     if x is None:
         distb(file=file)
