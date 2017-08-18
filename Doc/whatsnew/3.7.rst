@@ -465,7 +465,7 @@ Changes in the Python API
 * Due to internal changes in :mod:`socket` you won't be able to
   :func:`socket.fromshare` a socket :func:`~socket.socket.share`-ed in older
   Python versions.
-  
+
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
