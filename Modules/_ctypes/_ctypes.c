@@ -3263,7 +3263,8 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     if (!PyArg_ParseTuple(ftuple, "O&O;illegal func_spec argument",
-                          _get_name, &name, &dll)) {
+                          _get_name, &name, &dll))
+    {
         Py_DECREF(ftuple);
         return NULL;
     }

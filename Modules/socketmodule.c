@@ -5972,9 +5972,9 @@ socket_getnameinfo(PyObject *self, PyObject *args)
                         "getnameinfo() argument 1 must be a tuple");
         return NULL;
     }
-    if (!PyArg_ParseTuple(sa,
-                          "si|II;getnameinfo(): illegal sockaddr argument",
-                          &hostp, &port, &flowinfo, &scope_id)) {
+    if (!PyArg_ParseTuple(sa, "si|II;getnameinfo(): illegal sockaddr argument",
+                          &hostp, &port, &flowinfo, &scope_id))
+    {
         return NULL;
     }
     if (flowinfo > 0xfffff) {

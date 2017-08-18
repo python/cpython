@@ -3472,6 +3472,7 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         decoder = codecs.getincrementaldecoder("utf-8")()
         decoder = self.IncrementalNewlineDecoder(decoder, translate=True)
         self.check_newline_decoding_utf8(decoder)
+        self.assertRaises(TypeError, decoder.setstate, 42)
 
     def test_newline_bytes(self):
         # Issue 5433: Excessive optimization in IncrementalNewlineDecoder
