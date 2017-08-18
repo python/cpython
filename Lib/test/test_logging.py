@@ -2887,6 +2887,9 @@ class ConfigDictTest(BaseTest):
             logging.warning('Exclamation')
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
 
+    # listen() uses ConfigSocketReceiver which is based
+    # on socketserver.ThreadingTCPServer
+    @unittest.skipIf(True, "FIXME: bpo-30830")
     @unittest.skipUnless(threading, 'listen() needs threading to work')
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
