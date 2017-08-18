@@ -68,6 +68,9 @@ try:
 except ImportError:
     pass
 
+STOP_TIMEOUT = 2.0
+
+
 class BaseTest(unittest.TestCase):
 
     """Base class for logging tests."""
@@ -643,7 +646,6 @@ class HandlerTest(BaseTest):
             fd, fn = tempfile.mkstemp('.log', 'test_logging-3-')
             os.close(fd)
             remover = threading.Thread(target=remove_loop, args=(fn, del_count))
-            remover.daemon = True
             remover.start()
             h = logging.handlers.WatchedFileHandler(fn, delay=delay)
             f = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
@@ -759,11 +761,10 @@ if threading:
 
         def start(self):
             """
-            Start the server running on a separate daemon thread.
+            Start the server running on a separate thread.
             """
             self._thread = t = threading.Thread(target=self.serve_forever,
                                                 args=(self.poll_interval,))
-            t.setDaemon(True)
             t.start()
 
         def serve_forever(self, poll_interval):
@@ -796,7 +797,7 @@ if threading:
             alive = self._thread.is_alive()
             self._thread = None
             if alive:
-                self.fail("join() timed out")
+                raise AssertionError("join() timed out")
 
     class ControlMixin(object):
         """
@@ -822,11 +823,10 @@ if threading:
 
         def start(self):
             """
-            Create a daemon thread to run the server, and start it.
+            Create a thread to run the server, and start it.
             """
             self._thread = t = threading.Thread(target=self.serve_forever,
                                                 args=(self.poll_interval,))
-            t.setDaemon(True)
             t.start()
 
         def serve_forever(self, poll_interval):
@@ -850,7 +850,7 @@ if threading:
                 alive = self._thread.is_alive()
                 self._thread = None
                 if alive:
-                    self.fail("join() timed out")
+                    raise AssertionError("join() timed out")
             self.server_close()
             self.ready.clear()
 
@@ -1505,7 +1505,7 @@ class SocketHandlerTest(BaseTest):
         """Shutdown the TCP server."""
         try:
             if self.server:
-                self.server.stop(2.0)
+                self.server.stop(STOP_TIMEOUT)
             if self.sock_hdlr:
                 self.root_logger.removeHandler(self.sock_hdlr)
                 self.sock_hdlr.close()
@@ -1545,7 +1545,7 @@ class SocketHandlerTest(BaseTest):
         # one-second timeout on socket.create_connection() (issue #16264).
         self.sock_hdlr.retryStart = 2.5
         # Kill the server
-        self.server.stop(2.0)
+        self.server.stop(STOP_TIMEOUT)
         # The logging call should try to connect, which should fail
         try:
             raise RuntimeError('Deliberate mistake')
@@ -1622,7 +1622,7 @@ class DatagramHandlerTest(BaseTest):
         """Shutdown the UDP server."""
         try:
             if self.server:
-                self.server.stop(2.0)
+                self.server.stop(STOP_TIMEOUT)
             if self.sock_hdlr:
                 self.root_logger.removeHandler(self.sock_hdlr)
                 self.sock_hdlr.close()
@@ -1706,7 +1706,7 @@ class SysLogHandlerTest(BaseTest):
         """Shutdown the server."""
         try:
             if self.server:
-                self.server.stop(2.0)
+                self.server.stop(STOP_TIMEOUT)
             if self.sl_hdlr:
                 self.root_logger.removeHandler(self.sl_hdlr)
                 self.sl_hdlr.close()
@@ -1847,7 +1847,7 @@ class HTTPHandlerTest(BaseTest):
                 self.assertEqual(d['funcName'], ['test_output'])
                 self.assertEqual(d['msg'], [msg])
 
-            self.server.stop(2.0)
+            self.server.stop(STOP_TIMEOUT)
             self.root_logger.removeHandler(self.h_hdlr)
             self.h_hdlr.close()
 
@@ -2891,7 +2891,7 @@ class ConfigDictTest(BaseTest):
         t.ready.clear()
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2.0)
+            sock.settimeout(STOP_TIMEOUT)
             sock.connect(('localhost', port))
 
             slen = struct.pack('>L', len(text))
@@ -2904,9 +2904,9 @@ class ConfigDictTest(BaseTest):
                 left -= sent
             sock.close()
         finally:
-            t.ready.wait(2.0)
+            t.ready.wait(STOP_TIMEOUT)
             logging.config.stopListening()
-            t.join(2.0)
+            t.join(STOP_TIMEOUT)
             if t.is_alive():
                 self.fail("join() timed out")
 
