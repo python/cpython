@@ -44,6 +44,9 @@ PC/*/*.suo
 PC/*/Win32-temp-*
 PC/*/x64-temp-*
 PC/*/amd64
+PCbuild/*.user
+PCbuild/*.suo
+PCbuild/*.*sdf
 PCbuild/*.bsc
 PCbuild/*.dll
 PCbuild/*.exe
@@ -55,6 +58,9 @@ PCbuild/*.pdb
 PCbuild/Win32-temp-*
 PCbuild/*.VC.db
 PCbuild/*.VC.opendb
+PCbuild/amd64/
+PCbuild/obj/
+PCbuild/win32/
 Parser/pgen
 Parser/pgen.stamp
 autom4te.cache
@@ -70,6 +76,7 @@ platform
 pybuilddir.txt
 pyconfig.h
 python$
+python.bat
 python.exe
 python*-gdb.py
 tags
