@@ -1116,10 +1116,11 @@ class ProcessTestCase(BaseTestCase):
             p.stdin.write(line) # expect that it flushes the line in text mode
             os.close(p.stdin.fileno()) # close it without flushing the buffer
             read_line = p.stdout.readline()
-            try:
-                p.stdin.close()
-            except OSError:
-                pass
+            with support.SuppressCrashReport():
+                try:
+                    p.stdin.close()
+                except OSError:
+                    pass
             p.stdin = None
         self.assertEqual(p.returncode, 0)
         self.assertEqual(read_line, expected)
