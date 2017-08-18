@@ -1,4 +1,5 @@
 import unittest
+import sys
 from io import StringIO
 
 from test import support
@@ -156,43 +157,32 @@ class TestPy2MigrationHint(unittest.TestCase):
         self.assertIn('print("Hello World", end=" ")', str(context.exception))
 
     def test_stream_redirection_hint_for_py2_migration(self):
-        import sys
 
         # Test correct hint produced for Py2 redirection syntax
-        python2_print_str = 'print >> sys.stderr, "message"'
         with self.assertRaises(TypeError) as context:
-            exec(python2_print_str)
-
+            print >> sys.stderr, "message"
         self.assertIn('Did you mean "print(<message>, '
                 'file=<output_stream>)', str(context.exception))
 
-        # Test correct hint is produced in thecase where RHS implements
+        # Test correct hint is produced in the case where RHS implements
         # __rrshift__ but returns NotImplemented
-        python2_print_str = 'print >> 42'
         with self.assertRaises(TypeError) as context:
-            exec(python2_print_str)
-
+            print >> 42
         self.assertIn('Did you mean "print(<message>, '
                 'file=<output_stream>)', str(context.exception))
 
         # Test stream redirection hint is specific to print
-        python2_print_str = 'max >> sys.stderr'
         with self.assertRaises(TypeError) as context:
-            exec(python2_print_str)
-
+            max >> sys.stderr
         self.assertNotIn('Did you mean ', str(context.exception))
 
-        # Test stream redirection hint is specific to rrshift
-        python2_print_str = 'print << sys.stderr'
+        # Test stream redirection hint is specific to rshift
         with self.assertRaises(TypeError) as context:
-            exec(python2_print_str)
-
-        self.assertNotIn('Did you mean "print(<message>, '
-                'file=<output_stream>)', str(context.exception))
+            print << sys.stderr
+        self.assertNotIn('Did you mean', str(context.exception))
 
         # Test stream redirection with right argument implemented __rrshift__
         class OverrideRRShift:
-
             def __rrshift__(self, lhs):
                 return 42 # Force result independent of LHS
 
