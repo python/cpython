@@ -3272,7 +3272,6 @@ if hasattr(logging.handlers, 'QueueListener'):
             for i in range(self.repeat):
                 queue = multiprocessing.Queue()
                 self.setup_and_log(queue, '%s_%s' %(self.id(), i))
-                # time.sleep(1)
                 items = list(self.get_all_from_queue(queue))
                 queue.close()
                 queue.join_thread()
