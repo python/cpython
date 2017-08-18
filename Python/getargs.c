@@ -1655,10 +1655,11 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
     nkwargs = (kwargs == NULL) ? 0 : PyDict_GET_SIZE(kwargs);
     if (nargs + nkwargs > len) {
         PyErr_Format(PyExc_TypeError,
-                     "%.200s%s takes at most %d argument%s (%zd given)",
+                     "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      len,
+                     (nargs == 0) ? "keyword " : "",
                      (len == 1) ? "" : "s",
                      nargs + nkwargs);
         return cleanreturn(0, &freelist);
@@ -2078,10 +2079,11 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     }
     if (nargs + nkwargs > len) {
         PyErr_Format(PyExc_TypeError,
-                     "%.200s%s takes at most %d argument%s (%zd given)",
+                     "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (parser->fname == NULL) ? "function" : parser->fname,
                      (parser->fname == NULL) ? "" : "()",
                      len,
+                     (nargs == 0) ? "keyword " : "",
                      (len == 1) ? "" : "s",
                      nargs + nkwargs);
         return cleanreturn(0, &freelist);
