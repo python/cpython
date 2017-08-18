@@ -54,27 +54,53 @@ static PyObject *get_data(PyObject *archive, PyObject *toc_entry);
 static PyObject *get_module_code(ZipImporter *self, PyObject *fullname,
                                  int *p_ispackage, PyObject **p_modpath);
 
+static PyTypeObject ZipImporter_Type;
 
 #define ZipImporter_Check(op) PyObject_TypeCheck(op, &ZipImporter_Type)
+
+/*[clinic input]
+module zipimport
+class zipimport.zipimporter "ZipImporter *" "&ZipImporter_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9db8b61557d911e7]*/
+#include "clinic/zipimport.c.h"
 
 
 /* zipimporter.__init__
    Split the "subdirectory" from the Zip archive path, lookup a matching
    entry in sys.path_importer_cache, fetch the file directory from there
    if found, or else read it from the archive. */
+
+/*[clinic input]
+zipimport.zipimporter.__init__
+
+    archivepath as path: object(converter="PyUnicode_FSDecoder")
+        A path-like object to a zipfile, or to a specific path inside
+        a zipfile.
+    /
+
+Create a new zipimporter instance.
+
+'archivepath' must be a path-like object to a zipfile, or to a specific path
+inside a zipfile. For example, it can be '/tmp/myimport.zip', or
+'/tmp/myimport.zip/mydirectory', if mydirectory is a valid directory inside
+the archive.
+
+'ZipImportError' is raised if 'archivepath' doesn't point to a valid Zip
+archive.
+
+The 'archive' attribute of the zipimporter object contains the name of the
+zipfile targeted.
+
+[clinic start generated code]*/
+
 static int
-zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
+zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *path)
+/*[clinic end generated code: output=141558fefdb46dc8 input=92b9ebeed1f6a704]*/
 {
-    PyObject *path, *files, *tmp;
+    PyObject *files, *tmp;
     PyObject *filename = NULL;
     Py_ssize_t len, flen;
-
-    if (!_PyArg_NoKeywords("zipimporter", kwds))
-        return -1;
-
-    if (!PyArg_ParseTuple(args, "O&:zipimporter",
-                          PyUnicode_FSDecoder, &path))
-        return -1;
 
     if (PyUnicode_READY(path) == -1)
         return -1;
@@ -379,20 +405,29 @@ find_loader(ZipImporter *self, PyObject *fullname, PyObject **namespace_portion)
     return FL_MODULE_FOUND;
 }
 
+/*[clinic input]
+zipimport.zipimporter.find_module
 
-/* Check whether we can satisfy the import of the module named by
-   'fullname'. Return self if we can, None if we can't. */
+    fullname: unicode
+    path: object = None
+    /
+
+Search for a module specified by 'fullname'.
+
+'fullname' must be the fully qualified (dotted) module name. It returns the
+zipimporter instance itself if the module was found, or None if it wasn't.
+The optional 'path' argument is ignored -- it's there for compatibility
+with the importer protocol.
+
+[clinic start generated code]*/
+
 static PyObject *
-zipimporter_find_module(PyObject *obj, PyObject *args)
+zipimport_zipimporter_find_module_impl(ZipImporter *self, PyObject *fullname,
+                                       PyObject *path)
+/*[clinic end generated code: output=506087f609466dc7 input=e3528520e075063f]*/
 {
-    ZipImporter *self = (ZipImporter *)obj;
-    PyObject *path = NULL;
-    PyObject *fullname;
     PyObject *namespace_portion = NULL;
     PyObject *result = NULL;
-
-    if (!PyArg_ParseTuple(args, "U|O:zipimporter.find_module", &fullname, &path))
-        return NULL;
 
     switch (find_loader(self, fullname, &namespace_portion)) {
     case FL_ERROR:
@@ -416,22 +451,30 @@ zipimporter_find_module(PyObject *obj, PyObject *args)
 }
 
 
-/* Check whether we can satisfy the import of the module named by
-   'fullname', or whether it could be a portion of a namespace
-   package. Return self if we can load it, a string containing the
-   full path if it's a possible namespace portion, None if we
-   can't load it. */
+/*[clinic input]
+zipimport.zipimporter.find_loader
+
+    fullname: unicode
+    path: object = None
+    /
+
+Search for a module specified by 'fullname'.
+
+'fullname' must be the fully qualified (dotted) module name. It returns the
+zipimporter instance itself if the module was found, a string containing the
+full path name if it's possibly a portion of a namespace package,
+or None otherwise. The optional 'path' argument is ignored -- it's
+there for compatibility with the importer protocol.
+
+[clinic start generated code]*/
+
 static PyObject *
-zipimporter_find_loader(PyObject *obj, PyObject *args)
+zipimport_zipimporter_find_loader_impl(ZipImporter *self, PyObject *fullname,
+                                       PyObject *path)
+/*[clinic end generated code: output=601599a43bc0f49a input=dc73f275b0d5be23]*/
 {
-    ZipImporter *self = (ZipImporter *)obj;
-    PyObject *path = NULL;
-    PyObject *fullname;
     PyObject *result = NULL;
     PyObject *namespace_portion = NULL;
-
-    if (!PyArg_ParseTuple(args, "U|O:zipimporter.find_module", &fullname, &path))
-        return NULL;
 
     switch (find_loader(self, fullname, &namespace_portion)) {
     case FL_ERROR:
@@ -453,19 +496,27 @@ zipimporter_find_loader(PyObject *obj, PyObject *args)
     return result;
 }
 
-/* Load and return the module named by 'fullname'. */
+/*[clinic input]
+zipimport.zipimporter.load_module
+
+    fullname: unicode
+    /
+
+Load the module specified by 'fullname'.
+
+'fullname' must be the fully qualified (dotted) module name. It returns the
+imported module, or raises ZipImportError if it wasn't found.
+
+[clinic start generated code]*/
+
 static PyObject *
-zipimporter_load_module(PyObject *obj, PyObject *args)
+zipimport_zipimporter_load_module_impl(ZipImporter *self, PyObject *fullname)
+/*[clinic end generated code: output=7303cebf88d47953 input=c236e2e8621f04ef]*/
 {
-    ZipImporter *self = (ZipImporter *)obj;
     PyObject *code = NULL, *mod, *dict;
-    PyObject *fullname;
     PyObject *modpath = NULL;
     int ispackage;
 
-    if (!PyArg_ParseTuple(args, "U:zipimporter.load_module",
-                          &fullname))
-        return NULL;
     if (PyUnicode_READY(fullname) == -1)
         return NULL;
 
@@ -523,17 +574,22 @@ error:
     return NULL;
 }
 
-/* Return a string matching __file__ for the named module */
-static PyObject *
-zipimporter_get_filename(PyObject *obj, PyObject *args)
-{
-    ZipImporter *self = (ZipImporter *)obj;
-    PyObject *fullname, *code, *modpath;
-    int ispackage;
+/*[clinic input]
+zipimport.zipimporter.get_filename
 
-    if (!PyArg_ParseTuple(args, "U:zipimporter.get_filename",
-                          &fullname))
-        return NULL;
+    fullname: unicode
+    /
+
+Return the filename for the specified module.
+[clinic start generated code]*/
+
+static PyObject *
+zipimport_zipimporter_get_filename_impl(ZipImporter *self,
+                                        PyObject *fullname)
+/*[clinic end generated code: output=c5b92b58bea86506 input=28d2eb57e4f25c8a]*/
+{
+    PyObject *code, *modpath;
+    int ispackage;
 
     /* Deciding the filename requires working out where the code
        would come from if the module was actually loaded */
@@ -545,17 +601,23 @@ zipimporter_get_filename(PyObject *obj, PyObject *args)
     return modpath;
 }
 
-/* Return a bool signifying whether the module is a package or not. */
-static PyObject *
-zipimporter_is_package(PyObject *obj, PyObject *args)
-{
-    ZipImporter *self = (ZipImporter *)obj;
-    PyObject *fullname;
-    enum zi_module_info mi;
+/*[clinic input]
+zipimport.zipimporter.is_package
 
-    if (!PyArg_ParseTuple(args, "U:zipimporter.is_package",
-                          &fullname))
-        return NULL;
+    fullname: unicode
+    /
+
+Return True if the module specified by fullname is a package.
+
+Raise ZipImportError if the module couldn't be found.
+
+[clinic start generated code]*/
+
+static PyObject *
+zipimport_zipimporter_is_package_impl(ZipImporter *self, PyObject *fullname)
+/*[clinic end generated code: output=c32958c2a5216ae6 input=a7ba752f64345062]*/
+{
+    enum zi_module_info mi;
 
     mi = get_module_info(self, fullname);
     if (mi == MI_ERROR)
@@ -568,16 +630,25 @@ zipimporter_is_package(PyObject *obj, PyObject *args)
 }
 
 
+/*[clinic input]
+zipimport.zipimporter.get_data
+
+    pathname as path: unicode
+    /
+
+Return the data associated with 'pathname'.
+
+Raise OSError if the file was not found.
+
+[clinic start generated code]*/
+
 static PyObject *
-zipimporter_get_data(PyObject *obj, PyObject *args)
+zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *path)
+/*[clinic end generated code: output=65dc506aaa268436 input=fa6428b74843c4ae]*/
 {
-    ZipImporter *self = (ZipImporter *)obj;
-    PyObject *path, *key;
+    PyObject *key;
     PyObject *toc_entry;
     Py_ssize_t path_start, path_len, len;
-
-    if (!PyArg_ParseTuple(args, "U:zipimporter.get_data", &path))
-        return NULL;
 
 #ifdef ALTSEP
     path = _PyObject_CallMethodId(path, &PyId_replace, "CC", ALTSEP, SEP);
@@ -615,28 +686,45 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
     return NULL;
 }
 
+/*[clinic input]
+zipimport.zipimporter.get_code
+
+    fullname: unicode
+    /
+
+Return the code object for the specified module.
+
+Raise ZipImportError if the module couldn't be found.
+
+[clinic start generated code]*/
+
 static PyObject *
-zipimporter_get_code(PyObject *obj, PyObject *args)
+zipimport_zipimporter_get_code_impl(ZipImporter *self, PyObject *fullname)
+/*[clinic end generated code: output=b923c37fa99cbac4 input=2761412bc37f3549]*/
 {
-    ZipImporter *self = (ZipImporter *)obj;
-    PyObject *fullname;
-
-    if (!PyArg_ParseTuple(args, "U:zipimporter.get_code", &fullname))
-        return NULL;
-
     return get_module_code(self, fullname, NULL, NULL);
 }
 
-static PyObject *
-zipimporter_get_source(PyObject *obj, PyObject *args)
-{
-    ZipImporter *self = (ZipImporter *)obj;
-    PyObject *toc_entry;
-    PyObject *fullname, *subname, *path, *fullpath;
-    enum zi_module_info mi;
+/*[clinic input]
+zipimport.zipimporter.get_source
 
-    if (!PyArg_ParseTuple(args, "U:zipimporter.get_source", &fullname))
-        return NULL;
+    fullname: unicode
+    /
+
+Return the source code for the specified module.
+
+Raise ZipImportError if the module couldn't be found, return None if the
+archive does contain the module, but has no source for it.
+
+[clinic start generated code]*/
+
+static PyObject *
+zipimport_zipimporter_get_source_impl(ZipImporter *self, PyObject *fullname)
+/*[clinic end generated code: output=bc059301b0c33729 input=4e4b186f2e690716]*/
+{
+    PyObject *toc_entry;
+    PyObject *subname, *path, *fullpath;
+    enum zi_module_info mi;
 
     mi = get_module_info(self, fullname);
     if (mi == MI_ERROR)
@@ -680,80 +768,16 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(doc_find_module,
-"find_module(fullname, path=None) -> self or None.\n\
-\n\
-Search for a module specified by 'fullname'. 'fullname' must be the\n\
-fully qualified (dotted) module name. It returns the zipimporter\n\
-instance itself if the module was found, or None if it wasn't.\n\
-The optional 'path' argument is ignored -- it's there for compatibility\n\
-with the importer protocol.");
-
-PyDoc_STRVAR(doc_find_loader,
-"find_loader(fullname, path=None) -> self, str or None.\n\
-\n\
-Search for a module specified by 'fullname'. 'fullname' must be the\n\
-fully qualified (dotted) module name. It returns the zipimporter\n\
-instance itself if the module was found, a string containing the\n\
-full path name if it's possibly a portion of a namespace package,\n\
-or None otherwise. The optional 'path' argument is ignored -- it's\n\
- there for compatibility with the importer protocol.");
-
-PyDoc_STRVAR(doc_load_module,
-"load_module(fullname) -> module.\n\
-\n\
-Load the module specified by 'fullname'. 'fullname' must be the\n\
-fully qualified (dotted) module name. It returns the imported\n\
-module, or raises ZipImportError if it wasn't found.");
-
-PyDoc_STRVAR(doc_get_data,
-"get_data(pathname) -> string with file data.\n\
-\n\
-Return the data associated with 'pathname'. Raise OSError if\n\
-the file wasn't found.");
-
-PyDoc_STRVAR(doc_is_package,
-"is_package(fullname) -> bool.\n\
-\n\
-Return True if the module specified by fullname is a package.\n\
-Raise ZipImportError if the module couldn't be found.");
-
-PyDoc_STRVAR(doc_get_code,
-"get_code(fullname) -> code object.\n\
-\n\
-Return the code object for the specified module. Raise ZipImportError\n\
-if the module couldn't be found.");
-
-PyDoc_STRVAR(doc_get_source,
-"get_source(fullname) -> source string.\n\
-\n\
-Return the source code for the specified module. Raise ZipImportError\n\
-if the module couldn't be found, return None if the archive does\n\
-contain the module, but has no source for it.");
-
-
-PyDoc_STRVAR(doc_get_filename,
-"get_filename(fullname) -> filename string.\n\
-\n\
-Return the filename for the specified module.");
 
 static PyMethodDef zipimporter_methods[] = {
-    {"find_module", zipimporter_find_module, METH_VARARGS,
-     doc_find_module},
-    {"find_loader", zipimporter_find_loader, METH_VARARGS,
-     doc_find_loader},
-    {"load_module", zipimporter_load_module, METH_VARARGS,
-     doc_load_module},
-    {"get_data", zipimporter_get_data, METH_VARARGS,
-     doc_get_data},
-    {"get_code", zipimporter_get_code, METH_VARARGS,
-     doc_get_code},
-    {"get_source", zipimporter_get_source, METH_VARARGS,
-     doc_get_source},
-    {"get_filename", zipimporter_get_filename, METH_VARARGS,
-     doc_get_filename},
-    {"is_package", zipimporter_is_package, METH_VARARGS,
-     doc_is_package},
+    ZIPIMPORT_ZIPIMPORTER_FIND_MODULE_METHODDEF
+    ZIPIMPORT_ZIPIMPORTER_FIND_LOADER_METHODDEF
+    ZIPIMPORT_ZIPIMPORTER_LOAD_MODULE_METHODDEF
+    ZIPIMPORT_ZIPIMPORTER_GET_FILENAME_METHODDEF
+    ZIPIMPORT_ZIPIMPORTER_IS_PACKAGE_METHODDEF
+    ZIPIMPORT_ZIPIMPORTER_GET_DATA_METHODDEF
+    ZIPIMPORT_ZIPIMPORTER_GET_CODE_METHODDEF
+    ZIPIMPORT_ZIPIMPORTER_GET_SOURCE_METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -763,20 +787,6 @@ static PyMemberDef zipimporter_members[] = {
     {"_files",   T_OBJECT, offsetof(ZipImporter, files),    READONLY},
     {NULL}
 };
-
-PyDoc_STRVAR(zipimporter_doc,
-"zipimporter(archivepath) -> zipimporter object\n\
-\n\
-Create a new zipimporter instance. 'archivepath' must be a path to\n\
-a zipfile, or to a specific path inside a zipfile. For example, it can be\n\
-'/tmp/myimport.zip', or '/tmp/myimport.zip/mydirectory', if mydirectory is a\n\
-valid directory inside the archive.\n\
-\n\
-'ZipImportError is raised if 'archivepath' doesn't point to a valid Zip\n\
-archive.\n\
-\n\
-The 'archive' attribute of zipimporter objects contains the name of the\n\
-zipfile targeted.");
 
 #define DEFERRED_ADDRESS(ADDR) 0
 
@@ -802,7 +812,7 @@ static PyTypeObject ZipImporter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
         Py_TPFLAGS_HAVE_GC,                     /* tp_flags */
-    zipimporter_doc,                            /* tp_doc */
+    zipimport_zipimporter___init____doc__,      /* tp_doc */
     zipimporter_traverse,                       /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -817,7 +827,7 @@ static PyTypeObject ZipImporter_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    (initproc)zipimporter_init,                 /* tp_init */
+    (initproc)zipimport_zipimporter___init__,   /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
