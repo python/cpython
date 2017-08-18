@@ -68,7 +68,7 @@ try:
 except ImportError:
     pass
 
-STOP_TIMEOUT = 2.0
+STOP_TIMEOUT = 60.0
 
 
 class BaseTest(unittest.TestCase):
