@@ -1654,6 +1654,8 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
     nargs = PyTuple_GET_SIZE(args);
     nkwargs = (kwargs == NULL) ? 0 : PyDict_GET_SIZE(kwargs);
     if (nargs + nkwargs > len) {
+        /* adding "keyword" (when nargs == 0) prevents producing wrong error
+           messages in some special cases (see bpo-31229). */
         PyErr_Format(PyExc_TypeError,
                      "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (fname == NULL) ? "function" : fname,
@@ -2078,6 +2080,8 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
         nkwargs = 0;
     }
     if (nargs + nkwargs > len) {
+        /* adding "keyword" (when nargs == 0) prevents producing wrong error
+           messages in some special cases (see bpo-31229). */
         PyErr_Format(PyExc_TypeError,
                      "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (parser->fname == NULL) ? "function" : parser->fname,
