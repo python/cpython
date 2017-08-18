@@ -315,7 +315,7 @@ class Server(object):
     def dummy(self, c):
         pass
 
-    def debug_info(self, c): # c is unused?
+    def debug_info(self, c): # Perhaps include debug info about 'c'?
         '''
         Return some info --- useful to spot problems with refcounting
         '''
@@ -426,7 +426,7 @@ class Server(object):
 
         with self.mutex:
             if self.id_to_refcount[ident] <= 0:
-                raise ProcessError(
+                raise AssertionError(
                     "Id {0!s} ({1!r}) has refcount {2:n}, not 1+".format(
                         ident, self.id_to_obj[ident],
                         self.id_to_refcount[ident]))
@@ -686,9 +686,9 @@ class BaseManager(object):
                            getattr(proxytype, '_method_to_typeid_', None)
 
         if method_to_typeid:
-            for key, value in list(method_to_typeid.items()):
-                assert isinstance(key, str), '%r is not a string' % key
-                assert isinstance(value, str), '%r is not a string' % value
+            for key, value in list(method_to_typeid.items()): # isinstance?
+                assert type(key) == str, '%r is not a string' % key
+                assert type(value) == str, '%r is not a string' % value
 
         cls._registry[typeid] = (
             callable, exposed, method_to_typeid, proxytype

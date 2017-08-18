@@ -270,13 +270,13 @@ class Condition(object):
 
     def notify(self, n=1):
         assert self._lock._semlock._is_mine(), 'lock is not owned'
-        assert not self._wait_semaphore.acquire(False)
+        assert not self._wait_semaphore.acquire(False), 'waiting to acquire'
 
         # to take account of timeouts since last notify*() we subtract
         # woken_count from sleeping_count and rezero woken_count
         while self._woken_count.acquire(False):
             res = self._sleeping_count.acquire(False)
-            assert res
+            assert res, 'res is {:n}'.format(res)
 
         sleepers = 0
         while sleepers < n and self._sleeping_count.acquire(False):

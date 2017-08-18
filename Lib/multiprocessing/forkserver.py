@@ -56,7 +56,7 @@ class ForkServer(object):
         '''Request forkserver to create a child process.
 
         Returns a pair of fds (status_r, data_w).  The calling process can read
-        the child process's pid and (eventually) its returncode from status_r.
+        the child process\'s pid and (eventually) its returncode from status_r.
         The calling process should write to data_w the pickled preparation and
         process data.
         '''
@@ -189,7 +189,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
 
                 if alive_r in rfds:
                     # EOF because no more client processes left
-                    assert os.read(alive_r, 1) == b''
+                    assert os.read(alive_r, 1) == b'', "Not at EOF?"
                     raise SystemExit
 
                 if sig_r in rfds:
@@ -208,7 +208,10 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                             if os.WIFSIGNALED(sts):
                                 returncode = -os.WTERMSIG(sts)
                             else:
-                                assert os.WIFEXITED(sts)
+                                if not os.WIFEXITED(sts):
+                                    raise AssertionError(
+                                        "Child {0:n} status is {1:n}".format(
+                                            pid,sts))
                                 returncode = os.WEXITSTATUS(sts)
                             # Send exit code to client process
                             try:
@@ -227,7 +230,10 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                     with listener.accept()[0] as s:
                         # Receive fds from client
                         fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
-                        assert len(fds) <= MAXFDS_TO_SEND
+                        if len(fds) > MAXFDS_TO_SEND:
+                            raise RuntimeError(
+                                "Too many ({0:n}) fds to send".format(
+                                    len(fds)))
                         child_r, child_w, *fds = fds
                         s.close()
                         pid = os.fork()

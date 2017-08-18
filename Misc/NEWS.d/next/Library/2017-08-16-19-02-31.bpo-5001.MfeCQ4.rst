@@ -1,4 +1,0 @@
-Further cleanup of asserts without information in `multiprocessing`, in this
-instance in the `multiprocessing.pool` module. Converted to appropriate
-errors (generally ValueErrors or TypeErrors) and information for the user
-added. - Allen W. Smith (drallensmith on GitHub).

@@ -1,7 +1,0 @@
-This is a fix of some of the uninformative asserts in `multiprocessing`,
-including in `multiprocessing.managers` and `multiprocessing.queues`. Those
-in the queues.py module remain AssertionErrors, as do some in the
-managers.py module; others have been changed to more specific errors. In
-BaseManager's interpretation of method_to_typeid entries, checking for
-type(key or value) == str has been replaced with isinstance(key or value,
-str). - Patch by Allen W. Smith (drallensmith on GitHub).

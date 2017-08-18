@@ -1,0 +1,4 @@
+Except for those in windows-exclusive sections (not changed due to lack of
+familiarity), all asserts in `multiprocessing` are now more informative, and
+some error types have been changed to more specific ones. - Allen W. Smith
+(drallensmith on github)
