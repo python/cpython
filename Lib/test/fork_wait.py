@@ -13,8 +13,9 @@ the same application, the present example should work just fine.  DC
 """
 
 import os, sys, time, unittest
-import test.test_support as test_support
-thread = test_support.import_module('thread')
+import test.support as support
+
+threading = support.import_module('threading')
 
 LONGSLEEP = 2
 SHORTSLEEP = 0.5
@@ -23,8 +24,19 @@ NUM_THREADS = 4
 class ForkWait(unittest.TestCase):
 
     def setUp(self):
+        self._threading_key = support.threading_setup()
         self.alive = {}
         self.stop = 0
+        self.threads = []
+
+    def tearDown(self):
+        # Stop threads
+        self.stop = 1
+        for thread in self.threads:
+            thread.join()
+        thread = None
+        del self.threads[:]
+        support.threading_cleanup(*self._threading_key)
 
     def f(self, id):
         while not self.stop:
@@ -48,7 +60,9 @@ class ForkWait(unittest.TestCase):
 
     def test_wait(self):
         for i in range(NUM_THREADS):
-            thread.start_new(self.f, (i,))
+            thread = threading.Thread(target=self.f, args=(i,))
+            thread.start()
+            self.threads.append(thread)
 
         time.sleep(LONGSLEEP)
 
@@ -74,6 +88,3 @@ class ForkWait(unittest.TestCase):
         else:
             # Parent
             self.wait_impl(cpid)
-            # Tell threads to die
-            self.stop = 1
-            time.sleep(2*SHORTSLEEP) # Wait for threads to die
