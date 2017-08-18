@@ -787,7 +787,7 @@ the following methods and attributes:
             window.chgat(y, x, num, attr)
 
    Set the attributes of *num* characters at the current cursor position, or at
-   position ``(y, x)`` if supplied. If no value of *num* is given or *num* = ``-1``,
+   position ``(y, x)`` if supplied. If *num* is not given or is ``-1``,
    the attribute will  be set on all the characters to the end of the line.  This
    function does not move the cursor. The changed line will be touched using the
    :meth:`touchline` method so that the contents will be redisplayed by the next
