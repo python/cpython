@@ -161,14 +161,14 @@ class TestPy2MigrationHint(unittest.TestCase):
         with self.assertRaises(TypeError) as context:
             print >> sys.stderr, "message"
         self.assertIn('Did you mean "print(<message>, '
-                'file=<output_stream>)', str(context.exception))
+                'file=<output_stream>)"?', str(context.exception))
 
         # Test correct hint is produced in the case where RHS implements
         # __rrshift__ but returns NotImplemented
         with self.assertRaises(TypeError) as context:
             print >> 42
         self.assertIn('Did you mean "print(<message>, '
-                'file=<output_stream>)', str(context.exception))
+                'file=<output_stream>)"?', str(context.exception))
 
         # Test stream redirection hint is specific to print
         with self.assertRaises(TypeError) as context:
