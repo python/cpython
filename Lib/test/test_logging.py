@@ -797,6 +797,8 @@ if threading:
             """
             self.close()
             self._thread.join(timeout)
+            asyncore.close_all(map=self._map, ignore_all=True)
+
             alive = self._thread.is_alive()
             self._thread = None
             if alive:
