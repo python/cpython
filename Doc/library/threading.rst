@@ -875,8 +875,8 @@ Barrier Objects
 This class provides a simple synchronization primitive for use by a fixed number
 of threads that need to wait for each other.  Each of the threads tries to pass
 the barrier by calling the :meth:`~Barrier.wait` method and will block until
-all of the threads have made the call.  At this points, the threads are released
-simultaneously.
+all of the threads have made their :meth:`~Barrier.wait` calls. At this point,
+the threads are released simultaneously.
 
 The barrier can be reused any number of times for the same number of threads.
 

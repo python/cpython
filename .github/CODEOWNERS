@@ -15,7 +15,7 @@
 **/*pyhash*                   @tiran
 
 # Import (including importlib)
-**/*import*                   @brettcannon
+**/*import*                   @python/import-team
 
 # SSL
 **/*ssl*                      @tiran
@@ -26,3 +26,14 @@
 **/*mime*                     @bitdancer
 **/*imap*                     @bitdancer
 **/*poplib*                   @bitdancer
+
+# subprocess
+**/*subprocess*               @gpshead
+
+# Windows
+/PC/                          @python/windows-team
+/PCBuild/                     @python/windows-team
+
+# Windows installer packages
+/Tools/msi/                   @python/windows-team
+/Tools/nuget/                 @python/windows-team
