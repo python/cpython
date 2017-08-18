@@ -351,15 +351,21 @@ inline int _Py_atomic_load_32bit(volatile int* value, int order) {
 }
 
 #define _Py_atomic_store_explicit(ATOMIC_VAL, NEW_VAL, ORDER) \
+  __pragma(warning(push)) \
+  __pragma(warning(disable: 4133)) \
   if (sizeof(*ATOMIC_VAL._value) == 8) { \
     _Py_atomic_store_64bit(ATOMIC_VAL._value, NEW_VAL, ORDER) } else { \
-    _Py_atomic_store_32bit(ATOMIC_VAL._value, NEW_VAL, ORDER) } 
+    _Py_atomic_store_32bit(ATOMIC_VAL._value, NEW_VAL, ORDER) } \
+  __pragma(warning(pop))
 
 #define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER) \
   ( \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4133)) \
     sizeof(*(ATOMIC_VAL._value)) == 8 ? \
     _Py_atomic_load_64bit(ATOMIC_VAL._value, ORDER) : \
     _Py_atomic_load_32bit(ATOMIC_VAL._value, ORDER) \
+    __pragma(warning(pop)) \
   )
 #elif defined(_M_ARM) || defined(_M_ARM64)
 typedef enum _Py_memory_order {
