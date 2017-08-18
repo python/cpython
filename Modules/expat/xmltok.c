@@ -1019,7 +1019,11 @@ streqci(const char *s1, const char *s2)
     if (ASCII_a <= c1 && c1 <= ASCII_z)
       c1 += ASCII_A - ASCII_a;
     if (ASCII_a <= c2 && c2 <= ASCII_z)
-      c2 += ASCII_A - ASCII_a;
+      /* The following line will never get executed.  streqci() is
+       * only called from two places, both of which guarantee to put
+       * upper-case strings into s2.
+       */
+      c2 += ASCII_A - ASCII_a; /* LCOV_EXCL_LINE */
     if (c1 != c2)
       return 0;
     if (!c1)
@@ -1291,7 +1295,7 @@ XmlUtf8Encode(int c, char *buf)
   };
 
   if (c < 0)
-    return 0;
+    return 0; /* LCOV_EXCL_LINE: this case is always eliminated beforehand */
   if (c < min2) {
     buf[0] = (char)(c | UTF8_cval1);
     return 1;
@@ -1314,7 +1318,7 @@ XmlUtf8Encode(int c, char *buf)
     buf[3] = (char)((c & 0x3f) | 0x80);
     return 4;
   }
-  return 0;
+  return 0; /* LCOV_EXCL_LINE: this case too is eliminated before calling */
 }
 
 int FASTCALL
@@ -1464,6 +1468,9 @@ XmlInitUnknownEncoding(void *mem,
     }
     else if (c < 0) {
       if (c < -4)
+        return 0;
+      /* Multi-byte sequences need a converter function */
+      if (!convert)
         return 0;
       e->normal.type[i] = (unsigned char)(BT_LEAD2 - (c + 2));
       e->utf8[i][0] = 0;

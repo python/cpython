@@ -170,7 +170,14 @@ prolog1(PROLOG_STATE *state,
   case XML_TOK_COMMENT:
     return XML_ROLE_COMMENT;
   case XML_TOK_BOM:
-    return XML_ROLE_NONE;
+    /* This case can never arise.  To reach this role function, the
+     * parse must have passed through prolog0 and therefore have had
+     * some form of input, even if only a space.  At that point, a
+     * byte order mark is no longer a valid character (though
+     * technically it should be interpreted as a non-breaking space),
+     * so will be rejected by the tokenizing stages.
+     */
+    return XML_ROLE_NONE; /* LCOV_EXCL_LINE */
   case XML_TOK_DECL_OPEN:
     if (!XmlNameMatchesAscii(enc,
                              ptr + 2 * MIN_BYTES_PER_CHAR(enc),
@@ -1285,6 +1292,26 @@ declClose(PROLOG_STATE *state,
   return common(state, tok);
 }
 
+/* This function will only be invoked if the internal logic of the
+ * parser has broken down.  It is used in two cases:
+ *
+ * 1: When the XML prolog has been finished.  At this point the
+ * processor (the parser level above these role handlers) should
+ * switch from prologProcessor to contentProcessor and reinitialise
+ * the handler function.
+ *
+ * 2: When an error has been detected (via common() below).  At this
+ * point again the processor should be switched to errorProcessor,
+ * which will never call a handler.
+ *
+ * The result of this is that error() can only be called if the
+ * processor switch failed to happen, which is an internal error and
+ * therefore we shouldn't be able to provoke it simply by using the
+ * library.  It is a necessary backstop, however, so we merely exclude
+ * it from the coverage statistics.
+ *
+ * LCOV_EXCL_START
+ */
 static int PTRCALL
 error(PROLOG_STATE *UNUSED_P(state),
       int UNUSED_P(tok),
@@ -1294,6 +1321,7 @@ error(PROLOG_STATE *UNUSED_P(state),
 {
   return XML_ROLE_NONE;
 }
+/* LCOV_EXCL_STOP */
 
 static int FASTCALL
 common(PROLOG_STATE *state, int tok)

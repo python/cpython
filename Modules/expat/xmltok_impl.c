@@ -1198,8 +1198,14 @@ PREFIX(attributeValueTok)(const ENCODING *enc, const char *ptr,
   const char *start;
   if (ptr >= end)
     return XML_TOK_NONE;
-  else if (! HAS_CHAR(enc, ptr, end))
-    return XML_TOK_PARTIAL;
+  else if (! HAS_CHAR(enc, ptr, end)) {
+    /* This line cannot be executed.  The incoming data has already
+     * been tokenized once, so incomplete characters like this have
+     * already been eliminated from the input.  Retaining the paranoia
+     * check is still valuable, however.
+     */
+    return XML_TOK_PARTIAL; /* LCOV_EXCL_LINE */
+  }
   start = ptr;
   while (HAS_CHAR(enc, ptr, end)) {
     switch (BYTE_TYPE(enc, ptr)) {
@@ -1258,8 +1264,14 @@ PREFIX(entityValueTok)(const ENCODING *enc, const char *ptr,
   const char *start;
   if (ptr >= end)
     return XML_TOK_NONE;
-  else if (! HAS_CHAR(enc, ptr, end))
-    return XML_TOK_PARTIAL;
+  else if (! HAS_CHAR(enc, ptr, end)) {
+    /* This line cannot be executed.  The incoming data has already
+     * been tokenized once, so incomplete characters like this have
+     * already been eliminated from the input.  Retaining the paranoia
+     * check is still valuable, however.
+     */
+    return XML_TOK_PARTIAL; /* LCOV_EXCL_LINE */
+  }
   start = ptr;
   while (HAS_CHAR(enc, ptr, end)) {
     switch (BYTE_TYPE(enc, ptr)) {
@@ -1614,6 +1626,14 @@ PREFIX(predefinedEntityName)(const ENCODING *UNUSED_P(enc), const char *ptr,
   return 0;
 }
 
+/* This function does not appear to be called from anywhere within the
+ * library code.  It is used via the macro XmlSameName(), which is
+ * defined but never used.  Since it appears in the encoding function
+ * table, removing it is not a thing to be undertaken lightly.  For
+ * the moment, we simply exclude it from coverage tests.
+ *
+ * LCOV_EXCL_START
+ */
 static int PTRCALL
 PREFIX(sameName)(const ENCODING *enc, const char *ptr1, const char *ptr2)
 {
@@ -1677,14 +1697,21 @@ PREFIX(sameName)(const ENCODING *enc, const char *ptr1, const char *ptr2)
   }
   /* not reached */
 }
+/* LCOV_EXCL_STOP */
 
 static int PTRCALL
 PREFIX(nameMatchesAscii)(const ENCODING *UNUSED_P(enc), const char *ptr1,
                          const char *end1, const char *ptr2)
 {
   for (; *ptr2; ptr1 += MINBPC(enc), ptr2++) {
-    if (end1 - ptr1 < MINBPC(enc))
-      return 0;
+    if (end1 - ptr1 < MINBPC(enc)) {
+      /* This line cannot be executed.  THe incoming data has already
+       * been tokenized once, so imcomplete characters like this have
+       * already been eliminated from the input.  Retaining the
+       * paranoia check is still valuable, however.
+       */
+      return 0; /* LCOV_EXCL_LINE */
+    }
     if (!CHAR_MATCHES(enc, ptr1, *ptr2))
       return 0;
   }
