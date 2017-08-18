@@ -221,7 +221,7 @@ def collect_os(info_add):
         info_add("os.umask", '%03o' % mask)
 
     if hasattr(os, 'getrandom'):
-        # PEP 524: Check is system urandom is initialized
+        # PEP 524: Check if system urandom is initialized
         try:
             os.getrandom(1, os.GRND_NONBLOCK)
             state = 'ready (initialized)'
