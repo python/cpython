@@ -820,8 +820,10 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
 
-        if (op_slot == NB_SLOT(nb_rshift) && \
-                PyCFunction_Check(v) && strcmp(((PyCFunctionObject *)v) -> m_ml -> ml_name, "print") == 0) {
+        if (op_slot == NB_SLOT(nb_rshift) &&
+                PyCFunction_Check(v) &&
+                strncmp(((PyCFunctionObject *)v) -> m_ml -> ml_name, "print", 6) == 0)
+        {
 
             PyErr_Format(PyExc_TypeError,
                 "unsupported operand type(s) for %.100s: "

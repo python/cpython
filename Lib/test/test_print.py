@@ -155,8 +155,10 @@ class TestPy2MigrationHint(unittest.TestCase):
 
         self.assertIn('print("Hello World", end=" ")', str(context.exception))
 
-    def test_print_string_with_stream_redirection(self):
+    def test_stream_redirection_hint_for_py2_migration(self):
         import sys
+
+        # Test correct hint produced for Py2 redirection syntax
         python2_print_str = 'print >> sys.stderr, "message"'
         with self.assertRaises(TypeError) as context:
             exec(python2_print_str)
@@ -164,31 +166,38 @@ class TestPy2MigrationHint(unittest.TestCase):
         self.assertIn('Did you mean "print(<message>, '
                 'file=<output_stream>)', str(context.exception))
 
-    def test_print_with_stream_redirection_using_max(self):
-        import sys
-        python2_print_str = 'max >> sys.stderr'
-        with self.assertRaises(TypeError) as context:
-            exec(python2_print_str)
-
-        self.assertNotIn('Did you mean "print(<message>, '
-                'file=<output_stream>)', str(context.exception))
-
-    def test_print_with_stream_redirection_using_rrshift(self):
-        import sys
-
-        class OverrideRRShift:
-
-            def __rrshift__(self, lhs):
-                return 0 # Force result independent of LHS
-
-        self.assertEqual(print >> OverrideRRShift(), 0)
-
+        # Test correct hint is produced in thecase where RHS implements
+        # __rrshift__ but returns NotImplemented
         python2_print_str = 'print >> 42'
         with self.assertRaises(TypeError) as context:
             exec(python2_print_str)
 
         self.assertIn('Did you mean "print(<message>, '
                 'file=<output_stream>)', str(context.exception))
+
+        # Test stream redirection hint is specific to print
+        python2_print_str = 'max >> sys.stderr'
+        with self.assertRaises(TypeError) as context:
+            exec(python2_print_str)
+
+        self.assertNotIn('Did you mean ', str(context.exception))
+
+        # Test stream redirection hint is specific to rrshift
+        python2_print_str = 'print << sys.stderr'
+        with self.assertRaises(TypeError) as context:
+            exec(python2_print_str)
+
+        self.assertNotIn('Did you mean "print(<message>, '
+                'file=<output_stream>)', str(context.exception))
+
+        # Test stream redirection with right argument implemented __rrshift__
+        class OverrideRRShift:
+
+            def __rrshift__(self, lhs):
+                return 42 # Force result independent of LHS
+
+        self.assertEqual(print >> OverrideRRShift(), 42)
+
 
 
 if __name__ == "__main__":
