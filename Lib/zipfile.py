@@ -1621,12 +1621,10 @@ class ZipFile:
 
         # Skip if somebody tries to archive the archive...
         if self.filename is not None:
-            try:
+            if not isinstance(self.filename, int) and not isinstance(filename, int):
                 if os.path.abspath(filename) == os.path.abspath(self.filename):
                     print("zipfile: Skipped adding %r as not good to zip self!" % filename)
-                return
-            except TypeError:  # On some platforms self.filename may be a Handle
-                pass
+                    return
 
         zinfo = ZipInfo.from_file(filename, arcname)
 
