@@ -1469,6 +1469,7 @@ class ConfigFileTest(BaseTest):
         self.assertFalse(logger.disabled)
 
 
+@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class SocketHandlerTest(BaseTest):
 
@@ -1568,6 +1569,7 @@ def _get_temp_domain_socket():
     os.remove(fn)
     return fn
 
+@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class UnixSocketHandlerTest(SocketHandlerTest):
@@ -1586,6 +1588,7 @@ class UnixSocketHandlerTest(SocketHandlerTest):
         SocketHandlerTest.tearDown(self)
         support.unlink(self.address)
 
+@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class DatagramHandlerTest(BaseTest):
 
@@ -1652,6 +1655,7 @@ class DatagramHandlerTest(BaseTest):
         self.handled.wait()
         self.assertEqual(self.log_output, "spam\neggs\n")
 
+@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class UnixDatagramHandlerTest(DatagramHandlerTest):
@@ -1739,6 +1743,7 @@ class SysLogHandlerTest(BaseTest):
         self.handled.wait()
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
 
+@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class UnixSysLogHandlerTest(SysLogHandlerTest):
@@ -1757,6 +1762,7 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         SysLogHandlerTest.tearDown(self)
         support.unlink(self.address)
 
+@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(support.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 @unittest.skipUnless(threading, 'Threading required for this test.')
