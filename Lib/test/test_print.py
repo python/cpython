@@ -157,7 +157,6 @@ class TestPy2MigrationHint(unittest.TestCase):
         self.assertIn('print("Hello World", end=" ")', str(context.exception))
 
     def test_stream_redirection_hint_for_py2_migration(self):
-
         # Test correct hint produced for Py2 redirection syntax
         with self.assertRaises(TypeError) as context:
             print >> sys.stderr, "message"
@@ -181,7 +180,7 @@ class TestPy2MigrationHint(unittest.TestCase):
             print << sys.stderr
         self.assertNotIn('Did you mean', str(context.exception))
 
-        # Test stream redirection with right argument implemented __rrshift__
+        # Ensure right operand implementing rrshift still works
         class OverrideRRShift:
             def __rrshift__(self, lhs):
                 return 42 # Force result independent of LHS
