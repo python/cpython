@@ -1,0 +1,3 @@
+In `multiprocessing.util`, two uninformative asserts were replaced with a
+TypeError and a ValueError. For the first, a typecheck was also replaced
+with isinstance. - Allen W. Smith (drallensmith on github)
