@@ -727,7 +727,10 @@ class Popen(object):
                     to_close.append(self._devnull)
                 for fd in to_close:
                     try:
-                        os.close(fd)
+                        if _mswindows and isinstance(fd, Handle):
+                            fd.Close()
+                        else:
+                            os.close(fd)
                     except OSError:
                         pass
 
@@ -1007,6 +1010,9 @@ class Popen(object):
                     errwrite.Close()
                 if hasattr(self, '_devnull'):
                     os.close(self._devnull)
+                # Prevent a double close of these handles/fds from __init__
+                # on error.
+                self._closed_child_pipe_fds = True
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
