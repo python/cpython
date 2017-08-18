@@ -23,14 +23,17 @@ class PythonInfo:
         if key in self.info:
             raise ValueError("duplicate key: %r" % key)
 
-        if isinstance(value, str):
+        if value is None:
+            return
+
+        if not isinstance(value, int):
+            if not isinstance(value, str):
+                # convert other objects like sys.flags to string
+                value = str(value)
+
             value = value.strip()
             if not value:
                 return
-        elif value is None:
-            return
-        elif not isinstance(value, int):
-            raise TypeError("value type must be str, int or None")
 
         self.info[key] = value
 
@@ -52,25 +55,47 @@ def copy_attributes(info_add, obj, name_fmt, attributes, *, formatter=None):
         info_add(name, value)
 
 
-def collect_sys(info_add):
-    def format_attr(attr, value):
-        if attr == 'flags':
-            # convert sys.flags tuple to string
-            return str(value)
-        else:
-            return value
+def call_func(info_add, name, mod, func_name, *, formatter=None):
+    try:
+        func = getattr(mod, func_name)
+    except AttributeError:
+        return
+    value = func()
+    if formatter is not None:
+        value = formatter(value)
+    info_add(name, value)
 
+
+def collect_sys(info_add):
     attributes = (
         '_framework',
+        'abiflags',
+        'api_version',
+        'builtin_module_names',
         'byteorder',
+        'dont_write_bytecode',
         'executable',
         'flags',
+        'float_info',
+        'float_repr_style',
+        'hash_info',
+        'hexversion',
+        'implementation',
+        'int_info',
         'maxsize',
         'maxunicode',
+        'path',
+        'platform',
+        'prefix',
+        'thread_info',
         'version',
+        'version_info',
+        'winver',
     )
-    copy_attributes(info_add, sys, 'sys.%s', attributes,
-                    formatter=format_attr)
+    copy_attributes(info_add, sys, 'sys.%s', attributes)
+
+    call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
+    call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
@@ -88,15 +113,6 @@ def collect_sys(info_add):
         if errors:
             encoding = '%s/%s' % (encoding, errors)
         info_add('sys.%s.encoding' % name, encoding)
-
-    if hasattr(sys, 'hash_info'):
-        alg = sys.hash_info.algorithm
-        bits = 64 if sys.maxsize > 2**32 else 32
-        alg = '%s (%s bits)' % (alg, bits)
-        info_add('sys.hash_info', alg)
-
-    if hasattr(sys, 'getandroidapilevel'):
-        info_add('sys.androidapilevel', sys.getandroidapilevel())
 
 
 def collect_platform(info_add):
@@ -121,20 +137,27 @@ def collect_locale(info_add):
 def collect_os(info_add):
     import os
 
-    if hasattr(os, 'getrandom'):
-        # PEP 524: Check is system urandom is initialized
-        try:
-            os.getrandom(1, os.GRND_NONBLOCK)
-            state = 'ready (initialized)'
-        except BlockingIOError as exc:
-            state = 'not seeded yet (%s)' % exc
-        info_add('os.getrandom', state)
+    def format_attr(attr, value):
+        if attr in ('supports_follow_symlinks', 'supports_fd',
+                    'supports_effective_ids'):
+            return str(sorted(func.__name__ for func in value))
+        else:
+            return value
+
+    attributes = (
+        'name',
+        'supports_bytes_environ',
+        'supports_effective_ids',
+        'supports_fd',
+        'supports_follow_symlinks',
+    )
+    copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
 
     info_add("os.cwd", os.getcwd())
 
-    if hasattr(os, 'getuid'):
-        info_add("os.uid", os.getuid())
-        info_add("os.gid", os.getgid())
+    call_func(info_add, 'os.uid', os, 'getuid')
+    call_func(info_add, 'os.gid', os, 'getgid')
+    call_func(info_add, 'os.uname', os, 'uname')
 
     if hasattr(os, 'getgroups'):
         groups = os.getgroups()
@@ -157,9 +180,7 @@ def collect_os(info_add):
         if cpu_count:
             info_add('os.cpu_count', cpu_count)
 
-    if hasattr(os, 'getloadavg'):
-        load = os.getloadavg()
-        info_add('os.loadavg', str(load))
+    call_func(info_add, 'os.loadavg', os, 'getloadavg')
 
     # Get environment variables: filter to list
     # to not leak sensitive information
@@ -193,6 +214,20 @@ def collect_os(info_add):
            # Visual Studio: VS140COMNTOOLS
            or (uname.startswith("VS") and uname.endswith("COMNTOOLS"))):
             info_add('os.environ[%s]' % name, value)
+
+    if hasattr(os, 'umask'):
+        mask = os.umask(0)
+        os.umask(mask)
+        info_add("os.umask", '%03o' % mask)
+
+    if hasattr(os, 'getrandom'):
+        # PEP 524: Check if system urandom is initialized
+        try:
+            os.getrandom(1, os.GRND_NONBLOCK)
+            state = 'ready (initialized)'
+        except BlockingIOError as exc:
+            state = 'not seeded yet (%s)' % exc
+        info_add('os.getrandom', state)
 
 
 def collect_readline(info_add):
@@ -255,12 +290,20 @@ def collect_tkinter(info_add):
 def collect_time(info_add):
     import time
 
+    attributes = (
+        'altzone',
+        'daylight',
+        'timezone',
+        'tzname',
+    )
+    copy_attributes(info_add, time, 'time.%s', attributes)
+
     if not hasattr(time, 'get_clock_info'):
         return
 
     for clock in ('time', 'perf_counter'):
         tinfo = time.get_clock_info(clock)
-        info_add('time.%s' % clock, str(tinfo))
+        info_add('time.%s' % clock, tinfo)
 
 
 def collect_sysconfig(info_add):
@@ -305,8 +348,7 @@ def collect_ssl(info_add):
         if attr.startswith('OP_'):
             return '%#8x' % value
         else:
-            # Convert OPENSSL_VERSION_INFO tuple to str
-            return str(value)
+            return value
 
     attributes = (
         'OPENSSL_VERSION',
