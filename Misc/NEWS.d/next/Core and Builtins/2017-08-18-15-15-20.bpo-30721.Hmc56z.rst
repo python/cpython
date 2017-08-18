@@ -1,0 +1,2 @@
+``print`` now shows correct usage hint for using Python 2 redirection
+syntax.  Patch by Sanyam Khurana.
