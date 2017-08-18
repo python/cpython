@@ -3,6 +3,34 @@ Released on 2018-06-18?
 ========================
 
 
+bpo-31205: Factor KeysPage(Frame) class from ConfigDialog.
+The slightly modified tests continue to pass.
+Patch by Cheryl Sabella.
+
+bpo-31002: Add tests for configdialog keys tab.
+Patch by Cheryl Sabella.
+
+bpo-19903: Change calltipes to use inspect.signature.
+Idlelib.calltips.get_argspec now uses inspect.signature instead of
+inspect.getfullargspec, like help() does.  This improves the signature
+in the call tip in a few different cases, including builtins converted
+to provide a signature.  A message is added if the object is not
+callable, has an invalid signature, or if it has positional-only
+parameters.  Patch by Louie Lu.
+
+bop-31083: Add an outline of a TabPage class in configdialog.
+Add template as comment. Update existing classes to match outline.
+Initial patch by Cheryl Sabella.
+
+bpo-31050: Factor GenPage(Frame) class from ConfigDialog.
+The slightly modified tests for the General tab continue to pass.
+Patch by Cheryl Sabella.
+
+bpo-31004: Factor FontPage(Frame) class from ConfigDialog.
+The slightly modified tests continue to pass. The General test
+broken by the switch to ttk.Notebook is fixed.
+Patch mostly by Cheryl Sabella.
+
 bpo-30781: IDLE - Use ttk Notebook in ConfigDialog.
 Patch by Terry Jan Reedy.
 
@@ -81,7 +109,7 @@ so that instances of the latter two can be placed with other widgets
 within a multiframe window.
 Patches by Cheryl Sabella and Terry Jan Reedy.
 
-bp0-30723: Make several improvements to parenmatch.
+bpo-30723: Make several improvements to parenmatch.
 * Add 'parens' style to highlight both opener and closer.
 * Make 'default' style, which is not default, a synonym for 'opener'.
 * Make time-delay work the same with all styles.
