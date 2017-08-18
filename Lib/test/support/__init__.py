@@ -2030,22 +2030,32 @@ def threading_cleanup(*original_values):
     global environment_altered
 
     _MAX_COUNT = 100
-    t0 = time.monotonic()
+
     for count in range(_MAX_COUNT):
         values = _thread._count(), threading._dangling
         if values == original_values:
             break
+
+        if not count:
+            # Display a warning at the first iteration
+            environment_altered = True
+            dangling_threads = values[1]
+            print("Warning -- threading_cleanup() failed to cleanup "
+                  "%s threads (count: %s, dangling: %s)"
+                  % (values[0] - original_values[0],
+                     values[0], len(dangling_threads)),
+                  file=sys.stderr)
+            for thread in dangling_threads:
+                print(f"Dangling thread: {thread!r}", file=sys.stderr)
+            sys.stderr.flush()
+
+            # Don't hold references to threads
+            dangling_threads = None
+        values = None
+
         time.sleep(0.01)
         gc_collect()
-    else:
-        environment_altered = True
 
-        dt = time.monotonic() - t0
-        print("Warning -- threading_cleanup() failed to cleanup %s threads "
-              "after %.0f sec (count: %s, dangling: %s)"
-              % (values[0] - original_values[0], dt,
-                 values[0], len(values[1])),
-              file=sys.stderr)
 
 def reap_threads(func):
     """Use this function when threads are being used.  This will
