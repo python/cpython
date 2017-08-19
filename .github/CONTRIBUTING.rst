@@ -17,6 +17,13 @@ Build Status
   + `Stable buildbots <http://buildbot.python.org/2.7.stable/>`_
 
 
+Thank You
+---------
+First off, thanks for contributing to the maintenance of the Python programming
+language and the CPython interpreter! Even if your contribution is not
+ultimately accepted, the fact you put time and effort into helping out is
+greatly appreciated.
+
 Contribution Guidelines
 -----------------------
 Please read the `devguide <https://devguide.python.org/>`_ for
