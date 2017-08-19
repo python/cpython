@@ -1254,7 +1254,7 @@ class ZipFile:
         """
         Print a table of contents for the zip file.
         :param file: Output file descriptor
-        :param verbose: How much detail to output"
+        :param int verbose: How much detail to output"
         """
         formatinfo = [
             # (Title, Width, Fmt) In order of verbosity
@@ -1268,8 +1268,9 @@ class ZipFile:
             ("CRC", 12, "{z.CRC:12}"),  # verbose = 3
             ("Method", 11, "{compression:>11}"),  # verbose = 3
         ]
-        elsement_dict = {0:1, 1:3, 2:4, 3:5, 4:6,}
-        fieldcount = elsement_dict.get(verbose, len(formatinfo))
+        element_dict = {0:1, 1:3, 2:4, 3:5, 4:6,}
+        # Look up which elements to use, if verbose >= 4 use all of them.
+        fieldcount = element_dict.get(verbose, len(formatinfo))
         fields = formatinfo[:fieldcount]
         # Print the title
         print(' '.join(['{0:^{1}}'.format(*field) for field in fields]),
@@ -1623,7 +1624,8 @@ class ZipFile:
         if self.filename is not None:
             if not isinstance(self.filename, int) and not isinstance(filename, int):
                 if os.path.abspath(filename) == os.path.abspath(self.filename):
-                    print("zipfile: Skipped adding %r as not good to zip self!" % filename)
+                    print("zipfile: Skipped adding %r since it is the "
+                          "destination, (recursive zips would be bad)!" % filename)
                     return
 
         zinfo = ZipInfo.from_file(filename, arcname)
@@ -2014,7 +2016,9 @@ def main(args=None):
         'If a directory is passed as a parameter to create or append',
         'it will be recursively added. Wildcards are supported, glob style,',
         'and a wildcard such as **/*.py will recurse.  All recursion will',
-        'skip any directories starting with . such as .git, etc.'
+        'skip any directories starting with . such as .git, etc. if',
+        'you wish to include them you will need to add .**/* or similar as well.',
+        'Behavoir is as for the glob.iglob() function.'
     ])
     parser = argparse.ArgumentParser(description=description, epilog=epilog)
     parser.add_argument('-v', '--verbose', action='count')
@@ -2088,11 +2092,19 @@ def main(args=None):
                                           os.path.join(path, nm),
                                           os.path.join(zippath, nm))
             else:
+                # Not a file or dir so possible wildcard
                 if args.verbose:
                     print("Looking for wildcard matches to", path)
-                matches = glob.iglob(path)  # Might be a just wildcard
+                    if path.startswith('**/'):
+                        print("Recursing directories that don't start with .")
+                    elif path.startswith('.**/'):
+                        print("Recursing directories that do start with .")
+                    oldcount = count
+                matches = glob.iglob(path)
                 for nm in matches:  # if not then this will have no entries.
                     count += addToZip(zf, nm, nm)
+                if args.verbose and count == oldcount:
+                    print("No Matches Found!")
             # else: ignore
             return count
         if len(files):
@@ -2102,7 +2114,7 @@ def main(args=None):
                     zippath = os.path.basename(path)
                     if not zippath:
                         zippath = os.path.basename(os.path.dirname(path))
-                    if zippath in ('', os.curdir, os.pardir):
+                    if zippath in (os.curdir, os.pardir):
                         zippath = ''
                     count += addToZip(zf, path, zippath)
             if args.verbose:

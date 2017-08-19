@@ -2466,12 +2466,14 @@ def main():
 
     description = 'A simple command-line interface for tarfile module.'
     epilog= ' '.join([
-        'When creating compression is determined by a tarfile',
+        'When creating a tarfile, compression is determined by the filename\'s',
         'final extention of any of %s. ' % ', '.join(compressions.keys()),
         'If a directory is passed as a parameter to create or append',
         'it will be recursively added. Wildcards are supported, glob style,',
         'and a wildcard such as **/*.py will recurse, this recursion will',
-        'skip any directories starting with . such as .git, etc.'
+        'skip any files & directories starting with . such as .git, etc. if',
+        'you wish to include them you will need to add .**/* or similar as well.',
+        'Behavoir is as for the glob.iglob() function.'
     ])
     parser = argparse.ArgumentParser(
         description=description,
@@ -2490,7 +2492,7 @@ def main():
                        help='Create tarfile from files.')
     group.add_argument('-a', '--add', nargs='+',
                        metavar=('<name>', '<file|dir>'),
-                       help='Append files to a tarfile, (.tar only).')
+                       help='Append files to a tarfile, (uncompressed only).')
     group.add_argument('-t', '--test', metavar='<tarfile>',
                        help='Test if a tarfile is valid')
     args = parser.parse_args()
@@ -2542,21 +2544,26 @@ def main():
         tar_mode = 'w:' + compressions[ext] if ext in compressions else 'w'
         tar_files = args.create
         if args.verbose:
-            print('Create {!r}:'.format(tar_name))
+            print('Creating {!r}:'.format(tar_name))
         # Actual adding files is done later.
     elif args.add is not None:
         tar_name = args.add.pop(0)
-        _, ext = os.path.splitext(tar_name)
+        dummy, ext = os.path.splitext(tar_name)
 
         tar_mode = 'a'
         tar_files = args.add
         if args.verbose:
-            print('Add to {!r}:'.format(tar_name))
+            if os.path.exists(tar_name):
+                print('Adding to {!r}:'.format(tar_name))
+            else:
+                print('Creating {!r}:'.format(tar_name))
 
-        if ext in compressions:
+        if os.path.exists(tar_name) and ext in compressions:
             parser.exit(
                 1,
-                "Error: Add is not a supported operation for compressed tar files")
+                "Error: Append is not a supported operation for compressed tar files"
+                "you will need to unpack and then create a new file."
+            )
 
         if os.path.exists(tar_name) and not is_tarfile(tar_name):
             parser.exit(
@@ -2571,16 +2578,24 @@ def main():
                 for file_name in tar_files:
                     if args.verbose:
                         print('  Add: {!r}'.format(file_name))
+                        if file_name.startswith('**/'):
+                            print("Recursing directories that don't start with .")
+                        elif file_name.startswith('.**/'):
+                            print("Recursing directories that do start with .")
                     if os.path.exists(file_name):
                         tf.add(file_name)
                     else:
                         # Not a file or dir so possible wildcard
                         if args.verbose:
-                            print("Possible  Wildcard Add!", file_name)
-                        for file_name in glob.glob(file_name):
+                            print("Possible Wildcard Add {!r}!".format(file_name))
+                            found = False
+                        for file_name in glob.iglob(file_name):
                             if args.verbose:
                                 print('  Add: {!r}'.format(file_name))
+                                found = True
                             tf.add(file_name)
+                            if args.verbose and not found:
+                                print("No Matches Found!")
 
             if args.verbose:
                 print('{!r} file created.'.format(tar_name))

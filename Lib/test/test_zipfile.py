@@ -2252,7 +2252,11 @@ class CommandLineTest(unittest.TestCase):
                 out = self.zipfilecmd(opt, TESTFN2, pat.format(TESTFN))
                 #self.assertEqual(out, b'')
                 with zipfile.ZipFile(TESTFN2) as zf:
-                    self.assertEqual(len(zf.namelist()), expect)
+                    self.assertEqual(
+                        len(zf.namelist()), expect,
+                        "Expected {} files in {!r} from {!r} got {!r}".format(
+                            expect, TESTFN2, pat, zf.namelist()
+                        ))
             finally:
                 unlink(TESTFN2)
 
@@ -2284,8 +2288,10 @@ class CommandLineTest(unittest.TestCase):
                 out = self.zipfilecmd('-v', opt, TESTFN2, pat.format(TESTFN))
                 #self.assertEqual(out, b'')
                 with zipfile.ZipFile(TESTFN2) as zf:
-                    self.assertGreaterEqual(len(zf.namelist()), expect,
-                                            "Testing Pattern %s" % pat.format(TESTFN))
+                    self.assertGreaterEqual(
+                        len(zf.namelist()), expect,
+                        "Testing Pattern {!r} expect {} files in got {!r}".format(
+                            pat.format(TESTFN), expect, zf.namelist()))
             finally:
                 unlink(TESTFN2)
 
@@ -2307,16 +2313,30 @@ class CommandLineTest(unittest.TestCase):
                 out = self.zipfilecmd(opt, TESTFN2, *files)
                 self.assertEqual(out, b'')
                 with zipfile.ZipFile(TESTFN2) as zf:
-                    self.assertEqual(zf.namelist(), namelist)
-                    self.assertEqual(zf.read(namelist[0]), b'test 1')
-                    self.assertEqual(zf.read(namelist[2]), b'test 2')
+                    self.assertEqual(
+                        zf.namelist(), namelist,
+                        '{!r} Contains {!r} should have {!r}'.format(
+                            TESTFN2, zf.namelist(), namelist
+                        ))
+                    self.assertEqual(
+                        zf.read(namelist[0]), b'test 1',
+                        'In {!r} {!r} contains {!r} should read {!r}!'.format(
+                            TESTFN2, namelist[0], b'test 1', zf.read(namelist[0])
+                    ))
+                    self.assertEqual(zf.read(namelist[2]), b'test 2',
+                        'In {!r} {!r} contains {!r} should read {!r}!'.format(
+                            TESTFN2, namelist[2], b'test 2', zf.read(namelist[2])
+                    ))
                 testfn3 = "Spam.txt"
                 with open(testfn3, 'w') as f:
                     f.write('Spam Test!')
                 self.addCleanup(unlink, testfn3)
                 out = self.zipfilecmd('-v', opt, TESTFN2, testfn3)
                 with zipfile.ZipFile(TESTFN2) as zf:
-                    self.assertEqual(zf.read(testfn3), b"Spam Test!")
+                    self.assertEqual(zf.read(testfn3), b"Spam Test!",
+                        'In {!r} {!r} contains {!r} should read {!r}!'.format(
+                            TESTFN2, testfn3, b"Spam Test!", zf.read(testfn3)
+                    ))
             finally:
                 unlink(TESTFN2)
 
