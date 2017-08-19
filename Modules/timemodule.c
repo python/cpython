@@ -586,8 +586,9 @@ time_strftime(PyObject *self, PyObject *args)
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
-    else if (!gettmarg(tup, &buf, "iiiiiiiii;strftime(): illegal time tuple "
-                                  "argument") || !checktm(&buf))
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;strftime(): illegal time tuple argument") ||
+             !checktm(&buf))
     {
         return NULL;
     }
@@ -780,8 +781,9 @@ time_asctime(PyObject *self, PyObject *args)
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
 
-    } else if (!gettmarg(tup, &buf, "iiiiiiiii;asctime(): illegal time tuple "
-                                    "argument") || !checktm(&buf))
+    } else if (!gettmarg(tup, &buf,
+                         "iiiiiiiii;asctime(): illegal time tuple argument") ||
+               !checktm(&buf))
     {
         return NULL;
     }
@@ -820,8 +822,8 @@ time_mktime(PyObject *self, PyObject *tup)
 {
     struct tm buf;
     time_t tt;
-    if (!gettmarg(tup, &buf, "iiiiiiiii;mktime(): illegal time tuple "
-                             "argument"))
+    if (!gettmarg(tup, &buf,
+                  "iiiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
     }

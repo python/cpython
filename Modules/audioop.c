@@ -1371,7 +1371,7 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
             channel = PyTuple_GetItem(samps, chan);
             if (!PyTuple_Check(channel)) {
                 PyErr_SetString(PyExc_TypeError,
-                                "ratecv(): channel must be a tuple");
+                                "ratecv(): illegal state argument");
                 goto exit;
             }
             if (!PyArg_ParseTuple(channel,
