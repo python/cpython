@@ -114,6 +114,26 @@ class ConfigDialog(Toplevel):
         note.pack(side=TOP, expand=TRUE, fill=BOTH)
         self.create_action_buttons().pack(side=BOTTOM)
 
+#    def load_configs(self):
+#        """Load configuration for each page.
+#
+#        Load configuration from default and user config files and populate
+#        the widgets on the config dialog pages.
+#
+#        Methods:
+#            load_font_cfg
+#            load_tab_cfg
+#            load_theme_cfg
+#            load_key_cfg
+#            load_general_cfg
+#        """
+#        #self.load_font_cfg()
+#        #self.load_tab_cfg()
+#        # self.load_theme_cfg()
+#        # self.load_key_cfg()
+#        # self.load_general_cfg()
+#        # note: extension page handled separately
+
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
 
