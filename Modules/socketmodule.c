@@ -1555,7 +1555,6 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #if defined(AF_NETLINK)
     case AF_NETLINK:
     {
-        char format[64] = "II:";
         struct sockaddr_nl* addr;
         int pid, groups;
         addr = (struct sockaddr_nl *)addr_ret;
@@ -1566,9 +1565,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        strcat(format, caller);
-        if (!PyArg_ParseTuple(args, format, &pid, &groups))
+        if (!PyArg_ParseTuple(args, "II;invalid address argument",
+                              &pid, &groups))
+        {
             return 0;
+        }
         addr->nl_family = AF_NETLINK;
         addr->nl_pid = pid;
         addr->nl_groups = groups;
@@ -1587,7 +1588,6 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         struct sockaddr_in* addr;
         struct maybe_idna host = {NULL, NULL};
         int port, result;
-        char format[64] = "O&i:";
         if (!PyTuple_Check(args)) {
             PyErr_Format(
                 PyExc_TypeError,
@@ -1595,9 +1595,16 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        strcat(format, caller);
-        if (!PyArg_ParseTuple(args, format, idna_converter, &host, &port))
+        if (!PyArg_ParseTuple(args, "O&i;invalid address argument",
+                              idna_converter, &host, &port))
+        {
+            assert(PyErr_Occurred());
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Format(PyExc_OverflowError,
+                             "%s(): port must be 0-65535.", caller);
+            }
             return 0;
+        }
         addr=(struct sockaddr_in*)addr_ret;
         result = setipaddr(host.buf, (struct sockaddr *)addr,
                            sizeof(*addr),  AF_INET);
@@ -1607,8 +1614,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         if (port < 0 || port > 0xffff) {
             PyErr_Format(
                 PyExc_OverflowError,
-                "%s(): port must be 0-65535.",
-                caller);
+                "%s(): port must be 0-65535.", caller);
             return 0;
         }
         addr->sin_family = AF_INET;
@@ -1632,9 +1638,15 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "O&i|II",
+        if (!PyArg_ParseTuple(args, "O&i|II;invalid address argument",
                               idna_converter, &host, &port, &flowinfo,
-                              &scope_id)) {
+                              &scope_id))
+        {
+            assert(PyErr_Occurred());
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Format(PyExc_OverflowError,
+                             "%s(): port must be 0-65535.", caller);
+            }
             return 0;
         }
         addr = (struct sockaddr_in6*)addr_ret;
@@ -1646,8 +1658,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         if (port < 0 || port > 0xffff) {
             PyErr_Format(
                 PyExc_OverflowError,
-                "%s(): port must be 0-65535.",
-                caller);
+                "%s(): port must be 0-65535.", caller);
             return 0;
         }
         if (flowinfo > 0xfffff) {
@@ -1679,7 +1690,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             memset(addr, 0, sizeof(struct sockaddr_l2));
             _BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
             if (!PyArg_ParseTuple(args, "si", &straddr,
-                                  &_BT_L2_MEMB(addr, psm))) {
+                                  &_BT_L2_MEMB(addr, psm)))
+            {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
@@ -1698,7 +1710,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             addr = (struct sockaddr_rc *)addr_ret;
             _BT_RC_MEMB(addr, family) = AF_BLUETOOTH;
             if (!PyArg_ParseTuple(args, "si", &straddr,
-                                  &_BT_RC_MEMB(addr, channel))) {
+                                  &_BT_RC_MEMB(addr, channel)))
+            {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
@@ -1781,10 +1794,17 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "si|iiy*", &interfaceName,
-                              &protoNumber, &pkttype, &hatype,
+        if (!PyArg_ParseTuple(args, "si|iiy*;invalid address argument",
+                              &interfaceName, &protoNumber, &pkttype, &hatype,
                               &haddr))
+        {
+            assert(PyErr_Occurred());
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Format(PyExc_OverflowError,
+                             "%s(): address argument out of range.", caller);
+            }
             return 0;
+        }
         strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
         ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
         if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
@@ -1886,9 +1906,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
             addr = (struct sockaddr_can *)addr_ret;
 
-            if (!PyArg_ParseTuple(args, "O&", PyUnicode_FSConverter,
-                                              &interfaceName))
+            if (!PyArg_ParseTuple(args, "O&;invalid address argument",
+                                  PyUnicode_FSConverter, &interfaceName))
+            {
                 return 0;
+            }
 
             len = PyBytes_GET_SIZE(interfaceName);
 
@@ -1962,11 +1984,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
                 addr->sc_id = info.ctl_id;
                 addr->sc_unit = 0;
-            } else if (!PyArg_ParseTuple(args, "II",
-                                         &(addr->sc_id), &(addr->sc_unit))) {
+            }
+            else if (!PyArg_ParseTuple(args, "II",
+                                       &(addr->sc_id), &(addr->sc_unit)))
+            {
                 PyErr_Format(PyExc_TypeError,
-                             "%s(): expected str or tuple of two ints",
-                             caller);
+                             "%s(): expected address argument to be a str or "
+                             "a tuple of two ints", caller);
                 return 0;
             }
 
@@ -1986,16 +2010,16 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         struct sockaddr_alg *sa;
         char *type;
         char *name;
-        char format[64] = "ss|HH:";
         sa = (struct sockaddr_alg *)addr_ret;
 
         memset(sa, 0, sizeof(*sa));
         sa->salg_family = AF_ALG;
 
-        strcat(format, caller);
-        if (!PyArg_ParseTuple(args, format,
-                                &type, &name, &sa->salg_feat, &sa->salg_mask))
+        if (!PyArg_ParseTuple(args, "ss|HH;invalid address argument",
+                              &type, &name, &sa->salg_feat, &sa->salg_mask))
+        {
             return 0;
+        }
         /* sockaddr_alg has fixed-sized char arrays for type and name */
         if (strlen(type) > sizeof(sa->salg_type)) {
             PyErr_SetString(PyExc_ValueError, "AF_ALG type too long.");
