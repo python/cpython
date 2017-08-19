@@ -24,6 +24,7 @@ language and the CPython interpreter! Even if your contribution is not
 ultimately accepted, the fact you put time and effort into helping out is
 greatly appreciated.
 
+
 Contribution Guidelines
 -----------------------
 Please read the `devguide <https://devguide.python.org/>`_ for
@@ -42,6 +43,16 @@ our workflow that are not covered by a bot or status check are:
   should happen on bugs.python.org
 - Upon your first non-trivial pull request (which includes documentation changes),
   feel free to add yourself to ``Misc/ACKS``
+
+
+Setting Expectations
+--------------------
+Due to the fact that this project is entirely volunteer-run (i.e. no one is paid
+to work on Python full-time), we unfortunately can make no guarantees as to if
+or when a core developer will get around to reviewing your pull request.
+If no core developer has done a review or responded to changes made because of a
+"changes requested" review, please feel free to email python-dev to ask if
+someone could take a look at your pull request.
 
 
 Code of Conduct
