@@ -27,8 +27,9 @@ also suggestions on how you can most effectively help the project.
 Please be aware that our workflow does deviate slightly from the typical GitHub
 project. Details on how to properly submit a pull request are covered in
 `Lifecycle of a Pull Request <https://cpython-devguide.readthedocs.io/pullrequest/>`_.
-We utilize various bots and status checks to help with this, so do follow what
-they say. The key points that are not covered by a bot or status check are:
+We utilize various bots and status checks to help with this, so do follow the
+comments they leaves and their "Details" links, respectively. The key points of
+our workflow that are not covered by a bot or status check are:
 
 - All discussions that are not directly related to the code in the pull request
   should happen on bugs.python.org
