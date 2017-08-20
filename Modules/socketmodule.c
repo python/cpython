@@ -1802,7 +1802,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
         if (!PyArg_ParseTuple(args,
                               "si|iiy*;AF_PACKET address must be a tuple of "
-                              "two to five elemnens",
+                              "two to five elements",
                               &interfaceName, &protoNumber, &pkttype, &hatype,
                               &haddr))
         {
