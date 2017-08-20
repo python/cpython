@@ -780,10 +780,10 @@ time_asctime(PyObject *self, PyObject *args)
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
-
-    } else if (!gettmarg(tup, &buf,
-                         "iiiiiiiii;asctime(): illegal time tuple argument") ||
-               !checktm(&buf))
+    }
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;asctime(): illegal time tuple argument") ||
+             !checktm(&buf))
     {
         return NULL;
     }
