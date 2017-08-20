@@ -5972,12 +5972,14 @@ socket_getnameinfo(PyObject *self, PyObject *args)
                         "getnameinfo() argument 1 must be a tuple");
         return NULL;
     }
-    if (!PyArg_ParseTuple(sa, "si|II",
+    if (!PyArg_ParseTuple(sa, "si|II;getnameinfo(): illegal sockaddr argument",
                           &hostp, &port, &flowinfo, &scope_id))
+    {
         return NULL;
+    }
     if (flowinfo > 0xfffff) {
         PyErr_SetString(PyExc_OverflowError,
-                        "getsockaddrarg: flowinfo must be 0-1048575.");
+                        "getnameinfo(): flowinfo must be 0-1048575.");
         return NULL;
     }
     PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);
