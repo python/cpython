@@ -134,10 +134,10 @@ class ConfigDialog(Toplevel):
         # self.load_general_cfg()
         # note: extension page handled separately
     def create_action_buttons(self):
-	"""Return frame of action buttons for dialog.
+        """Return frame of action buttons for dialog.
 
         Methods:
-           ok
+            ok
             apply
             cancel
             help
