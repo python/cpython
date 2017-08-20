@@ -1498,8 +1498,9 @@ class POSIXProcessTestCase(BaseTestCase):
         """Test error passing done through errpipe_write in the good case"""
         def proper_error(*args):
             errpipe_write = args[13]
-            # 15 is the unix error code for EISDIR: 'is a directory'
-            os.write(errpipe_write, b"OSError:15:")
+            # Write the hex for the error code EISDIR: 'is a directory'
+            err_code = '{:x}'.format(errno.EISDIR).encode()
+            os.write(errpipe_write, b"OSError:" + err_code + b":")
             return 0
 
         fork_exec.side_effect = proper_error
