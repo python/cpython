@@ -1800,6 +1800,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 caller, Py_TYPE(args)->tp_name);
             return 0;
         }
+        /* XXX: improve the default error message according to the
+           documentation of AF_PACKET, which would be added as part
+           of bpo-25041. */
         if (!PyArg_ParseTuple(args,
                               "si|iiy*;AF_PACKET address must be a tuple of "
                               "two to five elements",
@@ -1868,7 +1871,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
         if (!PyArg_ParseTuple(args,
                               "IIII|I;AF_TIPC address must be a tuple "
-                              "(addr_type, v1, v2, v3 [, scope])",
+                              "(addr_type, v1, v2, v3[, scope])",
                               &atype, &v1, &v2, &v3, &scope))
         {
             return 0;
@@ -2044,7 +2047,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
         if (!PyArg_ParseTuple(args,
                               "ss|HH;AF_ALG address must be a tuple "
-                              "(type, name [, feat [, mask]])",
+                              "(type, name[, feat[, mask]])",
                               &type, &name, &sa->salg_feat, &sa->salg_mask))
         {
             return 0;
