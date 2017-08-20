@@ -1,7 +1,7 @@
 """Test idlelib.configdialog.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 81%.
+Coverage: 95%.
 """
 from idlelib import configdialog
 from test.support import requires
@@ -226,7 +226,7 @@ class IndentTest(unittest.TestCase):
         self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
 
 
-class HighlightTest(unittest.TestCase):
+class HighPageTest(unittest.TestCase):
     """Test that highlight tab widgets enable users to make changes.
 
     Test that widget actions set vars, that var changes add
@@ -235,21 +235,21 @@ class HighlightTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        d = dialog
-        dialog.note.select(d.highpage)
-        d.set_theme_type = Func()
-        d.paint_theme_sample = Func()
-        d.set_highlight_target = Func()
-        d.set_color_sample = Func()
+        page = cls.page = dialog.highpage
+        dialog.note.select(page)
+        page.set_theme_type = Func()
+        page.paint_theme_sample = Func()
+        page.set_highlight_target = Func()
+        page.set_color_sample = Func()
 
     @classmethod
     def tearDownClass(cls):
-        d = dialog
+        d = cls.page
         del d.set_theme_type, d.paint_theme_sample
         del d.set_highlight_target, d.set_color_sample
 
     def setUp(self):
-        d = dialog
+        d = self.page
         # The following is needed for test_load_key_cfg, _delete_custom_keys.
         # This may indicate a defect in some test or function.
         for section in idleConf.GetSectionList('user', 'highlight'):
@@ -262,7 +262,7 @@ class HighlightTest(unittest.TestCase):
 
     def test_load_theme_cfg(self):
         tracers.detach()
-        d = dialog
+        d = self.page
         eq = self.assertEqual
 
         # Use builtin theme with no user themes created.
@@ -303,7 +303,7 @@ class HighlightTest(unittest.TestCase):
 
     def test_theme_source(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         # Test these separately.
         d.var_changed_builtin_name = Func()
         d.var_changed_custom_name = Func()
@@ -324,7 +324,7 @@ class HighlightTest(unittest.TestCase):
 
     def test_builtin_name(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         item_list = ['IDLE Classic', 'IDLE Dark', 'IDLE New']
 
         # Not in old_themes, defaults name to first item.
@@ -351,7 +351,7 @@ class HighlightTest(unittest.TestCase):
         eq(d.paint_theme_sample.called, 3)
 
     def test_custom_name(self):
-        d = dialog
+        d = self.page
 
         # If no selections, doesn't get added.
         d.customlist.SetMenu([], '- no custom themes -')
@@ -365,7 +365,7 @@ class HighlightTest(unittest.TestCase):
         self.assertEqual(d.paint_theme_sample.called, 1)
 
     def test_color(self):
-        d = dialog
+        d = self.page
         d.on_new_color_set = Func()
         # self.color is only set in get_color through ColorChooser.
         d.color.set('green')
@@ -375,7 +375,7 @@ class HighlightTest(unittest.TestCase):
     def test_highlight_target_list_mouse(self):
         # Set highlight_target through targetlist.
         eq = self.assertEqual
-        d = dialog
+        d = self.page
 
         d.targetlist.SetMenu(['a', 'b', 'c'], 'c')
         eq(d.highlight_target.get(), 'c')
@@ -384,7 +384,7 @@ class HighlightTest(unittest.TestCase):
     def test_highlight_target_text_mouse(self):
         # Set highlight_target through clicking highlight_sample.
         eq = self.assertEqual
-        d = dialog
+        d = self.page
 
         elem = {}
         count = 0
@@ -420,7 +420,7 @@ class HighlightTest(unittest.TestCase):
 
     def test_set_theme_type(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         del d.set_theme_type
 
         # Builtin theme selected.
@@ -441,7 +441,7 @@ class HighlightTest(unittest.TestCase):
 
     def test_get_color(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         orig_chooser = configdialog.tkColorChooser.askcolor
         chooser = configdialog.tkColorChooser.askcolor = Func()
         gntn = d.get_new_theme_name = Func()
@@ -487,7 +487,7 @@ class HighlightTest(unittest.TestCase):
         configdialog.tkColorChooser.askcolor = orig_chooser
 
     def test_on_new_color_set(self):
-        d = dialog
+        d = self.page
         color = '#3f7cae'
         d.custom_name.set('Python')
         d.highlight_target.set('Selected Text')
@@ -502,7 +502,7 @@ class HighlightTest(unittest.TestCase):
     def test_get_new_theme_name(self):
         orig_sectionname = configdialog.SectionName
         sn = configdialog.SectionName = Func(return_self=True)
-        d = dialog
+        d = self.page
 
         sn.result = 'New Theme'
         self.assertEqual(d.get_new_theme_name(''), 'New Theme')
@@ -510,7 +510,7 @@ class HighlightTest(unittest.TestCase):
         configdialog.SectionName = orig_sectionname
 
     def test_save_as_new_theme(self):
-        d = dialog
+        d = self.page
         gntn = d.get_new_theme_name = Func()
         d.theme_source.set(True)
 
@@ -530,7 +530,7 @@ class HighlightTest(unittest.TestCase):
 
     def test_create_new_and_save_new(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
 
         # Use default as previously active theme.
         d.theme_source.set(True)
@@ -562,7 +562,7 @@ class HighlightTest(unittest.TestCase):
 
     def test_set_highlight_target(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         del d.set_highlight_target
 
         # Target is cursor.
@@ -582,7 +582,7 @@ class HighlightTest(unittest.TestCase):
         d.set_highlight_target = Func()
 
     def test_set_color_sample_binding(self):
-        d = dialog
+        d = self.page
         scs = d.set_color_sample
 
         d.fg_on.invoke()
@@ -592,7 +592,7 @@ class HighlightTest(unittest.TestCase):
         self.assertEqual(scs.called, 2)
 
     def test_set_color_sample(self):
-        d = dialog
+        d = self.page
         del d.set_color_sample
         d.highlight_target.set('Selected Text')
         d.fg_bg_toggle.set(True)
@@ -603,7 +603,7 @@ class HighlightTest(unittest.TestCase):
 
     def test_paint_theme_sample(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         del d.paint_theme_sample
         hs_tag = d.highlight_sample.tag_cget
         gh = idleConf.GetHighlight
@@ -640,7 +640,7 @@ class HighlightTest(unittest.TestCase):
 
     def test_delete_custom(self):
         eq = self.assertEqual
-        d = dialog
+        d = self.page
         d.button_delete_custom['state'] = NORMAL
         yesno = configdialog.tkMessageBox.askyesno = Func()
         dialog.deactivate_current_config = Func()
