@@ -134,7 +134,8 @@ class ConfigDialog(Toplevel):
         # self.load_general_cfg()
         # note: extension page handled separately
     def create_action_buttons(self):
-			  """Return frame of action buttons for dialog.
+	"""Return frame of action buttons for dialog.
+
         Methods:
            ok
             apply
@@ -432,7 +433,7 @@ class ConfigDialog(Toplevel):
                 frame_theme, self.custom_name, None, command=None)
         self.button_delete_custom = Button(
                 frame_theme, text='Delete Custom Theme',
-               command=self.delete_custom)
+                command=self.delete_custom)
         self.theme_message = Label(frame_theme, bd=2)
 
         # Pack widgets:
@@ -740,7 +741,7 @@ class ConfigDialog(Toplevel):
 
         Instance variables accessed:
             theme_elements
-           highlight_target
+            highlight_target
             fg_bg_toggle
             highlight_sample
 
