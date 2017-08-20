@@ -1565,7 +1565,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "II;invalid address argument",
+        if (!PyArg_ParseTuple(args,
+                              "II;AF_NETLINK address must be a pair "
+                              "(pid, groups)",
                               &pid, &groups))
         {
             return 0;
@@ -1595,7 +1597,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "O&i;invalid address argument",
+        if (!PyArg_ParseTuple(args,
+                              "O&i;AF_INET address must be a pair "
+                              "(host, port)",
                               idna_converter, &host, &port))
         {
             assert(PyErr_Occurred());
@@ -1638,7 +1642,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "O&i|II;invalid address argument",
+        if (!PyArg_ParseTuple(args,
+                              "O&i|II;AF_INET6 address must be a tuple "
+                              "(host, port[, flowinfo[, scopeid]])",
                               idna_converter, &host, &port, &flowinfo,
                               &scope_id))
         {
@@ -1794,14 +1800,16 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 caller, Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "si|iiy*;invalid address argument",
+        if (!PyArg_ParseTuple(args,
+                              "si|iiy*;AF_PACKET address must be a tuple of "
+                              "two to five elemnens",
                               &interfaceName, &protoNumber, &pkttype, &hatype,
                               &haddr))
         {
             assert(PyErr_Occurred());
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
                 PyErr_Format(PyExc_OverflowError,
-                             "%s(): address argument out of range.", caller);
+                             "%s(): address argument out of range", caller);
             }
             return 0;
         }
@@ -1859,9 +1867,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
 
         if (!PyArg_ParseTuple(args,
-                                "IIII|I;Invalid TIPC address format",
-                                &atype, &v1, &v2, &v3, &scope))
+                              "IIII|I;AF_TIPC address must be a tuple "
+                              "(addr_type, v1, v2, v3 [, scope])",
+                              &atype, &v1, &v2, &v3, &scope))
+        {
             return 0;
+        }
 
         addr = (struct sockaddr_tipc *) addr_ret;
         memset(addr, 0, sizeof(struct sockaddr_tipc));
@@ -1906,7 +1917,16 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
             addr = (struct sockaddr_can *)addr_ret;
 
-            if (!PyArg_ParseTuple(args, "O&;invalid address argument",
+            if (!PyTuple_Check(args)) {
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "%s(): AF_CAN address must be tuple, not %.500s",
+                    caller, Py_TYPE(args)->tp_name);
+                return 0;
+            }
+            if (!PyArg_ParseTuple(args,
+                                  "O&;AF_CAN address must be a tuple "
+                                  "(interface, )",
                                   PyUnicode_FSConverter, &interfaceName))
             {
                 return 0;
@@ -1989,8 +2009,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                                        &(addr->sc_id), &(addr->sc_unit)))
             {
                 PyErr_Format(PyExc_TypeError,
-                             "%s(): expected address argument to be a str or "
-                             "a tuple of two ints", caller);
+                             "%s(): PF_SYSTEM address must be a str or "
+                             "a pair (id, unit)", caller);
                 return 0;
             }
 
@@ -2015,7 +2035,16 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         memset(sa, 0, sizeof(*sa));
         sa->salg_family = AF_ALG;
 
-        if (!PyArg_ParseTuple(args, "ss|HH;invalid address argument",
+        if (!PyTuple_Check(args)) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "%s(): AF_ALG address must be tuple, not %.500s",
+                caller, Py_TYPE(args)->tp_name);
+            return 0;
+        }
+        if (!PyArg_ParseTuple(args,
+                              "ss|HH;AF_ALG address must be a tuple "
+                              "(type, name [, feat [, mask]])",
                               &type, &name, &sa->salg_feat, &sa->salg_mask))
         {
             return 0;
