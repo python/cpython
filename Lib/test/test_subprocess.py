@@ -1492,9 +1492,12 @@ class POSIXProcessTestCase(BaseTestCase):
     # the destructor. An alternative would be to set _child_created to
     # False before the destructor is called but there is no easy way
     # to do that
-    @mock.patch.object(subprocess.Popen, "__del__")
+    class PopenNoDestructor(subprocess.Popen):
+        def __del__(self):
+            pass
+
     @mock.patch("subprocess._posixsubprocess.fork_exec")
-    def test_exception_errpipe_normal(self, fork_exec, destructor):
+    def test_exception_errpipe_normal(self, fork_exec):
         """Test error passing done through errpipe_write in the good case"""
         def proper_error(*args):
             errpipe_write = args[13]
@@ -1506,11 +1509,10 @@ class POSIXProcessTestCase(BaseTestCase):
         fork_exec.side_effect = proper_error
 
         with self.assertRaises(IsADirectoryError):
-            subprocess.Popen(["non_existent_command"])
+            self.PopenNoDestructor(["non_existent_command"])
 
-    @mock.patch.object(subprocess.Popen, "__del__")
     @mock.patch("subprocess._posixsubprocess.fork_exec")
-    def test_exception_errpipe_bad_data(self, fork_exec, destructor):
+    def test_exception_errpipe_bad_data(self, fork_exec):
         """Test error passing done through errpipe_write where its not
         in the expected format"""
         error_data = b"\xFF\x00\xDE\xAD"
@@ -1525,7 +1527,7 @@ class POSIXProcessTestCase(BaseTestCase):
         fork_exec.side_effect = bad_error
 
         with self.assertRaises(subprocess.SubprocessError) as e:
-            subprocess.Popen(["non_existent_command"])
+            self.PopenNoDestructor(["non_existent_command"])
 
         self.assertIn(repr(error_data), str(e.exception))
 
