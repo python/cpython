@@ -75,8 +75,7 @@ class ConfigDialog(Toplevel):
         # self.bind('<Escape>', self.Cancel) #dismiss dialog, no save
         # self.bind('<Alt-a>', self.Apply) #apply changes, save
         # self.bind('<F1>', self.Help) #context help
-        self.load_configs()
-        # Avoid callbacks during load_configs.
+        # Attach callbacks after loading config to avoid calling them.
         tracers.attach()
 
         if not _utest:
@@ -84,13 +83,12 @@ class ConfigDialog(Toplevel):
             self.wm_deiconify()
             self.wait_window()
 
-
     def create_widgets(self):
         """Create and place widgets for tabbed dialog.
 
         Widgets Bound to self:
             note: Notebook
-            highpage: self.create_page_highlight
+            highpage: HighPage
             fontpage: FontPage
             keyspage: KeysPage
             genpage: GenPage
@@ -102,7 +100,7 @@ class ConfigDialog(Toplevel):
             activate_config_changes: Tell editors to reload.
         """
         self.note = note = Notebook(self, width=450, height=450)
-        self.highpage = self.create_page_highlight()
+        self.highpage = HighPage(note)
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = KeysPage(note)
         self.genpage = GenPage(note)
@@ -131,11 +129,10 @@ class ConfigDialog(Toplevel):
         """
         #self.load_font_cfg()
         #self.load_tab_cfg()
-        self.load_theme_cfg()
+        # self.load_theme_cfg()
         # self.load_key_cfg()
         # self.load_general_cfg()
         # note: extension page handled separately
-
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
 
@@ -1477,7 +1474,8 @@ class HighPage(Frame):
             text.insert(END, texttag[0], texttag[1])
         for element in self.theme_elements:
             def tem(event, elem=element):
-                event.widget.winfo_toplevel().highlight_target.set(elem)
+                # event.widget.winfo_top_level().highlight_target.set(elem)
+                self.highlight_target.set(elem)
             text.tag_bind(
                     self.theme_elements[element][0], '<ButtonPress-1>', tem)
         text['state'] = DISABLED
@@ -1912,7 +1910,7 @@ class HighPage(Frame):
         if not tkMessageBox.askyesno(
                 'Delete Theme',  delmsg % theme_name, parent=self):
             return
-        cd.deactivate_current_config()
+        self.cd.deactivate_current_config()
         # Remove theme from changes, config, and file.
         changes.delete_section('highlight', theme_name)
         # Reload user theme list.
@@ -1928,8 +1926,8 @@ class HighPage(Frame):
         self.builtin_name.set(idleConf.defaultCfg['main'].Get('Theme', 'name'))
         # User can't back out of these changes, they must be applied now.
         changes.save_all()
-        cd.save_all_changed_extensions()
-        cd.activate_config_changes()
+        self.cd.save_all_changed_extensions()
+        self.cd.activate_config_changes()
         self.set_theme_type()
 
 
