@@ -90,7 +90,7 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import groupby
 from bisect import bisect_left, bisect_right
-
+from random import randint 
 
 
 # === Exceptions ===
@@ -284,6 +284,37 @@ def _fail_neg(values, errmsg='negative value'):
             raise StatisticsError(errmsg)
         yield x
 
+# Partition function which _select() uses
+def _partition(data, left, right, pivot_index):
+    pivot_value = data[pivot_index]
+    tmp = data[pivot_index]
+    data[pivot_index] = data[right]
+    data[right] = tmp
+    store_index = left
+    for i in range(left, right):
+        if data[i] < pivot_value:
+            tmp = data[store_index]
+            data[store_index] = data[i]
+            data[i] = tmp
+            store_index += 1
+    tmp = data[right]
+    data[right] = data[store_index]
+    data[store_index] = tmp
+    return store_index
+
+# Quickselect algorithm for finding median
+def _select(data, left, right, k):
+    if left == right:       
+        return data[left]
+    pivot_index = randint(left, right)
+    pivot_index = _partition(data, left, right, pivot_index)
+    if k == pivot_index:
+        return data[k]
+    elif k < pivot_index:
+        return _select(data, left, pivot_index - 1, k)
+    else:
+        return _select(data, pivot_index + 1, right, k)
+
 
 # === Measures of central tendency (averages) ===
 
@@ -359,7 +390,6 @@ def harmonic_mean(data):
     return _convert(n/total, T)
 
 
-# FIXME: investigate ways to calculate medians without sorting? Quickselect?
 def median(data):
     """Return the median (middle value) of numeric data.
 
@@ -373,15 +403,13 @@ def median(data):
     4.0
 
     """
-    data = sorted(data)
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    if n % 2 == 1:
+        return _select(data, 0, n-1, (n-1)//2)
     else:
-        i = n//2
-        return (data[i - 1] + data[i])/2
+        return (_select(data, 0, n-1, (n//2)-1) + _select(data, 0, n-1, ((n+2)//2)-1))/2
 
 
 def median_low(data):
@@ -396,14 +424,7 @@ def median_low(data):
     3
 
     """
-    data = sorted(data)
-    n = len(data)
-    if n == 0:
-        raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
-    else:
-        return data[n//2 - 1]
+    return int(math.floor(median(data)))
 
 
 def median_high(data):
@@ -418,11 +439,7 @@ def median_high(data):
     5
 
     """
-    data = sorted(data)
-    n = len(data)
-    if n == 0:
-        raise StatisticsError("no median for empty data")
-    return data[n//2]
+    return int(math.ceil(median(data)))
 
 
 def median_grouped(data, interval=1):
@@ -503,8 +520,8 @@ def mode(data):
         return table[0][0]
     elif table:
         raise StatisticsError(
-                'no unique mode; found %d equally common values' % len(table)
-                )
+            'no unique mode; found %d equally common values' % len(table)
+        )
     else:
         raise StatisticsError('no mode for empty data')
 
