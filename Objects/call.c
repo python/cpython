@@ -499,7 +499,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
         if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
             goto no_keyword_error;
         }
-        /* fall through next case */
+        /* fall through */
 
     case METH_VARARGS | METH_KEYWORDS:
     {
@@ -656,7 +656,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
         if (nkwargs) {
             goto no_keyword_error;
         }
-        /* fall through next case */
+        /* fall through */
 
     case METH_VARARGS | METH_KEYWORDS:
     {
