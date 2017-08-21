@@ -49,6 +49,8 @@ if mswindows:
 else:
     SETBINARY = ''
 
+NONEXISTING_CMD = ('nonexisting_i_hope',)
+
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
@@ -1145,12 +1147,53 @@ class ProcessTestCase(BaseTestCase):
         # 1024 times (each call leaked two fds).
         for i in range(1024):
             with self.assertRaises(OSError) as c:
-                subprocess.Popen(['nonexisting_i_hope'],
+                subprocess.Popen(NONEXISTING_CMD,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             # ignore errors that indicate the command was not found
             if c.exception.errno not in (errno.ENOENT, errno.EACCES):
                 raise c.exception
+
+    def test_nonexisting_with_pipes(self):
+        # bpo-30121: Popen with pipes must close properly pipes on error.
+        # Previously, os.close() was called with a Windows handle which is not
+        # a valid file descriptor.
+        #
+        # Run the test in a subprocess to control how the CRT reports errors
+        # and to get stderr content.
+        try:
+            import msvcrt
+            msvcrt.CrtSetReportMode
+        except (AttributeError, ImportError):
+            self.skipTest("need msvcrt.CrtSetReportMode")
+
+        code = textwrap.dedent(f"""
+            import msvcrt
+            import subprocess
+
+            cmd = {NONEXISTING_CMD!r}
+
+            for report_type in [msvcrt.CRT_WARN,
+                                msvcrt.CRT_ERROR,
+                                msvcrt.CRT_ASSERT]:
+                msvcrt.CrtSetReportMode(report_type, msvcrt.CRTDBG_MODE_FILE)
+                msvcrt.CrtSetReportFile(report_type, msvcrt.CRTDBG_FILE_STDERR)
+
+            try:
+                subprocess.Popen([cmd],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            except OSError:
+                pass
+        """)
+        cmd = [sys.executable, "-c", code]
+        proc = subprocess.Popen(cmd,
+                                stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        with proc:
+            stderr = proc.communicate()[1]
+        self.assertEqual(stderr, "")
+        self.assertEqual(proc.returncode, 0)
 
     @unittest.skipIf(threading is None, "threading required")
     def test_double_close_on_error(self):
@@ -1164,7 +1207,7 @@ class ProcessTestCase(BaseTestCase):
         t.start()
         try:
             with self.assertRaises(EnvironmentError):
-                subprocess.Popen(['nonexisting_i_hope'],
+                subprocess.Popen(NONEXISTING_CMD,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
@@ -2430,7 +2473,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # should trigger the wait() of p
         time.sleep(0.2)
         with self.assertRaises(OSError) as c:
-            with subprocess.Popen(['nonexisting_i_hope'],
+            with subprocess.Popen(NONEXISTING_CMD,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:
                 pass
@@ -2876,7 +2919,7 @@ class ContextManagerTests(BaseTestCase):
 
     def test_invalid_args(self):
         with self.assertRaises((FileNotFoundError, PermissionError)) as c:
-            with subprocess.Popen(['nonexisting_i_hope'],
+            with subprocess.Popen(NONEXISTING_CMD,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:
                 pass
