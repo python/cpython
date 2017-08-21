@@ -668,7 +668,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         ncpu = cpu_count()
         if ncpu:
             print "== CPU count:", ncpu
-        print "Testing with flags:", sys.flags
 
     if randomize:
         random.seed(random_seed)
