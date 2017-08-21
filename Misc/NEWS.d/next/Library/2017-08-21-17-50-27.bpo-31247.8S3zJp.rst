@@ -1,0 +1,2 @@
+xmlrpc.server now explicitly breaks reference cycles when using
+sys.exc_info() in code handling exceptions.
