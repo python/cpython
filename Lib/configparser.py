@@ -610,9 +610,6 @@ class RawConfigParser(MutableMapping):
         self._converters = ConverterMapping(self)
         self._proxies = self._dict()
         self._proxies[default_section] = SectionProxy(self, default_section)
-        if defaults:
-            for key, value in defaults.items():
-                self._defaults[self.optionxform(key)] = value
         self._delimiters = tuple(delimiters)
         if delimiters == ('=', ':'):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
@@ -637,6 +634,8 @@ class RawConfigParser(MutableMapping):
             self._interpolation = Interpolation()
         if converters is not _UNSET:
             self._converters.update(converters)
+        if defaults:
+            self.read_dict({default_section: defaults})
 
     def defaults(self):
         return self._defaults
