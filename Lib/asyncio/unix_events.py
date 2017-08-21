@@ -308,8 +308,106 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return server
 
     @coroutine
-    def create_unix_datagram_endpoint(self, protocol_factory, path=None, *,
-                                      sock=None, bind=False):
+    def create_unix_datagram_connection(self, protocol_factory, path=None, *,
+                                        sock=None):
+        if path is not None:
+            if sock is not None:
+                raise ValueError(
+                    'path and sock can not be specified at the same time')
+
+            path = _fspath(path)
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+            try:
+                sock.setblocking(False)
+                yield from self.sock_connect(sock, path)
+            except:
+                sock.close()
+                raise
+        else:
+            if sock is None:
+                raise ValueError(
+                    'path was not specified, and no sock specified')
+
+            if (sock.family != socket.AF_UNIX or
+                    not base_events._is_dgram_socket(sock)):
+                raise ValueError(
+                    'A UNIX Domain Datagram Socket was expected, got {!r}'
+                    .format(sock))
+
+            sock.setblocking(False)
+            path = sock.getpeername()
+
+        protocol = protocol_factory()
+        waiter = self.create_future()
+        transport = self._make_socket_datagram_transport(sock, protocol, path,
+                                                         waiter)
+
+        try:
+            yield from waiter
+        except:
+            transport.close()
+            raise
+
+        return transport, protocol
+
+    @coroutine
+    def create_unix_datagram_server(self, protocol_factory, path=None, *,
+                                    sock=None):
+        if path is not None:
+            if sock is not None:
+                raise ValueError(
+                    'path and sock can not be specified at the same time')
+
+            path = _fspath(path)
+            # Check for abstract socket. `str` and `bytes` paths are supported.
+            if path[0] not in (0, '\x00'):
+                try:
+                    if stat.S_ISSOCK(os.stat(path).st_mode):
+                        os.remove(path)
+                except FileNotFoundError:
+                    pass
+                except OSError as err:
+                    # Directory may have permissions only to create socket.
+                    logger.error('Unable to check or remove stale UNIX'
+                                 ' socket %r: %r', path, err)
+
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+            try:
+                sock.setblocking(False)
+                sock.bind(path)
+            except:
+                sock.close()
+                raise
+        else:
+            if sock is None:
+                raise ValueError(
+                    'path was not specified, and no sock specified')
+
+            if (sock.family != socket.AF_UNIX or
+                    not base_events._is_dgram_socket(sock)):
+                raise ValueError(
+                    'A UNIX Domain Datagram Socket was expected, got {!r}'
+                    .format(sock))
+
+            sock.setblocking(False)
+            path = sock.getsockname()
+
+        protocol = protocol_factory()
+        waiter = self.create_future()
+        transport = self._make_socket_datagram_transport(sock, protocol, path,
+                                                         waiter)
+
+        try:
+            yield from waiter
+        except:
+            transport.close()
+            raise
+
+        return transport, protocol
+
+    @coroutine
+    def _create_unix_datagram_endpoint(self, protocol_factory, path=None, *,
+                                       sock=None, bind=False):
         if path is not None:
             if sock is not None:
                 raise ValueError(
