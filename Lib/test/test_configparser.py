@@ -857,8 +857,12 @@ boolean {0[0]} NO
 
     def test_defaults_keyword(self):
         # test that bpo-23835 is fixed
-        cf = self.newconfig(defaults={1:2.4})
-        cf = self.newconfig(defaults={"a":5.2})
+        cf = self.newconfig(defaults={1: 2.4})
+        self.assertEqual(cf['DEFAULT']['1'], '2.4')
+        self.assertAlmostEqual(cf['DEFAULT'].getfloat('1'), 2.4)
+        cf = self.newconfig(defaults={"A": 5.2})
+        self.assertEqual(cf['DEFAULT']['a'], '5.2')
+        self.assertAlmostEqual(cf['DEFAULT'].getfloat('a'), 5.2)
 
 
 class StrictTestCase(BasicTestCase, unittest.TestCase):
