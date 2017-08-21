@@ -375,6 +375,15 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             try:
                 sock.setblocking(False)
                 sock.bind(path)
+            except OSError as exc:
+                sock.close()
+                if exc.errno == errno.EADDRINUSE:
+                    # Let's improve the error message by adding
+                    # with what exact address it occurs.
+                    msg = 'Address {!r} is already in use'.format(path)
+                    raise OSError(errno.EADDRINUSE, msg) from None
+                else:
+                    raise
             except:
                 sock.close()
                 raise

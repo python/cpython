@@ -17,6 +17,7 @@ from asyncio.selector_events import _SelectorTransport
 from asyncio.selector_events import _SelectorSslTransport
 from asyncio.selector_events import _SelectorSocketTransport
 from asyncio.selector_events import _SelectorDatagramTransport
+from asyncio.selector_events import _SelectorSocketDatagramTransport
 
 
 MOCK_ANY = mock.ANY
@@ -1619,6 +1620,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
             list(transport._buffer))
+        print(transport._buffer)
         self.assertIsInstance(transport._buffer[1][0], bytes)
 
     def test_sendto_tryagain(self):
@@ -1779,6 +1781,262 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
     @mock.patch('asyncio.base_events.logger.error')
     def test_fatal_error_connected(self, m_exc):
         transport = self.datagram_transport(address=('0.0.0.0', 1))
+        err = ConnectionRefusedError()
+        transport._fatal_error(err)
+        self.assertFalse(self.protocol.error_received.called)
+        m_exc.assert_called_with(
+            test_utils.MockPattern(
+                'Fatal error on transport\nprotocol:.*\ntransport:.*'),
+            exc_info=(ConnectionRefusedError, MOCK_ANY, MOCK_ANY))
+
+
+class SelectorSocketDatagramTransportTests(test_utils.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.loop = self.new_test_loop()
+        self.protocol = test_utils.make_test_protocol(
+            asyncio.UnixDatagramProtocol)
+        self.sock = mock.Mock(socket.socket)
+        self.sock_fd = self.sock.fileno.return_value = 7
+        self.address = 'testsocket'
+
+    def socket_datagram_transport(self, waiter=None):
+        transport = _SelectorSocketDatagramTransport(self.loop, self.sock,
+                                                     self.protocol,
+                                                     address=self.address,
+                                                     waiter=waiter)
+        self.addCleanup(close_transport, transport)
+        return transport
+
+    def test_ctor(self):
+        waiter = asyncio.Future(loop=self.loop)
+        tr = self.socket_datagram_transport(waiter=waiter)
+        self.loop.run_until_complete(waiter)
+
+        self.loop.assert_reader(7, tr._read_ready)
+        test_utils.run_briefly(self.loop)
+        self.protocol.connection_made.assert_called_with(tr)
+
+    def test_ctor_with_waiter(self):
+        waiter = asyncio.Future(loop=self.loop)
+        self.socket_datagram_transport(waiter=waiter)
+        self.loop.run_until_complete(waiter)
+        self.assertIsNone(waiter.result())
+
+    def test_read_ready(self):
+        transport = self.socket_datagram_transport()
+        self.sock.recv.return_value = b'data'
+        transport._read_ready()
+        self.protocol.datagram_received.assert_called_with(b'data')
+
+    def test_read_ready_tryagain(self):
+        self.sock.recv.side_effect = BlockingIOError
+
+        transport = self.socket_datagram_transport()
+        transport._fatal_error = mock.Mock()
+        transport._read_ready()
+
+        self.assertFalse(transport._fatal_error.called)
+
+    def test_read_ready_err(self):
+        err = self.sock.recv.side_effect = ValueError()
+
+        transport = self.socket_datagram_transport()
+        transport._fatal_error = mock.Mock()
+        transport._read_ready()
+        transport._fatal_error.assert_called_with(err,
+                                                  'Fatal read error on'
+                                                  ' datagram transport')
+
+    def test_read_ready_oserr(self):
+        err = self.sock.recv.side_effect = OSError()
+
+        transport = self.socket_datagram_transport()
+        transport._fatal_error = mock.Mock()
+        transport._read_ready()
+        self.protocol.error_received.assert_called_with(err)
+
+    def test_send(self):
+        data = b'data'
+        transport = self.socket_datagram_transport()
+        transport.send(data)
+        self.assertTrue(self.sock.sendto.called)
+        self.assertEqual(self.sock.sendto.call_args[0], (data, self.address))
+
+    def test_send_bytearray(self):
+        data = bytearray(b'data')
+        transport = self.socket_datagram_transport()
+        transport.send(data)
+        self.assertTrue(self.sock.sendto.called)
+        self.assertEqual(
+            self.sock.sendto.call_args[0], (data, self.address))
+
+    def test_send_memoryview(self):
+        data = memoryview(b'data')
+        transport = self.socket_datagram_transport()
+        transport.send(data)
+        self.assertTrue(self.sock.sendto.called)
+        self.assertEqual(self.sock.sendto.call_args[0], (data, self.address))
+
+    def test_send_no_data(self):
+        transport = self.socket_datagram_transport()
+        transport._buffer.append(b'data')
+        transport.send(b'')
+        self.assertFalse(self.sock.sendto.called)
+        self.assertEqual([b'data'], list(transport._buffer))
+
+    def test_send_buffer(self):
+        transport = self.socket_datagram_transport()
+        transport._buffer.append(b'data1')
+        transport.send(b'data2')
+        self.assertFalse(self.sock.sendto.called)
+        self.assertEqual([b'data1', b'data2'], list(transport._buffer))
+
+    def test_send_buffer_bytearray(self):
+        data2 = bytearray(b'data2')
+        transport = self.socket_datagram_transport()
+        transport._buffer.append(b'data1')
+        transport.send(data2)
+        self.assertFalse(self.sock.sendto.called)
+        self.assertEqual([b'data1', b'data2'], list(transport._buffer))
+        self.assertIsInstance(transport._buffer[1], bytes)
+
+    def test_send_buffer_memoryview(self):
+        data2 = memoryview(b'data2')
+        transport = self.socket_datagram_transport()
+        transport._buffer.append(b'data1')
+        transport.send(data2)
+        self.assertFalse(self.sock.sendto.called)
+        self.assertEqual([b'data1', b'data2'], list(transport._buffer))
+        self.assertIsInstance(transport._buffer[1], bytes)
+
+    def test_send_tryagain(self):
+        data = b'data'
+        self.sock.sendto.side_effect = BlockingIOError
+
+        transport = self.socket_datagram_transport()
+        transport.send(data)
+
+        self.loop.assert_writer(7, transport._send_ready)
+        self.assertEqual([b'data'], list(transport._buffer))
+
+    @mock.patch('asyncio.selector_events.logger')
+    def test_sendto_exception(self, m_log):
+        data = b'data'
+        err = self.sock.sendto.side_effect = RuntimeError()
+
+        transport = self.socket_datagram_transport()
+        transport._fatal_error = mock.Mock()
+        transport.send(data)
+
+        self.assertTrue(transport._fatal_error.called)
+        transport._fatal_error.assert_called_with(
+                                   err,
+                                   'Fatal write error on datagram transport')
+        transport._conn_lost = 1
+
+        transport.send(data)
+        transport.send(data)
+        transport.send(data)
+        transport.send(data)
+        transport.send(data)
+        m_log.warning.assert_called_with('socket.send() raised exception.')
+
+    def test_send_error_received(self):
+        data = b'data'
+
+        self.sock.sendto.side_effect = ConnectionRefusedError
+
+        transport = self.socket_datagram_transport()
+        transport._fatal_error = mock.Mock()
+        transport.send(data)
+
+        self.assertEqual(transport._conn_lost, 0)
+        self.assertFalse(transport._fatal_error.called)
+        self.assertTrue(self.protocol.error_received.called)
+
+    def test_send_str(self):
+        transport = self.socket_datagram_transport()
+        self.assertRaises(TypeError, transport.send, 'str')
+
+    def test_send_closing(self):
+        transport = self.socket_datagram_transport()
+        transport.close()
+        self.assertEqual(transport._conn_lost, 1)
+        transport.send(b'data')
+        self.assertEqual(transport._conn_lost, 2)
+
+    def test_send_ready(self):
+        data = b'data'
+        self.sock.sendto.return_value = len(data)
+
+        transport = self.socket_datagram_transport()
+        transport._buffer.append(data)
+        self.loop._add_writer(7, transport._send_ready)
+        transport._send_ready()
+        self.assertTrue(self.sock.sendto.called)
+        self.assertEqual(self.sock.sendto.call_args[0], (data, self.address))
+        self.assertFalse(self.loop.writers)
+
+    def test_send_ready_closing(self):
+        data = b'data'
+        self.sock.sendto.return_value = len(data)
+
+        transport = self.socket_datagram_transport()
+        transport._closing = True
+        transport._buffer.append(data)
+        self.loop._add_writer(7, transport._send_ready)
+        transport._send_ready()
+        self.sock.sendto.assert_called_with(data, self.address)
+        self.assertFalse(self.loop.writers)
+        self.sock.close.assert_called_with()
+        self.protocol.connection_lost.assert_called_with(None)
+
+    def test_send_ready_no_data(self):
+        transport = self.socket_datagram_transport()
+        self.loop._add_writer(7, transport._send_ready)
+        transport._send_ready()
+        self.assertFalse(self.sock.sendto.called)
+        self.assertFalse(self.loop.writers)
+
+    def test_send_ready_tryagain(self):
+        self.sock.sendto.side_effect = BlockingIOError
+
+        transport = self.socket_datagram_transport()
+        transport._buffer.extend([b'data1', b'data2'])
+        self.loop._add_writer(7, transport._send_ready)
+        transport._send_ready()
+
+        self.loop.assert_writer(7, transport._send_ready)
+        self.assertEqual([b'data1', b'data2'], list(transport._buffer))
+
+    def test_send_ready_exception(self):
+        err = self.sock.sendto.side_effect = RuntimeError()
+
+        transport = self.socket_datagram_transport()
+        transport._fatal_error = mock.Mock()
+        transport._buffer.append(b'data')
+        transport._send_ready()
+
+        transport._fatal_error.assert_called_with(
+                                   err,
+                                   'Fatal write error on datagram transport')
+
+    def test_send_ready_error_received(self):
+        self.sock.sendto.side_effect = ConnectionRefusedError
+
+        transport = self.socket_datagram_transport()
+        transport._fatal_error = mock.Mock()
+        transport._buffer.append(b'data')
+        transport._send_ready()
+
+        self.assertFalse(transport._fatal_error.called)
+        self.assertTrue(self.protocol.error_received.called)
+
+    @mock.patch('asyncio.base_events.logger.error')
+    def test_fatal_error_connected(self, m_exc):
+        transport = self.socket_datagram_transport()
         err = ConnectionRefusedError()
         transport._fatal_error(err)
         self.assertFalse(self.protocol.error_received.called)
