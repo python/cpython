@@ -2273,6 +2273,10 @@ def _start_server(urlhandler, port):
         def stop(self):
             """Stop the server and this thread nicely"""
             self.docserver.quit = True
+            self.join()
+            # explicitly break a reference cycle: DocServer.callback
+            # has indirectly a reference to ServerThread.
+            self.docserver = None
             self.serving = False
             self.url = None
 
