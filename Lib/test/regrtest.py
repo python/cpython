@@ -295,6 +295,24 @@ def format_test_result(test_name, result):
     return fmt % test_name
 
 
+def cpu_count():
+    # first try os.sysconf() to prevent loading the big multiprocessing module
+    try:
+        return os.sysconf('SC_NPROCESSORS_ONLN')
+    except (AttributeError, ValueError):
+        pass
+
+    # try multiprocessing.cpu_count()
+    try:
+        import multiprocessing
+    except ImportError:
+        pass
+    else:
+        return multiprocessing.cpu_count()
+
+    return None
+
+
 def unload_test_modules(save_modules):
     # Unload the newly imported modules (best effort finalization)
     for module in sys.modules.keys():
@@ -617,14 +635,23 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     def display_progress(test_index, test):
         # "[ 51/405/1] test_tcl"
-        fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
-        line = fmt.format(test_count_width, test_index, test_count,
-                          len(bad), test)
+        line = "{1:{0}}{2}".format(test_count_width, test_index, test_count)
+        if bad and not pgo:
+            line = '{}/{}'.format(line, len(bad))
+        line = '[{}]'.format(line)
+
+        # add the system load prefix: "load avg: 1.80 "
+        if hasattr(os, 'getloadavg'):
+            load_avg_1min = os.getloadavg()[0]
+            line = "load avg: {:.2f} {}".format(load_avg_1min, line)
 
         # add the timestamp prefix:  "0:01:05 "
         test_time = time.time() - regrtest_start_time
         test_time = datetime.timedelta(seconds=int(test_time))
         line = "%s %s" % (test_time, line)
+
+        # add the test name
+        line = "{} {}".format(line, test)
 
         print(line)
         sys.stdout.flush()
@@ -638,6 +665,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             print "==  ", platform.platform(aliased=True), \
                           "%s-endian" % sys.byteorder
             print "==  ", os.getcwd()
+            ncpu = cpu_count()
+            if ncpu:
+                print "== CPU count:", ncpu
             print "Testing with flags:", sys.flags
 
     if randomize:
