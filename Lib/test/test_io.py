@@ -3245,6 +3245,30 @@ class TextIOWrapperTest(unittest.TestCase):
         t = _make_illegal_wrapper()
         self.assertRaises(TypeError, t.read)
 
+        # Issue 31243: The interpreter shouldn't crash or raise a SystemError
+        # in case the return value of decoder's getstate() is invalid.
+        def _make_very_illegal_wrapper(getstate_ret_val):
+            class BadDecoder():
+                def getstate(self):
+                    return getstate_ret_val
+            class BadIncrementalDecoder():
+                def __call__(self, dummy):
+                    return BadDecoder()
+            quopri = codecs.lookup("quopri")
+            quopri_decoder = quopri.incrementaldecoder
+            quopri.incrementaldecoder = BadIncrementalDecoder()
+            try:
+                t = _make_illegal_wrapper()
+            finally:
+                quopri.incrementaldecoder = quopri_decoder
+            return t
+        t = _make_very_illegal_wrapper(42)
+        self.assertRaises(TypeError, t.read, 42)
+        t = _make_very_illegal_wrapper(())
+        self.assertRaises(TypeError, t.read, 42)
+        t = _make_very_illegal_wrapper((1, 2))
+        self.assertRaises(TypeError, t.read, 42)
+
     def _check_create_at_shutdown(self, **kwargs):
         # Issue #20037: creating a TextIOWrapper at shutdown
         # shouldn't crash the interpreter.

@@ -1498,15 +1498,26 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
         /* Given this, we know there was a valid snapshot point
          * len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
          */
-        if (PyArg_ParseTuple(state, "OO", &dec_buffer, &dec_flags) < 0) {
+        if (!PyTuple_Check(state)) {
+            PyErr_Format(PyExc_TypeError,
+                         "decoder getstate() should have returned a tuple, "
+                         "not '%.200s'",
+                         Py_TYPE(state)->tp_name);
+            Py_DECREF(state);
+            return -1;
+        }
+        if (!PyArg_ParseTuple(state,
+                              "OO;decoder getstate() should have returned a "
+                              "2-tuple", &dec_buffer, &dec_flags))
+        {
             Py_DECREF(state);
             return -1;
         }
 
         if (!PyBytes_Check(dec_buffer)) {
             PyErr_Format(PyExc_TypeError,
-                         "decoder getstate() should have returned a bytes "
-                         "object, not '%.200s'",
+                         "decoder getstate() should have returned a tuple "
+                         "whose first item is a bytes object, not '%.200s'",
                          Py_TYPE(dec_buffer)->tp_name);
             Py_DECREF(state);
             return -1;
