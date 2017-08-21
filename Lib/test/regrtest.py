@@ -572,6 +572,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             nottests.add(arg)
         args = []
 
+    display_header = (verbose or header or not (quiet or single or tests or args)) and (not pgo)
     alltests = findtests(testdir, stdtests, nottests)
     selected = tests or args or alltests
     if single:
@@ -657,18 +658,17 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         sys.stdout.flush()
 
     # For a partial run, we do not need to clutter the output.
-    if verbose or header or not (quiet or single or tests or args):
-        if not pgo:
-            # Print basic platform information
-            print "==", platform.python_implementation(), \
-                        " ".join(sys.version.split())
-            print "==  ", platform.platform(aliased=True), \
-                          "%s-endian" % sys.byteorder
-            print "==  ", os.getcwd()
-            ncpu = cpu_count()
-            if ncpu:
-                print "== CPU count:", ncpu
-            print "Testing with flags:", sys.flags
+    if display_header:
+        # Print basic platform information
+        print "==", platform.python_implementation(), \
+                    " ".join(sys.version.split())
+        print "==  ", platform.platform(aliased=True), \
+                      "%s-endian" % sys.byteorder
+        print "==  ", os.getcwd()
+        ncpu = cpu_count()
+        if ncpu:
+            print "== CPU count:", ncpu
+        print "Testing with flags:", sys.flags
 
     if randomize:
         random.seed(random_seed)
