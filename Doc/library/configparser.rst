@@ -944,6 +944,11 @@ ConfigParser Objects
    .. versionchanged:: 3.5
       The *converters* argument was added.
 
+   .. versionchanged:: 3.7
+      The *defaults* argument is read with :meth:`read_dict()`,
+      providing consistent behavior across the parser: non-string
+      keys and values are implicitly converted to strings.
+
 
    .. method:: defaults()
 
@@ -1325,4 +1330,3 @@ Exceptions
 .. [1] Config parsers allow for heavy customization.  If you are interested in
        changing the behaviour outlined by the footnote reference, consult the
        `Customizing Parser Behaviour`_ section.
-
