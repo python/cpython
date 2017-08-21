@@ -263,8 +263,6 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     'path and sock can not be specified at the same time')
 
             path = _fspath(path)
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-
             # Check for abstract socket. `str` and `bytes` paths are supported.
             if path[0] not in (0, '\x00'):
                 try:
@@ -274,8 +272,10 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     pass
                 except OSError as err:
                     # Directory may have permissions only to create socket.
-                    logger.error('Unable to check or remove stale UNIX socket %r: %r', path, err)
+                    logger.error('Unable to check or remove stale UNIX'
+                                 ' socket %r: %r', path, err)
 
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             try:
                 sock.bind(path)
             except OSError as exc:
@@ -316,8 +316,6 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     'path and sock can not be specified at the same time')
 
             path = _fspath(path)
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-
             # Check for abstract socket. `str` and `bytes` paths are supported.
             if bind and path[0] not in (0, '\x00'):
                 try:
@@ -330,6 +328,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     logger.error('Unable to check or remove stale UNIX'
                                  ' socket %r: %r', path, err)
 
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
             try:
                 sock.setblocking(False)
                 if bind:
@@ -354,7 +353,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     'A UNIX Domain Datagram Socket was expected, got {!r}'
                     .format(sock))
             sock.setblocking(False)
-            path = sock.getsockname() or sock.getpeername()
+            path = sock.getsockname()
+            if not path:
+                path = sock.getpeername()
 
         protocol = protocol_factory()
         waiter = self.create_future()
