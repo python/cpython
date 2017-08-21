@@ -4922,6 +4922,7 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
             if (instr->i_jrel || instr->i_jabs)
                 dfs(c, instr->i_target, a, j);
         }
+        assert(a->a_nblocks < j);
         a->a_postorder[a->a_nblocks++] = b;
     }
 }
