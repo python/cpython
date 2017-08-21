@@ -1182,6 +1182,7 @@ ast_for_comp_op(struct compiling *c, const node *n)
                     return In;
                 if (strcmp(STR(n), "is") == 0)
                     return Is;
+                /* fall through */
             default:
                 PyErr_Format(PyExc_SystemError, "invalid comp_op: %s",
                              STR(n));
@@ -1196,6 +1197,7 @@ ast_for_comp_op(struct compiling *c, const node *n)
                     return NotIn;
                 if (strcmp(STR(CHILD(n, 0)), "is") == 0)
                     return IsNot;
+                /* fall through */
             default:
                 PyErr_Format(PyExc_SystemError, "invalid comp_op: %s %s",
                              STR(CHILD(n, 0)), STR(CHILD(n, 1)));
@@ -3147,6 +3149,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
                 }
                 return Raise(expression, cause, LINENO(n), n->n_col_offset, c->c_arena);
             }
+            /* fall through */
         default:
             PyErr_Format(PyExc_SystemError,
                          "unexpected flow_stmt: %d", TYPE(ch));

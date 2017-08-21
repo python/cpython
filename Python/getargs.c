@@ -2304,8 +2304,8 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                 /* after 'e', only 's' and 't' is allowed */
                 goto err;
             format++;
-            /* explicit fallthrough to string cases */
         }
+        /* fall through */
 
     case 's': /* string */
     case 'z': /* string or None */
