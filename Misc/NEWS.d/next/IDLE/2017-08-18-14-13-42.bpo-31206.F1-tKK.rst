@@ -1,0 +1,2 @@
+IDLE: Factor HighPage(Frame) class from ConfigDialog. Patch by Cheryl
+Sabella.
