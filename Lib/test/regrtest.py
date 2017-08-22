@@ -1038,6 +1038,9 @@ def runtest(test, verbose, quiet,
         test_support.use_resources = use_resources
     try:
         test_support.match_tests = match_tests
+        # reset the environment_altered flag to detect if a test altered
+        # the environment
+        test_support.environment_altered = False
         if failfast:
             test_support.failfast = True
         return runtest_inner(test, verbose, quiet, huntrleaks, pgo, testdir)
@@ -1178,6 +1181,9 @@ class saved_test_environment:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # Read support.environment_altered, set by support helper functions
+        self.changed |= test_support.environment_altered
+
         saved_values = self.saved_values
         del self.saved_values
         for name, get, restore in self.resource_info():
