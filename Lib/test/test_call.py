@@ -204,11 +204,14 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, ImportError, 0, a=1, b=2, c=3)
 
     def test_varargs16_kw(self):
-        msg = r"^function takes at most 2 keyword arguments \(3 given\)$"
+        msg = r"^min\(\) takes at most 2 keyword arguments \(3 given\)$"
         self.assertRaisesRegex(TypeError, msg, min, 0, a=1, b=2, c=3)
-        self.assertRaisesRegex(TypeError, msg, max, 0, a=1, b=2, c=3)
 
     def test_varargs17_kw(self):
+        msg = r"^max\(\) takes at most 2 keyword arguments \(3 given\)$"
+        self.assertRaisesRegex(TypeError, msg, max, 0, a=1, b=2, c=3)
+
+    def test_varargs18_kw(self):
         msg = r"^print\(\) takes at most 4 keyword arguments \(5 given\)$"
         self.assertRaisesRegex(TypeError, msg,
                                print, 0, a=1, b=2, c=3, d=4, e=5)
