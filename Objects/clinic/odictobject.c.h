@@ -2,71 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(OrderedDict_fromkeys__doc__,
-"fromkeys($type, /, iterable, value=None)\n"
-"--\n"
-"\n"
-"Create a new ordered dictionary with keys from iterable and values set to value.");
-
-#define ORDEREDDICT_FROMKEYS_METHODDEF    \
-    {"fromkeys", (PyCFunction)OrderedDict_fromkeys, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, OrderedDict_fromkeys__doc__},
-
-static PyObject *
-OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value);
-
-static PyObject *
-OrderedDict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"iterable", "value", NULL};
-    static _PyArg_Parser _parser = {"O|O:fromkeys", _keywords, 0};
-    PyObject *seq;
-    PyObject *value = Py_None;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &seq, &value)) {
-        goto exit;
-    }
-    return_value = OrderedDict_fromkeys_impl(type, seq, value);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(OrderedDict_setdefault__doc__,
-"setdefault($self, /, key, default=None)\n"
-"--\n"
-"\n"
-"Insert key with a value of default if key is not in the dictionary.\n"
-"\n"
-"Return the value for key if key is in the dictionary, else default.");
-
-#define ORDEREDDICT_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)OrderedDict_setdefault, METH_FASTCALL|METH_KEYWORDS, OrderedDict_setdefault__doc__},
-
-static PyObject *
-OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
-                            PyObject *default_value);
-
-static PyObject *
-OrderedDict_setdefault(PyODictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"key", "default", NULL};
-    static _PyArg_Parser _parser = {"O|O:setdefault", _keywords, 0};
-    PyObject *key;
-    PyObject *default_value = Py_None;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &key, &default_value)) {
-        goto exit;
-    }
-    return_value = OrderedDict_setdefault_impl(self, key, default_value);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(OrderedDict_popitem__doc__,
 "popitem($self, /, last=True)\n"
 "--\n"
@@ -131,4 +66,4 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject **args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b2f82eca6e8c8084 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=337743923055faf0 input=a9049054013a1b77]*/

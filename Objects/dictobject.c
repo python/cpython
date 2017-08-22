@@ -1075,7 +1075,7 @@ build_indices(PyDictKeysObject *keys, PyDictKeyEntry *ep,
               Py_ssize_t offset, Py_ssize_t n)
 {
     size_t mask = (size_t)DK_SIZE(keys) - 1;
-    for (Py_ssize_t ix = offset; ix != n; ix++, ep++) {
+    for (Py_ssize_t ix = offset; ix != n+offset; ix++, ep++) {
         Py_hash_t hash = ep->me_hash;
         size_t i = hash & mask;
         for (size_t perturb = hash; dk_get_index(keys, i) != DKIX_EMPTY;) {
@@ -1161,7 +1161,7 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize, Py_ssize_t offset)
     }
     else {  // combined table.
         if (oldkeys->dk_nentries == numentries) {
-            memcpy(newentries, oldentries, numentries * sizeof(PyDictKeyEntry));
+            memcpy(newentries + offset, oldentries, numentries * sizeof(PyDictKeyEntry));
         }
         else {
             PyDictKeyEntry *ep = &oldentries[mp->ma_offset];
@@ -1183,7 +1183,7 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize, Py_ssize_t offset)
         }
     }
 
-    build_indices(mp->ma_keys, newentries, offset, numentries);
+    build_indices(mp->ma_keys, newentries+offset, offset, numentries);
     mp->ma_keys->dk_usable -= numentries + offset;
     mp->ma_keys->dk_nentries = numentries + offset;
     mp->ma_offset = offset;
@@ -2862,7 +2862,7 @@ dict_pop(PyDictObject *mp, PyObject *args)
 }
 
 static PyObject *
-dict_popitem(PyDictObject *mp)
+dict_popitem_common(PyDictObject *mp, int last)
 {
     Py_ssize_t i, j;
     PyDictKeyEntry *ep0, *ep;
@@ -2897,9 +2897,17 @@ dict_popitem(PyDictObject *mp)
 
     /* Pop last item */
     ep0 = DK_ENTRIES(mp->ma_keys);
-    i = mp->ma_keys->dk_nentries - 1;
-    while (i >= 0 && ep0[i].me_value == NULL) {
-        i--;
+    if (last) {
+        i = mp->ma_keys->dk_nentries - 1;
+        while (i >= 0 && ep0[i].me_value == NULL) {
+            i--;
+        }
+    }
+    else {
+        i = mp->ma_offset;
+        while (i < mp->ma_keys->dk_nentries && ep0[i].me_value == NULL) {
+            i++;
+        }
     }
     assert(i >= 0);
 
@@ -2914,11 +2922,22 @@ dict_popitem(PyDictObject *mp)
     ep->me_key = NULL;
     ep->me_value = NULL;
     /* We can't dk_usable++ since there is DKIX_DUMMY in indices */
-    mp->ma_keys->dk_nentries = i;
+    if (last) {
+        mp->ma_keys->dk_nentries = i;
+    }
+    else {
+        mp->ma_offset = i+1;
+    }
     mp->ma_used--;
     mp->ma_version_tag = DICT_NEXT_VERSION();
     assert(_PyDict_CheckConsistency(mp));
     return res;
+}
+
+static PyObject *
+dict_popitem(PyDictObject *mp)
+{
+    return dict_popitem_common(mp, 1);
 }
 
 static int
@@ -2959,7 +2978,7 @@ dict_tp_clear(PyObject *op)
     return 0;
 }
 
-static PyObject *dictiter_new(PyDictObject *, PyTypeObject *);
+static PyObject *dictiter_new(PyDictObject *, PyTypeObject *, int);
 
 Py_ssize_t
 _PyDict_SizeOf(PyDictObject *mp)
@@ -3148,7 +3167,7 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 dict_iter(PyDictObject *dict)
 {
-    return dictiter_new(dict, &PyDictIterKey_Type);
+    return dictiter_new(dict, &PyDictIterKey_Type, 0);
 }
 
 PyDoc_STRVAR(dictionary_doc,
@@ -3288,10 +3307,11 @@ typedef struct {
     Py_ssize_t di_pos;
     PyObject* di_result; /* reusable result tuple for iteritems */
     Py_ssize_t len;
+    int di_reversed;
 } dictiterobject;
 
 static PyObject *
-dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
+dictiter_new(PyDictObject *dict, PyTypeObject *itertype, int reversed)
 {
     dictiterobject *di;
     di = PyObject_GC_New(dictiterobject, itertype);
@@ -3300,8 +3320,19 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     Py_INCREF(dict);
     di->di_dict = dict;
     di->di_used = dict->ma_used;
-    di->di_pos = dict->ma_offset;
+    if (reversed) {
+        if (dict->ma_values) {
+            di->di_pos = dict->ma_used-1;
+        }
+        else {
+            di->di_pos = dict->ma_keys->dk_nentries-1;
+        }
+    }
+    else {
+        di->di_pos = dict->ma_offset;
+    }
     di->len = dict->ma_used;
+    di->di_reversed = reversed;
     if (itertype == &PyDictIterItem_Type) {
         di->di_result = PyTuple_Pack(2, Py_None, Py_None);
         if (di->di_result == NULL) {
@@ -3379,7 +3410,10 @@ dictiter_iternextkey(dictiterobject *di)
 
     i = di->di_pos;
     k = d->ma_keys;
-    assert(i >= 0);
+    if (i < 0) {
+        goto fail;
+    }
+
     if (d->ma_values) {
         if (i >= d->ma_used)
             goto fail;
@@ -3389,15 +3423,27 @@ dictiter_iternextkey(dictiterobject *di)
     else {
         Py_ssize_t n = k->dk_nentries;
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
-        while (i < n && entry_ptr->me_value == NULL) {
-            entry_ptr++;
-            i++;
+        if (!di->di_reversed) {
+            while (i < n && entry_ptr->me_value == NULL) {
+                entry_ptr++;
+                i++;
+            }
+            if (i >= n) {
+                goto fail;
+            }
         }
-        if (i >= n)
-            goto fail;
+        else {
+            while (i >= 0 && entry_ptr->me_value == NULL) {
+                entry_ptr--;
+                i--;
+            }
+            if (i < 0) {
+                goto fail;
+            }
+        }
         key = entry_ptr->me_key;
     }
-    di->di_pos = i+1;
+    di->di_pos = di->di_reversed ? i-1 : i+1;
     di->len--;
     Py_INCREF(key);
     return key;
@@ -3460,7 +3506,9 @@ dictiter_iternextvalue(dictiterobject *di)
     }
 
     i = di->di_pos;
-    assert(i >= 0);
+    if (i < 0) {
+        goto fail;
+    }
     if (d->ma_values) {
         if (i >= d->ma_used)
             goto fail;
@@ -3470,15 +3518,27 @@ dictiter_iternextvalue(dictiterobject *di)
     else {
         Py_ssize_t n = d->ma_keys->dk_nentries;
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
-        while (i < n && entry_ptr->me_value == NULL) {
-            entry_ptr++;
-            i++;
+        if (!di->di_reversed) {
+            while (i < n && entry_ptr->me_value == NULL) {
+                entry_ptr++;
+                i++;
+            }
+            if (i >= n) {
+                goto fail;
+            }
         }
-        if (i >= n)
-            goto fail;
+        else {
+            while (i >= 0 && entry_ptr->me_value == NULL) {
+                entry_ptr--;
+                i--;
+            }
+            if (i < 0) {
+                goto fail;
+            }
+        }
         value = entry_ptr->me_value;
     }
-    di->di_pos = i+1;
+    di->di_pos = di->di_reversed ? i-1 : i+1;
     di->len--;
     Py_INCREF(value);
     return value;
@@ -3541,7 +3601,9 @@ dictiter_iternextitem(dictiterobject *di)
     }
 
     i = di->di_pos;
-    assert(i >= 0);
+    if (i < 0) {
+        goto fail;
+    }
     if (d->ma_values) {
         if (i >= d->ma_used)
             goto fail;
@@ -3552,16 +3614,28 @@ dictiter_iternextitem(dictiterobject *di)
     else {
         Py_ssize_t n = d->ma_keys->dk_nentries;
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
-        while (i < n && entry_ptr->me_value == NULL) {
-            entry_ptr++;
-            i++;
+        if (!di->di_reversed) {
+            while (i < n && entry_ptr->me_value == NULL) {
+                entry_ptr++;
+                i++;
+            }
+            if (i >= n) {
+                goto fail;
+            }
         }
-        if (i >= n)
-            goto fail;
+        else {
+            while (i >= 0 && entry_ptr->me_value == NULL) {
+                entry_ptr--;
+                i--;
+            }
+            if (i < 0) {
+                goto fail;
+            }
+        }
         key = entry_ptr->me_key;
         value = entry_ptr->me_value;
     }
-    di->di_pos = i+1;
+    di->di_pos = di->di_reversed ? i-1 : i+1;
     di->len--;
     Py_INCREF(key);
     Py_INCREF(value);
@@ -3842,7 +3916,7 @@ dictkeys_iter(_PyDictViewObject *dv)
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
-    return dictiter_new(dv->dv_dict, &PyDictIterKey_Type);
+    return dictiter_new(dv->dv_dict, &PyDictIterKey_Type, 0);
 }
 
 static int
@@ -4070,7 +4144,7 @@ dictitems_iter(_PyDictViewObject *dv)
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
-    return dictiter_new(dv->dv_dict, &PyDictIterItem_Type);
+    return dictiter_new(dv->dv_dict, &PyDictIterItem_Type, 0);
 }
 
 static int
@@ -4160,7 +4234,7 @@ dictvalues_iter(_PyDictViewObject *dv)
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
-    return dictiter_new(dv->dv_dict, &PyDictIterValue_Type);
+    return dictiter_new(dv->dv_dict, &PyDictIterValue_Type, 0);
 }
 
 static PySequenceMethods dictvalues_as_sequence = {
