@@ -48,16 +48,6 @@
     <TargetPath>$(OutDir)bin\$(tclDLLName)</TargetPath>
   </PropertyGroup>
   
-  <ItemGroup>
-    <ExpectedOutputs Include="
-        $(OutDir)\bin\$(tclDLLName);
-        $(OutDir)\bin\$(tclShExeName);
-        $(OutDir)\include\tcl.h;
-        $(OutDir)\lib\tcl$(TclMajorVersion);
-        $(OutDir)\lib\tcl$(TclMajorVersion).$(TclMinorVersion);
-        $(OutDir)\lib\$(tclLibName)" />
-  </ItemGroup>
-  
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   
   <PropertyGroup>
@@ -65,29 +55,19 @@
     <TclOpts Condition="$(Configuration) == 'Debug'">symbols,msvcrt</TclOpts>
     <TclDirs>INSTALLDIR="$(OutDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TclDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUGFLAGS="-wd4456 -wd4457 -wd4458 -wd4459 -wd4996"</DebugFlags>
+    <WarningsFlags>WARNINGS="-W3 -wd4311 -wd4312"</WarningsFlags>
     <NMakeBuildCommandLine>setlocal
-@(ExpectedOutputs->'if not exist "%(FullPath)" goto build','
-')
-goto :eof
-:build
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tclDir)win"
-nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) core shell dlls
-nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) install-binaries install-libraries
+nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) core shell dlls
+nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) install-binaries install-libraries
+copy /Y ..\license.terms "$(OutDir)\tcllicense.terms"
 </NMakeBuildCommandLine>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  
-  <Target Name="CopyDll" Inputs="$(OutDir)\bin\$(tclDLLName)" Outputs="$(BuildPath)$(tclDLLName)" AfterTargets="Build">
-    <Copy SourceFiles="$(OutDir)\bin\$(tclDLLName)" DestinationFiles="$(BuildPath)$(tclDLLName)" />
-  </Target>
-  
+
   <Target Name="Clean" />
-  <Target Name="CleanAll">
-    <Delete Files="$(TargetPath);$(BuildPath)$(tclDLLName)" />
-    <RemoveDir Directories="$(IntDir)" />
-  </Target>
   
   <Target Name="ResolveAssemblyReferences" />
 </Project>

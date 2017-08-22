@@ -1,0 +1,1 @@
+Allow `logging.config.fileConfig` to accept kwargs and/or args.

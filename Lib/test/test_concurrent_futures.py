@@ -59,10 +59,21 @@ class MyObject(object):
         pass
 
 
+class BaseTestCase(unittest.TestCase):
+    def setUp(self):
+        self._thread_key = test.support.threading_setup()
+
+    def tearDown(self):
+        test.support.reap_children()
+        test.support.threading_cleanup(*self._thread_key)
+
+
 class ExecutorMixin:
     worker_count = 5
 
     def setUp(self):
+        super().setUp()
+
         self.t1 = time.time()
         try:
             self.executor = self.executor_type(max_workers=self.worker_count)
@@ -72,10 +83,14 @@ class ExecutorMixin:
 
     def tearDown(self):
         self.executor.shutdown(wait=True)
+        self.executor = None
+
         dt = time.time() - self.t1
         if test.support.verbose:
             print("%.2fs" % dt, end=' ')
         self.assertLess(dt, 60, "synchronization issue: test lasted too long")
+
+        super().tearDown()
 
     def _prime_executor(self):
         # Make sure that the executor is ready to do work before running the
@@ -123,7 +138,7 @@ class ExecutorShutdownTest:
             f.result()
 
 
-class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, unittest.TestCase):
+class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase):
     def _prime_executor(self):
         pass
 
@@ -172,14 +187,13 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, unittest.Tes
         del executor
 
         for t in threads:
-            # We don't particularly care what the default name is, just that
-            # it has a default name implying that it is a ThreadPoolExecutor
-            # followed by what looks like a thread number.
-            self.assertRegex(t.name, r'^.*ThreadPoolExecutor.*_[0-4]$')
+            # Ensure that our default name is reasonably sane and unique when
+            # no thread_name_prefix was supplied.
+            self.assertRegex(t.name, r'ThreadPoolExecutor-\d+_[0-4]$')
             t.join()
 
 
-class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, unittest.TestCase):
+class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCase):
     def _prime_executor(self):
         pass
 
@@ -316,7 +330,7 @@ class WaitTests:
         self.assertEqual(set([future2]), pending)
 
 
-class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, unittest.TestCase):
+class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
 
     def test_pending_calls_race(self):
         # Issue #14406: multi-threaded race condition when waiting on all
@@ -334,7 +348,7 @@ class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, unittest.TestCase):
             sys.setswitchinterval(oldswitchinterval)
 
 
-class ProcessPoolWaitTests(ProcessPoolMixin, WaitTests, unittest.TestCase):
+class ProcessPoolWaitTests(ProcessPoolMixin, WaitTests, BaseTestCase):
     pass
 
 
@@ -383,11 +397,11 @@ class AsCompletedTests:
         self.assertEqual(len(completed), 1)
 
 
-class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, unittest.TestCase):
+class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, BaseTestCase):
     pass
 
 
-class ProcessPoolAsCompletedTests(ProcessPoolMixin, AsCompletedTests, unittest.TestCase):
+class ProcessPoolAsCompletedTests(ProcessPoolMixin, AsCompletedTests, BaseTestCase):
     pass
 
 
@@ -458,7 +472,7 @@ class ExecutorTest:
                 self.executor_type(max_workers=number)
 
 
-class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, unittest.TestCase):
+class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
     def test_map_submits_without_iteration(self):
         """Tests verifying issue 11777."""
         finished = []
@@ -475,7 +489,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, unittest.TestCase):
                          (os.cpu_count() or 1) * 5)
 
 
-class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, unittest.TestCase):
+class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, BaseTestCase):
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
         # "broken".
@@ -531,7 +545,7 @@ class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, unittest.TestCase)
                       f1.getvalue())
 
 
-class FutureTests(unittest.TestCase):
+class FutureTests(BaseTestCase):
     def test_done_callback_with_result(self):
         callback_result = None
         def fn(callback_future):

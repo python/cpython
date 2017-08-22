@@ -2774,7 +2774,7 @@ typedef struct {
 } XMLParserObject;
 
 static PyObject*
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames);
+_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_t nargs);
 static PyObject *
 _elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
                                     PyObject *pubid, PyObject *system);
@@ -3990,6 +3990,11 @@ PyInit__elementtree(void)
     st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
+    if (st->deepcopy_obj == NULL) {
+        return NULL;
+    }
+
+    assert(!PyErr_Occurred());
     if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
         return NULL;
 

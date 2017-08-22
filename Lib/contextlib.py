@@ -1,6 +1,7 @@
 """Utilities for with-statement contexts.  See PEP 343."""
 import abc
 import sys
+import _collections_abc
 from collections import deque
 from functools import wraps
 
@@ -25,9 +26,7 @@ class AbstractContextManager(abc.ABC):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is AbstractContextManager:
-            if (any("__enter__" in B.__dict__ for B in C.__mro__) and
-                any("__exit__" in B.__dict__ for B in C.__mro__)):
-                return True
+            return _collections_abc._check_methods(C, "__enter__", "__exit__")
         return NotImplemented
 
 

@@ -47,6 +47,7 @@ class CallTips:
     def force_open_calltip_event(self, event):
         "The user selected the menu entry or hotkey, open the tip."
         self.open_calltip(True)
+        return "break"
 
     def try_open_calltip_event(self, event):
         """Happens when it would be nice to open a CallTip, but not really
@@ -122,6 +123,8 @@ _MAX_LINES = 5  # enough for bytes
 _INDENT = ' '*4  # for wrapped signatures
 _first_param = re.compile(r'(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
+_invalid_method = "invalid method signature"
+_argument_positional = "\n['/' marks preceding arguments as positional-only]\n"
 
 
 def get_argspec(ob):
@@ -133,25 +136,30 @@ def get_argspec(ob):
     empty line or _MAX_LINES.    For builtins, this typically includes
     the arguments in addition to the return value.
     '''
-    argspec = ""
+    argspec = default = ""
     try:
         ob_call = ob.__call__
     except BaseException:
-        return argspec
-    if isinstance(ob, type):
-        fob = ob.__init__
-    elif isinstance(ob_call, types.MethodType):
-        fob = ob_call
-    else:
-        fob = ob
-    if isinstance(fob, (types.FunctionType, types.MethodType)):
-        argspec = inspect.formatargspec(*inspect.getfullargspec(fob))
-        if (isinstance(ob, (type, types.MethodType)) or
-                isinstance(ob_call, types.MethodType)):
-            argspec = _first_param.sub("", argspec)
+        return default
+
+    fob = ob_call if isinstance(ob_call, types.MethodType) else ob
+
+    try:
+        argspec = str(inspect.signature(fob))
+    except ValueError as err:
+        msg = str(err)
+        if msg.startswith(_invalid_method):
+            return _invalid_method
+
+    if '/' in argspec:
+        """Using AC's positional argument should add the explain"""
+        argspec += _argument_positional
+    if isinstance(fob, type) and argspec == '()':
+        """fob with no argument, use default callable argspec"""
+        argspec = _default_callable_argspec
 
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
-            if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
+             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
 
     if isinstance(ob_call, types.MethodType):
         doc = ob_call.__doc__
@@ -169,6 +177,7 @@ def get_argspec(ob):
     if not argspec:
         argspec = _default_callable_argspec
     return argspec
+
 
 if __name__ == '__main__':
     from unittest import main

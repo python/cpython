@@ -23,10 +23,34 @@ typedef struct _is PyInterpreterState;
 #else
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
+
+typedef struct {
+    int ignore_environment;
+    int use_hash_seed;
+    unsigned long hash_seed;
+    int _disable_importlib; /* Needed by freeze_importlib */
+} _PyCoreConfig;
+
+#define _PyCoreConfig_INIT {0, -1, 0, 0}
+
+/* Placeholders while working on the new configuration API
+ *
+ * See PEP 432 for final anticipated contents
+ *
+ * For the moment, just handle the args to _Py_InitializeEx
+ */
+typedef struct {
+    int install_signal_handlers;
+} _PyMainInterpreterConfig;
+
+#define _PyMainInterpreterConfig_INIT {-1}
+
 typedef struct _is {
 
     struct _is *next;
     struct _ts *tstate_head;
+
+    int64_t id;
 
     PyObject *modules;
     PyObject *modules_by_index;
@@ -40,6 +64,8 @@ typedef struct _is {
     int codecs_initialized;
     int fscodec_initialized;
 
+    _PyCoreConfig core_config;
+    _PyMainInterpreterConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
@@ -48,6 +74,15 @@ typedef struct _is {
     PyObject *import_func;
     /* Initialized to PyEval_EvalFrameDefault(). */
     _PyFrameEvalFunction eval_frame;
+
+    Py_ssize_t co_extra_user_count;
+    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
+
+#ifdef HAVE_FORK
+    PyObject *before_forkers;
+    PyObject *after_forkers_parent;
+    PyObject *after_forkers_child;
+#endif
 } PyInterpreterState;
 #endif
 
@@ -142,9 +177,6 @@ typedef struct _ts {
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
 
-    Py_ssize_t co_extra_user_count;
-    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
-
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
 
@@ -154,9 +186,16 @@ typedef struct _ts {
 #endif
 
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _PyInterpreterState_Init(void);
+#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+/* New in 3.7 */
+PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
+#endif
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
 #endif /* !Py_LIMITED_API */
@@ -293,6 +332,7 @@ PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
 #ifndef Py_LIMITED_API
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);

@@ -74,7 +74,7 @@ __attribute__((packed))
 #endif
 {
     uintptr_t ptr;
-    _PyTraceMalloc_domain_t domain;
+    unsigned int domain;
 } pointer_t;
 
 /* Pack the frame_t structure to reduce the memory footprint on 64-bit
@@ -83,7 +83,7 @@ typedef struct
 #ifdef __GNUC__
 __attribute__((packed))
 #elif defined(_MSC_VER)
-_declspec(align(4))
+#pragma pack(push, 4)
 #endif
 {
     /* filename cannot be NULL: "<unknown>" is used if the Python frame
@@ -91,6 +91,9 @@ _declspec(align(4))
     PyObject *filename;
     unsigned int lineno;
 } frame_t;
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 
 typedef struct {
@@ -578,7 +581,7 @@ tracemalloc_use_domain(void)
 
 
 static void
-tracemalloc_remove_trace(_PyTraceMalloc_domain_t domain, uintptr_t ptr)
+tracemalloc_remove_trace(unsigned int domain, uintptr_t ptr)
 {
     trace_t trace;
     int removed;
@@ -605,7 +608,7 @@ tracemalloc_remove_trace(_PyTraceMalloc_domain_t domain, uintptr_t ptr)
 
 
 static int
-tracemalloc_add_trace(_PyTraceMalloc_domain_t domain, uintptr_t ptr,
+tracemalloc_add_trace(unsigned int domain, uintptr_t ptr,
                       size_t size)
 {
     pointer_t key = {ptr, domain};
@@ -1267,7 +1270,7 @@ traceback_to_pyobject(traceback_t *traceback, _Py_hashtable_t *intern_table)
 
 
 static PyObject*
-trace_to_pyobject(_PyTraceMalloc_domain_t domain, trace_t *trace,
+trace_to_pyobject(unsigned int domain, trace_t *trace,
                   _Py_hashtable_t *intern_tracebacks)
 {
     PyObject *trace_obj = NULL;
@@ -1313,7 +1316,7 @@ tracemalloc_get_traces_fill(_Py_hashtable_t *traces, _Py_hashtable_entry_t *entr
                             void *user_data)
 {
     get_traces_t *get_traces = user_data;
-    _PyTraceMalloc_domain_t domain;
+    unsigned int domain;
     trace_t trace;
     PyObject *tracemalloc_obj;
     int res;
@@ -1428,7 +1431,7 @@ finally:
 
 
 static traceback_t*
-tracemalloc_get_traceback(_PyTraceMalloc_domain_t domain, uintptr_t ptr)
+tracemalloc_get_traceback(unsigned int domain, uintptr_t ptr)
 {
     trace_t trace;
     int found;
@@ -1752,7 +1755,7 @@ _PyTraceMalloc_Init(void)
         if (key == NULL)
             return -1;
 
-        value = PyDict_GetItemWithError(xoptions, key);
+        value = PyDict_GetItemWithError(xoptions, key); /* borrowed */
         Py_DECREF(key);
         if (value == NULL) {
             if (PyErr_Occurred())
@@ -1763,7 +1766,6 @@ _PyTraceMalloc_Init(void)
         }
 
         nframe = parse_sys_xoptions(value);
-        Py_DECREF(value);
         if (nframe < 0) {
             Py_FatalError("-X tracemalloc=NFRAME: invalid number of frames");
         }
@@ -1783,8 +1785,8 @@ _PyTraceMalloc_Fini(void)
 }
 
 int
-_PyTraceMalloc_Track(_PyTraceMalloc_domain_t domain, uintptr_t ptr,
-                     size_t size)
+PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
+                    size_t size)
 {
     int res;
 #ifdef WITH_THREAD
@@ -1812,7 +1814,7 @@ _PyTraceMalloc_Track(_PyTraceMalloc_domain_t domain, uintptr_t ptr,
 
 
 int
-_PyTraceMalloc_Untrack(_PyTraceMalloc_domain_t domain, uintptr_t ptr)
+PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 {
     if (!tracemalloc_config.tracing) {
         /* tracemalloc is not tracing: do nothing */
@@ -1828,7 +1830,7 @@ _PyTraceMalloc_Untrack(_PyTraceMalloc_domain_t domain, uintptr_t ptr)
 
 
 PyObject*
-_PyTraceMalloc_GetTraceback(_PyTraceMalloc_domain_t domain, uintptr_t ptr)
+_PyTraceMalloc_GetTraceback(unsigned int domain, uintptr_t ptr)
 {
     traceback_t *traceback;
 

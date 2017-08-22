@@ -1,8 +1,10 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
+from collections import namedtuple
 import os
 import pickle
+import platform
 import random
 import re
 import subprocess
@@ -13,7 +15,7 @@ import time
 import unittest
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 try:
     import _posixsubprocess
 except ImportError:
@@ -241,6 +243,38 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
+    def test_set_nomemory(self):
+        code = """if 1:
+            import _testcapi
+
+            class C(): pass
+
+            # The first loop tests both functions and that remove_mem_hooks()
+            # can be called twice in a row. The second loop checks a call to
+            # set_nomemory() after a call to remove_mem_hooks(). The third
+            # loop checks the start and stop arguments of set_nomemory().
+            for outer_cnt in range(1, 4):
+                start = 10 * outer_cnt
+                for j in range(100):
+                    if j == 0:
+                        if outer_cnt != 3:
+                            _testcapi.set_nomemory(start)
+                        else:
+                            _testcapi.set_nomemory(start, start + 1)
+                    try:
+                        C()
+                    except MemoryError as e:
+                        if outer_cnt != 3:
+                            _testcapi.remove_mem_hooks()
+                        print('MemoryError', outer_cnt, j)
+                        _testcapi.remove_mem_hooks()
+                        break
+        """
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'MemoryError 1 10', out)
+        self.assertIn(b'MemoryError 2 20', out)
+        self.assertIn(b'MemoryError 3 30', out)
+
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class TestPendingCalls(unittest.TestCase):
@@ -369,48 +403,123 @@ class EmbeddingTests(unittest.TestCase):
     def tearDown(self):
         os.chdir(self.oldcwd)
 
-    def run_embedded_interpreter(self, *args):
+    def run_embedded_interpreter(self, *args, env=None):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
+        if env is not None and sys.platform == 'win32':
+            # Windows requires at least the SYSTEMROOT environment variable to
+            # start Python.
+            env = env.copy()
+            env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
+
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
-                             universal_newlines=True)
+                             universal_newlines=True,
+                             env=env)
         (out, err) = p.communicate()
         self.assertEqual(p.returncode, 0,
                          "bad returncode %d, stderr is %r" %
                          (p.returncode, err))
         return out, err
 
-    def test_subinterps(self):
-        # This is just a "don't crash" test
+    def run_repeated_init_and_subinterpreters(self):
         out, err = self.run_embedded_interpreter("repeated_init_and_subinterpreters")
-        if support.verbose:
-            print()
-            print(out)
-            print(err)
+        self.assertEqual(err, "")
 
-    @staticmethod
-    def _get_default_pipe_encoding():
-        rp, wp = os.pipe()
-        try:
-            with os.fdopen(wp, 'w') as w:
-                default_pipe_encoding = w.encoding
-        finally:
-            os.close(rp)
-        return default_pipe_encoding
+        # The output from _testembed looks like this:
+        # --- Pass 0 ---
+        # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
+        # interp 1 <0x1d4f690>, thread state <0x1d35350>: id(modules) = 139650431165784
+        # interp 2 <0x1d5a690>, thread state <0x1d99ed0>: id(modules) = 139650413140368
+        # interp 3 <0x1d4f690>, thread state <0x1dc3340>: id(modules) = 139650412862200
+        # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
+        # --- Pass 1 ---
+        # ...
+
+        interp_pat = (r"^interp (\d+) <(0x[\dA-F]+)>, "
+                      r"thread state <(0x[\dA-F]+)>: "
+                      r"id\(modules\) = ([\d]+)$")
+        Interp = namedtuple("Interp", "id interp tstate modules")
+
+        numloops = 0
+        current_run = []
+        for line in out.splitlines():
+            if line == "--- Pass {} ---".format(numloops):
+                self.assertEqual(len(current_run), 0)
+                if support.verbose:
+                    print(line)
+                numloops += 1
+                continue
+
+            self.assertLess(len(current_run), 5)
+            match = re.match(interp_pat, line)
+            if match is None:
+                self.assertRegex(line, interp_pat)
+
+            # Parse the line from the loop.  The first line is the main
+            # interpreter and the 3 afterward are subinterpreters.
+            interp = Interp(*match.groups())
+            if support.verbose:
+                print(interp)
+            self.assertTrue(interp.interp)
+            self.assertTrue(interp.tstate)
+            self.assertTrue(interp.modules)
+            current_run.append(interp)
+
+            # The last line in the loop should be the same as the first.
+            if len(current_run) == 5:
+                main = current_run[0]
+                self.assertEqual(interp, main)
+                yield current_run
+                current_run = []
+
+    def test_subinterps_main(self):
+        for run in self.run_repeated_init_and_subinterpreters():
+            main = run[0]
+
+            self.assertEqual(main.id, '0')
+
+    def test_subinterps_different_ids(self):
+        for run in self.run_repeated_init_and_subinterpreters():
+            main, *subs, _ = run
+
+            mainid = int(main.id)
+            for i, sub in enumerate(subs):
+                self.assertEqual(sub.id, str(mainid + i + 1))
+
+    def test_subinterps_distinct_state(self):
+        for run in self.run_repeated_init_and_subinterpreters():
+            main, *subs, _ = run
+
+            if '0x0' in main:
+                # XXX Fix on Windows (and other platforms): something
+                # is going on with the pointers in Programs/_testembed.c.
+                # interp.interp is 0x0 and interp.modules is the same
+                # between interpreters.
+                raise unittest.SkipTest('platform prints pointers as 0x0')
+
+            for sub in subs:
+                # A new subinterpreter may have the same
+                # PyInterpreterState pointer as a previous one if
+                # the earlier one has already been destroyed.  So
+                # we compare with the main interpreter.  The same
+                # applies to tstate.
+                self.assertNotEqual(sub.interp, main.interp)
+                self.assertNotEqual(sub.tstate, main.tstate)
+                self.assertNotEqual(sub.modules, main.modules)
 
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
-        out, err = self.run_embedded_interpreter("forced_io_encoding")
-        if support.verbose:
+        env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
+        out, err = self.run_embedded_interpreter("forced_io_encoding", env=env)
+        if support.verbose > 1:
             print()
             print(out)
             print(err)
-        expected_errors = sys.__stdout__.errors
-        expected_stdin_encoding = sys.__stdin__.encoding
-        expected_pipe_encoding = self._get_default_pipe_encoding()
+        expected_stream_encoding = "utf-8"
+        expected_errors = "surrogateescape"
         expected_output = '\n'.join([
         "--- Use defaults ---",
         "Expected encoding: default",
@@ -437,8 +546,8 @@ class EmbeddingTests(unittest.TestCase):
         "stdout: latin-1:replace",
         "stderr: latin-1:backslashreplace"])
         expected_output = expected_output.format(
-                                in_encoding=expected_stdin_encoding,
-                                out_encoding=expected_pipe_encoding,
+                                in_encoding=expected_stream_encoding,
+                                out_encoding=expected_stream_encoding,
                                 errors=expected_errors)
         # This is useful if we ever trip over odd platform behaviour
         self.maxDiff = None

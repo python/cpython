@@ -1,0 +1,3 @@
+pydoc: the stop() method of the private ServerThread class now waits until
+DocServer.serve_until_quit() completes and then explicitly sets its
+docserver attribute to None to break a reference cycle.

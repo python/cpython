@@ -49,16 +49,17 @@ if defined NOGPG (
     echo Found gpg2.exe at %GPG%
 )
 
-call "%PCBUILD%env.bat" > nul 2> nul
+call "%PCBUILD%find_msbuild.bat" %MSBUILD%
+if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 pushd "%D%"
-msbuild /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x86 %PURGE_OPTION%
-msbuild /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x64 /p:IncludeDoc=false %PURGE_OPTION%
+%MSBUILD% /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x86 %PURGE_OPTION%
+%MSBUILD% /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x64 /p:IncludeDoc=false %PURGE_OPTION%
 if not defined NOTEST (
-    msbuild /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x86
-    msbuild /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x64
+    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x86
+    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x64
 )
-msbuild /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x86
-msbuild /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x64 /p:IncludeDoc=false
+%MSBUILD% /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x86
+%MSBUILD% /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x64 /p:IncludeDoc=false
 popd
 exit /B 0
 

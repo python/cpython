@@ -3262,7 +3262,9 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         /* Here ftuple is a borrowed reference */
         return NULL;
 
-    if (!PyArg_ParseTuple(ftuple, "O&O", _get_name, &name, &dll)) {
+    if (!PyArg_ParseTuple(ftuple, "O&O;illegal func_spec argument",
+                          _get_name, &name, &dll))
+    {
         Py_DECREF(ftuple);
         return NULL;
     }
@@ -3614,7 +3616,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
         case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
             *pinoutmask |= (1 << i); /* mark as inout arg */
             (*pnumretvals)++;
-            /* fall through to PARAMFLAG_FIN... */
+            /* fall through */
         case 0:
         case PARAMFLAG_FIN:
             /* 'in' parameter.  Copy it from inargs. */
@@ -3670,7 +3672,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
             */
             if (ob == NULL)
                 goto error;
-            /* The .from_param call that will ocurr later will pass this
+            /* The .from_param call that will occur later will pass this
                as a byref parameter. */
             PyTuple_SET_ITEM(callargs, i, ob);
             *poutmask |= (1 << i); /* mark as out arg */

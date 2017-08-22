@@ -159,8 +159,23 @@ class ParseArgsTestCase(unittest.TestCase):
         for opt in '-m', '--match':
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt, 'pattern'])
-                self.assertEqual(ns.match_tests, 'pattern')
+                self.assertEqual(ns.match_tests, ['pattern'])
                 self.checkError([opt], 'expected one argument')
+
+        ns = libregrtest._parse_args(['-m', 'pattern1',
+                                      '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, ['pattern1', 'pattern2'])
+
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, "w") as fp:
+            print('matchfile1', file=fp)
+            print('matchfile2', file=fp)
+
+        filename = os.path.abspath(support.TESTFN)
+        ns = libregrtest._parse_args(['-m', 'match',
+                                      '--matchfile', filename])
+        self.assertEqual(ns.match_tests,
+                         ['match', 'matchfile1', 'matchfile2'])
 
     def test_failfast(self):
         for opt in '-G', '--failfast':
@@ -176,14 +191,25 @@ class ParseArgsTestCase(unittest.TestCase):
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt, 'gui,network'])
                 self.assertEqual(ns.use_resources, ['gui', 'network'])
+
                 ns = libregrtest._parse_args([opt, 'gui,none,network'])
                 self.assertEqual(ns.use_resources, ['network'])
-                expected = list(libregrtest.RESOURCE_NAMES)
+
+                expected = list(libregrtest.ALL_RESOURCES)
                 expected.remove('gui')
                 ns = libregrtest._parse_args([opt, 'all,-gui'])
                 self.assertEqual(ns.use_resources, expected)
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid resource')
+
+                # all + a resource not part of "all"
+                ns = libregrtest._parse_args([opt, 'all,tzdata'])
+                self.assertEqual(ns.use_resources,
+                                 list(libregrtest.ALL_RESOURCES) + ['tzdata'])
+
+                # test another resource which is not part of "all"
+                ns = libregrtest._parse_args([opt, 'extralargefile'])
+                self.assertEqual(ns.use_resources, ['extralargefile'])
 
     def test_memlimit(self):
         for opt in '-M', '--memlimit':
@@ -275,7 +301,6 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = libregrtest._parse_args([opt])
                 self.assertTrue(ns.forever)
 
-
     def test_unrecognized_argument(self):
         self.checkError(['--xxx'], 'usage:')
 
@@ -363,19 +388,19 @@ class BaseTestCase(unittest.TestCase):
         return list(match.group(1) for match in parser)
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
-                             omitted=(), randomize=False, interrupted=False):
+                             env_changed=(), omitted=(),
+                             randomize=False, interrupted=False,
+                             fail_env_changed=False):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
             skipped = [skipped]
         if isinstance(failed, str):
             failed = [failed]
+        if isinstance(env_changed, str):
+            env_changed = [env_changed]
         if isinstance(omitted, str):
             omitted = [omitted]
-        ntest = len(tests)
-        nskipped = len(skipped)
-        nfailed = len(failed)
-        nomitted = len(omitted)
 
         executed = self.parse_executed_tests(output)
         if randomize:
@@ -401,11 +426,17 @@ class BaseTestCase(unittest.TestCase):
             regex = list_regex('%s test%s failed', failed)
             self.check_line(output, regex)
 
+        if env_changed:
+            regex = list_regex('%s test%s altered the execution environment',
+                               env_changed)
+            self.check_line(output, regex)
+
         if omitted:
             regex = list_regex('%s test%s omitted', omitted)
             self.check_line(output, regex)
 
-        good = ntest - nskipped - nfailed - nomitted
+        good = (len(tests) - len(skipped) - len(failed)
+                - len(omitted) - len(env_changed))
         if good:
             regex = r'%s test%s OK\.$' % (good, plural(good))
             if not skipped and not failed and good > 1:
@@ -415,10 +446,12 @@ class BaseTestCase(unittest.TestCase):
         if interrupted:
             self.check_line(output, 'Test suite interrupted by signal SIGINT.')
 
-        if nfailed:
+        if failed:
             result = 'FAILURE'
         elif interrupted:
             result = 'INTERRUPTED'
+        elif fail_env_changed and env_changed:
+            result = 'ENV CHANGED'
         else:
             result = 'SUCCESS'
         self.check_line(output, 'Tests result: %s' % result)
@@ -456,7 +489,6 @@ class BaseTestCase(unittest.TestCase):
                         % proc.stderr)
             self.fail(msg)
         return proc
-
 
     def run_python(self, args, **kw):
         args = [sys.executable, '-X', 'faulthandler', '-I', *args]
@@ -591,7 +623,7 @@ class ArgsTestCase(BaseTestCase):
         test_failing = self.create_test('failing', code=code)
         tests = [test_ok, test_failing]
 
-        output = self.run_tests(*tests, exitcode=1)
+        output = self.run_tests(*tests, exitcode=2)
         self.check_executed_tests(output, tests, failed=test_failing)
 
     def test_resources(self):
@@ -690,7 +722,7 @@ class ArgsTestCase(BaseTestCase):
     def test_interrupted(self):
         code = TEST_INTERRUPTED
         test = self.create_test('sigint', code=code)
-        output = self.run_tests(test, exitcode=1)
+        output = self.run_tests(test, exitcode=130)
         self.check_executed_tests(output, test, omitted=test,
                                   interrupted=True)
 
@@ -719,7 +751,7 @@ class ArgsTestCase(BaseTestCase):
                 args = ("--slowest", "-j2", test)
             else:
                 args = ("--slowest", test)
-            output = self.run_tests(*args, exitcode=1)
+            output = self.run_tests(*args, exitcode=130)
             self.check_executed_tests(output, test,
                                       omitted=test, interrupted=True)
 
@@ -759,8 +791,42 @@ class ArgsTestCase(BaseTestCase):
                         builtins.__dict__['RUN'] = 1
         """)
         test = self.create_test('forever', code=code)
-        output = self.run_tests('--forever', test, exitcode=1)
+        output = self.run_tests('--forever', test, exitcode=2)
         self.check_executed_tests(output, [test]*3, failed=test)
+
+    def check_leak(self, code, what):
+        test = self.create_test('huntrleaks', code=code)
+
+        filename = 'reflog.txt'
+        self.addCleanup(support.unlink, filename)
+        output = self.run_tests('--huntrleaks', '3:3:', test,
+                                exitcode=2,
+                                stderr=subprocess.STDOUT)
+        self.check_executed_tests(output, [test], failed=test)
+
+        line = 'beginning 6 repetitions\n123456\n......\n'
+        self.check_line(output, re.escape(line))
+
+        line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
+        self.assertIn(line2, output)
+
+        with open(filename) as fp:
+            reflog = fp.read()
+            self.assertIn(line2, reflog)
+
+    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    def test_huntrleaks(self):
+        # test --huntrleaks
+        code = textwrap.dedent("""
+            import unittest
+
+            GLOBAL_LIST = []
+
+            class RefLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    GLOBAL_LIST.append(object())
+        """)
+        self.check_leak(code, 'references')
 
     @unittest.skipUnless(Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
@@ -769,41 +835,12 @@ class ArgsTestCase(BaseTestCase):
             import os
             import unittest
 
-            # Issue #25306: Disable popups and logs to stderr on assertion
-            # failures in MSCRT
-            try:
-                import msvcrt
-                msvcrt.CrtSetReportMode
-            except (ImportError, AttributeError):
-                # no Windows, o release build
-                pass
-            else:
-                for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                    msvcrt.CrtSetReportMode(m, 0)
-
             class FDLeakTest(unittest.TestCase):
                 def test_leak(self):
                     fd = os.open(__file__, os.O_RDONLY)
-                    # bug: never cloes the file descriptor
+                    # bug: never close the file descriptor
         """)
-        test = self.create_test('huntrleaks', code=code)
-
-        filename = 'reflog.txt'
-        self.addCleanup(support.unlink, filename)
-        output = self.run_tests('--huntrleaks', '3:3:', test,
-                                exitcode=1,
-                                stderr=subprocess.STDOUT)
-        self.check_executed_tests(output, [test], failed=test)
-
-        line = 'beginning 6 repetitions\n123456\n......\n'
-        self.check_line(output, re.escape(line))
-
-        line2 = '%s leaked [1, 1, 1] file descriptors, sum=3\n' % test
-        self.assertIn(line2, output)
-
-        with open(filename) as fp:
-            reflog = fp.read()
-            self.assertIn(line2, reflog)
+        self.check_leak(code, 'file descriptors')
 
     def test_list_tests(self):
         # test --list-tests
@@ -812,6 +849,32 @@ class ArgsTestCase(BaseTestCase):
         self.assertEqual(output.rstrip().splitlines(),
                          tests)
 
+    def test_list_cases(self):
+        # test --list-cases
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+
+        # Test --list-cases
+        all_methods = ['%s.Tests.test_method1' % testname,
+                       '%s.Tests.test_method2' % testname]
+        output = self.run_tests('--list-cases', testname)
+        self.assertEqual(output.splitlines(), all_methods)
+
+        # Test --list-cases with --match
+        all_methods = ['%s.Tests.test_method1' % testname]
+        output = self.run_tests('--list-cases',
+                                '-m', 'test_method1',
+                                testname)
+        self.assertEqual(output.splitlines(), all_methods)
+
     def test_crashed(self):
         # Any code which causes a crash
         code = 'import faulthandler; faulthandler._sigsegv()'
@@ -819,9 +882,73 @@ class ArgsTestCase(BaseTestCase):
         ok_test = self.create_test(name="ok")
 
         tests = [crash_test, ok_test]
-        output = self.run_tests("-j2", *tests, exitcode=1)
+        output = self.run_tests("-j2", *tests, exitcode=2)
         self.check_executed_tests(output, tests, failed=crash_test,
                                   randomize=True)
+
+    def parse_methods(self, output):
+        regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
+        return [match.group(1) for match in regex.finditer(output)]
+
+    def test_matchfile(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+                def test_method3(self):
+                    pass
+                def test_method4(self):
+                    pass
+        """)
+        all_methods = ['test_method1', 'test_method2',
+                       'test_method3', 'test_method4']
+        testname = self.create_test(code=code)
+
+        # by default, all methods should be run
+        output = self.run_tests("-v", testname)
+        methods = self.parse_methods(output)
+        self.assertEqual(methods, all_methods)
+
+        # only run a subset
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        subset = [
+            # only match the method name
+            'test_method1',
+            # match the full identifier
+            '%s.Tests.test_method3' % testname]
+        with open(filename, "w") as fp:
+            for name in subset:
+                print(name, file=fp)
+
+        output = self.run_tests("-v", "--matchfile", filename, testname)
+        methods = self.parse_methods(output)
+        subset = ['test_method1', 'test_method3']
+        self.assertEqual(methods, subset)
+
+    def test_env_changed(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_env_changed(self):
+                    open("env_changed", "w").close()
+        """)
+        testname = self.create_test(code=code)
+
+        # don't fail by default
+        output = self.run_tests(testname)
+        self.check_executed_tests(output, [testname], env_changed=testname)
+
+        # fail with --fail-env-changed
+        output = self.run_tests("--fail-env-changed", testname, exitcode=3)
+        self.check_executed_tests(output, [testname], env_changed=testname,
+                                  fail_env_changed=True)
 
 
 if __name__ == '__main__':

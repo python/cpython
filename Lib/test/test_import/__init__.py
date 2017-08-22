@@ -10,6 +10,8 @@ import py_compile
 import random
 import stat
 import sys
+import threading
+import time
 import unittest
 import unittest.mock as mock
 import textwrap
@@ -21,8 +23,9 @@ from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
     unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
-    temp_dir)
+    temp_dir, DirsOnSysPath)
 from test.support import script_helper
+from test.test_importlib.util import uncache
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -380,6 +383,32 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(str(cm.exception),
             "cannot import name 'does_not_exist' from '<unknown module name>' (unknown location)")
 
+    def test_concurrency(self):
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
+        try:
+            exc = None
+            def run():
+                event.wait()
+                try:
+                    import package
+                except BaseException as e:
+                    nonlocal exc
+                    exc = e
+
+            for i in range(10):
+                event = threading.Event()
+                threads = [threading.Thread(target=run) for x in range(2)]
+                try:
+                    with test.support.start_threads(threads, event.set):
+                        time.sleep(0)
+                finally:
+                    sys.modules.pop('package', None)
+                    sys.modules.pop('package.submodule', None)
+                if exc is not None:
+                    raise exc
+        finally:
+            del sys.path[0]
+
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
@@ -597,7 +626,7 @@ class PathsTests(unittest.TestCase):
         try:
             os.listdir(unc)
         except OSError as e:
-            if e.errno in (errno.EPERM, errno.EACCES):
+            if e.errno in (errno.EPERM, errno.EACCES, errno.ENOENT):
                 # See issue #15338
                 self.skipTest("cannot access administrative share %r" % (unc,))
             raise
@@ -642,11 +671,11 @@ class RelativeImportTests(unittest.TestCase):
 
         # Check relative import fails with only __package__ wrong
         ns = dict(__package__='foo', __name__='test.notarealmodule')
-        self.assertRaises(SystemError, check_relative)
+        self.assertRaises(ModuleNotFoundError, check_relative)
 
         # Check relative import fails with __package__ and __name__ wrong
         ns = dict(__package__='foo', __name__='notarealpkg.notarealmodule')
-        self.assertRaises(SystemError, check_relative)
+        self.assertRaises(ModuleNotFoundError, check_relative)
 
         # Check relative import fails with package set to a non-string
         ns = dict(__package__=object())
@@ -660,6 +689,20 @@ class RelativeImportTests(unittest.TestCase):
             from .os import sep
             self.fail("explicit relative import triggered an "
                       "implicit absolute import")
+
+    def test_import_from_non_package(self):
+        path = os.path.join(os.path.dirname(__file__), 'data', 'package2')
+        with uncache('submodule1', 'submodule2'), DirsOnSysPath(path):
+            with self.assertRaises(ImportError):
+                import submodule1
+            self.assertNotIn('submodule1', sys.modules)
+            self.assertNotIn('submodule2', sys.modules)
+
+    def test_import_from_unloaded_package(self):
+        with uncache('package2', 'package2.submodule1', 'package2.submodule2'), \
+             DirsOnSysPath(os.path.join(os.path.dirname(__file__), 'data')):
+            import package2.submodule1
+            package2.submodule1.submodule2
 
 
 class OverridingImportBuiltinTests(unittest.TestCase):

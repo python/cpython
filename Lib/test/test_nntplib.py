@@ -274,6 +274,11 @@ class NetworkedNNTPTestsMixin:
 NetworkedNNTPTestsMixin.wrap_methods()
 
 
+EOF_ERRORS = (EOFError,)
+if ssl is not None:
+    EOF_ERRORS += (ssl.SSLEOFError,)
+
+
 class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     # This server supports STARTTLS (gmane doesn't)
     NNTP_HOST = 'news.trigofacile.com'
@@ -289,7 +294,7 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
             try:
                 cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, timeout=TIMEOUT,
                                             usenetrc=False)
-            except EOFError:
+            except EOF_ERRORS:
                 raise unittest.SkipTest(f"{cls} got EOF error on connecting "
                                         f"to {cls.NNTP_HOST!r}")
 
