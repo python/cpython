@@ -1620,7 +1620,6 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
             list(transport._buffer))
-        print(transport._buffer)
         self.assertIsInstance(transport._buffer[1][0], bytes)
 
     def test_sendto_tryagain(self):
