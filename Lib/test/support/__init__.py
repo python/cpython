@@ -1645,16 +1645,28 @@ def threading_setup():
         return 1,
 
 def threading_cleanup(nb_threads):
+    global environment_altered
+
     if not thread:
         return
 
-    _MAX_COUNT = 10
+    # Wait 1 second
+    _MAX_COUNT = 100
+    t0 = time.time()
     for count in range(_MAX_COUNT):
         n = thread._count()
         if n == nb_threads:
             break
-        time.sleep(0.1)
-    # XXX print a warning in case of failure?
+        time.sleep(0.010)
+        gc_collect()
+    else:
+        environment_altered = True
+
+        dt = time.time() - t0
+        msg = ("Warning -- threading_cleanup() failed to cleanup %s threads "
+               "after %.0f sec (count: %s)"
+               % (n - nb_threads, dt, n))
+        print >>sys.stderr, msg
 
 def reap_threads(func):
     """Use this function when threads are being used.  This will
