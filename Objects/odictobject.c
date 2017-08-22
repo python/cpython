@@ -469,11 +469,7 @@ later:
 
 */
 
-#include "Python.h"
 #include "structmember.h"
-#include "dict-common.h"
-#include <stddef.h>
-
 #include "clinic/odictobject.c.h"
 
 /*[clinic input]
@@ -525,7 +521,7 @@ struct _odictnode {
 
 #define _odict_FIRST(od) (((PyODictObject *)od)->od_first)
 #define _odict_LAST(od) (((PyODictObject *)od)->od_last)
-#define _odict_EMPTY(od) (_odict_FIRST(od) == NULL)
+#define _odict_EMPTY(od) (((PyDictObject *)od)->ma_used == 0)
 #define _odict_FOREACH(od, node) \
     for (node = _odict_FIRST(od); node != NULL; node = _odictnode_NEXT(node))
 
@@ -857,10 +853,6 @@ static PyMappingMethods odict_as_mapping = {
 /* ----------------------------------------------
  * OrderedDict methods
  */
-
-/* __delitem__() */
-
-PyDoc_STRVAR(odict_delitem__doc__, "od.__delitem__(y) <==> del od[y]");
 
 /* __eq__() */
 
@@ -1217,31 +1209,6 @@ PyDoc_STRVAR(odict_items__doc__, "");
 
 static PyObject * odictitems_new(PyObject *od);  /* forward */
 
-/* update() */
-
-/* MutableMapping.update() does not have a docstring. */
-PyDoc_STRVAR(odict_update__doc__, "");
-
-/* forward */
-static PyObject * mutablemapping_update(PyObject *, PyObject *, PyObject *);
-
-#define odict_update mutablemapping_update
-
-/* clear() */
-
-PyDoc_STRVAR(odict_clear__doc__,
-             "od.clear() -> None.  Remove all items from od.");
-
-static PyObject *
-odict_clear(register PyODictObject *od)
-{
-    PyDict_Clear((PyObject *)od);
-    _odict_clear_nodes(od);
-    if (_odict_resize(od) < 0)
-        return NULL;
-    Py_RETURN_NONE;
-}
-
 /* copy() */
 
 /* forward */
@@ -1253,7 +1220,6 @@ PyDoc_STRVAR(odict_copy__doc__, "od.copy() -> a shallow copy of od");
 static PyObject *
 odict_copy(register PyODictObject *od)
 {
-    _ODictNode *node;
     PyObject *od_copy;
 
     if (PyODict_CheckExact(od))
@@ -1263,37 +1229,9 @@ odict_copy(register PyODictObject *od)
     if (od_copy == NULL)
         return NULL;
 
-    if (PyODict_CheckExact(od)) {
-        _odict_FOREACH(od, node) {
-            PyObject *key = _odictnode_KEY(node);
-            PyObject *value = _odictnode_VALUE(node, od);
-            if (value == NULL) {
-                if (!PyErr_Occurred())
-                    PyErr_SetObject(PyExc_KeyError, key);
-                goto fail;
-            }
-            if (_PyODict_SetItem_KnownHash((PyObject *)od_copy, key, value,
-                                           _odictnode_HASH(node)) != 0)
-                goto fail;
-        }
+    if (PyDict_Merge(od_copy, (PyObject*)od, 1) == 0) {
+        return od_copy;
     }
-    else {
-        _odict_FOREACH(od, node) {
-            int res;
-            PyObject *value = PyObject_GetItem((PyObject *)od,
-                                               _odictnode_KEY(node));
-            if (value == NULL)
-                goto fail;
-            res = PyObject_SetItem((PyObject *)od_copy,
-                                   _odictnode_KEY(node), value);
-            Py_DECREF(value);
-            if (res != 0)
-                goto fail;
-        }
-    }
-    return od_copy;
-
-fail:
     Py_DECREF(od_copy);
     return NULL;
 }
@@ -1333,35 +1271,88 @@ static PyObject *
 OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last)
 /*[clinic end generated code: output=fafa4c5cc9b92f20 input=d6ceff7132a2fcd7]*/
 {
-    _ODictNode *node;
-
     if (_odict_EMPTY(self)) {
         PyErr_SetObject(PyExc_KeyError, key);
         return NULL;
     }
-    node = last ? _odict_LAST(self) : _odict_FIRST(self);
-    if (key != _odictnode_KEY(node)) {
-        node = _odict_find_node(self, key);
-        if (node == NULL) {
-            if (!PyErr_Occurred())
-                PyErr_SetObject(PyExc_KeyError, key);
-            return NULL;
+
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1) {
+        return NULL;
+    }
+
+    PyDictObject *mp = (PyDictObject*)self;
+    PyDictKeysObject *keys = mp->ma_keys;
+    PyObject *value;
+    Py_ssize_t ix = keys->dk_lookup(mp, key, hash, &value);
+    if (ix == DKIX_EMPTY) {
+        PyErr_SetObject(PyExc_KeyError, key);
+        return NULL;
+    }
+    if (ix == DKIX_ERROR) {
+        return NULL;
+    }
+
+    // Use key in dict instead of argument
+    key = DK_ENTRIES(keys)[ix].me_key;
+    Py_ssize_t offset = mp->ma_offset;
+
+    if (last) {
+        if (ix == keys->dk_nentries - 1) {
+            Py_RETURN_NONE;
         }
-        if (last) {
-            /* Only move if not already the last one. */
-            if (node != _odict_LAST(self)) {
-                _odict_remove_node(self, node);
-                _odict_add_tail(self, node);
+        if (keys->dk_usable == 0) {
+            if (dictresize(mp, GROWTH_RATE(mp) + offset, offset) < 0) {
+                return NULL;
             }
+            ix = lookdict_ident(keys, key, hash);
+            assert(ix >= 0);
         }
-        else {
-            /* Only move if not already the first one. */
-            if (node != _odict_FIRST(self)) {
-                _odict_remove_node(self, node);
-                _odict_add_head(self, node);
-            }
+
+        Py_ssize_t hashpos = lookdict_index(keys, hash, ix);
+        dk_set_index(keys, hashpos, keys->dk_nentries);
+
+        PyDictKeyEntry *ep0 = DK_ENTRIES(keys);
+        ep0[keys->dk_nentries] = ep0[ix];
+        ep0[ix].me_key = NULL;
+        ep0[ix].me_value = NULL;
+        ep0[ix].me_hash = 0;
+
+        mp->ma_keys->dk_nentries++;
+        mp->ma_keys->dk_usable--;
+        if (ix == offset) {
+            mp->ma_offset++;
         }
     }
+    else {
+        if (ix == offset) {
+            Py_RETURN_NONE;
+        }
+
+        if (offset == 0) {
+            offset = mp->ma_used / 2 + 2;  // reserve at least two space.
+            if (dictresize(mp, GROWTH_RATE(mp) + offset, offset) < 0) {
+                return NULL;
+            }
+            ix = lookdict_ident(keys, key, hash);
+            assert(ix >= 0);
+        }
+
+        offset--;
+        Py_ssize_t hashpos = lookdict_index(keys, hash, ix);
+        dk_set_index(keys, hashpos, offset);
+
+        PyDictKeyEntry *ep0 = DK_ENTRIES(keys);
+        ep0[offset] = ep0[ix];
+        ep0[ix].me_key = NULL;
+        ep0[ix].me_value = NULL;
+        ep0[ix].me_hash = 0;
+
+        mp->ma_keys->dk_nentries++;
+        mp->ma_keys->dk_usable--;
+        mp->ma_offset = offset;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -1372,8 +1363,6 @@ static PyMethodDef odict_methods[] = {
 
     /* explicitly defined so we can align docstrings with
      * collections.OrderedDict */
-    {"__delitem__",     (PyCFunction)odict_mp_ass_sub,  METH_NOARGS,
-     odict_delitem__doc__},
     {"__eq__",          (PyCFunction)odict_eq,          METH_NOARGS,
      odict_eq__doc__},
     {"__init__",        (PyCFunction)odict_init,        METH_NOARGS,
@@ -1403,10 +1392,6 @@ static PyMethodDef odict_methods[] = {
      odict_values__doc__},
     {"items",           (PyCFunction)odictitems_new,    METH_NOARGS,
      odict_items__doc__},
-    {"update",          (PyCFunction)odict_update, METH_VARARGS | METH_KEYWORDS,
-     odict_update__doc__},
-    {"clear",           (PyCFunction)odict_clear,       METH_NOARGS,
-     odict_clear__doc__},
     {"copy",            (PyCFunction)odict_copy,        METH_NOARGS,
      odict_copy__doc__},
 
@@ -1565,13 +1550,9 @@ odict_traverse(PyODictObject *od, visitproc visit, void *arg)
 static int
 odict_tp_clear(PyODictObject *od)
 {
-    PyObject *res;
     Py_CLEAR(od->od_inst_dict);
     Py_CLEAR(od->od_weakreflist);
-    res = odict_clear(od);
-    if (res == NULL)
-        return -1;
-    Py_DECREF(res);
+    PyDict_Clear((PyObject*)od);
     return 0;
 }
 
@@ -1617,7 +1598,7 @@ odict_richcompare(PyObject *v, PyObject *w, int op)
 static PyObject *
 odict_iter(PyODictObject *od)
 {
-    return odictiter_new(od, _odict_ITER_KEYS);
+    return dictiter_new((PyDictObject*)od, &PyDictIterKey_Type);
 }
 
 /* tp_init */
@@ -1625,25 +1606,7 @@ odict_iter(PyODictObject *od)
 static int
 odict_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *res;
-    Py_ssize_t len = PyObject_Length(args);
-
-    if (len == -1)
-        return -1;
-    if (len > 1) {
-        char *msg = "expected at most 1 arguments, got %d";
-        PyErr_Format(PyExc_TypeError, msg, len);
-        return -1;
-    }
-
-    /* __init__() triggering update() is just the way things are! */
-    res = odict_update(self, args, kwds);
-    if (res == NULL) {
-        return -1;
-    } else {
-        Py_DECREF(res);
-        return 0;
-    }
+    return dict_update_common(self, args, kwds, "OrderedDict");
 }
 
 /* tp_new */
@@ -1912,8 +1875,6 @@ done:
 }
 
 /* No need for tp_clear because odictiterobject is not mutable. */
-
-PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 
 static PyObject *
 odictiter_reduce(odictiterobject *di)
@@ -2329,105 +2290,4 @@ Done:
         return -1;
     else
         return 0;
-}
-
-static PyObject *
-mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int res = 0;
-    Py_ssize_t len;
-    _Py_IDENTIFIER(items);
-    _Py_IDENTIFIER(keys);
-
-    /* first handle args, if any */
-    assert(args == NULL || PyTuple_Check(args));
-    len = (args != NULL) ? PyTuple_GET_SIZE(args) : 0;
-    if (len > 1) {
-        char *msg = "update() takes at most 1 positional argument (%d given)";
-        PyErr_Format(PyExc_TypeError, msg, len);
-        return NULL;
-    }
-
-    if (len) {
-        PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
-        assert(other != NULL);
-        Py_INCREF(other);
-        if PyDict_CheckExact(other) {
-            PyObject *items;
-            if (PyDict_CheckExact(other))
-                items = PyDict_Items(other);
-            else
-                items = _PyObject_CallMethodId(other, &PyId_items, NULL);
-            Py_DECREF(other);
-            if (items == NULL)
-                return NULL;
-            res = mutablemapping_add_pairs(self, items);
-            Py_DECREF(items);
-            if (res == -1)
-                return NULL;
-        }
-        else if (_PyObject_HasAttrId(other, &PyId_keys)) {  /* never fails */
-            PyObject *keys, *iterator, *key;
-            keys = _PyObject_CallMethodIdObjArgs(other, &PyId_keys, NULL);
-            if (keys == NULL) {
-                Py_DECREF(other);
-                return NULL;
-            }
-            iterator = PyObject_GetIter(keys);
-            Py_DECREF(keys);
-            if (iterator == NULL) {
-                Py_DECREF(other);
-                return NULL;
-            }
-            while (res == 0 && (key = PyIter_Next(iterator))) {
-                PyObject *value = PyObject_GetItem(other, key);
-                if (value != NULL) {
-                    res = PyObject_SetItem(self, key, value);
-                    Py_DECREF(value);
-                }
-                else {
-                    res = -1;
-                }
-                Py_DECREF(key);
-            }
-            Py_DECREF(other);
-            Py_DECREF(iterator);
-            if (res != 0 || PyErr_Occurred())
-                return NULL;
-        }
-        else if (_PyObject_HasAttrId(other, &PyId_items)) {  /* never fails */
-            PyObject *items;
-            if (PyDict_CheckExact(other))
-                items = PyDict_Items(other);
-            else
-                items = _PyObject_CallMethodId(other, &PyId_items, NULL);
-            Py_DECREF(other);
-            if (items == NULL)
-                return NULL;
-            res = mutablemapping_add_pairs(self, items);
-            Py_DECREF(items);
-            if (res == -1)
-                return NULL;
-        }
-        else {
-            res = mutablemapping_add_pairs(self, other);
-            Py_DECREF(other);
-            if (res != 0)
-                return NULL;
-        }
-    }
-
-    /* now handle kwargs */
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-    if (kwargs != NULL && PyDict_GET_SIZE(kwargs)) {
-        PyObject *items = PyDict_Items(kwargs);
-        if (items == NULL)
-            return NULL;
-        res = mutablemapping_add_pairs(self, items);
-        Py_DECREF(items);
-        if (res == -1)
-            return NULL;
-    }
-
-    Py_RETURN_NONE;
 }
