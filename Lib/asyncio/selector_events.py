@@ -1237,7 +1237,7 @@ class _SelectorSocketDatagramTransport(_SelectorTransport):
             self._conn_lost += 1
             self._loop._remove_writer(self._sock_fd)
             self._loop.call_soon(self._call_connection_lost, None)
-            
+
     @coroutine
     def wait_closed(self):
         if self._closing_waiter:
