@@ -10,6 +10,9 @@ What's New in Python 3.6.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- bpo-31161: Make sure the 'Missing parentheses' syntax error message is
+  only applied to SyntaxError, not to subclasses. Patch by Martijn Pieters.
+
 - bpo-30814: Fixed a race condition when import a submodule from a package.
 
 - bpo-30597: ``print`` now shows expected input in custom error message when
