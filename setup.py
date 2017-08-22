@@ -1525,6 +1525,9 @@ class PyBuildExt(build_ext):
             expat_inc = [os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')]
             define_macros = [
                 ('HAVE_EXPAT_CONFIG_H', '1'),
+                # bpo-30947: Python uses best available entropy sources to
+                # call XML_SetHashSalt(), expat entropy sources are not needed
+                ('XML_POOR_ENTROPY', '1'),
             ]
             expat_lib = []
             expat_sources = ['expat/xmlparse.c',
@@ -2118,9 +2121,6 @@ class PyBuildExt(build_ext):
                 define_macros = config['ansi32']
         else:
             raise DistutilsError("_decimal: unsupported architecture")
-
-        if 'gcc' in cc: # Suppressing the warnings in the source is too verbose.
-            extra_compile_args.append('-Wno-implicit-fallthrough')
 
         # Workarounds for toolchain bugs:
         if sysconfig.get_config_var('HAVE_IPA_PURE_CONST_BUG'):

@@ -239,6 +239,8 @@ class TestForkInThread(unittest.TestCase):
                     os._exit(0)
             else: # parent
                 os.close(self.write_fd)
+                pid, status = os.waitpid(pid, 0)
+                self.assertEqual(status, 0)
 
         thread.start_new_thread(thread1, ())
         self.assertEqual(os.read(self.read_fd, 2), b"OK",
