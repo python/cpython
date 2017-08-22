@@ -109,7 +109,7 @@ def compile_command(source, filename="<input>", symbol="single"):
     source -- the source string; may contain \n characters
     filename -- optional filename from which source was read; default
                 "<input>"
-    symbol -- optional grammar start symbol; "single" (default) or "eval"
+    symbol -- optional grammar start symbol; "single" (default), "eval" or "exec"
 
     Return value / exceptions raised:
 
