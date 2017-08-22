@@ -11,7 +11,7 @@ import _pyio as pyio
 import pickle
 import sys
 
-class IntLike():
+class IntLike:
     def __init__(self, num):
         self._num = num
     def __index__(self):
