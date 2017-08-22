@@ -54,8 +54,10 @@ class _WorkItem(object):
 
         try:
             result = self.fn(*self.args, **self.kwargs)
-        except BaseException as e:
-            self.future.set_exception(e)
+        except BaseException as exc:
+            self.future.set_exception(exc)
+            # Break a reference cycle with the exception 'exc'
+            self = None
         else:
             self.future.set_result(result)
 
