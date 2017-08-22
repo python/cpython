@@ -635,7 +635,7 @@ class RawConfigParser(MutableMapping):
         if converters is not _UNSET:
             self._converters.update(converters)
         if defaults:
-            self.read_dict({default_section: defaults})
+            self._read_defaults(defaults)
 
     def defaults(self):
         return self._defaults
@@ -1121,6 +1121,12 @@ class RawConfigParser(MutableMapping):
                                                                 section,
                                                                 name, val)
 
+    def _read_defaults(self, defaults):
+        """Read the defaults passed in the initializer.
+        Note: values can be non-string."""
+        for key, value in defaults.items():
+            self._defaults[self.optionxform(key)] = value
+
     def _handle_error(self, exc, fpname, lineno, line):
         if not exc:
             exc = ParsingError(fpname)
@@ -1197,6 +1203,11 @@ class ConfigParser(RawConfigParser):
         a string."""
         self._validate_value_types(section=section)
         super().add_section(section)
+
+    def _read_defaults(self, defaults):
+        """Reads the defaults passed in the initializer, implicitly converting
+        values to strings like the rest of the API."""
+        self.read_dict({self.default_section: defaults})
 
 
 class SafeConfigParser(ConfigParser):

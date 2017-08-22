@@ -1213,8 +1213,10 @@ RawConfigParser Objects
                            default_section=configparser.DEFAULTSECT[, \
                            interpolation])
 
-   Legacy variant of the :class:`ConfigParser` with interpolation disabled
-   by default and unsafe ``add_section`` and ``set`` methods.
+   Legacy variant of the :class:`ConfigParser`.  It has interpolation
+   disabled by default and allows for non-string section names, option
+   names, and values via its unsafe ``add_section`` and ``set`` methods,
+   as well as the legacy ``defaults=`` keyword argument handling.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of

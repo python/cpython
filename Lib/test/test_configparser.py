@@ -855,15 +855,6 @@ boolean {0[0]} NO
         self.assertEqual(cf.get('DEFAULT', 'test'), 'test')
         self.assertEqual(cf['DEFAULT']['test'], 'test')
 
-    def test_defaults_keyword(self):
-        # test that bpo-23835 is fixed
-        cf = self.newconfig(defaults={1: 2.4})
-        self.assertEqual(cf[self.default_section]['1'], '2.4')
-        self.assertAlmostEqual(cf[self.default_section].getfloat('1'), 2.4)
-        cf = self.newconfig(defaults={"A": 5.2})
-        self.assertEqual(cf[self.default_section]['a'], '5.2')
-        self.assertAlmostEqual(cf[self.default_section].getfloat('a'), 5.2)
-
 
 class StrictTestCase(BasicTestCase, unittest.TestCase):
     config_class = configparser.RawConfigParser
@@ -958,6 +949,15 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
     def test_add_section_default(self):
         cf = self.newconfig()
         self.assertRaises(ValueError, cf.add_section, self.default_section)
+
+    def test_defaults_keyword(self):
+        """bpo-23835 fix for ConfigParser"""
+        cf = self.newconfig(defaults={1: 2.4})
+        self.assertEqual(cf[self.default_section]['1'], '2.4')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('1'), 2.4)
+        cf = self.newconfig(defaults={"A": 5.2})
+        self.assertEqual(cf[self.default_section]['a'], '5.2')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('a'), 5.2)
 
 
 class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
@@ -1098,6 +1098,15 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
             cf.optionxform = lambda x: x
             cf.set('non-string', 1, 1)
             self.assertEqual(cf.get('non-string', 1), 1)
+
+    def test_defaults_keyword(self):
+        """bpo-23835 legacy behavior for RawConfigParser"""
+        with self.assertRaises(AttributeError) as ctx:
+            self.newconfig(defaults={1: 2.4})
+        err = ctx.exception
+        self.assertEqual(str(err), "'int' object has no attribute 'lower'")
+        cf = self.newconfig(defaults={"A": 5.2})
+        self.assertAlmostEqual(cf[self.default_section]['a'], 5.2)
 
 
 class RawConfigParserTestCaseNonStandardDelimiters(RawConfigParserTestCase):
