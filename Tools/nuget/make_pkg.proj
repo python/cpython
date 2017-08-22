@@ -30,8 +30,8 @@
         <PipArguments>"$(IntermediateOutputPath)\python.exe" -B -c "import sys; sys.path.append(r'$(PySourcePath)\Lib'); import ensurepip; ensurepip._main()"</PipArguments>
         <PackageArguments Condition="$(Packages) != ''">"$(IntermediateOutputPath)\python.exe" -B -m pip install -U $(Packages)</PackageArguments>
         
-        <NugetArguments>"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).nuspec"</NugetArguments>
-        <NugetArguments>$(NugetArguments) -BasePath "$(IntermediateOutputPath)"</NugetArguments>
+        <NugetPackCommand>"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).nuspec" -BasePath "$(IntermediateOutputPath)"</NugetPackCommand>
+        <NugetPackSymbolsCommand Condition="Exists('$(MSBuildThisFileDirectory)\$(OutputName).symbols.nuspec')">"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).symbols.nuspec" -BasePath "$(BuildPath.TrimEnd(`\`))"</NugetPackSymbolsCommand>
         <NugetArguments>$(NugetArguments) -OutputDirectory "$(OutputPath.Trim(`\`))"</NugetArguments>
         <NugetArguments>$(NugetArguments) -Version "$(NuspecVersion)"</NugetArguments>
         <NugetArguments>$(NugetArguments) -NoPackageAnalysis -NonInteractive</NugetArguments>
@@ -51,7 +51,8 @@
         <Exec Command="setlocal%0D%0A$(Environment)%0D%0A$(PythonArguments)" />
         <Exec Command="$(PipArguments)" />
         <Exec Command="$(PackageArguments)" Condition="$(PackageArguments) != ''" />
-        <Exec Command="$(NugetArguments)" />
+        <Exec Command="$(NugetPackCommand) $(NugetArguments)" />
+        <Exec Command="$(NugetPackSymbolsCommand) $(NugetArguments)" Condition="$(NugetPackSymbolsCommand) != ''" />
     </Target>
 
     <Target Name="AfterBuild" />

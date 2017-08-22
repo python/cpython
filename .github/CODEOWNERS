@@ -29,3 +29,11 @@
 
 # subprocess
 **/*subprocess*               @gpshead
+
+# Windows
+/PC/                          @python/windows-team
+/PCBuild/                     @python/windows-team
+
+# Windows installer packages
+/Tools/msi/                   @python/windows-team
+/Tools/nuget/                 @python/windows-team
