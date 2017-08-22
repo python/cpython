@@ -36,7 +36,7 @@ Please be aware that our workflow does deviate slightly from the typical GitHub
 project. Details on how to properly submit a pull request are covered in
 `Lifecycle of a Pull Request <https://devguide.python.org/pullrequest/>`_.
 We utilize various bots and status checks to help with this, so do follow the
-comments they leaves and their "Details" links, respectively. The key points of
+comments they leave and their "Details" links, respectively. The key points of
 our workflow that are not covered by a bot or status check are:
 
 - All discussions that are not directly related to the code in the pull request
