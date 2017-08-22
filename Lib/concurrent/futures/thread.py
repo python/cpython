@@ -150,5 +150,4 @@ class ThreadPoolExecutor(_base.Executor):
         if wait:
             for t in self._threads:
                 t.join()
-            self._threads.clear()
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
