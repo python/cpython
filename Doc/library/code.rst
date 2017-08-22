@@ -56,7 +56,7 @@ build applications which provide an interactive interpreter prompt.
 
    *source* is the source string; *filename* is the optional filename from which
    source was read, defaulting to ``'<input>'``; and *symbol* is the optional
-   grammar start symbol, which should be either ``'single'`` (the default) or
+   grammar start symbol, which should be ``'single'`` (the default), ``'exec'`` or
    ``'eval'``.
 
    Returns a code object (the same as ``compile(source, filename, symbol)``) if the
