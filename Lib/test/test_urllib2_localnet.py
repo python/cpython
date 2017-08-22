@@ -289,10 +289,14 @@ class BasicAuthTests(unittest.TestCase):
         def http_server_with_basic_auth_handler(*args, **kwargs):
             return BasicAuthHandler(*args, **kwargs)
         self.server = LoopbackHttpServerThread(http_server_with_basic_auth_handler)
-        self.addCleanup(self.server.stop)
+        self.addCleanup(self.stop_server)
         self.server_url = 'http://127.0.0.1:%s' % self.server.port
         self.server.start()
         self.server.ready.wait()
+
+    def stop_server(self):
+        self.server.stop()
+        self.server = None
 
     def tearDown(self):
         super(BasicAuthTests, self).tearDown()
@@ -339,6 +343,7 @@ class ProxyAuthTests(unittest.TestCase):
             return FakeProxyHandler(self.digest_auth_handler, *args, **kwargs)
 
         self.server = LoopbackHttpServerThread(create_fake_proxy_handler)
+        self.addCleanup(self.stop_server)
         self.server.start()
         self.server.ready.wait()
         proxy_url = "http://127.0.0.1:%d" % self.server.port
@@ -347,9 +352,9 @@ class ProxyAuthTests(unittest.TestCase):
         self.opener = urllib.request.build_opener(
             handler, self.proxy_digest_handler)
 
-    def tearDown(self):
+    def stop_server(self):
         self.server.stop()
-        super(ProxyAuthTests, self).tearDown()
+        self.server = None
 
     def test_proxy_with_bad_password_raises_httperror(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
@@ -468,13 +473,17 @@ class TestUrlopen(unittest.TestCase):
             f.close()
         return b"".join(l)
 
+    def stop_server(self):
+        self.server.stop()
+        self.server = None
+
     def start_server(self, responses=None):
         if responses is None:
             responses = [(200, [], b"we don't care")]
         handler = GetRequestHandler(responses)
 
         self.server = LoopbackHttpServerThread(handler)
-        self.addCleanup(self.server.stop)
+        self.addCleanup(self.stop_server)
         self.server.start()
         self.server.ready.wait()
         port = self.server.port
@@ -664,7 +673,7 @@ def setUpModule():
 
 def tearDownModule():
     if threads_key:
-        support.threading_cleanup(threads_key)
+        support.threading_cleanup(*threads_key)
 
 if __name__ == "__main__":
     unittest.main()
