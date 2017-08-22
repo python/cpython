@@ -19,7 +19,7 @@
 
 This module supports type hints as specified by :pep:`484` and :pep:`526`.
 The most fundamental support consists of the types :data:`Any`, :data:`Union`,
-:data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
+:class:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For
 a simplified introduction to type hints see :pep:`483`.
 
@@ -962,7 +962,7 @@ The module defines the following classes, functions and decorators:
    A mandatory argument may still have an ``Optional`` type if an
    explicit value of ``None`` is allowed.
 
-.. data:: Tuple
+.. class:: Tuple
 
    Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
    with the first item of type X and the second of type Y.
@@ -972,7 +972,7 @@ The module defines the following classes, functions and decorators:
    of an int, a float and a string.
 
    To specify a variable-length tuple of homogeneous type,
-   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
+   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :class:`Tuple`
    is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
 
 .. data:: Callable
