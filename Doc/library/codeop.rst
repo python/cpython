@@ -42,9 +42,12 @@ To do just the former:
    :exc:`SyntaxError` is raised if there is invalid Python syntax, and
    :exc:`OverflowError` or :exc:`ValueError` if there is an invalid literal.
 
-   The *symbol* argument determines whether *source* is compiled as a statement
-   (``'single'``, the default) or as an :term:`expression` (``'eval'``).  Any
-   other value will cause :exc:`ValueError` to  be raised.
+   The *symbol* argument determines whether *source* is compiled as a single statement
+   (``'single'``, the default), as a sequence of statements (``'exec'``) or
+   as an :term:`expression` (``'eval'``).  Any other value will cause :exc:`ValueError`
+   to  be raised. If *symbol* is ``'single'`` and *source* is an expression, executing
+   the resulting code object will print a representation of the object the expression
+   evaluates to unless it evaluates to None.
 
    .. note::
 
