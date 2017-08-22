@@ -68,8 +68,8 @@ typedef struct {
 static void
 reap_obj(pylist fd2obj[FD_SETSIZE + 1])
 {
-    int i;
-    for (i = 0; i < FD_SETSIZE + 1 && fd2obj[i].sentinel >= 0; i++) {
+    unsigned int i;
+    for (i = 0; i < (unsigned int)FD_SETSIZE + 1 && fd2obj[i].sentinel >= 0; i++) {
         Py_CLEAR(fd2obj[i].obj);
     }
     fd2obj[0].sentinel = -1;
@@ -83,7 +83,7 @@ static int
 seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
 {
     int max = -1;
-    int index = 0;
+    unsigned int index = 0;
     Py_ssize_t i;
     PyObject* fast_seq = NULL;
     PyObject* o = NULL;
@@ -120,7 +120,7 @@ seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
         FD_SET(v, set);
 
         /* add object and its file descriptor to the list */
-        if (index >= FD_SETSIZE) {
+        if (index >= (unsigned int)FD_SETSIZE) {
             PyErr_SetString(PyExc_ValueError,
                           "too many file descriptors in select()");
             goto finally;
