@@ -111,6 +111,7 @@ converting the dict to the combined table.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
+#include "structmember.h"
 #include "stringlib/eq.h"    /* to get unicode_eq() */
 
 typedef struct {
@@ -2282,14 +2283,13 @@ dict_items(PyDictObject *mp)
 dict.fromkeys
     iterable: object
     value: object=None
-    /
 
 Create a new dictionary with keys from iterable and values set to value.
 [clinic start generated code]*/
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
-/*[clinic end generated code: output=8fb98e4b10384999 input=382ba4855d0f74c3]*/
+/*[clinic end generated code: output=8fb98e4b10384999 input=fa1ae88144844e5f]*/
 {
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
@@ -2895,7 +2895,6 @@ dict.setdefault
 
     key: object
     default: object = None
-    /
 
 Insert key with a value of default if key is not in the dictionary.
 
@@ -2905,7 +2904,7 @@ Return the value for key if key is in the dictionary, else default.
 static PyObject *
 dict_setdefault_impl(PyDictObject *self, PyObject *key,
                      PyObject *default_value)
-/*[clinic end generated code: output=f8c1101ebf69e220 input=0f063756e815fd9d]*/
+/*[clinic end generated code: output=f8c1101ebf69e220 input=613262f74b140581]*/
 {
     PyObject *val;
 
@@ -2922,12 +2921,16 @@ dict_clear(PyDictObject *mp)
 }
 
 static PyObject *
-dict_pop(PyDictObject *mp, PyObject *args)
+dict_pop(PyDictObject *mp, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"key", "default", 0};
     PyObject *key, *deflt = NULL;
 
-    if(!PyArg_UnpackTuple(args, "pop", 1, 2, &key, &deflt))
+    /* borrowed */
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
+                &key, &deflt)) {
         return NULL;
+    }
 
     return _PyDict_Pop((PyObject*)mp, key, deflt);
 }
@@ -3132,7 +3135,7 @@ static PyMethodDef mapp_methods[] = {
      sizeof__doc__},
     DICT_GET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
-    {"pop",         (PyCFunction)dict_pop,          METH_VARARGS,
+    {"pop",             (PyCFunction)dict_pop,          METH_VARARGS | METH_KEYWORDS,
      pop__doc__},
     {"popitem",         (PyCFunction)dict_popitem,      METH_NOARGS,
      popitem__doc__},
@@ -4713,7 +4716,6 @@ method            impl
 __reduce__        odict_reduce
 __sizeof__        odict_sizeof
 copy              odict_copy
-fromkeys          odict_fromkeys
 items             odictitems_new
 keys              odictkeys_new
 pop               odict_pop
@@ -4739,40 +4741,6 @@ __str__          tp_str
 get              -
 ================ ==========================
 
-
-Other Challenges
-================
-
-Preserving Ordering During Iteration
-------------------------------------
-During iteration through an OrderedDict, it is possible that items could
-get added, removed, or reordered.  For a linked-list implementation, as
-with some other implementations, that situation may lead to undefined
-behavior.  The documentation for dict mentions this in the `iter()` section
-of http://docs.python.org/3.4/library/stdtypes.html#dictionary-view-objects.
-In this implementation we follow dict's lead (as does the pure Python
-implementation) for __iter__(), keys(), values(), and items().
-
-For internal iteration (using _odict_FOREACH or not), there is still the
-risk that not all nodes that we expect to be seen in the loop actually get
-seen.  Thus, we are careful in each of those places to ensure that they
-are.  This comes, of course, at a small price at each location.  The
-solutions are much the same as those detailed in the `Situation that
-Endangers Consistency` section above.
-
-
-Potential Optimizations
-=======================
-
-* Allocate the nodes as a block via od_fast_nodes instead of individually.
-  - Set node->key to NULL to indicate the node is not-in-use.
-  - Add _odict_EXISTS()?
-  - How to maintain consistency across resizes?  Existing node pointers
-    would be invalidate after a resize, which is particularly problematic
-    for the iterators.
-* Use a more stream-lined implementation of update() and, likely indirectly,
-  __init__().
-
 */
 
 /* TODO
@@ -4788,12 +4756,9 @@ later:
 - implement a fuller MutableMapping API in C?
 - move the MutableMapping implementation to abstract.c?
 - optimize mutablemapping_update
-- use PyObject_MALLOC (small object allocator) for odict nodes?
 - support subclasses better (e.g. in odict_richcompare)
 
 */
-
-#include "structmember.h"
 
 /*[clinic input]
 class OrderedDict "PyODictObject *" "&PyODict_Type"
@@ -4881,10 +4846,6 @@ odict_ne(PyObject *a, PyObject *b)
 PyDoc_STRVAR(odict_repr__doc__, "od.__repr__() <==> repr(od)");
 
 static PyObject * odict_repr(PyODictObject *self);  /* forward */
-
-/* __setitem__() */
-
-PyDoc_STRVAR(odict_setitem__doc__, "od.__setitem__(i, y) <==> od[i]=y");
 
 /* __sizeof__() */
 
@@ -5127,8 +5088,6 @@ static PyMethodDef odict_methods[] = {
      odict_ne__doc__},
     {"__repr__",        (PyCFunction)odict_repr,        METH_NOARGS,
      odict_repr__doc__},
-    {"__setitem__",     (PyCFunction)dict_ass_sub,      METH_NOARGS,
-     odict_setitem__doc__},
 
     /* overridden dict methods */
     {"__sizeof__",      (PyCFunction)odict_sizeof,      METH_NOARGS,
@@ -5338,20 +5297,6 @@ odict_init(PyObject *self, PyObject *args, PyObject *kwds)
     return dict_update_common(self, args, kwds, "OrderedDict");
 }
 
-/* tp_new */
-
-static PyObject *
-odict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyODictObject *od;
-
-    od = (PyODictObject *)PyDict_Type.tp_new(type, args, kwds);
-    if (od == NULL)
-        return NULL;
-
-    return (PyObject*)od;
-}
-
 /* PyODict_Type */
 
 PyTypeObject PyODict_Type = {
@@ -5392,8 +5337,6 @@ PyTypeObject PyODict_Type = {
     offsetof(PyODictObject, od_inst_dict),      /* tp_dictoffset */
     (initproc)odict_init,                       /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    (newfunc)odict_new,                         /* tp_new */
-    0,                                          /* tp_free */
 };
 
 
@@ -5403,7 +5346,7 @@ PyTypeObject PyODict_Type = {
 
 PyObject *
 PyODict_New(void) {
-    return odict_new(&PyODict_Type, NULL, NULL);
+    return PyDict_Type.tp_new(&PyODict_Type, NULL, NULL);
 }
 
 int

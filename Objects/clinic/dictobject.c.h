@@ -3,26 +3,27 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dict_fromkeys__doc__,
-"fromkeys($type, iterable, value=None, /)\n"
+"fromkeys($type, /, iterable, value=None)\n"
 "--\n"
 "\n"
 "Create a new dictionary with keys from iterable and values set to value.");
 
 #define DICT_FROMKEYS_METHODDEF    \
-    {"fromkeys", (PyCFunction)dict_fromkeys, METH_FASTCALL|METH_CLASS, dict_fromkeys__doc__},
+    {"fromkeys", (PyCFunction)dict_fromkeys, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, dict_fromkeys__doc__},
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
 
 static PyObject *
-dict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs)
+dict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"iterable", "value", NULL};
+    static _PyArg_Parser _parser = {"O|O:fromkeys", _keywords, 0};
     PyObject *iterable;
     PyObject *value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "fromkeys",
-        1, 2,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &iterable, &value)) {
         goto exit;
     }
@@ -72,7 +73,7 @@ exit:
 }
 
 PyDoc_STRVAR(dict_setdefault__doc__,
-"setdefault($self, key, default=None, /)\n"
+"setdefault($self, /, key, default=None)\n"
 "--\n"
 "\n"
 "Insert key with a value of default if key is not in the dictionary.\n"
@@ -80,21 +81,22 @@ PyDoc_STRVAR(dict_setdefault__doc__,
 "Return the value for key if key is in the dictionary, else default.");
 
 #define DICT_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)dict_setdefault, METH_FASTCALL, dict_setdefault__doc__},
+    {"setdefault", (PyCFunction)dict_setdefault, METH_FASTCALL|METH_KEYWORDS, dict_setdefault__doc__},
 
 static PyObject *
 dict_setdefault_impl(PyDictObject *self, PyObject *key,
                      PyObject *default_value);
 
 static PyObject *
-dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs)
+dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"key", "default", NULL};
+    static _PyArg_Parser _parser = {"O|O:setdefault", _keywords, 0};
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setdefault",
-        1, 2,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &key, &default_value)) {
         goto exit;
     }
@@ -168,4 +170,4 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject **args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7c9e471cfc57e055 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96a451cf353bd36f input=a9049054013a1b77]*/
