@@ -1,5 +1,7 @@
+import test.support
 import unittest
-import _fuzz
+
+_fuzz = test.support.import_module('_fuzz')
 
 class TestFuzz(unittest.TestCase):
 
