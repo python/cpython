@@ -627,6 +627,7 @@ element_gc_clear(ElementObject *self)
 static void
 element_dealloc(ElementObject* self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_SAFE_BEGIN(self)
 
@@ -2076,6 +2077,7 @@ elementiter_dealloc(ElementIterObject *it)
 {
     Py_ssize_t i = it->parent_stack_used;
     it->parent_stack_used = 0;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(it);
     while (i--)
         Py_XDECREF(it->parent_stack[i].parent);

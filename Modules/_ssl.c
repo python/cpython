@@ -2778,6 +2778,7 @@ context_clear(PySSLContext *self)
 static void
 context_dealloc(PySSLContext *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     context_clear(self);
     SSL_CTX_free(self->ctx);
@@ -4293,6 +4294,7 @@ static PyTypeObject PySSLMemoryBIO_Type = {
 static void
 PySSLSession_dealloc(PySSLSession *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->ctx);
     if (self->session != NULL) {

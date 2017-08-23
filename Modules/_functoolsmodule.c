@@ -113,6 +113,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 partial_dealloc(partialobject *pto)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(pto);
     if (pto->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) pto);
@@ -1074,6 +1075,7 @@ static void
 lru_cache_dealloc(lru_cache_object *obj)
 {
     lru_list_elem *list;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(obj);
 
     list = lru_cache_unlink_list(obj);
