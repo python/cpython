@@ -398,9 +398,12 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         with tempfile.NamedTemporaryFile() as file:
             coro = self.loop.create_unix_datagram_server(mock.MagicMock,
                                                          file.name)
-            with self.assertRaisesRegex(OSError,
-                                        'Address.*is already in use'):
+            with self.assertRaises(OSError) as exc:
                 self.loop.run_until_complete(coro)
+
+            assert exc.exception.errno == errno.EADDRINUSE
+            self.assertRegex(exc.exception.strerror,
+                             'Address.*is already in use')
 
     def test_create_unix_datagram_server_nopath_nosock(self):
         coro = self.loop.create_unix_datagram_server(mock.MagicMock, path=None)

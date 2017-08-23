@@ -1177,8 +1177,6 @@ class _SelectorSocketDatagramTransport(_SelectorTransport):
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError('data argument must be a bytes-like object, '
                             'not %r' % type(data).__name__)
-        if not data:
-            return
 
         if self._conn_lost:
             if self._conn_lost >= constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES:

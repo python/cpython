@@ -1813,7 +1813,7 @@ class SelectorSocketDatagramTransportTests(test_utils.TestCase):
         tr = self.socket_datagram_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
-        self.loop.assert_reader(7, tr._read_ready)
+        self.loop.assert_reader(self.sock_fd, tr._read_ready)
         test_utils.run_briefly(self.loop)
         self.protocol.connection_made.assert_called_with(tr)
 
@@ -1880,10 +1880,8 @@ class SelectorSocketDatagramTransportTests(test_utils.TestCase):
 
     def test_send_no_data(self):
         transport = self.socket_datagram_transport()
-        transport._buffer.append(b'data')
         transport.send(b'')
-        self.assertFalse(self.sock.sendto.called)
-        self.assertEqual([b'data'], list(transport._buffer))
+        self.assertTrue(self.sock.sendto.called)
 
     def test_send_buffer(self):
         transport = self.socket_datagram_transport()
@@ -1985,7 +1983,7 @@ class SelectorSocketDatagramTransportTests(test_utils.TestCase):
         transport = self.socket_datagram_transport()
         transport._closing = True
         transport._buffer.append(data)
-        self.loop._add_writer(7, transport._send_ready)
+        self.loop._add_writer(self.sock_fd, transport._send_ready)
         transport._send_ready()
         self.sock.sendto.assert_called_with(data, self.address)
         self.assertFalse(self.loop.writers)
