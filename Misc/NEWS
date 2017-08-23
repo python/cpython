@@ -379,6 +379,9 @@ Extension Modules
 Library
 -------
 
+- bpo-22536: The subprocess module now sets the filename when FileNotFoundError
+  is raised on POSIX systems due to the executable or cwd not being found.
+
 - bpo-30119: ftplib.FTP.putline() now throws ValueError on commands that contains
   CR or LF. Patch by Dong-hee Na.
 
