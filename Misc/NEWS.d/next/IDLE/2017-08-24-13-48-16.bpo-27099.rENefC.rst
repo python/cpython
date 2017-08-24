@@ -1,0 +1,2 @@
+Convert IDLE's built-in 'extensions' to regular features. Inital patch by
+Charles Wohlganger.
