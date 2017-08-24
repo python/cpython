@@ -662,6 +662,7 @@ class IdleConf:
             '<<del-word-right>>': ['<Control-Key-Delete>'],
             '<<autocomplete>>':['<Key-Tab'],
             '<<try-open-completions>>':['<KeyRelease-period>', '<KeyRelease-slash>', '<KeyRelease-backslash>'],
+            '<<force-open-completions>>':['<Control-Key-space>'],
             '<<expand-word>>':['<Alt-Key-slash>'],
             '<<try-open-calltip>>':['<KeyRelease-parenleft>'],
             '<<refresh-calltip>>':['<KeyRelease-parenright>', '<KeyRelease-0>'],

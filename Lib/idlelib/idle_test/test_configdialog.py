@@ -836,7 +836,7 @@ class KeysPageTest(unittest.TestCase):
         d.bindingslist.selection_anchor(1)
         d.keybinding.set('<Key-F11>')
         self.assertEqual(extpage,
-                         {'zoomheight_cfgBindings': {'zoom-height': '<Key-F11>'}})
+                         {'ZoomHeight_cfgBindings': {'zoom-height': '<Key-F11>'}})
 
     def test_set_keys_type(self):
         eq = self.assertEqual
