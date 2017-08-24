@@ -1131,6 +1131,8 @@ bytesiobuf_traverse(bytesiobuf *self, visitproc visit, void *arg)
 static void
 bytesiobuf_dealloc(bytesiobuf *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->source);
     Py_TYPE(self)->tp_free(self);
 }
