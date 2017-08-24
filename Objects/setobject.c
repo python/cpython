@@ -553,6 +553,7 @@ set_dealloc(PySetObject *so)
     setentry *entry;
     Py_ssize_t used = so->used;
 
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
     Py_TRASHCAN_SAFE_BEGIN(so)
     if (so->weakreflist != NULL)
@@ -809,6 +810,8 @@ typedef struct {
 static void
 setiter_dealloc(setiterobject *si)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    _PyObject_GC_UNTRACK(si);
     Py_XDECREF(si->si_set);
     PyObject_GC_Del(si);
 }
