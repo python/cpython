@@ -1,8 +1,5 @@
 /* A fuzz test for CPython.
 
-  Unusually for CPython, this is written in C++ for the benefit of linking with
-  libFuzzer.
-
   The only exposed function is LLVMFuzzerTestOneInput, which is called by
   fuzzers and by the _fuzz module for smoke tests.
 
