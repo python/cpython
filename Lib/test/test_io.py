@@ -3252,17 +3252,12 @@ class TextIOWrapperTest(unittest.TestCase):
             class BadDecoder:
                 def getstate(self):
                     return getstate_ret_val
-            class BadIncrementalDecoder:
-                def __call__(self, dummy):
-                    return BadDecoder()
+            def _get_bad_decoder(dummy):
+                return BadDecoder()
             quopri = codecs.lookup("quopri")
-            quopri_decoder = quopri.incrementaldecoder
-            quopri.incrementaldecoder = BadIncrementalDecoder()
-            try:
-                t = _make_illegal_wrapper()
-            finally:
-                quopri.incrementaldecoder = quopri_decoder
-            return t
+            with support.swap_attr(quopri, 'incrementaldecoder',
+                                   _get_bad_decoder):
+                return _make_illegal_wrapper()
         t = _make_very_illegal_wrapper(42)
         self.assertRaises(TypeError, t.read, 42)
         t = _make_very_illegal_wrapper(())

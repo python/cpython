@@ -1499,16 +1499,13 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
          * len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
          */
         if (!PyTuple_Check(state)) {
-            PyErr_Format(PyExc_TypeError,
-                         "decoder getstate() should have returned a tuple, "
-                         "not '%.200s'",
-                         Py_TYPE(state)->tp_name);
+            PyErr_SetString(PyExc_TypeError,
+                            "illegal decoder state");
             Py_DECREF(state);
             return -1;
         }
         if (!PyArg_ParseTuple(state,
-                              "OO;decoder getstate() should have returned a "
-                              "2-tuple", &dec_buffer, &dec_flags))
+                              "OO;illegal decoder state", &dec_buffer, &dec_flags))
         {
             Py_DECREF(state);
             return -1;
@@ -1516,8 +1513,8 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
 
         if (!PyBytes_Check(dec_buffer)) {
             PyErr_Format(PyExc_TypeError,
-                         "decoder getstate() should have returned a tuple "
-                         "whose first item is a bytes object, not '%.200s'",
+                         "illegal decoder state: the first item should be a "
+                         "bytes object, not '%.200s'",
                          Py_TYPE(dec_buffer)->tp_name);
             Py_DECREF(state);
             return -1;
@@ -2395,8 +2392,8 @@ _io_TextIOWrapper_tell_impl(textio *self)
         } \
         if (!PyBytes_Check(dec_buffer)) { \
             PyErr_Format(PyExc_TypeError, \
-                         "decoder getstate() should have returned a bytes " \
-                         "object, not '%.200s'", \
+                         "illegal decoder state: the first item should be a " \
+                         "bytes object, not '%.200s'", \
                          Py_TYPE(dec_buffer)->tp_name); \
             Py_DECREF(_state); \
             goto fail; \
