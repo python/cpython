@@ -9,13 +9,10 @@ Note that tab width in IDLE is currently fixed at eight due to Tk issues.
 Refer to comments in EditorWindow autoindent code for details.
 
 """
-from tkinter import (Toplevel, Frame, LabelFrame, Listbox, Label, Button,
-                     Entry, Text, Scale, Radiobutton, Checkbutton, Canvas,
-                     StringVar, BooleanVar, IntVar, TRUE, FALSE,
-                     TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
-                     NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
-                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
-from tkinter.ttk import Notebook, Scrollbar
+from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
+                     StringVar, BooleanVar, IntVar)
+from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
+                         Notebook, Radiobutton, Scrollbar, Style)
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
 import tkinter.messagebox as tkMessageBox
@@ -25,7 +22,6 @@ from idlelib.config_key import GetKeysDialog
 from idlelib.dynoption import DynOptionMenu
 from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
-from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
 
 changes = ConfigChanges()
@@ -57,7 +53,7 @@ class ConfigDialog(Toplevel):
         if not _utest:
             self.withdraw()
 
-        self.configure(borderwidth=5)
+        self['borderwidth'] = 5
         self.title(title or 'IDLE Preferences')
         x = parent.winfo_rootx() + 20
         y = parent.winfo_rooty() + (30 if not _htest else 150)
@@ -66,7 +62,7 @@ class ConfigDialog(Toplevel):
         # The first value of the tuple is the sample area tag name.
         # The second value is the display name list sort index.
         self.create_widgets()
-        self.resizable(height=FALSE, width=FALSE)
+        self.resizable(height=False, width=False)
         self.transient(parent)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.fontpage.fontlist.focus_set()
@@ -111,8 +107,8 @@ class ConfigDialog(Toplevel):
         note.add(self.genpage, text=' General ')
         note.add(self.extpage, text='Extensions')
         note.enable_traversal()
-        note.pack(side=TOP, expand=TRUE, fill=BOTH)
-        self.create_action_buttons().pack(side=BOTTOM)
+        note.pack(side='top', expand=True, fill='both')
+        self.create_action_buttons().pack(side='bottom')
 
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
@@ -137,19 +133,19 @@ class ConfigDialog(Toplevel):
             # text in the buttons.
             padding_args = {}
         else:
-            padding_args = {'padx':6, 'pady':3}
-        outer = Frame(self, pady=2)
-        buttons = Frame(outer, pady=2)
+            padding_args = {'padding': (6, 3)}
+        outer = Frame(self, padding=2)
+        buttons = Frame(outer, padding=2)
         for txt, cmd in (
             ('Ok', self.ok),
             ('Apply', self.apply),
             ('Cancel', self.cancel),
             ('Help', self.help)):
-            Button(buttons, text=txt, command=cmd, takefocus=FALSE,
-                   **padding_args).pack(side=LEFT, padx=5)
+            Button(buttons, text=txt, command=cmd, takefocus=False,
+                   **padding_args).pack(side='left', padx=5)
         # Add space above buttons.
-        Frame(outer, height=2, borderwidth=0).pack(side=TOP)
-        buttons.pack(side=BOTTOM)
+        Frame(outer, height=2, borderwidth=0).pack(side='top')
+        buttons.pack(side='bottom')
         return outer
 
     def ok(self):
@@ -266,7 +262,7 @@ class ConfigDialog(Toplevel):
         self.extension_list.grid(column=0, row=0, sticky='nws')
         scroll.grid(column=1, row=0, sticky='ns')
         self.details_frame.grid(column=2, row=0, sticky='nsew', padx=[10, 0])
-        frame.configure(padx=10, pady=10)
+        frame.configure(padding=10)
         self.config_frame = {}
         self.current_extension = None
 
@@ -353,21 +349,20 @@ class ConfigDialog(Toplevel):
         for row, opt in enumerate(self.extensions[ext_name]):
             # Create a row with a label and entry/checkbutton.
             label = Label(entry_area, text=opt['name'])
-            label.grid(row=row, column=0, sticky=NW)
+            label.grid(row=row, column=0, sticky='nw')
             var = opt['var']
             if opt['type'] == 'bool':
-                Checkbutton(entry_area, textvariable=var, variable=var,
-                            onvalue='True', offvalue='False',
-                            indicatoron=FALSE, selectcolor='', width=8
-                            ).grid(row=row, column=1, sticky=W, padx=7)
+                Checkbutton(entry_area, variable=var, onvalue='True',
+                            offvalue='False', width=8
+                            ).grid(row=row, column=1, sticky='w', padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
                       validatecommand=(self.is_int, '%P')
-                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
+                      ).grid(row=row, column=1, sticky='nsew', padx=7)
 
             else:
                 Entry(entry_area, textvariable=var
-                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
+                      ).grid(row=row, column=1, sticky='nsew', padx=7)
         return
 
     def set_extension_value(self, section, opt):
@@ -486,35 +481,35 @@ class FontPage(Frame):
         # Create widgets:
         # body and body section frames.
         frame_font = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
+                self, borderwidth=2, relief='groove', text=' Base Editor Font ')
         frame_indent = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
+                self, borderwidth=2, relief='groove', text=' Indentation Width ')
         # frame_font.
         frame_font_name = Frame(frame_font)
         frame_font_param = Frame(frame_font)
         font_name_title = Label(
-                frame_font_name, justify=LEFT, text='Font Face :')
+                frame_font_name, justify='left', text='Font Face :')
         self.fontlist = Listbox(frame_font_name, height=5,
-                                takefocus=True, exportselection=FALSE)
+                                takefocus=True, exportselection=False)
         self.fontlist.bind('<ButtonRelease-1>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Up>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Down>', self.on_fontlist_select)
         scroll_font = Scrollbar(frame_font_name)
-        scroll_font.config(command=self.fontlist.yview)
-        self.fontlist.config(yscrollcommand=scroll_font.set)
+        scroll_font['command'] = self.fontlist.yview
+        self.fontlist['yscrollcommand'] = scroll_font.set
         font_size_title = Label(frame_font_param, text='Size :')
         self.sizelist = DynOptionMenu(frame_font_param, self.font_size, None)
         self.bold_toggle = Checkbutton(
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
-        frame_font_sample = Frame(frame_font, relief=SOLID, borderwidth=1)
+        frame_font_sample = Frame(frame_font, relief='solid', borderwidth=1)
         temp_font = tkFont.Font(self, ('courier', 10, 'normal'))
         self.font_sample = Label(
-                frame_font_sample, justify=LEFT, font=temp_font,
+                frame_font_sample, justify='left', font=temp_font,
                 text='AaBbCcDdEe\nFfGgHhIiJj\n1234567890\n#:+=(){}[]')
         # frame_indent.
         indent_title = Label(
-                frame_indent, justify=LEFT,
+                frame_indent, justify='left',
                 text='Python Standard: 4 Spaces!')
         self.indent_scale = Scale(
                 frame_indent, variable=self.space_num,
@@ -522,23 +517,23 @@ class FontPage(Frame):
 
         # Pack widgets:
         # body.
-        frame_font.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_indent.pack(side=LEFT, padx=5, pady=5, fill=Y)
+        frame_font.pack(side='left', padx=5, pady=5, expand=True, fill='both')
+        frame_indent.pack(side='left', padx=5, pady=5, fill='y')
         # frame_font.
-        frame_font_name.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_font_param.pack(side=TOP, padx=5, pady=5, fill=X)
-        font_name_title.pack(side=TOP, anchor=W)
-        self.fontlist.pack(side=LEFT, expand=TRUE, fill=X)
-        scroll_font.pack(side=LEFT, fill=Y)
-        font_size_title.pack(side=LEFT, anchor=W)
-        self.sizelist.pack(side=LEFT, anchor=W)
-        self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
-        frame_font_sample.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        self.font_sample.pack(expand=TRUE, fill=BOTH)
+        frame_font_name.pack(side='top', padx=5, pady=5, fill='x')
+        frame_font_param.pack(side='top', padx=5, pady=5, fill='x')
+        font_name_title.pack(side='top', anchor='w')
+        self.fontlist.pack(side='left', expand=True, fill='x')
+        scroll_font.pack(side='left', fill='y')
+        font_size_title.pack(side='left', anchor='w')
+        self.sizelist.pack(side='left', anchor='w')
+        self.bold_toggle.pack(side='left', anchor='w', padx=20)
+        frame_font_sample.pack(side='top', padx=5, pady=5, expand=True, fill='both')
+        self.font_sample.pack(expand=True, fill='both')
         # frame_indent.
-        frame_indent.pack(side=TOP, fill=X)
-        indent_title.pack(side=TOP, anchor=W, padx=5)
-        self.indent_scale.pack(side=TOP, padx=5, fill=X)
+        frame_indent.pack(side='top', fill='x')
+        indent_title.pack(side='top', anchor='w', padx=5)
+        self.indent_scale.pack(side='top', padx=5, fill='x')
 
     def load_font_cfg(self):
         """Load current configuration settings for the font options.
@@ -550,13 +545,13 @@ class FontPage(Frame):
         configured_font = idleConf.GetFont(self, 'main', 'EditorWindow')
         font_name = configured_font[0].lower()
         font_size = configured_font[1]
-        font_bold  = configured_font[2]=='bold'
+        font_bold = configured_font[2]=='bold'
 
         # Set editor font selection list and font_name.
         fonts = list(tkFont.families(self))
         fonts.sort()
         for font in fonts:
-            self.fontlist.insert(END, font)
+            self.fontlist.insert('end', font)
         self.font_name.set(font_name)
         lc_fonts = [s.lower() for s in fonts]
         try:
@@ -592,12 +587,11 @@ class FontPage(Frame):
 
     def on_fontlist_select(self, event):
         """Handle selecting a font from the list.
-
         Event can result from either mouse click or Up or Down key.
         Set font_name and example displays to selection.
         """
         font = self.fontlist.get(
-                ACTIVE if event.type.name == 'KeyRelease' else ANCHOR)
+                'active' if event.type.name == 'KeyRelease' else 'anchor')
         self.font_name.set(font.lower())
 
     def set_samples(self, event=None):
@@ -635,6 +629,7 @@ class HighPage(Frame):
     def __init__(self, master):
         super().__init__(master)
         self.cd = master.master
+        self.style = Style(master)
         self.create_page_highlight()
         self.load_theme_cfg()
 
@@ -785,15 +780,15 @@ class HighPage(Frame):
 
         # Create widgets:
         # body frame and section frames.
-        frame_custom = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_custom = LabelFrame(self, borderwidth=2, relief='groove',
                                   text=' Custom Highlighting ')
-        frame_theme = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_theme = LabelFrame(self, borderwidth=2, relief='groove',
                                  text=' Highlighting Theme ')
         # frame_custom.
         text = self.highlight_sample = Text(
-                frame_custom, relief=SOLID, borderwidth=1,
+                frame_custom, relief='solid', borderwidth=1,
                 font=('courier', 12, ''), cursor='hand2', width=21, height=13,
-                takefocus=FALSE, highlightthickness=0, wrap=NONE)
+                takefocus=False, highlightthickness=0, wrap='none')
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         text_and_tags=(('\n', 'normal'),
@@ -814,19 +809,21 @@ class HighPage(Frame):
             ('stdout', 'stdout'), (' ', 'normal'),
             ('stderr', 'stderr'), ('\n\n', 'normal'))
         for texttag in text_and_tags:
-            text.insert(END, texttag[0], texttag[1])
+            text.insert('end', texttag[0], texttag[1])
         for element in self.theme_elements:
             def tem(event, elem=element):
                 # event.widget.winfo_top_level().highlight_target.set(elem)
                 self.highlight_target.set(elem)
             text.tag_bind(
                     self.theme_elements[element][0], '<ButtonPress-1>', tem)
-        text['state'] = DISABLED
-        self.frame_color_set = Frame(frame_custom, relief=SOLID, borderwidth=1)
+        text['state'] = 'disabled'
+        self.style.configure('frame_color_set.TFrame', borderwidth=1,
+                             relief='solid')
+        self.frame_color_set = Frame(frame_custom, style='frame_color_set.TFrame')
         frame_fg_bg_toggle = Frame(frame_custom)
         self.button_set_color = Button(
                 self.frame_color_set, text='Choose Color for :',
-                command=self.get_color, highlightthickness=0)
+                command=self.get_color)
         self.targetlist = DynOptionMenu(
                 self.frame_color_set, self.highlight_target, None,
                 highlightthickness=0) #, command=self.set_highlight_targetBinding
@@ -855,30 +852,30 @@ class HighPage(Frame):
         self.button_delete_custom = Button(
                 frame_theme, text='Delete Custom Theme',
                 command=self.delete_custom)
-        self.theme_message = Label(frame_theme, bd=2)
+        self.theme_message = Label(frame_theme, borderwidth=2)
 
         # Pack widgets:
         # body.
-        frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_theme.pack(side=LEFT, padx=5, pady=5, fill=Y)
+        frame_custom.pack(side='left', padx=5, pady=5, expand=True, fill='both')
+        frame_theme.pack(side='left', padx=5, pady=5, fill='y')
         # frame_custom.
-        self.frame_color_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
-        frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
+        self.frame_color_set.pack(side='top', padx=5, pady=5, expand=True, fill='x')
+        frame_fg_bg_toggle.pack(side='top', padx=5, pady=0)
         self.highlight_sample.pack(
-                side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        self.button_set_color.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=4)
-        self.targetlist.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=3)
-        self.fg_on.pack(side=LEFT, anchor=E)
-        self.bg_on.pack(side=RIGHT, anchor=W)
-        self.button_save_custom.pack(side=BOTTOM, fill=X, padx=5, pady=5)
+                side='top', padx=5, pady=5, expand=True, fill='both')
+        self.button_set_color.pack(side='top', expand=True, fill='x', padx=8, pady=4)
+        self.targetlist.pack(side='top', expand=True, fill='x', padx=8, pady=3)
+        self.fg_on.pack(side='left', anchor='e')
+        self.bg_on.pack(side='right', anchor='w')
+        self.button_save_custom.pack(side='bottom', fill='x', padx=5, pady=5)
         # frame_theme.
-        theme_type_title.pack(side=TOP, anchor=W, padx=5, pady=5)
-        self.builtin_theme_on.pack(side=TOP, anchor=W, padx=5)
-        self.custom_theme_on.pack(side=TOP, anchor=W, padx=5, pady=2)
-        self.builtinlist.pack(side=TOP, fill=X, padx=5, pady=5)
-        self.customlist.pack(side=TOP, fill=X, anchor=W, padx=5, pady=5)
-        self.button_delete_custom.pack(side=TOP, fill=X, padx=5, pady=5)
-        self.theme_message.pack(side=TOP, fill=X, pady=5)
+        theme_type_title.pack(side='top', anchor='w', padx=5, pady=5)
+        self.builtin_theme_on.pack(side='top', anchor='w', padx=5)
+        self.custom_theme_on.pack(side='top', anchor='w', padx=5, pady=2)
+        self.builtinlist.pack(side='top', fill='x', padx=5, pady=5)
+        self.customlist.pack(side='top', fill='x', anchor='w', padx=5, pady=5)
+        self.button_delete_custom.pack(side='top', fill='x', padx=5, pady=5)
+        self.theme_message.pack(side='top', fill='x', pady=5)
 
     def load_theme_cfg(self):
         """Load current configuration settings for the theme options.
@@ -913,7 +910,7 @@ class HighPage(Frame):
             item_list = idleConf.GetSectionList('user', 'highlight')
             item_list.sort()
             if not item_list:
-                self.custom_theme_on['state'] = DISABLED
+                self.custom_theme_on.state(('disabled',))
                 self.custom_name.set('- no custom themes -')
             else:
                 self.customlist.SetMenu(item_list, item_list[0])
@@ -945,12 +942,10 @@ class HighPage(Frame):
                 changes.add_option('main', 'Theme', 'name', old_themes[0])
             changes.add_option('main', 'Theme', 'name2', value)
             self.theme_message['text'] = 'New theme, see Help'
-            self.theme_message['fg'] = '#500000'
         else:
             changes.add_option('main', 'Theme', 'name', value)
             changes.add_option('main', 'Theme', 'name2', '')
             self.theme_message['text'] = ''
-            self.theme_message['fg'] = 'black'
         self.paint_theme_sample()
 
     def var_changed_custom_name(self, *params):
@@ -1004,14 +999,14 @@ class HighPage(Frame):
             load_theme_cfg
         """
         if self.theme_source.get():
-            self.builtinlist['state'] = NORMAL
-            self.customlist['state'] = DISABLED
-            self.button_delete_custom['state'] = DISABLED
+            self.builtinlist['state'] = 'normal'
+            self.customlist['state'] = 'disabled'
+            self.button_delete_custom.state(('disabled',))
         else:
-            self.builtinlist['state'] = DISABLED
-            self.custom_theme_on['state'] = NORMAL
-            self.customlist['state'] = NORMAL
-            self.button_delete_custom['state'] = NORMAL
+            self.builtinlist['state'] = 'disabled'
+            self.custom_theme_on.state(('!disabled',))
+            self.customlist['state'] = 'normal'
+            self.button_delete_custom.state(('!disabled',))
 
     def get_color(self):
         """Handle button to select a new color for the target tag.
@@ -1032,7 +1027,8 @@ class HighPage(Frame):
             create_new
         """
         target = self.highlight_target.get()
-        prev_color = self.frame_color_set.cget('bg')
+        prev_color = self.style.lookup(self.frame_color_set['style'],
+                                       'background')
         rgbTuplet, color_string = tkColorChooser.askcolor(
                 parent=self, title='Pick new color for : '+target,
                 initialcolor=prev_color)
@@ -1053,7 +1049,7 @@ class HighPage(Frame):
     def on_new_color_set(self):
         "Display sample of new color selection on the dialog."
         new_color = self.color.get()
-        self.frame_color_set['bg'] = new_color  # Set sample.
+        self.style.configure('frame_color_set.TFrame', background=new_color)
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
         sample_element = self.theme_elements[self.highlight_target.get()][0]
         self.highlight_sample.tag_config(sample_element, **{plane: new_color})
@@ -1139,12 +1135,12 @@ class HighPage(Frame):
             load_theme_cfg
         """
         if self.highlight_target.get() == 'Cursor':  # bg not possible
-            self.fg_on['state'] = DISABLED
-            self.bg_on['state'] = DISABLED
+            self.fg_on.state(('disabled',))
+            self.bg_on.state(('disabled',))
             self.fg_bg_toggle.set(1)
         else:  # Both fg and bg can be set.
-            self.fg_on['state'] = NORMAL
-            self.bg_on['state'] = NORMAL
+            self.fg_on.state(('!disabled',))
+            self.bg_on.state(('!disabled',))
             self.fg_bg_toggle.set(1)
         self.set_color_sample()
 
@@ -1172,7 +1168,7 @@ class HighPage(Frame):
         tag = self.theme_elements[self.highlight_target.get()][0]
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
         color = self.highlight_sample.tag_cget(tag, plane)
-        self.frame_color_set['bg'] = color
+        self.style.configure('frame_color_set.TFrame', background=color)
 
     def paint_theme_sample(self):
         """Apply the theme colors to each element tag in the sample text.
@@ -1260,7 +1256,7 @@ class HighPage(Frame):
         item_list = idleConf.GetSectionList('user', 'highlight')
         item_list.sort()
         if not item_list:
-            self.custom_theme_on['state'] = DISABLED
+            self.custom_theme_on.state(('disabled',))
             self.customlist.SetMenu(item_list, '- no custom themes -')
         else:
             self.customlist.SetMenu(item_list, item_list[0])
@@ -1376,17 +1372,17 @@ class KeysPage(Frame):
         # Create widgets:
         # body and section frames.
         frame_custom = LabelFrame(
-                self, borderwidth=2, relief=GROOVE,
+                self, borderwidth=2, relief='groove',
                 text=' Custom Key Bindings ')
         frame_key_sets = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Key Set ')
+                self, borderwidth=2, relief='groove', text=' Key Set ')
         # frame_custom.
         frame_target = Frame(frame_custom)
         target_title = Label(frame_target, text='Action - Key(s)')
         scroll_target_y = Scrollbar(frame_target)
-        scroll_target_x = Scrollbar(frame_target, orient=HORIZONTAL)
+        scroll_target_x = Scrollbar(frame_target, orient='horizontal')
         self.bindingslist = Listbox(
-                frame_target, takefocus=FALSE, exportselection=FALSE)
+                frame_target, takefocus=False, exportselection=False)
         self.bindingslist.bind('<ButtonRelease-1>',
                                self.on_bindingslist_select)
         scroll_target_y['command'] = self.bindingslist.yview
@@ -1395,9 +1391,9 @@ class KeysPage(Frame):
         self.bindingslist['xscrollcommand'] = scroll_target_x.set
         self.button_new_keys = Button(
                 frame_custom, text='Get New Keys for Selection',
-                command=self.get_new_keys, state=DISABLED)
+                command=self.get_new_keys, state='disabled')
         # frame_key_sets.
-        frames = [Frame(frame_key_sets, padx=2, pady=2, borderwidth=0)
+        frames = [Frame(frame_key_sets, padding=2, borderwidth=0)
                   for i in range(2)]
         self.builtin_keyset_on = Radiobutton(
                 frames[0], variable=self.keyset_source, value=1,
@@ -1415,32 +1411,32 @@ class KeysPage(Frame):
         self.button_save_custom_keys = Button(
                 frames[1], text='Save as New Custom Key Set',
                 command=self.save_as_new_key_set)
-        self.keys_message = Label(frames[0], bd=2)
+        self.keys_message = Label(frames[0], borderwidth=2)
 
         # Pack widgets:
         # body.
-        frame_custom.pack(side=BOTTOM, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_key_sets.pack(side=BOTTOM, padx=5, pady=5, fill=BOTH)
+        frame_custom.pack(side='bottom', padx=5, pady=5, expand=True, fill='both')
+        frame_key_sets.pack(side='bottom', padx=5, pady=5, fill='both')
         # frame_custom.
-        self.button_new_keys.pack(side=BOTTOM, fill=X, padx=5, pady=5)
-        frame_target.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        self.button_new_keys.pack(side='bottom', fill='x', padx=5, pady=5)
+        frame_target.pack(side='left', padx=5, pady=5, expand=True, fill='both')
         # frame_target.
         frame_target.columnconfigure(0, weight=1)
         frame_target.rowconfigure(1, weight=1)
-        target_title.grid(row=0, column=0, columnspan=2, sticky=W)
-        self.bindingslist.grid(row=1, column=0, sticky=NSEW)
-        scroll_target_y.grid(row=1, column=1, sticky=NS)
-        scroll_target_x.grid(row=2, column=0, sticky=EW)
+        target_title.grid(row=0, column=0, columnspan=2, sticky='w')
+        self.bindingslist.grid(row=1, column=0, sticky='nsew')
+        scroll_target_y.grid(row=1, column=1, sticky='ns')
+        scroll_target_x.grid(row=2, column=0, sticky='ew')
         # frame_key_sets.
-        self.builtin_keyset_on.grid(row=0, column=0, sticky=W+NS)
-        self.custom_keyset_on.grid(row=1, column=0, sticky=W+NS)
-        self.builtinlist.grid(row=0, column=1, sticky=NSEW)
-        self.customlist.grid(row=1, column=1, sticky=NSEW)
-        self.keys_message.grid(row=0, column=2, sticky=NSEW, padx=5, pady=5)
-        self.button_delete_custom_keys.pack(side=LEFT, fill=X, expand=True, padx=2)
-        self.button_save_custom_keys.pack(side=LEFT, fill=X, expand=True, padx=2)
-        frames[0].pack(side=TOP, fill=BOTH, expand=True)
-        frames[1].pack(side=TOP, fill=X, expand=True, pady=2)
+        self.builtin_keyset_on.grid(row=0, column=0, sticky='w'+'ns')
+        self.custom_keyset_on.grid(row=1, column=0, sticky='w'+'ns')
+        self.builtinlist.grid(row=0, column=1, sticky='nsew')
+        self.customlist.grid(row=1, column=1, sticky='nsew')
+        self.keys_message.grid(row=0, column=2, sticky='nsew', padx=5, pady=5)
+        self.button_delete_custom_keys.pack(side='left', fill='x', expand=True, padx=2)
+        self.button_save_custom_keys.pack(side='left', fill='x', expand=True, padx=2)
+        frames[0].pack(side='top', fill='both', expand=True)
+        frames[1].pack(side='top', fill='x', expand=True, pady=2)
 
     def load_key_cfg(self):
         "Load current configuration settings for the keybinding options."
@@ -1457,7 +1453,7 @@ class KeysPage(Frame):
             item_list = idleConf.GetSectionList('user', 'keys')
             item_list.sort()
             if not item_list:
-                self.custom_keyset_on['state'] = DISABLED
+                self.custom_keyset_on.state(('disabled',))
                 self.custom_name.set('- no custom keys -')
             else:
                 self.customlist.SetMenu(item_list, item_list[0])
@@ -1487,12 +1483,10 @@ class KeysPage(Frame):
                 changes.add_option('main', 'Keys', 'name', old_keys[0])
             changes.add_option('main', 'Keys', 'name2', value)
             self.keys_message['text'] = 'New key set, see Help'
-            self.keys_message['fg'] = '#500000'
         else:
             changes.add_option('main', 'Keys', 'name', value)
             changes.add_option('main', 'Keys', 'name2', '')
             self.keys_message['text'] = ''
-            self.keys_message['fg'] = 'black'
         self.load_keys_list(value)
 
     def var_changed_custom_name(self, *params):
@@ -1515,7 +1509,7 @@ class KeysPage(Frame):
         "Store change to a keybinding."
         value = self.keybinding.get()
         key_set = self.custom_name.get()
-        event = self.bindingslist.get(ANCHOR).split()[0]
+        event = self.bindingslist.get('anchor').split()[0]
         if idleConf.IsCoreBinding(event):
             changes.add_option('keys', key_set, event, value)
         else:  # Event is an extension binding.
@@ -1526,14 +1520,14 @@ class KeysPage(Frame):
     def set_keys_type(self):
         "Set available screen options based on builtin or custom key set."
         if self.keyset_source.get():
-            self.builtinlist['state'] = NORMAL
-            self.customlist['state'] = DISABLED
-            self.button_delete_custom_keys['state'] = DISABLED
+            self.builtinlist['state'] = 'normal'
+            self.customlist['state'] = 'disabled'
+            self.button_delete_custom_keys.state(('disabled',))
         else:
-            self.builtinlist['state'] = DISABLED
-            self.custom_keyset_on['state'] = NORMAL
-            self.customlist['state'] = NORMAL
-            self.button_delete_custom_keys['state'] = NORMAL
+            self.builtinlist['state'] = 'disabled'
+            self.custom_keyset_on.state(('!disabled',))
+            self.customlist['state'] = 'normal'
+            self.button_delete_custom_keys.state(('!disabled',))
 
     def get_new_keys(self):
         """Handle event to change key binding for selected line.
@@ -1544,7 +1538,7 @@ class KeysPage(Frame):
         changed, then a name for a custom key set needs to be
         entered for the change to be applied.
         """
-        list_index = self.bindingslist.index(ANCHOR)
+        list_index = self.bindingslist.index('anchor')
         binding = self.bindingslist.get(list_index)
         bind_name = binding.split()[0]
         if self.keyset_source.get():
@@ -1595,7 +1589,7 @@ class KeysPage(Frame):
 
     def on_bindingslist_select(self, event):
         "Activate button to assign new keys to selected action."
-        self.button_new_keys['state'] = NORMAL
+        self.button_new_keys.state(('!disabled',))
 
     def create_new_key_set(self, new_key_set_name):
         """Create a new custom key set with the given name.
@@ -1635,11 +1629,11 @@ class KeysPage(Frame):
         reselect = False
         if self.bindingslist.curselection():
             reselect = True
-            list_index = self.bindingslist.index(ANCHOR)
+            list_index = self.bindingslist.index('anchor')
         keyset = idleConf.GetKeySet(keyset_name)
         bind_names = list(keyset.keys())
         bind_names.sort()
-        self.bindingslist.delete(0, END)
+        self.bindingslist.delete(0, 'end')
         for bind_name in bind_names:
             key = ' '.join(keyset[bind_name])
             bind_name = bind_name[2:-2]  # Trim off the angle brackets.
@@ -1647,7 +1641,7 @@ class KeysPage(Frame):
                 # Handle any unsaved changes to this key set.
                 if bind_name in changes['keys'][keyset_name]:
                     key = changes['keys'][keyset_name][bind_name]
-            self.bindingslist.insert(END, bind_name+' - '+key)
+            self.bindingslist.insert('end', bind_name+' - '+key)
         if reselect:
             self.bindingslist.see(list_index)
             self.bindingslist.select_set(list_index)
@@ -1689,7 +1683,7 @@ class KeysPage(Frame):
         item_list = idleConf.GetSectionList('user', 'keys')
         item_list.sort()
         if not item_list:
-            self.custom_keyset_on['state'] = DISABLED
+            self.custom_keyset_on.state(('disabled',))
             self.customlist.SetMenu(item_list, '- no custom keys -')
         else:
             self.customlist.SetMenu(item_list, item_list[0])
@@ -1766,12 +1760,12 @@ class GenPage(Frame):
 
         # Create widgets:
         # Section frames.
-        frame_run = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_run = LabelFrame(self, borderwidth=2, relief='groove',
                               text=' Startup Preferences ')
-        frame_save = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_save = LabelFrame(self, borderwidth=2, relief='groove',
                                text=' autosave Preferences ')
-        frame_win_size = Frame(self, borderwidth=2, relief=GROOVE)
-        frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_win_size = Frame(self, borderwidth=2, relief='groove')
+        frame_help = LabelFrame(self, borderwidth=2, relief='groove',
                                text=' Additional Help Sources ')
         # frame_run.
         startup_title = Label(frame_run, text='At Startup')
@@ -1803,49 +1797,49 @@ class GenPage(Frame):
         frame_helplist_buttons = Frame(frame_helplist)
         self.helplist = Listbox(
                 frame_helplist, height=5, takefocus=True,
-                exportselection=FALSE)
+                exportselection=False)
         scroll_helplist = Scrollbar(frame_helplist)
         scroll_helplist['command'] = self.helplist.yview
         self.helplist['yscrollcommand'] = scroll_helplist.set
         self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
         self.button_helplist_edit = Button(
-                frame_helplist_buttons, text='Edit', state=DISABLED,
+                frame_helplist_buttons, text='Edit', state='disabled',
                 width=8, command=self.helplist_item_edit)
         self.button_helplist_add = Button(
                 frame_helplist_buttons, text='Add',
                 width=8, command=self.helplist_item_add)
         self.button_helplist_remove = Button(
-                frame_helplist_buttons, text='Remove', state=DISABLED,
+                frame_helplist_buttons, text='Remove', state='disabled',
                 width=8, command=self.helplist_item_remove)
 
         # Pack widgets:
         # body.
-        frame_run.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_save.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_win_size.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_run.pack(side='top', padx=5, pady=5, fill='x')
+        frame_save.pack(side='top', padx=5, pady=5, fill='x')
+        frame_win_size.pack(side='top', padx=5, pady=5, fill='x')
+        frame_help.pack(side='top', padx=5, pady=5, expand=True, fill='both')
         # frame_run.
-        startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        startup_title.pack(side='left', anchor='w', padx=5, pady=5)
+        self.startup_shell_on.pack(side='right', anchor='w', padx=5, pady=5)
+        self.startup_editor_on.pack(side='right', anchor='w', padx=5, pady=5)
         # frame_save.
-        run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        run_save_title.pack(side='left', anchor='w', padx=5, pady=5)
+        self.save_auto_on.pack(side='right', anchor='w', padx=5, pady=5)
+        self.save_ask_on.pack(side='right', anchor='w', padx=5, pady=5)
         # frame_win_size.
-        win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
-        win_height_title.pack(side=RIGHT, anchor=E, pady=5)
-        self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
-        win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        win_size_title.pack(side='left', anchor='w', padx=5, pady=5)
+        self.win_height_int.pack(side='right', anchor='e', padx=10, pady=5)
+        win_height_title.pack(side='right', anchor='e', pady=5)
+        self.win_width_int.pack(side='right', anchor='e', padx=10, pady=5)
+        win_width_title.pack(side='right', anchor='e', pady=5)
         # frame_help.
-        frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
-        frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
-        self.helplist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
-        self.button_helplist_edit.pack(side=TOP, anchor=W, pady=5)
-        self.button_helplist_add.pack(side=TOP, anchor=W)
-        self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
+        frame_helplist_buttons.pack(side='right', padx=5, pady=5, fill='y')
+        frame_helplist.pack(side='top', padx=5, pady=5, expand=True, fill='both')
+        scroll_helplist.pack(side='right', anchor='w', fill='y')
+        self.helplist.pack(side='left', anchor='e', expand=True, fill='both')
+        self.button_helplist_edit.pack(side='top', anchor='w', pady=5)
+        self.button_helplist_add.pack(side='top', anchor='w')
+        self.button_helplist_remove.pack(side='top', anchor='w', pady=5)
 
     def load_general_cfg(self):
         "Load current configuration settings for the general options."
@@ -1864,7 +1858,7 @@ class GenPage(Frame):
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
         self.helplist.delete(0, 'end')
         for help_item in self.user_helplist:
-            self.helplist.insert(END, help_item[0])
+            self.helplist.insert('end', help_item[0])
         self.set_add_delete_state()
 
     def help_source_selected(self, event):
@@ -1874,15 +1868,15 @@ class GenPage(Frame):
     def set_add_delete_state(self):
         "Toggle the state for the help list buttons based on list entries."
         if self.helplist.size() < 1:  # No entries in list.
-            self.button_helplist_edit['state'] = DISABLED
-            self.button_helplist_remove['state'] = DISABLED
+            self.button_helplist_edit.state(('disabled',))
+            self.button_helplist_remove.state(('disabled',))
         else:  # Some entries.
             if self.helplist.curselection():  # There currently is a selection.
-                self.button_helplist_edit['state'] = NORMAL
-                self.button_helplist_remove['state'] = NORMAL
+                self.button_helplist_edit.state(('!disabled',))
+                self.button_helplist_remove.state(('!disabled',))
             else:  # There currently is not a selection.
-                self.button_helplist_edit['state'] = DISABLED
-                self.button_helplist_remove['state'] = DISABLED
+                self.button_helplist_edit.state(('disabled',))
+                self.button_helplist_remove.state(('disabled',))
 
     def helplist_item_add(self):
         """Handle add button for the help list.
@@ -1893,7 +1887,7 @@ class GenPage(Frame):
         help_source = HelpSource(self, 'New Help Source').result
         if help_source:
             self.user_helplist.append(help_source)
-            self.helplist.insert(END, help_source[0])
+            self.helplist.insert('end', help_source[0])
             self.update_help_changes()
 
     def helplist_item_edit(self):
@@ -1902,7 +1896,7 @@ class GenPage(Frame):
         Query with existing help source information and update
         config if the values are changed.
         """
-        item_index = self.helplist.index(ANCHOR)
+        item_index = self.helplist.index('anchor')
         help_source = self.user_helplist[item_index]
         new_help_source = HelpSource(
                 self, 'Edit Help Source',
@@ -1921,7 +1915,7 @@ class GenPage(Frame):
 
         Delete the help list item from config.
         """
-        item_index = self.helplist.index(ANCHOR)
+        item_index = self.helplist.index('anchor')
         del(self.user_helplist[item_index])
         self.helplist.delete(item_index)
         self.update_help_changes()
@@ -2060,11 +2054,11 @@ class VerticalScrolledFrame(Frame):
         Frame.__init__(self, parent, *args, **kw)
 
         # Create a canvas object and a vertical scrollbar for scrolling it.
-        vscrollbar = Scrollbar(self, orient=VERTICAL)
-        vscrollbar.pack(fill=Y, side=RIGHT, expand=FALSE)
-        canvas = Canvas(self, bd=0, highlightthickness=0,
+        vscrollbar = Scrollbar(self, orient='vertical')
+        vscrollbar.pack(fill='y', side='right', expand=False)
+        canvas = Canvas(self, borderwidth=0, highlightthickness=0,
                         yscrollcommand=vscrollbar.set, width=240)
-        canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
+        canvas.pack(side='left', fill='both', expand=True)
         vscrollbar.config(command=canvas.yview)
 
         # Reset the view.
@@ -2073,7 +2067,7 @@ class VerticalScrolledFrame(Frame):
 
         # Create a frame inside the canvas which will be scrolled with it.
         self.interior = interior = Frame(canvas)
-        interior_id = canvas.create_window(0, 0, window=interior, anchor=NW)
+        interior_id = canvas.create_window(0, 0, window=interior, anchor='nw')
 
         # Track changes to the canvas and frame width and sync them,
         # also updating the scrollbar.
