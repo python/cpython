@@ -2214,6 +2214,8 @@ context_clear(PySSLContext *self)
 static void
 context_dealloc(PySSLContext *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     context_clear(self);
     SSL_CTX_free(self->ctx);
 #ifdef OPENSSL_NPN_NEGOTIATED
@@ -3446,7 +3448,6 @@ static PyTypeObject PySSLContext_Type = {
     0,                                         /*tp_alloc*/
     context_new,                               /*tp_new*/
 };
-
 
 
 #ifdef HAVE_OPENSSL_RAND
