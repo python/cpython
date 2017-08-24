@@ -12,7 +12,7 @@ class zoomheight:
             ('_Zoom Height', '<<zoom-height>>'),
          ])
     ]
-    
+
     def __init__(self, editwin):
         self.editwin = editwin
 

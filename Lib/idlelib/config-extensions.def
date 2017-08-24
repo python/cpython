@@ -32,7 +32,7 @@
 # See config-keys.def for notes on specifying keys and extend.txt for
 # information on creating IDLE extensions.
 
-[ZoomHeight]
+[zoomheight]
 enable = True
-[ZoomHeight_cfgBindings]
+[zoomheight_cfgBindings]
 zoom-height=<Alt-2>

@@ -830,7 +830,7 @@ class KeysPageTest(unittest.TestCase):
         d.keybinding.set('<Key-F11>')
         self.assertEqual(keyspage,
                          {'my custom keys': {'copy': '<Key-F11>'}})
-        
+
         # Not a core binding - adds to extensions.
         d.bindingslist.selection_set(1)
         d.bindingslist.selection_anchor(1)

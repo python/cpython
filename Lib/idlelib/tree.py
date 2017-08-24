@@ -20,7 +20,7 @@ from tkinter import *
 from tkinter.ttk import Scrollbar
 
 from idlelib.config import idleConf
-from idlelib import zoomheight
+from idlelib import ZoomHeight
 
 ICONDIR = "Icons"
 
