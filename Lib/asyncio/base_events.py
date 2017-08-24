@@ -859,6 +859,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                 if family == 0:
                     raise ValueError('unexpected address family')
                 addr_pairs_info = (((family, proto), (None, None)),)
+            elif family == socket.AF_UNIX:
+                for addr in (local_addr, remote_addr):
+                    if addr is not None:
+                        assert isinstance(addr, str)
+                addr_pairs_info = (((family, proto),
+                                    (local_addr, remote_addr)), )
             else:
                 # join address by (family, protocol)
                 addr_infos = collections.OrderedDict()

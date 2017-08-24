@@ -1,2 +1,1 @@
-Added in asyncio `create_unix_datagram_connection` and
-`create_unix_datagram_server` to unix event loop.
+Added support for AF_UNIX socket in asyncio `create_datagram_endpoint`.
