@@ -677,7 +677,7 @@ typedef struct
                                       written, or NULL */
     Py_ssize_t pending_bytes_count;
 
-    /* snapshot is either None, or a tuple (dec_flags, next_input) where
+    /* snapshot is either NULL, or a tuple (dec_flags, next_input) where
      * dec_flags is the second (integer) item of the decoder state and
      * next_input is the chunk of input bytes that comes next after the
      * snapshot point.  We use this to reconstruct decoder states in tell().
@@ -2359,6 +2359,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
         goto fail;
 
     /* Skip backward to the snapshot point (see _read_chunk). */
+    assert(PyTuple_Check(self->snapshot));
     if (!PyArg_ParseTuple(self->snapshot, "iO", &cookie.dec_flags, &next_input))
         goto fail;
 
