@@ -1,7 +1,7 @@
 """Abstract Protocol class."""
 
 __all__ = ['BaseProtocol', 'Protocol', 'DatagramProtocol',
-           'SubprocessProtocol', 'UnixDatagramProtocol']
+           'SubprocessProtocol']
 
 
 class BaseProtocol:
@@ -104,19 +104,6 @@ class DatagramProtocol(BaseProtocol):
     """Interface for datagram protocol."""
 
     def datagram_received(self, data, addr):
-        """Called when some datagram is received."""
-
-    def error_received(self, exc):
-        """Called when a send or receive operation raises an OSError.
-
-        (Other than BlockingIOError or InterruptedError.)
-        """
-
-
-class UnixDatagramProtocol(BaseProtocol):
-    """Interface for unix socket datagram protocol."""
-
-    def datagram_received(self, data):
         """Called when some datagram is received."""
 
     def error_received(self, exc):

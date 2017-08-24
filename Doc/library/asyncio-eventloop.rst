@@ -341,9 +341,10 @@ Creating connections
 
 .. coroutinemethod:: AbstractEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0, reuse_address=None, reuse_port=None, allow_broadcast=None, sock=None)
 
-   Create datagram connection: socket family :py:data:`~socket.AF_INET` or
-   :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
-   socket type :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
+   Create datagram connection: socket family :py:data:`~socket.AF_INET`,
+   :py:data:`~socket.AF_INET6` or :py:data:`~socket.AF_UNIX` depending on
+   *host* (or *family* if specified), socket type
+   :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
    This method is a :ref:`coroutine <coroutine>` which will try to
@@ -394,25 +395,6 @@ Creating connections
 
    Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
    type :py:data:`~socket.SOCK_STREAM`. The :py:data:`~socket.AF_UNIX` socket
-   family is used to communicate between processes on the same machine
-   efficiently.
-
-   This method is a :ref:`coroutine <coroutine>` which will try to
-   establish the connection in the background.  When successful, the
-   coroutine returns a ``(transport, protocol)`` pair.
-
-   *path* is the name of a UNIX domain socket, and is required unless a *sock*
-   parameter is specified.  Abstract UNIX sockets, :class:`str`, and
-   :class:`bytes` paths are supported.
-
-   See the :meth:`AbstractEventLoop.create_connection` method for parameters.
-
-   Availability: UNIX.
-
-.. coroutinemethod:: AbstractEventLoop.create_unix_datagram_connection(protocol_factory, path=None, \*, sock=None)
-
-   Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
-   type :py:data:`~socket.SOCK_DGRAM`. The :py:data:`~socket.AF_UNIX` socket
    family is used to communicate between processes on the same machine
    efficiently.
 
@@ -495,16 +477,7 @@ Creating listening connections
 .. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None)
 
    Similar to :meth:`AbstractEventLoop.create_server`, but specific to the
-   socket family :py:data:`~socket.AF_UNIX`, socket type :py:data:`~socket.SOCK_STREAM`.
-
-   This method is a :ref:`coroutine <coroutine>`.
-
-   Availability: UNIX.
-
-.. coroutinemethod:: AbstractEventLoop.create_unix_datagram_server(protocol_factory, path=None, \*, sock=None)
-
-   Similar to :meth:`AbstractEventLoop.create_server`, but specific to the
-   socket family :py:data:`~socket.AF_UNIX`, socket type :py:data:`~socket.SOCK_DGRAM`.
+   socket family :py:data:`~socket.AF_UNIX`.
 
    This method is a :ref:`coroutine <coroutine>`.
 

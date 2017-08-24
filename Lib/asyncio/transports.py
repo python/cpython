@@ -88,7 +88,7 @@ class WriteTransport(BaseTransport):
         """Return the current size of the write buffer."""
         raise NotImplementedError
 
-    def nuwrite(self, data):
+    def write(self, data):
         """Write some data bytes to the transport.
 
         This does not block; it buffers the data and arranges for it
