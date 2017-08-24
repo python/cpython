@@ -1,4 +1,4 @@
-# Sample extension - zoom a window to maximum height
+# Sample extension: zoom a window to maximum height
 
 import re
 import sys
@@ -6,7 +6,7 @@ import sys
 from idlelib import macosx
 
 
-class zoomheight:
+class ZoomHeight:
     menudefs = [
         ('windows', [
             ('_Zoom Height', '<<zoom-height>>'),

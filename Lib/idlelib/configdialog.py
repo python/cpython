@@ -243,7 +243,11 @@ class ConfigDialog(Toplevel):
         which are boolean, and can be toggled with a True/False button.
 
         Methods:
-
+            load_extensions:
+            extension_selected: Handle selection from list.
+            create_extension_frame: Hold widgets for one extension.
+            set_extension_value: Set in userCfg['extensions'].
+            save_all_changed_extensions: Call extension page Save().
         """
         parent = self.parent
         frame = Frame(self.note)

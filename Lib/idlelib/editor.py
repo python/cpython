@@ -65,8 +65,7 @@ class EditorWindow(object):
         from idlelib.paragraph import FormatParagraph
         from idlelib.parenmatch import ParenMatch
         from idlelib.rstrip import RstripExtension
-        from idlelib.runscript import ScriptBinding
-        from idlelib.zoomheight import ZoomHeight
+        from idlelib.runscript import ScriptBinding        
 
         if EditorWindow.help_url is None:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
@@ -291,7 +290,6 @@ class EditorWindow(object):
         self.insParenMatch=ParenMatch(self)
         self.insRstripExtension=RstripExtension(self)
         self.insScriptBinding=ScriptBinding(self)
-        self.insZoomHeight=ZoomHeight(self)
 
         text.bind("<<autocomplete>>",self.insAutoComplete.autocomplete_event)
         text.bind("<<try-open-completions>>", self.insAutoComplete.try_open_completions_event)
@@ -303,7 +301,6 @@ class EditorWindow(object):
         text.bind("<<paren-closed>>",self.insParenMatch.paren_closed_event)
         text.bind("<<run-module>>",self.insScriptBinding.run_module_event)
         text.bind("<<check-module>>",self.insScriptBinding.check_module_event)
-        text.bind("<<zoom-height>>",self.insZoomHeight.zoom_height_event)
         text.bind("<<do-rstrip>>",self.insRstripExtension.do_rstrip)
         text.bind("<<try-open-calltip>>",self.insCallTips.try_open_calltip_event)
         text.bind("<<refresh-calltip>>",self.insCallTips.refresh_calltip_event) #must come after paren-closed to work right
@@ -1020,7 +1017,9 @@ class EditorWindow(object):
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(editor_only=True)
 
-    extfiles = {  }
+    extfiles = {
+        'ZoomHeight': 'zoomheight',
+        }
 
     def load_extension(self, name):
         fname = self.extfiles.get(name, name)
