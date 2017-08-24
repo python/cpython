@@ -746,7 +746,6 @@ static void
 bytesio_dealloc(bytesio *self)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(self);
     _PyObject_GC_UNTRACK(self);
     if (self->buf != NULL) {
         PyMem_Free(self->buf);

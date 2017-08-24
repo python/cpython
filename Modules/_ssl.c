@@ -3450,6 +3450,7 @@ static PyTypeObject PySSLContext_Type = {
 };
 
 
+
 #ifdef HAVE_OPENSSL_RAND
 
 /* helper routines for seeding the SSL PRNG */

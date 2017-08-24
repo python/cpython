@@ -544,9 +544,6 @@ subelement(PyObject* self, PyObject* args, PyObject* kw)
 static void
 element_dealloc(ElementObject* self)
 {
-    /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(self);
-
     if (self->extra)
         element_dealloc_extra(self);
 
