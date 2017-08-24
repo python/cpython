@@ -46,6 +46,25 @@ frame_getlineno(PyFrameObject *f, void *closure)
 }
 
 
+/* Given the index of the effective opcode,
+   scan back to construct the oparg with EXTENDED_ARG */
+static unsigned int
+get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
+{
+    _Py_CODEUNIT word;
+    unsigned int oparg = _Py_OPARG(codestr[i]);
+    if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG) {
+        oparg |= _Py_OPARG(word) << 8;
+        if (i >= 2 && _Py_OPCODE(word = codestr[i-2]) == EXTENDED_ARG) {
+            oparg |= _Py_OPARG(word) << 16;
+            if (i >= 3 && _Py_OPCODE(word = codestr[i-3]) == EXTENDED_ARG) {
+                oparg |= _Py_OPARG(word) << 24;
+            }
+        }
+    }
+    return oparg;
+}
+
 /*
  * Compute and return the setup addresses of the innermost 'finally' blocks
  * for *first_addr* and *second_addr* (-1 if none).
@@ -140,58 +159,6 @@ compute_finally_blocks(unsigned char *code, Py_ssize_t code_len,
 }
 
 
-/*
- * Compute and return the 'for' loop nesting levels
- * for *first_addr* and *second_addr*.
- */
-static void
-compute_for_loop_levels(unsigned char *code, Py_ssize_t code_len,
-                        int first_addr, int second_addr,
-                        int *first_loop_level, int *second_loop_level)
-{
-    int forstack[CO_MAXBLOCKS];
-    int forstack_top = 0;
-    int addr = 0;
-
-    forstack_top = 0;
-    *first_loop_level = -1;
-    *second_loop_level = -1;
-
-    for (addr = 0; addr < code_len; addr += sizeof(_Py_CODEUNIT)) {
-        unsigned char op = code[addr];
-        unsigned char oparg;
-        int target_addr;
-
-        switch (op) {
-        case FOR_ITER:
-            /* Store the loop end in forstack[] */
-            oparg = code[addr + 1];
-            target_addr = addr + oparg + 2;
-            assert(target_addr < code_len);
-            forstack[forstack_top++] = target_addr;
-            break;
-        }
-
-        while (forstack_top > 0 && forstack[forstack_top - 1] == addr) {
-            /* Out of innermost loop */
-            forstack_top--;
-        }
-
-        if (addr == first_addr) {
-            *first_loop_level = forstack_top;
-        }
-        if (addr == second_addr) {
-            *second_loop_level = forstack_top;
-        }
-    }
-
-    /* Verify that the forstack tracking code didn't get lost. */
-    assert(forstack_top == 0);
-    assert(*first_loop_level >= 0);
-    assert(*second_loop_level >= 0);
-}
-
-
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
  * order to jump to a given line of code, subject to some restrictions.  Most
  * lines are OK to jump to because they don't make any assumptions about the
@@ -230,8 +197,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     int min_iblock = 0;                 /* (ditto) */
     int f_lasti_setup_addr = 0;         /* Policing no-jump-into-finally */
     int new_lasti_setup_addr = 0;       /* (ditto) */
-    int f_lasti_loop_level = 0;         /* Policing 'for' loop levels */
-    int new_lasti_loop_level = 0;       /* (ditto) */
     int for_loop_delta = 0;             /* (ditto) */
 
     /* f_lineno must be an integer. */
@@ -349,9 +314,25 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     /* You can't jump inside a 'for' loop because it expects the iterator
      * to be on the stack.  Walk the bytecode to look for loop regions.
      */
-    compute_for_loop_levels(code, code_len,
-                            f->f_lasti, new_lasti,
-                            &f_lasti_loop_level, &new_lasti_loop_level);
+    for (addr = 0; addr < max_addr; addr += sizeof(_Py_CODEUNIT)) {
+        if (code[addr] == FOR_ITER) {
+            unsigned int oparg = get_arg((const _Py_CODEUNIT *)code,
+                                         addr / sizeof(_Py_CODEUNIT));
+            int target_addr = addr + oparg + sizeof(_Py_CODEUNIT);
+            assert(target_addr < code_len);
+            if (target_addr < min_addr) {
+                continue;
+            }
+            int first_in = addr < f->f_lasti && f->f_lasti < target_addr;
+            int second_in = addr < new_lasti && new_lasti < target_addr;
+            if (!first_in && second_in) {
+                PyErr_SetString(PyExc_ValueError,
+                                "can't jump into the middle of a block");
+                return -1;
+            }
+            for_loop_delta += first_in - second_in;  /* non-negative */
+        }
+    }
 
     /* Police block-jumping (you can't jump into the middle of a block)
      * and ensure that the blockstack finishes up in a sensible state (by
@@ -387,10 +368,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         /* Backwards jump. */
         new_iblock = f->f_iblock - delta_iblock;
     }
-    for_loop_delta = new_lasti_loop_level - f_lasti_loop_level;
 
     /* Are we jumping into a block? */
-    if (new_iblock > min_iblock || for_loop_delta > 0) {
+    if (new_iblock > min_iblock) {
         PyErr_SetString(PyExc_ValueError,
                         "can't jump into the middle of a block");
         return -1;
@@ -405,10 +385,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         }
     }
     /* Pop the iterators of any 'for' loop we're jumping out of. */
-    while (for_loop_delta < 0) {
+    while (for_loop_delta > 0) {
         PyObject *v = (*--f->f_stacktop);
         Py_DECREF(v);
-        for_loop_delta++;
+        for_loop_delta--;
     }
 
     /* Finally set the new f_lineno and f_lasti and return OK. */
