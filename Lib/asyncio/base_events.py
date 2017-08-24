@@ -859,7 +859,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 if family == 0:
                     raise ValueError('unexpected address family')
                 addr_pairs_info = (((family, proto), (None, None)),)
-            elif family == socket.AF_UNIX:
+            elif hasattr(socket, 'AF_UNIX') and family == socket.AF_UNIX:
                 for addr in (local_addr, remote_addr):
                     if addr is not None:
                         assert isinstance(addr, str)
