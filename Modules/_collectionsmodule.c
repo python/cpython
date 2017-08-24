@@ -1717,6 +1717,8 @@ dequeiter_traverse(dequeiterobject *dio, visitproc visit, void *arg)
 static void
 dequeiter_dealloc(dequeiterobject *dio)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(dio);
     Py_XDECREF(dio->deque);
     PyObject_GC_Del(dio);
 }
@@ -2097,6 +2099,8 @@ static PyMemberDef defdict_members[] = {
 static void
 defdict_dealloc(defdictobject *dd)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(dd);
     Py_CLEAR(dd->default_factory);
     PyDict_Type.tp_dealloc((PyObject *)dd);
 }
