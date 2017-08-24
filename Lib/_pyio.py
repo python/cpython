@@ -504,8 +504,13 @@ class IOBase(metaclass=abc.ABCMeta):
                 return 1
         if size is None:
             size = -1
-        elif not isinstance(size, int):
-            raise TypeError("size must be an integer")
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
         res = bytearray()
         while size < 0 or len(res) < size:
             b = self.read(nreadahead())
@@ -868,6 +873,13 @@ class BytesIO(BufferedIOBase):
             raise ValueError("read from closed file")
         if size is None:
             size = -1
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
         if size < 0:
             size = len(self._buffer)
         if len(self._buffer) <= self._pos:
@@ -905,9 +917,11 @@ class BytesIO(BufferedIOBase):
         if self.closed:
             raise ValueError("seek on closed file")
         try:
-            pos.__index__
-        except AttributeError as err:
-            raise TypeError("an integer is required") from err
+            pos_index = pos.__index__
+        except AttributeError:
+            raise TypeError(f"{pos!r} is not an integer")
+        else:
+            pos = pos_index()
         if whence == 0:
             if pos < 0:
                 raise ValueError("negative seek position %r" % (pos,))
@@ -932,9 +946,11 @@ class BytesIO(BufferedIOBase):
             pos = self._pos
         else:
             try:
-                pos.__index__
-            except AttributeError as err:
-                raise TypeError("an integer is required") from err
+                pos_index = pos.__index__
+            except AttributeError:
+                raise TypeError(f"{pos!r} is not an integer")
+            else:
+                pos = pos_index()
             if pos < 0:
                 raise ValueError("negative truncate position %r" % (pos,))
         del self._buffer[pos:]
@@ -2378,11 +2394,14 @@ class TextIOWrapper(TextIOBase):
         self._checkReadable()
         if size is None:
             size = -1
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
         decoder = self._decoder or self._get_decoder()
-        try:
-            size.__index__
-        except AttributeError as err:
-            raise TypeError("an integer is required") from err
         if size < 0:
             # Read everything.
             result = (self._get_decoded_chars() +
@@ -2413,8 +2432,13 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("read from closed file")
         if size is None:
             size = -1
-        elif not isinstance(size, int):
-            raise TypeError("size must be an integer")
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
 
         # Grab all the decoded text (we will rewind any extra bits later).
         line = self._get_decoded_chars()
