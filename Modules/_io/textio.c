@@ -1379,6 +1379,14 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     Py_DECREF(text);
     if (b == NULL)
         return NULL;
+    if (!PyBytes_Check(b)) {
+        PyErr_Format(PyExc_TypeError,
+                     "encode() should have returned a bytes object, not "
+                     "'%.200s'",
+                     Py_TYPE(b)->tp_name);
+        Py_DECREF(b);
+        return NULL;
+    }
 
     if (self->pending_bytes == NULL) {
         self->pending_bytes = PyList_New(0);

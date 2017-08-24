@@ -3225,6 +3225,20 @@ class TextIOWrapperTest(unittest.TestCase):
         t = self.TextIOWrapper(self.StringIO('a'))
         self.assertRaises(TypeError, t.read)
 
+    def test_illegal_encoder(self):
+        # Issue 31271: Calling write() while the return value of encoder's
+        # encode() is invalid shouldn't cause an assertion failure.
+        class BadEncoder():
+            def encode(self, dummy):
+                return 42
+        def _get_bad_encoder(dummy):
+            return BadEncoder()
+        quopri = codecs.lookup("quopri")
+        with support.swap_attr(quopri, '_is_text_encoding', True), \
+             support.swap_attr(quopri, 'incrementalencoder', _get_bad_encoder):
+            t = io.TextIOWrapper(io.BytesIO(b'foo'), encoding="quopri")
+        self.assertRaises(TypeError, t.write, 'bar')
+
     def test_illegal_decoder(self):
         # Issue #17106
         # Bypass the early encoding check added in issue 20404
