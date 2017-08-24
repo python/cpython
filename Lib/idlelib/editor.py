@@ -65,7 +65,7 @@ class EditorWindow(object):
         from idlelib.paragraph import FormatParagraph
         from idlelib.parenmatch import ParenMatch
         from idlelib.rstrip import RstripExtension
-        from idlelib.runscript import ScriptBinding        
+        from idlelib.runscript import ScriptBinding
 
         if EditorWindow.help_url is None:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
