@@ -1371,6 +1371,16 @@ class ProcessTestCase(BaseTestCase):
         fds_after_exception = os.listdir(fd_directory)
         self.assertEqual(fds_before_popen, fds_after_exception)
 
+    def test_file_not_found_includes_filename(self):
+        with self.assertRaises(FileNotFoundError) as c:
+            subprocess.call(['/opt/nonexistent_binary', 'with', 'some', 'args'])
+        self.assertEqual(c.exception.filename, '/opt/nonexistent_binary')
+
+    def test_file_not_found_with_bad_cwd(self):
+        with self.assertRaises(FileNotFoundError) as c:
+            subprocess.Popen(['exit', '0'], cwd='/some/nonexistent/directory')
+        self.assertEqual(c.exception.filename, '/some/nonexistent/directory')
+
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
