@@ -531,7 +531,15 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
            _PyIO_str_getstate, NULL);
         if (state == NULL)
             return NULL;
-        if (!PyArg_ParseTuple(state, "OK", &buffer, &flag)) {
+        if (!PyTuple_Check(state)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "illegal decoder state");
+            Py_DECREF(state);
+            return NULL;
+        }
+        if (!PyArg_ParseTuple(state, "OK;illegal decoder state",
+                              &buffer, &flag))
+        {
             Py_DECREF(state);
             return NULL;
         }
@@ -669,7 +677,7 @@ typedef struct
                                       written, or NULL */
     Py_ssize_t pending_bytes_count;
 
-    /* snapshot is either None, or a tuple (dec_flags, next_input) where
+    /* snapshot is either NULL, or a tuple (dec_flags, next_input) where
      * dec_flags is the second (integer) item of the decoder state and
      * next_input is the chunk of input bytes that comes next after the
      * snapshot point.  We use this to reconstruct decoder states in tell().
@@ -2351,6 +2359,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
         goto fail;
 
     /* Skip backward to the snapshot point (see _read_chunk). */
+    assert(PyTuple_Check(self->snapshot));
     if (!PyArg_ParseTuple(self->snapshot, "iO", &cookie.dec_flags, &next_input))
         goto fail;
 
@@ -2378,7 +2387,15 @@ _io_TextIOWrapper_tell_impl(textio *self)
             _PyIO_str_getstate, NULL); \
         if (_state == NULL) \
             goto fail; \
-        if (!PyArg_ParseTuple(_state, "Oi", &dec_buffer, &dec_flags)) { \
+        if (!PyTuple_Check(_state)) { \
+            PyErr_SetString(PyExc_TypeError, \
+                            "illegal decoder state"); \
+            Py_DECREF(_state); \
+            goto fail; \
+        } \
+        if (!PyArg_ParseTuple(_state, "Oi;illegal decoder state", \
+                              &dec_buffer, &dec_flags)) \
+        { \
             Py_DECREF(_state); \
             goto fail; \
         } \
