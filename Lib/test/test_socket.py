@@ -49,19 +49,13 @@ except ImportError:
 def get_cid():
     if fcntl is None:
         return None
-    if not os.path.exists("/dev/vsock"):
-        return None
     try:
-        fd = open("/dev/vsock", "rb")
-    except:
+        with open("/dev/vsock", "rb") as f:
+            r = fcntl.ioctl(f, socket.IOCTL_VM_SOCKETS_GET_LOCAL_CID, "    ")
+    except OSError:
         return None
-    try:
-        r = fcntl.ioctl(fd, socket.IOCTL_VM_SOCKETS_GET_LOCAL_CID, "    ")
-    except:
-        fd.close()
-        return None
-    fd.close()
-    return struct.unpack("I", r)[0]
+    else:
+        return struct.unpack("I", r)[0]
 
 def _have_socket_can():
     """Check whether CAN sockets are supported on this host."""

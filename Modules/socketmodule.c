@@ -2642,7 +2642,7 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
 
 #ifdef AF_VSOCK
     if (s->sock_family == AF_VSOCK) {
-        uint64_t vflag;
+        uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
         if (PyArg_ParseTuple(args, "iiK:setsockopt",
                          &level, &optname, &vflag)) {
@@ -2735,13 +2735,13 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
     if (buflen == 0) {
 #ifdef AF_VSOCK
         if (s->sock_family == AF_VSOCK) {
-            uint64_t vflag = 0;
+            uint64_t vflag = 0; // Must be set width of 64 bits
             flagsize = sizeof vflag;
             res = getsockopt(s->sock_fd, level, optname,
                          (void *)&vflag, &flagsize);
             if (res < 0)
                 return s->errorhandler();
-            return PyLong_FromLong(vflag);
+            return PyLong_FromUnsignedLong(vflag);
         }
 #endif
         flagsize = sizeof flag;
