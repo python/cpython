@@ -1,0 +1,2 @@
+Update some methods in the _pyio module to also accept integer types. Patch
+by Oren Milman.
