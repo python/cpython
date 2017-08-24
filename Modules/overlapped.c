@@ -837,7 +837,7 @@ Overlapped_WriteFile(OverlappedObject *self, PyObject *args)
 #if SIZEOF_SIZE_T > SIZEOF_LONG
     if (self->write_buffer.len > (Py_ssize_t)ULONG_MAX) {
         PyBuffer_Release(&self->write_buffer);
-        PyErr_SetString(PyExc_ValueError, "buffer to large");
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
         return NULL;
     }
 #endif
@@ -893,7 +893,7 @@ Overlapped_WSASend(OverlappedObject *self, PyObject *args)
 #if SIZEOF_SIZE_T > SIZEOF_LONG
     if (self->write_buffer.len > (Py_ssize_t)ULONG_MAX) {
         PyBuffer_Release(&self->write_buffer);
-        PyErr_SetString(PyExc_ValueError, "buffer to large");
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
         return NULL;
     }
 #endif
@@ -990,7 +990,9 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
         ((SOCKADDR_IN*)Address)->sin_port = htons(Port);
         return Length;
     }
-    else if (PyArg_ParseTuple(obj, "uHkk", &Host, &Port, &FlowInfo, &ScopeId))
+    else if (PyArg_ParseTuple(obj,
+                              "uHkk;ConnectEx(): illegal address_as_bytes "
+                              "argument", &Host, &Port, &FlowInfo, &ScopeId))
     {
         PyErr_Clear();
         Address->sa_family = AF_INET6;
@@ -1024,8 +1026,11 @@ Overlapped_ConnectEx(OverlappedObject *self, PyObject *args)
     BOOL ret;
     DWORD err;
 
-    if (!PyArg_ParseTuple(args, F_HANDLE "O", &ConnectSocket, &AddressObj))
+    if (!PyArg_ParseTuple(args, F_HANDLE "O!:ConnectEx",
+                          &ConnectSocket, &PyTuple_Type, &AddressObj))
+    {
         return NULL;
+    }
 
     if (self->type != TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation already attempted");

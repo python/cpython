@@ -132,8 +132,9 @@ class Regrtest:
 
         # "[ 51/405/1] test_tcl passed"
         line = f"{test_index:{self.test_count_width}}{self.test_count}"
-        if self.bad and not self.ns.pgo:
-            line = f"{line}/{len(self.bad)}"
+        fails = len(self.bad) + len(self.environment_changed)
+        if fails and not self.ns.pgo:
+            line = f"{line}/{fails}"
         line = f"[{line}] {test}"
 
         # add the system load prefix: "load avg: 1.80 "
@@ -423,8 +424,6 @@ class Regrtest:
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
-        print("== hash algorithm:", sys.hash_info.algorithm,
-              "64bit" if sys.maxsize > 2**32 else "32bit")
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:
@@ -432,7 +431,6 @@ class Regrtest:
         print("== encodings: locale=%s, FS=%s"
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
-        print("Testing with flags:", sys.flags)
 
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
