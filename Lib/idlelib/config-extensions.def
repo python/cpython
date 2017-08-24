@@ -33,6 +33,6 @@
 # information on creating IDLE extensions.
 
 [ZoomHeight]
-enable = True
+enable=True
 [ZoomHeight_cfgBindings]
-zoom-height=<Alt-2>
+zoom-height=<Alt-Key-2>

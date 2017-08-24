@@ -7,6 +7,7 @@ from idlelib import macosx
 
 
 class ZoomHeight:
+
     menudefs = [
         ('windows', [
             ('_Zoom Height', '<<zoom-height>>'),
