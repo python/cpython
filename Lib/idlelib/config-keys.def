@@ -69,7 +69,6 @@ flash-paren=<Control-Key-0>
 paren-closed=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-braceright>
 run-module=<Key-F5>
 check-module=<Alt-Key-x>
-zoom-height=<Alt-Key-2>
 
 [IDLE Classic Unix]
 copy=<Alt-Key-w> <Meta-Key-w>
@@ -133,7 +132,6 @@ flash-paren=<Control-Key-0>
 paren-closed=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-braceright>
 run-module=<Key-F5>
 check-module=<Alt-Key-x>
-zoom-height=<Alt-Key-2>
 
 [IDLE Modern Unix]
 copy = <Control-Shift-Key-C> <Control-Key-Insert>
@@ -197,7 +195,6 @@ flash-paren=<Control-Key-0>
 paren-closed=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-braceright>
 run-module=<Key-F5>
 check-module=<Alt-Key-x>
-zoom-height=<Alt-Key-2>
 
 [IDLE Classic Mac]
 copy=<Command-Key-c>
@@ -261,7 +258,6 @@ flash-paren=<Control-Key-0>
 paren-closed=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-braceright>
 run-module=<Key-F5>
 check-module=<Alt-Key-x>
-zoom-height=<Alt-Key-2>
 
 [IDLE Classic OSX]
 toggle-tabs = <Control-Key-t>
@@ -326,4 +322,3 @@ flash-paren=<Control-Key-0>
 paren-closed=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-braceright>
 run-module=<Key-F5>
 check-module=<Alt-Key-x>
-zoom-height=<Alt-Key-2>

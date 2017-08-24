@@ -823,19 +823,20 @@ class KeysPageTest(unittest.TestCase):
         d.custom_name.set('my custom keys')
         d.bindingslist.delete(0, 'end')
         d.bindingslist.insert(0, 'copy')
-        d.bindingslist.insert(1, 'expand-word')
+        d.bindingslist.insert(1, 'zoom-height')
         d.bindingslist.selection_set(0)
         d.bindingslist.selection_anchor(0)
         # Core binding - adds to keys.
         d.keybinding.set('<Key-F11>')
         self.assertEqual(keyspage,
                          {'my custom keys': {'copy': '<Key-F11>'}})
+        
         # Not a core binding - adds to extensions.
         d.bindingslist.selection_set(1)
         d.bindingslist.selection_anchor(1)
         d.keybinding.set('<Key-F11>')
         self.assertEqual(extpage,
-                         {'AutoExpand_cfgBindings': {'expand-word': '<Key-F11>'}})
+                         {'zoomheight_cfgBindings': {'zoom-height': '<Key-F11>'}})
 
     def test_set_keys_type(self):
         eq = self.assertEqual

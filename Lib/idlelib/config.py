@@ -672,8 +672,7 @@ class IdleConf:
             '<<flash-paren>>':['<Control-Key-0>'],
             '<<paren-closed>>':['<KeyRelease-parenright>', '<KeyRelease-bracketright>', '<KeyRelease-braceright>'],
             '<<run-module>>':['<Key-F5>'],
-            '<<check-module>>':['<Alt-Key-x>'],
-            '<<zoom-height>>':['<Alt-Key-2>']
+            '<<check-module>>':['<Alt-Key-x>']
             }
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or
