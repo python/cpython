@@ -272,7 +272,7 @@ class HighPageTest(unittest.TestCase):
         # builtinlist sets variable builtin_name to the CurrentTheme default.
         eq(d.builtin_name.get(), 'IDLE Classic')
         eq(d.custom_name.get(), '- no custom themes -')
-        eq(d.custom_theme_on.state(), (DISABLED,))
+        eq(d.custom_theme_on.state(), ('disabled',))
         eq(d.set_theme_type.called, 1)
         eq(d.paint_theme_sample.called, 1)
         eq(d.set_highlight_target.called, 1)

@@ -10,7 +10,10 @@ Refer to comments in EditorWindow autoindent code for details.
 
 """
 from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
-                     StringVar, BooleanVar, IntVar)
+                     StringVar, BooleanVar, IntVar, TRUE, FALSE,
+                     TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
+                     NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
+                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
 from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
                          Notebook, Radiobutton, Scrollbar, Style)
 import tkinter.colorchooser as tkColorChooser
@@ -22,6 +25,7 @@ from idlelib.config_key import GetKeysDialog
 from idlelib.dynoption import DynOptionMenu
 from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
+from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
 
 changes = ConfigChanges()
@@ -53,7 +57,7 @@ class ConfigDialog(Toplevel):
         if not _utest:
             self.withdraw()
 
-        self['borderwidth'] = 5
+        self.configure(borderwidth=5)
         self.title(title or 'IDLE Preferences')
         x = parent.winfo_rootx() + 20
         y = parent.winfo_rooty() + (30 if not _htest else 150)
@@ -62,7 +66,7 @@ class ConfigDialog(Toplevel):
         # The first value of the tuple is the sample area tag name.
         # The second value is the display name list sort index.
         self.create_widgets()
-        self.resizable(height=False, width=False)
+        self.resizable(height=FALSE, width=FALSE)
         self.transient(parent)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.fontpage.fontlist.focus_set()
@@ -107,8 +111,8 @@ class ConfigDialog(Toplevel):
         note.add(self.genpage, text=' General ')
         note.add(self.extpage, text='Extensions')
         note.enable_traversal()
-        note.pack(side='top', expand=True, fill='both')
-        self.create_action_buttons().pack(side='bottom')
+        note.pack(side=TOP, expand=TRUE, fill=BOTH)
+        self.create_action_buttons().pack(side=BOTTOM)
 
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
@@ -141,11 +145,11 @@ class ConfigDialog(Toplevel):
             ('Apply', self.apply),
             ('Cancel', self.cancel),
             ('Help', self.help)):
-            Button(buttons, text=txt, command=cmd, takefocus=False,
-                   **padding_args).pack(side='left', padx=5)
+            Button(buttons, text=txt, command=cmd, takefocus=FALSE,
+                   **padding_args).pack(side=LEFT, padx=5)
         # Add space above buttons.
-        Frame(outer, height=2, borderwidth=0).pack(side='top')
-        buttons.pack(side='bottom')
+        Frame(outer, height=2, borderwidth=0).pack(side=TOP)
+        buttons.pack(side=BOTTOM)
         return outer
 
     def ok(self):
@@ -349,20 +353,20 @@ class ConfigDialog(Toplevel):
         for row, opt in enumerate(self.extensions[ext_name]):
             # Create a row with a label and entry/checkbutton.
             label = Label(entry_area, text=opt['name'])
-            label.grid(row=row, column=0, sticky='nw')
+            label.grid(row=row, column=0, sticky=NW)
             var = opt['var']
             if opt['type'] == 'bool':
-                Checkbutton(entry_area, variable=var, onvalue='True',
-                            offvalue='False', width=8
-                            ).grid(row=row, column=1, sticky='w', padx=7)
+                Checkbutton(entry_area, variable=var,
+                            onvalue='True', offvalue='False', width=8
+                            ).grid(row=row, column=1, sticky=W, padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
                       validatecommand=(self.is_int, '%P')
-                      ).grid(row=row, column=1, sticky='nsew', padx=7)
+                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
 
             else:
                 Entry(entry_area, textvariable=var
-                      ).grid(row=row, column=1, sticky='nsew', padx=7)
+                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
         return
 
     def set_extension_value(self, section, opt):
@@ -481,35 +485,35 @@ class FontPage(Frame):
         # Create widgets:
         # body and body section frames.
         frame_font = LabelFrame(
-                self, borderwidth=2, relief='groove', text=' Base Editor Font ')
+                self, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
         frame_indent = LabelFrame(
-                self, borderwidth=2, relief='groove', text=' Indentation Width ')
+                self, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
         # frame_font.
         frame_font_name = Frame(frame_font)
         frame_font_param = Frame(frame_font)
         font_name_title = Label(
-                frame_font_name, justify='left', text='Font Face :')
+                frame_font_name, justify=LEFT, text='Font Face :')
         self.fontlist = Listbox(frame_font_name, height=5,
-                                takefocus=True, exportselection=False)
+                                takefocus=True, exportselection=FALSE)
         self.fontlist.bind('<ButtonRelease-1>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Up>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Down>', self.on_fontlist_select)
         scroll_font = Scrollbar(frame_font_name)
-        scroll_font['command'] = self.fontlist.yview
-        self.fontlist['yscrollcommand'] = scroll_font.set
+        scroll_font.config(command=self.fontlist.yview)
+        self.fontlist.config(yscrollcommand=scroll_font.set)
         font_size_title = Label(frame_font_param, text='Size :')
         self.sizelist = DynOptionMenu(frame_font_param, self.font_size, None)
         self.bold_toggle = Checkbutton(
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
-        frame_font_sample = Frame(frame_font, relief='solid', borderwidth=1)
+        frame_font_sample = Frame(frame_font, relief=SOLID, borderwidth=1)
         temp_font = tkFont.Font(self, ('courier', 10, 'normal'))
         self.font_sample = Label(
-                frame_font_sample, justify='left', font=temp_font,
+                frame_font_sample, justify=LEFT, font=temp_font,
                 text='AaBbCcDdEe\nFfGgHhIiJj\n1234567890\n#:+=(){}[]')
         # frame_indent.
         indent_title = Label(
-                frame_indent, justify='left',
+                frame_indent, justify=LEFT,
                 text='Python Standard: 4 Spaces!')
         self.indent_scale = Scale(
                 frame_indent, variable=self.space_num,
@@ -517,23 +521,23 @@ class FontPage(Frame):
 
         # Pack widgets:
         # body.
-        frame_font.pack(side='left', padx=5, pady=5, expand=True, fill='both')
-        frame_indent.pack(side='left', padx=5, pady=5, fill='y')
+        frame_font.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_indent.pack(side=LEFT, padx=5, pady=5, fill=Y)
         # frame_font.
-        frame_font_name.pack(side='top', padx=5, pady=5, fill='x')
-        frame_font_param.pack(side='top', padx=5, pady=5, fill='x')
-        font_name_title.pack(side='top', anchor='w')
-        self.fontlist.pack(side='left', expand=True, fill='x')
-        scroll_font.pack(side='left', fill='y')
-        font_size_title.pack(side='left', anchor='w')
-        self.sizelist.pack(side='left', anchor='w')
-        self.bold_toggle.pack(side='left', anchor='w', padx=20)
-        frame_font_sample.pack(side='top', padx=5, pady=5, expand=True, fill='both')
-        self.font_sample.pack(expand=True, fill='both')
+        frame_font_name.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_font_param.pack(side=TOP, padx=5, pady=5, fill=X)
+        font_name_title.pack(side=TOP, anchor=W)
+        self.fontlist.pack(side=LEFT, expand=TRUE, fill=X)
+        scroll_font.pack(side=LEFT, fill=Y)
+        font_size_title.pack(side=LEFT, anchor=W)
+        self.sizelist.pack(side=LEFT, anchor=W)
+        self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
+        frame_font_sample.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        self.font_sample.pack(expand=TRUE, fill=BOTH)
         # frame_indent.
-        frame_indent.pack(side='top', fill='x')
-        indent_title.pack(side='top', anchor='w', padx=5)
-        self.indent_scale.pack(side='top', padx=5, fill='x')
+        frame_indent.pack(side=TOP, fill=X)
+        indent_title.pack(side=TOP, anchor=W, padx=5)
+        self.indent_scale.pack(side=TOP, padx=5, fill=X)
 
     def load_font_cfg(self):
         """Load current configuration settings for the font options.
@@ -545,13 +549,13 @@ class FontPage(Frame):
         configured_font = idleConf.GetFont(self, 'main', 'EditorWindow')
         font_name = configured_font[0].lower()
         font_size = configured_font[1]
-        font_bold = configured_font[2]=='bold'
+        font_bold  = configured_font[2]=='bold'
 
         # Set editor font selection list and font_name.
         fonts = list(tkFont.families(self))
         fonts.sort()
         for font in fonts:
-            self.fontlist.insert('end', font)
+            self.fontlist.insert(END, font)
         self.font_name.set(font_name)
         lc_fonts = [s.lower() for s in fonts]
         try:
@@ -587,11 +591,12 @@ class FontPage(Frame):
 
     def on_fontlist_select(self, event):
         """Handle selecting a font from the list.
+
         Event can result from either mouse click or Up or Down key.
         Set font_name and example displays to selection.
         """
         font = self.fontlist.get(
-                'active' if event.type.name == 'KeyRelease' else 'anchor')
+                ACTIVE if event.type.name == 'KeyRelease' else ANCHOR)
         self.font_name.set(font.lower())
 
     def set_samples(self, event=None):
@@ -780,15 +785,15 @@ class HighPage(Frame):
 
         # Create widgets:
         # body frame and section frames.
-        frame_custom = LabelFrame(self, borderwidth=2, relief='groove',
+        frame_custom = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                   text=' Custom Highlighting ')
-        frame_theme = LabelFrame(self, borderwidth=2, relief='groove',
+        frame_theme = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                  text=' Highlighting Theme ')
         # frame_custom.
         text = self.highlight_sample = Text(
-                frame_custom, relief='solid', borderwidth=1,
+                frame_custom, relief=SOLID, borderwidth=1,
                 font=('courier', 12, ''), cursor='hand2', width=21, height=13,
-                takefocus=False, highlightthickness=0, wrap='none')
+                takefocus=FALSE, highlightthickness=0, wrap=NONE)
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         text_and_tags=(('\n', 'normal'),
@@ -809,7 +814,7 @@ class HighPage(Frame):
             ('stdout', 'stdout'), (' ', 'normal'),
             ('stderr', 'stderr'), ('\n\n', 'normal'))
         for texttag in text_and_tags:
-            text.insert('end', texttag[0], texttag[1])
+            text.insert(END, texttag[0], texttag[1])
         for element in self.theme_elements:
             def tem(event, elem=element):
                 # event.widget.winfo_top_level().highlight_target.set(elem)
@@ -856,26 +861,26 @@ class HighPage(Frame):
 
         # Pack widgets:
         # body.
-        frame_custom.pack(side='left', padx=5, pady=5, expand=True, fill='both')
-        frame_theme.pack(side='left', padx=5, pady=5, fill='y')
+        frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_theme.pack(side=LEFT, padx=5, pady=5, fill=Y)
         # frame_custom.
-        self.frame_color_set.pack(side='top', padx=5, pady=5, expand=True, fill='x')
-        frame_fg_bg_toggle.pack(side='top', padx=5, pady=0)
+        self.frame_color_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
+        frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
         self.highlight_sample.pack(
-                side='top', padx=5, pady=5, expand=True, fill='both')
-        self.button_set_color.pack(side='top', expand=True, fill='x', padx=8, pady=4)
-        self.targetlist.pack(side='top', expand=True, fill='x', padx=8, pady=3)
-        self.fg_on.pack(side='left', anchor='e')
-        self.bg_on.pack(side='right', anchor='w')
-        self.button_save_custom.pack(side='bottom', fill='x', padx=5, pady=5)
+                side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        self.button_set_color.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=4)
+        self.targetlist.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=3)
+        self.fg_on.pack(side=LEFT, anchor=E)
+        self.bg_on.pack(side=RIGHT, anchor=W)
+        self.button_save_custom.pack(side=BOTTOM, fill=X, padx=5, pady=5)
         # frame_theme.
-        theme_type_title.pack(side='top', anchor='w', padx=5, pady=5)
-        self.builtin_theme_on.pack(side='top', anchor='w', padx=5)
-        self.custom_theme_on.pack(side='top', anchor='w', padx=5, pady=2)
-        self.builtinlist.pack(side='top', fill='x', padx=5, pady=5)
-        self.customlist.pack(side='top', fill='x', anchor='w', padx=5, pady=5)
-        self.button_delete_custom.pack(side='top', fill='x', padx=5, pady=5)
-        self.theme_message.pack(side='top', fill='x', pady=5)
+        theme_type_title.pack(side=TOP, anchor=W, padx=5, pady=5)
+        self.builtin_theme_on.pack(side=TOP, anchor=W, padx=5)
+        self.custom_theme_on.pack(side=TOP, anchor=W, padx=5, pady=2)
+        self.builtinlist.pack(side=TOP, fill=X, padx=5, pady=5)
+        self.customlist.pack(side=TOP, fill=X, anchor=W, padx=5, pady=5)
+        self.button_delete_custom.pack(side=TOP, fill=X, padx=5, pady=5)
+        self.theme_message.pack(side=TOP, fill=X, pady=5)
 
     def load_theme_cfg(self):
         """Load current configuration settings for the theme options.
@@ -1372,17 +1377,17 @@ class KeysPage(Frame):
         # Create widgets:
         # body and section frames.
         frame_custom = LabelFrame(
-                self, borderwidth=2, relief='groove',
+                self, borderwidth=2, relief=GROOVE,
                 text=' Custom Key Bindings ')
         frame_key_sets = LabelFrame(
-                self, borderwidth=2, relief='groove', text=' Key Set ')
+                self, borderwidth=2, relief=GROOVE, text=' Key Set ')
         # frame_custom.
         frame_target = Frame(frame_custom)
         target_title = Label(frame_target, text='Action - Key(s)')
         scroll_target_y = Scrollbar(frame_target)
-        scroll_target_x = Scrollbar(frame_target, orient='horizontal')
+        scroll_target_x = Scrollbar(frame_target, orient=HORIZONTAL)
         self.bindingslist = Listbox(
-                frame_target, takefocus=False, exportselection=False)
+                frame_target, takefocus=FALSE, exportselection=FALSE)
         self.bindingslist.bind('<ButtonRelease-1>',
                                self.on_bindingslist_select)
         scroll_target_y['command'] = self.bindingslist.yview
@@ -1391,7 +1396,7 @@ class KeysPage(Frame):
         self.bindingslist['xscrollcommand'] = scroll_target_x.set
         self.button_new_keys = Button(
                 frame_custom, text='Get New Keys for Selection',
-                command=self.get_new_keys, state='disabled')
+                command=self.get_new_keys, state=DISABLED)
         # frame_key_sets.
         frames = [Frame(frame_key_sets, padding=2, borderwidth=0)
                   for i in range(2)]
@@ -1415,28 +1420,28 @@ class KeysPage(Frame):
 
         # Pack widgets:
         # body.
-        frame_custom.pack(side='bottom', padx=5, pady=5, expand=True, fill='both')
-        frame_key_sets.pack(side='bottom', padx=5, pady=5, fill='both')
+        frame_custom.pack(side=BOTTOM, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_key_sets.pack(side=BOTTOM, padx=5, pady=5, fill=BOTH)
         # frame_custom.
-        self.button_new_keys.pack(side='bottom', fill='x', padx=5, pady=5)
-        frame_target.pack(side='left', padx=5, pady=5, expand=True, fill='both')
+        self.button_new_keys.pack(side=BOTTOM, fill=X, padx=5, pady=5)
+        frame_target.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_target.
         frame_target.columnconfigure(0, weight=1)
         frame_target.rowconfigure(1, weight=1)
-        target_title.grid(row=0, column=0, columnspan=2, sticky='w')
-        self.bindingslist.grid(row=1, column=0, sticky='nsew')
-        scroll_target_y.grid(row=1, column=1, sticky='ns')
-        scroll_target_x.grid(row=2, column=0, sticky='ew')
+        target_title.grid(row=0, column=0, columnspan=2, sticky=W)
+        self.bindingslist.grid(row=1, column=0, sticky=NSEW)
+        scroll_target_y.grid(row=1, column=1, sticky=NS)
+        scroll_target_x.grid(row=2, column=0, sticky=EW)
         # frame_key_sets.
-        self.builtin_keyset_on.grid(row=0, column=0, sticky='w'+'ns')
-        self.custom_keyset_on.grid(row=1, column=0, sticky='w'+'ns')
-        self.builtinlist.grid(row=0, column=1, sticky='nsew')
-        self.customlist.grid(row=1, column=1, sticky='nsew')
-        self.keys_message.grid(row=0, column=2, sticky='nsew', padx=5, pady=5)
-        self.button_delete_custom_keys.pack(side='left', fill='x', expand=True, padx=2)
-        self.button_save_custom_keys.pack(side='left', fill='x', expand=True, padx=2)
-        frames[0].pack(side='top', fill='both', expand=True)
-        frames[1].pack(side='top', fill='x', expand=True, pady=2)
+        self.builtin_keyset_on.grid(row=0, column=0, sticky=W+NS)
+        self.custom_keyset_on.grid(row=1, column=0, sticky=W+NS)
+        self.builtinlist.grid(row=0, column=1, sticky=NSEW)
+        self.customlist.grid(row=1, column=1, sticky=NSEW)
+        self.keys_message.grid(row=0, column=2, sticky=NSEW, padx=5, pady=5)
+        self.button_delete_custom_keys.pack(side=LEFT, fill=X, expand=True, padx=2)
+        self.button_save_custom_keys.pack(side=LEFT, fill=X, expand=True, padx=2)
+        frames[0].pack(side=TOP, fill=BOTH, expand=True)
+        frames[1].pack(side=TOP, fill=X, expand=True, pady=2)
 
     def load_key_cfg(self):
         "Load current configuration settings for the keybinding options."
@@ -1509,7 +1514,7 @@ class KeysPage(Frame):
         "Store change to a keybinding."
         value = self.keybinding.get()
         key_set = self.custom_name.get()
-        event = self.bindingslist.get('anchor').split()[0]
+        event = self.bindingslist.get(ANCHOR).split()[0]
         if idleConf.IsCoreBinding(event):
             changes.add_option('keys', key_set, event, value)
         else:  # Event is an extension binding.
@@ -1538,7 +1543,7 @@ class KeysPage(Frame):
         changed, then a name for a custom key set needs to be
         entered for the change to be applied.
         """
-        list_index = self.bindingslist.index('anchor')
+        list_index = self.bindingslist.index(ANCHOR)
         binding = self.bindingslist.get(list_index)
         bind_name = binding.split()[0]
         if self.keyset_source.get():
@@ -1629,11 +1634,11 @@ class KeysPage(Frame):
         reselect = False
         if self.bindingslist.curselection():
             reselect = True
-            list_index = self.bindingslist.index('anchor')
+            list_index = self.bindingslist.index(ANCHOR)
         keyset = idleConf.GetKeySet(keyset_name)
         bind_names = list(keyset.keys())
         bind_names.sort()
-        self.bindingslist.delete(0, 'end')
+        self.bindingslist.delete(0, END)
         for bind_name in bind_names:
             key = ' '.join(keyset[bind_name])
             bind_name = bind_name[2:-2]  # Trim off the angle brackets.
@@ -1641,7 +1646,7 @@ class KeysPage(Frame):
                 # Handle any unsaved changes to this key set.
                 if bind_name in changes['keys'][keyset_name]:
                     key = changes['keys'][keyset_name][bind_name]
-            self.bindingslist.insert('end', bind_name+' - '+key)
+            self.bindingslist.insert(END, bind_name+' - '+key)
         if reselect:
             self.bindingslist.see(list_index)
             self.bindingslist.select_set(list_index)
@@ -1760,12 +1765,12 @@ class GenPage(Frame):
 
         # Create widgets:
         # Section frames.
-        frame_run = LabelFrame(self, borderwidth=2, relief='groove',
+        frame_run = LabelFrame(self, borderwidth=2, relief=GROOVE,
                               text=' Startup Preferences ')
-        frame_save = LabelFrame(self, borderwidth=2, relief='groove',
+        frame_save = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                text=' autosave Preferences ')
-        frame_win_size = Frame(self, borderwidth=2, relief='groove')
-        frame_help = LabelFrame(self, borderwidth=2, relief='groove',
+        frame_win_size = Frame(self, borderwidth=2, relief=GROOVE)
+        frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                text=' Additional Help Sources ')
         # frame_run.
         startup_title = Label(frame_run, text='At Startup')
@@ -1797,7 +1802,7 @@ class GenPage(Frame):
         frame_helplist_buttons = Frame(frame_helplist)
         self.helplist = Listbox(
                 frame_helplist, height=5, takefocus=True,
-                exportselection=False)
+                exportselection=FALSE)
         scroll_helplist = Scrollbar(frame_helplist)
         scroll_helplist['command'] = self.helplist.yview
         self.helplist['yscrollcommand'] = scroll_helplist.set
@@ -1814,32 +1819,32 @@ class GenPage(Frame):
 
         # Pack widgets:
         # body.
-        frame_run.pack(side='top', padx=5, pady=5, fill='x')
-        frame_save.pack(side='top', padx=5, pady=5, fill='x')
-        frame_win_size.pack(side='top', padx=5, pady=5, fill='x')
-        frame_help.pack(side='top', padx=5, pady=5, expand=True, fill='both')
+        frame_run.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_save.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_win_size.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
-        startup_title.pack(side='left', anchor='w', padx=5, pady=5)
-        self.startup_shell_on.pack(side='right', anchor='w', padx=5, pady=5)
-        self.startup_editor_on.pack(side='right', anchor='w', padx=5, pady=5)
+        startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         # frame_save.
-        run_save_title.pack(side='left', anchor='w', padx=5, pady=5)
-        self.save_auto_on.pack(side='right', anchor='w', padx=5, pady=5)
-        self.save_ask_on.pack(side='right', anchor='w', padx=5, pady=5)
+        run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         # frame_win_size.
-        win_size_title.pack(side='left', anchor='w', padx=5, pady=5)
-        self.win_height_int.pack(side='right', anchor='e', padx=10, pady=5)
-        win_height_title.pack(side='right', anchor='e', pady=5)
-        self.win_width_int.pack(side='right', anchor='e', padx=10, pady=5)
-        win_width_title.pack(side='right', anchor='e', pady=5)
+        win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        win_height_title.pack(side=RIGHT, anchor=E, pady=5)
+        self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        win_width_title.pack(side=RIGHT, anchor=E, pady=5)
         # frame_help.
-        frame_helplist_buttons.pack(side='right', padx=5, pady=5, fill='y')
-        frame_helplist.pack(side='top', padx=5, pady=5, expand=True, fill='both')
-        scroll_helplist.pack(side='right', anchor='w', fill='y')
-        self.helplist.pack(side='left', anchor='e', expand=True, fill='both')
-        self.button_helplist_edit.pack(side='top', anchor='w', pady=5)
-        self.button_helplist_add.pack(side='top', anchor='w')
-        self.button_helplist_remove.pack(side='top', anchor='w', pady=5)
+        frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
+        frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
+        self.helplist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
+        self.button_helplist_edit.pack(side=TOP, anchor=W, pady=5)
+        self.button_helplist_add.pack(side=TOP, anchor=W)
+        self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
 
     def load_general_cfg(self):
         "Load current configuration settings for the general options."
@@ -1858,7 +1863,7 @@ class GenPage(Frame):
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
         self.helplist.delete(0, 'end')
         for help_item in self.user_helplist:
-            self.helplist.insert('end', help_item[0])
+            self.helplist.insert(END, help_item[0])
         self.set_add_delete_state()
 
     def help_source_selected(self, event):
@@ -1887,7 +1892,7 @@ class GenPage(Frame):
         help_source = HelpSource(self, 'New Help Source').result
         if help_source:
             self.user_helplist.append(help_source)
-            self.helplist.insert('end', help_source[0])
+            self.helplist.insert(END, help_source[0])
             self.update_help_changes()
 
     def helplist_item_edit(self):
@@ -1896,7 +1901,7 @@ class GenPage(Frame):
         Query with existing help source information and update
         config if the values are changed.
         """
-        item_index = self.helplist.index('anchor')
+        item_index = self.helplist.index(ANCHOR)
         help_source = self.user_helplist[item_index]
         new_help_source = HelpSource(
                 self, 'Edit Help Source',
@@ -1915,7 +1920,7 @@ class GenPage(Frame):
 
         Delete the help list item from config.
         """
-        item_index = self.helplist.index('anchor')
+        item_index = self.helplist.index(ANCHOR)
         del(self.user_helplist[item_index])
         self.helplist.delete(item_index)
         self.update_help_changes()
@@ -2054,11 +2059,11 @@ class VerticalScrolledFrame(Frame):
         Frame.__init__(self, parent, *args, **kw)
 
         # Create a canvas object and a vertical scrollbar for scrolling it.
-        vscrollbar = Scrollbar(self, orient='vertical')
-        vscrollbar.pack(fill='y', side='right', expand=False)
+        vscrollbar = Scrollbar(self, orient=VERTICAL)
+        vscrollbar.pack(fill=Y, side=RIGHT, expand=FALSE)
         canvas = Canvas(self, borderwidth=0, highlightthickness=0,
                         yscrollcommand=vscrollbar.set, width=240)
-        canvas.pack(side='left', fill='both', expand=True)
+        canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
         vscrollbar.config(command=canvas.yview)
 
         # Reset the view.
@@ -2067,7 +2072,7 @@ class VerticalScrolledFrame(Frame):
 
         # Create a frame inside the canvas which will be scrolled with it.
         self.interior = interior = Frame(canvas)
-        interior_id = canvas.create_window(0, 0, window=interior, anchor='nw')
+        interior_id = canvas.create_window(0, 0, window=interior, anchor=NW)
 
         # Track changes to the canvas and frame width and sync them,
         # also updating the scrollbar.
