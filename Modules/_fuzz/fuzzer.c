@@ -30,8 +30,12 @@ static int fuzz_builtin_float(const char* data, size_t size) {
 
 /* Fuzz PyLong_FromUnicodeObject as a proxy for int(str). */
 static int fuzz_builtin_int(const char* data, size_t size) {
-    int base = _Py_HashBytes(data, size) % 36;
+    /* Pick a random valid base. (When the fuzzed function takes extra
+       parameters, it's somewhat normal to hash the input to generate those
+       parameters. We want to exercise all code paths, so we do so here.) */
+    int base = _Py_HashBytes(data, size) % 37;
     if (base == 1) {
+        // 1 is the only number between 0 and 36 that is not a valid base.
         base = 0;
     }
     if (base == -1) {
