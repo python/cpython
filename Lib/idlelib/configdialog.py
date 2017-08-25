@@ -791,7 +791,6 @@ class HighPage(Frame):
                 StringVar(self), self.var_changed_flash_delay)
         self.num_lines = tracers.add(
                 StringVar(self), self.var_changed_num_lines)
-
         self.parenstyle.set(idleConf.GetOption(
             'main','Theme','parenstyle', default='opener'))
         self.bell.set(idleConf.GetOption(
@@ -800,7 +799,6 @@ class HighPage(Frame):
             'main','Theme','flash-delay', default=500))
         self.num_lines.set(idleConf.GetOption(
             'main','Theme','numlines', default=3))
-
         # Create widgets:
         # body frame and section frames.
         frame_custom = LabelFrame(self, borderwidth=2, relief=GROOVE,
@@ -1830,6 +1828,11 @@ class GenPage(Frame):
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
 
+        self.formatp_maxw = tracers.add(
+            IntVar(self), ('main', 'General', 'formatp_maxw'))
+        self.autocomplete_wait = tracers.add(
+            IntVar(self), ('write', 'General', 'autocomplete_wait'))
+
         # Create widgets:
         # Section frames.
         frame_run = LabelFrame(self, borderwidth=2, relief=GROOVE,
@@ -1837,6 +1840,7 @@ class GenPage(Frame):
         frame_save = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                text=' autosave Preferences ')
         frame_win_size = Frame(self, borderwidth=2, relief=GROOVE)
+        frame_extras = Frame(self, borderwidth=2, relief=GROOVE)
         frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                text=' Additional Help Sources ')
         # frame_run.
@@ -1864,6 +1868,13 @@ class GenPage(Frame):
         win_height_title = Label(frame_win_size, text='Height')
         self.win_height_int = Entry(
                 frame_win_size, textvariable=self.win_height, width=3)
+        #frame extras
+        autocomplete_wait_title = Label(frame_extras, text='AutoComplete Popup Wait')
+        self.entry_autocomplete_wait = Entry(
+                frame_extras, textvariable=self.autocomplete_wait, width=6)
+        formatp_maxw_title = Label(frame_extras, text='Format Paragraph Max Width')
+        self.entry_formatp_maxw = Entry(
+                frame_extras, textvariable=self.formatp_maxw, width=3)
         # frame_help.
         frame_helplist = Frame(frame_help)
         frame_helplist_buttons = Frame(frame_helplist)
@@ -1889,6 +1900,7 @@ class GenPage(Frame):
         frame_run.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_save.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_win_size.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_extras.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
         startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -1904,6 +1916,11 @@ class GenPage(Frame):
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        #frame extras
+        self.entry_autocomplete_wait.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        autocomplete_wait_title.pack(side=RIGHT, anchor=E, pady=5)
+        self.entry_formatp_maxw.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        formatp_maxw_title.pack(side=RIGHT, anchor=E, pady=5)
         # frame_help.
         frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
