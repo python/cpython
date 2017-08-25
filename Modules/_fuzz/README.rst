@@ -8,6 +8,11 @@ oss-fuzz works against a library exposing a function of the form
 that library (``fuzzer.c``), and include a ``_fuzz`` module for testing with
 some toy values -- no fuzzing occurs in Python's test suite.
 
+oss-fuzz will regularly pull from CPython, discover all the tests in
+``fuzz_tests.txt``, and run them -- so adding a new test here means it will
+automatically be run in oss-fuzz, while also being smoke-tested as part of
+CPython's test suite.
+
 Adding a new fuzz test
 ----------------------
 
