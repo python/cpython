@@ -1518,6 +1518,7 @@ class PyBuildExt(build_ext):
         if '--with-system-expat' in sysconfig.get_config_var("CONFIG_ARGS"):
             expat_inc = []
             define_macros = []
+            extra_compile_args = []
             expat_lib = ['expat']
             expat_sources = []
             expat_depends = []
@@ -1529,6 +1530,7 @@ class PyBuildExt(build_ext):
                 # call XML_SetHashSalt(), expat entropy sources are not needed
                 ('XML_POOR_ENTROPY', '1'),
             ]
+            extra_compile_args = []
             expat_lib = []
             expat_sources = ['expat/xmlparse.c',
                              'expat/xmlrole.c',
@@ -1546,8 +1548,15 @@ class PyBuildExt(build_ext):
                              'expat/xmltok_impl.h'
                              ]
 
+            cc = sysconfig.get_config_var('CC').split()[0]
+            ret = os.system(
+                      '"%s" -Werror -Wimplicit-fallthrough -E -xc /dev/null >/dev/null 2>&1' % cc)
+            if ret >> 8 == 0:
+                extra_compile_args.append('-Wno-implicit-fallthrough')
+
         exts.append(Extension('pyexpat',
                               define_macros = define_macros,
+                              extra_compile_args = extra_compile_args,
                               include_dirs = expat_inc,
                               libraries = expat_lib,
                               sources = ['pyexpat.c'] + expat_sources,
