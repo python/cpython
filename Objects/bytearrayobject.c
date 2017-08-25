@@ -224,7 +224,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
             return -1;
         }
         memcpy(sval, PyByteArray_AS_STRING(self),
-               Py_MIN(requested_size, Py_SIZE(self)));
+               Py_MIN((size_t)requested_size, (size_t)Py_SIZE(self)));
         PyObject_Free(obj->ob_bytes);
     }
     else {
