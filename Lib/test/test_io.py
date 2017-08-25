@@ -3225,6 +3225,14 @@ class TextIOWrapperTest(unittest.TestCase):
         t = self.TextIOWrapper(self.StringIO('a'))
         self.assertRaises(TypeError, t.read)
 
+    def test_illegal_encoder(self):
+        # Issue 31271: Calling write() while the return value of encoder's
+        # encode() is invalid shouldn't cause an assertion failure.
+        rot13 = codecs.lookup("rot13")
+        with support.swap_attr(rot13, '_is_text_encoding', True):
+            t = io.TextIOWrapper(io.BytesIO(b'foo'), encoding="rot13")
+        self.assertRaises(TypeError, t.write, 'bar')
+
     def test_illegal_decoder(self):
         # Issue #17106
         # Bypass the early encoding check added in issue 20404
