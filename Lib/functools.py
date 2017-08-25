@@ -11,7 +11,7 @@
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
-           'partialmethod', 'singledispatch']
+           'partialmethod', 'singledispatch', 'deprecated']
 
 try:
     from _functools import reduce
@@ -809,3 +809,69 @@ def singledispatch(func):
     wrapper._clear_cache = dispatch_cache.clear
     update_wrapper(wrapper, func)
     return wrapper
+
+
+################################################################################
+### deprecated() decorator
+################################################################################
+try:
+    import logging
+except ImportError:
+    pass
+
+
+logger = logging.getLogger("functools.deprecated")
+stream_handler = logging.StreamHandler()
+formatter = logging.Formatter(
+    '%(name)s - %(levelname)s - %(message)s')
+stream_handler.setLevel(logging.WARN)
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
+
+# deprecated() decorator is a a tool to alert developers using a deprecated,
+# non-supported function and suggesting an alternative.
+def deprecated(*args, **kwargs):
+    """Deprecated decorator, used to alert developers (in run-time) about
+    using an old, non-supported, deprecated function.
+
+    Usage:
+    * @deprecated
+    def foo(): pass
+    * @deprecated(alternative=SOME_FUNCTION)
+    def foo(): pass
+    """
+    def decorator_with_alternative(alternative, function):
+        @wraps(function)
+        def wrapper(*args, **kwargs):
+            warning_message = "{0} method is deprecated," \
+                              " use {1} instead".format(function, alternative)
+
+            logger = logging.getLogger("functools.deprecated")
+            logger.warning(warning_message)
+
+            return function(*args, **kwargs)
+
+        return wrapper
+
+    def decorator_without_alternative(function):
+        @wraps(function)
+        def wrapper(*args, **kwargs):
+            warning_message = "{0} method is deprecated".format(function)
+
+            logger = logging.getLogger("functools.deprecated")
+            logger.warning(warning_message)
+
+            return function(*args, **kwargs)
+
+        return wrapper
+
+    if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
+        # called as @deprecated
+        return decorator_without_alternative(args[0])
+
+    else:
+        # called as @deprecated(alternative=<func>) or @deprecated(<func>)
+        if "alternative" in kwargs:
+            return partial(decorator_with_alternative, kwargs["alternative"])
+
+        raise KeyError("Missing key 'alternative' in deprecated decorator")
