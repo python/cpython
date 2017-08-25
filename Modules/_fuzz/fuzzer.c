@@ -46,14 +46,14 @@ static int fuzz_builtin_int(const char* data, size_t size) {
     }
 
     PyObject* s = PyUnicode_FromStringAndSize(data, size);
-    if (PyErr_Occurred()) {
+    if (s == NULL) {
         if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
             PyErr_Clear();
         }
         return 0;
     }
     PyObject* l = PyLong_FromUnicodeObject(s, base);
-    if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_ValueError)) {
+    if (l == NULL && PyErr_ExceptionMatches(PyExc_ValueError)) {
         PyErr_Clear();
     }
     PyErr_Clear();
@@ -65,7 +65,7 @@ static int fuzz_builtin_int(const char* data, size_t size) {
 /* Fuzz PyUnicode_FromStringAndSize as a proxy for unicode(str). */
 static int fuzz_builtin_unicode(const char* data, size_t size) {
     PyObject* s = PyUnicode_FromStringAndSize(data, size);
-    if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
+    if (s == NULL && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
         PyErr_Clear();
     }
     Py_XDECREF(s);
@@ -76,7 +76,8 @@ static int fuzz_builtin_unicode(const char* data, size_t size) {
 static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* , size_t)) {
     int rv = fuzzer((const char*) data, size);
     if (PyErr_Occurred()) {
-        /* Fuzz tests should handle expected errors for themselves. */
+        /* Fuzz tests should handle expected errors for themselves.
+           This is last-ditch check in case they didn't. */
         PyErr_Print();
         abort();
     }
