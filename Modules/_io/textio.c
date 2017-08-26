@@ -538,6 +538,12 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
            _PyIO_str_getstate, NULL);
         if (state == NULL)
             return NULL;
+        if (!PyTuple_Check(state)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "illegal decoder state");
+            Py_DECREF(state);
+            return NULL;
+        }
         if (!PyArg_ParseTuple(state, "OK", &buffer, &flag)) {
             Py_DECREF(state);
             return NULL;
@@ -569,6 +575,10 @@ _io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
     PyObject *buffer;
     unsigned long long flag;
 
+    if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state argument must be a tuple");
+        return NULL;
+    }
     if (!PyArg_ParseTuple(state, "OK", &buffer, &flag))
         return NULL;
 
@@ -2320,6 +2330,12 @@ _io_TextIOWrapper_tell_impl(textio *self)
             _PyIO_str_getstate, NULL); \
         if (_state == NULL) \
             goto fail; \
+        if (!PyTuple_Check(_state)) { \
+            PyErr_SetString(PyExc_TypeError, \
+                            "illegal decoder state"); \
+            Py_DECREF(_state); \
+            goto fail; \
+        } \
         if (!PyArg_ParseTuple(_state, "Oi", &dec_buffer, &dec_flags)) { \
             Py_DECREF(_state); \
             goto fail; \
