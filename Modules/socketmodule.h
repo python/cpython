@@ -109,8 +109,6 @@ typedef int socklen_t;
 
 #ifdef HAVE_LINUX_VM_SOCKETS_H
 # include <linux/vm_sockets.h>
-#else
-# undef AF_VSOCK
 #endif
 
 /* Linux 3.19 */
@@ -199,7 +197,7 @@ typedef union sock_addr {
 #ifdef HAVE_SOCKADDR_ALG
     struct sockaddr_alg alg;
 #endif
-#ifdef HAVE_LINUX_VM_SOCKETS_H
+#ifdef AF_VSOCK 
     struct sockaddr_vm vm;
 #endif
 } sock_addr_t;

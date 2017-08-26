@@ -157,7 +157,7 @@ created.  Socket addresses are represented as follows:
   their hosts. The sockets are represented as a ``(CID, port)`` tuple
   where the context ID or CID and port are integers.
 
-  Availability: Linux >= 3.9.
+  Availability: Linux >= 4.8 QEMU >= 2.8 ESX >= 4.0 ESX Workstation >= 6.5
 
   .. versionadded:: 3.7
 
