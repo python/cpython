@@ -1,2 +1,0 @@
-Upgrade libexpat embedded copy from version 2.2.1 to 2.2.3 to get security
-fixes.
