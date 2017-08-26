@@ -1747,13 +1747,13 @@ class ISOTPTest(unittest.TestCase):
     def testTooLongInterfaceName(self):
         # most systems limit IFNAMSIZ to 16, take 1024 to be sure
         with socket.socket(socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP) as s:
-            self.assertRaisesRegex(OSError, 'interface name too long',
-                                   s.bind, ('x' * 1024,1,2))
+            with self.assertRaisesRegex(OSError, 'interface name too long'):
+                s.bind(('x' * 1024,1,2))
 
     def testBind(self):
         try:
             with socket.socket(socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP) as s:
-                addr = (self.interface,0x123,0x456)
+                addr = self.interface,0x123,0x456
                 s.bind(addr)
                 self.assertEqual(s.getsockname(), addr)
         except OSError as e:

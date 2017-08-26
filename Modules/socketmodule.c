@@ -1882,7 +1882,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     }
 #endif
 
-#if defined(AF_CAN)
+#ifdef AF_CAN
 
 #if defined(CAN_RAW) && defined(CAN_BCM)
     case AF_CAN:
@@ -1929,7 +1929,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         }
 #endif
 
-#if defined(CAN_ISOTP)
+#ifdef CAN_ISOTP
         case CAN_ISOTP:
         {
             struct sockaddr_can *addr;
@@ -7055,8 +7055,9 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, CAN_SFF_MASK);
     PyModule_AddIntMacro(m, CAN_EFF_MASK);
     PyModule_AddIntMacro(m, CAN_ERR_MASK);
-
+#ifdef CAN_ISOTP
     PyModule_AddIntMacro(m, CAN_ISOTP);
+#endif
 #endif
 #ifdef HAVE_LINUX_CAN_RAW_H
     PyModule_AddIntMacro(m, CAN_RAW_FILTER);
