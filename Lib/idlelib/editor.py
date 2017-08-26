@@ -388,7 +388,10 @@ class EditorWindow(object):
     def postwindowsmenu(self):
         # Only called when Windows menu exists
         menu = self.menudict['windows']
-        end = menu.index("end")
+        try:
+            end = menu.index("end")
+        except TclError:
+            return
         if end is None:
             end = -1
         if end > self.wmenu_end:
