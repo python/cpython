@@ -9,13 +9,13 @@ Note that tab width in IDLE is currently fixed at eight due to Tk issues.
 Refer to comments in EditorWindow autoindent code for details.
 
 """
-from tkinter import (Toplevel, Frame, LabelFrame, Listbox, Label, Button,
-                     Entry, Text, Scale, Radiobutton, Checkbutton, Canvas,
+from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
-from tkinter.ttk import Notebook, Scrollbar
+from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
+                         Notebook, Radiobutton, Scrollbar, Style)
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
 import tkinter.messagebox as tkMessageBox
@@ -137,9 +137,9 @@ class ConfigDialog(Toplevel):
             # text in the buttons.
             padding_args = {}
         else:
-            padding_args = {'padx':6, 'pady':3}
-        outer = Frame(self, pady=2)
-        buttons = Frame(outer, pady=2)
+            padding_args = {'padding': (6, 3)}
+        outer = Frame(self, padding=2)
+        buttons = Frame(outer, padding=2)
         for txt, cmd in (
             ('Ok', self.ok),
             ('Apply', self.apply),
@@ -266,7 +266,7 @@ class ConfigDialog(Toplevel):
         self.extension_list.grid(column=0, row=0, sticky='nws')
         scroll.grid(column=1, row=0, sticky='ns')
         self.details_frame.grid(column=2, row=0, sticky='nsew', padx=[10, 0])
-        frame.configure(padx=10, pady=10)
+        frame.configure(padding=10)
         self.config_frame = {}
         self.current_extension = None
 
@@ -356,9 +356,8 @@ class ConfigDialog(Toplevel):
             label.grid(row=row, column=0, sticky=NW)
             var = opt['var']
             if opt['type'] == 'bool':
-                Checkbutton(entry_area, textvariable=var, variable=var,
-                            onvalue='True', offvalue='False',
-                            indicatoron=FALSE, selectcolor='', width=8
+                Checkbutton(entry_area, variable=var,
+                            onvalue='True', offvalue='False', width=8
                             ).grid(row=row, column=1, sticky=W, padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
@@ -635,6 +634,7 @@ class HighPage(Frame):
     def __init__(self, master):
         super().__init__(master)
         self.cd = master.master
+        self.style = Style(master)
         self.create_page_highlight()
         self.load_theme_cfg()
 
@@ -821,12 +821,14 @@ class HighPage(Frame):
                 self.highlight_target.set(elem)
             text.tag_bind(
                     self.theme_elements[element][0], '<ButtonPress-1>', tem)
-        text['state'] = DISABLED
-        self.frame_color_set = Frame(frame_custom, relief=SOLID, borderwidth=1)
+        text['state'] = 'disabled'
+        self.style.configure('frame_color_set.TFrame', borderwidth=1,
+                             relief='solid')
+        self.frame_color_set = Frame(frame_custom, style='frame_color_set.TFrame')
         frame_fg_bg_toggle = Frame(frame_custom)
         self.button_set_color = Button(
                 self.frame_color_set, text='Choose Color for :',
-                command=self.get_color, highlightthickness=0)
+                command=self.get_color)
         self.targetlist = DynOptionMenu(
                 self.frame_color_set, self.highlight_target, None,
                 highlightthickness=0) #, command=self.set_highlight_targetBinding
@@ -855,7 +857,7 @@ class HighPage(Frame):
         self.button_delete_custom = Button(
                 frame_theme, text='Delete Custom Theme',
                 command=self.delete_custom)
-        self.theme_message = Label(frame_theme, bd=2)
+        self.theme_message = Label(frame_theme, borderwidth=2)
 
         # Pack widgets:
         # body.
@@ -913,7 +915,7 @@ class HighPage(Frame):
             item_list = idleConf.GetSectionList('user', 'highlight')
             item_list.sort()
             if not item_list:
-                self.custom_theme_on['state'] = DISABLED
+                self.custom_theme_on.state(('disabled',))
                 self.custom_name.set('- no custom themes -')
             else:
                 self.customlist.SetMenu(item_list, item_list[0])
@@ -945,12 +947,10 @@ class HighPage(Frame):
                 changes.add_option('main', 'Theme', 'name', old_themes[0])
             changes.add_option('main', 'Theme', 'name2', value)
             self.theme_message['text'] = 'New theme, see Help'
-            self.theme_message['fg'] = '#500000'
         else:
             changes.add_option('main', 'Theme', 'name', value)
             changes.add_option('main', 'Theme', 'name2', '')
             self.theme_message['text'] = ''
-            self.theme_message['fg'] = 'black'
         self.paint_theme_sample()
 
     def var_changed_custom_name(self, *params):
@@ -1004,14 +1004,14 @@ class HighPage(Frame):
             load_theme_cfg
         """
         if self.theme_source.get():
-            self.builtinlist['state'] = NORMAL
-            self.customlist['state'] = DISABLED
-            self.button_delete_custom['state'] = DISABLED
+            self.builtinlist['state'] = 'normal'
+            self.customlist['state'] = 'disabled'
+            self.button_delete_custom.state(('disabled',))
         else:
-            self.builtinlist['state'] = DISABLED
-            self.custom_theme_on['state'] = NORMAL
-            self.customlist['state'] = NORMAL
-            self.button_delete_custom['state'] = NORMAL
+            self.builtinlist['state'] = 'disabled'
+            self.custom_theme_on.state(('!disabled',))
+            self.customlist['state'] = 'normal'
+            self.button_delete_custom.state(('!disabled',))
 
     def get_color(self):
         """Handle button to select a new color for the target tag.
@@ -1032,7 +1032,8 @@ class HighPage(Frame):
             create_new
         """
         target = self.highlight_target.get()
-        prev_color = self.frame_color_set.cget('bg')
+        prev_color = self.style.lookup(self.frame_color_set['style'],
+                                       'background')
         rgbTuplet, color_string = tkColorChooser.askcolor(
                 parent=self, title='Pick new color for : '+target,
                 initialcolor=prev_color)
@@ -1053,7 +1054,7 @@ class HighPage(Frame):
     def on_new_color_set(self):
         "Display sample of new color selection on the dialog."
         new_color = self.color.get()
-        self.frame_color_set['bg'] = new_color  # Set sample.
+        self.style.configure('frame_color_set.TFrame', background=new_color)
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
         sample_element = self.theme_elements[self.highlight_target.get()][0]
         self.highlight_sample.tag_config(sample_element, **{plane: new_color})
@@ -1139,12 +1140,12 @@ class HighPage(Frame):
             load_theme_cfg
         """
         if self.highlight_target.get() == 'Cursor':  # bg not possible
-            self.fg_on['state'] = DISABLED
-            self.bg_on['state'] = DISABLED
+            self.fg_on.state(('disabled',))
+            self.bg_on.state(('disabled',))
             self.fg_bg_toggle.set(1)
         else:  # Both fg and bg can be set.
-            self.fg_on['state'] = NORMAL
-            self.bg_on['state'] = NORMAL
+            self.fg_on.state(('!disabled',))
+            self.bg_on.state(('!disabled',))
             self.fg_bg_toggle.set(1)
         self.set_color_sample()
 
@@ -1172,7 +1173,7 @@ class HighPage(Frame):
         tag = self.theme_elements[self.highlight_target.get()][0]
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
         color = self.highlight_sample.tag_cget(tag, plane)
-        self.frame_color_set['bg'] = color
+        self.style.configure('frame_color_set.TFrame', background=color)
 
     def paint_theme_sample(self):
         """Apply the theme colors to each element tag in the sample text.
@@ -1260,7 +1261,7 @@ class HighPage(Frame):
         item_list = idleConf.GetSectionList('user', 'highlight')
         item_list.sort()
         if not item_list:
-            self.custom_theme_on['state'] = DISABLED
+            self.custom_theme_on.state(('disabled',))
             self.customlist.SetMenu(item_list, '- no custom themes -')
         else:
             self.customlist.SetMenu(item_list, item_list[0])
@@ -1397,7 +1398,7 @@ class KeysPage(Frame):
                 frame_custom, text='Get New Keys for Selection',
                 command=self.get_new_keys, state=DISABLED)
         # frame_key_sets.
-        frames = [Frame(frame_key_sets, padx=2, pady=2, borderwidth=0)
+        frames = [Frame(frame_key_sets, padding=2, borderwidth=0)
                   for i in range(2)]
         self.builtin_keyset_on = Radiobutton(
                 frames[0], variable=self.keyset_source, value=1,
@@ -1415,7 +1416,7 @@ class KeysPage(Frame):
         self.button_save_custom_keys = Button(
                 frames[1], text='Save as New Custom Key Set',
                 command=self.save_as_new_key_set)
-        self.keys_message = Label(frames[0], bd=2)
+        self.keys_message = Label(frames[0], borderwidth=2)
 
         # Pack widgets:
         # body.
@@ -1457,7 +1458,7 @@ class KeysPage(Frame):
             item_list = idleConf.GetSectionList('user', 'keys')
             item_list.sort()
             if not item_list:
-                self.custom_keyset_on['state'] = DISABLED
+                self.custom_keyset_on.state(('disabled',))
                 self.custom_name.set('- no custom keys -')
             else:
                 self.customlist.SetMenu(item_list, item_list[0])
@@ -1487,12 +1488,10 @@ class KeysPage(Frame):
                 changes.add_option('main', 'Keys', 'name', old_keys[0])
             changes.add_option('main', 'Keys', 'name2', value)
             self.keys_message['text'] = 'New key set, see Help'
-            self.keys_message['fg'] = '#500000'
         else:
             changes.add_option('main', 'Keys', 'name', value)
             changes.add_option('main', 'Keys', 'name2', '')
             self.keys_message['text'] = ''
-            self.keys_message['fg'] = 'black'
         self.load_keys_list(value)
 
     def var_changed_custom_name(self, *params):
@@ -1526,14 +1525,14 @@ class KeysPage(Frame):
     def set_keys_type(self):
         "Set available screen options based on builtin or custom key set."
         if self.keyset_source.get():
-            self.builtinlist['state'] = NORMAL
-            self.customlist['state'] = DISABLED
-            self.button_delete_custom_keys['state'] = DISABLED
+            self.builtinlist['state'] = 'normal'
+            self.customlist['state'] = 'disabled'
+            self.button_delete_custom_keys.state(('disabled',))
         else:
-            self.builtinlist['state'] = DISABLED
-            self.custom_keyset_on['state'] = NORMAL
-            self.customlist['state'] = NORMAL
-            self.button_delete_custom_keys['state'] = NORMAL
+            self.builtinlist['state'] = 'disabled'
+            self.custom_keyset_on.state(('!disabled',))
+            self.customlist['state'] = 'normal'
+            self.button_delete_custom_keys.state(('!disabled',))
 
     def get_new_keys(self):
         """Handle event to change key binding for selected line.
@@ -1595,7 +1594,7 @@ class KeysPage(Frame):
 
     def on_bindingslist_select(self, event):
         "Activate button to assign new keys to selected action."
-        self.button_new_keys['state'] = NORMAL
+        self.button_new_keys.state(('!disabled',))
 
     def create_new_key_set(self, new_key_set_name):
         """Create a new custom key set with the given name.
@@ -1689,7 +1688,7 @@ class KeysPage(Frame):
         item_list = idleConf.GetSectionList('user', 'keys')
         item_list.sort()
         if not item_list:
-            self.custom_keyset_on['state'] = DISABLED
+            self.custom_keyset_on.state(('disabled',))
             self.customlist.SetMenu(item_list, '- no custom keys -')
         else:
             self.customlist.SetMenu(item_list, item_list[0])
@@ -1809,13 +1808,13 @@ class GenPage(Frame):
         self.helplist['yscrollcommand'] = scroll_helplist.set
         self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
         self.button_helplist_edit = Button(
-                frame_helplist_buttons, text='Edit', state=DISABLED,
+                frame_helplist_buttons, text='Edit', state='disabled',
                 width=8, command=self.helplist_item_edit)
         self.button_helplist_add = Button(
                 frame_helplist_buttons, text='Add',
                 width=8, command=self.helplist_item_add)
         self.button_helplist_remove = Button(
-                frame_helplist_buttons, text='Remove', state=DISABLED,
+                frame_helplist_buttons, text='Remove', state='disabled',
                 width=8, command=self.helplist_item_remove)
 
         # Pack widgets:
@@ -1874,15 +1873,15 @@ class GenPage(Frame):
     def set_add_delete_state(self):
         "Toggle the state for the help list buttons based on list entries."
         if self.helplist.size() < 1:  # No entries in list.
-            self.button_helplist_edit['state'] = DISABLED
-            self.button_helplist_remove['state'] = DISABLED
+            self.button_helplist_edit.state(('disabled',))
+            self.button_helplist_remove.state(('disabled',))
         else:  # Some entries.
             if self.helplist.curselection():  # There currently is a selection.
-                self.button_helplist_edit['state'] = NORMAL
-                self.button_helplist_remove['state'] = NORMAL
+                self.button_helplist_edit.state(('!disabled',))
+                self.button_helplist_remove.state(('!disabled',))
             else:  # There currently is not a selection.
-                self.button_helplist_edit['state'] = DISABLED
-                self.button_helplist_remove['state'] = DISABLED
+                self.button_helplist_edit.state(('disabled',))
+                self.button_helplist_remove.state(('disabled',))
 
     def helplist_item_add(self):
         """Handle add button for the help list.
@@ -2062,7 +2061,7 @@ class VerticalScrolledFrame(Frame):
         # Create a canvas object and a vertical scrollbar for scrolling it.
         vscrollbar = Scrollbar(self, orient=VERTICAL)
         vscrollbar.pack(fill=Y, side=RIGHT, expand=FALSE)
-        canvas = Canvas(self, bd=0, highlightthickness=0,
+        canvas = Canvas(self, borderwidth=0, highlightthickness=0,
                         yscrollcommand=vscrollbar.set, width=240)
         canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
         vscrollbar.config(command=canvas.yview)
