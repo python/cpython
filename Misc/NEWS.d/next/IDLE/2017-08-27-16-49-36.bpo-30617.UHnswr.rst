@@ -1,0 +1,4 @@
+IDLE - Add docstrings and tests for outwin subclass of editor.
+
+Move some data and functions from the class to module level. Patch by Cheryl
+Sabella.
