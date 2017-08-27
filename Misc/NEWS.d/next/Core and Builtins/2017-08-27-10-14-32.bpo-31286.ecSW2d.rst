@@ -1,0 +1,1 @@
+Fixed stack usage in absolute imports with binding a submodule to a name.
