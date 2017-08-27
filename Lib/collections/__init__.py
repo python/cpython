@@ -477,6 +477,11 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
         'Return self as a plain tuple.  Used by copy and pickle.'
         return tuple(self)
 
+    module_name = 'namedtuple_{typename}'.format(typename=typename)
+    for method in (__new__, _make.__func__, _replace, __repr__, _asdict, __getnewargs__):
+        method.__module__ = module_name
+        method.__qualname__ = '{typename}.{name}'.format(typename=typename, name=method.__name__)
+
     class_namespace = {
         '__doc__': '{typename}({arg_list})'.format(typename=typename,
                                                    arg_list=arg_list),
