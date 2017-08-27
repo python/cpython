@@ -355,9 +355,9 @@ _field_template = '''\
 _repr_template = '{name}=%r'
 _new_template = '''
 def __new__(_cls, {arg_list}):
-    'Create new instance of {typename}({arg_list})'
     return _tuple_new(_cls, ({arg_list}))
 '''
+_new_doc_template = 'Create new instance of {typename}({arg_list})'
 
 
 class _source_descriptor:
@@ -440,9 +440,10 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
                                for name in field_names) + ')'
 
     namespace = {'_tuple_new': tuple.__new__}
-    new_source = _new_template.format(typename=typename, arg_list=arg_list)
+    new_source = _new_template.format(arg_list=arg_list)
     exec(new_source, namespace)
     __new__ = namespace['__new__']
+    __new__.__doc__ = _new_doc_template.format(typename=typename, arg_list=arg_list)
 
     @classmethod
     def _make(cls, iterable, new=tuple.__new__, len=len, num_fields=num_fields):
