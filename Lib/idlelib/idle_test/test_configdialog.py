@@ -643,7 +643,7 @@ class HighPageTest(unittest.TestCase):
         eq = self.assertEqual
         d = self.page
         d.button_delete_custom.state(('!disabled',))
-        yesno = configdialog.tkMessageBox.askyesno = Func()
+        yesno = d.askyesno = Func()
         dialog.deactivate_current_config = Func()
         dialog.activate_config_changes = Func()
 
@@ -678,7 +678,7 @@ class HighPageTest(unittest.TestCase):
         eq(d.set_theme_type.called, 1)
 
         del dialog.activate_config_changes, dialog.deactivate_current_config
-        del configdialog.tkMessageBox.askyesno
+        del d.askyesno
 
 
 class KeysPageTest(unittest.TestCase):
@@ -1034,7 +1034,7 @@ class KeysPageTest(unittest.TestCase):
         eq = self.assertEqual
         d = self.page
         d.button_delete_custom_keys.state(('!disabled',))
-        yesno = configdialog.tkMessageBox.askyesno = Func()
+        yesno = d.askyesno = Func()
         dialog.deactivate_current_config = Func()
         dialog.activate_config_changes = Func()
 
@@ -1069,7 +1069,7 @@ class KeysPageTest(unittest.TestCase):
         eq(d.set_keys_type.called, 1)
 
         del dialog.activate_config_changes, dialog.deactivate_current_config
-        del configdialog.tkMessageBox.askyesno
+        del d.askyesno
 
 
 class GenPageTest(unittest.TestCase):
