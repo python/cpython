@@ -1,1 +1,1 @@
-IDLE - Do not modify tkinter.message. First: fix error in test_configdialog.
+IDLE - Do not modify tkinter.message in test_configdialog.
