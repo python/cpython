@@ -18,7 +18,7 @@ from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
                          Notebook, Radiobutton, Scrollbar, Style)
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
-import tkinter.messagebox as tkMessageBox
+from tkinter import messagebox
 
 from idlelib.config import idleConf, ConfigChanges
 from idlelib.config_key import GetKeysDialog
@@ -1227,6 +1227,10 @@ class HighPage(Frame):
             value = theme[element]
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
 
+    def askyesno(self, *args, **kwargs):
+        # Make testing easier.  Could change implementation.
+        messagebox.askyesno(*args, **kwargs)
+
     def delete_custom(self):
         """Handle event to delete custom theme.
 
@@ -1251,7 +1255,7 @@ class HighPage(Frame):
         """
         theme_name = self.custom_name.get()
         delmsg = 'Are you sure you wish to delete the theme %r ?'
-        if not tkMessageBox.askyesno(
+        if not self.askyesno(
                 'Delete Theme',  delmsg % theme_name, parent=self):
             return
         self.cd.deactivate_current_config()
@@ -1669,6 +1673,10 @@ class KeysPage(Frame):
             value = keyset[event]
             idleConf.userCfg['keys'].SetOption(keyset_name, event, value)
 
+    def askyesno(self, *args, **kwargs):
+        # Make testing easier.  Could change implementation.
+        messagebox.askyesno(*args, **kwargs)
+
     def delete_custom_keys(self):
         """Handle event to delete a custom key set.
 
@@ -1678,7 +1686,7 @@ class KeysPage(Frame):
         """
         keyset_name = self.custom_name.get()
         delmsg = 'Are you sure you wish to delete the key set %r ?'
-        if not tkMessageBox.askyesno(
+        if not self.askyesno(
                 'Delete Key Set',  delmsg % keyset_name, parent=self):
             return
         self.cd.deactivate_current_config()
