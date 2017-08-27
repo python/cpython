@@ -1,0 +1,2 @@
+Fix an assertion failure in `warnings.warn_explicit`, when the return value
+of the received loader's get_source() is invalid. Patch by Oren Milman.
