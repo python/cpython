@@ -888,7 +888,8 @@ field names, the method and attribute names start with an underscore.
     .. versionadded:: 3.3
 
     .. versionchanged:: 3.7
-       ``_source`` is no longer used to created the named tuple class.
+       ``_source`` is no longer used to create the named tuple class implementation, but contains
+       an equivalent implementation.
 
 .. attribute:: somenamedtuple._fields
 
