@@ -794,6 +794,33 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         self.assertNotIn(b'Warning!', stderr)
         self.assertNotIn(b'Error', stderr)
 
+    def test_warn_explicit(self):
+        # Issue #31285: warn_explicit() should neither raise a SystemError nor
+        # cause an assertion failure, in case the return value of get_source()
+        # is invalid.
+        def _get_bad_loader(splitlines_ret_val):
+            class BadLoader:
+                def get_source(self, fullname):
+                    class BadSource:
+                        def splitlines(self):
+                            return splitlines_ret_val
+                    return BadSource()
+            return BadLoader()
+        self.assertRaises(TypeError, self.module.warn_explicit,
+                          'foo', UserWarning, 'bar', 42,
+                          module_globals={'__loader__': _get_bad_loader(42),
+                                          '__name__': 'foobar'})
+        show = self.module._showwarnmsg
+        try:
+            del self.module._showwarnmsg
+            self.assertRaises(TypeError, self.module.warn_explicit,
+                              'foo', ArithmeticError, 'bar', 1,
+                              module_globals={
+                                '__loader__': _get_bad_loader([42]),
+                                '__name__': 'foobar'})
+        finally:
+            self.module._showwarnmsg = show
+
 
 class WarningsDisplayTests(BaseTest):
 
