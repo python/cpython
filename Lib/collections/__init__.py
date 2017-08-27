@@ -356,7 +356,7 @@ _repr_template = '{name}=%r'
 _new_template = '''
 def __new__(_cls, {arg_list}):
     'Create new instance of {typename}({arg_list})'
-    return _tuple.__new__(_cls, ({arg_list}))
+    return _tuple_new(_cls, ({arg_list}))
 '''
 
 
@@ -439,17 +439,17 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
     repr_fmt = '(' + ', '.join(_repr_template.format(name=name)
                                for name in field_names) + ')'
 
-    namespace = {'_tuple': tuple}
+    namespace = {'_tuple_new': tuple.__new__}
     new_source = _new_template.format(typename=typename, arg_list=arg_list)
     exec(new_source, namespace)
     __new__ = namespace['__new__']
 
     @classmethod
-    def _make(cls, iterable, new=tuple.__new__, len=len):
+    def _make(cls, iterable, new=tuple.__new__, len=len, num_fields=num_fields):
         result = new(cls, iterable)
         if len(result) != cls._num_fields:
             raise TypeError('Expected %d arguments, got %d' %
-                            (cls._num_fields, len(result)))
+                            (num_fields, len(result)))
         return result
 
     _make.__func__.__doc__ = ('Make a new {typename} object from a sequence '
