@@ -22,6 +22,7 @@ class OutputWindowTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.window.close()
         del cls.text, cls.window
         cls.root.destroy()
         del cls.root
@@ -114,7 +115,7 @@ class OutputWindowTest(unittest.TestCase):
 
         w.flist = mock.Mock()
         gfl = w.flist.gotofileline = Func()
-        showerror = outwin.messagebox.showerror = Mbox_func()
+        showerror = w.showerror = Mbox_func()
 
         # No file/line number.
         w.write('Not a file line')
@@ -135,7 +136,7 @@ class OutputWindowTest(unittest.TestCase):
         self.assertIsNone(w.goto_file_line())
         eq(gfl.args, (str(__file__), 42))
 
-        del w.flist.gotofileline, outwin.messagebox.showerror
+        del w.flist.gotofileline, w.showerror
 
 
 class ModuleFunctionTest(unittest.TestCase):

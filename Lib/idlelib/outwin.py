@@ -80,8 +80,7 @@ class OutputWindow(EditorWindow):
 
     # Customize EditorWindow
     def ispythonsource(self, filename):
-        "Control colorization of Python source."
-        # No colorization needed
+        "Python source is only part of output: do not colorize."
         return False
 
     def short_title(self):
@@ -90,7 +89,6 @@ class OutputWindow(EditorWindow):
 
     def maybesave(self):
         "Customize EditorWindow to not display save file messagebox."
-        # Override base class method -- don't ask any questions
         return 'yes' if self.get_saved() else 'no'
 
     # Act as output file
@@ -123,11 +121,11 @@ class OutputWindow(EditorWindow):
             self.write(line)
 
     def flush(self):
-        """Flush file.
-
-        Provide file flush functionality for the window.
-        """
+        "No flushing needed as write() directly writes to widget."
         pass
+
+    def showerror(self, *args, **kwargs):
+        messagebox.showerror(*args, **kwargs)
 
     def goto_file_line(self, event=None):
         """Handle request to open file/line.
@@ -147,15 +145,14 @@ class OutputWindow(EditorWindow):
                                  "insert -1line lineend")
             result = file_line_helper(line)
             if not result:
-                messagebox.showerror(
+                self.showerror(
                     "No special line",
                     "The line you point at doesn't look like "
                     "a valid file name followed by a line number.",
                     parent=self.text)
-                return None
+                return
         filename, lineno = result
         self.flist.gotofileline(filename, lineno)
-        return None
 
 
 # These classes are currently not used but might come in handy
