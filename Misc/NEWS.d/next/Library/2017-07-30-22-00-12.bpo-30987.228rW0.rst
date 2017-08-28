@@ -1,0 +1,1 @@
+Added support for CAN ISO-TP protocol in the socket module.
