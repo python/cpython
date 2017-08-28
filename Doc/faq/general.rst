@@ -167,7 +167,7 @@ several useful pieces of freely distributable software.  The source will compile
 and run out of the box on most UNIX platforms.
 
 Consult the `Getting Started section of the Python Developer's Guide
-<https://devguide.python.org/setup.html>`__ for more
+<https://devguide.python.org/setup/>`__ for more
 information on getting the source code and compiling it.
 
 
