@@ -871,7 +871,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         # multiplied by a float with a bad as_integer_ratio() method.
         class BadFloat(float):
             def as_integer_ratio(self):
-                return (1 << 1000) - 1
+                return 1 << 1000
         self.assertRaises(TypeError, truediv, timedelta(), BadFloat())
         self.assertRaises(TypeError, mul, timedelta(), BadFloat())
 
