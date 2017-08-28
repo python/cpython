@@ -517,6 +517,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             zi = zipimport.zipimporter(TEMP_ZIP)
             self.assertEqual(data, zi.get_data(name))
             self.assertIn('zipimporter object', repr(zi))
+            # Issue #31291: There shouldn't be an assertion failure in
+            # get_data().
+            class FunnyStr(str):
+                def replace(self, old, new):
+                    return 42
+            self.assertEqual(data, zi.get_data(FunnyStr(name)))
         finally:
             z.close()
             os.remove(TEMP_ZIP)
