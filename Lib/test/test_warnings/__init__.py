@@ -801,19 +801,19 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         def _get_bad_loader(splitlines_ret_val):
             class BadLoader:
                 def get_source(self, fullname):
-                    class BadSource:
+                    class BadSource(str):
                         def splitlines(self):
                             return splitlines_ret_val
                     return BadSource()
             return BadLoader()
-        self.assertRaises(TypeError, self.module.warn_explicit,
+        self.assertRaises(IndexError, self.module.warn_explicit,
                           'foo', UserWarning, 'bar', 42,
                           module_globals={'__loader__': _get_bad_loader(42),
                                           '__name__': 'foobar'})
         show = self.module._showwarnmsg
         try:
             del self.module._showwarnmsg
-            self.assertRaises(TypeError, self.module.warn_explicit,
+            self.assertRaises(IndexError, self.module.warn_explicit,
                               'foo', ArithmeticError, 'bar', 1,
                               module_globals={
                                 '__loader__': _get_bad_loader([42]),

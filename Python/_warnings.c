@@ -884,28 +884,16 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Split the source into lines. */
-        source_list = PyObject_CallMethodObjArgs(source,
+        source_list = PyObject_CallMethodObjArgs((PyObject *)&PyUnicode_Type,
                                                  PyId_splitlines.object,
-                                                 NULL);
+                                                 source, NULL);
         Py_DECREF(source);
         if (!source_list)
             return NULL;
-        if (!PyList_Check(source_list)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "loader get_source() return value is invalid");
-            Py_DECREF(source_list);
-            return NULL;
-        }
 
         /* Get the source line. */
         source_line = PyList_GetItem(source_list, lineno-1);
         if (!source_line) {
-            Py_DECREF(source_list);
-            return NULL;
-        }
-        if (!PyUnicode_Check(source_line)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "loader get_source() return value is invalid");
             Py_DECREF(source_list);
             return NULL;
         }
