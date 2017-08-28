@@ -1373,9 +1373,22 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
                 ifname = ifr.ifr_name;
         }
 
-        return Py_BuildValue("O&h", PyUnicode_DecodeFSDefault,
-                                    ifname,
-                                    a->can_family);
+        switch (proto) {
+#ifdef CAN_ISOTP
+          case CAN_ISOTP:
+          {
+              return Py_BuildValue("O&kk", PyUnicode_DecodeFSDefault,
+                                          ifname,
+                                          a->can_addr.tp.rx_id,
+                                          a->can_addr.tp.tx_id);
+          }
+#endif
+          default:
+          {
+              return Py_BuildValue("O&", PyUnicode_DecodeFSDefault,
+                                        ifname);
+          }
+        }
     }
 #endif
 
@@ -1869,7 +1882,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     }
 #endif
 
-#if defined(AF_CAN) && defined(CAN_RAW) && defined(CAN_BCM)
+#ifdef AF_CAN
+
+#if defined(CAN_RAW) && defined(CAN_BCM)
     case AF_CAN:
         switch (s->sock_proto) {
         case CAN_RAW:
@@ -1880,7 +1895,6 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             PyObject *interfaceName;
             struct ifreq ifr;
             Py_ssize_t len;
-
             addr = (struct sockaddr_can *)addr_ret;
 
             if (!PyArg_ParseTuple(args, "O&", PyUnicode_FSConverter,
@@ -1913,6 +1927,54 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             Py_DECREF(interfaceName);
             return 1;
         }
+#endif
+
+#ifdef CAN_ISOTP
+        case CAN_ISOTP:
+        {
+            struct sockaddr_can *addr;
+            PyObject *interfaceName;
+            struct ifreq ifr;
+            Py_ssize_t len;
+            unsigned long int rx_id, tx_id;
+
+            addr = (struct sockaddr_can *)addr_ret;
+
+            if (!PyArg_ParseTuple(args, "O&kk", PyUnicode_FSConverter,
+                                              &interfaceName,
+                                              &rx_id,
+                                              &tx_id))
+                return 0;
+
+            len = PyBytes_GET_SIZE(interfaceName);
+
+            if (len == 0) {
+                ifr.ifr_ifindex = 0;
+            } else if ((size_t)len < sizeof(ifr.ifr_name)) {
+                strncpy(ifr.ifr_name, PyBytes_AS_STRING(interfaceName), sizeof(ifr.ifr_name));
+                ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
+                if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
+                    s->errorhandler();
+                    Py_DECREF(interfaceName);
+                    return 0;
+                }
+            } else {
+                PyErr_SetString(PyExc_OSError,
+                                "AF_CAN interface name too long");
+                Py_DECREF(interfaceName);
+                return 0;
+            }
+
+            addr->can_family = AF_CAN;
+            addr->can_ifindex = ifr.ifr_ifindex;
+            addr->can_addr.tp.rx_id = rx_id;
+            addr->can_addr.tp.tx_id = tx_id;
+
+            *len_ret = sizeof(*addr);
+            Py_DECREF(interfaceName);
+            return 1;
+        }
+#endif
         default:
             PyErr_SetString(PyExc_OSError,
                             "getsockaddrarg: unsupported CAN protocol");
@@ -6995,6 +7057,9 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, CAN_SFF_MASK);
     PyModule_AddIntMacro(m, CAN_EFF_MASK);
     PyModule_AddIntMacro(m, CAN_ERR_MASK);
+#ifdef CAN_ISOTP
+    PyModule_AddIntMacro(m, CAN_ISOTP);
+#endif
 #endif
 #ifdef HAVE_LINUX_CAN_RAW_H
     PyModule_AddIntMacro(m, CAN_RAW_FILTER);
