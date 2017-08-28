@@ -249,6 +249,71 @@ PyDict_GetItemProxy(PyObject *dict, PyObject *key)
 }
 
 /******************************************************************/
+
+/*
+  Allocate a memory block for a pep3118 format string, filled with
+  a suitable PEP 3118 type code corresponding to the given ctypes
+  type. Returns NULL on failure, with the error indicator set.
+
+  This produces type codes in the standard size mode (cf. struct module),
+  since the endianness may need to be swapped to a non-native one
+  later on.
+ */
+static char *
+_ctypes_alloc_format_string_for_type(char code, int big_endian)
+{
+    char *result;
+    char pep_code = '\0';
+
+    switch (code) {
+#if SIZEOF_INT == 2
+    case 'i': pep_code = 'h'; break;
+    case 'I': pep_code = 'H'; break;
+#elif SIZEOF_INT == 4
+    case 'i': pep_code = 'i'; break;
+    case 'I': pep_code = 'I'; break;
+#elif SIZEOF_INT == 8
+    case 'i': pep_code = 'q'; break;
+    case 'I': pep_code = 'Q'; break;
+#else
+# error SIZEOF_INT has an unexpected value
+#endif /* SIZEOF_INT */
+#if SIZEOF_LONG == 4
+    case 'l': pep_code = 'l'; break;
+    case 'L': pep_code = 'L'; break;
+#elif SIZEOF_LONG == 8
+    case 'l': pep_code = 'q'; break;
+    case 'L': pep_code = 'Q'; break;
+#else
+# error SIZEOF_LONG has an unexpected value
+#endif /* SIZEOF_LONG */
+#if SIZEOF__BOOL == 1
+    case '?': pep_code = '?'; break;
+#elif SIZEOF__BOOL == 2
+    case '?': pep_code = 'H'; break;
+#elif SIZEOF__BOOL == 4
+    case '?': pep_code = 'L'; break;
+#elif SIZEOF__BOOL == 8
+    case '?': pep_code = 'Q'; break;
+#else
+# error SIZEOF__BOOL has an unexpected value
+#endif /* SIZEOF__BOOL */
+    default:
+        /* The standard-size code is the same as the ctypes one */
+        pep_code = code;
+        break;
+    }
+
+    result = PyMem_Malloc(3);
+    if (result == NULL)
+        return NULL;
+
+    result[0] = big_endian ? '>' : '<';
+    result[1] = pep_code;
+    result[2] = '\0';
+    return result;
+}
+
 /*
   Allocate a memory block for a pep3118 format string, copy prefix (if
   non-null) and suffix into it.  Returns NULL on failure, with the error
@@ -1930,9 +1995,9 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->setfunc = fmt->setfunc;
     stgdict->getfunc = fmt->getfunc;
 #ifdef WORDS_BIGENDIAN
-    stgdict->format = _ctypes_alloc_format_string(">", proto_str);
+    stgdict->format = _ctypes_alloc_format_string_for_type(proto_str[0], 1);
 #else
-    stgdict->format = _ctypes_alloc_format_string("<", proto_str);
+    stgdict->format = _ctypes_alloc_format_string_for_type(proto_str[0], 0);
 #endif
     if (stgdict->format == NULL) {
         Py_DECREF(result);
