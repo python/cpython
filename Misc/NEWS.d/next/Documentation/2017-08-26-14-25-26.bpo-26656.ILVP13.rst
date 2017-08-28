@@ -1,5 +1,0 @@
-documentation of re.compile improved
-
-The re.compile mention of compiled regular expression objects now links to
-the relevant heading. Also, it is more explicit that more than the methods
-listed can be used.
