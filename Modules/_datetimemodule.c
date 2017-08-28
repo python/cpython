@@ -1664,6 +1664,12 @@ multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
     ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
     if (ratio == NULL)
         goto error;
+    if (!PyTuple_Check(ratio)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Can't multiply timedelta object by float with "
+                        "bad as_integer_ratio() method");
+        goto error;
+    }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 0));
     Py_DECREF(pyus_in);
     pyus_in = NULL;
@@ -1762,6 +1768,12 @@ truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *f)
     ratio = _PyObject_CallMethodId(f, &PyId_as_integer_ratio, NULL);
     if (ratio == NULL)
         goto error;
+    if (!PyTuple_Check(ratio)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Can't divide timedelta object by float with "
+                        "bad as_integer_ratio() method");
+        goto error;
+    }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 1));
     Py_DECREF(pyus_in);
     pyus_in = NULL;

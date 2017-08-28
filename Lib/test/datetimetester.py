@@ -18,7 +18,7 @@ import unittest
 
 from array import array
 
-from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
+from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod, mul
 
 from test import support
 
@@ -865,6 +865,15 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(ZeroDivisionError, divmod, t, zerotd)
 
         self.assertRaises(TypeError, divmod, t, 10)
+
+    def test_issue31293(self):
+        # The interpreter shouldn't crash in case a timedelta is divided or
+        # multiplied by a float with a bad as_integer_ratio() method.
+        class BadFloat(float):
+            def as_integer_ratio(self):
+                return (1 << 1000) - 1
+        self.assertRaises(TypeError, truediv, timedelta(), BadFloat())
+        self.assertRaises(TypeError, mul, timedelta(), BadFloat())
 
 
 #############################################################################
