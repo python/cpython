@@ -99,7 +99,7 @@ The module defines two convenience functions:
 
 
 .. function:: create_archive(source, target=None, interpreter=None, main=None,
-                             include_file=None)
+                             filter=None)
 
    Create an application archive from *source*.  The source can be any
    of the following:
@@ -144,9 +144,10 @@ The module defines two convenience functions:
    contain a ``__main__.py`` file, as otherwise the resulting archive
    would not be executable.
 
-   The *include_file* argument specifies a callback function that is passed the
-   relative path to the file in order to determine which files to store when
-   being called against a directory.
+   The optional *filter* argument specifies a callback function that
+   is passed a Path object representing the path to the file being added
+   (relative to the source directory).  It should return ``True`` if the
+   file is to be added.
 
    If a file object is specified for *source* or *target*, it is the
    caller's responsibility to close it after calling create_archive.
@@ -156,6 +157,9 @@ The module defines two convenience functions:
    archive from a directory, if the target is a file object it will be
    passed to the ``zipfile.ZipFile`` class, and must supply the methods
    needed by that class.
+
+   .. versionadded:: 3.7
+      Added the *filter* argument.
 
 .. function:: get_interpreter(archive)
 
