@@ -1665,9 +1665,10 @@ multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
     if (ratio == NULL)
         goto error;
     if (!PyTuple_Check(ratio)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Can't multiply timedelta object by float with "
-                        "bad as_integer_ratio() method");
+        PyErr_Format(PyExc_TypeError,
+                     "unexpected return type from as_integer_ratio(): "
+                     "expected tuple, got '%.200s'",
+                     Py_TYPE(ratio)->tp_name);
         goto error;
     }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 0));
@@ -1769,9 +1770,10 @@ truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *f)
     if (ratio == NULL)
         goto error;
     if (!PyTuple_Check(ratio)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Can't divide timedelta object by float with "
-                        "bad as_integer_ratio() method");
+        PyErr_Format(PyExc_TypeError,
+                     "unexpected return type from as_integer_ratio(): "
+                     "expected tuple, got '%.200s'",
+                     Py_TYPE(ratio)->tp_name);
         goto error;
     }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 1));

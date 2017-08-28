@@ -18,7 +18,7 @@ import unittest
 
 from array import array
 
-from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod, mul
+from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 
@@ -872,8 +872,10 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         class BadFloat(float):
             def as_integer_ratio(self):
                 return 1 << 1000
-        self.assertRaises(TypeError, truediv, timedelta(), BadFloat())
-        self.assertRaises(TypeError, mul, timedelta(), BadFloat())
+        with self.assertRaises(TypeError):
+            timedelta() / BadFloat()
+        with self.assertRaises(TypeError):
+            timedelta() * BadFloat()
 
 
 #############################################################################
