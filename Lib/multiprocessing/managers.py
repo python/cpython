@@ -315,10 +315,11 @@ class Server(object):
     def dummy(self, c):
         pass
 
-    def debug_info(self, c): # Perhaps include debug info about 'c'?
+    def debug_info(self, c):
         '''
         Return some info --- useful to spot problems with refcounting
         '''
+        # Perhaps include debug info about 'c'?
         with self.mutex:
             result = []
             keys = list(self.id_to_refcount.keys())
@@ -687,8 +688,8 @@ class BaseManager(object):
 
         if method_to_typeid:
             for key, value in list(method_to_typeid.items()): # isinstance?
-                assert type(key) == str, '%r is not a string' % key
-                assert type(value) == str, '%r is not a string' % value
+                assert type(key) is str, '%r is not a string' % key
+                assert type(value) is str, '%r is not a string' % value
 
         cls._registry[typeid] = (
             callable, exposed, method_to_typeid, proxytype

@@ -256,7 +256,7 @@ class Pool(object):
     def apply(self, func, args=(), kwds={}):
         '''
         Equivalent of `func(*args, **kwds)`.
-        self._state should be RUN.
+        Pool must be running.
         '''
         return self.apply_async(func, args, kwds).get()
 

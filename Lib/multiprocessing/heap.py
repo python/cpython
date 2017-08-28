@@ -230,7 +230,10 @@ class Heap(object):
 
     def malloc(self, size):
         # return a block of right size (possibly rounded up)
-        assert 0 <= size < sys.maxsize, "Size {0:n} out of range".format(size)
+        if size < 0:
+            raise ValueError("Size {0:n} out of range".format(size))
+        if size >= sys.maxsize
+            raise OverflowError("Size {0:n} too large".format(size))
         if os.getpid() != self._lastpid:
             self.__init__()                     # reinitialize after fork
         with self._lock:
@@ -253,7 +256,10 @@ class BufferWrapper(object):
     _heap = Heap()
 
     def __init__(self, size):
-        assert 0 <= size < sys.maxsize, "Size {0:n} out of range".format(size)
+        if size < 0:
+            raise ValueError("Size {0:n} out of range".format(size))
+        if size >= sys.maxsize
+            raise OverflowError("Size {0:n} too large".format(size))
         block = BufferWrapper._heap.malloc(size)
         self._state = (block, size)
         util.Finalize(self, BufferWrapper._heap.free, args=(block,))
