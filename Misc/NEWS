@@ -379,6 +379,10 @@ Extension Modules
 Library
 -------
 
+- bpo-31299: ``traceback.TracebackException.format`` and :mod:`traceback`
+  functions that use it now accept the ``ignore_modules`` argument: a list of
+  modules, stack trace entries from which should be hidden.
+
 - bpo-30119: ftplib.FTP.putline() now throws ValueError on commands that contains
   CR or LF. Patch by Dong-hee Na.
 
