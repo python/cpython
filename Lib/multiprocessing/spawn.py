@@ -93,7 +93,7 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
     '''
     Run code specified by data received over pipe
     '''
-    assert is_forking(sys.argv)
+    assert is_forking(sys.argv), "Not forking"
     if sys.platform == 'win32':
         import msvcrt
         new_handle = reduction.steal_handle(parent_pid, pipe_handle)

@@ -35,7 +35,7 @@ class Popen(object):
                 if os.WIFSIGNALED(sts):
                     self.returncode = -os.WTERMSIG(sts)
                 else:
-                    assert os.WIFEXITED(sts)
+                    assert os.WIFEXITED(sts), "Status is {:n}".format(sts)
                     self.returncode = os.WEXITSTATUS(sts)
         return self.returncode
 
