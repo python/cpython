@@ -1054,26 +1054,26 @@ class IgnoredModulesTest(unittest.TestCase):
              support.temp_dir(f'{pkg_container}/pkg') as pkg, \
              support.temp_dir(f'{pkg}/subpkg') as subpkg, \
              support.change_cwd(path=pkg_container):
-            module_name = make_script(subpkg, 'module', '1/0')
+            make_script(subpkg, 'module', '1/0')
             try:
                 from pkg.subpkg import module
             except Exception as e:
                 tb_exc = traceback.TracebackException.from_exception(e)
 
+            _, *original_stack, _ = tb_exc.format()
+
             for mod in ('pkg', 'pkg.subpkg', 'pkg.subpkg.module'):
                 with self.subTest(ignored=mod):
-                    header, *stack, error = tb_exc.format(ignore_modules=(mod,))
-                    self.assertEqual(len(stack), 1)
-                    self.assertNotIn(module_name, stack[0])
+                    _, *clean_stack, error = tb_exc.format(ignore_modules=(mod,))
+                    self.assertEqual(clean_stack, original_stack[:1])
                     self.assertIn('ZeroDivisionError', error)
 
-            # The first part of the name isn't the top-level package
+            # The first part of the name isn't our top-level package, nothing
+            # should be removed
             for mod in ('pk', 'subpkg.module'):
                 with self.subTest(ignored=mod):
-                    header, *stack, error = tb_exc.format(ignore_modules=(mod,))
-                    self.assertEqual(len(stack), 2)
-                    self.assertIn(__file__, stack[0])
-                    self.assertIn(module_name, stack[1])
+                    _, *clean_stack, error = tb_exc.format(ignore_modules=(mod,))
+                    self.assertEqual(clean_stack, original_stack)
                     self.assertIn('ZeroDivisionError', error)
 
     def test_single_file_module(self):
@@ -1085,32 +1085,30 @@ class IgnoredModulesTest(unittest.TestCase):
             except Exception as e:
                 tb_exc = traceback.TracebackException.from_exception(e)
 
-            header, *stack, error = tb_exc.format(ignore_modules=('runpy',))
-            self.assertEqual(len(stack), 2)
-            self.assertIn(__file__, stack[0])
-            self.assertIn(script_name, stack[1])
+            _, *original_stack, _ = tb_exc.format()
+            _, *clean_stack, error = tb_exc.format(ignore_modules=('runpy',))
+            self.assertEqual(clean_stack, [original_stack[0], original_stack[-1]])
             self.assertIn('ZeroDivisionError', error)
 
     def test_frozen_module(self):
         with support.temp_dir() as script_dir, \
              support.change_cwd(path=script_dir):
-            module_name = make_script(script_dir, 'module', '1/0')
+            make_script(script_dir, 'module', '1/0')
             import _frozen_importlib
             try:
                 _frozen_importlib.__import__('module')
             except Exception as e:
                 tb_exc = traceback.TracebackException.from_exception(e)
 
+            _, *original_stack, _ = tb_exc.format()
             # Ignoring these frozen modules and their parent package must
             # produce the same traceback
             ignored = [('_frozen_importlib', '_frozen_importlib_external'),
                        ('importlib',)]
             for mod in ignored:
                 with self.subTest(ignored=mod):
-                    header, *stack, error = tb_exc.format(ignore_modules=mod)
-                    self.assertEqual(len(stack), 2)
-                    self.assertIn(__file__, stack[0])
-                    self.assertIn(module_name, stack[1])
+                    _, *clean_stack, error = tb_exc.format(ignore_modules=mod)
+                    self.assertEqual(clean_stack, [original_stack[0], original_stack[-1]])
                     self.assertIn('ZeroDivisionError', error)
 
 
