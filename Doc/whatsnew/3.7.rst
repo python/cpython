@@ -108,7 +108,7 @@ locale remains active when the core interpreter is initialized.
        PEP written and implemented by Nick Coghlan.
 
 
-.. _whatsnew37-pep467
+.. _whatsnew37-pep467:
 
 PEP 467: Minor API improvements for binary sequences
 ----------------------------------------------------
