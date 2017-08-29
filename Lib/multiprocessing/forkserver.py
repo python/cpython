@@ -56,7 +56,7 @@ class ForkServer(object):
         '''Request forkserver to create a child process.
 
         Returns a pair of fds (status_r, data_w).  The calling process can read
-        the child process\'s pid and (eventually) its returncode from status_r.
+        the child process's pid and (eventually) its returncode from status_r.
         The calling process should write to data_w the pickled preparation and
         process data.
         '''
