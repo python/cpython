@@ -1,1 +1,1 @@
-Many asserts in `multiprocessing` are now more informative, and some error types have been changed to more specific ones.
+Many asserts in `multiprocessing` are now more informative, and some error types have been changed to more specific ones. - Allen W. Smith (drallensmith on github)
