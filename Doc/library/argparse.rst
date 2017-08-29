@@ -169,10 +169,10 @@ ArgumentParser objects
    * fromfile_prefix_chars_ - The set of characters that prefix files from
      which additional arguments should be read (default: ``None``)
 
-   * fromfile_parent_relative_ - Whether to treat paths of argument
-     files as relative to the location of the file they are specified in
-     (``True``) or to the current working directory (``False``) (default:
-     ``False``)
+   * fromfile_parent_relative_ - Whether to treat paths of included
+     argument files as relative to the location of the file they
+     are specified in (``True``) or to the current working directory
+     (``False``) (default: ``False``)
 
    * argument_default_ - The global default value for arguments
      (default: ``None``)
