@@ -211,7 +211,10 @@ class Heap(object):
         # synchronously sometimes later from malloc() or free(), by calling
         # _free_pending_blocks() (appending and retrieving from a list is not
         # strictly thread-safe but under cPython it's atomic thanks to the GIL).
-        assert os.getpid() == self._lastpid
+        if os.getpid() != self._lastpid:
+            raise ValueError(
+                "My pid ({0:n}) is not last pid {1:n}".format(
+                    os.getpid(),self._lastpid))
         if not self._lock.acquire(False):
             # can't acquire the lock right now, add the block to the list of
             # pending blocks to free
@@ -227,7 +230,10 @@ class Heap(object):
 
     def malloc(self, size):
         # return a block of right size (possibly rounded up)
-        assert 0 <= size < sys.maxsize
+        if size < 0:
+            raise ValueError("Size {0:n} out of range".format(size))
+        if sys.maxsize <= size:
+            raise OverflowError("Size {0:n} too large".format(size))
         if os.getpid() != self._lastpid:
             self.__init__()                     # reinitialize after fork
         with self._lock:
@@ -250,7 +256,10 @@ class BufferWrapper(object):
     _heap = Heap()
 
     def __init__(self, size):
-        assert 0 <= size < sys.maxsize
+        if size < 0:
+            raise ValueError("Size {0:n} out of range".format(size))
+        if sys.maxsize <= size:
+            raise OverflowError("Size {0:n} too large".format(size))
         block = BufferWrapper._heap.malloc(size)
         self._state = (block, size)
         util.Finalize(self, BufferWrapper._heap.free, args=(block,))

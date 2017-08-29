@@ -78,7 +78,7 @@ class Queue(object):
         self._poll = self._reader.poll
 
     def put(self, obj, block=True, timeout=None):
-        assert not self._closed
+        assert not self._closed, "Queue {0!r} has been closed".format(self)
         if not self._sem.acquire(block, timeout):
             raise Full
 
@@ -140,7 +140,7 @@ class Queue(object):
 
     def join_thread(self):
         debug('Queue.join_thread()')
-        assert self._closed
+        assert self._closed, "Queue {0!r} not closed".format(self)
         if self._jointhread:
             self._jointhread()
 
@@ -281,7 +281,7 @@ class JoinableQueue(Queue):
         self._cond, self._unfinished_tasks = state[-2:]
 
     def put(self, obj, block=True, timeout=None):
-        assert not self._closed
+        assert not self._closed, "Queue {0!r} is closed".format(self)
         if not self._sem.acquire(block, timeout):
             raise Full
 
