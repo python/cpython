@@ -2702,6 +2702,26 @@ class TextIOWrapperTest(unittest.TestCase):
             #t = _make_illegal_wrapper()
             #self.assertRaises(TypeError, t.read)
 
+        # Issue 31243: calling read() while the return value of decoder's
+        # getstate() is invalid should neither crash the interpreter nor
+        # raise a SystemError.
+        def _make_very_illegal_wrapper(getstate_ret_val):
+            class BadDecoder:
+                def getstate(self):
+                    return getstate_ret_val
+            def _get_bad_decoder(dummy):
+                return BadDecoder()
+            quopri = codecs.lookup("quopri_codec")
+            with support.swap_attr(quopri, 'incrementaldecoder',
+                                   _get_bad_decoder):
+                return _make_illegal_wrapper()
+        t = _make_very_illegal_wrapper(42)
+        with self.maybeRaises(TypeError):
+            t.read(42)
+        t = _make_very_illegal_wrapper(())
+        with self.maybeRaises(TypeError):
+            t.read(42)
+
 
 class CTextIOWrapperTest(TextIOWrapperTest):
 
