@@ -651,7 +651,8 @@ zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *path)
     Py_ssize_t path_start, path_len, len;
 
 #ifdef ALTSEP
-    path = _PyObject_CallMethodId(path, &PyId_replace, "CC", ALTSEP, SEP);
+    path = _PyObject_CallMethodId((PyObject *)&PyUnicode_Type, &PyId_replace,
+                                  "OCC", path, ALTSEP, SEP);
     if (!path)
         return NULL;
 #else
