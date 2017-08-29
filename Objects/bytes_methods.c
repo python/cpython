@@ -239,6 +239,10 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
 }
 
 
+PyDoc_STRVAR_shared(_Py_iterbytes__doc__,
+"B.iterbytes() -> iterator that produces length 1 bytes objects instead of integers");
+
+
 PyDoc_STRVAR_shared(_Py_lower__doc__,
 "B.lower() -> copy of B\n\
 \n\

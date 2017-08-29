@@ -648,6 +648,67 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(bytearray_zeros__doc__,
+"zeros($type, size, /)\n"
+"--\n"
+"\n"
+"Create a bytearray object of size given by the parameter initialized with null bytes.\n"
+"\n"
+"Parameter must be 0 or a positive integer.\n"
+"Example: bytearray.zeros(3) -> bytearray(b\\\'\\\\x00\\\\x00\\\\x00\')");
+
+#define BYTEARRAY_ZEROS_METHODDEF    \
+    {"zeros", (PyCFunction)bytearray_zeros, METH_O|METH_CLASS, bytearray_zeros__doc__},
+
+static PyObject *
+bytearray_zeros_impl(PyTypeObject *type, int size);
+
+static PyObject *
+bytearray_zeros(PyTypeObject *type, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int size;
+
+    if (!PyArg_Parse(arg, "i:zeros", &size)) {
+        goto exit;
+    }
+    return_value = bytearray_zeros_impl(type, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytearray_byte__doc__,
+"byte($type, x, /)\n"
+"--\n"
+"\n"
+"Create a bytearray object, consisting of a single byte.\n"
+"\n"
+"Parameter must be in range(0, 256)\n"
+"bytearray.byte(x) is equivalent to bytearray([x])\n"
+"Example: bytearray.byte(3) -> bytearray(b\'\\x03\')");
+
+#define BYTEARRAY_BYTE_METHODDEF    \
+    {"byte", (PyCFunction)bytearray_byte, METH_O|METH_CLASS, bytearray_byte__doc__},
+
+static PyObject *
+bytearray_byte_impl(PyTypeObject *type, int x);
+
+static PyObject *
+bytearray_byte(PyTypeObject *type, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int x;
+
+    if (!PyArg_Parse(arg, "i:byte", &x)) {
+        goto exit;
+    }
+    return_value = bytearray_byte_impl(type, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(bytearray_reduce__doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -711,4 +772,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=e53f10084457a46b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=26f8911786111e2b input=a9049054013a1b77]*/

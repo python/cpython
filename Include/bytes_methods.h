@@ -41,6 +41,7 @@ extern const char _Py_isdigit__doc__[];
 extern const char _Py_islower__doc__[];
 extern const char _Py_isupper__doc__[];
 extern const char _Py_istitle__doc__[];
+extern const char _Py_iterbytes__doc__[];
 extern const char _Py_lower__doc__[];
 extern const char _Py_upper__doc__[];
 extern const char _Py_title__doc__[];

@@ -383,6 +383,15 @@ class AbstractMemoryTests:
         self.assertEqual(c.format, "H")
         self.assertEqual(d.format, "H")
 
+    def test_iterbytes(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            it = m.iterbytes()
+            for byte in m:
+                self.assertEqual(next(it), bytes([byte]))
+            self.assertRaises(StopIteration, next, it)
+
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
 # with itemsize > 1.

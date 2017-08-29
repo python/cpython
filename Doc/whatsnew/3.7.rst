@@ -108,6 +108,23 @@ locale remains active when the core interpreter is initialized.
        PEP written and implemented by Nick Coghlan.
 
 
+.. _whatsnew37-pep467
+
+PEP 467: Minor API improvements for binary sequences
+----------------------------------------------------
+
+:pep:`467` adds four small adjustments to the APIs of the :class:`bytes`, :class:`bytearray` and :class:`memoryview` types to make it easier to operate entirely in the binary domain:
+
+* Deprecate passing single integer values to :class:`bytes` and :class:`bytearray`
+* Add :meth:`bytes.zeros` and :meth:`bytearray.zeros` alternative constructors
+* Add :meth:`bytes.byte` and :meth:`bytearray.byte` alternative constructors
+* Add :meth:`bytes.iterbytes`, :meth:`bytearray.iterbytes` and :meth:`memoryview.iterbytes` alternative iterators
+
+.. seealso::
+
+    :pep:`467` -- Minor API improvements for binary sequences
+
+
 Other Language Changes
 ======================
 

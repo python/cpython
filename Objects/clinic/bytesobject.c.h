@@ -499,4 +499,65 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9e3374bd7d04c163 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(bytes_zeros__doc__,
+"zeros($type, size, /)\n"
+"--\n"
+"\n"
+"Create a bytes object of size given by the parameter initialized with null bytes.\n"
+"\n"
+"Parameter must be 0 or a positive integer.\n"
+"Example: bytes.zeros(3) -> b\\\'\\\\x00\\\\x00\\\\x00\'");
+
+#define BYTES_ZEROS_METHODDEF    \
+    {"zeros", (PyCFunction)bytes_zeros, METH_O|METH_CLASS, bytes_zeros__doc__},
+
+static PyObject *
+bytes_zeros_impl(PyTypeObject *type, int size);
+
+static PyObject *
+bytes_zeros(PyTypeObject *type, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int size;
+
+    if (!PyArg_Parse(arg, "i:zeros", &size)) {
+        goto exit;
+    }
+    return_value = bytes_zeros_impl(type, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytes_byte__doc__,
+"byte($type, x, /)\n"
+"--\n"
+"\n"
+"Create a bytes object, consisting of a single byte.\n"
+"\n"
+"Parameter must be in range(0, 256)\n"
+"bytes.byte(x) is equivalent to bytes([x])\n"
+"Example: bytes.byte(3) -> b\'\\x03\'");
+
+#define BYTES_BYTE_METHODDEF    \
+    {"byte", (PyCFunction)bytes_byte, METH_O|METH_CLASS, bytes_byte__doc__},
+
+static PyObject *
+bytes_byte_impl(PyTypeObject *type, int x);
+
+static PyObject *
+bytes_byte(PyTypeObject *type, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int x;
+
+    if (!PyArg_Parse(arg, "i:byte", &x)) {
+        goto exit;
+    }
+    return_value = bytes_byte_impl(type, x);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=13231af5ad06dec3 input=a9049054013a1b77]*/

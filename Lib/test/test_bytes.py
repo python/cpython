@@ -95,14 +95,37 @@ class BaseBytesTest:
         self.assertEqual(self.type2test(B(b"foobar")), b"foobar")
 
     def test_from_ssize(self):
-        self.assertEqual(self.type2test(0), b'')
-        self.assertEqual(self.type2test(1), b'\x00')
-        self.assertEqual(self.type2test(5), b'\x00\x00\x00\x00\x00')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.type2test(0), b'')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.type2test(1), b'\x00')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.type2test(5), b'\x00\x00\x00\x00\x00')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.type2test(10), self.type2test([0]*10))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.type2test(10000), self.type2test([0]*10000))
+
         self.assertRaises(ValueError, self.type2test, -1)
 
         self.assertEqual(self.type2test('0', 'ascii'), b'0')
         self.assertEqual(self.type2test(b'0'), b'0')
         self.assertRaises(OverflowError, self.type2test, sys.maxsize + 1)
+
+    def test_zeros(self):
+        self.assertEqual(self.type2test.zeros(0), b'')
+        self.assertEqual(self.type2test.zeros(1), b'\x00')
+        self.assertEqual(self.type2test.zeros(5), b'\x00\x00\x00\x00\x00')
+        self.assertRaises(ValueError, self.type2test.zeros, -1)
+
+    def test_single_byte(self):
+        self.assertEqual(self.type2test.byte(0), b'\x00')
+        self.assertEqual(self.type2test.byte(65), b'A')
+        self.assertEqual(self.type2test.byte(255), b'\xff')
+        self.assertEqual(self.type2test.byte(False), b'\x00')
+        self.assertEqual(self.type2test.byte(True), b'\x01')
+        self.assertRaises(ValueError, self.type2test.byte, 256)
+        self.assertRaises(ValueError, self.type2test.byte, -1)
 
     def test_constructor_type_errors(self):
         self.assertRaises(TypeError, self.type2test, 0.0)
@@ -241,14 +264,6 @@ class BaseBytesTest:
                          "Hello world\n")
         # Default encoding is utf-8
         self.assertEqual(self.type2test(b'\xe2\x98\x83').decode(), '\u2603')
-
-    def test_from_int(self):
-        b = self.type2test(0)
-        self.assertEqual(b, self.type2test())
-        b = self.type2test(10)
-        self.assertEqual(b, self.type2test([0]*10))
-        b = self.type2test(10000)
-        self.assertEqual(b, self.type2test([0]*10000))
 
     def test_concat(self):
         b1 = self.type2test(b"abc")
@@ -503,6 +518,14 @@ class BaseBytesTest:
         self.assertEqual(b.rindex(i, 1, 3), 1)
         self.assertEqual(b.rindex(i, 3, 9), 7)
         self.assertRaises(ValueError, b.rindex, w, 1, 3)
+
+    def test_iterbytes(self):
+        b = self.type2test(b'foo')
+        it = b.iterbytes()
+        self.assertEqual(next(it), b'f')
+        self.assertEqual(next(it), b'o')
+        self.assertEqual(next(it), b'o')
+        self.assertRaises(StopIteration, next, it)
 
     def test_mod(self):
         b = self.type2test(b'hello, %b!')

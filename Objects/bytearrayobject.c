@@ -807,6 +807,13 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
                 PyErr_SetString(PyExc_ValueError, "negative count");
                 return -1;
             }
+            if (count >= 0) {
+                if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                     "Passing an integer to the bytearray "
+                                     "constructor is deprecated. Use "
+                                     "bytearray.zeros(%zd) instead.\n", count) < 0)
+                    return NULL;
+            }
             if (count > 0) {
                 if (PyByteArray_Resize((PyObject *)self, count))
                     return -1;
@@ -1995,6 +2002,67 @@ bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
     return result;
 }
 
+/*[clinic input]
+@classmethod
+bytearray.zeros
+
+    size: int
+    /
+
+Create a bytearray object of size given by the parameter initialized with null bytes.
+
+Parameter must be 0 or a positive integer.
+Example: bytearray.zeros(3) -> bytearray(b\'\\x00\\x00\\x00')
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_zeros_impl(PyTypeObject *type, int size)
+/*[clinic end generated code: output=483e961ce69e50dc input=b6e4556bd3095de2]*/
+{
+    if (size == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative count");
+        return NULL;
+    }
+    if (size >= 0) {
+        PyObject *result = PyByteArray_FromStringAndSize(NULL, size);
+        if (PyByteArray_Resize((PyObject *)result, size))
+            return NULL;
+        memset(PyByteArray_AS_STRING(result), 0, size);
+        return result;
+    }
+}
+
+/*[clinic input]
+@classmethod
+bytearray.byte
+
+    x: int
+    /
+
+Create a bytearray object, consisting of a single byte.
+
+Parameter must be in range(0, 256)
+bytearray.byte(x) is equivalent to bytearray([x])
+Example: bytearray.byte(3) -> bytearray(b'\x03')
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_byte_impl(PyTypeObject *type, int x)
+/*[clinic end generated code: output=756fefaafb00a523 input=d36148c99214b551]*/
+{
+    char byte;
+    if (x < 0 || x > 255) {
+        PyErr_Format(PyExc_ValueError, "bytes must be in range(0, 256)");
+        return NULL;
+    }
+    byte = (char)x;
+    return PyByteArray_FromStringAndSize(&byte, 1);
+}
+
+
 PyDoc_STRVAR(hex__doc__,
 "B.hex() -> string\n\
 \n\
@@ -2113,6 +2181,8 @@ static PyBufferProcs bytearray_as_buffer = {
     (releasebufferproc)bytearray_releasebuffer,
 };
 
+static PyObject *bytearray_iterbytes(PyObject *seq);
+
 static PyMethodDef
 bytearray_methods[] = {
     {"__alloc__", (PyCFunction)bytearray_alloc, METH_NOARGS, alloc_doc},
@@ -2120,6 +2190,7 @@ bytearray_methods[] = {
     BYTEARRAY_REDUCE_EX_METHODDEF
     BYTEARRAY_SIZEOF_METHODDEF
     BYTEARRAY_APPEND_METHODDEF
+    BYTEARRAY_BYTE_METHODDEF
     {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     {"center", (PyCFunction)stringlib_center, METH_VARARGS, _Py_center__doc__},
@@ -2153,6 +2224,8 @@ bytearray_methods[] = {
      _Py_istitle__doc__},
     {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
      _Py_isupper__doc__},
+    {"iterbytes", (PyCFunction)bytearray_iterbytes, METH_NOARGS,
+     _Py_iterbytes__doc__},
     BYTEARRAY_JOIN_METHODDEF
     {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, _Py_ljust__doc__},
     {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
@@ -2179,6 +2252,7 @@ bytearray_methods[] = {
     {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
     BYTEARRAY_TRANSLATE_METHODDEF
     {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
+    BYTEARRAY_ZEROS_METHODDEF
     {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, _Py_zfill__doc__},
     {NULL}
 };
@@ -2403,6 +2477,70 @@ bytearray_iter(PyObject *seq)
         return NULL;
     }
     it = PyObject_GC_New(bytesiterobject, &PyByteArrayIter_Type);
+    if (it == NULL)
+        return NULL;
+    it->it_index = 0;
+    Py_INCREF(seq);
+    it->it_seq = (PyByteArrayObject *)seq;
+    _PyObject_GC_TRACK(it);
+    return (PyObject *)it;
+}
+
+/****************** bytearray_iterbytes object ***********************/
+
+static PyObject *
+bytearray_iterbytes_next(bytesiterobject *it)
+{
+    PyObject *item = bytearrayiter_next(it);
+    if (item != NULL) {
+        return Py_BuildValue("c", (unsigned char)PyLong_AsLong(item));
+    }
+    return item;
+}
+
+PyTypeObject PyByteArrayIterBytes_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "bytearray_iterator",                        /* tp_name */
+    sizeof(bytesiterobject),          /* tp_basicsize */
+    0,                                           /* tp_itemsize */
+    /* methods */
+    (destructor)bytearrayiter_dealloc,           /* tp_dealloc */
+    0,                                           /* tp_print */
+    0,                                           /* tp_getattr */
+    0,                                           /* tp_setattr */
+    0,                                           /* tp_reserved */
+    0,                                           /* tp_repr */
+    0,                                           /* tp_as_number */
+    0,                                           /* tp_as_sequence */
+    0,                                           /* tp_as_mapping */
+    0,                                           /* tp_hash */
+    0,                                           /* tp_call */
+    0,                                           /* tp_str */
+    PyObject_GenericGetAttr,                     /* tp_getattro */
+    0,                                           /* tp_setattro */
+    0,                                           /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,     /* tp_flags */
+    0,                                           /* tp_doc */
+    (traverseproc)bytearrayiter_traverse,        /* tp_traverse */
+    0,                                           /* tp_clear */
+    0,                                           /* tp_richcompare */
+    0,                                           /* tp_weaklistoffset */
+    PyObject_SelfIter,                           /* tp_iter */
+    (iternextfunc)bytearray_iterbytes_next,      /* tp_iternext */
+    bytearrayiter_methods,                       /* tp_methods */
+    0,
+};
+
+static PyObject *
+bytearray_iterbytes(PyObject *seq)
+{
+    bytesiterobject *it;
+
+    if (!PyByteArray_Check(seq)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    it = PyObject_GC_New(bytesiterobject, &PyByteArrayIterBytes_Type);
     if (it == NULL)
         return NULL;
     it->it_index = 0;

@@ -2538,6 +2538,167 @@ static PySequenceMethods memory_as_sequence = {
 
 
 /**************************************************************************/
+/*                            iterbytes object                            */
+/**************************************************************************/
+
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t it_index;
+    PyMemoryViewObject *it_seq; /* Set to NULL when iterator is exhausted */
+} memoryview_iterobject;
+
+static void
+memoryview_iter_dealloc(memoryview_iterobject *it)
+{
+    _PyObject_GC_UNTRACK(it);
+    Py_XDECREF(it->it_seq);
+    PyObject_GC_Del(it);
+}
+
+static int
+memoryview_iter_traverse(memoryview_iterobject *it, visitproc visit, void *arg)
+{
+    Py_VISIT(it->it_seq);
+    return 0;
+}
+
+static PyObject *
+memoryview_iterbytes_next(memoryview_iterobject *it)
+{
+    PyMemoryViewObject *seq;
+    PyObject *item;
+    Py_buffer *view;
+
+    assert(it != NULL);
+    seq = it->it_seq;
+    if (seq == NULL)
+        return NULL;
+    assert(PyMemoryView_Check(seq));
+    view = &(seq->view);
+
+    if (it->it_index < view->shape[0]) {
+        char *ptr = ptr_from_index(view, it->it_index);
+        item = Py_BuildValue("c", (unsigned char)*ptr);
+        if (item != NULL)
+            ++it->it_index;
+        return item;
+    }
+
+    it->it_seq = NULL;
+    Py_DECREF(seq);
+    return NULL;
+}
+
+static PyObject *
+memoryview_iter_len(memoryview_iterobject *it)
+{
+    Py_ssize_t len = 0;
+    if (it->it_seq)
+        len = Py_SIZE(it->it_seq) - it->it_index;
+    return PyLong_FromSsize_t(len);
+}
+
+PyDoc_STRVAR(length_hint_doc,
+             "Private method returning an estimate of len(list(it)).");
+
+static PyObject *
+memoryview_iter_reduce(memoryview_iterobject *it)
+{
+    if (it->it_seq != NULL) {
+        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+                             it->it_seq, it->it_index);
+    } else {
+        PyObject *u = PyUnicode_FromUnicode(NULL, 0);
+        if (u == NULL)
+            return NULL;
+        return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), u);
+    }
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
+static PyObject *
+memoryview_iter_setstate(memoryview_iterobject *it, PyObject *state)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(state);
+    if (index == -1 && PyErr_Occurred())
+        return NULL;
+    if (it->it_seq != NULL) {
+        if (index < 0)
+            index = 0;
+        else if (index > Py_SIZE(it->it_seq))
+            index = Py_SIZE(it->it_seq); /* iterator exhausted */
+        it->it_index = index;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
+static PyMethodDef memoryview_iter_methods[] = {
+    {"__length_hint__", (PyCFunction)memoryview_iter_len, METH_NOARGS,
+     length_hint_doc},
+    {"__reduce__",      (PyCFunction)memoryview_iter_reduce, METH_NOARGS,
+     reduce_doc},
+    {"__setstate__",    (PyCFunction)memoryview_iter_setstate, METH_O,
+     setstate_doc},
+    {NULL,              NULL}           /* sentinel */
+};
+
+PyTypeObject PyMemoryViewIterBytes_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "memoryview_iterator",                      /* tp_name */
+    sizeof(memoryview_iterobject),              /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)memoryview_iter_dealloc,        /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)memoryview_iter_traverse,     /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)memoryview_iterbytes_next,    /* tp_iternext */
+    memoryview_iter_methods,                    /* tp_methods */
+    0,
+};
+
+static PyObject *
+memoryview_iterbytes(PyObject *seq)
+{
+    memoryview_iterobject *it;
+
+    if (!PyMemoryView_Check(seq)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    it = PyObject_GC_New(memoryview_iterobject, &PyMemoryViewIterBytes_Type);
+    if (it == NULL)
+        return NULL;
+    it->it_index = 0;
+    Py_INCREF(seq);
+    it->it_seq = (PyMemoryViewObject *)seq;
+    _PyObject_GC_TRACK(it);
+    return (PyObject *)it;
+}
+
+
+/**************************************************************************/
 /*                             Comparisons                                */
 /**************************************************************************/
 
@@ -3059,6 +3220,12 @@ PyDoc_STRVAR(memory_cast_doc,
 "cast($self, /, format, *, shape)\n--\n\
 \n\
 Cast a memoryview to a new format or shape.");
+PyDoc_STRVAR(memory_iterbytes_doc,
+"iterbytes($self, /)\n--\n\
+\n\
+Iterator that produces length 1 bytes objects instead of integers");
+
+static PyObject *memoryview_iterbytes(PyObject *seq);
 
 static PyMethodDef memory_methods[] = {
     {"release",     (PyCFunction)memory_release, METH_NOARGS, memory_release_doc},
@@ -3066,6 +3233,7 @@ static PyMethodDef memory_methods[] = {
     {"hex",         (PyCFunction)memory_hex, METH_NOARGS, memory_hex_doc},
     {"tolist",      (PyCFunction)memory_tolist, METH_NOARGS, memory_tolist_doc},
     {"cast",        (PyCFunction)memory_cast, METH_VARARGS|METH_KEYWORDS, memory_cast_doc},
+    {"iterbytes",   (PyCFunction)memoryview_iterbytes, METH_NOARGS, memory_iterbytes_doc},
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, NULL},
     {NULL,          NULL}

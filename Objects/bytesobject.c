@@ -2426,6 +2426,58 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     return NULL;
 }
 
+/*[clinic input]
+@classmethod
+bytes.zeros
+
+    size: int
+    /
+
+Create a bytes object of size given by the parameter initialized with null bytes.
+
+Parameter must be 0 or a positive integer.
+Example: bytes.zeros(3) -> b\'\\x00\\x00\\x00'
+[clinic start generated code]*/
+
+static PyObject *
+bytes_zeros_impl(PyTypeObject *type, int size)
+/*[clinic end generated code: output=ae545bb17865f2a1 input=12e0adfbb086d92d]*/
+{
+    if (size == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative count");
+        return NULL;
+    }
+    return _PyBytes_FromSize(size, 1);
+}
+
+/*[clinic input]
+@classmethod
+bytes.byte
+
+    x: int
+    /
+
+Create a bytes object, consisting of a single byte.
+
+Parameter must be in range(0, 256)
+bytes.byte(x) is equivalent to bytes([x])
+Example: bytes.byte(3) -> b'\x03'
+[clinic start generated code]*/
+
+static PyObject *
+bytes_byte_impl(PyTypeObject *type, int x)
+/*[clinic end generated code: output=9045f894ce311daa input=eb583448446d0edd]*/
+{
+    if (x < 0 || x > 255) {
+        PyErr_Format(PyExc_ValueError, "bytes must be in range(0, 256)");
+        return NULL;
+    }
+    return Py_BuildValue("c", x);
+}
+
 PyDoc_STRVAR(hex__doc__,
 "B.hex() -> string\n\
 \n\
@@ -2446,10 +2498,13 @@ bytes_getnewargs(PyBytesObject *v)
     return Py_BuildValue("(y#)", v->ob_sval, Py_SIZE(v));
 }
 
+static PyObject *bytes_iterbytes(PyObject *seq);
+
 
 static PyMethodDef
 bytes_methods[] = {
     {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
+    BYTES_BYTE_METHODDEF
     {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     {"center", (PyCFunction)stringlib_center, METH_VARARGS,
@@ -2480,6 +2535,8 @@ bytes_methods[] = {
      _Py_istitle__doc__},
     {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
      _Py_isupper__doc__},
+    {"iterbytes", (PyCFunction)bytes_iterbytes, METH_NOARGS,
+     _Py_iterbytes__doc__},
     BYTES_JOIN_METHODDEF
     {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, _Py_ljust__doc__},
     {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
@@ -2503,6 +2560,7 @@ bytes_methods[] = {
     {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
     BYTES_TRANSLATE_METHODDEF
     {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
+    BYTES_ZEROS_METHODDEF
     {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, _Py_zfill__doc__},
     {NULL,     NULL}                         /* sentinel */
 };
@@ -2617,6 +2675,11 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             }
             new = _PyBytes_FromSize(size, 1);
             if (new == NULL)
+                return NULL;
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                 "Passing an integer to the bytes constructor is "
+                                 "deprecated. Use bytes.zeros(%zd) instead.\n",
+                                 size) < 0)
                 return NULL;
             return new;
         }
@@ -3141,6 +3204,71 @@ bytes_iter(PyObject *seq)
         return NULL;
     }
     it = PyObject_GC_New(striterobject, &PyBytesIter_Type);
+    if (it == NULL)
+        return NULL;
+    it->it_index = 0;
+    Py_INCREF(seq);
+    it->it_seq = (PyBytesObject *)seq;
+    _PyObject_GC_TRACK(it);
+    return (PyObject *)it;
+}
+
+
+/*********************** iterbytes object ****************************/
+
+static PyObject *
+iterbytes_next(striterobject *it)
+{
+    PyObject *item = striter_next(it);
+    if (item != NULL) {
+        return Py_BuildValue("c", (unsigned char)PyLong_AsLong(item));
+    }
+    return item;
+}
+
+PyTypeObject PyIterBytes_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "bytes_iterator",                           /* tp_name */
+    sizeof(striterobject),                   /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)striter_dealloc,                /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)striter_traverse,             /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)iterbytes_next,               /* tp_iternext */
+    striter_methods,                            /* tp_methods */
+    0,
+};
+
+static PyObject *
+bytes_iterbytes(PyObject *seq)
+{
+    striterobject *it;
+
+    if (!PyBytes_Check(seq)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    it = PyObject_GC_New(striterobject, &PyIterBytes_Type);
     if (it == NULL)
         return NULL;
     it->it_index = 0;

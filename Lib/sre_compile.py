@@ -262,7 +262,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
     # internal: optimize character set
     out = []
     tail = []
-    charmap = bytearray(256)
+    charmap = bytearray.zeros(256)
     hascased = False
     for op, av in charset:
         while True:
@@ -373,7 +373,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
 
     charmap = bytes(charmap) # should be hashable
     comps = {}
-    mapping = bytearray(256)
+    mapping = bytearray.zeros(256)
     block = 0
     data = bytearray()
     for i in range(0, 65536, 256):

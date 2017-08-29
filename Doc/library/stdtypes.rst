@@ -2303,8 +2303,11 @@ data and are closely related to string objects in a variety of other ways.
    other ways:
 
    * A zero-filled bytes object of a specified length: ``bytes(10)``
+     (deprecated in version 3.7)
    * From an iterable of integers: ``bytes(range(20))``
    * Copying existing binary data via the buffer protocol:  ``bytes(obj)``
+   * Using the :meth:`~bytes.zeros` constructor: ``bytes.zeros(10)``
+   * Using the :meth:`~bytes.byte` single-byte constructor: ``bytes.byte(65)``
 
    Also see the :ref:`bytes <func-bytes>` built-in.
 
@@ -2375,8 +2378,11 @@ objects.
 
    * Creating an empty instance: ``bytearray()``
    * Creating a zero-filled instance with a given length: ``bytearray(10)``
+     (deprecated in version 3.7)
    * From an iterable of integers: ``bytearray(range(20))``
    * Copying existing binary data via the buffer protocol:  ``bytearray(b'Hi!')``
+   * Using the :meth:`~bytearray.zeros` constructor: ``bytearray.zeros(10)``
+   * Using the :meth:`~bytearray.byte` single-byte constructor: ``bytearray.byte(65)``
 
    As bytearray objects are mutable, they support the
    :ref:`mutable <typesseq-mutable>` sequence operations in addition to the
@@ -2545,6 +2551,14 @@ arbitrary binary data.
 
    .. versionchanged:: 3.3
       Also accept an integer in the range 0 to 255 as the subsequence.
+
+
+.. classmethod:: bytes.iterbytes()
+                 bytearray.iterbytes()
+
+   Return an iterator that produce :class:`bytes` objects of length 1.
+
+   .. versionadded:: 3.7
 
 
 .. method:: bytes.join(iterable)
@@ -3680,6 +3694,12 @@ copying.
 
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
+
+   .. classmethod:: memoryview.iterbytes()
+
+      Return an iterator that produce :class:`bytes` objects of length 1.
+
+      .. versionadded:: 3.7
 
    There are also several readonly attributes available:
 
