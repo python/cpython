@@ -1513,15 +1513,23 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
         /* Given this, we know there was a valid snapshot point
          * len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
          */
-        if (PyArg_ParseTuple(state, "OO", &dec_buffer, &dec_flags) < 0) {
+        if (!PyTuple_Check(state)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "illegal decoder state");
+            Py_DECREF(state);
+            return -1;
+        }
+        if (!PyArg_ParseTuple(state,
+                              "OO;illegal decoder state", &dec_buffer, &dec_flags))
+        {
             Py_DECREF(state);
             return -1;
         }
 
         if (!PyBytes_Check(dec_buffer)) {
             PyErr_Format(PyExc_TypeError,
-                         "decoder getstate() should have returned a bytes "
-                         "object, not '%.200s'",
+                         "illegal decoder state: the first item should be a "
+                         "bytes object, not '%.200s'",
                          Py_TYPE(dec_buffer)->tp_name);
             Py_DECREF(state);
             return -1;
@@ -2408,8 +2416,8 @@ _io_TextIOWrapper_tell_impl(textio *self)
         } \
         if (!PyBytes_Check(dec_buffer)) { \
             PyErr_Format(PyExc_TypeError, \
-                         "decoder getstate() should have returned a bytes " \
-                         "object, not '%.200s'", \
+                         "illegal decoder state: the first item should be a " \
+                         "bytes object, not '%.200s'", \
                          Py_TYPE(dec_buffer)->tp_name); \
             Py_DECREF(_state); \
             goto fail; \

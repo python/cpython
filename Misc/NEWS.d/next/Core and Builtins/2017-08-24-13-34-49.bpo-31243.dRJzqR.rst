@@ -1,0 +1,2 @@
+Fix a crash in some methods of `io.TextIOWrapper`, when the decoder's state
+is invalid. Patch by Oren Milman.
