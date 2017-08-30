@@ -96,9 +96,7 @@ class ForkServer(object):
                 try:
                     pid, status = os.waitpid(self._forkserver_pid, os.WNOHANG)
                 except ChildProcessError:
-                    # On Linux at least, this means the forkserver died,
-                    # as Python forces SIGCHLD to SIG_DFL.
-                    # (https://linux.die.net/man/2/wait)
+                    # Happens during the test suite, which also calls waitpid()
                     pass
                 else:
                     if not pid:
