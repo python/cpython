@@ -1739,20 +1739,22 @@ class GenPage(Frame):
         rewrite changes['main']['HelpFiles'].
 
         Widgets for GenPage(Frame):  (*) widgets bound to self
-            frame_run: LabelFrame
-                startup_title: Label
-                (*)startup_editor_on: Radiobutton - startup_edit
-                (*)startup_shell_on: Radiobutton - startup_edit
-            frame_save: LabelFrame
-                run_save_title: Label
-                (*)save_ask_on: Radiobutton - autosave
-                (*)save_auto_on: Radiobutton - autosave
-            frame_win_size: LabelFrame
-                win_size_title: Label
-                win_width_title: Label
-                (*)win_width_int: Entry - win_width
-                win_height_title: Label
-                (*)win_height_int: Entry - win_height
+            frame_window: LabelFrame
+                frame_run: Frame
+                    startup_title: Label
+                    (*)startup_editor_on: Radiobutton - startup_edit
+                    (*)startup_shell_on: Radiobutton - startup_edit
+                frame_win_size: Frame
+                    win_size_title: Label
+                    win_width_title: Label
+                    (*)win_width_int: Entry - win_width
+                    win_height_title: Label
+                    (*)win_height_int: Entry - win_height
+            frame_editor: LabelFrame
+                frame_save: Frame
+                    run_save_title: Label
+                    (*)save_ask_on: Radiobutton - autosave
+                    (*)save_auto_on: Radiobutton - autosave
             frame_help: LabelFrame
                 frame_helplist: Frame
                     frame_helplist_buttons: Frame
@@ -1771,16 +1773,15 @@ class GenPage(Frame):
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
 
-        # Create widgets:
         # Section frames.
-        frame_run = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                              text=' Startup Preferences ')
-        frame_save = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                               text=' autosave Preferences ')
-        frame_win_size = Frame(self, borderwidth=2, relief=GROOVE)
+        frame_window = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Window Preferences')
+        frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Editor Preferences')
         frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                text=' Additional Help Sources ')
-        # frame_run.
+        # Frame_window.
+        frame_run = Frame(frame_window, borderwidth=0)
         startup_title = Label(frame_run, text='At Startup')
         self.startup_editor_on = Radiobutton(
                 frame_run, variable=self.startup_edit, value=1,
@@ -1788,15 +1789,8 @@ class GenPage(Frame):
         self.startup_shell_on = Radiobutton(
                 frame_run, variable=self.startup_edit, value=0,
                 text='Open Shell Window')
-        # frame_save.
-        run_save_title = Label(frame_save, text='At Start of Run (F5)  ')
-        self.save_ask_on = Radiobutton(
-                frame_save, variable=self.autosave, value=0,
-                text="Prompt to Save")
-        self.save_auto_on = Radiobutton(
-                frame_save, variable=self.autosave, value=1,
-                text='No Prompt')
-        # frame_win_size.
+
+        frame_win_size = Frame(frame_window, borderwidth=0,)
         win_size_title = Label(
                 frame_win_size, text='Initial Window Size  (in characters)')
         win_width_title = Label(frame_win_size, text='Width')
@@ -1805,6 +1799,17 @@ class GenPage(Frame):
         win_height_title = Label(frame_win_size, text='Height')
         self.win_height_int = Entry(
                 frame_win_size, textvariable=self.win_height, width=3)
+
+        # Frame_editor.
+        frame_save = Frame(frame_editor, borderwidth=0)
+        run_save_title = Label(frame_save, text='At Start of Run (F5)  ')
+        self.save_ask_on = Radiobutton(
+                frame_save, variable=self.autosave, value=0,
+                text="Prompt to Save")
+        self.save_auto_on = Radiobutton(
+                frame_save, variable=self.autosave, value=1,
+                text='No Prompt')
+
         # frame_help.
         frame_helplist = Frame(frame_help)
         frame_helplist_buttons = Frame(frame_helplist)
@@ -1826,25 +1831,27 @@ class GenPage(Frame):
                 width=8, command=self.helplist_item_remove)
 
         # Pack widgets:
-        # body.
-        frame_run.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_save.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_win_size.pack(side=TOP, padx=5, pady=5, fill=X)
+        # Body.
+        frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
+        frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
         startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        # frame_save.
-        run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         # frame_win_size.
+        frame_win_size.pack(side=TOP, padx=5, pady=0, fill=X)
         win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        # frame_save.
+        frame_save.pack(side=TOP, padx=5, pady=0, fill=X)
+        run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         # frame_help.
         frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
