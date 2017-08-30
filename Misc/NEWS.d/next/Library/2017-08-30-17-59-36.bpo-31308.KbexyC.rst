@@ -1,2 +1,2 @@
-If multiprocessing's forkserver dies (for example because of Ctrl-C), launch
-it again when necessary.
+Make multiprocessing's forkserver process immune to Ctrl-C and other user interruptions.
+If it crashes, restart it when necessary.
