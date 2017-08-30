@@ -171,9 +171,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
     handlers = {
         # unblocking SIGCHLD allows the wakeup fd to notify our event loop
         signal.SIGCHLD: sigchld_handler,
-        # protect the process from ^C and "killall python" etc
+        # protect the process from ^C
         signal.SIGINT: signal.SIG_IGN,
-        signal.SIGTERM: signal.SIG_IGN,
         }
     old_handlers = {sig: signal.signal(sig, val)
                     for (sig, val) in handlers.items()}
