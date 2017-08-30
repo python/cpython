@@ -66,6 +66,7 @@ class EditorWindow(object):
         from idlelib.parenmatch import ParenMatch
         from idlelib.rstrip import RstripExtension
         from idlelib.runscript import ScriptBinding
+        from idlelib.zoomheight import ZoomHeight
 
         if EditorWindow.help_url is None:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
@@ -282,14 +283,15 @@ class EditorWindow(object):
 
 
         #init merged extentions binds - needs to be done after color is set
-        self.insAutoComplete=AutoComplete(self)
-        self.insAutoExpand=AutoExpand(self)
-        self.insCallTips=CallTips(self)
-        self.insCodeContext=CodeContext(self)
-        self.insFormatParagraph=FormatParagraph(self)
-        self.insParenMatch=ParenMatch(self)
-        self.insRstripExtension=RstripExtension(self)
-        self.insScriptBinding=ScriptBinding(self)
+        self.insAutoComplete = AutoComplete(self)
+        self.insAutoExpand = AutoExpand(self)
+        self.insCallTips = CallTips(self)
+        self.insCodeContext = CodeContext(self)
+        self.insFormatParagraph = FormatParagraph(self)
+        self.insParenMatch = ParenMatch(self)
+        self.insRstripExtension = RstripExtension(self)
+        self.insScriptBinding = ScriptBinding(self)
+        self.insZoomHeight = ZoomHeight(self)
 
         text.bind("<<autocomplete>>",self.insAutoComplete.autocomplete_event)
         text.bind("<<try-open-completions>>", self.insAutoComplete.try_open_completions_event)
@@ -305,6 +307,7 @@ class EditorWindow(object):
         text.bind("<<try-open-calltip>>",self.insCallTips.try_open_calltip_event)
         text.bind("<<refresh-calltip>>",self.insCallTips.refresh_calltip_event) #must come after paren-closed to work right
         text.bind("<<force-open-calltip>>",self.insCallTips.force_open_calltip_event)
+        text.bind("<<zoom-height>>",self.insZoomHeight.zoom_height_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
@@ -1008,17 +1011,19 @@ class EditorWindow(object):
 
     def load_standard_extensions(self):
         for name in self.get_standard_extension_names():
-            try:
-                self.load_extension(name)
-            except:
-                print("Failed to load extension", repr(name))
-                traceback.print_exc()
+            if name not in {'CodeContext','FormatParagraph','ParenMatch','AutoComplete'}:
+                # specific exclusions because we are storing config for mainlined old
+                # extensions in config-extensions.def for backward compatibility
+                try:
+                    self.load_extension(name)
+                except:
+                    print("Failed to load extension", repr(name))
+                    traceback.print_exc()
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(editor_only=True)
 
     extfiles = {
-        'ZoomHeight': 'zoomheight',
         }
 
     def load_extension(self, name):

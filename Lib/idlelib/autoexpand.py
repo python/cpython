@@ -10,6 +10,7 @@ Changing the current text line or leaving the cursor in a different
 place before requesting the next selection causes AutoExpand to reset
 its state.
 
+There is only one instance of Autoexpand.
 '''
 import re
 import string

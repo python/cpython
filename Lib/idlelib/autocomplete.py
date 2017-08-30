@@ -1,6 +1,6 @@
-"""
-This can complete either attribute names or file names. It can pop
-a window with all available names, for the user to select from.
+"""Complete either attribute names or file names. 
+Either on demand or after a user-selected delay after a key character,
+pop up a list of candidates.
 """
 import os
 import string
@@ -26,19 +26,18 @@ if os.altsep:  # e.g. '/' on Windows...
 
 class AutoComplete:
 
-    def __init__(self, editwin=None):
+    def __init__(self, editwin):
         self.editwin = editwin
-        if editwin is not None:  # not in subprocess or test
-            self.reset()
-            self.text = editwin.text
-            self.autocompletewindow = None
-            # id of delayed call, and the index of the text insert when
-            # the delayed call was issued. If _delayed_completion_id is
-            # None, there is no delayed call.
-            self._delayed_completion_id = None
-            self._delayed_completion_index = None
+        self.reload()
+        self.text = editwin.text
+        self.autocompletewindow = None
+        # id of delayed call, and the index of the text insert when
+        # the delayed call was issued. If _delayed_completion_id is
+        # None, there is no delayed call.
+        self._delayed_completion_id = None
+        self._delayed_completion_index = None
 
-    def reset(self):
+    def reload(self):
         self.popupwait = idleConf.GetOption("main", "General",
                                    "autocomplete_wait", type="int", default=0)
 

@@ -32,7 +32,19 @@
 # See config-keys.def for notes on specifying keys and extend.txt for
 # information on creating IDLE extensions.
 
-[ZoomHeight]
-enable=True
-[ZoomHeight_cfgBindings]
-zoom-height=<Alt-Key-2>
+[AutoComplete]
+popupwait=2000
+
+[CodeContext]
+numlines=3
+visible=False
+bgcolor=LightGray
+fgcolor=Black
+
+[FormatParagraph]
+max-width=72
+
+[ParenMatch]
+style=expression
+flash-delay=500
+bell=True

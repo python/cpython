@@ -92,7 +92,6 @@ class ColorDelegator(Delegator):
             "ERROR": idleConf.GetHighlight(theme, "error"),
             # The following is used by ReplaceDialog:
             "hit": idleConf.GetHighlight(theme, "hit"),
-            "paren": idleConf.GetHighlight(theme, "parenmatch"),
             }
 
         if DEBUG: print('tagdefs',self.tagdefs)

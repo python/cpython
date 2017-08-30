@@ -769,8 +769,6 @@ class HighPage(Frame):
             'Shell Error Text': ('error', '11'),
             'Shell Stdout Text': ('stdout', '12'),
             'Shell Stderr Text': ('stderr', '13'),
-            'Code Context Text': ('codecontext', '14'),
-            'Matched Parenthetics': ('parenmatch', '15'),
             }
         self.builtin_name = tracers.add(
                 StringVar(self), self.var_changed_builtin_name)
@@ -783,32 +781,13 @@ class HighPage(Frame):
                 BooleanVar(self), self.var_changed_theme_source)
         self.highlight_target = tracers.add(
                 StringVar(self), self.var_changed_highlight_target)
-        self.parenstyle = tracers.add(
-                StringVar(self), self.var_changed_parenstyle)
-        self.bell = tracers.add(
-                StringVar(self), self.var_changed_bell)
-        self.flash_delay = tracers.add(
-                StringVar(self), self.var_changed_flash_delay)
-        self.num_lines = tracers.add(
-                StringVar(self), self.var_changed_num_lines)
-        self.parenstyle.set(idleConf.GetOption(
-            'main','Theme','parenstyle', default='opener'))
-        self.bell.set(idleConf.GetOption(
-            'main','Theme','bell', default=True))
-        self.flash_delay.set(idleConf.GetOption(
-            'main','Theme','flash-delay', default=500))
-        self.num_lines.set(idleConf.GetOption(
-            'main','Theme','numlines', default=3))
+
         # Create widgets:
         # body frame and section frames.
         frame_custom = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                   text=' Custom Highlighting ')
         frame_theme = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                  text=' Highlighting Theme ')
-        frame_paren = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                                text=' Matched Parenthetics ')
-        frame_code = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                                text=' Code Context ')
         # frame_custom.
         text = self.highlight_sample = Text(
                 frame_custom, relief=SOLID, borderwidth=1,
@@ -816,13 +795,13 @@ class HighPage(Frame):
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
-        text_and_tags=(
-            ('Class CodeContext\n', 'codecontext'),
+        text_and_tags=(('\n', 'normal'),
+
             ('#you can click here', 'comment'), ('\n', 'normal'),
             ('#to choose items', 'comment'), ('\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
-            ('func', 'definition'),
-            ('(parenthetics)','parenmatch'),
+            ('func', 'definition'), ('(param):\n  ', 'normal'),
+            ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
             (':\n','normal'),
             ('  """string"""', 'string'), ('\n  var0 = ', 'normal'),
             ("'string'", 'string'), ('\n  var1 = ', 'normal'),
@@ -881,24 +860,10 @@ class HighPage(Frame):
                 frame_theme, text='Delete Custom Theme',
                 command=self.delete_custom)
         self.theme_message = Label(frame_theme, borderwidth=2)
-        #frame_paren
-        self.opt_menu_pstyle = OptionMenu(
-                frame_paren, self.parenstyle, "opener","parens","expression")
-        flash_label = Label(frame_paren, text='Time Displayed : \n(0 is until given input)')
-        self.entry_flash = Entry(
-                frame_paren, textvariable=self.flash_delay, width=4)
-        self.check_bell = Checkbutton(
-                frame_paren, text="Bell", variable=self.bell)
-        #frame_code
-        lines_label = Label(frame_code, text='Lines : ')
-        self.entry_num_lines = Entry(
-                frame_code, textvariable=self.num_lines, width=3)
         # Pack widgets:
         # body.
         frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_theme.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_paren.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_code.pack(side=TOP, padx=5, pady=5, fill=X)
         # frame_custom.
         self.frame_color_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
         frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
@@ -917,14 +882,6 @@ class HighPage(Frame):
         self.customlist.pack(side=TOP, fill=X, anchor=W, padx=5, pady=5)
         self.button_delete_custom.pack(side=TOP, fill=X, padx=5, pady=5)
         self.theme_message.pack(side=TOP, fill=X, pady=5)
-        #frame_paren
-        self.opt_menu_pstyle.pack(side=TOP,anchor=W,padx=5, fill=X)
-        self.check_bell.pack(side=TOP, anchor=W,padx=5)
-        flash_label.pack(side=LEFT, anchor=W, padx=5)
-        self.entry_flash.pack(side=LEFT, fill=X,anchor=W,padx=5)
-        #frame_code
-        lines_label.pack(side=LEFT, anchor=W, padx=5)
-        self.entry_num_lines.pack(side=LEFT,anchor=W,padx=5)
 
     def load_theme_cfg(self):
         """Load current configuration settings for the theme options.
@@ -1028,26 +985,6 @@ class HighPage(Frame):
     def var_changed_highlight_target(self, *params):
         "Process selection of new target tag for highlighting."
         self.set_highlight_target()
-
-    def var_changed_parenstyle(self, *params):
-        "Store change to parenthetics display style."
-        value=self.parenstyle.get()
-        changes.add_option('main', 'Theme', 'parenstyle', value)
-
-    def var_changed_bell(self, *params):
-        "Store change to parenthtics bell (on/off)."
-        value=self.bell.get()
-        changes.add_option('main', 'Theme', 'bell', value)
-
-    def var_changed_flash_delay(self, *params):
-        "Store change to parenthetics flash delay."
-        value=self.flash_delay.get()
-        changes.add_option('main', 'Theme', 'flash-delay', value)
-
-    def var_changed_num_lines(self, *params):
-        "Store change to code context - number of lines displayed."
-        value=self.num_lines.get()
-        changes.add_option('main', 'Theme', 'numlines', value)
 
     def set_theme_type(self):
         """Set available screen options based on builtin or custom theme.
@@ -1836,19 +1773,32 @@ class GenPage(Frame):
                 StringVar(self), ('main', 'EditorWindow', 'width'))
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
+        self.parenstyle = tracers.add(
+                StringVar(self), ('extensions', 'ParenMatch', 'style'))
+        self.bell = tracers.add(
+                BooleanVar(self), ('extensions', 'ParenMatch', 'bell'))
+        self.flash_delay = tracers.add(
+                IntVar(self), ('extensions', 'ParenMatch', 'flash-delay'))
+        self.num_lines = tracers.add(
+                IntVar(self), ('extensions', 'CodeContext', 'numlines'))
         self.formatp_maxw = tracers.add(
-            IntVar(self), ('main', 'General', 'formatp_maxw'))
+            IntVar(self), ('extensions', 'FormatParagraph', 'max-width'))
         self.autocomplete_wait = tracers.add(
-            IntVar(self), ('write', 'General', 'autocomplete_wait'))
+            IntVar(self), ('extensions', 'Autocomplete', 'popupwait'))
 
+        # Create widgets:
         # Section frames.
         frame_window = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                   text=' Window Preferences')
         frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                   text=' Editor Preferences')
+        frame_extras = Frame(self, borderwidth=2, relief=GROOVE)
+        frame_paren = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                text=' Matched Parenthetics ')
+        frame_code = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                text=' Code Context ')
         frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                text=' Additional Help Sources ')
-        frame_extras = Frame(self, borderwidth=2, relief=GROOVE)
         # Frame_window.
         frame_run = Frame(frame_window, borderwidth=0)
         startup_title = Label(frame_run, text='At Startup')
@@ -1868,6 +1818,18 @@ class GenPage(Frame):
         win_height_title = Label(frame_win_size, text='Height')
         self.win_height_int = Entry(
                 frame_win_size, textvariable=self.win_height, width=3)
+        #frame_paren
+        self.opt_menu_pstyle = OptionMenu(
+                frame_paren, self.parenstyle, "opener","parens","expression")
+        flash_label = Label(frame_paren, text='Time Displayed : \n(0 is until given input)')
+        self.entry_flash = Entry(
+                frame_paren, textvariable=self.flash_delay, width=4)
+        self.check_bell = Checkbutton(
+                frame_paren, text="Bell", variable=self.bell)
+        #frame_code
+        lines_label = Label(frame_code, text='Lines : ')
+        self.entry_num_lines = Entry(
+                frame_code, textvariable=self.num_lines, width=3)
         #frame extras
         autocomplete_wait_title = Label(frame_extras, text='AutoComplete Popup Wait')
         self.entry_autocomplete_wait = Entry(
@@ -1908,7 +1870,8 @@ class GenPage(Frame):
         # Body.
         frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-
+        frame_paren.pack(side=TOP, padx=5, pady=5, fill=X)
+        frame_code.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_extras.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
@@ -1923,6 +1886,14 @@ class GenPage(Frame):
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        #frame_paren
+        self.opt_menu_pstyle.pack(side=TOP,anchor=W,padx=5, fill=X)
+        self.check_bell.pack(side=TOP, anchor=W,padx=5)
+        flash_label.pack(side=LEFT, anchor=W, padx=5)
+        self.entry_flash.pack(side=LEFT, fill=X,anchor=W,padx=5)
+        #frame_code
+        lines_label.pack(side=LEFT, anchor=W, padx=5)
+        self.entry_num_lines.pack(side=LEFT,anchor=W,padx=5)
         #frame extras
         self.entry_autocomplete_wait.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         autocomplete_wait_title.pack(side=RIGHT, anchor=E, pady=5)

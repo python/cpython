@@ -76,11 +76,6 @@ num-spaces= 4
 default= 1
 name= IDLE Classic
 name2=
-contexton= 0
-numlines= 3
-parenstyle= opener
-flash-delay= 500
-bell= 1
 # name2 set in user config-main.cfg for themes added after 2015 Oct 1
 
 [Keys]

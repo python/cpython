@@ -91,6 +91,9 @@ menudefs = [
    ('Configure _IDLE', '<<open-config-dialog>>'),
    ('_Code Context', '<<toggle-code-context>>'),
    ]),
+ ('windows', [
+   ('Zoom Height', '<<zoom-height>>'),
+   ]),
  ('help', [
    ('_About IDLE', '<<about-idle>>'),
    None,

@@ -51,15 +51,15 @@ class ParenMatch:
 
     def reset(self):
         self.STYLE = idleConf.GetOption(
-            'main','Theme','parenstyle', default='opener')
+            'extensions','ParenMatch','style', default='opener')
         self.FLASH_DELAY = idleConf.GetOption(
-                'main','Theme','flash-delay', type='int',default=500)
+                'extensions','ParenMatch','flash-delay', type='int',default=500)
         if idleConf.GetOption(
-                'main','Theme','bell', type='bool',default=1):
+                'extensions','ParenMatch','bell', type='bool',default=1):
             self.bell=self.text.bell
         else:
             self.bell=lambda:None
-        self.HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(), 'parenmatch')
+        self.HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(), 'hilite')
         self.set_style(self.STYLE)
 
     def activate_restore(self):
