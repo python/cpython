@@ -982,6 +982,35 @@ class TestSpooledTemporaryFile(BaseTestCase):
         f = self.do_create(max_size=100, pre="a", suf=".txt")
         self.assertFalse(f._rolled)
 
+    def test_iobase_abstract(self):
+        # SpooledTemporaryFile should implement the IOBase abstract
+        iobase_abstract = (
+            'close',
+            'closed',
+            'fileno',
+            'flush',
+            'isatty',
+            'read',
+            'readable',
+            'readinto',
+            'readline',
+            'readlines',
+            'seek',
+            'seekable',
+            'tell',
+            'truncate',
+            'write',
+            'writable',
+            'writelines',
+            '__del__',
+        )
+        f = self.do_create()
+        for attribute in iobase_abstract:
+            self.assertTrue(
+                hasattr(f, attribute),
+                '{} attribute missing'.format(attribute)
+            )
+
     def test_del_on_close(self):
         # A SpooledTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()

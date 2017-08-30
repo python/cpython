@@ -685,6 +685,9 @@ class SpooledTemporaryFile:
     def __iter__(self):
         return self._file.__iter__()
 
+    def __del__(self):
+        return self._file.__del__()
+
     def close(self):
         self._file.close()
 
@@ -737,6 +740,12 @@ class SpooledTemporaryFile:
     def read(self, *args):
         return self._file.read(*args)
 
+    def readable(self):
+        return self._file.readable()
+
+    def readinto(self, b):
+        return self._file.readinto(b)
+
     def readline(self, *args):
         return self._file.readline(*args)
 
@@ -745,6 +754,9 @@ class SpooledTemporaryFile:
 
     def seek(self, *args):
         self._file.seek(*args)
+
+    def seekable(self):
+        return self._file.seekable()
 
     @property
     def softspace(self):
@@ -766,6 +778,9 @@ class SpooledTemporaryFile:
         rv = file.write(s)
         self._check(file)
         return rv
+
+    def writable(self):
+        return self._file.writable()
 
     def writelines(self, iterable):
         file = self._file
