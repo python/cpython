@@ -1960,7 +1960,7 @@ Other Improvements
   ``.py`` extension.  (Contributed by Paul Moore in :issue:`18569`.)
 
 * A new ``make`` target `coverage-report
-  <https://docs.python.org/devguide/coverage.html#measuring-coverage-of-c-code-with-gcov-and-lcov>`_
+  <https://devguide.python.org/coverage/#measuring-coverage-of-c-code-with-gcov-and-lcov>`_
   will build python, run the test suite, and generate an HTML coverage report
   for the C codebase using ``gcov`` and `lcov
   <http://ltp.sourceforge.net/coverage/lcov.php>`_.
@@ -2176,7 +2176,7 @@ The following obsolete and previously deprecated APIs and features have been
 removed:
 
 * The unmaintained ``Misc/TextMate`` and ``Misc/vim`` directories have been
-  removed (see the `devguide <https://docs.python.org/devguide>`_
+  removed (see the `devguide <https://devguide.python.org>`_
   for suggestions on what to use instead).
 
 * The ``SO`` makefile macro is removed (it was replaced by the
