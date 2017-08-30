@@ -571,7 +571,7 @@ class _TestProcess(BaseTestCase):
     def _set_event(self, evt):
         evt.set()
 
-    def check_forkserver_death(self, signum):
+    def check_forkserver_death(self, signum, should_die):
         # bpo-31308: if the forkserver process has died, we should still
         # be able to create and run new Process instances (the forkserver
         # is implicitly restarted).
@@ -587,7 +587,8 @@ class _TestProcess(BaseTestCase):
         _forkserver.ensure_running()
         pid = _forkserver._forkserver_pid
         os.kill(pid, signum)
-        os.waitpid(pid, 0)
+        if should_die:
+            os.waitpid(pid, 0)
 
         evt = self.Event()
         proc = self.Process(target=self._set_event, args=(evt,))
@@ -597,12 +598,12 @@ class _TestProcess(BaseTestCase):
 
     def test_forkserver_sigint(self):
         # Catchable signal
-        self.check_forkserver_death(signal.SIGINT)
+        self.check_forkserver_death(signal.SIGINT, False)
 
     def test_forkserver_sigkill(self):
         # Uncatchable signal
         if os.name != 'nt':
-            self.check_forkserver_death(signal.SIGKILL)
+            self.check_forkserver_death(signal.SIGKILL, True)
 
 
 #
