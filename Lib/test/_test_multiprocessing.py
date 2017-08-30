@@ -601,7 +601,8 @@ class _TestProcess(BaseTestCase):
 
     def test_forkserver_sigkill(self):
         # Uncatchable signal
-        self.check_forkserver_death(signal.SIGKILL)
+        if os.name != 'nt':
+            self.check_forkserver_death(signal.SIGKILL)
 
 
 #
