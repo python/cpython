@@ -440,9 +440,9 @@ class IdleConf:
         extns = self.RemoveKeyBindNames(
                 self.GetSectionList('default', 'extensions'))
         for extn in ['AutoComplete','CodeContext','FormatParagraph','ParenMatch']:
-            extns.remove(extn)                
+            extns.remove(extn)
             # specific exclusions because we are storing config for mainlined old
-            # extensions in config-extensions.def for backward compatibility                 
+            # extensions in config-extensions.def for backward compatibility
         userExtns = self.RemoveKeyBindNames(
                 self.GetSectionList('user', 'extensions'))
         for extn in userExtns:
@@ -683,7 +683,7 @@ class IdleConf:
             else:
                 for event in keyBindings:
                     if event not in {'<<try-open-calltip>>','<<try-open-completions>>','<<paren-closed>>'}:
-                        # do not allow calltips, etc. events/keys to be configured. 
+                        # do not allow calltips, etc. events/keys to be configured.
                         binding = self.GetKeyBinding(keySetName, event)
                         if binding:
                             keyBindings[event] = binding
