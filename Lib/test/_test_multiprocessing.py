@@ -4,6 +4,7 @@
 
 import unittest
 import queue as pyqueue
+import contextlib
 import time
 import io
 import itertools
@@ -4302,29 +4303,38 @@ class TestSemaphoreTracker(unittest.TestCase):
         self.assertRegex(err, expected)
         self.assertRegex(err, r'semaphore_tracker: %r: \[Errno' % name1)
 
-    def check_semaphore_tracker_death(self, signum):
+    def check_semaphore_tracker_death(self, signum, should_die):
         # bpo-31310: if the semaphore tracker process has died, it should
         # be restarted implicitly.
         from multiprocessing.semaphore_tracker import _semaphore_tracker
         _semaphore_tracker.ensure_running()
         pid = _semaphore_tracker._pid
         os.kill(pid, signum)
-        os.waitpid(pid, 0)
+        time.sleep(1.0)  # give it time to die
 
         ctx = multiprocessing.get_context("spawn")
-        sem = ctx.Semaphore()
-        sem.acquire()
-        sem.release()
-        wr = weakref.ref(sem)
-        # ensure `sem` gets collected, which triggers communication with
-        # the semaphore tracker
-        del sem
-        gc.collect()
-        self.assertIsNone(wr())
+        with contextlib.ExitStack() as stack:
+            if should_die:
+                stack.enter_context(self.assertWarnsRegex(
+                    UserWarning,
+                    "semaphore_tracker: process died"))
+            sem = ctx.Semaphore()
+            sem.acquire()
+            sem.release()
+            wr = weakref.ref(sem)
+            # ensure `sem` gets collected, which triggers communication with
+            # the semaphore tracker
+            del sem
+            gc.collect()
+            self.assertIsNone(wr())
+
+    def test_semaphore_tracker_sigint(self):
+        # Catchable signal (ignored by semaphore tracker)
+        self.check_semaphore_tracker_death(signal.SIGINT, False)
 
     def test_semaphore_tracker_sigkill(self):
-        # Uncatchable signal.  Note the semaphore tracker ignores SIGINT.
-        self.check_semaphore_tracker_death(signal.SIGKILL)
+        # Uncatchable signal.
+        self.check_semaphore_tracker_death(signal.SIGKILL, True)
 
 
 class TestSimpleQueue(unittest.TestCase):

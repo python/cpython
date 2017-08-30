@@ -43,21 +43,17 @@ class SemaphoreTracker(object):
         with self._lock:
             if self._pid is not None:
                 # semaphore tracker was launched before, is it still running?
-                try:
-                    pid, status = os.waitpid(self._pid, os.WNOHANG)
-                except ChildProcessError:
-                    # On Linux at least, this means the forkserver died,
-                    # as Python forces SIGCHLD to SIG_DFL.
-                    # (https://linux.die.net/man/2/wait)
-                    pass
-                else:
-                    if not pid:
-                        # semaphore tracker still alive
-                        return
-                # semaphore tracker  is dead, launch it again
+                pid, status = os.waitpid(self._pid, os.WNOHANG)
+                if not pid:
+                    # => still alive
+                    return
+                # => dead, launch it again
                 os.close(self._fd)
                 self._fd = None
                 self._pid = None
+
+                warnings.warn('semaphore_tracker: process died unexpectedly, '
+                              'relaunching.  Some semaphores might leak.')
 
             fds_to_pass = []
             try:
