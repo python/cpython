@@ -1,0 +1,1 @@
+Rearrange IDLE condigdialog GenPage into Window, Editor, and Help sections.
