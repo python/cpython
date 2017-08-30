@@ -1,0 +1,2 @@
+os.cpu_count() now returns the correct number of processors on Windows
+when the number of logical processors is greater than 64.
