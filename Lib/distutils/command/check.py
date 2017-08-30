@@ -135,7 +135,7 @@ class check(Command):
                           error_handler=settings.error_encoding_error_handler)
 
         document = nodes.document(settings, reporter, source=source_path)
-        document.note_source(StringIO(), -1)
+        document.note_source(source_path, -1)
         try:
             parser.parse(data, document)
         except AttributeError as e:
