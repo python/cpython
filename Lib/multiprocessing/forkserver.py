@@ -93,16 +93,11 @@ class ForkServer(object):
             semaphore_tracker.ensure_running()
             if self._forkserver_pid is not None:
                 # forkserver was launched before, is it still running?
-                try:
-                    pid, status = os.waitpid(self._forkserver_pid, os.WNOHANG)
-                except ChildProcessError:
-                    # Happens during the test suite, which also calls waitpid()
-                    pass
-                else:
-                    if not pid:
-                        # forkserver still alive
-                        return
-                # forkserver is dead, launch it again
+                pid, status = os.waitpid(self._forkserver_pid, os.WNOHANG)
+                if not pid:
+                    # still alive
+                    return
+                # dead, launch it again
                 os.close(self._forkserver_alive_fd)
                 self._forkserver_address = None
                 self._forkserver_alive_fd = None
