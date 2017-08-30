@@ -28,7 +28,7 @@ General Information
 - Source code: https://github.com/python/cpython
 - Issue tracker: https://bugs.python.org
 - Documentation: https://docs.python.org
-- Developer's Guide: https://docs.python.org/devguide/
+- Developer's Guide: https://devguide.python.org/
 
 Contributing to CPython
 -----------------------
@@ -36,7 +36,7 @@ Contributing to CPython
 For more complete instructions on contributing to CPython development,
 see the `Developer Guide`_.
 
-.. _Developer Guide: https://docs.python.org/devguide/
+.. _Developer Guide: https://devguide.python.org/
 
 Using Python
 ------------
