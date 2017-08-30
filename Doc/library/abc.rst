@@ -73,7 +73,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
       example::
 
          from abc import ABC
-         
+
          class MyABC(ABC):
              pass
 
