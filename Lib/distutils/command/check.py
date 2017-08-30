@@ -120,7 +120,7 @@ class check(Command):
 
     def _check_rst_data(self, data):
         """Returns warnings when the provided data doesn't compile."""
-        source_path = StringIO()
+        source_path = self.distribution.script_name or 'long_description'
         parser = Parser()
         settings = frontend.OptionParser(components=(Parser,)).get_default_values()
         settings.tab_width = 4
@@ -135,7 +135,7 @@ class check(Command):
                           error_handler=settings.error_encoding_error_handler)
 
         document = nodes.document(settings, reporter, source=source_path)
-        document.note_source(source_path, -1)
+        document.note_source(StringIO(), -1)
         try:
             parser.parse(data, document)
         except AttributeError as e:

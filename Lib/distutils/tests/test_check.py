@@ -1,4 +1,5 @@
 """Tests for distutils.command.check."""
+import os
 import textwrap
 import unittest
 from test.support import run_unittest
@@ -96,6 +97,11 @@ class CheckTestCase(support.LoggingSilencer,
 
         # and non-broken rest, including a non-ASCII character to test #12114
         metadata['long_description'] = 'title\n=====\n\ntest \u00df'
+        cmd = self._run(metadata, strict=1, restructuredtext=1)
+        self.assertEqual(cmd._warnings, 0)
+
+        # check that includes work to test #31292
+        metadata['long_description'] = f'title\n=====\n\n.. include:: {os.devnull}'
         cmd = self._run(metadata, strict=1, restructuredtext=1)
         self.assertEqual(cmd._warnings, 0)
 
