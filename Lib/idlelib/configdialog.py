@@ -287,7 +287,11 @@ class ConfigDialog(Toplevel):
         "Fill self.extensions with data from the default and user configs."
         self.extensions = {}
         for ext_name in idleConf.GetExtensions(active_only=False):
-            self.extensions[ext_name] = []
+            if ext_name not in {'AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext', 'FormatParagraph',
+                                'ParenMatch', 'RStripExtension', 'ScriptBinding', 'ZoomHeight'}:
+                # These extensions were converted to built-ins, and need to be filtered out so they don't
+                # appear in the Extensions tab.
+                self.extensions[ext_name] = []
 
         for ext_name in self.extensions:
             opt_list = sorted(self.ext_defaultCfg.GetOptionList(ext_name))
