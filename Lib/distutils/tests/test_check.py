@@ -101,7 +101,7 @@ class CheckTestCase(support.LoggingSilencer,
         self.assertEqual(cmd._warnings, 0)
 
         # check that includes work to test #31292
-        metadata['long_description'] = f'title\n=====\n\n.. include:: {os.devnull}'
+        metadata['long_description'] = 'title\n=====\n\n.. include:: ' + os.devnull
         cmd = self._run(metadata, strict=1, restructuredtext=1)
         self.assertEqual(cmd._warnings, 0)
 
