@@ -1,0 +1,2 @@
+If multiprocessing's forkserver dies (for example because of Ctrl-C), launch
+it again when necessary.
