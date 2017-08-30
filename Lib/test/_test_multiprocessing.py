@@ -4261,14 +4261,14 @@ class TestStartMethod(unittest.TestCase):
             self.fail("failed spawning forkserver or grandchild")
 
 
-#
-# Check that killing process does not leak named semaphores
-#
-
 @unittest.skipIf(sys.platform == "win32",
                  "test semantics don't make sense on Windows")
 class TestSemaphoreTracker(unittest.TestCase):
+
     def test_semaphore_tracker(self):
+        #
+        # Check that killing process does not leak named semaphores
+        #
         import subprocess
         cmd = '''if 1:
             import multiprocessing as mp, time, os
@@ -4301,6 +4301,31 @@ class TestSemaphoreTracker(unittest.TestCase):
         expected = 'semaphore_tracker: There appear to be 2 leaked semaphores'
         self.assertRegex(err, expected)
         self.assertRegex(err, r'semaphore_tracker: %r: \[Errno' % name1)
+
+    def check_semaphore_tracker_death(self, signum):
+        # bpo-31310: if the semaphore tracker process has died, it should
+        # be restarted implicitly.
+        from multiprocessing.semaphore_tracker import _semaphore_tracker
+        _semaphore_tracker.ensure_running()
+        pid = _semaphore_tracker._pid
+        os.kill(pid, signum)
+        os.waitpid(pid, 0)
+
+        ctx = multiprocessing.get_context("spawn")
+        sem = ctx.Semaphore()
+        sem.acquire()
+        sem.release()
+        wr = weakref.ref(sem)
+        # ensure `sem` gets collected, which triggers communication with
+        # the semaphore tracker
+        del sem
+        gc.collect()
+        self.assertIsNone(wr())
+
+    def test_semaphore_tracker_sigkill(self):
+        # Uncatchable signal.  Note the semaphore tracker ignores SIGINT.
+        self.check_semaphore_tracker_death(signal.SIGKILL)
+
 
 class TestSimpleQueue(unittest.TestCase):
 
