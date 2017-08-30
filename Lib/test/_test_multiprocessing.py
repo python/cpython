@@ -568,7 +568,8 @@ class _TestProcess(BaseTestCase):
         self.assertTrue(evt.is_set())
 
     @classmethod
-    def _set_event(self, evt):
+    def _sleep_and_set_event(self, evt, delay=0.0):
+        time.sleep(delay)
         evt.set()
 
     def check_forkserver_death(self, signum):
@@ -585,15 +586,25 @@ class _TestProcess(BaseTestCase):
 
         from multiprocessing.forkserver import _forkserver
         _forkserver.ensure_running()
+
+        evt = self.Event()
+        proc = self.Process(target=self._sleep_and_set_event, args=(evt, 1.0))
+        proc.start()
+
         pid = _forkserver._forkserver_pid
         os.kill(pid, signum)
         time.sleep(1.0)  # give it time to die
 
-        evt = self.Event()
-        proc = self.Process(target=self._set_event, args=(evt,))
-        proc.start()
+        evt2 = self.Event()
+        proc2 = self.Process(target=self._sleep_and_set_event, args=(evt2,))
+        proc2.start()
+        proc2.join()
+        self.assertTrue(evt2.is_set())
+        self.assertEqual(proc2.exitcode, 0)
+
         proc.join()
         self.assertTrue(evt.is_set())
+        self.assertIn(proc.exitcode, (0, 255))
 
     def test_forkserver_sigint(self):
         # Catchable signal
