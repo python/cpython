@@ -2673,28 +2673,34 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
        If there is a dot in name, we need to split it and emit a
        IMPORT_FROM for each name.
     */
-    Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
-                                        PyUnicode_GET_LENGTH(name), 1);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(name);
+    Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, len, 1);
     if (dot == -2)
         return 0;
     if (dot != -1) {
         /* Consume the base module name to get the first attribute */
-        Py_ssize_t pos = dot + 1;
-        while (dot != -1) {
+        while (1) {
+            Py_ssize_t pos = dot + 1;
             PyObject *attr;
-            dot = PyUnicode_FindChar(name, '.', pos,
-                                     PyUnicode_GET_LENGTH(name), 1);
+            dot = PyUnicode_FindChar(name, '.', pos, len, 1);
             if (dot == -2)
                 return 0;
-            attr = PyUnicode_Substring(name, pos,
-                                       (dot != -1) ? dot :
-                                       PyUnicode_GET_LENGTH(name));
+            attr = PyUnicode_Substring(name, pos, (dot != -1) ? dot : len);
             if (!attr)
                 return 0;
             ADDOP_O(c, IMPORT_FROM, attr, names);
             Py_DECREF(attr);
-            pos = dot + 1;
+            if (dot == -1) {
+                break;
+            }
+            ADDOP(c, ROT_TWO);
+            ADDOP(c, POP_TOP);
         }
+        if (!compiler_nameop(c, asname, Store)) {
+            return 0;
+        }
+        ADDOP(c, POP_TOP);
+        return 1;
     }
     return compiler_nameop(c, asname, Store);
 }
