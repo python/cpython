@@ -34,6 +34,7 @@ class ForkServer(object):
     def __init__(self):
         self._forkserver_address = None
         self._forkserver_alive_fd = None
+        self._forkserver_pid = None
         self._inherited_fds = None
         self._lock = threading.Lock()
         self._preload_modules = ['__main__']
@@ -90,8 +91,24 @@ class ForkServer(object):
         '''
         with self._lock:
             semaphore_tracker.ensure_running()
-            if self._forkserver_alive_fd is not None:
-                return
+            if self._forkserver_pid is not None:
+                # forkserver was launched before, is it still running?
+                try:
+                    pid, status = os.waitpid(self._forkserver_pid, os.WNOHANG)
+                except ChildProcessError:
+                    # On Linux at least, this means the forkserver died,
+                    # as Python forces SIGCHLD to SIG_DFL.
+                    # (https://linux.die.net/man/2/wait)
+                    pass
+                else:
+                    if not pid:
+                        # forkserver still alive
+                        return
+                # forkserver is dead, launch it again
+                os.close(self._forkserver_alive_fd)
+                self._forkserver_address = None
+                self._forkserver_alive_fd = None
+                self._forkserver_pid = None
 
             cmd = ('from multiprocessing.forkserver import main; ' +
                    'main(%d, %d, %r, **%r)')
@@ -127,6 +144,7 @@ class ForkServer(object):
                     os.close(alive_r)
                 self._forkserver_address = address
                 self._forkserver_alive_fd = alive_w
+                self._forkserver_pid = pid
 
 #
 #

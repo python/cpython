@@ -567,6 +567,42 @@ class _TestProcess(BaseTestCase):
         proc.join()
         self.assertTrue(evt.is_set())
 
+    @classmethod
+    def _set_event(self, evt):
+        evt.set()
+
+    def check_forkserver_death(self, signum):
+        # bpo-31308: if the forkserver process has died, we should still
+        # be able to create and run new Process instances (the forkserver
+        # is implicitly restarted).
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        sm = multiprocessing.get_start_method()
+        if sm != 'forkserver':
+            # The fork method by design inherits all fds from the parent,
+            # trying to go against it is a lost battle
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        from multiprocessing.forkserver import _forkserver
+        _forkserver.ensure_running()
+        pid = _forkserver._forkserver_pid
+        os.kill(pid, signum)
+        os.waitpid(pid, 0)
+
+        evt = self.Event()
+        proc = self.Process(target=self._set_event, args=(evt,))
+        proc.start()
+        proc.join()
+        self.assertTrue(evt.is_set())
+
+    def test_forkserver_sigint(self):
+        # Catchable signal
+        self.check_forkserver_death(signal.SIGINT)
+
+    def test_forkserver_sigkill(self):
+        # Uncatchable signal
+        self.check_forkserver_death(signal.SIGKILL)
+
 
 #
 #
