@@ -884,9 +884,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Split the source into lines. */
-        source_list = PyObject_CallMethodObjArgs((PyObject *)&PyUnicode_Type,
-                                                 PyId_splitlines.object,
-                                                 source, NULL);
+        source_list = PyUnicode_Splitlines(source, 0);
         Py_DECREF(source);
         if (!source_list)
             return NULL;
