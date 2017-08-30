@@ -72,13 +72,15 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
       Register *subclass* as a "virtual subclass" of this ABC. For
       example::
 
-        class MyABC(ABC):
-            pass
+         from abc import ABC
+         
+         class MyABC(ABC):
+             pass
 
-        MyABC.register(tuple)
+         MyABC.register(tuple)
 
-        assert issubclass(tuple, MyABC)
-        assert isinstance((), MyABC)
+         assert issubclass(tuple, MyABC)
+         assert isinstance((), MyABC)
 
       .. versionchanged:: 3.3
          Returns the registered subclass, to allow usage as a class decorator.
