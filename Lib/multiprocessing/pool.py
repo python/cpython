@@ -313,7 +313,6 @@ class Pool(object):
                 raise ValueError(
                     "Chunksize must be 1+, not {0:n}".format(
                         chunksize))
-            assert chunksize > 1
             task_batches = Pool._get_tasks(func, iterable, chunksize)
             result = IMapIterator(self._cache)
             self._taskqueue.put(
