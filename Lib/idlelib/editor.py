@@ -53,21 +53,20 @@ class EditorWindow(object):
     from idlelib import mainmenu
     from tkinter import Toplevel
     from idlelib.statusbar import MultiStatusBar
+    from idlelib.autocomplete import AutoComplete
+    from idlelib.autoexpand import AutoExpand
+    from idlelib.calltips import CallTips
+    from idlelib.codecontext import CodeContext
+    from idlelib.paragraph import FormatParagraph
+    from idlelib.parenmatch import ParenMatch
+    from idlelib.rstrip import RstripExtension
+    from idlelib.runscript import ScriptBinding
+    from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
-        from idlelib.autocomplete import AutoComplete
-        from idlelib.autoexpand import AutoExpand
-        from idlelib.calltips import CallTips
-        from idlelib.codecontext import CodeContext
-        from idlelib.paragraph import FormatParagraph
-        from idlelib.parenmatch import ParenMatch
-        from idlelib.rstrip import RstripExtension
-        from idlelib.runscript import ScriptBinding
-        from idlelib.zoomheight import ZoomHeight
-
         if EditorWindow.help_url is None:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
             if sys.platform.count('linux'):
@@ -282,16 +281,16 @@ class EditorWindow(object):
         self.showerror = tkMessageBox.showerror
 
 
-        #init merged extentions binds - needs to be done after color is set
-        self.insAutoComplete = AutoComplete(self)
-        self.insAutoExpand = AutoExpand(self)
-        self.insCallTips = CallTips(self)
-        self.insCodeContext = CodeContext(self)
-        self.insFormatParagraph = FormatParagraph(self)
-        self.insParenMatch = ParenMatch(self)
-        self.insRstripExtension = RstripExtension(self)
-        self.insScriptBinding = ScriptBinding(self)
-        self.insZoomHeight = ZoomHeight(self)
+        # merged extentions binds - depends on frame.text being packed (called from self.ResetColorizer())
+        self.insAutoComplete = self.AutoComplete(self)
+        self.insAutoExpand = self.AutoExpand(self)
+        self.insCallTips = self.CallTips(self)
+        self.insCodeContext = self.CodeContext(self)
+        self.insFormatParagraph = self.FormatParagraph(self)
+        self.insParenMatch = self.ParenMatch(self)
+        self.insRstripExtension = self.RstripExtension(self)
+        self.insScriptBinding = self.ScriptBinding(self)
+        self.insZoomHeight = self.ZoomHeight(self)
 
         text.bind("<<autocomplete>>",self.insAutoComplete.autocomplete_event)
         text.bind("<<try-open-completions>>", self.insAutoComplete.try_open_completions_event)
@@ -305,7 +304,8 @@ class EditorWindow(object):
         text.bind("<<check-module>>",self.insScriptBinding.check_module_event)
         text.bind("<<do-rstrip>>",self.insRstripExtension.do_rstrip)
         text.bind("<<try-open-calltip>>",self.insCallTips.try_open_calltip_event)
-        text.bind("<<refresh-calltip>>",self.insCallTips.refresh_calltip_event) #must come after paren-closed to work right
+        #refresh-calltips must come after paren-closed to work right
+        text.bind("<<refresh-calltip>>",self.insCallTips.refresh_calltip_event)
         text.bind("<<force-open-calltip>>",self.insCallTips.force_open_calltip_event)
         text.bind("<<zoom-height>>",self.insZoomHeight.zoom_height_event)
 
@@ -1011,14 +1011,11 @@ class EditorWindow(object):
 
     def load_standard_extensions(self):
         for name in self.get_standard_extension_names():
-            if name not in {'CodeContext','FormatParagraph','ParenMatch','AutoComplete'}:
-                # specific exclusions because we are storing config for mainlined old
-                # extensions in config-extensions.def for backward compatibility
-                try:
-                    self.load_extension(name)
-                except:
-                    print("Failed to load extension", repr(name))
-                    traceback.print_exc()
+            try:
+                self.load_extension(name)
+            except:
+                print("Failed to load extension", repr(name))
+                traceback.print_exc()
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(editor_only=True)

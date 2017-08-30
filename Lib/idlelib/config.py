@@ -439,6 +439,10 @@ class IdleConf:
         """
         extns = self.RemoveKeyBindNames(
                 self.GetSectionList('default', 'extensions'))
+        for extn in ['AutoComplete','CodeContext','FormatParagraph','ParenMatch']:
+            extns.remove(extn)                
+            # specific exclusions because we are storing config for mainlined old
+            # extensions in config-extensions.def for backward compatibility                 
         userExtns = self.RemoveKeyBindNames(
                 self.GetSectionList('user', 'extensions'))
         for extn in userExtns:
@@ -656,10 +660,13 @@ class IdleConf:
             '<<change-indentwidth>>': ['<Alt-Key-u>'],
             '<<del-word-left>>': ['<Control-Key-BackSpace>'],
             '<<del-word-right>>': ['<Control-Key-Delete>'],
+            '<<try-open-calltip>>':['<KeyRelease-parenleft>'],
+            '<<try-open-completions>>':['<KeyRelease-period>', '<KeyRelease-slash>', '<KeyRelease-backslash>'],
             '<<force-open-completions>>':['<Control-Key-space>'],
             '<<expand-word>>':['<Alt-Key-slash>'],
             '<<force-open-calltip>>':['<Control-Key-backslash>'],
             '<<flash-paren>>':['<Control-Key-0>'],
+            '<<paren-closed>>':['<KeyRelease-parenright>', '<KeyRelease-bracketright>', '<KeyRelease-braceright>'],
             '<<run-module>>':['<Key-F5>'],
             '<<check-module>>':['<Alt-Key-x>'],
             '<<zoom-height>>':['<Alt-Key-2>']
@@ -675,18 +682,20 @@ class IdleConf:
                 _warn(warning, 'keys', keySetName)
             else:
                 for event in keyBindings:
-                    binding = self.GetKeyBinding(keySetName, event)
-                    if binding:
-                        keyBindings[event] = binding
-                    else: #we are going to return a default, print warning
-                        warning = (
-                            '\n Warning: config.py - IdleConf.GetCoreKeys -\n'
-                            ' problem retrieving key binding for event %r\n'
-                            ' from key set %r.\n'
-                            ' returning default value: %r' %
-                            (event, keySetName, keyBindings[event])
-                        )
-                        _warn(warning, 'keys', keySetName, event)
+                    if event not in {'<<try-open-calltip>>','<<try-open-completions>>','<<paren-closed>>'}:
+                        # do not allow calltips, etc. events/keys to be configured. 
+                        binding = self.GetKeyBinding(keySetName, event)
+                        if binding:
+                            keyBindings[event] = binding
+                        else: #we are going to return a default, print warning
+                            warning = (
+                                '\n Warning: config.py - IdleConf.GetCoreKeys -\n'
+                                ' problem retrieving key binding for event %r\n'
+                                ' from key set %r.\n'
+                                ' returning default value: %r' %
+                                (event, keySetName, keyBindings[event])
+                            )
+                            _warn(warning, 'keys', keySetName, event)
         return keyBindings
 
     def GetExtraHelpSourceList(self, configSet):
