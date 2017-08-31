@@ -333,12 +333,12 @@ function.
 The method table must be referenced in the module definition structure::
 
    static struct PyModuleDef spammodule = {
-      PyModuleDef_HEAD_INIT,
-      "spam",   /* name of module */
-      spam_doc, /* module documentation, may be NULL */
-      -1,       /* size of per-interpreter state of the module,
-                   or -1 if the module keeps state in global variables. */
-      SpamMethods
+       PyModuleDef_HEAD_INIT,
+       "spam",   /* name of module */
+       spam_doc, /* module documentation, may be NULL */
+       -1,       /* size of per-interpreter state of the module,
+                    or -1 if the module keeps state in global variables. */
+       SpamMethods
    };
 
 This structure, in turn, must be passed to the interpreter in the module's
