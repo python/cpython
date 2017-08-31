@@ -21,6 +21,12 @@ def requires_load_dynamic(meth):
     meth = support.cpython_only(meth)
     return unittest.skipIf(not hasattr(imp, 'load_dynamic'),
                            'imp.load_dynamic() required')(meth)
+def requires_create_dynamic(meth):
+    """Decorator to skip a test if not running under CPython or lacking
+    imp.create_dynamic()."""
+    meth = support.cpython_only(meth)
+    return unittest.skipIf(not hasattr(imp, 'create_dynamic'),
+                           'imp.create_dynamic() required')(meth)
 
 
 @unittest.skipIf(_thread is None, '_thread module is required')
@@ -317,6 +323,16 @@ class ImportTests(unittest.TestCase):
     def test_load_source(self):
         with self.assertRaisesRegex(ValueError, 'embedded null'):
             imp.load_source(__name__, __file__ + "\0")
+
+    @requires_create_dynamic
+    def test_issue31315(self):
+        # There shouldn't be an assertion failure in imp.create_dynamic(),
+        # when spec.name is not a string.
+        class BadSpec:
+            name = 42
+            origin = 'foo'
+        with self.assertRaises(TypeError):
+            imp.create_dynamic(BadSpec())
 
 
 class ReloadTests(unittest.TestCase):
