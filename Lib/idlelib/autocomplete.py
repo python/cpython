@@ -26,20 +26,21 @@ if os.altsep:  # e.g. '/' on Windows...
 
 class AutoComplete:
 
-    def __init__(self, editwin):
+    def __init__(self, editwin=None):
         self.editwin = editwin
-        self.reload()
-        self.text = editwin.text
-        self.autocompletewindow = None
-        # id of delayed call, and the index of the text insert when
-        # the delayed call was issued. If _delayed_completion_id is
-        # None, there is no delayed call.
-        self._delayed_completion_id = None
-        self._delayed_completion_index = None
+        if editwin is not None:   # not in subprocess or test
+            self.text = editwin.text
+            self.autocompletewindow = None
+            # id of delayed call, and the index of the text insert when
+            # the delayed call was issued. If _delayed_completion_id is
+            # None, there is no delayed call.
+            self._delayed_completion_id = None
+            self._delayed_completion_index = None
 
-    def reload(self):
-        self.popupwait = idleConf.GetOption("main", "General",
-                                   "autocomplete_wait", type="int", default=0)
+    @classmethod
+    def reload(cls):
+        cls.popupwait = idleConf.GetOption(
+            "extensions", "AutoComplete", "popupwait", type="int", default=0)
 
     def _make_autocomplete_window(self):
         return autocomplete_w.AutoCompleteWindow(self.text)
@@ -220,6 +221,9 @@ class AutoComplete:
         namespace = sys.modules.copy()
         namespace.update(__main__.__dict__)
         return eval(name, namespace)
+
+
+AutoComplete.reload()
 
 
 if __name__ == '__main__':
