@@ -438,7 +438,7 @@ Main website:  https://www.python.org/
 .br
 Documentation:  https://docs.python.org/
 .br
-Developer resources:  https://docs.python.org/devguide/
+Developer resources:  https://devguide.python.org/
 .br
 Downloads:  https://www.python.org/downloads/
 .br
