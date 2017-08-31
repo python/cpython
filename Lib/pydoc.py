@@ -2619,7 +2619,7 @@ def cli():
         sys.path.insert(0, '.')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'bk:h:p:w')
+        opts, args = getopt.getopt(sys.argv[1:], 'bk:n:p:w')
         writing = False
         start_server = False
         open_browser = False
@@ -2637,7 +2637,7 @@ def cli():
                 port = val
             if opt == '-w':
                 writing = True
-            if opt == '-h':
+            if opt == '-n':
                 start_server = True
                 hostname = val
 
@@ -2678,7 +2678,7 @@ def cli():
 {cmd} -k <keyword>
     Search for a keyword in the synopsis lines of all available modules.
 
-{cmd} -h <hostname>
+{cmd} -n <hostname>
     Start an HTTP server with the given hostname.(default: localhost)
 
 {cmd} -p <port>
