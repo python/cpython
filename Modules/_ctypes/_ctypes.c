@@ -2665,8 +2665,11 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     int res;
     PyObject *dict, *mydict;
     CDataObject *self = (CDataObject *)myself;
-    if (!PyArg_ParseTuple(args, "Os#", &dict, &data, &len))
+    if (!PyArg_ParseTuple(args, "O!s#",
+                          &PyDict_Type, &dict, &data, &len))
+    {
         return NULL;
+    }
     if (len > self->b_size)
         len = self->b_size;
     memmove(self->b_ptr, data, len);
