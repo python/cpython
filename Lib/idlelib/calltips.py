@@ -1,9 +1,8 @@
-"""
+"""Pop up a reminder of how to call a function.
 
 Call Tips are floating windows which display function, class, and method
 parameter and docstring information when you type an opening parenthesis, and
 which disappear when you type a closing parenthesis.
-
 """
 import inspect
 import re
@@ -14,6 +13,7 @@ import types
 from idlelib import calltip_w
 from idlelib.hyperparser import HyperParser
 import __main__
+
 
 class CallTips:
 
@@ -97,6 +97,7 @@ class CallTips:
         else:
             return get_argspec(get_entity(expression))
 
+
 def get_entity(expression):
     """Return the object corresponding to expression evaluated
     in a namespace spanning sys.modules and __main.dict__.
@@ -119,7 +120,6 @@ _first_param = re.compile(r'(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
 _invalid_method = "invalid method signature"
 _argument_positional = "\n['/' marks preceding arguments as positional-only]\n"
-
 
 def get_argspec(ob):
     '''Return a string describing the signature of a callable object, or ''.

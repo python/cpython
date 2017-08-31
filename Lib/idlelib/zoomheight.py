@@ -1,4 +1,4 @@
-# Zoom a window to maximum height
+"Zoom a window to maximum height."
 
 import re
 import sys

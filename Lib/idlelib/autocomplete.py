@@ -1,4 +1,5 @@
 """Complete either attribute names or file names.
+
 Either on demand or after a user-selected delay after a key character,
 pop up a list of candidates.
 """

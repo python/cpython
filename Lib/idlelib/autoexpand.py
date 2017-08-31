@@ -15,9 +15,6 @@ There is only one instance of Autoexpand.
 import re
 import string
 
-###$ event <<expand-word>>
-###$ win <Alt-slash>
-###$ unix <Alt-slash>
 
 class AutoExpand:
     wordchars = string.ascii_letters + string.digits + "_"
@@ -92,6 +89,7 @@ class AutoExpand:
         while i > 0 and line[i-1] in self.wordchars:
             i = i-1
         return line[i:]
+
 
 if __name__ == '__main__':
     import unittest

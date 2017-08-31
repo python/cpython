@@ -55,8 +55,6 @@ autosave= 0
 print-command-posix=lpr %%s
 print-command-win=start /min notepad /p %%s
 delete-exitfunc= 1
-autocomplete_wait= 0
-formatp_maxw= 72
 
 [EditorWindow]
 width= 80

@@ -25,6 +25,7 @@ FONTUPDATEINTERVAL = 1000 # millisec
 getspacesfirstword =\
                    lambda s, c=re.compile(r"^(\s*)(\w*)"): c.match(s).groups()
 
+
 class CodeContext:
     bgcolor = idleConf.GetOption("extensions", "CodeContext",
                                  "bgcolor", type="str", default="LightGray")
@@ -47,15 +48,14 @@ class CodeContext:
         self.text.after(UPDATEINTERVAL, self.timer_event)
         self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
 
-    def reload(self):
-        self.context_depth = idleConf.GetOption("extensions", "CodeContext",
+    @classmethod
+    def reload(cls):
+        cls.context_depth = idleConf.GetOption("extensions", "CodeContext",
                                        "numlines", type="int", default=3)
-        self.bgcolor = idleConf.GetOption("extensions", "CodeContext",
+        cls.bgcolor = idleConf.GetOption("extensions", "CodeContext",
                                      "bgcolor", type="str", default="LightGray")
-        self.fgcolor = idleConf.GetOption("extensions", "CodeContext",
+        cls.fgcolor = idleConf.GetOption("extensions", "CodeContext",
                                      "fgcolor", type="str", default="Black")
-
-
 
     def toggle_code_context_event(self, event=None):
         if not self.label:
@@ -180,3 +180,6 @@ class CodeContext:
             self.textfont = newtextfont
             self.label["font"] = self.textfont
         self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+
+
+CodeContext.reload()

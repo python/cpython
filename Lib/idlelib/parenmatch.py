@@ -45,22 +45,21 @@ class ParenMatch:
         # and deactivate_restore (which calls event_delete).
         editwin.text.bind(self.RESTORE_VIRTUAL_EVENT_NAME,
                           self.restore_event)
+        self.bell = self.text.bell if self.BELL else lambda: None
         self.counter = 0
         self.is_restore_active = 0
-        self.reset()
-
-    def reset(self):
-        self.STYLE = idleConf.GetOption(
-            'extensions','ParenMatch','style', default='opener')
-        self.FLASH_DELAY = idleConf.GetOption(
-                'extensions','ParenMatch','flash-delay', type='int',default=500)
-        if idleConf.GetOption(
-                'extensions','ParenMatch','bell', type='bool',default=1):
-            self.bell=self.text.bell
-        else:
-            self.bell=lambda:None
-        self.HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(), 'hilite')
         self.set_style(self.STYLE)
+
+    @classmethod
+    def reload(cls):
+        cls.STYLE = idleConf.GetOption(
+            'extensions','ParenMatch','style', default='opener')
+        cls.FLASH_DELAY = idleConf.GetOption(
+                'extensions','ParenMatch','flash-delay', type='int',default=500)
+        cls.BELL = idleConf.GetOption(
+                'extensions','ParenMatch','bell', type='bool', default=1)
+        cls.HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),
+                                                  'hilite')
 
     def activate_restore(self):
         "Activate mechanism to restore text from highlighting."
@@ -179,6 +178,9 @@ class ParenMatch:
         self.editwin.text_frame.after(
             self.FLASH_DELAY,
             lambda self=self, c=self.counter: self.handle_restore_timer(c))
+
+
+ParenMatch.reload()
 
 
 if __name__ == '__main__':
