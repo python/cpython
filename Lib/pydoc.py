@@ -16,12 +16,15 @@ backslash on Windows) it is treated as the path to a Python source file.
 Run "pydoc -k <keyword>" to search for a keyword in the synopsis lines
 of all available modules.
 
+Run "pydoc -n <hostname>" to start an HTTP server with the given
+hostname (default: localhost) on the local machine.
+
 Run "pydoc -p <port>" to start an HTTP server on the given port on the
 local machine.  Port number 0 can be used to get an arbitrary unused port.
 
 Run "pydoc -b" to start an HTTP server on an arbitrary unused port and
-open a Web browser to interactively browse documentation.  The -p option
-can be used with the -b option to explicitly specify the server port.
+open a Web browser to interactively browse documentation.  Combine with
+the -n and -p options to control the hostname and port used.
 
 Run "pydoc -w <name>" to write out the HTML documentation for a module
 to a file named "<name>.html".
@@ -2687,8 +2690,8 @@ def cli():
 
 {cmd} -b
     Start an HTTP server on an arbitrary unused port and open a Web browser
-    to interactively browse documentation.  The -p option can be used with
-    the -b option to explicitly specify the server port.
+    to interactively browse documentation.  This option can be used in
+    combination with -n and/or -p.
 
 {cmd} -w <name> ...
     Write out the HTML documentation for a module to a file in the current
