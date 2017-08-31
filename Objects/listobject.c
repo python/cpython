@@ -2748,6 +2748,7 @@ static PyObject *listiter_len(listiterobject *);
 static PyObject *listiter_reduce_general(void *_it, int forward);
 static PyObject *listiter_reduce(listiterobject *);
 static PyObject *listiter_setstate(listiterobject *, PyObject *state);
+static int listiter_contains(listiterobject *it, PyObject *el);
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -2758,6 +2759,10 @@ static PyMethodDef listiter_methods[] = {
     {"__reduce__", (PyCFunction)listiter_reduce, METH_NOARGS, reduce_doc},
     {"__setstate__", (PyCFunction)listiter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
+};
+
+static PySequenceMethods listiter_as_sequence = {
+    .sq_contains = (objobjproc)listiter_contains,
 };
 
 PyTypeObject PyListIter_Type = {
@@ -2773,7 +2778,7 @@ PyTypeObject PyListIter_Type = {
     0,                                          /* tp_reserved */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
+    &listiter_as_sequence,                      /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
@@ -2884,6 +2889,35 @@ listiter_setstate(listiterobject *it, PyObject *state)
         it->it_index = index;
     }
     Py_RETURN_NONE;
+}
+
+static int
+listiter_contains(listiterobject *it, PyObject *el)
+{
+    PyListObject *seq;
+    PyObject *item;
+    int cmp;
+
+    assert(it != NULL);
+    seq = it->it_seq;
+    if (seq == NULL)
+        return 0;
+    assert(PyList_Check(it->it_seq));
+
+    do {
+        item = PyList_GET_ITEM(seq, it->it_index);
+        ++it->it_index;
+        if (it->it_index >= Py_SIZE(seq)) {
+            it->it_seq = NULL;
+            cmp = PyObject_RichCompareBool(el, item, Py_EQ);
+            Py_DECREF(seq);
+            return cmp;
+        }
+        cmp = PyObject_RichCompareBool(el, item, Py_EQ);
+        if (cmp != 0)
+            return cmp;
+    } while(it->it_seq != NULL);
+    return 0;
 }
 
 /*********************** List Reverse Iterator **************************/
