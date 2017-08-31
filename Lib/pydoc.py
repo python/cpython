@@ -2679,7 +2679,7 @@ def cli():
     Search for a keyword in the synopsis lines of all available modules.
 
 {cmd} -n <hostname>
-    Start an HTTP server with the given hostname.(default: localhost)
+    Start an HTTP server with the given hostname (default: localhost).
 
 {cmd} -p <port>
     Start an HTTP server on the given port on the local machine.  Port
