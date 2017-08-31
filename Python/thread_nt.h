@@ -448,6 +448,7 @@ PyThread_tss_delete(Py_tss_t *key)
 int
 PyThread_tss_set(Py_tss_t *key, void *value)
 {
+    assert(key != NULL);
     BOOL ok = TlsSetValue(key->_key, value);
     return ok ? 0 : -1;
 }
@@ -455,6 +456,7 @@ PyThread_tss_set(Py_tss_t *key, void *value)
 void *
 PyThread_tss_get(Py_tss_t *key)
 {
+    assert(key != NULL);
     /* because TSS is used in the Py_END_ALLOW_THREAD macro,
      * it is necessary to preserve the windows error state, because
      * it is assumed to be preserved across the call to the macro.

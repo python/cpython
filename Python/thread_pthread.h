@@ -722,6 +722,7 @@ PyThread_tss_delete(Py_tss_t *key)
 int
 PyThread_tss_set(Py_tss_t *key, void *value)
 {
+    assert(key != NULL);
     int fail = pthread_setspecific(key->_key, value);
     return fail ? -1 : 0;
 }
@@ -729,5 +730,6 @@ PyThread_tss_set(Py_tss_t *key, void *value)
 void *
 PyThread_tss_get(Py_tss_t *key)
 {
+    assert(key != NULL);
     return pthread_getspecific(key->_key);
 }

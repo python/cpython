@@ -173,8 +173,8 @@ PyThread_tss_free(Py_tss_t *key)
 {
     if (key != NULL) {
         PyThread_tss_delete(key);
+        PyMem_RawFree((void *)key);
     }
-    PyMem_RawFree((void *)key);
 }
 
 bool
