@@ -584,7 +584,7 @@ Instances of the :class:`Popen` class have the following methods:
 .. method:: Popen.poll()
 
    Check if child process has terminated.  Set and return
-   :attr:`~Popen.returncode` attribute.
+   :attr:`~Popen.returncode` attribute. Otherwise, returns ``None``.
 
 
 .. method:: Popen.wait(timeout=None)

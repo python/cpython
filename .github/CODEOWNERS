@@ -1,0 +1,39 @@
+# See https://help.github.com/articles/about-codeowners/
+# for more info about CODEOWNERS file
+
+# It uses the same pattern rule for gitignore file
+# https://git-scm.com/docs/gitignore#_pattern_format
+
+# asyncio
+**/*asyncio*                  @1st1
+
+# Core
+**/*genobject*                @1st1
+
+# Hashing
+**/*hashlib*                  @tiran
+**/*pyhash*                   @tiran
+
+# Import (including importlib)
+**/*import*                   @python/import-team
+
+# SSL
+**/*ssl*                      @tiran
+
+# Email and related
+**/*mail*                     @bitdancer
+**/*smtp*                     @bitdancer
+**/*mime*                     @bitdancer
+**/*imap*                     @bitdancer
+**/*poplib*                   @bitdancer
+
+# subprocess
+**/*subprocess*               @gpshead
+
+# Windows
+/PC/                          @python/windows-team
+/PCBuild/                     @python/windows-team
+
+# Windows installer packages
+/Tools/msi/                   @python/windows-team
+/Tools/nuget/                 @python/windows-team

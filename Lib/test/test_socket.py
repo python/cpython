@@ -55,6 +55,16 @@ def _have_socket_can():
         s.close()
     return True
 
+def _have_socket_can_isotp():
+    """Check whether CAN ISOTP sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
 def _have_socket_rds():
     """Check whether RDS sockets are supported on this host."""
     try:
@@ -76,6 +86,8 @@ def _have_socket_alg():
     return True
 
 HAVE_SOCKET_CAN = _have_socket_can()
+
+HAVE_SOCKET_CAN_ISOTP = _have_socket_can_isotp()
 
 HAVE_SOCKET_RDS = _have_socket_rds()
 
@@ -1707,6 +1719,49 @@ class CANTest(ThreadedCANSocketTest):
         header_plus_frame = header + self.cf
         bytes_sent = bcm.send(header_plus_frame)
         self.assertEqual(bytes_sent, len(header_plus_frame))
+
+
+@unittest.skipUnless(HAVE_SOCKET_CAN_ISOTP, 'CAN ISOTP required for this test.')
+class ISOTPTest(unittest.TestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.interface = "vcan0"
+
+    def testCrucialConstants(self):
+        socket.AF_CAN
+        socket.PF_CAN
+        socket.CAN_ISOTP
+        socket.SOCK_DGRAM
+
+    def testCreateSocket(self):
+        with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
+            pass
+
+    @unittest.skipUnless(hasattr(socket, "CAN_ISOTP"),
+                         'socket.CAN_ISOTP required for this test.')
+    def testCreateISOTPSocket(self):
+        with socket.socket(socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP) as s:
+            pass
+
+    def testTooLongInterfaceName(self):
+        # most systems limit IFNAMSIZ to 16, take 1024 to be sure
+        with socket.socket(socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP) as s:
+            with self.assertRaisesRegex(OSError, 'interface name too long'):
+                s.bind(('x' * 1024, 1, 2))
+
+    def testBind(self):
+        try:
+            with socket.socket(socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_ISOTP) as s:
+                addr = self.interface, 0x123, 0x456
+                s.bind(addr)
+                self.assertEqual(s.getsockname(), addr)
+        except OSError as e:
+            if e.errno == errno.ENODEV:
+                self.skipTest('network interface `%s` does not exist' %
+                           self.interface)
+            else:
+                raise
 
 
 @unittest.skipUnless(HAVE_SOCKET_RDS, 'RDS sockets required for this test.')

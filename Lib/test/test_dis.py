@@ -331,6 +331,13 @@ dis_fstring = """\
 def _g(x):
     yield x
 
+async def _ag(x):
+    yield x
+
+async def _co(x):
+    async for item in _ag(x):
+        pass
+
 def _h(y):
     def foo(x):
         '''funcdoc'''
@@ -389,6 +396,7 @@ Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
        _h.__code__.co_firstlineno + 3,
        _h.__code__.co_firstlineno + 3,
 )
+
 
 class DisTests(unittest.TestCase):
 
@@ -531,9 +539,21 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(_C.cm, dis_c_class_method)
 
     def test_disassemble_generator(self):
-        gen_func_disas = self.get_disassembly(_g)  # Disassemble generator function
-        gen_disas = self.get_disassembly(_g(1))  # Disassemble generator itself
+        gen_func_disas = self.get_disassembly(_g)  # Generator function
+        gen_disas = self.get_disassembly(_g(1))  # Generator iterator
         self.assertEqual(gen_disas, gen_func_disas)
+
+    def test_disassemble_async_generator(self):
+        agen_func_disas = self.get_disassembly(_ag)  # Async generator function
+        agen_disas = self.get_disassembly(_ag(1))  # Async generator iterator
+        self.assertEqual(agen_disas, agen_func_disas)
+
+    def test_disassemble_coroutine(self):
+        coro_func_disas = self.get_disassembly(_co)  # Coroutine function
+        coro = _co(1)  # Coroutine object
+        coro.close()  # Avoid a RuntimeWarning (never awaited)
+        coro_disas = self.get_disassembly(coro)
+        self.assertEqual(coro_disas, coro_func_disas)
 
     def test_disassemble_fstring(self):
         self.do_disassembly_test(_fstring, dis_fstring)
@@ -1051,11 +1071,13 @@ class BytecodeTests(unittest.TestCase):
 
     def test_source_line_in_disassembly(self):
         # Use the line in the source code
-        actual = dis.Bytecode(simple).dis()[:3]
-        expected = "{:>3}".format(simple.__code__.co_firstlineno)
+        actual = dis.Bytecode(simple).dis()
+        actual = actual.strip().partition(" ")[0]  # extract the line no
+        expected = str(simple.__code__.co_firstlineno)
         self.assertEqual(actual, expected)
         # Use an explicit first line number
-        actual = dis.Bytecode(simple, first_line=350).dis()[:3]
+        actual = dis.Bytecode(simple, first_line=350).dis()
+        actual = actual.strip().partition(" ")[0]  # extract the line no
         self.assertEqual(actual, "350")
 
     def test_info(self):

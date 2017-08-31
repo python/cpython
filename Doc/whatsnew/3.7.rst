@@ -247,7 +247,7 @@ Peterson.)
 urllib.parse
 ------------
 
-:func:`urllib.parse.quote` has been updated to from RFC 2396 to RFC 3986,
+:func:`urllib.parse.quote` has been updated from RFC 2396 to RFC 3986,
 adding `~` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
 
@@ -257,6 +257,13 @@ uu
 Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+zipapp
+------
+
+Function :func:`zipapp.create_archive` now accepts an optional *filter*
+argument, to allow the user to select which files should be included in the
+archive.
 
 
 Optimizations

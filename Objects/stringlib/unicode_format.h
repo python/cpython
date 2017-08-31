@@ -410,18 +410,22 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
     if (index == -1) {
         /* look up in kwargs */
         PyObject *key = SubString_new_object(&first);
-        if (key == NULL)
+        if (key == NULL) {
             goto error;
-
-        /* Use PyObject_GetItem instead of PyDict_GetItem because this
-           code is no longer just used with kwargs. It might be passed
-           a non-dict when called through format_map. */
-        if ((kwargs == NULL) || (obj = PyObject_GetItem(kwargs, key)) == NULL) {
+        }
+        if (kwargs == NULL) {
             PyErr_SetObject(PyExc_KeyError, key);
             Py_DECREF(key);
             goto error;
         }
+        /* Use PyObject_GetItem instead of PyDict_GetItem because this
+           code is no longer just used with kwargs. It might be passed
+           a non-dict when called through format_map. */
+        obj = PyObject_GetItem(kwargs, key);
         Py_DECREF(key);
+        if (obj == NULL) {
+            goto error;
+        }
     }
     else {
         /* If args is NULL, we have a format string with a positional field

@@ -237,6 +237,23 @@ class ImportTests(unittest.TestCase):
         import test.support as y
         self.assertIs(y, test.support, y.__name__)
 
+    def test_issue31286(self):
+        # import in a 'finally' block resulted in SystemError
+        try:
+            x = ...
+        finally:
+            import test.support.script_helper as x
+
+        # import in a 'while' loop resulted in stack overflow
+        i = 0
+        while i < 10:
+            import test.support.script_helper as x
+            i += 1
+
+        # import in a 'for' loop resulted in segmentation fault
+        for i in range(2):
+            import test.support.script_helper as x
+
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.
         source = TESTFN + os.extsep + "py"
