@@ -96,7 +96,8 @@ class EditorWindow(object):
                     # Safari requires real file:-URLs
                     EditorWindow.help_url = 'file://' + EditorWindow.help_url
             else:
-                EditorWindow.help_url = "https://docs.python.org/%d.%d/" % sys.version_info[:2]
+                EditorWindow.help_url = ("https://docs.python.org/%d.%d/"
+                                         % sys.version_info[:2])
         self.flist = flist
         root = root or flist.root
         self.root = root
@@ -283,33 +284,32 @@ class EditorWindow(object):
         self.showerror = tkMessageBox.showerror
 
 
-        # merged extentions binds - depends on frame.text being packed (called from self.ResetColorizer())
-        self.insAutoComplete = self.AutoComplete(self)
-        self.insAutoExpand = self.AutoExpand(self)
-        self.insCallTips = self.CallTips(self)
-        self.insCodeContext = self.CodeContext(self)
-        self.insFormatParagraph = self.FormatParagraph(self)
-        self.insParenMatch = self.ParenMatch(self)
-        self.insRstripExtension = self.RstripExtension(self)
-        self.insScriptBinding = self.ScriptBinding(self)
-        self.insZoomHeight = self.ZoomHeight(self)
-
-        text.bind("<<autocomplete>>",self.insAutoComplete.autocomplete_event)
-        text.bind("<<try-open-completions>>", self.insAutoComplete.try_open_completions_event)
-        text.bind("<<force-open-completions>>",self.insAutoComplete.force_open_completions_event)
-        text.bind("<<expand-word>>",self.insAutoExpand.expand_word_event)
-        text.bind("<<toggle-code-context>>",self.insCodeContext.toggle_code_context_event)
-        text.bind("<<format-paragraph>>",self.insFormatParagraph.format_paragraph_event)
-        text.bind("<<flash-paren>>",self.insParenMatch.flash_paren_event)
-        text.bind("<<paren-closed>>",self.insParenMatch.paren_closed_event)
-        text.bind("<<run-module>>",self.insScriptBinding.run_module_event)
-        text.bind("<<check-module>>",self.insScriptBinding.check_module_event)
-        text.bind("<<do-rstrip>>",self.insRstripExtension.do_rstrip)
-        text.bind("<<try-open-calltip>>",self.insCallTips.try_open_calltip_event)
+        # Former extension bindings depends on frame.text being packed
+        # (called from self.ResetColorizer()).
+        autocomplete = self.AutoComplete(self)
+        text.bind("<<autocomplete>>", autocomplete.autocomplete_event)
+        text.bind("<<try-open-completions>>",
+                  autocomplete.try_open_completions_event)
+        text.bind("<<force-open-completions>>",
+                  autocomplete.force_open_completions_event)
+        text.bind("<<expand-word>>", self.AutoExpand(self).expand_word_event)
+        text.bind("<<toggle-code-context>>",
+                  self.CodeContext(self).toggle_code_context_event)
+        text.bind("<<format-paragraph>>",
+                  self.FormatParagraph(self).format_paragraph_event)
+        parenmath = self.ParenMatch(self)
+        text.bind("<<flash-paren>>", parenmatch.flash_paren_event)
+        text.bind("<<paren-closed>>", parenmatch.paren_closed_event)
+        scriptbinding = self.ScriptBinding(self)
+        text.bind("<<check-module>>", scriptbinding.check_module_event)
+        text.bind("<<run-module>>", scriptbinding.run_module_event)
+        text.bind("<<do-rstrip>>", self.RstripExtension().do_rstrip)
+        calltips = self.CallTips(self)
+        text.bind("<<try-open-calltip>>", calltips.try_open_calltip_event)
         #refresh-calltips must come after paren-closed to work right
-        text.bind("<<refresh-calltip>>",self.insCallTips.refresh_calltip_event)
-        text.bind("<<force-open-calltip>>",self.insCallTips.force_open_calltip_event)
-        text.bind("<<zoom-height>>",self.insZoomHeight.zoom_height_event)
+        text.bind("<<refresh-calltip>>", calltips.refresh_calltip_event)
+        text.bind("<<force-open-calltip>>", calltips.force_open_calltip_event)
+        text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
