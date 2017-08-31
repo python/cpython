@@ -1,5 +1,6 @@
 import unittest
 from ctypes.test import need_symbol
+import test.support
 
 class SimpleTypesTestCase(unittest.TestCase):
 
@@ -180,24 +181,24 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(TypeError, _Pointer.from_param, 42)
         self.assertRaises(TypeError, _SimpleCData.from_param, 42)
 
+    @test.support.cpython_only
     def test_issue31311(self):
         # __setstate__ should neither raise a SystemError nor crash in case
         # of a bad __dict__.
         from ctypes import Structure
 
-        if hasattr(Structure, '__setstate__'):
-            class BadStruct(Structure):
-                def __dict__(self):
-                    pass
-            with self.assertRaises(TypeError):
-                BadStruct().__setstate__({}, b'foo')
+        class BadStruct(Structure):
+            def __dict__(self):
+                pass
+        with self.assertRaises(TypeError):
+            BadStruct().__setstate__({}, b'foo')
 
-            class WorseStruct(Structure):
-                @property
-                def __dict__(self):
-                    raise ArithmeticError
-            with self.assertRaises(ArithmeticError):
-                WorseStruct().__setstate__({}, b'foo')
+        class WorseStruct(Structure):
+            @property
+            def __dict__(self):
+                raise ArithmeticError
+        with self.assertRaises(ArithmeticError):
+            WorseStruct().__setstate__({}, b'foo')
 
 ################################################################
 
