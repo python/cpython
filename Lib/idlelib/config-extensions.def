@@ -1,5 +1,25 @@
 # config-extensions.def
 #
+# The following sections are for features that are no longer extensions.
+# Their options values are left here for back-compatibility.
+
+[AutoComplete]
+popupwait= 2000
+
+[CodeContext]
+numlines= 3
+visible= False
+bgcolor= LightGray
+fgcolor= Black
+
+[FormatParagraph]
+max-width= 72  # PEP8 standard
+
+[ParenMatch]
+style= expression
+flash-delay= 500
+bell= True
+
 # IDLE reads several config files to determine user preferences.  This
 # file is the default configuration file for IDLE extensions settings.
 #
@@ -19,7 +39,7 @@
 # extension that may be sensibly re-configured.
 #
 # If there are no keybindings for a menus' virtual events, include lines
-# like <<toggle-code-context>>=  (See [CodeContext], below.)
+# like <<toggle-code-context>>=.
 #
 # Currently it is necessary to manually modify this file to change
 # extension key bindings and default values. To customize, create
@@ -32,19 +52,13 @@
 # See config-keys.def for notes on specifying keys and extend.txt for
 # information on creating IDLE extensions.
 
-[AutoComplete]
-popupwait=2000
-
-[CodeContext]
-numlines=3
-visible=False
-bgcolor=LightGray
-fgcolor=Black
-
-[FormatParagraph]
-max-width=72
-
-[ParenMatch]
-style=expression
-flash-delay=500
-bell=True
+# A fake extension for testing and example purposes.
+# When enabled and invoked, inserts or deletes z-text at beginning of
+# every line.
+[ZzDummy]  
+enable= False
+enable_shell = False
+enable_editor = True
+z-text= Z
+[ZzDummy_bindings]
+z-in= <Control-Alt-Shift-Insert>

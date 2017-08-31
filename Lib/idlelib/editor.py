@@ -1022,7 +1022,8 @@ class EditorWindow(object):
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(editor_only=True)
 
-    extfiles = {
+    extfiles = {  # Use for experimental features implemented as extension.
+        'ZzDummy': 'zzdummy',
         }
 
     def load_extension(self, name):
