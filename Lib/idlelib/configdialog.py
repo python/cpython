@@ -1647,9 +1647,6 @@ class KeysPage(Frame):
         keyset = idleConf.GetKeySet(keyset_name)
         bind_names = list(keyset.keys())
         bind_names.sort()
-        for key in ('<<try-open-calltip>>','<<try-open-completions>>','<<paren-closed>>'):
-            #do not allow these event keys to be configured
-            bind_names.remove(key)
         self.bindingslist.delete(0, END)
         for bind_name in bind_names:
             key = ' '.join(keyset[bind_name])

@@ -824,7 +824,7 @@ class KeysPageTest(unittest.TestCase):
         d.custom_name.set('my custom keys')
         d.bindingslist.delete(0, 'end')
         d.bindingslist.insert(0, 'copy')
-        d.bindingslist.insert(1, 'zoom-height')
+        d.bindingslist.insert(1, 'z-out')
         d.bindingslist.selection_set(0)
         d.bindingslist.selection_anchor(0)
         # Core binding - adds to keys.
@@ -837,7 +837,7 @@ class KeysPageTest(unittest.TestCase):
         d.bindingslist.selection_anchor(1)
         d.keybinding.set('<Key-F11>')
         self.assertEqual(extpage,
-                         {'ZoomHeight_cfgBindings': {'zoom-height': '<Key-F11>'}})
+                         {'ZzDummy_cfgBindings': {'z-out': '<Key-F11>'}})
 
     def test_set_keys_type(self):
         eq = self.assertEqual

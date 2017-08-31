@@ -13,7 +13,7 @@ bgcolor= LightGray
 fgcolor= Black
 
 [FormatParagraph]
-max-width= 72  # PEP8 standard
+max-width= 72
 
 [ParenMatch]
 style= expression
@@ -52,13 +52,14 @@ bell= True
 # See config-keys.def for notes on specifying keys and extend.txt for
 # information on creating IDLE extensions.
 
-# A fake extension for testing and example purposes.
-# When enabled and invoked, inserts or deletes z-text at beginning of
-# every line.
-[ZzDummy]  
-enable= False
+# A fake extension for testing and example purposes.  When enabled and
+# invoked, inserts or deletes z-text at beginning of every line.
+[ZzDummy]
+enable= True
 enable_shell = False
 enable_editor = True
 z-text= Z
 [ZzDummy_bindings]
-z-in= <Control-Alt-Shift-Insert>
+z-in= <Control-Shift-KeyRelease-Insert>
+[ZzDummy_cfgBindings]
+z-out= <Control-Shift-KeyRelease-Delete>

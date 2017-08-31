@@ -297,13 +297,13 @@ class EditorWindow(object):
                   self.CodeContext(self).toggle_code_context_event)
         text.bind("<<format-paragraph>>",
                   self.FormatParagraph(self).format_paragraph_event)
-        parenmath = self.ParenMatch(self)
+        parenmatch = self.ParenMatch(self)
         text.bind("<<flash-paren>>", parenmatch.flash_paren_event)
         text.bind("<<paren-closed>>", parenmatch.paren_closed_event)
-        scriptbinding = self.ScriptBinding(self)
+        scriptbinding = ScriptBinding(self)
         text.bind("<<check-module>>", scriptbinding.check_module_event)
         text.bind("<<run-module>>", scriptbinding.run_module_event)
-        text.bind("<<do-rstrip>>", self.RstripExtension().do_rstrip)
+        text.bind("<<do-rstrip>>", self.RstripExtension(self).do_rstrip)
         calltips = self.CallTips(self)
         text.bind("<<try-open-calltip>>", calltips.try_open_calltip_event)
         #refresh-calltips must come after paren-closed to work right
