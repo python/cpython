@@ -258,8 +258,8 @@ class EventLoopTestsMixin:
         if not self.loop.is_closed():
             test_utils.run_briefly(self.loop)
 
-        self.loop.close()
-        gc.collect()
+        self.doCleanups()
+        support.gc_collect()
         super().tearDown()
 
     def test_run_until_complete_nesting(self):
