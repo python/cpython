@@ -1,0 +1,2 @@
+The ``map()`` and ``as_completed()`` iterators in ``concurrent.futures``
+now avoid keeping a reference to yielded objects.
