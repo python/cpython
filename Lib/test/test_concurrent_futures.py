@@ -59,6 +59,10 @@ class MyObject(object):
         pass
 
 
+def make_dummy_object(_):
+    return MyObject()
+
+
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self._thread_key = test.support.threading_setup()
@@ -396,6 +400,38 @@ class AsCompletedTests:
         completed = [f for f in futures.as_completed([future1,future1])]
         self.assertEqual(len(completed), 1)
 
+    def test_free_reference_yielded_future(self):
+        # Issue #14406: Generator should not keep references
+        # to finished futures.
+        futures_list = [Future() for _ in range(8)]
+        futures_list.append(create_future(state=CANCELLED_AND_NOTIFIED))
+        futures_list.append(create_future(state=SUCCESSFUL_FUTURE))
+
+        with self.assertRaises(futures.TimeoutError):
+            for future in futures.as_completed(futures_list, timeout=0):
+                futures_list.remove(future)
+                wr = weakref.ref(future)
+                del future
+                self.assertIsNone(wr())
+
+        futures_list[0].set_result("test")
+        for future in futures.as_completed(futures_list):
+            futures_list.remove(future)
+            wr = weakref.ref(future)
+            del future
+            self.assertIsNone(wr())
+            if futures_list:
+                futures_list[0].set_result("test")
+
+    def test_correct_timeout_exception_msg(self):
+        futures_list = [CANCELLED_AND_NOTIFIED_FUTURE, PENDING_FUTURE,
+                        RUNNING_FUTURE, SUCCESSFUL_FUTURE]
+
+        with self.assertRaises(futures.TimeoutError) as cm:
+            list(futures.as_completed(futures_list, timeout=0))
+
+        self.assertEqual(str(cm.exception), '2 (of 4) futures unfinished')
+
 
 class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, BaseTestCase):
     pass
@@ -419,6 +455,10 @@ class ExecutorTest:
     def test_map(self):
         self.assertEqual(
                 list(self.executor.map(pow, range(10), range(10))),
+                list(map(pow, range(10), range(10))))
+
+        self.assertEqual(
+                list(self.executor.map(pow, range(10), range(10), chunksize=3)),
                 list(map(pow, range(10), range(10))))
 
     def test_map_exception(self):
@@ -470,6 +510,14 @@ class ExecutorTest:
                                         "max_workers must be greater "
                                         "than 0"):
                 self.executor_type(max_workers=number)
+
+    def test_free_reference(self):
+        # Issue #14406: Result iterator should not keep an internal
+        # reference to result objects.
+        for obj in self.executor.map(make_dummy_object, range(10)):
+            wr = weakref.ref(obj)
+            del obj
+            self.assertIsNone(wr())
 
 
 class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
