@@ -19,6 +19,24 @@ test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next'])
 
 
+# Variable and functions used to test clear_frames()
+clear_frames_err = None
+
+
+def clear_frames_func1():
+    x = 1
+    clear_frames_func2()
+
+
+def clear_frames_func2():
+    global clear_frames_err
+    z = 3
+    try:
+        raise ValueError()
+    except Exception as exc:
+        clear_frames_err = exc
+
+
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
     # formatting of SyntaxErrors works based on changes for 2.1.
@@ -751,29 +769,58 @@ class MiscTracebackCases(unittest.TestCase):
     # Check non-printing functions in traceback module
     #
 
-    def test_clear(self):
+    def test_clear_frames(self):
+        err = None
+
         def outer():
+            x = 1
             middle()
         def middle():
+            y = 2
             inner()
         def inner():
-            i = 1
-            1/0
+            nonlocal err
+            z = 3
+            try:
+                1/0
+            except Exception as exc:
+                err = exc
 
-        try:
-            outer()
-        except:
-            type_, value, tb = sys.exc_info()
+        def get_locals(tb):
+            flocals = {}
+            frame = tb.tb_frame
+            while frame is not None:
+                name = frame.f_code.co_name
+                if name in ('outer', 'middle', 'inner'):
+                    flocals[name] = dict(frame.f_locals)
+                frame = frame.f_back
+            return flocals
 
-        # Initial assertion: there's one local in the inner frame.
-        inner_frame = tb.tb_next.tb_next.tb_next.tb_frame
-        self.assertEqual(len(inner_frame.f_locals), 1)
+        # Indirectly call inner() to set err
+        outer()
+        tb = err.__traceback__
+
+        # Initial assertion: all frames contains local variables
+        tb_locals = {
+            'outer': {'middle': middle, 'x': 1},
+            'middle': {'inner': inner, 'y': 2},
+            'inner': {'err': err, 'z': 3},
+        }
+        self.assertEqual(get_locals(tb), tb_locals)
 
         # Clear traceback frames
         traceback.clear_frames(tb)
 
-        # Local variable dict should now be empty.
-        self.assertEqual(len(inner_frame.f_locals), 0)
+        # Local variable dictionaries should now be empty.
+        tb_locals = {
+            'outer': {},
+            'middle': {},
+            'inner': {},
+        }
+        self.assertEqual(get_locals(tb), tb_locals)
+
+        # Explicitly break a reference cycle
+        err = None
 
     def test_extract_stack(self):
         def extract():
