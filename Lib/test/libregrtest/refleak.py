@@ -7,6 +7,13 @@ from inspect import isabstract
 from test import support
 
 
+def maybe_small_long(x):
+    # bpo-31217: On CPython, x_sub() of longobject.c doesn't try to use int
+    # singletons. Try to get singletons to prevent false alarms on memory block
+    # leaks.
+    return int(str(x))
+
+
 def dash_R(the_module, test, indirect_test, huntrleaks):
     """Run a test multiple times, looking for reference leaks.
 
@@ -56,9 +63,9 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
                                                          abcs)
         print('.', end='', file=sys.stderr, flush=True)
         if i >= nwarmup:
-            rc_deltas[i] = rc_after - rc_before
-            alloc_deltas[i] = alloc_after - alloc_before
-            fd_deltas[i] = fd_after - fd_before
+            rc_deltas[i] = maybe_small_long(rc_after - rc_before)
+            alloc_deltas[i] = maybe_small_long(alloc_after - alloc_before)
+            fd_deltas[i] = maybe_small_long(fd_after - fd_before)
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
