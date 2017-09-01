@@ -177,7 +177,7 @@ PyThread_tss_free(Py_tss_t *key)
     }
 }
 
-bool
+int
 PyThread_tss_is_created(Py_tss_t *key)
 {
     assert(key != NULL);

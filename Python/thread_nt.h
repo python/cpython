@@ -8,7 +8,6 @@
 #ifdef HAVE_PROCESS_H
 #include <process.h>
 #endif
-#include <stdbool.h>  /* necessary for TSS key */
 
 /* options */
 #ifndef _PY_USE_CV_LOCKS
@@ -427,7 +426,7 @@ PyThread_tss_create(Py_tss_t *key)
     }
     /* In Windows, platform-specific key type is DWORD. */
     key->_key = result;
-    key->_is_initialized = true;
+    key->_is_initialized = 1;
     return 0;
 }
 
@@ -442,7 +441,7 @@ PyThread_tss_delete(Py_tss_t *key)
 
     TlsFree(key->_key);
     key->_key = TLS_OUT_OF_INDEXES;
-    key->_is_initialized = false;
+    key->_is_initialized = 0;
 }
 
 int

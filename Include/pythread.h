@@ -6,8 +6,6 @@
 #   error "Require native thread feature. See https://bugs.python.org/issue30832"
 #endif
 
-#include <stdbool.h>  /* necessary for TSS key */
-
 typedef void *PyThread_type_lock;
 typedef void *PyThread_type_sema;
 
@@ -125,14 +123,14 @@ typedef struct _Py_tss_t Py_tss_t;
    you must handle TSS key through API functions due to compatibility.
 */
 struct _Py_tss_t {
-    bool _is_initialized;
+    int _is_initialized;
     NATIVE_TSS_KEY_T _key;
 };
 
 #undef NATIVE_TSS_KEY_T
 
 /* When static allocation, you must initialize with Py_tss_NEEDS_INIT. */
-#define Py_tss_NEEDS_INIT   {._is_initialized = false}
+#define Py_tss_NEEDS_INIT   {._is_initialized = 0}
 #endif  /* !Py_LIMITED_API */
 
 PyAPI_FUNC(int) PyThread_tss_create(Py_tss_t *key);
@@ -147,7 +145,7 @@ PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t *key);
 PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
 PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
 
-PyAPI_FUNC(bool) PyThread_tss_is_created(Py_tss_t *key);
+PyAPI_FUNC(int) PyThread_tss_is_created(Py_tss_t *key);
 
 #ifdef __cplusplus
 }

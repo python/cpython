@@ -1,7 +1,6 @@
 
 /* Posix threads interface */
 
-#include <stdbool.h>  /* necessary for TSS key */
 #include <stdlib.h>
 #include <string.h>
 #if defined(__APPLE__) || defined(HAVE_PTHREAD_DESTRUCTOR)
@@ -701,7 +700,7 @@ PyThread_tss_create(Py_tss_t *key)
     if (fail) {
         return -1;
     }
-    key->_is_initialized = true;
+    key->_is_initialized = 1;
     return 0;
 }
 
@@ -716,7 +715,7 @@ PyThread_tss_delete(Py_tss_t *key)
 
     pthread_key_delete(key->_key);
     /* pthread has not provided the defined invalid value for the key. */
-    key->_is_initialized = false;
+    key->_is_initialized = 0;
 }
 
 int
