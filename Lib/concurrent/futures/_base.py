@@ -172,11 +172,15 @@ def _create_and_install_waiters(fs, return_when):
 
 
 def _yield_and_decref(fs, ref_collect):
-    """Yields a future. Before yielding, removes the future
-    from each set in collection of sets (`ref_collect`)."""
+    """
+    Iterate on the list *fs*, yielding objects one by one in reverse order.
+    Before yielding an object, it is removed from each set in
+    the collection of sets *ref_collect*.
+    """
     while fs:
         for futures_set in ref_collect:
             futures_set.remove(fs[-1])
+        # Careful not to keep a reference to the popped value
         yield fs.pop()
 
 
@@ -566,6 +570,7 @@ class Executor(object):
                 # reverse to keep finishing order
                 fs.reverse()
                 while fs:
+                    # Careful not to keep a reference to the popped future
                     if timeout is None:
                         yield fs.pop().result()
                     else:

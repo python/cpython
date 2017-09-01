@@ -357,12 +357,12 @@ def _check_system_limits():
     raise NotImplementedError(_system_limited)
 
 
-def _chain_from_iterable(iterable):
+def _chain_from_iterable_of_lists(iterable):
     """
-    Different implementation of itertools.chain.from_iterable.
-    The difference is _chain_from_iterable do not keep reference to returned objects.
+    Specialized implementation of itertools.chain.from_iterable.
+    Each item in *iterable* should be a list.  This function is
+    careful not to keep references to yielded objects.
     """
-
     for element in iterable:
         element.reverse()
         while element:
@@ -494,7 +494,7 @@ class ProcessPoolExecutor(_base.Executor):
         results = super().map(partial(_process_chunk, fn),
                               _get_chunks(*iterables, chunksize=chunksize),
                               timeout=timeout)
-        return _chain_from_iterable(results)
+        return _chain_from_iterable_of_lists(results)
 
     def shutdown(self, wait=True):
         with self._shutdown_lock:

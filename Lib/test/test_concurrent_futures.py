@@ -54,13 +54,13 @@ def sleep_and_print(t, msg):
     sys.stdout.flush()
 
 
-def _dummy_object_fn(_):
-    return object()
-
-
 class MyObject(object):
     def my_method(self):
         pass
+
+
+def make_dummy_object(_):
+    return MyObject()
 
 
 class BaseTestCase(unittest.TestCase):
@@ -401,8 +401,8 @@ class AsCompletedTests:
         self.assertEqual(len(completed), 1)
 
     def test_free_reference_yielded_future(self):
-        # Issue #14406: Generator should not keep reference
-        # for finished futures.
+        # Issue #14406: Generator should not keep references
+        # to finished futures.
         futures_list = [Future() for _ in range(8)]
         futures_list.append(create_future(state=CANCELLED_AND_NOTIFIED))
         futures_list.append(create_future(state=SUCCESSFUL_FUTURE))
@@ -410,18 +410,22 @@ class AsCompletedTests:
         with self.assertRaises(futures.TimeoutError):
             for future in futures.as_completed(futures_list, timeout=0):
                 futures_list.remove(future)
-                self.assertEqual(sys.getrefcount(future), 2)
+                wr = weakref.ref(future)
+                del future
+                self.assertIsNone(wr())
 
         futures_list[0].set_result("test")
         for future in futures.as_completed(futures_list):
             futures_list.remove(future)
-            self.assertEqual(sys.getrefcount(future), 2)
+            wr = weakref.ref(future)
+            del future
+            self.assertIsNone(wr())
             if futures_list:
                 futures_list[0].set_result("test")
 
     def test_correct_timeout_exception_msg(self):
         futures_list = [CANCELLED_AND_NOTIFIED_FUTURE, PENDING_FUTURE,
-                   RUNNING_FUTURE, SUCCESSFUL_FUTURE]
+                        RUNNING_FUTURE, SUCCESSFUL_FUTURE]
 
         with self.assertRaises(futures.TimeoutError) as cm:
             list(futures.as_completed(futures_list, timeout=0))
@@ -508,10 +512,12 @@ class ExecutorTest:
                 self.executor_type(max_workers=number)
 
     def test_free_reference(self):
-        # Issue #14406: Result iterator should not keep reference
-        # for finished futures.
-        for result_object in self.executor.map(_dummy_object_fn, range(10)):
-            self.assertEqual(sys.getrefcount(result_object), 2)
+        # Issue #14406: Result iterator should not keep an internal
+        # reference to result objects.
+        for obj in self.executor.map(make_dummy_object, range(10)):
+            wr = weakref.ref(obj)
+            del obj
+            self.assertIsNone(wr())
 
 
 class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):

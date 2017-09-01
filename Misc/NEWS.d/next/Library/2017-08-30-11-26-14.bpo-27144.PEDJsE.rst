@@ -1,2 +1,2 @@
-concurrent.futures as_complie and map iterators do not keep reference to
-returned object
+The ``map()`` and ``as_completed()`` iterators in ``concurrent.futures``
+now avoid keeping a reference to yielded objects.
