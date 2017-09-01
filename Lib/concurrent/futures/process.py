@@ -507,7 +507,11 @@ class ProcessPoolExecutor(_base.Executor):
         # To reduce the risk of opening too many files, remove references to
         # objects that use file descriptors.
         self._queue_management_thread = None
-        self._call_queue = None
+        if self._call_queue is not None:
+            self._call_queue.close()
+            if wait:
+                self._call_queue.join_thread()
+            self._call_queue = None
         self._result_queue = None
         self._processes = None
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
