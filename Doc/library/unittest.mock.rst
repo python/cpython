@@ -239,7 +239,7 @@ the *new_callable* argument to :func:`patch`.
       :attr:`return_value` attribute.
 
     * *unsafe*: By default if any attribute starts with *assert* or
-      *assret* will raise an :exc:`AttributeError`. Passing ``unsafe=True``
+      *assert* will raise an :exc:`AttributeError`. Passing ``unsafe=True``
       will allow access to these attributes.
 
       .. versionadded:: 3.5
@@ -2172,7 +2172,7 @@ your assertion is gone:
 
     >>> mock = Mock(name='Thing', return_value=None)
     >>> mock(1, 2, 3)
-    >>> mock.assret_called_once_with(4, 5, 6)
+    >>> mock.assert_called_once_with(4, 5, 6)
 
 Your tests can pass silently and incorrectly because of the typo.
 
@@ -2192,10 +2192,10 @@ attributes on the mock that exist on the real class:
 
     >>> from urllib import request
     >>> mock = Mock(spec=request.Request)
-    >>> mock.assret_called_with
+    >>> mock.assert_called_with
     Traceback (most recent call last):
      ...
-    AttributeError: Mock object has no attribute 'assret_called_with'
+    AttributeError: Mock object has no attribute 'assert_called_with'
 
 The spec only applies to the mock itself, so we still have the same issue
 with any methods on the mock:
@@ -2204,7 +2204,7 @@ with any methods on the mock:
 
     >>> mock.has_data()
     <mock.Mock object at 0x...>
-    >>> mock.has_data.assret_called_with()
+    >>> mock.has_data.assert_called_with()
 
 Auto-speccing solves this problem. You can either pass ``autospec=True`` to
 :func:`patch` / :func:`patch.object` or use the :func:`create_autospec` function to create a
@@ -2247,10 +2247,10 @@ any typos in our asserts will raise the correct error:
 
     >>> req.add_header('spam', 'eggs')
     <MagicMock name='request.Request().add_header()' id='...'>
-    >>> req.add_header.assret_called_with
+    >>> req.add_header.assert_called_with
     Traceback (most recent call last):
      ...
-    AttributeError: Mock object has no attribute 'assret_called_with'
+    AttributeError: Mock object has no attribute 'assert_called_with'
     >>> req.add_header.assert_called_with('spam', 'eggs')
 
 In many cases you will just be able to add ``autospec=True`` to your existing
