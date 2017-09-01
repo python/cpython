@@ -23,11 +23,16 @@ def requires_load_dynamic(meth):
                            'imp.load_dynamic() required')(meth)
 
 def requires_create_dynamic(meth):
-    """Decorator to skip a test if not running under CPython or lacking
-    imp.create_dynamic()."""
+    """A decorator to skip tests that rely on imp.create_dynamic().
+
+    Some Python implementations might not provide imp.create_dynamic(). In
+    such implementations, this decorator causes decorated tests to be skipped
+    through the normal unittest mechanism.
+    """
     meth = support.cpython_only(meth)
-    return unittest.skipIf(not hasattr(imp, 'create_dynamic'),
-                           'imp.create_dynamic() required')(meth)
+    supported = hasattr(imp, 'create_dynamic')
+    deco = unittest.skipIf(not supported, 'imp.create_dynamic() required')
+    return deco(meth)
 
 
 @unittest.skipIf(_thread is None, '_thread module is required')
