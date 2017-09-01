@@ -357,6 +357,18 @@ def _check_system_limits():
     raise NotImplementedError(_system_limited)
 
 
+def _chain_from_iterable_of_lists(iterable):
+    """
+    Specialized implementation of itertools.chain.from_iterable.
+    Each item in *iterable* should be a list.  This function is
+    careful not to keep references to yielded objects.
+    """
+    for element in iterable:
+        element.reverse()
+        while element:
+            yield element.pop()
+
+
 class BrokenProcessPool(RuntimeError):
     """
     Raised when a process in a ProcessPoolExecutor terminated abruptly
@@ -482,7 +494,7 @@ class ProcessPoolExecutor(_base.Executor):
         results = super().map(partial(_process_chunk, fn),
                               _get_chunks(*iterables, chunksize=chunksize),
                               timeout=timeout)
-        return itertools.chain.from_iterable(results)
+        return _chain_from_iterable_of_lists(results)
 
     def shutdown(self, wait=True):
         with self._shutdown_lock:
