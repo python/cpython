@@ -99,6 +99,8 @@ PyAPI_FUNC(void) PyThread_delete_key_value(int key) Py_DEPRECATED(3.7);
 PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
 
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+/* New in 3.7 */
 /* Thread Specific Storage (TSS) API */
 
 /* Py_tss_t is an opaque data type the definition of which depends on the
@@ -146,6 +148,7 @@ PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
 PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
 
 PyAPI_FUNC(int) PyThread_tss_is_created(Py_tss_t *key);
+#endif  /* New in 3.7 */
 
 #ifdef __cplusplus
 }
