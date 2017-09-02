@@ -59,7 +59,7 @@ enable= True
 enable_shell = False
 enable_editor = True
 z-text= Z
-[ZzDummy_bindings]
-z-in= <Control-Shift-KeyRelease-Insert>
 [ZzDummy_cfgBindings]
+z-in= <Control-Shift-KeyRelease-Insert>
+[ZzDummy_bindings]
 z-out= <Control-Shift-KeyRelease-Delete>

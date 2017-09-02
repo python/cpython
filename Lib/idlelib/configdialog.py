@@ -10,12 +10,12 @@ Refer to comments in EditorWindow autoindent code for details.
 
 """
 from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
-                     OptionMenu, StringVar, BooleanVar, IntVar, TRUE, FALSE,
+                     StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
 from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
-                         Notebook, Radiobutton, Scrollbar, Style)
+                         OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
 from tkinter import messagebox
@@ -287,8 +287,8 @@ class ConfigDialog(Toplevel):
         "Fill self.extensions with data from the default and user configs."
         self.extensions = {}
         for ext_name in idleConf.GetExtensions(active_only=False):
-            if ext_name not in {'AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext', 'FormatParagraph',
-                                'ParenMatch', 'RStripExtension', 'ScriptBinding', 'ZoomHeight'}:
+            if ext_name not in {'AutoComplete', 'CodeContext',
+                                'FormatParagraph', 'ParenMatch'}:
                 # These extensions were converted to built-ins, and need to be filtered out so they don't
                 # appear in the Extensions tab.
                 self.extensions[ext_name] = []
@@ -1771,24 +1771,25 @@ class GenPage(Frame):
         """
         self.startup_edit = tracers.add(
                 IntVar(self), ('main', 'General', 'editor-on-startup'))
-        self.autosave = tracers.add(
-                IntVar(self), ('main', 'General', 'autosave'))
         self.win_width = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'width'))
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
-        self.parenstyle = tracers.add(
+        self.autocomplete_wait = tracers.add(
+            IntVar(self), ('extensions', 'AutoComplete', 'popupwait'))
+        self.paren_style = tracers.add(
                 StringVar(self), ('extensions', 'ParenMatch', 'style'))
-        self.bell = tracers.add(
-                BooleanVar(self), ('extensions', 'ParenMatch', 'bell'))
         self.flash_delay = tracers.add(
                 IntVar(self), ('extensions', 'ParenMatch', 'flash-delay'))
-        self.num_lines = tracers.add(
+        self.paren_bell = tracers.add(
+                BooleanVar(self), ('extensions', 'ParenMatch', 'bell'))
+
+        self.autosave = tracers.add(
+                IntVar(self), ('main', 'General', 'autosave'))
+        self.format_width = tracers.add(
+                IntVar(self), ('extensions', 'FormatParagraph', 'max-width'))
+        self.context_lines = tracers.add(
                 IntVar(self), ('extensions', 'CodeContext', 'numlines'))
-        self.formatp_maxw = tracers.add(
-            IntVar(self), ('extensions', 'FormatParagraph', 'max-width'))
-        self.autocomplete_wait = tracers.add(
-            IntVar(self), ('extensions', 'Autocomplete', 'popupwait'))
 
         # Create widgets:
         # Section frames.
@@ -1796,11 +1797,6 @@ class GenPage(Frame):
                                   text=' Window Preferences')
         frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                   text=' Editor Preferences')
-        frame_extras = Frame(self, borderwidth=2, relief=GROOVE)
-        frame_paren = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                                text=' Matched Parenthetics ')
-        frame_code = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                                text=' Code Context ')
         frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                text=' Additional Help Sources ')
         # Frame_window.
@@ -1813,7 +1809,7 @@ class GenPage(Frame):
                 frame_run, variable=self.startup_edit, value=0,
                 text='Open Shell Window')
 
-        frame_win_size = Frame(frame_window, borderwidth=0,)
+        frame_win_size = Frame(frame_window, borderwidth=0)
         win_size_title = Label(
                 frame_win_size, text='Initial Window Size  (in characters)')
         win_width_title = Label(frame_win_size, text='Width')
@@ -1822,25 +1818,27 @@ class GenPage(Frame):
         win_height_title = Label(frame_win_size, text='Height')
         self.win_height_int = Entry(
                 frame_win_size, textvariable=self.win_height, width=3)
-        #frame_paren
-        self.opt_menu_pstyle = OptionMenu(
-                frame_paren, self.parenstyle, "opener","parens","expression")
-        flash_label = Label(frame_paren, text='Time Displayed : \n(0 is until given input)')
-        self.entry_flash = Entry(
-                frame_paren, textvariable=self.flash_delay, width=4)
-        self.check_bell = Checkbutton(
-                frame_paren, text="Bell", variable=self.bell)
-        #frame_code
-        lines_label = Label(frame_code, text='Lines : ')
-        self.entry_num_lines = Entry(
-                frame_code, textvariable=self.num_lines, width=3)
-        #frame extras
-        autocomplete_wait_title = Label(frame_extras, text='AutoComplete Popup Wait')
-        self.entry_autocomplete_wait = Entry(
-                frame_extras, textvariable=self.autocomplete_wait, width=6)
-        formatp_maxw_title = Label(frame_extras, text='Format Paragraph Max Width')
-        self.entry_formatp_maxw = Entry(
-                frame_extras, textvariable=self.formatp_maxw, width=3)
+
+        frame_autocomplete = Frame(frame_window, borderwidth=0,)
+        auto_wait_title = Label(frame_autocomplete,
+                               text='Completions Popup Wait (milliseconds)')
+        self.auto_wait_int = Entry(frame_autocomplete, width=6,
+                                   textvariable=self.autocomplete_wait)
+
+        frame_paren1 = Frame(frame_window, borderwidth=0)
+        paren_style_title = Label(frame_paren1, text='Paren Match Style')
+        self.paren_style_type = OptionMenu(
+                frame_paren1, self.paren_style, 'expression',
+                "opener","parens","expression")
+        frame_paren2 = Frame(frame_window, borderwidth=0)
+        paren_time_title = Label(
+                frame_paren2, text='Time Match Displayed (milliseconds)\n'
+                                  '(0 is until next input)')
+        self.paren_flash_time = Entry(
+                frame_paren2, textvariable=self.flash_delay, width=6)
+        self.bell_on = Checkbutton(
+                frame_paren2, text="Bell on Mismatch", variable=self.paren_bell)
+
         # Frame_editor.
         frame_save = Frame(frame_editor, borderwidth=0)
         run_save_title = Label(frame_save, text='At Start of Run (F5)  ')
@@ -1850,6 +1848,19 @@ class GenPage(Frame):
         self.save_auto_on = Radiobutton(
                 frame_save, variable=self.autosave, value=1,
                 text='No Prompt')
+
+        frame_format = Frame(frame_editor, borderwidth=0)
+        format_width_title = Label(frame_format,
+                                   text='Format Paragraph Max Width')
+        self.format_width_int = Entry(
+                frame_format, textvariable=self.format_width, width=4)
+
+        frame_context = Frame(frame_editor, borderwidth=0)
+        context_title = Label(frame_context, text='Context Lines :')
+        self.context_int = Entry(
+                frame_context, textvariable=self.context_lines, width=3)
+
+
         # frame_help.
         frame_helplist = Frame(frame_help)
         frame_helplist_buttons = Frame(frame_helplist)
@@ -1874,9 +1885,6 @@ class GenPage(Frame):
         # Body.
         frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_paren.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_code.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_extras.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
         frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
@@ -1890,24 +1898,33 @@ class GenPage(Frame):
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
-        #frame_paren
-        self.opt_menu_pstyle.pack(side=TOP,anchor=W,padx=5, fill=X)
-        self.check_bell.pack(side=TOP, anchor=W,padx=5)
-        flash_label.pack(side=LEFT, anchor=W, padx=5)
-        self.entry_flash.pack(side=LEFT, fill=X,anchor=W,padx=5)
-        #frame_code
-        lines_label.pack(side=LEFT, anchor=W, padx=5)
-        self.entry_num_lines.pack(side=LEFT,anchor=W,padx=5)
-        #frame extras
-        self.entry_autocomplete_wait.pack(side=RIGHT, anchor=E, padx=10, pady=5)
-        autocomplete_wait_title.pack(side=RIGHT, anchor=E, pady=5)
-        self.entry_formatp_maxw.pack(side=RIGHT, anchor=E, padx=10, pady=5)
-        formatp_maxw_title.pack(side=RIGHT, anchor=E, pady=5)
+        # frame_autocomplete.
+        frame_autocomplete.pack(side=TOP, padx=5, pady=0, fill=X)
+        auto_wait_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.auto_wait_int.pack(side=TOP, padx=10, pady=5)
+        # frame_paren.
+        frame_paren1.pack(side=TOP, padx=5, pady=0, fill=X)
+        paren_style_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.paren_style_type.pack(side=TOP, padx=10, pady=5)
+        frame_paren2.pack(side=TOP, padx=5, pady=0, fill=X)
+        paren_time_title.pack(side=LEFT, anchor=W, padx=5)
+        self.bell_on.pack(side=RIGHT, anchor=E, padx=15, pady=5)
+        self.paren_flash_time.pack(side=TOP, anchor=W, padx=15, pady=5)
+
         # frame_save.
         frame_save.pack(side=TOP, padx=5, pady=0, fill=X)
         run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        # frame_format.
+        frame_format.pack(side=TOP, padx=5, pady=0, fill=X)
+        format_width_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.format_width_int.pack(side=TOP, padx=10, pady=5)
+        # frame_context.
+        frame_context.pack(side=TOP, padx=5, pady=0, fill=X)
+        context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.context_int.pack(side=TOP, padx=5, pady=5)
+
         # frame_help.
         frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
@@ -1919,17 +1936,30 @@ class GenPage(Frame):
 
     def load_general_cfg(self):
         "Load current configuration settings for the general options."
-        # Set startup state.
+        # Set variables for all windows.
         self.startup_edit.set(idleConf.GetOption(
-                'main', 'General', 'editor-on-startup', default=0, type='bool'))
-        # Set autosave state.
-        self.autosave.set(idleConf.GetOption(
-                'main', 'General', 'autosave', default=0, type='bool'))
-        # Set initial window size.
+                'main', 'General', 'editor-on-startup', type='bool'))
         self.win_width.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'width', type='int'))
         self.win_height.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'height', type='int'))
+        self.autocomplete_wait.set(idleConf.GetOption(
+                'extensions', 'AutoComplete', 'popupwait', type='int'))
+        self.paren_style.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'style'))
+        self.flash_delay.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'flash-delay', type='int'))
+        self.paren_bell.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'bell'))
+
+        # Set variables for editor windows.
+        self.autosave.set(idleConf.GetOption(
+                'main', 'General', 'autosave', default=0, type='bool'))
+        self.format_width.set(idleConf.GetOption(
+                'extensions', 'FormatParagraph', 'max-width', type='int'))
+        self.context_lines.set(idleConf.GetOption(
+                'extensions', 'CodeContext', 'numlines', type='int'))
+
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
         self.helplist.delete(0, 'end')
@@ -2090,10 +2120,10 @@ The IDLE Modern Unix key set is new in June 2016.  It can only
 be used with older IDLE releases if it is saved as a custom
 key set, with a different name.
 ''',
-     'Extensions': '''
-Extensions:
+     'General': '''
+General:
 
-Autocomplete: Popupwait is milleseconds to wait after key char, without
+AutoComplete: Popupwait is milleseconds to wait after key char, without
 cursor movement, before popping up completion box.  Key char is '.' after
 identifier or a '/' (or '\\' on Windows) within a string.
 
