@@ -20,7 +20,6 @@
 #include <stdio.h>
 #endif
 
-#include <stdbool.h>  /* necessary for TSS key */
 #include <stdlib.h>
 
 #include "pythread.h"
@@ -164,7 +163,7 @@ PyThread_tss_alloc(void)
     if (new_key == NULL) {
         return NULL;
     }
-    new_key->_is_initialized = false;
+    new_key->_is_initialized = 0;
     return new_key;
 }
 
