@@ -128,6 +128,12 @@ bytes(cdata)
 #endif
 #include "ctypes.h"
 
+/* Definition matching cfield.c:724 */
+#ifndef HAVE_C99_BOOL
+#undef SIZEOF__BOOL
+#define SIZEOF__BOOL 1
+#endif
+
 PyObject *PyExc_ArgError;
 
 /* This dict maps ctypes types to POINTER types */
