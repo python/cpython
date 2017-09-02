@@ -15,9 +15,6 @@
 /* Xxo objects */
 
 #include "Python.h"
-#ifdef WITH_THREAD
-#include "pythread.h"
-#endif
 
 static PyObject *ErrorObject;
 
@@ -218,63 +215,6 @@ static PyType_Spec Null_Type_spec = {
 
 /* ---------- */
 
-#ifdef WITH_THREAD
-PyDoc_STRVAR(xx_tss_doc,
-"tss(a) -> a\n\
-\n\
-TSS API test in the limited API.");
-
-/* In the limited API, Py_tss_t value cannot be statically allocated.
-static Py_tss_t tss_key = Py_tss_NEEDS_INIT;
-*/
-static Py_tss_t *tss_key;
-
-static PyObject *
-xx_tss(PyObject *self, PyObject *args)
-{
-    PyObject *a, *b;
-    if (!PyArg_ParseTuple(args, "O:tss", &a)) {
-        return NULL;
-    }
-
-    tss_key = PyThread_tss_alloc();
-    if (tss_key == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_alloc failed");
-        return NULL;
-    }
-    if (PyThread_tss_create(tss_key) != 0) {
-        PyThread_tss_free(tss_key);
-        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_create failed");
-        return NULL;
-    }
-    if (!PyThread_tss_is_created(tss_key)) {
-        PyThread_tss_free(tss_key);
-        PyErr_SetString(PyExc_RuntimeError,
-                        "TSS key in an uninitialized state");
-        return NULL;
-    }
-    if (PyThread_tss_set(tss_key, (void *)a) != 0) {
-        PyThread_tss_free(tss_key);
-        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_set failed");
-        return NULL;
-    }
-    b = (PyObject *)PyThread_tss_get(tss_key);
-    if (a != b) {
-        PyThread_tss_free(tss_key);
-        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_get failed");
-        return NULL;
-    }
-    PyThread_tss_delete(tss_key);
-    PyThread_tss_free(tss_key);
-    tss_key = NULL;
-
-    Py_INCREF(b);
-    return b;
-}
-#endif  /* WITH_THREAD */
-
-/* ---------- */
-
 /* List of functions defined in the module */
 
 static PyMethodDef xx_methods[] = {
@@ -284,10 +224,6 @@ static PyMethodDef xx_methods[] = {
         xx_foo_doc},
     {"new",             xx_new,         METH_VARARGS,
         PyDoc_STR("new() -> new Xx object")},
-#ifdef WITH_THREAD
-    {"tss",             xx_tss,         METH_VARARGS,
-        xx_tss_doc},
-#endif
     {NULL,              NULL}           /* sentinel */
 };
 
