@@ -167,7 +167,7 @@ several useful pieces of freely distributable software.  The source will compile
 and run out of the box on most UNIX platforms.
 
 Consult the `Getting Started section of the Python Developer's Guide
-<https://docs.python.org/devguide/setup.html>`__ for more
+<https://devguide.python.org/setup/>`__ for more
 information on getting the source code and compiling it.
 
 
@@ -223,7 +223,7 @@ newsgroups and on the Python home page at https://www.python.org/; an RSS feed o
 news is available.
 
 You can also access the development version of Python through Git.  See
-`The Python Developer's Guide <https://docs.python.org/devguide/>`_ for details.
+`The Python Developer's Guide <https://devguide.python.org/>`_ for details.
 
 
 How do I submit bug reports and patches for Python?
@@ -239,7 +239,7 @@ report bugs to Python, you can obtain your Roundup password through Roundup's
 `password reset procedure <https://bugs.python.org/user?@template=forgotten>`_.
 
 For more information on how Python is developed, consult `the Python Developer's
-Guide <https://docs.python.org/devguide/>`_.
+Guide <https://devguide.python.org/>`_.
 
 
 Are there any published articles about Python that I can reference?

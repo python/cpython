@@ -1889,7 +1889,11 @@ if _have_threads:
                     # XXX Various errors can have happened here, for example
                     # a mismatching protocol version, an invalid certificate,
                     # or a low-level bug. This should be made more discriminating.
-                    self.server.conn_errors.append(e)
+                    #
+                    # bpo-31323: Store the exception as string to prevent
+                    # a reference leak: server -> conn_errors -> exception
+                    # -> traceback -> self (ConnectionHandler) -> server
+                    self.server.conn_errors.append(str(e))
                     if self.server.chatty:
                         handle_error("\n server:  bad connection attempt from " + repr(self.addr) + ":\n")
                     self.running = False
@@ -3097,7 +3101,7 @@ if _have_threads:
                 with context.wrap_socket(socket.socket()) as s:
                     with self.assertRaises(OSError):
                         s.connect((HOST, server.port))
-            self.assertIn("no shared cipher", str(server.conn_errors[0]))
+            self.assertIn("no shared cipher", server.conn_errors[0])
 
         def test_version_basic(self):
             """
