@@ -88,13 +88,16 @@ class ThreadPoolExecutor(_base.Executor):
     # Used to assign unique thread names when thread_name_prefix is not supplied.
     _counter = itertools.count().__next__
 
-    def __init__(self, max_workers=None, thread_name_prefix=''):
+    def __init__(self, max_workers=None, thread_name_prefix='',
+                 worker_target=_worker, workitem_cls=_WorkItem):
         """Initializes a new ThreadPoolExecutor instance.
 
         Args:
             max_workers: The maximum number of threads that can be used to
                 execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
+            worker_target: The worker's thread target function.
+            workitem_cls: The subclass of `_WorkItem`.
         """
         if max_workers is None:
             # Use this number because ThreadPoolExecutor is often
@@ -105,6 +108,8 @@ class ThreadPoolExecutor(_base.Executor):
 
         self._max_workers = max_workers
         self._work_queue = queue.Queue()
+        self._worker_target = worker_target
+        self._workitem_cls = workitem_cls
         self._threads = set()
         self._shutdown = False
         self._shutdown_lock = threading.Lock()
@@ -117,7 +122,7 @@ class ThreadPoolExecutor(_base.Executor):
                 raise RuntimeError('cannot schedule new futures after shutdown')
 
             f = _base.Future()
-            w = _WorkItem(f, fn, args, kwargs)
+            w = self._workitem_cls(f, fn, args, kwargs)
 
             self._work_queue.put(w)
             self._adjust_thread_count()
@@ -135,7 +140,7 @@ class ThreadPoolExecutor(_base.Executor):
         if num_threads < self._max_workers:
             thread_name = '%s_%d' % (self._thread_name_prefix or self,
                                      num_threads)
-            t = threading.Thread(name=thread_name, target=_worker,
+            t = threading.Thread(name=thread_name, target=self._worker_target,
                                  args=(weakref.ref(self, weakref_cb),
                                        self._work_queue))
             t.daemon = True
