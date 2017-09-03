@@ -426,7 +426,9 @@ should not be line-wrapped::
     -h, --help  show this help message and exit
 
 :class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text,
-including argument descriptions.
+including argument descriptions. However, multiple new lines in epilog and
+description are replaced with one. If you prefer to use multiple new lines,
+add white space between the new line characters.
 
 :class:`ArgumentDefaultsHelpFormatter` automatically adds information about
 default values to each of the argument help messages::
