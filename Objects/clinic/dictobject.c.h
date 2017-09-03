@@ -73,7 +73,7 @@ exit:
 }
 
 PyDoc_STRVAR(dict_setdefault__doc__,
-"setdefault($self, /, key, default=None)\n"
+"setdefault($self, key, default=None, /)\n"
 "--\n"
 "\n"
 "Insert key with a value of default if key is not in the dictionary.\n"
@@ -81,14 +81,47 @@ PyDoc_STRVAR(dict_setdefault__doc__,
 "Return the value for key if key is in the dictionary, else default.");
 
 #define DICT_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)dict_setdefault, METH_FASTCALL|METH_KEYWORDS, dict_setdefault__doc__},
+    {"setdefault", (PyCFunction)dict_setdefault, METH_FASTCALL, dict_setdefault__doc__},
 
 static PyObject *
 dict_setdefault_impl(PyDictObject *self, PyObject *key,
                      PyObject *default_value);
 
 static PyObject *
-dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *key;
+    PyObject *default_value = Py_None;
+
+    if (!_PyArg_UnpackStack(args, nargs, "setdefault",
+        1, 2,
+        &key, &default_value)) {
+        goto exit;
+    }
+    return_value = dict_setdefault_impl(self, key, default_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(OrderedDict_setdefault__doc__,
+"setdefault($self, /, key, default=None)\n"
+"--\n"
+"\n"
+"Insert key with a value of default if key is not in the dictionary.\n"
+"\n"
+"Return the value for key if key is in the dictionary, else default.");
+
+#define ORDEREDDICT_SETDEFAULT_METHODDEF    \
+    {"setdefault", (PyCFunction)OrderedDict_setdefault, METH_FASTCALL|METH_KEYWORDS, OrderedDict_setdefault__doc__},
+
+static PyObject *
+OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
+                            PyObject *default_value);
+
+static PyObject *
+OrderedDict_setdefault(PyODictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "default", NULL};
@@ -100,7 +133,7 @@ dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject 
         &key, &default_value)) {
         goto exit;
     }
-    return_value = dict_setdefault_impl(self, key, default_value);
+    return_value = OrderedDict_setdefault_impl(self, key, default_value);
 
 exit:
     return return_value;
@@ -170,4 +203,4 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject **args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96a451cf353bd36f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=99214b23a05f5c3a input=a9049054013a1b77]*/

@@ -2898,6 +2898,7 @@ dict.setdefault
 
     key: object
     default: object = None
+    /
 
 Insert key with a value of default if key is not in the dictionary.
 
@@ -2907,7 +2908,7 @@ Return the value for key if key is in the dictionary, else default.
 static PyObject *
 dict_setdefault_impl(PyDictObject *self, PyObject *key,
                      PyObject *default_value)
-/*[clinic end generated code: output=f8c1101ebf69e220 input=613262f74b140581]*/
+/*[clinic end generated code: output=f8c1101ebf69e220 input=0f063756e815fd9d]*/
 {
     PyObject *val;
 
@@ -4908,6 +4909,31 @@ Done:
     return result;
 }
 
+/* setdefault()
+ * Exactly same to dict_setdefault, but supports keyword argument.
+ */
+
+/*[clinic input]
+OrderedDict.setdefault
+
+    key: object
+    default: object = None
+
+Insert key with a value of default if key is not in the dictionary.
+
+Return the value for key if key is in the dictionary, else default.
+[clinic start generated code]*/
+
+static PyObject *
+OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
+                            PyObject *default_value)
+/*[clinic end generated code: output=97537cb7c28464b6 input=38e098381c1efbc6]*/
+{
+    PyObject *val = PyDict_SetDefault((PyObject *)self, key, default_value);
+    Py_XINCREF(val);
+    return val;
+}
+
 
 /* popitem() */
 
@@ -5097,6 +5123,7 @@ static PyMethodDef odict_methods[] = {
      sizeof__doc__},
     {"__reduce__",      (PyCFunction)odict_reduce,      METH_NOARGS,
      reduce_doc},
+    ORDEREDDICT_SETDEFAULT_METHODDEF
     ORDEREDDICT_POPITEM_METHODDEF
     {"keys",            (PyCFunction)odictkeys_new,     METH_NOARGS,
      keys__doc__},
