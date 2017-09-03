@@ -2073,26 +2073,35 @@ def reap_threads(func):
             threading_cleanup(*key)
     return decorator
 
+
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
     are started.  This will help ensure that no extra children (zombies)
     stick around to hog resources and create problems when looking
     for refleaks.
     """
+    global environment_altered
+
+    # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
+    if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
+        return
+
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
-    if hasattr(os, 'waitpid'):
-        any_process = -1
-        while True:
-            try:
-                # This will raise an exception on Windows.  That's ok.
-                pid, status = os.waitpid(any_process, os.WNOHANG)
-                if pid == 0:
-                    break
-                print("Warning -- reap_children() reaped child process %s"
-                      % pid, file=sys.stderr)
-            except:
-                break
+    while True:
+        try:
+            # Read the exit status of any child process which already completed
+            pid, status = os.waitpid(-1, os.WNOHANG)
+        except OSError:
+            break
+
+        if pid == 0:
+            break
+
+        print("Warning -- reap_children() reaped child process %s"
+              % pid, file=sys.stderr)
+        environment_altered = True
+
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
@@ -2649,12 +2658,6 @@ def disable_faulthandler():
             faulthandler.enable(file=fd, all_threads=True)
 
 
-try:
-    MAXFD = os.sysconf("SC_OPEN_MAX")
-except Exception:
-    MAXFD = 256
-
-
 def fd_count():
     """Count the number of open file descriptors.
     """
@@ -2665,16 +2668,48 @@ def fd_count():
         except FileNotFoundError:
             pass
 
-    count = 0
-    for fd in range(MAXFD):
+    old_modes = None
+    if sys.platform == 'win32':
+        # bpo-25306, bpo-31009: Call CrtSetReportMode() to not kill the process
+        # on invalid file descriptor if Python is compiled in debug mode
         try:
-            # Prefer dup() over fstat(). fstat() can require input/output
-            # whereas dup() doesn't.
-            fd2 = os.dup(fd)
-        except OSError as e:
-            if e.errno != errno.EBADF:
-                raise
+            import msvcrt
+            msvcrt.CrtSetReportMode
+        except (AttributeError, ImportError):
+            # no msvcrt or a release build
+            pass
         else:
-            os.close(fd2)
-            count += 1
+            old_modes = {}
+            for report_type in (msvcrt.CRT_WARN,
+                                msvcrt.CRT_ERROR,
+                                msvcrt.CRT_ASSERT):
+                old_modes[report_type] = msvcrt.CrtSetReportMode(report_type, 0)
+
+    MAXFD = 256
+    if hasattr(os, 'sysconf'):
+        try:
+            MAXFD = os.sysconf("SC_OPEN_MAX")
+        except OSError:
+            pass
+
+    try:
+        count = 0
+        for fd in range(MAXFD):
+            try:
+                # Prefer dup() over fstat(). fstat() can require input/output
+                # whereas dup() doesn't.
+                fd2 = os.dup(fd)
+            except OSError as e:
+                if e.errno != errno.EBADF:
+                    raise
+            else:
+                os.close(fd2)
+                count += 1
+    finally:
+        if old_modes is not None:
+            for report_type in (msvcrt.CRT_WARN,
+                                msvcrt.CRT_ERROR,
+                                msvcrt.CRT_ASSERT):
+                msvcrt.CrtSetReportMode(report_type, old_modes[report_type])
+
     return count

@@ -80,7 +80,8 @@ class SemaphoreTracker(object):
             # bytes are atomic, and that PIPE_BUF >= 512
             raise ValueError('name too long')
         nbytes = os.write(self._fd, msg)
-        assert nbytes == len(msg)
+        assert nbytes == len(msg), "nbytes {0:n} but len(msg) {1:n}".format(
+            nbytes, len(msg))
 
 
 _semaphore_tracker = SemaphoreTracker()

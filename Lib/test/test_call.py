@@ -7,6 +7,7 @@ except ImportError:
     _testcapi = None
 import struct
 import collections
+import itertools
 
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C
@@ -193,6 +194,26 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
     def test_varargs13_kw(self):
         msg = r"^classmethod\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, classmethod, func=id)
+
+    def test_varargs14_kw(self):
+        msg = r"^product\(\) takes at most 1 keyword argument \(2 given\)$"
+        self.assertRaisesRegex(TypeError, msg,
+                               itertools.product, 0, repeat=1, foo=2)
+
+    def test_varargs15_kw(self):
+        msg = r"^ImportError\(\) takes at most 2 keyword arguments \(3 given\)$"
+        self.assertRaisesRegex(TypeError, msg,
+                               ImportError, 0, name=1, path=2, foo=3)
+
+    def test_varargs16_kw(self):
+        msg = r"^min\(\) takes at most 2 keyword arguments \(3 given\)$"
+        self.assertRaisesRegex(TypeError, msg,
+                               min, 0, default=1, key=2, foo=3)
+
+    def test_varargs17_kw(self):
+        msg = r"^print\(\) takes at most 4 keyword arguments \(5 given\)$"
+        self.assertRaisesRegex(TypeError, msg,
+                               print, 0, sep=1, end=2, file=3, flush=4, foo=5)
 
     def test_oldargs0_1(self):
         msg = r"keys\(\) takes no arguments \(1 given\)"

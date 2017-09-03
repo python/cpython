@@ -1069,6 +1069,8 @@ class ThreadingExceptionTests(BaseTestCase):
         thread.join()
         self.assertIsNotNone(thread.exc)
         self.assertIsInstance(thread.exc, RuntimeError)
+        # explicitly break the reference cycle to not leak a dangling thread
+        thread.exc = None
 
 class TimerTests(BaseTestCase):
 

@@ -761,6 +761,18 @@ call fails (for example because the path doesn't exist):
    other errors (such as permission errors) are propagated.
 
 
+.. method:: Path.is_mount()
+
+   Return ``True`` if the path is a :dfn:`mount point`: a point in a
+   file system where a different file system has been mounted.  On POSIX, the
+   function checks whether *path*'s parent, :file:`path/..`, is on a different
+   device than *path*, or whether :file:`path/..` and *path* point to the same
+   i-node on the same device --- this should detect mount points for all Unix
+   and POSIX variants.  Not implemented on Windows.
+
+   .. versionadded:: 3.7
+
+
 .. method:: Path.is_symlink()
 
    Return ``True`` if the path points to a symbolic link, ``False`` otherwise.

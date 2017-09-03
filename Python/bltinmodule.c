@@ -1519,8 +1519,9 @@ min_max(PyObject *args, PyObject *kwds, int op)
     emptytuple = PyTuple_New(0);
     if (emptytuple == NULL)
         return NULL;
-    ret = PyArg_ParseTupleAndKeywords(emptytuple, kwds, "|$OO", kwlist,
-                                      &keyfunc, &defaultval);
+    ret = PyArg_ParseTupleAndKeywords(emptytuple, kwds,
+                                      (op == Py_LT) ? "|$OO:min" : "|$OO:max",
+                                      kwlist, &keyfunc, &defaultval);
     Py_DECREF(emptytuple);
     if (!ret)
         return NULL;

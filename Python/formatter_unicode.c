@@ -312,6 +312,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
                 format->thousands_separators = LT_UNDER_FOUR_LOCALE;
                 break;
             }
+            /* fall through */
         default:
             invalid_comma_type(format->type);
             return 0;

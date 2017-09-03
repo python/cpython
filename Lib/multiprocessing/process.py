@@ -17,6 +17,7 @@ import os
 import sys
 import signal
 import itertools
+import threading
 from _weakrefset import WeakSet
 
 #
@@ -148,10 +149,16 @@ class BaseProcess(object):
         if self is _current_process:
             return True
         assert self._parent_pid == os.getpid(), 'can only test a child process'
+
         if self._popen is None:
             return False
-        self._popen.poll()
-        return self._popen.returncode is None
+
+        returncode = self._popen.poll()
+        if returncode is None:
+            return True
+        else:
+            _children.discard(self)
+            return False
 
     def close(self):
         '''
@@ -305,6 +312,7 @@ class BaseProcess(object):
             sys.stderr.write('Process %s:\n' % self.name)
             traceback.print_exc()
         finally:
+            threading._shutdown()
             util.info('process exiting with exitcode %d' % exitcode)
             sys.stdout.flush()
             sys.stderr.flush()

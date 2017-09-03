@@ -374,7 +374,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                       args, nargs,
-                                      k, k + 1, nk, 2,
+                                      k, k != NULL ? k + 1 : NULL, nk, 2,
                                       d, nd, kwdefs,
                                       closure, name, qualname);
     Py_XDECREF(kwtuple);
@@ -499,7 +499,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
         if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
             goto no_keyword_error;
         }
-        /* fall through next case */
+        /* fall through */
 
     case METH_VARARGS | METH_KEYWORDS:
     {
@@ -656,7 +656,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
         if (nkwargs) {
             goto no_keyword_error;
         }
-        /* fall through next case */
+        /* fall through */
 
     case METH_VARARGS | METH_KEYWORDS:
     {

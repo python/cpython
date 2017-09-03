@@ -1,0 +1,1 @@
+Fix a race condition in importlib _get_module_lock().
