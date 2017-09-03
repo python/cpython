@@ -949,9 +949,9 @@ class SizeofTest(unittest.TestCase):
         # method-wrapper (descriptor object)
         check({}.__iter__, size('2P'))
         # dict
-        check({}, size('n2Q2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
+        check({}, size('2nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(longdict, size('n2Q2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
+        check(longdict, size('2nQ2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
         check({}.keys(), size('P'))
         # dictionary-valueview
