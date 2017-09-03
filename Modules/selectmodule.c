@@ -532,11 +532,12 @@ poll_poll(pollObject *self, PyObject *args)
         return NULL;
     }
 
+    deadline = 0;   /* initialize to prevent gcc warning */
+
     /* Check values for timeout */
     if (timeout_obj == NULL || timeout_obj == Py_None) {
         timeout = -1;
         ms = -1;
-        deadline = 0;   /* initialize to prevent gcc warning */
     }
     else {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
@@ -554,7 +555,14 @@ poll_poll(pollObject *self, PyObject *args)
             return NULL;
         }
 
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+        if (ms >= 0)
+            deadline = _PyTime_GetMonotonicClock() + timeout;
+        else    /* On many OSes timeout must be -1 or INFTIM, issue 31334 */
+#ifdef INFTIM
+            ms = INFTIM;
+#else
+            ms = -1;
+#endif
     }
 
     /* Avoid concurrent poll() invocation, issue 8865 */
