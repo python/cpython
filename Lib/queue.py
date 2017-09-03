@@ -244,3 +244,21 @@ class LifoQueue(Queue):
 
     def _get(self):
         return self.queue.pop()
+
+
+class SimpleQueue:
+
+    def __init__(self):
+        self._queue = deque()
+        self._count = threading.Semaphore(0)
+
+    def put(self, item):
+        self._queue.append(item)
+        self._count.release()
+
+    def get(self, block=True, timeout=None):
+        if timeout is not None and timeout < 0:
+            raise ValueError("'timeout' must be a non-negative number")
+        if not self._count.acquire(block, timeout):
+            raise Empty
+        return self._queue.popleft()

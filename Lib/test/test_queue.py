@@ -1,6 +1,8 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
+import collections
 import queue
+import random
 import time
 import unittest
 from test import support
@@ -90,7 +92,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         self.cum = 0
         self.cumlock = threading.Lock()
 
-    def simple_queue_test(self, q):
+    def basic_queue_test(self, q):
         if q.qsize():
             raise RuntimeError("Call this function with an empty queue")
         self.assertTrue(q.empty())
@@ -193,12 +195,12 @@ class BaseQueueTestMixin(BlockingTestMixin):
         else:
             self.fail("Did not detect task count going negative")
 
-    def test_simple_queue(self):
+    def test_basic(self):
         # Do it a couple of times on the same queue.
         # Done twice to make sure works with same instance reused.
         q = self.type2test(QUEUE_SIZE)
-        self.simple_queue_test(q)
-        self.simple_queue_test(q)
+        self.basic_queue_test(q)
+        self.basic_queue_test(q)
 
     def test_negative_timeout_raises_exception(self):
         q = self.type2test(QUEUE_SIZE)
@@ -352,6 +354,145 @@ class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
         q = FailingQueue(QUEUE_SIZE)
         self.failing_queue_test(q)
         self.failing_queue_test(q)
+
+
+class SimpleQueueTest(unittest.TestCase):
+    type2test = queue.SimpleQueue
+
+    def setUp(self):
+        self.q = self.type2test()
+
+    def feed(self, q, seq, rnd):
+        while True:
+            try:
+                val = seq.pop()
+            except IndexError:
+                return
+            q.put(val)
+            if rnd.random() > 0.5:
+                time.sleep(rnd.random() * 1e-3)
+
+    def consume(self, q, results, sentinel):
+        while True:
+            val = q.get()
+            if val == sentinel:
+                return
+            results.append(val)
+
+    def consume_nonblock(self, q, results, sentinel):
+        while True:
+            while True:
+                try:
+                    val = q.get(block=False)
+                except queue.Empty:
+                    time.sleep(1e-5)
+                else:
+                    break
+            if val == sentinel:
+                return
+            results.append(val)
+
+    def consume_timeout(self, q, results, sentinel):
+        while True:
+            while True:
+                try:
+                    val = q.get(timeout=1e-5)
+                except queue.Empty:
+                    pass
+                else:
+                    break
+            if val == sentinel:
+                return
+            results.append(val)
+
+    def run_threads(self, n_feeders, n_consumers, q, inputs,
+                    feed_func, consume_func):
+        results = []
+        sentinel = None
+        seq = inputs + [sentinel] * n_consumers
+        seq.reverse()
+        rnd = random.Random(42)
+
+        exceptions = []
+        def log_exceptions(f):
+            def wrapper(*args, **kwargs):
+                try:
+                    f(*args, **kwargs)
+                except BaseException as e:
+                    exceptions.append(e)
+            return wrapper
+
+        feeders = [threading.Thread(target=log_exceptions(feed_func),
+                                    args=(q, seq, rnd))
+                   for i in range(n_feeders)]
+        consumers = [threading.Thread(target=log_exceptions(consume_func),
+                                      args=(q, results, sentinel))
+                     for i in range(n_consumers)]
+
+        with support.start_threads(feeders + consumers):
+            pass
+
+        self.assertFalse(exceptions)
+
+        return results
+
+    def test_simple(self):
+        q = self.q
+        q.put(1)
+        q.put(2)
+        q.put(3)
+        q.put(4)
+        self.assertEqual(q.get(), 1)
+        self.assertEqual(q.get(), 2)
+        self.assertEqual(q.get(block=False), 3)
+        self.assertEqual(q.get(timeout=0.1), 4)
+        with self.assertRaises(queue.Empty):
+            q.get(block=False)
+        with self.assertRaises(queue.Empty):
+            q.get(timeout=1e-3)
+
+    def test_negative_timeout_raises_exception(self):
+        q = self.q
+        q.put(1)
+        with self.assertRaises(ValueError):
+            q.get(timeout=-1)
+
+    def test_order(self):
+        N = 3
+        q = self.q
+        inputs = list(range(100))
+        results = self.run_threads(N, 1, q, inputs, self.feed, self.consume)
+
+        # One consumer => results appended in well-defined order
+        self.assertEqual(results, inputs)
+
+    def test_many_threads(self):
+        N = 50
+        q = self.q
+        inputs = list(range(10000))
+        results = self.run_threads(N, N, q, inputs, self.feed, self.consume)
+
+        # Multiple consumers without synchronization append the
+        # results in random order
+        self.assertEqual(sorted(results), inputs)
+
+    def test_many_threads_nonblock(self):
+        N = 50
+        q = self.q
+        inputs = list(range(10000))
+        results = self.run_threads(N, N, q, inputs,
+                                   self.feed, self.consume_nonblock)
+
+        self.assertEqual(sorted(results), inputs)
+
+    def test_many_threads_timeout(self):
+        N = 50
+        q = self.q
+        inputs = list(range(10000))
+        results = self.run_threads(N, N, q, inputs,
+                                   self.feed, self.consume_timeout)
+
+        self.assertEqual(sorted(results), inputs)
 
 
 if __name__ == "__main__":
