@@ -720,6 +720,38 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
     return DKIX_ERROR;
 }
 
+/* Search key by it's identity, without equality check.
+
+Since this function doesn't compare keys, it must not return DKIX_ERROR.
+This function is intended to be used for finding key again after dictresize().
+*/
+static Py_ssize_t
+lookdict_ident(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
+{
+    PyDictKeyEntry *ep0 = DK_ENTRIES(keys);
+    size_t mask = DK_MASK(keys);
+    size_t perturb = (size_t)hash;
+    size_t i = (size_t)hash & mask;
+
+    for (;;) {
+        Py_ssize_t ix = dk_get_index(keys, i);
+        if (ix == DKIX_EMPTY) {
+            return DKIX_EMPTY;
+        }
+        if (ix >= 0) {
+            PyDictKeyEntry *ep = &ep0[ix];
+            assert(ep->me_key != NULL);
+            if (ep->me_key == key) {
+                return ix;
+            }
+        }
+        perturb >>= PERTURB_SHIFT;
+        i = mask & (i*5 + perturb + 1);
+    }
+    assert(0);          /* NOT REACHED */
+    return 0;
+}
+
 /*
 The basic lookup function used by all operations.
 This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
@@ -925,35 +957,6 @@ lookdict_split(PyDictObject *mp, PyObject *key,
             (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
             *value_addr = mp->ma_values[ix];
             return ix;
-        }
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-    }
-    assert(0);          /* NOT REACHED */
-    return 0;
-}
-
-// lookdict function to find key by it's identity.
-// This function is used to find key knwon it's in the dict.
-static Py_ssize_t
-lookdict_ident(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
-{
-    PyDictKeyEntry *ep0 = DK_ENTRIES(keys);
-    size_t mask = DK_MASK(keys);
-    size_t perturb = (size_t)hash;
-    size_t i = (size_t)hash & mask;
-
-    for (;;) {
-        Py_ssize_t ix = dk_get_index(keys, i);
-        if (ix == DKIX_EMPTY) {
-            return DKIX_EMPTY;
-        }
-        if (ix >= 0) {
-            PyDictKeyEntry *ep = &ep0[ix];
-            assert(ep->me_key != NULL);
-            if (ep->me_key == key) {
-                return ix;
-            }
         }
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
