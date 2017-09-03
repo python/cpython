@@ -405,7 +405,7 @@ class AsCompletedTests:
         # to finished futures.
         futures_list = [Future() for _ in range(8)]
         futures_list.append(create_future(state=CANCELLED_AND_NOTIFIED))
-        futures_list.append(create_future(state=SUCCESSFUL_FUTURE))
+        futures_list.append(create_future(state=FINISHED, result=42))
 
         with self.assertRaises(futures.TimeoutError):
             for future in futures.as_completed(futures_list, timeout=0):
