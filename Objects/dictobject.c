@@ -3053,7 +3053,7 @@ dict_tp_clear(PyObject *op)
     return 0;
 }
 
-static PyObject *dictiter_new(PyDictObject *, PyTypeObject *, int);
+static PyObject *dictiter_new(PyDictObject *, PyTypeObject *);
 
 Py_ssize_t
 _PyDict_SizeOf(PyDictObject *mp)
@@ -3242,7 +3242,7 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 dict_iter(PyDictObject *dict)
 {
-    return dictiter_new(dict, &PyDictIterKey_Type, 0);
+    return dictiter_new(dict, &PyDictIterKey_Type);
 }
 
 PyDoc_STRVAR(dictionary_doc,
@@ -3382,11 +3382,10 @@ typedef struct {
     Py_ssize_t di_pos;
     PyObject* di_result; /* reusable result tuple for iteritems */
     Py_ssize_t len;
-    int di_reversed;
 } dictiterobject;
 
 static PyObject *
-dictiter_new(PyDictObject *dict, PyTypeObject *itertype, int reversed)
+dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 {
     dictiterobject *di;
     di = PyObject_GC_New(dictiterobject, itertype);
@@ -3395,19 +3394,8 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype, int reversed)
     Py_INCREF(dict);
     di->di_dict = dict;
     di->di_used = dict->ma_used;
-    if (reversed) {
-        if (dict->ma_values) {
-            di->di_pos = dict->ma_used-1;
-        }
-        else {
-            di->di_pos = dict->ma_keys->dk_nentries-1;
-        }
-    }
-    else {
-        di->di_pos = dict->ma_offset;
-    }
+    di->di_pos = dict->ma_offset;
     di->len = dict->ma_used;
-    di->di_reversed = reversed;
     if (itertype == &PyDictIterItem_Type) {
         di->di_result = PyTuple_Pack(2, Py_None, Py_None);
         if (di->di_result == NULL) {
@@ -3498,27 +3486,16 @@ dictiter_iternextkey(dictiterobject *di)
     else {
         Py_ssize_t n = k->dk_nentries;
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
-        if (!di->di_reversed) {
-            while (i < n && entry_ptr->me_value == NULL) {
-                entry_ptr++;
-                i++;
-            }
-            if (i >= n) {
-                goto fail;
-            }
+        while (i < n && entry_ptr->me_value == NULL) {
+            entry_ptr++;
+            i++;
         }
-        else {
-            while (i >= 0 && entry_ptr->me_value == NULL) {
-                entry_ptr--;
-                i--;
-            }
-            if (i < 0) {
-                goto fail;
-            }
+        if (i >= n) {
+            goto fail;
         }
         key = entry_ptr->me_key;
     }
-    di->di_pos = di->di_reversed ? i-1 : i+1;
+    di->di_pos = i+1;
     di->len--;
     Py_INCREF(key);
     return key;
@@ -3593,27 +3570,16 @@ dictiter_iternextvalue(dictiterobject *di)
     else {
         Py_ssize_t n = d->ma_keys->dk_nentries;
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
-        if (!di->di_reversed) {
-            while (i < n && entry_ptr->me_value == NULL) {
-                entry_ptr++;
-                i++;
-            }
-            if (i >= n) {
-                goto fail;
-            }
+        while (i < n && entry_ptr->me_value == NULL) {
+            entry_ptr++;
+            i++;
         }
-        else {
-            while (i >= 0 && entry_ptr->me_value == NULL) {
-                entry_ptr--;
-                i--;
-            }
-            if (i < 0) {
-                goto fail;
-            }
+        if (i >= n) {
+            goto fail;
         }
         value = entry_ptr->me_value;
     }
-    di->di_pos = di->di_reversed ? i-1 : i+1;
+    di->di_pos = i+1;
     di->len--;
     Py_INCREF(value);
     return value;
@@ -3689,28 +3655,17 @@ dictiter_iternextitem(dictiterobject *di)
     else {
         Py_ssize_t n = d->ma_keys->dk_nentries;
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
-        if (!di->di_reversed) {
-            while (i < n && entry_ptr->me_value == NULL) {
-                entry_ptr++;
-                i++;
-            }
-            if (i >= n) {
-                goto fail;
-            }
+        while (i < n && entry_ptr->me_value == NULL) {
+            entry_ptr++;
+            i++;
         }
-        else {
-            while (i >= 0 && entry_ptr->me_value == NULL) {
-                entry_ptr--;
-                i--;
-            }
-            if (i < 0) {
-                goto fail;
-            }
+        if (i >= n) {
+            goto fail;
         }
         key = entry_ptr->me_key;
         value = entry_ptr->me_value;
     }
-    di->di_pos = di->di_reversed ? i-1 : i+1;
+    di->di_pos = i+1;
     di->len--;
     Py_INCREF(key);
     Py_INCREF(value);
@@ -3991,7 +3946,7 @@ dictkeys_iter(_PyDictViewObject *dv)
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
-    return dictiter_new(dv->dv_dict, &PyDictIterKey_Type, 0);
+    return dictiter_new(dv->dv_dict, &PyDictIterKey_Type);
 }
 
 static int
@@ -4219,7 +4174,7 @@ dictitems_iter(_PyDictViewObject *dv)
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
-    return dictiter_new(dv->dv_dict, &PyDictIterItem_Type, 0);
+    return dictiter_new(dv->dv_dict, &PyDictIterItem_Type);
 }
 
 static int
@@ -4309,7 +4264,7 @@ dictvalues_iter(_PyDictViewObject *dv)
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
-    return dictiter_new(dv->dv_dict, &PyDictIterValue_Type, 0);
+    return dictiter_new(dv->dv_dict, &PyDictIterValue_Type);
 }
 
 static PySequenceMethods dictvalues_as_sequence = {
@@ -4772,6 +4727,7 @@ struct _odictobject {
     PyDictObject od_dict;        /* the underlying dict */
     PyObject *od_inst_dict;      /* OrderedDict().__dict__ */
     PyObject *od_weakreflist;    /* holds weakrefs to the odict */
+    size_t od_state;             /* incremented whenever order is changed */
 };
 
 #define _odict_EMPTY(od) (((PyDictObject *)od)->ma_used == 0)
@@ -5011,10 +4967,17 @@ odict_copy(register PyODictObject *od)
 
 PyDoc_STRVAR(odict_reversed__doc__, "od.__reversed__() <==> reversed(od)");
 
+#define _odict_ITER_REVERSED 1  // always reversed
+#define _odict_ITER_KEYS 2
+#define _odict_ITER_VALUES 4
+
+/* forward */
+static PyObject * odictiter_new(PyODictObject *, int);
+
 static PyObject *
 odict_reversed(PyODictObject *od)
 {
-    return dictiter_new((PyDictObject*)od, &PyDictIterKey_Type, 1);
+    return odictiter_new(od, _odict_ITER_KEYS | _odict_ITER_REVERSED);
 }
 
 
@@ -5118,7 +5081,7 @@ OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last)
         mp->ma_keys->dk_usable--;
         mp->ma_offset = offset;
     }
-
+    self->od_state++;
     Py_RETURN_NONE;
 }
 
@@ -5343,6 +5306,14 @@ odict_richcompare(PyObject *v, PyObject *w, int op)
     }
 }
 
+/* tp_iter */
+
+static PyObject *
+odict_iter(PyODictObject *od)
+{
+    return odictiter_new(od, _odict_ITER_KEYS);
+}
+
 /* tp_init */
 
 static int
@@ -5379,7 +5350,7 @@ PyTypeObject PyODict_Type = {
     (inquiry)odict_tp_clear,                    /* tp_clear */
     (richcmpfunc)odict_richcompare,             /* tp_richcompare */
     offsetof(PyODictObject, od_weakreflist),    /* tp_weaklistoffset */
-    (getiterfunc)dict_iter,                     /* tp_iter */
+    (getiterfunc)odict_iter,                    /* tp_iter */
     0,                                          /* tp_iternext */
     odict_methods,                              /* tp_methods */
     0,                                          /* tp_members */
@@ -5420,7 +5391,250 @@ PyODict_DelItem(PyObject *od, PyObject *key)
  * The OrderedDict views (keys/values/items)
  */
 
+/* Since normal dict iter is ordered already, ODictIter is used only for
+ * reversed iterator.
+ */
+
+typedef struct {
+    PyObject_HEAD
+    int kind;
+    PyODictObject *di_odict;
+    PyDictKeysObject *di_keys;
+    Py_ssize_t di_size;
+    size_t di_state;
+    Py_ssize_t di_pos;
+    PyObject *di_result; /* reusable result tuple for iteritems */
+} odictiterobject;
+
+static void
+odictiter_dealloc(odictiterobject *di)
+{
+    PyObject_GC_UnTrack(di);
+    Py_XDECREF(di->di_odict);
+    if (di->kind & (_odict_ITER_KEYS | _odict_ITER_VALUES)) {
+        Py_DECREF(di->di_result);
+    }
+    PyObject_GC_Del(di);
+}
+
+static int
+odictiter_traverse(odictiterobject *di, visitproc visit, void *arg)
+{
+    Py_VISIT(di->di_odict);
+    Py_VISIT(di->di_result);
+    return 0;
+}
+
+static PyObject *
+odictiter_iternext(odictiterobject *di)
+{
+    if (di->di_odict == NULL) {
+        return NULL;
+    }
+
+    PyDictKeysObject *dk = ((PyDictObject *)di->di_odict)->ma_keys;
+
+    if (di->di_odict->od_state != di->di_state ||
+            dk != di->di_keys) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "OrderedDict mutated during iteration");
+        Py_CLEAR(di->di_odict);
+        return NULL;
+    }
+    if (di->di_size != PyODict_SIZE(di->di_odict)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "OrderedDict changed size during iteration");
+        di->di_size = -1; /* Make this state sticky */
+        return NULL;
+    }
+
+
+    // OrderedDict can be key sharing dict only when od.clear() is called.
+    // di->di_odict == NULL for such case.
+    assert(((PyDictObject *)di->di_odict)->ma_values == NULL);
+
+    Py_ssize_t pos = di->di_pos;
+    PyDictKeyEntry *entry_ptr = &DK_ENTRIES(dk)[pos];
+
+    if (di->kind & _odict_ITER_REVERSED) {
+        Py_ssize_t offset = ((PyDictObject *)di->di_odict)->ma_offset;
+        while (pos >= offset && entry_ptr->me_value == NULL) {
+            entry_ptr--;
+            pos--;
+        }
+        if (pos < 0) {
+            goto fail;
+        }
+        pos--;
+    }
+    else {
+        Py_ssize_t n = dk->dk_nentries;
+        while (pos < n && entry_ptr->me_value == NULL) {
+            entry_ptr++;
+            pos++;
+        }
+        if (pos >= n) {
+            goto fail;
+        }
+        pos++;
+    }
+    di->di_pos = pos;
+
+    /* Handle the keys case. */
+    if (! (di->kind & _odict_ITER_VALUES)) {
+        Py_INCREF(entry_ptr->me_key);
+        return entry_ptr->me_key;
+    }
+
+    /* Handle the values case. */
+    if (!(di->kind & _odict_ITER_KEYS)) {
+        Py_INCREF(entry_ptr->me_value);
+        return entry_ptr->me_value;
+    }
+
+    /* Handle the items case. */
+    PyObject *key = entry_ptr->me_key;
+    PyObject *value = entry_ptr->me_value;
+    PyObject *result = di->di_result;
+
+    // dict can be mutated while allocating tuple.
+    Py_INCREF(key);
+    Py_INCREF(value);
+
+    if (Py_REFCNT(result) == 1) {
+        /* not in use so we can reuse it
+         * (the common case during iteration) */
+        Py_INCREF(result);
+        Py_DECREF(PyTuple_GET_ITEM(result, 0));  /* borrowed */
+        Py_DECREF(PyTuple_GET_ITEM(result, 1));  /* borrowed */
+    }
+    else {
+        result = PyTuple_New(2);
+        if (result == NULL) {
+            Py_DECREF(key);
+            Py_DECREF(value);
+            goto fail;
+        }
+    }
+
+    PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
+    PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+    return result;
+
+fail:
+    Py_CLEAR(di->di_odict);
+    return NULL;
+}
+
+/* No need for tp_clear because odictiterobject is not mutable. */
+
+//PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
+
+static PyObject *
+odictiter_reduce(odictiterobject *di)
+{
+    PyObject *list, *iter;
+
+    list = PyList_New(0);
+    if (!list)
+        return NULL;
+
+    /* iterate the temporary into a list */
+    for(;;) {
+        PyObject *element = odictiter_iternext(di);
+        if (element) {
+            if (PyList_Append(list, element)) {
+                Py_DECREF(element);
+                Py_DECREF(list);
+                return NULL;
+            }
+            Py_DECREF(element);
+        }
+        else {
+            /* done iterating? */
+            break;
+        }
+    }
+    if (PyErr_Occurred()) {
+        Py_DECREF(list);
+        return NULL;
+    }
+    iter = _PyObject_GetBuiltin("iter");
+    if (iter == NULL) {
+        Py_DECREF(list);
+        return NULL;
+    }
+    return Py_BuildValue("N(N)", iter, list);
+}
+
+static PyMethodDef odictiter_methods[] = {
+    {"__reduce__", (PyCFunction)odictiter_reduce, METH_NOARGS, reduce_doc},
+    {NULL,              NULL}           /* sentinel */
+};
+
+PyTypeObject PyODictIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "odict_iterator",                         /* tp_name */
+    sizeof(odictiterobject),                  /* tp_basicsize */
+    .tp_dealloc = (destructor)odictiter_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)odictiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)odictiter_iternext,
+    .tp_methods = odictiter_methods,
+};
+
+static PyObject *
+odictiter_new(PyODictObject *od, int kind)
+{
+    odictiterobject *di;
+    int reversed = kind & _odict_ITER_REVERSED;
+
+    di = PyObject_GC_New(odictiterobject, &PyODictIter_Type);
+    if (di == NULL)
+        return NULL;
+
+    if (kind & (_odict_ITER_KEYS | _odict_ITER_VALUES)){
+        di->di_result = PyTuple_Pack(2, Py_None, Py_None);
+        if (di->di_result == NULL) {
+            Py_DECREF(di);
+            return NULL;
+        }
+    }
+    else
+        di->di_result = NULL;
+
+    di->kind = kind;
+    di->di_size = PyODict_SIZE(od);
+    if (di->di_size > 0) {
+        di->di_odict = od;
+        di->di_keys = ((PyDictObject *)od)->ma_keys;
+        di->di_state = od->od_state;
+        di->di_pos = reversed ? di->di_keys->dk_nentries - 1
+                              : ((PyDictObject *)od)->ma_offset;
+        Py_INCREF(od);
+        _PyObject_GC_TRACK(di);
+    }
+    else {
+        di->di_odict = NULL;
+        di->di_keys = NULL;
+        di->di_state = -1;
+        di->di_pos = -1;
+    }
+    return (PyObject *)di;
+}
+
 /* keys() */
+
+static PyObject *
+odictkeys_iter(_PyDictViewObject *dv)
+{
+    if (dv->dv_dict == NULL) {
+        Py_RETURN_NONE;
+    }
+    return odictiter_new((PyODictObject *)dv->dv_dict, _odict_ITER_KEYS);
+}
 
 static PyObject *
 odictkeys_reversed(_PyDictViewObject *dv)
@@ -5428,7 +5642,8 @@ odictkeys_reversed(_PyDictViewObject *dv)
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
-    return dictiter_new(dv->dv_dict, &PyDictIterKey_Type, 1);
+    return odictiter_new((PyODictObject *)dv->dv_dict,
+                         _odict_ITER_KEYS | _odict_ITER_REVERSED);
 }
 
 static PyMethodDef odictkeys_methods[] = {
@@ -5439,6 +5654,7 @@ static PyMethodDef odictkeys_methods[] = {
 PyTypeObject PyODictKeys_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "odict_keys",
+    .tp_iter = (getiterfunc)odictkeys_iter,
     .tp_methods = odictkeys_methods,
     .tp_base = &PyDictKeys_Type,
 };
@@ -5452,12 +5668,23 @@ odictkeys_new(PyObject *od)
 /* items() */
 
 static PyObject *
+odictitems_iter(_PyDictViewObject *dv)
+{
+    if (dv->dv_dict == NULL) {
+        Py_RETURN_NONE;
+    }
+    return odictiter_new((PyODictObject *)dv->dv_dict,
+            _odict_ITER_KEYS|_odict_ITER_VALUES);
+}
+
+static PyObject *
 odictitems_reversed(_PyDictViewObject *dv)
 {
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
-    return dictiter_new(dv->dv_dict, &PyDictIterItem_Type, 1);
+    return odictiter_new((PyODictObject *)dv->dv_dict,
+            _odict_ITER_KEYS|_odict_ITER_VALUES|_odict_ITER_REVERSED);
 }
 
 static PyMethodDef odictitems_methods[] = {
@@ -5468,6 +5695,7 @@ static PyMethodDef odictitems_methods[] = {
 PyTypeObject PyODictItems_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "odict_items",
+    .tp_iter = (getiterfunc)odictitems_iter,
     .tp_methods = odictitems_methods,
     .tp_base = &PyDictItems_Type,
 };
@@ -5481,12 +5709,23 @@ odictitems_new(PyObject *od)
 /* values() */
 
 static PyObject *
+odictvalues_iter(_PyDictViewObject *dv)
+{
+    if (dv->dv_dict == NULL) {
+        Py_RETURN_NONE;
+    }
+    return odictiter_new((PyODictObject *)dv->dv_dict,
+            _odict_ITER_VALUES);
+}
+
+static PyObject *
 odictvalues_reversed(_PyDictViewObject *dv)
 {
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
-    return dictiter_new(dv->dv_dict, &PyDictIterValue_Type, 1);
+    return odictiter_new((PyODictObject *)dv->dv_dict,
+            _odict_ITER_VALUES|_odict_ITER_REVERSED);
 }
 
 static PyMethodDef odictvalues_methods[] = {
@@ -5497,6 +5736,7 @@ static PyMethodDef odictvalues_methods[] = {
 PyTypeObject PyODictValues_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "odict_values",
+    .tp_iter = (getiterfunc)odictvalues_iter,
     .tp_methods = odictvalues_methods,
     .tp_base = &PyDictValues_Type
 };
