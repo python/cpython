@@ -2925,14 +2925,11 @@ dict_clear(PyDictObject *mp)
 }
 
 static PyObject *
-dict_pop(PyDictObject *mp, PyObject *args, PyObject *kwargs)
+dict_pop(PyDictObject *mp, PyObject *args)
 {
-    static char *kwlist[] = {"key", "default", 0};
     PyObject *key, *deflt = NULL;
 
-    /* borrowed */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
-                &key, &deflt)) {
+    if(!PyArg_UnpackTuple(args, "pop", 1, 2, &key, &deflt)) {
         return NULL;
     }
 
@@ -3139,7 +3136,7 @@ static PyMethodDef mapp_methods[] = {
      sizeof__doc__},
     DICT_GET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
-    {"pop",             (PyCFunction)dict_pop,          METH_VARARGS | METH_KEYWORDS,
+    {"pop",         (PyCFunction)dict_pop,          METH_VARARGS,
      pop__doc__},
     {"popitem",         (PyCFunction)dict_popitem,      METH_NOARGS,
      popitem__doc__},
@@ -4934,6 +4931,31 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
     return val;
 }
 
+/* pop() */
+
+PyDoc_STRVAR(odict_pop__doc__,
+"od.pop(k[,d]) -> v, remove specified key and return the corresponding\n\
+        value.  If key is not found, d is returned if given, otherwise KeyError\n\
+        is raised.\n\
+\n\
+        ");
+
+/* Skips __missing__() calls. */
+static PyObject *
+odict_pop(PyObject *od, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"key", "default", 0};
+    PyObject *key, *failobj = NULL;
+
+    /* borrowed */
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
+                                     &key, &failobj)) {
+        return NULL;
+    }
+
+    return _PyDict_Pop((PyObject*)od, key, failobj);
+}
+
 
 /* popitem() */
 
@@ -5124,6 +5146,8 @@ static PyMethodDef odict_methods[] = {
     {"__reduce__",      (PyCFunction)odict_reduce,      METH_NOARGS,
      reduce_doc},
     ORDEREDDICT_SETDEFAULT_METHODDEF
+    {"pop",             (PyCFunction)odict_pop,
+     METH_VARARGS | METH_KEYWORDS, odict_pop__doc__},
     ORDEREDDICT_POPITEM_METHODDEF
     {"keys",            (PyCFunction)odictkeys_new,     METH_NOARGS,
      keys__doc__},
