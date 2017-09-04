@@ -24,11 +24,11 @@
 Python/bootstrap_hash.c       @python/crypto-team
 
 # Email and related
-**/*mail*                     @bitdancer
-**/*smtp*                     @bitdancer
-**/*mime*                     @bitdancer
-**/*imap*                     @bitdancer
-**/*poplib*                   @bitdancer
+**/*mail*                     @python/email-team
+**/*smtp*                     @python/email-team
+**/*mime*                     @python/email-team
+**/*imap*                     @python/email-team
+**/*poplib*                   @python/email-team
 
 # subprocess
 **/*subprocess*               @gpshead
