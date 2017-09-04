@@ -1,0 +1,1 @@
+The dis.dis() function now is able to disassemble nested code objects.

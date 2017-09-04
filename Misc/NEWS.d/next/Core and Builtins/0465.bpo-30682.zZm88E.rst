@@ -1,0 +1,2 @@
+Removed a too-strict assertion that failed for certain f-strings, such as
+eval("f'\\\n'") and eval("f'\\\r'").

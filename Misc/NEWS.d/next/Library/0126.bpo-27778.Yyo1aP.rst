@@ -1,0 +1,2 @@
+Fix a memory leak in os.getrandom() when the getrandom() is interrupted by a
+signal and a signal handler raises a Python exception.

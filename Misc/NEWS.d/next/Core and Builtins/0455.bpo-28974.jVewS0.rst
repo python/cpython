@@ -1,0 +1,2 @@
+``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather than
+``format(str(self), '')``.

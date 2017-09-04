@@ -1,0 +1,4 @@
+Regular expression patterns, _sre.SRE_Pattern objects created by
+re.compile(), become comparable (only x==y and x!=y operators). This change
+should fix the issue #18383: don't duplicate warning filters when the
+warnings module is reloaded (thing usually only done in unit tests).
