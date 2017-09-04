@@ -1,0 +1,1127 @@
+.. bpo: 25678
+.. date: 9701
+.. nonce: aOCs4y
+.. release date: 2015-11-21
+.. section: Core and Builtins
+
+Avoid buffer overreads when int(), long(), float(), and compile() are passed
+buffer objects.  These objects are not necessarily terminated by a null
+byte, but the functions assumed they were.
+
+..
+
+.. bpo: 25388
+.. date: 9700
+.. nonce: Yl4HRL
+.. section: Core and Builtins
+
+Fixed tokenizer hang when processing undecodable source code with a null
+byte.
+
+..
+
+.. bpo: 22995
+.. date: 9699
+.. nonce: 90kpuP
+.. section: Core and Builtins
+
+Default implementation of __reduce__ and __reduce_ex__ now rejects builtin
+types with not defined __new__.
+
+..
+
+.. bpo: 7267
+.. date: 9698
+.. nonce: eje_k4
+.. section: Core and Builtins
+
+format(int, 'c') now raises OverflowError when the argument is not in
+range(0, 256).
+
+..
+
+.. bpo: 24806
+.. date: 9697
+.. nonce: Nb0znT
+.. section: Core and Builtins
+
+Prevent builtin types that are not allowed to be subclassed from being
+subclassed through multiple inheritance.
+
+..
+
+.. bpo: 24848
+.. date: 9696
+.. nonce: HlUSuy
+.. section: Core and Builtins
+
+Fixed a number of bugs in UTF-7 decoding of misformed data.
+
+..
+
+.. bpo: 25003
+.. date: 9695
+.. nonce: -bdxOl
+.. section: Core and Builtins
+
+os.urandom() doesn't use getentropy() on Solaris because getentropy() is
+blocking, whereas os.urandom() should not block. getentropy() is supported
+since Solaris 11.3.
+
+..
+
+.. bpo: 21167
+.. date: 9694
+.. nonce: uom-Dq
+.. section: Core and Builtins
+
+NAN operations are now handled correctly when python is compiled with ICC
+even if -fp-model strict is not specified.
+
+..
+
+.. bpo: 24467
+.. date: 9693
+.. nonce: BAJ80-
+.. section: Core and Builtins
+
+Fixed possible buffer over-read in bytearray. The bytearray object now
+always allocates place for trailing null byte and it's buffer now is always
+null-terminated.
+
+..
+
+.. bpo: 19543
+.. date: 9692
+.. nonce: OT7JMe
+.. section: Core and Builtins
+
+encode() and decode() methods and constructors of str, unicode and bytearray
+classes now emit deprecation warning for known non-text encodings when
+Python is ran with the -3 option.
+
+..
+
+.. bpo: 24115
+.. date: 9691
+.. nonce: y9e_MO
+.. section: Core and Builtins
+
+Update uses of PyObject_IsTrue(), PyObject_Not(), PyObject_IsInstance(),
+PyObject_RichCompareBool() and _PyDict_Contains() to check for and handle
+errors correctly.
+
+..
+
+.. bpo: 4753
+.. date: 9690
+.. nonce: o7jpYf
+.. section: Core and Builtins
+
+On compilers where it is supported, use "computed gotos" for bytecode
+dispatch in the interpreter. This improves interpretation performance.
+
+..
+
+.. bpo: 22939
+.. date: 9689
+.. nonce: grBMzV
+.. section: Core and Builtins
+
+Fixed integer overflow in iterator object.  Original patch by Clement
+Rouault.
+
+..
+
+.. bpo: 24102
+.. date: 9688
+.. nonce: 9T6h3m
+.. section: Core and Builtins
+
+Fixed exception type checking in standard error handlers.
+
+..
+
+.. bpo: 10128
+.. date: 9687
+.. nonce: 0pRKCf
+.. section: Library
+
+backport issue #10845's mitigation of incompatibilities between the
+multiprocessing module and directory and zipfile execution. Multiprocessing
+on Windows will now automatically skip rerunning __main__ in spawned
+processes, rather than failing with AssertionError.
+
+..
+
+.. bpo: 25578
+.. date: 9686
+.. nonce: G6S-ft
+.. section: Library
+
+Fix (another) memory leak in SSLSocket.getpeercer().
+
+..
+
+.. bpo: 25590
+.. date: 9685
+.. nonce: aCt-yW
+.. section: Library
+
+In the Readline completer, only call getattr() once per attribute.
+
+..
+
+.. bpo: 25530
+.. date: 9684
+.. nonce: hDFkwu
+.. section: Library
+
+Disable the vulnerable SSLv3 protocol by default when creating
+ssl.SSLContext.
+
+..
+
+.. bpo: 25569
+.. date: 9683
+.. nonce: CfvQjK
+.. section: Library
+
+Fix memory leak in SSLSocket.getpeercert().
+
+..
+
+.. bpo: 7759
+.. date: 9682
+.. nonce: a72qAb
+.. section: Library
+
+Fixed the mhlib module on filesystems that doesn't support link counting for
+directories.
+
+..
+
+.. bpo: 892902
+.. date: 9681
+.. nonce: V_kMwt
+.. section: Library
+
+Fixed pickling recursive objects.
+
+..
+
+.. bpo: 18010
+.. date: 9680
+.. nonce: pHcjnp
+.. section: Library
+
+Fix the pydoc GUI's search function to handle exceptions from importing
+packages.
+
+..
+
+.. bpo: 25515
+.. date: 9679
+.. nonce: fQsyYG
+.. section: Library
+
+Always use os.urandom as a source of randomness in uuid.uuid4.
+
+..
+
+.. bpo: 21827
+.. date: 9678
+.. nonce: k2oreR
+.. section: Library
+
+Fixed textwrap.dedent() for the case when largest common whitespace is a
+substring of smallest leading whitespace. Based on patch by Robert Li.
+
+..
+
+.. bpo: 21709
+.. date: 9677
+.. nonce: hiATOK
+.. section: Library
+
+Fix the logging module to not depend upon __file__ being set properly to get
+the filename of its caller from the stack.  This allows it to work if run in
+a frozen or embedded environment where the module's .__file__ attribute does
+not match its code object's .co_filename.
+
+..
+
+.. bpo: 25319
+.. date: 9676
+.. nonce: iyuglv
+.. section: Library
+
+When threading.Event is reinitialized, the underlying condition should use a
+regular lock rather than a recursive lock.
+
+..
+
+.. bpo: 25232
+.. date: 9675
+.. nonce: KhKjCE
+.. section: Library
+
+Fix CGIRequestHandler to split the query from the URL at the first question
+mark (?) rather than the last. Patch from Xiang Zhang.
+
+..
+
+.. bpo: 24657
+.. date: 9674
+.. nonce: h2Ag7y
+.. section: Library
+
+Prevent CGIRequestHandler from collapsing slashes in the query part of the
+URL as if it were a path. Patch from Xiang Zhang.
+
+..
+
+.. bpo: 22958
+.. date: 9673
+.. nonce: 04wca1
+.. section: Library
+
+Constructor and update method of weakref.WeakValueDictionary now accept the
+self keyword argument.
+
+..
+
+.. bpo: 22609
+.. date: 9672
+.. nonce: aTCKbk
+.. section: Library
+
+Constructor and the update method of collections.UserDict now accept the
+self keyword argument.
+
+..
+
+.. bpo: 25203
+.. date: 9671
+.. nonce: IgDEbt
+.. section: Library
+
+Failed readline.set_completer_delims() no longer left the module in
+inconsistent state.
+
+..
+
+.. bpo: 19143
+.. date: 9670
+.. nonce: 76SBSO
+.. section: Library
+
+platform module now reads Windows version from kernel32.dll to avoid
+compatibility shims.
+
+..
+
+.. bpo: 25135
+.. date: 9669
+.. nonce: gVHNy-
+.. section: Library
+
+Make deque_clear() safer by emptying the deque before clearing. This helps
+avoid possible reentrancy issues.
+
+..
+
+.. bpo: 24684
+.. date: 9668
+.. nonce: 7ewUAL
+.. section: Library
+
+socket.socket.getaddrinfo() now calls PyUnicode_AsEncodedString() instead of
+calling the encode() method of the host, to handle correctly custom unicode
+string with an encode() method which doesn't return a byte string. The
+encoder of the IDNA codec is now called directly instead of calling the
+encode() method of the string.
+
+..
+
+.. bpo: 24982
+.. date: 9667
+.. nonce: sGMMAR
+.. section: Library
+
+shutil.make_archive() with the "zip" format now adds entries for directories
+(including empty directories) in ZIP file.
+
+..
+
+.. bpo: 17849
+.. date: 9666
+.. nonce: prwvGY
+.. section: Library
+
+Raise a sensible exception if an invalid response is received for a HTTP
+tunnel request, as seen with some servers that do not support tunnelling.
+Initial patch from Cory Benfield.
+
+..
+
+.. bpo: 16180
+.. date: 9665
+.. nonce: 6IUcNS
+.. section: Library
+
+Exit pdb if file has syntax error, instead of trapping user in an infinite
+loop.  Patch by Xavier de Gaye.
+
+..
+
+.. bpo: 22812
+.. date: 9664
+.. nonce: kLCF0G
+.. section: Library
+
+Fix unittest discovery examples. Patch from Pam McA'Nulty.
+
+..
+
+.. bpo: 24634
+.. date: 9663
+.. nonce: 7bnVgr
+.. section: Library
+
+Importing uuid should not try to load libc on Windows
+
+..
+
+.. bpo: 23652
+.. date: 9662
+.. nonce: DdZRSr
+.. section: Library
+
+Make it possible to compile the select module against the libc headers from
+the Linux Standard Base, which do not include some EPOLL macros.  Initial
+patch by Matt Frank.
+
+..
+
+.. bpo: 15138
+.. date: 9661
+.. nonce: PXj7mj
+.. section: Library
+
+Speed up base64.urlsafe_b64{en,de}code considerably.
+
+..
+
+.. bpo: 23319
+.. date: 9660
+.. nonce: FXyUH-
+.. section: Library
+
+Fix ctypes.BigEndianStructure, swap correctly bytes. Patch written by
+Matthieu Gautier.
+
+..
+
+.. bpo: 23254
+.. date: 9659
+.. nonce: zNiy1X
+.. section: Library
+
+Document how to close the TCPServer listening socket. Patch from Martin
+Panter.
+
+..
+
+.. bpo: 17527
+.. date: 9658
+.. nonce: ve9fyw
+.. section: Library
+
+Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
+
+..
+
+.. bpo: 24613
+.. date: 9657
+.. nonce: QZrd_P
+.. section: Library
+
+Calling array.fromstring() with self is no longer allowed to prevent the
+use-after-free error.  Patch by John Leitch.
+
+..
+
+.. bpo: 24708
+.. date: 9656
+.. nonce: WIZWbu
+.. section: Library
+
+Fix possible integer overflow in strop.replace().
+
+..
+
+.. bpo: 24620
+.. date: 9655
+.. nonce: rrnxB-
+.. section: Library
+
+Random.setstate() now validates the value of state last element.
+
+..
+
+.. bpo: 13938
+.. date: 9654
+.. nonce: e5NSE1
+.. section: Library
+
+2to3 converts StringTypes to a tuple. Patch from Mark Hammond.
+
+..
+
+.. bpo: 24611
+.. date: 9653
+.. nonce: _KNs8d
+.. section: Library
+
+Fixed compiling the posix module on non-Windows platforms without mknod() or
+makedev() (e.g. on Unixware).
+
+..
+
+.. bpo: 18684
+.. date: 9652
+.. nonce: S2es0F
+.. section: Library
+
+Fixed reading out of the buffer in the re module.
+
+..
+
+.. bpo: 24259
+.. date: 9651
+.. nonce: vMAi1A
+.. section: Library
+
+tarfile now raises a ReadError if an archive is truncated inside a data
+segment.
+
+..
+
+.. bpo: 24514
+.. date: 9650
+.. nonce: _xRb2r
+.. section: Library
+
+tarfile now tolerates number fields consisting of only whitespace.
+
+..
+
+.. bpo: 20387
+.. date: 9649
+.. nonce: aAbWbQ
+.. section: Library
+
+Restore semantic round-trip correctness in tokenize/untokenize for tab-
+indented blocks.
+
+..
+
+.. bpo: 24456
+.. date: 9648
+.. nonce: swkJgS
+.. section: Library
+
+Fixed possible buffer over-read in adpcm2lin() and lin2adpcm() functions of
+the audioop module.  Fixed SystemError when the state is not a tuple.  Fixed
+possible memory leak.
+
+..
+
+.. bpo: 24481
+.. date: 9647
+.. nonce: EsJTQ7
+.. section: Library
+
+Fix possible memory corruption with large profiler info strings in hotshot.
+
+..
+
+.. bpo: 24489
+.. date: 9646
+.. nonce: GJnMcW
+.. section: Library
+
+ensure a previously set C errno doesn't disturb cmath.polar().
+
+..
+
+.. bpo: 19543
+.. date: 9645
+.. nonce: 8XxBDj
+.. section: Library
+
+io.TextIOWrapper (and hence io.open()) now uses the internal codec marking
+system added to emit deprecation warning for known non-text encodings at
+stream construction time when Python is ran with the -3 option.
+
+..
+
+.. bpo: 24264
+.. date: 9644
+.. nonce: 3zMc38
+.. section: Library
+
+Fixed buffer overflow in the imageop module.
+
+..
+
+.. bpo: 5633
+.. date: 9643
+.. nonce: JNzKZq
+.. section: Library
+
+Fixed timeit when the statement is a string and the setup is not.
+
+..
+
+.. bpo: 24326
+.. date: 9642
+.. nonce: 4t_6Gy
+.. section: Library
+
+Fixed audioop.ratecv() with non-default weightB argument. Original patch by
+David Moore.
+
+..
+
+.. bpo: 22095
+.. date: 9641
+.. nonce: iISzxM
+.. section: Library
+
+Fixed HTTPConnection.set_tunnel with default port.  The port value in the
+host header was set to "None".  Patch by Demian Brecht.
+
+..
+
+.. bpo: 24257
+.. date: 9640
+.. nonce: L_efq0
+.. section: Library
+
+Fixed segmentation fault in sqlite3.Row constructor with faked cursor type.
+
+..
+
+.. bpo: 24286
+.. date: 9639
+.. nonce: QTU65z
+.. section: Library
+
+Dict view were not registered with the MappingView abstract base classes.
+This caused key and item views in OrderedDict to not be equal to their
+regular dict counterparts.
+
+..
+
+.. bpo: 22107
+.. date: 9638
+.. nonce: 2F8k4W
+.. section: Library
+
+tempfile.gettempdir() and tempfile.mkdtemp() now try again when a directory
+with the chosen name already exists on Windows as well as on Unix.
+tempfile.mkstemp() now fails early if parent directory is not valid (not
+exists or is a file) on Windows.
+
+..
+
+.. bpo: 6598
+.. date: 9637
+.. nonce: JdZNDt
+.. section: Library
+
+Increased time precision and random number range in email.utils.make_msgid()
+to strengthen the uniqueness of the message ID.
+
+..
+
+.. bpo: 24091
+.. date: 9636
+.. nonce: vBNeTI
+.. section: Library
+
+Fixed various crashes in corner cases in cElementTree.
+
+..
+
+.. bpo: 15267
+.. date: 9635
+.. nonce: xT65mc
+.. section: Library
+
+HTTPConnection.request() now is compatible with old-style classes (such as
+TemporaryFile).  Original patch by Atsuo Ishimoto.
+
+..
+
+.. bpo: 20014
+.. date: 9634
+.. nonce: NfHQd1
+.. section: Library
+
+array.array() now accepts unicode typecodes.  Based on patch by Vajrasky
+Kok.
+
+..
+
+.. bpo: 23637
+.. date: 9633
+.. nonce: 1yFWAy
+.. section: Library
+
+Showing a warning no longer fails with UnicodeError. Formatting unicode
+warning in the file with the path containing non-ascii characters no longer
+fails with UnicodeError.
+
+..
+
+.. bpo: 24134
+.. date: 9632
+.. nonce: 4cPfh1
+.. section: Library
+
+Reverted issue #24134 changes.
+
+..
+
+.. bpo: 15348
+.. date: 9631
+.. nonce: d1Fg01
+.. section: IDLE
+
+Stop the debugger engine (normally in a user process) before closing the
+debugger window (running in the IDLE process). This prevents the
+RuntimeErrors that were being caught and ignored.
+
+..
+
+.. bpo: 24455
+.. date: 9630
+.. nonce: x6YqtE
+.. section: IDLE
+
+Prevent IDLE from hanging when a) closing the shell while the debugger is
+active (15347); b) closing the debugger with the [X] button (15348); and c)
+activating the debugger when already active (24455). The patch by Mark
+Roseman does this by making two changes. 1. Suspend and resume the
+gui.interaction method with the tcl vwait mechanism intended for this
+purpose (instead of root.mainloop & .quit). 2. In gui.run, allow any
+existing interaction to terminate first.
+
+..
+
+.. bpo: 0
+.. date: 9629
+.. nonce: Yp9LRY
+.. section: IDLE
+
+Change 'The program' to 'Your program' in an IDLE 'kill program?' message to
+make it clearer that the program referred to is the currently running user
+program, not IDLE itself.
+
+..
+
+.. bpo: 24750
+.. date: 9628
+.. nonce: xgsi-K
+.. section: IDLE
+
+Improve the appearance of the IDLE editor window status bar. Patch by Mark
+Roseman.
+
+..
+
+.. bpo: 25313
+.. date: 9627
+.. nonce: xMXHpO
+.. section: IDLE
+
+Change the handling of new built-in text color themes to better address the
+compatibility problem introduced by the addition of IDLE Dark. Consistently
+use the revised idleConf.CurrentTheme everywhere in idlelib.
+
+..
+
+.. bpo: 24782
+.. date: 9626
+.. nonce: PCsWad
+.. section: IDLE
+
+Extension configuration is now a tab in the IDLE Preferences dialog rather
+than a separate dialog.   The former tabs are now a sorted list.  Patch by
+Mark Roseman.
+
+..
+
+.. bpo: 22726
+.. date: 9625
+.. nonce: x8T0dA
+.. section: IDLE
+
+Re-activate the config dialog help button with some content about the other
+buttons and the new IDLE Dark theme.
+
+..
+
+.. bpo: 24820
+.. date: 9624
+.. nonce: TFPJhr
+.. section: IDLE
+
+IDLE now has an 'IDLE Dark' built-in text color theme. It is more or less
+IDLE Classic inverted, with a cobalt blue background. Strings, comments,
+keywords, ... are still green, red, orange, ... . To use it with IDLEs
+released before November 2015, hit the 'Save as New Custom Theme' button and
+enter a new name, such as 'Custom Dark'.  The custom theme will work with
+any IDLE release, and can be modified.
+
+..
+
+.. bpo: 25224
+.. date: 9623
+.. nonce: 5Llwo4
+.. section: IDLE
+
+README.txt is now an idlelib index for IDLE developers and curious users.
+The previous user content is now in the IDLE doc chapter. 'IDLE' now means
+'Integrated Development and Learning Environment'.
+
+..
+
+.. bpo: 24820
+.. date: 9622
+.. nonce: ZUz9Fn
+.. section: IDLE
+
+Users can now set breakpoint colors in Settings -> Custom Highlighting.
+Original patch by Mark Roseman.
+
+..
+
+.. bpo: 24972
+.. date: 9621
+.. nonce: uc0uNo
+.. section: IDLE
+
+Inactive selection background now matches active selection background, as
+configured by users, on all systems.  Found items are now always highlighted
+on Windows.  Initial patch by Mark Roseman.
+
+..
+
+.. bpo: 24570
+.. date: 9620
+.. nonce: s3EkNn
+.. section: IDLE
+
+Idle: make calltip and completion boxes appear on Macs affected by a tk
+regression.  Initial patch by Mark Roseman.
+
+..
+
+.. bpo: 24988
+.. date: 9619
+.. nonce: tXqq4T
+.. section: IDLE
+
+Idle ScrolledList context menus (used in debugger) now work on Mac Aqua.
+Patch by Mark Roseman.
+
+..
+
+.. bpo: 24801
+.. date: 9618
+.. nonce: -bj_Ou
+.. section: IDLE
+
+Make right-click for context menu work on Mac Aqua. Patch by Mark Roseman.
+
+..
+
+.. bpo: 25173
+.. date: 9617
+.. nonce: EZzrPg
+.. section: IDLE
+
+Associate tkinter messageboxes with a specific widget. For Mac OSX, make
+them a 'sheet'.  Patch by Mark Roseman.
+
+..
+
+.. bpo: 25198
+.. date: 9616
+.. nonce: -j_BV7
+.. section: IDLE
+
+Enhance the initial html viewer now used for Idle Help. * Properly indent
+fixed-pitch text (patch by Mark Roseman). * Give code snippet a very Sphinx-
+like light blueish-gray background. * Re-use initial width and height set by
+users for shell and editor. * When the Table of Contents (TOC) menu is used,
+put the section header at the top of the screen.
+
+..
+
+.. bpo: 25225
+.. date: 9615
+.. nonce: 9pvdq6
+.. section: IDLE
+
+Condense and rewrite Idle doc section on text colors.
+
+..
+
+.. bpo: 21995
+.. date: 9614
+.. nonce: C5Rmzx
+.. section: IDLE
+
+Explain some differences between IDLE and console Python.
+
+..
+
+.. bpo: 22820
+.. date: 9613
+.. nonce: hix_8X
+.. section: IDLE
+
+Explain need for *print* when running file from Idle editor.
+
+..
+
+.. bpo: 25224
+.. date: 9612
+.. nonce: UVMYQq
+.. section: IDLE
+
+Doc: augment Idle feature list and no-subprocess section.
+
+..
+
+.. bpo: 25219
+.. date: 9611
+.. nonce: 8_9DYg
+.. section: IDLE
+
+Update doc for Idle command line options. Some were missing and notes were
+not correct.
+
+..
+
+.. bpo: 24861
+.. date: 9610
+.. nonce: Ecg2yT
+.. section: IDLE
+
+Most of idlelib is private and subject to change. Use idleib.idle.* to start
+Idle. See idlelib.__init__.__doc__.
+
+..
+
+.. bpo: 25199
+.. date: 9609
+.. nonce: ih7yY3
+.. section: IDLE
+
+Idle: add synchronization comments for future maintainers.
+
+..
+
+.. bpo: 16893
+.. date: 9608
+.. nonce: bZtPgJ
+.. section: IDLE
+
+Replace help.txt with help.html for Idle doc display. The new
+idlelib/help.html is rstripped Doc/build/html/library/idle.html. It looks
+better than help.txt and will better document Idle as released. The tkinter
+html viewer that works for this file was written by Mark Roseman. The now
+unused EditorWindow.HelpDialog class and helt.txt file are deprecated.
+
+..
+
+.. bpo: 24199
+.. date: 9607
+.. nonce: VKnZEv
+.. section: IDLE
+
+Deprecate unused idlelib.idlever with possible removal in 3.6.
+
+..
+
+.. bpo: 24790
+.. date: 9606
+.. nonce: hD1hlj
+.. section: IDLE
+
+Remove extraneous code (which also create 2 & 3 conflicts).
+
+..
+
+.. bpo: 23672
+.. date: 9605
+.. nonce: 8td2se
+.. section: IDLE
+
+Allow Idle to edit and run files with astral chars in name. Patch by Mohd
+Sanad Zaki Rizvi.
+
+..
+
+.. bpo: 24745
+.. date: 9604
+.. nonce: edbziT
+.. section: IDLE
+
+Idle editor default font. Switch from Courier to platform-sensitive
+TkFixedFont.  This should not affect current customized font selections.  If
+there is a problem, edit $HOME/.idlerc/config-main.cfg and remove 'fontxxx'
+entries from [Editor Window].  Patch by Mark Roseman.
+
+..
+
+.. bpo: 21192
+.. date: 9603
+.. nonce: CdbipH
+.. section: IDLE
+
+Idle editor. When a file is run, put its name in the restart bar. Do not
+print false prompts. Original patch by Adnan Umer.
+
+..
+
+.. bpo: 13884
+.. date: 9602
+.. nonce: vVcO1E
+.. section: IDLE
+
+Idle menus. Remove tearoff lines. Patch by Roger Serwy.
+
+..
+
+.. bpo: 15809
+.. date: 9601
+.. nonce: mfawdr
+.. section: IDLE
+
+IDLE shell now uses locale encoding instead of Latin1 for decoding unicode
+literals.
+
+..
+
+.. bpo: 24952
+.. date: 9600
+.. nonce: aJv9x1
+.. section: Documentation
+
+Clarify the default size argument of stack_size() in the "threading" and
+"thread" modules. Patch from Mattip.
+
+..
+
+.. bpo: 20769
+.. date: 9599
+.. nonce: ZUc9z9
+.. section: Documentation
+
+Improve reload() docs. Patch by Dorian Pula.
+
+..
+
+.. bpo: 23589
+.. date: 9598
+.. nonce: rjU421
+.. section: Documentation
+
+Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
+
+..
+
+.. bpo: 22155
+.. date: 9597
+.. nonce: 6Kq5Tv
+.. section: Documentation
+
+Add File Handlers subsection with createfilehandler to Tkinter doc.  Remove
+obsolete example from FAQ.  Patch by Martin Panter.
+
+..
+
+.. bpo: 24751
+.. date: 9596
+.. nonce: pL2pbj
+.. section: Tests
+
+When running regrtest with the ``-w`` command line option, a test run is no
+longer marked as a failure if all tests succeed when re-run.
+
+..
+
+.. bpo: 0
+.. date: 9595
+.. nonce: yeHJKJ
+.. section: Tests
+
+PCbuild\rt.bat now accepts an unlimited number of arguments to pass along to
+regrtest.py.  Previously there was a limit of 9.
+
+..
+
+.. bpo: 24915
+.. date: 9594
+.. nonce: N9MrQY
+.. section: Build
+
+When doing a PGO build, the test suite is now used instead of pybench; Clang
+support was also added as part off this work. Initial patch by Alecsandru
+Patrascu of Intel.
+
+..
+
+.. bpo: 24986
+.. date: 9593
+.. nonce: 1WyXeU
+.. section: Build
+
+It is now possible to build Python on Windows without errors when external
+libraries are not available.
+
+..
+
+.. bpo: 24508
+.. date: 9592
+.. nonce: m8-La8
+.. section: Build
+
+Backported the MSBuild project files from Python 3.5.  The backported files
+replace the old project files in PCbuild; the old files moved to PC/VS9.0
+and remain supported.
+
+..
+
+.. bpo: 24603
+.. date: 9591
+.. nonce: PyHyF5
+.. section: Build
+
+Update Windows builds and OS X 10.5 installer to use OpenSSL 1.0.2d.
+
+..
+
+.. bpo: 25022
+.. date: 9590
+.. nonce: vAt_zr
+.. section: Windows
+
+Removed very outdated PC/example_nt/ directory.

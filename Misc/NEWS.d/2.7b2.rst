@@ -1,0 +1,666 @@
+.. bpo: 0
+.. date: 8039
+.. nonce: 8aqNKP
+.. release date: 2010-05-08
+.. section: Core and Builtins
+
+Run Clang 2.7's static analyzer for ``Objects/`` and ``Python/``.
+
+..
+
+.. bpo: 1533
+.. date: 8038
+.. nonce: 6FLjC9
+.. section: Core and Builtins
+
+Fix inconsistency in range function argument processing: any non-float non-
+integer argument is now converted to an integer (if possible) using its
+__int__ method.  Previously, only small arguments were treated this way;
+larger arguments (those whose __int__ was outside the range of a C long)
+would produce a TypeError.
+
+..
+
+.. bpo: 8202
+.. date: 8037
+.. nonce: UvqmQ2
+.. section: Core and Builtins
+
+``sys.argv[0]`` is now set to '-m' instead of '-c' when searching for the
+module file to be executed with the -m command line option.
+
+..
+
+.. bpo: 7319
+.. date: 8036
+.. nonce: Ry0QuX
+.. section: Core and Builtins
+
+When -Q is used, do not silence DeprecationWarning.
+
+..
+
+.. bpo: 7332
+.. date: 8035
+.. nonce: mCUzwz
+.. section: Core and Builtins
+
+Remove the 16KB stack-based buffer in ``PyMarshal_ReadLastObjectFromFile``,
+which doesn't bring any noticeable benefit compared to the dynamic memory
+allocation fallback.  Patch by Charles-François Natali.
+
+..
+
+.. bpo: 8417
+.. date: 8034
+.. nonce: qcRfh8
+.. section: Core and Builtins
+
+Raise an OverflowError when an integer larger than sys.maxsize is passed to
+bytearray.
+
+..
+
+.. bpo: 7072
+.. date: 8033
+.. nonce: YGHQG7
+.. section: Core and Builtins
+
+``isspace(0xa0)`` is true on Mac OS X.
+
+..
+
+.. bpo: 8404
+.. date: 8032
+.. nonce: 0krGPF
+.. section: Core and Builtins
+
+Fix set operations on dictionary views.
+
+..
+
+.. bpo: 8084
+.. date: 8031
+.. nonce: uiAFoS
+.. section: Core and Builtins
+
+PEP 370 now conforms to system conventions for framework builds on MacOS X.
+That is, ``python setup.py install --user`` will install into
+``~/Library/Python/2.7`` instead of ``~/.local``.
+
+..
+
+.. bpo: 8681
+.. date: 8030
+.. nonce: bnD2Mi
+.. section: Library
+
+Make the zlib module's error messages more informative when the zlib itself
+doesn't give any detailed explanation.
+
+..
+
+.. bpo: 8571
+.. date: 8029
+.. nonce: BGxcud
+.. section: Library
+
+Fix an internal error when compressing or decompressing a chunk larger than
+1GB with the zlib module's compressor and decompressor objects.
+
+..
+
+.. bpo: 8573
+.. date: 8028
+.. nonce: PZTYKm
+.. section: Library
+
+asyncore ``_strerror()`` function might throw ValueError.
+
+..
+
+.. bpo: 8483
+.. date: 8027
+.. nonce: gWRwCr
+.. section: Library
+
+asyncore.dispatcher's __getattr__ method produced confusing error messages
+when accessing undefined class attributes because of the cheap inheritance
+with the underlying socket object.  The cheap inheritance has been
+deprecated.
+
+..
+
+.. bpo: 4265
+.. date: 8026
+.. nonce: gtcR-h
+.. section: Library
+
+``shutil.copyfile()`` was leaking file descriptors when disk fills.  Patch
+by Tres Seaver.
+
+..
+
+.. bpo: 7755
+.. date: 8025
+.. nonce: k5FaAX
+.. section: Library
+
+Use an unencumbered audio file for tests.
+
+..
+
+.. bpo: 8621
+.. date: 8024
+.. nonce: 64sJJn
+.. section: Library
+
+``uuid.uuid4()`` returned the same sequence of values in the parent and any
+children created using ``os.fork`` on Mac OS X 10.6.
+
+..
+
+.. bpo: 8313
+.. date: 8023
+.. nonce: lE868K
+.. section: Library
+
+``traceback.format_exception_only()`` encodes unicode message to ASCII with
+backslashreplace error handler if ``str(value)`` failed.
+
+..
+
+.. bpo: 8567
+.. date: 8022
+.. nonce: agGfsd
+.. section: Library
+
+Fix precedence of signals in Decimal module: when a Decimal operation raises
+multiple signals and more than one of those signals is trapped, the
+specification determines the order in which the signals should be handled.
+In many cases this order wasn't being followed, leading to the wrong Python
+exception being raised.
+
+..
+
+.. bpo: 7865
+.. date: 8021
+.. nonce: YF-RSw
+.. section: Library
+
+The close() method of :mod:`io` objects should not swallow exceptions raised
+by the implicit flush().  Also ensure that calling close() several times is
+supported.  Patch by Pascal Chambon.
+
+..
+
+.. bpo: 8576
+.. date: 8020
+.. nonce: P-vn7s
+.. section: Library
+
+logging updated to remove usage of find_unused_port().
+
+..
+
+.. bpo: 4687
+.. date: 8019
+.. nonce: WuWPAI
+.. section: Library
+
+Fix accuracy of garbage collection runtimes displayed with gc.DEBUG_STATS.
+
+..
+
+.. bpo: 8354
+.. date: 8018
+.. nonce: ihPpD8
+.. section: Library
+
+The siginterrupt setting is now preserved for all signals, not just SIGCHLD.
+
+..
+
+.. bpo: 7192
+.. date: 8017
+.. nonce: crfmVq
+.. section: Library
+
+``webbrowser.get("firefox")`` now works on Mac OS X, as does
+``webbrowser.get("safari")``.
+
+..
+
+.. bpo: 8577
+.. date: 8016
+.. nonce: aNmUf8
+.. section: Library
+
+``distutils.sysconfig.get_python_inc()`` now makes a difference between the
+build dir and the source dir when looking for "python.h" or "Include".
+
+..
+
+.. bpo: 8464
+.. date: 8015
+.. nonce: dckIPz
+.. section: Library
+
+tarfile no longer creates files with execute permissions set when mode="w|"
+is used.
+
+..
+
+.. bpo: 7834
+.. date: 8014
+.. nonce: 6FWkzA
+.. section: Library
+
+Fix connect() of Bluetooth L2CAP sockets with recent versions of the Linux
+kernel.  Patch by Yaniv Aknin.
+
+..
+
+.. bpo: 6312
+.. date: 8013
+.. nonce: ZgHCwc
+.. section: Library
+
+Fix http HEAD request when the transfer encoding is chunked.  It should
+correctly return an empty response now.
+
+..
+
+.. bpo: 7490
+.. date: 8012
+.. nonce: hT8uzG
+.. section: Library
+
+To facilitate sharing of doctests between 2.x and 3.x test suites, the
+``IGNORE_EXCEPTION_DETAIL`` directive now also ignores the module location
+of the raised exception.  Based on initial patch by Lennart Regebro.
+
+..
+
+.. bpo: 8086
+.. date: 8011
+.. nonce: Nn01DF
+.. section: Library
+
+In :func:`ssl.DER_cert_to_PEM_cert()`, fix missing newline before the
+certificate footer.  Patch by Kyle VanderBeek.
+
+..
+
+.. bpo: 8546
+.. date: 8010
+.. nonce: ZJV_Z2
+.. section: Library
+
+Reject None given as the buffering argument to ``_pyio.open()``.
+
+..
+
+.. bpo: 8549
+.. date: 8009
+.. nonce: 9m7vbm
+.. section: Library
+
+Fix compiling the _ssl extension under AIX.  Patch by Sridhar Ratnakumar.
+
+..
+
+.. bpo: 6656
+.. date: 8008
+.. nonce: oU6_NU
+.. section: Library
+
+Fix locale.format_string to handle escaped percents and mappings.
+
+..
+
+.. bpo: 2302
+.. date: 8007
+.. nonce: KqJUA8
+.. section: Library
+
+Fix a race condition in SocketServer.BaseServer.shutdown, where the method
+could block indefinitely if called just before the event loop started
+running.  This also fixes the occasional freezes witnessed in
+test_httpservers.
+
+..
+
+.. bpo: 5103
+.. date: 8006
+.. nonce: mBe0-l
+.. section: Library
+
+SSL handshake would ignore the socket timeout and block indefinitely if the
+other end didn't respond.
+
+..
+
+.. bpo: 0
+.. date: 8005
+.. nonce: XlQAbN
+.. section: Library
+
+The do_handshake() method of SSL objects now adjusts the blocking mode of
+the SSL structure if necessary (as other methods already do).
+
+..
+
+.. bpo: 7507
+.. date: 8004
+.. nonce: PPZWiA
+.. section: Library
+
+Quote "!" in pipes.quote(); it is special to some shells.
+
+..
+
+.. bpo: 5238
+.. date: 8003
+.. nonce: HjIVqr
+.. section: Library
+
+Calling makefile() on an SSL object would prevent the underlying socket from
+being closed until all objects get truely destroyed.
+
+..
+
+.. bpo: 7943
+.. date: 8002
+.. nonce: 0wcepT
+.. section: Library
+
+Fix circular reference created when instantiating an SSL socket. Initial
+patch by Péter Szabó.
+
+..
+
+.. bpo: 8451
+.. date: 8001
+.. nonce: vWZKfu
+.. section: Library
+
+Syslog module now uses basename(sys.argv[0]) instead of the string "python"
+as the *ident*.  openlog() arguments are all optional and keywords.
+
+..
+
+.. bpo: 8108
+.. date: 8000
+.. nonce: gw3ghC
+.. section: Library
+
+Fix the unwrap() method of SSL objects when the socket has a non-infinite
+timeout.  Also make that method friendlier with applications wanting to
+continue using the socket in clear-text mode, by disabling OpenSSL's
+internal readahead.  Thanks to Darryl Miles for guidance.
+
+..
+
+.. bpo: 8484
+.. date: 7999
+.. nonce: b9zFsh
+.. section: Library
+
+Load all ciphers and digest algorithms when initializing the _ssl extension,
+such that verification of some SSL certificates doesn't fail because of an
+"unknown algorithm".
+
+..
+
+.. bpo: 8437
+.. date: 7998
+.. nonce: iGGyX3
+.. section: Library
+
+Fix test_gdb failures, patch written by Dave Malcolm
+
+..
+
+.. bpo: 4814
+.. date: 7997
+.. nonce: kc5m59
+.. section: Library
+
+The timeout parameter is now applied also for connections resulting from
+PORT/EPRT commands.
+
+..
+
+.. bpo: 8463
+.. date: 7996
+.. nonce: slxxrW
+.. section: Library
+
+Add missing reference to bztar in shutil's documentation.
+
+..
+
+.. bpo: 8438
+.. date: 7995
+.. nonce: TUjaAU
+.. section: Library
+
+Remove reference to the missing "surrogateescape" encoding error handler
+from the new IO library.
+
+..
+
+.. bpo: 3817
+.. date: 7994
+.. nonce: 6zjb85
+.. section: Library
+
+ftplib.FTP.abort() method now considers 225 a valid response code as stated
+in RFC-959 at chapter 5.4.
+
+..
+
+.. bpo: 8279
+.. date: 7993
+.. nonce: MubiOg
+.. section: Library
+
+Fix test_gdb failures.
+
+..
+
+.. bpo: 8322
+.. date: 7992
+.. nonce: XVocgc
+.. section: Library
+
+Add a *ciphers* argument to SSL sockets, so as to change the available
+cipher list.  Helps fix test_ssl with OpenSSL 1.0.0.
+
+..
+
+.. bpo: 2987
+.. date: 7991
+.. nonce: FbxT-M
+.. section: Library
+
+RFC 2732 support for urlparse (IPv6 addresses).  Patch by Tony Locke and
+Hans Ulrich Niedermann.
+
+..
+
+.. bpo: 7585
+.. date: 7990
+.. nonce: stGadz
+.. section: Library
+
+difflib context and unified diffs now place a tab between filename and date,
+conforming to the 'standards' they were originally designed to follow.  This
+improves compatibility with patch tools.
+
+..
+
+.. bpo: 7472
+.. date: 7989
+.. nonce: IghBPp
+.. section: Library
+
+Fixed typo in email.encoders module; messages using ISO-2022 character sets
+will now consistently use a Content-Transfer-Encoding of 7bit rather than
+sometimes being marked as 8bit.
+
+..
+
+.. bpo: 8330
+.. date: 7988
+.. nonce: LPDqBG
+.. section: Library
+
+Fix expected output in test_gdb.
+
+..
+
+.. bpo: 8374
+.. date: 7987
+.. nonce: bWoGdD
+.. section: Library
+
+Update the internal alias table in the :mod:`locale` module to cover recent
+locale changes and additions.
+
+..
+
+.. bpo: 8644
+.. date: 7986
+.. nonce: JWO_61
+.. section: Library
+
+Improved accuracy of ``timedelta.total_seconds()``.
+
+..
+
+.. bpo: 0
+.. date: 7985
+.. nonce: LYHXVb
+.. section: Library
+
+Use Clang 2.7's static analyzer to find places to clean up some code.
+
+..
+
+.. bpo: 0
+.. date: 7984
+.. nonce: jbiDIM
+.. section: Library
+
+Build the ossaudio extension on GNU/kFreeBSD.
+
+..
+
+.. bpo: 0
+.. date: 7983
+.. nonce: NCKMWo
+.. section: Library
+
+On Windows, ctypes no longer checks the stack before and after calling a
+foreign function.  This allows using the unmodified libffi library.
+
+..
+
+.. bpo: 8672
+.. date: 7982
+.. nonce: hs9Ync
+.. section: Tests
+
+Add a zlib test ensuring that an incomplete stream can be handled by a
+decompressor object without errors (it returns incomplete uncompressed
+data).
+
+..
+
+.. bpo: 8490
+.. date: 7981
+.. nonce: yG1Xr0
+.. section: Tests
+
+asyncore now has a more solid test suite which actually tests its API.
+
+..
+
+.. bpo: 8576
+.. date: 7980
+.. nonce: Up6MTB
+.. section: Tests
+
+Remove use of find_unused_port() in test_smtplib and test_multiprocessing.
+Patch by Paul Moore.
+
+..
+
+.. bpo: 7449
+.. date: 7979
+.. nonce: as77J5
+.. section: Tests
+
+Fix many tests to support Python compiled without thread support. Patches
+written by Jerry Seutter.
+
+..
+
+.. bpo: 8108
+.. date: 7978
+.. nonce: -PlMAS
+.. section: Tests
+
+test_ftplib's non-blocking SSL server now has proper handling of SSL
+shutdowns.
+
+..
+
+.. bpo: 8625
+.. date: 7977
+.. nonce: E4dSUW
+.. section: Build
+
+Turn off optimization in ``--with-pydebug`` builds with gcc. (Optimization
+was unintentionally turned on in gcc --with-pydebug builds in 2.7 beta1 as a
+result of the issue #1628484 fix, combined with autoconf's strange choice of
+default CFLAGS produced by AC_PROG_CC for gcc.)
+
+..
+
+.. bpo: 8509
+.. date: 7976
+.. nonce: N8vHHZ
+.. section: Build
+
+Fix quoting in help strings and code snippets in configure.in.
+
+..
+
+.. bpo: 3646
+.. date: 7975
+.. nonce: UyNDbm
+.. section: Build
+
+It is now easily possible to install a Python framework into your home
+directory on Mac OS X, see Mac/README for more information.
+
+..
+
+.. bpo: 8510
+.. date: 7974
+.. nonce: 8MiUfR
+.. section: Build
+
+Update to autoconf 2.65.
+
+..
+
+.. bpo: 0
+.. date: 7973
+.. nonce: 18HloG
+.. section: Windows
+
+Update the Vim syntax highlight file.

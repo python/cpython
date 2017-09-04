@@ -1,0 +1,102 @@
+.. bpo: 3967
+.. date: 7179
+.. nonce: q7G-yg
+.. release date: 01-Oct-2008
+.. section: Core and Builtins
+
+Fixed a crash in the count() and find() methods of string-like objects, when
+the "start" parameter is a huge value.
+
+..
+
+.. bpo: 3965
+.. date: 7178
+.. nonce: oD6PeM
+.. section: Core and Builtins
+
+Fixed a crash on Windows when open() is given an invalid filename or mode,
+and the filename is a unicode string.
+
+..
+
+.. bpo: 3951
+.. date: 7177
+.. nonce: WMRS35
+.. section: Core and Builtins
+
+Py_USING_MEMORY_DEBUGGER should not be enabled by default.
+
+..
+
+.. bpo: 3965
+.. date: 7176
+.. nonce: 67WKTr
+.. section: Library
+
+Allow repeated calls to turtle.Screen, by making it a true singleton object.
+
+..
+
+.. bpo: 3895
+.. date: 7175
+.. nonce: 7zAG5K
+.. section: Library
+
+It was possible to crash the interpreter when an external timer was used
+with cProfile that returned an object that could not be converted into a
+float.
+
+..
+
+.. bpo: 3950
+.. date: 7174
+.. nonce: zZXLaL
+.. section: Library
+
+Made turtle respect scale factors.
+
+..
+
+.. bpo: 3547
+.. date: 7173
+.. nonce: MEAOsx
+.. section: Library
+
+Fixed ctypes structures bitfields of varying integer sizes.
+
+..
+
+.. bpo: 3879
+.. date: 7172
+.. nonce: F8u7Is
+.. section: Library
+
+A regression in urllib.getproxies_environment was fixed.
+
+..
+
+.. bpo: 3863
+.. date: 7171
+.. nonce: 5nuS5x
+.. section: Library
+
+Disabled a unit test of fork being called from a thread when running on
+platforms known to exhibit OS bugs when attempting that.
+
+..
+
+.. bpo: 3989
+.. date: 7170
+.. nonce: RW3kS6
+.. section: Build
+
+Package the 2to3 script (as 2to3.py) in the Windows installer.
+
+..
+
+.. bpo: 3887
+.. date: 7169
+.. nonce: qYeYwa
+.. section: Build
+
+Package x64 version of CRT for AMD64 Windows binaries.

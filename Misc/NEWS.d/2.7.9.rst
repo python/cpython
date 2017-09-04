@@ -1,0 +1,65 @@
+.. bpo: 22959
+.. date: 9494
+.. nonce: FioVGu
+.. release date: 2014-12-10
+.. section: Library
+
+Remove the *check_hostname* parameter of httplib.HTTPSConnection. The
+*context* parameter should be used instead.
+
+..
+
+.. bpo: 16043
+.. date: 9493
+.. nonce: TGIC7t
+.. section: Library
+
+Add a default limit for the amount of data xmlrpclib.gzip_decode will
+return. This resolves CVE-2013-1753.
+
+..
+
+.. bpo: 16042
+.. date: 9492
+.. nonce: 7I3FPy
+.. section: Library
+
+CVE-2013-1752: smtplib: Limit amount of data read by limiting the call to
+readline().  Original patch by Christian Heimes.
+
+..
+
+.. bpo: 16041
+.. date: 9491
+.. nonce: TyhfVi
+.. section: Library
+
+In poplib, limit maximum line length read from the server to prevent
+CVE-2013-1752.
+
+..
+
+.. bpo: 22960
+.. date: 9490
+.. nonce: J-KiZ3
+.. section: Library
+
+Add a context argument to xmlrpclib.ServerProxy.
+
+..
+
+.. bpo: 22935
+.. date: 9489
+.. nonce: -vY3lc
+.. section: Build
+
+Allow the ssl module to be compiled if openssl doesn't support SSL 3.
+
+..
+
+.. bpo: 17128
+.. date: 9488
+.. nonce: JMdOBP
+.. section: Build
+
+Use private version of OpenSSL for 2.7.9 OS X 10.5+ installer.

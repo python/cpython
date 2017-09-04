@@ -1,0 +1,187 @@
+.. bpo: 2236
+.. date: 8293
+.. nonce: 1Mj4VJ
+.. release date: 2010-11-27
+.. section: Library
+
+distutils' mkpath ignored the mode parameter.
+
+..
+
+.. bpo: 0
+.. date: 8292
+.. nonce: NFeWRc
+.. section: Library
+
+Fix typo in one sdist option (medata-check).
+
+..
+
+.. bpo: 10323
+.. date: 8291
+.. nonce: rFKI3X
+.. section: Library
+
+itertools.islice() now consumes the minimum number of inputs before
+stopping.  Formerly, the final state of the underlying iterator was
+undefined.
+
+..
+
+.. bpo: 10565
+.. date: 8290
+.. nonce: g3L9da
+.. section: Library
+
+The collections.Iterator ABC now checks for both ``__iter__`` and ``next``.
+
+..
+
+.. bpo: 10092
+.. date: 8289
+.. nonce: -B7ynY
+.. section: Library
+
+Properly reset locale in calendar.Locale*Calendar classes.
+
+..
+
+.. bpo: 10459
+.. date: 8288
+.. nonce: G0RFoD
+.. section: Library
+
+Update CJK character names to Unicode 5.2.
+
+..
+
+.. bpo: 6098
+.. date: 8287
+.. nonce: CKisab
+.. section: Library
+
+Don't claim DOM level 3 conformance in minidom.
+
+..
+
+.. bpo: 10561
+.. date: 8286
+.. nonce: gxs6bQ
+.. section: Library
+
+In pdb, clear the breakpoints by the breakpoint number.
+
+..
+
+.. bpo: 5762
+.. date: 8285
+.. nonce: ADvGzb
+.. section: Library
+
+Fix AttributeError raised by ``xml.dom.minidom`` when an empty XML namespace
+attribute is encountered.
+
+..
+
+.. bpo: 1710703
+.. date: 8284
+.. nonce: NAAh-d
+.. section: Library
+
+Write structures for an empty ZIP archive when a ZipFile is created in modes
+'a' or 'w' and then closed without adding any files. Raise BadZipfile
+(rather than IOError) when opening small non-ZIP files.
+
+..
+
+.. bpo: 4493
+.. date: 8283
+.. nonce: idMjMG
+.. section: Library
+
+urllib2 adds '/' in front of path components which does not start with '/.
+Common behavior exhibited by browsers and other clients.
+
+..
+
+.. bpo: 10407
+.. date: 8282
+.. nonce: f8LrF_
+.. section: Library
+
+Fix one NameError in distutils.
+
+..
+
+.. bpo: 10198
+.. date: 8281
+.. nonce: 7ruhdY
+.. section: Library
+
+fix duplicate header written to wave files when writeframes() is called
+without data.
+
+..
+
+.. bpo: 10467
+.. date: 8280
+.. nonce: uNWGiY
+.. section: Library
+
+Fix BytesIO.readinto() after seeking into a position after the end of the
+file.
+
+..
+
+.. bpo: 5111
+.. date: 8279
+.. nonce: XegYFR
+.. section: Library
+
+IPv6 Host in the Header is wrapped inside [ ]. Patch by Chandru.
+
+..
+
+.. bpo: 6378
+.. date: 8278
+.. nonce: ovcYOt
+.. section: IDLE
+
+idle.bat now runs with the appropriate Python version rather than the system
+default. Patch by Sridhar Ratnakumar.
+
+..
+
+.. bpo: 0
+.. date: 8277
+.. nonce: 64ssfS
+.. section: Build
+
+Backport r83399 to allow test_distutils to pass on installed versions.
+
+..
+
+.. bpo: 1303434
+.. date: 8276
+.. nonce: AVO6EG
+.. section: Build
+
+Generate ZIP file containing all PDBs.
+
+..
+
+.. bpo: 9424
+.. date: 8275
+.. nonce: BO5Jfa
+.. section: Tests
+
+Replace deprecated assert* methods in the Python test suite.
+
+..
+
+.. bpo: 10299
+.. date: 8274
+.. nonce: ERtbPa
+.. section: Documentation
+
+List the built-in functions in a table in functions.rst.

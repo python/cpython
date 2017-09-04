@@ -1,0 +1,4 @@
+Fixed crashes in IOBase methods next() and readlines() when readline() or
+next() respectively return non-sizeable object. Fixed possible other errors
+caused by not checking results of PyObject_Size(), PySequence_Size(), or
+PyMapping_Size().

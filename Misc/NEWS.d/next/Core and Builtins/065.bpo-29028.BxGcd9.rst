@@ -1,0 +1,2 @@
+Fixed possible use-after-free bugs in the subscription of the buffer object
+with custom index object.

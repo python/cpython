@@ -1,0 +1,39 @@
+.. bpo: 0
+.. date: 7168
+.. nonce: 0ihWh2
+.. release date: 17-Sep-2008
+.. section: Library
+
+Security Issue #2: imageop did not validate arguments correctly and could
+segfault as a result.
+
+..
+
+.. bpo: 3886
+.. date: 7167
+.. nonce: l6kzFl
+.. section: Library
+
+Possible integer overflows in the _hashopenssl module were closed.
+
+..
+
+.. bpo: 3850
+.. date: 7166
+.. nonce: AJBbYw
+.. section: Tools/Demos
+
+recursion tests in Tools/scripts/find_recursion_limit.py can raise
+AttributeError instead of RuntimeError, depending in which C API call
+exactly the recursion limit is exceeded. Consequently, both exception types
+are caught and silenced.
+
+..
+
+.. bpo: 3617
+.. date: 7165
+.. nonce: aR1Dim
+.. section: Build
+
+Include a licensing statement regarding the Microsoft C runtime in the
+Windows installer.

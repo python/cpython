@@ -1,0 +1,1 @@
+Fixed race condition in HTMLParser.unescape().
