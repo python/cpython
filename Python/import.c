@@ -344,24 +344,6 @@ _PyImport_GetModuleWithError(PyObject *name)
 }
 
 PyObject *
-_PyImport_GetModuleString(const char *name)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_Check(modules)) {
-        return PyDict_GetItemString(modules, name);
-    }
-
-    PyObject *mod = PyMapping_GetItemString(modules, name);
-    // For backward-comaptibility we copy the behavior
-    // of PyDict_GetItemString().
-    if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
-    Py_XDECREF(mod);
-    return mod;
-}
-
-PyObject *
 _PyImport_GetModuleId(struct _Py_Identifier *nameid)
 {
     PyObject *name = _PyUnicode_FromId(nameid); /* borrowed */
@@ -1790,9 +1772,10 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
 PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
+    _Py_IDENTIFIER(imp);
     _Py_IDENTIFIER(reload);
     PyObject *reloaded_module = NULL;
-    PyObject *imp = _PyImport_GetModuleString("imp");
+    PyObject *imp = _PyImport_GetModuleId(&PyId_imp);
     if (imp == NULL) {
         imp = PyImport_ImportModule("imp");
         if (imp == NULL) {
