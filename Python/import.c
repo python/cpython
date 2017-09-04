@@ -544,14 +544,6 @@ PyImport_GetMagicTag(void)
 
 int
 _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
-                               PyObject *filename)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    return _PyImport_FixupExtensionObjectEx(mod, name, filename, modules);
-}
-
-int
-_PyImport_FixupExtensionObjectEx(PyObject *mod, PyObject *name,
                                  PyObject *filename, PyObject *modules)
 {
     PyObject *dict, *key;
@@ -609,7 +601,7 @@ _PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
     nameobj = PyUnicode_InternFromString(name);
     if (nameobj == NULL)
         return -1;
-    res = _PyImport_FixupExtensionObjectEx(mod, nameobj, nameobj, modules);
+    res = _PyImport_FixupExtensionObject(mod, nameobj, nameobj, modules);
     Py_DECREF(nameobj);
     return res;
 }
@@ -1096,6 +1088,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         return NULL;
     }
 
+    PyObject *modules = NULL;
     for (p = PyImport_Inittab; p->name != NULL; p++) {
         PyModuleDef *def;
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
@@ -1121,7 +1114,11 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
                     return NULL;
                 }
                 def->m_base.m_init = p->initfunc;
-                if (_PyImport_FixupExtensionObject(mod, name, name) < 0) {
+                if (modules == NULL) {
+                    modules = PyImport_GetModuleDict();
+                }
+                if (_PyImport_FixupExtensionObject(mod, name, name,
+                                                   modules) < 0) {
                     Py_DECREF(name);
                     return NULL;
                 }
