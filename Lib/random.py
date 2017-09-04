@@ -388,7 +388,7 @@ class Random(_random.Random):
             u = 1.0 - u
             c = 1.0 - c
             low, high = high, low
-        return low + (high - low) * (u * c) ** 0.5
+        return low + (high - low) * _sqrt(u * c)
 
 ## -------------------- normal distribution --------------------
 
