@@ -756,8 +756,7 @@ attributes:
 * *idpattern* -- This is the regular expression describing the pattern for
   non-braced placeholders.  The default value is the regular expression
   ``[_a-z][_a-z0-9]*``.  If this is given and *braceidpattern* is ``None``
-  this pattern will also apply to braced placeholders (the braces will be
-  added automatically).
+  this pattern will also apply to braced placeholders.
 
   .. versionchanged:: 3.7
      *braceidpattern* can be used to define separate patterns used inside and
