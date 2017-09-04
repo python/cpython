@@ -206,7 +206,9 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_GetModule(PyObject *name)
 
-   Return the already imported module with the given name.
+   Return the already imported module with the given name.  If the
+   module has not been imported yet then returns NULL but does not set
+   an error.  Returns NULL and sets an error if the lookup failed.
 
    .. versionadded:: 3.7
 
