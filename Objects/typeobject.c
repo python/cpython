@@ -3013,6 +3013,9 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         res = _PyDict_GetItem_KnownHash(dict, name, hash);
         if (res != NULL)
             break;
+        /* Ignore any errors during lookup - unlikely to happen,
+           but not impossible. */
+        PyErr_Clear();
     }
     Py_DECREF(mro);
 
