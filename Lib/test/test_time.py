@@ -2,6 +2,12 @@ from test import test_support
 import time
 import unittest
 import sys
+import sysconfig
+
+
+# Max year is only limited by the size of C int.
+SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
+TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
 
 
 class TimeTestCase(unittest.TestCase):
@@ -123,15 +129,15 @@ class TimeTestCase(unittest.TestCase):
         time.asctime(time.gmtime(self.t))
         self.assertRaises(TypeError, time.asctime, 0)
         self.assertRaises(TypeError, time.asctime, ())
-        # XXX: Posix compiant asctime should refuse to convert
-        # year > 9999, but Linux implementation does not.
-        # self.assertRaises(ValueError, time.asctime,
-        #                  (12345, 1, 0, 0, 0, 0, 0, 0, 0))
-        # XXX: For now, just make sure we don't have a crash:
-        try:
-            time.asctime((12345, 1, 1, 0, 0, 0, 0, 1, 0))
-        except ValueError:
-            pass
+
+        # Max year is only limited by the size of C int.
+        asc = time.asctime((TIME_MAXYEAR, 6, 1) + (0,) * 6)
+        self.assertEqual(asc[-len(str(TIME_MAXYEAR)):], str(TIME_MAXYEAR))
+        self.assertRaises(OverflowError, time.asctime,
+                          (TIME_MAXYEAR + 1,) + (0,) * 8)
+        self.assertRaises(TypeError, time.asctime, 0)
+        self.assertRaises(TypeError, time.asctime, ())
+        self.assertRaises(TypeError, time.asctime, (0,) * 10)
 
     @unittest.skipIf(not hasattr(time, "tzset"),
         "time module has no attribute tzset")
