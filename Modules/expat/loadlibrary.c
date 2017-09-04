@@ -6,8 +6,10 @@
  *                             \___|\___/|_| \_\_____|
  *
  * Copyright (C) 2016 - 2017, Steve Holme, <steve_holme@hotmail.com>.
+ * Copyright (C) 2017, Expat development team
  *
  * All rights reserved.
+ * Licensed under the MIT license:
  *
  * Permission to  use, copy,  modify, and distribute  this software  for any
  * purpose with  or without fee is  hereby granted, provided that  the above

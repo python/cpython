@@ -1,0 +1,3 @@
+expat: Update libexpat from 2.2.3 to 2.2.4. Fix copying of partial
+characters for UTF-8 input (libexpat bug 115):
+https://github.com/libexpat/libexpat/issues/115
