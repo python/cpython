@@ -3,27 +3,26 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(dict_fromkeys__doc__,
-"fromkeys($type, /, iterable, value=None)\n"
+"fromkeys($type, iterable, value=None, /)\n"
 "--\n"
 "\n"
 "Create a new dictionary with keys from iterable and values set to value.");
 
 #define DICT_FROMKEYS_METHODDEF    \
-    {"fromkeys", (PyCFunction)dict_fromkeys, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, dict_fromkeys__doc__},
+    {"fromkeys", (PyCFunction)dict_fromkeys, METH_FASTCALL|METH_CLASS, dict_fromkeys__doc__},
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
 
 static PyObject *
-dict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"iterable", "value", NULL};
-    static _PyArg_Parser _parser = {"O|O:fromkeys", _keywords, 0};
     PyObject *iterable;
     PyObject *value = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+    if (!_PyArg_UnpackStack(args, nargs, "fromkeys",
+        1, 2,
         &iterable, &value)) {
         goto exit;
     }
@@ -100,6 +99,37 @@ dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs)
         goto exit;
     }
     return_value = dict_setdefault_impl(self, key, default_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(OrderedDict_fromkeys__doc__,
+"fromkeys($type, /, iterable, value=None)\n"
+"--\n"
+"\n"
+"Create a new ordered dictionary with keys from iterable and values set to value.");
+
+#define ORDEREDDICT_FROMKEYS_METHODDEF    \
+    {"fromkeys", (PyCFunction)OrderedDict_fromkeys, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, OrderedDict_fromkeys__doc__},
+
+static PyObject *
+OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value);
+
+static PyObject *
+OrderedDict_fromkeys(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"iterable", "value", NULL};
+    static _PyArg_Parser _parser = {"O|O:fromkeys", _keywords, 0};
+    PyObject *seq;
+    PyObject *value = Py_None;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &seq, &value)) {
+        goto exit;
+    }
+    return_value = OrderedDict_fromkeys_impl(type, seq, value);
 
 exit:
     return return_value;
@@ -203,4 +233,4 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject **args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=99214b23a05f5c3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5169c4993a5a8bb input=a9049054013a1b77]*/

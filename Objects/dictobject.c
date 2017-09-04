@@ -2286,13 +2286,14 @@ dict_items(PyDictObject *mp)
 dict.fromkeys
     iterable: object
     value: object=None
+    /
 
 Create a new dictionary with keys from iterable and values set to value.
 [clinic start generated code]*/
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
-/*[clinic end generated code: output=8fb98e4b10384999 input=fa1ae88144844e5f]*/
+/*[clinic end generated code: output=8fb98e4b10384999 input=382ba4855d0f74c3]*/
 {
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
@@ -4672,6 +4673,7 @@ method            impl
 __reduce__        odict_reduce
 __sizeof__        odict_sizeof
 copy              odict_copy
+fromkeys          odict_fromkeys
 items             odictitems_new
 keys              odictkeys_new
 pop               odict_pop
@@ -4803,6 +4805,25 @@ odict_ne(PyObject *a, PyObject *b)
 PyDoc_STRVAR(odict_repr__doc__, "od.__repr__() <==> repr(od)");
 
 static PyObject * odict_repr(PyODictObject *self);  /* forward */
+
+/* fromkeys() */
+
+/*[clinic input]
+@classmethod
+OrderedDict.fromkeys
+
+    iterable as seq: object
+    value: object = None
+
+Create a new ordered dictionary with keys from iterable and values set to value.
+[clinic start generated code]*/
+
+static PyObject *
+OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value)
+/*[clinic end generated code: output=c10390d452d78d6d input=1a0476c229c597b3]*/
+{
+    return _PyDict_FromKeys((PyObject *)type, seq, value);
+}
 
 /* __sizeof__() */
 
@@ -5102,6 +5123,7 @@ static PyMethodDef odict_methods[] = {
      odict_ne__doc__},
     {"__repr__",        (PyCFunction)odict_repr,        METH_NOARGS,
      odict_repr__doc__},
+    ORDEREDDICT_FROMKEYS_METHODDEF
 
     /* overridden dict methods */
     {"__sizeof__",      (PyCFunction)odict_sizeof,      METH_NOARGS,
