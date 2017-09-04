@@ -336,7 +336,7 @@ PyObject *
 _PyImport_GetModule(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_Check(modules)) {
+    if (PyDict_CheckExact(modules)) {
         return PyDict_GetItem(modules, name);
     }
 
@@ -353,7 +353,7 @@ PyObject *
 _PyImport_GetModuleWithError(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_Check(modules)) {
+    if (PyDict_CheckExact(modules)) {
         return PyDict_GetItemWithError(modules, name);
     }
 
@@ -400,7 +400,7 @@ PyImport_GetModule(PyObject *name)
         return NULL;
     }
     Py_INCREF(modules);
-    if (PyDict_Check(modules)) {
+    if (PyDict_CheckExact(modules)) {
         m = PyDict_GetItemWithError(modules, name);  /* borrowed */
         Py_XINCREF(m);
     }
@@ -785,7 +785,7 @@ PyObject *
 _PyImport_AddModuleObject(PyObject *name, PyObject *modules)
 {
     PyObject *m;
-    if (PyDict_Check(modules)) {
+    if (PyDict_CheckExact(modules)) {
         m = PyDict_GetItemWithError(modules, name);
     }
     else {
