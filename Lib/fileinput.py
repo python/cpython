@@ -330,7 +330,7 @@ class FileInput:
         else:
             if self._inplace:
                 self._backupfilename = (
-                    self._filename + (self._backup or ".bak"))
+                    os.fspath(self._filename) + (self._backup or ".bak"))
                 try:
                     os.unlink(self._backupfilename)
                 except OSError:
