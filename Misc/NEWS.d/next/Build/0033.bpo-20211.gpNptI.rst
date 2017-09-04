@@ -1,0 +1,3 @@
+Do not add the directory for installing C header files and the directory for
+installing object code libraries to the cross compilation search paths.
+Original patch by Thomas Petazzoni.

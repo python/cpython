@@ -1,0 +1,2 @@
+Add new :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant. Patch by
+Nathaniel J. Smith.

@@ -1,0 +1,4 @@
+.. original section: Library
+
+Prevent environment variables injection in subprocess on Windows.  Prevent
+passing other environment variables and command arguments.

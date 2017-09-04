@@ -1,0 +1,1 @@
+Don't log exceptions if Task/Future "cancel()" method was called.

@@ -1,0 +1,3 @@
+unittest's assertAlmostEqual and assertNotAlmostEqual provide a better
+message in case of failure which includes the difference between left and
+right arguments.  (patch by Giampaolo Rodola')
