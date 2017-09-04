@@ -1,0 +1,1149 @@
+.. bpo: 3211
+.. date: 7017
+.. nonce: 53eouC
+.. release date: 18-June-2008
+.. section: Core and Builtins
+
+warnings.warn_explicit() did not guard against its 'registry' argument being
+anything other than a dict or None. Also fixed a bug in error handling when
+'message' and 'category' were both set to None, triggering a bus error.
+
+..
+
+.. bpo: 3100
+.. date: 7016
+.. nonce: FGUaxt
+.. section: Core and Builtins
+
+Corrected a crash on deallocation of a subclassed weakref which holds the
+last (strong) reference to its referent.
+
+..
+
+.. bpo: 0
+.. date: 7015
+.. nonce: habgq9
+.. section: Core and Builtins
+
+Add future_builtins.ascii().
+
+..
+
+.. bpo: 0
+.. date: 7014
+.. nonce: ZqCwWn
+.. section: Core and Builtins
+
+Several set methods now accept multiple arguments: update(), union(),
+intersection(), intersection_update(), difference(), and
+difference_update().
+
+..
+
+.. bpo: 2898
+.. date: 7013
+.. nonce: 3Al5vX
+.. section: Core and Builtins
+
+Added sys.getsizeof() to retrieve size of objects in bytes.
+
+..
+
+.. bpo: 0
+.. date: 7012
+.. nonce: 7NZKM7
+.. section: Core and Builtins
+
+New environment variable PYTHONIOENCODING.
+
+..
+
+.. bpo: 2488
+.. date: 7011
+.. nonce: SglN-p
+.. section: Core and Builtins
+
+Add sys.maxsize.
+
+..
+
+.. bpo: 2353
+.. date: 7010
+.. nonce: IYOwih
+.. section: Core and Builtins
+
+file.xreadlines() now emits a Py3k warning.
+
+..
+
+.. bpo: 2863
+.. date: 7009
+.. nonce: rpJxY7
+.. section: Core and Builtins
+
+generators now have a ``gen.__name__`` attribute that equals
+``gen.gi_code.co_name``, like ``func.__name___`` that equals
+``func.func_code.co_name``.  The repr() of a generator now also contains
+this name.
+
+..
+
+.. bpo: 2831
+.. date: 7008
+.. nonce: Clokao
+.. section: Core and Builtins
+
+enumerate() now has a ``start`` argument.
+
+..
+
+.. bpo: 2801
+.. date: 7007
+.. nonce: mKH_h9
+.. section: Core and Builtins
+
+fix bug in the float.is_integer method where a ValueError was sometimes
+incorrectly raised.
+
+..
+
+.. bpo: 2790
+.. date: 7006
+.. nonce: XESeko
+.. section: Core and Builtins
+
+sys.flags was not properly exposing its bytes_warning attribute.
+
+..
+
+.. bpo: 2196
+.. date: 7005
+.. nonce: Bzc5vC
+.. section: Core and Builtins
+
+hasattr() now lets exceptions which do not inherit Exception
+(KeyboardInterrupt, and SystemExit) propagate instead of ignoring them.
+
+..
+
+.. bpo: 0
+.. date: 7004
+.. nonce: PBmDwc
+.. section: Core and Builtins
+
+Added checks for integer overflows, contributed by Google. Some are only
+available if asserts are left in the code, in cases where they can't be
+triggered from Python code.
+
+..
+
+.. bpo: 1179
+.. date: 7003
+.. nonce: ZiG6Oq
+.. section: Library
+
+[CVE-2007-4965] Integer overflow in imageop module.
+
+..
+
+.. bpo: 3116
+.. date: 7002
+.. nonce: A_baFS
+.. section: Library
+
+marshal.dumps() had quadratic behavior for strings > 32Mb.
+
+..
+
+.. bpo: 2138
+.. date: 7001
+.. nonce: 1v8Wds
+.. section: Library
+
+Add factorial() to the math module.
+
+..
+
+.. bpo: 0
+.. date: 7000
+.. nonce: Zg08xh
+.. section: Library
+
+The heapq module does comparisons using LT instead of LE.  This makes its
+implementation match that used by list.sort().
+
+..
+
+.. bpo: 2819
+.. date: 6999
+.. nonce: 8rJOqA
+.. section: Library
+
+add full-precision summation function to math module, based on Hettinger's
+ASPN Python Cookbook recipe.
+
+..
+
+.. bpo: 2592
+.. date: 6998
+.. nonce: dyYM9F
+.. section: Library
+
+delegate nb_index and the floor/truediv slots in weakref.proxy.
+
+..
+
+.. bpo: 0
+.. date: 6997
+.. nonce: 9pq1AU
+.. section: Library
+
+Support os.O_ASYNC and fcntl.FASYNC if the constants exist on the platform.
+
+..
+
+.. bpo: 0
+.. date: 6996
+.. nonce: xpuGyu
+.. section: Library
+
+Support for Windows 9x has been removed from the winsound module.
+
+..
+
+.. bpo: 0
+.. date: 6995
+.. nonce: QqGmIr
+.. section: Library
+
+bsddb module updated to version 4.7.3.
+http://www.jcea.es/programacion/pybsddb.htm#bsddb3-4.7.3. This code should
+be compatible with Python 3.0.
+
+..
+
+.. bpo: 2858
+.. date: 6994
+.. nonce: klmpfU
+.. section: Library
+
+Fix potential memory corruption when bsddb.db.DBEnv.lock_get and other
+bsddb.db object constructors raised an exception.
+
+..
+
+.. bpo: 2669
+.. date: 6993
+.. nonce: ThHCIr
+.. section: Library
+
+bsddb/__init__.py iteration no longer silently fails when the database has
+changed size during iteration.  It now raises a RuntimeError in the same
+manner as a dictionary.
+
+..
+
+.. bpo: 2870
+.. date: 6992
+.. nonce: dmu5w6
+.. section: Library
+
+cmathmodule.c compile error.
+
+..
+
+.. bpo: 0
+.. date: 6991
+.. nonce: F-3bCT
+.. section: Library
+
+Added a threading.Thread.ident property.
+
+..
+
+.. bpo: 0
+.. date: 6990
+.. nonce: eoz_IQ
+.. section: Library
+
+logging.config: Removed out-of-date comment in _install_handlers and used
+issubclass in place of equality comparison of classes.
+
+..
+
+.. bpo: 2722
+.. date: 6989
+.. nonce: wqgrWN
+.. section: Library
+
+Now the os.getcwd() supports very long path names.
+
+..
+
+.. bpo: 2888
+.. date: 6988
+.. nonce: gJe46M
+.. section: Library
+
+Fixed the behaviour of pprint when working with nested structures, to match
+the behaviour of 2.5 and 3.0 (now follows the common sense).
+
+..
+
+.. bpo: 1817
+.. date: 6987
+.. nonce: pPMpU3
+.. section: Library
+
+cgi now correctly handles the querystring on POST requests
+
+..
+
+.. bpo: 3136
+.. date: 6986
+.. nonce: h_BTKr
+.. section: Library
+
+fileConfig()'s disabling of old loggers is now conditional via an optional
+disable_existing_loggers parameter, but the default value is such that the
+old behaviour is preserved. Thanks to Leandro Lucarella for the patch.
+
+..
+
+.. bpo: 3126
+.. date: 6985
+.. nonce: fTafXl
+.. section: Library
+
+StreamHandler and FileHandler check before calling "flush" and "close" that
+the stream object has these, using hasattr (thanks to bobf for the patch).
+
+..
+
+.. bpo: 2912
+.. date: 6984
+.. nonce: eOMCRu
+.. section: Library
+
+platform.uname now tries to determine unknown information even if os.uname
+exists.
+
+..
+
+.. bpo: 0
+.. date: 6983
+.. nonce: suPcSI
+.. section: Library
+
+The rfc822 module has been deprecated for removal in 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6982
+.. nonce: UOZNCJ
+.. section: Library
+
+The mimetools module has been deprecated for removal in 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6981
+.. nonce: RqZ_5y
+.. section: Library
+
+The ctypes.byref function now takes an optional second parameter which
+specifies an offset in bytes for the constructed pointer-like object.
+
+..
+
+.. bpo: 0
+.. date: 6980
+.. nonce: oTWuUu
+.. section: Library
+
+Added the ast module.
+
+..
+
+.. bpo: 0
+.. date: 6979
+.. nonce: fHFiuS
+.. section: Library
+
+Added the multiprocessing module, PEP 371.
+
+..
+
+.. bpo: 0
+.. date: 6978
+.. nonce: nlfVuP
+.. section: Library
+
+Factored out the indentation cleaning from inspect.getdoc() into
+inspect.cleandoc() to ease standalone use.
+
+..
+
+.. bpo: 1798
+.. date: 6977
+.. nonce: AzgRaY
+.. section: Library
+
+Add ctypes calling convention that allows safe access to errno.
+
+..
+
+.. bpo: 2404
+.. date: 6976
+.. nonce: y3Vi2t
+.. section: Library
+
+ctypes objects support the new pep3118 buffer interface.
+
+..
+
+.. bpo: 2125
+.. date: 6975
+.. nonce: wZgsqd
+.. section: Library
+
+Add GetInteger and GetString methods for msilib.Record objects.
+
+..
+
+.. bpo: 2782
+.. date: 6974
+.. nonce: cDdM9Y
+.. section: Library
+
+The datetime module's strftime methods now accept unicode format strings
+just as time.strftime always has.
+
+..
+
+.. bpo: 0
+.. date: 6973
+.. nonce: lhIEH0
+.. section: Library
+
+The sgmllib and htmllib modules have been deprecated for removal in Python
+3.0.
+
+..
+
+.. bpo: 3011
+.. date: 6972
+.. nonce: 6bdKsn
+.. section: Library
+
+locale module alias table was updated to the latest version from the X.org
+locale.alias file.
+
+..
+
+.. bpo: 1797
+.. date: 6971
+.. nonce: q7se8Q
+.. section: Library
+
+ctypes NULL function pointers have a False boolean value now.
+
+..
+
+.. bpo: 2985
+.. date: 6970
+.. nonce: Lj8FT6
+.. section: Library
+
+Allow 64-bit integer responses (``<i8>``) in XMLRPC transfers.
+
+..
+
+.. bpo: 2877
+.. date: 6969
+.. nonce: DHx0Vp
+.. section: Library
+
+The UserString.MutableString class has been removed in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6968
+.. nonce: eAZNNA
+.. section: Library
+
+Do not close external file objects passed to tarfile.open(mode='w:bz2') when
+the TarFile is closed.
+
+..
+
+.. bpo: 2959
+.. date: 6967
+.. nonce: VfcUGd
+.. section: Library
+
+For consistency with other file-like objects, gzip's GzipFile.close() can
+now be called multiple times without raising an exception.
+
+..
+
+.. bpo: 1390
+.. date: 6966
+.. nonce: r5VD4K
+.. section: Library
+
+Raise ValueError in toxml when an invalid comment would otherwise be
+produced.
+
+..
+
+.. bpo: 2914
+.. date: 6965
+.. nonce: vFi4D6
+.. section: Library
+
+TimedRotatingFileHandler now takes an optional keyword argument "utc" to use
+UTC time rather than local time.
+
+..
+
+.. bpo: 2929
+.. date: 6964
+.. nonce: rN0khF
+.. section: Library
+
+TimedRotatingFileHandler was using the wrong path when deleting old log
+files (filename only instead of full path).
+
+..
+
+.. bpo: 1775025
+.. date: 6963
+.. nonce: 0zA_rX
+.. section: Library
+
+You can now specify zipfile members to open(), read() or extract() via a
+ZipInfo instance.  This allows handling duplicate filenames in zipfiles.
+
+..
+
+.. bpo: 961805
+.. date: 6962
+.. nonce: lic8H4
+.. section: Library
+
+Fix Text.edit_modified() in Tkinter.
+
+..
+
+.. bpo: 1793
+.. date: 6961
+.. nonce: uqwZq4
+.. section: Library
+
+Function ctypes.util.find_msvcrt() added that returns the name of the C
+runtime library that Python uses. ctypes.util.find_library(name) now call
+this function when name is 'm' or 'c'.
+
+..
+
+.. bpo: 0
+.. date: 6960
+.. nonce: TYfaoC
+.. section: Library
+
+The statvfs module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6959
+.. nonce: YxHVfd
+.. section: Library
+
+The sunaudiodev and SUNAUDIODEV modules have been deprecated for removal in
+Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6958
+.. nonce: xxpvg4
+.. section: Library
+
+The WAIT module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6957
+.. nonce: 2EEuVl
+.. section: Library
+
+The torgb module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6956
+.. nonce: DxcqyJ
+.. section: Library
+
+The SV module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6955
+.. nonce: T3Yn6K
+.. section: Library
+
+The readcd module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6954
+.. nonce: H9XINa
+.. section: Library
+
+The panelparser module from IRIX has been deprecated for removal in Python
+3.0.
+
+..
+
+.. bpo: 0
+.. date: 6953
+.. nonce: zVi2Qa
+.. section: Library
+
+The panel module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6952
+.. nonce: G7TA5T
+.. section: Library
+
+The jpeg module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6951
+.. nonce: mVA78R
+.. section: Library
+
+The IOCTL module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6950
+.. nonce: J4KyX6
+.. section: Library
+
+The IN module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6949
+.. nonce: Nuh6UM
+.. section: Library
+
+The imgfile module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6948
+.. nonce: UBseEw
+.. section: Library
+
+The GLWS module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6947
+.. nonce: xgzC-j
+.. section: Library
+
+The GET module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6946
+.. nonce: NgBwkl
+.. section: Library
+
+The fm module from IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6945
+.. nonce: 9kD1K-
+.. section: Library
+
+The FL, flp, and fl modules from IRIX have been deprecated for removal in
+Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6944
+.. nonce: AYoVJR
+.. section: Library
+
+The FILE module on IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6943
+.. nonce: CQ38ij
+.. section: Library
+
+The ERRNO module on IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6942
+.. nonce: R-9YLH
+.. section: Library
+
+The DEVICE, GL, gl, and cgen modules (which indirectly includes cgensupport)
+have been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6941
+.. nonce: dKOF2g
+.. section: Library
+
+The CL, CL_old, and cl modules for IRIX have been deprecated for removal in
+Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6940
+.. nonce: 5cFkYd
+.. section: Library
+
+The cdplayer module for IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6939
+.. nonce: 5y0yek
+.. section: Library
+
+The cddb module for IRIX has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6938
+.. nonce: 0pHLuS
+.. section: Library
+
+The cd and CD modules for IRIX have been deprecated for removal in Python
+3.0.
+
+..
+
+.. bpo: 0
+.. date: 6937
+.. nonce: eF0f6O
+.. section: Library
+
+The al and AL modules for IRIX have been deprecated for removal in Python
+3.0.
+
+..
+
+.. bpo: 1713041
+.. date: 6936
+.. nonce: JzsT_z
+.. section: Library
+
+fix pprint's handling of maximum depth.
+
+..
+
+.. bpo: 0
+.. date: 6935
+.. nonce: FpBuBP
+.. section: Library
+
+The timing module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6934
+.. nonce: Lz9Ysd
+.. section: Library
+
+The sv module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6933
+.. nonce: kwju7-
+.. section: Library
+
+The multifile module has been deprecated as per PEP 4.
+
+..
+
+.. bpo: 0
+.. date: 6932
+.. nonce: G-Cuj6
+.. section: Library
+
+The imageop module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 2250
+.. date: 6931
+.. nonce: v4HLiv
+.. section: Library
+
+Exceptions raised during evaluation of names in rlcompleter's
+``Completer.complete()`` method are now caught and ignored.
+
+..
+
+.. bpo: 2659
+.. date: 6930
+.. nonce: FuhwDb
+.. section: Library
+
+Added ``break_on_hyphens`` option to textwrap TextWrapper class.
+
+..
+
+.. bpo: 0
+.. date: 6929
+.. nonce: w8Xvgj
+.. section: Library
+
+The mhlib module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6928
+.. nonce: f4HWLF
+.. section: Library
+
+The linuxaudiodev module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6927
+.. nonce: O9UJsR
+.. section: Library
+
+The ihooks module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6926
+.. nonce: JFJhmk
+.. section: Library
+
+The fpformat module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6925
+.. nonce: BVxyeG
+.. section: Library
+
+The dl module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6924
+.. nonce: MCsyLJ
+.. section: Library
+
+The Canvas module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6923
+.. nonce: aVjhm5
+.. section: Library
+
+The compiler package has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6922
+.. nonce: R6-PB3
+.. section: Library
+
+The Bastion and rexec modules have been deprecated for removal in Python
+3.0.
+
+..
+
+.. bpo: 0
+.. date: 6921
+.. nonce: BvlchT
+.. section: Library
+
+The bsddb185 module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6920
+.. nonce: Lt4pJF
+.. section: Library
+
+The pure module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 2487
+.. date: 6919
+.. nonce: n2AhZO
+.. section: Library
+
+change the semantics of math.ldexp(x, n) when n is too large to fit in a C
+long.  ldexp(x, n) now returns a zero (with suitable sign) if n is large and
+negative; previously, it raised OverflowError.
+
+..
+
+.. bpo: 0
+.. date: 6918
+.. nonce: 6I_VH_
+.. section: Library
+
+The toaiff module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6917
+.. nonce: qWQme_
+.. section: Library
+
+The test.testall module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6916
+.. nonce: HPixGU
+.. section: Library
+
+The new module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6915
+.. nonce: sQ0aEE
+.. section: Library
+
+The user module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6914
+.. nonce: J-y7uq
+.. section: Library
+
+The stringold module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6913
+.. nonce: u1RhAc
+.. section: Library
+
+The mutex module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6912
+.. nonce: NlWeSy
+.. section: Library
+
+The imputil module has been deprecated for removal in Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6911
+.. nonce: iI_4rp
+.. section: Library
+
+test.test_support.catch_warning() gained a 'record' argument.
+
+..
+
+.. bpo: 0
+.. date: 6910
+.. nonce: 0DtsL9
+.. section: Library
+
+os.path.walk is deprecated in favor of os.walk.
+
+..
+
+.. bpo: 0
+.. date: 6909
+.. nonce: MWVgy8
+.. section: Library
+
+pdb gained the "until" command.
+
+..
+
+.. bpo: 0
+.. date: 6908
+.. nonce: R978mb
+.. section: Library
+
+The Mac Modules (including Carbon) have been deprecated for removal in
+Python 3.0.
+
+..
+
+.. bpo: 0
+.. date: 6907
+.. nonce: 2hRfXS
+.. section: Library
+
+Library: on MacOS X you can now set ``ARCHFLAGS`` in the shell environment
+to control the '-arch' flags that are used to build an extension. This was
+added for compatibility with Apple's build of Python.
+
+..
+
+.. bpo: 0
+.. date: 6906
+.. nonce: HjodSi
+.. section: Library
+
+The bundled OSX-specific copy of libbffi is now in sync with the version
+shipped with PyObjC 2.0 and includes support for x86_64 and ppc64 platforms.
+
+..
+
+.. bpo: 0
+.. date: 6905
+.. nonce: iTp3z3
+.. section: Library
+
+The threading module gained aliases for names that will be removed in the
+3.x series.
+
+..
+
+.. bpo: 0
+.. date: 6904
+.. nonce: 0CBHNl
+.. section: Build
+
+The Windows installer now includes Tk 8.5, bzip2 1.0.5, and SQLite 3.5.9.
+
+..
+
+.. bpo: 1722225
+.. date: 6903
+.. nonce: j9OSPy
+.. section: Build
+
+Support QNX 6.
+
+..
+
+.. bpo: 0
+.. date: 6902
+.. nonce: CBo5JG
+.. section: Build
+
+``Lib/lib-old`` is now added to sys.path.
+
+..
+
+.. bpo: 0
+.. date: 6901
+.. nonce: sehDt_
+.. section: Build
+
+On MacOS X it is now possible to install the framework in 64-bit mode or
+even as a 4-way universal binary (that is, PPC, i386, PPC64 and x86_64
+support in one binary).
+
+This is controlled by the configure argument ``--with-universal-archs``:
+
+- ``--with-universal-archs=all``: install 4-way universal
+
+- ``--with-universal-archs=32-bit``: install 2-way universal, 32-bit (the
+default)
+
+- ``--with-universal-archs=64-bit``: install 2-way universal, 64-bit
+
+This option should be used in combination with ``--enable-universalsdk=``.
+
+NOTE: 64-bit and 4-way builds are only suppported on Mac OS X 10.5 (or
+later).
+
+..
+
+.. bpo: 0
+.. date: 6900
+.. nonce: dWsqLp
+.. section: C API
+
+Add ``PyType_Modified()`` as a public API to clear the type cache.
+
+..
+
+.. bpo: 0
+.. date: 6899
+.. nonce: kBP7ih
+.. section: C API
+
+The PyBytes functions have been renamed to PyByteArray.
+
+..
+
+.. bpo: 0
+.. date: 6898
+.. nonce: Ab5wDH
+.. section: C API
+
+The PyString functions have been renamed to PyBytes. A batch of defines were
+added so that the linker still sees the original PyString names.

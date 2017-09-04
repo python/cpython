@@ -1,0 +1,4 @@
+Rewrite Comparisons section in the Expressions chapter of the language
+reference. Some of the details of comparing mixed types were incorrect or
+ambiguous. Added default behaviour and consistency suggestions for user-
+defined classes. Based on patch from Andy Maier.

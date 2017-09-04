@@ -1,0 +1,4 @@
+Support glibc 2.24 on Linux: don't use getentropy() function but read from
+/dev/urandom to get random bytes, for example in os.urandom(). On Linux,
+getentropy() is implemented which getrandom() is blocking mode, whereas
+os.urandom() should not block.

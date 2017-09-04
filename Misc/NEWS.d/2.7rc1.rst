@@ -1,0 +1,395 @@
+.. bpo: 8271
+.. date: 8078
+.. nonce: HKwc-i
+.. release date: 2010-06-05
+.. section: Core and Builtins
+
+during the decoding of an invalid UTF-8 byte sequence, only the start byte
+and the continuation byte(s) are now considered invalid, instead of the
+number of bytes specified by the start byte. E.g.:
+'\xf1\x80AB'.decode('utf-8', 'replace') now returns u'\ufffdAB' and replaces
+with U+FFFD only the start byte ('\xf1') and the continuation byte ('\x80')
+even if '\xf1' is the start byte of a 4-bytes sequence. Previous versions
+returned a single u'\ufffd'.
+
+..
+
+.. bpo: 8627
+.. date: 8077
+.. nonce: l2l6Zs
+.. section: Core and Builtins
+
+Remove bogus "Overriding __cmp__ blocks inheritance of __hash__ in 3.x"
+warning.  Also fix "XXX undetected error" that arises from the "Overriding
+__eq__ blocks inheritance ..." warning when turned into an exception: in
+this case the exception simply gets ignored.
+
+..
+
+.. bpo: 8748
+.. date: 8076
+.. nonce: bKymOB
+.. section: Core and Builtins
+
+Fix two issues with comparisons between complex and integer objects.  (1)
+The comparison could incorrectly return True in some cases (2**53+1 ==
+complex(2**53) == 2**53), breaking transivity of equality. (2) The
+comparison raised an OverflowError for large integers, leading to
+unpredictable exceptions when combining integers and complex objects in sets
+or dicts.
+
+..
+
+.. bpo: 5211
+.. date: 8075
+.. nonce: BNwm54
+.. section: Core and Builtins
+
+Implicit coercion for the complex type is now completely removed.  (Coercion
+for arithmetic operations was already removed in 2.7 alpha 4, but coercion
+for rich comparisons was accidentally left in.)
+
+..
+
+.. bpo: 3798
+.. date: 8074
+.. nonce: L9n27k
+.. section: Core and Builtins
+
+Write sys.exit() message to sys.stderr to use stderr encoding and error
+handler, instead of writing to the C stderr file in utf-8
+
+..
+
+.. bpo: 7902
+.. date: 8073
+.. nonce: K75Ezw
+.. section: Core and Builtins
+
+When using explicit relative import syntax, don't try implicit relative
+import semantics.
+
+..
+
+.. bpo: 7079
+.. date: 8072
+.. nonce: wEGBdB
+.. section: Core and Builtins
+
+Fix a possible crash when closing a file object while using it from another
+thread.  Patch by Daniel Stutzbach.
+
+..
+
+.. bpo: 8868
+.. date: 8071
+.. nonce: rg3J-W
+.. section: Core and Builtins
+
+Fix that ensures that python scripts have access to the Window Server again
+in a framework build on MacOSX 10.5 or earlier.
+
+..
+
+.. bpo: 5753
+.. date: 8070
+.. nonce: 205374
+.. section: C API
+
+A new C API function, :cfunc:`PySys_SetArgvEx`, allows embedders of the
+interpreter to set sys.argv without also modifying sys.path.  This helps fix
+`CVE-2008-5983 <http://cve.mitre.org/cgi-
+bin/cvename.cgi?name=CVE-2008-5983>`_.
+
+..
+
+.. bpo: 8302
+.. date: 8069
+.. nonce: U5tZ_l
+.. section: Library
+
+SkipTest in unittest.TestCase.setUpClass or setUpModule is now reported as a
+skip rather than an error.
+
+..
+
+.. bpo: 8351
+.. date: 8068
+.. nonce: 8I5oO-
+.. section: Library
+
+Excessively large diffs due to unittest.TestCase.assertSequenceEqual are no
+longer included in failure reports.
+
+..
+
+.. bpo: 8899
+.. date: 8067
+.. nonce: Q6oIpy
+.. section: Library
+
+time.struct_time now has class and attribute docstrings.
+
+..
+
+.. bpo: 4487
+.. date: 8066
+.. nonce: WdV86e
+.. section: Library
+
+email now accepts as charset aliases all codec aliases accepted by the
+codecs module.
+
+..
+
+.. bpo: 6470
+.. date: 8065
+.. nonce: eVTlgU
+.. section: Library
+
+Drop UNC prefix in FixTk.
+
+..
+
+.. bpo: 5610
+.. date: 8064
+.. nonce: 3x0O2c
+.. section: Library
+
+feedparser no longer eats extra characters at the end of a body part if the
+body part ends with a \r\n.
+
+..
+
+.. bpo: 8833
+.. date: 8063
+.. nonce: R9JBZA
+.. section: Library
+
+tarfile created hard link entries with a size field != 0 by mistake.
+
+..
+
+.. bpo: 1368247
+.. date: 8062
+.. nonce: OVD5zb
+.. section: Library
+
+set_charset (and therefore MIMEText) now automatically encodes a unicode
+_payload to the output_charset.
+
+..
+
+.. bpo: 7150
+.. date: 8061
+.. nonce: kBTznJ
+.. section: Library
+
+Raise OverflowError if the result of adding or subtracting timedelta from
+date or datetime falls outside of the MINYEAR:MAXYEAR range.
+
+..
+
+.. bpo: 6662
+.. date: 8060
+.. nonce: jpO1QX
+.. section: Library
+
+Fix parsing of malformatted charref (&#bad;), patch written by Fredrik Håård
+
+..
+
+.. bpo: 8016
+.. date: 8059
+.. nonce: vAmdrz
+.. section: Library
+
+Add the CP858 codec.
+
+..
+
+.. bpo: 3924
+.. date: 8058
+.. nonce: -W1f1B
+.. section: Library
+
+Ignore cookies with invalid "version" field in cookielib.
+
+..
+
+.. bpo: 6268
+.. date: 8057
+.. nonce: fQgJxL
+.. section: Library
+
+Fix seek() method of codecs.open(), don't read or write the BOM twice after
+seek(0). Fix also reset() method of codecs, UTF-16, UTF-32 and StreamWriter
+classes.
+
+..
+
+.. bpo: 5640
+.. date: 8056
+.. nonce: dpc6TZ
+.. section: Library
+
+Fix Shift-JIS incremental encoder for error handlers different than
+'strict'.
+
+..
+
+.. bpo: 8782
+.. date: 8055
+.. nonce: asLuOV
+.. section: Library
+
+Add a trailing newline in linecache.updatecache to the last line of files
+without one.
+
+..
+
+.. bpo: 8729
+.. date: 8054
+.. nonce: Nq_Uhf
+.. section: Library
+
+Return NotImplemented from ``collections.Mapping.__eq__()`` when comparing
+to a non-mapping.
+
+..
+
+.. bpo: 8759
+.. date: 8053
+.. nonce: 0yDlu7
+.. section: Library
+
+Fix user paths in sysconfig for posix and os2 schemes.
+
+..
+
+.. bpo: 1285086
+.. date: 8052
+.. nonce: U8BtXR
+.. section: Library
+
+Speed up ``urllib.quote()`` and urllib.unquote for simple cases.
+
+..
+
+.. bpo: 8688
+.. date: 8051
+.. nonce: gUJqmI
+.. section: Library
+
+Distutils now recalculates MANIFEST every time.
+
+..
+
+.. bpo: 5099
+.. date: 8050
+.. nonce: kmjFaU
+.. section: Library
+
+The ``__del__()`` method of ``subprocess.Popen`` (and the methods it calls)
+referenced global objects, causing errors to pop up during interpreter
+shutdown.
+
+..
+
+.. bpo: 7384
+.. date: 8049
+.. nonce: E16zrc
+.. section: Library
+
+If the system readline library is linked against ncurses, the curses module
+must be linked against ncurses as well. Otherwise it is not safe to load
+both the readline and curses modules in an application.
+
+..
+
+.. bpo: 2810
+.. date: 8048
+.. nonce: FSt0Y0
+.. section: Library
+
+Fix cases where the Windows registry API returns ERROR_MORE_DATA, requiring
+a re-try in order to get the complete result.
+
+..
+
+.. bpo: 8674
+.. date: 8047
+.. nonce: Q2kfWX
+.. section: Library
+
+Fixed a number of incorrect or undefined-behaviour-inducing overflow checks
+in the ``audioop`` module.
+
+..
+
+.. bpo: 8889
+.. date: 8046
+.. nonce: 9IoVzA
+.. section: Tests
+
+test_support.transient_internet rewritten so that the new checks also work
+on FreeBSD, which lacks EAI_NODATA.
+
+..
+
+.. bpo: 8835
+.. date: 8045
+.. nonce: FJzJvJ
+.. section: Tests
+
+test_support.transient_internet() catches gaierror(EAI_NONAME) and
+gaierror(EAI_NODATA)
+
+..
+
+.. bpo: 7449
+.. date: 8044
+.. nonce: LeKyd_
+.. section: Tests
+
+Skip test_socketserver if threading support is disabled
+
+..
+
+.. bpo: 0
+.. date: 8043
+.. nonce: b_na1a
+.. section: Tests
+
+On darwin, ``test_site`` assumed that a framework build was being used,
+leading to a failure where four directories were expected for site-packages
+instead of two in a non-framework build.
+
+..
+
+.. bpo: 0
+.. date: 8042
+.. nonce: g-v7fs
+.. section: Build
+
+Display installer warning that Windows 2000 won't be supported in future
+releases.
+
+..
+
+.. bpo: 1759169
+.. date: 8041
+.. nonce: NW035m
+.. section: Build
+
+Drop _XOPEN_SOURCE on Solaris, define it for multiprocessing only. (See
+also: bpo-8864)
+
+..
+
+.. bpo: 5464
+.. date: 8040
+.. nonce: R1pj9Y
+.. section: Tools/Demos
+
+Implement plural forms in msgfmt.py.

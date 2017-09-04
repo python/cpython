@@ -1,0 +1,2 @@
+Fixed error messages in the index() method of tuple and list when pass
+indices of wrong type.

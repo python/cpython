@@ -1,0 +1,433 @@
+.. bpo: 4346
+.. date: 9373
+.. nonce: UASH7u
+.. release date: 2014-06-29
+.. section: Core and Builtins
+
+In PyObject_CallMethod and PyObject_CallMethodObjArgs, don't overwrite the
+error set in PyObject_GetAttr.
+
+..
+
+.. bpo: 21831
+.. date: 9372
+.. nonce: LMoAu3
+.. section: Core and Builtins
+
+Avoid integer overflow when large sizes and offsets are given to the buffer
+type. CVE-2014-7185.
+
+..
+
+.. bpo: 19656
+.. date: 9371
+.. nonce: H_jvEi
+.. section: Core and Builtins
+
+Running Python with the -3 option now also warns about non-ascii bytes
+literals.
+
+..
+
+.. bpo: 21642
+.. date: 9370
+.. nonce: CjIqaU
+.. section: Core and Builtins
+
+If the conditional if-else expression, allow an integer written with no
+space between itself and the ``else`` keyword (e.g. ``True if 42else
+False``) to be valid syntax.
+
+..
+
+.. bpo: 21523
+.. date: 9369
+.. nonce: f_PPYO
+.. section: Core and Builtins
+
+Fix over-pessimistic computation of the stack effect of some opcodes in the
+compiler.  This also fixes a quadratic compilation time issue noticeable
+when compiling code with a large number of "and" and "or" operators.
+
+..
+
+.. bpo: 21652
+.. date: 9368
+.. nonce: kCNkbE
+.. section: Library
+
+Prevent mimetypes.type_map from containing unicode keys on Windows.
+
+..
+
+.. bpo: 21729
+.. date: 9367
+.. nonce: oa2kD6
+.. section: Library
+
+Used the "with" statement in the dbm.dumb module to ensure files closing.
+
+..
+
+.. bpo: 21672
+.. date: 9366
+.. nonce: iMRNWM
+.. section: Library
+
+Fix the behavior of ntpath.join on UNC-style paths.
+
+..
+
+.. bpo: 19145
+.. date: 9365
+.. nonce: cRrKpW
+.. section: Library
+
+The times argument for itertools.repeat now handles negative values the same
+way for keyword arguments as it does for positional arguments.
+
+..
+
+.. bpo: 21832
+.. date: 9364
+.. nonce: PBA0Uu
+.. section: Library
+
+Require named tuple inputs to be exact strings.
+
+..
+
+.. bpo: 8343
+.. date: 9363
+.. nonce: 2KNnCH
+.. section: Library
+
+Named group error messages in the re module did not show the name of the
+erroneous group.
+
+..
+
+.. bpo: 21491
+.. date: 9362
+.. nonce: suNKZf
+.. section: Library
+
+SocketServer: Fix a race condition in child processes reaping.
+
+..
+
+.. bpo: 21635
+.. date: 9361
+.. nonce: ET3OJZ
+.. section: Library
+
+The difflib SequenceMatcher.get_matching_blocks() method cache didn't match
+the actual result.  The former was a list of tuples and the latter was a
+list of named tuples.
+
+..
+
+.. bpo: 21722
+.. date: 9360
+.. nonce: WTHuRy
+.. section: Library
+
+The distutils "upload" command now exits with a non-zero return code when
+uploading fails.  Patch by Martin Dengler.
+
+..
+
+.. bpo: 21766
+.. date: 9359
+.. nonce: 0xk_xC
+.. section: Library
+
+Prevent a security hole in CGIHTTPServer by URL unquoting paths before
+checking for a CGI script at that path.
+
+..
+
+.. bpo: 21310
+.. date: 9358
+.. nonce: 2mjByJ
+.. section: Library
+
+Fixed possible resource leak in failed open().
+
+..
+
+.. bpo: 21304
+.. date: 9357
+.. nonce: xXyySz
+.. section: Library
+
+Backport the key derivation function hashlib.pbkdf2_hmac from Python 3 per
+PEP 466.
+
+..
+
+.. bpo: 11709
+.. date: 9356
+.. nonce: JdObvL
+.. section: Library
+
+Fix the pydoc.help function to not fail when sys.stdin is not a valid file.
+
+..
+
+.. bpo: 13223
+.. date: 9355
+.. nonce: 9AzEbN
+.. section: Library
+
+Fix pydoc.writedoc so that the HTML documentation for methods that use
+'self' in the example code is generated correctly.
+
+..
+
+.. bpo: 21552
+.. date: 9354
+.. nonce: uVy4tM
+.. section: Library
+
+Fixed possible integer overflow of too long string lengths in the tkinter
+module on 64-bit platforms.
+
+..
+
+.. bpo: 14315
+.. date: 9353
+.. nonce: YzZzS8
+.. section: Library
+
+The zipfile module now ignores extra fields in the central directory that
+are too short to be parsed instead of letting a struct.unpack error bubble
+up as this "bad data" appears in many real world zip files in the wild and
+is ignored by other zip tools.
+
+..
+
+.. bpo: 21402
+.. date: 9352
+.. nonce: GuVy1L
+.. section: Library
+
+Tkinter.ttk now works when default root window is not set.
+
+..
+
+.. bpo: 10203
+.. date: 9351
+.. nonce: gERvVk
+.. section: Library
+
+sqlite3.Row now truly supports sequence protocol.  In particulr it supports
+reverse() and negative indices.  Original patch by Claudiu Popa.
+
+..
+
+.. bpo: 8743
+.. date: 9350
+.. nonce: I6_2r3
+.. section: Library
+
+Fix interoperability between set objects and the collections.Set() abstract
+base class.
+
+..
+
+.. bpo: 21481
+.. date: 9349
+.. nonce: YDrlf7
+.. section: Library
+
+Argparse equality and inequality tests now return NotImplemented when
+comparing to an unknown type.
+
+..
+
+.. bpo: 21940
+.. date: 9348
+.. nonce: VlIRz7
+.. section: IDLE
+
+Add unittest for WidgetRedirector. Initial patch by Saimadhav Heblikar.
+
+..
+
+.. bpo: 18592
+.. date: 9347
+.. nonce: sMG-SZ
+.. section: IDLE
+
+Add unittest for SearchDialogBase. Patch by Phil Webster.
+
+..
+
+.. bpo: 21694
+.. date: 9346
+.. nonce: 1oLmRo
+.. section: IDLE
+
+Add unittest for ParenMatch. Patch by Saimadhav Heblikar.
+
+..
+
+.. bpo: 21686
+.. date: 9345
+.. nonce: TAkFB0
+.. section: IDLE
+
+add unittest for HyperParser. Original patch by Saimadhav Heblikar.
+
+..
+
+.. bpo: 12387
+.. date: 9344
+.. nonce: XO7Ozk
+.. section: IDLE
+
+Add missing upper(lower)case versions of default Windows key bindings for
+Idle so Caps Lock does not disable them. Patch by Roger Serwy.
+
+..
+
+.. bpo: 21695
+.. date: 9343
+.. nonce: g-t0Tm
+.. section: IDLE
+
+Closing a Find-in-files output window while the search is still in progress
+no longer closes Idle.
+
+..
+
+.. bpo: 18910
+.. date: 9342
+.. nonce: ke8lMK
+.. section: IDLE
+
+Add unittest for textView. Patch by Phil Webster.
+
+..
+
+.. bpo: 18292
+.. date: 9341
+.. nonce: ks_3wm
+.. section: IDLE
+
+Add unittest for AutoExpand. Patch by Saihadhav Heblikar.
+
+..
+
+.. bpo: 18409
+.. date: 9340
+.. nonce: 7fe-aK
+.. section: IDLE
+
+Add unittest for AutoComplete. Patch by Phil Webster.
+
+..
+
+.. bpo: 20155
+.. date: 9339
+.. nonce: nphzS3
+.. section: Tests
+
+Changed HTTP method names in failing tests in test_httpservers so that
+packet filtering software (specifically Windows Base Filtering Engine) does
+not interfere with the transaction semantics expected by the tests.
+
+..
+
+.. bpo: 19493
+.. date: 9338
+.. nonce: SwbzLQ
+.. section: Tests
+
+Refactored the ctypes test package to skip tests explicitly rather than
+silently.
+
+..
+
+.. bpo: 18492
+.. date: 9337
+.. nonce: ylPRU7
+.. section: Tests
+
+All resources are now allowed when tests are not run by regrtest.py.
+
+..
+
+.. bpo: 21605
+.. date: 9336
+.. nonce: qsLV8d
+.. section: Tests
+
+Added tests for Tkinter images.
+
+..
+
+.. bpo: 21493
+.. date: 9335
+.. nonce: NqhRsy
+.. section: Tests
+
+Added test for ntpath.expanduser().  Original patch by Claudiu Popa.
+
+..
+
+.. bpo: 19925
+.. date: 9334
+.. nonce: dhMx08
+.. section: Tests
+
+Added tests for the spwd module. Original patch by Vajrasky Kok.
+
+..
+
+.. bpo: 13355
+.. date: 9333
+.. nonce: gCByXK
+.. section: Tests
+
+random.triangular() no longer fails with a ZeroDivisionError when low equals
+high.
+
+..
+
+.. bpo: 21522
+.. date: 9332
+.. nonce: b-VwFW
+.. section: Tests
+
+Added Tkinter tests for Listbox.itemconfigure(),
+PanedWindow.paneconfigure(), and Menu.entryconfigure().
+
+..
+
+.. bpo: 20635
+.. date: 9331
+.. nonce: mzWmoS
+.. section: Tests
+
+Added tests for Tk geometry managers.
+
+..
+
+.. bpo: 21811
+.. date: 9330
+.. nonce: 3_Xyr-
+.. section: Build
+
+Anticipated fixes to support OS X versions > 10.9.
+
+..
+
+.. bpo: 21671
+.. date: 9329
+.. nonce: sm-hhO
+.. section: Windows
+
+The bundled version of OpenSSL has been updated to 1.0.1h. (See also:
+CVE-2014-0224)
