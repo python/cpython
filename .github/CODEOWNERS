@@ -11,14 +11,14 @@
 **/*genobject*                @1st1
 
 # Hashing
-**/*hashlib*                  @tiran
-**/*pyhash*                   @tiran
+**/*hashlib*                  @python/crypto-team
+**/*pyhash*                   @python/crypto-team
 
 # Import (including importlib)
 **/*import*                   @python/import-team
 
 # SSL
-**/*ssl*                      @tiran
+**/*ssl*                      @python/crypto-team
 
 # Email and related
 **/*mail*                     @bitdancer
