@@ -1,0 +1,1 @@
+Sped up reading encrypted ZIP files by 2 times.

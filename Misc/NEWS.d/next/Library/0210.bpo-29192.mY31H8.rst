@@ -1,0 +1,1 @@
+Removed deprecated features in the http.cookies module.

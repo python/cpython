@@ -1,0 +1,2 @@
+Enhanced regular expressions optimization. This increased the performance of
+matching some patterns up to 25 times.

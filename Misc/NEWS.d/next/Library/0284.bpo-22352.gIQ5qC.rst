@@ -1,0 +1,2 @@
+Column widths in the output of dis.dis() are now adjusted for large line
+numbers and instruction offsets.

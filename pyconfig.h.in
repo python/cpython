@@ -1505,9 +1505,6 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
-/* Define to empty if the keyword does not work. */
-#undef volatile
-
 
 /* Define the macros needed if on a UnixWare 7.x system. */
 #if defined(__USLC__) && defined(__SCO_VERSION__)

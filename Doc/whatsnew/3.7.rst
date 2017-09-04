@@ -223,6 +223,13 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+string
+------
+
+:class:`string.Template` now lets you to optionally modify the regular
+expression pattern for braced placeholders and non-braced placeholders
+separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
 unittest.mock
 -------------
 
