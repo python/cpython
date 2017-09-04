@@ -498,10 +498,10 @@ def nsmallest(n, iterable, key=None):
         for elem in it:
             if elem < top:
                 _heapreplace(result, (elem, order))
-                top = result[0][0]
+                top, _order = result[0]
                 order += 1
         result.sort()
-        return [r[0] for r in result]
+        return [elem for (elem, order) in result]
 
     # General case, slowest method
     it = iter(iterable)
@@ -516,10 +516,10 @@ def nsmallest(n, iterable, key=None):
         k = key(elem)
         if k < top:
             _heapreplace(result, (k, order, elem))
-            top = result[0][0]
+            top, _order, _elem = result[0]
             order += 1
     result.sort()
-    return [r[2] for r in result]
+    return [elem for (k, order, elem) in result]
 
 def nlargest(n, iterable, key=None):
     """Find the n largest elements in a dataset.
@@ -559,10 +559,10 @@ def nlargest(n, iterable, key=None):
         for elem in it:
             if top < elem:
                 _heapreplace(result, (elem, order))
-                top = result[0][0]
+                top, _order = result[0]
                 order -= 1
         result.sort(reverse=True)
-        return [r[0] for r in result]
+        return [elem for (elem, order) in result]
 
     # General case, slowest method
     it = iter(iterable)
@@ -577,10 +577,10 @@ def nlargest(n, iterable, key=None):
         k = key(elem)
         if top < k:
             _heapreplace(result, (k, order, elem))
-            top = result[0][0]
+            top, _order, _elem = result[0]
             order -= 1
     result.sort(reverse=True)
-    return [r[2] for r in result]
+    return [elem for (k, order, elem) in result]
 
 # If available, use C implementation
 try:
