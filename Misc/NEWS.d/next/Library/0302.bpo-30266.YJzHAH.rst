@@ -1,0 +1,3 @@
+contextlib.AbstractContextManager now supports anti-registration by setting
+__enter__ = None or __exit__ = None, following the pattern introduced in
+bpo-25958. Patch by Jelle Zijlstra.

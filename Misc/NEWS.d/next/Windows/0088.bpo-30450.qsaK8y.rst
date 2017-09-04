@@ -1,0 +1,4 @@
+The build process on Windows no longer depends on Subversion, instead
+pulling external code from GitHub via a Python script.  If Python 3.6 is not
+found on the system (via ``py -3.6``), NuGet is used to download a copy of
+32-bit Python.
