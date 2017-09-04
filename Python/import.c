@@ -1894,7 +1894,7 @@ PyImport_Import(PyObject *module_name)
     Py_DECREF(r);
 
     r = _PyImport_GetModule(module_name);
-    if (r != NULL)
+    if (r != NULL) {
         Py_INCREF(r);
     }
     else if (!PyErr_Occurred()) {
