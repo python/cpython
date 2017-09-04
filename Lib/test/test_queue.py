@@ -8,6 +8,11 @@ import unittest
 from test import support
 threading = support.import_module('threading')
 
+try:
+    import _queue
+except ImportError:
+    _queue = None
+
 QUEUE_SIZE = 5
 
 def qfull(q):
@@ -356,8 +361,7 @@ class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
         self.failing_queue_test(q)
 
 
-class SimpleQueueTest(unittest.TestCase):
-    type2test = queue.SimpleQueue
+class BaseSimpleQueueTest:
 
     def setUp(self):
         self.q = self.type2test()
@@ -436,7 +440,7 @@ class SimpleQueueTest(unittest.TestCase):
 
         return results
 
-    def test_simple(self):
+    def test_basic(self):
         q = self.q
         q.put(1)
         q.put(2)
@@ -488,11 +492,24 @@ class SimpleQueueTest(unittest.TestCase):
     def test_many_threads_timeout(self):
         N = 50
         q = self.q
-        inputs = list(range(10000))
+        inputs = list(range(1000))
         results = self.run_threads(N, N, q, inputs,
                                    self.feed, self.consume_timeout)
 
         self.assertEqual(sorted(results), inputs)
+
+
+class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
+    type2test = queue._PySimpleQueue
+
+
+if _queue is not None:
+
+    class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
+        type2test = _queue.SimpleQueue
+
+        def test_is_default(self):
+            self.assertIs(self.type2test, queue.SimpleQueue)
 
 
 if __name__ == "__main__":

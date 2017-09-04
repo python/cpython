@@ -8,15 +8,25 @@ from collections import deque
 from heapq import heappush, heappop
 from time import monotonic as time
 
+try:
+    import _queue
+except ImportError:
+    _queue = None
+
 __all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue']
 
-class Empty(Exception):
-    'Exception raised by Queue.get(block=0)/get_nowait().'
-    pass
+
+try:
+    Empty = _queue.Empty
+except AttributeError:
+    class Empty(Exception):
+        'Exception raised by Queue.get(block=0)/get_nowait().'
+        pass
 
 class Full(Exception):
     'Exception raised by Queue.put(block=0)/put_nowait().'
     pass
+
 
 class Queue:
     '''Create a queue object with a given maximum size.
@@ -246,7 +256,7 @@ class LifoQueue(Queue):
         return self.queue.pop()
 
 
-class SimpleQueue:
+class _PySimpleQueue:
 
     def __init__(self):
         self._queue = deque()
@@ -262,3 +272,9 @@ class SimpleQueue:
         if not self._count.acquire(block, timeout):
             raise Empty
         return self._queue.popleft()
+
+
+try:
+    SimpleQueue = _queue.SimpleQueue
+except AttributeError:
+    SimpleQueue = _PySimpleQueue
