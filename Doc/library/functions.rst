@@ -7,24 +7,24 @@ Built-in Functions
 The Python interpreter has a number of functions and types built into it that
 are always available.  They are listed here in alphabetical order.
 
-===================  =================  ==================  ================  ====================
-..                   ..                 Built-in Functions  ..                ..
-===================  =================  ==================  ================  ====================
-:func:`abs`          |func-dict|_       :func:`help`        :func:`min`       :func:`setattr`
-:func:`all`          :func:`dir`        :func:`hex`         :func:`next`      :func:`slice`
-:func:`any`          :func:`divmod`     :func:`id`          :func:`object`    :func:`sorted`
-:func:`ascii`        :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
-:func:`bin`          :func:`eval`       :func:`int`         :func:`open`      |func-str|_
-:func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
-|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
-|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
-:func:`callable`     :func:`format`     :func:`len`         :func:`property`  :func:`type`
-:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_     :func:`vars`
-:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
-:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`  :func:`__import__`
-:func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
-:func:`delattr`      :func:`hash`       |func-memoryview|_  |func-set|_
-===================  =================  ==================  ================  ====================
+===================  =================  ==================  ==================  ====================
+..                   ..                 Built-in Functions  ..                  ..
+===================  =================  ==================  ==================  ====================
+:func:`abs`          :func:`delattr`    :func:`hash`        |func-memoryview|_  |func-set|_
+:func:`all`          |func-dict|_       :func:`help`        :func:`min`         :func:`setattr`
+:func:`any`          :func:`dir`        :func:`hex`         :func:`next`        :func:`slice`
+:func:`ascii`        :func:`divmod`     :func:`id`          :func:`object`      :func:`sorted`
+:func:`bin`          :func:`enumerate`  :func:`input`       :func:`oct`         :func:`staticmethod`
+:func:`bool`         :func:`eval`       :func:`int`         :func:`open`        |func-str|_
+|func-bytearray|_    :func:`exec`       :func:`isinstance`  :func:`ord`         :func:`sum`
+|func-bytes|_        :func:`filter`     :func:`issubclass`  :func:`pow`         :func:`super`
+:func:`callable`     :func:`float`      :func:`iter`        :func:`print`       |func-tuple|_
+:func:`chr`          :func:`format`     :func:`len`         :func:`property`    :func:`type`
+:func:`classmethod`  |func-frozenset|_  |func-list|_        |func-range|_       :func:`vars`
+:func:`compile`      :func:`getattr`    :func:`locals`      :func:`repr`        :func:`zip`
+:func:`complex`      :func:`globals`    :func:`map`         :func:`reversed`    :func:`__import__`
+:func:`debug`        :func:`hasattr`    :func:`max`         :func:`round`
+===================  =================  ==================  ==================  ====================
 
 .. using :func:`dict` would create a link to another page, so local targets are
    used, with replacement texts to make the output in the table consistent
@@ -292,6 +292,16 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
 
+
+.. function:: debug()
+
+   This function drops you into the debugger at the call site.  Specifically,
+   it calls :func:`sys.debughook` which by default calls
+   :func:`pdb.set_trace()`.  In this case, it is purely a convenience function
+   so you don't have to explicitly import :mod:`pdb` or type as much code to
+   enter the debugger.  However, :func:`sys.debughook` can be set to some
+   other function and :func:`debug` will automatically call that, allowing you
+   to drop into the debugger of choice.
 
 .. function:: delattr(object, name)
 
