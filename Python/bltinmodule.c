@@ -415,8 +415,17 @@ builtin_callable(PyObject *module, PyObject *obj)
     return PyBool_FromLong((long)PyCallable_Check(obj));
 }
 
+/*[clinic input]
+debug as builtin_debug
+
+Call the sys.debughook() function.
+
+By default, this drops you into the pdb debugger.
+[clinic start generated code]*/
+
 static PyObject *
-debug(PyObject *self, PyObject *noargs)
+builtin_debug_impl(PyObject *module)
+/*[clinic end generated code: output=15a7e4ccf2ccd3ca input=ddc119996e60d7ce]*/
 {
     PyObject *debughook = PySys_GetObject("debughook");
     PyObject *retval = NULL;
@@ -430,13 +439,6 @@ debug(PyObject *self, PyObject *noargs)
     Py_DECREF(debughook);
     return retval;
 }
-
-PyDoc_STRVAR(debug_doc,
-"debug()\n"
-"\n"
-"Call the sys.debughook() function.\n"
-"By default, this drops you into the pdb debugger.\n"
-);
 
 typedef struct {
     PyObject_HEAD
@@ -2645,7 +2647,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
-    {"debug",           (PyCFunction)debug, METH_NOARGS, debug_doc},
+    BUILTIN_DEBUG_METHODDEF
     BUILTIN_DELATTR_METHODDEF
     {"dir",             builtin_dir,        METH_VARARGS, dir_doc},
     BUILTIN_DIVMOD_METHODDEF

@@ -71,6 +71,26 @@ PyDoc_STRVAR(builtin_callable__doc__,
 #define BUILTIN_CALLABLE_METHODDEF    \
     {"callable", (PyCFunction)builtin_callable, METH_O, builtin_callable__doc__},
 
+PyDoc_STRVAR(builtin_debug__doc__,
+"debug($module, /)\n"
+"--\n"
+"\n"
+"Call the sys.debughook() function.\n"
+"\n"
+"By default, this drops you into the pdb debugger.");
+
+#define BUILTIN_DEBUG_METHODDEF    \
+    {"debug", (PyCFunction)builtin_debug, METH_NOARGS, builtin_debug__doc__},
+
+static PyObject *
+builtin_debug_impl(PyObject *module);
+
+static PyObject *
+builtin_debug(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return builtin_debug_impl(module);
+}
+
 PyDoc_STRVAR(builtin_format__doc__,
 "format($module, value, format_spec=\'\', /)\n"
 "--\n"
@@ -676,4 +696,4 @@ builtin_issubclass(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=09752daa8cdd6ec7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4ac43ce5c7b3e20 input=a9049054013a1b77]*/

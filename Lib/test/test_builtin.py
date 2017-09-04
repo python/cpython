@@ -20,6 +20,7 @@ import warnings
 from operator import neg
 from test.support import TESTFN, unlink, check_warnings
 from test.support.script_helper import assert_python_ok
+from unittest.mock import patch
 try:
     import pty, signal
 except ImportError:
@@ -351,6 +352,23 @@ class BuiltinTest(unittest.TestCase):
                 exec(code, ns)
                 rv = ns['f']()
                 self.assertEqual(rv, (debugval, docstring))
+
+    def test_debug(self):
+        with patch('pdb.set_trace') as mock:
+            debug()
+        mock.assert_called_once()
+
+    def test_debug_with_debughook_set(self):
+        call_status = 'Not called'
+        def my_debughook():
+            nonlocal call_status
+            call_status = 'Called'
+        try:
+            sys.debughook = my_debughook
+            debug()
+        finally:
+            sys.debughook = sys.__debughook__
+        self.assertEqual(call_status, 'Called')
 
     def test_delattr(self):
         sys.spam = 1
