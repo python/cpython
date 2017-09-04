@@ -297,13 +297,15 @@ PyImport_GetModuleDict(void)
 
     /* We aren't ready to do this yet.
     PyObject *sysdict = PyThreadState_GET()->interp->sysdict;
-    if (sysdict == NULL)
+    if (sysdict == NULL) {
         Py_FatalError("PyImport_GetModuleDict: no sys module!");
+    }
 
     _Py_IDENTIFIER(modules);
     PyObject *modules = _PyDict_GetItemId(sysdict, &PyId_modules);
-    if (modules == NULL)
+    if (modules == NULL) {
         Py_FatalError("lost sys.modules");
+    }
     return modules;
     */
 }
@@ -327,7 +329,6 @@ _PyImport_IsInitialized(PyInterpreterState *interp)
     */
     return 1;
 }
-
 
 /* List of names to clear in sys */
 static const char * const sys_deletes[] = {
