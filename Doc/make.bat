@@ -107,9 +107,17 @@ echo.be passed by setting the SPHINXOPTS environment variable.
 goto end
 
 :build
-if defined BLURB (
-    echo.Merging Misc/NEWS with %BLURB%
-    %BLURB% merge -f
+if exist ..\Misc\NEWS (
+    echo.Copying Misc\NEWS to build\NEWS
+    copy ..\Misc\NEWS build\NEWS > nul
+) else if exist ..\Misc\NEWS.D (
+    if defined BLURB (
+        echo.Merging Misc/NEWS with %BLURB%
+        %BLURB% merge -f build\NEWS
+    ) else (
+        echo.No Misc/NEWS file and Blurb is not available.
+        exit /B 1
+    )
 )
 
 if NOT "%PAPER%" == "" (
