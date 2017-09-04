@@ -16,8 +16,19 @@ if not defined SPHINXBUILD if defined PYTHON (
     set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
 )
 
+if not defined BLURB if defined PYTHON (
+    %PYTHON% -c "import blurb" > nul 2> nul
+    if errorlevel 1 (
+        echo Installing blurb with %PYTHON%
+        %PYTHON% -m pip install blurb
+        if errorlevel 1 exit /B
+    )
+    set BLURB=%PYTHON% -m blurb
+)
+
 if not defined PYTHON set PYTHON=py
 if not defined SPHINXBUILD set SPHINXBUILD=sphinx-build
+if not defined BLURB set BLURB=blurb
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
 if exist "%HTMLHELP%" goto :skiphhcsearch
@@ -96,6 +107,11 @@ echo.be passed by setting the SPHINXOPTS environment variable.
 goto end
 
 :build
+if defined BLURB (
+    echo.Merging Misc/NEWS with %BLURB%
+    %BLURB% merge -f
+)
+
 if NOT "%PAPER%" == "" (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )

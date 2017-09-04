@@ -39,6 +39,24 @@
                           Overwrite="true"
                           Lines="@(_LicenseFiles->'%(Content)')" />
     </Target>
-        
+    
+    <Target Name="_MergeMiscNewsWithBlurb" AfterTargets="PrepareForBuild" Condition="$(Blurb) != ''">
+        <Exec Command="$(Blurb) merge -f" WorkingDirectory="$(PCBuild)" />
+    </Target>
+    
+    <Target Name="_MergeMiscNewsWithPython" AfterTargets="PrepareForBuild" Condition="$(Blurb) == ''">
+        <ItemGroup>
+            <HostPython Include="$(ExternalsDir)python*\tools\python.exe" />
+            <HostPython Include="@(HostPython)" Condition="Exists(%(FullPath))" />
+            <HostPython Include="py" Condition="@(HostPython) == ''" />
+        </ItemGroup>
+        <PropertyGroup>
+            <HostPython>@(HostPython)</HostPython>
+            <HostPython Condition="$(HostPython.Contains(';'))">$(HostPython.Remove($(HostPython.IndexOf(';'))))</HostPython>
+        </PropertyGroup>
+        <Exec Command="&quot;$(HostPython)&quot; -m pip install -U blurb" WorkingDirectory="$(PCBuild)" />
+        <Exec Command="&quot;$(HostPython)&quot; -m blurb merge -f" WorkingDirectory="$(PCBuild)" />
+    </Target>
+    
     <Import Project="..\msi.targets" />
 </Project>
