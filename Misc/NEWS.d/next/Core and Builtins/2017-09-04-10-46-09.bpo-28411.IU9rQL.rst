@@ -1,0 +1,3 @@
+``PyInterpreterState`` has a "modules" field that is copied into
+``sys.modules`` during interpreter startup.  We restructure code
+to better isolate sys.modules, to make it easier to sync them up.
