@@ -1,0 +1,4 @@
+``PyInterpreterState`` has a "modules" field that is copied into
+``sys.modules`` during interpreter startup.  This causes problems if a
+program replaces ``sys.modules`` with something else.  To solve this we
+eliminate ``PyInterpreterState.modules``.

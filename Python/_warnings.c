@@ -44,7 +44,6 @@ static PyObject *
 get_warnings_attr(const char *attr, int try_import)
 {
     static PyObject *warnings_str = NULL;
-    PyObject *all_modules;
     PyObject *warnings_module, *obj;
 
     if (warnings_str == NULL) {
@@ -64,9 +63,7 @@ get_warnings_attr(const char *attr, int try_import)
         }
     }
     else {
-        all_modules = PyImport_GetModuleDict();
-
-        warnings_module = PyDict_GetItem(all_modules, warnings_str);
+        warnings_module = _PyImport_GetModule(warnings_str);
         if (warnings_module == NULL)
             return NULL;
 
