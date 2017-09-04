@@ -41,6 +41,7 @@ _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(threading);
 
 #ifdef __cplusplus
 extern "C" {
@@ -1880,7 +1881,7 @@ wait_for_thread_shutdown(void)
 #ifdef WITH_THREAD
     _Py_IDENTIFIER(_shutdown);
     PyObject *result;
-    PyObject *threading = _PyImport_GetModuleString("threading");
+    PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
     if (threading == NULL) {
         /* threading not imported */
         PyErr_Clear();
