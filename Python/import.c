@@ -291,8 +291,9 @@ PyObject *
 PyImport_GetModuleDict(void)
 {
     PyInterpreterState *interp = PyThreadState_GET()->interp;
-    if (interp->modules == NULL)
+    if (interp->modules == NULL) {
         Py_FatalError("PyImport_GetModuleDict: no module dictionary!");
+    }
     return interp->modules;
 }
 
@@ -312,13 +313,15 @@ PyObject *
 _PyImport_GetModule(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_Check(modules))
+    if (PyDict_Check(modules)) {
         return PyDict_GetItem(modules, name);
+    }
 
     PyObject *mod = PyObject_GetItem(modules, name);
     // For backward-comaptibility we copy the behavior of PyDict_GetItem().
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
         PyErr_Clear();
+    }
     Py_XDECREF(mod);
     return mod;
 }
@@ -327,14 +330,16 @@ PyObject *
 _PyImport_GetModuleWithError(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_Check(modules))
+    if (PyDict_Check(modules)) {
         return PyDict_GetItemWithError(modules, name);
+    }
 
     PyObject *mod = PyObject_GetItem(modules, name);
     // For backward-comaptibility we copy the behavior
     // of PyDict_GetItemWithError().
-    if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
+    if (PyErr_Occurred() && !PyMapping_HasKey(modules, name)) {
         PyErr_Clear();
+    }
     return mod;
 }
 
@@ -342,14 +347,16 @@ PyObject *
 _PyImport_GetModuleString(const char *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_Check(modules))
+    if (PyDict_Check(modules)) {
         return PyDict_GetItemString(modules, name);
+    }
 
     PyObject *mod = PyMapping_GetItemString(modules, name);
     // For backward-comaptibility we copy the behavior
     // of PyDict_GetItemString().
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
         PyErr_Clear();
+    }
     Py_XDECREF(mod);
     return mod;
 }
@@ -358,19 +365,22 @@ PyObject *
 _PyImport_GetModuleId(struct _Py_Identifier *nameid)
 {
     PyObject *name = _PyUnicode_FromId(nameid); /* borrowed */
-    if (name == NULL)
+    if (name == NULL) {
         return NULL;
+    }
     return _PyImport_GetModule(name);
 }
 
 int
-_PyImport_SetModule(PyObject *name, PyObject *m) {
+_PyImport_SetModule(PyObject *name, PyObject *m)
+{
     PyObject *modules = PyImport_GetModuleDict();
     return PyObject_SetItem(modules, name, m);
 }
 
 int
-_PyImport_SetModuleString(const char *name, PyObject *m) {
+_PyImport_SetModuleString(const char *name, PyObject *m)
+{
     PyObject *modules = PyImport_GetModuleDict();
     return PyMapping_SetItemString(modules, name, m);
 }
@@ -388,7 +398,8 @@ PyImport_GetModule(PyObject *name)
     if (PyDict_Check(modules)) {
         m = PyDict_GetItemWithError(modules, name);  /* borrowed */
         Py_XINCREF(m);
-    } else {
+    }
+    else {
         m = PyObject_GetItem(modules, name);
         if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
             PyErr_Clear();
@@ -764,7 +775,8 @@ _PyImport_AddModuleObject(PyObject *name, PyObject *modules)
     PyObject *m;
     if (PyDict_Check(modules)) {
         m = PyDict_GetItemWithError(modules, name);
-    } else {
+    }
+    else {
         m = PyObject_GetItem(modules, name);
         // For backward-comaptibility we copy the behavior
         // of PyDict_GetItemWithError().
