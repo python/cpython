@@ -50,7 +50,7 @@
 	/>
 	<UserMacro
 		Name="bsddb47Dir"
-		Value="$(externalsDir)\db-4.7.25.0\build_windows"
+		Value="$(externalsDir)\bsddb-4.7.25.0\build_windows"
 	/>
 	<UserMacro
 		Name="bsddb47DepLibs"
@@ -74,7 +74,7 @@
 	/>
 	<UserMacro
 		Name="sqlite3Dir"
-		Value="$(externalsDir)\sqlite-3.8.11.0"
+		Value="$(externalsDir)\sqlite-3.14.2.0"
 	/>
 	<UserMacro
 		Name="bz2Dir"
