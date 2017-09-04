@@ -399,7 +399,7 @@ def _lanscan_getnode():
 
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
-    # This might work on AIX, Tru64 UNIX and presumably on IRIX.
+    # This might work on AIX, Tru64 UNIX.
     try:
         proc = _popen('netstat', '-ia')
         if not proc:

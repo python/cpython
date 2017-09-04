@@ -350,9 +350,6 @@ _symtable symtablemodule.c
 # The library to link fpectl with is platform specific.
 # Choose *one* of the options below for fpectl:
 
-# For SGI IRIX (tested on 5.3):
-#fpectl fpectlmodule.c -lfpe
-
 # For Solaris with SunPro compiler (tested on Solaris 2.5 with SunPro C 4.2):
 # (Without the compiler you don't have -lsunmath.)
 #fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
