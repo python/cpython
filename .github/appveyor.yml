@@ -5,6 +5,8 @@ branches:
     - master
     - /\d\.\d/
     - buildbot-custom
+cache:
+  - externals -> PCbuild\*
 build_script:
 - cmd: PCbuild\build.bat -e
 - cmd: PCbuild\win32\python.exe -m test.pythoninfo
