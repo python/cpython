@@ -1076,6 +1076,7 @@ dict_dealloc(register PyDictObject *mp)
 {
     register PyDictEntry *ep;
     Py_ssize_t fill = mp->ma_fill;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(mp);
     Py_TRASHCAN_SAFE_BEGIN(mp)
     for (ep = mp->ma_table; fill > 0; ep++) {
@@ -2576,6 +2577,8 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 static void
 dictiter_dealloc(dictiterobject *di)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_dict);
     Py_XDECREF(di->di_result);
     PyObject_GC_Del(di);
@@ -2855,6 +2858,8 @@ typedef struct {
 static void
 dictview_dealloc(dictviewobject *dv)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    _PyObject_GC_UNTRACK(dv);
     Py_XDECREF(dv->dv_dict);
     PyObject_GC_Del(dv);
 }
