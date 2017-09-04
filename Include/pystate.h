@@ -52,7 +52,6 @@ typedef struct _is {
 
     int64_t id;
 
-    PyObject *modules;
     PyObject *modules_by_index;
     PyObject *sysdict;
     PyObject *builtins;
