@@ -728,7 +728,6 @@ CFLAGS
 CC
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
-SGI_ABI
 _PYTHON_HOST_PLATFORM
 MACHDEP
 FRAMEWORKINSTALLAPPSPREFIX
@@ -3447,25 +3446,6 @@ then
 $as_echo "#define _INCLUDE__STDC_A1_SOURCE 1" >>confdefs.h
 
 fi
-
-#
-# SGI compilers allow the specification of the both the ABI and the
-# ISA on the command line.  Depending on the values of these switches,
-# different and often incompatible code will be generated.
-#
-# The SGI_ABI variable can be used to modify the CC and LDFLAGS and
-# thus supply support for various ABI/ISA combinations.  The MACHDEP
-# variable is also adjusted.
-#
-
-if test ! -z "$SGI_ABI"
-then
-        CC="cc $SGI_ABI"
-        LDFLAGS="$SGI_ABI $LDFLAGS"
-        MACHDEP=`echo "${MACHDEP}${SGI_ABI}" | sed 's/ *//g'`
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MACHDEP" >&5
-$as_echo "$MACHDEP" >&6; }
 
 # Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
 # it may influence the way we can build extensions, so distutils
