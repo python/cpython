@@ -360,7 +360,7 @@ _PyImport_GetModuleWithError(PyObject *name)
     PyObject *mod = PyObject_GetItem(modules, name);
     // For backward-comaptibility we copy the behavior
     // of PyDict_GetItemWithError().
-    if (PyErr_Occurred() && !PyMapping_HasKey(modules, name)) {
+    if (PyErr_ExceptionMatches(PyExc_KeyError)) {
         PyErr_Clear();
     }
     return mod;
@@ -406,8 +406,9 @@ PyImport_GetModule(PyObject *name)
     }
     else {
         m = PyObject_GetItem(modules, name);
-        if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
+        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_Clear();
+        }
     }
     Py_DECREF(modules);
     return m;
@@ -792,8 +793,9 @@ _PyImport_AddModuleObject(PyObject *name, PyObject *modules)
         m = PyObject_GetItem(modules, name);
         // For backward-comaptibility we copy the behavior
         // of PyDict_GetItemWithError().
-        if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
+        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_Clear();
+        }
     }
     if (PyErr_Occurred()) {
         return NULL;
