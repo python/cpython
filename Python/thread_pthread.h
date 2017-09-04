@@ -466,61 +466,66 @@ PyLockStatus
 PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
                             int intr_flag)
 {
-    PyLockStatus success;
+    PyLockStatus success = PY_LOCK_FAILURE;
     pthread_lock *thelock = (pthread_lock *)lock;
     int status, error = 0;
 
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
-    status = pthread_mutex_lock( &thelock->mut );
-    CHECK_STATUS_PTHREAD("pthread_mutex_lock[1]");
+    if (microseconds == 0) {
+        status = pthread_mutex_trylock( &thelock->mut );
+        if (status != EBUSY)
+            CHECK_STATUS_PTHREAD("pthread_mutex_trylock[1]");
+    }
+    else {
+        status = pthread_mutex_lock( &thelock->mut );
+        CHECK_STATUS_PTHREAD("pthread_mutex_lock[1]");
+    }
+    if (status == 0) {
+        if (thelock->locked == 0) {
+            success = PY_LOCK_ACQUIRED;
+        }
+        else if (microseconds != 0) {
+            struct timespec ts;
+            if (microseconds > 0)
+                MICROSECONDS_TO_TIMESPEC(microseconds, ts);
+            /* continue trying until we get the lock */
 
-    if (thelock->locked == 0) {
-        success = PY_LOCK_ACQUIRED;
-    } else if (microseconds == 0) {
-        success = PY_LOCK_FAILURE;
-    } else {
-        struct timespec ts;
-        if (microseconds > 0)
-            MICROSECONDS_TO_TIMESPEC(microseconds, ts);
-        /* continue trying until we get the lock */
+            /* mut must be locked by me -- part of the condition
+             * protocol */
+            while (success == PY_LOCK_FAILURE) {
+                if (microseconds > 0) {
+                    status = pthread_cond_timedwait(
+                        &thelock->lock_released,
+                        &thelock->mut, &ts);
+                    if (status == ETIMEDOUT)
+                        break;
+                    CHECK_STATUS_PTHREAD("pthread_cond_timed_wait");
+                }
+                else {
+                    status = pthread_cond_wait(
+                        &thelock->lock_released,
+                        &thelock->mut);
+                    CHECK_STATUS_PTHREAD("pthread_cond_wait");
+                }
 
-        /* mut must be locked by me -- part of the condition
-         * protocol */
-        success = PY_LOCK_FAILURE;
-        while (success == PY_LOCK_FAILURE) {
-            if (microseconds > 0) {
-                status = pthread_cond_timedwait(
-                    &thelock->lock_released,
-                    &thelock->mut, &ts);
-                if (status == ETIMEDOUT)
+                if (intr_flag && status == 0 && thelock->locked) {
+                    /* We were woken up, but didn't get the lock.  We probably received
+                     * a signal.  Return PY_LOCK_INTR to allow the caller to handle
+                     * it and retry.  */
+                    success = PY_LOCK_INTR;
                     break;
-                CHECK_STATUS_PTHREAD("pthread_cond_timed_wait");
-            }
-            else {
-                status = pthread_cond_wait(
-                    &thelock->lock_released,
-                    &thelock->mut);
-                CHECK_STATUS_PTHREAD("pthread_cond_wait");
-            }
-
-            if (intr_flag && status == 0 && thelock->locked) {
-                /* We were woken up, but didn't get the lock.  We probably received
-                 * a signal.  Return PY_LOCK_INTR to allow the caller to handle
-                 * it and retry.  */
-                success = PY_LOCK_INTR;
-                break;
-            } else if (status == 0 && !thelock->locked) {
-                success = PY_LOCK_ACQUIRED;
-            } else {
-                success = PY_LOCK_FAILURE;
+                }
+                else if (status == 0 && !thelock->locked) {
+                    success = PY_LOCK_ACQUIRED;
+                }
             }
         }
+        if (success == PY_LOCK_ACQUIRED) thelock->locked = 1;
+        status = pthread_mutex_unlock( &thelock->mut );
+        CHECK_STATUS_PTHREAD("pthread_mutex_unlock[1]");
     }
-    if (success == PY_LOCK_ACQUIRED) thelock->locked = 1;
-    status = pthread_mutex_unlock( &thelock->mut );
-    CHECK_STATUS_PTHREAD("pthread_mutex_unlock[1]");
 
     if (error) success = PY_LOCK_FAILURE;
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
@@ -603,7 +608,6 @@ _pythread_pthread_set_stacksize(size_t size)
 
 #define THREAD_SET_STACKSIZE(x) _pythread_pthread_set_stacksize(x)
 
-#define Py_HAVE_NATIVE_TLS
 
 int
 PyThread_create_key(void)

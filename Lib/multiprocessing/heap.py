@@ -60,25 +60,31 @@ if sys.platform == 'win32':
 else:
 
     class Arena(object):
+        if sys.platform == 'linux':
+            _dir_candidates = ['/dev/shm']
+        else:
+            _dir_candidates = []
 
         def __init__(self, size, fd=-1):
             self.size = size
             self.fd = fd
             if fd == -1:
                 self.fd, name = tempfile.mkstemp(
-                     prefix='pym-%d-'%os.getpid(), dir=util.get_temp_dir())
+                     prefix='pym-%d-'%os.getpid(),
+                     dir=self._choose_dir(size))
                 os.unlink(name)
                 util.Finalize(self, os.close, (self.fd,))
-                with open(self.fd, 'wb', closefd=False) as f:
-                    bs = 1024 * 1024
-                    if size >= bs:
-                        zeros = b'\0' * bs
-                        for _ in range(size // bs):
-                            f.write(zeros)
-                        del zeros
-                    f.write(b'\0' * (size % bs))
-                    assert f.tell() == size
+                os.ftruncate(self.fd, size)
             self.buffer = mmap.mmap(self.fd, self.size)
+
+        def _choose_dir(self, size):
+            # Choose a non-storage backed directory if possible,
+            # to improve performance
+            for d in self._dir_candidates:
+                st = os.statvfs(d)
+                if st.f_bavail * st.f_frsize >= size:  # enough free space?
+                    return d
+            return util.get_temp_dir()
 
     def reduce_arena(a):
         if a.fd == -1:
@@ -205,7 +211,10 @@ class Heap(object):
         # synchronously sometimes later from malloc() or free(), by calling
         # _free_pending_blocks() (appending and retrieving from a list is not
         # strictly thread-safe but under cPython it's atomic thanks to the GIL).
-        assert os.getpid() == self._lastpid
+        if os.getpid() != self._lastpid:
+            raise ValueError(
+                "My pid ({0:n}) is not last pid {1:n}".format(
+                    os.getpid(),self._lastpid))
         if not self._lock.acquire(False):
             # can't acquire the lock right now, add the block to the list of
             # pending blocks to free
@@ -221,7 +230,10 @@ class Heap(object):
 
     def malloc(self, size):
         # return a block of right size (possibly rounded up)
-        assert 0 <= size < sys.maxsize
+        if size < 0:
+            raise ValueError("Size {0:n} out of range".format(size))
+        if sys.maxsize <= size:
+            raise OverflowError("Size {0:n} too large".format(size))
         if os.getpid() != self._lastpid:
             self.__init__()                     # reinitialize after fork
         with self._lock:
@@ -244,7 +256,10 @@ class BufferWrapper(object):
     _heap = Heap()
 
     def __init__(self, size):
-        assert 0 <= size < sys.maxsize
+        if size < 0:
+            raise ValueError("Size {0:n} out of range".format(size))
+        if sys.maxsize <= size:
+            raise OverflowError("Size {0:n} too large".format(size))
         block = BufferWrapper._heap.malloc(size)
         self._state = (block, size)
         util.Finalize(self, BufferWrapper._heap.free, args=(block,))

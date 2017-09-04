@@ -627,6 +627,7 @@ element_gc_clear(ElementObject *self)
 static void
 element_dealloc(ElementObject* self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_SAFE_BEGIN(self)
 
@@ -2076,6 +2077,8 @@ elementiter_dealloc(ElementIterObject *it)
 {
     Py_ssize_t i = it->parent_stack_used;
     it->parent_stack_used = 0;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(it);
     while (i--)
         Py_XDECREF(it->parent_stack[i].parent);
     PyMem_Free(it->parent_stack);
@@ -2083,7 +2086,6 @@ elementiter_dealloc(ElementIterObject *it)
     Py_XDECREF(it->sought_tag);
     Py_XDECREF(it->root_element);
 
-    PyObject_GC_UnTrack(it);
     PyObject_GC_Del(it);
 }
 
@@ -2774,7 +2776,7 @@ typedef struct {
 } XMLParserObject;
 
 static PyObject*
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames);
+_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_t nargs);
 static PyObject *
 _elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
                                     PyObject *pubid, PyObject *system);
@@ -3990,6 +3992,11 @@ PyInit__elementtree(void)
     st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
+    if (st->deepcopy_obj == NULL) {
+        return NULL;
+    }
+
+    assert(!PyErr_Occurred());
     if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
         return NULL;
 

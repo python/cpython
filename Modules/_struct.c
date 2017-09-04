@@ -1589,6 +1589,8 @@ typedef struct {
 static void
 unpackiter_dealloc(unpackiterobject *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     Py_XDECREF(self->so);
     PyBuffer_Release(&self->buf);
     PyObject_GC_Del(self);
@@ -1817,7 +1819,7 @@ to the format string S.format.  See help(struct) for more on format\n\
 strings.");
 
 static PyObject *
-s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyStructObject *soself;
     PyObject *result;
@@ -1830,9 +1832,6 @@ s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     {
         PyErr_Format(StructError,
             "pack expected %zd items for packing (got %zd)", soself->s_len, nargs);
-        return NULL;
-    }
-    if (!_PyArg_NoStackKeywords("pack", kwnames)) {
         return NULL;
     }
 
@@ -1859,7 +1858,7 @@ offset.  Note that the offset is a required argument.  See\n\
 help(struct) for more on format strings.");
 
 static PyObject *
-s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyStructObject *soself;
     Py_buffer buffer;
@@ -1884,9 +1883,6 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
                         "pack_into expected %zd items for packing (got %zd)",
                         soself->s_len, (nargs - 2));
         }
-        return NULL;
-    }
-    if (!_PyArg_NoStackKeywords("pack_into", kwnames)) {
         return NULL;
     }
 
@@ -1929,11 +1925,14 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
 
     /* Check boundaries */
     if ((buffer.len - offset) < soself->s_size) {
+        assert(offset >= 0);
+        assert(soself->s_size >= 0);
+
         PyErr_Format(StructError,
-                     "pack_into requires a buffer of at least %zd bytes for "
+                     "pack_into requires a buffer of at least %zu bytes for "
                      "packing %zd bytes at offset %zd "
                      "(actual buffer size is %zd)",
-                     soself->s_size + offset,
+                     (size_t)soself->s_size + (size_t)offset,
                      soself->s_size,
                      offset,
                      buffer.len);
@@ -1954,8 +1953,8 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
 static PyObject *
 s_get_format(PyStructObject *self, void *unused)
 {
-    Py_INCREF(self->s_format);
-    return self->s_format;
+    return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
+                                       PyBytes_GET_SIZE(self->s_format));
 }
 
 static PyObject *
@@ -2123,7 +2122,7 @@ Return a bytes object containing the values v1, v2, ... packed according\n\
 to the format string.  See help(struct) for more on format strings.");
 
 static PyObject *
-pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
@@ -2137,7 +2136,7 @@ pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     if (!cache_struct_converter(format, &s_object)) {
         return NULL;
     }
-    result = s_pack(s_object, args + 1, nargs - 1, kwnames);
+    result = s_pack(s_object, args + 1, nargs - 1);
     Py_DECREF(s_object);
     return result;
 }
@@ -2151,7 +2150,7 @@ that the offset is a required argument.  See help(struct) for more\n\
 on format strings.");
 
 static PyObject *
-pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
@@ -2165,7 +2164,7 @@ pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     if (!cache_struct_converter(format, &s_object)) {
         return NULL;
     }
-    result = s_pack_into(s_object, args + 1, nargs - 1, kwnames);
+    result = s_pack_into(s_object, args + 1, nargs - 1);
     Py_DECREF(s_object);
     return result;
 }

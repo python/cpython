@@ -280,6 +280,10 @@ f'{a * x()}'"""
                              "f'{10:{ }}'",
                              "f' { } '",
 
+                             # The Python parser ignores also the following
+                             # whitespace characters in additional to a space.
+                             "f'''{\t\f\r\n}'''",
+
                              # Catch the empty expression before the
                              #  invalid conversion.
                              "f'{!x}'",
@@ -298,6 +302,12 @@ f'{a * x()}'"""
                              "f'{!s:'",
                              "f'{:'",
                              "f'{:x'",
+                             ])
+
+        # Different error message is raised for other whitespace characters.
+        self.assertAllRaise(SyntaxError, 'invalid character in identifier',
+                            ["f'''{\xa0}'''",
+                             "\xa0",
                              ])
 
     def test_parens_in_expressions(self):
@@ -360,6 +370,20 @@ f'{a * x()}'"""
         self.assertEqual(f'2\x20', '2 ')
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
+
+        with self.assertWarns(DeprecationWarning):  # invalid escape sequence
+            value = eval(r"f'\{6*7}'")
+        self.assertEqual(value, '\\42')
+        self.assertEqual(f'\\{6*7}', '\\42')
+        self.assertEqual(fr'\{6*7}', '\\42')
+
+        AMPERSAND = 'spam'
+        # Get the right unicode character (&), or pick up local variable
+        # depending on the number of backslashes.
+        self.assertEqual(f'\N{AMPERSAND}', '&')
+        self.assertEqual(f'\\N{AMPERSAND}', '\\Nspam')
+        self.assertEqual(fr'\N{AMPERSAND}', '\\Nspam')
+        self.assertEqual(f'\\\N{AMPERSAND}', '\\&')
 
     def test_misformed_unicode_character_name(self):
         # These test are needed because unicode names are parsed
@@ -755,6 +779,12 @@ f'{a * x()}'"""
 
         self.assertEqual(f'{d["foo"]}', 'bar')
         self.assertEqual(f"{d['foo']}", 'bar')
+
+    def test_backslash_char(self):
+        # Check eval of a backslash followed by a control char.
+        # See bpo-30682: this used to raise an assert in pydebug mode.
+        self.assertEqual(eval('f"\\\n"'), '')
+        self.assertEqual(eval('f"\\\r"'), '')
 
 if __name__ == '__main__':
     unittest.main()

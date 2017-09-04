@@ -727,7 +727,10 @@ class Popen(object):
                     to_close.append(self._devnull)
                 for fd in to_close:
                     try:
-                        os.close(fd)
+                        if _mswindows and isinstance(fd, Handle):
+                            fd.Close()
+                        else:
+                            os.close(fd)
                     except OSError:
                         pass
 
@@ -778,19 +781,21 @@ class Popen(object):
                 self.stdin.write(input)
             except BrokenPipeError:
                 pass  # communicate() must ignore broken pipe errors.
-            except OSError as e:
-                if e.errno == errno.EINVAL and self.poll() is not None:
-                    # Issue #19612: On Windows, stdin.write() fails with EINVAL
-                    # if the process already exited before the write
+            except OSError as exc:
+                if exc.errno == errno.EINVAL:
+                    # bpo-19612, bpo-30418: On Windows, stdin.write() fails
+                    # with EINVAL if the child process exited or if the child
+                    # process is still running but closed the pipe.
                     pass
                 else:
                     raise
+
         try:
             self.stdin.close()
         except BrokenPipeError:
             pass  # communicate() must ignore broken pipe errors.
-        except OSError as e:
-            if e.errno == errno.EINVAL and self.poll() is not None:
+        except OSError as exc:
+            if exc.errno == errno.EINVAL:
                 pass
             else:
                 raise
@@ -1005,6 +1010,9 @@ class Popen(object):
                     errwrite.Close()
                 if hasattr(self, '_devnull'):
                     os.close(self._devnull)
+                # Prevent a double close of these handles/fds from __init__
+                # on error.
+                self._closed_child_pipe_fds = True
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
@@ -1236,8 +1244,12 @@ class Popen(object):
                     # and pass it to fork_exec()
 
                     if env is not None:
-                        env_list = [os.fsencode(k) + b'=' + os.fsencode(v)
-                                    for k, v in env.items()]
+                        env_list = []
+                        for k, v in env.items():
+                            k = os.fsencode(k)
+                            if b'=' in k:
+                                raise ValueError("illegal environment variable name")
+                            env_list.append(k + b'=' + os.fsencode(v))
                     else:
                         env_list = None  # Use execv instead of execve.
                     executable = os.fsencode(executable)
@@ -1315,15 +1327,15 @@ class Popen(object):
                     child_exec_never_called = (err_msg == "noexec")
                     if child_exec_never_called:
                         err_msg = ""
+                        # The error must be from chdir(cwd).
+                        err_filename = cwd
+                    else:
+                        err_filename = orig_executable
                     if errno_num != 0:
                         err_msg = os.strerror(errno_num)
                         if errno_num == errno.ENOENT:
-                            if child_exec_never_called:
-                                # The error must be from chdir(cwd).
-                                err_msg += ': ' + repr(cwd)
-                            else:
-                                err_msg += ': ' + repr(orig_executable)
-                    raise child_exception_type(errno_num, err_msg)
+                            err_msg += ': ' + repr(err_filename)
+                    raise child_exception_type(errno_num, err_msg, err_filename)
                 raise child_exception_type(err_msg)
 
 

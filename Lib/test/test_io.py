@@ -2440,6 +2440,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(t.encoding, "ascii")
         self.assertEqual(t.errors, "strict")
         self.assertFalse(t.line_buffering)
+        self.assertFalse(t.write_through)
 
     def test_repr(self):
         raw = self.BytesIO("hello".encode("utf-8"))
@@ -2481,6 +2482,33 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(r.getvalue(), b"XY\nZ")  # All got flushed
         t.write("A\rB")
         self.assertEqual(r.getvalue(), b"XY\nZA\rB")
+
+    def test_reconfigure_line_buffering(self):
+        r = self.BytesIO()
+        b = self.BufferedWriter(r, 1000)
+        t = self.TextIOWrapper(b, newline="\n", line_buffering=False)
+        t.write("AB\nC")
+        self.assertEqual(r.getvalue(), b"")
+
+        t.reconfigure(line_buffering=True)   # implicit flush
+        self.assertEqual(r.getvalue(), b"AB\nC")
+        t.write("DEF\nG")
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nG")
+        t.write("H")
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nG")
+        t.reconfigure(line_buffering=False)   # implicit flush
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nGH")
+        t.write("IJ")
+        self.assertEqual(r.getvalue(), b"AB\nCDEF\nGH")
+
+        # Keeping default value
+        t.reconfigure()
+        t.reconfigure(line_buffering=None)
+        self.assertEqual(t.line_buffering, False)
+        t.reconfigure(line_buffering=True)
+        t.reconfigure()
+        t.reconfigure(line_buffering=None)
+        self.assertEqual(t.line_buffering, True)
 
     def test_default_encoding(self):
         old_environ = dict(os.environ)
@@ -3164,6 +3192,29 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertTrue(write_called)
         self.assertEqual(rawio.getvalue(), data * 11) # all flushed
 
+    def test_reconfigure_write_through(self):
+        raw = self.MockRawIO([])
+        t = self.TextIOWrapper(raw, encoding='ascii', newline='\n')
+        t.write('1')
+        t.reconfigure(write_through=True)  # implied flush
+        self.assertEqual(t.write_through, True)
+        self.assertEqual(b''.join(raw._write_stack), b'1')
+        t.write('23')
+        self.assertEqual(b''.join(raw._write_stack), b'123')
+        t.reconfigure(write_through=False)
+        self.assertEqual(t.write_through, False)
+        t.write('45')
+        t.flush()
+        self.assertEqual(b''.join(raw._write_stack), b'12345')
+        # Keeping default value
+        t.reconfigure()
+        t.reconfigure(write_through=None)
+        self.assertEqual(t.write_through, False)
+        t.reconfigure(write_through=True)
+        t.reconfigure()
+        t.reconfigure(write_through=None)
+        self.assertEqual(t.write_through, True)
+
     def test_read_nonbytes(self):
         # Issue #17106
         # Crash when underlying read() returns non-bytes
@@ -3173,6 +3224,14 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertRaises(TypeError, t.readline)
         t = self.TextIOWrapper(self.StringIO('a'))
         self.assertRaises(TypeError, t.read)
+
+    def test_illegal_encoder(self):
+        # Issue 31271: Calling write() while the return value of encoder's
+        # encode() is invalid shouldn't cause an assertion failure.
+        rot13 = codecs.lookup("rot13")
+        with support.swap_attr(rot13, '_is_text_encoding', True):
+            t = io.TextIOWrapper(io.BytesIO(b'foo'), encoding="rot13")
+        self.assertRaises(TypeError, t.write, 'bar')
 
     def test_illegal_decoder(self):
         # Issue #17106
@@ -3193,6 +3252,26 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertRaises(TypeError, t.readline)
         t = _make_illegal_wrapper()
         self.assertRaises(TypeError, t.read)
+
+        # Issue 31243: calling read() while the return value of decoder's
+        # getstate() is invalid should neither crash the interpreter nor
+        # raise a SystemError.
+        def _make_very_illegal_wrapper(getstate_ret_val):
+            class BadDecoder:
+                def getstate(self):
+                    return getstate_ret_val
+            def _get_bad_decoder(dummy):
+                return BadDecoder()
+            quopri = codecs.lookup("quopri")
+            with support.swap_attr(quopri, 'incrementaldecoder',
+                                   _get_bad_decoder):
+                return _make_illegal_wrapper()
+        t = _make_very_illegal_wrapper(42)
+        self.assertRaises(TypeError, t.read, 42)
+        t = _make_very_illegal_wrapper(())
+        self.assertRaises(TypeError, t.read, 42)
+        t = _make_very_illegal_wrapper((1, 2))
+        self.assertRaises(TypeError, t.read, 42)
 
     def _check_create_at_shutdown(self, **kwargs):
         # Issue #20037: creating a TextIOWrapper at shutdown
@@ -3421,6 +3500,7 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         decoder = codecs.getincrementaldecoder("utf-8")()
         decoder = self.IncrementalNewlineDecoder(decoder, translate=True)
         self.check_newline_decoding_utf8(decoder)
+        self.assertRaises(TypeError, decoder.setstate, 42)
 
     def test_newline_bytes(self):
         # Issue 5433: Excessive optimization in IncrementalNewlineDecoder

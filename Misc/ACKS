@@ -33,6 +33,7 @@ Fred Allen
 Jeff Allen
 Ray Allen
 Billy G. Allie
+Jamiel Almeida
 Kevin Altis
 Skyler Leigh Amador
 Joe Amenta
@@ -56,6 +57,7 @@ Ankur Ankan
 Heidi Annexstad
 Ramchandra Apte
 Éric Araujo
+Alexandru Ardelean
 Alicia Arlen
 Jeffrey Armstrong
 Jason Asbahr
@@ -271,6 +273,7 @@ Adal Chiriliuc
 Matt Chisholm
 Lita Cho
 Sayan Chowdhury
+Yuan-Chao Chou
 Anders Chrigström
 Tom Christiansen
 Renee Chu
@@ -309,6 +312,7 @@ Garrett Cooper
 Greg Copeland
 Ian Cordasco
 Aldo Cortesi
+Mircea Cosbuc
 David Costanzo
 Scott Cotton
 Greg Couch
@@ -436,6 +440,7 @@ Tim Everett
 Paul Everitt
 David Everly
 Daniel Evers
+evilzero
 Winston Ewert
 Greg Ewing
 Martijn Faassen
@@ -523,6 +528,7 @@ Elazar (אלעזר) Gershuni
 Ben Gertzfield
 Nadim Ghaznavi
 Dinu Gherman
+Subhendu Ghosh
 Jonathan Giddy
 Johannes Gijsbers
 Michael Gilfix
@@ -556,6 +562,7 @@ Eric Groo
 Daniel Andrade Groppe
 Dag Gruneau
 Filip Gruszczyński
+Andrii Grynenko
 Grzegorz Grzywacz
 Thomas Guettler
 Yuyang Guo
@@ -592,6 +599,7 @@ David Harrigan
 Brian Harring
 Jonathan Hartley
 Travis B. Hartwell
+Shane Harvey
 Larry Hastings
 Tim Hatch
 Shane Hathaway
@@ -619,11 +627,13 @@ Thomas Herve
 Bernhard Herzog
 Magnus L. Hetland
 Raymond Hettinger
+Lisa Hewus Fresh
 Kevan Heydon
 Wouter van Heyst
 Kelsey Hightower
 Jason Hildebrand
 Aaron Hill
+Joel Hillacre
 Richie Hindle
 Konrad Hinsen
 David Hobley
@@ -773,6 +783,7 @@ Robert Kern
 Jim Kerr
 Magnus Kessler
 Lawrence Kesteloot
+Garvit Khatri
 Vivek Khera
 Dhiru Kholia
 Akshit Khurana
@@ -801,6 +812,7 @@ Kim Knapp
 Lenny Kneler
 Pat Knight
 Jeff Knupp
+Nicholas Kobald
 Kubilay Kocak
 Greg Kochanski
 Manvisha Kodali
@@ -877,6 +889,8 @@ Inyeol Lee
 James Lee
 John J. Lee
 Thomas Lee
+Cooper Ry Lees
+Yaron de Leeuw
 Tennessee Leeuwenburg
 Luc Lefebvre
 Pierre Paul Lefebvre
@@ -895,6 +909,7 @@ John Lenton
 Kostyantyn Leschenko
 Benno Leslie
 Christopher Tur Lesniewski-Laas
+Pier-Yves Lessard
 Alain Leufroy
 Mark Levinson
 Mark Levitt
@@ -919,6 +934,7 @@ Gregor Lingl
 Everett Lipman
 Mirko Liss
 Alexander Liu
+Yuan Liu
 Nick Lockwood
 Stephanie Lockwood
 Martin von Löwis
@@ -1072,17 +1088,20 @@ Dale Nagata
 John Nagle
 Takahiro Nakayama
 Travers Naran
+Motoki Naruse
 Charles-François Natali
 Vilmos Nebehaj
 Fredrik Nehr
 Tony Nelson
 Trent Nelson
 Andrew Nester
+Osvaldo Santana Neto
 Chad Netzer
 Max Neunhöffer
 Anthon van der Neut
 George Neville-Neil
 Hieu Nguyen
+Nam Nguyen
 Johannes Nicolai
 Samuel Nicolary
 Jonathan Niehof
@@ -1126,6 +1145,7 @@ William Orr
 Michele Orrù
 Tomáš Orsava
 Oleg Oshmyan
+Denis Osipov
 Denis S. Otkidach
 Peter Otten
 Michael Otteneder
@@ -1167,6 +1187,7 @@ Berker Peksag
 Andreas Pelme
 Steven Pemberton
 Bo Peng
+Bruno "Polaco" Penteado
 Santiago Peresón
 George Peristerakis
 Thomas Perl
@@ -1195,6 +1216,7 @@ Steve Piercy
 Jim St. Pierre
 Dan Pierson
 Martijn Pieters
+Antoine Pietri
 Anand B. Pillai
 François Pinard
 Tom Pinckney
@@ -1235,10 +1257,12 @@ Brian Quinlan
 Anders Qvist
 Thomas Rachel
 Ram Rachum
+Jeffrey Rackauckas
 Jérôme Radix
 Burton Radons
 Abhilash Raj
 Shorya Raj
+Dhushyanth Ramasamy
 Jeff Ramnani
 Bayard Randel
 Varpu Rantala
@@ -1445,6 +1469,7 @@ Ville Skyttä
 Michael Sloan
 Nick Sloan
 Václav Šmilauer
+Allen W. Smith
 Christopher Smith
 Eric V. Smith
 Gregory P. Smith
@@ -1502,6 +1527,7 @@ Nathan Sullivan
 Mark Summerfield
 Reuben Sumner
 Eryk Sun
+Sanjay Sundaresan
 Marek Šuppa
 Hisao Suzuki
 Kalle Svensson
@@ -1548,12 +1574,14 @@ Jeremy Thurgood
 Eric Tiedemann
 July Tikhonov
 Tracy Tims
+Oz Tiram
 Oren Tirosh
 Tim Tisdall
 Jason Tishler
 Christian Tismer
 Jim Tittsler
 Frank J. Tobin
+James Tocknell
 Bennett Todd
 R Lindsay Todd
 Eugene Toder
@@ -1585,6 +1613,7 @@ Doobee R. Tzeck
 Eren Türkay
 Lionel Ulmer
 Adnan Umer
+Utkarsh Upadhyay
 Roger Upole
 Daniel Urban
 Michael Urman
@@ -1595,6 +1624,7 @@ Andi Vajda
 Case Van Horsen
 John Mark Vandenberg
 Kyle VanderBeek
+Eric N. Vander Weele
 Andrew Vant
 Atul Varma
 Dmitry Vasiliev
@@ -1674,6 +1704,7 @@ Jakub Wilk
 Gerald S. Williams
 Jason Williams
 John Williams
+Roy Williams
 Sue Williams
 Carol Willing
 Steven Willis
@@ -1695,6 +1726,7 @@ John Wiseman
 Chris Withers
 Stefan Witzel
 Irek Wlizlo
+Charles Wohlganger
 David Wolever
 Klaus-Juergen Wolf
 Dan Wolfe
@@ -1744,7 +1776,3 @@ Jelle Zijlstra
 Gennadiy Zlobin
 Doug Zongker
 Peter Åstrand
-evilzero
-Dhushyanth Ramasamy
-Subhendu Ghosh
-Sanjay Sundaresan

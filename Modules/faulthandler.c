@@ -373,8 +373,8 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     DWORD code = exc_info->ExceptionRecord->ExceptionCode;
     DWORD flags = exc_info->ExceptionRecord->ExceptionFlags;
 
-    /* only log fatal exceptions */
-    if (flags & EXCEPTION_NONCONTINUABLE) {
+    /* bpo-30557: only log fatal exceptions */
+    if (!(code & 0x80000000)) {
         /* call the next exception handler */
         return EXCEPTION_CONTINUE_SEARCH;
     }
@@ -391,8 +391,8 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     case EXCEPTION_IN_PAGE_ERROR: PUTS(fd, "page error"); break;
     case EXCEPTION_STACK_OVERFLOW: PUTS(fd, "stack overflow"); break;
     default:
-        PUTS(fd, "code ");
-        _Py_DumpDecimal(fd, code);
+        PUTS(fd, "code 0x");
+        _Py_DumpHexadecimal(fd, code, 8);
     }
     PUTS(fd, "\n\n");
 

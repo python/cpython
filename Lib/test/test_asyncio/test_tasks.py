@@ -3,6 +3,7 @@
 import collections
 import contextlib
 import functools
+import gc
 import io
 import os
 import re
@@ -90,6 +91,20 @@ class BaseTaskTests:
         self.loop = self.new_test_loop()
         self.loop.set_task_factory(self.new_task)
         self.loop.create_future = lambda: self.new_future(self.loop)
+
+    def test_task_del_collect(self):
+        class Evil:
+            def __del__(self):
+                gc.collect()
+
+        @asyncio.coroutine
+        def run():
+            return Evil()
+
+        self.loop.run_until_complete(
+            asyncio.gather(*[
+                self.new_task(self.loop, run()) for _ in range(100)
+            ], loop=self.loop))
 
     def test_other_loop_future(self):
         other_loop = asyncio.new_event_loop()
@@ -1863,6 +1878,25 @@ class BaseTaskTests:
             'source_traceback': source_traceback,
         })
         mock_handler.reset_mock()
+
+    @mock.patch('asyncio.base_events.logger')
+    def test_tb_logger_not_called_after_cancel(self, m_log):
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        @asyncio.coroutine
+        def coro():
+            raise TypeError
+
+        @asyncio.coroutine
+        def runner():
+            task = self.new_task(loop, coro())
+            yield from asyncio.sleep(0.05, loop=loop)
+            task.cancel()
+            task = None
+
+        loop.run_until_complete(runner())
+        self.assertFalse(m_log.error.called)
 
     @mock.patch('asyncio.coroutines.logger')
     def test_coroutine_never_yielded(self, m_log):

@@ -553,6 +553,7 @@ set_dealloc(PySetObject *so)
     setentry *entry;
     Py_ssize_t used = so->used;
 
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
     Py_TRASHCAN_SAFE_BEGIN(so)
     if (so->weakreflist != NULL)
@@ -809,6 +810,8 @@ typedef struct {
 static void
 setiter_dealloc(setiterobject *si)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    _PyObject_GC_UNTRACK(si);
     Py_XDECREF(si->si_set);
     PyObject_GC_Del(si);
 }
@@ -1083,7 +1086,7 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL, *result;
 
-    if (type == &PyFrozenSet_Type && !_PyArg_NoKeywords("frozenset()", kwds))
+    if (type == &PyFrozenSet_Type && !_PyArg_NoKeywords("frozenset", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable))
@@ -2006,7 +2009,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL;
 
-    if (!_PyArg_NoKeywords("set()", kwds))
+    if (!_PyArg_NoKeywords("set", kwds))
         return -1;
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;

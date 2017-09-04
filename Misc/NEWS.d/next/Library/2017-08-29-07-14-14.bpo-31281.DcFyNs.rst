@@ -1,0 +1,2 @@
+Fix ``fileinput.FileInput(files, inplace=True)`` when ``files`` contain
+``pathlib.Path`` objects.

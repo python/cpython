@@ -112,6 +112,7 @@
 
 #include "pyarena.h"
 #include "modsupport.h"
+#include "compile.h"
 #include "pythonrun.h"
 #include "pylifecycle.h"
 #include "ceval.h"
@@ -123,7 +124,6 @@
 #include "abstract.h"
 #include "bltinmodule.h"
 
-#include "compile.h"
 #include "eval.h"
 
 #include "pyctype.h"
