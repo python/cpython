@@ -1415,9 +1415,6 @@
 /* Define on OpenBSD to activate all library features */
 #undef _BSD_SOURCE
 
-/* Define on Irix to enable u_int */
-#undef _BSD_TYPES
-
 /* Define on Darwin to activate all library features */
 #undef _DARWIN_C_SOURCE
 
