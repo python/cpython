@@ -803,9 +803,10 @@ static void
 remove_module(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
+    if (!PyMapping_HasKey(modules, name)) {
+        return;
+    }
     if (PyMapping_DelItem(modules, name) < 0) {
-        if (!PyMapping_HasKey(modules, name))
-            return;
         Py_FatalError("import:  deleting existing key in"
                       "sys.modules failed");
     }
