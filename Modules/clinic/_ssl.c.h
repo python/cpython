@@ -132,7 +132,7 @@ _ssl__SSLSocket_version(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_version_impl(self);
 }
 
-#if defined(OPENSSL_NPN_NEGOTIATED)
+#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
 
 PyDoc_STRVAR(_ssl__SSLSocket_selected_npn_protocol__doc__,
 "selected_npn_protocol($self, /)\n"
@@ -151,7 +151,7 @@ _ssl__SSLSocket_selected_npn_protocol(PySSLSocket *self, PyObject *Py_UNUSED(ign
     return _ssl__SSLSocket_selected_npn_protocol_impl(self);
 }
 
-#endif /* defined(OPENSSL_NPN_NEGOTIATED) */
+#endif /* defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG) */
 
 #if defined(HAVE_ALPN)
 
