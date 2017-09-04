@@ -1,0 +1,2 @@
+Show correct error messages when any of the pthread_* calls in
+thread_pthread.h fails.

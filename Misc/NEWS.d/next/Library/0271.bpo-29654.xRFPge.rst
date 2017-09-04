@@ -1,0 +1,2 @@
+Support If-Modified-Since HTTP header (browser cache).  Patch by Pierre
+Quentel.

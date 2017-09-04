@@ -1,0 +1,2 @@
+multiprocessing.Queue._feed background running thread do not break from main
+loop on exception.
