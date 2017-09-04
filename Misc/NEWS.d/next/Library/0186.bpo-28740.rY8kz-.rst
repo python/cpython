@@ -1,0 +1,2 @@
+Add sys.getandroidapilevel(): return the build time API version of Android
+as an integer. Function only available on Android.

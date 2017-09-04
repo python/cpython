@@ -1,0 +1,2 @@
+Fixed memory leaks in the replace() method of datetime and time objects when
+pass out of bound fold argument.

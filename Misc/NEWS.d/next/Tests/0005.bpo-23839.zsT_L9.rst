@@ -1,0 +1,1 @@
+Various caches now are cleared before running every test file.

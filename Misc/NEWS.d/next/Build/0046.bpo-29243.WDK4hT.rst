@@ -1,0 +1,3 @@
+Prevent unnecessary rebuilding of Python during ``make test``, ``make
+install`` and some other make targets when configured with ``--enable-
+optimizations``.

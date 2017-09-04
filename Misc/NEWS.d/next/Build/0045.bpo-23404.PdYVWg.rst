@@ -1,0 +1,2 @@
+Don't regenerate generated files based on file modification time anymore:
+the action is now explicit. Replace ``make touch`` with ``make regen-all``.

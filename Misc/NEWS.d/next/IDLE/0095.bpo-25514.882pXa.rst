@@ -1,0 +1,2 @@
+Add doc subsubsection about IDLE failure to start. Popup no-connection
+message directs users to this section.

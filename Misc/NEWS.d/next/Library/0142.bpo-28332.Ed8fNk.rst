@@ -1,0 +1,2 @@
+Deprecated silent truncations in socket.htons and socket.ntohs. Original
+patch by Oren Milman.

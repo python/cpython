@@ -1,0 +1,4 @@
+Fix error position of the unicode error in ASCII and Latin1 encoders when a
+string returned by the error handler contains multiple non-encodable
+characters (non-ASCII for the ASCII codec, characters out of the
+U+0000-U+00FF range for Latin1).

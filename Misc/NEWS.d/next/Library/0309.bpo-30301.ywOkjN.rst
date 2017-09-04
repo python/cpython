@@ -1,0 +1,2 @@
+Fix AttributeError when using SimpleQueue.empty() under *spawn* and
+*forkserver* start methods.

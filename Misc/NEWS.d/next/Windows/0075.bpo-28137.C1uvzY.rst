@@ -1,0 +1,1 @@
+Renames Windows path file to ._pth

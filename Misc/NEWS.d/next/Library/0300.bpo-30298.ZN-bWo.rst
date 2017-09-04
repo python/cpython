@@ -1,0 +1,4 @@
+Weaken the condition of deprecation warnings for inline modifiers. Now
+allowed several subsequential inline modifiers at the start of the pattern
+(e.g. ``'(?i)(?s)...'``).  In verbose mode whitespaces and comments now are
+allowed before and between inline modifiers (e.g. ``'(?x) (?i) (?s)...'``).

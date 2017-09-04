@@ -1,0 +1,2 @@
+If max_line_length=None is specified while using the Compat32 policy, it is
+no longer ignored.  Patch by Mircea Cosbuc.

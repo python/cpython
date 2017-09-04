@@ -1,0 +1,3 @@
+Creating instances of range_iterator by calling range_iterator type now is
+disallowed.  Calling iter() on range instance is the only way. Patch by Oren
+Milman.

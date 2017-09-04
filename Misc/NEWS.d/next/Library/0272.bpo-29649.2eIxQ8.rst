@@ -1,0 +1,2 @@
+Improve struct.pack_into() exception messages for problems with the buffer
+size and offset.  Patch by Andrew Nester.

@@ -1,0 +1,3 @@
+Shift operation now has less opportunity to raise OverflowError. ValueError
+always is raised rather than OverflowError for negative counts. Shifting
+zero with non-negative count always returns zero.

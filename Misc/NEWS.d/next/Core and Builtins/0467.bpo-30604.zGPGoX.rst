@@ -1,0 +1,1 @@
+Move co_extra_freefuncs from per-thread to per-interpreter to avoid crashes.

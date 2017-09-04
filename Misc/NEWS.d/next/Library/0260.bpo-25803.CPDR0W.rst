@@ -1,0 +1,2 @@
+Avoid incorrect errors raised by Path.mkdir(exist_ok=True) when the OS gives
+priority to errors such as EACCES over EEXIST.

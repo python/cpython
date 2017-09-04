@@ -1,0 +1,3 @@
+Prohibit implicit C function declarations: use -Werror=implicit-function-
+declaration when possible (GCC and Clang, but it depends on the compiler
+version). Patch written by Chi Hsuan Yen.

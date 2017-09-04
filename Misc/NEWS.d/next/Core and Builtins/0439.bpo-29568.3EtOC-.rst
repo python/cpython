@@ -1,0 +1,2 @@
+Escaped percent "%%" in the format string for classic string formatting no
+longer allows any characters between two percents.

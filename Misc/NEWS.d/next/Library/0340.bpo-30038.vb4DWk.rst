@@ -1,0 +1,2 @@
+Fix race condition between signal delivery and wakeup file descriptor.
+Patch by Nathaniel Smith.

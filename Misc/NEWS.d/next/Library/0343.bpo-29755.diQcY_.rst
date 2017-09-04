@@ -1,0 +1,2 @@
+Fixed the lgettext() family of functions in the gettext module. They now
+always return bytes.

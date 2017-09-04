@@ -1,0 +1,1 @@
+compileall now supports pathlib.

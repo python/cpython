@@ -1,0 +1,2 @@
+functools.lru_cache() was susceptible to an obscure reentrancy bug
+triggerable by a monkey-patched len() function.

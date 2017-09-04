@@ -1,0 +1,3 @@
+Argument Clinic now uses the converter `bool(accept={int})` rather than
+`int` for semantical booleans.  This avoids repeating the default value for
+Python and C and will help in converting to `bool` in future.

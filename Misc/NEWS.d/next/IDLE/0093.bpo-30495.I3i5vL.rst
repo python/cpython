@@ -1,0 +1,2 @@
+Add docstrings for textview.py and use PEP8 names. Patches by Cheryl Sabella
+and Terry Jan Reedy.

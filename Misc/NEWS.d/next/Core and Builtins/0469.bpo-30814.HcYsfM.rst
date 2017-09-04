@@ -1,0 +1,1 @@
+Fixed a race condition when import a submodule from a package.

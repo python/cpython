@@ -1,0 +1,1 @@
+faulthandler now correctly filters and displays exception codes on Windows

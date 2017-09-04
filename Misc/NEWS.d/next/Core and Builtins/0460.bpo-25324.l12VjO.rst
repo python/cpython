@@ -1,0 +1,3 @@
+Tokens needed for parsing in Python moved to C. ``COMMENT``, ``NL`` and
+``ENCODING``. This way the tokens and tok_names in the token module don't
+get changed when you import the tokenize module.

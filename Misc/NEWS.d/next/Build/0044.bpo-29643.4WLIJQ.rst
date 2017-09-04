@@ -1,0 +1,1 @@
+Fix ``--enable-optimization`` didn't work.

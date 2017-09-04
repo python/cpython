@@ -1,0 +1,3 @@
+Various updates to typing module: add typing.NoReturn type, use
+WrapperDescriptorType, minor bug-fixes.  Original PRs by Jim Fasarakis-
+Hilliard and Ivan Levkivskyi.

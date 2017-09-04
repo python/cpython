@@ -1,0 +1,4 @@
+Implement PEP 538 (legacy C locale coercion). This means that when a
+suitable coercion target locale is available, both the core interpreter and
+locale-aware C extensions will assume the use of UTF-8 as the default text
+encoding, rather than ASCII.

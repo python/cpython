@@ -1,0 +1,1 @@
+Removes readme.txt from the installer.

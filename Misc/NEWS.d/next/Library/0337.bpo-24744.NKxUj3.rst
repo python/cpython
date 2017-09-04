@@ -1,0 +1,2 @@
+pkgutil.walk_packages function now raises ValueError if *path* is a string.
+Patch by Sanyam Khurana.

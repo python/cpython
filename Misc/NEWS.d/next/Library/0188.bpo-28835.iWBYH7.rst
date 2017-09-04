@@ -1,0 +1,2 @@
+Fix a regression introduced in warnings.catch_warnings(): call
+warnings.showwarning() if it was overridden inside the context manager.

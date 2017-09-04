@@ -1,0 +1,1 @@
+String constants with null character no longer interned.

@@ -1,0 +1,1 @@
+Prevent memory leak in win32_ver().

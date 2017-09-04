@@ -1,0 +1,1 @@
+Fix references leaked by pdb in the handling of SIGINT handlers.

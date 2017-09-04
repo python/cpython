@@ -1,0 +1,1 @@
+imghdr now supports pathlib.

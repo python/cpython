@@ -1,0 +1,4 @@
+Distutils.sdist now looks for README and setup.py files with case
+sensitivity. This behavior matches that found in Setuptools 6.0 and later.
+See `setuptools 100 <https://github.com/pypa/setuptools/issues/100>`_ for
+rationale.

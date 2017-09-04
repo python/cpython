@@ -1,0 +1,1 @@
+Fix PathLike support for shutil.unpack_archive. Patch by Jelle Zijlstra.

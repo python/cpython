@@ -1,0 +1,3 @@
+The type of results of PyThread_start_new_thread() and
+PyThread_get_thread_ident(), and the id parameter of
+PyThreadState_SetAsyncExc() changed from "long" to "unsigned long".

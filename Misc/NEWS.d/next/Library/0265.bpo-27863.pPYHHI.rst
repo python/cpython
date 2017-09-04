@@ -1,0 +1,2 @@
+Fixed multiple crashes in ElementTree caused by race conditions and wrong
+types.

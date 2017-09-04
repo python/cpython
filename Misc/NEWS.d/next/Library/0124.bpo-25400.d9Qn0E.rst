@@ -1,0 +1,2 @@
+RobotFileParser now correctly returns default values for crawl_delay and
+request_rate.  Initial patch by Peter Wirtz.

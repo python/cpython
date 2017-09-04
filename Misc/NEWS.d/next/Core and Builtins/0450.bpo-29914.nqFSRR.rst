@@ -1,0 +1,3 @@
+Fixed default implementations of __reduce__ and __reduce_ex__().
+object.__reduce__() no longer takes arguments, object.__reduce_ex__() now
+requires one argument.

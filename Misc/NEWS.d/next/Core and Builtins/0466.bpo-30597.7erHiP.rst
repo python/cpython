@@ -1,0 +1,2 @@
+``print`` now shows expected input in custom error message when used as a
+Python 2 statement. Patch by Sanyam Khurana.
