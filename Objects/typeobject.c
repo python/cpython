@@ -3000,8 +3000,8 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     }
 
     res = NULL;
-    /* keep a strong reference to mro because type->tp_mro can be replaced
-       during PyDict_GetItem(dict, name)  */
+    /* Keep a strong reference to mro because type->tp_mro can be replaced
+       during dict lookup, e.g. when comparing to non-string keys. */
     Py_INCREF(mro);
     assert(PyTuple_Check(mro));
     n = PyTuple_GET_SIZE(mro);
