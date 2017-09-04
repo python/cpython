@@ -74,7 +74,7 @@
 	/>
 	<UserMacro
 		Name="sqlite3Dir"
-		Value="$(externalsDir)\sqlite-3.8.11.0"
+		Value="$(externalsDir)\sqlite-3.14.2.0"
 	/>
 	<UserMacro
 		Name="bz2Dir"
