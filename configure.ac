@@ -2168,25 +2168,7 @@ if test "$ac_cv_has_le64toh" = "yes"; then
     AC_DEFINE(HAVE_HTOLE64, 1, [Define this if you have le64toh()])
 fi
 
-# Enabling LFS on Solaris (2.6 to 9) with gcc 2.95 triggers a bug in
-# the system headers: If _XOPEN_SOURCE and _LARGEFILE_SOURCE are
-# defined, but the compiler does not support pragma redefine_extname,
-# and _LARGEFILE64_SOURCE is not defined, the headers refer to 64-bit
-# structures (such as rlimit64) without declaring them. As a
-# work-around, disable LFS on such configurations
-
 use_lfs=yes
-AC_MSG_CHECKING(Solaris LFS bug)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#define _LARGEFILE_SOURCE 1
-#define _FILE_OFFSET_BITS 64
-#include <sys/resource.h>
-]], [[struct rlimit foo;]])],[sol_lfs_bug=no],[sol_lfs_bug=yes])
-AC_MSG_RESULT($sol_lfs_bug)
-if test "$sol_lfs_bug" = "yes"; then
-  use_lfs=no
-fi
-
 # Don't use largefile support for GNU/Hurd
 case $ac_sys_system in GNU*)
   use_lfs=no
