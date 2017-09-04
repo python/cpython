@@ -546,24 +546,6 @@ then
   AC_DEFINE(_INCLUDE__STDC_A1_SOURCE, 1, Define to include mbstate_t for mbrtowc)
 fi
 
-#
-# SGI compilers allow the specification of the both the ABI and the
-# ISA on the command line.  Depending on the values of these switches,
-# different and often incompatible code will be generated.
-#
-# The SGI_ABI variable can be used to modify the CC and LDFLAGS and
-# thus supply support for various ABI/ISA combinations.  The MACHDEP
-# variable is also adjusted.
-#
-AC_SUBST(SGI_ABI)
-if test ! -z "$SGI_ABI"
-then
-        CC="cc $SGI_ABI"
-        LDFLAGS="$SGI_ABI $LDFLAGS"
-        MACHDEP=`echo "${MACHDEP}${SGI_ABI}" | sed 's/ *//g'`
-fi
-AC_MSG_RESULT($MACHDEP)
-
 # Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
 # it may influence the way we can build extensions, so distutils
 # needs to check it
