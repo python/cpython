@@ -2945,6 +2945,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
     Py_ssize_t i, n;
     PyObject *mro, *res, *base, *dict;
+    Py_hash_t hash;
     unsigned int h;
 
     if (MCACHE_CACHEABLE_NAME(name) &&
@@ -2983,6 +2984,21 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         }
     }
 
+    if (!PyUnicode_CheckExact(name) ||
+        (hash = ((PyASCIIObject *) name)->hash) == -1)
+    {
+        hash = PyObject_Hash(name);
+        if (hash == -1) {
+            /* Same comment as above applies: this should not ignore the
+               error. But it's highly unlikely that we even get here since
+               'name' is bound to be a PyUnicode object and almost certainly
+               not a subtype.
+             */
+            PyErr_Clear();
+            return NULL;
+        }
+    }
+
     res = NULL;
     /* keep a strong reference to mro because type->tp_mro can be replaced
        during PyDict_GetItem(dict, name)  */
@@ -2994,7 +3010,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         assert(PyType_Check(base));
         dict = ((PyTypeObject *)base)->tp_dict;
         assert(dict && PyDict_Check(dict));
-        res = PyDict_GetItem(dict, name);
+        res = _PyDict_GetItem_KnownHash(dict, name, hash);
         if (res != NULL)
             break;
     }
