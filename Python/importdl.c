@@ -215,7 +215,8 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     else
         Py_INCREF(path);
 
-    if (_PyImport_FixupExtensionObject(m, name_unicode, path) < 0)
+    PyObject *modules = PyImport_GetModuleDict();
+    if (_PyImport_FixupExtensionObject(m, name_unicode, path, modules) < 0)
         goto error;
 
     Py_DECREF(name_unicode);
