@@ -775,9 +775,6 @@
 /* Define to 1 if you have the `sched_setscheduler' function. */
 #undef HAVE_SCHED_SETSCHEDULER
 
-/* Define to 1 if you have the `select' function. */
-#undef HAVE_SELECT
-
 /* Define to 1 if you have the `sem_getvalue' function. */
 #undef HAVE_SEM_GETVALUE
 
