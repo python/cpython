@@ -8246,43 +8246,7 @@ $as_echo "#define HAVE_HTOLE64 1" >>confdefs.h
 
 fi
 
-# Enabling LFS on Solaris (2.6 to 9) with gcc 2.95 triggers a bug in
-# the system headers: If _XOPEN_SOURCE and _LARGEFILE_SOURCE are
-# defined, but the compiler does not support pragma redefine_extname,
-# and _LARGEFILE64_SOURCE is not defined, the headers refer to 64-bit
-# structures (such as rlimit64) without declaring them. As a
-# work-around, disable LFS on such configurations
-
 use_lfs=yes
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Solaris LFS bug" >&5
-$as_echo_n "checking Solaris LFS bug... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define _LARGEFILE_SOURCE 1
-#define _FILE_OFFSET_BITS 64
-#include <sys/resource.h>
-
-int
-main ()
-{
-struct rlimit foo;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  sol_lfs_bug=no
-else
-  sol_lfs_bug=yes
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $sol_lfs_bug" >&5
-$as_echo "$sol_lfs_bug" >&6; }
-if test "$sol_lfs_bug" = "yes"; then
-  use_lfs=no
-fi
-
 # Don't use largefile support for GNU/Hurd
 case $ac_sys_system in GNU*)
   use_lfs=no
