@@ -4789,6 +4789,9 @@ static int odict_init(PyObject *self, PyObject *args, PyObject *kwds);
 
 PyDoc_STRVAR(odict_iter__doc__, "od.__iter__() <==> iter(od)");
 
+/* forward */
+static PyObject * odict_iter(PyODictObject *od);
+
 /* __ne__() */
 
 /* Mapping.__ne__() does not have a docstring. */
@@ -5117,7 +5120,7 @@ static PyMethodDef odict_methods[] = {
      odict_eq__doc__},
     {"__init__",        (PyCFunction)odict_init,        METH_NOARGS,
      odict_init__doc__},
-    {"__iter__",        (PyCFunction)dict_iter,         METH_NOARGS,
+    {"__iter__",        (PyCFunction)odict_iter,        METH_NOARGS,
      odict_iter__doc__},
     {"__ne__",          (PyCFunction)odict_ne,          METH_NOARGS,
      odict_ne__doc__},

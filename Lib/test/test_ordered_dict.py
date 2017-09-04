@@ -712,7 +712,7 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         check(od.items(), size('P'))
         check(od.values(), size('P'))
 
-        itersize = size('P2nPni')
+        itersize = size('i2P3nP')
         check(iter(od), itersize)
         check(iter(od.keys()), itersize)
         check(iter(od.items()), itersize)
