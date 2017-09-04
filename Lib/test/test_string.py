@@ -282,6 +282,30 @@ class TestTemplate(unittest.TestCase):
         s = PathPattern('$bag.foo.who likes to eat a bag of $bag.what')
         self.assertEqual(s.substitute(m), 'tim likes to eat a bag of ham')
 
+    def test_idpattern_override_inside_outside(self):
+        # bpo-1198569: Allow the regexp inside and outside braces to be
+        # different when deriving from Template.
+        class MyPattern(Template):
+            idpattern = r'[a-z]+'
+            braceidpattern = r'[A-Z]+'
+            flags = 0
+        m = dict(foo='foo', BAR='BAR')
+        s = MyPattern('$foo ${BAR}')
+        self.assertEqual(s.substitute(m), 'foo BAR')
+
+    def test_idpattern_override_inside_outside_invalid_unbraced(self):
+        # bpo-1198569: Allow the regexp inside and outside braces to be
+        # different when deriving from Template.
+        class MyPattern(Template):
+            idpattern = r'[a-z]+'
+            braceidpattern = r'[A-Z]+'
+            flags = 0
+        m = dict(foo='foo', BAR='BAR')
+        s = MyPattern('$FOO')
+        self.assertRaises(ValueError, s.substitute, m)
+        s = MyPattern('${bar}')
+        self.assertRaises(ValueError, s.substitute, m)
+
     def test_pattern_override(self):
         class MyPattern(Template):
             pattern = r"""
