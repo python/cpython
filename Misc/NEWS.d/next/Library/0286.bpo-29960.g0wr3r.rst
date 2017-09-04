@@ -1,0 +1,2 @@
+Preserve generator state when _random.Random.setstate() raises an exception.
+Patch by Bryan Olson.

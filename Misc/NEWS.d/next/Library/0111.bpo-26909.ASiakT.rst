@@ -1,0 +1,1 @@
+Fix slow pipes IO in asyncio. Patch by INADA Naoki.

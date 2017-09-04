@@ -1,0 +1,1 @@
+Add missing info of code object in inspect documentation.

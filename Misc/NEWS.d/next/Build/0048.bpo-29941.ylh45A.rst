@@ -1,0 +1,2 @@
+Add ``--with-assertions`` configure flag to explicitly enable C ``assert()``
+checks. Defaults to off. ``--with-pydebug`` implies ``--with-assertions``.

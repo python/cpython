@@ -1,0 +1,1 @@
+Fix UnboundLocalError in socket._sendfile_use_sendfile.
