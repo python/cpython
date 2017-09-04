@@ -50,7 +50,7 @@
 	/>
 	<UserMacro
 		Name="bsddb47Dir"
-		Value="$(externalsDir)\db-4.7.25.0\build_windows"
+		Value="$(externalsDir)\bsddb-4.7.25.0\build_windows"
 	/>
 	<UserMacro
 		Name="bsddb47DepLibs"
