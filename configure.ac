@@ -4081,14 +4081,6 @@ AC_C_CHAR_UNSIGNED
 AC_C_CONST
 
 works=no
-AC_MSG_CHECKING(for working volatile)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[volatile int x; x = 0;]])],
-  [works=yes],
-  [AC_DEFINE(volatile, , [Define to empty if the keyword does not work.])]
-)
-AC_MSG_RESULT($works)
-
-works=no
 AC_MSG_CHECKING(for working signed char)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[signed char c;]])],
   [works=yes],
