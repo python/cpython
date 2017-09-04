@@ -1,0 +1,3 @@
+``PyInterpreterState`` has a "modules" field that is copied into
+``sys.modules`` during interpreter startup.  Adding support for
+other mappings than dict gives us some flexibility.
