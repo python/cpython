@@ -959,13 +959,13 @@ class SizeofTest(unittest.TestCase):
         # dictionary-itemview
         check({}.items(), size('P'))
         # dictionary iterator
-        check(iter({}), size('P2nPni'))
+        check(iter({}), size('P2nPn'))
         # dictionary-keyiterator
-        check(iter({}.keys()), size('P2nPni'))
+        check(iter({}.keys()), size('P2nPn'))
         # dictionary-valueiterator
-        check(iter({}.values()), size('P2nPni'))
+        check(iter({}.values()), size('P2nPn'))
         # dictionary-itemiterator
-        check(iter({}.items()), size('P2nPni'))
+        check(iter({}.items()), size('P2nPn'))
         # dictproxy
         class C(object): pass
         check(C.__dict__, size('P'))
