@@ -134,10 +134,6 @@ AC_DEFINE(_NETBSD_SOURCE, 1, [Define on NetBSD to activate all library features]
 AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features])
 
 # The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
-# u_int on Irix 5.3. Defining _BSD_TYPES brings it back.
-AC_DEFINE(_BSD_TYPES, 1, [Define on Irix to enable u_int])
-
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])
@@ -406,7 +402,6 @@ then
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
-	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
 fi
@@ -2402,7 +2397,7 @@ fi
 AC_MSG_RESULT($SHLIB_SUFFIX)
 
 # LDSHARED is the ld *command* used to create shared library
-# -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
+# -- "cc -G" on SunOS 5.x.
 # (Shared libraries in this instance are shared modules to be loaded into
 # Python, as opposed to building Python itself as a shared library.)
 AC_MSG_CHECKING(LDSHARED)
@@ -2413,8 +2408,6 @@ then
 		BLDSHARED="Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
-	IRIX/5*) LDSHARED="ld -shared";;
-	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/5*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
@@ -2572,10 +2565,6 @@ then
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
-	IRIX*/6*)  case $CC in
-		   *gcc*) CCSHARED="-shared";;
-		   *) CCSHARED="";;
-		   esac;;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
