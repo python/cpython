@@ -477,8 +477,10 @@ time_strftime(PyObject *self, PyObject *args)
     if (tup == NULL) {
         time_t tt = time(NULL);
         buf = *localtime(&tt);
-    } else if (!gettmarg(tup, &buf))
+    } else if (!gettmarg(tup, &buf)
+               || !checktm(&buf)) {
         return NULL;
+    }
 
     /* Checks added to make sure strftime() does not crash Python by
        indexing blindly into some array for a textual representation
