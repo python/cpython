@@ -3,8 +3,10 @@ dist: trusty
 sudo: false
 group: beta
 
-# To cache doc-building dependencies.
-cache: pip
+# To cache doc-building dependencies and C compiler output.
+cache:
+    - pip
+    - ccache
 
 branches:
   only:
