@@ -559,11 +559,40 @@ See the library reference manual for formatting codes (same as strftime()).");
 
 
 static PyObject *
+_asctime(struct tm *timeptr)
+{
+    /* Inspired by Open Group reference implementation available at
+     * http://pubs.opengroup.org/onlinepubs/009695399/functions/asctime.html */
+    static const char wday_name[7][4] = {
+        "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+    };
+    static const char mon_name[12][4] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+    PyObject *unicode, *str;
+    /* PyString_FromString() cannot be used because it doesn't support %3d */
+    unicode = PyUnicode_FromFormat(
+        "%s %s%3d %.2d:%.2d:%.2d %d",
+        wday_name[timeptr->tm_wday],
+        mon_name[timeptr->tm_mon],
+        timeptr->tm_mday, timeptr->tm_hour,
+        timeptr->tm_min, timeptr->tm_sec,
+        1900 + timeptr->tm_year);
+    if (unicode == NULL) {
+        return NULL;
+    }
+
+    str = PyUnicode_AsASCIIString(unicode);
+    Py_DECREF(unicode);
+    return str;
+}
+
+static PyObject *
 time_asctime(PyObject *self, PyObject *args)
 {
     PyObject *tup = NULL;
     struct tm buf;
-    char *p;
     if (!PyArg_UnpackTuple(args, "asctime", 0, 1, &tup))
         return NULL;
     if (tup == NULL) {
@@ -571,14 +600,7 @@ time_asctime(PyObject *self, PyObject *args)
         buf = *localtime(&tt);
     } else if (!gettmarg(tup, &buf))
         return NULL;
-    p = asctime(&buf);
-    if (p == NULL) {
-        PyErr_SetString(PyExc_ValueError, "invalid time");
-        return NULL;
-    }
-    if (p[24] == '\n')
-        p[24] = '\0';
-    return PyString_FromString(p);
+    return _asctime(&buf);
 }
 
 PyDoc_STRVAR(asctime_doc,
@@ -593,7 +615,7 @@ time_ctime(PyObject *self, PyObject *args)
 {
     PyObject *ot = NULL;
     time_t tt;
-    char *p;
+    struct tm *buf;
 
     if (!PyArg_UnpackTuple(args, "ctime", 0, 1, &ot))
         return NULL;
@@ -607,14 +629,16 @@ time_ctime(PyObject *self, PyObject *args)
         if (tt == (time_t)-1 && PyErr_Occurred())
             return NULL;
     }
-    p = ctime(&tt);
-    if (p == NULL) {
-        PyErr_SetString(PyExc_ValueError, "unconvertible time");
-        return NULL;
+    buf = localtime(&tt);
+    if (buf == NULL) {
+#ifdef EINVAL
+        if (errno == 0) {
+            errno = EINVAL;
+        }
+#endif
+        return PyErr_SetFromErrno(PyExc_ValueError);
     }
-    if (p[24] == '\n')
-        p[24] = '\0';
-    return PyString_FromString(p);
+    return _asctime(buf);
 }
 
 PyDoc_STRVAR(ctime_doc,

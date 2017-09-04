@@ -1,0 +1,4 @@
+Rewrite time.asctime() and time.ctime(). Backport and adapt the _asctime()
+function from the master branch to not depend on the implementation of
+asctime() and ctime() from the external C library. This change fixes a bug
+when Python is run using the musl C library.
