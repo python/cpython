@@ -44,6 +44,7 @@ PC/*/*.suo
 PC/*/Win32-temp-*
 PC/*/x64-temp-*
 PC/*/amd64
+PCbuild/*.ilk
 PCbuild/*.user
 PCbuild/*.suo
 PCbuild/*.*sdf
