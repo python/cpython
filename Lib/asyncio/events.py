@@ -606,7 +606,7 @@ _lock = threading.Lock()
 
 # A TLS for the running event loop, used by _get_running_loop.
 _running_loop = threading.local()
-_running_loop._loop_pid = (None, None)
+_running_loop.loop_pid = (None, None)
 
 
 def _get_running_loop():
@@ -615,7 +615,7 @@ def _get_running_loop():
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
-    running_loop, pid = _running_loop._loop_pid
+    running_loop, pid = _running_loop.loop_pid
     if running_loop is not None and pid == os.getpid():
         return running_loop
 
@@ -626,7 +626,7 @@ def _set_running_loop(loop):
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
-    _running_loop._loop_pid = (loop, os.getpid())
+    _running_loop.loop_pid = (loop, os.getpid())
 
 
 def _init_event_loop_policy():
