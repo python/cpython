@@ -1,0 +1,2 @@
+SSLObject.version() now correctly returns None when handshake over BIO has
+not been performed yet.
