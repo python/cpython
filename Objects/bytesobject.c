@@ -866,7 +866,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     switch(c)
                     {
                         default:
-                            assert(0 && "'type' not in [diuoxX]");
+                            Py_UNREACHABLE();
                         case 'd':
                         case 'i':
                         case 'u':

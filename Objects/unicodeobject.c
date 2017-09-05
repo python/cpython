@@ -2076,7 +2076,7 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
 #endif
         break;
     default:
-        assert(0 && "Impossible state");
+        Py_UNREACHABLE();
     }
 
     return unicode_result(unicode);
@@ -2169,8 +2169,7 @@ kind_maxchar_limit(unsigned int kind)
     case PyUnicode_4BYTE_KIND:
         return 0x10000;
     default:
-        assert(0 && "invalid kind");
-        return MAX_UNICODE;
+        Py_UNREACHABLE();
     }
 }
 
@@ -4064,7 +4063,7 @@ PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
                     *w = *four_bytes;
 
                 if (w > wchar_end) {
-                    assert(0 && "Miscalculated string end");
+                    Py_UNREACHABLE();
                 }
             }
             *w = 0;
@@ -4116,7 +4115,7 @@ PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
 #endif
             }
             else {
-                assert(0 && "This should never happen.");
+                Py_UNREACHABLE();
             }
         }
     }
@@ -13607,8 +13606,7 @@ _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
     case PyUnicode_2BYTE_KIND: maxchar = 0xffff; break;
     case PyUnicode_4BYTE_KIND: maxchar = 0x10ffff; break;
     default:
-        assert(0 && "invalid kind");
-        return -1;
+        Py_UNREACHABLE();
     }
 
     return _PyUnicodeWriter_PrepareInternal(writer, 0, maxchar);
@@ -14342,7 +14340,7 @@ mainformatlong(PyObject *v,
         switch(type)
         {
             default:
-                assert(0 && "'type' not in [diuoxX]");
+                Py_UNREACHABLE();
             case 'd':
             case 'i':
             case 'u':
@@ -15353,8 +15351,7 @@ _Py_ReleaseInternedUnicodeStrings(void)
     for (i = 0; i < n; i++) {
         s = PyList_GET_ITEM(keys, i);
         if (PyUnicode_READY(s) == -1) {
-            assert(0 && "could not ready string");
-            fprintf(stderr, "could not ready string\n");
+            Py_UNREACHABLE();
         }
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_NOT_INTERNED:
