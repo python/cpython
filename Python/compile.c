@@ -1350,8 +1350,7 @@ get_const_value(expr_ty e)
     case NameConstant_kind:
         return e->v.NameConstant.value;
     default:
-        assert(!is_const(e));
-        return NULL;
+        Py_UNREACHABLE();
     }
 }
 
