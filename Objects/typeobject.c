@@ -2375,18 +2375,20 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     /* Adjust for empty tuple bases */
     nbases = PyTuple_GET_SIZE(bases);
     if (nbases == 0) {
-        bases = PyTuple_Pack(1, &PyBaseObject_Type);
+        base = &PyBaseObject_Type;
+        bases = PyTuple_Pack(1, base);
         if (bases == NULL)
             goto error;
         nbases = 1;
     }
-    else
+    else {
         Py_INCREF(bases);
 
-    /* Calculate best base, and check that all bases are type objects */
-    base = best_base(bases);
-    if (base == NULL) {
-        goto error;
+        /* Calculate best base, and check that all bases are type objects */
+        base = best_base(bases);
+        if (base == NULL) {
+            goto error;
+        }
     }
 
     dict = PyDict_Copy(orig_dict);
