@@ -303,6 +303,8 @@ are always available.  They are listed here in alphabetical order.
    other function and :func:`debug` will automatically call that, allowing you
    to drop into the debugger of choice.
 
+   .. versionadded:: 3.7
+
 .. function:: delattr(object, name)
 
    This is a relative of :func:`setattr`.  The arguments are an object and a

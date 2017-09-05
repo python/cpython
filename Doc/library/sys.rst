@@ -115,6 +115,8 @@ always available.
    drops you into the :mod:`pdb` debugger, but it can be set to any other
    function so that you can choose which debugger gets used.
 
+   .. versionadded:: 3.7
+
 .. function:: _debugmallocstats()
 
    Print low-level information to stderr about the state of CPython's memory
@@ -202,6 +204,9 @@ always available.
    saved so that ``debughook``, ``displayhook`` and ``excepthook`` can be
    restored in case they happen to get replaced with broken or alternative
    objects.
+
+   .. versionadded:: 3.7
+      __debughook__
 
 
 .. function:: exc_info()
