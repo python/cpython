@@ -328,6 +328,10 @@ class XMLRPCTestCase(unittest.TestCase):
                 self.handled = True
                 self.close_connection = False
 
+            def log_message(self, format, *args):
+                # don't clobber sys.stderr
+                pass
+
         def run_server():
             server.socket.settimeout(float(1))  # Don't hang if client fails
             server.handle_request()  # First request and attempt at second
