@@ -12,16 +12,23 @@
 
    To improve cache locality, each probe inspects a series of consecutive
    nearby entries before moving on to probes elsewhere in memory.  This leaves
-   us with a hybrid of linear probing and open addressing.  The linear probing
+   us with a hybrid of linear probing and randomized probing.  The linear probing
    reduces the cost of hash collisions because consecutive memory accesses
    tend to be much cheaper than scattered probes.  After LINEAR_PROBES steps,
-   we then use open addressing with the upper bits from the hash value.  This
-   helps break-up long chains of collisions.
+   we then use more of the upper bits from the hash value and apply a simple
+   linear congruential random number genearator.  This helps break-up long
+   chains of collisions.
 
    All arithmetic on hash should ignore overflow.
 
    Unlike the dictionary implementation, the lookkey function can return
    NULL if the rich comparison returns an error.
+   
+   Use cases for sets differ considerably from dictionaries where looked-up
+   keys are more likely to be present.  In contrast, sets are primarily
+   about membership testing where the presence of an element is not known in
+   advance.  Accordingly, the set implementation needs to optimize for both
+   the found and not-found case.
 */
 
 #include "Python.h"
