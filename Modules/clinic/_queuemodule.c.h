@@ -31,30 +31,36 @@ exit:
 }
 
 PyDoc_STRVAR(_queue_SimpleQueue_put__doc__,
-"put($self, /, item)\n"
+"put($self, /, item, block=True, timeout=None)\n"
 "--\n"
 "\n"
-"Put the item on the queue.  This method never blocks.");
+"Put the item on the queue.\n"
+"\n"
+"The optional \'block\' and \'timeout\' arguments are ignored, as this method\n"
+"never blocks.  They are provided for compatibility with the Queue class.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_METHODDEF    \
     {"put", (PyCFunction)_queue_SimpleQueue_put, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
 
 static PyObject *
-_queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item);
+_queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
+                            int block, PyObject *timeout);
 
 static PyObject *
 _queue_SimpleQueue_put(simplequeueobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"item", NULL};
-    static _PyArg_Parser _parser = {"O:put", _keywords, 0};
+    static const char * const _keywords[] = {"item", "block", "timeout", NULL};
+    static _PyArg_Parser _parser = {"O|pO:put", _keywords, 0};
     PyObject *item;
+    int block = 1;
+    PyObject *timeout = Py_None;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &item)) {
+        &item, &block, &timeout)) {
         goto exit;
     }
-    return_value = _queue_SimpleQueue_put_impl(self, item);
+    return_value = _queue_SimpleQueue_put_impl(self, item, block, timeout);
 
 exit:
     return return_value;
@@ -135,4 +141,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 {
     return _queue_SimpleQueue_qsize_impl(self);
 }
-/*[clinic end generated code: output=9dbbdf1f531051c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b2b51cb20569489b input=a9049054013a1b77]*/

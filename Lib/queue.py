@@ -257,13 +257,20 @@ class LifoQueue(Queue):
 
 
 class _PySimpleQueue:
+    '''Simple, unbounded FIFO queue.
+
+    This pure Python implementation is not reentrant.
+    '''
 
     def __init__(self):
         self._queue = deque()
         self._count = threading.Semaphore(0)
 
-    def put(self, item):
-        '''Put an item into the queue.  This method never blocks.
+    def put(self, item, block=True, timeout=None):
+        '''Put the item on the queue.
+
+        The optional 'block' and 'timeout' arguments are ignored, as this method
+        never blocks.  They are provided for compatibility with the Queue class.
         '''
         self._queue.append(item)
         self._count.release()

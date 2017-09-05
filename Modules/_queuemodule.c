@@ -79,7 +79,7 @@ simplequeue_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 /*[clinic input]
 _queue.SimpleQueue.__init__
 
-Simple reentrant queue.
+Simple, unbounded, reentrant FIFO queue.
 [clinic start generated code]*/
 
 static int
@@ -89,19 +89,23 @@ _queue_SimpleQueue___init___impl(simplequeueobject *self)
     return 0;
 }
 
-/* XXX should we support dummy "block" and "timeout" args for compatibility? */
-
 /*[clinic input]
 _queue.SimpleQueue.put
     item: object
+    block: bool = True
+    timeout: object = None
 
-Put the item on the queue.  This method never blocks.
+Put the item on the queue.
+
+The optional 'block' and 'timeout' arguments are ignored, as this method
+never blocks.  They are provided for compatibility with the Queue class.
 
 [clinic start generated code]*/
 
 static PyObject *
-_queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item)
-/*[clinic end generated code: output=5b502db806a97f16 input=6d5e2cb86ae2246a]*/
+_queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
+                            int block, PyObject *timeout)
+/*[clinic end generated code: output=4333136e88f90d8b input=6e601fa707a782d5]*/
 {
     /* BEGIN GIL-protected critical section */
     if (PyList_Append(self->lst, item) < 0)
