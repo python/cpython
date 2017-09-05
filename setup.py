@@ -681,7 +681,10 @@ class PyBuildExt(build_ext):
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
 
-        exts.append( Extension("_queue", ["_queuemodule.c"]) )
+        if sysconfig.get_config_var('WITH_THREAD'):
+            exts.append( Extension("_queue", ["_queuemodule.c"]) )
+        else:
+            missing.append('queue')
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
