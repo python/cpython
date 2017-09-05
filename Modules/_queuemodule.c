@@ -223,7 +223,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
             r = PyThread_acquire_lock_timed(self->lock, microseconds, 1);
             Py_END_ALLOW_THREADS
         }
-        if (r == PY_LOCK_INTR) {
+        if (r == PY_LOCK_INTR && Py_MakePendingCalls() < 0) {
             return NULL;
         }
         if (r == PY_LOCK_FAILURE) {
