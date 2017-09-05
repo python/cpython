@@ -1,0 +1,2 @@
+README.rst is now included in the list of distutils standard READMEs and
+therefore included in source distributions.

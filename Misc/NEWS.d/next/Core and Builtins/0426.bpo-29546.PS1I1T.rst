@@ -1,0 +1,2 @@
+Set the 'path' and 'name' attribute on ImportError for ``from ... import
+...``.

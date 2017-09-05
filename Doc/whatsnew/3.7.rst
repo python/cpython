@@ -223,6 +223,13 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+string
+------
+
+:class:`string.Template` now lets you to optionally modify the regular
+expression pattern for braced placeholders and non-braced placeholders
+separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
 unittest.mock
 -------------
 
@@ -448,6 +455,9 @@ Changes in the Python API
   anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
   and module are affected by this change. (Contributed by INADA Naoki and
   Eugene Toder in :issue:`29463`.)
+
+* ``PyInterpreterState`` no longer has a ``modules`` field.  Instead use
+  ``sys.modules``.
 
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
   permission bits of newly-created intermediate-level directories.

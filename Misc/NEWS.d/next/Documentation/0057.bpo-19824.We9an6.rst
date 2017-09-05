@@ -1,0 +1,3 @@
+Improve the documentation for, and links to, template strings by emphasizing
+their utility for internationalization, and by clarifying some usage
+constraints. (See also: bpo-20314, bpo-12518)
