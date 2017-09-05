@@ -1,0 +1,1 @@
+Optimize get_event_loop and _get_running_loop to become 17.71% faster.
