@@ -97,6 +97,8 @@ _queue_SimpleQueue___init___impl(simplequeueobject *self)
     return 0;
 }
 
+/* XXX should we support dummy "block" and "timeout" args for compatibility? */
+
 /*[clinic input]
 _queue.SimpleQueue.put
     item: object
@@ -161,7 +163,15 @@ _queue.SimpleQueue.get
     block: bool = True
     timeout: object = None
 
-XXX
+Remove and return an item from the queue.
+
+If optional args 'block' is true and 'timeout' is None (the default),
+block if necessary until an item is available. If 'timeout' is
+a non-negative number, it blocks at most 'timeout' seconds and raises
+the Empty exception if no item was available within that time.
+Otherwise ('block' is false), return an item if one is immediately
+available, else raise the Empty exception ('timeout' is ignored
+in that case).
 
 [clinic start generated code]*/
 
@@ -278,7 +288,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
 static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_GET_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
-    /* XXX implement __sizeof__ */
+    /* XXX implement __sizeof__, empty and qsize? */
     {NULL,           NULL}              /* sentinel */
 };
 
@@ -330,9 +340,8 @@ PyTypeObject PySimpleQueueType = {
 /* Initialization function */
 
 PyDoc_STRVAR(queue_module_doc,
-"XXX \n\
-This module provides primitive operations to write multi-threaded programs.\n\
-The 'threading' module provides a more convenient interface.");
+"C implementation of the Python queue module.\n\
+This module is an implementation detail, please do not use it directly.");
 
 static struct PyModuleDef queuemodule = {
     PyModuleDef_HEAD_INIT,
