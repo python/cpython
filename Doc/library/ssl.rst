@@ -206,8 +206,9 @@ instead.
    .. rubric:: Footnotes
    .. [1] :class:`SSLContext` disables SSLv2 with :data:`OP_NO_SSLv2` by default.
    .. [2] :class:`SSLContext` disables SSLv3 with :data:`OP_NO_SSLv3` by default.
-   .. [3] TLS 1.3 protocol is will be available with :data:`PROTOCOL_TLS` in
-      OpenSSL >= 1.1.1. There is no dedicated PROTOCOL for just TLSv1.3.
+   .. [3] TLS 1.3 protocol will be available with :data:`PROTOCOL_TLS` in
+      OpenSSL >= 1.1.1. There is no dedicated PROTOCOL constant for just
+      TLS 1.3.
 
    .. note::
 
