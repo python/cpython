@@ -767,7 +767,7 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
         BLOOM_UPDATE(Py_UCS4, mask, ptr, len);
         break;
     default:
-        assert(0);
+        Py_UNREACHABLE();
     }
     return mask;
 
@@ -868,8 +868,7 @@ findchar(const void *s, int kind,
         else
             return ucs4lib_rfind_char((Py_UCS4 *) s, size, ch);
     default:
-        assert(0);
-        return -1;
+        Py_UNREACHABLE();
     }
 }
 
@@ -1519,8 +1518,7 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
                     );
             }
             else {
-                assert(0);
-                return -1;
+                Py_UNREACHABLE();
             }
         }
         else {
@@ -2316,8 +2314,7 @@ _PyUnicode_FindMaxChar(PyObject *unicode, Py_ssize_t start, Py_ssize_t end)
     case PyUnicode_4BYTE_KIND:
         return ucs4lib_find_max_char(startptr, endptr);
     default:
-        assert(0);
-        return 0;
+        Py_UNREACHABLE();
     }
 }
 
@@ -5130,7 +5127,7 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
 #endif
         if (ch > 0xFF) {
 #if SIZEOF_WCHAR_T == 4
-            assert(0);
+            Py_UNREACHABLE();
 #else
             assert(ch > 0xFFFF && ch <= MAX_UNICODE);
             /*  compute and append the two surrogates: */
@@ -5183,7 +5180,7 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
 
     switch (kind) {
     default:
-        assert(0);
+        Py_UNREACHABLE();
     case PyUnicode_1BYTE_KIND:
         /* the string cannot be ASCII, or PyUnicode_UTF8() would be set */
         assert(!PyUnicode_IS_ASCII(unicode));
@@ -9290,7 +9287,7 @@ any_find_slice(PyObject* s1, PyObject* s2,
             result = ucs4lib_find_slice(buf1, len1, buf2, len2, start, end);
             break;
         default:
-            assert(0); result = -2;
+            Py_UNREACHABLE();
         }
     }
     else {
@@ -9308,7 +9305,7 @@ any_find_slice(PyObject* s1, PyObject* s2,
             result = ucs4lib_rfind_slice(buf1, len1, buf2, len2, start, end);
             break;
         default:
-            assert(0); result = -2;
+            Py_UNREACHABLE();
         }
     }
 
@@ -9382,8 +9379,7 @@ _PyUnicode_InsertThousandsGrouping(
             (Py_UCS4 *) thousands_sep_data, thousands_sep_len);
         break;
     default:
-        assert(0);
-        return -1;
+        Py_UNREACHABLE();
     }
     if (unicode != NULL && thousands_sep_kind != kind) {
         if (thousands_sep_kind < kind)
@@ -9461,7 +9457,7 @@ PyUnicode_Count(PyObject *str,
             );
         break;
     default:
-        assert(0); result = 0;
+        Py_UNREACHABLE();
     }
 
     if (kind2 != kind1)
@@ -9877,8 +9873,7 @@ case_operation(PyObject *self,
         memcpy(outdata, tmp, sizeof(Py_UCS4) * newlength);
         break;
     default:
-        assert(0);
-        break;
+        Py_UNREACHABLE();
     }
   leave:
     PyMem_FREE(tmp);
@@ -10101,7 +10096,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject **items, Py_ssize_t seqlen)
             for (; i_ < (length); ++i_, ++to_) *to_ = (value); \
             break; \
         } \
-        default: assert(0); \
+        default: Py_UNREACHABLE(); \
         } \
     } while (0)
 
@@ -10225,8 +10220,7 @@ PyUnicode_Splitlines(PyObject *string, int keepends)
             PyUnicode_GET_LENGTH(string), keepends);
         break;
     default:
-        assert(0);
-        list = 0;
+        Py_UNREACHABLE();
     }
     return list;
 }
@@ -10271,8 +10265,7 @@ split(PyObject *self,
                 PyUnicode_GET_LENGTH(self), maxcount
                 );
         default:
-            assert(0);
-            return NULL;
+            Py_UNREACHABLE();
         }
 
     if (PyUnicode_READY(substring) == -1)
@@ -10363,8 +10356,7 @@ rsplit(PyObject *self,
                 PyUnicode_GET_LENGTH(self), maxcount
                 );
         default:
-            assert(0);
-            return NULL;
+            Py_UNREACHABLE();
         }
 
     if (PyUnicode_READY(substring) == -1)
@@ -10430,8 +10422,7 @@ anylib_find(int kind, PyObject *str1, void *buf1, Py_ssize_t len1,
     case PyUnicode_4BYTE_KIND:
         return ucs4lib_find(buf1, len1, buf2, len2, offset);
     }
-    assert(0);
-    return -1;
+    Py_UNREACHABLE();
 }
 
 static Py_ssize_t
@@ -10449,8 +10440,7 @@ anylib_count(int kind, PyObject *sstr, void* sbuf, Py_ssize_t slen,
     case PyUnicode_4BYTE_KIND:
         return ucs4lib_count(sbuf, slen, buf1, len1, maxcount);
     }
-    assert(0);
-    return 0;
+    Py_UNREACHABLE();
 }
 
 static void
@@ -10905,7 +10895,7 @@ unicode_compare(PyObject *str1, PyObject *str2)
             COMPARE(Py_UCS1, Py_UCS4);
             break;
         default:
-            assert(0);
+            Py_UNREACHABLE();
         }
         break;
     }
@@ -10924,7 +10914,7 @@ unicode_compare(PyObject *str1, PyObject *str2)
             COMPARE(Py_UCS2, Py_UCS4);
             break;
         default:
-            assert(0);
+            Py_UNREACHABLE();
         }
         break;
     }
@@ -10952,12 +10942,12 @@ unicode_compare(PyObject *str1, PyObject *str2)
             break;
         }
         default:
-            assert(0);
+            Py_UNREACHABLE();
         }
         break;
     }
     default:
-        assert(0);
+        Py_UNREACHABLE();
     }
 
     if (len1 == len2)
@@ -11281,8 +11271,7 @@ PyUnicode_Contains(PyObject *str, PyObject *substr)
         result = ucs4lib_find(buf1, len1, buf2, len2, 0) != -1;
         break;
     default:
-        result = -1;
-        assert(0);
+        Py_UNREACHABLE();
     }
 
     if (kind2 != kind1)
@@ -11507,7 +11496,7 @@ unicode_count(PyObject *self, PyObject *args)
             );
         break;
     default:
-        assert(0); iresult = 0;
+        Py_UNREACHABLE();
     }
 
     result = PyLong_FromSsize_t(iresult);
@@ -12978,8 +12967,7 @@ PyUnicode_Partition(PyObject *str_obj, PyObject *sep_obj)
         out = ucs4lib_partition(str_obj, buf1, len1, sep_obj, buf2, len2);
         break;
     default:
-        assert(0);
-        out = 0;
+        Py_UNREACHABLE();
     }
 
     if (kind2 != kind1)
@@ -13036,8 +13024,7 @@ PyUnicode_RPartition(PyObject *str_obj, PyObject *sep_obj)
         out = ucs4lib_rpartition(str_obj, buf1, len1, sep_obj, buf2, len2);
         break;
     default:
-        assert(0);
-        out = 0;
+        Py_UNREACHABLE();
     }
 
     if (kind2 != kind1)
@@ -13763,7 +13750,7 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
         break;
     }
     default:
-        assert(0);
+        Py_UNREACHABLE();
     }
 
     writer->pos += len;

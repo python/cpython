@@ -99,8 +99,7 @@ expr_context_name(expr_context_ty ctx)
     case Param:
         return "Param";
     default:
-        assert(0);
-        return "(unknown)";
+        Py_UNREACHABLE();
     }
 }
 
@@ -758,8 +757,7 @@ num_stmts(const node *n)
             Py_FatalError(buf);
         }
     }
-    assert(0);
-    return 0;
+    Py_UNREACHABLE();
 }
 
 /* Transform the CST rooted at node * to the appropriate AST

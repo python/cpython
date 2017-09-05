@@ -1806,8 +1806,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
         bits = 1;
         break;
     default:
-        assert(0); /* shouldn't ever get here */
-        bits = 0; /* to silence gcc warning */
+        Py_UNREACHABLE();
     }
 
     /* Compute exact length 'sz' of output string. */

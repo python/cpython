@@ -297,7 +297,7 @@ PyEval_RestoreThread(PyThreadState *tstate)
         if (_Py_Finalizing && tstate != _Py_Finalizing) {
             drop_gil(tstate);
             PyThread_exit_thread();
-            assert(0);  /* unreachable */
+            Py_UNREACHABLE();
         }
         errno = err;
     }
@@ -3556,7 +3556,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
-        assert(0);
+        Py_UNREACHABLE();
 
 error:
 
