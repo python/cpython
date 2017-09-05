@@ -571,6 +571,12 @@ time_asctime(PyObject *self, PyObject *args)
         buf = *localtime(&tt);
     } else if (!gettmarg(tup, &buf))
         return NULL;
+    /* bpo-31339: Restrict to years < 10,000 so the output fits
+       into 24 characters */
+    if (buf.tm_year > 9999) {
+        PyErr_SetString(PyExc_ValueError, "year larger than 9999");
+        return NULL;
+    }
     p = asctime(&buf);
     if (p == NULL) {
         PyErr_SetString(PyExc_ValueError, "invalid time");

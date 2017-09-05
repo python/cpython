@@ -1,0 +1,2 @@
+time.asctime() now raises a ValueError for year larger than 9999 to prevent a
+crash when Python is run using the musl C library.
