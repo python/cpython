@@ -3,6 +3,7 @@
 import collections
 import queue
 import random
+import sys
 import time
 import unittest
 from test import support
@@ -437,23 +438,44 @@ class BaseSimpleQueueTest:
             pass
 
         self.assertFalse(exceptions)
+        self.assertTrue(q.empty())
+        self.assertEqual(q.qsize(), 0)
 
         return results
 
     def test_basic(self):
         q = self.q
+        self.assertTrue(q.empty())
+        self.assertEqual(q.qsize(), 0)
         q.put(1)
+        self.assertFalse(q.empty())
+        self.assertEqual(q.qsize(), 1)
         q.put(2)
         q.put(3)
         q.put(4)
+        self.assertFalse(q.empty())
+        self.assertEqual(q.qsize(), 4)
+
         self.assertEqual(q.get(), 1)
+        self.assertEqual(q.qsize(), 3)
+
         self.assertEqual(q.get(), 2)
+        self.assertEqual(q.qsize(), 2)
+
         self.assertEqual(q.get(block=False), 3)
+        self.assertFalse(q.empty())
+        self.assertEqual(q.qsize(), 1)
+
         self.assertEqual(q.get(timeout=0.1), 4)
+        self.assertTrue(q.empty())
+        self.assertEqual(q.qsize(), 0)
+
         with self.assertRaises(queue.Empty):
             q.get(block=False)
         with self.assertRaises(queue.Empty):
             q.get(timeout=1e-3)
+        self.assertTrue(q.empty())
+        self.assertEqual(q.qsize(), 0)
 
     def test_negative_timeout_raises_exception(self):
         q = self.q
@@ -509,6 +531,20 @@ if _queue is not None:
 
         def test_is_default(self):
             self.assertIs(self.type2test, queue.SimpleQueue)
+
+        def test_sizeof(self):
+            N = 10
+            q = self.q
+            # getsizeof() takes into account the internal queue size
+            cur = sys.getsizeof(q)
+            for item in range(N):
+                q.put(item)
+            new = sys.getsizeof(q)
+            self.assertGreater(new, cur)
+            # popping items eventually frees up some internal space
+            for i in range(N - 1):
+                q.get()
+            self.assertLess(sys.getsizeof(q), new)
 
 
 if __name__ == "__main__":

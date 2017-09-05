@@ -99,4 +99,40 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyObject **args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=79f2a6160c9ce4be input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_queue_SimpleQueue_empty__doc__,
+"empty($self, /)\n"
+"--\n"
+"\n"
+"Return True if the queue is empty, False otherwise (not reliable!).");
+
+#define _QUEUE_SIMPLEQUEUE_EMPTY_METHODDEF    \
+    {"empty", (PyCFunction)_queue_SimpleQueue_empty, METH_NOARGS, _queue_SimpleQueue_empty__doc__},
+
+static PyObject *
+_queue_SimpleQueue_empty_impl(simplequeueobject *self);
+
+static PyObject *
+_queue_SimpleQueue_empty(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _queue_SimpleQueue_empty_impl(self);
+}
+
+PyDoc_STRVAR(_queue_SimpleQueue_qsize__doc__,
+"qsize($self, /)\n"
+"--\n"
+"\n"
+"Return the approximate size of the queue (not reliable!).");
+
+#define _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF    \
+    {"qsize", (PyCFunction)_queue_SimpleQueue_qsize, METH_NOARGS, _queue_SimpleQueue_qsize__doc__},
+
+static PyObject *
+_queue_SimpleQueue_qsize_impl(simplequeueobject *self);
+
+static PyObject *
+_queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _queue_SimpleQueue_qsize_impl(self);
+}
+/*[clinic end generated code: output=9dbbdf1f531051c2 input=a9049054013a1b77]*/

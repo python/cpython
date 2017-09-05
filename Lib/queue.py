@@ -263,15 +263,35 @@ class _PySimpleQueue:
         self._count = threading.Semaphore(0)
 
     def put(self, item):
+        '''Put an item into the queue.  This method never blocks.
+        '''
         self._queue.append(item)
         self._count.release()
 
     def get(self, block=True, timeout=None):
+        '''Remove and return an item from the queue.
+
+        If optional args 'block' is true and 'timeout' is None (the default),
+        block if necessary until an item is available. If 'timeout' is
+        a non-negative number, it blocks at most 'timeout' seconds and raises
+        the Empty exception if no item was available within that time.
+        Otherwise ('block' is false), return an item if one is immediately
+        available, else raise the Empty exception ('timeout' is ignored
+        in that case).
+        '''
         if timeout is not None and timeout < 0:
             raise ValueError("'timeout' must be a non-negative number")
         if not self._count.acquire(block, timeout):
             raise Empty
         return self._queue.popleft()
+
+    def empty(self):
+        '''Return True if the queue is empty, False otherwise (not reliable!).'''
+        return len(self._queue) == 0
+
+    def qsize(self):
+        '''Return the approximate size of the queue (not reliable!).'''
+        return len(self._queue)
 
 
 try:

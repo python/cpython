@@ -103,9 +103,6 @@ static PyObject *
 _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item)
 /*[clinic end generated code: output=5b502db806a97f16 input=6d5e2cb86ae2246a]*/
 {
-//     fprintf(stderr,
-//             "PUT [%lu] (lst_pos = %zd, count = %zd, locked = %d)\n",
-//             PyThread_get_thread_ident(), self->lst_pos, PyList_GET_SIZE(self->lst) - self->lst_pos, self->locked);
     /* BEGIN GIL-protected critical section */
     if (PyList_Append(self->lst, item) < 0)
         return NULL;
@@ -113,14 +110,8 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item)
         /* A get() may be waiting, wake it up */
         self->locked = 0;
         PyThread_release_lock(self->lock);
-//         fprintf(stderr,
-//                 "PUT [%lu] release lock (lst_pos = %zd, count = %zd, locked = %d)\n",
-//                 PyThread_get_thread_ident(), self->lst_pos, PyList_GET_SIZE(self->lst) - self->lst_pos, self->locked);
     }
     /* END GIL-protected critical section */
-//     fprintf(stderr,
-//             "/PUT [%lu]\n",
-//             PyThread_get_thread_ident());
     Py_RETURN_NONE;
 }
 
@@ -212,10 +203,6 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
      * (queue non-empty) becomes true.
      */
     while (self->lst_pos == PyList_GET_SIZE(self->lst)) {
-//         fprintf(stderr,
-//                 "GET [%lu] acquire lock 2 (lst_pos = %zd, count = %zd, locked = %d)\n",
-//                 PyThread_get_thread_ident(), self->lst_pos, PyList_GET_SIZE(self->lst) - self->lst_pos, self->locked);
-
         /* First a simple non-blocking try without releasing the GIL */
         r = PyThread_acquire_lock_timed(self->lock, 0, 0);
         if (r == PY_LOCK_FAILURE && microseconds != 0) {
@@ -242,19 +229,56 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
     assert(self->lst_pos < PyList_GET_SIZE(self->lst));
     item = simplequeue_pop_item(self);
     if (self->locked) {
-//         fprintf(stderr,
-//                 "GET [%lu] release lock (lst_pos = %zd, count = %zd, locked = %d)\n",
-//                 PyThread_get_thread_ident(), self->lst_pos, PyList_GET_SIZE(self->lst) - self->lst_pos, self->locked);
         PyThread_release_lock(self->lock);
         self->locked = 0;
     }
     /* END GIL-protected critical section */
-//     fprintf(stderr,
-//             "/GET [%lu] slow (lst_pos = %zd, count = %zd, locked = %d)\n",
-//             PyThread_get_thread_ident(), self->lst_pos, PyList_GET_SIZE(self->lst) - self->lst_pos, self->locked);
 
     return item;
 }
+
+/*[clinic input]
+_queue.SimpleQueue.empty
+
+Return True if the queue is empty, False otherwise (not reliable!).
+[clinic start generated code]*/
+
+static PyObject *
+_queue_SimpleQueue_empty_impl(simplequeueobject *self)
+/*[clinic end generated code: output=25164355586aaad0 input=990412cc070aa6a2]*/
+{
+    PyObject *r;
+    if (self->lst_pos == PyList_GET_SIZE(self->lst))
+        r = Py_True;
+    else
+        r = Py_False;
+    Py_INCREF(r);
+    return r;
+}
+
+/*[clinic input]
+_queue.SimpleQueue.qsize
+
+Return the approximate size of the queue (not reliable!).
+[clinic start generated code]*/
+
+static PyObject *
+_queue_SimpleQueue_qsize_impl(simplequeueobject *self)
+/*[clinic end generated code: output=4c6f52e316a53f60 input=76444ac3249e90c5]*/
+{
+    return PyLong_FromSsize_t(PyList_GET_SIZE(self->lst) - self->lst_pos);
+}
+
+static PyObject *
+simplequeue_sizeof(simplequeueobject *self, void *unused)
+{
+    Py_ssize_t res;
+
+    res = _PyObject_SIZE(Py_TYPE(self));
+    res += _PySys_GetSizeOf(self->lst);
+    return PyLong_FromSsize_t(res);
+}
+
 
 #include "clinic/_queuemodule.c.h"
 
@@ -262,7 +286,9 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
 static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_GET_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
-    /* XXX implement __sizeof__, empty and qsize? */
+    _QUEUE_SIMPLEQUEUE_EMPTY_METHODDEF
+    _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
+    {"__sizeof__", (PyCFunction) simplequeue_sizeof, METH_NOARGS, NULL},
     {NULL,           NULL}              /* sentinel */
 };
 
