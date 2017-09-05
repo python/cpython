@@ -1,0 +1,2 @@
+The fundamental subinterpreter functionality of CPython gets exposed for
+internal use.
