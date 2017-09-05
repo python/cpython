@@ -660,16 +660,17 @@ class IdleConf:
             '<<change-indentwidth>>': ['<Alt-Key-u>'],
             '<<del-word-left>>': ['<Control-Key-BackSpace>'],
             '<<del-word-right>>': ['<Control-Key-Delete>'],
-            '<<try-open-calltip>>':['<KeyRelease-parenleft>'],
-            '<<try-open-completions>>':['<KeyRelease-period>', '<KeyRelease-slash>', '<KeyRelease-backslash>'],
-            '<<force-open-completions>>':['<Control-Key-space>'],
-            '<<expand-word>>':['<Alt-Key-slash>'],
-            '<<force-open-calltip>>':['<Control-Key-backslash>'],
-            '<<flash-paren>>':['<Control-Key-0>'],
-            '<<paren-closed>>':['<KeyRelease-parenright>', '<KeyRelease-bracketright>', '<KeyRelease-braceright>'],
-            '<<run-module>>':['<Key-F5>'],
-            '<<check-module>>':['<Alt-Key-x>'],
-            '<<zoom-height>>':['<Alt-Key-2>']
+            '<<try-open-calltip>>': ['<KeyRelease-parenleft>'],
+            '<<try-open-completions>>': ['<KeyRelease-period>', '<KeyRelease-slash>', '<KeyRelease-backslash>'],
+            '<<force-open-completions>>': ['<Control-Key-space>'],
+            '<<expand-word>>': ['<Alt-Key-slash>'],
+            '<<force-open-calltip>>': ['<Control-Key-backslash>'],
+            '<<flash-paren>>': ['<Control-Key-0>'],
+            '<<format-paragraph>>': ['<Alt-Key-q>'],
+            '<<paren-closed>>': ['<KeyRelease-parenright>', '<KeyRelease-bracketright>', '<KeyRelease-braceright>'],
+            '<<run-module>>': ['<Key-F5>'],
+            '<<check-module>>': ['<Alt-Key-x>'],
+            '<<zoom-height>>': ['<Alt-Key-2>'],
             }
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or
