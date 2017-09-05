@@ -96,9 +96,8 @@ if "%do_pgo%" EQU "true" if "%platf%" EQU "x64" (
     )
 )
 
-if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
+if "%GIT%" EQU "" set GIT=git
 if exist "%GIT%" set GITProperty=/p:GIT="%GIT%"
-if not exist "%GIT%" echo Cannot find Git on PATH & set GITProperty=
 
 rem Setup the environment
 call "%dir%find_msbuild.bat" %MSBUILD%
