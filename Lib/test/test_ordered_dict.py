@@ -520,14 +520,23 @@ class OrderedDictTests:
             od[key] = i
 
         # These should not crash.
-        with self.assertRaises(KeyError):
+        # Pure Python implementation raises KeyError, C implementation not.
+        try:
             list(od.values())
-        with self.assertRaises(KeyError):
+        except KeyError:
+            pass
+        try:
             list(od.items())
-        with self.assertRaises(KeyError):
+        except KeyError:
+            pass
+        try:
             repr(od)
-        with self.assertRaises(KeyError):
+        except KeyError:
+            pass
+        try:
             od.copy()
+        except KeyError:
+            pass
 
     def test_issue24348(self):
         OrderedDict = self.OrderedDict
@@ -578,8 +587,11 @@ class OrderedDictTests:
         od['spam'] = 1
         od['ham'] = 2
         dict.__delitem__(od, 'spam')
-        with self.assertRaises(KeyError):
+        # Pure Python implementation raises KeyError, C implementation not.
+        try:
             repr(od)
+        except KeyError:
+            pass
 
     def test_dict_clear(self):
         OrderedDict = self.OrderedDict
@@ -595,8 +607,11 @@ class OrderedDictTests:
         od['spam'] = 1
         od['ham'] = 2
         dict.pop(od, 'spam')
-        with self.assertRaises(KeyError):
+        # Pure Python implementation raises KeyError, C implementation not.
+        try:
             repr(od)
+        except KeyError:
+            pass
 
     def test_dict_popitem(self):
         OrderedDict = self.OrderedDict
@@ -604,8 +619,11 @@ class OrderedDictTests:
         od['spam'] = 1
         od['ham'] = 2
         dict.popitem(od)
-        with self.assertRaises(KeyError):
+        # Pure Python implementation raises KeyError, C implementation not.
+        try:
             repr(od)
+        except KeyError:
+            pass
 
     def test_dict_setdefault(self):
         OrderedDict = self.OrderedDict
@@ -676,26 +694,25 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         size = support.calcobjsize
         check = self.check_sizeof
 
-        basicsize = size('nQ2P' + '3PnPn2P') + calcsize('2nP2n')
+        basicsize = size('n2Q2P' + '2Pn') + calcsize('2nP2n')
 
         entrysize = calcsize('n2P')
         p = calcsize('P')
-        nodesize = calcsize('Pn2P')
 
         od = OrderedDict()
-        check(od, basicsize + 8*p + 8 + 5*entrysize)  # 8byte indicies + 8*2//3 * entry table
+        check(od, basicsize + 8 + 5*entrysize)  # 8byte indicies + 8*2//3 * entry table
         od.x = 1
-        check(od, basicsize + 8*p + 8 + 5*entrysize)
+        check(od, basicsize + 8 + 5*entrysize)
         od.update([(i, i) for i in range(3)])
-        check(od, basicsize + 8*p + 8 + 5*entrysize + 3*nodesize)
+        check(od, basicsize + 8 + 5*entrysize)
         od.update([(i, i) for i in range(3, 10)])
-        check(od, basicsize + 16*p + 16 + 10*entrysize + 10*nodesize)
+        check(od, basicsize + 16 + 10*entrysize)
 
         check(od.keys(), size('P'))
         check(od.items(), size('P'))
         check(od.values(), size('P'))
 
-        itersize = size('iP2n2P')
+        itersize = size('i2P3nP')
         check(iter(od), itersize)
         check(iter(od.keys()), itersize)
         check(iter(od.items()), itersize)

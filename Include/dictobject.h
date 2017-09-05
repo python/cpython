@@ -25,6 +25,8 @@ typedef struct {
 
     /* Number of items in the dictionary */
     Py_ssize_t ma_used;
+    // Number of free entries in front of dk_entries.
+    Py_ssize_t ma_offset;
 
     /* Dictionary version: globally unique, value change each time
        the dictionary is modified */
