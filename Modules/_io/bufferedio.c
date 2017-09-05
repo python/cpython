@@ -196,7 +196,7 @@ bufferediobase_write(PyObject *self, PyObject *args)
 }
 
 
-typedef struct {
+typedef struct _buffered {
     PyObject_HEAD
 
     PyObject *raw;
@@ -240,7 +240,17 @@ typedef struct {
 
     PyObject *dict;
     PyObject *weakreflist;
+
+    /* a doubly-linked chained list of "buffered" objects that need to
+       be flushed when the process exits */
+    struct _buffered *next, *prev;
 } buffered;
+
+/* the actual list of buffered objects */
+static buffered buffer_list_end = {
+    .next = &buffer_list_end,
+    .prev = &buffer_list_end
+};
 
 /*
     Implementation notes:
@@ -387,6 +397,15 @@ _enter_buffered_busy(buffered *self)
 
 
 static void
+remove_from_linked_list(buffered *self)
+{
+    self->next->prev = self->prev;
+    self->prev->next = self->next;
+    self->prev = NULL;
+    self->next = NULL;
+}
+
+static void
 buffered_dealloc(buffered *self)
 {
     self->finalizing = 1;
@@ -394,6 +413,8 @@ buffered_dealloc(buffered *self)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
+    if (self->next != NULL)
+        remove_from_linked_list(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->raw);
@@ -1817,8 +1838,31 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->fast_closed_checks = (Py_TYPE(self) == &PyBufferedWriter_Type &&
                                 Py_TYPE(raw) == &PyFileIO_Type);
 
+    if (self->next == NULL) {
+        self->prev = &buffer_list_end;
+        self->next = buffer_list_end.next;
+        buffer_list_end.next->prev = self;
+        buffer_list_end.next = self;
+    }
+
     self->ok = 1;
     return 0;
+}
+
+/*
+* Ensure all buffered writers are flushed before proceeding with
+* normal shutdown.  Otherwise, if the underlying file objects get
+* finalized before the buffered writer wrapping it then any buffered
+* data will be lost.
+*/
+void _PyIO_atexit_flush(void)
+{
+    while (buffer_list_end.next != &buffer_list_end) {
+        buffered *buf = buffer_list_end.next;
+        remove_from_linked_list(buf);
+        buffered_flush(buf, NULL);
+        PyErr_Clear();
+    }
 }
 
 static Py_ssize_t
