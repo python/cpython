@@ -1705,7 +1705,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
 
     /* If no module is found, use __main__. */
     module_name = _PyUnicode_FromId(&PyId___main__);
-    Py_INCREF(module_name);
+    Py_XINCREF(module_name);
     return module_name;
 }
 
