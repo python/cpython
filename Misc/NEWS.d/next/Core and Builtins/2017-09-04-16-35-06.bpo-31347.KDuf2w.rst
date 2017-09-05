@@ -1,0 +1,1 @@
+Fix possible undefined behavior in _PyObject_FastCall_Prepend.
