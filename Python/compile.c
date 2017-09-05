@@ -3360,6 +3360,11 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
         }
         for (i = begin; i < end; i++) {
             key = get_const_value((expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            if (key == NULL) {
+                Py_DECREF(keys);
+                PyErr_BadInternalCall();
+                return 0;
+            }
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }

@@ -1,0 +1,2 @@
+Close a minor NULL dereference opportunity in compile.c.  Found by Kirit
+Sankar Gupta.
