@@ -462,12 +462,11 @@ class BaseSimpleQueueTest:
             q.get(timeout=-1)
 
     def test_order(self):
-        N = 3
         q = self.q
         inputs = list(range(100))
-        results = self.run_threads(N, 1, q, inputs, self.feed, self.consume)
+        results = self.run_threads(1, 1, q, inputs, self.feed, self.consume)
 
-        # One consumer => results appended in well-defined order
+        # One producer, one consumer => results appended in well-defined order
         self.assertEqual(results, inputs)
 
     def test_many_threads(self):
