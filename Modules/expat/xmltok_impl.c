@@ -1,8 +1,35 @@
-/* Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
-   See the file COPYING for copying permission.
+/* This file is included!
+                            __  __            _
+                         ___\ \/ /_ __   __ _| |_
+                        / _ \\  /| '_ \ / _` | __|
+                       |  __//  \| |_) | (_| | |_
+                        \___/_/\_\ .__/ \__,_|\__|
+                                 |_| XML parser
+
+   Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
+   Copyright (c) 2000-2017 Expat development team
+   Licensed under the MIT license:
+
+   Permission is  hereby granted,  free of charge,  to any  person obtaining
+   a  copy  of  this  software   and  associated  documentation  files  (the
+   "Software"),  to  deal in  the  Software  without restriction,  including
+   without  limitation the  rights  to use,  copy,  modify, merge,  publish,
+   distribute, sublicense, and/or sell copies of the Software, and to permit
+   persons  to whom  the Software  is  furnished to  do so,  subject to  the
+   following conditions:
+
+   The above copyright  notice and this permission notice  shall be included
+   in all copies or substantial portions of the Software.
+
+   THE  SOFTWARE  IS  PROVIDED  "AS  IS",  WITHOUT  WARRANTY  OF  ANY  KIND,
+   EXPRESS  OR IMPLIED,  INCLUDING  BUT  NOT LIMITED  TO  THE WARRANTIES  OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+   NO EVENT SHALL THE AUTHORS OR  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+   DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+   USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/* This file is included! */
 #ifdef XML_TOK_IMPL_C
 
 #ifndef IS_INVALID_CHAR
@@ -1198,8 +1225,14 @@ PREFIX(attributeValueTok)(const ENCODING *enc, const char *ptr,
   const char *start;
   if (ptr >= end)
     return XML_TOK_NONE;
-  else if (! HAS_CHAR(enc, ptr, end))
-    return XML_TOK_PARTIAL;
+  else if (! HAS_CHAR(enc, ptr, end)) {
+    /* This line cannot be executed.  The incoming data has already
+     * been tokenized once, so incomplete characters like this have
+     * already been eliminated from the input.  Retaining the paranoia
+     * check is still valuable, however.
+     */
+    return XML_TOK_PARTIAL; /* LCOV_EXCL_LINE */
+  }
   start = ptr;
   while (HAS_CHAR(enc, ptr, end)) {
     switch (BYTE_TYPE(enc, ptr)) {
@@ -1258,8 +1291,14 @@ PREFIX(entityValueTok)(const ENCODING *enc, const char *ptr,
   const char *start;
   if (ptr >= end)
     return XML_TOK_NONE;
-  else if (! HAS_CHAR(enc, ptr, end))
-    return XML_TOK_PARTIAL;
+  else if (! HAS_CHAR(enc, ptr, end)) {
+    /* This line cannot be executed.  The incoming data has already
+     * been tokenized once, so incomplete characters like this have
+     * already been eliminated from the input.  Retaining the paranoia
+     * check is still valuable, however.
+     */
+    return XML_TOK_PARTIAL; /* LCOV_EXCL_LINE */
+  }
   start = ptr;
   while (HAS_CHAR(enc, ptr, end)) {
     switch (BYTE_TYPE(enc, ptr)) {
@@ -1614,6 +1653,14 @@ PREFIX(predefinedEntityName)(const ENCODING *UNUSED_P(enc), const char *ptr,
   return 0;
 }
 
+/* This function does not appear to be called from anywhere within the
+ * library code.  It is used via the macro XmlSameName(), which is
+ * defined but never used.  Since it appears in the encoding function
+ * table, removing it is not a thing to be undertaken lightly.  For
+ * the moment, we simply exclude it from coverage tests.
+ *
+ * LCOV_EXCL_START
+ */
 static int PTRCALL
 PREFIX(sameName)(const ENCODING *enc, const char *ptr1, const char *ptr2)
 {
@@ -1677,14 +1724,21 @@ PREFIX(sameName)(const ENCODING *enc, const char *ptr1, const char *ptr2)
   }
   /* not reached */
 }
+/* LCOV_EXCL_STOP */
 
 static int PTRCALL
 PREFIX(nameMatchesAscii)(const ENCODING *UNUSED_P(enc), const char *ptr1,
                          const char *end1, const char *ptr2)
 {
   for (; *ptr2; ptr1 += MINBPC(enc), ptr2++) {
-    if (end1 - ptr1 < MINBPC(enc))
-      return 0;
+    if (end1 - ptr1 < MINBPC(enc)) {
+      /* This line cannot be executed.  THe incoming data has already
+       * been tokenized once, so imcomplete characters like this have
+       * already been eliminated from the input.  Retaining the
+       * paranoia check is still valuable, however.
+       */
+      return 0; /* LCOV_EXCL_LINE */
+    }
     if (!CHAR_MATCHES(enc, ptr1, *ptr2))
       return 0;
   }
