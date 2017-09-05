@@ -279,7 +279,7 @@ static unsigned int _ssl_locks_count = 0;
 typedef struct {
     PyObject_HEAD
     SSL_CTX *ctx;
-#ifdef OPENSSL_NPN_NEGOTIATED
+#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
     unsigned char *npn_protocols;
     int npn_protocols_len;
 #endif
@@ -1693,7 +1693,7 @@ _ssl__SSLSocket_version_impl(PySSLSocket *self)
     return PyUnicode_FromString(version);
 }
 
-#ifdef OPENSSL_NPN_NEGOTIATED
+#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
 /*[clinic input]
 _ssl._SSLSocket.selected_npn_protocol
 [clinic start generated code]*/
@@ -2645,7 +2645,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
     self->ctx = ctx;
-#ifdef OPENSSL_NPN_NEGOTIATED
+#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
     self->npn_protocols = NULL;
 #endif
 #ifdef HAVE_ALPN
@@ -2780,7 +2780,7 @@ context_dealloc(PySSLContext *self)
     PyObject_GC_UnTrack(self);
     context_clear(self);
     SSL_CTX_free(self->ctx);
-#ifdef OPENSSL_NPN_NEGOTIATED
+#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
     PyMem_FREE(self->npn_protocols);
 #endif
 #ifdef HAVE_ALPN
@@ -2858,7 +2858,7 @@ _ssl__SSLContext_get_ciphers_impl(PySSLContext *self)
 #endif
 
 
-#ifdef OPENSSL_NPN_NEGOTIATED
+#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG) || defined(HAVE_ALPN)
 static int
 do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
                       const unsigned char *server_protocols, unsigned int server_protocols_len,
@@ -2882,7 +2882,9 @@ do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
 
     return SSL_TLSEXT_ERR_OK;
 }
+#endif
 
+#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
 /* this callback gets passed to SSL_CTX_set_next_protos_advertise_cb */
 static int
 _advertiseNPN_cb(SSL *s,
@@ -2925,7 +2927,7 @@ _ssl__SSLContext__set_npn_protocols_impl(PySSLContext *self,
                                          Py_buffer *protos)
 /*[clinic end generated code: output=72b002c3324390c6 input=319fcb66abf95bd7]*/
 {
-#ifdef OPENSSL_NPN_NEGOTIATED
+#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
     PyMem_Free(self->npn_protocols);
     self->npn_protocols = PyMem_Malloc(protos->len);
     if (self->npn_protocols == NULL)
@@ -5391,7 +5393,7 @@ PyInit__ssl(void)
     Py_INCREF(r);
     PyModule_AddObject(m, "HAS_ECDH", r);
 
-#ifdef OPENSSL_NPN_NEGOTIATED
+#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
     r = Py_True;
 #else
     r = Py_False;
