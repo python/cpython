@@ -1,0 +1,4 @@
+The ssl and hashlib modules now call OPENSSL_add_all_algorithms_noconf() on
+OpenSSL < 1.1.0. The function detects CPU features and enables optimizations
+on some CPU architectures such as POWER8. Patch is based on research from
+Gustavo Serra Scalet.
