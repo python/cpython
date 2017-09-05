@@ -661,13 +661,17 @@ class IdleConf:
             '<<del-word-left>>': ['<Control-Key-BackSpace>'],
             '<<del-word-right>>': ['<Control-Key-Delete>'],
             '<<try-open-calltip>>': ['<KeyRelease-parenleft>'],
-            '<<try-open-completions>>': ['<KeyRelease-period>', '<KeyRelease-slash>', '<KeyRelease-backslash>'],
+            '<<try-open-completions>>': ['<KeyRelease-period>',
+                                         '<KeyRelease-slash>',
+                                         '<KeyRelease-backslash>'],
             '<<force-open-completions>>': ['<Control-Key-space>'],
             '<<expand-word>>': ['<Alt-Key-slash>'],
             '<<force-open-calltip>>': ['<Control-Key-backslash>'],
             '<<flash-paren>>': ['<Control-Key-0>'],
             '<<format-paragraph>>': ['<Alt-Key-q>'],
-            '<<paren-closed>>': ['<KeyRelease-parenright>', '<KeyRelease-bracketright>', '<KeyRelease-braceright>'],
+            '<<paren-closed>>': ['<KeyRelease-parenright>',
+                                 '<KeyRelease-bracketright>',
+                                 '<KeyRelease-braceright>'],
             '<<run-module>>': ['<Key-F5>'],
             '<<check-module>>': ['<Alt-Key-x>'],
             '<<zoom-height>>': ['<Alt-Key-2>'],
@@ -683,7 +687,9 @@ class IdleConf:
                 _warn(warning, 'keys', keySetName)
             else:
                 for event in keyBindings:
-                    if event not in {'<<try-open-calltip>>','<<try-open-completions>>','<<paren-closed>>'}:
+                    if event not in {'<<try-open-calltip>>',
+                                     '<<try-open-completions>>',
+                                     '<<paren-closed>>'}:
                         # do not allow calltips, etc. events/keys to be configured.
                         binding = self.GetKeyBinding(keySetName, event)
                         if binding:
