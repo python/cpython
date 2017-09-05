@@ -100,7 +100,7 @@ class BufferedSubFile(object):
 
     def push(self, data):
         """Push some new data into this object."""
-        self._partial.write(data)
+        self._partial.write(str(data))
         if '\n' not in data and '\r' not in data:
             # No new complete lines, wait for more.
             return
@@ -172,7 +172,7 @@ class FeedParser:
 
     def feed(self, data):
         """Push more data into the parser."""
-        self._input.push(data)
+        self._input.push(str(data))
         self._call_parse()
 
     def _call_parse(self):
