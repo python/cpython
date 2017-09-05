@@ -2938,44 +2938,21 @@ PyType_GetSlot(PyTypeObject *type, int slot)
     return  *(void**)(((char*)type) + slotoffsets[slot]);
 }
 
-/* Internal API to look for a name through the MRO.
-   This returns a borrowed reference, and doesn't set an exception! */
-PyObject *
-_PyType_Lookup(PyTypeObject *type, PyObject *name)
+/* Internal API to look for a name through the MRO, bypassing the method cache.
+   This returns a borrowed reference, and might set an exception! */
+static PyObject *
+_PyType_LookupUncached(PyTypeObject *type, PyObject *name, int *error)
 {
     Py_ssize_t i, n;
     PyObject *mro, *res, *base, *dict;
     Py_hash_t hash;
-    unsigned int h;
-
-    if (MCACHE_CACHEABLE_NAME(name) &&
-        PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
-        /* fast path */
-        h = MCACHE_HASH_METHOD(type, name);
-        if (method_cache[h].version == type->tp_version_tag &&
-            method_cache[h].name == name) {
-#if MCACHE_STATS
-            method_cache_hits++;
-#endif
-            return method_cache[h].value;
-        }
-    }
-
+    *error = 1;
     /* Look in tp_dict of types in MRO */
     mro = type->tp_mro;
 
     if (mro == NULL) {
         if ((type->tp_flags & Py_TPFLAGS_READYING) == 0 &&
-            PyType_Ready(type) < 0) {
-            /* It's not ideal to clear the error condition,
-               but this function is documented as not setting
-               an exception, and I don't want to change that.
-               When PyType_Ready() can't proceed, it won't
-               set the "ready" flag, so future attempts to ready
-               the same type will call it again -- hopefully
-               in a context that propagates the exception out.
-            */
-            PyErr_Clear();
+                PyType_Ready(type) < 0) {
             return NULL;
         }
         mro = type->tp_mro;
@@ -2989,12 +2966,6 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     {
         hash = PyObject_Hash(name);
         if (hash == -1) {
-            /* Same comment as above applies: this should not ignore the
-               error. But it's highly unlikely that we even get here since
-               'name' is bound to be a PyUnicode object and almost certainly
-               not a subtype.
-             */
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -3013,11 +2984,50 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         res = _PyDict_GetItem_KnownHash(dict, name, hash);
         if (res != NULL)
             break;
-        /* Ignore any errors during lookup - unlikely to happen,
-           but not impossible. */
-        PyErr_Clear();
+        if (PyErr_Occurred())
+            return NULL;
     }
     Py_DECREF(mro);
+    *error = 0;
+    return res;
+}
+
+/* Internal API to look for a name through the MRO.
+   This returns a borrowed reference, and doesn't set an exception! */
+PyObject *
+_PyType_Lookup(PyTypeObject *type, PyObject *name)
+{
+    PyObject *res;
+    int error;
+    unsigned int h;
+
+    if (MCACHE_CACHEABLE_NAME(name) &&
+        PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
+        /* fast path */
+        h = MCACHE_HASH_METHOD(type, name);
+        if (method_cache[h].version == type->tp_version_tag &&
+            method_cache[h].name == name) {
+#if MCACHE_STATS
+            method_cache_hits++;
+#endif
+            return method_cache[h].value;
+        }
+    }
+
+    res = _PyType_LookupUncached(type, name, &error);
+    /* Only put NULL results into cache if there was no error. */
+    if (error) {
+        /* It's not ideal to clear the error condition,
+           but this function is documented as not setting
+           an exception, and I don't want to change that.
+           E.g., when PyType_Ready() can't proceed, it won't
+           set the "ready" flag, so future attempts to ready
+           the same type will call it again -- hopefully
+           in a context that propagates the exception out.
+        */
+        PyErr_Clear();
+        return NULL;
+    }
 
     if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
         h = MCACHE_HASH_METHOD(type, name);
@@ -6968,6 +6978,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
     void *generic = NULL, *specific = NULL;
     int use_generic = 0;
     int offset = p->offset;
+    int error;
     void **ptr = slotptr(type, offset);
 
     if (ptr == NULL) {
@@ -6977,8 +6988,14 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         return p;
     }
     do {
-        descr = _PyType_Lookup(type, p->name_strobj);
+        descr = _PyType_LookupUncached(type, p->name_strobj, &error);
         if (descr == NULL) {
+            if (error) {
+                /* It is unlikely by not impossible that there has been an exception
+                   during lookup. Since this function originally expected no errors,
+                   we ignore them here in order to keep up the interface. */
+                PyErr_Clear();
+            }
             if (ptr == (void**)&type->tp_iternext) {
                 specific = (void *)_PyObject_NextNotImplemented;
             }
