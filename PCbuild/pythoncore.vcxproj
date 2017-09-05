@@ -49,6 +49,7 @@
   </ImportGroup>
   <PropertyGroup>
     <KillPython>true</KillPython>
+    <RequirePGCFiles>true</RequirePGCFiles>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -431,11 +432,5 @@
   </Target>
   <Target Name="_WarnAboutToolset" BeforeTargets="PrepareForBuild" Condition="$(PlatformToolset) != 'v140' and $(PlatformToolset) != 'v141'">
     <Warning Text="Toolset $(PlatformToolset) is not used for official builds. Your build may have errors or incompatibilities." />
-  </Target>
-  <Target Name="_ValidatePGUpdate" BeforeTargets="PrepareForBuild" Condition="$(Configuration) == 'PGUpdate'">
-    <ItemGroup>
-      <_PGCFiles Include="$(OutDir)$(TargetName)!*.pgc" />
-    </ItemGroup>
-    <Error Text="PGO run did not succeed (no $(TargetName)!*.pgc files) and there is no data to merge" Condition="@(_PGCFiles) == ''" />
   </Target>
 </Project>
