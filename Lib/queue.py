@@ -261,6 +261,10 @@ class _PySimpleQueue:
 
     This pure Python implementation is not reentrant.
     '''
+    # Note: while this pure Python version provides fairness
+    # (by using a threading.Semaphore which is itself fair, being based
+    #  on threading.Condition), fairness is not part of the API contract.
+    # This allows the C version to use a different implementation.
 
     def __init__(self):
         self._queue = deque()
@@ -291,6 +295,22 @@ class _PySimpleQueue:
         if not self._count.acquire(block, timeout):
             raise Empty
         return self._queue.popleft()
+
+    def put_nowait(self, item):
+        '''Put an item into the queue without blocking.
+
+        This is exactly equivalent to `put(item)` and is only provided
+        for compatibility with the Queue class.
+        '''
+        return self.put(item, block=False)
+
+    def get_nowait(self):
+        '''Remove and return an item from the queue without blocking.
+
+        Only get an item if one is immediately available. Otherwise
+        raise the Empty exception.
+        '''
+        return self.get(block=False)
 
     def empty(self):
         '''Return True if the queue is empty, False otherwise (not reliable!).'''

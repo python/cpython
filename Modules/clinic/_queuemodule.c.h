@@ -6,7 +6,7 @@ PyDoc_STRVAR(_queue_SimpleQueue___init____doc__,
 "SimpleQueue()\n"
 "--\n"
 "\n"
-"Simple reentrant queue.");
+"Simple, unbounded, reentrant FIFO queue.");
 
 static int
 _queue_SimpleQueue___init___impl(simplequeueobject *self);
@@ -66,6 +66,39 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_queue_SimpleQueue_put_nowait__doc__,
+"put_nowait($self, /, item)\n"
+"--\n"
+"\n"
+"Put an item into the queue without blocking.\n"
+"\n"
+"This is exactly equivalent to `put(item)` and is only provided\n"
+"for compatibility with the Queue class.");
+
+#define _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF    \
+    {"put_nowait", (PyCFunction)_queue_SimpleQueue_put_nowait, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put_nowait__doc__},
+
+static PyObject *
+_queue_SimpleQueue_put_nowait_impl(simplequeueobject *self, PyObject *item);
+
+static PyObject *
+_queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"item", NULL};
+    static _PyArg_Parser _parser = {"O:put_nowait", _keywords, 0};
+    PyObject *item;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &item)) {
+        goto exit;
+    }
+    return_value = _queue_SimpleQueue_put_nowait_impl(self, item);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 "get($self, /, block=True, timeout=None)\n"
 "--\n"
@@ -106,6 +139,27 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_queue_SimpleQueue_get_nowait__doc__,
+"get_nowait($self, /)\n"
+"--\n"
+"\n"
+"Remove and return an item from the queue without blocking.\n"
+"\n"
+"Only get an item if one is immediately available. Otherwise\n"
+"raise the Empty exception.");
+
+#define _QUEUE_SIMPLEQUEUE_GET_NOWAIT_METHODDEF    \
+    {"get_nowait", (PyCFunction)_queue_SimpleQueue_get_nowait, METH_NOARGS, _queue_SimpleQueue_get_nowait__doc__},
+
+static PyObject *
+_queue_SimpleQueue_get_nowait_impl(simplequeueobject *self);
+
+static PyObject *
+_queue_SimpleQueue_get_nowait(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _queue_SimpleQueue_get_nowait_impl(self);
+}
+
 PyDoc_STRVAR(_queue_SimpleQueue_empty__doc__,
 "empty($self, /)\n"
 "--\n"
@@ -141,4 +195,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 {
     return _queue_SimpleQueue_qsize_impl(self);
 }
-/*[clinic end generated code: output=b2b51cb20569489b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d05b0a7744934b91 input=a9049054013a1b77]*/

@@ -451,7 +451,7 @@ class BaseSimpleQueueTest:
         self.assertFalse(q.empty())
         self.assertEqual(q.qsize(), 1)
         q.put(2)
-        q.put(3)
+        q.put_nowait(3)
         q.put(4)
         self.assertFalse(q.empty())
         self.assertEqual(q.qsize(), 4)
@@ -459,7 +459,7 @@ class BaseSimpleQueueTest:
         self.assertEqual(q.get(), 1)
         self.assertEqual(q.qsize(), 3)
 
-        self.assertEqual(q.get(), 2)
+        self.assertEqual(q.get_nowait(), 2)
         self.assertEqual(q.qsize(), 2)
 
         self.assertEqual(q.get(block=False), 3)
@@ -474,6 +474,8 @@ class BaseSimpleQueueTest:
             q.get(block=False)
         with self.assertRaises(queue.Empty):
             q.get(timeout=1e-3)
+        with self.assertRaises(queue.Empty):
+            q.get_nowait()
         self.assertTrue(q.empty())
         self.assertEqual(q.qsize(), 0)
 

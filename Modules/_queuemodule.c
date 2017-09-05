@@ -84,7 +84,7 @@ Simple, unbounded, reentrant FIFO queue.
 
 static int
 _queue_SimpleQueue___init___impl(simplequeueobject *self)
-/*[clinic end generated code: output=111d7b9a0c26aa23 input=fb09ddd81b016cea]*/
+/*[clinic end generated code: output=111d7b9a0c26aa23 input=21461b956918fcfb]*/
 {
     return 0;
 }
@@ -117,6 +117,24 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
     }
     /* END GIL-protected critical section */
     Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_queue.SimpleQueue.put_nowait
+    item: object
+
+Put an item into the queue without blocking.
+
+This is exactly equivalent to `put(item)` and is only provided
+for compatibility with the Queue class.
+
+[clinic start generated code]*/
+
+static PyObject *
+_queue_SimpleQueue_put_nowait_impl(simplequeueobject *self, PyObject *item)
+/*[clinic end generated code: output=0990536715efb1f1 input=36b1ea96756b2ece]*/
+{
+    return _queue_SimpleQueue_put_impl(self, item, 0, Py_None);
 }
 
 static PyObject *
@@ -242,6 +260,22 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
 }
 
 /*[clinic input]
+_queue.SimpleQueue.get_nowait
+
+Remove and return an item from the queue without blocking.
+
+Only get an item if one is immediately available. Otherwise
+raise the Empty exception.
+[clinic start generated code]*/
+
+static PyObject *
+_queue_SimpleQueue_get_nowait_impl(simplequeueobject *self)
+/*[clinic end generated code: output=a89731a75dbe4937 input=6fe5102db540a1b9]*/
+{
+    return _queue_SimpleQueue_get_impl(self, 0, Py_None);
+}
+
+/*[clinic input]
 _queue.SimpleQueue.empty
 
 Return True if the queue is empty, False otherwise (not reliable!).
@@ -288,9 +322,11 @@ simplequeue_sizeof(simplequeueobject *self, void *unused)
 
 
 static PyMethodDef simplequeue_methods[] = {
-    _QUEUE_SIMPLEQUEUE_GET_METHODDEF
-    _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
     _QUEUE_SIMPLEQUEUE_EMPTY_METHODDEF
+    _QUEUE_SIMPLEQUEUE_GET_METHODDEF
+    _QUEUE_SIMPLEQUEUE_GET_NOWAIT_METHODDEF
+    _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
+    _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
     {"__sizeof__", (PyCFunction) simplequeue_sizeof, METH_NOARGS, NULL},
     {NULL,           NULL}              /* sentinel */
