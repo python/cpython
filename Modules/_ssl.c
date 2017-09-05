@@ -5181,9 +5181,14 @@ PyInit__ssl(void)
         return NULL;
     PySocketModule = *socket_api;
 
+#ifndef OPENSSL_VERSION_1_1
+    /* Load all algorithms and initialize cpuid */
+    OPENSSL_add_all_algorithms_noconf();
     /* Init OpenSSL */
     SSL_load_error_strings();
     SSL_library_init();
+#endif
+
 #ifdef WITH_THREAD
 #ifdef HAVE_OPENSSL_CRYPTO_LOCK
     /* note that this will start threading if not already started */
@@ -5195,7 +5200,6 @@ PyInit__ssl(void)
     _ssl_locks_count++;
 #endif
 #endif  /* WITH_THREAD */
-    OpenSSL_add_all_algorithms();
 
     /* Add symbols to module dict */
     sslerror_type_slots[0].pfunc = PyExc_OSError;
