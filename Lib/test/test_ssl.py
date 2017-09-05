@@ -1853,10 +1853,13 @@ if _have_threads:
                         self.sock, server_side=True)
                     self.server.selected_npn_protocols.append(self.sslconn.selected_npn_protocol())
                     self.server.selected_alpn_protocols.append(self.sslconn.selected_alpn_protocol())
-                except (ssl.SSLError, ConnectionResetError) as e:
+                except (ssl.SSLError, ConnectionResetError, OSError) as e:
                     # We treat ConnectionResetError as though it were an
                     # SSLError - OpenSSL on Ubuntu abruptly closes the
                     # connection when asked to use an unsupported protocol.
+                    #
+                    # OSError may occur with wrong protocols, e.g. both
+                    # sides use PROTOCOL_TLS_SERVER.
                     #
                     # XXX Various errors can have happened here, for example
                     # a mismatching protocol version, an invalid certificate,
