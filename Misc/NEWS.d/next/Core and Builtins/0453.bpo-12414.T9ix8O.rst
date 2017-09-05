@@ -1,0 +1,2 @@
+sys.getsizeof() on a code object now returns the sizes which includes the
+code struct and sizes of objects which it references. Patch by Dong-hee Na.

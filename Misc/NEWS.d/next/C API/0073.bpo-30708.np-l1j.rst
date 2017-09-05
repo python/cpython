@@ -1,0 +1,2 @@
+PyUnicode_AsWideCharString() now raises a ValueError if the second argument
+is NULL and the wchar_t\* string contains null characters.

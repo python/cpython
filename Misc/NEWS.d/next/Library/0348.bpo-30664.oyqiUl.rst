@@ -1,0 +1,2 @@
+The description of a unittest subtest now preserves the order of keyword
+arguments of TestCase.subTest().

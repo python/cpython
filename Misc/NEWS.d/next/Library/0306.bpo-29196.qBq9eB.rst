@@ -1,0 +1,4 @@
+Removed previously deprecated in Python 2.4 classes Plist, Dict and
+_InternalDict in the plistlib module.  Dict values in the result of
+functions readPlist() and readPlistFromBytes() are now normal dicts.  You no
+longer can use attribute access to access items of these dictionaries.

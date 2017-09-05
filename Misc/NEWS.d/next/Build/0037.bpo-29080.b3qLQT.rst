@@ -1,0 +1,1 @@
+Removes hard dependency on hg.exe from PCBuild/build.bat

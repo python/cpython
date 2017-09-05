@@ -1,0 +1,3 @@
+importlib.find_spec() raises ModuleNotFoundError instead of AttributeError
+if the specified parent module is not a package (i.e. lacks a __path__
+attribute).

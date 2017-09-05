@@ -898,6 +898,8 @@ values are:
      usage: PROG [-h] foo [foo ...]
      PROG: error: too few arguments
 
+.. _`argparse.REMAINDER`:
+
 * ``argparse.REMAINDER``.  All the remaining command-line arguments are gathered
   into a list.  This is commonly useful for command line utilities that dispatch
   to other command line utilities::
@@ -1324,8 +1326,11 @@ The parse_args() method
    created and how they are assigned. See the documentation for
    :meth:`add_argument` for details.
 
-   By default, the argument strings are taken from :data:`sys.argv`, and a new empty
-   :class:`Namespace` object is created for the attributes.
+   * args_ - List of strings to parse.  The default is taken from
+     :data:`sys.argv`.
+
+   * namespace_ - An object to take the attributes.  The default is a new empty
+     :class:`Namespace` object.
 
 
 Option value syntax
@@ -1467,6 +1472,7 @@ unambiguous (the prefix matches a unique option)::
 An error is produced for arguments that could produce more than one options.
 This feature can be disabled by setting :ref:`allow_abbrev` to ``False``.
 
+.. _args:
 
 Beyond ``sys.argv``
 ^^^^^^^^^^^^^^^^^^^
@@ -1488,6 +1494,7 @@ interactive prompt::
    >>> parser.parse_args(['1', '2', '3', '4', '--sum'])
    Namespace(accumulate=<built-in function sum>, integers=[1, 2, 3, 4])
 
+.. _namespace:
 
 The Namespace object
 ^^^^^^^^^^^^^^^^^^^^
@@ -2008,7 +2015,12 @@ A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 * Replace ``(options, args) = parser.parse_args()`` with ``args =
   parser.parse_args()`` and add additional :meth:`ArgumentParser.add_argument`
   calls for the positional arguments. Keep in mind that what was previously
-  called ``options``, now in :mod:`argparse` context is called ``args``.
+  called ``options``, now in the :mod:`argparse` context is called ``args``.
+
+* Replace :meth:`optparse.OptionParser.disable_interspersed_args`
+  by setting ``nargs`` of a positional argument to `argparse.REMAINDER`_, or
+  use :meth:`~ArgumentParser.parse_known_args` to collect unparsed argument
+  strings in a separate list.
 
 * Replace callback actions and the ``callback_*`` keyword arguments with
   ``type`` or ``action`` arguments.

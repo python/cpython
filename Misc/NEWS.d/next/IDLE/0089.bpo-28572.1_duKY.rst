@@ -1,0 +1,2 @@
+Add 10% to coverage of IDLE's test_configdialog. Update and augment
+description of the configuration system.

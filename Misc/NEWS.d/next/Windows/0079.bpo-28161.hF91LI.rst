@@ -1,0 +1,1 @@
+Opening CON for write access fails
