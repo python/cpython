@@ -34,7 +34,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_put__doc__,
 "put($self, /, item)\n"
 "--\n"
 "\n"
-"Put the item on the queue, without blocking.");
+"Put the item on the queue.  This method never blocks.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_METHODDEF    \
     {"put", (PyCFunction)_queue_SimpleQueue_put, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
@@ -64,7 +64,15 @@ PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 "get($self, /, block=True, timeout=None)\n"
 "--\n"
 "\n"
-"XXX");
+"Remove and return an item from the queue.\n"
+"\n"
+"If optional args \'block\' is true and \'timeout\' is None (the default),\n"
+"block if necessary until an item is available. If \'timeout\' is\n"
+"a non-negative number, it blocks at most \'timeout\' seconds and raises\n"
+"the Empty exception if no item was available within that time.\n"
+"Otherwise (\'block\' is false), return an item if one is immediately\n"
+"available, else raise the Empty exception (\'timeout\' is ignored\n"
+"in that case).");
 
 #define _QUEUE_SIMPLEQUEUE_GET_METHODDEF    \
     {"get", (PyCFunction)_queue_SimpleQueue_get, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get__doc__},
@@ -91,4 +99,4 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyObject **args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1203bbd791fee07c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79f2a6160c9ce4be input=a9049054013a1b77]*/

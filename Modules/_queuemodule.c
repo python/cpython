@@ -103,7 +103,7 @@ Put the item on the queue.  This method never blocks.
 
 static PyObject *
 _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item)
-/*[clinic end generated code: output=5b502db806a97f16 input=fbf18e55e43edea9]*/
+/*[clinic end generated code: output=5b502db806a97f16 input=6d5e2cb86ae2246a]*/
 {
 //     fprintf(stderr,
 //             "PUT [%lu] (lst_pos = %zd, count = %zd, locked = %d)\n",
@@ -173,7 +173,7 @@ in that case).
 static PyObject *
 _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
                             PyObject *timeout)
-/*[clinic end generated code: output=ec82a7157dcccd1a input=08e407fb75711d10]*/
+/*[clinic end generated code: output=ec82a7157dcccd1a input=4bf691f9f01fa297]*/
 {
     _PyTime_t endtime = 0;
     _PyTime_t timeout_val;
