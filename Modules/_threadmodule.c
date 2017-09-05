@@ -1,3 +1,7 @@
+
+/* Thread module */
+/* Interface to Sjoerd's portable C thread library */
+
 #include "Python.h"
 #include "structmember.h" /* offsetof */
 

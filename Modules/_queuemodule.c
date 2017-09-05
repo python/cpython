@@ -1,7 +1,3 @@
-
-/* Thread module */
-/* Interface to Sjoerd's portable C thread library */
-
 #include "Python.h"
 #include "structmember.h" /* offsetof */
 
@@ -22,8 +18,6 @@ class _queue.SimpleQueue "simplequeueobject *" "&PySimpleQueueType"
 extern PyTypeObject PySimpleQueueType;  /* forward decl */
 
 static PyObject *EmptyError;
-
-static _PyTime_t infinite_timeout_val;
 
 
 typedef struct {
@@ -103,7 +97,7 @@ _queue_SimpleQueue___init___impl(simplequeueobject *self)
 _queue.SimpleQueue.put
     item: object
 
-Put the item on the queue, without blocking.
+Put the item on the queue.  This method never blocks.
 
 [clinic start generated code]*/
 
@@ -147,8 +141,9 @@ simplequeue_pop_item(simplequeueobject *self)
     self->lst_pos += 1;
     count = n - self->lst_pos;
     if (self->lst_pos > count) {
-        /* reclaim space at beginning of list */
+        /* The list is more than 50% empty, reclaim space at the beginning */
         if (PyList_SetSlice(self->lst, 0, self->lst_pos, NULL)) {
+            /* Undo pop */
             self->lst_pos -= 1;
             PyList_SET_ITEM(self->lst, self->lst_pos, item);
             return NULL;
@@ -212,25 +207,6 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
     else {
         /* Infinitely blocking */
         microseconds = -1;
-    }
-
-//     fprintf(stderr,
-//             "GET [%lu] (lst_pos = %zd, count = %zd, locked = %d)\n",
-//             PyThread_get_thread_ident(), self->lst_pos, PyList_GET_SIZE(self->lst) - self->lst_pos, self->locked);
-    if (self->lst_pos < PyList_GET_SIZE(self->lst)) {
-        /* Fast path */
-        assert(!self->locked);
-        /* BEGIN GIL-protected critical section */
-        item = simplequeue_pop_item(self);
-        if (item == NULL) {
-            return NULL;
-        }
-        /* END GIL-protected critical section */
-        assert(!self->locked);
-//         fprintf(stderr,
-//                 "/GET [%lu] fast (lst_pos = %zd, count = %zd, locked = %d)\n",
-//                 PyThread_get_thread_ident(), self->lst_pos, PyList_GET_SIZE(self->lst) - self->lst_pos, self->locked);
-        return item;
     }
 
     /* put() signals the queue to be non-empty by releasing the lock.
@@ -383,6 +359,5 @@ PyInit__queue(void)
     if (PyModule_AddObject(m, "SimpleQueue", (PyObject *)&PySimpleQueueType) < 0)
         return NULL;
 
-    infinite_timeout_val = _PyTime_FromSeconds(-1);
     return m;
 }
