@@ -605,8 +605,11 @@ _lock = threading.Lock()
 
 
 # A TLS for the running event loop, used by _get_running_loop.
-_running_loop = threading.local()
-_running_loop.loop_pid = (None, None)
+class _RunningLoop(threading.local):
+    loop_pid = (None, None)
+
+
+_running_loop = _RunningLoop()
 
 
 def _get_running_loop():
