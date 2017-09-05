@@ -1,0 +1,1 @@
+Allows setting cell values for __closure__. Patch by Lisa Roach.

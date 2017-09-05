@@ -1,0 +1,3 @@
+``string.Template`` subclasses can optionally define ``braceidpattern`` if
+they want to specify different placeholder patterns inside and outside the
+braces.  If None (the default) it falls back to ``idpattern``.

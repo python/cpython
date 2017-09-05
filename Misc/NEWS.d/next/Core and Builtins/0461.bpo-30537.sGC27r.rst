@@ -1,0 +1,2 @@
+itertools.islice now accepts integer-like objects (having an __index__
+method) as start, stop, and slice arguments

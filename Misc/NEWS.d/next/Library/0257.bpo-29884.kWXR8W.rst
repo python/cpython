@@ -1,0 +1,2 @@
+faulthandler: Restore the old sigaltstack during teardown. Patch by
+Christophe Zeitouny.
