@@ -26,8 +26,8 @@
 @set MSBUILD=
 
 @rem If msbuild.exe is on the PATH, assume that the user wants that one.
-@where msbuild > "%TEMP%\msbuild.loc" 2> nul && set /P MSBUILD= < "%TEMP%\msbuild.loc" & del "%TEMP%\msbuild.loc"
-@if exist "%MSBUILD%" set MSBUILD="%MSBUILD%" & (set _Py_MSBuild_Source=PATH) & goto :found
+@msbuild /version > nul 2>&1
+@if NOT ERRORLEVEL 9009 set MSBUILD=msbuild & (set _Py_MSBuild_Source=PATH) & goto :found
 
 @rem VS 2015 and earlier register MSBuild separately, so we can find it.
 @rem Prefer MSBuild 14.0 over MSBuild 15.0, since the latter may not be able to find a VC14 install.
