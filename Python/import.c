@@ -2095,6 +2095,10 @@ _imp_exec_in_module_impl(PyObject *module, PyObject *spec,
 
     m_def = (PyModuleDef *)_PyImport_LoadDynamicModuleDef(spec, NULL);
 
+    if (m_def == NULL) {
+        return NULL;
+    }
+
     if (!PyObject_TypeCheck(m_def, &PyModuleDef_Type)) {
         PyErr_Format(PyExc_ImportError,
                      "This module cannot be directly executed");
