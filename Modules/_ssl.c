@@ -75,6 +75,7 @@ static PySocketModule_APIObject PySocketModule;
 #include "openssl/err.h"
 #include "openssl/rand.h"
 #include "openssl/bio.h"
+#include "openssl/engine.h"
 
 /* SSL error object */
 static PyObject *PySSLErrorObject;
@@ -175,6 +176,8 @@ static void _PySSLFixErrno(void) {
 #define HAVE_OPENSSL_CRYPTO_LOCK
 #endif
 
+/* For some reason, this function is not declared on OpenSSL's headers */
+void OPENSSL_cpuid_setup(void);
 #define TLS_method SSLv23_method
 #define TLS_client_method SSLv23_client_method
 #define TLS_server_method SSLv23_server_method
@@ -5195,7 +5198,17 @@ PyInit__ssl(void)
     _ssl_locks_count++;
 #endif
 #endif  /* WITH_THREAD */
+
+#ifndef OPENSSL_VERSION_1_1
+    /* "As of version 1.1.0 OpenSSL will automatically allocate all resources
+     * that it needs so no explicit initialisation is required. Similarly it
+     * will also automatically deinitialise as required."
+     * https://www.openssl.org/docs/man1.1.0/crypto/OPENSSL_init_crypto.html */
     OpenSSL_add_all_algorithms();
+
+    /* Detect HW capabilities to improve performance */
+    OPENSSL_cpuid_setup();
+#endif
 
     /* Add symbols to module dict */
     sslerror_type_slots[0].pfunc = PyExc_OSError;

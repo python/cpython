@@ -21,6 +21,7 @@
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
+#include <openssl/engine.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include "openssl/err.h"
@@ -43,6 +44,8 @@ module _hashlib
 #define EVP_MD_CTX_free EVP_MD_CTX_destroy
 #define HAS_FAST_PKCS5_PBKDF2_HMAC 0
 #include <openssl/hmac.h>
+/* For some reason, this function is not declared on OpenSSL's headers */
+void OPENSSL_cpuid_setup(void);
 #else
 /* OpenSSL >= 1.1.0 */
 #define HAS_FAST_PKCS5_PBKDF2_HMAC 1
@@ -1022,8 +1025,17 @@ PyInit__hashlib(void)
 {
     PyObject *m, *openssl_md_meth_names;
 
+#ifndef OPENSSL_VERSION_1_1
+    /* "As of version 1.1.0 OpenSSL will automatically allocate all resources
+     * that it needs so no explicit initialisation is required. Similarly it
+     * will also automatically deinitialise as required."
+     * https://www.openssl.org/docs/man1.1.0/crypto/OPENSSL_init_crypto.html */
     OpenSSL_add_all_digests();
     ERR_load_crypto_strings();
+
+    /* Detect HW capabilities to improve performance */
+    OPENSSL_cpuid_setup();
+#endif
 
     /* TODO build EVP_functions openssl_* entries dynamically based
      * on what hashes are supported rather than listing many
