@@ -16,17 +16,18 @@
 #define PGEN
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "pgenheaders.h"
 #include "grammar.h"
 #include "node.h"
 #include "parsetok.h"
 #include "pgen.h"
-#include "internal/mem.h"
 
 int Py_DebugFlag;
 int Py_VerboseFlag;
 int Py_IgnoreEnvironmentFlag;
-struct pyruntimestate _PyRuntime = {};
+_PyRuntimeState _PyRuntime = {};
 
 /* Forward */
 grammar *getgrammar(const char *filename);
