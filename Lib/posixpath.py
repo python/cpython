@@ -244,7 +244,10 @@ def expanduser(path):
     if i == 1:
         if 'HOME' not in os.environ:
             import pwd
-            userhome = pwd.getpwuid(os.getuid()).pw_dir
+            try:
+                userhome = pwd.getpwuid(os.getuid()).pw_dir
+            except KeyError:
+                return path
         else:
             userhome = os.environ['HOME']
     else:
