@@ -21,6 +21,8 @@ import pickle
 import struct
 import random
 import string
+import _thread as thread
+import threading
 try:
     import multiprocessing
 except ImportError:
@@ -33,12 +35,6 @@ except ImportError:
 HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
 
-try:
-    import _thread as thread
-    import threading
-except ImportError:
-    thread = None
-    threading = None
 try:
     import _socket
 except ImportError:
@@ -124,18 +120,17 @@ class ThreadSafeCleanupTestCase(unittest.TestCase):
     with a recursive lock.
     """
 
-    if threading:
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self._cleanup_lock = threading.RLock()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cleanup_lock = threading.RLock()
 
-        def addCleanup(self, *args, **kwargs):
-            with self._cleanup_lock:
-                return super().addCleanup(*args, **kwargs)
+    def addCleanup(self, *args, **kwargs):
+        with self._cleanup_lock:
+            return super().addCleanup(*args, **kwargs)
 
-        def doCleanups(self, *args, **kwargs):
-            with self._cleanup_lock:
-                return super().doCleanups(*args, **kwargs)
+    def doCleanups(self, *args, **kwargs):
+        with self._cleanup_lock:
+            return super().doCleanups(*args, **kwargs)
 
 class SocketCANTest(unittest.TestCase):
 
@@ -1629,7 +1624,6 @@ class BasicCANTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class CANTest(ThreadedCANSocketTest):
 
     def __init__(self, methodName='runTest'):
@@ -1783,7 +1777,6 @@ class BasicRDSTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAVE_SOCKET_RDS, 'RDS sockets required for this test.')
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RDSTest(ThreadedRDSSocketTest):
 
     def __init__(self, methodName='runTest'):
@@ -1874,7 +1867,6 @@ class RDSTest(ThreadedRDSSocketTest):
         self.assertIn(self.serv, r)
 
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):
 
     def __init__(self, methodName='runTest'):
@@ -1997,7 +1989,7 @@ class BasicTCPTest(SocketConnectedTest):
     def _testDetach(self):
         self.serv_conn.send(MSG)
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
+
 class BasicUDPTest(ThreadedUDPSocketTest):
 
     def __init__(self, methodName='runTest'):
@@ -3594,17 +3586,14 @@ class SendrecvmsgUDPTestBase(SendrecvmsgDgramFlagsBase,
     pass
 
 @requireAttrs(socket.socket, "sendmsg")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class SendmsgUDPTest(SendmsgConnectionlessTests, SendrecvmsgUDPTestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgUDPTest(RecvmsgTests, SendrecvmsgUDPTestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg_into")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgIntoUDPTest(RecvmsgIntoTests, SendrecvmsgUDPTestBase):
     pass
 
@@ -3621,21 +3610,18 @@ class SendrecvmsgUDP6TestBase(SendrecvmsgDgramFlagsBase,
 @requireAttrs(socket.socket, "sendmsg")
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireSocket("AF_INET6", "SOCK_DGRAM")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class SendmsgUDP6Test(SendmsgConnectionlessTests, SendrecvmsgUDP6TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireSocket("AF_INET6", "SOCK_DGRAM")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgUDP6Test(RecvmsgTests, SendrecvmsgUDP6TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg_into")
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireSocket("AF_INET6", "SOCK_DGRAM")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgIntoUDP6Test(RecvmsgIntoTests, SendrecvmsgUDP6TestBase):
     pass
 
@@ -3643,7 +3629,6 @@ class RecvmsgIntoUDP6Test(RecvmsgIntoTests, SendrecvmsgUDP6TestBase):
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireAttrs(socket, "IPPROTO_IPV6")
 @requireSocket("AF_INET6", "SOCK_DGRAM")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgRFC3542AncillaryUDP6Test(RFC3542AncillaryTest,
                                       SendrecvmsgUDP6TestBase):
     pass
@@ -3652,7 +3637,6 @@ class RecvmsgRFC3542AncillaryUDP6Test(RFC3542AncillaryTest,
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
 @requireAttrs(socket, "IPPROTO_IPV6")
 @requireSocket("AF_INET6", "SOCK_DGRAM")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgIntoRFC3542AncillaryUDP6Test(RecvmsgIntoMixin,
                                           RFC3542AncillaryTest,
                                           SendrecvmsgUDP6TestBase):
@@ -3664,18 +3648,15 @@ class SendrecvmsgTCPTestBase(SendrecvmsgConnectedBase,
     pass
 
 @requireAttrs(socket.socket, "sendmsg")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class SendmsgTCPTest(SendmsgStreamTests, SendrecvmsgTCPTestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgTCPTest(RecvmsgTests, RecvmsgGenericStreamTests,
                      SendrecvmsgTCPTestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg_into")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgIntoTCPTest(RecvmsgIntoTests, RecvmsgGenericStreamTests,
                          SendrecvmsgTCPTestBase):
     pass
@@ -3688,13 +3669,11 @@ class SendrecvmsgSCTPStreamTestBase(SendrecvmsgSCTPFlagsBase,
 
 @requireAttrs(socket.socket, "sendmsg")
 @requireSocket("AF_INET", "SOCK_STREAM", "IPPROTO_SCTP")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class SendmsgSCTPStreamTest(SendmsgStreamTests, SendrecvmsgSCTPStreamTestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
 @requireSocket("AF_INET", "SOCK_STREAM", "IPPROTO_SCTP")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgSCTPStreamTest(RecvmsgTests, RecvmsgGenericStreamTests,
                             SendrecvmsgSCTPStreamTestBase):
 
@@ -3708,7 +3687,6 @@ class RecvmsgSCTPStreamTest(RecvmsgTests, RecvmsgGenericStreamTests,
 
 @requireAttrs(socket.socket, "recvmsg_into")
 @requireSocket("AF_INET", "SOCK_STREAM", "IPPROTO_SCTP")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgIntoSCTPStreamTest(RecvmsgIntoTests, RecvmsgGenericStreamTests,
                                 SendrecvmsgSCTPStreamTestBase):
 
@@ -3727,33 +3705,28 @@ class SendrecvmsgUnixStreamTestBase(SendrecvmsgConnectedBase,
 
 @requireAttrs(socket.socket, "sendmsg")
 @requireAttrs(socket, "AF_UNIX")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class SendmsgUnixStreamTest(SendmsgStreamTests, SendrecvmsgUnixStreamTestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
 @requireAttrs(socket, "AF_UNIX")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgUnixStreamTest(RecvmsgTests, RecvmsgGenericStreamTests,
                             SendrecvmsgUnixStreamTestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg_into")
 @requireAttrs(socket, "AF_UNIX")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgIntoUnixStreamTest(RecvmsgIntoTests, RecvmsgGenericStreamTests,
                                 SendrecvmsgUnixStreamTestBase):
     pass
 
 @requireAttrs(socket.socket, "sendmsg", "recvmsg")
 @requireAttrs(socket, "AF_UNIX", "SOL_SOCKET", "SCM_RIGHTS")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgSCMRightsStreamTest(SCMRightsTest, SendrecvmsgUnixStreamTestBase):
     pass
 
 @requireAttrs(socket.socket, "sendmsg", "recvmsg_into")
 @requireAttrs(socket, "AF_UNIX", "SOL_SOCKET", "SCM_RIGHTS")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgIntoSCMRightsStreamTest(RecvmsgIntoMixin, SCMRightsTest,
                                      SendrecvmsgUnixStreamTestBase):
     pass
@@ -3841,7 +3814,6 @@ class InterruptedRecvTimeoutTest(InterruptedTimeoutBase, UDPTestBase):
 @requireAttrs(signal, "siginterrupt")
 @unittest.skipUnless(hasattr(signal, "alarm") or hasattr(signal, "setitimer"),
                      "Don't have signal.alarm or signal.setitimer")
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
                                  ThreadSafeCleanupTestCase,
                                  SocketListeningTestMixin, TCPTestBase):
@@ -3894,7 +3866,6 @@ class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
         self.checkInterruptedSend(self.serv_conn.sendmsg, [b"a"*512])
 
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class TCPCloserTest(ThreadedTCPSocketTest):
 
     def testClose(self):
@@ -3914,7 +3885,7 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         self.cli.connect((HOST, self.port))
         time.sleep(1.0)
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
+
 class BasicSocketPairTest(SocketPairTest):
 
     def __init__(self, methodName='runTest'):
@@ -3949,7 +3920,7 @@ class BasicSocketPairTest(SocketPairTest):
         msg = self.cli.recv(1024)
         self.assertEqual(msg, MSG)
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
+
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def __init__(self, methodName='runTest'):
@@ -4077,7 +4048,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         time.sleep(0.1)
         self.cli.send(MSG)
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
+
 class FileObjectClassTestCase(SocketConnectedTest):
     """Unit tests for the object returned by socket.makefile()
 
@@ -4461,7 +4432,6 @@ class NetworkConnectionNoServer(unittest.TestCase):
                 socket.create_connection((HOST, 1234))
 
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -4530,7 +4500,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.gettimeout(), 30)
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
+
 class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -4774,7 +4744,7 @@ class TestUnixDomain(unittest.TestCase):
         self.addCleanup(support.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
+
 class BufferIOTest(SocketConnectedTest):
     """
     Test the buffer versions of socket.recv() and socket.send().
@@ -4947,7 +4917,6 @@ class TIPCThreadableTest(unittest.TestCase, ThreadableTest):
         self.cli.close()
 
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class ContextManagersTest(ThreadedTCPSocketTest):
 
     def _testSocketClass(self):
@@ -5209,7 +5178,6 @@ class TestSocketSharing(SocketTCPTest):
                     source.close()
 
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
 class SendfileUsingSendTest(ThreadedTCPSocketTest):
     """
     Test the send() implementation of socket.sendfile().
@@ -5467,7 +5435,6 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
                                        meth, file, count=-1)
 
 
-@unittest.skipUnless(thread, 'Threading required for this test.')
 @unittest.skipUnless(hasattr(os, "sendfile"),
                      'os.sendfile() required for this test.')
 class SendfileUsingSendfileTest(SendfileUsingSendTest):

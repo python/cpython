@@ -220,7 +220,6 @@ LIBC=		@LIBC@
 SYSLIBS=	$(LIBM) $(LIBC)
 SHLIBS=		@SHLIBS@
 
-THREADOBJ=	@THREADOBJ@
 DLINCLDIR=	@DLINCLDIR@
 DYNLOADFILE=	@DYNLOADFILE@
 MACHDEP_OBJS=	@MACHDEP_OBJS@
@@ -354,6 +353,7 @@ PYTHON_OBJS=	\
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
+		Python/thread.o \
 		Python/traceback.o \
 		Python/getopt.o \
 		Python/pystrcmp.o \
@@ -365,7 +365,6 @@ PYTHON_OBJS=	\
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
-		$(THREADOBJ) \
 		$(DTRACE_OBJS)
 
 

@@ -87,11 +87,7 @@ static long dxp[256];
 #endif
 #endif
 
-#ifdef WITH_THREAD
 #define GIL_REQUEST _Py_atomic_load_relaxed(&gil_drop_request)
-#else
-#define GIL_REQUEST 0
-#endif
 
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
@@ -102,8 +98,6 @@ static long dxp[256];
         GIL_REQUEST | \
         _Py_atomic_load_relaxed(&pendingcalls_to_do) | \
         pending_async_exc)
-
-#ifdef WITH_THREAD
 
 #define SET_GIL_DROP_REQUEST() \
     do { \
@@ -116,8 +110,6 @@ static long dxp[256];
         _Py_atomic_store_relaxed(&gil_drop_request, 0); \
         COMPUTE_EVAL_BREAKER(); \
     } while (0)
-
-#endif
 
 /* Pending calls are only modified under pending_lock */
 #define SIGNAL_PENDING_CALLS() \
@@ -150,8 +142,6 @@ static _Py_atomic_int pendingcalls_to_do = {0};
 /* Request for looking at the `async_exc` field of the current thread state.
    Guarded by the GIL. */
 static int pending_async_exc = 0;
-
-#ifdef WITH_THREAD
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -256,8 +246,6 @@ PyEval_ReInitThreads(void)
     _PyThreadState_DeleteExcept(current_tstate);
 }
 
-#endif /* WITH_THREAD */
-
 /* This function is used to signal that async exceptions are waiting to be
    raised, therefore it is also useful in non-threaded builds. */
 
@@ -277,10 +265,8 @@ PyEval_SaveThread(void)
     PyThreadState *tstate = PyThreadState_Swap(NULL);
     if (tstate == NULL)
         Py_FatalError("PyEval_SaveThread: NULL tstate");
-#ifdef WITH_THREAD
     if (gil_created())
         drop_gil(tstate);
-#endif
     return tstate;
 }
 
@@ -289,7 +275,6 @@ PyEval_RestoreThread(PyThreadState *tstate)
 {
     if (tstate == NULL)
         Py_FatalError("PyEval_RestoreThread: NULL tstate");
-#ifdef WITH_THREAD
     if (gil_created()) {
         int err = errno;
         take_gil(tstate);
@@ -301,7 +286,6 @@ PyEval_RestoreThread(PyThreadState *tstate)
         }
         errno = err;
     }
-#endif
     PyThreadState_Swap(tstate);
 }
 
@@ -320,14 +304,12 @@ PyEval_RestoreThread(PyThreadState *tstate)
    Note that because registry may occur from within signal handlers,
    or other asynchronous events, calling malloc() is unsafe!
 
-#ifdef WITH_THREAD
    Any thread can schedule pending calls, but only the main thread
    will execute them.
    There is no facility to schedule calls to a particular thread, but
    that should be easy to change, should that ever be required.  In
    that case, the static variables here should go into the python
    threadstate.
-#endif
 */
 
 void
@@ -339,9 +321,7 @@ _PyEval_SignalReceived(void)
     SIGNAL_PENDING_CALLS();
 }
 
-#ifdef WITH_THREAD
-
-/* The WITH_THREAD implementation is thread-safe.  It allows
+/* This implementation is thread-safe.  It allows
    scheduling to be made from any thread, and even from an executing
    callback.
  */
@@ -463,106 +443,6 @@ error:
     SIGNAL_PENDING_CALLS(); /* We're not done yet */
     return -1;
 }
-
-#else /* if ! defined WITH_THREAD */
-
-/*
-   WARNING!  ASYNCHRONOUSLY EXECUTING CODE!
-   This code is used for signal handling in python that isn't built
-   with WITH_THREAD.
-   Don't use this implementation when Py_AddPendingCalls() can happen
-   on a different thread!
-
-   There are two possible race conditions:
-   (1) nested asynchronous calls to Py_AddPendingCall()
-   (2) AddPendingCall() calls made while pending calls are being processed.
-
-   (1) is very unlikely because typically signal delivery
-   is blocked during signal handling.  So it should be impossible.
-   (2) is a real possibility.
-   The current code is safe against (2), but not against (1).
-   The safety against (2) is derived from the fact that only one
-   thread is present, interrupted by signals, and that the critical
-   section is protected with the "busy" variable.  On Windows, which
-   delivers SIGINT on a system thread, this does not hold and therefore
-   Windows really shouldn't use this version.
-   The two threads could theoretically wiggle around the "busy" variable.
-*/
-
-#define NPENDINGCALLS 32
-static struct {
-    int (*func)(void *);
-    void *arg;
-} pendingcalls[NPENDINGCALLS];
-static volatile int pendingfirst = 0;
-static volatile int pendinglast = 0;
-
-int
-Py_AddPendingCall(int (*func)(void *), void *arg)
-{
-    static volatile int busy = 0;
-    int i, j;
-    /* XXX Begin critical section */
-    if (busy)
-        return -1;
-    busy = 1;
-    i = pendinglast;
-    j = (i + 1) % NPENDINGCALLS;
-    if (j == pendingfirst) {
-        busy = 0;
-        return -1; /* Queue full */
-    }
-    pendingcalls[i].func = func;
-    pendingcalls[i].arg = arg;
-    pendinglast = j;
-
-    SIGNAL_PENDING_CALLS();
-    busy = 0;
-    /* XXX End critical section */
-    return 0;
-}
-
-int
-Py_MakePendingCalls(void)
-{
-    static int busy = 0;
-    if (busy)
-        return 0;
-    busy = 1;
-
-    /* unsignal before starting to call callbacks, so that any callback
-       added in-between re-signals */
-    UNSIGNAL_PENDING_CALLS();
-    /* Python signal handler doesn't really queue a callback: it only signals
-       that a signal was received, see _PyEval_SignalReceived(). */
-    if (PyErr_CheckSignals() < 0) {
-        goto error;
-    }
-
-    for (;;) {
-        int i;
-        int (*func)(void *);
-        void *arg;
-        i = pendingfirst;
-        if (i == pendinglast)
-            break; /* Queue empty */
-        func = pendingcalls[i].func;
-        arg = pendingcalls[i].arg;
-        pendingfirst = (i + 1) % NPENDINGCALLS;
-        if (func(arg) < 0) {
-            goto error;
-        }
-    }
-    busy = 0;
-    return 0;
-
-error:
-    busy = 0;
-    SIGNAL_PENDING_CALLS(); /* We're not done yet */
-    return -1;
-}
-
-#endif /* WITH_THREAD */
 
 
 /* The interpreter's recursion limit */
@@ -1101,7 +981,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 if (Py_MakePendingCalls() < 0)
                     goto error;
             }
-#ifdef WITH_THREAD
             if (_Py_atomic_load_relaxed(&gil_drop_request)) {
                 /* Give another thread a chance */
                 if (PyThreadState_Swap(NULL) != tstate)
@@ -1121,7 +1000,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 if (PyThreadState_Swap(tstate) != NULL)
                     Py_FatalError("ceval: orphan tstate");
             }
-#endif
             /* Check for asynchronous exceptions. */
             if (tstate->async_exc != NULL) {
                 PyObject *exc = tstate->async_exc;
