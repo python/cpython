@@ -8,6 +8,13 @@ PyDoc_STRVAR(warnings__doc__,
 MODULE_NAME " provides basic warning filtering support.\n"
 "It is a helper module to speed up interpreter start-up.");
 
+/* Both 'filters' and 'onceregistry' can be set in warnings.py;
+   get_warnings_attr() will reset these variables accordingly. */
+static PyObject *_filters;  /* List */
+static PyObject *_once_registry;  /* Dict */
+static PyObject *_default_action; /* String */
+static long _filters_version;
+
 _Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
 
@@ -46,7 +53,7 @@ get_warnings_attr(const char *attr, int try_import)
     }
 
     /* don't try to import after the start of the Python finallization */
-    if (try_import && !_Py_IS_FINALIZING()) {
+    if (try_import && _Py_Finalizing == NULL) {
         warnings_module = PyImport_Import(warnings_str);
         if (warnings_module == NULL) {
             /* Fallback to the C implementation if we cannot get
@@ -83,10 +90,10 @@ get_once_registry(void)
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
-        return _PyRuntime.warnings.once_registry;
+        return _once_registry;
     }
-    Py_DECREF(_PyRuntime.warnings.once_registry);
-    _PyRuntime.warnings.once_registry = registry;
+    Py_DECREF(_once_registry);
+    _once_registry = registry;
     return registry;
 }
 
@@ -101,11 +108,11 @@ get_default_action(void)
         if (PyErr_Occurred()) {
             return NULL;
         }
-        return _PyRuntime.warnings.default_action;
+        return _default_action;
     }
 
-    Py_DECREF(_PyRuntime.warnings.default_action);
-    _PyRuntime.warnings.default_action = default_action;
+    Py_DECREF(_default_action);
+    _default_action = default_action;
     return default_action;
 }
 
@@ -125,24 +132,23 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
             return NULL;
     }
     else {
-        Py_DECREF(_PyRuntime.warnings.filters);
-        _PyRuntime.warnings.filters = warnings_filters;
+        Py_DECREF(_filters);
+        _filters = warnings_filters;
     }
 
-    PyObject *filters = _PyRuntime.warnings.filters;
-    if (filters == NULL || !PyList_Check(filters)) {
+    if (_filters == NULL || !PyList_Check(_filters)) {
         PyErr_SetString(PyExc_ValueError,
                         MODULE_NAME ".filters must be a list");
         return NULL;
     }
 
-    /* _PyRuntime.warnings.filters could change while we are iterating over it. */
-    for (i = 0; i < PyList_GET_SIZE(filters); i++) {
+    /* _filters could change while we are iterating over it. */
+    for (i = 0; i < PyList_GET_SIZE(_filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
         int is_subclass, good_msg, good_mod;
 
-        tmp_item = PyList_GET_ITEM(filters, i);
+        tmp_item = PyList_GET_ITEM(_filters, i);
         if (!PyTuple_Check(tmp_item) || PyTuple_GET_SIZE(tmp_item) != 5) {
             PyErr_Format(PyExc_ValueError,
                          MODULE_NAME ".filters item %zd isn't a 5-tuple", i);
@@ -214,9 +220,9 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
     version_obj = _PyDict_GetItemId(registry, &PyId_version);
     if (version_obj == NULL
         || !PyLong_CheckExact(version_obj)
-        || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version) {
+        || PyLong_AsLong(version_obj) != _filters_version) {
         PyDict_Clear(registry);
-        version_obj = PyLong_FromLong(_PyRuntime.warnings.filters_version);
+        version_obj = PyLong_FromLong(_filters_version);
         if (version_obj == NULL)
             return -1;
         if (_PyDict_SetItemId(registry, &PyId_version, version_obj) < 0) {
@@ -514,7 +520,7 @@ warn_explicit(PyObject *category, PyObject *message,
                 if (registry == NULL)
                     goto cleanup;
             }
-            /* _PyRuntime.warnings.once_registry[(text, category)] = 1 */
+            /* _once_registry[(text, category)] = 1 */
             rc = update_registry(registry, text, category, 0);
         }
         else if (_PyUnicode_EqualToASCIIString(action, "module")) {
@@ -904,7 +910,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 warnings_filters_mutated(PyObject *self, PyObject *args)
 {
-    _PyRuntime.warnings.filters_version++;
+    _filters_version++;
     Py_RETURN_NONE;
 }
 
@@ -1154,8 +1160,7 @@ create_filter(PyObject *category, const char *action)
     }
 
     /* This assumes the line number is zero for now. */
-    return PyTuple_Pack(5, action_obj, Py_None,
-                        category, Py_None, _PyLong_Zero);
+    return PyTuple_Pack(5, action_obj, Py_None, category, Py_None, _PyLong_Zero);
 }
 
 static PyObject *
@@ -1223,35 +1228,33 @@ _PyWarnings_Init(void)
     if (m == NULL)
         return NULL;
 
-    if (_PyRuntime.warnings.filters == NULL) {
-        _PyRuntime.warnings.filters = init_filters();
-        if (_PyRuntime.warnings.filters == NULL)
+    if (_filters == NULL) {
+        _filters = init_filters();
+        if (_filters == NULL)
             return NULL;
     }
-    Py_INCREF(_PyRuntime.warnings.filters);
-    if (PyModule_AddObject(m, "filters", _PyRuntime.warnings.filters) < 0)
+    Py_INCREF(_filters);
+    if (PyModule_AddObject(m, "filters", _filters) < 0)
         return NULL;
 
-    if (_PyRuntime.warnings.once_registry == NULL) {
-        _PyRuntime.warnings.once_registry = PyDict_New();
-        if (_PyRuntime.warnings.once_registry == NULL)
+    if (_once_registry == NULL) {
+        _once_registry = PyDict_New();
+        if (_once_registry == NULL)
             return NULL;
     }
-    Py_INCREF(_PyRuntime.warnings.once_registry);
-    if (PyModule_AddObject(m, "_onceregistry",
-                           _PyRuntime.warnings.once_registry) < 0)
+    Py_INCREF(_once_registry);
+    if (PyModule_AddObject(m, "_onceregistry", _once_registry) < 0)
         return NULL;
 
-    if (_PyRuntime.warnings.default_action == NULL) {
-        _PyRuntime.warnings.default_action = PyUnicode_FromString("default");
-        if (_PyRuntime.warnings.default_action == NULL)
+    if (_default_action == NULL) {
+        _default_action = PyUnicode_FromString("default");
+        if (_default_action == NULL)
             return NULL;
     }
-    Py_INCREF(_PyRuntime.warnings.default_action);
-    if (PyModule_AddObject(m, "_defaultaction",
-                           _PyRuntime.warnings.default_action) < 0)
+    Py_INCREF(_default_action);
+    if (PyModule_AddObject(m, "_defaultaction", _default_action) < 0)
         return NULL;
 
-    _PyRuntime.warnings.filters_version = 0;
+    _filters_version = 0;
     return m;
 }

@@ -93,12 +93,7 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
       PyThreadState_GET()->overflowed = 0;  \
     } while(0)
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char *where);
-#ifdef Py_BUILD_CORE
-#define _Py_CheckRecursionLimit _PyRuntime.ceval.check_recursion_limit
-#else
-PyAPI_FUNC(int) _PyEval_CheckRecursionLimit(void);
-#define _Py_CheckRecursionLimit _PyEval_CheckRecursionLimit()
-#endif
+PyAPI_DATA(int) _Py_CheckRecursionLimit;
 
 #ifdef USE_STACKCHECK
 /* With USE_STACKCHECK, we artificially decrement the recursion limit in order
