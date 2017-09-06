@@ -116,7 +116,6 @@
     <ClInclude Include="..\Include\internal\mem.h" />
     <ClInclude Include="..\Include\internal\pymalloc.h" />
     <ClInclude Include="..\Include\internal\pystate.h" />
-    <ClInclude Include="..\Include\internal\runtime.h" />
     <ClInclude Include="..\Include\internal\warnings.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />

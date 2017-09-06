@@ -990,7 +990,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/mem.h \
 		$(srcdir)/Include/internal/pymalloc.h \
 		$(srcdir)/Include/internal/pystate.h \
-		$(srcdir)/Include/internal/runtime.h \
 		$(srcdir)/Include/internal/warnings.h \
 		$(DTRACE_HEADERS)
 

@@ -12,6 +12,5 @@
 #include "internal/ceval.h"
 #include "internal/warnings.h"
 #include "internal/pystate.h"
-#include "internal/runtime.h"
 
 #endif /* !Py_INTERNAL_PYTHON_H */
