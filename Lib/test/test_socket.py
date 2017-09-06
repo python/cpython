@@ -33,6 +33,8 @@ except ImportError:
 HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
 
+VSOCKPORT = 1234
+
 try:
     import _thread as thread
     import threading
@@ -44,6 +46,16 @@ try:
 except ImportError:
     _socket = None
 
+def get_cid():
+    if fcntl is None:
+        return None
+    try:
+        with open("/dev/vsock", "rb") as f:
+            r = fcntl.ioctl(f, socket.IOCTL_VM_SOCKETS_GET_LOCAL_CID, "    ")
+    except OSError:
+        return None
+    else:
+        return struct.unpack("I", r)[0]
 
 def _have_socket_can():
     """Check whether CAN sockets are supported on this host."""
@@ -85,6 +97,11 @@ def _have_socket_alg():
         s.close()
     return True
 
+def _have_socket_vsock():
+    """Check whether AF_VSOCK sockets are supported on this host."""
+    ret = get_cid() is not None
+    return ret
+
 HAVE_SOCKET_CAN = _have_socket_can()
 
 HAVE_SOCKET_CAN_ISOTP = _have_socket_can_isotp()
@@ -92,6 +109,8 @@ HAVE_SOCKET_CAN_ISOTP = _have_socket_can_isotp()
 HAVE_SOCKET_RDS = _have_socket_rds()
 
 HAVE_SOCKET_ALG = _have_socket_alg()
+
+HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
@@ -386,6 +405,42 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
         self.cli.close()
         self.cli = None
         ThreadableTest.clientTearDown(self)
+
+@unittest.skipIf(fcntl is None, "need fcntl")
+@unittest.skipUnless(thread, 'Threading required for this test.')
+@unittest.skipUnless(HAVE_SOCKET_VSOCK,
+          'VSOCK sockets required for this test.')
+@unittest.skipUnless(get_cid() != 2,
+          "This test can only be run on a virtual guest.")
+class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
+
+    def __init__(self, methodName='runTest'):
+        unittest.TestCase.__init__(self, methodName=methodName)
+        ThreadableTest.__init__(self)
+
+    def setUp(self):
+        self.serv = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
+        self.addCleanup(self.serv.close)
+        self.serv.bind((socket.VMADDR_CID_ANY, VSOCKPORT))
+        self.serv.listen()
+        self.serverExplicitReady()
+        self.conn, self.connaddr = self.serv.accept()
+        self.addCleanup(self.conn.close)
+
+    def clientSetUp(self):
+        time.sleep(0.1)
+        self.cli = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
+        self.addCleanup(self.cli.close)
+        cid = get_cid()
+        self.cli.connect((cid, VSOCKPORT))
+
+    def testStream(self):
+        msg = self.conn.recv(1024)
+        self.assertEqual(msg, MSG)
+
+    def _testStream(self):
+        self.cli.send(MSG)
+        self.cli.close()
 
 class SocketConnectedTest(ThreadedTCPSocketTest):
     """Socket tests for client-server connection.
@@ -1873,6 +1928,54 @@ class RDSTest(ThreadedRDSSocketTest):
         r, w, x = select.select([self.serv], [], [], 3.0)
         self.assertIn(self.serv, r)
 
+
+@unittest.skipIf(fcntl is None, "need fcntl")
+@unittest.skipUnless(HAVE_SOCKET_VSOCK,
+          'VSOCK sockets required for this test.')
+class BasicVSOCKTest(unittest.TestCase):
+
+    def testCrucialConstants(self):
+        socket.AF_VSOCK
+
+    def testVSOCKConstants(self):
+        socket.SO_VM_SOCKETS_BUFFER_SIZE
+        socket.SO_VM_SOCKETS_BUFFER_MIN_SIZE
+        socket.SO_VM_SOCKETS_BUFFER_MAX_SIZE
+        socket.VMADDR_CID_ANY
+        socket.VMADDR_PORT_ANY
+        socket.VMADDR_CID_HOST
+        socket.VM_SOCKETS_INVALID_VERSION
+        socket.IOCTL_VM_SOCKETS_GET_LOCAL_CID
+
+    def testCreateSocket(self):
+        with socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM) as s:
+            pass
+
+    def testSocketBufferSize(self):
+        with socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM) as s:
+            orig_max = s.getsockopt(socket.AF_VSOCK,
+                                    socket.SO_VM_SOCKETS_BUFFER_MAX_SIZE)
+            orig = s.getsockopt(socket.AF_VSOCK,
+                                socket.SO_VM_SOCKETS_BUFFER_SIZE)
+            orig_min = s.getsockopt(socket.AF_VSOCK,
+                                    socket.SO_VM_SOCKETS_BUFFER_MIN_SIZE)
+
+            s.setsockopt(socket.AF_VSOCK,
+                         socket.SO_VM_SOCKETS_BUFFER_MAX_SIZE, orig_max * 2)
+            s.setsockopt(socket.AF_VSOCK,
+                         socket.SO_VM_SOCKETS_BUFFER_SIZE, orig * 2)
+            s.setsockopt(socket.AF_VSOCK,
+                         socket.SO_VM_SOCKETS_BUFFER_MIN_SIZE, orig_min * 2)
+
+            self.assertEqual(orig_max * 2,
+                             s.getsockopt(socket.AF_VSOCK,
+                             socket.SO_VM_SOCKETS_BUFFER_MAX_SIZE))
+            self.assertEqual(orig * 2,
+                             s.getsockopt(socket.AF_VSOCK,
+                             socket.SO_VM_SOCKETS_BUFFER_SIZE))
+            self.assertEqual(orig_min * 2,
+                             s.getsockopt(socket.AF_VSOCK,
+                             socket.SO_VM_SOCKETS_BUFFER_MIN_SIZE))
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):
@@ -5681,6 +5784,10 @@ def test_main():
     tests.extend([BasicCANTest, CANTest])
     tests.extend([BasicRDSTest, RDSTest])
     tests.append(LinuxKernelCryptoAPI)
+    tests.extend([
+        BasicVSOCKTest,
+        ThreadedVSOCKSocketStreamTest,
+    ])
     tests.extend([
         CmsgMacroTests,
         SendmsgUDPTest,
