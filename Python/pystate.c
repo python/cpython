@@ -37,7 +37,8 @@ extern "C" {
 void
 _PyRuntimeState_Init(_PyRuntimeState *runtime)
 {
-    memset(runtime, 0, sizeof(*runtime));
+    _PyRuntimeState initial = {};
+    *runtime = initial;
 
     _PyObject_Initialize(&runtime->obj);
     _PyMem_Initialize(&runtime->mem);
