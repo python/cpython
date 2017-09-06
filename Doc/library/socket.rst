@@ -153,6 +153,14 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.6
 
+- :const:`AF_VSOCK` allows communication between virtual machines and
+  their hosts. The sockets are represented as a ``(CID, port)`` tuple
+  where the context ID or CID and port are integers.
+
+  Availability: Linux >= 4.8 QEMU >= 2.8 ESX >= 4.0 ESX Workstation >= 6.5
+
+  .. versionadded:: 3.7
+
 - Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
   support specific representations.
 
@@ -394,6 +402,18 @@ Constants
    Availability: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
+
+
+.. data:: AF_VSOCK
+          IOCTL_VM_SOCKETS_GET_LOCAL_CID
+          VMADDR*
+          SO_VM*
+
+   Constants for Linux host/guest communication.
+
+   Availability: Linux >= 4.8.
+
+   .. versionadded:: 3.7
 
 .. data:: AF_LINK
 
