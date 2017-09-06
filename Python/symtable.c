@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "internal/pystate.h"
 #include "Python-ast.h"
 #include "code.h"
 #include "symtable.h"

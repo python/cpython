@@ -984,7 +984,6 @@ PYTHON_HEADERS= \
 		pyconfig.h \
 		$(PARSER_HEADERS) \
 		$(srcdir)/Include/Python-ast.h \
-		$(srcdir)/Include/internal/Python.h \
 		$(srcdir)/Include/internal/ceval.h \
 		$(srcdir)/Include/internal/gil.h \
 		$(srcdir)/Include/internal/mem.h \

@@ -109,7 +109,6 @@
     <ClInclude Include="..\Include\graminit.h" />
     <ClInclude Include="..\Include\grammar.h" />
     <ClInclude Include="..\Include\import.h" />
-    <ClInclude Include="..\Include\internal\Python.h" />
     <ClInclude Include="..\Include\internal\ceval.h" />
     <ClInclude Include="..\Include\internal\condvar.h" />
     <ClInclude Include="..\Include\internal\gil.h" />

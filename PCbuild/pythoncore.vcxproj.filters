@@ -129,9 +129,6 @@
     <ClInclude Include="..\Include\import.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\Python.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\ceval.h">
       <Filter>Include</Filter>
     </ClInclude>
