@@ -15,8 +15,9 @@ test_script:
 environment:
   HOST_PYTHON: C:\Python36\python.exe
 matrix:
-  - image: Visual Studio 2015
-  - image: Visual Studio 2017
+  image:
+    - Visual Studio 2015
+    - Visual Studio 2017
 
 # Only trigger AppVeyor if actual code or its configuration changes
 only_commits:
