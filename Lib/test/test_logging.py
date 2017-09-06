@@ -1569,7 +1569,8 @@ class UnixSocketHandlerTest(SocketHandlerTest):
 
     """Test for SocketHandler with unix sockets."""
 
-    server_class = TestUnixStreamServer
+    if hasattr(socket, "AF_UNIX"):
+        server_class = TestUnixStreamServer
 
     def setUp(self):
         # override the definition in the base class
@@ -1651,7 +1652,8 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     """Test for DatagramHandler using Unix sockets."""
 
-    server_class = TestUnixDatagramServer
+    if hasattr(socket, "AF_UNIX"):
+        server_class = TestUnixDatagramServer
 
     def setUp(self):
         # override the definition in the base class
