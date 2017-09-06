@@ -1319,7 +1319,6 @@
     <Compile Include="test\test_time.py" />
     <Compile Include="test\test_timeit.py" />
     <Compile Include="test\test_timeout.py" />
-    <Compile Include="test\test_tix.py" />
     <Compile Include="test\test_tk.py" />
     <Compile Include="test\test_tokenize.py" />
     <Compile Include="test\test_tools\test_fixcid.py" />
@@ -1443,7 +1442,6 @@
     <Compile Include="tkinter\test\test_ttk\__init__.py" />
     <Compile Include="tkinter\test\widget_tests.py" />
     <Compile Include="tkinter\test\__init__.py" />
-    <Compile Include="tkinter\tix.py" />
     <Compile Include="tkinter\ttk.py" />
     <Compile Include="tkinter\__init__.py" />
     <Compile Include="tkinter\__main__.py" />

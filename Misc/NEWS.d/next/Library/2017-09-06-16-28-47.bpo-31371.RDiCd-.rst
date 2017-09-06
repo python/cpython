@@ -1,0 +1,1 @@
+Removed the deprecated tkinter.tix module.
