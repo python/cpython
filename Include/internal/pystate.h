@@ -81,9 +81,11 @@ typedef struct pyruntimestate {
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
-PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 PyAPI_FUNC(void) _PyRuntimeState_Init(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
+
+
+/* Other */
 
 PyAPI_FUNC(void) _PyInterpreterState_Enable(_PyRuntimeState *);
 

@@ -150,6 +150,9 @@
     <ClInclude Include="..\Include\internal\pystate.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\runtime.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\warnings.h">
       <Filter>Include</Filter>
     </ClInclude>
