@@ -2021,16 +2021,9 @@ class PyBuildExt(build_ext):
             ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
-            with open(ffi_h) as f:
-                for line in f:
-                    line = line.strip()
-                    if line.startswith(('#define LIBFFI_H',
-                                        '#define ffi_wrapper_h')):
-                        break
-                else:
-                    ffi_inc = None
-                    print('Header file {} does not define LIBFFI_H or '
-                          'ffi_wrapper_h'.format(ffi_h))
+            if not os.path.exists(ffi_h):
+                ffi_inc = None
+                print('Header file {} does not exist'.format(ffi_h))
         ffi_lib = None
         if ffi_inc is not None:
             for lib_name in ('ffi', 'ffi_pic'):
