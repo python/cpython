@@ -112,8 +112,6 @@ WIN32 is still required for the locale module.
    defined on Win32 *and* Win64. Win32 only code must therefore be
    guarded as follows:
         #if defined(MS_WIN32) && !defined(MS_WIN64)
-   Some modules are disabled on Itanium processors, therefore we
-   have MS_WINI64 set for those targets, otherwise MS_WINX64
 */
 #ifdef _WIN64
 #define MS_WIN64
@@ -121,17 +119,12 @@ WIN32 is still required for the locale module.
 
 /* set the COMPILER */
 #ifdef MS_WIN64
-#if defined(_M_IA64)
-#define COMPILER _Py_PASTE_VERSION("64 bit (Itanium)")
-#define MS_WINI64
-#define PYD_PLATFORM_TAG "win_ia64"
-#elif defined(_M_X64) || defined(_M_AMD64)
+#if defined(_M_X64) || defined(_M_AMD64)
 #if defined(__INTEL_COMPILER)
 #define COMPILER ("[ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 64 bit (amd64) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
 #endif /* __INTEL_COMPILER */
-#define MS_WINX64
 #define PYD_PLATFORM_TAG "win_amd64"
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")

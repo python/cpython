@@ -6,9 +6,7 @@
 #include "Python.h"
 
 extern PyObject* PyInit_array(void);
-#ifndef MS_WINI64
 extern PyObject* PyInit_audioop(void);
-#endif
 extern PyObject* PyInit_binascii(void);
 extern PyObject* PyInit_cmath(void);
 extern PyObject* PyInit_errno(void);
@@ -80,11 +78,7 @@ struct _inittab _PyImport_Inittab[] = {
 
     {"array", PyInit_array},
     {"_ast", PyInit__ast},
-#ifdef MS_WINDOWS
-#ifndef MS_WINI64
     {"audioop", PyInit_audioop},
-#endif
-#endif
     {"binascii", PyInit_binascii},
     {"cmath", PyInit_cmath},
     {"errno", PyInit_errno},
