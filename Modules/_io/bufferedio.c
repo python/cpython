@@ -279,7 +279,7 @@ _enter_buffered_busy(buffered *self)
                      "reentrant call inside %R", self);
         return 0;
     }
-    relax_locking = (_Py_Finalizing != NULL);
+    relax_locking = _Py_IS_FINALIZING();
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking)
         st = PyThread_acquire_lock(self->lock, 1);
