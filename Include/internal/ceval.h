@@ -1,15 +1,15 @@
-#ifndef _Py_CEVAL_H
-#define _Py_CEVAL_H
+#ifndef Py_INTERNAL_CEVAL_H
+#define Py_INTERNAL_CEVAL_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "ceval.h"
-#include "compile.h"
-#include "pyatomic.h"
+#include <ceval.h>
+#include <compile.h>
+#include <pyatomic.h>
 
 #ifdef WITH_THREAD
-#include "pythread.h"
+#include <pythread.h>
 #endif
 
 struct _pending_calls {
@@ -41,7 +41,7 @@ struct _pending_calls {
 #endif /* WITH_THREAD */
 };
 
-#include "_gil.h"
+#include "internal/gil.h"
 
 struct _ceval_runtime_state {
     int recursion_limit;
@@ -68,4 +68,4 @@ PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !_Py_CEVAL_H */
+#endif /* !Py_INTERNAL_CEVAL_H */

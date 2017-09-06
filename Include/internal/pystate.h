@@ -1,19 +1,19 @@
-#ifndef _Py_PYSTATE_H
-#define _Py_PYSTATE_H
+#ifndef Py_INTERNAL_PYSTATE_H
+#define Py_INTERNAL_PYSTATE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "pystate.h"
-#include "pyatomic.h"
+#include <pystate.h>
+#include <pyatomic.h>
 
 #ifdef WITH_THREAD
-#include "pythread.h"
+#include <pythread.h>
 #endif
 
-#include "_mem.h"
-#include "_ceval.h"
-#include "_warnings.h"
+#include "internal/mem.h"
+#include "internal/ceval.h"
+#include "internal/warnings.h"
 
 
 /* GIL state */
@@ -90,4 +90,4 @@ PyAPI_FUNC(void) _PyInterpreterState_Enable(_PyRuntimeState *);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !_Py_PYSTATE_H */
+#endif /* !Py_INTERNAL_PYSTATE_H */

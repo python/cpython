@@ -134,7 +134,7 @@
 #include "pyfpe.h"
 
 #ifdef Py_BUILD_CORE
-#include "internal/_Python.h"
+#include "internal/Python.h"
 #endif
 
 #endif /* !Py_PYTHON_H */

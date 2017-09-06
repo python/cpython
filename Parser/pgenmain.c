@@ -21,7 +21,7 @@
 #include "node.h"
 #include "parsetok.h"
 #include "pgen.h"
-#include "internal/_mem.h"
+#include "internal/mem.h"
 
 int Py_DebugFlag;
 int Py_VerboseFlag;

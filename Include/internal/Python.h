@@ -1,5 +1,5 @@
-#ifndef _Py_PYTHON_H
-#define _Py_PYTHON_H
+#ifndef Py_INTERNAL_PYTHON_H
+#define Py_INTERNAL_PYTHON_H
 /* Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" { */
 
 /* Include all internal Python header files */
@@ -8,9 +8,9 @@
 #error "Internal headers are not available externally."
 #endif
 
-#include "_mem.h"
-#include "_ceval.h"
-#include "_warnings.h"
-#include "_pystate.h"
+#include "internal/mem.h"
+#include "internal/ceval.h"
+#include "internal/warnings.h"
+#include "internal/pystate.h"
 
-#endif /* !_Py_PYTHON_H */
+#endif /* !Py_INTERNAL_PYTHON_H */

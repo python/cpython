@@ -1,10 +1,10 @@
-#ifndef _Py_WARNINGS_H
-#define _Py_WARNINGS_H
+#ifndef Py_INTERNAL_WARNINGS_H
+#define Py_INTERNAL_WARNINGS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "object.h"
+#include <object.h>
 
 struct _warnings_runtime_state {
     /* Both 'filters' and 'onceregistry' can be set in warnings.py;
@@ -18,4 +18,4 @@ struct _warnings_runtime_state {
 #ifdef __cplusplus
 }
 #endif
-#endif /* !_Py_WARNINGS_H */
+#endif /* !Py_INTERNAL_WARNINGS_H */

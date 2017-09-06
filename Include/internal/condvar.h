@@ -1,5 +1,5 @@
-#ifndef _CONDVAR_H_
-#define _CONDVAR_H_
+#ifndef Py_INTERNAL_CONDVAR_H
+#define Py_INTERNAL_CONDVAR_H
 
 #ifndef _POSIX_THREADS
 /* This means pthreads are not implemented in libc headers, hence the macro
@@ -88,4 +88,4 @@ typedef CONDITION_VARIABLE  PyCOND_T;
 
 #endif /* _POSIX_THREADS, NT_THREADS */
 
-#endif /* _CONDVAR_H_ */
+#endif /* Py_INTERNAL_CONDVAR_H */

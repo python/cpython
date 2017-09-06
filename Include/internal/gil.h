@@ -1,12 +1,12 @@
-#ifndef _Py_GIL_H
-#define _Py_GIL_H
+#ifndef Py_INTERNAL_GIL_H
+#define Py_INTERNAL_GIL_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "pyatomic.h"
+#include <pyatomic.h>
 
-#include "internal/_condvar.h"
+#include "internal/condvar.h"
 #ifndef Py_HAVE_CONDVAR
 #error You need either a POSIX-compatible or a Windows system!
 #endif
@@ -45,4 +45,4 @@ struct _gil_runtime_state {
 #ifdef __cplusplus
 }
 #endif
-#endif /* !_Py_GIL_H */
+#endif /* !Py_INTERNAL_GIL_H */

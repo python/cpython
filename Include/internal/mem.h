@@ -1,14 +1,14 @@
-#ifndef _Py_MEM_H
-#define _Py_MEM_H
+#ifndef Py_INTERNAL_MEM_H
+#define Py_INTERNAL_MEM_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "objimpl.h"
-#include "pymem.h"
+#include <objimpl.h>
+#include <pymem.h>
 
 #ifdef WITH_PYMALLOC
-#include "_pymalloc.h"
+#include "internal/pymalloc.h"
 #endif
 
 /* Low-level memory runtime state */
@@ -194,4 +194,4 @@ PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_runtime_state *);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !_Py_MEM_H */
+#endif /* !Py_INTERNAL_MEM_H */
