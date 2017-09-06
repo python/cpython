@@ -2360,36 +2360,38 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                           &bases, &PyDict_Type, &orig_dict))
         return NULL;
 
-    /* Determine the proper metatype to deal with this: */
-    winner = _PyType_CalculateMetaclass(metatype, bases);
-    if (winner == NULL) {
-        return NULL;
-    }
-
-    if (winner != metatype) {
-        if (winner->tp_new != type_new) /* Pass it to the winner */
-            return winner->tp_new(winner, args, kwds);
-        metatype = winner;
-    }
-
     /* Adjust for empty tuple bases */
     nbases = PyTuple_GET_SIZE(bases);
     if (nbases == 0) {
         base = &PyBaseObject_Type;
         bases = PyTuple_Pack(1, base);
         if (bases == NULL)
-            goto error;
+            return NULL;
         nbases = 1;
     }
     else {
-        Py_INCREF(bases);
+        /* Search the bases for the proper metatype to deal with this: */
+        winner = _PyType_CalculateMetaclass(metatype, bases);
+        if (winner == NULL) {
+            return NULL;
+        }
+
+        if (winner != metatype) {
+            if (winner->tp_new != type_new) /* Pass it to the winner */
+                return winner->tp_new(winner, args, kwds);
+            metatype = winner;
+        }
 
         /* Calculate best base, and check that all bases are type objects */
         base = best_base(bases);
         if (base == NULL) {
-            goto error;
+            return NULL;
         }
+
+        Py_INCREF(bases);
     }
+
+    /* Use "goto error" from this point on as we now own the reference to "bases". */
 
     dict = PyDict_Copy(orig_dict);
     if (dict == NULL)
