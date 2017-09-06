@@ -10,6 +10,7 @@
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
     -->
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath11)' != ''">v110</BasePlatformToolset>
@@ -39,6 +40,7 @@
     <BuildPath Condition="'$(ArchName)' == 'amd64'">$(BuildPath64)</BuildPath>
     <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCBuild\$(ArchName)\</BuildPath>
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
+    <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath)instrumented\</BuildPath>
     
     <!-- Directories of external projects. tcltk is handled in tcltk.props -->
     <ExternalsDir>$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals\`))</ExternalsDir>
@@ -62,7 +64,24 @@
     <!-- Full path of the resulting python.exe binary -->
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
   </PropertyGroup>
-  
+
+  <PropertyGroup Condition="$(DefaultWindowsSDKVersion) == ''">
+    <!--
+    Attempt to select the latest installed WinSDK. If we don't find any, then we will
+    let the MSBuild targets determine which one it wants to use (typically the earliest
+    possible version). Since we limit WINVER to Windows 7 anyway, it doesn't really
+    matter which WinSDK version we use.
+    -->
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(OverrideVersion)' == ''">
     <!--
     Read version information from Include\patchlevel.h. The following properties are set:
