@@ -4,8 +4,8 @@
 extern "C" {
 #endif
 
-#include <objimpl.h>
-#include <pymem.h>
+#include "objimpl.h"
+#include "pymem.h"
 
 #ifdef WITH_PYMALLOC
 #include "internal/pymalloc.h"

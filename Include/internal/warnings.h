@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include <object.h>
+#include "object.h"
 
 struct _warnings_runtime_state {
     /* Both 'filters' and 'onceregistry' can be set in warnings.py;

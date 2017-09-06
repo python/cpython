@@ -4,11 +4,11 @@
 extern "C" {
 #endif
 
-#include <pystate.h>
-#include <pyatomic.h>
+#include "pystate.h"
+#include "pyatomic.h"
 
 #ifdef WITH_THREAD
-#include <pythread.h>
+#include "pythread.h"
 #endif
 
 #include "internal/mem.h"

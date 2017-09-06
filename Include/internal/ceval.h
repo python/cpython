@@ -4,12 +4,10 @@
 extern "C" {
 #endif
 
-#include <ceval.h>
-#include <compile.h>
-#include <pyatomic.h>
+#include "pyatomic.h"
 
 #ifdef WITH_THREAD
-#include <pythread.h>
+#include "pythread.h"
 #endif
 
 struct _pending_calls {

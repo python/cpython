@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include <pyatomic.h>
+#include "pyatomic.h"
 
 #include "internal/condvar.h"
 #ifndef Py_HAVE_CONDVAR
