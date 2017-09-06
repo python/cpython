@@ -1706,6 +1706,10 @@ _ssl__SSLSocket_version_impl(PySSLSocket *self)
 
     if (self->ssl == NULL)
         Py_RETURN_NONE;
+    if (!SSL_is_init_finished(self->ssl)) {
+        /* handshake not finished */
+        Py_RETURN_NONE;
+    }
     version = SSL_get_version(self->ssl);
     if (!strcmp(version, "unknown"))
         Py_RETURN_NONE;
