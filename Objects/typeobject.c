@@ -1157,10 +1157,10 @@ subtype_dealloc(PyObject *self)
     /* UnTrack and re-Track around the trashcan macro, alas */
     /* See explanation at end of function for full disclosure */
     PyObject_GC_UnTrack(self);
-    ++_PyTrash_delete_nesting;
+    ++_PyRuntime.gc.trash_delete_nesting;
     ++ tstate->trash_delete_nesting;
     Py_TRASHCAN_SAFE_BEGIN(self);
-    --_PyTrash_delete_nesting;
+    --_PyRuntime.gc.trash_delete_nesting;
     -- tstate->trash_delete_nesting;
 
     /* Find the nearest base with a different tp_dealloc */
@@ -1254,10 +1254,10 @@ subtype_dealloc(PyObject *self)
       Py_DECREF(type);
 
   endlabel:
-    ++_PyTrash_delete_nesting;
+    ++_PyRuntime.gc.trash_delete_nesting;
     ++ tstate->trash_delete_nesting;
     Py_TRASHCAN_SAFE_END(self);
-    --_PyTrash_delete_nesting;
+    --_PyRuntime.gc.trash_delete_nesting;
     -- tstate->trash_delete_nesting;
 
     /* Explanation of the weirdness around the trashcan macros:
@@ -1297,7 +1297,7 @@ subtype_dealloc(PyObject *self)
           a subtle disaster.
 
        Q. Why the bizarre (net-zero) manipulation of
-          _PyTrash_delete_nesting around the trashcan macros?
+          _PyRuntime.trash_delete_nesting around the trashcan macros?
 
        A. Some base classes (e.g. list) also use the trashcan mechanism.
           The following scenario used to be possible:
