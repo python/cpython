@@ -6,18 +6,18 @@ pushd %~dp0
 set this=%~n0
 
 call ..\PCBuild\find_python.bat %PYTHON%
-if "%SPHINXBUILD%" EQU "" if "%PYTHON%" NEQ "" (
-    set SPHINXBUILD=%PYTHON%\..\Scripts\sphinx-build.exe
-    rem Cannot use %SPHINXBUILD% in the same block where we set it
-    if not exist "%PYTHON%\..\Scripts\sphinx-build.exe" (
+if not defined SPHINXBUILD if defined PYTHON (
+    %PYTHON% -c "import sphinx" > nul 2> nul
+    if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
-        "%PYTHON%" -m pip install sphinx
+        %PYTHON% -m pip install sphinx
         if errorlevel 1 exit /B
     )
+    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
 )
 
-if "%PYTHON%" EQU "" set PYTHON=py
-if "%SPHINXBUILD%" EQU "" set SPHINXBUILD=sphinx-build
+if not defined PYTHON set PYTHON=py
+if not defined SPHINXBUILD set SPHINXBUILD=sphinx-build
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
 if exist "%HTMLHELP%" goto :skiphhcsearch
@@ -99,7 +99,7 @@ goto end
 if NOT "%PAPER%" == "" (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
-cmd /C %SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . %BUILDDIR%\%*
+cmd /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . %BUILDDIR%\%*"
 
 if "%1" EQU "htmlhelp" (
     cmd /C "%HTMLHELP%" build\htmlhelp\python%DISTVERSION:.=%.hhp

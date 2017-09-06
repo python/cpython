@@ -1,0 +1,2 @@
+The seek() and tell() methods of io.FileIO now set the internal seekable
+attribute to avoid one syscall on open() (in buffered or text mode).

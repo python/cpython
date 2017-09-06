@@ -103,6 +103,10 @@ created.  Socket addresses are represented as follows:
   ``'can0'``. The network interface name ``''`` can be used to receive packets
   from all network interfaces of this family.
 
+  - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)``
+    where both additional parameters are unsigned long integer that represent a
+    CAN identifier (standard or extended).
+
 - A string or a tuple ``(id, unit)`` is used for the :const:`SYSPROTO_CONTROL`
   protocol of the :const:`PF_SYSTEM` family. The string is the name of a
   kernel control using a dynamically-assigned ID. The tuple can be used if ID
@@ -341,6 +345,16 @@ Constants
 
    .. versionadded:: 3.5
 
+.. data:: CAN_ISOTP
+
+   CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
+   ISO-TP constants, documented in the Linux documentation.
+
+   Availability: Linux >= 2.6.25
+
+   .. versionadded:: 3.7
+
+
 .. data:: AF_RDS
           PF_RDS
           SOL_RDS
@@ -427,7 +441,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
    constants. The protocol number is usually zero and may be omitted or in the
    case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW` or :const:`CAN_BCM`.  If *fileno* is specified, the other
+   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.  If *fileno* is specified, the other
    arguments are ignored, causing the socket with the specified file descriptor
    to return.  Unlike :func:`socket.fromfd`, *fileno* will return the same
    socket and not a duplicate. This may help close a detached socket using
@@ -445,6 +459,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.4
       The returned socket is now non-inheritable.
 
+   .. versionchanged:: 3.7
+       The CAN_ISOTP protocol was added.
 
 .. function:: socketpair([family[, type[, proto]]])
 
@@ -1661,7 +1677,7 @@ the interface::
    # disabled promiscuous mode
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
 
-The last example shows how to use the socket interface to communicate to a CAN
+The next example shows how to use the socket interface to communicate to a CAN
 network using the raw socket protocol. To use CAN with the broadcast
 manager protocol instead, open a socket with::
 
@@ -1671,7 +1687,7 @@ After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, yo
 can use the :meth:`socket.send`, and the :meth:`socket.recv` operations (and
 their counterparts) on the socket object as usual.
 
-This example might require special privileges::
+This last example might require special privileges::
 
    import socket
    import struct

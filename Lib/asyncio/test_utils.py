@@ -437,12 +437,19 @@ def get_function_source(func):
 
 
 class TestCase(unittest.TestCase):
+    @staticmethod
+    def close_loop(loop):
+        executor = loop._default_executor
+        if executor is not None:
+            executor.shutdown(wait=True)
+        loop.close()
+
     def set_event_loop(self, loop, *, cleanup=True):
         assert loop is not None
         # ensure that the event loop is passed explicitly in asyncio
         events.set_event_loop(None)
         if cleanup:
-            self.addCleanup(loop.close)
+            self.addCleanup(self.close_loop, loop)
 
     def new_test_loop(self, gen=None):
         loop = TestLoop(gen)
