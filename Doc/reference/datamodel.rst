@@ -33,9 +33,10 @@ represented by objects.)
    type, under certain controlled conditions
 
 Every object has an identity, a type and a value.  An object's *identity* never
-changes once it has been created; you may think of it as the object's address in
-memory.  The ':keyword:`is`' operator compares the identity of two objects; the
-:func:`id` function returns an integer representing its identity.
+changes once it has been created; you may think of it as the object's "license
+number" or "social security number".  The ':keyword:`is`' operator compares the
+identity of two objects; the :func:`id` function returns an integer representing
+its identity.
 
 .. impl-detail::
 
