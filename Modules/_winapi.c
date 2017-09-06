@@ -114,7 +114,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if _Py_IS_FINALIZING()
+        else if (_Py_Finalizing == NULL)
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */

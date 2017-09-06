@@ -133,8 +133,4 @@
 #include "fileutils.h"
 #include "pyfpe.h"
 
-#ifdef Py_BUILD_CORE
-#include "internal/_Python.h"
-#endif
-
 #endif /* !Py_PYTHON_H */
