@@ -27,7 +27,7 @@
 int Py_DebugFlag;
 int Py_VerboseFlag;
 int Py_IgnoreEnvironmentFlag;
-_PyRuntimeState _PyRuntime = {};
+_PyRuntimeState _PyRuntime = {0, 0};
 
 /* Forward */
 grammar *getgrammar(const char *filename);

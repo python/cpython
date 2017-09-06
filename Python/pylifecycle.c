@@ -76,7 +76,7 @@ extern void _Py_ReadyTypes(void);
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
 extern void _PyGILState_Fini(void);
 
-_PyRuntimeState _PyRuntime = {};
+_PyRuntimeState _PyRuntime = {0, 0};
 
 void
 _PyRuntime_Initialize(void)
