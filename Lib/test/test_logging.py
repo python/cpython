@@ -1735,7 +1735,8 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     """Test for SysLogHandler with Unix sockets."""
 
-    server_class = TestUnixDatagramServer
+    if hasattr(socket, "AF_UNIX"):
+        server_class = TestUnixDatagramServer
 
     def setUp(self):
         # override the definition in the base class
