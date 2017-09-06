@@ -640,6 +640,15 @@ Constants
 
    .. versionadded:: 3.6
 
+.. class:: VerifyResult
+
+   :class:`enum.IntEnum` collection of verify results used by
+   :attr:`SSLSocket.verify_result`. Verify result ``V_OK`` means success,
+   all other values are errors. Some results are only available with
+   OpenSSL 1.1.0 or newer.
+
+   .. versionadded:: 3.7
+
 .. data:: PROTOCOL_TLS
 
    Selects the highest protocol version that both the client and server support.
@@ -1390,6 +1399,22 @@ SSL sockets also have the following additional methods and attributes:
 .. attribute:: SSLSocket.session_reused
 
    .. versionadded:: 3.6
+
+.. attribute:: SSLSocket.verify_result
+
+   The result of chain verification as data:`VerifyResult`, message tuple.
+   The property raises an :exc:`SSLError` exception if TLS connection hasn't
+   been established yet or the peer hasn't send a certificate. The property
+   can be used in combination with :data:`CERT_NONE` to check if OpenSSL has
+   successfully validated the certificate::
+
+        >>> ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        >>> ctx.verify_mode = ssl.CERT_NONE
+        >>> sock = ctx.wrap_socket(conn, server_hostname='www.example.org')
+        >>> sock.verify_result
+        (<VerifyResult.V_OK: 0>, 'ok')
+
+   .. versionadded:: 3.7
 
 
 SSL Contexts

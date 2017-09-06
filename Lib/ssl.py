@@ -149,6 +149,12 @@ _IntEnum._convert_(
     lambda name: name.startswith('CERT_'),
     source=_ssl)
 
+_IntEnum._convert(
+    'VerifyResult', __name__,
+    lambda name: name.startswith('V_'),
+    source=_ssl)
+
+
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
 
@@ -695,6 +701,11 @@ class SSLObject:
         server hostame is set."""
         return self._sslobj.server_hostname
 
+    @property
+    def verify_result(self):
+        errcode, msg = self._sslobj.verify_result
+        return VerifyResult(errcode), msg
+
     def read(self, len=1024, buffer=None):
         """Read up to 'len' bytes from the SSL object and return them.
 
@@ -889,6 +900,13 @@ class SSLSocket(socket):
     def session_reused(self):
         if self._sslobj is not None:
             return self._sslobj.session_reused
+
+    @property
+    def verify_result(self):
+        if self._sslobj is not None:
+            return self._sslobj.verify_result
+        else:
+            raise SSLError("Connection is not established yet.")
 
     def dup(self):
         raise NotImplementedError("Can't dup() %s instances" %

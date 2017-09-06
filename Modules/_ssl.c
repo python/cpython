@@ -2833,6 +2833,34 @@ PySSL_get_session_reused(PySSLSocket *self, void *closure) {
 PyDoc_STRVAR(PySSL_get_session_reused_doc,
 "Was the client session reused during handshake?");
 
+static PyObject *
+PySSL_get_verify_result(PySSLSocket *self, void *closure) {
+    long result;
+    const char *msg;
+
+    if (!SSL_is_init_finished(self->ssl)) {
+        _setSSLError("Connection is not established yet.", 0, __FILE__,
+                     __LINE__);
+        return NULL;
+    }
+
+    if (SSL_get_peer_certificate(self->ssl) == NULL) {
+        _setSSLError("Peer did not sent a certificate.", 0, __FILE__,
+                     __LINE__);
+        return NULL;
+    }
+    result = SSL_get_verify_result(self->ssl);
+    msg = X509_verify_cert_error_string(result);
+    return Py_BuildValue("ls", result, msg);
+}
+
+PyDoc_STRVAR(PySSL_get_verify_result_doc,
+"Get certificate validation result\n\
+\n\
+Returns (error_code, error_message) or raises an exception if connection\n\
+has't been established yet. Error code 0 means success.");
+
+
 static PyGetSetDef ssl_getsetlist[] = {
     {"context", (getter) PySSL_get_context,
                 (setter) PySSL_set_context, PySSL_set_context_doc},
@@ -2846,6 +2874,8 @@ static PyGetSetDef ssl_getsetlist[] = {
                 (setter) PySSL_set_session, PySSL_set_session_doc},
     {"session_reused", (getter) PySSL_get_session_reused, NULL,
               PySSL_get_session_reused_doc},
+    {"verify_result", (getter) PySSL_get_verify_result, NULL,
+              PySSL_get_verify_result_doc},
     {NULL},            /* sentinel */
 };
 
@@ -6140,6 +6170,89 @@ PyInit__ssl(void)
     addbool(m, "HAS_TLSv1_3", 1);
 #else
     addbool(m, "HAS_TLSv1_3", 0);
+#endif
+
+    /* Verify result */
+    PyModule_AddIntConstant(m, "V_OK", X509_V_OK);
+#ifdef X509_V_ERR_UNSPECIFIED
+    PyModule_AddIntConstant(m, "V_UNSPECIFIED", X509_V_ERR_UNSPECIFIED);
+#endif
+    PyModule_AddIntConstant(m, "V_UNABLE_TO_GET_ISSUER_CERT", X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT);
+    PyModule_AddIntConstant(m, "V_UNABLE_TO_GET_CRL", X509_V_ERR_UNABLE_TO_GET_CRL);
+    PyModule_AddIntConstant(m, "V_UNABLE_TO_DECRYPT_CERT_SIGNATURE", X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE);
+    PyModule_AddIntConstant(m, "V_UNABLE_TO_DECRYPT_CRL_SIGNATURE", X509_V_ERR_UNABLE_TO_DECRYPT_CRL_SIGNATURE);
+    PyModule_AddIntConstant(m, "V_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY", X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY);
+    PyModule_AddIntConstant(m, "V_CERT_SIGNATURE_FAILURE", X509_V_ERR_CERT_SIGNATURE_FAILURE);
+    PyModule_AddIntConstant(m, "V_CRL_SIGNATURE_FAILURE", X509_V_ERR_CRL_SIGNATURE_FAILURE);
+    PyModule_AddIntConstant(m, "V_CERT_NOT_YET_VALID", X509_V_ERR_CERT_NOT_YET_VALID);
+    PyModule_AddIntConstant(m, "V_CERT_HAS_EXPIRED", X509_V_ERR_CERT_HAS_EXPIRED);
+    PyModule_AddIntConstant(m, "V_CRL_NOT_YET_VALID", X509_V_ERR_CRL_NOT_YET_VALID);
+    PyModule_AddIntConstant(m, "V_CRL_HAS_EXPIRED", X509_V_ERR_CRL_HAS_EXPIRED);
+    PyModule_AddIntConstant(m, "V_ERROR_IN_CERT_NOT_BEFORE_FIELD", X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD);
+    PyModule_AddIntConstant(m, "V_ERROR_IN_CERT_NOT_AFTER_FIELD", X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD);
+    PyModule_AddIntConstant(m, "V_ERROR_IN_CRL_LAST_UPDATE_FIELD", X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD);
+    PyModule_AddIntConstant(m, "V_ERROR_IN_CRL_NEXT_UPDATE_FIELD", X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD);
+    PyModule_AddIntConstant(m, "V_OUT_OF_MEM", X509_V_ERR_OUT_OF_MEM);
+    PyModule_AddIntConstant(m, "V_DEPTH_ZERO_SELF_SIGNED_CERT", X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT);
+    PyModule_AddIntConstant(m, "V_SELF_SIGNED_CERT_IN_CHAIN", X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN);
+    PyModule_AddIntConstant(m, "V_UNABLE_TO_GET_ISSUER_CERT_LOCALLY", X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY);
+    PyModule_AddIntConstant(m, "V_UNABLE_TO_VERIFY_LEAF_SIGNATURE", X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE);
+    PyModule_AddIntConstant(m, "V_CERT_CHAIN_TOO_LONG", X509_V_ERR_CERT_CHAIN_TOO_LONG);
+    PyModule_AddIntConstant(m, "V_CERT_REVOKED", X509_V_ERR_CERT_REVOKED);
+    PyModule_AddIntConstant(m, "V_INVALID_CA", X509_V_ERR_INVALID_CA);
+    PyModule_AddIntConstant(m, "V_PATH_LENGTH_EXCEEDED", X509_V_ERR_PATH_LENGTH_EXCEEDED);
+    PyModule_AddIntConstant(m, "V_INVALID_PURPOSE", X509_V_ERR_INVALID_PURPOSE);
+    PyModule_AddIntConstant(m, "V_CERT_UNTRUSTED", X509_V_ERR_CERT_UNTRUSTED);
+    PyModule_AddIntConstant(m, "V_CERT_REJECTED", X509_V_ERR_CERT_REJECTED);
+    PyModule_AddIntConstant(m, "V_SUBJECT_ISSUER_MISMATCH", X509_V_ERR_SUBJECT_ISSUER_MISMATCH);
+    PyModule_AddIntConstant(m, "V_AKID_SKID_MISMATCH", X509_V_ERR_AKID_SKID_MISMATCH);
+    PyModule_AddIntConstant(m, "V_AKID_ISSUER_SERIAL_MISMATCH", X509_V_ERR_AKID_ISSUER_SERIAL_MISMATCH);
+    PyModule_AddIntConstant(m, "V_KEYUSAGE_NO_CERTSIGN", X509_V_ERR_KEYUSAGE_NO_CERTSIGN);
+    PyModule_AddIntConstant(m, "V_UNABLE_TO_GET_CRL_ISSUER", X509_V_ERR_UNABLE_TO_GET_CRL_ISSUER);
+    PyModule_AddIntConstant(m, "V_UNHANDLED_CRITICAL_EXTENSION", X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION);
+    PyModule_AddIntConstant(m, "V_KEYUSAGE_NO_CRL_SIGN", X509_V_ERR_KEYUSAGE_NO_CRL_SIGN);
+    PyModule_AddIntConstant(m, "V_UNHANDLED_CRITICAL_CRL_EXTENSION", X509_V_ERR_UNHANDLED_CRITICAL_CRL_EXTENSION);
+    PyModule_AddIntConstant(m, "V_INVALID_NON_CA", X509_V_ERR_INVALID_NON_CA);
+    PyModule_AddIntConstant(m, "V_PROXY_PATH_LENGTH_EXCEEDED", X509_V_ERR_PROXY_PATH_LENGTH_EXCEEDED);
+    PyModule_AddIntConstant(m, "V_KEYUSAGE_NO_DIGITAL_SIGNATURE", X509_V_ERR_KEYUSAGE_NO_DIGITAL_SIGNATURE);
+    PyModule_AddIntConstant(m, "V_PROXY_CERTIFICATES_NOT_ALLOWED", X509_V_ERR_PROXY_CERTIFICATES_NOT_ALLOWED);
+    PyModule_AddIntConstant(m, "V_INVALID_EXTENSION", X509_V_ERR_INVALID_EXTENSION);
+    PyModule_AddIntConstant(m, "V_INVALID_POLICY_EXTENSION", X509_V_ERR_INVALID_POLICY_EXTENSION);
+    PyModule_AddIntConstant(m, "V_NO_EXPLICIT_POLICY", X509_V_ERR_NO_EXPLICIT_POLICY);
+    PyModule_AddIntConstant(m, "V_DIFFERENT_CRL_SCOPE", X509_V_ERR_DIFFERENT_CRL_SCOPE);
+    PyModule_AddIntConstant(m, "V_UNSUPPORTED_EXTENSION_FEATURE", X509_V_ERR_UNSUPPORTED_EXTENSION_FEATURE);
+    PyModule_AddIntConstant(m, "V_UNNESTED_RESOURCE", X509_V_ERR_UNNESTED_RESOURCE);
+    PyModule_AddIntConstant(m, "V_PERMITTED_VIOLATION", X509_V_ERR_PERMITTED_VIOLATION);
+    PyModule_AddIntConstant(m, "V_EXCLUDED_VIOLATION", X509_V_ERR_EXCLUDED_VIOLATION);
+    PyModule_AddIntConstant(m, "V_SUBTREE_MINMAX", X509_V_ERR_SUBTREE_MINMAX);
+    PyModule_AddIntConstant(m, "V_APPLICATION_VERIFICATION", X509_V_ERR_APPLICATION_VERIFICATION);
+    PyModule_AddIntConstant(m, "V_UNSUPPORTED_CONSTRAINT_TYPE", X509_V_ERR_UNSUPPORTED_CONSTRAINT_TYPE);
+    PyModule_AddIntConstant(m, "V_UNSUPPORTED_CONSTRAINT_SYNTAX", X509_V_ERR_UNSUPPORTED_CONSTRAINT_SYNTAX);
+    PyModule_AddIntConstant(m, "V_UNSUPPORTED_NAME_SYNTAX", X509_V_ERR_UNSUPPORTED_NAME_SYNTAX);
+    PyModule_AddIntConstant(m, "V_CRL_PATH_VALIDATION_ERROR", X509_V_ERR_CRL_PATH_VALIDATION_ERROR);
+#ifdef X509_V_ERR_PATH_LOOP
+    PyModule_AddIntConstant(m, "V_PATH_LOOP", X509_V_ERR_PATH_LOOP);
+#endif
+#ifdef VERIFY_RESULT_SUITE_B_INVALID_VERSION
+    PyModule_AddIntConstant(m, "V_SUITE_B_INVALID_VERSION", X509_V_ERR_SUITE_B_INVALID_VERSION);
+    PyModule_AddIntConstant(m, "V_SUITE_B_INVALID_ALGORITHM", X509_V_ERR_SUITE_B_INVALID_ALGORITHM);
+    PyModule_AddIntConstant(m, "V_SUITE_B_INVALID_CURVE", X509_V_ERR_SUITE_B_INVALID_CURVE);
+    PyModule_AddIntConstant(m, "V_SUITE_B_INVALID_SIGNATURE_ALGORITHM", X509_V_ERR_SUITE_B_INVALID_SIGNATURE_ALGORITHM);
+    PyModule_AddIntConstant(m, "V_SUITE_B_LOS_NOT_ALLOWED", X509_V_ERR_SUITE_B_LOS_NOT_ALLOWED);
+    PyModule_AddIntConstant(m, "V_SUITE_B_CANNOT_SIGN_P_384_WITH_P_256", X509_V_ERR_SUITE_B_CANNOT_SIGN_P_384_WITH_P_256);
+#endif
+    PyModule_AddIntConstant(m, "V_HOSTNAME_MISMATCH", X509_V_ERR_HOSTNAME_MISMATCH);
+    PyModule_AddIntConstant(m, "V_EMAIL_MISMATCH", X509_V_ERR_EMAIL_MISMATCH);
+    PyModule_AddIntConstant(m, "V_IP_ADDRESS_MISMATCH", X509_V_ERR_IP_ADDRESS_MISMATCH);
+#ifdef OPENSSL_VERSION_1_1
+    PyModule_AddIntConstant(m, "V_DANE_NO_MATCH", X509_V_ERR_DANE_NO_MATCH);
+    PyModule_AddIntConstant(m, "V_EE_KEY_TOO_SMALL", X509_V_ERR_EE_KEY_TOO_SMALL);
+    PyModule_AddIntConstant(m, "V_CA_KEY_TOO_SMALL", X509_V_ERR_CA_KEY_TOO_SMALL);
+    PyModule_AddIntConstant(m, "V_CA_MD_TOO_WEAK", X509_V_ERR_CA_MD_TOO_WEAK);
+    PyModule_AddIntConstant(m, "V_INVALID_CALL", X509_V_ERR_INVALID_CALL);
+    PyModule_AddIntConstant(m, "V_STORE_LOOKUP", X509_V_ERR_STORE_LOOKUP);
+    PyModule_AddIntConstant(m, "V_NO_VALID_SCTS", X509_V_ERR_NO_VALID_SCTS);
+    PyModule_AddIntConstant(m, "V_PROXY_SUBJECT_NAME_VIOLATION", X509_V_ERR_PROXY_SUBJECT_NAME_VIOLATION);
 #endif
 
     /* Mappings for error codes */

@@ -3075,6 +3075,49 @@ class ThreadedTests(unittest.TestCase):
                     self.assertIn(msg, repr(e))
                     self.assertIn('certificate verify failed', repr(e))
 
+    def test_ssl_cert_verify_result(self):
+        if support.verbose:
+            sys.stdout.write("\n")
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context.load_cert_chain(SIGNED_CERTFILE)
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with context.wrap_socket(
+                    socket.socket(),
+                    do_handshake_on_connect=False,
+                    server_hostname=SIGNED_CERTFILE_HOSTNAME) as s:
+                with self.assertRaises(ssl.SSLError):
+                    s.verify_result
+                s.connect((HOST, server.port))
+                with self.assertRaises(ssl.SSLError):
+                    s.verify_result
+
+                s.do_handshake()  # no error, CERT_NONE
+                self.assertEqual(
+                    s.verify_result,
+                    (ssl.VerifyResult.V_UNABLE_TO_GET_ISSUER_CERT_LOCALLY,
+                     'unable to get local issuer certificate')
+                )
+
+        context.load_verify_locations(SIGNING_CA)
+
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with context.wrap_socket(
+                    socket.socket(),
+                    server_hostname=SIGNED_CERTFILE_HOSTNAME) as s:
+                s.connect((HOST, server.port))
+                self.assertEqual(
+                    s.verify_result,
+                    (ssl.VerifyResult.V_OK, 'ok')
+                )
+
     @unittest.skipUnless(hasattr(ssl, 'PROTOCOL_SSLv2'),
                          "OpenSSL is compiled without SSLv2 support")
     def test_protocol_sslv2(self):
