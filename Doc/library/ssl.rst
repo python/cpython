@@ -2328,3 +2328,9 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA
+
+   `RFC 7525: Recommendations for Secure Use of Transport Layer Security (TLS) and Datagram Transport Layer Security (DTLS) <https://tools.ietf.org/html/rfc7525>`_
+       IETF
+
+   `Mozilla's Server Side TLS recommendations <https://wiki.mozilla.org/Security/Server_Side_TLS>`_
+       Mozilla
