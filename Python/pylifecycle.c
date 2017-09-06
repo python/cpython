@@ -77,7 +77,7 @@ extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
 extern void _PyGILState_Fini(void);
 #endif /* WITH_THREAD */
 
-_PyRuntimeState _PyRuntime = {};
+_PyRuntimeState _PyRuntime = {0, 0};
 
 void
 _PyRuntime_Initialize(void)
