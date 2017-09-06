@@ -65,7 +65,7 @@ and full support for mouse and keyboard input.
 The Python curses module
 ------------------------
 
-Thy Python module is a fairly simple wrapper over the C functions provided by
+The Python module is a fairly simple wrapper over the C functions provided by
 curses; if you're already familiar with curses programming in C, it's really
 easy to transfer that knowledge to Python.  The biggest difference is that the
 Python interface makes things simpler by merging different C functions such as

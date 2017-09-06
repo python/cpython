@@ -325,4 +325,3 @@ whatsnew/3.5,,:warning,'WARNING:root:warning\n'
 whatsnew/3.5,,::,>>> addr6 = ipaddress.IPv6Address('::1')
 whatsnew/3.5,,:root,ERROR:root:exception
 whatsnew/3.5,,:exception,ERROR:root:exception
-whatsnew/changelog,,:version,import sys; I = version[:version.index(' ')]

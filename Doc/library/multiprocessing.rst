@@ -1024,7 +1024,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
    .. method:: recv()
 
       Return an object sent from the other end of the connection using
-      :meth:`send`.  Blocks until there its something to receive.  Raises
+      :meth:`send`.  Blocks until there is something to receive.  Raises
       :exc:`EOFError` if there is nothing left to receive
       and the other end was closed.
 

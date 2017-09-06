@@ -1,0 +1,2 @@
+IDLE - Use ttk widgets in ConfigDialog.
+Patches by Terry Jan Reedy and Cheryl Sabella.

@@ -1605,6 +1605,8 @@ typedef struct {
 static void
 unpackiter_dealloc(unpackiterobject *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     Py_XDECREF(self->so);
     PyBuffer_Release(&self->buf);
     PyObject_GC_Del(self);

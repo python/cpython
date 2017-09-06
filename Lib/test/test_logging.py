@@ -770,6 +770,7 @@ if threading:
             """
             self.close()
             self._thread.join(timeout)
+            asyncore.close_all(map=self._map, ignore_all=True)
             self._thread = None
 
     class ControlMixin(object):

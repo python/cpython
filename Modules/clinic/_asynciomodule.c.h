@@ -28,7 +28,7 @@ _asyncio_Future___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     static const char * const _keywords[] = {"loop", NULL};
     static _PyArg_Parser _parser = {"|$O:Future", _keywords, 0};
-    PyObject *loop = NULL;
+    PyObject *loop = Py_None;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &loop)) {
@@ -244,7 +244,7 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static const char * const _keywords[] = {"coro", "loop", NULL};
     static _PyArg_Parser _parser = {"O|$O:Task", _keywords, 0};
     PyObject *coro;
-    PyObject *loop = NULL;
+    PyObject *loop = Py_None;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &coro, &loop)) {
@@ -477,7 +477,7 @@ _asyncio_Task__step(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject *
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc", NULL};
     static _PyArg_Parser _parser = {"|O:_step", _keywords, 0};
-    PyObject *exc = NULL;
+    PyObject *exc = Py_None;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &exc)) {
@@ -517,4 +517,4 @@ _asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=40ca6c9da517da73 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7441872b13652085 input=a9049054013a1b77]*/

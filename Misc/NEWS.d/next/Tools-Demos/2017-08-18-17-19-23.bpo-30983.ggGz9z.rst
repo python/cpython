@@ -1,0 +1,6 @@
+gdb integration commands (py-bt, etc.) work on optimized shared builds now,
+too.  PEP 523 introduced _PyEval_EvalFrameDefault which inlines
+PyEval_EvalFrameEx on non-debug shared builds.  This broke the ability to
+use py-bt, py-up, and a few other Python-specific gdb integrations. The
+problem is fixed by only looking for _PyEval_EvalFrameDefault frames in
+python-gdb.py.  Original patch by Bruno "Polaco" Penteado.

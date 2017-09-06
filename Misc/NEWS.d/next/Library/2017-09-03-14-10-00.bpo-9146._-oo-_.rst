@@ -1,0 +1,3 @@
+Fix a segmentation fault in _hashopenssl when standard hash functions
+such as md5 are not available in the linked OpenSSL library.  As in
+some special FIPS-140 build environments.

@@ -1293,7 +1293,7 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
     char *cp, *ncp;
     Py_ssize_t len;
     int chan, d, *prev_i, *cur_i, cur_o;
-    PyObject *samps, *str, *rv = NULL;
+    PyObject *samps, *str, *rv = NULL, *channel;
     int bytes_per_frame;
 
     if (!audioop_check_size(width))
@@ -1354,6 +1354,10 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
             prev_i[chan] = cur_i[chan] = 0;
     }
     else {
+        if (!PyTuple_Check(state)) {
+            PyErr_SetString(PyExc_TypeError, "state must be a tuple or None");
+            goto exit;
+        }
         if (!PyArg_ParseTuple(state,
                         "iO!;audioop.ratecv: illegal state argument",
                         &d, &PyTuple_Type, &samps))
@@ -1364,7 +1368,13 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
             goto exit;
         }
         for (chan = 0; chan < nchannels; chan++) {
-            if (!PyArg_ParseTuple(PyTuple_GetItem(samps, chan),
+            channel = PyTuple_GetItem(samps, chan);
+            if (!PyTuple_Check(channel)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "ratecv(): illegal state argument");
+                goto exit;
+            }
+            if (!PyArg_ParseTuple(channel,
                                   "ii:ratecv", &prev_i[chan],
                                                &cur_i[chan]))
                 goto exit;

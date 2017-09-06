@@ -1,0 +1,1 @@
+IDLE -- stop leaks in test_configdialog. Initial patch by Victor Stinner.

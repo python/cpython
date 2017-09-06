@@ -186,6 +186,8 @@ class FTP:
 
     # Internal: send one line to the server, appending CRLF
     def putline(self, line):
+        if '\r' in line or '\n' in line:
+            raise ValueError('an illegal newline character should not be contained')
         line = line + CRLF
         if self.debugging > 1:
             print('*put*', self.sanitize(line))
