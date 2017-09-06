@@ -1542,6 +1542,53 @@ class POSIXProcessTestCase(BaseTestCase):
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
+    # We mock the __del__ method for Popen in the next two tests
+    # because it does cleanup based on the pid returned by fork_exec
+    # along with issuing a resource warning if it still exists. Since
+    # we don't actually spawn a process in these tests we can forego
+    # the destructor. An alternative would be to set _child_created to
+    # False before the destructor is called but there is no easy way
+    # to do that
+    class PopenNoDestructor(subprocess.Popen):
+        def __del__(self):
+            pass
+
+    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    def test_exception_errpipe_normal(self, fork_exec):
+        """Test error passing done through errpipe_write in the good case"""
+        def proper_error(*args):
+            errpipe_write = args[13]
+            # Write the hex for the error code EISDIR: 'is a directory'
+            err_code = '{:x}'.format(errno.EISDIR).encode()
+            os.write(errpipe_write, b"OSError:" + err_code + b":")
+            return 0
+
+        fork_exec.side_effect = proper_error
+
+        with self.assertRaises(IsADirectoryError):
+            self.PopenNoDestructor(["non_existent_command"])
+
+    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    def test_exception_errpipe_bad_data(self, fork_exec):
+        """Test error passing done through errpipe_write where its not
+        in the expected format"""
+        error_data = b"\xFF\x00\xDE\xAD"
+        def bad_error(*args):
+            errpipe_write = args[13]
+            # Anything can be in the pipe, no assumptions should
+            # be made about its encoding, so we'll write some
+            # arbitrary hex bytes to test it out
+            os.write(errpipe_write, error_data)
+            return 0
+
+        fork_exec.side_effect = bad_error
+
+        with self.assertRaises(subprocess.SubprocessError) as e:
+            self.PopenNoDestructor(["non_existent_command"])
+
+        self.assertIn(repr(error_data), str(e.exception))
+
+
     def test_restore_signals(self):
         # Code coverage for both values of restore_signals to make sure it
         # at least does not blow up.

@@ -14,6 +14,8 @@ test_script:
 - cmd: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 --fail-env-changed -j0
 environment:
   HOST_PYTHON: C:\Python36\python.exe
+image:
+- Visual Studio 2017
 
 # Only trigger AppVeyor if actual code or its configuration changes
 only_commits:
