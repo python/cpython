@@ -416,27 +416,27 @@ builtin_callable(PyObject *module, PyObject *obj)
 }
 
 /*[clinic input]
-debug as builtin_debug
+breakpoint as builtin_breakpoint
 
-Call the sys.debughook() function.
+Call the sys.breakpointhook() function.
 
 By default, this drops you into the pdb debugger.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_debug_impl(PyObject *module)
-/*[clinic end generated code: output=15a7e4ccf2ccd3ca input=ddc119996e60d7ce]*/
+builtin_breakpoint_impl(PyObject *module)
+/*[clinic end generated code: output=31a2b40a5bce5816 input=ad4bff59a1be4b8e]*/
 {
-    PyObject *debughook = PySys_GetObject("debughook");
+    PyObject *hook = PySys_GetObject("breakpointhook");
     PyObject *retval = NULL;
 
-    if (debughook == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.debughook");
+    if (hook == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.breakpointhook");
         return NULL;
     }
-    Py_INCREF(debughook);
-    retval = PyObject_CallObject(debughook, NULL);
-    Py_DECREF(debughook);
+    Py_INCREF(hook);
+    retval = PyObject_CallObject(hook, NULL);
+    Py_DECREF(hook);
     return retval;
 }
 
@@ -2644,10 +2644,10 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
+    BUILTIN_BREAKPOINT_METHODDEF
     BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
-    BUILTIN_DEBUG_METHODDEF
     BUILTIN_DELATTR_METHODDEF
     {"dir",             builtin_dir,        METH_VARARGS, dir_doc},
     BUILTIN_DIVMOD_METHODDEF

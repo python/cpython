@@ -353,21 +353,21 @@ class BuiltinTest(unittest.TestCase):
                 rv = ns['f']()
                 self.assertEqual(rv, (debugval, docstring))
 
-    def test_debug(self):
+    def test_breakpoint(self):
         with patch('pdb.set_trace') as mock:
-            debug()
+            breakpoint()
         mock.assert_called_once()
 
-    def test_debug_with_debughook_set(self):
+    def test_breakpoint_with_breakpointhook_set(self):
         call_status = 'Not called'
-        def my_debughook():
+        def my_breakpointhook():
             nonlocal call_status
             call_status = 'Called'
         try:
-            sys.debughook = my_debughook
-            debug()
+            sys.breakpointhook = my_breakpointhook
+            breakpoint()
         finally:
-            sys.debughook = sys.__debughook__
+            sys.breakpointhook = sys.__breakpointhook__
         self.assertEqual(call_status, 'Called')
 
     def test_delattr(self):

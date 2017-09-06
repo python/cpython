@@ -93,6 +93,32 @@ PySys_SetObject(const char *name, PyObject *v)
         return PyDict_SetItemString(sd, name, v);
 }
 
+static PyObject *
+sys_breakpointhook(PyObject *self, PyObject *noargs)
+{
+    PyObject *pdb = PyImport_ImportModule("pdb");
+    PyObject *set_trace = NULL;
+    PyObject *retval = NULL;
+
+    if (pdb == NULL) {
+        return NULL;
+    }
+    set_trace = PyObject_GetAttrString(pdb, "set_trace");
+    Py_DECREF(pdb);
+    if (set_trace == NULL) {
+        return NULL;
+    }
+    retval = PyObject_CallObject(set_trace, NULL);
+    Py_DECREF(set_trace);
+    return retval;
+}
+
+PyDoc_STRVAR(breakpointhook_doc,
+"breakpointhook()\n"
+"\n"
+"Called when the built-in breakpoint() function is called.\n"
+);
+
 /* Write repr(o) to sys.stdout using sys.stdout.encoding and 'backslashreplace'
    error handler. If sys.stdout has a buffer attribute, use
    sys.stdout.buffer.write(encoded), otherwise redecode the string and use
@@ -154,32 +180,6 @@ finally:
     Py_XDECREF(stdout_encoding);
     return ret;
 }
-
-static PyObject *
-sys_debughook(PyObject *self, PyObject *noargs)
-{
-    PyObject *pdb = PyImport_ImportModule("pdb");
-    PyObject *set_trace = NULL;
-    PyObject *retval = NULL;
-
-    if (pdb == NULL) {
-        return NULL;
-    }
-    set_trace = PyObject_GetAttrString(pdb, "set_trace");
-    Py_DECREF(pdb);
-    if (set_trace == NULL) {
-        return NULL;
-    }
-    retval = PyObject_CallObject(set_trace, NULL);
-    Py_DECREF(set_trace);
-    return retval;
-}
-
-PyDoc_STRVAR(debughook_doc,
-"debughook()\n"
-"\n"
-"Called when the built-in debug() function is called.\n"
-);
 
 static PyObject *
 sys_displayhook(PyObject *self, PyObject *o)
@@ -1389,13 +1389,13 @@ sys_getandroidapilevel(PyObject *self)
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
+    {"breakpointhook",  sys_breakpointhook, METH_NOARGS, breakpointhook_doc},
     {"callstats", (PyCFunction)sys_callstats, METH_NOARGS,
      callstats_doc},
     {"_clear_type_cache",       sys_clear_type_cache,     METH_NOARGS,
      sys_clear_type_cache__doc__},
     {"_current_frames", sys_current_frames, METH_NOARGS,
      current_frames_doc},
-    {"debughook",       sys_debughook, METH_NOARGS, debughook_doc},
     {"displayhook",     sys_displayhook, METH_O, displayhook_doc},
     {"exc_info",        sys_exc_info, METH_NOARGS, exc_info_doc},
     {"excepthook",      sys_excepthook, METH_VARARGS, excepthook_doc},
@@ -1983,8 +1983,9 @@ _PySys_BeginInit(void)
                                PyDict_GetItemString(sysdict, "displayhook"));
     SET_SYS_FROM_STRING_BORROW("__excepthook__",
                                PyDict_GetItemString(sysdict, "excepthook"));
-    SET_SYS_FROM_STRING_BORROW("__debughook__",
-                               PyDict_GetItemString(sysdict, "debughook"));
+    SET_SYS_FROM_STRING_BORROW(
+        "__breakpointhook__",
+        PyDict_GetItemString(sysdict, "breakpointhook"));
     SET_SYS_FROM_STRING("version",
                          PyUnicode_FromString(Py_GetVersion()));
     SET_SYS_FROM_STRING("hexversion",

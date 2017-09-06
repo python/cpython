@@ -109,10 +109,10 @@ always available.
    This function should be used for internal and specialized purposes only.
 
 
-.. function:: debughook()
+.. function:: breakpointhook()
 
-   This hook function is called by built-in :func:`debug`.  By default, it
-   drops you into the :mod:`pdb` debugger, but it can be set to any other
+   This hook function is called by built-in :func:`breakpoint`.  By default,
+   it drops you into the :mod:`pdb` debugger, but it can be set to any other
    function so that you can choose which debugger gets used.
 
    .. versionadded:: 3.7
@@ -195,18 +195,18 @@ always available.
    customized by assigning another three-argument function to ``sys.excepthook``.
 
 
-.. data:: __debughook__
+.. data:: __breakpointhook__
           __displayhook__
           __excepthook__
 
-   These objects contain the original values of ``debughook``,
+   These objects contain the original values of ``breakpointhook``,
    ``displayhook``, and ``excepthook`` at the start of the program.  They are
-   saved so that ``debughook``, ``displayhook`` and ``excepthook`` can be
+   saved so that ``breakpointhook``, ``displayhook`` and ``excepthook`` can be
    restored in case they happen to get replaced with broken or alternative
    objects.
 
    .. versionadded:: 3.7
-      __debughook__
+      __breakpointhook__
 
 
 .. function:: exc_info()
