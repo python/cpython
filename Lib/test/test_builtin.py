@@ -370,6 +370,21 @@ class BuiltinTest(unittest.TestCase):
             sys.breakpointhook = sys.__breakpointhook__
         self.assertEqual(call_status, 'Called')
 
+    def test_breakpoint_with_breakpointhook_reset(self):
+        call_status = 'Not called'
+        def my_breakpointhook():
+            nonlocal call_status
+            call_status = 'Called'
+        try:
+            sys.breakpointhook = my_breakpointhook
+            breakpoint()
+        finally:
+            sys.breakpointhook = sys.__breakpointhook__
+        self.assertEqual(call_status, 'Called')
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+        mock.assert_called_once()
+
     def test_delattr(self):
         sys.spam = 1
         delattr(sys, 'spam')
