@@ -961,8 +961,9 @@ class SSLSocket(socket):
                     self.__class__)
             amount = len(data)
             count = 0
+            view = memoryview(data)
             while (count < amount):
-                v = self.send(data[count:])
+                v = self.send(view[count:])
                 count += v
         else:
             return socket.sendall(self, data, flags)
