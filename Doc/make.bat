@@ -5,8 +5,30 @@ pushd %~dp0
 
 set this=%~n0
 
-if "%SPHINXBUILD%" EQU "" set SPHINXBUILD=sphinx-build
-if "%PYTHON%" EQU "" set PYTHON=py
+call ..\PCBuild\find_python.bat %PYTHON%
+if not defined SPHINXBUILD if defined PYTHON (
+    %PYTHON% -c "import sphinx" > nul 2> nul
+    if errorlevel 1 (
+        echo Installing sphinx with %PYTHON%
+        %PYTHON% -m pip install sphinx
+        if errorlevel 1 exit /B
+    )
+    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
+)
+
+if not defined BLURB if defined PYTHON (
+    %PYTHON% -c "import blurb" > nul 2> nul
+    if errorlevel 1 (
+        echo Installing blurb with %PYTHON%
+        %PYTHON% -m pip install blurb
+        if errorlevel 1 exit /B
+    )
+    set BLURB=%PYTHON% -m blurb
+)
+
+if not defined PYTHON set PYTHON=py
+if not defined SPHINXBUILD set SPHINXBUILD=sphinx-build
+if not defined BLURB set BLURB=blurb
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
 if exist "%HTMLHELP%" goto :skiphhcsearch
@@ -85,6 +107,19 @@ echo.be passed by setting the SPHINXOPTS environment variable.
 goto end
 
 :build
+if exist ..\Misc\NEWS (
+    echo.Copying Misc\NEWS to build\NEWS
+    copy ..\Misc\NEWS build\NEWS > nul
+) else if exist ..\Misc\NEWS.D (
+    if defined BLURB (
+        echo.Merging Misc/NEWS with %BLURB%
+        %BLURB% merge -f build\NEWS
+    ) else (
+        echo.No Misc/NEWS file and Blurb is not available.
+        exit /B 1
+    )
+)
+
 if NOT "%PAPER%" == "" (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
