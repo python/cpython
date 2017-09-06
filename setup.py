@@ -717,8 +717,8 @@ class PyBuildExt(build_ext):
 
         # Fuzz tests.
         exts.append( Extension(
-            '_fuzz',
-            ['_fuzz/_fuzzmodule.c', '_fuzz/fuzzer.c'])
+            '_xxtestfuzz',
+            ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c'])
         )
 
         #

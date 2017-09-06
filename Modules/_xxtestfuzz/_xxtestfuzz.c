@@ -1,3 +1,4 @@
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -6,7 +7,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 
 static PyObject* _fuzz_run(PyObject* self, PyObject* args) {
     const char* buf;
-    size_t size;
+    Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "s#", &buf, &size)) {
         return NULL;
     }
@@ -41,7 +42,7 @@ static struct PyModuleDef _fuzzmodule = {
 };
 
 PyMODINIT_FUNC
-PyInit__fuzz(void)
+PyInit__xxtestfuzz(void)
 {
     PyObject *m = NULL;
 
