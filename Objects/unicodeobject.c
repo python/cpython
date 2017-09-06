@@ -14182,7 +14182,7 @@ _PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
 
     switch (type) {
     default:
-        assert(!"'type' not in [diuoxX]");
+        Py_UNREACHABLE();
     case 'd':
     case 'i':
     case 'u':
