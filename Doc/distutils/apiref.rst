@@ -814,13 +814,13 @@ This module provides the :class:`UnixCCompiler` class, a subclass of
 .. module:: distutils.msvccompiler
    :synopsis: Microsoft Compiler
 
+.. XXX: This is *waaaaay* out of date!
 
 This module provides :class:`MSVCCompiler`, an implementation of the abstract
 :class:`CCompiler` class for Microsoft Visual Studio. Typically, extension
 modules need to be compiled with the same compiler that was used to compile
 Python. For Python 2.3 and earlier, the compiler was Visual Studio 6. For Python
-2.4 and 2.5, the compiler is Visual Studio .NET 2003. The AMD64 and Itanium
-binaries are created using the Platform SDK.
+2.4 and 2.5, the compiler is Visual Studio .NET 2003.
 
 :class:`MSVCCompiler` will normally choose the right compiler, linker etc. on
 its own. To override this choice, the environment variables *DISTUTILS_USE_SDK*

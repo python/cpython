@@ -208,7 +208,7 @@ class build_ext(Command):
             if self.plat_name == 'win32':
                 suffix = 'win32'
             else:
-                # win-amd64 or win-ia64
+                # win-amd64
                 suffix = self.plat_name[4:]
             new_lib = os.path.join(sys.exec_prefix, 'PCbuild')
             if suffix:

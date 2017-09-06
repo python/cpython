@@ -30,24 +30,14 @@ def get_platform ():
 
     Windows will return one of:
        win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
-       win-ia64 (64bit Windows on Itanium)
        win32 (all others - specifically, sys.platform is returned)
 
     For other non-POSIX platforms, currently just returns 'sys.platform'.
 
     """
     if os.name == 'nt':
-        # sniff sys.version for architecture.
-        prefix = " bit ("
-        i = sys.version.find(prefix)
-        if i == -1:
-            return sys.platform
-        j = sys.version.find(")", i)
-        look = sys.version[i+len(prefix):j].lower()
-        if look == 'amd64':
+        if 'amd64' in sys.version.lower():
             return 'win-amd64'
-        if look == 'itanium':
-            return 'win-ia64'
         return sys.platform
 
     # Set for cross builds explicitly
