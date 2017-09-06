@@ -56,6 +56,9 @@
             <_PropsContents>$([System.IO.File]::ReadAllText('python.props'))</_PropsContents>
             <_PropsContents>$(_PropsContents.Replace('$$PYTHON_TAG$$', '$(MajorVersionNumber).$(MinorVersionNumber)'))</_PropsContents>
             <_PropsContents>$(_PropsContents.Replace('$$PYTHON_VERSION$$', '$(NuspecVersion)'))</_PropsContents>
+            <_PropsContents Condition="$(Platform) == 'x86'">$(_PropsContents.Replace('$$PYTHON_PLATFORM$$', 'Win32'))</_PropsContents>
+            <_PropsContents Condition="$(Platform) != 'x86'">$(_PropsContents.Replace('$$PYTHON_PLATFORM$$', '$(Platform)'))</_PropsContents>
+            <_PropsContents>$(_PropsContents.Replace('$$PYTHON_TARGET$$', '_GetPythonRuntimeFilesDependsOn$(MajorVersionNumber)$(MinorVersionNumber)_$(Platform)'))</_PropsContents>
             <_ExistingContents Condition="Exists('$(IntermediateOutputPath)\python.props')">$([System.IO.File]::ReadAllText('$(IntermediateOutputPath)\python.props'))</_ExistingContents>
         </PropertyGroup>
         <WriteLinesToFile File="$(IntermediateOutputPath)\python.props"

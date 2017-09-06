@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
+  <PropertyGroup Condition="$(Platform) == '$$PYTHON_PLATFORM$$'">
     <PythonHome>$(MSBuildThisFileDirectory)\..\..\tools</PythonHome>
     <PythonInclude>$(PythonHome)\include</PythonInclude>
     <PythonLibs>$(PythonHome)\libs</PythonLibs>
@@ -11,9 +11,11 @@
     <IncludeDistutils Condition="$(IncludeDistutils) == ''">false</IncludeDistutils>
     <IncludeLib2To3 Condition="$(IncludeLib2To3) == ''">false</IncludeLib2To3>
     <IncludeVEnv Condition="$(IncludeVEnv) == ''">false</IncludeVEnv>
+
+    <GetPythonRuntimeFilesDependsOn>$$PYTHON_TARGET$$;$(GetPythonRuntimeFilesDependsOn)</GetPythonRuntimeFilesDependsOn>
   </PropertyGroup>
 
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="$(Platform) == '$$PYTHON_PLATFORM$$'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(PythonInclude);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -23,7 +25,9 @@
     </Link>
   </ItemDefinitionGroup>
 
-  <Target Name="GetPythonRuntimeFiles" Returns="@(PythonRuntime)">
+  <Target Name="GetPythonRuntimeFiles" Returns="@(PythonRuntime)" DependsOnTargets="$(GetPythonRuntimeFilesDependsOn)" />
+
+  <Target Name="$$PYTHON_TARGET$$" Returns="@(PythonRuntime)">
     <ItemGroup>
       <_PythonRuntimeExe Include="$(PythonHome)\python*.dll" />
       <_PythonRuntimeExe Include="$(PythonHome)\vcruntime140.dll" />
