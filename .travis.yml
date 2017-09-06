@@ -25,15 +25,6 @@ matrix:
       # compiler here and the other to run the coverage build. Clang is preferred
       # in this instance for its better error messages.
       env: TESTING=cpython
-    - os: osx
-      language: c
-      compiler: clang
-      # Testing under macOS is optional until testing stability has been demonstrated.
-      env: OPTIONAL=true
-      before_install:
-        - brew install openssl xz
-        - export CPPFLAGS="-I$(brew --prefix openssl)/include"
-        - export LDFLAGS="-L$(brew --prefix openssl)/lib"
     - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
