@@ -409,12 +409,12 @@ static void
 buffered_dealloc(buffered *self)
 {
     self->finalizing = 1;
+    if (self->next != NULL)
+        remove_from_linked_list(self);
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
-    if (self->next != NULL)
-        remove_from_linked_list(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->raw);
@@ -1860,8 +1860,13 @@ void _PyIO_atexit_flush(void)
     while (buffer_list_end.next != &buffer_list_end) {
         buffered *buf = buffer_list_end.next;
         remove_from_linked_list(buf);
-        buffered_flush(buf, NULL);
-        PyErr_Clear();
+        if (buf->ok && !buf->finalizing) {
+            /* good state and not finalizing */
+            Py_INCREF(buf);
+            buffered_flush(buf, NULL);
+            Py_DECREF(buf);
+            PyErr_Clear();
+        }
     }
 }
 
