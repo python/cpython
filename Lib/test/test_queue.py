@@ -1,6 +1,7 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
 import collections
+import itertools
 import queue
 import random
 import sys
@@ -444,6 +445,7 @@ class BaseSimpleQueueTest:
         return results
 
     def test_basic(self):
+        # Basic tests for get(), put() etc.
         q = self.q
         self.assertTrue(q.empty())
         self.assertEqual(q.qsize(), 0)
@@ -486,6 +488,7 @@ class BaseSimpleQueueTest:
             q.get(timeout=-1)
 
     def test_order(self):
+        # Test a pair of concurrent put() and get()
         q = self.q
         inputs = list(range(100))
         results = self.run_threads(1, 1, q, inputs, self.feed, self.consume)
@@ -494,6 +497,7 @@ class BaseSimpleQueueTest:
         self.assertEqual(results, inputs)
 
     def test_many_threads(self):
+        # Test multiple concurrent put() and get()
         N = 50
         q = self.q
         inputs = list(range(10000))
@@ -504,6 +508,7 @@ class BaseSimpleQueueTest:
         self.assertEqual(sorted(results), inputs)
 
     def test_many_threads_nonblock(self):
+        # Test multiple concurrent put() and get(block=False)
         N = 50
         q = self.q
         inputs = list(range(10000))
@@ -513,6 +518,7 @@ class BaseSimpleQueueTest:
         self.assertEqual(sorted(results), inputs)
 
     def test_many_threads_timeout(self):
+        # Test multiple concurrent put() and get(timeout=...)
         N = 50
         q = self.q
         inputs = list(range(1000))
@@ -547,6 +553,34 @@ if _queue is not None:
             for i in range(N - 1):
                 q.get()
             self.assertLess(sys.getsizeof(q), new)
+
+        def test_reentrancy(self):
+            # bpo-14976: put() may be called reentrantly in an asynchronous
+            # callback.
+            q = self.q
+            gen = itertools.count()
+            N = 10000
+            results = []
+
+            # This test exploits the fact that __del__ in a reference cycle
+            # can be called any time the GC may run.
+
+            class Circular(object):
+                def __init__(self):
+                    self.circular = self
+
+                def __del__(self):
+                    q.put(next(gen))
+
+            while True:
+                o = Circular()
+                q.put(next(gen))
+                del o
+                results.append(q.get())
+                if results[-1] >= N:
+                    break
+
+            self.assertEqual(results, list(range(N + 1)))
 
 
 if __name__ == "__main__":
