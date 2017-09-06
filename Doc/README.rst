@@ -7,7 +7,7 @@ available <https://docs.python.org/dev/download.html>`_.
 
 Documentation on authoring Python documentation, including information about
 both style and markup, is available in the "`Documenting Python
-<https://docs.python.org/devguide/documenting.html>`_" chapter of the
+<https://devguide.python.org/documenting/>`_" chapter of the
 developers guide.
 
 
@@ -109,10 +109,10 @@ see the make targets above).
 Contributing
 ============
 
-Bugs in the content should be reported to the 
+Bugs in the content should be reported to the
 `Python bug tracker <https://bugs.python.org>`_.
 
-Bugs in the toolset should be reported in the 
+Bugs in the toolset should be reported in the
 `Sphinx bug tracker <https://github.com/sphinx-doc/sphinx/issues>`_.
 
 You can also send a mail to the Python Documentation Team at docs@python.org,
