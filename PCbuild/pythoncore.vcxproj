@@ -106,6 +106,14 @@
     <ClInclude Include="..\Include\graminit.h" />
     <ClInclude Include="..\Include\grammar.h" />
     <ClInclude Include="..\Include\import.h" />
+    <ClInclude Include="..\Include\internal\_Python.h" />
+    <ClInclude Include="..\Include\internal\_ceval.h" />
+    <ClInclude Include="..\Include\internal\_condvar.h" />
+    <ClInclude Include="..\Include\internal\_gil.h" />
+    <ClInclude Include="..\Include\internal\_mem.h" />
+    <ClInclude Include="..\Include\internal\_pymalloc.h" />
+    <ClInclude Include="..\Include\internal\_pystate.h" />
+    <ClInclude Include="..\Include\internal\_warnings.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
