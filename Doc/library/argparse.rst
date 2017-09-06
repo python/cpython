@@ -1994,7 +1994,7 @@ Intermixed parsing
 
 A number of unix commands allow the user to intermix optional arguments with
 positional arguments.  The :meth:`~ArgumentParser.parse_intermixed_args`
-and :meth:`~ArgumentParser.parse_known_intermixed_args` :methods
+and :meth:`~ArgumentParser.parse_known_intermixed_args` methods
 support this parsing style.
 
 These parsers do not support all the argparse features, and will raise
@@ -2017,10 +2017,12 @@ into ``rest``.  ::
    >>> parser.parse_intermixed_args('cmd1 1 --foo bar 2 3'.split())
    Namespace(cmd='cmd1', foo='bar', rest=[1, 2, 3])
 
-:meth:`~ArgumentParser.parse_known_intermixed_args` method, returns a
-two item tuple containing the populated namespace and the list of
-remaining argument strings.  :meth:`~ArgumentParser.parse_intermixed_args`
-raises an error if there are any remaining unparsed argument strings.
+:meth:`~ArgumentParser.parse_known_intermixed_args` returns a two item tuple
+containing the populated namespace and the list of remaining argument strings.
+:meth:`~ArgumentParser.parse_intermixed_args` raises an error if there are any
+remaining unparsed argument strings.
+
+.. versionadded:: 3.7
 
 .. _upgrading-optparse-code:
 
