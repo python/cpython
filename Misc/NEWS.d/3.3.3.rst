@@ -1,0 +1,7 @@
+.. bpo: 0
+.. date: 9774
+.. no changes: True
+.. nonce: 9rfvE-
+.. release date: 17-Nov-2013
+
+No changes from release candidate 2.

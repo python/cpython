@@ -1,0 +1,82 @@
+.. bpo: 20731
+.. date: 9943
+.. nonce: _03SZg
+.. release date: 02-Mar-2014
+.. section: Core and Builtins
+
+Properly position in source code files even if they are opened in text mode.
+Patch by Serhiy Storchaka.
+
+..
+
+.. bpo: 19619
+.. date: 9942
+.. nonce: p4mly-
+.. section: Core and Builtins
+
+str.encode, bytes.decode and bytearray.decode now use an internal API to
+throw LookupError for known non-text encodings, rather than attempting the
+encoding or decoding operation and then throwing a TypeError for an
+unexpected output type. (The latter mechanism remains in place for third
+party non-text encodings)
+
+..
+
+.. bpo: 20778
+.. date: 9941
+.. nonce: g_fAGI
+.. section: Library
+
+Fix modulefinder to work with bytecode-only modules.
+
+..
+
+.. bpo: 20791
+.. date: 9940
+.. nonce: n_zrkc
+.. section: Library
+
+copy.copy() now doesn't make a copy when the input is a bytes object.
+Initial patch by Peter Otten.
+
+..
+
+.. bpo: 20621
+.. date: 9939
+.. nonce: E_LQ4E
+.. section: Library
+
+Fixes a zipimport bug introduced in 3.3.4 that could cause spurious crashes
+or SystemErrors when importing modules or packages from a zip file.  The
+change causing the problem was reverted.
+
+..
+
+.. bpo: 20404
+.. date: 9938
+.. nonce: 9dU6on
+.. section: Library
+
+io.TextIOWrapper (and hence the open() builtin) now uses the internal codec
+marking system added for issue #19619 to throw LookupError for known non-
+text encodings at stream construction time. The existing output type checks
+remain in place to deal with unmarked third party codecs.
+
+..
+
+.. bpo: 20743
+.. date: 9937
+.. nonce: hxZQUf
+.. section: Tests
+
+Fix a reference leak in test_tcl.
+
+..
+
+.. bpo: 20535
+.. date: 9936
+.. nonce: 0qkvZZ
+.. section: Tools/Demos
+
+PYTHONWARNING no longer affects the run_tests.py script. Patch by Arfrever
+Frehtes Taifersar Arahesis.

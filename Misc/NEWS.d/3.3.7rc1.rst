@@ -1,0 +1,377 @@
+.. bpo: 30947
+.. date: 2017-09-05-20-34-44
+.. nonce: iNMmm4
+.. release date: 2017-09-05
+.. section: Security
+
+Upgrade libexpat embedded copy from version 2.2.1 to 2.2.3 to get security
+fixes.
+
+..
+
+.. bpo: 26657
+.. date: 2017-07-11-22-07-03
+.. nonce: wvpzFD
+.. section: Security
+
+Fix directory traversal vulnerability with http.server on Windows. This
+fixes a regression that was introduced in 3.3.4rc1 and 3.4.0rc1. Based on
+patch by Philipp Hagemeister.
+
+..
+
+.. bpo: 30500
+.. date: 2017-07-11-22-02-51
+.. nonce: wXUrkQ
+.. section: Security
+
+Fix urllib.parse.splithost() to correctly parse fragments. For example,
+``splithost('//127.0.0.1#@evil.com/')`` now correctly returns the
+``127.0.0.1`` host, instead of treating ``@evil.com`` as the host in an
+authentification (``login@host``).
+
+..
+
+.. bpo: 30730
+.. date: 023
+.. nonce: ZF8XGV
+.. original section: Library
+.. section: Security
+
+Prevent environment variables injection in subprocess on Windows.  Prevent
+passing other invalid environment variables and command arguments.
+
+..
+
+.. bpo: 30585
+.. date: 022
+.. nonce: W_u2bO
+.. original section: Library
+.. section: Security
+
+Fix TLS stripping vulnerability in smptlib, CVE-2016-0772.  Reported by Team
+Oststrom
+
+..
+
+.. bpo: 30694
+.. date: 021
+.. nonce: WkMWM_
+.. original section: Library
+.. section: Security
+
+Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes of multiple security
+vulnerabilities including: CVE-2017-9233 (External entity infinite loop
+DoS), CVE-2016-9063 (Integer overflow, re-fix), CVE-2016-0718 (Fix
+regression bugs from 2.2.0's fix to CVE-2016-0718) and CVE-2012-0876
+(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use os-
+specific entropy sources like getrandom) doesn't impact Python, since Python
+already gets entropy from the OS to set the expat secret using
+``XML_SetHashSalt()``.
+
+..
+
+.. bpo: 29591
+.. date: 020
+.. nonce: -hhJCP
+.. original section: Library
+.. section: Security
+
+Update expat copy from 2.1.0 to 2.2.0 to get fixes of CVE-2016-0718 and
+CVE-2016-4472. See https://sourceforge.net/p/expat/bugs/537/ for more
+information.
+
+..
+
+.. bpo: 27945
+.. date: 033
+.. nonce: p29r3O
+.. section: Core and Builtins
+
+Fixed various segfaults with dict when input collections are mutated during
+searching, inserting or comparing.  Based on patches by Duane Griffin and
+Tim Mitchell.
+
+..
+
+.. bpo: 28648
+.. date: 032
+.. nonce: z7B52W
+.. section: Core and Builtins
+
+Fixed crash in Py_DecodeLocale() in debug build on Mac OS X when decode
+astral characters.  Patch by Xiang Zhang.
+
+..
+
+.. bpo: 26171
+.. date: 031
+.. nonce: 8SaQEa
+.. section: Core and Builtins
+
+Fix possible integer overflow and heap corruption in zipimporter.get_data().
+
+..
+
+.. bpo: 25709
+.. date: 030
+.. nonce: kZHYbk
+.. section: Core and Builtins
+
+Fixed problem with in-place string concatenation and utf-8 cache.
+
+..
+
+.. bpo: 24407
+.. date: 029
+.. nonce: GmCBB3
+.. section: Core and Builtins
+
+Fix crash when dict is mutated while being updated.
+
+..
+
+.. bpo: 24097
+.. date: 028
+.. nonce: Vt4E-i
+.. section: Core and Builtins
+
+Fixed crash in object.__reduce__() if slot name is freed inside __getattr__.
+
+..
+
+.. bpo: 24096
+.. date: 027
+.. nonce: a_Rap7
+.. section: Core and Builtins
+
+Make warnings.warn_explicit more robust against mutation of the
+warnings.filters list.
+
+..
+
+.. bpo: 24044
+.. date: 026
+.. nonce: H7vb6-
+.. section: Core and Builtins
+
+Fix possible null pointer dereference in list.sort in out of memory
+conditions.
+
+..
+
+.. bpo: 23055
+.. date: 025
+.. nonce: rRkRIJ
+.. section: Core and Builtins
+
+Fixed a buffer overflow in PyUnicode_FromFormatV.  Analysis and fix by Guido
+Vranken.
+
+..
+
+.. bpo: 31170
+.. date: 2017-09-05-20-35-21
+.. nonce: QGmJ1t
+.. section: Library
+
+expat: Update libexpat from 2.2.3 to 2.2.4. Fix copying of partial
+characters for UTF-8 input (libexpat bug 115):
+https://github.com/libexpat/libexpat/issues/115
+
+..
+
+.. bpo: 22928
+.. date: 2017-07-25-15-48-29
+.. nonce: LCRp8D
+.. section: Library
+
+Disabled HTTP header injections in http.client. Original patch by Demian
+Brecht.
+
+..
+
+.. bpo: 30119
+.. date: 024
+.. nonce: 8ezFT1
+.. section: Library
+
+ftplib.FTP.putline() now throws ValueError on commands that contains CR or
+LF. Patch by Dong-hee Na
+
+..
+
+.. bpo: 28563
+.. date: 019
+.. nonce: iweEiw
+.. section: Library
+
+Fixed possible DoS and arbitrary code execution when handle plural form
+selections in the gettext module.  The expression parser now supports exact
+syntax supported by GNU gettext.
+
+..
+
+.. bpo: 27783
+.. date: 018
+.. nonce: 6fCCY9
+.. section: Library
+
+Fix possible usage of uninitialized memory in operator.methodcaller.
+
+..
+
+.. bpo: 27774
+.. date: 017
+.. nonce: FDcik1
+.. section: Library
+
+Fix possible Py_DECREF on unowned object in _sre.
+
+..
+
+.. bpo: 27760
+.. date: 016
+.. nonce: gxMjp4
+.. section: Library
+
+Fix possible integer overflow in binascii.b2a_qp.
+
+..
+
+.. bpo: 27758
+.. date: 015
+.. nonce: x9DC4R
+.. section: Library
+
+Fix possible integer overflow in the _csv module for large record lengths.
+
+..
+
+.. bpo: 27568
+.. date: 014
+.. nonce: OnuO9s
+.. section: Library
+
+Prevent HTTPoxy attack (CVE-2016-1000110). Ignore the HTTP_PROXY variable
+when REQUEST_METHOD environment is set, which indicates that the script is
+in CGI mode.
+
+..
+
+.. bpo: 24521
+.. date: 013
+.. nonce: bn4U-y
+.. section: Library
+
+Fix possible integer overflows in the pickle module.
+
+..
+
+.. bpo: 22931
+.. date: 012
+.. nonce: 4CuWYD
+.. section: Library
+
+Allow '[' and ']' in cookie values.
+
+..
+
+.. bpo: 24094
+.. date: 011
+.. nonce: 7T-u7k
+.. section: Library
+
+Fix possible crash in json.encode with poorly behaved dict subclasses.
+
+..
+
+.. bpo: 23367
+.. date: 010
+.. nonce: kHnFiz
+.. section: Library
+
+Fix possible overflows in the unicodedata module.
+
+..
+
+.. bpo: 23361
+.. date: 009
+.. nonce: I_w0-z
+.. section: Library
+
+Fix possible overflow in Windows subprocess creation code.
+
+..
+
+.. bpo: 23363
+.. date: 008
+.. nonce: -koaol
+.. section: Library
+
+Fix possible overflow in itertools.permutations.
+
+..
+
+.. bpo: 23364
+.. date: 007
+.. nonce: 3yBV-6
+.. section: Library
+
+Fix possible overflow in itertools.product.
+
+..
+
+.. bpo: 23369
+.. date: 006
+.. nonce: nqChyE
+.. section: Library
+
+Fixed possible integer overflow in _json.encode_basestring_ascii.
+
+..
+
+.. bpo: 23366
+.. date: 005
+.. nonce: tyAfm8
+.. section: Library
+
+Fixed possible integer overflow in itertools.combinations.
+
+..
+
+.. bpo: 23365
+.. date: 004
+.. nonce: h5jLQ9
+.. section: Library
+
+Fixed possible integer overflow in itertools.combinations_with_replacement.
+
+..
+
+.. bpo: 27369
+.. date: 002
+.. nonce: LG7U2D
+.. section: Tests
+
+In test_pyexpat, avoid testing an error message detail that changed in Expat
+2.2.0.
+
+..
+
+.. bpo: 25940
+.. date: 001
+.. nonce: 7uNcQG
+.. section: Tests
+
+Changed test_ssl and test_httplib to use self-signed.pythontest.net.  This
+avoids relying on svn.python.org, which recently changed root certificate.
+
+..
+
+.. bpo: 23998
+.. date: 003
+.. nonce: z7mlLW
+.. section: C API
+
+PyImport_ReInitLock() now checks for lock allocation error

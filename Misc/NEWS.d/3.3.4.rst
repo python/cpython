@@ -1,0 +1,7 @@
+.. bpo: 20374
+.. date: 9894
+.. nonce: If81ji
+.. release date: 09-Feb-2014
+.. section: Library
+
+Fix build warnings of the readline module with libedit on Mac.

@@ -1,0 +1,779 @@
+.. bpo: 17237
+.. date: 9562
+.. nonce: cF-0Zw
+.. release date: 13-May-2013
+.. section: Core and Builtins
+
+Fix crash in the ASCII decoder on m68k.
+
+..
+
+.. bpo: 17408
+.. date: 9561
+.. nonce: mfHmrB
+.. section: Core and Builtins
+
+Avoid using an obsolete instance of the copyreg module when the interpreter
+is shutdown and then started again.
+
+..
+
+.. bpo: 17863
+.. date: 9560
+.. nonce: 3PTJAD
+.. section: Core and Builtins
+
+In the interactive console, don't loop forever if the encoding can't be
+fetched from stdin.
+
+..
+
+.. bpo: 17867
+.. date: 9559
+.. nonce: DrmXe2
+.. section: Core and Builtins
+
+Raise an ImportError if __import__ is not found in __builtins__.
+
+..
+
+.. bpo: 17857
+.. date: 9558
+.. nonce: 7cCKDk
+.. section: Core and Builtins
+
+Prevent build failures with pre-3.5.0 versions of sqlite3, such as was
+shipped with Centos 5 and Mac OS X 10.4.
+
+..
+
+.. bpo: 17413
+.. date: 9557
+.. nonce: Nt_U0G
+.. section: Core and Builtins
+
+sys.settrace callbacks were being passed a string instead of an exception
+instance for the 'value' element of the arg tuple if the exception
+originated from C code; now an exception instance is always provided.
+
+..
+
+.. bpo: 17782
+.. date: 9556
+.. nonce: HwEf1N
+.. section: Core and Builtins
+
+Fix undefined behaviour on platforms where ``struct timespec``'s "tv_nsec"
+member is not a C long.
+
+..
+
+.. bpo: 17715
+.. date: 9555
+.. nonce: gZ33Sm
+.. section: Core and Builtins
+
+Fix segmentation fault from raising an exception in a __trunc__ method.
+
+..
+
+.. bpo: 16447
+.. date: 9554
+.. nonce: Nqypja
+.. section: Core and Builtins
+
+Fixed potential segmentation fault when setting __name__ on a class.
+
+..
+
+.. bpo: 17669
+.. date: 9553
+.. nonce: TkSpEF
+.. section: Core and Builtins
+
+Fix crash involving finalization of generators using yield from.
+
+..
+
+.. bpo: 17619
+.. date: 9552
+.. nonce: nQqD2x
+.. section: Core and Builtins
+
+Make input() check for Ctrl-C correctly on Windows.
+
+..
+
+.. bpo: 17610
+.. date: 9551
+.. nonce: QpIzEB
+.. section: Core and Builtins
+
+Don't rely on non-standard behavior of the C qsort() function.
+
+..
+
+.. bpo: 17357
+.. date: 9550
+.. nonce: E6yP5h
+.. section: Core and Builtins
+
+Add missing verbosity output when using -v/-vv.
+
+..
+
+.. bpo: 17606
+.. date: 9549
+.. nonce: KiLlUm
+.. section: Library
+
+Fixed support of encoded byte strings in the XMLGenerator characters() and
+ignorableWhitespace() methods.  Original patch by Sebastian Ortiz Vasquez.
+
+..
+
+.. bpo: 17732
+.. date: 9548
+.. nonce: nVRMov
+.. section: Library
+
+Ignore distutils.cfg options pertaining to install paths if a virtual
+environment is active.
+
+..
+
+.. bpo: 1159051
+.. date: 9547
+.. nonce: bpQMXP
+.. section: Library
+
+Back out a fix for handling corrupted gzip files that broke backwards
+compatibility.
+
+..
+
+.. bpo: 17915
+.. date: 9546
+.. nonce: ugMGeG
+.. section: Library
+
+Fix interoperability of xml.sax with file objects returned by codecs.open().
+
+..
+
+.. bpo: 16601
+.. date: 9545
+.. nonce: _FiBrB
+.. section: Library
+
+Restarting iteration over tarfile no more continues from where it left off.
+Patch by Michael Birtwell.
+
+..
+
+.. bpo: 17289
+.. date: 9544
+.. nonce: NPHOks
+.. section: Library
+
+The readline module now plays nicer with external modules or applications
+changing the rl_completer_word_break_characters global variable.  Initial
+patch by Bradley Froehle.
+
+..
+
+.. bpo: 12181
+.. date: 9543
+.. nonce: Dq2moC
+.. section: Library
+
+select module: Fix struct kevent definition on OpenBSD 64-bit platforms.
+Patch by Federico Schwindt.
+
+..
+
+.. bpo: 14173
+.. date: 9542
+.. nonce: mZM9Pr
+.. section: Library
+
+Avoid crashing when reading a signal handler during interpreter shutdown.
+
+..
+
+.. bpo: 16316
+.. date: 9541
+.. nonce: AOkxPd
+.. section: Library
+
+mimetypes now recognizes the .xz and .txz (.tar.xz) extensions.
+
+..
+
+.. bpo: 15902
+.. date: 9540
+.. nonce: 3XIl24
+.. section: Library
+
+Fix imp.load_module() accepting None as a file when loading an extension
+module.
+
+..
+
+.. bpo: 17802
+.. date: 9539
+.. nonce: ztoqWb
+.. section: Library
+
+Fix an UnboundLocalError in html.parser.  Initial tests by Thomas Barlow.
+
+..
+
+.. bpo: 15535
+.. date: 9538
+.. nonce: hc30Tv
+.. section: Library
+
+Fix namedtuple pickles which were picking up the OrderedDict instead of just
+the underlying tuple.
+
+..
+
+.. bpo: 17192
+.. date: 9537
+.. nonce: 9NzXC9
+.. section: Library
+
+Restore the patch for Issue #11729 which was ommitted in 3.3.1 when updating
+the bundled version of libffi used by ctypes.  Update many libffi files that
+were missed in 3.3.1's update to libffi-3.0.13.
+
+..
+
+.. bpo: 17358
+.. date: 9536
+.. nonce: kyf-Ix
+.. section: Library
+
+Modules loaded by imp.load_source() and load_compiled() (and by extention
+load_module()) now have a better chance of working when reloaded.
+
+..
+
+.. bpo: 17353
+.. date: 9535
+.. nonce: 6Wiqfl
+.. section: Library
+
+Plistlib emitted empty data tags with deeply nested datastructures
+
+..
+
+.. bpo: 11714
+.. date: 9534
+.. nonce: EZxzYl
+.. section: Library
+
+Use 'with' statements to assure a Semaphore releases a condition variable.
+Original patch by Thomas Rachel.
+
+..
+
+.. bpo: 17795
+.. date: 9533
+.. nonce: IgVwMv
+.. section: Library
+
+Reverted backwards-incompatible change in SysLogHandler with Unix domain
+sockets.
+
+..
+
+.. bpo: 17555
+.. date: 9532
+.. nonce: 9klJCB
+.. section: Library
+
+Fix ForkAwareThreadLock so that size of after fork registry does not grow
+exponentially with generation of process.
+
+..
+
+.. bpo: 17707
+.. date: 9531
+.. nonce: 54fwPS
+.. section: Library
+
+multiprocessing.Queue's get() method does not block for short timeouts.
+
+..
+
+.. bpo: 0
+.. date: 9530
+.. nonce: hO2HQT
+.. section: Library
+
+Isuse #17720: Fix the Python implementation of pickle.Unpickler to correctly
+process the APPENDS opcode when it is used on non-list objects.
+
+..
+
+.. bpo: 17012
+.. date: 9529
+.. nonce: gzoKo4
+.. section: Library
+
+shutil.which() no longer fallbacks to the PATH environment variable if empty
+path argument is specified.  Patch by Serhiy Storchaka.
+
+..
+
+.. bpo: 17710
+.. date: 9528
+.. nonce: OCzZ2n
+.. section: Library
+
+Fix pickle raising a SystemError on bogus input.
+
+..
+
+.. bpo: 17341
+.. date: 9527
+.. nonce: DI-1AO
+.. section: Library
+
+Include the invalid name in the error messages from re about invalid group
+names.
+
+..
+
+.. bpo: 17702
+.. date: 9526
+.. nonce: ySqg1b
+.. section: Library
+
+os.environ now raises KeyError with the original environment variable name
+(str on UNIX), instead of using the encoded name (bytes on UNIX).
+
+..
+
+.. bpo: 16163
+.. date: 9525
+.. nonce: 3aay4D
+.. section: Library
+
+Make the importlib based version of pkgutil.iter_importers work for
+submodules. Initial patch by Berker Peksag.
+
+..
+
+.. bpo: 16804
+.. date: 9524
+.. nonce: vK8Q1B
+.. section: Library
+
+Fix a bug in the 'site' module that caused running 'python -S -m site' to
+incorrectly throw an exception.
+
+..
+
+.. bpo: 17016
+.. date: 9523
+.. nonce: lQnMI8
+.. section: Library
+
+Get rid of possible pointer wraparounds and integer overflows in the re
+module.  Patch by Nickolai Zeldovich.
+
+..
+
+.. bpo: 16658
+.. date: 9522
+.. nonce: 0nnlDI
+.. section: Library
+
+add missing return to HTTPConnection.send() Patch by Jeff Knupp.
+
+..
+
+.. bpo: 14971
+.. date: 9521
+.. nonce: cc8xNA
+.. section: Library
+
+unittest test discovery no longer gets confused when a function has a
+different __name__ than its name in the TestCase class dictionary.
+
+..
+
+.. bpo: 17678
+.. date: 9520
+.. nonce: im-rqY
+.. section: Library
+
+Fix DeprecationWarning in the http/cookiejar.py by changing the usage of
+get_origin_req_host() to origin_req_host.
+
+..
+
+.. bpo: 17666
+.. date: 9519
+.. nonce: L8Gq8u
+.. section: Library
+
+Fix reading gzip files with an extra field.
+
+..
+
+.. bpo: 17502
+.. date: 9518
+.. nonce: ujjkwG
+.. section: Library
+
+Process DEFAULT values in mock side_effect that returns iterator. Patch by
+Michael Foord.
+
+..
+
+.. bpo: 17572
+.. date: 9517
+.. nonce: EadyGN
+.. section: Library
+
+Avoid chained exceptions while passing bad directives to time.strptime().
+Initial patch by Claudiu Popa.
+
+..
+
+.. bpo: 17435
+.. date: 9516
+.. nonce: 167Uzu
+.. section: Library
+
+threading.Timer's __init__ method no longer uses mutable default values for
+the args and kwargs parameters.
+
+..
+
+.. bpo: 17526
+.. date: 9515
+.. nonce: wiYvlk
+.. section: Library
+
+fix an IndexError raised while passing code without filename to
+inspect.findsource().  Initial patch by Tyler Doyle.
+
+..
+
+.. bpo: 16550
+.. date: 9514
+.. nonce: HIUeZQ
+.. section: Library
+
+Update the opcode descriptions of pickletools to use unsigned integers where
+appropriate.  Initial patch by Serhiy Storchaka.
+
+..
+
+.. bpo: 17838
+.. date: 9513
+.. nonce: -DDdhT
+.. section: IDLE
+
+Allow sys.stdin to be reassigned.
+
+..
+
+.. bpo: 13495
+.. date: 9512
+.. nonce: CqEc2d
+.. section: IDLE
+
+Avoid loading the color delegator twice in IDLE.
+
+..
+
+.. bpo: 17798
+.. date: 9511
+.. nonce: PVfMob
+.. section: IDLE
+
+Allow IDLE to edit new files when specified on command line.
+
+..
+
+.. bpo: 14735
+.. date: 9510
+.. nonce: lbbw49
+.. section: IDLE
+
+Update IDLE docs to omit "Control-z on Windows".
+
+..
+
+.. bpo: 17585
+.. date: 9509
+.. nonce: oXlcVX
+.. section: IDLE
+
+Fixed IDLE regression. Now closes when using exit() or quit().
+
+..
+
+.. bpo: 17657
+.. date: 9508
+.. nonce: rGfxNo
+.. section: IDLE
+
+Show full Tk version in IDLE's about dialog. Patch by Todd Rovito.
+
+..
+
+.. bpo: 17613
+.. date: 9507
+.. nonce: MfAJ31
+.. section: IDLE
+
+Prevent traceback when removing syntax colorizer in IDLE.
+
+..
+
+.. bpo: 1207589
+.. date: 9506
+.. nonce: wqzkjh
+.. section: IDLE
+
+Backwards-compatibility patch for right-click menu in IDLE.
+
+..
+
+.. bpo: 16887
+.. date: 9505
+.. nonce: -tb-0g
+.. section: IDLE
+
+IDLE now accepts Cancel in tabify/untabify dialog box.
+
+..
+
+.. bpo: 17625
+.. date: 9504
+.. nonce: SoDm9J
+.. section: IDLE
+
+In IDLE, close the replace dialog after it is used.
+
+..
+
+.. bpo: 14254
+.. date: 9503
+.. nonce: heeMG-
+.. section: IDLE
+
+IDLE now handles readline correctly across shell restarts.
+
+..
+
+.. bpo: 17614
+.. date: 9502
+.. nonce: 9pmpYW
+.. section: IDLE
+
+IDLE no longer raises exception when quickly closing a file.
+
+..
+
+.. bpo: 6698
+.. date: 9501
+.. nonce: fXoiv2
+.. section: IDLE
+
+IDLE now opens just an editor window when configured to do so.
+
+..
+
+.. bpo: 8900
+.. date: 9500
+.. nonce: jkW99r
+.. section: IDLE
+
+Using keyboard shortcuts in IDLE to open a file no longer raises an
+exception.
+
+..
+
+.. bpo: 6649
+.. date: 9499
+.. nonce: uwGice
+.. section: IDLE
+
+Fixed missing exit status in IDLE. Patch by Guilherme Polo.
+
+..
+
+.. bpo: 17833
+.. date: 9498
+.. nonce: AqQAlk
+.. section: Tests
+
+Fix test_gdb failures seen on machines where debug symbols for glibc are
+available (seen on PPC64 Linux).
+
+..
+
+.. bpo: 7855
+.. date: 9497
+.. nonce: ZbX91d
+.. section: Tests
+
+Add tests for ctypes/winreg for issues found in IronPython. Initial patch by
+Dino Viehland.
+
+..
+
+.. bpo: 17712
+.. date: 9496
+.. nonce: RqkHUB
+.. section: Tests
+
+Fix test_gdb failures on Ubuntu 13.04.
+
+..
+
+.. bpo: 17835
+.. date: 9495
+.. nonce: mJdR71
+.. section: Tests
+
+Fix test_io when the default OS pipe buffer size is larger than one million
+bytes.
+
+..
+
+.. bpo: 17065
+.. date: 9494
+.. nonce: rql8lF
+.. section: Tests
+
+Use process-unique key for winreg tests to avoid failures if test is run
+multiple times in parallel (eg: on a buildbot host).
+
+..
+
+.. bpo: 12820
+.. date: 9493
+.. nonce: HATljf
+.. section: Tests
+
+add tests for the xml.dom.minicompat module. Patch by John Chandler and Phil
+Connell.
+
+..
+
+.. bpo: 17790
+.. date: 9492
+.. nonce: JJXcrD
+.. section: Tests
+
+test_set now works with unittest test discovery. Patch by Zachary Ware.
+
+..
+
+.. bpo: 17789
+.. date: 9491
+.. nonce: ILUl9_
+.. section: Tests
+
+test_random now works with unittest test discovery. Patch by Zachary Ware.
+
+..
+
+.. bpo: 17779
+.. date: 9490
+.. nonce: f61EJr
+.. section: Tests
+
+test_osx_env now works with unittest test discovery. Patch by Zachary Ware.
+
+..
+
+.. bpo: 17766
+.. date: 9489
+.. nonce: fGhYwN
+.. section: Tests
+
+test_iterlen now works with unittest test discovery. Patch by Zachary Ware.
+
+..
+
+.. bpo: 17690
+.. date: 9488
+.. nonce: Tm3Owh
+.. section: Tests
+
+test_time now works with unittest test discovery. Patch by Zachary Ware.
+
+..
+
+.. bpo: 17692
+.. date: 9487
+.. nonce: 6eSLWJ
+.. section: Tests
+
+test_sqlite now works with unittest test discovery. Patch by Zachary Ware.
+
+..
+
+.. bpo: 17843
+.. date: 9486
+.. nonce: 3inmDr
+.. section: Tests
+
+Removed bz2 test data file that was triggering false-positive virus warnings
+with certain antivirus software.
+
+..
+
+.. bpo: 15940
+.. date: 9485
+.. nonce: XL62xu
+.. section: Documentation
+
+Specify effect of locale on time functions.
+
+..
+
+.. bpo: 6696
+.. date: 9484
+.. nonce: -aRVrf
+.. section: Documentation
+
+add documentation for the Profile objects, and improve profile/cProfile
+docs.  Patch by Tom Pinckney.
+
+..
+
+.. bpo: 17915
+.. date: 9483
+.. nonce: ugMGeG
+.. section: Documentation
+
+Fix interoperability of xml.sax with file objects returned by codecs.open().
+
+..
+
+.. bpo: 17547
+.. date: 9482
+.. nonce: yVllRd
+.. section: Build
+
+In configure, explicitly pass -Wformat for the benefit for GCC 4.8.
+
+..
+
+.. bpo: 17962
+.. date: 9481
+.. nonce: 1oDDhN
+.. section: Build
+
+Build with OpenSSL 1.0.1e on Windows.

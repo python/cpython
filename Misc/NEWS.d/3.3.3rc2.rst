@@ -1,0 +1,37 @@
+.. bpo: 19227
+.. date: 9773
+.. nonce: XYyKFm
+.. release date: 11-Nov-2013
+.. section: Library
+
+Any re-seeding of the OpenSSL RNG on fork has been removed; this should be
+handled by OpenSSL itself or by the application.
+
+..
+
+.. bpo: 19435
+.. date: 9772
+.. nonce: kXqMz3
+.. section: Library
+
+Fix directory traversal attack on CGIHttpRequestHandler.
+
+..
+
+.. bpo: 18964
+.. date: 9771
+.. nonce: 48qplP
+.. section: Tests
+
+Fix test_tcl when run with Tcl/Tk versions  < 8.5.
+
+..
+
+.. bpo: 15663
+.. date: 9770
+.. nonce: hZFR8Q
+.. section: Build
+
+Revert OS X installer built-in Tcl/Tk support for 3.3.3. Some third-party
+projects, such as Matplotlib and PIL/Pillow, depended on being able to build
+with Tcl and Tk frameworks in /Library/Frameworks.

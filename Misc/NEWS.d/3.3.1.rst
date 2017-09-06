@@ -1,0 +1,16 @@
+.. bpo: 17550
+.. date: 9480
+.. nonce: zn8gOk
+.. release date: 07-Apr-2013
+.. section: Build
+
+Fix the --enable-profiling configure switch.
+
+..
+
+.. bpo: 17625
+.. date: 9479
+.. nonce: SoDm9J
+.. section: IDLE
+
+In IDLE, close the replace dialog after it is used.

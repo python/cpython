@@ -1,0 +1,214 @@
+.. bpo: 22643
+.. date: 9966
+.. nonce: xv8xev
+.. release date: 11-Oct-2014
+.. section: Core and Builtins
+
+Fix integer overflow in Unicode case operations (upper, lower, title,
+swapcase, casefold).
+
+..
+
+.. bpo: 22518
+.. date: 9965
+.. nonce: igrgN2
+.. section: Core and Builtins
+
+Fixed integer overflow issues in "backslashreplace", "xmlcharrefreplace",
+and "surrogatepass" error handlers.
+
+..
+
+.. bpo: 22520
+.. date: 9964
+.. nonce: ZPJXSq
+.. section: Core and Builtins
+
+Fix overflow checking when generating the repr of a unicode object.
+
+..
+
+.. bpo: 22519
+.. date: 9963
+.. nonce: xvJVg0
+.. section: Core and Builtins
+
+Fix overflow checking in PyBytes_Repr.
+
+..
+
+.. bpo: 22518
+.. date: 9962
+.. nonce: C9T6ed
+.. section: Core and Builtins
+
+Fix integer overflow issues in latin-1 encoding.
+
+..
+
+.. bpo: 23165
+.. date: 9961
+.. nonce: lk8uCE
+.. section: Core and Builtins
+
+Perform overflow checks before allocating memory in the _Py_char2wchar
+function.
+
+..
+
+.. bpo: 16043
+.. date: 9960
+.. nonce: TGIC7t
+.. section: Library
+
+Add a default limit for the amount of data xmlrpclib.gzip_decode will
+return. This resolves CVE-2013-1753.
+
+..
+
+.. bpo: 22517
+.. date: 9959
+.. nonce: SOfMig
+.. section: Library
+
+When a io.BufferedRWPair object is deallocated, clear its weakrefs.
+
+..
+
+.. bpo: 22419
+.. date: 9958
+.. nonce: FqH4aC
+.. section: Library
+
+Limit the length of incoming HTTP request in wsgiref server to 65536 bytes
+and send a 414 error code for higher lengths. Patch contributed by Devin
+Cook.
+
+..
+
+.. bpo: 0
+.. date: 9957
+.. nonce: y7r3O2
+.. section: Library
+
+Lax cookie parsing in http.cookies could be a security issue when combined
+with non-standard cookie handling in some Web browsers.  Reported by Sergey
+Bobrov.
+
+..
+
+.. bpo: 21766
+.. date: 9956
+.. nonce: 0xk_xC
+.. section: Library
+
+Prevent a security hole in CGIHTTPServer by URL unquoting paths before
+checking for a CGI script at that path.
+
+..
+
+.. bpo: 20633
+.. date: 9955
+.. nonce: 6kaPjT
+.. section: Library
+
+Replace relative import by absolute import.
+
+..
+
+.. bpo: 21082
+.. date: 9954
+.. nonce: GLzGlV
+.. section: Library
+
+In os.makedirs, do not set the process-wide umask. Note this changes
+behavior of makedirs when exist_ok=True.
+
+..
+
+.. bpo: 20875
+.. date: 9953
+.. nonce: IjfI5V
+.. section: Library
+
+Prevent possible gzip "'read' is not defined" NameError. Patch by Claudiu
+Popa.
+
+..
+
+.. bpo: 11599
+.. date: 9952
+.. nonce: 9QOXf4
+.. section: Library
+
+When an external command (e.g. compiler) fails, distutils now prints out the
+whole command line (instead of just the command name) if the environment
+variable DISTUTILS_DEBUG is set.
+
+..
+
+.. bpo: 4931
+.. date: 9951
+.. nonce: uF10hr
+.. section: Library
+
+distutils should not produce unhelpful "error: None" messages anymore.
+distutils.util.grok_environment_error is kept but doc-deprecated.
+
+..
+
+.. bpo: 20283
+.. date: 9950
+.. nonce: v0Vs9V
+.. section: Library
+
+RE pattern methods now accept the string keyword parameters as documented.
+The pattern and source keyword parameters are left as deprecated aliases.
+
+..
+
+.. bpo: 21323
+.. date: 9949
+.. nonce: quiWfl
+.. section: Library
+
+Fix http.server to again handle scripts in CGI subdirectories, broken by the
+fix for security issue #19435.  Patch by Zach Byrne.
+
+..
+
+.. bpo: 21529
+.. date: 9948
+.. nonce: 57R_Fc
+.. section: Library
+
+Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
+parameter. Bug reported by Guido Vranken. (See also: CVE-2014-4616)
+
+..
+
+.. bpo: 17752
+.. date: 9947
+.. nonce: P8iG44
+.. section: Tests
+
+Fix distutils tests when run from the installed location.
+
+..
+
+.. bpo: 20946
+.. date: 9946
+.. nonce: iI4MlK
+.. section: Tests
+
+Correct alignment assumptions of some ctypes tests.
+
+..
+
+.. bpo: 20939
+.. date: 9945
+.. nonce: MX5O4e
+.. section: Tests
+
+Fix test_geturl failure in test_urllibnet due to new redirect of
+http://www.python.org/ to https://www.python.org.

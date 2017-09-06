@@ -1,2 +1,0 @@
-Disabled HTTP header injections in http.client. Original patch by Demian
-Brecht.
