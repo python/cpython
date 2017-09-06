@@ -6990,6 +6990,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         return p;
     }
     do {
+        /* Use faster uncached lookup as we won't get any cache hits during type setup. */
         descr = _PyType_LookupUncached(type, p->name_strobj, &error);
         if (descr == NULL) {
             if (error) {
