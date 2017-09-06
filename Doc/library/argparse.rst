@@ -1992,7 +1992,7 @@ Intermixed parsing
 .. method:: ArgumentParser.parse_intermixed_args(args=None, namespace=None)
 .. method:: ArgumentParser.parse_known_intermixed_args(args=None, namespace=None)
 
-A number of unix commands allow the user to intermix optional arguments with
+A number of Unix commands allow the user to intermix optional arguments with
 positional arguments.  The :meth:`~ArgumentParser.parse_intermixed_args`
 and :meth:`~ArgumentParser.parse_known_intermixed_args` methods
 support this parsing style.
@@ -2012,10 +2012,10 @@ into ``rest``.  ::
    >>> parser.add_argument('--foo')
    >>> parser.add_argument('cmd')
    >>> parser.add_argument('rest', nargs='*', type=int)
-   >>> parser.parse_known_args('cmd1 1 --foo bar 2 3'.split())
-   (Namespace(cmd='cmd1', foo='bar', rest=[1]), ['2', '3'])
-   >>> parser.parse_intermixed_args('cmd1 1 --foo bar 2 3'.split())
-   Namespace(cmd='cmd1', foo='bar', rest=[1, 2, 3])
+   >>> parser.parse_known_args('doit 1 --foo bar 2 3'.split())
+   (Namespace(cmd='doit', foo='bar', rest=[1]), ['2', '3'])
+   >>> parser.parse_intermixed_args('doit 1 --foo bar 2 3'.split())
+   Namespace(cmd='doit', foo='bar', rest=[1, 2, 3])
 
 :meth:`~ArgumentParser.parse_known_intermixed_args` returns a two item tuple
 containing the populated namespace and the list of remaining argument strings.
