@@ -7,17 +7,16 @@ except ImportError:
 from collections import deque
 from heapq import heappush, heappop
 from time import monotonic as time
-
 try:
-    import _queue
+    from _queue import SimpleQueue
 except ImportError:
-    _queue = None
+    SimpleQueue = None
 
-__all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue']
+__all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue', 'SimpleQueue']
 
 
 try:
-    Empty = _queue.Empty
+    from _queue import Empty
 except AttributeError:
     class Empty(Exception):
         'Exception raised by Queue.get(block=0)/get_nowait().'
@@ -321,7 +320,5 @@ class _PySimpleQueue:
         return len(self._queue)
 
 
-try:
-    SimpleQueue = _queue.SimpleQueue
-except AttributeError:
+if SimpleQueue is None:
     SimpleQueue = _PySimpleQueue
