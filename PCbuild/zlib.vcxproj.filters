@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(zlibDir)\adler32.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\compress.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\crc32.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\deflate.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\infback.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\inffast.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\inflate.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\inftrees.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\trees.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\uncompr.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\zutil.c">
+      <Filter>zlib Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\zlibmodule.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(zlibDir)\crc32.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\deflate.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inffast.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inffixed.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inflate.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inftrees.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\trees.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zconf.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zconf.in.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zlib.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zutil.h">
+      <Filter>zlib Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="zlib Source Files">
+      <UniqueIdentifier>{09ecb11a-be55-4026-8067-31473afe50ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zlib Header Files">
+      <UniqueIdentifier>{04ee1de3-c3cb-4106-9cde-0abcc4003898}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{cce25c2c-8904-4d69-b13c-543554c6f216}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -50,7 +50,6 @@ extern PyObject* PyInit__struct(void);
 extern PyObject* PyInit__datetime(void);
 extern PyObject* PyInit__functools(void);
 extern PyObject* PyInit__json(void);
-extern PyObject* PyInit_zlib(void);
 
 extern PyObject* PyInit__multibytecodec(void);
 extern PyObject* PyInit__codecs_cn(void);
@@ -133,7 +132,6 @@ struct _inittab _PyImport_Inittab[] = {
 
     {"xxsubtype", PyInit_xxsubtype},
     {"zipimport", PyInit_zipimport},
-    {"zlib", PyInit_zlib},
 
     /* CJK codecs */
     {"_multibytecodec", PyInit__multibytecodec},

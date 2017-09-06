@@ -51,7 +51,7 @@
     <!-- Extension modules -->
     <ExtensionModules Include="_asyncio;_ctypes;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;select;unicodedata;winsound" />
     <!-- Extension modules that require external sources -->
-    <ExternalModules Include="_bz2;_lzma;_sqlite3" />
+    <ExternalModules Include="_bz2;_lzma;_sqlite3;zlib" />
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
     <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
     <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
