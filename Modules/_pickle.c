@@ -1,7 +1,10 @@
-#include "Python.h"
-#ifdef Py_BUILD_CORE  /* _pickle is built-in on Windows. */
-#include "internal/pystate.h"
+
+/* Core extension modules are built-in on some platforms (e.g. Windows). */
+#ifdef Py_BUILD_CORE
+#undef Py_BUILD_CORE
 #endif
+
+#include "Python.h"
 #include "structmember.h"
 
 PyDoc_STRVAR(pickle_module_doc,
