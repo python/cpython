@@ -1,0 +1,3 @@
+A new function ``argparse.ArgumentParser.parse_intermixed_args`` provides the
+ability to parse command lines where there user intermixes options and
+positional arguments.
