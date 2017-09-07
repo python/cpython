@@ -163,10 +163,6 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # include <sys/uio.h>
 #endif
 
-#if !defined(WITH_THREAD)
-# undef HAVE_GETHOSTBYNAME_R
-#endif
-
 #if defined(__ANDROID__) && __ANDROID_API__ < 23
 # undef HAVE_GETHOSTBYNAME_R
 #endif
@@ -185,8 +181,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # endif
 #endif
 
-#if !defined(HAVE_GETHOSTBYNAME_R) && defined(WITH_THREAD) && \
-    !defined(MS_WINDOWS)
+#if !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
 # define USE_GETHOSTBYNAME_LOCK
 #endif
 
@@ -210,8 +205,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 
 http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&r2=1.83
  */
-#if defined(WITH_THREAD) && ( \
-    (defined(__APPLE__) && \
+#if ((defined(__APPLE__) && \
         MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5) || \
     (defined(__FreeBSD__) && __FreeBSD_version+0 < 503000) || \
     (defined(__OpenBSD__) && OpenBSD+0 < 201311) || \
@@ -656,10 +650,8 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     struct timeval tv, *tvp;
 #endif
 
-#ifdef WITH_THREAD
     /* must be called with the GIL held */
     assert(PyGILState_Check());
-#endif
 
     /* Error condition is for output only */
     assert(!(connect && !writing));
@@ -758,10 +750,8 @@ sock_call_ex(PySocketSockObject *s,
     int deadline_initialized = 0;
     int res;
 
-#ifdef WITH_THREAD
     /* sock_call() must be called with the GIL held. */
     assert(PyGILState_Check());
-#endif
 
     /* outer loop to retry select() when select() is interrupted by a signal
        or to retry select()+sock_func() on false positive (see above) */

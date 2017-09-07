@@ -646,9 +646,7 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
-THREADOBJ
 LDLAST
-USE_THREAD_MODULE
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -782,6 +780,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -828,8 +827,6 @@ enable_loadable_sqlite_extensions
 with_tcltk_includes
 with_tcltk_libs
 with_dbmliborder
-with_threads
-with_thread
 enable_ipv6
 with_doc_strings
 with_pymalloc
@@ -895,6 +892,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1147,6 +1145,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1284,7 +1291,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1437,6 +1444,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1523,10 +1531,6 @@ Optional Packages:
                           order to check db backends for dbm. Valid value is a
                           colon separated string with the backend names
                           `ndbm', `gdbm' and `bdb'.
-  --with(out)-threads[=DIRECTORY]
-                          disable/enable thread support
-  --with(out)-thread[=DIRECTORY]
-                          deprecated; use --with(out)-threads
   --with(out)-doc-strings disable/enable documentation strings
   --with(out)-pymalloc    disable/enable specialized mallocs
   --with(out)-c-locale-coercion
@@ -10148,83 +10152,39 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
 $as_echo "$with_dbmliborder" >&6; }
 
-# This is used to generate Setup.config
-
-USE_THREAD_MODULE=""
-
 
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
 
 
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-threads" >&5
-$as_echo_n "checking for --with-threads... " >&6; }
-
-# Check whether --with-threads was given.
-if test "${with_threads+set}" = set; then :
-  withval=$with_threads;
-fi
-
-
-# --with-thread is deprecated, but check for it anyway
-
-# Check whether --with-thread was given.
-if test "${with_thread+set}" = set; then :
-  withval=$with_thread; with_threads=$with_thread
-fi
-
-
-if test -z "$with_threads"
-then with_threads="yes"
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_threads" >&5
-$as_echo "$with_threads" >&6; }
-
-
-if test "$with_threads" = "no"
+if test "$ac_cv_pthread_is_default" = yes
 then
-    USE_THREAD_MODULE="#"
-elif test "$ac_cv_pthread_is_default" = yes
-then
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     $as_echo "#define _REENTRANT 1" >>confdefs.h
 
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kpthread"
     fi
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kthread" = "yes"
 then
     CC="$CC -Kthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kthread"
     fi
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_pthread" = "yes"
 then
     CC="$CC -pthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -pthread"
     fi
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 else
     if test ! -z "$with_threads" -a -d "$with_threads"
     then LDFLAGS="$LDFLAGS -L$with_threads"
@@ -10287,19 +10247,16 @@ if ac_fn_c_try_link "$LINENO"; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
+
 else
 
     LIBS=$_libs
     ac_fn_c_check_func "$LINENO" "pthread_detach" "ac_cv_func_pthread_detach"
 if test "x$ac_cv_func_pthread_detach" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
+
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lpthreads" >&5
@@ -10339,11 +10296,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pthreads_pthread_create" >&5
 $as_echo "$ac_cv_lib_pthreads_pthread_create" >&6; }
 if test "x$ac_cv_lib_pthreads_pthread_create" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
     LIBS="$LIBS -lpthreads"
-    THREADOBJ="Python/thread.o"
+
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lc_r" >&5
@@ -10383,11 +10339,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_r_pthread_create" >&5
 $as_echo "$ac_cv_lib_c_r_pthread_create" >&6; }
 if test "x$ac_cv_lib_c_r_pthread_create" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
     LIBS="$LIBS -lc_r"
-    THREADOBJ="Python/thread.o"
+
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __pthread_create_system in -lpthread" >&5
@@ -10427,11 +10382,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pthread___pthread_create_system" >&5
 $as_echo "$ac_cv_lib_pthread___pthread_create_system" >&6; }
 if test "x$ac_cv_lib_pthread___pthread_create_system" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
     LIBS="$LIBS -lpthread"
-    THREADOBJ="Python/thread.o"
+
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lcma" >&5
@@ -10471,14 +10425,14 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_cma_pthread_create" >&5
 $as_echo "$ac_cv_lib_cma_pthread_create" >&6; }
 if test "x$ac_cv_lib_cma_pthread_create" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     posix_threads=yes
     LIBS="$LIBS -lcma"
-    THREADOBJ="Python/thread.o"
+
 else
 
-    USE_THREAD_MODULE="#"
+    as_fn_error $? "could not find pthreads on your system" "$LINENO" 5
+
 fi
 
 
@@ -10531,60 +10485,12 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpc_usconfig" >&5
 $as_echo "$ac_cv_lib_mpc_usconfig" >&6; }
 if test "x$ac_cv_lib_mpc_usconfig" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
 
     LIBS="$LIBS -lmpc"
-    THREADOBJ="Python/thread.o"
-    USE_THREAD_MODULE=""
+
 fi
 
 
-    if test "$posix_threads" != "yes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for thr_create in -lthread" >&5
-$as_echo_n "checking for thr_create in -lthread... " >&6; }
-if ${ac_cv_lib_thread_thr_create+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lthread  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char thr_create ();
-int
-main ()
-{
-return thr_create ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_thread_thr_create=yes
-else
-  ac_cv_lib_thread_thr_create=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_thread_thr_create" >&5
-$as_echo "$ac_cv_lib_thread_thr_create" >&6; }
-if test "x$ac_cv_lib_thread_thr_create" = xyes; then :
-  $as_echo "#define WITH_THREAD 1" >>confdefs.h
-
-      LIBS="$LIBS -lthread"
-      THREADOBJ="Python/thread.o"
-      USE_THREAD_MODULE=""
-fi
-
-    fi
 fi
 
 if test "$posix_threads" = "yes"; then
@@ -16591,7 +16497,7 @@ $as_echo "#define HAVE_GETRANDOM 1" >>confdefs.h
 fi
 
 # generate output files
-ac_config_files="$ac_config_files Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh"
+ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-config.sh"
 
 ac_config_files="$ac_config_files Modules/ld_so_aix"
 
@@ -17293,7 +17199,6 @@ do
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
-    "Modules/Setup.config") CONFIG_FILES="$CONFIG_FILES Modules/Setup.config" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-config.sh") CONFIG_FILES="$CONFIG_FILES Misc/python-config.sh" ;;
     "Modules/ld_so_aix") CONFIG_FILES="$CONFIG_FILES Modules/ld_so_aix" ;;
@@ -17909,7 +17814,7 @@ fi
 
 echo "creating Makefile" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
-			-s Modules Modules/Setup.config \
+			-s Modules \
 			Modules/Setup.local Modules/Setup
 mv config.c Modules
 
