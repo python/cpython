@@ -419,7 +419,9 @@ should not be line-wrapped::
     -h, --help  show this help message and exit
 
 :class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text,
-including argument descriptions.
+including argument descriptions. However, multiple new lines are replaced with
+one. If you wish to preserve multiple blank lines, add spaces between the
+newlines.
 
 The other formatter class available, :class:`ArgumentDefaultsHelpFormatter`,
 will add information about the default value of each of the arguments::
