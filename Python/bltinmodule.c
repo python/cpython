@@ -415,17 +415,8 @@ builtin_callable(PyObject *module, PyObject *obj)
     return PyBool_FromLong((long)PyCallable_Check(obj));
 }
 
-/*[clinic input]
-breakpoint as builtin_breakpoint
-
-Call the sys.breakpointhook() function.
-
-By default, this drops you into the pdb debugger.
-[clinic start generated code]*/
-
 static PyObject *
-builtin_breakpoint_impl(PyObject *module)
-/*[clinic end generated code: output=31a2b40a5bce5816 input=ad4bff59a1be4b8e]*/
+builtin_breakpoint(PyObject *self, PyObject *args, PyObject *keywords)
 {
     PyObject *hook = PySys_GetObject("breakpointhook");
     PyObject *retval = NULL;
@@ -435,10 +426,19 @@ builtin_breakpoint_impl(PyObject *module)
         return NULL;
     }
     Py_INCREF(hook);
-    retval = PyObject_CallObject(hook, NULL);
+    retval = PyObject_Call(hook, args, keywords);
     Py_DECREF(hook);
     return retval;
 }
+
+PyDoc_STRVAR(breakpoint_doc,
+"breakpoint(*args, **kws)\n\
+\n\
+Call the sys.breakpointhook() function, passing *args and **kws\n\
+through unchanged.  sys.breakpointhook() must accept the arguments\n\
+passed.\n\
+\n\
+By default, this drops you into the pdb debugger.");
 
 typedef struct {
     PyObject_HEAD
@@ -2644,7 +2644,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
-    BUILTIN_BREAKPOINT_METHODDEF
+    {"breakpoint",      (PyCFunction)builtin_breakpoint, METH_VARARGS | METH_KEYWORDS, breakpoint_doc},
     BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF

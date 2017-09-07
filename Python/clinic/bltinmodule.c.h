@@ -71,26 +71,6 @@ PyDoc_STRVAR(builtin_callable__doc__,
 #define BUILTIN_CALLABLE_METHODDEF    \
     {"callable", (PyCFunction)builtin_callable, METH_O, builtin_callable__doc__},
 
-PyDoc_STRVAR(builtin_breakpoint__doc__,
-"breakpoint($module, /)\n"
-"--\n"
-"\n"
-"Call the sys.breakpointhook() function.\n"
-"\n"
-"By default, this drops you into the pdb debugger.");
-
-#define BUILTIN_BREAKPOINT_METHODDEF    \
-    {"breakpoint", (PyCFunction)builtin_breakpoint, METH_NOARGS, builtin_breakpoint__doc__},
-
-static PyObject *
-builtin_breakpoint_impl(PyObject *module);
-
-static PyObject *
-builtin_breakpoint(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return builtin_breakpoint_impl(module);
-}
-
 PyDoc_STRVAR(builtin_format__doc__,
 "format($module, value, format_spec=\'\', /)\n"
 "--\n"
@@ -696,4 +676,4 @@ builtin_issubclass(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d63bb279b3be5cbe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=09752daa8cdd6ec7 input=a9049054013a1b77]*/

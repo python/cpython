@@ -385,6 +385,27 @@ class BuiltinTest(unittest.TestCase):
             breakpoint()
         mock.assert_called_once()
 
+    def test_breakpoint_with_args_and_keywords(self):
+        call_args = None
+        def my_breakpointhook(*args, **kws):
+            nonlocal call_args
+            call_args = args, kws
+        try:
+            sys.breakpointhook = my_breakpointhook
+            breakpoint(1, 2, 3, four=4, five=5)
+        finally:
+            sys.breakpointhook = sys.__breakpointhook__
+        self.assertEqual(call_args, ((1, 2, 3), dict(four=4, five=5)))
+
+    def test_breakpoint_with_passthru_error(self):
+        def my_breakpointhook():
+            pass
+        try:
+            sys.breakpointhook = my_breakpointhook
+            self.assertRaises(TypeError, breakpoint, 1, 2, 3, four=4, five=5)
+        finally:
+            sys.breakpointhook = sys.__breakpointhook__
+
     def test_delattr(self):
         sys.spam = 1
         delattr(sys, 'spam')
