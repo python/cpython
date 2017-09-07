@@ -127,10 +127,7 @@ import socket
 import selectors
 import os
 import sys
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
+import threading
 from io import BufferedIOBase
 from time import monotonic as time
 

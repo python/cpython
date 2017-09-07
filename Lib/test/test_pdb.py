@@ -1040,9 +1040,6 @@ class PdbTestCase(unittest.TestCase):
         # invoking "continue" on a non-main thread triggered an exception
         # inside signal.signal
 
-        # raises SkipTest if python was built without threads
-        support.import_module('threading')
-
         with open(support.TESTFN, 'wb') as f:
             f.write(textwrap.dedent("""
                 import threading

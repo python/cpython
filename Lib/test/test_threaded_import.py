@@ -11,12 +11,12 @@ import importlib
 import sys
 import time
 import shutil
+import threading
 import unittest
 from unittest import mock
 from test.support import (
     verbose, import_module, run_unittest, TESTFN, reap_threads,
     forget, unlink, rmtree, start_threads)
-threading = import_module('threading')
 
 def task(N, done, done_tasks, errors):
     try:

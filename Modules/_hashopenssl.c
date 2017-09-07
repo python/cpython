@@ -53,9 +53,7 @@ typedef struct {
     PyObject_HEAD
     PyObject            *name;  /* name of this hash algorithm */
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
-#ifdef WITH_THREAD
     PyThread_type_lock   lock;  /* OpenSSL context lock */
-#endif
 } EVPobject;
 
 
@@ -122,9 +120,7 @@ newEVPobject(PyObject *name)
     /* save the name for .name to return */
     Py_INCREF(name);
     retval->name = name;
-#ifdef WITH_THREAD
     retval->lock = NULL;
-#endif
 
     return retval;
 }
@@ -153,10 +149,8 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
 static void
 EVP_dealloc(EVPobject *self)
 {
-#ifdef WITH_THREAD
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
-#endif
     EVP_MD_CTX_free(self->ctx);
     Py_XDECREF(self->name);
     PyObject_Del(self);
@@ -267,7 +261,6 @@ EVP_update(EVPobject *self, PyObject *args)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
 
-#ifdef WITH_THREAD
     if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE) {
         self->lock = PyThread_allocate_lock();
         /* fail? lock = NULL and we fail over to non-threaded code. */
@@ -282,9 +275,6 @@ EVP_update(EVPobject *self, PyObject *args)
     } else {
         EVP_hash(self, view.buf, view.len);
     }
-#else
-    EVP_hash(self, view.buf, view.len);
-#endif
 
     PyBuffer_Release(&view);
     Py_RETURN_NONE;

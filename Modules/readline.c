@@ -896,13 +896,9 @@ on_startup_hook()
 #endif
 {
     int r;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
     r = on_hook(readlinestate_global->startup_hook);
-#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
-#endif
     return r;
 }
 
@@ -915,13 +911,9 @@ on_pre_input_hook()
 #endif
 {
     int r;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
     r = on_hook(readlinestate_global->pre_input_hook);
-#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
-#endif
     return r;
 }
 #endif
@@ -936,9 +928,7 @@ on_completion_display_matches_hook(char **matches,
 {
     int i;
     PyObject *sub, *m=NULL, *s=NULL, *r=NULL;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
     m = PyList_New(num_matches);
     if (m == NULL)
         goto error;
@@ -967,9 +957,7 @@ on_completion_display_matches_hook(char **matches,
         Py_XDECREF(m);
         Py_XDECREF(r);
     }
-#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
-#endif
 }
 
 #endif
@@ -1002,9 +990,7 @@ on_completion(const char *text, int state)
     char *result = NULL;
     if (readlinestate_global->completer != NULL) {
         PyObject *r = NULL, *t;
-#ifdef WITH_THREAD
         PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
         rl_attempted_completion_over = 1;
         t = decode(text);
         r = PyObject_CallFunction(readlinestate_global->completer, "Ni", t, state);
@@ -1026,9 +1012,7 @@ on_completion(const char *text, int state)
         PyErr_Clear();
         Py_XDECREF(r);
       done:
-#ifdef WITH_THREAD
         PyGILState_Release(gilstate);
-#endif
         return result;
     }
     return result;
@@ -1045,9 +1029,7 @@ flex_complete(const char *text, int start, int end)
     char saved;
     size_t start_size, end_size;
     wchar_t *s;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     rl_completion_append_character ='\0';
 #endif
@@ -1080,9 +1062,7 @@ done:
     readlinestate_global->begidx = PyLong_FromLong((long) start);
     readlinestate_global->endidx = PyLong_FromLong((long) end);
     result = completion_matches((char *)text, *on_completion);
-#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
-#endif
     return result;
 }
 
@@ -1234,13 +1214,9 @@ readline_until_enter_or_signal(const char *prompt, int *signal)
         }
         else if (err == EINTR) {
             int s;
-#ifdef WITH_THREAD
             PyEval_RestoreThread(_PyOS_ReadlineTState);
-#endif
             s = PyErr_CheckSignals();
-#ifdef WITH_THREAD
             PyEval_SaveThread();
-#endif
             if (s < 0) {
                 rl_free_line_state();
 #if defined(RL_READLINE_VERSION) && RL_READLINE_VERSION >= 0x0700

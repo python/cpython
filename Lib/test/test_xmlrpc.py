@@ -10,6 +10,7 @@ import xmlrpc.server
 import http.client
 import http, http.server
 import socket
+import threading
 import re
 import io
 import contextlib
@@ -19,10 +20,6 @@ try:
     import gzip
 except ImportError:
     gzip = None
-try:
-    import threading
-except ImportError:
-    threading = None
 
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
@@ -307,7 +304,6 @@ class XMLRPCTestCase(unittest.TestCase):
         except OSError:
             self.assertTrue(has_ssl)
 
-    @unittest.skipUnless(threading, "Threading required for this test.")
     def test_keepalive_disconnect(self):
         class RequestHandler(http.server.BaseHTTPRequestHandler):
             protocol_version = "HTTP/1.1"
@@ -747,7 +743,6 @@ def make_request_and_skipIf(condition, reason):
         return make_request_and_skip
     return decorator
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class BaseServerTestCase(unittest.TestCase):
     requestHandler = None
     request_count = 1
@@ -1206,7 +1201,6 @@ class FailingMessageClass(http.client.HTTPMessage):
         return super().get(key, failobj)
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class FailingServerTestCase(unittest.TestCase):
     def setUp(self):
         self.evt = threading.Event()

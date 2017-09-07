@@ -142,8 +142,6 @@ _PyImportZip_Init(void)
    in different threads to return with a partially loaded module.
    These calls are serialized by the global interpreter lock. */
 
-#ifdef WITH_THREAD
-
 #include "pythread.h"
 
 static PyThread_type_lock import_lock = 0;
@@ -224,8 +222,6 @@ _PyImport_ReInitLock(void)
     }
 }
 
-#endif
-
 /*[clinic input]
 _imp.lock_held
 
@@ -238,11 +234,7 @@ static PyObject *
 _imp_lock_held_impl(PyObject *module)
 /*[clinic end generated code: output=8b89384b5e1963fc input=9b088f9b217d9bdf]*/
 {
-#ifdef WITH_THREAD
     return PyBool_FromLong(import_lock_thread != PYTHREAD_INVALID_THREAD_ID);
-#else
-    Py_RETURN_FALSE;
-#endif
 }
 
 /*[clinic input]
@@ -258,9 +250,7 @@ static PyObject *
 _imp_acquire_lock_impl(PyObject *module)
 /*[clinic end generated code: output=1aff58cb0ee1b026 input=4a2d4381866d5fdc]*/
 {
-#ifdef WITH_THREAD
     _PyImport_AcquireLock();
-#endif
     Py_RETURN_NONE;
 }
 
@@ -276,13 +266,11 @@ static PyObject *
 _imp_release_lock_impl(PyObject *module)
 /*[clinic end generated code: output=7faab6d0be178b0a input=934fb11516dd778b]*/
 {
-#ifdef WITH_THREAD
     if (_PyImport_ReleaseLock() < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "not holding the import lock");
         return NULL;
     }
-#endif
     Py_RETURN_NONE;
 }
 
@@ -290,12 +278,10 @@ void
 _PyImport_Fini(void)
 {
     Py_CLEAR(extensions);
-#ifdef WITH_THREAD
     if (import_lock != NULL) {
         PyThread_free_lock(import_lock);
         import_lock = NULL;
     }
-#endif
 }
 
 /* Helper for sys */

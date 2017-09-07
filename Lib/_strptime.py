@@ -19,10 +19,7 @@ from re import escape as re_escape
 from datetime import (date as datetime_date,
                       timedelta as datetime_timedelta,
                       timezone as datetime_timezone)
-try:
-    from _thread import allocate_lock as _thread_allocate_lock
-except ImportError:
-    from _dummy_thread import allocate_lock as _thread_allocate_lock
+from _thread import allocate_lock as _thread_allocate_lock
 
 __all__ = []
 

@@ -3,15 +3,11 @@ import json
 import os
 import queue
 import sys
+import threading
 import time
 import traceback
 import types
 from test import support
-try:
-    import threading
-except ImportError:
-    print("Multiprocess option requires thread support")
-    sys.exit(2)
 
 from test.libregrtest.runtest import (
     runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,

@@ -18,7 +18,6 @@
 
 #include "Python.h"
 
-#ifdef WITH_THREAD
 #include "pythread.h"
 
 /* Redefined below for Windows debug builds after important #includes */
@@ -34,17 +33,6 @@
 #define PySSL_BLOCK_THREADS     PySSL_END_ALLOW_THREADS_S(_save);
 #define PySSL_UNBLOCK_THREADS   PySSL_BEGIN_ALLOW_THREADS_S(_save);
 #define PySSL_END_ALLOW_THREADS PySSL_END_ALLOW_THREADS_S(_save); }
-
-#else   /* no WITH_THREAD */
-
-#define PySSL_BEGIN_ALLOW_THREADS_S(save)
-#define PySSL_END_ALLOW_THREADS_S(save)
-#define PySSL_BEGIN_ALLOW_THREADS
-#define PySSL_BLOCK_THREADS
-#define PySSL_UNBLOCK_THREADS
-#define PySSL_END_ALLOW_THREADS
-
-#endif
 
 /* Include symbols from _socket module */
 #include "socketmodule.h"
@@ -171,9 +159,7 @@ static void _PySSLFixErrno(void) {
 #define OPENSSL_NO_SSL2
 #endif
 #else /* OpenSSL < 1.1.0 */
-#if defined(WITH_THREAD)
 #define HAVE_OPENSSL_CRYPTO_LOCK
-#endif
 
 #define TLS_method SSLv23_method
 #define TLS_client_method SSLv23_client_method
@@ -285,14 +271,10 @@ enum py_ssl_version {
     PY_SSL_VERSION_TLS_SERVER,
 };
 
-#ifdef WITH_THREAD
-
 /* serves as a flag to see whether we've initialized the SSL thread support. */
 /* 0 means no, greater than 0 means yes */
 
 static unsigned int _ssl_locks_count = 0;
-
-#endif /* def WITH_THREAD */
 
 /* SSL socket object */
 
@@ -3768,16 +3750,12 @@ _servername_callback(SSL *s, int *al, void *args)
     /* The high-level ssl.SSLSocket object */
     PyObject *ssl_socket;
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
-#ifdef WITH_THREAD
     PyGILState_STATE gstate = PyGILState_Ensure();
-#endif
 
     if (ssl_ctx->set_hostname == NULL) {
         /* remove race condition in this the call back while if removing the
          * callback is in progress */
-#ifdef WITH_THREAD
         PyGILState_Release(gstate);
-#endif
         return SSL_TLSEXT_ERR_OK;
     }
 
@@ -3846,18 +3824,14 @@ _servername_callback(SSL *s, int *al, void *args)
         Py_DECREF(result);
     }
 
-#ifdef WITH_THREAD
     PyGILState_Release(gstate);
-#endif
     return ret;
 
 error:
     Py_DECREF(ssl_socket);
     *al = SSL_AD_INTERNAL_ERROR;
     ret = SSL_TLSEXT_ERR_ALERT_FATAL;
-#ifdef WITH_THREAD
     PyGILState_Release(gstate);
-#endif
     return ret;
 }
 #endif
@@ -5117,7 +5091,7 @@ static int _setup_ssl_threads(void) {
     return 1;
 }
 
-#endif  /* HAVE_OPENSSL_CRYPTO_LOCK for WITH_THREAD && OpenSSL < 1.1.0 */
+#endif  /* HAVE_OPENSSL_CRYPTO_LOCK for OpenSSL < 1.1.0 */
 
 PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
@@ -5193,7 +5167,6 @@ PyInit__ssl(void)
     SSL_library_init();
 #endif
 
-#ifdef WITH_THREAD
 #ifdef HAVE_OPENSSL_CRYPTO_LOCK
     /* note that this will start threading if not already started */
     if (!_setup_ssl_threads()) {
@@ -5203,7 +5176,6 @@ PyInit__ssl(void)
     /* OpenSSL 1.1.0 builtin thread support is enabled */
     _ssl_locks_count++;
 #endif
-#endif  /* WITH_THREAD */
 
     /* Add symbols to module dict */
     sslerror_type_slots[0].pfunc = PyExc_OSError;

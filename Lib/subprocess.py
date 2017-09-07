@@ -138,10 +138,7 @@ else:
     import _posixsubprocess
     import select
     import selectors
-    try:
-        import threading
-    except ImportError:
-        import dummy_threading as threading
+    import threading
 
     # When select or poll has indicated that the file is writable,
     # we can write up to _PIPE_BUF bytes without risk of blocking.

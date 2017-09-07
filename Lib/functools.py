@@ -22,13 +22,7 @@ from collections import namedtuple
 from types import MappingProxyType
 from weakref import WeakKeyDictionary
 from reprlib import recursive_repr
-try:
-    from _thread import RLock
-except ImportError:
-    class RLock:
-        'Dummy reentrant lock for builds without threads'
-        def __enter__(self): pass
-        def __exit__(self, exctype, excinst, exctb): pass
+from _thread import RLock
 
 
 ################################################################################

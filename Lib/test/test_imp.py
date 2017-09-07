@@ -1,7 +1,3 @@
-try:
-    import _thread
-except ImportError:
-    _thread = None
 import importlib
 import importlib.util
 import os
@@ -23,7 +19,6 @@ def requires_load_dynamic(meth):
                            'imp.load_dynamic() required')(meth)
 
 
-@unittest.skipIf(_thread is None, '_thread module is required')
 class LockTests(unittest.TestCase):
 
     """Very basic test of import lock functions."""

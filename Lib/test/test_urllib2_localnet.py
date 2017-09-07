@@ -4,12 +4,11 @@ import email
 import urllib.parse
 import urllib.request
 import http.server
+import threading
 import unittest
 import hashlib
 
 from test import support
-
-threading = support.import_module('threading')
 
 try:
     import ssl
@@ -276,7 +275,6 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
 
 # Test cases
 
-@unittest.skipUnless(threading, "Threading required for this test.")
 class BasicAuthTests(unittest.TestCase):
     USER = "testUser"
     PASSWD = "testPass"
@@ -317,7 +315,6 @@ class BasicAuthTests(unittest.TestCase):
         self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen, self.server_url)
 
 
-@unittest.skipUnless(threading, "Threading required for this test.")
 class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
 
@@ -439,7 +436,6 @@ def GetRequestHandler(responses):
     return FakeHTTPRequestHandler
 
 
-@unittest.skipUnless(threading, "Threading required for this test.")
 class TestUrlopen(unittest.TestCase):
     """Tests urllib.request.urlopen using the network.
 

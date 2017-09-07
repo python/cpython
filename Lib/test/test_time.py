@@ -9,10 +9,6 @@ import sysconfig
 import time
 import unittest
 try:
-    import threading
-except ImportError:
-    threading = None
-try:
     import _testcapi
 except ImportError:
     _testcapi = None

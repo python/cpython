@@ -31,13 +31,8 @@ import logging.handlers
 import re
 import struct
 import sys
+import threading
 import traceback
-
-try:
-    import _thread as thread
-    import threading
-except ImportError: #pragma: no cover
-    thread = None
 
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
@@ -816,8 +811,6 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
     normal. Note that you can return transformed bytes, e.g. by decrypting
     the bytes passed in.
     """
-    if not thread: #pragma: no cover
-        raise NotImplementedError("listen() needs threading to work")
 
     class ConfigStreamHandler(StreamRequestHandler):
         """

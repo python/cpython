@@ -10,9 +10,9 @@ active threads survive in the child after a fork(); this is an error.
 """
 
 import os, sys, time, unittest
+import threading
 import test.support as support
 
-threading = support.import_module('threading')
 
 LONGSLEEP = 2
 SHORTSLEEP = 0.5

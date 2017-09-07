@@ -218,12 +218,10 @@ PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 #endif /* !Py_LIMITED_API */
-#ifdef WITH_THREAD
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
 #endif /* !Py_LIMITED_API */
-#endif
 
 /* Return the current thread state. The global interpreter lock must be held.
  * When the current thread state is NULL, this issues a fatal error (so that
@@ -257,7 +255,6 @@ typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}
         PyGILState_STATE;
 
-#ifdef WITH_THREAD
 
 /* Ensure that the current thread is ready to call the Python
    C API, regardless of the current state of Python, or of its
@@ -319,7 +316,6 @@ PyAPI_FUNC(int) PyGILState_Check(void);
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 #endif
 
-#endif   /* #ifdef WITH_THREAD */
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
    thread id to that thread's current frame.

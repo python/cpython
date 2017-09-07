@@ -10,6 +10,7 @@ import socket
 import io
 import errno
 import os
+import threading
 import time
 try:
     import ssl
@@ -19,7 +20,6 @@ except ImportError:
 from unittest import TestCase, skipUnless
 from test import support
 from test.support import HOST, HOSTv6
-threading = support.import_module('threading')
 
 TIMEOUT = 3
 # the dummy data returned by server over the data channel when

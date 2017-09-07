@@ -12,10 +12,7 @@ import hashlib
 import itertools
 import os
 import sys
-try:
-    import threading
-except ImportError:
-    threading = None
+import threading
 import unittest
 import warnings
 from test import support
@@ -738,7 +735,6 @@ class HashLibTestCase(unittest.TestCase):
         m = hashlib.md5(b'x' * gil_minsize)
         self.assertEqual(m.hexdigest(), 'cfb767f225d58469c5de3632a8803958')
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_threaded_hashing(self):
         # Updating the same hash object from several threads at once

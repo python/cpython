@@ -749,7 +749,6 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     PyThreadState *tstate;
     unsigned int nthreads;
 
-#ifdef WITH_THREAD
     if (current_tstate == NULL) {
         /* _Py_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
@@ -777,21 +776,6 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             interp = current_tstate->interp;
         }
     }
-#else
-    if (current_tstate == NULL) {
-        /* Call _PyThreadState_UncheckedGet() instead of PyThreadState_Get()
-           to not fail with a fatal error if the thread state is NULL. */
-        current_tstate = _PyThreadState_UncheckedGet();
-    }
-
-    if (interp == NULL) {
-        if (current_tstate == NULL) {
-            /* We need the interpreter state to get Python threads */
-            return "unable to get the interpreter state";
-        }
-        interp = current_tstate->interp;
-    }
-#endif
     assert(interp != NULL);
 
     /* Get the current interpreter from the current thread */

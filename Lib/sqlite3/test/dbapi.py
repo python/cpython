@@ -21,12 +21,9 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import threading
 import unittest
 import sqlite3 as sqlite
-try:
-    import threading
-except ImportError:
-    threading = None
 
 from test.support import TESTFN, unlink
 
@@ -503,7 +500,6 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(results, expected)
 
 
-@unittest.skipUnless(threading, 'This test requires threading.')
 class ThreadTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")

@@ -15,9 +15,7 @@
 
 #include "Python.h"
 #include "pystrhex.h"
-#ifdef WITH_THREAD
 #include "pythread.h"
-#endif
 
 #include "../hashlib.h"
 #include "blake2ns.h"
@@ -41,9 +39,7 @@ typedef struct {
     PyObject_HEAD
     blake2s_param    param;
     blake2s_state    state;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } BLAKE2sObject;
 
 #include "clinic/blake2s_impl.c.h"
@@ -60,11 +56,9 @@ new_BLAKE2sObject(PyTypeObject *type)
 {
     BLAKE2sObject *self;
     self = (BLAKE2sObject *)type->tp_alloc(type, 0);
-#ifdef WITH_THREAD
     if (self != NULL) {
         self->lock = NULL;
     }
-#endif
     return self;
 }
 
@@ -292,7 +286,6 @@ _blake2s_blake2s_update(BLAKE2sObject *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-#ifdef WITH_THREAD
     if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE)
         self->lock = PyThread_allocate_lock();
 
@@ -305,9 +298,6 @@ _blake2s_blake2s_update(BLAKE2sObject *self, PyObject *obj)
     } else {
         blake2s_update(&self->state, buf.buf, buf.len);
     }
-#else
-    blake2s_update(&self->state, buf.buf, buf.len);
-#endif /* !WITH_THREAD */
     PyBuffer_Release(&buf);
 
     Py_RETURN_NONE;
@@ -407,12 +397,10 @@ py_blake2s_dealloc(PyObject *self)
     /* Try not to leave state in memory. */
     secure_zero_memory(&obj->param, sizeof(obj->param));
     secure_zero_memory(&obj->state, sizeof(obj->state));
-#ifdef WITH_THREAD
     if (obj->lock) {
         PyThread_free_lock(obj->lock);
         obj->lock = NULL;
     }
-#endif
     PyObject_Del(self);
 }
 

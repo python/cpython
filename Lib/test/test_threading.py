@@ -9,8 +9,8 @@ from test.support.script_helper import assert_python_ok, assert_python_failure
 
 import random
 import sys
-_thread = import_module('_thread')
-threading = import_module('threading')
+import _thread
+import threading
 import time
 import unittest
 import weakref

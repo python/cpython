@@ -15,14 +15,11 @@ import time
 import select
 import errno
 import textwrap
+import threading
 
 import unittest
 from test import support, mock_socket
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 HOST = support.HOST
 
@@ -191,7 +188,6 @@ MSG_END = '------------ END MESSAGE ------------\n'
 # test server times out, causing the test to fail.
 
 # Test behavior of smtpd.DebuggingServer
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class DebuggingServerTests(unittest.TestCase):
 
     maxDiff = None
@@ -570,7 +566,6 @@ class NonConnectingTests(unittest.TestCase):
 
 
 # test response of client to a non-successful HELO message
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class BadHELOServerTests(unittest.TestCase):
 
     def setUp(self):
@@ -590,7 +585,6 @@ class BadHELOServerTests(unittest.TestCase):
                             HOST, self.port, 'localhost', 3)
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class TooLongLineTests(unittest.TestCase):
     respdata = b'250 OK' + (b'.' * smtplib._MAXLINE * 2) + b'\n'
 
@@ -835,7 +829,6 @@ class SimSMTPServer(smtpd.SMTPServer):
 
 # Test various SMTP & ESMTP commands/behaviors that require a simulated server
 # (i.e., something with more features than DebuggingServer)
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPSimTests(unittest.TestCase):
 
     def setUp(self):
@@ -1091,7 +1084,6 @@ class SimSMTPUTF8Server(SimSMTPServer):
         self.last_rcpt_options = rcpt_options
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPUTF8SimTests(unittest.TestCase):
 
     maxDiff = None
@@ -1227,7 +1219,6 @@ class SimSMTPAUTHInitialResponseServer(SimSMTPServer):
     channel_class = SimSMTPAUTHInitialResponseChannel
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
     def setUp(self):
         self.real_getfqdn = socket.getfqdn

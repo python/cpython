@@ -230,10 +230,8 @@ typedef struct {
        isn't ready for writing. */
     Py_off_t write_end;
 
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
     volatile unsigned long owner;
-#endif
 
     Py_ssize_t buffer_size;
     Py_ssize_t buffer_mask;
@@ -266,8 +264,6 @@ typedef struct {
 */
 
 /* These macros protect the buffered object against concurrent operations. */
-
-#ifdef WITH_THREAD
 
 static int
 _enter_buffered_busy(buffered *self)
@@ -314,11 +310,6 @@ _enter_buffered_busy(buffered *self)
         self->owner = 0; \
         PyThread_release_lock(self->lock); \
     } while(0);
-
-#else
-#define ENTER_BUFFERED(self) 1
-#define LEAVE_BUFFERED(self)
-#endif
 
 #define CHECK_INITIALIZED(self) \
     if (self->ok <= 0) { \
@@ -401,12 +392,10 @@ buffered_dealloc(buffered *self)
         PyMem_Free(self->buffer);
         self->buffer = NULL;
     }
-#ifdef WITH_THREAD
     if (self->lock) {
         PyThread_free_lock(self->lock);
         self->lock = NULL;
     }
-#endif
     Py_CLEAR(self->dict);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -753,7 +742,6 @@ _buffered_init(buffered *self)
         PyErr_NoMemory();
         return -1;
     }
-#ifdef WITH_THREAD
     if (self->lock)
         PyThread_free_lock(self->lock);
     self->lock = PyThread_allocate_lock();
@@ -762,7 +750,6 @@ _buffered_init(buffered *self)
         return -1;
     }
     self->owner = 0;
-#endif
     /* Find out whether buffer_size is a power of 2 */
     /* XXX is this optimization useful? */
     for (n = self->buffer_size - 1; n & 1; n >>= 1)

@@ -72,10 +72,8 @@ extern int _PyTraceMalloc_Init(void);
 extern int _PyTraceMalloc_Fini(void);
 extern void _Py_ReadyTypes(void);
 
-#ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
 extern void _PyGILState_Fini(void);
-#endif /* WITH_THREAD */
 
 /* Global configuration variable declarations are in pydebug.h */
 /* XXX (ncoghlan): move those declarations to pylifecycle.h? */
@@ -618,7 +616,6 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
         Py_FatalError("Py_InitializeCore: can't make first thread");
     (void) PyThreadState_Swap(tstate);
 
-#ifdef WITH_THREAD
     /* We can't call _PyEval_FiniThreads() in Py_FinalizeEx because
        destroying the GIL might fail when it is being referenced from
        another running thread (see issue #9901).
@@ -627,7 +624,6 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     _PyEval_FiniThreads();
     /* Auto-thread-state API */
     _PyGILState_Init(interp, tstate);
-#endif /* WITH_THREAD */
 
     _Py_ReadyTypes();
 
@@ -1084,9 +1080,7 @@ Py_FinalizeEx(void)
     PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
 
     /* Cleanup auto-thread-state */
-#ifdef WITH_THREAD
     _PyGILState_Fini();
-#endif /* WITH_THREAD */
 
     /* Delete current thread. After this, many C API calls become crashy. */
     PyThreadState_Swap(NULL);
@@ -1142,11 +1136,9 @@ Py_NewInterpreter(void)
     if (!_Py_Initialized)
         Py_FatalError("Py_NewInterpreter: call Py_Initialize first");
 
-#ifdef WITH_THREAD
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
     _PyGILState_check_enabled = 0;
-#endif
 
     interp = PyInterpreterState_New();
     if (interp == NULL)
@@ -1850,9 +1842,7 @@ exit:
 
 /* Clean up and exit */
 
-#ifdef WITH_THREAD
 #  include "pythread.h"
-#endif
 
 static void (*pyexitfunc)(void) = NULL;
 /* For the atexit module. */
@@ -1878,7 +1868,6 @@ call_py_exitfuncs(void)
 static void
 wait_for_thread_shutdown(void)
 {
-#ifdef WITH_THREAD
     _Py_IDENTIFIER(_shutdown);
     PyObject *result;
     PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
@@ -1896,7 +1885,6 @@ wait_for_thread_shutdown(void)
         Py_DECREF(result);
     }
     Py_DECREF(threading);
-#endif
 }
 
 #define NEXITFUNCS 32

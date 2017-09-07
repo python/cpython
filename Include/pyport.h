@@ -797,4 +797,12 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #include <android/api-level.h>
 #endif
 
+/* This macro used to tell whether Python was built with multithreading
+ * enabled.  Now multithreading is always enabled, but keep the macro
+ * for compatibility.
+ */
+#ifndef WITH_THREAD
+#define WITH_THREAD
+#endif
+
 #endif /* Py_PYPORT_H */

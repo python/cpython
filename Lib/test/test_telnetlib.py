@@ -1,11 +1,11 @@
 import socket
 import selectors
 import telnetlib
+import threading
 import contextlib
 
 from test import support
 import unittest
-threading = support.import_module('threading')
 
 HOST = support.HOST
 
