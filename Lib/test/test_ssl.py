@@ -18,6 +18,10 @@ import asyncore
 import weakref
 import platform
 import functools
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
 
 ssl = support.import_module("ssl")
 
@@ -2891,6 +2895,13 @@ class ThreadedTests(unittest.TestCase):
             self.assertEqual(s.read(-1, buffer), len(data))
             self.assertEqual(buffer, data)
 
+            # sendall accepts bytes-like objects
+            if ctypes is not None:
+                ubyte = ctypes.c_ubyte * len(data)
+                byteslike = ubyte.from_buffer_copy(data)
+                s.sendall(byteslike)
+                self.assertEqual(s.read(), data)
+
             # Make sure sendmsg et al are disallowed to avoid
             # inadvertent disclosure of data and/or corruption
             # of the encrypted data stream
@@ -2898,7 +2909,6 @@ class ThreadedTests(unittest.TestCase):
             self.assertRaises(NotImplementedError, s.recvmsg, 100)
             self.assertRaises(NotImplementedError,
                               s.recvmsg_into, bytearray(100))
-
             s.write(b"over\n")
 
             self.assertRaises(ValueError, s.recv, -1)
