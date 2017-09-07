@@ -85,6 +85,12 @@ PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 PyAPI_FUNC(void) _PyRuntimeState_Init(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
 
+#define _Py_CURRENTLY_FINALIZING(tstate) \
+    (_PyRuntime.finalizing == tstate)
+
+
+/* Other */
+
 PyAPI_FUNC(void) _PyInterpreterState_Enable(_PyRuntimeState *);
 
 #ifdef __cplusplus

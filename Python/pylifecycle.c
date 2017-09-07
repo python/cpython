@@ -100,6 +100,12 @@ _PyRuntime_Finalize(void)
     _PyRuntimeState_Fini(&_PyRuntime);
 }
 
+int
+_Py_IsFinalizing(void)
+{
+    return _PyRuntime.finalizing != NULL;
+}
+
 /* Global configuration variable declarations are in pydebug.h */
 /* XXX (ncoghlan): move those declarations to pylifecycle.h? */
 int Py_DebugFlag; /* Needed by parser.c */
