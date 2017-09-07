@@ -7,6 +7,7 @@ import random
 import sys
 import time
 import unittest
+import weakref
 from test import support
 threading = support.import_module('threading')
 
@@ -526,6 +527,20 @@ class BaseSimpleQueueTest:
                                    self.feed, self.consume_timeout)
 
         self.assertEqual(sorted(results), inputs)
+
+    def test_references(self):
+        # The queue should lose references to each item as soon as
+        # it leaves the queue.
+        class C:
+            pass
+
+        N = 20
+        q = self.q
+        for i in range(N):
+            q.put(C())
+        for i in range(N):
+            wr = weakref.ref(q.get())
+            self.assertIsNone(wr())
 
 
 class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
