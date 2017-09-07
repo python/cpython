@@ -650,7 +650,7 @@ DocTestFinder finds the line number of each example:
 
 Line numbers of properties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-DocTestFinder finds the line numbers of each propery example
+DocTestFinder finds the line numbers of each property example
 
     >>> @property
     ... def foo(x):
