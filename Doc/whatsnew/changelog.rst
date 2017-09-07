@@ -2,5 +2,5 @@
 Changelog
 +++++++++
 
-.. miscnews:: ../../Misc/NEWS
+.. miscnews:: ../build/NEWS
 
