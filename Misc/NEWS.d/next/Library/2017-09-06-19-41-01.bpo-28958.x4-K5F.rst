@@ -1,0 +1,2 @@
+ssl.SSLContext() now uses OpenSSL error information when a context cannot be
+instantiated.
