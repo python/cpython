@@ -555,15 +555,16 @@ poll_poll(pollObject *self, PyObject *args)
             return NULL;
         }
 
-        if (ms >= 0)
+        if (timeout >= 0)
             deadline = _PyTime_GetMonotonicClock() + timeout;
-        else    /* On many OSes timeout must be -1 or INFTIM, issue 31334 */
-#ifdef INFTIM
-            ms = INFTIM;
-#else
-            ms = -1;
-#endif
     }
+
+    if (ms < 0) /* On many OSes timeout must be INFTIM or -1, issue 31334 */
+#ifdef INFTIM
+        ms = INFTIM;
+#else
+        ms = -1;
+#endif
 
     /* Avoid concurrent poll() invocation, issue 8865 */
     if (self->poll_running) {
