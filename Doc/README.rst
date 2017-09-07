@@ -37,7 +37,7 @@ the virtual environment was created in the ``env`` directory (the default;
 configurable with the VENVDIR variable), you can run the following command to
 build the HTML output files::
 
-  make html PYTHON=./env/bin/python
+  make html
 
 By default, if the virtual environment is not created, the Makefile will
 look for instances of sphinxbuild and blurb installed on your process PATH
