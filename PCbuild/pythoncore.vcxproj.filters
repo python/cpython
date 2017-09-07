@@ -321,39 +321,6 @@
     <ClInclude Include="..\Modules\_io\_iomodule.h">
       <Filter>Modules\_io</Filter>
     </ClInclude>
-    <ClInclude Include="..\Modules\zlib\crc32.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\deflate.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\inffast.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\inffixed.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\inflate.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\inftrees.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\trees.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\zconf.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\zconf.in.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\zlib.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\zlib\zutil.h">
-      <Filter>Modules\zlib</Filter>
-    </ClInclude>
     <ClInclude Include="..\Modules\cjkcodecs\alg_jisx0201.h">
       <Filter>Modules\cjkcodecs</Filter>
     </ClInclude>
@@ -444,11 +411,41 @@
     <ClInclude Include="..\Include\odictobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="$(zlibDir)\crc32.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\deflate.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inffast.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inffixed.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inflate.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\inftrees.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\trees.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zconf.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zconf.in.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zlib.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zutil.h">
+      <Filter>Modules\zlib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_asynciomodule.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
     <ClCompile Include="..\Modules\_bisectmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -613,39 +610,6 @@
     </ClCompile>
     <ClCompile Include="..\Modules\_io\_iomodule.c">
       <Filter>Modules\_io</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\adler32.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\compress.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\crc32.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\deflate.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\infback.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\inffast.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\inflate.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\inftrees.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\trees.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\uncompr.c">
-      <Filter>Modules\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\zlib\zutil.c">
-      <Filter>Modules\zlib</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\cjkcodecs\_codecs_cn.c">
       <Filter>Modules\cjkcodecs</Filter>
@@ -1000,6 +964,45 @@
     </ClCompile>
     <ClCompile Include="..\Objects\odictobject.c">
       <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PC\_findvs.cpp">
+      <Filter>PC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_asynciomodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\adler32.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\compress.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\crc32.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\deflate.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\infback.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\inffast.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\inflate.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\inftrees.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\trees.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\uncompr.c">
+      <Filter>Modules\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibDir)\zutil.c">
+      <Filter>Modules\zlib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
