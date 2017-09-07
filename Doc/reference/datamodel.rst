@@ -980,9 +980,9 @@ Internal types
       disabled by setting :attr:`f_trace_lines` to :const:`False`.
 
       Implementations *may* allow per-opcode events to be requested by setting
-      :attr:`f_trace_opcodes` to :const:`True`. This is intended specifically
-      for interpreter signal safety testing, and may have surprising results
-      if exceptions are raised by the trace function.
+      :attr:`f_trace_opcodes` to :const:`True`. Note that this may lead to
+      undefined interpreter behaviour if exceptions raised by the trace
+      function escape to the function being traced.
 
       :attr:`f_lineno` is the current line number of the frame --- writing to this
       from within a trace function jumps to the given line (only for the bottom-most
