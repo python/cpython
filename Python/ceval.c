@@ -4458,8 +4458,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         *instr_lb = bounds.ap_lower;
         *instr_ub = bounds.ap_upper;
     }
-    /* Always emit an opcode event if we're tracing all opcodes.
-    */
+    /* Always emit an opcode event if we're tracing all opcodes. */
     if (frame->f_trace_opcodes) {
         result = call_trace(func, obj, tstate, frame, PyTrace_OPCODE, Py_None);
     }
