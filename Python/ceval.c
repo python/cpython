@@ -1807,9 +1807,11 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             switch (oparg) {
             case 2:
                 cause = POP(); /* cause */
+                /* fall through */
             case 1:
                 exc = POP(); /* exc */
-            case 0: /* Fallthrough */
+                /* fall through */
+            case 0:
                 if (do_raise(exc, cause)) {
                     why = WHY_EXCEPTION;
                     goto fast_block_end;
@@ -5052,7 +5054,7 @@ import_from(PyObject *v, PyObject *name)
         Py_DECREF(pkgname);
         return NULL;
     }
-    x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
+    x = _PyImport_GetModule(fullmodname);
     Py_DECREF(fullmodname);
     if (x == NULL) {
         goto error;

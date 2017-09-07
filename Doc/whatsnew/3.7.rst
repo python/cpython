@@ -140,6 +140,15 @@ Improved Modules
 ================
 
 
+argparse
+--------
+
+The :meth:`~argparse.ArgumentParser.parse_intermixed_args` supports letting
+the user intermix options and positional arguments on the command line,
+as is possible in many unix commands.  It supports most but not all
+argparse features.  (Contributed by paul.j3 in :issue:`14191`.)
+
+
 binascii
 --------
 
@@ -223,6 +232,13 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+string
+------
+
+:class:`string.Template` now lets you to optionally modify the regular
+expression pattern for braced placeholders and non-braced placeholders
+separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
 unittest.mock
 -------------
 
@@ -257,6 +273,13 @@ uu
 Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+zipapp
+------
+
+Function :func:`zipapp.create_archive` now accepts an optional *filter*
+argument, to allow the user to select which files should be included in the
+archive.
 
 
 Optimizations
@@ -441,6 +464,9 @@ Changes in the Python API
   anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
   and module are affected by this change. (Contributed by INADA Naoki and
   Eugene Toder in :issue:`29463`.)
+
+* ``PyInterpreterState`` no longer has a ``modules`` field.  Instead use
+  ``sys.modules``.
 
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
   permission bits of newly-created intermediate-level directories.

@@ -1,0 +1,3 @@
+Fix concurrent.futures.thread.ThreadPoolExecutor threads to have a non
+repr() based thread name by default when no thread_name_prefix is supplied.
+They will now identify themselves as "ThreadPoolExecutor-y_n".

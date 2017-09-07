@@ -1,0 +1,3 @@
+The compiler now produces more optimal code for complex condition
+expressions in the "if", "while" and "assert" statement, the "if"
+expression, and generator expressions and comprehensions.

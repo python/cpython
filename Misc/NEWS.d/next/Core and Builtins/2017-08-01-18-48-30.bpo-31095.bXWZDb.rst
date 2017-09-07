@@ -1,0 +1,2 @@
+Fix potential crash during GC caused by ``tp_dealloc`` which doesn't call
+``PyObject_GC_UnTrack()``.

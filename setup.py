@@ -715,6 +715,12 @@ class PyBuildExt(build_ext):
         # syslog daemon interface
         exts.append( Extension('syslog', ['syslogmodule.c']) )
 
+        # Fuzz tests.
+        exts.append( Extension(
+            '_xxtestfuzz',
+            ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c'])
+        )
+
         #
         # Here ends the simple stuff.  From here on, modules need certain
         # libraries, are platform-specific, or present other surprises.
@@ -1518,6 +1524,7 @@ class PyBuildExt(build_ext):
         if '--with-system-expat' in sysconfig.get_config_var("CONFIG_ARGS"):
             expat_inc = []
             define_macros = []
+            extra_compile_args = []
             expat_lib = ['expat']
             expat_sources = []
             expat_depends = []
@@ -1525,7 +1532,11 @@ class PyBuildExt(build_ext):
             expat_inc = [os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')]
             define_macros = [
                 ('HAVE_EXPAT_CONFIG_H', '1'),
+                # bpo-30947: Python uses best available entropy sources to
+                # call XML_SetHashSalt(), expat entropy sources are not needed
+                ('XML_POOR_ENTROPY', '1'),
             ]
+            extra_compile_args = []
             expat_lib = []
             expat_sources = ['expat/xmlparse.c',
                              'expat/xmlrole.c',
@@ -1543,8 +1554,15 @@ class PyBuildExt(build_ext):
                              'expat/xmltok_impl.h'
                              ]
 
+            cc = sysconfig.get_config_var('CC').split()[0]
+            ret = os.system(
+                      '"%s" -Werror -Wimplicit-fallthrough -E -xc /dev/null >/dev/null 2>&1' % cc)
+            if ret >> 8 == 0:
+                extra_compile_args.append('-Wno-implicit-fallthrough')
+
         exts.append(Extension('pyexpat',
                               define_macros = define_macros,
+                              extra_compile_args = extra_compile_args,
                               include_dirs = expat_inc,
                               libraries = expat_lib,
                               sources = ['pyexpat.c'] + expat_sources,
@@ -2003,16 +2021,9 @@ class PyBuildExt(build_ext):
             ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
-            with open(ffi_h) as f:
-                for line in f:
-                    line = line.strip()
-                    if line.startswith(('#define LIBFFI_H',
-                                        '#define ffi_wrapper_h')):
-                        break
-                else:
-                    ffi_inc = None
-                    print('Header file {} does not define LIBFFI_H or '
-                          'ffi_wrapper_h'.format(ffi_h))
+            if not os.path.exists(ffi_h):
+                ffi_inc = None
+                print('Header file {} does not exist'.format(ffi_h))
         ffi_lib = None
         if ffi_inc is not None:
             for lib_name in ('ffi', 'ffi_pic'):
@@ -2118,9 +2129,6 @@ class PyBuildExt(build_ext):
                 define_macros = config['ansi32']
         else:
             raise DistutilsError("_decimal: unsupported architecture")
-
-        if 'gcc' in cc: # Suppressing the warnings in the source is too verbose.
-            extra_compile_args.append('-Wno-implicit-fallthrough')
 
         # Workarounds for toolchain bugs:
         if sysconfig.get_config_var('HAVE_IPA_PURE_CONST_BUG'):

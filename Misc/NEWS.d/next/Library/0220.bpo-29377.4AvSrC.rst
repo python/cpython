@@ -1,0 +1,2 @@
+Add WrapperDescriptorType, MethodWrapperType, and MethodDescriptorType
+built-in types to types module. Original patch by Manuel Krebber.

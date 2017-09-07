@@ -1,0 +1,2 @@
+Avoid KeyboardInterrupt tracebacks in forkserver helper process when Ctrl-C
+is received.
