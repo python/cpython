@@ -1641,12 +1641,9 @@ class PyBuildExt(build_ext):
                 sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
 
-        if sysconfig.get_config_var('WITH_THREAD'):
-            exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
-                                    define_macros=list(macros.items()),
-                                    include_dirs=["Modules/_multiprocessing"]))
-        else:
-            missing.append('_multiprocessing')
+        exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
+                                define_macros=list(macros.items()),
+                                include_dirs=["Modules/_multiprocessing"]))
         # End multiprocessing
 
         # Platform-specific libraries
@@ -2140,10 +2137,6 @@ class PyBuildExt(build_ext):
             # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
             # http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
             undef_macros.append('_FORTIFY_SOURCE')
-
-        # Faster version without thread local contexts:
-        if not sysconfig.get_config_var('WITH_THREAD'):
-            define_macros.append(('WITHOUT_THREADS', 1))
 
         # Uncomment for extra functionality:
         #define_macros.append(('EXTRA_FUNCTIONALITY', 1))

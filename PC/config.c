@@ -97,9 +97,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_sha3", PyInit__sha3},
     {"_blake2", PyInit__blake2},
     {"time", PyInit_time},
-#ifdef WITH_THREAD
     {"_thread", PyInit__thread},
-#endif
 #ifdef WIN32
     {"msvcrt", PyInit_msvcrt},
     {"_locale", PyInit__locale},
