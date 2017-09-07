@@ -556,7 +556,6 @@ PyDoc_STRVAR(getcheckinterval_doc,
 "getcheckinterval() -> current check interval; see setcheckinterval()."
 );
 
-#ifdef WITH_THREAD
 static PyObject *
 sys_setswitchinterval(PyObject *self, PyObject *args)
 {
@@ -593,8 +592,6 @@ sys_getswitchinterval(PyObject *self, PyObject *args)
 PyDoc_STRVAR(getswitchinterval_doc,
 "getswitchinterval() -> current thread switch interval; see setswitchinterval()."
 );
-
-#endif /* WITH_THREAD */
 
 static PyObject *
 sys_setrecursionlimit(PyObject *self, PyObject *args)
@@ -1418,12 +1415,10 @@ static PyMethodDef sys_methods[] = {
      setcheckinterval_doc},
     {"getcheckinterval",        sys_getcheckinterval, METH_NOARGS,
      getcheckinterval_doc},
-#ifdef WITH_THREAD
     {"setswitchinterval",       sys_setswitchinterval, METH_VARARGS,
      setswitchinterval_doc},
     {"getswitchinterval",       sys_getswitchinterval, METH_NOARGS,
      getswitchinterval_doc},
-#endif
 #ifdef HAVE_DLOPEN
     {"setdlopenflags", sys_setdlopenflags, METH_VARARGS,
      setdlopenflags_doc},
@@ -2055,9 +2050,7 @@ _PySys_BeginInit(void)
                         PyUnicode_FromString("legacy"));
 #endif
 
-#ifdef WITH_THREAD
     SET_SYS_FROM_STRING("thread_info", PyThread_GetInfo());
-#endif
 
     /* initialize asyncgen_hooks */
     if (AsyncGenHooksType.tp_name == NULL) {

@@ -8,6 +8,7 @@
 #include "node.h"
 #include "ast.h"
 #include "token.h"
+#include "pythonrun.h"
 
 #include <assert.h>
 
@@ -4270,6 +4271,55 @@ decode_bytes_with_escapes(struct compiling *c, const node *n, const char *s,
     return result;
 }
 
+/* Shift locations for the given node and all its children by adding `lineno`
+   and `col_offset` to existing locations. */
+static void fstring_shift_node_locations(node *n, int lineno, int col_offset)
+{
+    n->n_col_offset = n->n_col_offset + col_offset;
+    for (int i = 0; i < NCH(n); ++i) {
+        if (n->n_lineno && n->n_lineno < CHILD(n, i)->n_lineno) {
+            /* Shifting column offsets unnecessary if there's been newlines. */
+            col_offset = 0;
+        }
+        fstring_shift_node_locations(CHILD(n, i), lineno, col_offset);
+    }
+    n->n_lineno = n->n_lineno + lineno;
+}
+
+/* Fix locations for the given node and its children.
+
+   `parent` is the enclosing node.
+   `n` is the node which locations are going to be fixed relative to parent.
+   `expr_str` is the child node's string representation, incuding braces.
+*/
+static void
+fstring_fix_node_location(const node *parent, node *n, char *expr_str)
+{
+    char *substr = NULL;
+    char *start;
+    int lines = LINENO(parent) - 1;
+    int cols = parent->n_col_offset;
+    /* Find the full fstring to fix location information in `n`. */
+    while (parent && parent->n_type != STRING)
+        parent = parent->n_child;
+    if (parent && parent->n_str) {
+        substr = strstr(parent->n_str, expr_str);
+        if (substr) {
+            start = substr;
+            while (start > parent->n_str) {
+                if (start[0] == '\n')
+                    break;
+                start--;
+            }
+            cols += substr - start;
+            /* Fix lineno in mulitline strings. */
+            while ((substr = strchr(substr + 1, '\n')))
+                lines--;
+        }
+    }
+    fstring_shift_node_locations(n, lines, cols);
+}
+
 /* Compile this expression in to an expr_ty.  Add parens around the
    expression, in order to allow leading spaces in the expression. */
 static expr_ty
@@ -4278,6 +4328,7 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
 
 {
     PyCompilerFlags cf;
+    node *mod_n;
     mod_ty mod;
     char *str;
     Py_ssize_t len;
@@ -4287,9 +4338,10 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     assert(*(expr_start-1) == '{');
     assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
 
-    /* If the substring is all whitespace, it's an error.  We need to catch
-       this here, and not when we call PyParser_ASTFromString, because turning
-       the expression '' in to '()' would go from being invalid to valid. */
+    /* If the substring is all whitespace, it's an error.  We need to catch this
+       here, and not when we call PyParser_SimpleParseStringFlagsFilename,
+       because turning the expression '' in to '()' would go from being invalid
+       to valid. */
     for (s = expr_start; s != expr_end; s++) {
         char c = *s;
         /* The Python parser ignores only the following whitespace
@@ -4315,9 +4367,19 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+2] = 0;
 
     cf.cf_flags = PyCF_ONLY_AST;
-    mod = PyParser_ASTFromString(str, "<fstring>",
-                                 Py_eval_input, &cf, c->c_arena);
+    mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
+                                                    Py_eval_input, 0);
+    if (!mod_n) {
+        PyMem_RawFree(str);
+        return NULL;
+    }
+    /* Reuse str to find the correct column offset. */
+    str[0] = '{';
+    str[len+1] = '}';
+    fstring_fix_node_location(n, mod_n, str);
+    mod = PyAST_FromNode(mod_n, &cf, "<fstring>", c->c_arena);
     PyMem_RawFree(str);
+    PyNode_Free(mod_n);
     if (!mod)
         return NULL;
     return mod->v.Expression.body;

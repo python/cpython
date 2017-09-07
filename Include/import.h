@@ -100,13 +100,8 @@ PyAPI_FUNC(int) PyImport_ImportFrozenModule(
     );
 
 #ifndef Py_LIMITED_API
-#ifdef WITH_THREAD
 PyAPI_FUNC(void) _PyImport_AcquireLock(void);
 PyAPI_FUNC(int) _PyImport_ReleaseLock(void);
-#else
-#define _PyImport_AcquireLock()
-#define _PyImport_ReleaseLock() 1
-#endif
 
 PyAPI_FUNC(void) _PyImport_ReInitLock(void);
 
