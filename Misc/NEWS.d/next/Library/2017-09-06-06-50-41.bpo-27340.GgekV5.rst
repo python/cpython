@@ -1,0 +1,3 @@
+SSLSocket.sendall() now uses memoryview to create slices of data. This fixes
+support for all bytes-like object. It is also more efficient and avoids
+costly copies.
