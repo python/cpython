@@ -61,7 +61,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         if (PyType_Check(base)) {
             continue;
         }
-        new_base_meth = PyObject_GetAttrString(base, "__base_subclass__");
+        new_base_meth = PyObject_GetAttrString(base, "__subclass_base__");
         if (!new_base_meth) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 PyErr_Clear();
@@ -71,7 +71,7 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         }
         if (!PyCallable_Check(new_base_meth)) {
             PyErr_SetString(PyExc_TypeError,
-                            "__base_subclass__ must be callable");
+                            "__subclass_base__ must be callable");
             return NULL;
         }
         new_base = _PyObject_FastCall(new_base_meth, stack, 1);
