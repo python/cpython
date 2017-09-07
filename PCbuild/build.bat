@@ -84,7 +84,7 @@ if "%~1"=="-E" (set IncludeExternals=false) & shift & goto CheckOpts
 if "%~1"=="--no-ssl" (set IncludeSSL=false) & shift & goto CheckOpts
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
 
-if "%IncludeExternals%"=="" set IncludeExternals=false
+if "%IncludeExternals%"=="" set IncludeExternals=true
 if "%IncludeSSL%"=="" set IncludeSSL=true
 if "%IncludeTkinter%"=="" set IncludeTkinter=true
 
