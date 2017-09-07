@@ -1,4 +1,7 @@
 #include "Python.h"
+#ifdef Py_BUILD_CORE  /* _pickle is built-in on Windows. */
+#include "internal/pystate.h"
+#endif
 #include "structmember.h"
 
 PyDoc_STRVAR(pickle_module_doc,

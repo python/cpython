@@ -1,4 +1,7 @@
 #include "Python.h"
+#ifdef Py_BUILD_CORE  /* _json is built-in on Windows. */
+#include "internal/pystate.h"
+#endif
 #include "structmember.h"
 #include "accu.h"
 
