@@ -1397,9 +1397,6 @@
 /* Define if you want to compile in Python-specific mallocs */
 #undef WITH_PYMALLOC
 
-/* Define if you want to compile in rudimentary thread support */
-#undef WITH_THREAD
-
 /* Define if you want pymalloc to be disabled when running under valgrind */
 #undef WITH_VALGRIND
 

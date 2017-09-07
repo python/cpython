@@ -14,6 +14,7 @@ import selectors
 import sysconfig
 import select
 import shutil
+import threading
 import gc
 import textwrap
 
@@ -23,11 +24,6 @@ except ImportError:
     ctypes = None
 else:
     import ctypes.util
-
-try:
-    import threading
-except ImportError:
-    threading = None
 
 try:
     import _testcapi
@@ -1196,7 +1192,6 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stderr, "")
         self.assertEqual(proc.returncode, 0)
 
-    @unittest.skipIf(threading is None, "threading required")
     def test_double_close_on_error(self):
         # Issue #18851
         fds = []
@@ -1226,7 +1221,6 @@ class ProcessTestCase(BaseTestCase):
             if exc is not None:
                 raise exc
 
-    @unittest.skipIf(threading is None, "threading required")
     def test_threadsafe_wait(self):
         """Issue21291: Popen.wait() needs to be threadsafe for returncode."""
         proc = subprocess.Popen([sys.executable, '-c',

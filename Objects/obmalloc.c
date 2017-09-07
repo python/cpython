@@ -1967,11 +1967,9 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 static void
 _PyMem_DebugCheckGIL(void)
 {
-#ifdef WITH_THREAD
     if (!PyGILState_Check())
         Py_FatalError("Python memory allocator called "
                       "without holding the GIL");
-#endif
 }
 
 static void *

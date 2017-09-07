@@ -1,10 +1,11 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
 import queue
+import threading
 import time
 import unittest
 from test import support
-threading = support.import_module('threading')
+
 
 QUEUE_SIZE = 5
 

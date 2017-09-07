@@ -4,10 +4,7 @@ import os
 import subprocess
 import random
 import select
-try:
-    import threading
-except ImportError:
-    threading = None
+import threading
 import time
 import unittest
 from test.support import TESTFN, run_unittest, reap_threads, cpython_only
@@ -179,7 +176,6 @@ class PollTests(unittest.TestCase):
         self.assertRaises(OverflowError, pollster.poll, INT_MAX + 1)
         self.assertRaises(OverflowError, pollster.poll, UINT_MAX + 1)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @reap_threads
     def test_threaded_poll(self):
         r, w = os.pipe()
