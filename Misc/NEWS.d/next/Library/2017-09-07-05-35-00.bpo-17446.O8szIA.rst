@@ -1,1 +1,2 @@
 Detect line numbers of properties in doctests.
+Contributed by Michael Scott Cuthbert and Timo Furrer
