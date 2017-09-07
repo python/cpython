@@ -1,0 +1,3 @@
+Location information (``lineno`` and ``col_offset``) in f-strings is now
+(mostly) correct.  This fixes tools like flake8 from showing warnings on the
+wrong line (typically the first line of the file).
