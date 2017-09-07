@@ -27,7 +27,6 @@ struct _gil_runtime_state {
     _Py_atomic_int locked;
     /* Number of GIL switches since the beginning. */
     unsigned long switch_number;
-#ifdef WITH_THREAD
     /* This condition variable allows one or several threads to wait
        until the GIL is released. In addition, the mutex also protects
        the above variables. */
@@ -39,7 +38,6 @@ struct _gil_runtime_state {
     PyCOND_T switch_cond;
     PyMUTEX_T switch_mutex;
 #endif
-#endif /* WITH_THREAD */
 };
 
 #ifdef __cplusplus

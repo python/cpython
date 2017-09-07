@@ -6,10 +6,7 @@ extern "C" {
 
 #include "pystate.h"
 #include "pyatomic.h"
-
-#ifdef WITH_THREAD
 #include "pythread.h"
-#endif
 
 #include "internal/mem.h"
 #include "internal/ceval.h"
@@ -24,14 +21,12 @@ struct _gilstate_runtime_state {
        PyThreadState for the current thread. */
     _Py_atomic_address tstate_current;
     PyThreadFrameGetter getframe;
-#ifdef WITH_THREAD
     /* The single PyInterpreterState used by this process'
        GILState implementation
     */
     /* TODO: Given interp_main, it may be possible to kill this ref */
     PyInterpreterState *autoInterpreterState;
     int autoTLSkey;
-#endif /* WITH_THREAD */
 };
 
 /* hook for PyEval_GetFrame(), requested for Psyco */
@@ -50,9 +45,7 @@ typedef struct pyruntimestate {
     PyThreadState *finalizing;
 
     struct pyinterpreters {
-#ifdef WITH_THREAD
         PyThread_type_lock mutex;
-#endif
         PyInterpreterState *head;
         PyInterpreterState *main;
         /* _next_interp_id is an auto-numbered sequence of small
