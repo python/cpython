@@ -646,6 +646,23 @@ DocTestFinder finds the line number of each example:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> [e.lineno for e in test.examples]
     [1, 9, 12]
+
+
+Line numbers of properties
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+DocTestFinder finds the line numbers of each propery example
+
+    >>> @property
+    ... def foo(x):
+    ...     '''
+    ...     >>> 1/1
+    ...     1
+    ...     >>> 41 + 1
+    ...     42
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(foo, "foo")[0]
+    >>> [e.lineno for e in test.examples]
+    [1, 3]
 """
 
     if int.__doc__: # simple check for --without-doc-strings, skip if lacking

@@ -1096,6 +1096,12 @@ class DocTestFinder:
         if inspect.isframe(obj): obj = obj.f_code
         if inspect.iscode(obj):
             lineno = getattr(obj, 'co_firstlineno', None)-1
+        if lineno is None and isinstance(obj, property) \
+                and obj.fget is not None \
+                and hasattr(obj.fget, "__code__"):
+            obj = obj.fget.__code__
+            # no need to subtract 1 because of decorator line
+            lineno = getattr(obj, 'co_firstlineno', None)
 
         # Find the line number where the docstring starts.  Assume
         # that it's the first line that begins with a quote mark.
