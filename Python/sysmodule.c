@@ -349,18 +349,20 @@ same value.");
  * Cached interned string objects used for calling the profile and
  * trace functions.  Initialized by trace_init().
  */
-static PyObject *whatstrings[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+static PyObject *whatstrings[8] = {
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,NULL};
 
 static int
 trace_init(void)
 {
-    static const char * const whatnames[7] = {
+    static const char * const whatnames[8] = {
         "call", "exception", "line", "return",
-        "c_call", "c_exception", "c_return"
+        "c_call", "c_exception", "c_return",
+        "instruction"
     };
     PyObject *name;
     int i;
-    for (i = 0; i < 7; ++i) {
+    for (i = 0; i < 8; ++i) {
         if (whatstrings[i] == NULL) {
             name = PyUnicode_InternFromString(whatnames[i]);
             if (name == NULL)
@@ -430,7 +432,7 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
         return 0;
     result = call_trampoline(callback, frame, what, arg);
     if (result == NULL) {
-        PyEval_SetTrace(NULL, NULL);
+        _PyEval_SetTraceEx(NULL, NULL, 0);
         Py_CLEAR(frame->f_trace);
         return -1;
     }
@@ -463,15 +465,48 @@ function call.  See the debugger chapter in the library manual."
 );
 
 static PyObject *
+sys_settracestate(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *trace_func = NULL;
+    int trace_instructions;
+    static char *keywords[] = {"trace_func", "trace_instructions", 0};
+    if (trace_init() == -1)
+        return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$p:settracestate",
+                                     keywords, &trace_func,
+                                     &trace_instructions))
+        return NULL;
+
+    if (trace_func == Py_None)
+        _PyEval_SetTraceEx(NULL, NULL, 0);
+    else
+        _PyEval_SetTraceEx(trace_trampoline, trace_func, trace_instructions);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(settracestate_doc,
+"settracestate(function)\n\
+\n\
+Set the global debug tracing function, and enable instruction tracing.  \n\
+TODO: refer to the detailed documentation (also fix settrace doc above)."
+);
+
+static PyObject *
 sys_gettrace(PyObject *self, PyObject *args)
 {
     PyThreadState *tstate = PyThreadState_GET();
-    PyObject *temp = tstate->c_traceobj;
+    PyObject *trace_func = tstate->c_traceobj;
 
-    if (temp == NULL)
-        temp = Py_None;
-    Py_INCREF(temp);
-    return temp;
+    if (tstate->trace_instructions) {
+        PyErr_Format(PyExc_ValueError,
+            "trace_instructions has been set to True; "
+            "use sys.getttracestate to capture the complete state");
+        return NULL;
+    }
+    if (trace_func == NULL)
+        trace_func = Py_None;
+    Py_INCREF(trace_func);
+    return trace_func;
 }
 
 PyDoc_STRVAR(gettrace_doc,
@@ -479,6 +514,30 @@ PyDoc_STRVAR(gettrace_doc,
 \n\
 Return the global debug tracing function set with sys.settrace.\n\
 See the debugger chapter in the library manual."
+);
+
+static PyObject *
+sys_gettracestate(PyObject *self, PyObject *args)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    PyObject *trace_func = tstate->c_traceobj;
+    PyObject *trace_instructions = PyBool_FromLong(tstate->trace_instructions);
+
+    if (trace_func == NULL)
+        trace_func = Py_None;
+    Py_INCREF(trace_func);
+
+    return Py_BuildValue("{s:O,s:O}", "trace_func", trace_func,
+        "trace_instructions", trace_instructions);
+}
+
+PyDoc_STRVAR(gettracestate_doc,
+"gettracestate()\n\
+\n\
+Returns a dictionary containing the complete tracing state. \n\
+Currently this consists of \"tracefunc\", the global tracing function, \n\
+and \"trace_instructions\", a boolean indicating whether instruction \n\
+tracing is enabled."
 );
 
 static PyObject *
@@ -1428,7 +1487,10 @@ static PyMethodDef sys_methods[] = {
     {"setrecursionlimit", sys_setrecursionlimit, METH_VARARGS,
      setrecursionlimit_doc},
     {"settrace",        sys_settrace, METH_O, settrace_doc},
+    {"settracestate",    (PyCFunction)sys_settracestate, METH_VARARGS | METH_KEYWORDS,
+     settracestate_doc},
     {"gettrace",        sys_gettrace, METH_NOARGS, gettrace_doc},
+    {"gettracestate",    sys_gettracestate, METH_NOARGS, gettracestate_doc},
     {"call_tracing", sys_call_tracing, METH_VARARGS, call_tracing_doc},
     {"_debugmallocstats", sys_debugmallocstats, METH_NOARGS,
      debugmallocstats_doc},

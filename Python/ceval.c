@@ -4465,6 +4465,10 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         frame->f_lineno = line;
         result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
     }
+    else if (tstate->trace_instructions) {
+        result = call_trace(func, obj, tstate, frame, PyTrace_INSTRUCTION,
+                            Py_None);
+    }
     *instr_prev = frame->f_lasti;
     return result;
 }
@@ -4487,22 +4491,31 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 }
 
 void
-PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
+_PyEval_SetTraceEx(Py_tracefunc func, PyObject *traceobj,
+                   int trace_instructions)
 {
     PyThreadState *tstate = PyThreadState_GET();
-    PyObject *temp = tstate->c_traceobj;
+    PyObject *old_traceobj = tstate->c_traceobj;
     _Py_TracingPossible += (func != NULL) - (tstate->c_tracefunc != NULL);
-    Py_XINCREF(arg);
+    Py_XINCREF(traceobj);
     tstate->c_tracefunc = NULL;
     tstate->c_traceobj = NULL;
-    /* Must make sure that profiling is not ignored if 'temp' is freed */
+    /* Make sure that profiling is not ignored if 'old_traceobj' is freed */
     tstate->use_tracing = tstate->c_profilefunc != NULL;
-    Py_XDECREF(temp);
+    Py_XDECREF(old_traceobj);
     tstate->c_tracefunc = func;
-    tstate->c_traceobj = arg;
+    tstate->c_traceobj = traceobj;
+    tstate->trace_instructions = trace_instructions;
     /* Flag that tracing or profiling is turned on */
     tstate->use_tracing = ((func != NULL)
                            || (tstate->c_profilefunc != NULL));
+}
+
+void
+PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
+{
+    /* trace_instructions=False. */
+    _PyEval_SetTraceEx(func, arg, 0);
 }
 
 void

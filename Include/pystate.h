@@ -100,6 +100,7 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_CALL 4
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
+#define PyTrace_INSTRUCTION 7
 #endif
 
 #ifdef Py_LIMITED_API
@@ -123,6 +124,7 @@ typedef struct _ts {
        the trace/profile. */
     int tracing;
     int use_tracing;
+    int trace_instructions; /* whether to trace every instruction. */
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;

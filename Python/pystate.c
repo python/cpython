@@ -238,6 +238,7 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->recursion_critical = 0;
         tstate->tracing = 0;
         tstate->use_tracing = 0;
+        tstate->trace_instructions = 0;
         tstate->gilstate_counter = 0;
         tstate->async_exc = NULL;
         tstate->thread_id = PyThread_get_thread_ident();
@@ -441,6 +442,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     tstate->c_profilefunc = NULL;
     tstate->c_tracefunc = NULL;
+
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
 
