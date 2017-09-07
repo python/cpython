@@ -5,9 +5,9 @@
 
 # You can set these variables from the command line.
 PYTHON       = python3
-VENVDIR      = venv
-SPHINXBUILD  = $(PYTHON) -m sphinx
-BLURB        = $(PYTHON) -m blurb
+VENVDIR      = ./venv
+SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
+BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
@@ -123,7 +123,7 @@ clean:
 
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
-	./$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
+	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:

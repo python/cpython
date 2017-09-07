@@ -39,6 +39,10 @@ build the HTML output files::
 
   make html PYTHON=./env/bin/python
 
+By default, if the virtual environment is not created, the Makefile will
+look for instances of sphinxbuild and blurb installed on your process PATH
+(configurable with the SPHINXBUILD and BLURB variables).
+
 On Windows, we try to emulate the Makefile as closely as possible with a
 ``make.bat`` file. If you need to specify the Python interpreter to use,
 set the PYTHON environment variable instead.
