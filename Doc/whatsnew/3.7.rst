@@ -140,6 +140,15 @@ Improved Modules
 ================
 
 
+argparse
+--------
+
+The :meth:`~argparse.ArgumentParser.parse_intermixed_args` supports letting
+the user intermix options and positional arguments on the command line,
+as is possible in many unix commands.  It supports most but not all
+argparse features.  (Contributed by paul.j3 in :issue:`14191`.)
+
+
 binascii
 --------
 
