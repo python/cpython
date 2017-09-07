@@ -1116,7 +1116,6 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     /* The empty frozenset is a singleton */
     if (emptyfrozenset == NULL)
-        /* There is a possible (relatively harmless) race here. */
         emptyfrozenset = make_new_set(type, NULL);
     Py_XINCREF(emptyfrozenset);
     return emptyfrozenset;
