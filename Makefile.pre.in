@@ -898,6 +898,14 @@ memtest:	@DEF_MAKE_RULE@ platform
 		-$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 		$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 
+# SSL tests
+.PHONY: multisslcompile multissltest
+multisslcompile: build_all
+	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py --compile-only
+
+multissltest: build_all
+	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py
+
 # Install everything
 install:	@FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
