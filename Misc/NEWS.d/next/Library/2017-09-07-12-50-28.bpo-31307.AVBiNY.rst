@@ -1,0 +1,2 @@
+Allow use of bytes object as a single argument in
+``configparser.ConfigParser.read()``.
