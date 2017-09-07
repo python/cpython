@@ -1311,8 +1311,9 @@ are always available.  They are listed here in alphabetical order.
    negative).  The return value is an integer if *ndigits* is omitted or is ``None``.
    Otherwise the return value has the same type as *number*.
 
-   For a general Python object ``number``, ``round`` delegates to
-   ``number.__round__``.
+   For a general Python object, ``round(number)`` or ``round(number, None)``
+   delegates to ``number.__round__()``, and ``round(number, ndigits)`` delegates
+   to ``number.__round__(ndigits)``.
 
    .. note::
 
