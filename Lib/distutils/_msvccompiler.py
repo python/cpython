@@ -72,7 +72,7 @@ def _find_vc2017():
     t.join()
 
     for name, version_str, path, packages in all_packages:
-        if 'Microsoft.VisualCpp.Tools.Core' in packages:
+        if 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64' in packages:
             vc_dir = os.path.join(path, 'VC', 'Auxiliary', 'Build')
             if not os.path.isdir(vc_dir):
                 continue
