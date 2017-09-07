@@ -115,6 +115,13 @@ always available.
    it drops you into the :mod:`pdb` debugger, but it can be set to any other
    function so that you can choose which debugger gets used.
 
+   The signature of this function is dependent on what it calls.  For example,
+   the default binding (e.g. ``pdb.set_trace()``) expects no arguments, but
+   you might bind it to a function that expects additional arguments
+   (positional and/or keyword).  The built-in ``breakpoint()`` function passes
+   its ``*args`` and ``**kws`` straight through.  Whatever
+   ``breakpointhooks()`` returns is returned from ``breakpoint()``.
+
    .. versionadded:: 3.7
 
 .. function:: _debugmallocstats()
