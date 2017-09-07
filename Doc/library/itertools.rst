@@ -630,26 +630,25 @@ loops that truncate the stream.
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
 
-    def zip_longest(*args, **kwds):
-        # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
-        fillvalue = kwds.get('fillvalue')
-        iterators = [iter(it) for it in args]
-
-        while True:
-            exhausted = 0
-            values = []
-
-            for it in iterators:
-                try:
-                    values.append(next(it))
-                except StopIteration:
-                    values.append(fillvalue)
-                    exhausted += 1
-
-            if exhausted < len(args):
-                yield tuple(values)
-            else:
-                break
+      def zip_longest(*args, fillvalue=None):
+          # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
+          iterators = [iter(it) for it in args]
+          num_active = len(iterators)
+          if not num_active:
+              return
+          while True:
+              values = []
+              for i, it in enumerate(iterators):
+                  try:
+                      value = next(it)
+                  except StopIteration:
+                      num_active -= 1
+                      if not num_active:
+                          return
+                      iterators[i] = repeat(fillvalue)
+                      value = fillvalue
+                  values.append(value)
+              yield tuple(values)
 
    If one of the iterables is potentially infinite, then the :func:`zip_longest`
    function should be wrapped with something that limits the number of calls
