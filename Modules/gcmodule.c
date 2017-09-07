@@ -1065,8 +1065,10 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
             PyErr_Clear();
         }
         else {
-            if (gc_str == NULL)
-                gc_str = PyUnicode_FromString("garbage collection");
+            /* if PyUnicode_FromString() fails: pass NULL
+               to PyErr_WriteUnraisable() */
+            (void)_PY_ONCEVAR_INIT(gc_str,
+                                   PyUnicode_FromString("garbage collection"));
             PyErr_WriteUnraisable(gc_str);
             Py_FatalError("unexpected exception during garbage collection");
         }

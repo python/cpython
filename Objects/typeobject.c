@@ -4424,15 +4424,14 @@ static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
 /*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
-    static PyObject *objreduce;
+    static PyObject *objreduce = NULL;
     PyObject *reduce, *res;
     _Py_IDENTIFIER(__reduce__);
 
-    if (objreduce == NULL) {
-        objreduce = _PyDict_GetItemId(PyBaseObject_Type.tp_dict,
-                                      &PyId___reduce__);
-        if (objreduce == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(objreduce,
+                         _PyDict_GetItemId(PyBaseObject_Type.tp_dict,
+                                           &PyId___reduce__))) {
+        return NULL;
     }
 
     reduce = _PyObject_GetAttrId(self, &PyId___reduce__);
@@ -6365,12 +6364,12 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 }
 
 static _Py_Identifier name_op[] = {
-    {0, "__lt__", 0},
-    {0, "__le__", 0},
-    {0, "__eq__", 0},
-    {0, "__ne__", 0},
-    {0, "__gt__", 0},
-    {0, "__ge__", 0}
+    {"__lt__", 0},
+    {"__le__", 0},
+    {"__eq__", 0},
+    {"__ne__", 0},
+    {"__gt__", 0},
+    {"__ge__", 0}
 };
 
 static PyObject *

@@ -140,12 +140,11 @@ typedef struct {
    _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
 */
 typedef struct _Py_Identifier {
-    struct _Py_Identifier *next;
     const char* string;
     PyObject *object;
 } _Py_Identifier;
 
-#define _Py_static_string_init(value) { .next = NULL, .string = value, .object = NULL }
+#define _Py_static_string_init(value) { .string = value, .object = NULL }
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
@@ -1069,6 +1068,17 @@ _PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
                        size_t sizeof_block);
 PyAPI_FUNC(void)
 _PyObject_DebugTypeStats(FILE *out);
+#endif /* ifndef Py_LIMITED_API */
+
+#ifndef Py_LIMITED_API
+/* Don't use this function directly, but _PY_ONCEVAR_INIT() */
+PyAPI_FUNC(int) _PyOnceVar_Set(PyObject **var, PyObject *value);
+
+/* Initialized the variable 'var' with the expression 'expr'.
+   The variable is only initialized once: do nothing if *var is not NULL.
+   Return 0 on success, return -1 on failure. */
+#define _PY_ONCEVAR_INIT(var, expr) \
+    ((var) == NULL ? _PyOnceVar_Set(&(var), (expr)) : 0)
 #endif /* ifndef Py_LIMITED_API */
 
 #ifdef __cplusplus
