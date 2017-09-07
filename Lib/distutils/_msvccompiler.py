@@ -90,8 +90,24 @@ def _find_vc2017():
 
 def _find_vcvarsall(plat_spec):
     best_version, best_dir = _find_vc2017()
+    vcruntime = None
+    vcruntime_plat = 'x64' if 'amd64' in plat_spec else 'x86'
+    if best_version:
+        try:
+            vcruntime = os.path.join(best_dir, "..", "..", "redist", "MSVC")
+            vcruntime = os.path.join(vcruntime, os.listdir(vcruntime)[-1])
+        except (OSError, LookupError):
+            vcruntime = None
+        else:
+            vcruntime = os.path.join(vcruntime, vcruntime_plat,
+            "Microsoft.VC141.CRT", "vcruntime140.dll")
+
     if not best_version:
         best_version, best_dir = _find_vc2015()
+        if best_version:
+            vcruntime = os.path.join(best_dir, 'redist', vcruntime_plat,
+                "Microsoft.VC140.CRT", "vcruntime140.dll")
+            
     if not best_version:
         log.debug("No suitable Visual C++ version found")
         return None, None
@@ -101,14 +117,9 @@ def _find_vcvarsall(plat_spec):
         log.debug("%s cannot be found", vcvarsall)
         return None, None
 
-    vcruntime = None
-    vcruntime_spec = _VCVARS_PLAT_TO_VCRUNTIME_REDIST.get(plat_spec)
-    if vcruntime_spec:
-        vcruntime = os.path.join(best_dir,
-            vcruntime_spec.format(best_version))
-        if not os.path.isfile(vcruntime):
-            log.debug("%s cannot be found", vcruntime)
-            vcruntime = None
+    if not vcruntime or not os.path.isfile(vcruntime):
+        log.debug("%s cannot be found", vcruntime)
+        vcruntime = None
 
     return vcvarsall, vcruntime
 
@@ -167,14 +178,6 @@ def _find_exe(exe, paths=None):
 PLAT_TO_VCVARS = {
     'win32' : 'x86',
     'win-amd64' : 'x86_amd64',
-}
-
-# A map keyed by get_platform() return values to the file under
-# the VC install directory containing the vcruntime redistributable.
-_VCVARS_PLAT_TO_VCRUNTIME_REDIST = {
-    'x86' : 'redist\\x86\\Microsoft.VC{0}0.CRT\\vcruntime{0}0.dll',
-    'amd64' : 'redist\\x64\\Microsoft.VC{0}0.CRT\\vcruntime{0}0.dll',
-    'x86_amd64' : 'redist\\x64\\Microsoft.VC{0}0.CRT\\vcruntime{0}0.dll',
 }
 
 # A set containing the DLLs that are guaranteed to be available for
