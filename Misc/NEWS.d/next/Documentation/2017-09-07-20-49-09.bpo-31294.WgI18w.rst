@@ -1,0 +1,2 @@
+Fix incomplete code snippet in the ZeroMQSocketListener and
+ZeroMQSocketHandler examples and adapt them to Python 3.
