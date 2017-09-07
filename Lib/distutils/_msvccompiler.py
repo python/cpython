@@ -93,14 +93,13 @@ def _find_vcvarsall(plat_spec):
     vcruntime = None
     vcruntime_plat = 'x64' if 'amd64' in plat_spec else 'x86'
     if best_version:
-        try:
-            vcruntime = os.path.join(best_dir, "..", "..", "redist", "MSVC")
-            vcruntime = os.path.join(vcruntime, os.listdir(vcruntime)[-1])
-        except (OSError, LookupError):
-            vcruntime = None
-        else:
-            vcruntime = os.path.join(vcruntime, vcruntime_plat,
+        vcredist = os.path.join(best_dir, "..", "..", "redist", "MSVC", "**",
             "Microsoft.VC141.CRT", "vcruntime140.dll")
+        try:
+            import glob
+            vcruntime = glob.glob(vcredist, recursive=True)[-1]
+        except (ImportError, OSError, LookupError):
+            vcruntime = None
 
     if not best_version:
         best_version, best_dir = _find_vc2015()
