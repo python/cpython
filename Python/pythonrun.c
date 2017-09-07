@@ -9,10 +9,10 @@
 /* TODO: Cull includes following phase split */
 
 #include "Python.h"
-#include "internal/pystate.h"
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/pystate.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"

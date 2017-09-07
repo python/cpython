@@ -1,10 +1,10 @@
 /* Python interpreter top-level routines, including init/exit */
 
 #include "Python.h"
-#include "internal/pystate.h"
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/pystate.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
