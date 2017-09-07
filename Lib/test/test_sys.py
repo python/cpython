@@ -10,15 +10,12 @@ import codecs
 import gc
 import sysconfig
 import locale
+import threading
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
 numruns = 0
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 class SysModuleTest(unittest.TestCase):
 
@@ -172,7 +169,6 @@ class SysModuleTest(unittest.TestCase):
                 sys.setcheckinterval(n)
                 self.assertEqual(sys.getcheckinterval(), n)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_switchinterval(self):
         self.assertRaises(TypeError, sys.setswitchinterval)
         self.assertRaises(TypeError, sys.setswitchinterval, "a")
@@ -348,21 +344,8 @@ class SysModuleTest(unittest.TestCase):
         )
 
     # sys._current_frames() is a CPython-only gimmick.
-    def test_current_frames(self):
-        have_threads = True
-        try:
-            import _thread
-        except ImportError:
-            have_threads = False
-
-        if have_threads:
-            self.current_frames_with_threads()
-        else:
-            self.current_frames_without_threads()
-
-    # Test sys._current_frames() in a WITH_THREADS build.
     @test.support.reap_threads
-    def current_frames_with_threads(self):
+    def test_current_frames(self):
         import threading
         import traceback
 
@@ -425,15 +408,6 @@ class SysModuleTest(unittest.TestCase):
         # Reap the spawned thread.
         leave_g.set()
         t.join()
-
-    # Test sys._current_frames() when thread support doesn't exist.
-    def current_frames_without_threads(self):
-        # Not much happens here:  there is only one thread, with artificial
-        # "thread id" 0.
-        d = sys._current_frames()
-        self.assertEqual(len(d), 1)
-        self.assertIn(0, d)
-        self.assertTrue(d[0] is sys._getframe())
 
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
@@ -516,8 +490,6 @@ class SysModuleTest(unittest.TestCase):
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
 
-    @unittest.skipUnless(hasattr(sys, 'thread_info'),
-                         'Threading required for this test.')
     def test_thread_info(self):
         info = sys.thread_info
         self.assertEqual(len(info), 3)

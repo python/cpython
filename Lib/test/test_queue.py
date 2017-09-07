@@ -5,11 +5,12 @@ import itertools
 import queue
 import random
 import sys
+import threading
 import time
 import unittest
 import weakref
 from test import support
-threading = support.import_module('threading')
+
 
 try:
     import _queue

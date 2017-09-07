@@ -351,8 +351,8 @@ installed, you can use a 32bit version of Windows to create 64bit extensions
 and vice-versa.
 
 To build for an alternate platform, specify the :option:`!--plat-name` option
-to the build command.  Valid values are currently 'win32', 'win-amd64' and
-'win-ia64'.  For example, on a 32bit version of Windows, you could execute::
+to the build command.  Valid values are currently 'win32', and  'win-amd64'.
+For example, on a 32bit version of Windows, you could execute::
 
    python setup.py build --plat-name=win-amd64
 
