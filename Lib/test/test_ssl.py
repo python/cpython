@@ -18,6 +18,10 @@ import asyncore
 import weakref
 import platform
 import functools
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
 
 ssl = support.import_module("ssl")
 
@@ -2882,7 +2886,13 @@ if _have_threads:
                 s.send(data)
                 buffer = bytearray(len(data))
                 self.assertEqual(s.read(-1, buffer), len(data))
-                self.assertEqual(buffer, data)
+                self.assertEqual(buffer, data)  # sendall accepts bytes-like objects
+
+                if ctypes is not None:
+                    ubyte = ctypes.c_ubyte * len(data)
+                    byteslike = ubyte.from_buffer_copy(data)
+                    s.sendall(byteslike)
+                    self.assertEqual(s.read(), data)
 
                 # Make sure sendmsg et al are disallowed to avoid
                 # inadvertent disclosure of data and/or corruption
