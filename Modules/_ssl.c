@@ -2654,8 +2654,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
     if (ctx == NULL) {
-        PyErr_SetString(PySSLErrorObject,
-                        "failed to allocate SSL context");
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
 
