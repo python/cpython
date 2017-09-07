@@ -14,6 +14,42 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+/* Get a null-terminated copy of some data. The caller owns the return value. */
+static char* copy_as_string(const char* data, size_t size) {
+    char* new_s = malloc(size + 1);
+    memcpy(new_s, data, size);
+    new_s[size] = 0;
+    return new_s;
+}
+
+/* Fuzz Py_CompileStringExFlags as a proxy for ast.parse(str) */
+static int fuzz_ast_parse(const char* data, size_t size) {
+    char* null_terminated_data = copy_as_string(data, size);
+    PyCompilerFlags flags;
+    flags.cf_flags = PyCF_ONLY_AST;
+    PyObject* ast = Py_CompileStringExFlags(
+        null_terminated_data,
+        "<imaginary_file>",
+        Py_file_input,
+        &flags,
+        0);
+    free(null_terminated_data);
+
+    if (ast == NULL) {
+        /* SyntaxError (from gibberish) and MemoryError (from deeply nested
+           expressions) are to be expected. */
+        if (PyErr_ExceptionMatches(PyExc_SyntaxError) || PyErr_ExceptionMatches(PyExc_MemoryError)) {
+            PyErr_Clear();
+            return 0;
+        } else {
+            PyErr_Print();
+            abort();
+        }
+    }
+    Py_DECREF(ast);
+    return 0;
+}
+
 /*  Fuzz PyFloat_FromString as a proxy for float(str). */
 static int fuzz_builtin_float(const char* data, size_t size) {
     PyObject* s = PyBytes_FromStringAndSize(data, size);
@@ -106,6 +142,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     int rv = 0;
 
 #define _Py_FUZZ_YES(test_name) (defined(_Py_FUZZ_##test_name) || !defined(_Py_FUZZ_ONE))
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_ast_parse)
+    rv |= _run_fuzz(data, size, fuzz_ast_parse);
+#endif
 #if _Py_FUZZ_YES(fuzz_builtin_float)
     rv |= _run_fuzz(data, size, fuzz_builtin_float);
 #endif
