@@ -1,0 +1,2 @@
+Fix several possible instances of undefined behavior due to floating-point
+demotions.
