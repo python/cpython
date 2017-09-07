@@ -1,11 +1,12 @@
 Quick Start Guide
 -----------------
 
-1.  Install Microsoft Visual Studio 2015, any edition.
+1.  Install Microsoft Visual Studio 2017 with Python workload and
+    Python native development component.
 1a. Optionally install Python 3.6 or later.  If not installed,
-    get_externals.bat (build.bat -e) will download and use Python via
+    get_externals.bat (via build.bat) will download and use Python via
     NuGet.
-2.  Run "build.bat -e" to build Python in 32-bit Release configuration.
+2.  Run "build.bat" to build Python in 32-bit Release configuration.
 3.  (Optional, but recommended) Run the test suite with "rt.bat -q".
 
 
@@ -68,9 +69,10 @@ this behavior, try `build.bat -h` to learn more.
 C Runtime
 ---------
 
-Visual Studio 2017 uses version 14 of the C runtime (vcruntime140).  The
-executables no longer use the "Side by Side" assemblies used in previous
-versions of the compiler.  This simplifies distribution of applications.
+Visual Studio 2017 uses version 14.0 of the C runtime (vcruntime140).
+The executables no longer use the "Side by Side" assemblies used in
+previous versions of the compiler.  This simplifies distribution of
+applications.
 
 The run time libraries are available under the redist folder of your
 Visual Studio distribution. For more info, see the Readme in the
@@ -135,7 +137,6 @@ _msi
 _multiprocessing
 _overlapped
 _socket
-_sqlite3
 _testbuffer
 _testcapi
 _testconsole
