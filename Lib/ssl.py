@@ -104,7 +104,7 @@ from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
 from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
-    SSLSyscallError, SSLEOFError,
+    SSLSyscallError, SSLEOFError, SSLCertVerificationError
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes, RAND_pseudo_bytes
