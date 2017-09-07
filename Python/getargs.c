@@ -4,6 +4,7 @@
 #include "Python.h"
 
 #include <ctype.h>
+#include <float.h>
 
 
 #ifdef __cplusplus
@@ -810,6 +811,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         double dval = PyFloat_AsDouble(arg);
         if (PyErr_Occurred())
             RETURN_ERR_OCCURRED;
+        else if (dval > FLT_MAX)
+            *p = (float)INFINITY;
+        else if (dval < -FLT_MAX)
+            *p = (float)-INFINITY;
         else
             *p = (float) dval;
         break;
