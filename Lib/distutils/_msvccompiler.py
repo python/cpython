@@ -107,7 +107,7 @@ def _find_vcvarsall(plat_spec):
         if best_version:
             vcruntime = os.path.join(best_dir, 'redist', vcruntime_plat,
                 "Microsoft.VC140.CRT", "vcruntime140.dll")
-            
+
     if not best_version:
         log.debug("No suitable Visual C++ version found")
         return None, None

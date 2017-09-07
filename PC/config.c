@@ -164,7 +164,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_stat", PyInit__stat},
     {"_opcode", PyInit__opcode},
 
-	{"_findvs", PyInit__findvs},
+    {"_findvs", PyInit__findvs},
 
     /* Sentinel */
     {0, 0}
