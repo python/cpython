@@ -437,18 +437,14 @@ error:
 #define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
 
+int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
+
 void
 _PyEval_Initialize(struct _ceval_runtime_state *state)
 {
     state->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
-    state->check_recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
+    _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
     _gil_initialize(&state->gil);
-}
-
-int
-_PyEval_CheckRecursionLimit(void)
-{
-    return _PyRuntime.ceval.check_recursion_limit;
 }
 
 int
@@ -461,7 +457,7 @@ void
 Py_SetRecursionLimit(int new_limit)
 {
     _PyRuntime.ceval.recursion_limit = new_limit;
-    _PyRuntime.ceval.check_recursion_limit = _PyRuntime.ceval.recursion_limit;
+    _Py_CheckRecursionLimit = _PyRuntime.ceval.recursion_limit;
 }
 
 /* the macro Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
@@ -482,7 +478,7 @@ _Py_CheckRecursiveCall(const char *where)
         return -1;
     }
 #endif
-    _PyRuntime.ceval.check_recursion_limit = recursion_limit;
+    _Py_CheckRecursionLimit = recursion_limit;
     if (tstate->recursion_critical)
         /* Somebody asked that we don't check for recursion. */
         return 0;
