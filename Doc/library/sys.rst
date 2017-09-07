@@ -1137,10 +1137,8 @@ always available.
 
    .. versionchanged:: 3.7
 
-      CPython frames gained the ability to switch off per-line trace events
-      (by setting :attr:`f_trace_lines` to :const:`False`) and to request
-      per-opcode trace events (by setting :attr:`f_trace_opcodes` to
-      :const:`True`)
+      ``'opcode'`` event type added; :attr:`f_trace_lines` and
+      :attr:`f_trace_opcodes` attributes added to frames
 
 .. function:: set_asyncgen_hooks(firstiter, finalizer)
 
