@@ -1165,27 +1165,32 @@ handling consistency are valid for these functions.
 
 .. function:: getstatusoutput(cmd)
 
-   Return ``(status, output)`` of executing *cmd* in a shell.
+   Return ``(exitcode, output)`` of executing *cmd* in a shell.
 
    Execute the string *cmd* in a shell with :meth:`Popen.check_output` and
-   return a 2-tuple ``(status, output)``. The locale encoding is used;
+   return a 2-tuple ``(exitcode, output)``. The locale encoding is used;
    see the notes on :ref:`frequently-used-arguments` for more details.
 
    A trailing newline is stripped from the output.
-   The exit status for the command can be interpreted
-   according to the rules for the C function :c:func:`wait`.  Example::
+   The exit code for the command can be interpreted as the return code
+   of subprocess.  Example::
 
       >>> subprocess.getstatusoutput('ls /bin/ls')
       (0, '/bin/ls')
       >>> subprocess.getstatusoutput('cat /bin/junk')
-      (256, 'cat: /bin/junk: No such file or directory')
+      (1, 'cat: /bin/junk: No such file or directory')
       >>> subprocess.getstatusoutput('/bin/junk')
-      (256, 'sh: /bin/junk: not found')
+      (127, 'sh: /bin/junk: not found')
+      >>> subprocess.getstatusoutput('/bin/kill $$')
+      (-15, '')
 
    Availability: POSIX & Windows
 
    .. versionchanged:: 3.3.4
-      Windows support added
+      Windows support was added.
+
+      The function now returns (exitcode, output) instead of (status, output)
+      as it did in Python 3.3.3 and earlier.  See :func:`WEXITSTATUS`.
 
 
 .. function:: getoutput(cmd)
