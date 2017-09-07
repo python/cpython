@@ -285,20 +285,20 @@ typedef struct _Py_atomic_int {
     a uintptr_t it will do an unsigned compare and crash
 */
 inline intptr_t _Py_atomic_load_64bit(volatile uintptr_t* value, int order) {
-    uintptr_t old;
+    __int64 old;
     switch (order) {
     case _Py_memory_order_acquire:
     {
       do {
         old = *value;
-      } while(_InterlockedCompareExchange64_HLEAcquire(value, old, old) != old);
+      } while(_InterlockedCompareExchange64_HLEAcquire((volatile __int64*)value, old, old) != old);
       break;
     }
     case _Py_memory_order_release:
     {
       do {
         old = *value;
-      } while(_InterlockedCompareExchange64_HLERelease(value, old, old) != old);
+      } while(_InterlockedCompareExchange64_HLERelease((volatile __int64*)value, old, old) != old);
       break;
     }
     case _Py_memory_order_relaxed:
@@ -308,7 +308,7 @@ inline intptr_t _Py_atomic_load_64bit(volatile uintptr_t* value, int order) {
     {
       do {
         old = *value;
-      } while(_InterlockedCompareExchange64(value, old, old) != old);
+      } while(_InterlockedCompareExchange64((volatile __int64*)value, old, old) != old);
       break;
     }
     }
@@ -320,20 +320,20 @@ inline intptr_t _Py_atomic_load_64bit(volatile uintptr_t* value, int order) {
 #endif
 
 inline int _Py_atomic_load_32bit(volatile int* value, int order) {
-    int old;
+    long old;
     switch (order) {
     case _Py_memory_order_acquire:
     {
       do {
         old = *value;
-      } while(_InterlockedCompareExchange_HLEAcquire(value, old, old) != old);
+      } while(_InterlockedCompareExchange_HLEAcquire((volatile long*)value, old, old) != old);
       break;
     }
     case _Py_memory_order_release:
     {
       do {
         old = *value;
-      } while(_InterlockedCompareExchange_HLERelease(value, old, old) != old);
+      } while(_InterlockedCompareExchange_HLERelease((volatile long*)value, old, old) != old);
       break;
     }
     case _Py_memory_order_relaxed:
@@ -343,7 +343,7 @@ inline int _Py_atomic_load_32bit(volatile int* value, int order) {
     {
       do {
         old = *value;
-      } while(_InterlockedCompareExchange(value, old, old) != old);
+      } while(_InterlockedCompareExchange((volatile long*)value, old, old) != old);
       break;
     }
     }

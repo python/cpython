@@ -1,0 +1,3 @@
+The files in this folder are from the Microsoft.VisualStudio.Setup.Configuration.Native package on Nuget.
+
+They are licensed under the MIT license.
