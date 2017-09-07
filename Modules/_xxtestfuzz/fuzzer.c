@@ -105,16 +105,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
     int rv = 0;
 
-#define _Py_FUZZ_YES(test_name) (defined(_Py_FUZZ_##test_name) || !defined(_Py_FUZZ_ONE))
-#if _Py_FUZZ_YES(fuzz_builtin_float)
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_builtin_float)
     rv |= _run_fuzz(data, size, fuzz_builtin_float);
 #endif
-#if _Py_FUZZ_YES(fuzz_builtin_int)
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_builtin_int)
     rv |= _run_fuzz(data, size, fuzz_builtin_int);
 #endif
-#if _Py_FUZZ_YES(fuzz_builtin_unicode)
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_builtin_unicode)
     rv |= _run_fuzz(data, size, fuzz_builtin_unicode);
 #endif
-#undef _Py_FUZZ_YES
   return rv;
 }
