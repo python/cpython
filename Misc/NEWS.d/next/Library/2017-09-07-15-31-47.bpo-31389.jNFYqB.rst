@@ -1,0 +1,2 @@
+``pdb.set_trace()`` now takes an optional keyword-only argument ``header``.
+If given, this is printed to the console just before debugging begins.
