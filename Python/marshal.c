@@ -647,7 +647,6 @@ typedef struct {
     FILE *fp;
     int depth;
     PyObject *readable;  /* Stream-like object being read from */
-    PyObject *current_filename;
     char *ptr;
     char *end;
     char *buf;
@@ -1390,18 +1389,6 @@ r_object(RFILE *p)
             filename = r_object(p);
             if (filename == NULL)
                 goto code_error;
-            if (PyUnicode_CheckExact(filename)) {
-                if (p->current_filename != NULL) {
-                    if (!PyUnicode_Compare(filename, p->current_filename)) {
-                        Py_DECREF(filename);
-                        Py_INCREF(p->current_filename);
-                        filename = p->current_filename;
-                    }
-                }
-                else {
-                    p->current_filename = filename;
-                }
-            }
             name = r_object(p);
             if (name == NULL)
                 goto code_error;
@@ -1484,7 +1471,6 @@ PyMarshal_ReadShortFromFile(FILE *fp)
     assert(fp);
     rf.readable = NULL;
     rf.fp = fp;
-    rf.current_filename = NULL;
     rf.end = rf.ptr = NULL;
     rf.buf = NULL;
     res = r_short(&rf);
@@ -1500,7 +1486,6 @@ PyMarshal_ReadLongFromFile(FILE *fp)
     long res;
     rf.fp = fp;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.ptr = rf.end = NULL;
     rf.buf = NULL;
     res = r_long(&rf);
@@ -1562,7 +1547,6 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     PyObject *result;
     rf.fp = fp;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.depth = 0;
     rf.ptr = rf.end = NULL;
     rf.buf = NULL;
@@ -1583,7 +1567,6 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     PyObject *result;
     rf.fp = NULL;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.ptr = (char *)str;
     rf.end = (char *)str + len;
     rf.buf = NULL;
@@ -1723,7 +1706,6 @@ marshal_load(PyObject *module, PyObject *file)
         rf.depth = 0;
         rf.fp = NULL;
         rf.readable = file;
-        rf.current_filename = NULL;
         rf.ptr = rf.end = NULL;
         rf.buf = NULL;
         if ((rf.refs = PyList_New(0)) != NULL) {
@@ -1782,7 +1764,6 @@ marshal_loads_impl(PyObject *module, Py_buffer *bytes)
     PyObject* result;
     rf.fp = NULL;
     rf.readable = NULL;
-    rf.current_filename = NULL;
     rf.ptr = s;
     rf.end = s + n;
     rf.depth = 0;
