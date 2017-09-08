@@ -321,6 +321,11 @@ typedef struct {
     enum py_ssl_server_or_client socket_type;
     PyObject *owner; /* Python level "owner" passed to servername callback */
     PyObject *server_hostname;
+    int ssl_errno; /* last seen error from SSL */
+    int c_errno; /* last seen error from libc */
+#ifdef MS_WINDOWS
+    int ws_errno; /* last seen error from winsock */
+#endif
 } PySSLSocket;
 
 typedef struct {
@@ -339,6 +344,21 @@ static PyTypeObject PySSLContext_Type;
 static PyTypeObject PySSLSocket_Type;
 static PyTypeObject PySSLMemoryBIO_Type;
 static PyTypeObject PySSLSession_Type;
+
+#ifdef MS_WINDOWS
+#define _PySSL_UPDATE_ERRNO_IF(cond, sock, retcode) if (cond) { \
+        (sock)->ws_errno = WSAGetLastError(); \
+        _PySSL_FIX_ERRNO; \
+        (sock)->c_errno = errno; \
+        (sock)->ssl_errno = SSL_get_error((sock->ssl), (retcode)); \
+    } else { sock->ws_errno = 0; sock->c_errno = 0; sock->ssl_errno = 0; }
+#else
+#define _PySSL_UPDATE_ERRNO_IF(cond, sock, retcode) if (cond) { \
+        (sock)->c_errno = errno; \
+        (sock)->ssl_errno = SSL_get_error((sock->ssl), (retcode)); \
+    } else { (sock)->c_errno = 0; (sock)->ssl_errno = 0; }
+#endif
+#define _PySSL_UPDATE_ERRNO(sock, retcode) _PySSL_UPDATE_ERRNO_IF(1, (sock), (retcode))
 
 /*[clinic input]
 module _ssl
@@ -580,7 +600,7 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
     e = ERR_peek_last_error();
 
     if (sslsock->ssl != NULL) {
-        err = SSL_get_error(sslsock->ssl, ret);
+        err = sslsock->ssl_errno;
 
         switch (err) {
         case SSL_ERROR_ZERO_RETURN:
@@ -616,8 +636,16 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                     errstr = "EOF occurred in violation of protocol";
                 } else if (s && ret == -1) {
                     /* underlying BIO reported an I/O error */
-                    Py_INCREF(s);
                     ERR_clear_error();
+#ifdef MS_WINDOWS
+                    if (sslsock->ws_errno)
+                        return PyErr_SetFromWindowsErr(sslsock->ws_errno);
+#endif
+                    if (sslsock->c_errno) {
+                        errno = sslsock->c_errno;
+                        return PyErr_SetFromErrno(PyExc_OSError);
+                    }
+                    Py_INCREF(s);
                     s->errorhandler();
                     Py_DECREF(s);
                     return NULL;
@@ -696,6 +724,11 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
         self->server_hostname = hostname;
     }
+    self->ssl_errno = 0;
+    self->c_errno = 0;
+#ifdef MS_WINDOWS
+    self->ws_errno = 0;
+#endif
 
     /* Make sure the SSL error state is initialized */
     (void) ERR_get_state();
@@ -792,8 +825,9 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     do {
         PySSL_BEGIN_ALLOW_THREADS
         ret = SSL_do_handshake(self->ssl);
-        err = SSL_get_error(self->ssl, ret);
+        _PySSL_UPDATE_ERRNO_IF(ret < 1, self, ret);
         PySSL_END_ALLOW_THREADS
+        err = self->ssl_errno;
 
         if (PyErr_CheckSignals())
             goto error;
@@ -2064,8 +2098,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     do {
         PySSL_BEGIN_ALLOW_THREADS
         len = SSL_write(self->ssl, b->buf, (int)b->len);
-        err = SSL_get_error(self->ssl, len);
+        _PySSL_UPDATE_ERRNO_IF(len <= 0, self, len);
         PySSL_END_ALLOW_THREADS
+        err = self->ssl_errno;
 
         if (PyErr_CheckSignals())
             goto error;
@@ -2119,6 +2154,7 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self)
 
     PySSL_BEGIN_ALLOW_THREADS
     count = SSL_pending(self->ssl);
+    _PySSL_UPDATE_ERRNO_IF(count < 0, self, count);
     PySSL_END_ALLOW_THREADS
     if (count < 0)
         return PySSL_SetError(self, count, __FILE__, __LINE__);
@@ -2207,7 +2243,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
     do {
         PySSL_BEGIN_ALLOW_THREADS
         count = SSL_read(self->ssl, mem, len);
-        err = SSL_get_error(self->ssl, count);
+        _PySSL_UPDATE_ERRNO_IF(count <= 0, self, count);
         PySSL_END_ALLOW_THREADS
 
         if (PyErr_CheckSignals())
@@ -2216,6 +2252,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
         if (has_timeout)
             timeout = deadline - _PyTime_GetMonotonicClock();
 
+        err = self->ssl_errno;
         if (err == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
         } else if (err == SSL_ERROR_WANT_WRITE) {
@@ -2272,7 +2309,7 @@ static PyObject *
 _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 /*[clinic end generated code: output=ca1aa7ed9d25ca42 input=ede2cc1a2ddf0ee4]*/
 {
-    int err, ssl_err, sockstate, nonblocking;
+    int err, sockstate, nonblocking;
     int zeros = 0;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
@@ -2311,6 +2348,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
         if (self->shutdown_seen_zero)
             SSL_set_read_ahead(self->ssl, 0);
         err = SSL_shutdown(self->ssl);
+        _PySSL_UPDATE_ERRNO_IF(err < 0, self, err);
         PySSL_END_ALLOW_THREADS
 
         /* If err == 1, a secure shutdown with SSL_shutdown() is complete */
@@ -2331,16 +2369,16 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
             timeout = deadline - _PyTime_GetMonotonicClock();
 
         /* Possibly retry shutdown until timeout or failure */
-        ssl_err = SSL_get_error(self->ssl, err);
-        if (ssl_err == SSL_ERROR_WANT_READ)
+        _PySSL_UPDATE_ERRNO(self, err);
+        if (self->ssl_errno == SSL_ERROR_WANT_READ)
             sockstate = PySSL_select(sock, 0, timeout);
-        else if (ssl_err == SSL_ERROR_WANT_WRITE)
+        else if (self->ssl_errno == SSL_ERROR_WANT_WRITE)
             sockstate = PySSL_select(sock, 1, timeout);
         else
             break;
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            if (ssl_err == SSL_ERROR_WANT_READ)
+            if (self->ssl_errno == SSL_ERROR_WANT_READ)
                 PyErr_SetString(PySocketModule.timeout_error,
                                 "The read operation timed out");
             else
