@@ -111,6 +111,7 @@ converting the dict to the combined table.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "dict-common.h"
 #include "stringlib/eq.h"    /* to get unicode_eq() */
 

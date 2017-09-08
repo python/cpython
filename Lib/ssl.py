@@ -115,7 +115,7 @@ except ImportError:
     pass
 
 
-from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN
+from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_TLSv1_3
 from _ssl import _OPENSSL_API_VERSION
 
 
@@ -178,6 +178,7 @@ else:
 # (OpenSSL's default setting is 'DEFAULT:!aNULL:!eNULL')
 # Enable a better set of ciphers by default
 # This list has been explicitly chosen to:
+#   * TLS 1.3 ChaCha20 and AES-GCM cipher suites
 #   * Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE)
 #   * Prefer ECDHE over DHE for better performance
 #   * Prefer AEAD over CBC for better performance and security
@@ -189,6 +190,8 @@ else:
 #   * Disable NULL authentication, NULL encryption, 3DES and MD5 MACs
 #     for security reasons
 _DEFAULT_CIPHERS = (
+    'TLS13-AES-256-GCM-SHA384:TLS13-CHACHA20-POLY1305-SHA256:'
+    'TLS13-AES-128-GCM-SHA256:'
     'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:'
     'ECDH+AES128:DH+AES:ECDH+HIGH:DH+HIGH:RSA+AESGCM:RSA+AES:RSA+HIGH:'
     '!aNULL:!eNULL:!MD5:!3DES'
@@ -196,6 +199,7 @@ _DEFAULT_CIPHERS = (
 
 # Restricted and more secure ciphers for the server side
 # This list has been explicitly chosen to:
+#   * TLS 1.3 ChaCha20 and AES-GCM cipher suites
 #   * Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE)
 #   * Prefer ECDHE over DHE for better performance
 #   * Prefer AEAD over CBC for better performance and security
@@ -206,6 +210,8 @@ _DEFAULT_CIPHERS = (
 #   * Disable NULL authentication, NULL encryption, MD5 MACs, DSS, RC4, and
 #     3DES for security reasons
 _RESTRICTED_SERVER_CIPHERS = (
+    'TLS13-AES-256-GCM-SHA384:TLS13-CHACHA20-POLY1305-SHA256:'
+    'TLS13-AES-128-GCM-SHA256:'
     'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:'
     'ECDH+AES128:DH+AES:ECDH+HIGH:DH+HIGH:RSA+AESGCM:RSA+AES:RSA+HIGH:'
     '!aNULL:!eNULL:!MD5:!DSS:!RC4:!3DES'
@@ -959,11 +965,12 @@ class SSLSocket(socket):
                 raise ValueError(
                     "non-zero flags not allowed in calls to sendall() on %s" %
                     self.__class__)
-            amount = len(data)
             count = 0
-            while (count < amount):
-                v = self.send(data[count:])
-                count += v
+            with memoryview(data) as view, view.cast("B") as byte_view:
+                amount = len(byte_view)
+                while count < amount:
+                    v = self.send(byte_view[count:])
+                    count += v
         else:
             return socket.sendall(self, data, flags)
 

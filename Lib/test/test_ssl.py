@@ -18,6 +18,10 @@ import asyncore
 import weakref
 import platform
 import functools
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
 
 ssl = support.import_module("ssl")
 
@@ -166,6 +170,13 @@ class BasicSocketTests(unittest.TestCase):
             ssl.OP_NO_COMPRESSION
         self.assertIn(ssl.HAS_SNI, {True, False})
         self.assertIn(ssl.HAS_ECDH, {True, False})
+        ssl.OP_NO_SSLv2
+        ssl.OP_NO_SSLv3
+        ssl.OP_NO_TLSv1
+        ssl.OP_NO_TLSv1_3
+        if ssl.OPENSSL_VERSION_INFO >= (1, 0, 1):
+            ssl.OP_NO_TLSv1_1
+            ssl.OP_NO_TLSv1_2
 
     def test_str_for_enums(self):
         # Make sure that the PROTOCOL_* constants have enum-like string
@@ -2891,6 +2902,13 @@ class ThreadedTests(unittest.TestCase):
             self.assertEqual(s.read(-1, buffer), len(data))
             self.assertEqual(buffer, data)
 
+            # sendall accepts bytes-like objects
+            if ctypes is not None:
+                ubyte = ctypes.c_ubyte * len(data)
+                byteslike = ubyte.from_buffer_copy(data)
+                s.sendall(byteslike)
+                self.assertEqual(s.read(), data)
+
             # Make sure sendmsg et al are disallowed to avoid
             # inadvertent disclosure of data and/or corruption
             # of the encrypted data stream
@@ -2898,7 +2916,6 @@ class ThreadedTests(unittest.TestCase):
             self.assertRaises(NotImplementedError, s.recvmsg, 100)
             self.assertRaises(NotImplementedError,
                               s.recvmsg_into, bytearray(100))
-
             s.write(b"over\n")
 
             self.assertRaises(ValueError, s.recv, -1)
@@ -3088,12 +3105,33 @@ class ThreadedTests(unittest.TestCase):
                 self.assertEqual(s.version(), 'TLSv1')
             self.assertIs(s.version(), None)
 
+    @unittest.skipUnless(ssl.HAS_TLSv1_3,
+                         "test requires TLSv1.3 enabled OpenSSL")
+    def test_tls1_3(self):
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.load_cert_chain(CERTFILE)
+        # disable all but TLS 1.3
+        context.options |= (
+            ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2
+        )
+        with ThreadedEchoServer(context=context) as server:
+            with context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
+                self.assertIn(s.cipher()[0], [
+                    'TLS13-AES-256-GCM-SHA384',
+                    'TLS13-CHACHA20-POLY1305-SHA256',
+                    'TLS13-AES-128-GCM-SHA256',
+                ])
+
     @unittest.skipUnless(ssl.HAS_ECDH, "test requires ECDH-enabled OpenSSL")
     def test_default_ecdh_curve(self):
         # Issue #21015: elliptic curve-based Diffie Hellman key exchange
         # should be enabled by default on SSL contexts.
         context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         context.load_cert_chain(CERTFILE)
+        # TLSv1.3 defaults to PFS key agreement and no longer has KEA in
+        # cipher name.
+        context.options |= ssl.OP_NO_TLSv1_3
         # Prior to OpenSSL 1.0.0, ECDH ciphers have to be enabled
         # explicitly using the 'ECCdraft' cipher alias.  Otherwise,
         # our default cipher list should prefer ECDH-based ciphers
@@ -3521,6 +3559,10 @@ class ThreadedTests(unittest.TestCase):
         context2.verify_mode = ssl.CERT_REQUIRED
         context2.load_verify_locations(CERTFILE)
         context2.load_cert_chain(CERTFILE)
+
+        # TODO: session reuse does not work with TLS 1.3
+        context.options |= ssl.OP_NO_TLSv1_3
+        context2.options |= ssl.OP_NO_TLSv1_3
 
         server = ThreadedEchoServer(context=context, chatty=False)
         with server:
