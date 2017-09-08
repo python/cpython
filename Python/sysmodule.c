@@ -349,18 +349,19 @@ same value.");
  * Cached interned string objects used for calling the profile and
  * trace functions.  Initialized by trace_init().
  */
-static PyObject *whatstrings[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+static PyObject *whatstrings[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 static int
 trace_init(void)
 {
-    static const char * const whatnames[7] = {
+    static const char * const whatnames[8] = {
         "call", "exception", "line", "return",
-        "c_call", "c_exception", "c_return"
+        "c_call", "c_exception", "c_return",
+        "opcode"
     };
     PyObject *name;
     int i;
-    for (i = 0; i < 7; ++i) {
+    for (i = 0; i < 8; ++i) {
         if (whatstrings[i] == NULL) {
             name = PyUnicode_InternFromString(whatnames[i]);
             if (name == NULL)
