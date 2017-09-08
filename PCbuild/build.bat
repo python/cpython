@@ -101,7 +101,7 @@ if exist "%GIT%" set GITProperty=/p:GIT="%GIT%"
 
 rem Setup the environment
 call "%dir%find_msbuild.bat" %MSBUILD%
-if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
+if ERRORLEVEL 1 (call "%dir%env.bat" && set MSBUILD=msbuild)
 
 if "%kill%"=="true" call :Kill
 
