@@ -14,17 +14,6 @@ typedef struct {
 static int
 all_name_chars(PyObject *o)
 {
-    /* [a-zA-Z0-9_] */
-    static const bool ok_name_char[128] = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0
-    };
     const unsigned char *s, *e;
 
     if (!PyUnicode_IS_ASCII(o))
@@ -33,7 +22,7 @@ all_name_chars(PyObject *o)
     s = PyUnicode_1BYTE_DATA(o);
     e = s + PyUnicode_GET_LENGTH(o);
     for (; s != e; s++) {
-        if (!ok_name_char[*s])
+        if (!Py_ISALNUM(*s) && *s != '_')
             return 0;
     }
     return 1;
