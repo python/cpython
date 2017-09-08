@@ -2414,5 +2414,10 @@ PyInit__collections(void)
     Py_INCREF(&dequereviter_type);
     PyModule_AddObject(m, "_deque_reverse_iterator", (PyObject *)&dequereviter_type);
 
+    if (PyType_Ready(&PyInstanceDescriptor_Type) < 0)
+        return NULL;
+    Py_INCREF(&PyInstanceDescriptor_Type);
+    PyModule_AddObject(m, "_InstanceDescriptor", (PyObject *)&PyInstanceDescriptor_Type);
+
     return m;
 }

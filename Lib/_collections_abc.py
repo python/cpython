@@ -8,6 +8,7 @@ Unit tests are in test_collections.
 
 from abc import ABCMeta, abstractmethod
 import sys
+from _collections import _InstanceDescriptor as InstanceDescriptor
 
 __all__ = ["Awaitable", "Coroutine",
            "AsyncIterable", "AsyncIterator", "AsyncGenerator",
@@ -18,6 +19,7 @@ __all__ = ["Awaitable", "Coroutine",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
            "ByteString",
+           "InstanceDescriptor",
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to

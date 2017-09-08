@@ -675,6 +675,7 @@ module_getattro_raise(PyModuleObject *m, PyObject *name,
     const char *fmt_with_module, const char *fmt_without_module)
 {
     PyObject *mod_name;
+
     if (m->md_dict) {
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
@@ -699,7 +700,7 @@ module_getattro(PyModuleObject *m, PyObject *name)
     PyObject *attr = PyObject_GenericGetAttr((PyObject *)m, name);
     if (attr) {
         if (!PyType_FastSubclass(Py_TYPE(attr),
-                Py_TPFLAGS_INSTANCE_PROPERTY_SUBCLASS)) {
+                Py_TPFLAGS_INSTANCE_DESCRIPTOR_SUBCLASS)) {
             return attr;
         }
 
@@ -710,6 +711,11 @@ module_getattro(PyModuleObject *m, PyObject *name)
 
             if (res) {
                 return res;
+            }
+
+            /* don't stomp on an existing error */
+            if (PyErr_Occurred()) {
+                return NULL;
             }
 
             return module_getattro_raise(m, name,
@@ -739,7 +745,7 @@ module_setattro(PyModuleObject *m, PyObject *name, PyObject *value)
     if (!attr) {
         PyErr_Clear();
     }
-    else if (PyType_FastSubclass(Py_TYPE(attr), Py_TPFLAGS_INSTANCE_PROPERTY_SUBCLASS)) {
+    else if (PyType_FastSubclass(Py_TYPE(attr), Py_TPFLAGS_INSTANCE_DESCRIPTOR_SUBCLASS)) {
         descrsetfunc f = attr->ob_type->tp_descr_set;
         if (f) {
             int res = f(attr, (PyObject *)m, value);
