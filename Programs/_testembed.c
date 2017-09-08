@@ -1,5 +1,4 @@
 #include <Python.h>
-#include "internal/pystate.h"
 #include <inttypes.h>
 #include <stdio.h>
 

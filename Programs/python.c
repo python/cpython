@@ -1,7 +1,6 @@
 /* Minimal main program -- everything is loaded from the library */
 
 #include "Python.h"
-#include "internal/pystate.h"
 #include <locale.h>
 
 #ifdef __FreeBSD__
