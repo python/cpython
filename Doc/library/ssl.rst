@@ -129,11 +129,26 @@ Functions, Constants, and Exceptions
 
    .. versionadded:: 3.3
 
+.. exception:: SSLCertVerificationError
+
+   A subclass of :exc:`SSLError` raised when certificate validation has
+   failed.
+
+   .. versionadded:: 3.7
+
+   .. attribute:: verify_code
+
+      A numeric error number that denotes the verification error.
+
+   .. attribute:: verify_message
+
+      A human readable string of the verification error.
+
 .. exception:: CertificateError
 
    Raised to signal an error with a certificate (such as mismatching
    hostname).  Certificate errors detected by OpenSSL, though, raise
-   an :exc:`SSLError`.
+   an :exc:`SSLCertVerificationError`.
 
 
 Socket creation

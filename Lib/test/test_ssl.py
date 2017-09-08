@@ -2530,6 +2530,29 @@ class ThreadedTests(unittest.TestCase):
         finally:
             t.join()
 
+    def test_ssl_cert_verify_error(self):
+        if support.verbose:
+            sys.stdout.write("\n")
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context.load_cert_chain(SIGNED_CERTFILE)
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with context.wrap_socket(socket.socket(),
+                                     server_hostname="localhost") as s:
+                try:
+                    s.connect((HOST, server.port))
+                except ssl.SSLError as e:
+                    msg = 'unable to get local issuer certificate'
+                    self.assertIsInstance(e, ssl.SSLCertVerificationError)
+                    self.assertEqual(e.verify_code, 20)
+                    self.assertEqual(e.verify_message, msg)
+                    self.assertIn(msg, repr(e))
+                    self.assertIn('certificate verify failed', repr(e))
+
     @skip_if_broken_ubuntu_ssl
     @unittest.skipUnless(hasattr(ssl, 'PROTOCOL_SSLv2'),
                          "OpenSSL is compiled without SSLv2 support")

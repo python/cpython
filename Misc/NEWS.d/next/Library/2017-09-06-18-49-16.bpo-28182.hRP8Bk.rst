@@ -1,0 +1,3 @@
+The SSL module now raises SSLCertVerificationError when OpenSSL fails to
+verify the peer's certificate. The exception contains more information about
+the error.
