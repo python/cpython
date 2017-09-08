@@ -5350,6 +5350,11 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_NO_TLSv1_1", SSL_OP_NO_TLSv1_1);
     PyModule_AddIntConstant(m, "OP_NO_TLSv1_2", SSL_OP_NO_TLSv1_2);
 #endif
+#ifdef SSL_OP_NO_TLSv1_3
+    PyModule_AddIntConstant(m, "OP_NO_TLSv1_3", SSL_OP_NO_TLSv1_3);
+#else
+    PyModule_AddIntConstant(m, "OP_NO_TLSv1_3", 0);
+#endif
     PyModule_AddIntConstant(m, "OP_CIPHER_SERVER_PREFERENCE",
                             SSL_OP_CIPHER_SERVER_PREFERENCE);
     PyModule_AddIntConstant(m, "OP_SINGLE_DH_USE", SSL_OP_SINGLE_DH_USE);
@@ -5397,6 +5402,14 @@ PyInit__ssl(void)
 #endif
     Py_INCREF(r);
     PyModule_AddObject(m, "HAS_ALPN", r);
+
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+    r = Py_True;
+#else
+    r = Py_False;
+#endif
+    Py_INCREF(r);
+    PyModule_AddObject(m, "HAS_TLSv1_3", r);
 
     /* Mappings for error codes */
     err_codes_to_names = PyDict_New();
