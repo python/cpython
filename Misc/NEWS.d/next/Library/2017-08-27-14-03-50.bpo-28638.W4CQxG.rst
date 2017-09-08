@@ -1,0 +1,2 @@
+Speed up namedtuple class creation by 4x by avoiding usage of exec(). Patch
+by Jelle Zijlstra.

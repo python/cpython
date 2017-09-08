@@ -301,6 +301,7 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
+# Used only for the _source attribute, not for creating namedtuple classes.
 _class_template = """\
 from builtins import property as _property, tuple as _tuple
 from operator import itemgetter as _itemgetter
@@ -346,12 +347,32 @@ class {typename}(tuple):
 
 {field_defs}
 """
-
-_repr_template = '{name}=%r'
-
 _field_template = '''\
     {name} = _property(_itemgetter({index:d}), doc='Alias for field number {index:d}')
 '''
+_repr_template = '{name}=%r'
+_new_template = '''
+def __new__(_cls, {arg_list}):
+    return _tuple_new(_cls, ({arg_list}))
+'''
+
+
+class _source_descriptor:
+    """Descriptor for generating the _source attribute of a namedtuple."""
+    __slots__ = ()
+
+    def __get__(self, instance, owner):
+        class_definition = _class_template.format(
+            typename = owner.__name__,
+            field_names = owner._fields,
+            num_fields = owner._num_fields,
+            arg_list = repr(owner._fields).replace("'", "")[1:-1],
+            repr_fmt = owner._repr_fmt,
+            field_defs = '\n'.join(_field_template.format(index=index, name=name)
+                                   for index, name in enumerate(owner._fields))
+        )
+        return class_definition
+
 
 def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None):
     """Returns a new subclass of tuple with named fields.
@@ -390,44 +411,92 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
                 or _iskeyword(name)
                 or name.startswith('_')
                 or name in seen):
-                field_names[index] = '_%d' % index
+                field_names[index] = f'_{index:d}'
             seen.add(name)
     for name in [typename] + field_names:
         if type(name) is not str:
             raise TypeError('Type names and field names must be strings')
         if not name.isidentifier():
             raise ValueError('Type names and field names must be valid '
-                             'identifiers: %r' % name)
+                             f'identifiers: {name!r}')
         if _iskeyword(name):
             raise ValueError('Type names and field names cannot be a '
-                             'keyword: %r' % name)
+                             f'keyword: {name!r}')
     seen = set()
     for name in field_names:
         if name.startswith('_') and not rename:
             raise ValueError('Field names cannot start with an underscore: '
-                             '%r' % name)
+                             f'{name!r}')
         if name in seen:
-            raise ValueError('Encountered duplicate field name: %r' % name)
+            raise ValueError(f'Encountered duplicate field name: {name!r}')
         seen.add(name)
 
-    # Fill-in the class template
-    class_definition = _class_template.format(
-        typename = typename,
-        field_names = tuple(field_names),
-        num_fields = len(field_names),
-        arg_list = repr(tuple(field_names)).replace("'", "")[1:-1],
-        repr_fmt = ', '.join(_repr_template.format(name=name)
-                             for name in field_names),
-        field_defs = '\n'.join(_field_template.format(index=index, name=name)
-                               for index, name in enumerate(field_names))
-    )
+    arg_list = repr(tuple(field_names)).replace("'", "")[1:-1]
+    num_fields = len(field_names)
+    repr_fmt = '(' + ', '.join(f'{name}=%r' for name in field_names) + ')'
 
-    # Execute the template string in a temporary namespace and support
-    # tracing utilities by setting a value for frame.f_globals['__name__']
-    namespace = dict(__name__='namedtuple_%s' % typename)
-    exec(class_definition, namespace)
-    result = namespace[typename]
-    result._source = class_definition
+    namespace = {'_tuple_new': tuple.__new__}
+    new_source = _new_template.format(arg_list=arg_list)
+    exec(new_source, namespace)
+    __new__ = namespace['__new__']
+    __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
+
+    @classmethod
+    def _make(cls, iterable, new=tuple.__new__, len=len, num_fields=num_fields):
+        result = new(cls, iterable)
+        if len(result) != cls._num_fields:
+            raise TypeError(f'Expected {num_fields} arguments, got {len(result)}')
+        return result
+
+    _make.__func__.__doc__ = (f'Make a new {typename} object from a sequence '
+                              'or iterable')
+
+    def _replace(_self, **kwds):
+        result = _self._make(map(kwds.pop, _self._fields, _self))
+        if kwds:
+            raise ValueError(f'Got unexpected field names: {list(kwds)}')
+        return result
+
+    _replace.__doc__ = (f'Return a new {typename} object replacing specified '
+                        'fields with new values')
+
+    def __repr__(self):
+        'Return a nicely formatted representation string'
+        return self.__class__.__name__ + self._repr_fmt % self
+
+    def _asdict(self):
+        'Return a new OrderedDict which maps field names to their values.'
+        return OrderedDict(zip(self._fields, self))
+
+    def __getnewargs__(self):
+        'Return self as a plain tuple.  Used by copy and pickle.'
+        return tuple(self)
+
+    module_name = f'namedtuple_{typename}'
+    for method in (__new__, _make.__func__, _replace, __repr__, _asdict, __getnewargs__):
+        method.__module__ = module_name
+        method.__qualname__ = f'{typename}.{method.__name__}'
+
+    class_namespace = {
+        '__doc__': f'{typename}({arg_list})',
+        '__slots__': (),
+        '_fields': tuple(field_names),
+        '__new__': __new__,
+        '_make': _make,
+        '_replace': _replace,
+        '__repr__': __repr__,
+        '_asdict': _asdict,
+        '__getnewargs__': __getnewargs__,
+        '_num_fields': len(field_names),
+        '_repr_fmt': repr_fmt,
+        '_source': _source_descriptor(),
+    }
+    for index, name in enumerate(field_names):
+        doc = f'Alias for field number {index:d}'
+        class_namespace[name] = property(_itemgetter(index), doc=doc)
+
+    result = type(typename, (tuple,), class_namespace)
+
     if verbose:
         print(result._source)
 
