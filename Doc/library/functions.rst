@@ -10,20 +10,20 @@ are always available.  They are listed here in alphabetical order.
 ===================  =================  ==================  ================  ====================
 ..                   ..                 Built-in Functions  ..                ..
 ===================  =================  ==================  ================  ====================
-:func:`abs`          |func-dict|_       :func:`help`        :func:`min`       :func:`setattr`
-:func:`all`          :func:`dir`        :func:`hex`         :func:`next`      :func:`slice`
-:func:`any`          :func:`divmod`     :func:`id`          :func:`object`    :func:`sorted`
-:func:`ascii`        :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
-:func:`bin`          :func:`eval`       :func:`int`         :func:`open`      |func-str|_
-:func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
-|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
-|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
-:func:`callable`     :func:`format`     :func:`len`         :func:`property`  :func:`type`
-:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_     :func:`vars`
-:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
-:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`  :func:`__import__`
-:func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
-:func:`delattr`      :func:`hash`       |func-memoryview|_  |func-set|_
+:func:`abs`          |func-dict|_       :func:`help`        :func:`min`       |func-set|_
+:func:`all`          :func:`dir`        :func:`hex`         :func:`next`      :func:`setattr`
+:func:`any`          :func:`divmod`     :func:`id`          :func:`noop`      :func:`slice`
+:func:`ascii`        :func:`enumerate`  :func:`input`       :func:`object`    :func:`sorted`
+:func:`bin`          :func:`eval`       :func:`int`         :func:`oct`       :func:`staticmethod`
+:func:`bool`         :func:`exec`       :func:`isinstance`  :func:`open`      |func-str|_
+|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`ord`       :func:`sum`
+|func-bytes|_        :func:`float`      :func:`iter`        :func:`pow`       :func:`super`
+:func:`callable`     :func:`format`     :func:`len`         :func:`print`     |func-tuple|_
+:func:`chr`          |func-frozenset|_  |func-list|_        :func:`property`  :func:`type`
+:func:`classmethod`  :func:`getattr`    :func:`locals`      |func-range|_     :func:`vars`
+:func:`compile`      :func:`globals`    :func:`map`         :func:`repr`      :func:`zip`
+:func:`complex`      :func:`hasattr`    :func:`max`         :func:`reversed`  :func:`__import__`
+:func:`delattr`      :func:`hash`       |func-memoryview|_  :func:`round`     
 ===================  =================  ==================  ================  ====================
 
 .. using :func:`dict` would create a link to another page, so local targets are
@@ -888,6 +888,12 @@ are always available.  They are listed here in alphabetical order.
    :meth:`~iterator.__next__` method.  If *default* is given, it is returned
    if the iterator is exhausted, otherwise :exc:`StopIteration` is raised.
 
+
+.. function:: noop(*args, **kws)
+
+   Do nothing but return ``None``.
+
+   .. versionadded:: 3.7
 
 .. class:: object()
 

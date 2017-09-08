@@ -984,6 +984,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, it)
         self.assertEqual(next(it, 42), 42)
 
+    def test_noop(self):
+        self.assertIsNone(noop())
+        self.assertIsNone(noop(1))
+        self.assertIsNone(noop(1, 2))
+        self.assertIsNone(noop(a=1))
+        self.assertIsNone(noop(a=1, b=3))
+        self.assertIsNone(noop(2, 4, a=1, b=3))
+
     def test_oct(self):
         self.assertEqual(oct(100), '0o144')
         self.assertEqual(oct(-100), '-0o144')
