@@ -10,8 +10,7 @@ typedef struct {
     void *ce_extras[1];
 } _PyCodeObjectExtra;
 
-/* all_name_chars(s): true iff all chars in s are valid NAME_CHARS */
-
+/* all_name_chars(s): true iff s matches [a-zA-Z0-9_]* */
 static int
 all_name_chars(PyObject *o)
 {
