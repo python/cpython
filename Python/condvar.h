@@ -104,6 +104,8 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
  * example native support on VISTA and onwards.
  */
 
+#include <windows.h>
+
 #if _PY_EMULATED_WIN_CV
 
 /* The mutex is a CriticalSection object and
@@ -120,6 +122,12 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
    but the implementations are all broken in some way.
    http://www.cse.wustl.edu/~schmidt/win32-cv-1.html
 */
+
+struct _PyCOND_T
+{
+    HANDLE sem;
+    int waiting; /* to allow PyCOND_SIGNAL to be a no-op */
+};
 
 Py_LOCAL_INLINE(int)
 PyMUTEX_INIT(PyMUTEX_T *cs)

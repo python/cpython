@@ -32,7 +32,6 @@
 
 /* include windows if it hasn't been done before */
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 /* options */
 /* non-emulated condition variables are provided for those that want
@@ -50,7 +49,7 @@
 
 #if _PY_EMULATED_WIN_CV
 
-typedef CRITICAL_SECTION PyMUTEX_T;
+typedef struct CRITICAL_SECTION PyMUTEX_T;
 
 /* The ConditionVariable object.  From XP onwards it is easily emulated
    with a Semaphore.
@@ -69,20 +68,16 @@ typedef CRITICAL_SECTION PyMUTEX_T;
    that would otherwise happen.
  */
 
-typedef struct _PyCOND_T
-{
-    HANDLE sem;
-    int waiting; /* to allow PyCOND_SIGNAL to be a no-op */
-} PyCOND_T;
+typedef struct _PyCOND_T PyCOND_T;
 
 #else /* !_PY_EMULATED_WIN_CV */
 
 /* Use native Win7 primitives if build target is Win7 or higher */
 
 /* SRWLOCK is faster and better than CriticalSection */
-typedef SRWLOCK PyMUTEX_T;
+typedef struct SRWLOCK PyMUTEX_T;
 
-typedef CONDITION_VARIABLE  PyCOND_T;
+typedef struct CONDITION_VARIABLE  PyCOND_T;
 
 #endif /* _PY_EMULATED_WIN_CV */
 
