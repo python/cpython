@@ -29,9 +29,10 @@ typedef struct {
     int use_hash_seed;
     unsigned long hash_seed;
     int _disable_importlib; /* Needed by freeze_importlib */
+    char *allocator;
 } _PyCoreConfig;
 
-#define _PyCoreConfig_INIT {0, -1, 0, 0}
+#define _PyCoreConfig_INIT {0, -1, 0, 0, NULL}
 
 /* Placeholders while working on the new configuration API
  *
@@ -56,6 +57,19 @@ typedef struct _is {
     PyObject *sysdict;
     PyObject *builtins;
     PyObject *importlib;
+
+    /* Used in Python/sysmodule.c. */
+    int check_interval;
+    PyObject *warnoptions;
+    PyObject *xoptions;
+
+    /* Used in Modules/_threadmodule.c. */
+    long num_threads;
+    /* Support for runtime thread stack size tuning.
+       A value of 0 means using the platform's default stack size
+       or the size specified by the THREAD_STACK_SIZE macro. */
+    /* Used in Python/thread.c. */
+    size_t pythread_stacksize;
 
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
@@ -190,9 +204,6 @@ typedef struct _ts {
 #endif
 
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyInterpreterState_Init(void);
-#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
@@ -249,7 +260,7 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
 #ifdef Py_BUILD_CORE
-PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
+#  define _PyThreadState_Current _PyRuntime.gilstate.tstate_current
 #  define PyThreadState_GET() \
              ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
 #else
@@ -303,10 +314,6 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 #ifndef Py_LIMITED_API
-/* Issue #26558: Flag to disable PyGILState_Check().
-   If set to non-zero, PyGILState_Check() always return 1. */
-PyAPI_DATA(int) _PyGILState_check_enabled;
-
 /* Helper/diagnostic function - return 1 if the current thread
    currently holds the GIL, 0 otherwise.
 
@@ -339,11 +346,6 @@ PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
-#endif
-
-/* hook for PyEval_GetFrame(), requested for Psyco */
-#ifndef Py_LIMITED_API
-PyAPI_DATA(PyThreadFrameGetter) _PyThreadState_GetFrame;
 #endif
 
 #ifdef __cplusplus
