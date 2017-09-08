@@ -340,38 +340,39 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
                 or _iskeyword(name)
                 or name.startswith('_')
                 or name in seen):
-                field_names[index] = '_%d' % index
+                field_names[index] = f'_{index}'
             seen.add(name)
     for name in [typename] + field_names:
         if type(name) is not str:
             raise TypeError('Type names and field names must be strings')
         if not name.isidentifier():
             raise ValueError('Type names and field names must be valid '
-                             'identifiers: %r' % name)
+                             f'identifiers: {name!r}')
         if _iskeyword(name):
             raise ValueError('Type names and field names cannot be a '
-                             'keyword: %r' % name)
+                             f'keyword: {name!r}')
     seen = set()
     for name in field_names:
         if name.startswith('_') and not rename:
             raise ValueError('Field names cannot start with an underscore: '
-                             '%r' % name)
+                             f'{name!r}')
         if name in seen:
-            raise ValueError('Encountered duplicate field name: %r' % name)
+            raise ValueError('Encountered duplicate field name: {name!r}')
         seen.add(name)
 
-    # Closure variables used in the methods and docstrings
+    # Variables used in the methods and docstrings
     field_names = tuple(field_names)
     num_fields = len(field_names)
     arg_list = repr(field_names).replace("'", "")[1:-1]
     repr_fmt = '(' + ', '.join(f'{name}=%r' for name in field_names) + ')'
+    module_name = f'namedtuple_{typename}'
     tuple_new = tuple.__new__
     _len = len
 
     # Create all the named tuple methods to be added to the class namespace
 
     s = f'def __new__(_cls, {arg_list}): return _tuple_new(_cls, ({arg_list}))'
-    namespace = dict(_tuple_new=tuple_new, __name__=f'namedtuple_{typename}')
+    namespace = dict(_tuple_new=tuple_new, __name__=module_name)
     # Note: exec() has the side-effect of interning the typename and field names
     exec(s, namespace)
     __new__ = namespace['__new__']
@@ -381,7 +382,7 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
     def _make(cls, iterable):
         result = tuple_new(cls, iterable)
         if _len(result) != num_fields:
-            raise TypeError(f'Expected {num_fields:d} arguments, got {len(result)}')
+            raise TypeError(f'Expected {num_fields} arguments, got {len(result)}')
         return result
 
     _make.__doc__ = f'Make a new {typename} object from a sequence or iterable'
@@ -392,7 +393,8 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
             raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
         return result
 
-    _replace.__doc__ = f'Return a new {typename} object replacing specified fields with new values'
+    _replace.__doc__ = (f'Return a new {typename} object replacing specified '
+                        'fields with new values')
 
     def __repr__(self):
         'Return a nicely formatted representation string'
@@ -405,6 +407,8 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
     def __getnewargs__(self):
         'Return self as a plain tuple.  Used by copy and pickle.'
         return tuple(self)
+
+    # Helper functions used in the class creation
 
     def reuse_itemgetter(index):
         try:
@@ -427,8 +431,9 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
         __getnewargs__ = __getnewargs__,
     )
     for index, name in enumerate(field_names):
-        class_namespace[name] = property(fget = reuse_itemgetter(index),
-                                         doc = f'Alias for field number {index}')
+        doc = f'Alias for field number {index}'
+        class_namespace[name] = property(reuse_itemgetter(index), doc=doc)
+
     result = type(typename, (tuple,), class_namespace)
 
     # For pickling to work, the __module__ variable needs to be set to the frame
