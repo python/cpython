@@ -207,8 +207,8 @@ class DebuggingServerTests(unittest.TestCase):
         # Pick a random unused port by passing 0 for the port number
         self.serv = smtpd.DebuggingServer((HOST, 0), ('nowhere', -1),
                                           decode_data=True)
-        # Keep a note of what port was assigned
-        self.port = self.serv.socket.getsockname()[1]
+        # Keep a note of what server host and port were assigned
+        self.host, self.port = self.serv.socket.getsockname()[:2]
         serv_args = (self.serv, self.serv_evt, self.client_evt)
         self.thread = threading.Thread(target=debugging_server, args=serv_args)
         self.thread.start()
@@ -242,16 +242,16 @@ class DebuggingServerTests(unittest.TestCase):
 
     def testSourceAddress(self):
         # connect
-        port = support.find_unused_port()
+        src_port = support.find_unused_port()
         try:
-            smtp = smtplib.SMTP(HOSTv4, self.port, local_hostname='localhost',
-                    timeout=3, source_address=('127.0.0.1', port))
-            self.assertEqual(smtp.source_address, ('127.0.0.1', port))
+            smtp = smtplib.SMTP(self.host, self.port, local_hostname='localhost',
+                                timeout=3, source_address=(self.host, src_port))
+            self.assertEqual(smtp.source_address, (self.host, src_port))
             self.assertEqual(smtp.local_hostname, 'localhost')
             smtp.quit()
         except OSError as e:
             if e.errno == errno.EADDRINUSE:
-                self.skipTest("couldn't bind to port %d" % port)
+                self.skipTest("couldn't bind to source port %d" % src_port)
             raise
 
     def testNOOP(self):
