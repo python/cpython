@@ -27,6 +27,8 @@ typedef struct _frame {
        to the current stack top. */
     PyObject **f_stacktop;
     PyObject *f_trace;          /* Trace function */
+    char f_trace_lines;         /* Emit per-line trace events? */
+    char f_trace_opcodes;       /* Emit per-opcode trace events? */
 
     /* In a generator, we need to be able to swap between the exception
        state inside the generator and the exception state of the calling
