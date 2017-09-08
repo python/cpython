@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "pythread.h"
 #include "_iomodule.h"
@@ -275,7 +276,7 @@ _enter_buffered_busy(buffered *self)
                      "reentrant call inside %R", self);
         return 0;
     }
-    relax_locking = (_Py_Finalizing != NULL);
+    relax_locking = _Py_IsFinalizing();
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking)
         st = PyThread_acquire_lock(self->lock, 1);
