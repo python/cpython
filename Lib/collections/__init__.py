@@ -301,6 +301,8 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
+_nt_itemgetters = {}
+
 def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None):
     """Returns a new subclass of tuple with named fields.
 
@@ -406,6 +408,13 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
         'Return self as a plain tuple.  Used by copy and pickle.'
         return tuple(self)
 
+    def reuse_itemgetter(index):
+        try:
+            return _nt_itemgetters[index]
+        except KeyError:
+            getter = _nt_itemgetters[index] = _itemgetter(index)
+            return getter
+
     # Build-up the class namespace dictionary
     # and use type() to build the result class
     class_namespace = dict(
@@ -420,8 +429,8 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
         __getnewargs__ = __getnewargs__,
     )
     for index, name in enumerate(field_names):
-        class_namespace[name] = property(fget=_itemgetter(index),
-                                         doc=f'Alias for field number {index:d}')
+        class_namespace[name] = property(fget = reuse_itemgetter(index),
+                                         doc = f'Alias for field number {index}')
     result = type(typename, (tuple,), class_namespace)
 
     # For pickling to work, the __module__ variable needs to be set to the frame
