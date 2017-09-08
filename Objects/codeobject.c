@@ -4,9 +4,6 @@
 #include "code.h"
 #include "structmember.h"
 
-#define NAME_CHARS \
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
-
 /* Holder for co_extra information */
 typedef struct {
     Py_ssize_t ce_size;
@@ -18,23 +15,26 @@ typedef struct {
 static int
 all_name_chars(PyObject *o)
 {
-    static char ok_name_char[256];
-    static const unsigned char *name_chars = (unsigned char *)NAME_CHARS;
+    /* [a-zA-Z0-9_] */
+    static const bool ok_name_char[128] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0
+    };
     const unsigned char *s, *e;
 
-    if (!PyUnicode_Check(o) || PyUnicode_READY(o) == -1 ||
-        !PyUnicode_IS_ASCII(o))
+    if (PyUnicode_READY(o) == -1 || !PyUnicode_IS_ASCII(o))
         return 0;
 
-    if (ok_name_char[*name_chars] == 0) {
-        const unsigned char *p;
-        for (p = name_chars; *p; p++)
-            ok_name_char[*p] = 1;
-    }
     s = PyUnicode_1BYTE_DATA(o);
     e = s + PyUnicode_GET_LENGTH(o);
-    while (s != e) {
-        if (ok_name_char[*s++] == 0)
+    for (; s != e; s++) {
+        if (!ok_name_char[*s])
             return 0;
     }
     return 1;
