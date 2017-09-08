@@ -485,18 +485,23 @@ fill_and_set_sslerror(PySSLSocket *sslsock, PyObject *type, int ssl_errno,
         }
 
         switch (verify_code) {
+#ifdef X509_V_ERR_HOSTNAME_MISMATCH
+        /* OpenSSL >= 1.0.2, LibreSSL >= 2.5.3 */
         case X509_V_ERR_HOSTNAME_MISMATCH:
             verify_obj = PyUnicode_FromFormat(
                 "Hostname mismatch, certificate is not valid for '%S'.",
                 sslsock->server_hostname
             );
             break;
+#endif
+#ifdef X509_V_ERR_IP_ADDRESS_MISMATCH
         case X509_V_ERR_IP_ADDRESS_MISMATCH:
             verify_obj = PyUnicode_FromFormat(
                 "IP address mismatch, certificate is not valid for '%S'.",
                 sslsock->server_hostname
             );
             break;
+#endif
         default:
             verify_str = X509_verify_cert_error_string(verify_code);
             if (verify_str != NULL) {
