@@ -171,6 +171,12 @@ static X509 *X509_OBJECT_get0_X509(X509_OBJECT *x)
     return x->data.x509;
 }
 
+static int BIO_up_ref(BIO *b)
+{
+    CRYPTO_add(&b->references, 1, CRYPTO_LOCK_BIO);
+    return 1;
+}
+
 static STACK_OF(X509_OBJECT) *X509_STORE_get0_objects(X509_STORE *store) {
     return store->objs;
 }
@@ -599,8 +605,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         /* BIOs are reference counted and SSL_set_bio borrows our reference.
          * To prevent a double free in memory_bio_dealloc() we need to take an
          * extra reference here. */
-        CRYPTO_add(&inbio->bio->references, 1, CRYPTO_LOCK_BIO);
-        CRYPTO_add(&outbio->bio->references, 1, CRYPTO_LOCK_BIO);
+        BIO_up_ref(inbio->bio);
+        BIO_up_ref(outbio->bio);
         SSL_set_bio(self->ssl, inbio->bio, outbio->bio);
     }
     mode = SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER;
