@@ -1,0 +1,1 @@
+``bool(range)`` works even if ``len(range)`` raises :exc:`OverflowError`.
