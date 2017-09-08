@@ -428,6 +428,16 @@ class TestNamedTuple(unittest.TestCase):
             pass
         self.assertEqual(repr(B(1)), 'B(x=1)')
 
+    def test_keyword_only_arguments(self):
+        # See issue 25628
+        with self.assertRaises(TypeError):
+            NT = namedtuple('NT', ['x', 'y'], True)
+
+        NT = namedtuple('NT', ['abc', 'def'], rename=True)
+        self.assertEqual(NT._fields, ('abc', '_1'))
+        with self.assertRaises(TypeError):
+            NT = namedtuple('NT', ['abc', 'def'], False, True)
+
     def test_namedtuple_subclass_issue_24931(self):
         class Point(namedtuple('_Point', ['x', 'y'])):
             pass
