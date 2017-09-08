@@ -1467,7 +1467,10 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
         len = PyByteArray_Size(obj);
     }
     else if (PyUnicode_Check(obj)) {
-        if (PyUnicode_READY(obj) == 0 && PyUnicode_IS_COMPACT_ASCII(obj)) {
+        if (PyUnicode_READY(obj) == -1) {
+            return 0;
+        }
+        if (PyUnicode_IS_COMPACT_ASCII(obj)) {
             data->buf = PyUnicode_DATA(obj);
             len = PyUnicode_GET_LENGTH(obj);
         }
