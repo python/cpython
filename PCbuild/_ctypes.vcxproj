@@ -94,7 +94,7 @@
       <ExcludedFromBuild Condition="'$(Platform)'=='Win32'">true</ExcludedFromBuild>
       <Command>
         cl /nologo /I"$(libffiDir)src\x86" /I"$(libffiDir)include" /EP "%(FullPath)" > "$(IntDir)win64.asm
-        ml64 /nologo /c /safeseh /Zi /Fo "$(IntDir)win64.obj" "$(IntDir)win64.asm
+        ml64 /nologo /c /Zi /Fo "$(IntDir)win64.obj" "$(IntDir)win64.asm
       </Command>
       <Outputs>$(IntDir)win64.obj;%(Outputs)</Outputs>
     </CustomBuild>
