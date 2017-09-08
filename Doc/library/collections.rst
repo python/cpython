@@ -804,7 +804,7 @@ they add the ability to access fields by name instead of position index.
 
     .. versionchanged:: 3.7
        Remove the *verbose* parameter and the :attr:`_source` attribute.
-       
+
 .. doctest::
     :options: +NORMALIZE_WHITESPACE
 
