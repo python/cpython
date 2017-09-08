@@ -234,15 +234,28 @@ generator_example.events = ([(0, 'call'),
 
 
 class Tracer:
-    def __init__(self):
+    def __init__(self, trace_line_events=None, trace_opcode_events=None):
+        self.trace_line_events = trace_line_events
+        self.trace_opcode_events = trace_opcode_events
         self.events = []
+
+    def _reconfigure_frame(self, frame):
+        if self.trace_line_events is not None:
+            frame.f_trace_lines = self.trace_line_events
+        if self.trace_opcode_events is not None:
+            frame.f_trace_opcodes = self.trace_opcode_events
+
     def trace(self, frame, event, arg):
+        self._reconfigure_frame(frame)
         self.events.append((frame.f_lineno, event))
         return self.trace
+
     def traceWithGenexp(self, frame, event, arg):
+        self._reconfigure_frame(frame)
         (o for o in [1])
         self.events.append((frame.f_lineno, event))
         return self.trace
+
 
 class TraceTestCase(unittest.TestCase):
 
@@ -257,6 +270,11 @@ class TraceTestCase(unittest.TestCase):
         if self.using_gc:
             gc.enable()
 
+    @staticmethod
+    def make_tracer():
+        """Helper to allow test subclasses to configure tracers differently"""
+        return Tracer()
+
     def compare_events(self, line_offset, events, expected_events):
         events = [(l - line_offset, e) for (l, e) in events]
         if events != expected_events:
@@ -266,7 +284,7 @@ class TraceTestCase(unittest.TestCase):
                                         [str(x) for x in events])))
 
     def run_and_compare(self, func, events):
-        tracer = Tracer()
+        tracer = self.make_tracer()
         sys.settrace(tracer.trace)
         func()
         sys.settrace(None)
@@ -277,7 +295,7 @@ class TraceTestCase(unittest.TestCase):
         self.run_and_compare(func, func.events)
 
     def run_test2(self, func):
-        tracer = Tracer()
+        tracer = self.make_tracer()
         func(tracer.trace)
         sys.settrace(None)
         self.compare_events(func.__code__.co_firstlineno,
@@ -329,7 +347,7 @@ class TraceTestCase(unittest.TestCase):
         # and if the traced function contains another generator
         # that is not completely exhausted, the trace stopped.
         # Worse: the 'finally' clause was not invoked.
-        tracer = Tracer()
+        tracer = self.make_tracer()
         sys.settrace(tracer.traceWithGenexp)
         generator_example()
         sys.settrace(None)
@@ -396,6 +414,34 @@ class TraceTestCase(unittest.TestCase):
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line')])
+
+
+class SkipLineEventsTraceTestCase(TraceTestCase):
+    """Repeat the trace tests, but with per-line events skipped"""
+
+    def compare_events(self, line_offset, events, expected_events):
+        skip_line_events = [e for e in expected_events if e[1] != 'line']
+        super().compare_events(line_offset, events, skip_line_events)
+
+    @staticmethod
+    def make_tracer():
+        return Tracer(trace_line_events=False)
+
+
+@support.cpython_only
+class TraceOpcodesTestCase(TraceTestCase):
+    """Repeat the trace tests, but with per-opcodes events enabled"""
+
+    def compare_events(self, line_offset, events, expected_events):
+        skip_opcode_events = [e for e in events if e[1] != 'opcode']
+        if len(events) > 1:
+            self.assertLess(len(skip_opcode_events), len(events),
+                            msg="No 'opcode' events received by the tracer")
+        super().compare_events(line_offset, skip_opcode_events, expected_events)
+
+    @staticmethod
+    def make_tracer():
+        return Tracer(trace_opcode_events=True)
 
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
@@ -846,6 +892,8 @@ output.append(4)
 def test_main():
     support.run_unittest(
         TraceTestCase,
+        SkipLineEventsTraceTestCase,
+        TraceOpcodesTestCase,
         RaisingTraceFuncTestCase,
         JumpTestCase
     )

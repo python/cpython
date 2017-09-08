@@ -970,10 +970,20 @@ Internal types
 
       .. index::
          single: f_trace (frame attribute)
+         single: f_trace_lines (frame attribute)
+         single: f_trace_opcodes (frame attribute)
          single: f_lineno (frame attribute)
 
       Special writable attributes: :attr:`f_trace`, if not ``None``, is a function
-      called at the start of each source code line (this is used by the debugger);
+      called for various events during code execution (this is used by the debugger).
+      Normally an event is triggered for each new source line - this can be
+      disabled by setting :attr:`f_trace_lines` to :const:`False`.
+
+      Implementations *may* allow per-opcode events to be requested by setting
+      :attr:`f_trace_opcodes` to :const:`True`. Note that this may lead to
+      undefined interpreter behaviour if exceptions raised by the trace
+      function escape to the function being traced.
+
       :attr:`f_lineno` is the current line number of the frame --- writing to this
       from within a trace function jumps to the given line (only for the bottom-most
       frame).  A debugger can implement a Jump command (aka Set Next Statement)

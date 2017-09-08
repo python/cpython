@@ -1,0 +1,5 @@
+For finer control of tracing behaviour when testing the interpreter, two new
+frame attributes have been added to control the emission of particular trace
+events: ``f_trace_lines`` (``True`` by default) to turn off per-line trace
+events; and ``f_trace_opcodes`` (``False`` by default) to turn on per-opcode
+trace events.

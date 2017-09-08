@@ -92,7 +92,11 @@ typedef struct _is {
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
 typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 
-/* The following values are used for 'what' for tracefunc functions: */
+/* The following values are used for 'what' for tracefunc functions
+ *
+ * To add a new kind of trace event, also update "trace_init" in
+ * Python/sysmodule.c to define the Python level event name
+ */
 #define PyTrace_CALL 0
 #define PyTrace_EXCEPTION 1
 #define PyTrace_LINE 2
@@ -100,6 +104,7 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_CALL 4
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
+#define PyTrace_OPCODE 7
 #endif
 
 #ifdef Py_LIMITED_API
