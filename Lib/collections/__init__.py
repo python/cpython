@@ -371,8 +371,8 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
     # Create all the named tuple methods to be added to the class namespace
 
     def create_new():
-        s = f'def __new__(_cls, {arg_list}): return _tuple.__new__(_cls, ({arg_list}))'
-        namespace = dict(_tuple=tuple, __name__=f'namedtuple_{typename}')
+        s = f'def __new__(_cls, {arg_list}): return _tuple_new(_cls, ({arg_list}))'
+        namespace = dict(_tuple_new=tuple_new, __name__=f'namedtuple_{typename}')
         exec(s, namespace)
         __new__ = namespace['__new__']
         __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
