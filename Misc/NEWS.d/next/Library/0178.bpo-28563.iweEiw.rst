@@ -1,0 +1,3 @@
+Fixed possible DoS and arbitrary code execution when handle plural form
+selections in the gettext module.  The expression parser now supports exact
+syntax supported by GNU gettext.

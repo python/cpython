@@ -41,6 +41,7 @@ _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(threading);
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,10 +72,8 @@ extern int _PyTraceMalloc_Init(void);
 extern int _PyTraceMalloc_Fini(void);
 extern void _Py_ReadyTypes(void);
 
-#ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
 extern void _PyGILState_Fini(void);
-#endif /* WITH_THREAD */
 
 /* Global configuration variable declarations are in pydebug.h */
 /* XXX (ncoghlan): move those declarations to pylifecycle.h? */
@@ -262,7 +261,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
 {
     PyObject *importlib;
     PyObject *impmod;
-    PyObject *sys_modules;
     PyObject *value;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
@@ -293,11 +291,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     else if (Py_VerboseFlag) {
         PySys_FormatStderr("import _imp # builtin\n");
     }
-    sys_modules = PyImport_GetModuleDict();
-    if (Py_VerboseFlag) {
-        PySys_FormatStderr("import sys # builtin\n");
-    }
-    if (PyDict_SetItemString(sys_modules, "_imp", impmod) < 0) {
+    if (_PyImport_SetModuleString("_imp", impmod) < 0) {
         Py_FatalError("Py_Initialize: can't save _imp to sys.modules");
     }
 
@@ -622,7 +616,6 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
         Py_FatalError("Py_InitializeCore: can't make first thread");
     (void) PyThreadState_Swap(tstate);
 
-#ifdef WITH_THREAD
     /* We can't call _PyEval_FiniThreads() in Py_FinalizeEx because
        destroying the GIL might fail when it is being referenced from
        another running thread (see issue #9901).
@@ -631,7 +624,6 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     _PyEval_FiniThreads();
     /* Auto-thread-state API */
     _PyGILState_Init(interp, tstate);
-#endif /* WITH_THREAD */
 
     _Py_ReadyTypes();
 
@@ -647,9 +639,19 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     if (!_PyFloat_Init())
         Py_FatalError("Py_InitializeCore: can't init float");
 
-    interp->modules = PyDict_New();
-    if (interp->modules == NULL)
+    PyObject *modules = PyDict_New();
+    if (modules == NULL)
         Py_FatalError("Py_InitializeCore: can't make modules dictionary");
+
+    sysmod = _PySys_BeginInit();
+    if (sysmod == NULL)
+        Py_FatalError("Py_InitializeCore: can't initialize sys");
+    interp->sysdict = PyModule_GetDict(sysmod);
+    if (interp->sysdict == NULL)
+        Py_FatalError("Py_InitializeCore: can't initialize sys dict");
+    Py_INCREF(interp->sysdict);
+    PyDict_SetItemString(interp->sysdict, "modules", modules);
+    _PyImport_FixupBuiltin(sysmod, "sys", modules);
 
     /* Init Unicode implementation; relies on the codec registry */
     if (_PyUnicode_Init() < 0)
@@ -661,7 +663,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     bimod = _PyBuiltin_Init();
     if (bimod == NULL)
         Py_FatalError("Py_InitializeCore: can't initialize builtins modules");
-    _PyImport_FixupBuiltin(bimod, "builtins");
+    _PyImport_FixupBuiltin(bimod, "builtins", modules);
     interp->builtins = PyModule_GetDict(bimod);
     if (interp->builtins == NULL)
         Py_FatalError("Py_InitializeCore: can't initialize builtins dict");
@@ -669,17 +671,6 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
 
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);
-
-    sysmod = _PySys_BeginInit();
-    if (sysmod == NULL)
-        Py_FatalError("Py_InitializeCore: can't initialize sys");
-    interp->sysdict = PyModule_GetDict(sysmod);
-    if (interp->sysdict == NULL)
-        Py_FatalError("Py_InitializeCore: can't initialize sys dict");
-    Py_INCREF(interp->sysdict);
-    _PyImport_FixupBuiltin(sysmod, "sys");
-    PyDict_SetItemString(interp->sysdict, "modules",
-                         interp->modules);
 
     /* Set up a preliminary stderr printer until we have enough
        infrastructure for the io module in place. */
@@ -1089,9 +1080,7 @@ Py_FinalizeEx(void)
     PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
 
     /* Cleanup auto-thread-state */
-#ifdef WITH_THREAD
     _PyGILState_Fini();
-#endif /* WITH_THREAD */
 
     /* Delete current thread. After this, many C API calls become crashy. */
     PyThreadState_Swap(NULL);
@@ -1147,11 +1136,9 @@ Py_NewInterpreter(void)
     if (!_Py_Initialized)
         Py_FatalError("Py_NewInterpreter: call Py_Initialize first");
 
-#ifdef WITH_THREAD
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
     _PyGILState_check_enabled = 0;
-#endif
 
     interp = PyInterpreterState_New();
     if (interp == NULL)
@@ -1178,9 +1165,22 @@ Py_NewInterpreter(void)
 
     /* XXX The following is lax in error checking */
 
-    interp->modules = PyDict_New();
+    PyObject *modules = PyDict_New();
+    if (modules == NULL)
+        Py_FatalError("Py_NewInterpreter: can't make modules dictionary");
 
-    bimod = _PyImport_FindBuiltin("builtins");
+    sysmod = _PyImport_FindBuiltin("sys", modules);
+    if (sysmod != NULL) {
+        interp->sysdict = PyModule_GetDict(sysmod);
+        if (interp->sysdict == NULL)
+            goto handle_error;
+        Py_INCREF(interp->sysdict);
+        PyDict_SetItemString(interp->sysdict, "modules", modules);
+        PySys_SetPath(Py_GetPath());
+        _PySys_EndInit(interp->sysdict);
+    }
+
+    bimod = _PyImport_FindBuiltin("builtins", modules);
     if (bimod != NULL) {
         interp->builtins = PyModule_GetDict(bimod);
         if (interp->builtins == NULL)
@@ -1191,18 +1191,9 @@ Py_NewInterpreter(void)
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);
 
-    sysmod = _PyImport_FindBuiltin("sys");
     if (bimod != NULL && sysmod != NULL) {
         PyObject *pstderr;
 
-        interp->sysdict = PyModule_GetDict(sysmod);
-        if (interp->sysdict == NULL)
-            goto handle_error;
-        Py_INCREF(interp->sysdict);
-        _PySys_EndInit(interp->sysdict);
-        PySys_SetPath(Py_GetPath());
-        PyDict_SetItemString(interp->sysdict, "modules",
-                             interp->modules);
         /* Set up a preliminary stderr printer until we have enough
            infrastructure for the io module in place. */
         pstderr = PyFile_NewStdPrinter(fileno(stderr));
@@ -1851,9 +1842,7 @@ exit:
 
 /* Clean up and exit */
 
-#ifdef WITH_THREAD
 #  include "pythread.h"
-#endif
 
 static void (*pyexitfunc)(void) = NULL;
 /* For the atexit module. */
@@ -1879,17 +1868,15 @@ call_py_exitfuncs(void)
 static void
 wait_for_thread_shutdown(void)
 {
-#ifdef WITH_THREAD
     _Py_IDENTIFIER(_shutdown);
     PyObject *result;
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *threading = PyMapping_GetItemString(tstate->interp->modules,
-                                                  "threading");
+    PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
     if (threading == NULL) {
         /* threading not imported */
         PyErr_Clear();
         return;
     }
+    Py_INCREF(threading);
     result = _PyObject_CallMethodId(threading, &PyId__shutdown, NULL);
     if (result == NULL) {
         PyErr_WriteUnraisable(threading);
@@ -1898,7 +1885,6 @@ wait_for_thread_shutdown(void)
         Py_DECREF(result);
     }
     Py_DECREF(threading);
-#endif
 }
 
 #define NEXITFUNCS 32

@@ -134,10 +134,6 @@ AC_DEFINE(_NETBSD_SOURCE, 1, [Define on NetBSD to activate all library features]
 AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features])
 
 # The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
-# u_int on Irix 5.3. Defining _BSD_TYPES brings it back.
-AC_DEFINE(_BSD_TYPES, 1, [Define on Irix to enable u_int])
-
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])
@@ -406,7 +402,6 @@ then
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
-	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
 fi
@@ -545,24 +540,6 @@ if test $define_stdc_a1 = yes
 then
   AC_DEFINE(_INCLUDE__STDC_A1_SOURCE, 1, Define to include mbstate_t for mbrtowc)
 fi
-
-#
-# SGI compilers allow the specification of the both the ABI and the
-# ISA on the command line.  Depending on the values of these switches,
-# different and often incompatible code will be generated.
-#
-# The SGI_ABI variable can be used to modify the CC and LDFLAGS and
-# thus supply support for various ABI/ISA combinations.  The MACHDEP
-# variable is also adjusted.
-#
-AC_SUBST(SGI_ABI)
-if test ! -z "$SGI_ABI"
-then
-        CC="cc $SGI_ABI"
-        LDFLAGS="$SGI_ABI $LDFLAGS"
-        MACHDEP=`echo "${MACHDEP}${SGI_ABI}" | sed 's/ *//g'`
-fi
-AC_MSG_RESULT($MACHDEP)
 
 # Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
 # it may influence the way we can build extensions, so distutils
@@ -2083,7 +2060,7 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h)
+sys/endian.h sys/sysmacros.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -2115,6 +2092,12 @@ AC_CHECK_HEADERS(linux/netlink.h,,,[
 #ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
 #endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+])
+
+AC_CHECK_HEADERS(linux/vm_sockets.h,,,[
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -2168,25 +2151,7 @@ if test "$ac_cv_has_le64toh" = "yes"; then
     AC_DEFINE(HAVE_HTOLE64, 1, [Define this if you have le64toh()])
 fi
 
-# Enabling LFS on Solaris (2.6 to 9) with gcc 2.95 triggers a bug in
-# the system headers: If _XOPEN_SOURCE and _LARGEFILE_SOURCE are
-# defined, but the compiler does not support pragma redefine_extname,
-# and _LARGEFILE64_SOURCE is not defined, the headers refer to 64-bit
-# structures (such as rlimit64) without declaring them. As a
-# work-around, disable LFS on such configurations
-
 use_lfs=yes
-AC_MSG_CHECKING(Solaris LFS bug)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#define _LARGEFILE_SOURCE 1
-#define _FILE_OFFSET_BITS 64
-#include <sys/resource.h>
-]], [[struct rlimit foo;]])],[sol_lfs_bug=no],[sol_lfs_bug=yes])
-AC_MSG_RESULT($sol_lfs_bug)
-if test "$sol_lfs_bug" = "yes"; then
-  use_lfs=no
-fi
-
 # Don't use largefile support for GNU/Hurd
 case $ac_sys_system in GNU*)
   use_lfs=no
@@ -2457,7 +2422,7 @@ fi
 AC_MSG_RESULT($SHLIB_SUFFIX)
 
 # LDSHARED is the ld *command* used to create shared library
-# -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
+# -- "cc -G" on SunOS 5.x.
 # (Shared libraries in this instance are shared modules to be loaded into
 # Python, as opposed to building Python itself as a shared library.)
 AC_MSG_CHECKING(LDSHARED)
@@ -2468,8 +2433,6 @@ then
 		BLDSHARED="Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
-	IRIX/5*) LDSHARED="ld -shared";;
-	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/5*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
@@ -2627,10 +2590,6 @@ then
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
-	IRIX*/6*)  case $CC in
-		   *gcc*) CCSHARED="-shared";;
-		   *) CCSHARED="";;
-		   esac;;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -2945,73 +2904,39 @@ else
 fi])
 AC_MSG_RESULT($with_dbmliborder)
 
-# This is used to generate Setup.config
-AC_SUBST(USE_THREAD_MODULE)
-USE_THREAD_MODULE=""
-
 AC_SUBST(LDLAST)
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
 AH_TEMPLATE(_REENTRANT,
   [Define to force use of thread-safe errno, h_errno, and other functions])
-AH_TEMPLATE(WITH_THREAD,
-  [Define if you want to compile in rudimentary thread support])
 
-AC_MSG_CHECKING(for --with-threads)
-dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-AC_ARG_WITH(threads,
-            AS_HELP_STRING([--with(out)-threads@<:@=DIRECTORY@:>@], [disable/enable thread support]))
-
-# --with-thread is deprecated, but check for it anyway
-dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-AC_ARG_WITH(thread,
-            AS_HELP_STRING([--with(out)-thread@<:@=DIRECTORY@:>@], [deprecated; use --with(out)-threads]),
-            [with_threads=$with_thread])
-
-if test -z "$with_threads"
-then with_threads="yes"
-fi
-AC_MSG_RESULT($with_threads)
-
-AC_SUBST(THREADOBJ)
-if test "$with_threads" = "no"
+if test "$ac_cv_pthread_is_default" = yes
 then
-    USE_THREAD_MODULE="#"
-elif test "$ac_cv_pthread_is_default" = yes
-then
-    AC_DEFINE(WITH_THREAD)
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kpthread"
     fi
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kthread" = "yes"
 then
     CC="$CC -Kthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kthread"
     fi
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_pthread" = "yes"
 then
     CC="$CC -pthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -pthread"
     fi
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 else
     if test ! -z "$with_threads" -a -d "$with_threads"
     then LDFLAGS="$LDFLAGS -L$with_threads"
@@ -3047,43 +2972,36 @@ yes
 void * start_routine (void *arg) { exit (0); }]], [[
 pthread_create (NULL, NULL, start_routine, NULL)]])],[
     AC_MSG_RESULT(yes)
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"],[
+    ],[
     LIBS=$_libs
-    AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
+    AC_CHECK_FUNC(pthread_detach, [
     posix_threads=yes
-    THREADOBJ="Python/thread.o"],[
-    AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
+    ],[
+    AC_CHECK_LIB(pthreads, pthread_create, [
     posix_threads=yes
     LIBS="$LIBS -lpthreads"
-    THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
+    ], [
+    AC_CHECK_LIB(c_r, pthread_create, [
     posix_threads=yes
     LIBS="$LIBS -lc_r"
-    THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
+    ], [
+    AC_CHECK_LIB(pthread, __pthread_create_system, [
     posix_threads=yes
     LIBS="$LIBS -lpthread"
-    THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
+    ], [
+    AC_CHECK_LIB(cma, pthread_create, [
     posix_threads=yes
     LIBS="$LIBS -lcma"
-    THREADOBJ="Python/thread.o"],[
-    USE_THREAD_MODULE="#"])
+    ],[
+    AC_MSG_ERROR([could not find pthreads on your system])
+    ])
     ])])])])])
 
-    AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
+    AC_CHECK_LIB(mpc, usconfig, [
     LIBS="$LIBS -lmpc"
-    THREADOBJ="Python/thread.o"
-    USE_THREAD_MODULE=""])
+    ])
 
-    if test "$posix_threads" != "yes"; then
-      AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
-      LIBS="$LIBS -lthread"
-      THREADOBJ="Python/thread.o"
-      USE_THREAD_MODULE=""])
-    fi
 fi
 
 if test "$posix_threads" = "yes"; then
@@ -3504,7 +3422,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
  pthread_init pthread_kill putenv pwrite readlink readlinkat readv realpath renameat \
- select sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
+ sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
@@ -4098,14 +4016,6 @@ fi
 
 AC_C_CHAR_UNSIGNED
 AC_C_CONST
-
-works=no
-AC_MSG_CHECKING(for working volatile)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[volatile int x; x = 0;]])],
-  [works=yes],
-  [AC_DEFINE(volatile, , [Define to empty if the keyword does not work.])]
-)
-AC_MSG_RESULT($works)
 
 works=no
 AC_MSG_CHECKING(for working signed char)
@@ -5494,7 +5404,7 @@ if test "$have_getrandom" = yes; then
 fi
 
 # generate output files
-AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh)
+AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
@@ -5512,7 +5422,7 @@ fi
 
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
-			-s Modules Modules/Setup.config \
+			-s Modules \
 			Modules/Setup.local Modules/Setup
 mv config.c Modules
 

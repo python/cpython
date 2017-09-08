@@ -1,0 +1,4 @@
+Rather than silently producing a class that doesn't support zero-argument
+``super()`` in methods, failing to pass the new ``__classcell__`` namespace
+entry up to ``type.__new__`` now results in a ``DeprecationWarning`` and a
+class that supports zero-argument ``super()``.

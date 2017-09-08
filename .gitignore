@@ -19,6 +19,9 @@
 .gdb_history
 Doc/build/
 Doc/venv/
+Doc/.venv/
+Doc/env/
+Doc/.env/
 Include/pydtrace_probes.h
 Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle

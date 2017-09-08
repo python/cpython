@@ -1,9 +1,6 @@
 '''A multi-producer, multi-consumer queue.'''
 
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
+import threading
 from collections import deque
 from heapq import heappush, heappop
 from time import monotonic as time

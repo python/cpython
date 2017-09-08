@@ -159,13 +159,11 @@ static PyObject *
 sys_displayhook(PyObject *self, PyObject *o)
 {
     PyObject *outf;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
-    PyObject *modules = interp->modules;
     PyObject *builtins;
     static PyObject *newline = NULL;
     int err;
 
-    builtins = _PyDict_GetItemId(modules, &PyId_builtins);
+    builtins = _PyImport_GetModuleId(&PyId_builtins);
     if (builtins == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
         return NULL;
@@ -351,18 +349,19 @@ same value.");
  * Cached interned string objects used for calling the profile and
  * trace functions.  Initialized by trace_init().
  */
-static PyObject *whatstrings[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+static PyObject *whatstrings[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 static int
 trace_init(void)
 {
-    static const char * const whatnames[7] = {
+    static const char * const whatnames[8] = {
         "call", "exception", "line", "return",
-        "c_call", "c_exception", "c_return"
+        "c_call", "c_exception", "c_return",
+        "opcode"
     };
     PyObject *name;
     int i;
-    for (i = 0; i < 7; ++i) {
+    for (i = 0; i < 8; ++i) {
         if (whatstrings[i] == NULL) {
             name = PyUnicode_InternFromString(whatnames[i]);
             if (name == NULL)
@@ -558,7 +557,6 @@ PyDoc_STRVAR(getcheckinterval_doc,
 "getcheckinterval() -> current check interval; see setcheckinterval()."
 );
 
-#ifdef WITH_THREAD
 static PyObject *
 sys_setswitchinterval(PyObject *self, PyObject *args)
 {
@@ -595,8 +593,6 @@ sys_getswitchinterval(PyObject *self, PyObject *args)
 PyDoc_STRVAR(getswitchinterval_doc,
 "getswitchinterval() -> current thread switch interval; see setswitchinterval()."
 );
-
-#endif /* WITH_THREAD */
 
 static PyObject *
 sys_setrecursionlimit(PyObject *self, PyObject *args)
@@ -1420,12 +1416,10 @@ static PyMethodDef sys_methods[] = {
      setcheckinterval_doc},
     {"getcheckinterval",        sys_getcheckinterval, METH_NOARGS,
      getcheckinterval_doc},
-#ifdef WITH_THREAD
     {"setswitchinterval",       sys_setswitchinterval, METH_VARARGS,
      setswitchinterval_doc},
     {"getswitchinterval",       sys_getswitchinterval, METH_NOARGS,
      getswitchinterval_doc},
-#endif
 #ifdef HAVE_DLOPEN
     {"setdlopenflags", sys_setdlopenflags, METH_VARARGS,
      setdlopenflags_doc},
@@ -1929,7 +1923,7 @@ _PySys_BeginInit(void)
     PyObject *m, *sysdict, *version_info;
     int res;
 
-    m = PyModule_Create(&sysmodule);
+    m = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
     if (m == NULL)
         return NULL;
     sysdict = PyModule_GetDict(m);
@@ -2057,9 +2051,7 @@ _PySys_BeginInit(void)
                         PyUnicode_FromString("legacy"));
 #endif
 
-#ifdef WITH_THREAD
     SET_SYS_FROM_STRING("thread_info", PyThread_GetInfo());
-#endif
 
     /* initialize asyncgen_hooks */
     if (AsyncGenHooksType.tp_name == NULL) {

@@ -163,10 +163,6 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # include <sys/uio.h>
 #endif
 
-#if !defined(WITH_THREAD)
-# undef HAVE_GETHOSTBYNAME_R
-#endif
-
 #if defined(__ANDROID__) && __ANDROID_API__ < 23
 # undef HAVE_GETHOSTBYNAME_R
 #endif
@@ -185,8 +181,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # endif
 #endif
 
-#if !defined(HAVE_GETHOSTBYNAME_R) && defined(WITH_THREAD) && \
-    !defined(MS_WINDOWS)
+#if !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
 # define USE_GETHOSTBYNAME_LOCK
 #endif
 
@@ -210,8 +205,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 
 http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&r2=1.83
  */
-#if defined(WITH_THREAD) && ( \
-    (defined(__APPLE__) && \
+#if ((defined(__APPLE__) && \
         MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5) || \
     (defined(__FreeBSD__) && __FreeBSD_version+0 < 503000) || \
     (defined(__OpenBSD__) && OpenBSD+0 < 201311) || \
@@ -268,10 +262,8 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #include <netdb.h>
 #endif
 
-/* Irix 6.5 fails to define this variable at all. This is needed
-   for both GCC and SGI's compiler. I'd say that the SGI headers
-   are just busted. Same thing for Solaris. */
-#if (defined(__sgi) || defined(sun)) && !defined(INET_ADDRSTRLEN)
+/* Solaris fails to define this variable at all. */
+#if defined(sun) && !defined(INET_ADDRSTRLEN)
 #define INET_ADDRSTRLEN 16
 #endif
 
@@ -658,10 +650,8 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     struct timeval tv, *tvp;
 #endif
 
-#ifdef WITH_THREAD
     /* must be called with the GIL held */
     assert(PyGILState_Check());
-#endif
 
     /* Error condition is for output only */
     assert(!(connect && !writing));
@@ -760,10 +750,8 @@ sock_call_ex(PySocketSockObject *s,
     int deadline_initialized = 0;
     int res;
 
-#ifdef WITH_THREAD
     /* sock_call() must be called with the GIL held. */
     assert(PyGILState_Check());
-#endif
 
     /* outer loop to retry select() when select() is interrupted by a signal
        or to retry select()+sock_func() on false positive (see above) */
@@ -1227,6 +1215,14 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
        }
 #endif /* AF_NETLINK */
 
+#if defined(AF_VSOCK)
+       case AF_VSOCK:
+       {
+           struct sockaddr_vm *a = (struct sockaddr_vm *) addr;
+           return Py_BuildValue("II", a->svm_cid, a->svm_port);
+       }
+#endif /* AF_VSOCK */
+
 #ifdef ENABLE_IPV6
     case AF_INET6:
     {
@@ -1587,6 +1583,32 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         return 1;
     }
 #endif
+
+#if defined(AF_VSOCK)
+    case AF_VSOCK:
+    {
+        struct sockaddr_vm* addr;
+        int port, cid;
+        addr = (struct sockaddr_vm *)addr_ret;
+        memset(addr, 0, sizeof(struct sockaddr_vm));
+        if (!PyTuple_Check(args)) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "getsockaddrarg: "
+                "AF_VSOCK address must be tuple, not %.500s",
+                Py_TYPE(args)->tp_name);
+            return 0;
+        }
+        if (!PyArg_ParseTuple(args, "II:getsockaddrarg", &cid, &port))
+            return 0;
+        addr->svm_family = s->sock_family;
+        addr->svm_port = port;
+        addr->svm_cid = cid;
+        *len_ret = sizeof(*addr);
+        return 1;
+    }
+#endif
+
 
 #ifdef AF_RDS
     case AF_RDS:
@@ -2105,6 +2127,14 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
     }
 #endif
 
+#if defined(AF_VSOCK)
+       case AF_VSOCK:
+       {
+           *len_ret = sizeof (struct sockaddr_vm);
+           return 1;
+       }
+#endif
+
 #ifdef AF_RDS
     case AF_RDS:
         /* RDS sockets use sockaddr_in: fall-through */
@@ -2600,6 +2630,21 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
     unsigned int optlen;
     PyObject *none;
 
+#ifdef AF_VSOCK
+    if (s->sock_family == AF_VSOCK) {
+        uint64_t vflag; // Must be set width of 64 bits
+        /* setsockopt(level, opt, flag) */
+        if (PyArg_ParseTuple(args, "iiK:setsockopt",
+                         &level, &optname, &vflag)) {
+            // level should always be set to AF_VSOCK
+            res = setsockopt(s->sock_fd, level, optname,
+                         (void*)&vflag, sizeof vflag);
+            goto done;
+        }
+        return NULL;
+    }
+#endif
+
     /* setsockopt(level, opt, flag) */
     if (PyArg_ParseTuple(args, "iii:setsockopt",
                          &level, &optname, &flag)) {
@@ -2670,20 +2715,39 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
     int res;
     PyObject *buf;
     socklen_t buflen = 0;
+    int flag = 0;
+    socklen_t flagsize;
 
     if (!PyArg_ParseTuple(args, "ii|i:getsockopt",
                           &level, &optname, &buflen))
         return NULL;
 
     if (buflen == 0) {
-        int flag = 0;
-        socklen_t flagsize = sizeof flag;
+#ifdef AF_VSOCK
+        if (s->sock_family == AF_VSOCK) {
+            uint64_t vflag = 0; // Must be set width of 64 bits
+            flagsize = sizeof vflag;
+            res = getsockopt(s->sock_fd, level, optname,
+                         (void *)&vflag, &flagsize);
+            if (res < 0)
+                return s->errorhandler();
+            return PyLong_FromUnsignedLong(vflag);
+        }
+#endif
+        flagsize = sizeof flag;
         res = getsockopt(s->sock_fd, level, optname,
                          (void *)&flag, &flagsize);
         if (res < 0)
             return s->errorhandler();
         return PyLong_FromLong(flag);
     }
+#ifdef AF_VSOCK
+    if (s->sock_family == AF_VSOCK) {
+        PyErr_SetString(PyExc_OSError,
+                        "getsockopt string buffer not allowed");
+        return NULL;
+        }
+#endif
     if (buflen <= 0 || buflen > 1024) {
         PyErr_SetString(PyExc_OSError,
                         "getsockopt buflen out of range");
@@ -6647,6 +6711,19 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, NETLINK_CRYPTO);
 #endif
 #endif /* AF_NETLINK */
+
+#ifdef AF_VSOCK
+    PyModule_AddIntConstant(m, "AF_VSOCK", AF_VSOCK);
+    PyModule_AddIntConstant(m, "SO_VM_SOCKETS_BUFFER_SIZE", 0);
+    PyModule_AddIntConstant(m, "SO_VM_SOCKETS_BUFFER_MIN_SIZE", 1);
+    PyModule_AddIntConstant(m, "SO_VM_SOCKETS_BUFFER_MAX_SIZE", 2);
+    PyModule_AddIntConstant(m, "VMADDR_CID_ANY", 0xffffffff);
+    PyModule_AddIntConstant(m, "VMADDR_PORT_ANY", 0xffffffff);
+    PyModule_AddIntConstant(m, "VMADDR_CID_HOST", 2);
+    PyModule_AddIntConstant(m, "VM_SOCKETS_INVALID_VERSION", 0xffffffff);
+    PyModule_AddIntConstant(m, "IOCTL_VM_SOCKETS_GET_LOCAL_CID",  _IO(7, 0xb9));
+#endif
+
 #ifdef AF_ROUTE
     /* Alias to emulate 4.4BSD */
     PyModule_AddIntMacro(m, AF_ROUTE);

@@ -15,6 +15,8 @@ static PyMemberDef frame_memberlist[] = {
     {"f_builtins",      T_OBJECT,       OFF(f_builtins),  READONLY},
     {"f_globals",       T_OBJECT,       OFF(f_globals),   READONLY},
     {"f_lasti",         T_INT,          OFF(f_lasti),     READONLY},
+    {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
+    {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
 };
 
@@ -728,6 +730,8 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     f->f_iblock = 0;
     f->f_executing = 0;
     f->f_gen = NULL;
+    f->f_trace_opcodes = 0;
+    f->f_trace_lines = 1;
 
     return f;
 }

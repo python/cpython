@@ -1,0 +1,1 @@
+Fix a refleak in code that raises DeprecationWarning.

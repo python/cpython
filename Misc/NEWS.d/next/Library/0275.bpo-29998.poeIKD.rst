@@ -1,0 +1,1 @@
+Pickling and copying ImportError now preserves name and path attributes.

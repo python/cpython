@@ -1,0 +1,2 @@
+The mode argument of os.makedirs() no longer affects the file permission
+bits of newly-created intermediate-level directories.

@@ -1,0 +1,2 @@
+Fixed the slowing down to 25 times in the searching of some unlucky Unicode
+characters.

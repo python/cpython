@@ -1,0 +1,3 @@
+rewrite cgi.parse_multipart, reusing the FieldStorage class and making its
+results consistent with those of FieldStorage for multipart/form-data
+requests. Patch by Pierre Quentel.
