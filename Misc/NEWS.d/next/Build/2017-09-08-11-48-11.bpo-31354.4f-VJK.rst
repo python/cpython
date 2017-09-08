@@ -1,0 +1,1 @@
+Allow --with-lto to be used on all builds, not just `make profile-opt`.
