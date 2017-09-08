@@ -161,18 +161,26 @@ static PyObject *find_all_instances()
         PyObject *version = nullptr;
         PyObject *path = nullptr;
         PyObject *packages = nullptr;
+        PyObject *tuple = nullptr;
 
         if (FAILED(hr = inst->QueryInterface(&inst2)) ||
             !(name = get_install_name(inst2)) ||
             !(version = get_install_version(inst)) ||
             !(path = get_install_path(inst)) ||
             !(packages = get_installed_packages(inst2)) ||
-            PyList_Append(res, PyTuple_Pack(4, name, version, path, packages)) < 0)
+            !(tuple = PyTuple_Pack(4, name, version, path, packages)) ||
+            PyList_Append(res, tuple) < 0)
             goto iter_error;
 
+        Py_DECREF(tuple);
+        Py_DECREF(packages);
+        Py_DECREF(path);
+        Py_DECREF(version);
+        Py_DECREF(name);
         continue;
     iter_error:
         if (inst2) inst2->Release();
+        Py_XDECREF(tuple);
         Py_XDECREF(packages);
         Py_XDECREF(path);
         Py_XDECREF(version);
