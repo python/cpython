@@ -3154,6 +3154,13 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     return res;
 }
 
+int
+_PyType_SetAttrObject(PyTypeObject *type, PyObject *name, PyObject *value)
+{
+    return type_setattro(type, name, value);
+}
+
+
 extern void
 _PyDictKeys_DecRef(PyDictKeysObject *keys);
 

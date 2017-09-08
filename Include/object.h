@@ -512,6 +512,8 @@ PyAPI_FUNC(void) PyType_Modified(PyTypeObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
+
+PyAPI_FUNC(int) _PyType_SetAttrObject(PyTypeObject *type, PyObject *name, PyObject *value);
 #endif
 
 /* Generic operations on objects */
