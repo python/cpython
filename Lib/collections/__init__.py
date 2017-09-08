@@ -370,32 +370,29 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
 
     # Create all the named tuple methods to be added to the class namespace
 
-    def create_new():
-        s = f'def __new__(_cls, {arg_list}): return _tuple_new(_cls, ({arg_list}))'
-        namespace = dict(_tuple_new=tuple_new, __name__=f'namedtuple_{typename}')
-        # Note: exec() has the side-effect of interning the typename and field names
-        exec(s, namespace)
-        __new__ = namespace['__new__']
-        __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
-        return __new__
+    s = f'def __new__(_cls, {arg_list}): return _tuple_new(_cls, ({arg_list}))'
+    namespace = dict(_tuple_new=tuple_new, __name__=f'namedtuple_{typename}')
+    # Note: exec() has the side-effect of interning the typename and field names
+    exec(s, namespace)
+    __new__ = namespace['__new__']
+    __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
 
-    def create_make():
-        def _make(cls, iterable):
-            result = tuple_new(cls, iterable)
-            if _len(result) != num_fields:
-                raise TypeError(f'Expected {num_fields:d} arguments, got {len(result)}')
-            return result
-        _make.__doc__ = f'Make a new {typename} object from a sequence or iterable'
-        return classmethod(_make)
+    @classmethod
+    def _make(cls, iterable):
+        result = tuple_new(cls, iterable)
+        if _len(result) != num_fields:
+            raise TypeError(f'Expected {num_fields:d} arguments, got {len(result)}')
+        return result
 
-    def create_replace():
-        def _replace(_self, **kwds):
-            result = _self._make(map(kwds.pop, field_names, _self))
-            if kwds:
-                raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
-            return result
-        _replace.__doc__ = f'Return a new {typename} object replacing specified fields with new values'
-        return _replace
+    _make.__doc__ = f'Make a new {typename} object from a sequence or iterable'
+
+    def _replace(_self, **kwds):
+        result = _self._make(map(kwds.pop, field_names, _self))
+        if kwds:
+            raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
+        return result
+
+    _replace.__doc__ = f'Return a new {typename} object replacing specified fields with new values'
 
     def __repr__(self):
         'Return a nicely formatted representation string'
@@ -419,12 +416,12 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
     # Build-up the class namespace dictionary
     # and use type() to build the result class
     class_namespace = dict(
-        __slots__ = (),
         __doc__ = f'{typename}({arg_list})',
+        __slots__ = (),
         _fields = field_names,
-        __new__ = create_new(),
-        _make = create_make(),
-        _replace = create_replace(),
+        __new__ = __new__,
+        _make = _make,
+        _replace = _replace,
         __repr__ = __repr__,
         _asdict = _asdict,
         __getnewargs__ = __getnewargs__,
