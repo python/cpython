@@ -16,6 +16,8 @@
 #define PGEN
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "pgenheaders.h"
 #include "grammar.h"
 #include "node.h"
@@ -25,6 +27,7 @@
 int Py_DebugFlag;
 int Py_VerboseFlag;
 int Py_IgnoreEnvironmentFlag;
+_PyRuntimeState _PyRuntime = {0, 0};
 
 /* Forward */
 grammar *getgrammar(const char *filename);
@@ -59,6 +62,8 @@ main(int argc, char **argv)
     filename = argv[1];
     graminit_h = argv[2];
     graminit_c = argv[3];
+    _PyObject_Initialize(&_PyRuntime.obj);
+    _PyMem_Initialize(&_PyRuntime.mem);
     g = getgrammar(filename);
     fp = fopen(graminit_c, "w");
     if (fp == NULL) {

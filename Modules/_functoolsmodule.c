@@ -1,5 +1,7 @@
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 /* _functools module written and maintained
