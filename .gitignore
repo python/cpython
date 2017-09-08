@@ -16,10 +16,10 @@
 *.profraw
 *.dyn
 Doc/build/
-Doc/tools/docutils/
-Doc/tools/jinja2/
-Doc/tools/pygments/
-Doc/tools/sphinx/
+Doc/venv/
+Doc/.venv/
+Doc/env/
+Doc/.env/
 Lib/lib2to3/*.pickle
 Lib/test/data/*
 Makefile
