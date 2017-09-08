@@ -792,7 +792,7 @@ class CPyTimeTestCase:
                 debug_info = {'value': value, 'rounding': time_rnd}
                 with self.assertRaises(OverflowError, msg=debug_info):
                     pytime_converter(value, time_rnd)
-        
+
     def check_int_rounding(self, pytime_converter, expected_func,
                            unit_to_sec=1, value_filter=None):
         self._check_rounding(pytime_converter, expected_func,
@@ -842,7 +842,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         self.check_float_rounding(
             PyTime_FromSecondsObject,
             lambda ns: self.decimal_round(ns * SEC_TO_NS))
-        
+
         # test nan
         for time_rnd, _ in ROUNDING_MODES:
             with self.assertRaises(ValueError):
