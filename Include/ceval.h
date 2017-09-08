@@ -93,6 +93,11 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
       PyThreadState_GET()->overflowed = 0;  \
     } while(0)
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char *where);
+/* XXX _Py_CheckRecursionLimit should be changed to
+   _PyRuntime.ceval.check_recursion_limit.  However, due to the macros
+   in which it's used, _Py_CheckRecursionLimit is stuck in the stable
+   ABI.  It should be removed therefrom when possible.
+*/
 PyAPI_DATA(int) _Py_CheckRecursionLimit;
 
 #ifdef USE_STACKCHECK

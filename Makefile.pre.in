@@ -984,6 +984,12 @@ PYTHON_HEADERS= \
 		pyconfig.h \
 		$(PARSER_HEADERS) \
 		$(srcdir)/Include/Python-ast.h \
+		$(srcdir)/Include/internal/ceval.h \
+		$(srcdir)/Include/internal/gil.h \
+		$(srcdir)/Include/internal/mem.h \
+		$(srcdir)/Include/internal/pymalloc.h \
+		$(srcdir)/Include/internal/pystate.h \
+		$(srcdir)/Include/internal/warnings.h \
 		$(DTRACE_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
