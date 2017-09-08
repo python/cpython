@@ -194,7 +194,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
         self.assertEqual(Point._fields, ('x', 'y'))
-        self.assertIn('class Point(tuple)', Point._source)
+        #self.assertIn('class Point(tuple)', Point._source)
 
         self.assertRaises(ValueError, namedtuple, 'abc%', 'efg ghi')       # type has non-alpha char
         self.assertRaises(ValueError, namedtuple, 'class', 'efg ghi')      # type has keyword
@@ -366,35 +366,6 @@ class TestNamedTuple(unittest.TestCase):
         newt = t._replace(itemgetter=10, property=20, self=30, cls=40, tuple=50)
         self.assertEqual(newt, (10,20,30,40,50))
 
-        # Broader test of all interesting names in a template
-        with support.captured_stdout() as template:
-            T = namedtuple('T', 'x', verbose=True)
-        words = set(re.findall('[A-Za-z]+', template.getvalue()))
-        words -= set(keyword.kwlist)
-        T = namedtuple('T', words)
-        # test __new__
-        values = tuple(range(len(words)))
-        t = T(*values)
-        self.assertEqual(t, values)
-        t = T(**dict(zip(T._fields, values)))
-        self.assertEqual(t, values)
-        # test _make
-        t = T._make(values)
-        self.assertEqual(t, values)
-        # exercise __repr__
-        repr(t)
-        # test _asdict
-        self.assertEqual(t._asdict(), dict(zip(T._fields, values)))
-        # test _replace
-        t = T._make(values)
-        newvalues = tuple(v*10 for v in values)
-        newt = t._replace(**dict(zip(T._fields, newvalues)))
-        self.assertEqual(newt, newvalues)
-        # test _fields
-        self.assertEqual(T._fields, tuple(words))
-        # test __getnewargs__
-        self.assertEqual(t.__getnewargs__(), values)
-
     def test_repr(self):
         with support.captured_stdout() as template:
             A = namedtuple('A', 'x', verbose=True)
@@ -403,30 +374,6 @@ class TestNamedTuple(unittest.TestCase):
         class B(A):
             pass
         self.assertEqual(repr(B(1)), 'B(x=1)')
-
-    def test_source(self):
-        # verify that _source can be run through exec()
-        tmp = namedtuple('NTColor', 'red green blue')
-        globals().pop('NTColor', None)          # remove artifacts from other tests
-        exec(tmp._source, globals())
-        self.assertIn('NTColor', globals())
-        c = NTColor(10, 20, 30)
-        self.assertEqual((c.red, c.green, c.blue), (10, 20, 30))
-        self.assertEqual(NTColor._fields, ('red', 'green', 'blue'))
-        globals().pop('NTColor', None)          # clean-up after this test
-
-    def test_keyword_only_arguments(self):
-        # See issue 25628
-        with support.captured_stdout() as template:
-            NT = namedtuple('NT', ['x', 'y'], verbose=True)
-        self.assertIn('class NT', NT._source)
-        with self.assertRaises(TypeError):
-            NT = namedtuple('NT', ['x', 'y'], True)
-
-        NT = namedtuple('NT', ['abc', 'def'], rename=True)
-        self.assertEqual(NT._fields, ('abc', '_1'))
-        with self.assertRaises(TypeError):
-            NT = namedtuple('NT', ['abc', 'def'], False, True)
 
     def test_namedtuple_subclass_issue_24931(self):
         class Point(namedtuple('_Point', ['x', 'y'])):
