@@ -17,8 +17,9 @@ import traceback
 import types
 import unittest
 import warnings
+from contextlib import ExitStack
 from operator import neg
-from test.support import TESTFN, unlink, check_warnings
+from test.support import EnvironmentVarGuard, TESTFN, unlink, check_warnings
 from test.support.script_helper import assert_python_ok
 from unittest.mock import patch
 try:
@@ -352,59 +353,6 @@ class BuiltinTest(unittest.TestCase):
                 exec(code, ns)
                 rv = ns['f']()
                 self.assertEqual(rv, (debugval, docstring))
-
-    def test_breakpoint(self):
-        with patch('pdb.set_trace') as mock:
-            breakpoint()
-        mock.assert_called_once()
-
-    def test_breakpoint_with_breakpointhook_set(self):
-        call_status = 'Not called'
-        def my_breakpointhook():
-            nonlocal call_status
-            call_status = 'Called'
-        try:
-            sys.breakpointhook = my_breakpointhook
-            breakpoint()
-        finally:
-            sys.breakpointhook = sys.__breakpointhook__
-        self.assertEqual(call_status, 'Called')
-
-    def test_breakpoint_with_breakpointhook_reset(self):
-        call_status = 'Not called'
-        def my_breakpointhook():
-            nonlocal call_status
-            call_status = 'Called'
-        try:
-            sys.breakpointhook = my_breakpointhook
-            breakpoint()
-        finally:
-            sys.breakpointhook = sys.__breakpointhook__
-        self.assertEqual(call_status, 'Called')
-        with patch('pdb.set_trace') as mock:
-            breakpoint()
-        mock.assert_called_once()
-
-    def test_breakpoint_with_args_and_keywords(self):
-        call_args = None
-        def my_breakpointhook(*args, **kws):
-            nonlocal call_args
-            call_args = args, kws
-        try:
-            sys.breakpointhook = my_breakpointhook
-            breakpoint(1, 2, 3, four=4, five=5)
-        finally:
-            sys.breakpointhook = sys.__breakpointhook__
-        self.assertEqual(call_args, ((1, 2, 3), dict(four=4, five=5)))
-
-    def test_breakpoint_with_passthru_error(self):
-        def my_breakpointhook():
-            pass
-        try:
-            sys.breakpointhook = my_breakpointhook
-            self.assertRaises(TypeError, breakpoint, 1, 2, 3, four=4, five=5)
-        finally:
-            sys.breakpointhook = sys.__breakpointhook__
 
     def test_delattr(self):
         sys.spam = 1
@@ -1564,6 +1512,114 @@ class BuiltinTest(unittest.TestCase):
             self.assertIs(tp(), const)
             self.assertRaises(TypeError, tp, 1, 2)
             self.assertRaises(TypeError, tp, a=1, b=2)
+
+
+class TestBreakpoint(unittest.TestCase):
+    def test_breakpoint(self):
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+        mock.assert_called_once()
+
+    def test_breakpoint_with_breakpointhook_set(self):
+        call_status = 'Not called'
+        def my_breakpointhook():
+            nonlocal call_status
+            call_status = 'Called'
+        try:
+            sys.breakpointhook = my_breakpointhook
+            breakpoint()
+        finally:
+            sys.breakpointhook = sys.__breakpointhook__
+        self.assertEqual(call_status, 'Called')
+
+    def test_breakpoint_with_breakpointhook_reset(self):
+        call_status = 'Not called'
+        def my_breakpointhook():
+            nonlocal call_status
+            call_status = 'Called'
+        try:
+            sys.breakpointhook = my_breakpointhook
+            breakpoint()
+        finally:
+            sys.breakpointhook = sys.__breakpointhook__
+        self.assertEqual(call_status, 'Called')
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+        mock.assert_called_once()
+
+    def test_breakpoint_with_args_and_keywords(self):
+        call_args = None
+        def my_breakpointhook(*args, **kws):
+            nonlocal call_args
+            call_args = args, kws
+        try:
+            sys.breakpointhook = my_breakpointhook
+            breakpoint(1, 2, 3, four=4, five=5)
+        finally:
+            sys.breakpointhook = sys.__breakpointhook__
+        self.assertEqual(call_args, ((1, 2, 3), dict(four=4, five=5)))
+
+    def test_breakpoint_with_passthru_error(self):
+        def my_breakpointhook():
+            pass
+        try:
+            sys.breakpointhook = my_breakpointhook
+            self.assertRaises(TypeError, breakpoint, 1, 2, 3, four=4, five=5)
+        finally:
+            sys.breakpointhook = sys.__breakpointhook__
+
+    def test_envar_good_path_builtin(self):
+        with ExitStack() as resources:
+            env = resources.enter_context(EnvironmentVarGuard())
+            env['PYTHONBREAKPOINT'] = 'int'
+            mock = resources.enter_context(patch('builtins.int'))
+            breakpoint('7')
+            mock.assert_called_once_with('7')
+
+    def test_envar_good_path_other(self):
+        with ExitStack() as resources:
+            env = resources.enter_context(EnvironmentVarGuard())
+            env['PYTHONBREAKPOINT'] = 'sys.exit'
+            mock = resources.enter_context(patch('sys.exit'))
+            breakpoint()
+            mock.assert_called_once_with()
+
+    def test_envar_good_path_noop_0(self):
+        with ExitStack() as resources:
+            env = resources.enter_context(EnvironmentVarGuard())
+            env['PYTHONBREAKPOINT'] = '0'
+            mock = resources.enter_context(patch('pdb.set_trace'))
+            breakpoint()
+            mock.assert_not_called()
+
+    def test_envar_good_path_empty_string(self):
+        # PYTHONBREAKPOINT='' is the same as it not being set.
+        with ExitStack() as resources:
+            env = resources.enter_context(EnvironmentVarGuard())
+            env['PYTHONBREAKPOINT'] = ''
+            mock = resources.enter_context(patch('pdb.set_trace'))
+            breakpoint()
+            mock.assert_called_once_with()
+
+    def test_envar_unimportable(self):
+        for envar in (
+                '.', '..', '.foo', 'foo.', '.int', 'int.'
+                'nosuchbuiltin',
+                'nosuchmodule.nosuchcallable',
+                ):
+            with self.subTest(envar=envar):
+                with ExitStack() as resources:
+                    env = resources.enter_context(EnvironmentVarGuard())
+                    env['PYTHONBREAKPOINT'] = envar
+                    mock = resources.enter_context(patch('pdb.set_trace'))
+                    w = resources.enter_context(check_warnings(quiet=True))
+                    breakpoint()
+                    self.assertEqual(
+                        str(w.message),
+                        f'Ignoring unimportable $PYTHONBREAKPOINT: "{envar}"')
+                    self.assertEqual(w.category, RuntimeWarning)
+                    mock.assert_not_called()
+
 
 @unittest.skipUnless(pty, "the pty and signal modules must be available")
 class PtyTests(unittest.TestCase):

@@ -418,14 +418,76 @@ builtin_callable(PyObject *module, PyObject *obj)
 static PyObject *
 builtin_breakpoint(PyObject *self, PyObject *args, PyObject *keywords)
 {
-    PyObject *hook = PySys_GetObject("breakpointhook");
+    PyObject *hook = NULL;
     PyObject *retval = NULL;
+    char *envar = getenv("PYTHONBREAKPOINT");
 
-    if (hook == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.breakpointhook");
-        return NULL;
+    if (envar != NULL && !strcmp(envar, "0")) {
+        /* The breakpoint is explicitly no-op'd. */
+        Py_RETURN_NONE;
     }
-    Py_INCREF(hook);
+    if (envar == NULL || strlen(envar) == 0) {
+        /* The breakpoint is not set, or it is set to the empty string.  We
+         * interpret both conditions to mean "use the default".
+         */
+        hook = PySys_GetObject("breakpointhook");
+        if (hook == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "lost sys.breakpointhook");
+            return NULL;
+        }
+        Py_INCREF(hook);
+    }
+    else {
+        /* We can't touch the value returned by getenv(). */
+        char *last_dot = strrchr(envar, '.');
+        char *attrname = NULL;
+        PyObject *modulepath = NULL;
+        PyObject *fromlist = NULL;
+        PyObject *module = NULL;
+
+        if (last_dot == NULL) {
+            /* Set the breakpoint to a built-in, e.g. PYTHONBREAKPOINT=int */
+            modulepath = PyUnicode_FromString("builtins");
+            attrname = envar;
+        }
+        else {
+            /* If any other environment variable value produces an
+             * unimportable path, warn and ignore.
+             */
+            /* Split on the last dot; */
+            modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
+            attrname = last_dot + 1;
+        }
+        if (modulepath == NULL) {
+            return NULL;
+        }
+        fromlist = Py_BuildValue("(s)", attrname);
+        if (fromlist == NULL) {
+            Py_DECREF(modulepath);
+            return NULL;
+        }
+        module = PyImport_ImportModuleLevelObject(
+            modulepath, NULL, NULL, fromlist, 0);
+        Py_DECREF(modulepath);
+        Py_DECREF(fromlist);
+
+        if (module != NULL) {
+            hook = PyObject_GetAttrString(module, attrname);
+            Py_DECREF(module);
+        }
+        if (hook == NULL) {
+            PyErr_Clear();
+            int status = PyErr_WarnFormat(
+                PyExc_RuntimeWarning, 0,
+                "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
+            if (status == 0) {
+                /* The warning was (probably) issued. */
+                Py_RETURN_NONE;
+            }
+            /* Printing the warning raised an exception. */
+            return NULL;
+        }
+    }
     retval = PyObject_Call(hook, args, keywords);
     Py_DECREF(hook);
     return retval;
