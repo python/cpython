@@ -4306,7 +4306,6 @@ py_w_stopcode(PyObject *self, PyObject *args)
 #endif
 
 
-#ifdef WITH_THREAD
 static PyObject *
 test_pythread_tss_key_state(PyObject *self, PyObject *args)
 {
@@ -4360,7 +4359,6 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
     ptr_key = NULL;
     Py_RETURN_NONE;
 }
-#endif
 
 
 static PyMethodDef TestMethods[] = {
@@ -4575,9 +4573,7 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
-#ifdef WITH_THREAD
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
-#endif
     {NULL, NULL} /* sentinel */
 };
 
