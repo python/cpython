@@ -66,7 +66,7 @@ def make_dummy_object(_):
     return MyObject()
 
 
-class BaseTestCase(BaseTestCase):
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self._thread_key = test.support.threading_setup()
 
@@ -83,7 +83,13 @@ class ExecutorMixin:
 
         self.t1 = time.time()
         try:
-            self.executor = self.executor_type(max_workers=self.worker_count)
+            if hasattr(self, "ctx"):
+                self.executor = self.executor_type(
+                    max_workers=self.worker_count,
+                    ctx=get_context(self.ctx))
+            else:
+                self.executor = self.executor_type(
+                    max_workers=self.worker_count)
         except NotImplementedError as e:
             self.skipTest(str(e))
         self._prime_executor()
@@ -113,21 +119,8 @@ class ThreadPoolMixin(ExecutorMixin):
     executor_type = futures.ThreadPoolExecutor
 
 
-class ProcessPoolMixin(ExecutorMixin):
+class ProcessPoolForkMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
-
-    def setUp(self):
-        self.t1 = time.time()
-        try:
-            self.executor = self.executor_type(
-                max_workers=self.worker_count,
-                ctx=get_context(self.ctx))
-        except NotImplementedError as e:
-            self.skipTest(str(e))
-        self._prime_executor()
-
-
-class ProcessPoolForkMixin(ProcessPoolMixin):
     ctx = "fork"
 
     def setUp(self):
@@ -136,11 +129,13 @@ class ProcessPoolForkMixin(ProcessPoolMixin):
         super().setUp()
 
 
-class ProcessPoolSpawnMixin(ProcessPoolMixin):
+class ProcessPoolSpawnMixin(ExecutorMixin):
+    executor_type = futures.ProcessPoolExecutor
     ctx = "spawn"
 
 
-class ProcessPoolForkserverMixin(ProcessPoolMixin):
+class ProcessPoolForkserverMixin(ExecutorMixin):
+    executor_type = futures.ProcessPoolExecutor
     ctx = "forkserver"
 
     def setUp(self):
@@ -232,7 +227,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
             t.join()
 
 
-class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCase):
+class ProcessPoolShutdownTest(ExecutorShutdownTest):
     def _prime_executor(self):
         pass
 
@@ -517,7 +512,6 @@ class AsCompletedTests:
 
 class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, BaseTestCase):
     pass
-
 
 
 class ProcessPoolForkAsCompletedTests(ProcessPoolForkMixin, AsCompletedTests,
