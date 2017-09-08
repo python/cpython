@@ -4185,8 +4185,11 @@ PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
     void *data;
     int kind;
 
-    if (!PyUnicode_Check(unicode) || PyUnicode_READY(unicode) == -1) {
+    if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
+        return (Py_UCS4)-1;
+    }
+    if (PyUnicode_READY(unicode) == -1) {
         return (Py_UCS4)-1;
     }
     if (index < 0 || index >= PyUnicode_GET_LENGTH(unicode)) {
@@ -11668,8 +11671,11 @@ unicode_getitem(PyObject *self, Py_ssize_t index)
     enum PyUnicode_Kind kind;
     Py_UCS4 ch;
 
-    if (!PyUnicode_Check(self) || PyUnicode_READY(self) == -1) {
+    if (!PyUnicode_Check(self)) {
         PyErr_BadArgument();
+        return NULL;
+    }
+    if (PyUnicode_READY(self) == -1) {
         return NULL;
     }
     if (index < 0 || index >= PyUnicode_GET_LENGTH(self)) {
