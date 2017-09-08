@@ -348,6 +348,18 @@ Build and C API Changes
   (Contributed by Antoine Pitrou in :issue:`31370`.).
 
 
+Other CPython Implementation Changes
+====================================
+
+* Trace hooks may now opt out of receiving ``line`` events from the interpreter
+  by setting the new ``f_trace_lines`` attribute to :const:`False` on the frame
+  being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
+
+* Trace hooks may now opt in to receiving ``opcode`` events from the interpreter
+  by setting the new ``f_trace_opcodes`` attribute to :const:`True` on the frame
+  being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
+
+
 Deprecated
 ==========
 
