@@ -27,7 +27,7 @@ all_name_chars(PyObject *o)
     };
     const unsigned char *s, *e;
 
-    if (PyUnicode_READY(o) == -1 || !PyUnicode_IS_ASCII(o))
+    if (!PyUnicode_IS_ASCII(o))
         return 0;
 
     s = PyUnicode_1BYTE_DATA(o);
@@ -63,6 +63,10 @@ intern_string_constants(PyObject *tuple)
     for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
+            if (PyUnicode_READY(v) == -1) {
+                PyErr_Clear();
+                continue;
+            }
             if (all_name_chars(v)) {
                 PyObject *w = v;
                 PyUnicode_InternInPlace(&v);
