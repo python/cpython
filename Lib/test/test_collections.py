@@ -194,7 +194,6 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
         self.assertEqual(Point._fields, ('x', 'y'))
-        #self.assertIn('class Point(tuple)', Point._source)
 
         self.assertRaises(ValueError, namedtuple, 'abc%', 'efg ghi')       # type has non-alpha char
         self.assertRaises(ValueError, namedtuple, 'class', 'efg ghi')      # type has keyword
@@ -367,8 +366,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(newt, (10,20,30,40,50))
 
     def test_repr(self):
-        with support.captured_stdout() as template:
-            A = namedtuple('A', 'x', verbose=True)
+        A = namedtuple('A', 'x')
         self.assertEqual(repr(A(1)), 'A(x=1)')
         # repr should show the name of the subclass
         class B(A):

@@ -303,7 +303,7 @@ except ImportError:
 
 _nt_itemgetters = {}
 
-def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None):
+def namedtuple(typename, field_names, *, rename=False, module=None):
     """Returns a new subclass of tuple with named fields.
 
     >>> Point = namedtuple('Point', ['x', 'y'])
@@ -385,7 +385,8 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
             raise TypeError(f'Expected {num_fields} arguments, got {len(result)}')
         return result
 
-    _make.__doc__ = f'Make a new {typename} object from a sequence or iterable'
+    _make.__func__.__doc__ = (f'Make a new {typename} object from a sequence '
+                              'or iterable')
 
     def _replace(_self, **kwds):
         result = _self._make(map(kwds.pop, field_names, _self))
