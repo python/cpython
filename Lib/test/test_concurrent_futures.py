@@ -86,7 +86,7 @@ class ExecutorMixin:
             if hasattr(self, "ctx"):
                 self.executor = self.executor_type(
                     max_workers=self.worker_count,
-                    ctx=get_context(self.ctx))
+                    context=get_context(self.ctx))
             else:
                 self.executor = self.executor_type(
                     max_workers=self.worker_count)
@@ -829,7 +829,7 @@ class ExecutorDeadlockTest:
              "crash during result pickle on worker"),
             (_return_instance, (ExitAtPickle,), BrokenProcessPool,
              "exit during result pickle on worker"),
-            (_return_instance, (ErrorAtPickle,), BrokenProcessPool,
+            (_return_instance, (ErrorAtPickle,), PicklingError,
              "error during result pickle on worker"),
             # Check problem occuring while unpickling a task in
             # the result_handler thread
@@ -845,8 +845,8 @@ class ExecutorDeadlockTest:
                 # skip the test involving pickle errors with thread as the
                 # tasks and results are not pickled in this case
                 with test.support.captured_stderr():
-                    executor = self.executor_type(max_workers=2,
-                                                  ctx=get_context(self.ctx))
+                    executor = self.executor_type(
+                        max_workers=2, context=get_context(self.ctx))
                     res = executor.submit(func, *args)
                     with self.assertRaises(error):
                         try:
@@ -884,8 +884,8 @@ class ExecutorDeadlockTest:
             with self.subTest(n_proc=n_proc):
                 # Test for external crash signal comming from neighbor
                 # with various race setup
-                executor = self.executor_type(max_workers=2,
-                                              ctx=get_context(self.ctx))
+                executor = self.executor_type(
+                    max_workers=2, context=get_context(self.ctx))
                 try:
                     raise AttributeError()
                     pids = [p.pid for p in executor._processes]
@@ -916,7 +916,7 @@ class ExecutorDeadlockTest:
         # if a worker failed
 
         with self.executor_type(max_workers=2,
-                                ctx=get_context(self.ctx)) as executor:
+                                context=get_context(self.ctx)) as executor:
             executor.submit(self._test_kill_worker, ())
             time.sleep(.01)
             executor.shutdown()
@@ -928,7 +928,7 @@ class ExecutorDeadlockTest:
         """
         from itertools import repeat
         executor = self.executor_type(max_workers=2,
-                                      ctx=get_context(self.ctx))
+                                      context=get_context(self.ctx))
         res1 = executor.map(sleep_and_return, repeat(.001), range(50))
         res2 = executor.map(sleep_and_return, repeat(.1), range(50))
         assert list(res1) == list(range(50))
