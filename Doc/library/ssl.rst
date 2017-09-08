@@ -777,7 +777,8 @@ Constants
    Prevents a TLSv1.3 connection. This option is only applicable in conjunction
    with :const:`PROTOCOL_TLS`. It prevents the peers from choosing TLSv1.3 as
    the protocol version. TLS 1.3 is available with OpenSSL 1.1.1 or later.
-   With older versions, the flag defaults to *0*.
+   When Python has been compiled against an older version of OpenSSL, the
+   flag defaults to *0*.
 
    .. versionadded:: 3.7
 
