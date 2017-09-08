@@ -411,11 +411,12 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
 
     # Modify function metadata to help with introspection and debugging
 
-    for method in (__new__, _make.__func__, _replace, __repr__, _asdict, __getnewargs__):
+    for method in (__new__, _make.__func__, _replace,
+                   __repr__, _asdict, __getnewargs__):
         method.__module__ = module_name
         method.__qualname__ = f'{typename}.{method.__name__}'
 
-    # Helper functions used in the class creation
+    # Helper function used in the class creation
 
     def reuse_itemgetter(index):
         try:
