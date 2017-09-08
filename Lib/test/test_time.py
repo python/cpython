@@ -2,6 +2,12 @@ from test import test_support
 import time
 import unittest
 import sys
+import sysconfig
+
+
+# Max year is only limited by the size of C int.
+SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
+TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
 
 
 class TimeTestCase(unittest.TestCase):
@@ -44,6 +50,66 @@ class TimeTestCase(unittest.TestCase):
         if sys.platform.startswith('win'):
             with self.assertRaises(ValueError):
                 time.strftime('%f')
+
+    def _bounds_checking(self, func):
+        # Make sure that strftime() checks the bounds of the various parts
+        # of the time tuple (0 is valid for *all* values).
+
+        # The year field is tested by other test cases above
+
+        # Check month [1, 12] + zero support
+        func((1900, 0, 1, 0, 0, 0, 0, 1, -1))
+        func((1900, 12, 1, 0, 0, 0, 0, 1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, -1, 1, 0, 0, 0, 0, 1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 13, 1, 0, 0, 0, 0, 1, -1))
+        # Check day of month [1, 31] + zero support
+        func((1900, 1, 0, 0, 0, 0, 0, 1, -1))
+        func((1900, 1, 31, 0, 0, 0, 0, 1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, -1, 0, 0, 0, 0, 1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 32, 0, 0, 0, 0, 1, -1))
+        # Check hour [0, 23]
+        func((1900, 1, 1, 23, 0, 0, 0, 1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 1, -1, 0, 0, 0, 1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 1, 24, 0, 0, 0, 1, -1))
+        # Check minute [0, 59]
+        func((1900, 1, 1, 0, 59, 0, 0, 1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 1, 0, -1, 0, 0, 1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 1, 0, 60, 0, 0, 1, -1))
+        # Check second [0, 61]
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 1, 0, 0, -1, 0, 1, -1))
+        # C99 only requires allowing for one leap second, but Python's docs say
+        # allow two leap seconds (0..61)
+        func((1900, 1, 1, 0, 0, 60, 0, 1, -1))
+        func((1900, 1, 1, 0, 0, 61, 0, 1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 1, 0, 0, 62, 0, 1, -1))
+        # No check for upper-bound day of week;
+        #  value forced into range by a ``% 7`` calculation.
+        # Start check at -2 since gettmarg() increments value before taking
+        #  modulo.
+        self.assertEqual(func((1900, 1, 1, 0, 0, 0, -1, 1, -1)),
+                         func((1900, 1, 1, 0, 0, 0, +6, 1, -1)))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 1, 0, 0, 0, -2, 1, -1))
+        # Check day of the year [1, 366] + zero support
+        func((1900, 1, 1, 0, 0, 0, 0, 0, -1))
+        func((1900, 1, 1, 0, 0, 0, 0, 366, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 1, 0, 0, 0, 0, -1, -1))
+        self.assertRaises(ValueError, func,
+                            (1900, 1, 1, 0, 0, 0, 0, 367, -1))
+
+    def test_strftime_bounding_check(self):
+        self._bounds_checking(lambda tup: time.strftime('', tup))
 
     def test_strftime_bounds_checking(self):
         # Make sure that strftime() checks the bounds of the various parts
@@ -123,15 +189,15 @@ class TimeTestCase(unittest.TestCase):
         time.asctime(time.gmtime(self.t))
         self.assertRaises(TypeError, time.asctime, 0)
         self.assertRaises(TypeError, time.asctime, ())
-        # XXX: Posix compiant asctime should refuse to convert
-        # year > 9999, but Linux implementation does not.
-        # self.assertRaises(ValueError, time.asctime,
-        #                  (12345, 1, 0, 0, 0, 0, 0, 0, 0))
-        # XXX: For now, just make sure we don't have a crash:
-        try:
-            time.asctime((12345, 1, 1, 0, 0, 0, 0, 1, 0))
-        except ValueError:
-            pass
+
+        # Max year is only limited by the size of C int.
+        asc = time.asctime((TIME_MAXYEAR, 6, 1) + (0,) * 6)
+        self.assertEqual(asc[-len(str(TIME_MAXYEAR)):], str(TIME_MAXYEAR))
+        self.assertRaises(OverflowError, time.asctime,
+                          (TIME_MAXYEAR + 1,) + (0,) * 8)
+        self.assertRaises(TypeError, time.asctime, 0)
+        self.assertRaises(TypeError, time.asctime, ())
+        self.assertRaises(TypeError, time.asctime, (0,) * 10)
 
     @unittest.skipIf(not hasattr(time, "tzset"),
         "time module has no attribute tzset")

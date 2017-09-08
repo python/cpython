@@ -1,0 +1,694 @@
+.. bpo: 1733757
+.. date: 6865
+.. nonce: cyKvMt
+.. release date: 02-Apr-2008
+.. section: Core and Builtins
+
+The interpreter would hang on shutdown if the tracing function set by
+sys.settrace is still active and happens to call threading.currentThread().
+
+..
+
+.. bpo: 1442
+.. date: 6864
+.. nonce: h73ZTm
+.. section: Core and Builtins
+
+properly report exceptions when the PYTHONSTARTUP file cannot be executed.
+
+..
+
+.. bpo: 0
+.. date: 6863
+.. nonce: q3LWX0
+.. section: Core and Builtins
+
+The compilation of a class nested in another class used to leak one
+reference on the outer class name.
+
+..
+
+.. bpo: 1810
+.. date: 6862
+.. nonce: ESXjRG
+.. section: Core and Builtins
+
+compile() can now compile _ast trees as returned by ``compile(...,
+PyCF_ONLY_AST)``.
+
+..
+
+.. bpo: 2426
+.. date: 6861
+.. nonce: H-NFT6
+.. section: Core and Builtins
+
+Added sqlite3.Connection.iterdump method to allow easy dumping of databases.
+Contributed by Paul Kippes at PyCon 2008.
+
+..
+
+.. bpo: 2477
+.. date: 6860
+.. nonce: iEeee2
+.. section: Core and Builtins
+
+Added from __future__ import unicode_literals.
+
+..
+
+.. bpo: 0
+.. date: 6859
+.. nonce: MQCT3j
+.. section: Core and Builtins
+
+Added backport of bytearray type.
+
+..
+
+.. bpo: 2355
+.. date: 6858
+.. nonce: 3IrFJn
+.. section: Core and Builtins
+
+add Py3k warning for buffer().
+
+..
+
+.. bpo: 1477
+.. date: 6857
+.. nonce: kL8T9Y
+.. section: Core and Builtins
+
+With narrow Unicode builds, the unicode escape sequence \Uxxxxxxxx did not
+accept values outside the Basic Multilingual Plane.  This affected raw
+unicode literals and the 'raw-unicode-escape' codec.  Now UTF-16 surrogates
+are generated in this case, like normal unicode literals and the 'unicode-
+escape' codec.
+
+..
+
+.. bpo: 2348
+.. date: 6856
+.. nonce: bTKRrx
+.. section: Core and Builtins
+
+add Py3k warning for file.softspace.
+
+..
+
+.. bpo: 2346
+.. date: 6855
+.. nonce: ZdxBIW
+.. section: Core and Builtins
+
+add Py3k warnings for __methods__ and __members__. (See also: bpo-2347)
+
+..
+
+.. bpo: 2358
+.. date: 6854
+.. nonce: -9p_qA
+.. section: Core and Builtins
+
+Add a Py3k warning on sys.exc_clear() usage.
+
+..
+
+.. bpo: 2400
+.. date: 6853
+.. nonce: Vh9y6O
+.. section: Core and Builtins
+
+Allow relative imports to "import *".
+
+..
+
+.. bpo: 1745
+.. date: 6852
+.. nonce: E7-cUG
+.. section: Core and Builtins
+
+Backport print function with ``from __future__ import print_function``.
+
+..
+
+.. bpo: 2332
+.. date: 6851
+.. nonce: J5iU51
+.. section: Core and Builtins
+
+add new attribute names for instance method objects. The two changes are:
+im_self -> __self__ and im_func -> __func__
+
+..
+
+.. bpo: 2379
+.. date: 6850
+.. nonce: 9-tqgC
+.. section: Core and Builtins
+
+Raise a Py3K warning for __getitem__ or __getslice__ on exception instances.
+
+..
+
+.. bpo: 2371
+.. date: 6849
+.. nonce: xuvdpy
+.. section: Core and Builtins
+
+Add a Py3k warning when catching an exception that doesn't derive from
+BaseException.
+
+..
+
+.. bpo: 2341
+.. date: 6848
+.. nonce: LmD2N7
+.. section: Core and Builtins
+
+Add a Py3k warning when raising an exception that doesn't derive from
+BaseException.
+
+..
+
+.. bpo: 2321
+.. date: 6847
+.. nonce: v7FzTy
+.. section: Core and Builtins
+
+use pymalloc for unicode object string data to reduce memory usage in some
+circumstances.
+
+..
+
+.. bpo: 0
+.. date: 6846
+.. nonce: O8A72m
+.. section: Core and Builtins
+
+PEP 3127: octal literals now start with "0o". Old-style octal literals are
+still valid. There are binary literals with a prefix of "0b".  This also
+affects int(x, 0).
+
+..
+
+.. bpo: 2359
+.. date: 6845
+.. nonce: cR7f7i
+.. section: Core and Builtins
+
+Adding deprecation warnings for array.{read,write}.
+
+..
+
+.. bpo: 1779871
+.. date: 6844
+.. nonce: Q9u7-T
+.. section: Core and Builtins
+
+GNU gcc can now build Python on OS X because the flags -Wno-long-double,
+-no-cpp-precomp, and -mno-fused-madd are no longer passed.
+
+..
+
+.. bpo: 0
+.. date: 6843
+.. nonce: 00spAB
+.. section: Core and Builtins
+
+Add a warning when asserting a non-empty tuple which is always true.
+
+..
+
+.. bpo: 2179
+.. date: 6842
+.. nonce: 6ZA8c-
+.. section: Core and Builtins
+
+speed up with statement execution by storing the exit method on the stack
+instead of in a temporary variable (patch by Jeffrey Yaskin)
+
+..
+
+.. bpo: 2238
+.. date: 6841
+.. nonce: LMUvyp
+.. section: Core and Builtins
+
+Some syntax errors in *args and **kwargs expressions could give bogus error
+messages.
+
+..
+
+.. bpo: 2143
+.. date: 6840
+.. nonce: 39hw9G
+.. section: Core and Builtins
+
+Fix embedded readline() hang on SSL socket EOF.
+
+..
+
+.. bpo: 2240
+.. date: 6839
+.. nonce: WNReGo
+.. section: Library
+
+Implement signal.setitimer and signal.getitimer.
+
+..
+
+.. bpo: 2315
+.. date: 6838
+.. nonce: pqno5o
+.. section: Library
+
+logging.handlers: TimedRotatingFileHandler now accounts for daylight savings
+time in calculating the next rollover.
+
+..
+
+.. bpo: 2316
+.. date: 6837
+.. nonce: ZS89xB
+.. section: Library
+
+logging.handlers: TimedRotatingFileHandler now calculates rollovers
+correctly even when nothing is logged for a while.
+
+..
+
+.. bpo: 2317
+.. date: 6836
+.. nonce: 4RDUg2
+.. section: Library
+
+logging.handlers: TimedRotatingFileHandler now uses improved logic for
+removing old files.
+
+..
+
+.. bpo: 2495
+.. date: 6835
+.. nonce: XaNV_D
+.. section: Library
+
+tokenize.untokenize now inserts a space between two consecutive string
+literals; previously, ["" ""] was rendered as [""""], which is incorrect
+python code.
+
+..
+
+.. bpo: 2248
+.. date: 6834
+.. nonce: EFdgNK
+.. section: Library
+
+return the result of the QUIT command. from SMTP.quit().
+
+..
+
+.. bpo: 0
+.. date: 6833
+.. nonce: lDMF2h
+.. section: Library
+
+Backport of Python 3.0's io module.
+
+..
+
+.. bpo: 2482
+.. date: 6832
+.. nonce: gt5k7F
+.. section: Library
+
+Make sure that the coefficient of a Decimal is always stored as a str
+instance, not as a unicode instance.  This ensures that str(Decimal) is
+always an instance of str.
+
+..
+
+.. bpo: 2478
+.. date: 6831
+.. nonce: A33H1n
+.. section: Library
+
+fix failure of decimal.Decimal(0).sqrt()
+
+..
+
+.. bpo: 2432
+.. date: 6830
+.. nonce: K_Wmv6
+.. section: Library
+
+give DictReader the dialect and line_num attributes advertised in the docs.
+
+..
+
+.. bpo: 2460
+.. date: 6829
+.. nonce: N-GQGP
+.. section: Library
+
+Make Ellipsis object copyable.
+
+..
+
+.. bpo: 1681432
+.. date: 6828
+.. nonce: UMEj9l
+.. section: Library
+
+Add triangular distribution to the random module
+
+..
+
+.. bpo: 2136
+.. date: 6827
+.. nonce: pMUClw
+.. section: Library
+
+urllib2's auth handler now allows single-quoted realms in the WWW-
+Authenticate header.
+
+..
+
+.. bpo: 2434
+.. date: 6826
+.. nonce: 7NhX4x
+.. section: Library
+
+Enhanced platform.win32_ver() to also work on Python installation which do
+not have the win32all package installed.
+
+..
+
+.. bpo: 0
+.. date: 6825
+.. nonce: Mua_8k
+.. section: Library
+
+Added support to platform.uname() to also report the machine and processor
+information on Windows XP and later. As a result, platform.machine() and
+platform.processor() will report this information as well.
+
+..
+
+.. bpo: 0
+.. date: 6824
+.. nonce: TVfcNn
+.. section: Library
+
+The library implementing the 2to3 conversion, lib2to3, was added to the
+standard distribution.
+
+..
+
+.. bpo: 1747858
+.. date: 6823
+.. nonce: q45meX
+.. section: Library
+
+Fix chown to work with large uid's and gid's on 64-bit platforms.
+
+..
+
+.. bpo: 1202
+.. date: 6822
+.. nonce: aihbD5
+.. section: Library
+
+zlib.crc32 and zlib.adler32 no longer return different values on 32-bit vs.
+64-bit python interpreters.  Both were correct, but they now both return a
+signed integer object for consistency.
+
+..
+
+.. bpo: 1158
+.. date: 6821
+.. nonce: AkVzAm
+.. section: Library
+
+add %f format (fractions of a second represented as microseconds) to
+datetime objects.  Understood by both strptime and strftime.
+
+..
+
+.. bpo: 705836
+.. date: 6820
+.. nonce: g5peII
+.. section: Library
+
+struct.pack(">f", x) now raises OverflowError on all platforms when x is too
+large to fit into an IEEE 754 float; previously it only raised OverflowError
+on non IEEE 754 platforms.
+
+..
+
+.. bpo: 2166
+.. date: 6819
+.. nonce: WF2f5f
+.. section: Library
+
+now distutils deals with HOME correctly under win32 (See also: bpo-1741,
+bpo-1531505)
+
+..
+
+.. bpo: 1858
+.. date: 6818
+.. nonce: jGCMLw
+.. section: Library
+
+distutils: added multiple server support in .pypirc
+
+..
+
+.. bpo: 1106316
+.. date: 6817
+.. nonce: uk36rF
+.. section: Library
+
+pdb.post_mortem()'s parameter, "traceback", is now optional: it defaults to
+the traceback of the exception that is currently being handled (is mandatory
+to be in the middle of an exception, otherwise it raises ValueError).
+
+..
+
+.. bpo: 1193577
+.. date: 6816
+.. nonce: b-BahY
+.. section: Library
+
+A .shutdown() method has been added to SocketServers which terminates the
+.serve_forever() loop.
+
+..
+
+.. bpo: 2220
+.. date: 6815
+.. nonce: qjYxWH
+.. section: Library
+
+handle rlcompleter attribute match failure more gracefully.
+
+..
+
+.. bpo: 2225
+.. date: 6814
+.. nonce: a0QsFA
+.. section: Library
+
+py_compile, when executed as a script, now returns a non- zero status code
+if not all files could be compiled successfully.
+
+..
+
+.. bpo: 1725737
+.. date: 6813
+.. nonce: nvfK6A
+.. section: Library
+
+In distutils' sdist, exclude RCS, CVS etc. also in the root directory, and
+also exclude .hg, .git, .bzr, and _darcs.
+
+..
+
+.. bpo: 1872
+.. date: 6812
+.. nonce: m8TmRv
+.. section: Library
+
+The struct module typecode for _Bool has been changed from 't' to '?'.
+
+..
+
+.. bpo: 0
+.. date: 6811
+.. nonce: VqAlAz
+.. section: Library
+
+The bundled libffi copy is now in sync with the recently released
+libffi3.0.4 version, apart from some small changes to
+Modules/_ctypes/libffi/configure.ac.  On OS X, preconfigured libffi files
+are used.  On all linux systems the --with-system-ffi configure option
+defaults to "yes".
+
+..
+
+.. bpo: 1577
+.. date: 6810
+.. nonce: njrgUJ
+.. section: Library
+
+shutil.move() now calls os.rename() if the destination is a directory
+instead of copying-then-remove-source.
+
+..
+
+.. bpo: 0
+.. date: 6809
+.. nonce: K5ZD7T
+.. section: Tests
+
+test_nis no longer fails when test.test_support.verbose is true and NIS is
+not set up on the testing machine.
+
+..
+
+.. bpo: 0
+.. date: 6808
+.. nonce: 1ZE-e2
+.. section: Tests
+
+Output comparison tests are no longer supported.
+
+..
+
+.. bpo: 0
+.. date: 6807
+.. nonce: N2wGxu
+.. section: Tests
+
+Rewrite test_errno to use unittest and no longer be a no-op.
+
+..
+
+.. bpo: 0
+.. date: 6806
+.. nonce: f80pTz
+.. section: Tests
+
+GHOP 234: Convert test_extcall to doctest.
+
+..
+
+.. bpo: 0
+.. date: 6805
+.. nonce: IG1fWw
+.. section: Tests
+
+GHOP 290: Convert test_dbm and test_dummy_threading to unittest.
+
+..
+
+.. bpo: 0
+.. date: 6804
+.. nonce: 2Pr5hV
+.. section: Tests
+
+GHOP 293: Convert test_strftime, test_getargs, and test_pep247 to unittest.
+
+..
+
+.. bpo: 2055
+.. date: 6803
+.. nonce: yoFv4H
+.. section: Tests
+
+Convert test_fcntl to unittest.
+
+..
+
+.. bpo: 1960
+.. date: 6802
+.. nonce: 8bFRO9
+.. section: Tests
+
+Convert test_gdbm to unittest.
+
+..
+
+.. bpo: 0
+.. date: 6801
+.. nonce: 5VXuUU
+.. section: Tests
+
+GHOP 294: Convert test_contains, test_crypt, and test_select to unittest.
+
+..
+
+.. bpo: 0
+.. date: 6800
+.. nonce: Huq18v
+.. section: Tests
+
+GHOP 238: Convert test_tokenize to use doctest.
+
+..
+
+.. bpo: 0
+.. date: 6799
+.. nonce: yrOIgp
+.. section: Tests
+
+GHOP 237: Rewrite test_thread using unittest.
+
+..
+
+.. bpo: 2232
+.. date: 6798
+.. nonce: gT2U-l
+.. section: Tests
+
+os.tmpfile might fail on Windows if the user has no permission to create
+files in the root directory.
+
+..
+
+.. bpo: 0
+.. date: 6797
+.. nonce: xClq5J
+.. section: Build
+
+A new script 2to3 is now installed, to run the 2.x to 3.x converter.
+
+..
+
+.. bpo: 0
+.. date: 6796
+.. nonce: K_qDWf
+.. section: Build
+
+Python/memmove.c and Python/strerror.c have been removed; both functions are
+in the C89 standard library.
+
+..
+
+.. bpo: 2284
+.. date: 6795
+.. nonce: g5HXfy
+.. section: Build
+
+Add -x64 option to rt.bat.
+
+..
+
+.. bpo: 2477
+.. date: 6794
+.. nonce: ff3qxW
+.. section: C API
+
+Added PyParser_ParseFileFlagsEx() and PyParser_ParseStringFlagsFilenameEx().

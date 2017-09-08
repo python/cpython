@@ -1,0 +1,2 @@
+cPickle now correctly propagates errors when unpickle instances of old-style
+classes.

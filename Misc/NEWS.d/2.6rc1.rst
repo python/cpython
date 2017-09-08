@@ -1,0 +1,517 @@
+.. bpo: 3642
+.. date: 7164
+.. nonce: TraQw9
+.. release date: 12-Sep-2008
+.. section: Core and Builtins
+
+Suppress warning in obmalloc when size_t is larger than uint.
+
+..
+
+.. bpo: 3743
+.. date: 7163
+.. nonce: _AUYYI
+.. section: Core and Builtins
+
+In a few places, PY_FORMAT_SIZE_T was incorrectly used with
+PyString_FromFormat or PyErr_Format to display size_t values. The macro
+PY_FORMAT_SIZE_T is designed to select the correct format for the OS
+``printf`` function, whereas PyString_FromFormat has an independent
+implementation and uses "%zd" on all platforms for size_t values. This makes
+a difference on win64, where ``printf`` needs "%Id" to display 64bit values.
+
+..
+
+.. bpo: 3634
+.. date: 7162
+.. nonce: q1zzTV
+.. section: Core and Builtins
+
+_weakref.ref(Exception).__init__() gave invalid return value on error.
+
+..
+
+.. bpo: 3777
+.. date: 7161
+.. nonce: NkvE9K
+.. section: Core and Builtins
+
+long() applied to a float object now always return a long object; previously
+an int would be returned for small values. the __long__ method is allowed to
+return either an int or a long, but the behaviour of float objects should
+not change to respect backward compatibility.
+
+..
+
+.. bpo: 3751
+.. date: 7160
+.. nonce: afWsF3
+.. section: Core and Builtins
+
+str.rpartition would perform a left-partition when called with a unicode
+argument.
+
+..
+
+.. bpo: 3683
+.. date: 7159
+.. nonce: CbyWTH
+.. section: Core and Builtins
+
+Fix compilation when --without-threads is given.
+
+..
+
+.. bpo: 3668
+.. date: 7158
+.. nonce: y5pFso
+.. section: Core and Builtins
+
+Fix a memory leak with the "s*" argument parser in PyArg_ParseTuple and
+friends, which occurred when the argument for "s*" was correctly parsed but
+parsing of subsequent arguments failed.
+
+..
+
+.. bpo: 2534
+.. date: 7157
+.. nonce: ZzJgOR
+.. section: Core and Builtins
+
+speed up isinstance() and issubclass() by 50-70%, so as to match Python 2.5
+speed despite the __instancecheck__ / __subclasscheck__ mechanism. In the
+process, fix a bug where isinstance() and issubclass(), when given a tuple
+of classes as second argument, were looking up __instancecheck__ /
+__subclasscheck__ on the tuple rather than on each type object.
+
+..
+
+.. bpo: 0
+.. date: 7156
+.. nonce: IOhEYG
+.. section: Core and Builtins
+
+Fix crashes on memory allocation failure found with failmalloc.
+
+..
+
+.. bpo: 0
+.. date: 7155
+.. nonce: 7fUtnU
+.. section: Core and Builtins
+
+Fix memory leaks found with valgrind and update suppressions file.
+
+..
+
+.. bpo: 0
+.. date: 7154
+.. nonce: C2iKX_
+.. section: Core and Builtins
+
+Fix compiler warnings in opt mode which would lead to invalid memory reads.
+
+..
+
+.. bpo: 0
+.. date: 7153
+.. nonce: F8qIAG
+.. section: Core and Builtins
+
+Fix problem using wrong name in decimal module reported by pychecker.
+
+..
+
+.. bpo: 0
+.. date: 7152
+.. nonce: 9G7-79
+.. section: Core and Builtins
+
+Silenced another compiler warning about a used but not defined function
+'stringlib_contains_obj'.
+
+..
+
+.. bpo: 0
+.. date: 7151
+.. nonce: cL5FNH
+.. section: Core and Builtins
+
+Added warnings on the use of ``__getslice__``, ``__setslice__``, or
+``__delslice__``.
+
+..
+
+.. bpo: 3678
+.. date: 7150
+.. nonce: tSSebH
+.. section: Core and Builtins
+
+Correctly pass LDFLAGS and LDLAST to the linker on shared library targets in
+the Makefile.
+
+..
+
+.. bpo: 1204
+.. date: 7149
+.. nonce: 9IuIp4
+.. section: Core and Builtins
+
+The configure script now tests for additional libraries that may be required
+when linking against readline.  This fixes issues with x86_64 builds on some
+platforms (a few Linux flavors and OpenBSD).
+
+..
+
+.. bpo: 0
+.. date: 7148
+.. nonce: Amo-aR
+.. section: C API
+
+Aliased PyObject_Bytes to PyObject_Str.
+
+..
+
+.. bpo: 3640
+.. date: 7147
+.. nonce: wZzbae
+.. section: Library
+
+Pickling a list or a dict uses less local variables, to reduce stack usage
+in the case of deeply nested objects.
+
+..
+
+.. bpo: 3629
+.. date: 7146
+.. nonce: 2q6K2c
+.. section: Library
+
+Fix sre "bytecode" validator for an end case.
+
+..
+
+.. bpo: 3811
+.. date: 7145
+.. nonce: 1qgQ9c
+.. section: Library
+
+The Unicode database was updated to 5.1.
+
+..
+
+.. bpo: 3781
+.. date: 7144
+.. nonce: HYW5OU
+.. section: Library
+
+Further warnings.catch_warnings() cleanup to prevent silent misbehaviour
+when a single instance is nested in multiple with statements, or when the
+methods are invoked in the wrong order.
+
+..
+
+.. bpo: 3809
+.. date: 7143
+.. nonce: 2A-aqP
+.. section: Library
+
+Fixed spurious 'test.blah' file left behind by test_logging.
+
+..
+
+.. bpo: 3781
+.. date: 7142
+.. nonce: jpkn0I
+.. section: Library
+
+Clean up the API for warnings.catch_warnings() by having it return a list or
+None rather than a custom object.
+
+..
+
+.. bpo: 1638033
+.. date: 7141
+.. nonce: kT2UVI
+.. section: Library
+
+Cookie.Morsel gained the httponly attribute.
+
+..
+
+.. bpo: 3535
+.. date: 7140
+.. nonce: dxRVxE
+.. section: Library
+
+zipfile couldn't read some zip files larger than 2GB.
+
+..
+
+.. bpo: 3776
+.. date: 7139
+.. nonce: Ct7r55
+.. section: Library
+
+Deprecate the bsddb package for removal in 3.0.
+
+..
+
+.. bpo: 3762
+.. date: 7138
+.. nonce: R3t7Yb
+.. section: Library
+
+platform.architecture() fails if python is lanched via its symbolic link.
+
+..
+
+.. bpo: 3772
+.. date: 7137
+.. nonce: 9RUdoE
+.. section: Library
+
+Fixed regression problem in StreamHandler.emit().
+
+..
+
+.. bpo: 600362
+.. date: 7136
+.. nonce: bb-Gpk
+.. section: Library
+
+Relocated parse_qs() and parse_qsl(), from the cgi module to the urlparse
+one.  Added a PendingDeprecationWarning in the old module, it will be
+deprecated in the future.
+
+..
+
+.. bpo: 2562
+.. date: 7135
+.. nonce: gvBsX4
+.. section: Library
+
+Fix distutils PKG-INFO writing logic to allow having non-ascii characters
+and Unicode in setup.py meta-data.
+
+..
+
+.. bpo: 3726
+.. date: 7134
+.. nonce: oNy3vR
+.. section: Library
+
+Allow spaces in separators in logging configuration files.
+
+..
+
+.. bpo: 3719
+.. date: 7133
+.. nonce: vt_7GX
+.. section: Library
+
+platform.architecture() fails if there are spaces in the path to the Python
+binary.
+
+..
+
+.. bpo: 3602
+.. date: 7132
+.. nonce: SFNmF7
+.. section: Library
+
+Moved test.test_support.catch_warning() to warnings.catch_warnings() along
+with some API cleanup. Expanding the tests for catch_warnings() also led to
+an improvement in the raising of a DeprecationWarning related to
+warnings.warn_explicit().
+
+..
+
+.. bpo: 0
+.. date: 7131
+.. nonce: Fxi-Xv
+.. section: Library
+
+The deprecation warnings for the old camelCase threading API were removed.
+
+..
+
+.. bpo: 0
+.. date: 7130
+.. nonce: _Wmj88
+.. section: Library
+
+logging: fixed lack of use of encoding attribute specified on a stream.
+
+..
+
+.. bpo: 0
+.. date: 7129
+.. nonce: yON-CX
+.. section: Library
+
+Silenced a trivial compiler warning in the sqlite module.
+
+..
+
+.. bpo: 0
+.. date: 7128
+.. nonce: UdFFop
+.. section: Library
+
+Fixed two format strings in the _collections module.
+
+..
+
+.. bpo: 3703
+.. date: 7127
+.. nonce: JVWmi4
+.. section: Library
+
+_fileio.FileIO gave unhelpful error message when trying to open a directory.
+
+..
+
+.. bpo: 3708
+.. date: 7126
+.. nonce: dbhr5L
+.. section: Library
+
+os.urandom no longer goes into an infinite loop when passed a non-integer
+floating point number.
+
+..
+
+.. bpo: 3110
+.. date: 7125
+.. nonce: TXNjN7
+.. section: Library
+
+multiprocessing fails to compiel on solaris 10 due to missing SEM_VALUE_MAX.
+
+..
+
+.. bpo: 4301
+.. date: 7124
+.. nonce: To_Er1
+.. section: Library
+
+Patch the logging module to add processName support, remove
+_check_logger_class from multiprocessing.
+
+..
+
+.. bpo: 2975
+.. date: 7123
+.. nonce: 3nTVpN
+.. section: Library
+
+When compiling several extension modules with Visual Studio 2008 from the
+same python interpreter, some environment variables would grow without
+limit.
+
+..
+
+.. bpo: 3643
+.. date: 7122
+.. nonce: r2JHSh
+.. section: Library
+
+Added a few more checks to _testcapi to prevent segfaults by exploitation of
+poor argument checking.
+
+..
+
+.. bpo: 0
+.. date: 7121
+.. nonce: WeFjzv
+.. section: Library
+
+sqlite3: Changed docstring of iterdump() to mark method as "Non-standard".
+
+..
+
+.. bpo: 3103
+.. date: 7120
+.. nonce: WO-2NA
+.. section: Library
+
+Reduced globals symbols used by sqlite3 module and made sure all remaining
+ones have "pysqlite_" prefix.
+
+..
+
+.. bpo: 3846
+.. date: 7119
+.. nonce: IF6rMt
+.. section: Library
+
+Release the GIL during sqlite3_prepare calls. This improves concurrent
+access to the same SQLite database from multiple threads/processes.
+
+..
+
+.. bpo: 3781
+.. date: 7118
+.. nonce: c8hFsy
+.. section: Tests
+
+Add test.test_support.check_warnings() as a convenience wrapper for
+warnings.catch_warnings() that makes it easier to check that expected
+warning messages are being reported.
+
+..
+
+.. bpo: 3796
+.. date: 7117
+.. nonce: 04E6Gg
+.. section: Tests
+
+Some tests functions were not enabled in test_float.
+
+..
+
+.. bpo: 3768
+.. date: 7116
+.. nonce: wK7GYq
+.. section: Tests
+
+Move test_py3kwarn over to the new API for catch_warnings().
+
+..
+
+.. bpo: 3833
+.. date: 7115
+.. nonce: 8gZDgB
+.. section: Build
+
+Use a different upgrade code for Win64 installers.
+
+..
+
+.. bpo: 2271
+.. date: 7114
+.. nonce: 8MXC-o
+.. section: Build
+
+Set SecureCustomProperties so that installation will properly use the
+TARGETDIR even for unprivileged users.
+
+..
+
+.. bpo: 0
+.. date: 7113
+.. nonce: 4XBUzg
+.. section: Build
+
+Allow passing the MSI file name to merge.py.
+
+..
+
+.. bpo: 3758
+.. date: 7112
+.. nonce: xZ4Rlj
+.. section: Build
+
+Rename the 'check' target to 'patchcheck' so as to not clash with GNU build
+target guidelines.

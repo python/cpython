@@ -8,6 +8,7 @@ import copy
 import pickle
 import sys
 import unittest
+import warnings
 from test import test_support
 
 class BufferTests(unittest.TestCase):
@@ -39,15 +40,19 @@ class BufferTests(unittest.TestCase):
 
     def test_copy(self):
         buf = buffer(b'abc')
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError), warnings.catch_warnings():
+            warnings.filterwarnings('ignore', ".*buffer", DeprecationWarning)
             copy.copy(buf)
 
-    # See issue #22995
-    ## def test_pickle(self):
-    ##     buf = buffer(b'abc')
-    ##     for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-    ##         with self.assertRaises(TypeError):
-    ##             pickle.dumps(buf, proto)
+    @test_support.cpython_only
+    def test_pickle(self):
+        buf = buffer(b'abc')
+        for proto in range(2):
+            with self.assertRaises(TypeError):
+                pickle.dumps(buf, proto)
+        with test_support.check_py3k_warnings(
+                (".*buffer", DeprecationWarning)):
+            pickle.dumps(buf, 2)
 
 
 def test_main():

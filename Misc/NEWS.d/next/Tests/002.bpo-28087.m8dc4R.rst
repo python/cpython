@@ -1,0 +1,3 @@
+Skip test_asyncore and test_eintr poll failures on macOS. Skip some tests of
+select.poll when running on macOS due to unresolved issues with the
+underlying system poll function on some macOS versions.

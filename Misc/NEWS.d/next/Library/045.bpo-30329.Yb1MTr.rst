@@ -1,0 +1,3 @@
+imaplib now catchs the Windows socket WSAEINVAL error (code 10022) on
+shutdown(SHUT_RDWR): An invalid operation was attempted. This error occurs
+sometimes on SSL connections.

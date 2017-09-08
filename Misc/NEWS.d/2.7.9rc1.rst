@@ -1,0 +1,1124 @@
+.. bpo: 21963
+.. date: 9487
+.. nonce: eUwKx1
+.. release date: 2014-11-25
+.. section: Core and Builtins
+
+backout issue #1856 patch (avoid crashes and lockups when daemon threads run
+while the interpreter is shutting down; instead, these threads are now
+killed when they try to take the GIL), as it seems to break some existing
+code.
+
+..
+
+.. bpo: 22604
+.. date: 9486
+.. nonce: yii-It
+.. section: Core and Builtins
+
+Fix assertion error in debug mode when dividing a complex number by
+(nan+0j).
+
+..
+
+.. bpo: 22470
+.. date: 9485
+.. nonce: Lc7ZPK
+.. section: Core and Builtins
+
+Fixed integer overflow issues in "backslashreplace" and "xmlcharrefreplace"
+error handlers.
+
+..
+
+.. bpo: 22526
+.. date: 9484
+.. nonce: Oc9lar
+.. section: Core and Builtins
+
+Fix iterating through files with lines longer than 2^31 bytes.
+
+..
+
+.. bpo: 22519
+.. date: 9483
+.. nonce: zTlQLy
+.. section: Core and Builtins
+
+Fix overflow checking in PyString_Repr.
+
+..
+
+.. bpo: 22518
+.. date: 9482
+.. nonce: C9T6ed
+.. section: Core and Builtins
+
+Fix integer overflow issues in latin-1 encoding.
+
+..
+
+.. bpo: 22379
+.. date: 9481
+.. nonce: 4_3Ge-
+.. section: Core and Builtins
+
+Fix empty exception message in a TypeError raised in ``str.join``.
+
+..
+
+.. bpo: 22221
+.. date: 9480
+.. nonce: t0BE8h
+.. section: Core and Builtins
+
+Now the source encoding declaration on the second line isn't effective if
+the first line contains anything except a comment.
+
+..
+
+.. bpo: 22023
+.. date: 9479
+.. nonce: id5Xei
+.. section: Core and Builtins
+
+Fix ``%S``, ``%R`` and ``%V`` formats of :c:func:`PyUnicode_FromFormat`.
+
+..
+
+.. bpo: 21591
+.. date: 9478
+.. nonce: hJVYlf
+.. section: Core and Builtins
+
+Correctly handle qualified exec statements in tuple form by moving
+compatibility layer from run-time to AST transformation.
+
+..
+
+.. bpo: 22417
+.. date: 9477
+.. nonce: To4b7U
+.. section: Library
+
+Verify certificates by default in httplib (PEP 476).
+
+..
+
+.. bpo: 22927
+.. date: 9476
+.. nonce: TKaKOP
+.. section: Library
+
+Allow urllib.urlopen to take a *context* parameter to control SSL settings
+for HTTPS connections.
+
+..
+
+.. bpo: 22921
+.. date: 9475
+.. nonce: a4wx1C
+.. section: Library
+
+Allow SSLContext to take the *hostname* parameter even if OpenSSL doesn't
+support SNI.
+
+..
+
+.. bpo: 9003
+.. date: 9474
+.. nonce: VCncsy
+.. section: Library
+
+httplib.HTTPSConnection, urllib2.HTTPSHandler and urllib2.urlopen now take
+optional arguments to allow for server certificate checking, as recommended
+in public uses of HTTPS. This backport is part of PEP 467. (See also:
+bpo-22366)
+
+..
+
+.. bpo: 12728
+.. date: 9473
+.. nonce: rHZmXO
+.. section: Library
+
+Different Unicode characters having the same uppercase but different
+lowercase are now matched in case-insensitive regular expressions.
+
+..
+
+.. bpo: 22821
+.. date: 9472
+.. nonce: 30cQ-U
+.. section: Library
+
+Fixed fcntl() with integer argument on 64-bit big-endian platforms.
+
+..
+
+.. bpo: 17293
+.. date: 9471
+.. nonce: Hk06bO
+.. section: Library
+
+uuid.getnode() now determines MAC address on AIX using netstat. Based on
+patch by Aivars Kalvāns.
+
+..
+
+.. bpo: 22769
+.. date: 9470
+.. nonce: PunnvQ
+.. section: Library
+
+Fixed ttk.Treeview.tag_has() when called without arguments.
+
+..
+
+.. bpo: 22787
+.. date: 9469
+.. nonce: QIzbnh
+.. section: Library
+
+Allow the keyfile argument of SSLContext.load_cert_chain to be None.
+
+..
+
+.. bpo: 22775
+.. date: 9468
+.. nonce: 9X-KKA
+.. section: Library
+
+Fixed unpickling of Cookie.SimpleCookie with protocol 2. Patch by Tim
+Graham.
+
+..
+
+.. bpo: 22776
+.. date: 9467
+.. nonce: xNcRse
+.. section: Library
+
+Brought excluded code into the scope of a try block in SysLogHandler.emit().
+
+..
+
+.. bpo: 17381
+.. date: 9466
+.. nonce: IrcC9I
+.. section: Library
+
+Fixed ranges handling in case-insensitive regular expressions.
+
+..
+
+.. bpo: 19329
+.. date: 9465
+.. nonce: f3o3tr
+.. section: Library
+
+Optimized compiling charsets in regular expressions.
+
+..
+
+.. bpo: 22410
+.. date: 9464
+.. nonce: 99YFdd
+.. section: Library
+
+Module level functions in the re module now cache compiled locale-dependent
+regular expressions taking into account the locale.
+
+..
+
+.. bpo: 8876
+.. date: 9463
+.. nonce: A83Av4
+.. section: Library
+
+distutils now falls back to copying files when hard linking doesn't work.
+This allows use with special filesystems such as VirtualBox shared folders.
+
+..
+
+.. bpo: 9351
+.. date: 9462
+.. nonce: u5UI-6
+.. section: Library
+
+Defaults set with set_defaults on an argparse subparser are no longer
+ignored when also set on the parent parser.
+
+..
+
+.. bpo: 20421
+.. date: 9461
+.. nonce: iR0S1s
+.. section: Library
+
+Add a .version() method to SSL sockets exposing the actual protocol version
+in use.
+
+..
+
+.. bpo: 22435
+.. date: 9460
+.. nonce: Mrmeio
+.. section: Library
+
+Fix a file descriptor leak when SocketServer bind fails.
+
+..
+
+.. bpo: 13664
+.. date: 9459
+.. nonce: tjVs9o
+.. section: Library
+
+GzipFile now supports non-ascii Unicode filenames.
+
+..
+
+.. bpo: 13096
+.. date: 9458
+.. nonce: rsailB
+.. section: Library
+
+Fixed segfault in CTypes POINTER handling of large values.
+
+..
+
+.. bpo: 11694
+.. date: 9457
+.. nonce: JuDrch
+.. section: Library
+
+Raise ConversionError in xdrlib as documented.  Patch by Filip Gruszczyński
+and Claudiu Popa.
+
+..
+
+.. bpo: 1686
+.. date: 9456
+.. nonce: -w9zEU
+.. section: Library
+
+Fix string.Template when overriding the pattern attribute.
+
+..
+
+.. bpo: 11866
+.. date: 9455
+.. nonce: xrvbIC
+.. section: Library
+
+Eliminated race condition in the computation of names for new threads.
+
+..
+
+.. bpo: 22219
+.. date: 9454
+.. nonce: l9Enh9
+.. section: Library
+
+The zipfile module CLI now adds entries for directories (including empty
+directories) in ZIP file.
+
+..
+
+.. bpo: 22449
+.. date: 9453
+.. nonce: nFW_Fl
+.. section: Library
+
+In the ssl.SSLContext.load_default_certs, consult the environmental
+variables SSL_CERT_DIR and SSL_CERT_FILE on Windows.
+
+..
+
+.. bpo: 8473
+.. date: 9452
+.. nonce: QcfDba
+.. section: Library
+
+doctest.testfile now uses universal newline mode to read the test file.
+
+..
+
+.. bpo: 20076
+.. date: 9451
+.. nonce: -7OIVB
+.. section: Library
+
+Added non derived UTF-8 aliases to locale aliases table.
+
+..
+
+.. bpo: 20079
+.. date: 9450
+.. nonce: qM949O
+.. section: Library
+
+Added locales supported in glibc 2.18 to locale alias table.
+
+..
+
+.. bpo: 22530
+.. date: 9449
+.. nonce: 4EcK4x
+.. section: Library
+
+Allow the ``group()`` method of regular expression match objects to take a
+``long`` as an index.
+
+..
+
+.. bpo: 22517
+.. date: 9448
+.. nonce: qT6-aB
+.. section: Library
+
+When an io.BufferedRWPair object is deallocated, clear its weakrefs.
+
+..
+
+.. bpo: 10510
+.. date: 9447
+.. nonce: N-ntcD
+.. section: Library
+
+distutils register and upload methods now use HTML standards compliant CRLF
+line endings.
+
+..
+
+.. bpo: 9850
+.. date: 9446
+.. nonce: D-UnVi
+.. section: Library
+
+Fixed macpath.join() for empty first component.  Patch by Oleg Oshmyan.
+
+..
+
+.. bpo: 20912
+.. date: 9445
+.. nonce: cAq3mZ
+.. section: Library
+
+Now directories added to ZIP file have correct Unix and MS-DOS directory
+attributes.
+
+..
+
+.. bpo: 21866
+.. date: 9444
+.. nonce: hSc4wM
+.. section: Library
+
+ZipFile.close() no longer writes ZIP64 central directory records if
+allowZip64 is false.
+
+..
+
+.. bpo: 22415
+.. date: 9443
+.. nonce: VKFghV
+.. section: Library
+
+Fixed debugging output of the GROUPREF_EXISTS opcode in the re module.
+
+..
+
+.. bpo: 22423
+.. date: 9442
+.. nonce: Rtb4oT
+.. section: Library
+
+Unhandled exception in thread no longer causes unhandled AttributeError when
+sys.stderr is None.
+
+..
+
+.. bpo: 22419
+.. date: 9441
+.. nonce: FqH4aC
+.. section: Library
+
+Limit the length of incoming HTTP request in wsgiref server to 65536 bytes
+and send a 414 error code for higher lengths. Patch contributed by Devin
+Cook.
+
+..
+
+.. bpo: 0
+.. date: 9440
+.. nonce: y7r3O2
+.. section: Library
+
+Lax cookie parsing in http.cookies could be a security issue when combined
+with non-standard cookie handling in some Web browsers.  Reported by Sergey
+Bobrov.
+
+..
+
+.. bpo: 21147
+.. date: 9439
+.. nonce: w9DE17
+.. section: Library
+
+sqlite3 now raises an exception if the request contains a null character
+instead of truncating it.  Based on patch by Victor Stinner.
+
+..
+
+.. bpo: 21951
+.. date: 9438
+.. nonce: 3vS4LK
+.. section: Library
+
+Fixed a crash in Tkinter on AIX when called Tcl command with empty string or
+tuple argument.
+
+..
+
+.. bpo: 21951
+.. date: 9437
+.. nonce: _CCC4v
+.. section: Library
+
+Tkinter now most likely raises MemoryError instead of crash if the memory
+allocation fails.
+
+..
+
+.. bpo: 22226
+.. date: 9436
+.. nonce: T1ZMPY
+.. section: Library
+
+First letter no longer is stripped from the "status" key in the result of
+Treeview.heading().
+
+..
+
+.. bpo: 22051
+.. date: 9435
+.. nonce: cUjFqL
+.. section: Library
+
+turtledemo no longer reloads examples to re-run them. Initialization of
+variables and gui setup should be done in main(), which is called each time
+a demo is run, but not on import.
+
+..
+
+.. bpo: 21597
+.. date: 9434
+.. nonce: aPTCWJ
+.. section: Library
+
+The separator between the turtledemo text pane and the drawing canvas can
+now be grabbed and dragged with a mouse.  The code text pane can be widened
+to easily view or copy the full width of the text.  The canvas can be
+widened on small screens.  Original patches by Jan Kanis and Lita Cho.
+
+..
+
+.. bpo: 18132
+.. date: 9433
+.. nonce: 2R2nwM
+.. section: Library
+
+Turtledemo buttons no longer disappear when the window is shrunk.  Original
+patches by Jan Kanis and Lita Cho.
+
+..
+
+.. bpo: 22312
+.. date: 9432
+.. nonce: WP13o8
+.. section: Library
+
+Fix ntpath.splitdrive IndexError.
+
+..
+
+.. bpo: 22216
+.. date: 9431
+.. nonce: Cmalu6
+.. section: Library
+
+smtplib now resets its state more completely after a quit.  The most obvious
+consequence of the previous behavior was a STARTTLS failure during a
+connect/starttls/quit/connect/starttls sequence.
+
+..
+
+.. bpo: 21305
+.. date: 9430
+.. nonce: Fl8I5B
+.. section: Library
+
+os.urandom now caches a fd to /dev/urandom. This is a PEP 466 backport from
+Python 3.
+
+..
+
+.. bpo: 21307
+.. date: 9429
+.. nonce: U7iiqX
+.. section: Library
+
+As part of PEP 466, backport hashlib.algorithms_guaranteed and
+hashlib.algorithms_available.
+
+..
+
+.. bpo: 22259
+.. date: 9428
+.. nonce: 6v9wLm
+.. section: Library
+
+Fix segfault when attempting to fopen a file descriptor corresponding to a
+directory.
+
+..
+
+.. bpo: 22236
+.. date: 9427
+.. nonce: 1utXkg
+.. section: Library
+
+Fixed Tkinter images copying operations in NoDefaultRoot mode.
+
+..
+
+.. bpo: 22191
+.. date: 9426
+.. nonce: 1K-CmD
+.. section: Library
+
+Fixed warnings.__all__.
+
+..
+
+.. bpo: 21308
+.. date: 9425
+.. nonce: _z9b8i
+.. section: Library
+
+Backport numerous features from Python's ssl module. This is part of PEP
+466.
+
+..
+
+.. bpo: 15696
+.. date: 9424
+.. nonce: PTwXYJ
+.. section: Library
+
+Add a __sizeof__ implementation for mmap objects on Windows.
+
+..
+
+.. bpo: 8797
+.. date: 9423
+.. nonce: aJcIPu
+.. section: Library
+
+Raise HTTPError on failed Basic Authentication immediately. Initial patch by
+Sam Bull.
+
+..
+
+.. bpo: 22068
+.. date: 9422
+.. nonce: wCdaW0
+.. section: Library
+
+Avoided reference loops with Variables and Fonts in Tkinter.
+
+..
+
+.. bpo: 21448
+.. date: 9421
+.. nonce: THJSYB
+.. section: Library
+
+Changed FeedParser feed() to avoid O(N**2) behavior when parsing long line.
+Original patch by Raymond Hettinger.
+
+..
+
+.. bpo: 17923
+.. date: 9420
+.. nonce: YI_QjG
+.. section: Library
+
+glob() patterns ending with a slash no longer match non-dirs on AIX.  Based
+on patch by Delhallt.
+
+..
+
+.. bpo: 21975
+.. date: 9419
+.. nonce: MI8ntO
+.. section: Library
+
+Fixed crash when using uninitialized sqlite3.Row (in particular when
+unpickling pickled sqlite3.Row).  sqlite3.Row is now initialized in the
+__new__() method.
+
+..
+
+.. bpo: 16037
+.. date: 9418
+.. nonce: q6A9-W
+.. section: Library
+
+HTTPMessage.readheaders() raises an HTTPException when more than 100 headers
+are read. Patch by Jyrki Pulliainen and Daniel Eriksson.
+
+..
+
+.. bpo: 21580
+.. date: 9417
+.. nonce: BUIf7o
+.. section: Library
+
+Now Tkinter correctly handles binary "data" and "maskdata" configure options
+of tkinter.PhotoImage.
+
+..
+
+.. bpo: 19612
+.. date: 9416
+.. nonce: xvU6AH
+.. section: Library
+
+subprocess.communicate() now also ignores EINVAL when using at least two
+pipes.
+
+..
+
+.. bpo: 0
+.. date: 9415
+.. nonce: aDlT3j
+.. section: Library
+
+Fix repr(_socket.socket) on Windows 64-bit: don't fail with OverflowError on
+closed socket.
+
+..
+
+.. bpo: 16133
+.. date: 9414
+.. nonce: 6cKWd2
+.. section: Library
+
+The asynchat.async_chat.handle_read() method now ignores socket.error()
+exceptions with blocking I/O errors: EAGAIN, EALREADY, EINPROGRESS, or
+EWOULDBLOCK.
+
+..
+
+.. bpo: 21990
+.. date: 9413
+.. nonce: _lujpf
+.. section: Library
+
+Clean-up unnecessary and slow inner class definition in saxutils
+(Contributed by Alex Gaynor).
+
+..
+
+.. bpo: 1730136
+.. date: 9412
+.. nonce: sqWp2M
+.. section: Library
+
+Fix the comparison between a tkFont.Font and an object of another kind.
+
+..
+
+.. bpo: 19884
+.. date: 9411
+.. nonce: 6cbo0V
+.. section: Library
+
+readline: Disable the meta modifier key if stdout is not a terminal to not
+write the ANSI sequence "\033[1034h" into stdout. This sequence is used on
+some terminal (ex: TERM=xterm-256color") to enable support of 8 bit
+characters.
+
+..
+
+.. bpo: 22017
+.. date: 9410
+.. nonce: BojGgr
+.. section: Library
+
+Correct reference counting error in the initialization of the _warnings
+module.
+
+..
+
+.. bpo: 21868
+.. date: 9409
+.. nonce: q_ZIvF
+.. section: Library
+
+Prevent turtle crash when undo buffer set to a value less than one.
+
+..
+
+.. bpo: 21151
+.. date: 9408
+.. nonce: T7tb9Q
+.. section: Library
+
+Fixed a segfault in the _winreg module when ``None`` is passed as a
+``REG_BINARY`` value to SetValueEx.  Patch by John Ehresman.
+
+..
+
+.. bpo: 21090
+.. date: 9407
+.. nonce: 20Ooif
+.. section: Library
+
+io.FileIO.readall() does not ignore I/O errors anymore. Before, it ignored
+I/O errors if at least the first C call read() succeed.
+
+..
+
+.. bpo: 19870
+.. date: 9406
+.. nonce: 3QBvmj
+.. section: Library
+
+BaseCookie now parses 'secure' and 'httponly' flags. Backport of issue
+#16611.
+
+..
+
+.. bpo: 21923
+.. date: 9405
+.. nonce: hXnoZa
+.. section: Library
+
+Prevent AttributeError in distutils.sysconfig.customize_compiler due to
+possible uninitialized _config_vars.
+
+..
+
+.. bpo: 21323
+.. date: 9404
+.. nonce: yRf1v6
+.. section: Library
+
+Fix CGIHTTPServer to again handle scripts in CGI subdirectories, broken by
+the fix for security issue #19435.  Patch by Zach Byrne.
+
+..
+
+.. bpo: 22199
+.. date: 9403
+.. nonce: SIwKds
+.. section: Library
+
+Make get_makefile_filename() available in Lib/sysconfig.py for 2.7 to match
+other versions of sysconfig.
+
+..
+
+.. bpo: 3068
+.. date: 9402
+.. nonce: TYjXTA
+.. section: IDLE
+
+Add Idle extension configuration dialog to Options menu. Changes are written
+to HOME/.idlerc/config-extensions.cfg. Original patch by Tal Einat.
+
+..
+
+.. bpo: 16233
+.. date: 9401
+.. nonce: sOadNo
+.. section: IDLE
+
+A module browser (File : Class Browser, Alt+C) requires an editor window
+with a filename.  When Class Browser is requested otherwise, from a shell,
+output window, or 'Untitled' editor, Idle no longer displays an error box.
+It now pops up an Open Module box (Alt+M). If a valid name is entered and a
+module is opened, a corresponding browser is also opened.
+
+..
+
+.. bpo: 4832
+.. date: 9400
+.. nonce: GRKi9M
+.. section: IDLE
+
+Save As to type Python files automatically adds .py to the name you enter
+(even if your system does not display it).  Some systems automatically add
+.txt when type is Text files.
+
+..
+
+.. bpo: 21986
+.. date: 9399
+.. nonce: 04GUv2
+.. section: IDLE
+
+Code objects are not normally pickled by the pickle module. To match this,
+they are no longer pickled when running under Idle.
+
+..
+
+.. bpo: 22221
+.. date: 9398
+.. nonce: d87SuA
+.. section: IDLE
+
+IDLE now ignores the source encoding declaration on the second line if the
+first line contains anything except a comment.
+
+..
+
+.. bpo: 17390
+.. date: 9397
+.. nonce: I4vHFh
+.. section: IDLE
+
+Adjust Editor window title; remove 'Python', move version to end.
+
+..
+
+.. bpo: 14105
+.. date: 9396
+.. nonce: -FZwYH
+.. section: IDLE
+
+Idle debugger breakpoints no longer disappear when inserting or deleting
+lines.
+
+..
+
+.. bpo: 22381
+.. date: 9395
+.. nonce: 6ngdZW
+.. section: Library
+
+Update zlib to 1.2.8.
+
+..
+
+.. bpo: 22176
+.. date: 9394
+.. nonce: rgbRyg
+.. section: Library
+
+Update the ctypes module's libffi to v3.1.  This release adds support for
+the Linux AArch64 and POWERPC ELF ABIv2 little endian architectures.
+
+..
+
+.. bpo: 10712
+.. date: 9393
+.. nonce: rnd0oc
+.. section: Tools/Demos
+
+2to3 has a new "asserts" fixer that replaces deprecated names of unittest
+methods (e.g. failUnlessEqual -> assertEqual).
+
+..
+
+.. bpo: 22221
+.. date: 9392
+.. nonce: vONLqA
+.. section: Tools/Demos
+
+2to3 and the findnocoding.py script now ignore the source encoding
+declaration on the second line if the first line contains anything except a
+comment.
+
+..
+
+.. bpo: 22201
+.. date: 9391
+.. nonce: k1Awbh
+.. section: Tools/Demos
+
+Command-line interface of the zipfile module now correctly extracts ZIP
+files with directory entries.  Patch by Ryan Wilson.
+
+..
+
+.. bpo: 22236
+.. date: 9390
+.. nonce: ginJSI
+.. section: Tests
+
+Tkinter tests now don't reuse default root window.  New root window is
+created for every test class.
+
+..
+
+.. bpo: 18004
+.. date: 9389
+.. nonce: jPXten
+.. section: Tests
+
+test_overflow in test_list by mistake consumed 40 GiB of memory on 64-bit
+systems.
+
+..
+
+.. bpo: 21976
+.. date: 9388
+.. nonce: Slq6se
+.. section: Tests
+
+Fix test_ssl to accept LibreSSL version strings.  Thanks to William Orr.
+
+..
+
+.. bpo: 22770
+.. date: 9387
+.. nonce: FxAh91
+.. section: Tests
+
+Prevent some Tk segfaults on OS X when running gui tests.
+
+..
+
+.. bpo: 20221
+.. date: 9386
+.. nonce: _yAetK
+.. section: Build
+
+Removed conflicting (or circular) hypot definition when compiled with VS
+2010 or above.  Initial patch by Tabrez Mohammed.
+
+..
+
+.. bpo: 16537
+.. date: 9385
+.. nonce: llFo71
+.. section: Build
+
+Check whether self.extensions is empty in setup.py. Patch by Jonathan
+Hosmer.
+
+..
+
+.. bpo: 0
+.. date: 9384
+.. nonce: YZUllw
+.. section: Build
+
+The documentation Makefile no longer automatically downloads Sphinx. Users
+are now required to have Sphinx already installed to build the
+documentation.
+
+..
+
+.. bpo: 21958
+.. date: 9383
+.. nonce: 3rq4qR
+.. section: Build
+
+Define HAVE_ROUND when building with Visual Studio 2013 and above.  Patch by
+Zachary Turner.
+
+..
+
+.. bpo: 15759
+.. date: 9382
+.. nonce: iGLR6O
+.. section: Build
+
+"make suspicious", "make linkcheck" and "make doctest" in Doc/ now display
+special message when and only when there are failures.
+
+..
+
+.. bpo: 21166
+.. date: 9381
+.. nonce: KAl7aO
+.. section: Build
+
+Prevent possible segfaults and other random failures of python --generate-
+posix-vars in pybuilddir.txt build target.
+
+..
+
+.. bpo: 18096
+.. date: 9380
+.. nonce: ELyAUJ
+.. section: Build
+
+Fix library order returned by python-config.
+
+..
+
+.. bpo: 17219
+.. date: 9379
+.. nonce: q8ueQ0
+.. section: Build
+
+Add library build dir for Python extension cross-builds.
+
+..
+
+.. bpo: 22877
+.. date: 9378
+.. nonce: nq_snR
+.. section: Build
+
+PEP 477 - OS X installer now installs pip.
+
+..
+
+.. bpo: 22878
+.. date: 9377
+.. nonce: y4UnOy
+.. section: Build
+
+PEP 477 - "make install" and "make altinstall" can now install or upgrade
+pip, using the bundled pip provided by the backported ensurepip module.  A
+configure option, --with-ensurepip[=upgrade|install|no], is available to set
+the option for subsequent installs; the default for Python 2 in "no" (do not
+install or upgrade pip).  The option can also be set with "make [alt]install
+ENSUREPIP=[upgrade|install|no]".
+
+..
+
+.. bpo: 17896
+.. date: 9376
+.. nonce: o79rHM
+.. section: Windows
+
+The Windows build scripts now expect external library sources to be in
+``PCbuild\..\externals`` rather than ``PCbuild\..\..``.
+
+..
+
+.. bpo: 17717
+.. date: 9375
+.. nonce: y1zoye
+.. section: Windows
+
+The Windows build scripts now use a copy of NASM pulled from svn.python.org
+to build OpenSSL.
+
+..
+
+.. bpo: 22644
+.. date: 9374
+.. nonce: gosBki
+.. section: Windows
+
+The bundled version of OpenSSL has been updated to 1.0.1j.

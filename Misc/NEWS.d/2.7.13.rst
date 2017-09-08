@@ -1,0 +1,7 @@
+.. bpo: 5322
+.. date: 9926
+.. nonce: _CaEiN
+.. release date: 2016-12-17
+.. section: Core and Builtins
+
+Revert a37cc3d926ec.

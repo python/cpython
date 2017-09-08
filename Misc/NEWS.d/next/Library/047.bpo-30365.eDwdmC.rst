@@ -1,0 +1,4 @@
+Running Python with the -3 option now emits deprecation warnings for
+getchildren() and getiterator() methods of the Element class in the
+xml.etree.cElementTree module and when pass the html argument to
+xml.etree.ElementTree.XMLParser().

@@ -295,6 +295,24 @@ def format_test_result(test_name, result):
     return fmt % test_name
 
 
+def cpu_count():
+    # first try os.sysconf() to prevent loading the big multiprocessing module
+    try:
+        return os.sysconf('SC_NPROCESSORS_ONLN')
+    except (AttributeError, ValueError):
+        pass
+
+    # try multiprocessing.cpu_count()
+    try:
+        import multiprocessing
+    except ImportError:
+        pass
+    else:
+        return multiprocessing.cpu_count()
+
+    return None
+
+
 def unload_test_modules(save_modules):
     # Unload the newly imported modules (best effort finalization)
     for module in sys.modules.keys():
@@ -554,6 +572,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             nottests.add(arg)
         args = []
 
+    display_header = (verbose or header or not (quiet or single or tests or args)) and (not pgo)
     alltests = findtests(testdir, stdtests, nottests)
     selected = tests or args or alltests
     if single:
@@ -617,28 +636,38 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     def display_progress(test_index, test):
         # "[ 51/405/1] test_tcl"
-        fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
-        line = fmt.format(test_count_width, test_index, test_count,
-                          len(bad), test)
+        line = "{1:{0}}{2}".format(test_count_width, test_index, test_count)
+        if bad and not pgo:
+            line = '{}/{}'.format(line, len(bad))
+        line = '[{}]'.format(line)
+
+        # add the system load prefix: "load avg: 1.80 "
+        if hasattr(os, 'getloadavg'):
+            load_avg_1min = os.getloadavg()[0]
+            line = "load avg: {:.2f} {}".format(load_avg_1min, line)
 
         # add the timestamp prefix:  "0:01:05 "
         test_time = time.time() - regrtest_start_time
         test_time = datetime.timedelta(seconds=int(test_time))
         line = "%s %s" % (test_time, line)
 
+        # add the test name
+        line = "{} {}".format(line, test)
+
         print(line)
         sys.stdout.flush()
 
     # For a partial run, we do not need to clutter the output.
-    if verbose or header or not (quiet or single or tests or args):
-        if not pgo:
-            # Print basic platform information
-            print "==", platform.python_implementation(), \
-                        " ".join(sys.version.split())
-            print "==  ", platform.platform(aliased=True), \
-                          "%s-endian" % sys.byteorder
-            print "==  ", os.getcwd()
-            print "Testing with flags:", sys.flags
+    if display_header:
+        # Print basic platform information
+        print "==", platform.python_implementation(), \
+                    " ".join(sys.version.split())
+        print "==  ", platform.platform(aliased=True), \
+                      "%s-endian" % sys.byteorder
+        print "==  ", os.getcwd()
+        ncpu = cpu_count()
+        if ncpu:
+            print "== CPU count:", ncpu
 
     if randomize:
         random.seed(random_seed)
@@ -1172,6 +1201,9 @@ class saved_test_environment:
         return False
 
 
+def post_test_cleanup():
+    test_support.reap_children()
+
 def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=None):
     test_support.unload(test)
     if verbose:
@@ -1205,6 +1237,7 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
                     refleak = dash_R(the_module, test, indirect_test,
                         huntrleaks)
                 test_time = time.time() - start_time
+            post_test_cleanup()
         finally:
             sys.stdout = save_stdout
     except test_support.ResourceDenied, msg:

@@ -278,6 +278,7 @@ class BaseTestCase(unittest.TestCase):
         self._threads = test_support.threading_setup()
 
     def tearDown(self):
+        self.doCleanups()
         test_support.threading_cleanup(*self._threads)
 
 
@@ -296,10 +297,7 @@ class BasicAuthTests(BaseTestCase):
         self.server_url = 'http://127.0.0.1:%s' % self.server.port
         self.server.start()
         self.server.ready.wait()
-
-    def tearDown(self):
-        self.server.stop()
-        super(BasicAuthTests, self).tearDown()
+        self.addCleanup(self.server.stop)
 
     def test_basic_auth_success(self):
         ah = urllib2.HTTPBasicAuthHandler()
@@ -347,14 +345,11 @@ class ProxyAuthTests(BaseTestCase):
         self.server = LoopbackHttpServerThread(create_fake_proxy_handler)
         self.server.start()
         self.server.ready.wait()
+        self.addCleanup(self.server.stop)
         proxy_url = "http://127.0.0.1:%d" % self.server.port
         handler = urllib2.ProxyHandler({"http" : proxy_url})
         self.proxy_digest_handler = urllib2.ProxyDigestAuthHandler()
         self.opener = urllib2.build_opener(handler, self.proxy_digest_handler)
-
-    def tearDown(self):
-        self.server.stop()
-        super(ProxyAuthTests, self).tearDown()
 
     def test_proxy_with_bad_password_raises_httperror(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
@@ -472,6 +467,7 @@ class TestUrlopen(BaseTestCase):
         self.server = LoopbackHttpServerThread(handler)
         self.server.start()
         self.server.ready.wait()
+        self.addCleanup(self.server.stop)
         port = self.server.port
         handler.port = port
         return handler
@@ -496,15 +492,12 @@ class TestUrlopen(BaseTestCase):
 
         handler = self.start_server(responses)
 
-        try:
-            f = urllib2.urlopen('http://localhost:%s/' % handler.port)
-            data = f.read()
-            f.close()
+        f = urllib2.urlopen('http://localhost:%s/' % handler.port)
+        data = f.read()
+        f.close()
 
-            self.assertEqual(data, expected_response)
-            self.assertEqual(handler.requests, ['/', '/somewhere_else'])
-        finally:
-            self.server.stop()
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ['/', '/somewhere_else'])
 
 
     def test_404(self):
@@ -512,49 +505,40 @@ class TestUrlopen(BaseTestCase):
         handler = self.start_server([(404, [], expected_response)])
 
         try:
-            try:
-                urllib2.urlopen('http://localhost:%s/weeble' % handler.port)
-            except urllib2.URLError, f:
-                pass
-            else:
-                self.fail('404 should raise URLError')
+            urllib2.urlopen('http://localhost:%s/weeble' % handler.port)
+        except urllib2.URLError, f:
+            pass
+        else:
+            self.fail('404 should raise URLError')
 
-            data = f.read()
-            f.close()
+        data = f.read()
+        f.close()
 
-            self.assertEqual(data, expected_response)
-            self.assertEqual(handler.requests, ['/weeble'])
-        finally:
-            self.server.stop()
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ['/weeble'])
 
 
     def test_200(self):
         expected_response = 'pycon 2008...'
         handler = self.start_server([(200, [], expected_response)])
 
-        try:
-            f = urllib2.urlopen('http://localhost:%s/bizarre' % handler.port)
-            data = f.read()
-            f.close()
+        f = urllib2.urlopen('http://localhost:%s/bizarre' % handler.port)
+        data = f.read()
+        f.close()
 
-            self.assertEqual(data, expected_response)
-            self.assertEqual(handler.requests, ['/bizarre'])
-        finally:
-            self.server.stop()
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ['/bizarre'])
 
     def test_200_with_parameters(self):
         expected_response = 'pycon 2008...'
         handler = self.start_server([(200, [], expected_response)])
 
-        try:
-            f = urllib2.urlopen('http://localhost:%s/bizarre' % handler.port, 'get=with_feeling')
-            data = f.read()
-            f.close()
+        f = urllib2.urlopen('http://localhost:%s/bizarre' % handler.port, 'get=with_feeling')
+        data = f.read()
+        f.close()
 
-            self.assertEqual(data, expected_response)
-            self.assertEqual(handler.requests, ['/bizarre', 'get=with_feeling'])
-        finally:
-            self.server.stop()
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ['/bizarre', 'get=with_feeling'])
 
     def test_https(self):
         handler = self.start_https_server()
@@ -603,52 +587,40 @@ class TestUrlopen(BaseTestCase):
     def test_sending_headers(self):
         handler = self.start_server([(200, [], "we don't care")])
 
-        try:
-            req = urllib2.Request("http://localhost:%s/" % handler.port,
-                                  headers={'Range': 'bytes=20-39'})
-            urllib2.urlopen(req)
-            self.assertEqual(handler.headers_received['Range'], 'bytes=20-39')
-        finally:
-            self.server.stop()
+        req = urllib2.Request("http://localhost:%s/" % handler.port,
+                              headers={'Range': 'bytes=20-39'})
+        urllib2.urlopen(req)
+        self.assertEqual(handler.headers_received['Range'], 'bytes=20-39')
 
     def test_basic(self):
         handler = self.start_server([(200, [], "we don't care")])
 
+        open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
+        for attr in ("read", "close", "info", "geturl"):
+            self.assertTrue(hasattr(open_url, attr), "object returned from "
+                         "urlopen lacks the %s attribute" % attr)
         try:
-            open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
-            for attr in ("read", "close", "info", "geturl"):
-                self.assertTrue(hasattr(open_url, attr), "object returned from "
-                             "urlopen lacks the %s attribute" % attr)
-            try:
-                self.assertTrue(open_url.read(), "calling 'read' failed")
-            finally:
-                open_url.close()
+            self.assertTrue(open_url.read(), "calling 'read' failed")
         finally:
-            self.server.stop()
+            open_url.close()
 
     def test_info(self):
         handler = self.start_server([(200, [], "we don't care")])
 
-        try:
-            open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
-            info_obj = open_url.info()
-            self.assertIsInstance(info_obj, mimetools.Message,
-                                  "object returned by 'info' is not an "
-                                  "instance of mimetools.Message")
-            self.assertEqual(info_obj.getsubtype(), "plain")
-        finally:
-            self.server.stop()
+        open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
+        info_obj = open_url.info()
+        self.assertIsInstance(info_obj, mimetools.Message,
+                              "object returned by 'info' is not an "
+                              "instance of mimetools.Message")
+        self.assertEqual(info_obj.getsubtype(), "plain")
 
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
         handler = self.start_server([(200, [], "we don't care")])
 
-        try:
-            open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
-            url = open_url.geturl()
-            self.assertEqual(url, "http://localhost:%s" % handler.port)
-        finally:
-            self.server.stop()
+        open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
+        url = open_url.geturl()
+        self.assertEqual(url, "http://localhost:%s" % handler.port)
 
 
     def test_bad_address(self):
@@ -682,26 +654,21 @@ class TestUrlopen(BaseTestCase):
     def test_iteration(self):
         expected_response = "pycon 2008..."
         handler = self.start_server([(200, [], expected_response)])
-        try:
-            data = urllib2.urlopen("http://localhost:%s" % handler.port)
-            for line in data:
-                self.assertEqual(line, expected_response)
-        finally:
-            self.server.stop()
+
+        data = urllib2.urlopen("http://localhost:%s" % handler.port)
+        for line in data:
+            self.assertEqual(line, expected_response)
 
     def ztest_line_iteration(self):
         lines = ["We\n", "got\n", "here\n", "verylong " * 8192 + "\n"]
         expected_response = "".join(lines)
         handler = self.start_server([(200, [], expected_response)])
-        try:
-            data = urllib2.urlopen("http://localhost:%s" % handler.port)
-            for index, line in enumerate(data):
-                self.assertEqual(line, lines[index],
-                                 "Fetched line number %s doesn't match expected:\n"
-                                 "    Expected length was %s, got %s" %
-                                 (index, len(lines[index]), len(line)))
-        finally:
-            self.server.stop()
+        data = urllib2.urlopen("http://localhost:%s" % handler.port)
+        for index, line in enumerate(data):
+            self.assertEqual(line, lines[index],
+                             "Fetched line number %s doesn't match expected:\n"
+                             "    Expected length was %s, got %s" %
+                             (index, len(lines[index]), len(line)))
         self.assertEqual(index + 1, len(lines))
 
 def test_main():

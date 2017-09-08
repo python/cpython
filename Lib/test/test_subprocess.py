@@ -28,6 +28,11 @@ try:
 except ImportError:
     threading = None
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 mswindows = (sys.platform == "win32")
 
 #
@@ -52,6 +57,8 @@ class BaseTestCase(unittest.TestCase):
             inst.wait()
         subprocess._cleanup()
         self.assertFalse(subprocess._active, "subprocess._active not empty")
+        self.doCleanups()
+        test_support.reap_children()
 
     def assertStderrEqual(self, stderr, expected, msg=None):
         # In a debug build, stuff like "[6580 refs]" is printed to stderr at
@@ -1265,40 +1272,28 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.assertEqual(p2.returncode, 0, "Unexpected error: " + repr(stderr))
 
-    @unittest.skipIf(not ctypes, 'ctypes module required')
-    @unittest.skipIf(not sys.executable, 'Test requires sys.executable')
-    def test_child_terminated_in_stopped_state(self):
+    @unittest.skipUnless(_testcapi is not None
+                         and hasattr(_testcapi, 'W_STOPCODE'),
+                         'need _testcapi.W_STOPCODE')
+    def test_stopped(self):
         """Test wait() behavior when waitpid returns WIFSTOPPED; issue29335."""
-        PTRACE_TRACEME = 0  # From glibc and MacOS (PT_TRACE_ME).
-        libc_name = ctypes.util.find_library('c')
-        libc = ctypes.CDLL(libc_name)
-        if not hasattr(libc, 'ptrace'):
-            raise unittest.SkipTest('ptrace() required')
+        args = [sys.executable, '-c', 'pass']
+        proc = subprocess.Popen(args)
 
-        code = textwrap.dedent("""
-             import ctypes
-             from test.support import _crash_python
+        # Wait until the real process completes to avoid zombie process
+        pid = proc.pid
+        pid, status = os.waitpid(pid, 0)
+        self.assertEqual(status, 0)
 
-             libc = ctypes.CDLL({libc_name!r})
-             libc.ptrace({PTRACE_TRACEME}, 0, 0)
-        """.format(libc_name=libc_name, PTRACE_TRACEME=PTRACE_TRACEME))
+        status = _testcapi.W_STOPCODE(3)
 
-        child = subprocess.Popen([sys.executable, '-c', code])
-        if child.wait() != 0:
-            raise unittest.SkipTest('ptrace() failed - unable to test')
+        def mock_waitpid(pid, flags):
+            return (pid, status)
 
-        code += textwrap.dedent("""
-             # Crash the process
-             _crash_python()
-        """)
-        child = subprocess.Popen([sys.executable, '-c', code])
-        try:
-            returncode = child.wait()
-        except:
-            child.kill()  # Clean up the hung stopped process.
-            raise
-        self.assertNotEqual(0, returncode)
-        self.assertLess(returncode, 0)  # signal death, likely SIGSEGV.
+        with test_support.swap_attr(os, 'waitpid', mock_waitpid):
+            returncode = proc.wait()
+
+        self.assertEqual(returncode, -3)
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

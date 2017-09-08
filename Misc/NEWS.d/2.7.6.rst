@@ -1,0 +1,37 @@
+.. bpo: 19435
+.. date: 9186
+.. nonce: kXqMz3
+.. release date: 2013-11-10
+.. section: Library
+
+Fix directory traversal attack on CGIHttpRequestHandler.
+
+..
+
+.. bpo: 19426
+.. date: 9185
+.. nonce: PwatP7
+.. section: IDLE
+
+Fixed the opening of Python source file with specified encoding.
+
+..
+
+.. bpo: 19457
+.. date: 9184
+.. nonce: HGwEFx
+.. section: Tests
+
+Fixed xmlcharrefreplace tests on wide build when tests are loaded from
+.py[co] files.
+
+..
+
+.. bpo: 15663
+.. date: 9183
+.. nonce: p-vVTG
+.. section: Build
+
+Revert OS X installer built-in Tcl/Tk support for 2.7.6. Some third-party
+projects, such as Matplotlib and PIL/Pillow, depended on being able to build
+with Tcl and Tk frameworks in /Library/Frameworks.

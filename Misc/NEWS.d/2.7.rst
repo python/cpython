@@ -1,0 +1,46 @@
+.. bpo: 0
+.. date: 8096
+.. nonce: HgSXMh
+.. release date: 2010-07-03
+.. section: Core and Builtins
+
+Prevent assignment to set literals.
+
+..
+
+.. bpo: 1868
+.. date: 8095
+.. nonce: 8rTkvC
+.. section: Library
+
+Eliminate subtle timing issues in thread-local objects by getting rid of the
+cached copy of thread-local attribute dictionary.
+
+..
+
+.. bpo: 9125
+.. date: 8094
+.. nonce: bm97Ws
+.. section: Library
+
+Add recognition of 'except ... as ...' syntax to parser module.
+
+..
+
+.. bpo: 7673
+.. date: 8093
+.. nonce: cDxsD2
+.. section: Library
+
+Fix security vulnerability (CVE-2010-2089) in the audioop module, ensure
+that the input string length is a multiple of the frame size.
+
+..
+
+.. bpo: 9075
+.. date: 8092
+.. nonce: kvxac2
+.. section: Library
+
+In the ssl module, remove the setting of a ``debug`` flag on an OpenSSL
+structure.

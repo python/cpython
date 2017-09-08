@@ -1,0 +1,5751 @@
+.. bpo: 7419
+.. date: 7759
+.. nonce: k1cFGq
+.. release date: 2009-12-05
+.. section: Core and Builtins
+
+``locale.setlocale()`` could crash the interpreter on Windows when called
+with invalid values.
+
+..
+
+.. bpo: 3382
+.. date: 7758
+.. nonce: gtmT4T
+.. section: Core and Builtins
+
+'F' formatting for float and complex now convert the result to upper case.
+This only affects 'inf' and 'nan', since 'f' no longer converts to 'g' for
+large values.
+
+..
+
+.. bpo: 0
+.. date: 7757
+.. nonce: fw7KHO
+.. section: Core and Builtins
+
+Remove switch from "%f" formatting to "%g" formatting for floats larger than
+1e50 in absolute value.
+
+..
+
+.. bpo: 0
+.. date: 7756
+.. nonce: npJH0D
+.. section: Core and Builtins
+
+Remove restrictions on precision when formatting floats.  E.g., "%.120g" %
+1e-100 used to raise OverflowError, but now gives the requested 120
+significant digits instead.
+
+..
+
+.. bpo: 0
+.. date: 7755
+.. nonce: Z3-djS
+.. section: Core and Builtins
+
+Add Py3k warnings for parameter names in parentheses.
+
+..
+
+.. bpo: 7362
+.. date: 7754
+.. nonce: wy5JgV
+.. section: Core and Builtins
+
+Give a proper error message for ``def f((x)=3): pass``.
+
+..
+
+.. bpo: 7085
+.. date: 7753
+.. nonce: 1mo7hs
+.. section: Core and Builtins
+
+Fix crash when importing some extensions in a thread on MacOSX 10.6.
+
+..
+
+.. bpo: 7117
+.. date: 7752
+.. nonce: 3_1LKC
+.. section: Core and Builtins
+
+``repr(x)`` for a float x returns a result based on the shortest decimal
+string that's guaranteed to round back to x under correct rounding (with
+round-half-to-even rounding mode).  Previously it gave a string based on
+rounding x to 17 decimal digits.  repr(x) for a complex number behaves
+similarly.  On platforms where the correctly-rounded strtod and dtoa code is
+not supported (see below), repr is unchanged.
+
+..
+
+.. bpo: 7117
+.. date: 7751
+.. nonce: 6am3Rw
+.. section: Core and Builtins
+
+On almost all platforms: float-to-string and string-to-float conversions
+within Python are now correctly rounded.  Places these conversions occur
+include: str for floats and complex numbers; the float and complex
+constructors; old-style and new-style numeric formatting; serialization and
+deserialization of floats and complex numbers using marshal, pickle and
+json; parsing of float and imaginary literals in Python code; Decimal-to-
+float conversion.
+
+The conversions use a Python-adapted version of David Gay's well-known
+dtoa.c, providing correctly-rounded strtod and dtoa C functions.  This code
+is supported on Windows, and on Unix-like platforms using gcc, icc or suncc
+as the C compiler.  There may be a small number of platforms on which
+correct operation of this code cannot be guaranteed, so the code is not
+used: notably, this applies to platforms where the C double format is not
+IEEE 754 binary64, and to platforms on x86 hardware where the x87 FPU is set
+to 64-bit precision and Python's configure script is unable to determine how
+to change the FPU precision.  On these platforms conversions use the
+platform strtod and dtoa, as before.
+
+..
+
+.. bpo: 7117
+.. date: 7750
+.. nonce: 2KoEdA
+.. section: Core and Builtins
+
+Backport round implementation from Python 3.x.  ``round()`` now uses the
+correctly-rounded string <-> float conversions described above (when
+available), and so produces correctly rounded results that will display
+nicely under the float repr.  There are two related small changes: (1) round
+now accepts any class with an ``__index__()`` method for its second argument
+(but no longer accepts floats for the second argument), and (2) an
+excessively large second integer argument (e.g., ``round(1.234, 10**100)``)
+no longer raises an exception.
+
+..
+
+.. bpo: 1757126
+.. date: 7749
+.. nonce: W4QhUw
+.. section: Core and Builtins
+
+Fix the cyrillic-asian alias for the ptcp154 encoding.
+
+..
+
+.. bpo: 0
+.. date: 7748
+.. nonce: mZpsla
+.. section: Core and Builtins
+
+Fix several issues with ``compile()``.  The input can now contain Windows
+and Mac newlines and is no longer required to end in a newline.
+
+..
+
+.. bpo: 0
+.. date: 7747
+.. nonce: sUbwH3
+.. section: Core and Builtins
+
+Remove length limitation when constructing a complex number from a unicode
+string.
+
+..
+
+.. bpo: 7244
+.. date: 7746
+.. nonce: qAVavO
+.. section: Core and Builtins
+
+``itertools.izip_longest()`` no longer ignores exceptions raised during the
+formation of an output tuple.
+
+..
+
+.. bpo: 1087418
+.. date: 7745
+.. nonce: dyFZpg
+.. section: Core and Builtins
+
+Boost performance of bitwise operations for longs.
+
+..
+
+.. bpo: 1722344
+.. date: 7744
+.. nonce: QqabuR
+.. section: Core and Builtins
+
+``threading._shutdown()`` is now called in ``Py_Finalize()``, which fixes
+the problem of some exceptions being thrown at shutdown when the interpreter
+is killed.  Patch by Adam Olsen.
+
+..
+
+.. bpo: 7168
+.. date: 7743
+.. nonce: pYjKia
+.. section: Core and Builtins
+
+Document ``PyFloat_AsString()`` and ``PyFloat_AsReprString()``, and note
+that they are unsafe and deprecated.
+
+..
+
+.. bpo: 7120
+.. date: 7742
+.. nonce: Ft2RxW
+.. section: Core and Builtins
+
+logging: Remove import of multiprocessing which is causing crash in GAE.
+
+..
+
+.. bpo: 7140
+.. date: 7741
+.. nonce: KNTZLI
+.. section: Core and Builtins
+
+The ``__dict__`` of a module should not be cleared unless the module is the
+only object holding a reference to it.
+
+..
+
+.. bpo: 1754094
+.. date: 7740
+.. nonce: I0gQmd
+.. section: Core and Builtins
+
+Improve the stack depth calculation in the compiler.  There should be no
+other effect than a small decrease in memory use.  Patch by Christopher Tur
+Lesniewski-Laas.
+
+..
+
+.. bpo: 7084
+.. date: 7739
+.. nonce: kUk5-B
+.. section: Core and Builtins
+
+Fix a (very unlikely) crash when printing a list from one thread, and
+mutating it from another one.  Patch by Scott Dial.
+
+..
+
+.. bpo: 1571184
+.. date: 7738
+.. nonce: EqTH98
+.. section: Core and Builtins
+
+The Unicode database contains properties for more characters. The tables for
+code points representing numeric values, white spaces or line breaks are now
+generated from the official Unicode Character Database files, and include
+information from the Unihan.txt file.
+
+..
+
+.. bpo: 7050
+.. date: 7737
+.. nonce: DM5jYL
+.. section: Core and Builtins
+
+Fix a SystemError when trying to use unpacking and augmented assignment.
+
+..
+
+.. bpo: 5329
+.. date: 7736
+.. nonce: bkqqa-
+.. section: Core and Builtins
+
+Fix ``os.popen*`` regression from 2.5 with commands as a sequence running
+through the shell.  Patch by Jean-Paul Calderone and Jani Hakala.
+
+..
+
+.. bpo: 7019
+.. date: 7735
+.. nonce: sCk9wW
+.. section: Core and Builtins
+
+Raise ValueError when unmarshalling bad long data, instead of producing
+internally inconsistent Python longs.
+
+..
+
+.. bpo: 6990
+.. date: 7734
+.. nonce: 19LcUf
+.. section: Core and Builtins
+
+Fix ``threading.local`` subclasses leaving old state around after a
+reference cycle GC which could be recycled by new locals.
+
+..
+
+.. bpo: 6300
+.. date: 7733
+.. nonce: 6gPIDy
+.. section: Core and Builtins
+
+unicode.encode, unicode.decode, str.decode, and str.encode now take keyword
+arguments.
+
+..
+
+.. bpo: 6922
+.. date: 7732
+.. nonce: _MuLB9
+.. section: Core and Builtins
+
+Fix an infinite loop when trying to decode an invalid UTF-32 stream with a
+non-raising error handler like "replace" or "ignore".
+
+..
+
+.. bpo: 6713
+.. date: 7731
+.. nonce: 89EnqN
+.. section: Core and Builtins
+
+Improve performance of base 10 int -> string and long -> string conversions.
+
+..
+
+.. bpo: 1590864
+.. date: 7730
+.. nonce: 8aex1L
+.. section: Core and Builtins
+
+Fix potential deadlock when mixing threads and fork().
+
+..
+
+.. bpo: 6844
+.. date: 7729
+.. nonce: oWxRbN
+.. section: Core and Builtins
+
+Do not emit DeprecationWarnings when accessing a "message" attribute on
+exceptions that was set explicitly.
+
+..
+
+.. bpo: 6846
+.. date: 7728
+.. nonce: q7b-Oy
+.. section: Core and Builtins
+
+Fix bug where bytearray.pop() returns negative integers.
+
+..
+
+.. bpo: 0
+.. date: 7727
+.. nonce: GQUdwf
+.. section: Core and Builtins
+
+``classmethod()`` no longer checks if its argument is callable.
+
+..
+
+.. bpo: 6750
+.. date: 7726
+.. nonce: _Pln31
+.. section: Core and Builtins
+
+A text file opened with ``io.open()`` could duplicate its output when
+writing from multiple threads at the same time.
+
+..
+
+.. bpo: 6704
+.. date: 7725
+.. nonce: OpSyKo
+.. section: Core and Builtins
+
+Improve the col_offset in AST for "for" statements with a target of tuple
+unpacking.
+
+..
+
+.. bpo: 6707
+.. date: 7724
+.. nonce: DXTwpb
+.. section: Core and Builtins
+
+``dir()`` on an uninitialized module caused a crash.
+
+..
+
+.. bpo: 6540
+.. date: 7723
+.. nonce: NsoPR8
+.. section: Core and Builtins
+
+Fixed crash for ``bytearray.translate()`` with invalid parameters.
+
+..
+
+.. bpo: 6573
+.. date: 7722
+.. nonce: VBwjtf
+.. section: Core and Builtins
+
+``set.union()`` stopped processing inputs if an instance of self occurred in
+the argument chain.
+
+..
+
+.. bpo: 1616979
+.. date: 7721
+.. nonce: YHyBWF
+.. section: Core and Builtins
+
+Added the cp720 (Arabic DOS) encoding.
+
+..
+
+.. bpo: 6070
+.. date: 7720
+.. nonce: -wC7vb
+.. section: Core and Builtins
+
+On posix platforms import no longer copies the execute bit from the .py file
+to the .pyc file if it is set.  Patch by Marco N.
+
+..
+
+.. bpo: 4618
+.. date: 7719
+.. nonce: B-bSRk
+.. section: Core and Builtins
+
+When unicode arguments are passed to ``print()``, the default separator and
+end should be unicode also.
+
+..
+
+.. bpo: 6119
+.. date: 7718
+.. nonce: 94FrLZ
+.. section: Core and Builtins
+
+Fixed an incorrect Py3k warning about order comparisons of built-in
+functions and methods.
+
+..
+
+.. bpo: 6347
+.. date: 7717
+.. nonce: VBKK7h
+.. section: Core and Builtins
+
+Include inttypes.h as well as stdint.h in pyport.h.  This fixes a build
+failure on HP-UX: int32_t and uint32_t are defined in inttypes.h instead of
+stdint.h on that platform.
+
+..
+
+.. bpo: 4856
+.. date: 7716
+.. nonce: RhxQ0Y
+.. section: Core and Builtins
+
+Remove checks for win NT.
+
+..
+
+.. bpo: 2016
+.. date: 7715
+.. nonce: ZTf6oS
+.. section: Core and Builtins
+
+Fixed a crash in a corner case where the dictionary of keyword arguments
+could be modified during the function call setup.
+
+..
+
+.. bpo: 0
+.. date: 7714
+.. nonce: uhA2zk
+.. section: Core and Builtins
+
+Removed the ipaddr module.
+
+..
+
+.. bpo: 6329
+.. date: 7713
+.. nonce: j7fwCJ
+.. section: Core and Builtins
+
+Fixed iteration for memoryview objects (it was being blocked because it
+wasn't recognized as a sequence).
+
+..
+
+.. bpo: 6289
+.. date: 7712
+.. nonce: zQqm8L
+.. section: Core and Builtins
+
+Encoding errors from ``compile()`` were being masked.
+
+..
+
+.. bpo: 0
+.. date: 7711
+.. nonce: s6jnqm
+.. section: Core and Builtins
+
+When no module is given in a relative import, the module field of the
+ImportFrom AST node is now None instead of an empty string.
+
+..
+
+.. bpo: 0
+.. date: 7710
+.. nonce: dFzVxY
+.. section: Core and Builtins
+
+Assignment to None using import statements now raises a SyntaxError.
+
+..
+
+.. bpo: 4547
+.. date: 7709
+.. nonce: 4fI3tX
+.. section: Core and Builtins
+
+When debugging a very large function, it was not always possible to update
+the lineno attribute of the current frame.
+
+..
+
+.. bpo: 5330
+.. date: 7708
+.. nonce: HPvn6G
+.. section: Core and Builtins
+
+C functions called with keyword arguments were not reported by the various
+profiling modules (profile, cProfile).  Patch by Hagen Fürstenau.
+
+..
+
+.. bpo: 5982
+.. date: 7707
+.. nonce: c_mt6_
+.. section: Core and Builtins
+
+staticmethod and classmethod now expose the wrapped function with
+``__func__``.
+
+..
+
+.. bpo: 0
+.. date: 7706
+.. nonce: w77qV4
+.. section: Core and Builtins
+
+Added support for multiple context managers in the same with-statement.
+Deprecated ``contextlib.nested()`` which is no longer needed.
+
+..
+
+.. bpo: 6101
+.. date: 7705
+.. nonce: 4tQTZX
+.. section: Core and Builtins
+
+A new opcode, SETUP_WITH, has been added to speed up the with statement and
+correctly lookup the __enter__ and __exit__ special methods.
+
+..
+
+.. bpo: 5829
+.. date: 7704
+.. nonce: Zt7a5o
+.. section: Core and Builtins
+
+complex("1e500") no longer raises OverflowError.  This makes it consistent
+with float("1e500") and interpretation of real and imaginary literals.
+
+..
+
+.. bpo: 3527
+.. date: 7703
+.. nonce: Eyqquq
+.. section: Core and Builtins
+
+Removed Py_WIN_WIDE_FILENAMES which is not used any more.
+
+..
+
+.. bpo: 0
+.. date: 7702
+.. nonce: 2yrH_o
+.. section: Core and Builtins
+
+``__instancecheck__()`` and ``__subclasscheck__()`` are now completely
+ignored on classic classes and instances.
+
+..
+
+.. bpo: 5994
+.. date: 7701
+.. nonce: woNvhx
+.. section: Core and Builtins
+
+The marshal module now has docstrings.
+
+..
+
+.. bpo: 5981
+.. date: 7700
+.. nonce: LkapH9
+.. section: Core and Builtins
+
+Fix three minor inf/nan issues in float.fromhex:
+
+(1) inf and nan strings with trailing whitespace were incorrectly rejected;
+(2) parsing of strings representing infinities and nans was locale aware;
+and (3) the interpretation of fromhex('-nan') didn't match that of
+float('-nan').
+
+..
+
+.. bpo: 5920
+.. date: 7699
+.. nonce: ZoI1xB
+.. section: Core and Builtins
+
+For ``float.__format__()``, change the behavior with the empty presentation
+type (that is, not one of 'e', 'f', 'g', or 'n') to be like 'g' but with at
+least one decimal point and with a default precision of 12. Previously, the
+behavior the same but with a default precision of 6. This more closely
+matches ``str()``, and reduces surprises when adding alignment flags to the
+empty presentation type. This also affects the new complex.__format__ in the
+same way.
+
+..
+
+.. bpo: 5890
+.. date: 7698
+.. nonce: sbCAtW
+.. section: Core and Builtins
+
+In subclasses of 'property' the __doc__ attribute was shadowed by
+classtype's, even if it was None.  property now inserts the __doc__ into the
+subclass instance __dict__.
+
+..
+
+.. bpo: 4426
+.. date: 7697
+.. nonce: Ny5_Rg
+.. section: Core and Builtins
+
+The UTF-7 decoder was too strict and didn't accept some legal sequences.
+Patch by Nick Barnes and Victor Stinner.
+
+..
+
+.. bpo: 1588
+.. date: 7696
+.. nonce: 8-XCeQ
+.. section: Core and Builtins
+
+Add complex.__format__. For example, ``format(complex(1, 2./3), '.5')`` now
+produces a sensible result.
+
+..
+
+.. bpo: 5864
+.. date: 7695
+.. nonce: UElc0c
+.. section: Core and Builtins
+
+Fix empty format code formatting for floats so that it never gives more than
+the requested number of significant digits.
+
+..
+
+.. bpo: 5793
+.. date: 7694
+.. nonce: 0DjdQj
+.. section: Core and Builtins
+
+Rationalize isdigit / isalpha / tolower, etc. Includes new Py_ISDIGIT /
+Py_ISALPHA / Py_TOLOWER, etc. in pctypes.h.
+
+..
+
+.. bpo: 4971
+.. date: 7693
+.. nonce: G5AyFS
+.. section: Core and Builtins
+
+Fix titlecase for characters that are their own titlecase, but not their own
+uppercase.
+
+..
+
+.. bpo: 5835
+.. date: 7692
+.. nonce: SBkH58
+.. section: Core and Builtins
+
+Deprecate PyOS_ascii_formatd and replace it with _PyOS_double_to_string or
+PyOS_double_to_string.
+
+..
+
+.. bpo: 5283
+.. date: 7691
+.. nonce: p_vsQP
+.. section: Core and Builtins
+
+Setting __class__ in __del__ caused a segfault.
+
+..
+
+.. bpo: 5816
+.. date: 7690
+.. nonce: 5WDdX0
+.. section: Core and Builtins
+
+``complex(repr(z))`` now recovers z exactly, even when z involves nans, infs
+or negative zeros.
+
+..
+
+.. bpo: 0
+.. date: 7689
+.. nonce: ld0JdT
+.. section: Core and Builtins
+
+Implement PEP 378, Format Specifier for Thousands Separator, for floats,
+ints, and longs.
+
+..
+
+.. bpo: 5515
+.. date: 7688
+.. nonce: H1aLcI
+.. section: Core and Builtins
+
+'n' formatting for ints, longs, and floats handles leading zero formatting
+poorly.
+
+..
+
+.. bpo: 5772
+.. date: 7687
+.. nonce: tXqVft
+.. section: Core and Builtins
+
+For float.__format__, don't add a trailing ".0" if we're using no type code
+and we have an exponent.
+
+..
+
+.. bpo: 3166
+.. date: 7686
+.. nonce: oL_y0x
+.. section: Core and Builtins
+
+Make long -> float (and int -> float) conversions correctly rounded.
+
+..
+
+.. bpo: 5787
+.. date: 7685
+.. nonce: iV1WRE
+.. section: Core and Builtins
+
+``object.__getattribute__(some_type, "__bases__")`` segfaulted on some
+built-in types.
+
+..
+
+.. bpo: 1869
+.. date: 7684
+.. nonce: cQ4HTO
+.. section: Core and Builtins
+
+Fix a couple of minor round() issues.  ``round(5e15+1)`` was giving 5e15+2;
+``round(-0.0)`` was losing the sign of the zero.
+
+..
+
+.. bpo: 5759
+.. date: 7683
+.. nonce: j3dL9W
+.. section: Core and Builtins
+
+float() didn't call __float__ on str subclasses.
+
+..
+
+.. bpo: 5704
+.. date: 7682
+.. nonce: TDk8Ck
+.. section: Core and Builtins
+
+The "-3" command-line option now implies "-t".
+
+..
+
+.. bpo: 2170
+.. date: 7681
+.. nonce: 35irN6
+.. section: Core and Builtins
+
+Refactored ``xml.dom.minidom.normalize``, increasing both its clarity and
+its speed.
+
+..
+
+.. bpo: 2396
+.. date: 7680
+.. nonce: v-oJ0Q
+.. section: Core and Builtins
+
+The memoryview object was backported from Python 3.1.
+
+..
+
+.. bpo: 0
+.. date: 7679
+.. nonce: wxbCGj
+.. section: Core and Builtins
+
+Fix a problem in PyErr_NormalizeException that leads to "undetected errors"
+when hitting the recursion limit under certain circumstances.
+
+..
+
+.. bpo: 1665206
+.. date: 7678
+.. nonce: D9xyVJ
+.. section: Core and Builtins
+
+Remove the last eager import in _warnings.c and make it lazy.
+
+..
+
+.. bpo: 4865
+.. date: 7677
+.. nonce: 9T7IVK
+.. section: Core and Builtins
+
+On MacOSX /Library/Python/2.7/site-packages is added to the end sys.path,
+for compatibility with the system install of Python.
+
+..
+
+.. bpo: 4688
+.. date: 7676
+.. nonce: k7jSS9
+.. section: Core and Builtins
+
+Add a heuristic so that tuples and dicts containing only untrackable objects
+are not tracked by the garbage collector. This can reduce the size of
+collections and therefore the garbage collection overhead on long-running
+programs, depending on their particular use of datatypes.
+
+..
+
+.. bpo: 5512
+.. date: 7675
+.. nonce: 0akWHy
+.. section: Core and Builtins
+
+Rewrite PyLong long division algorithm (x_divrem) to improve its
+performance.  Long divisions and remainder operations are now between 50%
+and 150% faster.
+
+..
+
+.. bpo: 4258
+.. date: 7674
+.. nonce: VzQaoh
+.. section: Core and Builtins
+
+Make it possible to use base 2**30 instead of base 2**15 for the internal
+representation of integers, for performance reasons.  Base 2**30 is enabled
+by default on 64-bit machines.  Add --enable-big-digits option to configure,
+which overrides the default.  Add sys.long_info structseq to provide
+information about the internal format.
+
+..
+
+.. bpo: 4034
+.. date: 7673
+.. nonce: WdZVvE
+.. section: Core and Builtins
+
+Fix weird attribute error messages of the traceback object. (As a result
+traceback.__members__ no longer exists.)
+
+..
+
+.. bpo: 4474
+.. date: 7672
+.. nonce: d-gOFs
+.. section: Core and Builtins
+
+PyUnicode_FromWideChar now converts characters outside the BMP to surrogate
+pairs, on systems with sizeof(wchar_t) == 4 and sizeof(Py_UNICODE) == 2.
+
+..
+
+.. bpo: 5237
+.. date: 7671
+.. nonce: TC5vHj
+.. section: Core and Builtins
+
+Allow auto-numbered fields in str.format(). For example: ``'{} {}'.format(1,
+2) == '1 2'``.
+
+..
+
+.. bpo: 3652
+.. date: 7670
+.. nonce: LS7lbT
+.. section: Core and Builtins
+
+Make the 'line' argument for ``warnings.showwarning()`` a requirement.
+Means the DeprecationWarning from Python 2.6 can go away.
+
+..
+
+.. bpo: 5247
+.. date: 7669
+.. nonce: FherHz
+.. section: Core and Builtins
+
+Improve error message when unknown format codes are used when using
+``str.format()`` with str, unicode, long, int, and float arguments.
+
+..
+
+.. bpo: 0
+.. date: 7668
+.. nonce: UMEr-l
+.. section: Core and Builtins
+
+Running Python with the -3 option now also warns about classic division for
+ints and longs.
+
+..
+
+.. bpo: 5260
+.. date: 7667
+.. nonce: Em88-S
+.. section: Core and Builtins
+
+Long integers now consume less memory: average saving is 2 bytes per long on
+a 32-bit system and 6 bytes per long on a 64-bit system.
+
+..
+
+.. bpo: 5186
+.. date: 7666
+.. nonce: j1is78
+.. section: Core and Builtins
+
+Reduce hash collisions for objects with no __hash__ method by rotating the
+object pointer by 4 bits to the right.
+
+..
+
+.. bpo: 4575
+.. date: 7665
+.. nonce: kbytK5
+.. section: Core and Builtins
+
+Fix Py_IS_INFINITY macro to work correctly on x87 FPUs: it now forces its
+argument to double before testing for infinity.
+
+..
+
+.. bpo: 4978
+.. date: 7664
+.. nonce: 1CHApa
+.. section: Core and Builtins
+
+Passing keyword arguments as unicode strings is now allowed.
+
+..
+
+.. bpo: 1242657
+.. date: 7663
+.. nonce: XDCnZa
+.. section: Core and Builtins
+
+the __len__() and __length_hint__() calls in several tools were suppressing
+all exceptions.  These include list(), filter(), map(), zip(), and
+bytearray().
+
+..
+
+.. bpo: 0
+.. date: 7662
+.. nonce: cFart9
+.. section: Core and Builtins
+
+os.ftruncate raises OSErrors instead of IOErrors for consistency with other
+os functions.
+
+..
+
+.. bpo: 4991
+.. date: 7661
+.. nonce: ALUxl0
+.. section: Core and Builtins
+
+Passing invalid file descriptors to io.FileIO now raises an OSError.
+
+..
+
+.. bpo: 4807
+.. date: 7660
+.. nonce: zBKF-Y
+.. section: Core and Builtins
+
+Port the _winreg module to Windows CE.
+
+..
+
+.. bpo: 4935
+.. date: 7659
+.. nonce: FCRsi7
+.. section: Core and Builtins
+
+The overflow checking code in the expandtabs() method common to str, bytes
+and bytearray could be optimized away by the compiler, letting the
+interpreter segfault instead of raising an error.
+
+..
+
+.. bpo: 3720
+.. date: 7658
+.. nonce: AhqraF
+.. section: Core and Builtins
+
+Fix a crash when an iterator modifies its class and removes its __next__
+method.
+
+..
+
+.. bpo: 4893
+.. date: 7657
+.. nonce: 6cqBTr
+.. section: Core and Builtins
+
+Use NT threading on CE.
+
+..
+
+.. bpo: 4915
+.. date: 7656
+.. nonce: 687QYF
+.. section: Core and Builtins
+
+Port sysmodule to Windows CE.
+
+..
+
+.. bpo: 4074
+.. date: 7655
+.. nonce: P6W6AU
+.. section: Core and Builtins
+
+Change the criteria for doing a full garbage collection (i.e. collecting the
+oldest generation) so that allocating lots of objects without destroying
+them does not show quadratic performance. Based on a proposal by Martin von
+Löwis at http://mail.python.org/pipermail/python-dev/2008-June/080579.html.
+
+..
+
+.. bpo: 4850
+.. date: 7654
+.. nonce: I2rQxz
+.. section: Core and Builtins
+
+Change COUNT_ALLOCS variables to Py_ssize_t.
+
+..
+
+.. bpo: 1180193
+.. date: 7653
+.. nonce: pCkOCz
+.. section: Core and Builtins
+
+When importing a module from a .pyc (or .pyo) file with an existing .py
+counterpart, override the co_filename attributes of all code objects if the
+original filename is obsolete (which can happen if the file has been
+renamed, moved, or if it is accessed through different paths).  Patch by
+Ziga Seilnacht and Jean-Paul Calderone.
+
+..
+
+.. bpo: 4075
+.. date: 7652
+.. nonce: Ccn4nr
+.. section: Core and Builtins
+
+Use ``OutputDebugStringW()`` in Py_FatalError.
+
+..
+
+.. bpo: 4797
+.. date: 7651
+.. nonce: X8BGMK
+.. section: Core and Builtins
+
+IOError.filename was not set when _fileio.FileIO failed to open file with
+`str' filename on Windows.
+
+..
+
+.. bpo: 3680
+.. date: 7650
+.. nonce: sDYVgF
+.. section: Core and Builtins
+
+Reference cycles created through a dict, set or deque iterator did not get
+collected.
+
+..
+
+.. bpo: 4701
+.. date: 7649
+.. nonce: KCWdVt
+.. section: Core and Builtins
+
+PyObject_Hash now implicitly calls PyType_Ready on types where the tp_hash
+and tp_dict slots are both NULL.
+
+..
+
+.. bpo: 4764
+.. date: 7648
+.. nonce: 9uJcCX
+.. section: Core and Builtins
+
+With io.open, IOError.filename is set when trying to open a directory on
+POSIX systems.
+
+..
+
+.. bpo: 4764
+.. date: 7647
+.. nonce: m87cQp
+.. section: Core and Builtins
+
+IOError.filename is set when trying to open a directory on POSIX systems.
+
+..
+
+.. bpo: 4759
+.. date: 7646
+.. nonce: jS_IUc
+.. section: Core and Builtins
+
+None is now allowed as the first argument of ``bytearray.translate()``.  It
+was always allowed for ``bytes.translate()``.
+
+..
+
+.. bpo: 0
+.. date: 7645
+.. nonce: NJHPw5
+.. section: Core and Builtins
+
+Added test case to ensure attempts to read from a file opened for writing
+fail.
+
+..
+
+.. bpo: 2467
+.. date: 7644
+.. nonce: hTdCDO
+.. section: Core and Builtins
+
+gc.DEBUG_STATS reported invalid elapsed times. Also, always print elapsed
+times, not only when some objects are uncollectable/unreachable. Original
+patch by Neil Schemenauer.
+
+..
+
+.. bpo: 3439
+.. date: 7643
+.. nonce: FDqFob
+.. section: Core and Builtins
+
+Add a bit_length method to int and long.
+
+..
+
+.. bpo: 2183
+.. date: 7642
+.. nonce: N4TSpS
+.. section: Core and Builtins
+
+Simplify and optimize bytecode for list comprehensions.  Original patch by
+Neal Norwitz.
+
+..
+
+.. bpo: 4597
+.. date: 7641
+.. nonce: tAXQWn
+.. section: Core and Builtins
+
+Fixed exception handling when the __exit__ function of a context manager
+returns a value that cannot be converted to a bool.
+
+..
+
+.. bpo: 4597
+.. date: 7640
+.. nonce: nQOPGV
+.. section: Core and Builtins
+
+Fixed several opcodes that weren't always propagating exceptions.
+
+..
+
+.. bpo: 4445
+.. date: 7639
+.. nonce: irvsqZ
+.. section: Core and Builtins
+
+Replace ``sizeof(PyStringObject)`` with ``offsetof(PyStringObject, ob_sval)
++ 1`` when allocating memory for str instances.  On a typical machine this
+saves 3 bytes of memory (on average) per string allocation.
+
+..
+
+.. bpo: 3996
+.. date: 7638
+.. nonce: MarU4T
+.. section: Core and Builtins
+
+On Windows, the PyOS_CheckStack function would cause the interpreter to
+abort ("Fatal Python error: Could not reset the stack!") instead of throwing
+a MemoryError.
+
+..
+
+.. bpo: 3689
+.. date: 7637
+.. nonce: CNYxlz
+.. section: Core and Builtins
+
+The list reversed iterator now supports __length_hint__ instead of __len__.
+Behavior now matches other reversed iterators.
+
+..
+
+.. bpo: 4367
+.. date: 7636
+.. nonce: fmKFqn
+.. section: Core and Builtins
+
+Python would segfault during compiling when the unicodedata module couldn't
+be imported and \N escapes were present.
+
+..
+
+.. bpo: 4233
+.. date: 7635
+.. nonce: iQj976
+.. section: Core and Builtins
+
+Changed semantic of ``_fileio.FileIO``'s ``close()`` method on file objects
+with closefd=False. The file descriptor is still kept open but the file
+object behaves like a closed file. The ``FileIO`` object also got a new
+readonly attribute ``closefd``.
+
+..
+
+.. bpo: 4348
+.. date: 7634
+.. nonce: 8mh_bw
+.. section: Core and Builtins
+
+Some bytearray methods returned that didn't cause any change to the
+bytearray, returned the same bytearray instead of a copy.
+
+..
+
+.. bpo: 4317
+.. date: 7633
+.. nonce: GGUHMc
+.. section: Core and Builtins
+
+Fixed a crash in the ``imageop.rgb2rgb8()`` function.
+
+..
+
+.. bpo: 4230
+.. date: 7632
+.. nonce: Ndmrfx
+.. section: Core and Builtins
+
+If ``__getattr__`` is a descriptor, it now functions correctly.
+
+..
+
+.. bpo: 4048
+.. date: 7631
+.. nonce: KmD4Fy
+.. section: Core and Builtins
+
+The parser module now correctly validates relative imports.
+
+..
+
+.. bpo: 4225
+.. date: 7630
+.. nonce: 7zU-HH
+.. section: Core and Builtins
+
+``from __future__ import unicode_literals`` didn't work in an exec
+statement.
+
+..
+
+.. bpo: 4176
+.. date: 7629
+.. nonce: qhcxIs
+.. section: Core and Builtins
+
+Fixed a crash when pickling an object which ``__reduce__`` method does not
+return iterators for the 4th and 5th items.
+
+..
+
+.. bpo: 4209
+.. date: 7628
+.. nonce: iE6R1Z
+.. section: Core and Builtins
+
+Enabling unicode_literals and the print_function in the same __future__
+import didn't work.
+
+..
+
+.. bpo: 0
+.. date: 7627
+.. nonce: EZzjhE
+.. section: Core and Builtins
+
+Using ``nonlocal`` as a variable name will now raise a Py3k SyntaxWarning
+because it is a reserved word in 3.x.
+
+..
+
+.. bpo: 0
+.. date: 7626
+.. nonce: 6ugG-L
+.. section: Core and Builtins
+
+On windows, ``os.chdir()`` given unicode was not working if
+GetCurrentDirectoryW returned a path longer than MAX_PATH. (But It's
+doubtful this code path is really executed because I cannot move to such
+directory on win2k)
+
+..
+
+.. bpo: 4069
+.. date: 7625
+.. nonce: KZVhcT
+.. section: Core and Builtins
+
+When ``set.remove(element)`` is used with a set element, the element is
+temporarily replaced with an equivalent frozenset.  But the eventual
+KeyError would always report the empty ``frozenset()`` as the missing key.
+Now it correctly refers to the initial element.
+
+..
+
+.. bpo: 4509
+.. date: 7624
+.. nonce: s_M7sU
+.. section: Core and Builtins
+
+Various issues surrounding resize of bytearray objects to which there are
+buffer exports.
+
+..
+
+.. bpo: 4748
+.. date: 7623
+.. nonce: VdAMxK
+.. section: Core and Builtins
+
+Lambda generators no longer return a value.
+
+..
+
+.. bpo: 3582
+.. date: 7622
+.. nonce: lPZMhV
+.. section: Core and Builtins
+
+Use native TLS functions on Windows
+
+..
+
+.. bpo: 0
+.. date: 7621
+.. nonce: -7Es2G
+.. section: Core and Builtins
+
+The re.sub(), re.subn() and re.split() functions now accept a flags
+parameter.
+
+..
+
+.. bpo: 3845
+.. date: 7620
+.. nonce: 1zs3tX
+.. section: Core and Builtins
+
+In PyRun_SimpleFileExFlags avoid invalid memory access with short file
+names.
+
+..
+
+.. bpo: 1113244
+.. date: 7619
+.. nonce: 0youo-
+.. section: Core and Builtins
+
+Py_XINCREF, Py_DECREF, Py_XDECREF: Add `do { ... } while (0)' to avoid
+compiler warnings.
+
+..
+
+.. bpo: 5705
+.. date: 7618
+.. nonce: sV9axH
+.. section: Core and Builtins
+
+os.setuid() would not accept values > 2**31-1 but pwd.getpwnam() returned
+them on 64bit platforms.
+
+..
+
+.. bpo: 5108
+.. date: 7617
+.. nonce: dAFFuh
+.. section: Core and Builtins
+
+Handle %s like %S and %R in PyUnicode_FromFormatV(): Call
+PyUnicode_DecodeUTF8() once, remember the result and output it in a second
+step. This avoids problems with counting UTF-8 bytes that ignores the effect
+of using the replace error handler in PyUnicode_DecodeUTF8().
+
+..
+
+.. bpo: 3739
+.. date: 7616
+.. nonce: M2kAQq
+.. section: Core and Builtins
+
+The unicode-internal encoder now reports the number of characters consumed
+like any other encoder (instead of the number of bytes).
+
+..
+
+.. bpo: 2422
+.. date: 7615
+.. nonce: wzigzB
+.. section: Core and Builtins
+
+When compiled with the ``--with-valgrind`` option, the pymalloc allocator
+will be automatically disabled when running under Valgrind.  This gives
+improved memory leak detection when running under Valgrind, while taking
+advantage of pymalloc at other times.
+
+..
+
+.. bpo: 0
+.. date: 7614
+.. nonce: hEj501
+.. section: Library
+
+Add count() and reverse() methods to collections.deque().
+
+..
+
+.. bpo: 0
+.. date: 7613
+.. nonce: uRsKsO
+.. section: Library
+
+Fix variations of extending deques:  d.extend(d)  d.extendleft(d)  d+=d
+
+..
+
+.. bpo: 6986
+.. date: 7612
+.. nonce: SdGPr9
+.. section: Library
+
+Fix crash in the JSON C accelerator when called with the wrong parameter
+types.  Patch by Victor Stinner.
+
+..
+
+.. bpo: 0
+.. date: 7611
+.. nonce: NFsq2E
+.. section: Library
+
+logging: Added optional "secure" parameter to SMTPHandler, to enable use of
+TLS with authentication credentials.
+
+..
+
+.. bpo: 1923
+.. date: 7610
+.. nonce: knrn4i
+.. section: Library
+
+Fixed the removal of meaningful spaces when PKG-INFO is generated in
+Distutils. Patch by Stephen Emslie.
+
+..
+
+.. bpo: 4120
+.. date: 7609
+.. nonce: 3cH4Sr
+.. section: Library
+
+Drop reference to CRT from manifest when building extensions with
+msvc9compiler.
+
+..
+
+.. bpo: 7333
+.. date: 7608
+.. nonce: 2fKr4C
+.. section: Library
+
+The ``posix`` module gains an ``initgroups()`` function providing access to
+the initgroups(3) C library call on Unix systems which implement it. Patch
+by Jean-Paul Calderone.
+
+..
+
+.. bpo: 7408
+.. date: 7607
+.. nonce: rgPHXu
+.. section: Library
+
+Fixed distutils.tests.sdist so it doesn't check for group ownership when the
+group is not forced, because the group may be different from the user's
+group and inherit from its container when the test is run.
+
+..
+
+.. bpo: 1515
+.. date: 7606
+.. nonce: xkpoux
+.. section: Library
+
+Enable use of deepcopy() with instance methods.  Patch by Robert Collins.
+
+..
+
+.. bpo: 7403
+.. date: 7605
+.. nonce: FwNMdd
+.. section: Library
+
+logging: Fixed possible race condition in lock creation.
+
+..
+
+.. bpo: 6845
+.. date: 7604
+.. nonce: TrdLOB
+.. section: Library
+
+Add restart support for binary upload in ftplib.  The ``storbinary()``
+method of FTP and FTP_TLS objects gains an optional "rest" argument.  Patch
+by Pablo Mouzo.
+
+..
+
+.. bpo: 5788
+.. date: 7603
+.. nonce: eXZYrC
+.. section: Library
+
+``datetime.timedelta`` objects get a new ``total_seconds()`` method
+returning the total number of seconds in the duration.  Patch by Brian
+Quinlan.
+
+..
+
+.. bpo: 6615
+.. date: 7602
+.. nonce: L1bwX7
+.. section: Library
+
+logging: Used weakrefs in internal handler list.
+
+..
+
+.. bpo: 1488943
+.. date: 7601
+.. nonce: bGsZyB
+.. section: Library
+
+``difflib.Differ`` doesn't always add hints for tab characters.
+
+..
+
+.. bpo: 6123
+.. date: 7600
+.. nonce: 7jPAMR
+.. section: Library
+
+tarfile now opens empty archives correctly and consistently raises ReadError
+on empty files.
+
+..
+
+.. bpo: 7354
+.. date: 7599
+.. nonce: JiC3ff
+.. section: Library
+
+distutils.tests.test_msvc9compiler - dragfullwindows can be 2.
+
+..
+
+.. bpo: 5037
+.. date: 7598
+.. nonce: OuRtI7
+.. section: Library
+
+Proxy the __unicode__ special method to __unicode__ instead of __str__.
+
+..
+
+.. bpo: 7341
+.. date: 7597
+.. nonce: ePPgs_
+.. section: Library
+
+Close the internal file object in the TarFile constructor in case of an
+error.
+
+..
+
+.. bpo: 7293
+.. date: 7596
+.. nonce: O5Dcu2
+.. section: Library
+
+``distutils.test_msvc9compiler`` is fixed to work on any fresh Windows box.
+Help provided by David Bolen.
+
+..
+
+.. bpo: 7328
+.. date: 7595
+.. nonce: I7W1pc
+.. section: Library
+
+pydoc no longer corrupts sys.path when run with the '-m' switch.
+
+..
+
+.. bpo: 2054
+.. date: 7594
+.. nonce: CqsOHR
+.. section: Library
+
+ftplib now provides an FTP_TLS class to do secure FTP using TLS or SSL.
+Patch by Giampaolo Rodola'.
+
+..
+
+.. bpo: 4969
+.. date: 7593
+.. nonce: etEJDg
+.. section: Library
+
+The mimetypes module now reads the MIME database from the registry under
+Windows.  Patch by Gabriel Genellina.
+
+..
+
+.. bpo: 6816
+.. date: 7592
+.. nonce: FkQHgU
+.. section: Library
+
+runpy now provides a run_path function that allows Python code to execute
+file paths that refer to source or compiled Python files as well as
+zipfiles, directories and other valid sys.path entries that contain a
+__main__.py file. This allows applications that run other Python scripts to
+support the same flexibility as the CPython command line itself.
+
+..
+
+.. bpo: 7318
+.. date: 7591
+.. nonce: 5Q1hkQ
+.. section: Library
+
+multiprocessing now uses a timeout when it fails to establish a connection
+with another process, rather than looping endlessly. The default timeout is
+20 seconds, which should be amply sufficient for local connections.
+
+..
+
+.. bpo: 7197
+.. date: 7590
+.. nonce: 0cm1Qm
+.. section: Library
+
+Allow unittest.TextTestRunner objects to be pickled and unpickled.  This
+fixes crashes under Windows when trying to run test_multiprocessing in
+verbose mode.
+
+..
+
+.. bpo: 7282
+.. date: 7589
+.. nonce: PGSXX5
+.. section: Library
+
+Fix a memory leak when an RLock was used in a thread other than those
+started through ``threading.Thread`` (for example, using
+``thread.start_new_thread()``.
+
+..
+
+.. bpo: 7264
+.. date: 7588
+.. nonce: gXNBWt
+.. section: Library
+
+Fix a possible deadlock when deallocating thread-local objects which are
+part of a reference cycle.
+
+..
+
+.. bpo: 7211
+.. date: 7587
+.. nonce: wuvMbi
+.. section: Library
+
+Allow 64-bit values for the ``ident`` and ``data`` fields of kevent objects
+on 64-bit systems.  Patch by Michael Broghton.
+
+..
+
+.. bpo: 6896
+.. date: 7586
+.. nonce: rXqOUx
+.. section: Library
+
+``mailbox.Maildir`` now invalidates its internal cache each time a
+modification is done through it.  This fixes inconsistencies and test
+failures on systems with slightly bogus mtime behaviour.
+
+..
+
+.. bpo: 7246
+.. date: 7585
+.. nonce: vVWoc1
+.. section: Library
+
+getpass now properly flushes input before reading from stdin so that
+existing input does not confuse it and lead to incorrect entry or an
+IOError.  It also properly flushes it afterwards to avoid the terminal
+echoing the input afterwards on OSes such as Solaris. (See also: bpo-7208)
+
+..
+
+.. bpo: 7233
+.. date: 7584
+.. nonce: Bfx5J4
+.. section: Library
+
+Fix a number of two-argument Decimal methods to make sure that they accept
+an int or long as the second argument.  Also fix buggy handling of large
+arguments (those with coefficient longer than the current precision) in
+shift and rotate.
+
+..
+
+.. bpo: 4750
+.. date: 7583
+.. nonce: qsUXdQ
+.. section: Library
+
+Store the basename of the original filename in the gzip FNAME header as
+required by RFC 1952.
+
+..
+
+.. bpo: 1180
+.. date: 7582
+.. nonce: ajrI93
+.. section: Library
+
+Added a new global option to ignore ~/.pydistutils.cfg in Distutils.
+
+..
+
+.. bpo: 7218
+.. date: 7581
+.. nonce: _fm9R5
+.. section: Library
+
+Fix test_site for win32, the directory comparison was done with an
+uppercase.
+
+..
+
+.. bpo: 7205
+.. date: 7580
+.. nonce: QiP1X-
+.. section: Library
+
+Fix a possible deadlock when using a BZ2File object from several threads at
+once.
+
+..
+
+.. bpo: 7071
+.. date: 7579
+.. nonce: QFsV-G
+.. section: Library
+
+byte-compilation in Distutils is now done with respect to
+sys.dont_write_bytecode.
+
+..
+
+.. bpo: 7066
+.. date: 7578
+.. nonce: FQTn5e
+.. section: Library
+
+archive_util.make_archive now restores the cwd if an error is raised.
+Initial patch by Ezio Melotti.
+
+..
+
+.. bpo: 6218
+.. date: 7577
+.. nonce: GFU36I
+.. section: Library
+
+io.StringIO and io.BytesIO instances are now picklable with protocol 2.
+
+..
+
+.. bpo: 7077
+.. date: 7576
+.. nonce: NfTfRo
+.. section: Library
+
+logging: SysLogHandler now treats Unicode as per RFC 5424.
+
+..
+
+.. bpo: 7099
+.. date: 7575
+.. nonce: fxh-zw
+.. section: Library
+
+Decimal.is_normal now returns True for numbers with exponent larger than
+emax.
+
+..
+
+.. bpo: 5833
+.. date: 7574
+.. nonce: bCmU3a
+.. section: Library
+
+Fix extra space character in readline completion with the GNU readline
+library version 6.0.
+
+..
+
+.. bpo: 7133
+.. date: 7573
+.. nonce: m6rxoT
+.. section: Library
+
+SSL objects now support the new buffer API.
+
+..
+
+.. bpo: 7149
+.. date: 7572
+.. nonce: J_eq7B
+.. section: Library
+
+urllib fails on OSX in the proxy detection code.
+
+..
+
+.. bpo: 7069
+.. date: 7571
+.. nonce: v9P7a0
+.. section: Library
+
+Make inspect.isabstract() return a boolean.
+
+..
+
+.. bpo: 0
+.. date: 7570
+.. nonce: mxZpdI
+.. section: Library
+
+Add support to the ``ihooks`` module for relative imports.
+
+..
+
+.. bpo: 6894
+.. date: 7569
+.. nonce: 1peOts
+.. section: Library
+
+Fixed the issue urllib2 doesn't respect "no_proxy" environment.
+
+..
+
+.. bpo: 7086
+.. date: 7568
+.. nonce: mZidvN
+.. section: Library
+
+Added TCP support to SysLogHandler, and tidied up some anachronisms in the
+code which were a relic of 1.5.2 compatibility.
+
+..
+
+.. bpo: 7082
+.. date: 7567
+.. nonce: 0CSJXy
+.. section: Library
+
+When falling back to the MIME 'name' parameter, the correct place to look
+for it is the Content-Type header.
+
+..
+
+.. bpo: 7048
+.. date: 7566
+.. nonce: TXR5Xr
+.. section: Library
+
+Force Decimal.logb to round its result when that result is too large to fit
+in the current precision.
+
+..
+
+.. bpo: 6516
+.. date: 7565
+.. nonce: omgsNx
+.. section: Library
+
+Added owner/group support when creating tar archives in Distutils.
+
+..
+
+.. bpo: 7031
+.. date: 7564
+.. nonce: n09dXD
+.. section: Library
+
+Add ``TestCase.assert(Not)IsInstance()`` methods.
+
+..
+
+.. bpo: 6790
+.. date: 7563
+.. nonce: Z8U9rk
+.. section: Library
+
+Make it possible again to pass an ``array.array`` to
+``httplib.HTTPConnection.send``.  Patch by Kirk McDonald.
+
+..
+
+.. bpo: 6236
+.. date: 7562
+.. nonce: cfUWek
+.. section: Library
+
+Fix various failures in the `io` module under AIX and other platforms, when
+using a non-gcc compiler.  Patch by egreen. (See also: bpo-6348)
+
+..
+
+.. bpo: 6954
+.. date: 7561
+.. nonce: Xr-JVf
+.. section: Library
+
+Fixed crash when using DISTUTILS_DEBUG flag in Distutils.
+
+..
+
+.. bpo: 6851
+.. date: 7560
+.. nonce: Hvzfi2
+.. section: Library
+
+Fix urllib.urlopen crash on secondairy threads on OSX 10.6
+
+..
+
+.. bpo: 4606
+.. date: 7559
+.. nonce: mPxDNW
+.. section: Library
+
+Passing 'None' if ctypes argtype is set to POINTER(...) does now always
+result in NULL.
+
+..
+
+.. bpo: 5042
+.. date: 7558
+.. nonce: eHTDqZ
+.. section: Library
+
+ctypes Structure sub-subclass does now initialize correctly with base class
+positional arguments.
+
+..
+
+.. bpo: 6938
+.. date: 7557
+.. nonce: qq4x0H
+.. section: Library
+
+Fix a TypeError in string formatting of a multiprocessing debug message.
+
+..
+
+.. bpo: 6635
+.. date: 7556
+.. nonce: hMzo5g
+.. section: Library
+
+Fix profiler printing usage message.
+
+..
+
+.. bpo: 6856
+.. date: 7555
+.. nonce: pxRVCd
+.. section: Library
+
+Add a filter keyword argument to TarFile.add().
+
+..
+
+.. bpo: 6163
+.. date: 7554
+.. nonce: RIBPzi
+.. section: Library
+
+Fixed HP-UX runtime library dir options in distutils.unixcompiler.  Initial
+patch by Sridhar Ratnakumar and Michael Haubenwallner.
+
+..
+
+.. bpo: 6857
+.. date: 7553
+.. nonce: HdfUqZ
+.. section: Library
+
+Default format() alignment should be '>' for Decimal instances.
+
+..
+
+.. bpo: 6795
+.. date: 7552
+.. nonce: q74KXT
+.. section: Library
+
+int(Decimal('nan')) now raises ValueError instead of returning NaN or
+raising InvalidContext.  Also, fix infinite recursion in
+long(Decimal('nan')).
+
+..
+
+.. bpo: 6850
+.. date: 7551
+.. nonce: qs_7UF
+.. section: Library
+
+Fix bug in Decimal._parse_format_specifier for formats with no type
+specifier.
+
+..
+
+.. bpo: 4937
+.. date: 7550
+.. nonce: q3smbI
+.. section: Library
+
+plat-mac/bundlebuilder refers to non-existing version.plist.
+
+..
+
+.. bpo: 6838
+.. date: 7549
+.. nonce: OOrAC0
+.. section: Library
+
+Use a list to accumulate the value instead of repeatedly concatenating
+strings in httplib's HTTPResponse._read_chunked providing a significant
+speed increase when downloading large files servend with a Transfer-Encoding
+of 'chunked'.
+
+..
+
+.. bpo: 5275
+.. date: 7548
+.. nonce: -iW5eK
+.. section: Library
+
+In Cookie's Cookie.load(), properly handle non-string arguments as
+documented.
+
+..
+
+.. bpo: 2666
+.. date: 7547
+.. nonce: XO1rSx
+.. section: Library
+
+Handle BROWSER environment variable properly for unknown browser names in
+the webbrowser module.
+
+..
+
+.. bpo: 6054
+.. date: 7546
+.. nonce: 593-Mx
+.. section: Library
+
+Do not normalize stored pathnames in tarfile.
+
+..
+
+.. bpo: 6794
+.. date: 7545
+.. nonce: k5-rmk
+.. section: Library
+
+Fix Decimal.compare_total and Decimal.compare_total_mag: NaN payloads are
+now ordered by integer value rather than lexicographically.
+
+..
+
+.. bpo: 6693
+.. date: 7544
+.. nonce: _dWH_f
+.. section: Library
+
+New functions in site.py to get user/global site packages paths.
+
+..
+
+.. bpo: 0
+.. date: 7543
+.. nonce: tZF7Ai
+.. section: Library
+
+The thread.lock type now supports weak references.
+
+..
+
+.. bpo: 1356969
+.. date: 7542
+.. nonce: fTwnvR
+.. section: Library
+
+Add missing info methods in Tix.HList.
+
+..
+
+.. bpo: 1522587
+.. date: 7541
+.. nonce: z2n84F
+.. section: Library
+
+New constants and methods for the Tix.Grid widget.
+
+..
+
+.. bpo: 1250469
+.. date: 7540
+.. nonce: Mbak0x
+.. section: Library
+
+Fix the return value of Tix.PanedWindow.panes.
+
+..
+
+.. bpo: 1119673
+.. date: 7539
+.. nonce: rSCSoq
+.. section: Library
+
+Do not override Tkinter.Text methods when creating a ScrolledText.
+
+..
+
+.. bpo: 6665
+.. date: 7538
+.. nonce: 4ep0tD
+.. section: Library
+
+Fix fnmatch to properly match filenames with newlines in them.
+
+..
+
+.. bpo: 1135
+.. date: 7537
+.. nonce: 3A5Z-R
+.. section: Library
+
+Add the XView and YView mix-ins to avoid duplicating the xview* and yview*
+methods.
+
+..
+
+.. bpo: 6629
+.. date: 7536
+.. nonce: 095djT
+.. section: Library
+
+Fix a data corruption issue in the new `io` package, which could occur when
+writing to a BufferedRandom object (e.g. a file opened in "rb+" or "wb+"
+mode) after having buffered a certain amount of data for reading. This bug
+was not present in the pure Python implementation.
+
+..
+
+.. bpo: 4660
+.. date: 7535
+.. nonce: xyTC5J
+.. section: Library
+
+If a multiprocessing.JoinableQueue.put() was preempted, it was possible to
+get a spurious 'task_done() called too many times' error.
+
+..
+
+.. bpo: 1628205
+.. date: 7534
+.. nonce: Bkm9lB
+.. section: Library
+
+Socket file objects returned by socket.socket.makefile() now properly
+handles EINTR within the read, readline, write & flush methods.  The
+socket.sendall() method now properly handles interrupted system calls.
+
+..
+
+.. bpo: 6595
+.. date: 7533
+.. nonce: 5kBbXa
+.. section: Library
+
+The Decimal constructor now allows arbitrary Unicode decimal digits in
+input, as recommended by the standard.  Previously it was restricted to
+accepting [0-9].
+
+..
+
+.. bpo: 6511
+.. date: 7532
+.. nonce: Qzfkov
+.. section: Library
+
+ZipFile now raises BadZipfile (instead of an IOError) when opening an empty
+or very small file.
+
+..
+
+.. bpo: 6553
+.. date: 7531
+.. nonce: Tr4HDD
+.. section: Library
+
+Fixed a crash in cPickle.load(), when given a file-like object containing
+incomplete data.
+
+..
+
+.. bpo: 6545
+.. date: 7530
+.. nonce: q91_KL
+.. section: Library
+
+Removed assert statements in distutils.Extension, so the behavior is similar
+when used with -O.
+
+..
+
+.. bpo: 0
+.. date: 7529
+.. nonce: QiwXfr
+.. section: Library
+
+unittest has been split up into a package.  All old names should still work.
+
+..
+
+.. bpo: 6431
+.. date: 7528
+.. nonce: tKBkPb
+.. section: Library
+
+Make Fraction type return NotImplemented when it doesn't know how to handle
+a comparison without loss of precision.  Also add correct handling of
+infinities and nans for comparisons with float.
+
+..
+
+.. bpo: 6415
+.. date: 7527
+.. nonce: QOMg1q
+.. section: Library
+
+Fixed warnings.warn segfault on bad formatted string.
+
+..
+
+.. bpo: 6466
+.. date: 7526
+.. nonce: j5IKKm
+.. section: Library
+
+Now distutils.cygwinccompiler and distutils.emxccompiler uses the same
+refactored function to get gcc/ld/dllwrap versions numbers.  It's
+``distutils.util.get_compiler_versions()``.  Added deprecation warnings for
+the obsolete get_versions() functions.
+
+..
+
+.. bpo: 6433
+.. date: 7525
+.. nonce: FJUeBp
+.. section: Library
+
+Fixed issues with multiprocessing.pool.map hanging on empty list.
+
+..
+
+.. bpo: 6314
+.. date: 7524
+.. nonce: oq2Uzy
+.. section: Library
+
+logging: Extra checks on the "level" argument in more places.
+
+..
+
+.. bpo: 2622
+.. date: 7523
+.. nonce: khlgNf
+.. section: Library
+
+Fixed an ImportError when importing email.messsage from a standalone
+application built with py2exe or py2app.
+
+..
+
+.. bpo: 6455
+.. date: 7522
+.. nonce: xHz4mF
+.. section: Library
+
+Fixed test_build_ext under win32.
+
+..
+
+.. bpo: 6377
+.. date: 7521
+.. nonce: Or-Jam
+.. section: Library
+
+Enabled the compiler option, and deprecate its usage as an attribute.
+
+..
+
+.. bpo: 6413
+.. date: 7520
+.. nonce: dVuHyQ
+.. section: Library
+
+Fixed the log level in distutils.dist for announce.
+
+..
+
+.. bpo: 3392
+.. date: 7519
+.. nonce: M_DdFb
+.. section: Library
+
+The subprocess communicate() method no longer fails in select() when file
+descriptors are large; communicate() now uses poll() when possible.
+
+..
+
+.. bpo: 6403
+.. date: 7518
+.. nonce: kDwSzy
+.. section: Library
+
+Fixed package path usage in build_ext.
+
+..
+
+.. bpo: 5155
+.. date: 7517
+.. nonce: G_HFri
+.. section: Library
+
+multiprocessing.Process._bootstrap was unconditionally calling
+"os.close(sys.stdin.fileno())" resulting in file descriptor errors. (See
+also: bpo-5313, bpo-5331)
+
+..
+
+.. bpo: 6365
+.. date: 7516
+.. nonce: eWJ_Cl
+.. section: Library
+
+Distutils build_ext inplace mode was copying the compiled extension in a
+subdirectory if the extension name had dots.
+
+..
+
+.. bpo: 6344
+.. date: 7515
+.. nonce: l35xXH
+.. section: Library
+
+Fixed a crash of mmap.read() when passed a negative argument.
+
+..
+
+.. bpo: 5230
+.. date: 7514
+.. nonce: EhUbpW
+.. section: Library
+
+pydoc would report no documentation found if a module generated a 'not
+found' import error when loaded; it now reports the import errors. Thanks to
+Lucas Prado Melo for initial fix and collaboration on the tests.
+
+..
+
+.. bpo: 6314
+.. date: 7513
+.. nonce: g55uyy
+.. section: Library
+
+``logging.basicConfig()`` performs extra checks on the "level" argument.
+
+..
+
+.. bpo: 6164
+.. date: 7512
+.. nonce: 6QByEi
+.. section: Library
+
+Added an AIX specific linker argument in Distutils unixcompiler. Original
+patch by Sridhar Ratnakumar.
+
+..
+
+.. bpo: 6274
+.. date: 7511
+.. nonce: eQoMPr
+.. section: Library
+
+Fixed possible file descriptors leak in subprocess.py.
+
+..
+
+.. bpo: 6189
+.. date: 7510
+.. nonce: aY-0-v
+.. section: Library
+
+Restored compatibility of subprocess.py with Python 2.2.
+
+..
+
+.. bpo: 6287
+.. date: 7509
+.. nonce: i5loQG
+.. section: Library
+
+Added the license field in Distutils documentation.
+
+..
+
+.. bpo: 6286
+.. date: 7508
+.. nonce: j2u4Wn
+.. section: Library
+
+Now Distutils upload command is based on urllib2 instead of httplib,
+allowing the usage of http_proxy.
+
+..
+
+.. bpo: 6271
+.. date: 7507
+.. nonce: nMZxcE
+.. section: Library
+
+mmap tried to close invalid file handle (-1) for anonymous maps on Unix.
+
+..
+
+.. bpo: 6215
+.. date: 7506
+.. nonce: e-D-t7
+.. section: Library
+
+All bug fixes and enhancements from the Python 3.1 io library (including the
+fast C implementation) have been backported to the standard ``io`` module.
+
+..
+
+.. bpo: 6258
+.. date: 7505
+.. nonce: dwBSws
+.. section: Library
+
+Support AMD64 in bdist_msi.
+
+..
+
+.. bpo: 6252
+.. date: 7504
+.. nonce: sYTPyU
+.. section: Library
+
+Fixed bug in next rollover time computation in TimedRotatingFileHandler.
+
+..
+
+.. bpo: 6263
+.. date: 7503
+.. nonce: 5RhZzP
+.. section: Library
+
+Fixed syntax error in distutils.cygwincompiler.
+
+..
+
+.. bpo: 5201
+.. date: 7502
+.. nonce: Wt3Orj
+.. section: Library
+
+distutils.sysconfig.parse_makefile() now understands ``$$`` in Makefiles.
+This prevents compile errors when using syntax like:
+``LDFLAGS='-rpath=\$$LIB:/some/other/path'``.  Patch by Floris Bruynooghe.
+
+..
+
+.. bpo: 5767
+.. date: 7501
+.. nonce: N_vQVh
+.. section: Library
+
+Removed sgmlop support from xmlrpclib.
+
+..
+
+.. bpo: 6131
+.. date: 7500
+.. nonce: yV_s9j
+.. section: Library
+
+test_modulefinder leaked when run after test_distutils.  Patch by Hirokazu
+Yamamoto.
+
+..
+
+.. bpo: 6048
+.. date: 7499
+.. nonce: 8c4ttr
+.. section: Library
+
+Now Distutils uses the tarfile module in archive_util.
+
+..
+
+.. bpo: 6121
+.. date: 7498
+.. nonce: u-IDuG
+.. section: Library
+
+pydoc now ignores leading and trailing spaces in the argument to the 'help'
+function.
+
+..
+
+.. bpo: 0
+.. date: 7497
+.. nonce: zlEDRS
+.. section: Library
+
+In unittest, using a skipping decorator on a class is now equivalent to
+skipping every test on the class.  The ClassTestSuite class has been
+removed.
+
+..
+
+.. bpo: 6050
+.. date: 7496
+.. nonce: tl_8xc
+.. section: Library
+
+Don't fail extracting a directory from a zipfile if the directory already
+exists.
+
+..
+
+.. bpo: 5311
+.. date: 7495
+.. nonce: 0oOK6H
+.. section: Library
+
+bdist_msi can now build packages that do not depend on a specific Python
+version.
+
+..
+
+.. bpo: 1309352
+.. date: 7494
+.. nonce: WM3egI
+.. section: Library
+
+fcntl now converts its third arguments to a C `long` rather than an int,
+which makes some operations possible under 64-bit Linux (e.g. DN_MULTISHOT
+with F_NOTIFY).
+
+..
+
+.. bpo: 1424152
+.. date: 7493
+.. nonce: ajujge
+.. section: Library
+
+Fix for httplib, urllib2 to support SSL while working through proxy.
+Original patch by Christopher Li, changes made by Senthil Kumaran.
+
+..
+
+.. bpo: 1983
+.. date: 7492
+.. nonce: 4NQtSC
+.. section: Library
+
+Fix functions taking or returning a process identifier to use the dedicated
+C type ``pid_t`` instead of a C ``int``.  Some platforms have a process
+identifier type wider than the standard C integer type.
+
+..
+
+.. bpo: 4066
+.. date: 7491
+.. nonce: 2iOjZ9
+.. section: Library
+
+smtplib.SMTP_SSL._get_socket now correctly returns the socket. Patch by
+Farhan Ahmad, test by Marcin Bachry.
+
+..
+
+.. bpo: 6062
+.. date: 7490
+.. nonce: 9WLZ5z
+.. section: Library
+
+In distutils, fixed the package option of build_ext.  Feedback and tests on
+pywin32 by Tim Golden.
+
+..
+
+.. bpo: 6053
+.. date: 7489
+.. nonce: WvTL0w
+.. section: Library
+
+Fixed distutils tests on win32.  Patch by Hirokazu Yamamoto.
+
+..
+
+.. bpo: 6046
+.. date: 7488
+.. nonce: cMZ2Tc
+.. section: Library
+
+Fixed the library extension when distutils build_ext is used in place.
+Initial patch by Roumen Petrov.
+
+..
+
+.. bpo: 6041
+.. date: 7487
+.. nonce: sw57bD
+.. section: Library
+
+Now distutils `sdist` and `register` commands use `check` as a subcommand.
+
+..
+
+.. bpo: 2116
+.. date: 7486
+.. nonce: 8p8xN6
+.. section: Library
+
+Weak references and weak dictionaries now support copy()ing and
+deepcopy()ing.
+
+..
+
+.. bpo: 1655
+.. date: 7485
+.. nonce: M-5sGT
+.. section: Library
+
+Make imaplib IPv6-capable.  Patch by Derek Morr.
+
+..
+
+.. bpo: 5918
+.. date: 7484
+.. nonce: x-8Oxl
+.. section: Library
+
+Fix a crash in the parser module.
+
+..
+
+.. bpo: 1664
+.. date: 7483
+.. nonce: sRl46y
+.. section: Library
+
+Make nntplib IPv6-capable.  Patch by Derek Morr.
+
+..
+
+.. bpo: 6022
+.. date: 7482
+.. nonce: Y3dUhe
+.. section: Library
+
+A test file was created in the current working directory by test_get_outputs
+in Distutils.
+
+..
+
+.. bpo: 4050
+.. date: 7481
+.. nonce: mjHlfF
+.. section: Library
+
+inspect.findsource/getsource now raise an IOError if the 'source' file is a
+binary.  Patch by Brodie Rao, tests by Daniel Diniz.
+
+..
+
+.. bpo: 5977
+.. date: 7480
+.. nonce: xcP2Su
+.. section: Library
+
+distutils build_ext.get_outputs was not taking into account the inplace
+option.  Initial patch by kxroberto.
+
+..
+
+.. bpo: 5984
+.. date: 7479
+.. nonce: evqxbf
+.. section: Library
+
+distutils.command.build_ext.check_extensions_list checks were broken for
+old-style extensions.
+
+..
+
+.. bpo: 5971
+.. date: 7478
+.. nonce: IQW2NO
+.. section: Library
+
+StreamHandler.handleError now swallows IOErrors which occur when trying to
+print a traceback.
+
+..
+
+.. bpo: 5976
+.. date: 7477
+.. nonce: 01_dSR
+.. section: Library
+
+Fixed Distutils test_check_environ.
+
+..
+
+.. bpo: 5900
+.. date: 7476
+.. nonce: uMqjsO
+.. section: Library
+
+Ensure RUNPATH is added to extension modules with RPATH if GNU ld is used.
+Original patch by Floris Bruynooghe.
+
+..
+
+.. bpo: 5941
+.. date: 7475
+.. nonce: Xdk_6Y
+.. section: Library
+
+Distutils build_clib command was not working anymore because of an
+incomplete customization of the archiver command.  Added ARFLAGS in the
+Makefile besides AR and make Distutils use it.  Original patch by David
+Cournapeau.
+
+..
+
+.. bpo: 5955
+.. date: 7474
+.. nonce: rZM3XY
+.. section: Library
+
+aifc's close method did not close the file it wrapped, now it does.  This
+also means getfp method now returns the real fp.
+
+..
+
+.. bpo: 4875
+.. date: 7473
+.. nonce: lozHFb
+.. section: Library
+
+On win32, ctypes.util.find_library does no longer return directories.
+
+..
+
+.. bpo: 5142
+.. date: 7472
+.. nonce: XGXII1
+.. section: Library
+
+Add the ability to skip modules while stepping to pdb.
+
+..
+
+.. bpo: 1309567
+.. date: 7471
+.. nonce: wcqooN
+.. section: Library
+
+Fix linecache behavior of stripping subdirectories when looking for files
+given by a relative filename.
+
+..
+
+.. bpo: 5692
+.. date: 7470
+.. nonce: XbbGod
+.. section: Library
+
+In ``zipfile.Zipfile``, fix wrong path calculation when extracting a file to
+the root directory.
+
+..
+
+.. bpo: 5913
+.. date: 7469
+.. nonce: Gg7oAA
+.. section: Library
+
+``os.listdir()`` should fail for empty path on windows.
+
+..
+
+.. bpo: 5084
+.. date: 7468
+.. nonce: 28LIEg
+.. section: Library
+
+Unpickling now interns the attribute names of pickled objects, saving memory
+and avoiding growth in size of subsequent pickles.  Proposal and original
+patch by Jake McGuire.
+
+..
+
+.. bpo: 3002
+.. date: 7467
+.. nonce: Q2Bwlw
+.. section: Library
+
+``shutil.copyfile()`` and ``shutil.copytree()`` now raise an error when a
+named pipe is encountered, rather than blocking infinitely.
+
+..
+
+.. bpo: 3959
+.. date: 7466
+.. nonce: JOcNpv
+.. section: Library
+
+The ipaddr module has been added to the standard library. Contributed by
+Google.
+
+..
+
+.. bpo: 2245
+.. date: 7465
+.. nonce: wM6yIG
+.. section: Library
+
+aifc now skips chunk types it doesn't recognize, per spec.
+
+..
+
+.. bpo: 5874
+.. date: 7464
+.. nonce: Wrh4pp
+.. section: Library
+
+distutils.tests.test_config_cmd is not locale-sensitive anymore.
+
+..
+
+.. bpo: 4305
+.. date: 7463
+.. nonce: yHp6W2
+.. section: Library
+
+ctypes should now build again on mipsel-linux-gnu
+
+..
+
+.. bpo: 1734234
+.. date: 7462
+.. nonce: I3S_a6
+.. section: Library
+
+Massively speedup ``unicodedata.normalize()`` when the string is already in
+normalized form, by performing a quick check beforehand. Original patch by
+Rauli Ruohonen.
+
+..
+
+.. bpo: 5853
+.. date: 7461
+.. nonce: oKokIP
+.. section: Library
+
+Calling a function of the mimetypes module from several threads at once
+could hit the recursion limit if the mimetypes database hadn't been
+initialized before.
+
+..
+
+.. bpo: 5854
+.. date: 7460
+.. nonce: 8o0llM
+.. section: Library
+
+Updated __all__ to include some missing names and remove some names which
+should not be exported.
+
+..
+
+.. bpo: 5810
+.. date: 7459
+.. nonce: LFr2OK
+.. section: Library
+
+Fixed Distutils test_build_scripts so it uses
+``sysconfig.get_config_vars()``.
+
+..
+
+.. bpo: 4951
+.. date: 7458
+.. nonce: 9eKc7j
+.. section: Library
+
+Fixed failure in test_httpservers.
+
+..
+
+.. bpo: 3102
+.. date: 7457
+.. nonce: LDgk6Z
+.. section: Library
+
+All global symbols that the _ctypes extension defines are now prefixed with
+'Py' or '_ctypes'.
+
+..
+
+.. bpo: 5041
+.. date: 7456
+.. nonce: 8SM2Q6
+.. section: Library
+
+ctypes does now allow pickling wide character.
+
+..
+
+.. bpo: 5812
+.. date: 7455
+.. nonce: DG4u35
+.. section: Library
+
+For the two-argument form of the Fraction constructor, ``Fraction(m, n)``, m
+and n are permitted to be arbitrary Rational instances.
+
+..
+
+.. bpo: 5812
+.. date: 7454
+.. nonce: bdeIy6
+.. section: Library
+
+Fraction('1e6') is valid: more generally, any string that's valid for
+float() is now valid for Fraction(), with the exception of strings
+representing NaNs and infinities.
+
+..
+
+.. bpo: 5795
+.. date: 7453
+.. nonce: _5SXcu
+.. section: Library
+
+Fixed test_distutils failure on Debian ppc.
+
+..
+
+.. bpo: 5768
+.. date: 7452
+.. nonce: Lx3FBy
+.. section: Library
+
+Fixed bug in Unicode output logic and test case for same.
+
+..
+
+.. bpo: 1161031
+.. date: 7451
+.. nonce: vIHCeg
+.. section: Library
+
+Fix readwrite select flag handling: POLLPRI now results in a
+handle_expt_event call, not handle_read_event, and POLLERR and POLLNVAL now
+call handle_close, not handle_expt_event.  Also, dispatcher now has an
+'ignore_log_types' attribute for suppressing log messages, which is set to
+'warning' by default.
+
+..
+
+.. bpo: 5607
+.. date: 7450
+.. nonce: GlYpK6
+.. section: Library
+
+Fixed Distutils test_get_platform for Mac OS X fat binaries.
+
+..
+
+.. bpo: 5741
+.. date: 7449
+.. nonce: sKDQuN
+.. section: Library
+
+Don't disallow "%%" (which is an escape for "%") when setting a value in
+SafeConfigParser.
+
+..
+
+.. bpo: 5732
+.. date: 7448
+.. nonce: BxEaO_
+.. section: Library
+
+Added a new command in Distutils: check.
+
+..
+
+.. bpo: 5731
+.. date: 7447
+.. nonce: tCA4Qq
+.. section: Library
+
+Distutils bdist_wininst no longer worked on non-Windows platforms.  Initial
+patch by Paul Moore.
+
+..
+
+.. bpo: 2254
+.. date: 7446
+.. nonce: XwszLk
+.. section: Library
+
+Fix CGIHTTPServer information disclosure.  Relative paths are now collapsed
+within the url properly before looking in cgi_directories.
+
+..
+
+.. bpo: 5095
+.. date: 7445
+.. nonce: xiSRDz
+.. section: Library
+
+Added bdist_msi to the list of bdist supported formats.  Initial fix by
+Steven Bethard.
+
+..
+
+.. bpo: 1491431
+.. date: 7444
+.. nonce: aNp23F
+.. section: Library
+
+Fixed distutils.filelist.glob_to_re for edge cases.  Initial fix by Wayne
+Davison.
+
+..
+
+.. bpo: 5693
+.. date: 7443
+.. nonce: M0PEHJ
+.. section: Library
+
+TestSuite.__iter__ can now be consistently overridden in subclasses.
+
+..
+
+.. bpo: 5694
+.. date: 7442
+.. nonce: ZvKxFR
+.. section: Library
+
+Removed spurious test output in Distutils (test_clean).
+
+..
+
+.. bpo: 5471
+.. date: 7441
+.. nonce: BKf7Q4
+.. section: Library
+
+Fix os.path.expanduser() for $HOME set to '/'.
+
+..
+
+.. bpo: 1326077
+.. date: 7440
+.. nonce: if0OW2
+.. section: Library
+
+Fix the formatting of SyntaxErrors by the traceback module.
+
+..
+
+.. bpo: 1726172
+.. date: 7439
+.. nonce: e2vy9u
+.. section: Library
+
+Fix IndexError in the case of and empty response in ftplib.
+
+..
+
+.. bpo: 2625
+.. date: 7438
+.. nonce: _XRRkk
+.. section: Library
+
+Added missing iteritems() call to the for loop in mailbox.MH.get_message().
+
+..
+
+.. bpo: 5585
+.. date: 7437
+.. nonce: YAZXyy
+.. section: Library
+
+Add the ability to call an initializer to multiprocessing.manager so that
+users can install custom handlers/etc.
+
+..
+
+.. bpo: 3551
+.. date: 7436
+.. nonce: Cu6Cul
+.. section: Library
+
+Patch multiprocessing to raise a proper exception if the size of the object
+when writefile is called causes an ERROR_NO_SYSTEM_RESOURCES.  Added docs to
+note the limitation.
+
+..
+
+.. bpo: 0
+.. date: 7435
+.. nonce: xAXTK2
+.. section: Library
+
+unittest.assertNotEqual() now uses the inequality operator (!=) instead of
+the equality operator.
+
+..
+
+.. bpo: 6001
+.. date: 7434
+.. nonce: oWiMFG
+.. section: Library
+
+Test discovery for unittest. Implemented in unittest.TestLoader.discover and
+from the command line.
+
+..
+
+.. bpo: 5679
+.. date: 7433
+.. nonce: GDbJ3F
+.. section: Library
+
+The methods unittest.TestCase.addCleanup and doCleanups were added.
+addCleanup allows you to add cleanup functions that will be called
+unconditionally (after setUp if setUp fails, otherwise after tearDown). This
+allows for much simpler resource allocation and deallocation during tests.
+
+..
+
+.. bpo: 3379
+.. date: 7432
+.. nonce: yfUkbC
+.. section: Library
+
+unittest.main now takes an optional exit argument. If False main doesn't
+call sys.exit allowing it to be used from the interactive interpreter.
+
+..
+
+.. bpo: 5995
+.. date: 7431
+.. nonce: S0agLh
+.. section: Library
+
+unittest.main now takes an optional verbosity argument allowing test modules
+to be run with a higher than default verbosity.
+
+..
+
+.. bpo: 5995
+.. date: 7430
+.. nonce: zjk0GI
+.. section: Library
+
+A fix to allow you to run "python -m unittest test_module" or "python -m
+unittest test_module.TestClass" from the command line.
+
+..
+
+.. bpo: 5728
+.. date: 7429
+.. nonce: wPx88T
+.. section: Library
+
+unittest.TestResult has new startTestRun and stopTestRun methods; called
+immediately before and after a test run.
+
+..
+
+.. bpo: 5663
+.. date: 7428
+.. nonce: FdiDuS
+.. section: Library
+
+Better failure messages for unittest asserts. Default assertTrue and
+assertFalse messages are now useful. TestCase has a longMessage attribute.
+This defaults to False, but if set to True useful error messages are shown
+in addition to explicit messages passed to assert methods.
+
+..
+
+.. bpo: 3110
+.. date: 7427
+.. nonce: ybmLDs
+.. section: Library
+
+Add additional protect around SEM_VALUE_MAX for multiprocessing.
+
+..
+
+.. bpo: 0
+.. date: 7426
+.. nonce: PTlc4y
+.. section: Library
+
+In Pdb, prevent the reassignment of __builtin__._ by sys.displayhook on
+printing out values.
+
+..
+
+.. bpo: 4572
+.. date: 7425
+.. nonce: yh5ziP
+.. section: Library
+
+Added SEEK_* symbolic constants to io module.
+
+..
+
+.. bpo: 1665206
+.. date: 7424
+.. nonce: 8AhGz1
+.. section: Library
+
+Move imports in cgitb to the top of the module instead of performing them in
+functions. Helps prevent import deadlocking in threads.
+
+..
+
+.. bpo: 5647
+.. date: 7423
+.. nonce: KPmSmW
+.. section: Library
+
+MutableSet.__iand__() no longer mutates self during iteration.
+
+..
+
+.. bpo: 0
+.. date: 7422
+.. nonce: t0Sm7D
+.. section: Library
+
+Actually make the SimpleXMLRPCServer CGI handler work.
+
+..
+
+.. bpo: 2522
+.. date: 7421
+.. nonce: TTa0fi
+.. section: Library
+
+locale.format() now checks its first argument to ensure it has been passed
+only one pattern, avoiding mysterious errors where it appeared that it was
+failing to do localization.
+
+..
+
+.. bpo: 5583
+.. date: 7420
+.. nonce: GNjR3y
+.. section: Library
+
+Added optional extensions in Distutils.  Initial patch by Georg Brandl.
+
+..
+
+.. bpo: 5619
+.. date: 7419
+.. nonce: IkF1og
+.. section: Library
+
+Multiprocessing children disobey the debug flag and causes popups on windows
+buildbots.  Patch applied to work around this issue.
+
+..
+
+.. bpo: 5632
+.. date: 7418
+.. nonce: OcociP
+.. section: Library
+
+Thread.ident was None for the main thread and threads not created with the
+threading module.
+
+..
+
+.. bpo: 5400
+.. date: 7417
+.. nonce: zmbm0t
+.. section: Library
+
+Added patch for multiprocessing on netbsd compilation/support.
+
+..
+
+.. bpo: 5387
+.. date: 7416
+.. nonce: uvZ11E
+.. section: Library
+
+Fixed mmap.move crash by integer overflow.
+
+..
+
+.. bpo: 5261
+.. date: 7415
+.. nonce: py6jc9
+.. section: Library
+
+Patch multiprocessing's semaphore.c to support context manager use: "with
+multiprocessing.Lock()" works now.
+
+..
+
+.. bpo: 5177
+.. date: 7414
+.. nonce: eRUMiM
+.. section: Library
+
+Multiprocessing's SocketListener class now uses socket.SO_REUSEADDR on all
+connections so that the user no longer needs to wait 120 seconds for the
+socket to expire.
+
+..
+
+.. bpo: 0
+.. date: 7413
+.. nonce: pFfCqO
+.. section: Library
+
+Adjusted _tkinter to compile without warnings when WITH_THREAD is not
+defined (part of issue #5035).
+
+..
+
+.. bpo: 5561
+.. date: 7412
+.. nonce: 11jxV4
+.. section: Library
+
+Removed the sys.version_info shortcuts from platform's python_version() and
+python_version_tuple() since they produced different output compared to
+previous Python versions.
+
+..
+
+.. bpo: 1034053
+.. date: 7411
+.. nonce: kAn84D
+.. section: Library
+
+unittest now supports skipping tests and expected failures.
+
+..
+
+.. bpo: 0
+.. date: 7410
+.. nonce: GHZyr1
+.. section: Library
+
+The unittest.TestCase.assertRaises() method now returns a context manager
+when not given a callable so that code to be tested can be written inline
+using a with statement.
+
+..
+
+.. bpo: 2578
+.. date: 7409
+.. nonce: JvL31E
+.. section: Library
+
+The unittest.TestCase.assertEqual() now displays the differences in lists,
+tuples, dicts and sets on failure.  Many new handy type and comparison
+specific assert* methods have been added that fail with error messages
+actually useful for debugging.  Contributed in part by Google.
+
+..
+
+.. bpo: 5068
+.. date: 7408
+.. nonce: MXgCgm
+.. section: Library
+
+Fixed the tarfile._BZ2Proxy.read() method that would loop forever on
+incomplete input.  That caused tarfile.open() to hang when used with mode
+'r' or 'r:bz2' and a fileobj argument that contained no data or partial
+bzip2 compressed data.
+
+..
+
+.. bpo: 5536
+.. date: 7407
+.. nonce: 9f--jv
+.. section: Library
+
+urllib.urlretrieve makes sure to close the file it's writing to even if an
+exception occurs.
+
+..
+
+.. bpo: 5381
+.. date: 7406
+.. nonce: qzMSVP
+.. section: Library
+
+Added object_pairs_hook to the json module.  This allows OrderedDicts to be
+built by the decoder.
+
+..
+
+.. bpo: 2110
+.. date: 7405
+.. nonce: VVQTv0
+.. section: Library
+
+Add support for thousands separator and 'n' type specifier to
+``Decimal.__format__()``.
+
+..
+
+.. bpo: 0
+.. date: 7404
+.. nonce: E4kk25
+.. section: Library
+
+Fix Decimal.__format__ bug that swapped the meanings of the '<' and '>'
+alignment characters.
+
+..
+
+.. bpo: 1222
+.. date: 7403
+.. nonce: o6ET8T
+.. section: Library
+
+``locale.format()`` bug when the thousands separator is a space character.
+
+..
+
+.. bpo: 5472
+.. date: 7402
+.. nonce: y52FYs
+.. section: Library
+
+Fixed distutils.test_util tear down. Original patch by Tim Golden.
+
+..
+
+.. bpo: 0
+.. date: 7401
+.. nonce: 353Xjd
+.. section: Library
+
+collections.deque objects now have a read-only attribute called maxlen.
+
+..
+
+.. bpo: 2638
+.. date: 7400
+.. nonce: NX9HHb
+.. section: Library
+
+Show a window constructed with tkSimpleDialog.Dialog only after it is has
+been populated and properly configured in order to prevent window flashing.
+
+..
+
+.. bpo: 4792
+.. date: 7399
+.. nonce: jK4Q6l
+.. section: Library
+
+Prevent a segfault in _tkinter by using the guaranteed to be safe interp
+argument given to the PythonCmd in place of the Tcl interpreter taken from a
+PythonCmd_ClientData.
+
+..
+
+.. bpo: 5193
+.. date: 7398
+.. nonce: cT2tgG
+.. section: Library
+
+Guarantee that Tkinter.Text.search returns a string.
+
+..
+
+.. bpo: 5394
+.. date: 7397
+.. nonce: i2Ffk-
+.. section: Library
+
+Removed > 2.3 syntax from distutils.msvc9compiler. Original patch by Akira
+Kitada.
+
+..
+
+.. bpo: 5385
+.. date: 7396
+.. nonce: I6RMU3
+.. section: Library
+
+Fixed mmap crash after resize failure on windows.
+
+..
+
+.. bpo: 5179
+.. date: 7395
+.. nonce: J-DtY4
+.. section: Library
+
+Fixed subprocess handle leak on failure on windows.
+
+..
+
+.. bpo: 0
+.. date: 7394
+.. nonce: 7zHVyM
+.. section: Library
+
+PEP 372: Added collections.OrderedDict().
+
+..
+
+.. bpo: 0
+.. date: 7393
+.. nonce: 7DzM2Y
+.. section: Library
+
+The _asdict() for method for namedtuples now returns an OrderedDict().
+
+..
+
+.. bpo: 0
+.. date: 7392
+.. nonce: 4id7jq
+.. section: Library
+
+The configparser module now defaults to using an ordered dictionary.
+
+..
+
+.. bpo: 4308
+.. date: 7391
+.. nonce: 7O6QSe
+.. section: Library
+
+httplib.IncompleteRead's repr doesn't include all of the data all ready
+received.
+
+..
+
+.. bpo: 5401
+.. date: 7390
+.. nonce: L67vEY
+.. section: Library
+
+Fixed a performance problem in mimetypes when ``from mimetypes import
+guess_extension`` was used.
+
+..
+
+.. bpo: 1733986
+.. date: 7389
+.. nonce: v6ClaV
+.. section: Library
+
+Fixed mmap crash on Windows in accessing elements of second map object with
+same tagname but larger size than first map.
+
+..
+
+.. bpo: 5386
+.. date: 7388
+.. nonce: Mfoc4E
+.. section: Library
+
+mmap.write_byte didn't check map size, so it could cause buffer overrun.
+
+..
+
+.. bpo: 1533164
+.. date: 7387
+.. nonce: oSDeo2
+.. section: Library
+
+Installed but not listed *.pyo was breaking Distutils bdist_rpm command.
+
+..
+
+.. bpo: 5378
+.. date: 7386
+.. nonce: Nu7yhK
+.. section: Library
+
+Added --quiet option to Distutils bdist_rpm command.
+
+..
+
+.. bpo: 5052
+.. date: 7385
+.. nonce: tuRmM7
+.. section: Library
+
+Make Distutils compatible with 2.3 again.
+
+..
+
+.. bpo: 0
+.. date: 7384
+.. nonce: i4QWFU
+.. section: Library
+
+Deprecated methods of symtable.Symbol have been removed: is_keywordarg(),
+is_vararg(), and is_in_tuple().
+
+..
+
+.. bpo: 5316
+.. date: 7383
+.. nonce: gdWjbL
+.. section: Library
+
+Fixed buildbot failures introduced by multiple inheritance in Distutils
+tests.
+
+..
+
+.. bpo: 5287
+.. date: 7382
+.. nonce: m3xQet
+.. section: Library
+
+Add exception handling around findCaller() call to help out IronPython.
+
+..
+
+.. bpo: 5282
+.. date: 7381
+.. nonce: oc64yd
+.. section: Library
+
+Fixed mmap resize on 32bit Windows and Unix.  When ``offset > 0``, the file
+was resized to wrong size.
+
+..
+
+.. bpo: 5292
+.. date: 7380
+.. nonce: K-iKkZ
+.. section: Library
+
+Fixed mmap crash on its boundary access m[len(m)].
+
+..
+
+.. bpo: 2279
+.. date: 7379
+.. nonce: T7t8d0
+.. section: Library
+
+distutils.sdist.add_defaults now add files from the package_data and the
+data_files metadata.
+
+..
+
+.. bpo: 5257
+.. date: 7378
+.. nonce: asNrGx
+.. section: Library
+
+Refactored all tests in distutils, so they use support.TempdirManager, to
+avoid writing in the tests directory.
+
+..
+
+.. bpo: 4524
+.. date: 7377
+.. nonce: Y3L_fh
+.. section: Library
+
+distutils build_script command failed with --with-suffix=3. Initial patch by
+Amaury Forgeot d'Arc.
+
+..
+
+.. bpo: 2461
+.. date: 7376
+.. nonce: RD653P
+.. section: Library
+
+Added tests for distutils.util.
+
+..
+
+.. bpo: 1008086
+.. date: 7375
+.. nonce: BbViq-
+.. section: Library
+
+Fixed socket.inet_aton() to always return 4 bytes even on LP64 platforms
+(most 64-bit Linux, bsd, unix systems).
+
+..
+
+.. bpo: 5203
+.. date: 7374
+.. nonce: _dsCYh
+.. section: Library
+
+Fixed ctypes segfaults when passing a unicode string to a function without
+argtypes (only occurs if HAVE_USABLE_WCHAR_T is false).
+
+..
+
+.. bpo: 3386
+.. date: 7373
+.. nonce: KG-Ru5
+.. section: Library
+
+distutils.sysconfig.get_python_lib prefix argument was ignored under NT and
+OS2. Patch by Philip Jenvey.
+
+..
+
+.. bpo: 5128
+.. date: 7372
+.. nonce: RLP-Ij
+.. section: Library
+
+Make compileall properly inspect bytecode to determine if needs to be
+recreated.  This avoids a timing hole thanks to the old reliance on the
+ctime of the files involved.
+
+..
+
+.. bpo: 5122
+.. date: 7371
+.. nonce: 45BIdZ
+.. section: Library
+
+Synchronize tk load failure check to prevent a potential deadlock.
+
+..
+
+.. bpo: 1818
+.. date: 7370
+.. nonce: _i2lg8
+.. section: Library
+
+collections.namedtuple() now supports a keyword argument 'rename' which lets
+invalid fieldnames be automatically converted to positional names in the
+form, _1, _2, ...
+
+..
+
+.. bpo: 4890
+.. date: 7369
+.. nonce: frM5Ou
+.. section: Library
+
+Handle empty text search pattern in Tkinter.Text.search.
+
+..
+
+.. bpo: 5170
+.. date: 7368
+.. nonce: qiqrbO
+.. section: Library
+
+Fixed Unicode output bug in logging and added test case.  This is a
+regression which did not occur in 2.5.
+
+..
+
+.. bpo: 4512
+.. date: 7367
+.. nonce: WCcn7w
+.. section: Library
+
+Promote ``ZipImporter._get_filename()`` to be a public documented method
+``ZipImporter.get_filename()``.
+
+..
+
+.. bpo: 4195
+.. date: 7366
+.. nonce: 462RKE
+.. section: Library
+
+The ``runpy`` module (and the ``-m`` switch) now support the execution of
+packages by looking for and executing a ``__main__`` submodule when a
+package name is supplied. Initial patch by Andi Vajda.
+
+..
+
+.. bpo: 1731706
+.. date: 7365
+.. nonce: WZ5WX5
+.. section: Library
+
+Call Tcl_ConditionFinalize for Tcl_Conditions that will not be used again
+(this requires Tcl/Tk 8.3.1), also fix a memory leak in Tkapp_Call when
+calling from a thread different than the one that created the Tcl
+interpreter.  Patch by Robert Hancock.
+
+..
+
+.. bpo: 1520877
+.. date: 7364
+.. nonce: 8L5pMp
+.. section: Library
+
+Now distutils.sysconfig reads $AR from the environment/Makefile. Patch by
+Douglas Greiman.
+
+..
+
+.. bpo: 4285
+.. date: 7363
+.. nonce: 3vlvS6
+.. section: Library
+
+Change sys.version_info to be a named tuple.  Patch by Ross Light.
+
+..
+
+.. bpo: 1276768
+.. date: 7362
+.. nonce: xGRlK_
+.. section: Library
+
+The verbose option was not used in the code of distutils.file_util and
+distutils.dir_util.
+
+..
+
+.. bpo: 5132
+.. date: 7361
+.. nonce: lYsgxj
+.. section: Library
+
+Fixed trouble building extensions under Solaris with --enabled-shared
+activated. Initial patch by Dave Peterson.
+
+..
+
+.. bpo: 1581476
+.. date: 7360
+.. nonce: 8PPtxr
+.. section: Library
+
+Always use the Tcl global namespace when calling into Tcl.
+
+..
+
+.. bpo: 2047
+.. date: 7359
+.. nonce: W29q2y
+.. section: Library
+
+shutil.move() could believe that its destination path was inside its source
+path if it began with the same letters (e.g. "src" vs.  "src.new").
+
+..
+
+.. bpo: 4920
+.. date: 7358
+.. nonce: 4C6Tka
+.. section: Library
+
+Fixed .next() vs .__next__() issues in the ABCs for Iterator and MutableSet.
+
+..
+
+.. bpo: 0
+.. date: 7357
+.. nonce: St1AK1
+.. section: Library
+
+Added the ttk module. See issue #2983: Ttk support for Tkinter.
+
+..
+
+.. bpo: 5021
+.. date: 7356
+.. nonce: w66Gt4
+.. section: Library
+
+doctest.testfile() did not create __name__ and collections.namedtuple()
+relied on __name__ being defined.
+
+..
+
+.. bpo: 0
+.. date: 7355
+.. nonce: iqhL-t
+.. section: Library
+
+Backport importlib from Python 3.1. Only the import_module() function has
+been backported to help facilitate transitions from 2.7 to 3.1.
+
+..
+
+.. bpo: 1885
+.. date: 7354
+.. nonce: PtaVKd
+.. section: Library
+
+distutils: When running sdist with --formats=tar,gztar the tar file was
+overridden by the gztar one.
+
+..
+
+.. bpo: 4863
+.. date: 7353
+.. nonce: WAd1yO
+.. section: Library
+
+distutils.mwerkscompiler has been removed.
+
+..
+
+.. bpo: 0
+.. date: 7352
+.. nonce: N87zoU
+.. section: Library
+
+Added new itertools functions: combinations_with_replacement() and
+compress().
+
+..
+
+.. bpo: 5032
+.. date: 7351
+.. nonce: Hc_HF9
+.. section: Library
+
+Added a step argument to itertools.count() and allowed non-integer
+arguments.
+
+..
+
+.. bpo: 0
+.. date: 7350
+.. nonce: htGT5q
+.. section: Library
+
+Fix and properly document the multiprocessing module's logging support,
+expose the internal levels and provide proper usage examples.
+
+..
+
+.. bpo: 1672332
+.. date: 7349
+.. nonce: PilXzF
+.. section: Library
+
+Fix unpickling of subnormal floats, which was producing a ValueError on some
+platforms.
+
+..
+
+.. bpo: 3881
+.. date: 7348
+.. nonce: bIWN64
+.. section: Library
+
+Help Tcl to load even when started through the unreadable local symlink to
+"Program Files" on Vista.
+
+..
+
+.. bpo: 4710
+.. date: 7347
+.. nonce: ZjbAFp
+.. section: Library
+
+Extract directories properly in the zipfile module; allow adding directories
+to a zipfile.
+
+..
+
+.. bpo: 3807
+.. date: 7346
+.. nonce: E4I458
+.. section: Library
+
+_multiprocessing build fails when configure is passed --without-threads
+argument. When this occurs, _multiprocessing will be disabled, and not
+compiled.
+
+..
+
+.. bpo: 5008
+.. date: 7345
+.. nonce: n1uR4V
+.. section: Library
+
+When a file is opened in append mode with the new IO library, do an explicit
+seek to the end of file (so that e.g. tell() returns the file size rather
+than 0). This is consistent with the behaviour of the traditional 2.x file
+object.
+
+..
+
+.. bpo: 5013
+.. date: 7344
+.. nonce: AZ9WNo
+.. section: Library
+
+Fixed a bug in FileHandler which occurred when the delay parameter was set.
+
+..
+
+.. bpo: 4998
+.. date: 7343
+.. nonce: AomdSw
+.. section: Library
+
+The memory saving effect of __slots__ had been lost on Fractions which
+inherited from numbers.py which did not have __slots__ defined.  The numbers
+hierarchy now has its own __slots__ declarations.
+
+..
+
+.. bpo: 3321
+.. date: 7342
+.. nonce: 4gfMOk
+.. section: Library
+
+_multiprocessing.Connection() doesn't check handle; added checks for *nix
+machines for negative handles and large int handles.  Without this check it
+is possible to segfault the interpreter.
+
+..
+
+.. bpo: 4449
+.. date: 7341
+.. nonce: O4I8D7
+.. section: Library
+
+AssertionError in mp_benchmarks.py, caused by an underlying issue in
+sharedctypes.py.
+
+..
+
+.. bpo: 1225107
+.. date: 7340
+.. nonce: p6wro7
+.. section: Library
+
+inspect.isclass() returned True for instances with a custom __getattr__.
+
+..
+
+.. bpo: 3997
+.. date: 7339
+.. nonce: kDqtnQ
+.. section: Library
+
+Zipfiles generated with more than 65536 files could not be opened with other
+applications.
+
+..
+
+.. bpo: 1162154
+.. date: 7338
+.. nonce: QHeSnh
+.. section: Library
+
+``inspect.getmembers()`` now skips attributes that raise AttributeError,
+e.g. a __slots__ attribute which has not been set.
+
+..
+
+.. bpo: 1696199
+.. date: 7337
+.. nonce: cR113m
+.. section: Library
+
+Add collections.Counter() for rapid and convenient counting.
+
+..
+
+.. bpo: 3860
+.. date: 7336
+.. nonce: f8AZsh
+.. section: Library
+
+GzipFile and BZ2File now support the context management protocol.
+
+..
+
+.. bpo: 4272
+.. date: 7335
+.. nonce: auf_M0
+.. section: Library
+
+Add an optional argument to the GzipFile constructor to override the
+timestamp in the gzip stream.  The default value remains the current time.
+The information can be used by e.g. gunzip when decompressing.  Patch by
+Jacques Frechet.
+
+..
+
+.. bpo: 0
+.. date: 7334
+.. nonce: 7sDs9W
+.. section: Library
+
+Restore Python 2.3 compatibility for decimal.py.
+
+..
+
+.. bpo: 1702551
+.. date: 7333
+.. nonce: If0hpw
+.. section: Library
+
+distutils sdist was not excluding VCS directories under Windows. Initial
+solution by Guy Dalberto.
+
+..
+
+.. bpo: 0
+.. date: 7332
+.. nonce: exKvPN
+.. section: Library
+
+The _tkinter module functions "createfilehandler", "deletefilehandler",
+"createtimerhandler", "mainloop", "dooneevent" and "quit" have been
+deprecated for removal in 3.x
+
+..
+
+.. bpo: 4796
+.. date: 7331
+.. nonce: UBKEyz
+.. section: Library
+
+Added Decimal.from_float() and Context.create_decimal_from_float() to the
+decimal module.
+
+..
+
+.. bpo: 4812
+.. date: 7330
+.. nonce: 2hPczw
+.. section: Library
+
+Add missing underscore prefix to some internal-use-only constants in the
+decimal module.  (Dec_0 becomes _Dec_0, etc.)
+
+..
+
+.. bpo: 4795
+.. date: 7329
+.. nonce: _vA-Zf
+.. section: Library
+
+inspect.isgeneratorfunction() returns False instead of None when the
+function is not a generator.
+
+..
+
+.. bpo: 4702
+.. date: 7328
+.. nonce: ybmQBP
+.. section: Library
+
+Throwing a DistutilsPlatformError instead of IOError in case no MSVC
+compiler is found under Windows.  Original patch by Philip Jenvey.
+
+..
+
+.. bpo: 4646
+.. date: 7327
+.. nonce: 7wQSEv
+.. section: Library
+
+distutils was choking on empty options arg in the setup function. Original
+patch by Thomas Heller.
+
+..
+
+.. bpo: 0
+.. date: 7326
+.. nonce: cAjOp1
+.. section: Library
+
+Fractions.from_float() no longer loses precision for integers too big to
+cast as floats.
+
+..
+
+.. bpo: 4790
+.. date: 7325
+.. nonce: aKNjhn
+.. section: Library
+
+The nsmallest() and nlargest() functions in the heapq module did unnecessary
+work in the common case where no key function was specified.
+
+..
+
+.. bpo: 3767
+.. date: 7324
+.. nonce: sY2Wyh
+.. section: Library
+
+Convert Tk object to string in tkColorChooser.
+
+..
+
+.. bpo: 3248
+.. date: 7323
+.. nonce: 6UId_r
+.. section: Library
+
+Allow placing ScrolledText in a PanedWindow.
+
+..
+
+.. bpo: 4444
+.. date: 7322
+.. nonce: oBxx2k
+.. section: Library
+
+Allow assertRaises() to be used as a context handler, so that the code under
+test can be written inline if more practical.
+
+..
+
+.. bpo: 4739
+.. date: 7321
+.. nonce: VoYRrw
+.. section: Library
+
+Add pydoc help topics for symbols, so that e.g. help('@') works as expected
+in the interactive environment.
+
+..
+
+.. bpo: 4756
+.. date: 7320
+.. nonce: pscfIt
+.. section: Library
+
+zipfile.is_zipfile() now supports file-like objects. Patch by Gabriel
+Genellina.
+
+..
+
+.. bpo: 4400
+.. date: 7319
+.. nonce: CSFvcN
+.. section: Library
+
+.pypirc default generated file was broken in distutils.
+
+..
+
+.. bpo: 4736
+.. date: 7318
+.. nonce: qftNAR
+.. section: Library
+
+io.BufferedRWPair's closed property now functions properly.
+
+..
+
+.. bpo: 3954
+.. date: 7317
+.. nonce: vPsfgT
+.. section: Library
+
+Fix a potential SystemError in _hotshot.logreader error handling.
+
+..
+
+.. bpo: 4574
+.. date: 7316
+.. nonce: CXYnzF
+.. section: Library
+
+Fix a crash in io.IncrementalNewlineDecoder when a carriage return encodes
+to more than one byte in the source encoding (e.g. UTF-16) and gets split on
+a chunk boundary.
+
+..
+
+.. bpo: 4223
+.. date: 7315
+.. nonce: UCATW5
+.. section: Library
+
+inspect.getsource() will now correctly display source code for packages
+loaded via zipimport (or any other conformant PEP 302 loader). Original
+patch by Alexander Belopolsky.
+
+..
+
+.. bpo: 4201
+.. date: 7314
+.. nonce: hdQbIQ
+.. section: Library
+
+pdb can now access and display source code loaded via zipimport (or any
+other conformant PEP 302 loader).  Original patch by Alexander Belopolsky.
+
+..
+
+.. bpo: 4197
+.. date: 7313
+.. nonce: IA6tPh
+.. section: Library
+
+Doctests in modules loaded via zipimport (or any other PEP 302 conformant
+loader) will now work correctly in most cases (they are still subject to the
+constraints that exist for all code running from inside a module loaded via
+a PEP 302 loader and attempting to perform IO operations based on __file__).
+Original patch by Alexander Belopolsky.
+
+..
+
+.. bpo: 4082
+.. date: 7312
+.. nonce: jpnXzi
+.. section: Library
+
+Add runpy support to zipimport in a manner that allows backporting to
+maintenance branches.  Original patch by Alexander Belopolsky. (See also:
+bpo-4512)
+
+..
+
+.. bpo: 4163
+.. date: 7311
+.. nonce: r4afWs
+.. section: Library
+
+Use unicode-friendly word splitting in the textwrap functions when given a
+Unicode string.
+
+..
+
+.. bpo: 4616
+.. date: 7310
+.. nonce: EfehU4
+.. section: Library
+
+TarFile.utime(): Restore directory times on Windows.
+
+..
+
+.. bpo: 4084
+.. date: 7309
+.. nonce: CgsU1v
+.. section: Library
+
+Fix max, min, max_mag and min_mag Decimal methods to give correct results in
+the case where one argument is a quiet NaN and the other is a finite number
+that requires rounding.
+
+..
+
+.. bpo: 1030250
+.. date: 7308
+.. nonce: s-KbFX
+.. section: Library
+
+Distutils created directories even when run with the --dry-run option.
+
+..
+
+.. bpo: 4483
+.. date: 7307
+.. nonce: H2pFWf
+.. section: Library
+
+_dbm module now builds on systems with gdbm & gdbm_compat libs.
+
+..
+
+.. bpo: 4529
+.. date: 7306
+.. nonce: J-M1ot
+.. section: Library
+
+Fix the parser module's validation of try-except-finally statements.
+
+..
+
+.. bpo: 4458
+.. date: 7305
+.. nonce: d68Oc-
+.. section: Library
+
+getopt.gnu_getopt() now recognizes a single "-" as an argument, not a
+malformed option.
+
+..
+
+.. bpo: 0
+.. date: 7304
+.. nonce: JcSDah
+.. section: Library
+
+Added the subprocess.check_output() convenience function to get output from
+a subprocess on success or raise an exception on error.
+
+..
+
+.. bpo: 1055234
+.. date: 7303
+.. nonce: PJDWMZ
+.. section: Library
+
+cgi.parse_header(): Fixed parsing of header parameters to support unusual
+filenames (such as those containing semi-colons) in Content-Disposition
+headers.
+
+..
+
+.. bpo: 4384
+.. date: 7302
+.. nonce: 5W6yrD
+.. section: Library
+
+Added logging integration with warnings module using captureWarnings().
+This change includes a NullHandler which does nothing; it will be of use to
+library developers who want to avoid the "No handlers could be found for
+logger XXX" message which can appear if the library user doesn't configure
+logging.
+
+..
+
+.. bpo: 3741
+.. date: 7301
+.. nonce: ugW7ZS
+.. section: Library
+
+DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an exception.
+
+..
+
+.. bpo: 4363
+.. date: 7300
+.. nonce: zbP2s9
+.. section: Library
+
+The uuid.uuid1() and uuid.uuid4() functions now work even if the ctypes
+module is not present.
+
+..
+
+.. bpo: 0
+.. date: 7299
+.. nonce: 9ohu2f
+.. section: Library
+
+FileIO's mode attribute now always includes ``"b"``.
+
+..
+
+.. bpo: 4116
+.. date: 7298
+.. nonce: CD_MP7
+.. section: Library
+
+Resolve member name conflict in ScrolledCanvas.__init__.
+
+..
+
+.. bpo: 0
+.. date: 7297
+.. nonce: QmONdW
+.. section: Library
+
+httplib.HTTPConnection.putheader() now accepts an arbitrary number of values
+for any header, matching what the documentation has claimed for a while.
+
+..
+
+.. bpo: 3774
+.. date: 7296
+.. nonce: qhBNNQ
+.. section: Library
+
+Fixed an error when create a Tkinter menu item without command and then
+remove it.
+
+..
+
+.. bpo: 0
+.. date: 7295
+.. nonce: NbETIR
+.. section: Library
+
+Fixed a modulefinder crash on certain relative imports.
+
+..
+
+.. bpo: 4150
+.. date: 7294
+.. nonce: Q8jnkP
+.. section: Library
+
+Pdb's "up" command now works for generator frames in post-mortem debugging.
+
+..
+
+.. bpo: 4092
+.. date: 7293
+.. nonce: cgu8U7
+.. section: Library
+
+Return ArgInfo as promised in the documentation from inspect.getargvalues.
+
+..
+
+.. bpo: 3935
+.. date: 7292
+.. nonce: xo6LXH
+.. section: Library
+
+Properly support list subclasses in bisect's C implementation.
+
+..
+
+.. bpo: 4014
+.. date: 7291
+.. nonce: VPepZh
+.. section: Library
+
+Don't claim that Python has an Alpha release status, in addition to claiming
+it is Mature.
+
+..
+
+.. bpo: 4730
+.. date: 7290
+.. nonce: Gb-t2A
+.. section: Library
+
+Fixed the cPickle module to handle correctly astral characters when protocol
+0 is used.
+
+..
+
+.. bpo: 1594
+.. date: 7289
+.. nonce: HEsHsF
+.. section: Library
+
+MacOS.GetCreatorAndType now always returns a big-endian result, to be
+consistent with Apple tools.
+
+..
+
+.. bpo: 900949
+.. date: 7288
+.. nonce: WLxHoH
+.. section: Library
+
+plat-mac/videoreader.py no longer relies on a non-existing module.
+
+..
+
+.. bpo: 16278952
+.. date: 7287
+.. nonce: lzPQW7
+.. section: Library
+
+plat-mac/videoreader.py now correctly imports MediaDescr
+
+..
+
+.. bpo: 1737832
+.. date: 7286
+.. nonce: cQdLju
+.. section: Library
+
+plat-mac/EasyDialog.py no longer uses the broken aepack module.
+
+..
+
+.. bpo: 1149804
+.. date: 7285
+.. nonce: -5eLwa
+.. section: Library
+
+macostools.mkdirs now even works when another process creates one of the
+needed subdirectories.
+
+..
+
+.. bpo: 900506
+.. date: 7284
+.. nonce: kVZAZL
+.. section: Library
+
+added --no-zipimport flag to the bundlebuilder script.
+
+..
+
+.. bpo: 841800
+.. date: 7283
+.. nonce: XCnSdr
+.. section: Library
+
+bundlebuilder now works with 'python -O'.
+
+..
+
+.. bpo: 4861
+.. date: 7282
+.. nonce: sIt_9h
+.. section: Library
+
+ctypes.util.find_library(): Robustify. Fix library detection on biarch
+systems.  Try to rely on ldconfig only, without using objdump and gcc.
+
+..
+
+.. bpo: 5104
+.. date: 7281
+.. nonce: YzzKtZ
+.. section: Library
+
+The socket module now raises OverflowError when 16-bit port and protocol
+numbers are supplied outside the allowed 0-65536 range on bind() and
+getservbyport().
+
+..
+
+.. bpo: 999042
+.. date: 7280
+.. nonce: cVohJD
+.. section: Library
+
+The Python compiler now handles explict global statements correctly (should
+be assigned using STORE_GLOBAL opcode).
+
+..
+
+.. bpo: 2703
+.. date: 7279
+.. nonce: nHzm3m
+.. section: Library
+
+SimpleXMLRPCDispatcher.__init__: Provide default values for new arguments
+introduced in 2.5.
+
+..
+
+.. bpo: 5828
+.. date: 7278
+.. nonce: vKsQ82
+.. section: Library
+
+Fixed bogus logic in makeunicodedata.py and regenerated the Unicode database
+(This fixes u'\u1d79'.lower() == '\x00').
+
+..
+
+.. bpo: 0
+.. date: 7277
+.. nonce: aOxIb2
+.. section: Library
+
+Windows locale mapping updated to Vista.
+
+..
+
+.. bpo: 5150
+.. date: 7276
+.. nonce: ROvOEC
+.. section: IDLE
+
+IDLE's format menu now has an option to strip trailing whitespace.
+
+..
+
+.. bpo: 5847
+.. date: 7275
+.. nonce: XwEpMA
+.. section: IDLE
+
+Remove -n switch on "Edit with IDLE" menu item.
+
+..
+
+.. bpo: 0
+.. date: 7274
+.. nonce: 0fQMGL
+.. section: IDLE
+
+idle.py modified and simplified to better support developing experimental
+versions of IDLE which are not installed in the standard location.
+
+..
+
+.. bpo: 5559
+.. date: 7273
+.. nonce: GKhgt1
+.. section: IDLE
+
+OutputWindow/PyShell right click menu "Go to file/line" wasn't working with
+file paths containing spaces.
+
+..
+
+.. bpo: 5783
+.. date: 7272
+.. nonce: oZFpQE
+.. section: IDLE
+
+Windows: Version string for the .chm help file changed, file not being
+accessed.  Patch by Guilherme Polo/
+
+..
+
+.. bpo: 1529142
+.. date: 7271
+.. nonce: _7kvP5
+.. section: IDLE
+
+Allow multiple IDLE GUI/subprocess pairs to exist simultaneously. Thanks to
+David Scherer for suggesting the use of an ephemeral port for the GUI.
+Patch by Weeble.
+
+..
+
+.. bpo: 0
+.. date: 7270
+.. nonce: D4DReJ
+.. section: IDLE
+
+Remove port spec from run.py and fix bug where subprocess fails to extract
+port from command line when warnings are present.
+
+..
+
+.. bpo: 5129
+.. date: 7269
+.. nonce: eVAJqn
+.. section: IDLE
+
+Tk 8.5 Text widget requires 'wordprocessor' tabstyle attr to handle mixed
+space/tab properly. Patch by Guilherme Polo.
+
+..
+
+.. bpo: 3549
+.. date: 7268
+.. nonce: nZ7He6
+.. section: IDLE
+
+On MacOS the preferences menu was not present
+
+..
+
+.. bpo: 0
+.. date: 7267
+.. nonce: fyANj_
+.. section: Tools/Demos
+
+Ttk demos added in Demo/tkinter/ttk/.
+
+..
+
+.. bpo: 4677
+.. date: 7266
+.. nonce: 4BCeec
+.. section: Tools/Demos
+
+Add two list comprehension tests to pybench.
+
+..
+
+.. bpo: 6603
+.. date: 7265
+.. nonce: I-Evb7
+.. section: Build
+
+Change READ_TIMESTAMP macro in ceval.c so that it compiles correctly under
+gcc on x86-64.  This fixes a reported problem with the --with-tsc build on
+x86-64.
+
+..
+
+.. bpo: 0
+.. date: 7264
+.. nonce: fOuNOF
+.. section: Build
+
+Add 2 new options to ``--with-universal-archs`` on MacOSX: ``intel`` builds
+a distribution with ``i386`` and ``x86_64`` architectures, while ``3-way``
+builds a distribution with the ``ppc``, ``i386`` and ``x86_64``
+architectures.
+
+..
+
+.. bpo: 6802
+.. date: 7263
+.. nonce: I0PGjW
+.. section: Build
+
+Fix build issues on MacOSX 10.6.
+
+..
+
+.. bpo: 6244
+.. date: 7262
+.. nonce: hQGLlr
+.. section: Build
+
+Allow detect_tkinter to look for Tcl/Tk 8.6.
+
+..
+
+.. bpo: 5390
+.. date: 7261
+.. nonce: ZnkJkB
+.. section: Build
+
+Add uninstall icon independent of whether file extensions are installed.
+
+..
+
+.. bpo: 5809
+.. date: 7260
+.. nonce: WMK90h
+.. section: Build
+
+Specifying both --enable-framework and --enable-shared is an error.
+Configure now explicitly tells you about this.
+
+..
+
+.. bpo: 3585
+.. date: 7259
+.. nonce: eB4RFU
+.. section: Build
+
+Add pkg-config support.  It creates a python-2.7.pc file and a python.pc
+symlink in the $(LIBDIR)/pkgconfig directory.  Patch by Clinton Roy.
+
+..
+
+.. bpo: 6094
+.. date: 7258
+.. nonce: shJUAU
+.. section: Build
+
+Build correctly with Subversion 1.7.
+
+..
+
+.. bpo: 5726
+.. date: 7257
+.. nonce: nHrlsd
+.. section: Build
+
+Make Modules/ld_so_aix return the actual exit code of the linker, rather
+than always exit successfully.  Patch by Floris Bruynooghe.
+
+..
+
+.. bpo: 4587
+.. date: 7256
+.. nonce: nnNweB
+.. section: Build
+
+Add configure option --with-dbmliborder=db1:db2:... to specify the order
+that backends for the dbm extension are checked.
+
+..
+
+.. bpo: 0
+.. date: 7255
+.. nonce: 9K_NPs
+.. section: Build
+
+Link the shared python library with $(MODLIBS).
+
+..
+
+.. bpo: 5134
+.. date: 7254
+.. nonce: JmNLWO
+.. section: Build
+
+Silence compiler warnings when compiling sqlite with VC++.
+
+..
+
+.. bpo: 4494
+.. date: 7253
+.. nonce: IGajo-
+.. section: Build
+
+Fix build with Py_NO_ENABLE_SHARED on Windows.
+
+..
+
+.. bpo: 4895
+.. date: 7252
+.. nonce: S-3ytm
+.. section: Build
+
+Use _strdup on Windows CE.
+
+..
+
+.. bpo: 4472
+.. date: 7251
+.. nonce: UbvbZD
+.. section: Build
+
+``configure --enable-shared`` now works on OSX.
+
+..
+
+.. bpo: 4728
+.. date: 7250
+.. nonce: FPe7Wi
+.. section: Build
+
+WORDS_BIGEDIAN is now correct in Universal builds. (See also: bpo-4060)
+
+..
+
+.. bpo: 4389
+.. date: 7249
+.. nonce: UrR3rH
+.. section: Build
+
+Add icon to the uninstall entry in "add-and-remove-programs".
+
+..
+
+.. bpo: 4289
+.. date: 7248
+.. nonce: xDo3LW
+.. section: Build
+
+Remove Cancel button from AdvancedDlg.
+
+..
+
+.. bpo: 1656675
+.. date: 7247
+.. nonce: yhrY5M
+.. section: Build
+
+Register a drop handler for .py* files on Windows.
+
+..
+
+.. bpo: 4120
+.. date: 7246
+.. nonce: AJJ_Yg
+.. section: Build
+
+Exclude manifest from extension modules in VS2008.
+
+..
+
+.. bpo: 4091
+.. date: 7245
+.. nonce: j3E4hq
+.. section: Build
+
+Install pythonxy.dll in system32 again.
+
+..
+
+.. bpo: 4018
+.. date: 7244
+.. nonce: UVtBMQ
+.. section: Build
+
+Disable "for me" installations on Vista.
+
+..
+
+.. bpo: 3758
+.. date: 7243
+.. nonce: cBcoI8
+.. section: Build
+
+Add ``patchcheck`` build target to ``.PHONY``.
+
+..
+
+.. bpo: 4204
+.. date: 7242
+.. nonce: NQswDc
+.. section: Build
+
+Fixed module build errors on FreeBSD 4.
+
+..
+
+.. bpo: 6556
+.. date: 7241
+.. nonce: Qn6fFV
+.. section: Documentation
+
+Fixed the Distutils configuration files location explanation for Windows.
+
+..
+
+.. bpo: 6801
+.. date: 7240
+.. nonce: yMIrow
+.. section: Documentation
+
+symmetric_difference_update also accepts ``|``.  Thanks to Carl Chenet.
+
+..
+
+.. bpo: 7528
+.. date: 7239
+.. nonce: CxgEcB
+.. section: C API
+
+Add PyLong_AsLongAndOverflow (backported from py3k).
+
+..
+
+.. bpo: 7228
+.. date: 7238
+.. nonce: Kj3IXX
+.. section: C API
+
+Add '%lld' and '%llu' support to PyString_FromFormat(V) and PyErr_Format, on
+machines with HAVE_LONG_LONG defined.
+
+..
+
+.. bpo: 0
+.. date: 7237
+.. nonce: XqzKYC
+.. section: C API
+
+Add new C-API function PyOS_string_to_double, and deprecated PyOS_ascii_atof
+and PyOS_ascii_strtod.
+
+..
+
+.. bpo: 0
+.. date: 7236
+.. nonce: EzTAcl
+.. section: C API
+
+Removed _PyOS_double_to_string. Use PyOS_double_to_string instead.  This is
+in preparation for (but not strictly related to) issue #7117, short float
+repr.
+
+..
+
+.. bpo: 6624
+.. date: 7235
+.. nonce: qPXO6F
+.. section: C API
+
+PyArg_ParseTuple with "s" format when parsing argument with NULL: Bogus
+TypeError detail string.
+
+..
+
+.. bpo: 5954
+.. date: 7234
+.. nonce: bl2-P2
+.. section: C API
+
+Add a PyFrame_GetLineNumber() function to replace most uses of
+PyCode_Addr2Line().
+
+..
+
+.. bpo: 5959
+.. date: 7233
+.. nonce: wmWB5t
+.. section: C API
+
+Add a PyCode_NewEmpty() function to create a new empty code object at a
+specified file, function, and line number.
+
+..
+
+.. bpo: 1419652
+.. date: 7232
+.. nonce: Q6BERX
+.. section: C API
+
+Change the first argument to PyImport_AppendInittab() to ``const char *`` as
+the string is stored beyond the call.
+
+..
+
+.. bpo: 0
+.. date: 7231
+.. nonce: hva90Q
+.. section: C API
+
+Some PyBytes_* aliases have been removed because they don't exist in 3.x.
+
+..
+
+.. bpo: 5175
+.. date: 7230
+.. nonce: r1a8Ms
+.. section: C API
+
+PyLong_AsUnsignedLongLong now raises OverflowError for negative arguments.
+Previously, it raised TypeError.
+
+..
+
+.. bpo: 4720
+.. date: 7229
+.. nonce: Mb6W01
+.. section: C API
+
+The format for PyArg_ParseTupleAndKeywords can begin with '|'.
+
+..
+
+.. bpo: 3632
+.. date: 7228
+.. nonce: upPC86
+.. section: C API
+
+From the gdb debugger, the 'pyo' macro can now be called when the GIL is
+released, or owned by another thread.
+
+..
+
+.. bpo: 4122
+.. date: 7227
+.. nonce: fhMq7A
+.. section: C API
+
+On Windows, fix a compilation error when using the Py_UNICODE_ISSPACE macro
+in an extension module.
+
+..
+
+.. bpo: 4293
+.. date: 7226
+.. nonce: QdarHx
+.. section: C API
+
+Py_AddPendingCall() is now thread safe and can be used for asynchronous
+notifications to python from any thread.  Documentation added.
+
+..
+
+.. bpo: 6508
+.. date: 7225
+.. nonce: R3EvXY
+.. section: Library
+
+Add posix.{getresuid,getresgid,setresuid,setresgid}.
+
+..
+
+.. bpo: 7078
+.. date: 7224
+.. nonce: 90Z604
+.. section: Library
+
+Set struct.__doc__ from _struct.__doc__.
+
+..
+
+.. bpo: 3366
+.. date: 7223
+.. nonce: U1DfAJ
+.. section: Library
+
+Add erf, erfc, expm1, gamma, lgamma functions to math module.
+
+..
+
+.. bpo: 6823
+.. date: 7222
+.. nonce: m4cwqj
+.. section: Library
+
+Allow time.strftime() to accept a tuple with a isdst field outside of the
+range of [-1, 1] by normalizing the value to within that range.
+
+..
+
+.. bpo: 6877
+.. date: 7221
+.. nonce: CMXt7p
+.. section: Library
+
+Make it possible to link the readline extension to libedit on OSX.
+
+..
+
+.. bpo: 6944
+.. date: 7220
+.. nonce: A9aMl7
+.. section: Library
+
+Fix a SystemError when socket.getnameinfo() was called with something other
+than a tuple as first argument.
+
+..
+
+.. bpo: 6865
+.. date: 7219
+.. nonce: 8EKGt5
+.. section: Library
+
+Fix reference counting issue in the initialization of the pwd module.
+
+..
+
+.. bpo: 6848
+.. date: 7218
+.. nonce: yoWK1A
+.. section: Library
+
+Fix curses module build failure on OS X 10.6.
+
+..
+
+.. bpo: 0
+.. date: 7217
+.. nonce: k2iXEM
+.. section: Library
+
+Fix a segfault in expat when given a specially crafted input lead to the
+tokenizer not stopping. CVE-2009-3720.
+
+..
+
+.. bpo: 6561
+.. date: 7216
+.. nonce: tJwGr-
+.. section: Library
+
+'\d' in a regex now matches only characters with Unicode category 'Nd'
+(Number, Decimal Digit).  Previously it also matched characters with
+category 'No'.
+
+..
+
+.. bpo: 1523
+.. date: 7215
+.. nonce: GYRz49
+.. section: Library
+
+Remove deprecated overflow wrapping for struct.pack with an integer format
+code ('bBhHiIlLqQ').  Packing an out-of-range integer now consistently
+raises struct.error.
+
+..
+
+.. bpo: 1530559
+.. date: 7214
+.. nonce: 0TjrtL
+.. section: Library
+
+Fix various struct.pack inconsistencies for the integer formats
+('bBhHiIlLqQ').  In the following, '*' represents any of '=', '<', '>'.
+
+- Packing a float now always gives a Deprecation Warning.  Previously it
+only warned for 'I', 'L', '*B', '*H', '*I', '*L'.
+
+- If x is not an int, long or float, then packing x will always result in
+struct.error.  Previously an x with an __int__ method could be packed by
+'b', 'B', 'h', 'H', 'i', 'l', '*b', '*h' ,'*i', '*l', and an x with a
+__long__ method could be packed by 'q', 'Q', '*q', '*Q'; for x with
+neither __int__ nor __long__, TypeError used to be raised (with a
+confusing error message) for 'I', 'L', '*B', '*H', '*I', '*L', and
+struct.error in other cases.
+
+Note: as of Python 2.7 beta 1, the above is out of date.  In 2.7 beta 1, any
+argument with an __int__ method can be packed, but use of this feature
+triggers a DeprecationWarning. (See also: bpo-1741130)
+
+..
+
+.. bpo: 4873
+.. date: 7213
+.. nonce: X6xp5Z
+.. section: Library
+
+Fix resource leaks in error cases of pwd and grp.
+
+..
+
+.. bpo: 4751
+.. date: 7212
+.. nonce: 6sPqcu
+.. section: Library
+
+For hashlib algorithms provided by OpenSSL, the Python GIL is now released
+during computation on data lengths >= 2048 bytes.
+
+..
+
+.. bpo: 3745
+.. date: 7211
+.. nonce: UWvSDY
+.. section: Library
+
+Fix hashlib to always reject unicode and non buffer-api supporting objects
+as input no matter how it was compiled (built in implementations or external
+openssl library).  NOTE: Undone in 2.7a2.
+
+..
+
+.. bpo: 4397
+.. date: 7210
+.. nonce: v3SDSI
+.. section: Library
+
+Fix occasional test_socket failure on OS X.
+
+..
+
+.. bpo: 4279
+.. date: 7209
+.. nonce: 4RY6FX
+.. section: Library
+
+Fix build of parsermodule under Cygwin.
+
+..
+
+.. bpo: 4051
+.. date: 7208
+.. nonce: CWy5So
+.. section: Library
+
+Prevent conflict of UNICODE macros in cPickle.
+
+..
+
+.. bpo: 4228
+.. date: 7207
+.. nonce: 6AP3nQ
+.. section: Library
+
+Pack negative values the same way as 2.4 in struct's L format.
+
+..
+
+.. bpo: 1040026
+.. date: 7206
+.. nonce: f_lNlD
+.. section: Library
+
+Fix os.times result on systems where HZ is incorrect.
+
+..
+
+.. bpo: 3167
+.. date: 7205
+.. nonce: Wq3nLl
+.. section: Library
+
+Fix test_math failures for log, log10 on Solaris, OpenBSD. (See also:
+bpo-3682)
+
+..
+
+.. bpo: 4365
+.. date: 7204
+.. nonce: 1v_32N
+.. section: Library
+
+Add crtassem.h constants to the msvcrt module.
+
+..
+
+.. bpo: 4396
+.. date: 7203
+.. nonce: 3vmXT4
+.. section: Library
+
+The parser module now correctly validates the with statement.
+
+..
+
+.. bpo: 5228
+.. date: 7202
+.. nonce: lDpzrP
+.. section: Library
+
+Make functools.partial objects can now be pickled.
+
+..
+
+.. bpo: 7431
+.. date: 7201
+.. nonce: gQvWFz
+.. section: Tests
+
+Use TESTFN in test_linecache instead of trying to create a file in the
+Lib/test directory, which might be read-only for the user running the tests.
+
+..
+
+.. bpo: 7324
+.. date: 7200
+.. nonce: qx7wYQ
+.. section: Tests
+
+Add a sanity check to regrtest argument parsing to catch the case of an
+option with no handler.
+
+..
+
+.. bpo: 7312
+.. date: 7199
+.. nonce: owJk3R
+.. section: Tests
+
+Add a -F flag to run the selected tests in a loop until a test fails.  Can
+be combined with -j.
+
+..
+
+.. bpo: 7295
+.. date: 7198
+.. nonce: ukZhHi
+.. section: Tests
+
+Do not use a hardcoded file name in test_tarfile.
+
+..
+
+.. bpo: 7270
+.. date: 7197
+.. nonce: am_b1S
+.. section: Tests
+
+Add some dedicated unit tests for multi-thread synchronization primitives
+such as Lock, RLock, Condition, Event and Semaphore.
+
+..
+
+.. bpo: 7222
+.. date: 7196
+.. nonce: iKJspN
+.. section: Tests
+
+Make thread "reaping" more reliable so that reference leak-chasing test runs
+give sensible results.  The previous method of reaping threads could return
+successfully while some Thread objects were still referenced.  This also
+introduces a new private function: ``thread._count()``.
+
+..
+
+.. bpo: 7151
+.. date: 7195
+.. nonce: U07hpR
+.. section: Tests
+
+Fixed regrtest -j so that output to stderr from a test no longer runs the
+risk of causing the worker thread to fail.
+
+..
+
+.. bpo: 7055
+.. date: 7194
+.. nonce: 3okJ5l
+.. section: Tests
+
+test___all__ now greedily detects all modules which have an __all__
+attribute, rather than using a hardcoded and incomplete list.
+
+..
+
+.. bpo: 7058
+.. date: 7193
+.. nonce: 3DkUXi
+.. section: Tests
+
+Added save/restore for things like sys.argv and cwd to runtest_inner in
+regrtest, with warnings if the called test modifies them, and a new section
+in the summary report at the end.
+
+..
+
+.. bpo: 7042
+.. date: 7192
+.. nonce: b8v3FJ
+.. section: Tests
+
+Fix test_signal (test_itimer_virtual) failure on OS X 10.6.
+
+..
+
+.. bpo: 6806
+.. date: 7191
+.. nonce: hS_Ys4
+.. section: Tests
+
+test_platform failed under OS X 10.6.0 because ``sw_ver`` leaves off the
+trailing 0 in the version number.
+
+..
+
+.. bpo: 5450
+.. date: 7190
+.. nonce: c2vdqn
+.. section: Tests
+
+Moved tests involving loading tk from Lib/test/test_tcl to Lib/lib-
+tk/test/test_tkinter/test_loadtk. With this, these tests demonstrate the
+same behaviour as test_ttkguionly (and now also test_tk) which is to skip
+the tests if DISPLAY is defined but can't be used.
+
+..
+
+.. bpo: 6152
+.. date: 7189
+.. nonce: EkeKpL
+.. section: Tests
+
+New option '-j'/'--multiprocess' for regrtest allows running regression
+tests in parallel, shortening the total runtime.
+
+..
+
+.. bpo: 5354
+.. date: 7188
+.. nonce: vIbbLT
+.. section: Tests
+
+New test support function import_fresh_module() makes it easy to import both
+normal and optimised versions of modules.  test_heapq and test_warnings have
+been adjusted to use it, tests for other modules with both C and Python
+implementations in the stdlib can be adjusted to use it over time.
+
+..
+
+.. bpo: 0
+.. date: 7187
+.. nonce: bTuQvV
+.. section: Tests
+
+Fix test_warnings to no longer reset the warnings filter.
+
+..
+
+.. bpo: 0
+.. date: 7186
+.. nonce: Mmlolu
+.. section: Tests
+
+Fix test_logging to no longer reset the warnings filter.
+
+..
+
+.. bpo: 5635
+.. date: 7185
+.. nonce: 8Yq1dn
+.. section: Tests
+
+Fix running test_sys with tracing enabled.
+
+..
+
+.. bpo: 0
+.. date: 7184
+.. nonce: t8Gnx4
+.. section: Tests
+
+regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
+that should cause a test to be skipped are now done using import_module from
+test support, which does the conversion.
+
+..
+
+.. bpo: 5083
+.. date: 7183
+.. nonce: imHnrP
+.. section: Tests
+
+New 'gui' resource for regrtest.
+
+..
+
+.. bpo: 5837
+.. date: 7182
+.. nonce: s1idZB
+.. section: Tests
+
+Certain sequences of calls to set() and unset() for
+support.EnvironmentVarGuard objects restored the environment variables
+incorrectly on __exit__.
+
+..
+
+.. bpo: 2389
+.. date: 7181
+.. nonce: w0L9Yb
+.. section: Tests
+
+Array objects are now pickled in a portable manner.
+
+..
+
+.. bpo: 5611
+.. date: 7180
+.. nonce: UOPr-Q
+.. section: Windows
+
+Auto-detect whether a C file uses tabs or spaces in Vim.

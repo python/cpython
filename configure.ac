@@ -1383,7 +1383,6 @@ if test "$Py_OPT" = 'true' ; then
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do managed to get a toolchain that works with it.  People
   # who want LTO need to use --with-lto themselves.
-  Py_LTO='true'
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
@@ -1702,7 +1701,7 @@ sys/param.h sys/poll.h sys/random.h sys/select.h sys/socket.h sys/statvfs.h sys/
 sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
 sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
-bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h)
+bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h sys/sysmacros.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 

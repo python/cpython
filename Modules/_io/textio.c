@@ -1416,7 +1416,7 @@ textiowrapper_read_chunk(textio *self)
         /* Given this, we know there was a valid snapshot point
          * len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
          */
-        if (PyArg_Parse(state, "(OO)", &dec_buffer, &dec_flags) < 0) {
+        if (!PyArg_Parse(state, "(OO)", &dec_buffer, &dec_flags)) {
             Py_DECREF(state);
             return -1;
         }

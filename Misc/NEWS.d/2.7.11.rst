@@ -1,0 +1,8 @@
+.. bpo: 25624
+.. date: 9702
+.. nonce: ed-fM0
+.. release date: 2015-12-05
+.. section: Library
+
+ZipFile now always writes a ZIP_STORED header for directory entries.  Patch
+by Dingyuan Wang.

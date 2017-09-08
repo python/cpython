@@ -185,6 +185,9 @@ class InterProcessSignalTests(unittest.TestCase):
                 self.fail('Test deadlocked after %d seconds.' %
                           self.MAX_DURATION)
 
+            # read the exit status to not leak a zombie process
+            os.waitpid(child, 0)
+
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class BasicSignalTests(unittest.TestCase):

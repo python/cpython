@@ -1,0 +1,3 @@
+Running Python with the -3 option now warns about regular expression syntax
+that is invalid or has different semantic in Python 3 or will change the
+behavior in future Python versions.

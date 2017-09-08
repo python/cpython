@@ -1,0 +1,10 @@
+.. bpo: 14234
+.. date: 8657
+.. nonce: 3-5k8_
+.. release date: 2012-03-17
+.. section: Library
+
+CVE-2012-0876: Randomize hashes of xml attributes in the hash table internal
+to the pyexpat module's copy of the expat library to avoid a denial of
+service due to hash collisions.  Patch by David Malcolm with some
+modifications by the expat project.

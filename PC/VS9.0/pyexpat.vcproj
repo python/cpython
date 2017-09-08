@@ -535,6 +535,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Modules\expat\loadlibrary.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Modules\expat\xmlparse.c"
 				>
 			</File>

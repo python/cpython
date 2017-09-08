@@ -17,6 +17,12 @@ class WithWeakref(object):
 class WithPrivate(object):
     __slots__ = ('__spam',)
 
+class _WithLeadingUnderscoreAndPrivate(object):
+    __slots__ = ('__spam',)
+
+class ___(object):
+    __slots__ = ('__spam',)
+
 class WithSingleString(object):
     __slots__ = 'spam'
 
@@ -105,6 +111,10 @@ class CopyRegTestCase(unittest.TestCase):
         self.assertEqual(copy_reg._slotnames(WithWeakref), [])
         expected = ['_WithPrivate__spam']
         self.assertEqual(copy_reg._slotnames(WithPrivate), expected)
+        expected = ['_WithLeadingUnderscoreAndPrivate__spam']
+        self.assertEqual(copy_reg._slotnames(_WithLeadingUnderscoreAndPrivate),
+                         expected)
+        self.assertEqual(copy_reg._slotnames(___), ['__spam'])
         self.assertEqual(copy_reg._slotnames(WithSingleString), ['spam'])
         expected = ['eggs', 'spam']
         expected.sort()

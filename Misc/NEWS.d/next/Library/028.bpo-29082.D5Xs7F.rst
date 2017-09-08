@@ -1,0 +1,2 @@
+Fixed loading libraries in ctypes by unicode names on Windows. Original
+patch by Chi Hsuan Yen.

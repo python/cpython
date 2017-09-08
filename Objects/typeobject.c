@@ -3366,6 +3366,29 @@ reduce_2(PyObject *obj)
             goto end;
         assert(names == Py_None || PyList_Check(names));
 
+        if (required_state && Py_Py3kWarningFlag) {
+            Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
+            if (obj->ob_type->tp_dictoffset)
+                basicsize += sizeof(PyObject *);
+            if (obj->ob_type->tp_weaklistoffset)
+                basicsize += sizeof(PyObject *);
+            if (names != Py_None)
+                basicsize += sizeof(PyObject *) * PyList_GET_SIZE(names);
+            if (obj->ob_type->tp_basicsize > basicsize) {
+                PyObject *msg = PyString_FromFormat(
+                            "can't pickle %.200s objects",
+                             Py_TYPE(obj)->tp_name);
+                if (msg == NULL) {
+                    goto end;
+                }
+                if (PyErr_WarnPy3k(PyString_AS_STRING(msg), 1) < 0) {
+                    Py_DECREF(msg);
+                    goto end;
+                }
+                Py_DECREF(msg);
+            }
+        }
+
         if (names != Py_None) {
             slots = PyDict_New();
             if (slots == NULL)

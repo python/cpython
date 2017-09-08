@@ -1222,8 +1222,9 @@ to speed up repeated connections from the same clients.
    This method will raise :exc:`NotImplementedError` if :data:`HAS_ALPN` is
    False.
 
-   OpenSSL 1.1.0+ will abort the handshake and raise :exc:`SSLError` when
-   both sides support ALPN but cannot agree on a protocol.
+   OpenSSL 1.1.0 to 1.1.0e will abort the handshake and raise :exc:`SSLError`
+   when both sides support ALPN but cannot agree on a protocol. 1.1.0f+
+   behaves like 1.0.2, :meth:`SSLSocket.selected_alpn_protocol` returns None.
 
    .. versionadded:: 2.7.10
 
@@ -2008,3 +2009,9 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA
+
+   `RFC 7525: Recommendations for Secure Use of Transport Layer Security (TLS) and Datagram Transport Layer Security (DTLS) <https://tools.ietf.org/html/rfc7525>`_
+       IETF
+
+   `Mozilla's Server Side TLS recommendations <https://wiki.mozilla.org/Security/Server_Side_TLS>`_
+       Mozilla

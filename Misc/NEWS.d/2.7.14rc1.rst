@@ -1,0 +1,149 @@
+.. bpo: 30947
+.. date: 2017-08-16-16-35-59
+.. nonce: iNMmm4
+.. release date: 2017-08-26
+.. section: Security
+
+Upgrade libexpat embedded copy from version 2.2.1 to 2.2.3 to get security
+fixes.
+
+..
+
+.. bpo: 30765
+.. date: 2017-06-26-14-29-50
+.. nonce: Q5iBmf
+.. section: Core and Builtins
+
+Avoid blocking in pthread_mutex_lock() when PyThread_acquire_lock() is asked
+not to block.
+
+..
+
+.. bpo: 31135
+.. date: 2017-08-08-14-59-26
+.. nonce: 9q1QdB
+.. section: Library
+
+ttk: Fix LabeledScale and OptionMenu destroy() method. Call the parent
+destroy() method even if the used attribute doesn't exist. The
+LabeledScale.destroy() method now also explicitly clears label and scale
+attributes to help the garbage collector to destroy all widgets.
+
+..
+
+.. bpo: 31107
+.. date: 2017-08-02-12-48-15
+.. nonce: 1t2hn5
+.. section: Library
+
+Fix `copy_reg._slotnames()` mangled attribute calculation for classes whose
+name begins with an underscore. Patch by Shane Harvey.
+
+..
+
+.. bpo: 29519
+.. date: 2017-07-31-19-32-57
+.. nonce: _j1awg
+.. section: Library
+
+Fix weakref spewing exceptions during interpreter shutdown when used with a
+rare combination of multiprocessing and custom codecs.
+
+..
+
+.. bpo: 30119
+.. date: 2017-07-26-22-02-07
+.. nonce: DZ6C_S
+.. section: Library
+
+ftplib.FTP.putline() now throws ValueError on commands that contains CR or
+LF. Patch by Dong-hee Na.
+
+..
+
+.. bpo: 30595
+.. date: 2017-07-26-04-46-12
+.. nonce: -zJ7d8
+.. section: Library
+
+multiprocessing.Queue.get() with a timeout now polls its reader in non-
+blocking mode if it succeeded to aquire the lock but the acquire took longer
+than the timeout.
+
+..
+
+.. bpo: 29902
+.. date: 2017-07-23-13-47-22
+.. nonce: CiuFdn
+.. section: Library
+
+Py3k deprecation warning now is emitted when pickling or copying some
+builtin and extension objects that don't support pickling explicitly and are
+pickled incorrectly by default (like memoryview or staticmethod).  This is a
+TypeError in Python 3.6.
+
+..
+
+.. bpo: 29854
+.. date: 2017-07-07-02-18-57
+.. nonce: J8wKb_
+.. section: Library
+
+Fix segfault in readline when using readline's history-size option.  Patch
+by Nir Soffer.
+
+..
+
+.. bpo: 30807
+.. date: 2017-06-29-22-04-44
+.. nonce: sLtjY-
+.. section: Library
+
+signal.setitimer() may disable the timer when passed a tiny value.
+
+Tiny values (such as 1e-6) are valid non-zero values for setitimer(), which
+is specified as taking microsecond-resolution intervals. However, on some
+platform, our conversion routine could convert 1e-6 into a zero interval,
+therefore disabling the timer instead of (re-)scheduling it.
+
+..
+
+.. bpo: 30715
+.. date: 2017-07-25-15-27-44
+.. nonce: Sp7bTF
+.. section: Tests
+
+Address ALPN callback changes for OpenSSL 1.1.0f. The latest version behaves
+like OpenSSL 1.0.2 and no longer aborts handshake.
+
+..
+
+.. bpo: 30822
+.. date: 2017-07-20-14-29-54
+.. nonce: X0wREo
+.. section: Tests
+
+Fix regrtest command line parser to allow passing -u extralargefile to run
+test_zipfile64.
+
+..
+
+.. bpo: 30283
+.. date: 2017-06-26-11-24-14
+.. nonce: qCQmlm
+.. section: Tests
+
+regrtest: Enhance regrtest and backport features from the master branch.
+
+Add options: --coverage, --testdir, --list-tests (list test files, don't run
+them), --list-cases (list test identifiers, don't run them, :issue:`30523`),
+--matchfile (load a list of test filters from a text file, :issue:`30540`),
+--slowest (alias to --slow).
+
+Enhance output: add timestamp, test result, currently running tests, "Tests
+result: xxx" summary with total duration, etc.
+
+Fix reference leak hunting in regrtest, --huntrleaks: regrtest now warms up
+caches, create explicitly all internal singletons which are created on
+demand to prevent false positives when checking for reference leaks.
+(:issue:`30675`).
