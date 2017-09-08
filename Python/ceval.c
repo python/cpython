@@ -5017,13 +5017,16 @@ import_all_from(PyObject *locals, PyObject *v)
                 PyErr_Clear();
             break;
         }
-        if (skip_leading_underscores &&
-            PyUnicode_Check(name) &&
-            PyUnicode_READY(name) != -1 &&
-            PyUnicode_READ_CHAR(name, 0) == '_')
-        {
-            Py_DECREF(name);
-            continue;
+        if (skip_leading_underscores && PyUnicode_Check(name)) {
+            if (PyUnicode_READY(name) == -1) {
+                Py_DECREF(name);
+                err = -1;
+                break;
+            }
+            if (PyUnicode_READ_CHAR(name, 0) == '_') {
+                Py_DECREF(name);
+                continue;
+            }
         }
         value = PyObject_GetAttr(v, name);
         if (value == NULL)
