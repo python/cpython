@@ -344,6 +344,9 @@ Build and C API Changes
   download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
   Ware in :issue:`30450`.)
 
+* Support for building ``--without-threads`` is removed.
+  (Contributed by Antoine Pitrou in :issue:`31370`.).
+
 
 Deprecated
 ==========

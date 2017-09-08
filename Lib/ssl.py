@@ -959,11 +959,12 @@ class SSLSocket(socket):
                 raise ValueError(
                     "non-zero flags not allowed in calls to sendall() on %s" %
                     self.__class__)
-            amount = len(data)
             count = 0
-            while (count < amount):
-                v = self.send(data[count:])
-                count += v
+            with memoryview(data) as view, view.cast("B") as byte_view:
+                amount = len(byte_view)
+                while count < amount:
+                    v = self.send(byte_view[count:])
+                    count += v
         else:
             return socket.sendall(self, data, flags)
 

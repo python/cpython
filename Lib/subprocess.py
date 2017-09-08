@@ -38,7 +38,7 @@ check_output(...): Same as check_call() but returns the contents of
 getoutput(...): Runs a command in the shell, waits for it to complete,
     then returns the output
 getstatusoutput(...): Runs a command in the shell, waits for it to complete,
-    then returns a (status, output) tuple
+    then returns a (exitcode, output) tuple
 """
 
 import sys
@@ -138,10 +138,7 @@ else:
     import _posixsubprocess
     import select
     import selectors
-    try:
-        import threading
-    except ImportError:
-        import dummy_threading as threading
+    import threading
 
     # When select or poll has indicated that the file is writable,
     # we can write up to _PIPE_BUF bytes without risk of blocking.
@@ -495,7 +492,7 @@ def list2cmdline(seq):
 #
 
 def getstatusoutput(cmd):
-    """    Return (status, output) of executing cmd in a shell.
+    """Return (exitcode, output) of executing cmd in a shell.
 
     Execute the string 'cmd' in a shell with 'check_output' and
     return a 2-tuple (status, output). The locale encoding is used
@@ -509,19 +506,21 @@ def getstatusoutput(cmd):
     >>> subprocess.getstatusoutput('ls /bin/ls')
     (0, '/bin/ls')
     >>> subprocess.getstatusoutput('cat /bin/junk')
-    (256, 'cat: /bin/junk: No such file or directory')
+    (1, 'cat: /bin/junk: No such file or directory')
     >>> subprocess.getstatusoutput('/bin/junk')
-    (256, 'sh: /bin/junk: not found')
+    (127, 'sh: /bin/junk: not found')
+    >>> subprocess.getstatusoutput('/bin/kill $$')
+    (-15, '')
     """
     try:
         data = check_output(cmd, shell=True, universal_newlines=True, stderr=STDOUT)
-        status = 0
+        exitcode = 0
     except CalledProcessError as ex:
         data = ex.output
-        status = ex.returncode
+        exitcode = ex.returncode
     if data[-1:] == '\n':
         data = data[:-1]
-    return status, data
+    return exitcode, data
 
 def getoutput(cmd):
     """Return output (stdout or stderr) of executing cmd in a shell.
