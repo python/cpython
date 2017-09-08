@@ -230,15 +230,6 @@ class DebuggingServerTests(unittest.TestCase):
         smtpd.DEBUGSTREAM.close()
         smtpd.DEBUGSTREAM = self.old_DEBUGSTREAM
 
-    def get_server_xpeer(self):
-        # Tests doing diffs of headers need the header our server adds.
-        # We use getpeername on the server socket because this exactly matches
-        # how smtpd.py gets the name to fill in for this header. :/
-        # Implementation specific, but socket.gethostbyname('localhost')
-        # does is _not_ the same thing.
-        return self.serv.socket.getpeername()[0]
-        #m['X-Peer'] = self.serv.socket.getpeername()[0]
-
     def get_output_without_xpeer(self):
         test_output = self.output.getvalue()
         return re.sub(r'(.*?)^X-Peer:\s*\S+\n(.*)', r'\1\2',
