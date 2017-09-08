@@ -157,8 +157,9 @@ class ExecutorShutdownTest:
             from concurrent.futures import {executor_type}
             from time import sleep
             from test.test_concurrent_futures import sleep_and_print
-            t = {executor_type}(5)
-            t.submit(sleep_and_print, 1.0, "apple")
+            if __name__ == "__main__":
+                t = {executor_type}(5)
+                t.submit(sleep_and_print, 1.0, "apple")
             """.format(executor_type=self.executor_type.__name__))
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
