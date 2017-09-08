@@ -193,11 +193,11 @@ instead.
      .. table::
 
        ========================  ============  ============  =============  =========  ===========  ===========
-        *client* / **server**    **SSLv2**     **SSLv3**     **TLS**        **TLSv1**  **TLSv1.1**  **TLSv1.2**
+        *client* / **server**    **SSLv2**     **SSLv3**     **TLS** [3]_   **TLSv1**  **TLSv1.1**  **TLSv1.2**
        ------------------------  ------------  ------------  -------------  ---------  -----------  -----------
         *SSLv2*                    yes           no            no [1]_        no         no         no
         *SSLv3*                    no            yes           no [2]_        no         no         no
-        *TLS* (*SSLv23*)           no [1]_       no [2]_       yes            yes        yes        yes
+        *TLS* (*SSLv23*) [3]_      no [1]_       no [2]_       yes            yes        yes        yes
         *TLSv1*                    no            no            yes            yes        no         no
         *TLSv1.1*                  no            no            yes            no         yes        no
         *TLSv1.2*                  no            no            yes            no         no         yes
@@ -206,6 +206,9 @@ instead.
    .. rubric:: Footnotes
    .. [1] :class:`SSLContext` disables SSLv2 with :data:`OP_NO_SSLv2` by default.
    .. [2] :class:`SSLContext` disables SSLv3 with :data:`OP_NO_SSLv3` by default.
+   .. [3] TLS 1.3 protocol will be available with :data:`PROTOCOL_TLS` in
+      OpenSSL >= 1.1.1. There is no dedicated PROTOCOL constant for just
+      TLS 1.3.
 
    .. note::
 
@@ -293,6 +296,11 @@ purposes.
      ChaCha20/Poly1305 was added to the default cipher string.
 
      3DES was dropped from the default cipher string.
+
+   .. versionchanged:: 3.7
+
+     TLS 1.3 cipher suites TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384,
+     and TLS_CHACHA20_POLY1305_SHA256 were added to the default cipher string.
 
 
 Random generation
@@ -764,6 +772,16 @@ Constants
 
    .. versionadded:: 3.4
 
+.. data:: OP_NO_TLSv1_3
+
+   Prevents a TLSv1.3 connection. This option is only applicable in conjunction
+   with :const:`PROTOCOL_TLS`. It prevents the peers from choosing TLSv1.3 as
+   the protocol version. TLS 1.3 is available with OpenSSL 1.1.1 or later.
+   When Python has been compiled against an older version of OpenSSL, the
+   flag defaults to *0*.
+
+   .. versionadded:: 3.7
+
 .. data:: OP_CIPHER_SERVER_PREFERENCE
 
    Use the server's cipher ordering preference, rather than the client's.
@@ -837,6 +855,12 @@ Constants
    which protocols you want to support.
 
    .. versionadded:: 3.3
+
+.. data:: HAS_TLSv1_3
+
+   Whether the OpenSSL library has built-in support for the TLS 1.3 protocol.
+
+   .. versionadded:: 3.7
 
 .. data:: CHANNEL_BINDING_TYPES
 
