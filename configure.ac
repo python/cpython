@@ -1282,9 +1282,8 @@ else
 fi
 
 # Enable LTO flags
-AC_SUBST(LTOFLAGS)
 AC_MSG_CHECKING(for --with-lto)
-AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in PGO builds. Disabled by default.]),
+AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in any build. Disabled by default.]),
 [
 if test "$withval" != no
 then
@@ -1319,6 +1318,8 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+  CFLAGS="$CFLAGS $LTOFLAGS"
+  LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
 
 # Enable PGO flags.
