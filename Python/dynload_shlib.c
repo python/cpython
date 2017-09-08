@@ -2,6 +2,7 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "importdl.h"
 
 #include <sys/types.h>

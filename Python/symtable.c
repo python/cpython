@@ -1,4 +1,8 @@
 #include "Python.h"
+#include "internal/pystate.h"
+#ifdef Yield
+#undef Yield /* undefine conflicting macro from winbase.h */
+#endif
 #include "Python-ast.h"
 #include "code.h"
 #include "symtable.h"

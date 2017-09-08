@@ -5,6 +5,7 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/pystate.h"
 #include "errcode.h"
 #include "marshal.h"
 #include "code.h"

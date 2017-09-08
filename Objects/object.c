@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "frameobject.h"
 
 #ifdef __cplusplus
@@ -2022,14 +2023,6 @@ finally:
 
 /* Trashcan support. */
 
-/* Current call-stack depth of tp_dealloc calls. */
-int _PyTrash_delete_nesting = 0;
-
-/* List of objects that still need to be cleaned up, singly linked via their
- * gc headers' gc_prev pointers.
- */
-PyObject *_PyTrash_delete_later = NULL;
-
 /* Add op to the _PyTrash_delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a currently untracked gc'ed
  * object, with refcount 0.  Py_DECREF must already have been called on it.
@@ -2040,8 +2033,8 @@ _PyTrash_deposit_object(PyObject *op)
     assert(PyObject_IS_GC(op));
     assert(_PyGC_REFS(op) == _PyGC_REFS_UNTRACKED);
     assert(op->ob_refcnt == 0);
-    _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyTrash_delete_later;
-    _PyTrash_delete_later = op;
+    _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyRuntime.gc.trash_delete_later;
+    _PyRuntime.gc.trash_delete_later = op;
 }
 
 /* The equivalent API, using per-thread state recursion info */
@@ -2062,11 +2055,11 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    while (_PyTrash_delete_later) {
-        PyObject *op = _PyTrash_delete_later;
+    while (_PyRuntime.gc.trash_delete_later) {
+        PyObject *op = _PyRuntime.gc.trash_delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        _PyTrash_delete_later =
+        _PyRuntime.gc.trash_delete_later =
             (PyObject*) _Py_AS_GC(op)->gc.gc_prev;
 
         /* Call the deallocator directly.  This used to try to
@@ -2076,9 +2069,9 @@ _PyTrash_destroy_chain(void)
          * up distorting allocation statistics.
          */
         assert(op->ob_refcnt == 0);
-        ++_PyTrash_delete_nesting;
+        ++_PyRuntime.gc.trash_delete_nesting;
         (*dealloc)(op);
-        --_PyTrash_delete_nesting;
+        --_PyRuntime.gc.trash_delete_nesting;
     }
 }
 
