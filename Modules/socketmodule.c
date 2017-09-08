@@ -529,11 +529,7 @@ set_error(void)
         return PyErr_SetExcFromWindowsErr(PyExc_OSError, err_no);
 #endif
 
-    if (errno)
-        return PyErr_SetFromErrno(PyExc_OSError);
-
-    PyErr_SetString(PyExc_EOFError, "assumed EOF");
-    return NULL;
+    return PyErr_SetFromErrno(PyExc_OSError);
 }
 
 
