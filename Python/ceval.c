@@ -4171,7 +4171,8 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
 {
     return _PyEval_EvalCodeWithName(_co, globals, locals,
                                     args, argcount,
-                                    kws, kws + 1, kwcount, 2,
+                                    kws, kws != NULL ? kws + 1 : NULL,
+                                    kwcount, 2,
                                     defs, defcount,
                                     kwdefs, closure,
                                     NULL, NULL);
@@ -5053,7 +5054,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                       args, nargs,
-                                      k, k + 1, nk, 2,
+                                      k, k != NULL ? k + 1 : NULL, nk, 2,
                                       d, nd, kwdefs,
                                       closure, name, qualname);
     Py_XDECREF(kwtuple);
