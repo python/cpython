@@ -333,8 +333,7 @@ To give a widget to the packer (geometry manager), you call pack with optional
 arguments.  In Tkinter, the Pack class holds all this functionality, and the
 various forms of the pack command are implemented as methods.  All widgets in
 :mod:`tkinter` are subclassed from the Packer, and so inherit all the packing
-methods. See the :mod:`tkinter.tix` module documentation for additional
-information on the Form geometry manager. ::
+methods. ::
 
    pack .fred -side left       =====>  fred.pack(side="left")
 

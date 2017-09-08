@@ -134,14 +134,6 @@ Tcl_AppInit(Tcl_Interp *interp)
     }
 #endif
 
-#ifdef WITH_TIX
-    {
-        extern int Tix_Init(Tcl_Interp *interp);
-        extern int Tix_SafeInit(Tcl_Interp *interp);
-        Tcl_StaticPackage(NULL, "Tix", Tix_Init, Tix_SafeInit);
-    }
-#endif
-
 #ifdef WITH_BLT
     {
         extern int Blt_Init(Tcl_Interp *);

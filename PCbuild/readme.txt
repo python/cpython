@@ -214,8 +214,7 @@ _tkinter
         http://www.tcl.tk/
 
     Tkinter's dependencies are built by the tcl.vcxproj and tk.vcxproj
-    projects.  The tix.vcxproj project also builds the Tix extended
-    widget set for use with Tkinter.
+    projects.
 
     Those three projects install their respective components in a
     directory alongside the source directories called "tcltk" on
@@ -223,7 +222,7 @@ _tkinter
     into the current output directory, which should ensure that Tkinter
     is able to load Tcl/Tk without having to change your PATH.
 
-    The tcl, tk, and tix sub-projects do not clean their builds with
+    The tcl and tk sub-projects do not clean their builds with
     the normal Clean target; if you need to rebuild, you should use the
     CleanAll target or manually delete their builds.
 
@@ -299,7 +298,7 @@ The property files used are:
  * python (versions, directories and build names)
  * pyproject (base settings for all projects)
  * openssl (used by libeay and ssleay projects)
- * tcltk (used by _tkinter, tcl, tk and tix projects)
+ * tcltk (used by _tkinter, tcl and tk projects)
 
 The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI

@@ -10,13 +10,8 @@
     <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
     <TkPatchLevel>$(TclPatchLevel)</TkPatchLevel>
     <TkRevision>$(TclRevision)</TkRevision>
-    <TixMajorVersion>8</TixMajorVersion>
-    <TixMinorVersion>4</TixMinorVersion>
-    <TixPatchLevel>3</TixPatchLevel>
-    <TixRevision>6</TixRevision>
     <tclDir>$(ExternalsDir)tcl-core-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\</tclDir>
     <tkDir>$(ExternalsDir)tk-$(TkMajorVersion).$(TkMinorVersion).$(TkPatchLevel).$(TkRevision)\</tkDir>
-    <tixDir>$(ExternalsDir)tix-$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel).$(TixRevision)\</tixDir>
     <tcltkDir>$(ExternalsDir)tcltk-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\$(ArchName)\</tcltkDir>
     <!--<TclDebugExt Condition="'$(Configuration)' == 'Debug'">g</TclDebugExt>-->
     <tclDLLName>tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).dll</tclDLLName>
@@ -24,8 +19,6 @@
     <tclShExeName>tclsh$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).exe</tclShExeName>
     <tkDLLName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).dll</tkDLLName>
     <tkLibName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tkLibName>
-    <tixDLLName>tix$(TixMajorVersion)$(TixMinorVersion)$(TclDebugExt).dll</tixDLLName>
-    <tixDLLPath>$(tcltkDir)lib\tix$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel)\$(tixDLLName)</tixDLLPath>
     <tcltkLib>$(tcltkDir)lib\tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib;$(tcltkDir)lib\tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tcltkLib>
     <TclMachine>IX86</TclMachine>
     <TclMachine Condition="'$(Platform)' == 'x64'">AMD64</TclMachine>

@@ -261,7 +261,7 @@ _symtable symtablemodule.c
 #
 # The command for _tkinter is long and site specific.  Please
 # uncomment and/or edit those parts as indicated.  If you don't have a
-# specific extension (e.g. Tix or BLT), leave the corresponding line
+# specific extension (e.g. PIL or BLT), leave the corresponding line
 # commented out.  (Leave the trailing backslashes in!  If you
 # experience strange errors, you may want to join all uncommented
 # lines and remove the backslashes -- the backslash interpretation is
@@ -278,8 +278,6 @@ _symtable symtablemodule.c
 #	-I/usr/X11R6/include \
 # *** Or uncomment this for Solaris:
 #	-I/usr/openwin/include \
-# *** Uncomment and edit for Tix extension only:
-#	-DWITH_TIX -ltix8.1.8.2 \
 # *** Uncomment and edit for BLT extension only:
 #	-DWITH_BLT -I/usr/local/blt/blt8.0-unoff/include -lBLT8.0 \
 # *** Uncomment and edit for PIL (TkImaging) extension only:
