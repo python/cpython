@@ -521,9 +521,11 @@ class IdleConfTest(unittest.TestCase):
         sys.platform = 'some-linux'
         self.assertEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
 
-        # This should not be the same, sicne replace <Alt- to <Option-
-        sys.platform = 'darwin'
-        self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
+        # This should not be the same, since replace <Alt- to <Option-.
+        # Above depended on config-extensions.def having Alt keys,
+        # which is no longer true.
+        # sys.platform = 'darwin'
+        # self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
 
         # Restore platform
         sys.platform = current_platform
