@@ -679,7 +679,6 @@ LLVM_PROF_FILE
 LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
-LTOFLAGS
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
 ABIFLAGS
@@ -1511,8 +1510,8 @@ Optional Packages:
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
   --with-assertions       build with C assertions enabled
-  --with-lto              Enable Link Time Optimization in PGO builds.
-                          Disabled by default.
+  --with-lto              Enable Link Time Optimization in any build. Disabled
+                          by default.
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm
   --with-address-sanitizer
@@ -6511,7 +6510,6 @@ else
 fi
 
 # Enable LTO flags
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-lto" >&5
 $as_echo_n "checking for --with-lto... " >&6; }
 
@@ -6557,6 +6555,8 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+  CFLAGS="$CFLAGS $LTOFLAGS"
+  LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
 
 # Enable PGO flags.

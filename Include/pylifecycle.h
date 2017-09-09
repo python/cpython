@@ -119,7 +119,7 @@ PyAPI_FUNC(void) _PyType_Fini(void);
 PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
 PyAPI_FUNC(void) PyAsyncGen_Fini(void);
 
-PyAPI_DATA(PyThreadState *) _Py_Finalizing;
+PyAPI_FUNC(int) _Py_IsFinalizing(void);
 #endif
 
 /* Signals */

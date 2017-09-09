@@ -6,6 +6,7 @@
    Stuff shared by all thread_*.h files is collected here. */
 
 #include "Python.h"
+#include "internal/pystate.h"
 
 #ifndef _POSIX_THREADS
 /* This means pthreads are not implemented in libc headers, hence the macro
@@ -76,11 +77,6 @@ PyThread_init_thread(void)
     PyThread__init_thread();
 }
 
-/* Support for runtime thread stack size tuning.
-   A value of 0 means using the platform's default stack size
-   or the size specified by the THREAD_STACK_SIZE macro. */
-static size_t _pythread_stacksize = 0;
-
 #if defined(_POSIX_THREADS)
 #   define PYTHREAD_NAME "pthread"
 #   include "thread_pthread.h"
@@ -96,7 +92,7 @@ static size_t _pythread_stacksize = 0;
 size_t
 PyThread_get_stacksize(void)
 {
-    return _pythread_stacksize;
+    return PyThreadState_GET()->interp->pythread_stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro
