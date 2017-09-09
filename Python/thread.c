@@ -84,7 +84,7 @@ PyThread_init_thread(void)
 #   define PYTHREAD_NAME "nt"
 #   include "thread_nt.h"
 #else
-#   error "Require native thread feature. See https://bugs.python.org/issue30832"
+#   error "Require native threads. See https://bugs.python.org/issue31370"
 #endif
 
 

@@ -3,7 +3,7 @@
 #define Py_PYTHREAD_H
 
 #if !(defined(_POSIX_THREADS) || defined(NT_THREADS))
-#   error "Require native thread feature. See https://bugs.python.org/issue30832"
+#   error "Require native threads. See https://bugs.python.org/issue31370"
 #endif
 
 typedef void *PyThread_type_lock;

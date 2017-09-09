@@ -167,12 +167,6 @@ tracemalloc_error(const char *format, ...)
 #if defined(TRACE_RAW_MALLOC)
 #define REENTRANT_THREADLOCAL
 
-/* If your OS does not provide native thread local storage, CPython
-   which is compiled with thread support does not provide tracemalloc. */
-#if !(defined(_POSIX_THREADS) || defined(NT_THREADS))
-#  error "need native thread local storage (TLS)"
-#endif
-
 static Py_tss_t tracemalloc_reentrant_key = Py_tss_NEEDS_INIT;
 
 /* Any non-NULL pointer can be used */
