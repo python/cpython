@@ -287,7 +287,6 @@ class dispatcher:
 
     def set_socket(self, sock, map=None):
         self.socket = sock
-##        self.__dict__['socket'] = sock
         self._fileno = sock.fileno()
         self.add_channel(map)
 
