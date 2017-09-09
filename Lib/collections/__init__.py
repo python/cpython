@@ -361,7 +361,7 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
         seen.add(name)
 
     # Variables used in the methods and docstrings
-    field_names = tuple(field_names)
+    field_names = tuple(map(_sys.intern, field_names))
     num_fields = len(field_names)
     arg_list = repr(field_names).replace("'", "")[1:-1]
     repr_fmt = '(' + ', '.join(f'{name}=%r' for name in field_names) + ')'
