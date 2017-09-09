@@ -125,6 +125,26 @@ a = A(destroyed)"""
         gc_collect()
         self.assertIs(wr(), None)
 
+    def test_module_getattr(self):
+        import test.good_getattr as gga
+        from test.good_getattr import test
+        self.assertEqual(test, "There is test")
+        self.assertEqual(gga.x, 1)
+        self.assertEqual(gga.y, 2)
+        with self.assertRaises(AttributeError):
+            gga.yolo
+        self.assertEqual(gga.whatever, "There is whatever")
+
+    def test_module_getattr_errors(self):
+        import test.bad_getattr as bga
+        from test import bad_getattr2
+        self.assertEqual(bga.x, 1)
+        self.assertEqual(bad_getattr2.x, 1)
+        with self.assertRaises(TypeError):
+            bga.nope
+        with self.assertRaises(TypeError):
+            bad_getattr2.nope
+
     def test_module_repr_minimal(self):
         # reprs when modules have no __file__, __name__, or __loader__
         m = ModuleType('foo')
