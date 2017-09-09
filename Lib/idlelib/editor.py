@@ -284,6 +284,16 @@ class EditorWindow(object):
         self.showerror = tkMessageBox.showerror
 
 
+        # Add pseudoevents for former extension fixed keys.
+        # (This probably needs to be done once in the process.)
+        text.event_add('<<autocomplete>>', '<Key-Tab>')
+        text.event_add('<<try-open-completions>>', '<KeyRelease-period>'
+                       '<KeyRelease-slash>', '<KeyRelease-backslash>')
+        text.event_add('<<try-open-calltip>>', '<KeyRelease-parenleft>')
+        text.event_add('<<refresh-calltip>>', '<KeyRelease-parenright>')
+        text.event_add('<<paren-closed>>', '<KeyRelease-parenright>',
+                       '<KeyRelease-bracketright>', '<KeyRelease-braceright>')
+
         # Former extension bindings depends on frame.text being packed
         # (called from self.ResetColorizer()).
         autocomplete = self.AutoComplete(self)

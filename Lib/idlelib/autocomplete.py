@@ -31,7 +31,6 @@ class AutoComplete:
         self.editwin = editwin
         if editwin is not None:   # not in subprocess or test
             self.text = editwin.text
-            self.text.event_add('<<autocomplete>>', '<Key-Tab>')
             self.autocompletewindow = None
             # id of delayed call, and the index of the text insert when
             # the delayed call was issued. If _delayed_completion_id is
