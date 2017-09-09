@@ -1154,10 +1154,12 @@ _odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
 /* popitem() */
 
 PyDoc_STRVAR(odict_popitem__doc__,
-"od.popitem() -> (k, v), return and remove a (key, value) pair.\n\
-        Pairs are returned in LIFO order if last is true or FIFO order if false.\n\
-\n\
-        ");
+"popitem($self, /, last=True)\n"
+"--\n"
+"\n"
+"Remove and return a (key, value) pair from the dictionary.\n"
+"\n"
+"Pairs are returned in LIFO order if last is true or FIFO order if false.");
 
 static PyObject *
 odict_popitem(PyObject *od, PyObject *args, PyObject *kwargs)
