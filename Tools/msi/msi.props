@@ -92,10 +92,10 @@
             $(DefineConstants);CRTRedist=$(CRTRedist);
         </DefineConstants>
         <DefineConstants Condition="$(Platform) != 'x64'">
-            $(DefineConstants);Suffix32=-32;
+            $(DefineConstants);Suffix32=-32;ssltag=-1_1;
         </DefineConstants>
         <DefineConstants Condition="$(Platform) == 'x64'">
-            $(DefineConstants);Suffix32=;
+            $(DefineConstants);Suffix32=;ssltag=-1_1-x64;
         </DefineConstants>
     </PropertyGroup>
 

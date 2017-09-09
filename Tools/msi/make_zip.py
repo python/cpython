@@ -47,8 +47,6 @@ EXCLUDE_FILE_FROM_LIBRARY = {
 
 EXCLUDE_FILE_FROM_LIBS = {
     'liblzma',
-    'ssleay',
-    'libeay',
     'python3stub',
 }
 
