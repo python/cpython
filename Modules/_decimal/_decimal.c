@@ -80,9 +80,7 @@ typedef struct {
     PyObject *traps;
     PyObject *flags;
     int capitals;
-#ifndef WITHOUT_THREADS
     PyThreadState *tstate;
-#endif
 } PyDecContextObject;
 
 typedef struct {
@@ -124,15 +122,10 @@ incr_false(void)
 }
 
 
-#ifdef WITHOUT_THREADS
-/* Default module context */
-static PyObject *module_context = NULL;
-#else
 /* Key for thread state dictionary */
 static PyObject *tls_context_key = NULL;
 /* Invariant: NULL or the most recently accessed thread local context */
 static PyDecContextObject *cached_context = NULL;
-#endif
 
 /* Template for creating new thread contexts, calling Context() without
  * arguments and initializing the module_context on first access. */
@@ -1219,9 +1212,7 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
     SdFlagAddr(self->flags) = &ctx->status;
 
     CtxCaps(self) = 1;
-#ifndef WITHOUT_THREADS
     self->tstate = NULL;
-#endif
 
     return (PyObject *)self;
 }
@@ -1229,11 +1220,10 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
 static void
 context_dealloc(PyDecContextObject *self)
 {
-#ifndef WITHOUT_THREADS
     if (self == cached_context) {
         cached_context = NULL;
     }
-#endif
+
     Py_XDECREF(self->traps);
     Py_XDECREF(self->flags);
     Py_TYPE(self)->tp_free(self);
@@ -1501,76 +1491,6 @@ static PyGetSetDef context_getsets [] =
 /*                Global, thread local and temporary contexts                 */
 /******************************************************************************/
 
-#ifdef WITHOUT_THREADS
-/* Return borrowed reference to the current context. When compiled
- * without threads, this is always the module context. */
-static int module_context_set = 0;
-static PyObject *
-current_context(void)
-{
-    /* In decimal.py, the module context is automatically initialized
-     * from the DefaultContext when it is first accessed. This
-     * complicates the code and has a speed penalty of 1-2%. */
-    if (module_context_set) {
-        return module_context;
-    }
-
-    *CTX(module_context) = *CTX(default_context_template);
-    CTX(module_context)->status = 0;
-    CTX(module_context)->newtrap = 0;
-    CtxCaps(module_context) = CtxCaps(default_context_template);
-
-    module_context_set = 1;
-    return module_context;
-}
-
-/* ctxobj := borrowed reference to the current context */
-#define CURRENT_CONTEXT(ctxobj) \
-    ctxobj = current_context()
-
-/* ctx := pointer to the mpd_context_t struct of the current context */
-#define CURRENT_CONTEXT_ADDR(ctx) \
-    ctx = CTX(current_context())
-
-/* Return a new reference to the current context */
-static PyObject *
-PyDec_GetCurrentContext(PyObject *self UNUSED, PyObject *args UNUSED)
-{
-    PyObject *context;
-
-    CURRENT_CONTEXT(context);
-
-    Py_INCREF(context);
-    return context;
-}
-
-/* Set the module context to a new context, decrement old reference */
-static PyObject *
-PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
-{
-    CONTEXT_CHECK(v);
-
-    /* If the new context is one of the templates, make a copy.
-     * This is the current behavior of decimal.py. */
-    if (v == default_context_template ||
-        v == basic_context_template ||
-        v == extended_context_template) {
-        v = context_copy(v, NULL);
-        if (v == NULL) {
-            return NULL;
-        }
-        CTX(v)->status = 0;
-    }
-    else {
-        Py_INCREF(v);
-    }
-
-    Py_XDECREF(module_context);
-    module_context = v;
-    module_context_set = 1;
-    Py_RETURN_NONE;
-}
-#else
 /*
  * Thread local storage currently has a speed penalty of about 4%.
  * All functions that map Python's arithmetic operators to mpdecimal
@@ -1713,7 +1633,6 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
     Py_DECREF(v);
     Py_RETURN_NONE;
 }
-#endif
 
 /* Context manager object for the 'with' statement. The manager
  * owns one reference to the global (outer) context and one
@@ -5840,17 +5759,9 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddObject(m, "DefaultContext",
                                  default_context_template));
 
-#ifdef WITHOUT_THREADS
-    /* Init module context */
-    ASSIGN_PTR(module_context,
-               PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
-    Py_INCREF(Py_False);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_False));
-#else
     ASSIGN_PTR(tls_context_key, PyUnicode_FromString("___DECIMAL_CTX__"));
     Py_INCREF(Py_True);
     CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_True));
-#endif
 
     /* Init basic context template */
     ASSIGN_PTR(basic_context_template,
@@ -5906,12 +5817,8 @@ error:
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
     Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(DecimalTuple); /* GCOV_NOT_REACHED */
-#ifdef WITHOUT_THREADS
-    Py_CLEAR(module_context); /* GCOV_NOT_REACHED */
-#else
     Py_CLEAR(default_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(tls_context_key); /* GCOV_NOT_REACHED */
-#endif
     Py_CLEAR(basic_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(extended_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(m); /* GCOV_NOT_REACHED */
