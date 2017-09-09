@@ -365,14 +365,13 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
     num_fields = len(field_names)
     arg_list = repr(field_names).replace("'", "")[1:-1]
     repr_fmt = '(' + ', '.join(f'{name}=%r' for name in field_names) + ')'
-    module_name = f'namedtuple_{typename}'
     tuple_new = tuple.__new__
     _len = len
 
     # Create all the named tuple methods to be added to the class namespace
 
     s = f'def __new__(_cls, {arg_list}): return _tuple_new(_cls, ({arg_list}))'
-    namespace = {'_tuple_new': tuple_new, '__name__': module_name}
+    namespace = {'_tuple_new': tuple_new, '__name__': f'namedtuple_{typename}'}
     # Note: exec() has the side-effect of interning the typename and field names
     exec(s, namespace)
     __new__ = namespace['__new__']
@@ -413,7 +412,6 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
 
     for method in (__new__, _make.__func__, _replace,
                    __repr__, _asdict, __getnewargs__):
-        method.__module__ = module_name
         method.__qualname__ = f'{typename}.{method.__name__}'
 
     # Helper function used in the class creation
