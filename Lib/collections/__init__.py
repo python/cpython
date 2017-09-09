@@ -357,7 +357,7 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
             raise ValueError('Field names cannot start with an underscore: '
                              f'{name!r}')
         if name in seen:
-            raise ValueError('Encountered duplicate field name: {name!r}')
+            raise ValueError(f'Encountered duplicate field name: {name!r}')
         seen.add(name)
 
     # Variables used in the methods and docstrings
