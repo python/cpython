@@ -287,11 +287,8 @@ class ConfigDialog(Toplevel):
         "Fill self.extensions with data from the default and user configs."
         self.extensions = {}
         for ext_name in idleConf.GetExtensions(active_only=False):
-            if ext_name not in {'AutoComplete', 'CodeContext',
-                                'FormatParagraph', 'ParenMatch'}:
-                # These extensions were converted to built-ins, and need to be filtered out so they don't
-                # appear in the Extensions tab.
-                self.extensions[ext_name] = []
+            # Former built-in extensions are already filtered out.
+            self.extensions[ext_name] = []
 
         for ext_name in self.extensions:
             opt_list = sorted(self.ext_defaultCfg.GetOptionList(ext_name))
@@ -799,15 +796,13 @@ class HighPage(Frame):
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
-        text_and_tags=(('\n', 'normal'),
-
+        text_and_tags=(
+            ('\n', 'normal'),
             ('#you can click here', 'comment'), ('\n', 'normal'),
             ('#to choose items', 'comment'), ('\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
             ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
-            (':\n','normal'),
-            ('  """string"""', 'string'), ('\n  var0 = ', 'normal'),
             ("'string'", 'string'), ('\n  var1 = ', 'normal'),
             ("'selected'", 'hilite'), ('\n  var2 = ', 'normal'),
             ("'found'", 'hit'), ('\n  var3 = ', 'normal'),

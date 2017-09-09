@@ -27,11 +27,9 @@ from idlelib import replace
 from idlelib import search
 from idlelib import windows
 
-
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
 _py_version = ' (%s)' % platform.python_version()
-
 
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
@@ -1031,7 +1029,7 @@ class EditorWindow(object):
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(editor_only=True)
 
-    extfiles = {  # Use for experimental features implemented as extension.
+    extfiles = {  # Map built-in config-extension section names to file names.
         'ZzDummy': 'zzdummy',
         }
 

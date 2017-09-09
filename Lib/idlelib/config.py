@@ -444,7 +444,8 @@ class IdleConf:
         for extn in userExtns:
             if extn not in extns: #user has added own extension
                 extns.append(extn)
-        for extn in ['AutoComplete','CodeContext','FormatParagraph','ParenMatch']:
+        for extn in ('AutoComplete','CodeContext',
+                     'FormatParagraph','ParenMatch'):
             extns.remove(extn)
             # specific exclusions because we are storing config for mainlined old
             # extensions in config-extensions.def for backward compatibility
