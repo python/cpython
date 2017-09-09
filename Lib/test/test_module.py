@@ -134,6 +134,7 @@ a = A(destroyed)"""
         with self.assertRaises(AttributeError):
             gga.yolo
         self.assertEqual(gga.whatever, "There is whatever")
+        del sys.modules['test.good_getattr']
 
     def test_module_getattr_errors(self):
         import test.bad_getattr as bga
@@ -144,6 +145,8 @@ a = A(destroyed)"""
             bga.nope
         with self.assertRaises(TypeError):
             bad_getattr2.nope
+        del sys.modules['test.bad_getattr']
+        del sys.modules['test.bad_getattr2']
 
     def test_module_repr_minimal(self):
         # reprs when modules have no __file__, __name__, or __loader__
