@@ -372,7 +372,7 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
     # Create all the named tuple methods to be added to the class namespace
 
     s = f'def __new__(_cls, {arg_list}): return _tuple_new(_cls, ({arg_list}))'
-    namespace = dict(_tuple_new=tuple_new, __name__=module_name)
+    namespace = {'_tuple_new': tuple_new, '__name__': module_name}
     # Note: exec() has the side-effect of interning the typename and field names
     exec(s, namespace)
     __new__ = namespace['__new__']
@@ -427,17 +427,17 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
 
     # Build-up the class namespace dictionary
     # and use type() to build the result class
-    class_namespace = dict(
-        __doc__ = f'{typename}({arg_list})',
-        __slots__ = (),
-        _fields = field_names,
-        __new__ = __new__,
-        _make = _make,
-        _replace = _replace,
-        __repr__ = __repr__,
-        _asdict = _asdict,
-        __getnewargs__ = __getnewargs__,
-    )
+    class_namespace = {
+        '__doc__': f'{typename}({arg_list})',
+        '__slots__': (),
+        '_fields': field_names,
+        '__new__': __new__,
+        '_make': _make,
+        '_replace': _replace,
+        '__repr__': __repr__,
+        '_asdict': _asdict,
+        '__getnewargs__': __getnewargs__,
+    }
     for index, name in enumerate(field_names):
         doc = _sys.intern(f'Alias for field number {index}')
         class_namespace[name] = property(reuse_itemgetter(index), doc=doc)
