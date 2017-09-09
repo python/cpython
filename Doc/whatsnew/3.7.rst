@@ -108,6 +108,37 @@ locale remains active when the core interpreter is initialized.
        PEP written and implemented by Nick Coghlan.
 
 
+.. _whatsnew37-pep539:
+
+PEP 539: A New C-API for Thread-Local Storage in CPython
+--------------------------------------------------------
+
+While CPython provides C API for the thread-local storage internally, the
+existing Thread Local Storage (TLS) API uses ``int`` to represent TLS keys
+across all platforms.  This has not generally been a problem for
+officially-support platforms, but that is neither POSIX-compliant, nor portable
+in any practical sense.
+
+:pep:`539` changes this by providing the new Thread Specific Storage (TSS) API
+to CPython which would supersede use of the existing TLS API within the CPython
+interpreter, while deprecating the existing API.  The TSS API uses a new type
+``Py_tss_t`` to conceal the native TLS key via opaque data type, therefore,
+this will allow to build CPython on platforms where the native TLS key is
+defined in a way that cannot be safely cast to ``int``.
+
+Moreover, on platforms where the native TLS key is defined in a way that cannot
+be safely cast to ``int``, ``PyThread_create_key`` will return immediately with
+a failure status, and the other TLS functions will all be no-ops on such
+platforms.  This indicates clearly that the old API is not supported on
+platforms where it cannot be used reliably, and that no effort will be made to
+add such support.
+
+.. seealso::
+
+    :pep:`539` -- A New C-API for Thread-Local Storage in CPython
+       PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
+
+
 Other Language Changes
 ======================
 
@@ -314,14 +345,6 @@ Optimizations
 
 Build and C API Changes
 =======================
-
-* Added Thread Specific Storage (TSS) API which would supersede use of the
-  existing Thread Local Storage (TLS) API within the CPython interpreter, while
-  deprecating the existing API.  The change is motivated primarily by the fact
-  that the old API uses int to represent TLS keys across all platforms, which
-  is neither POSIX-compliant, nor portable in any practical sense.  For more
-  information, see :pep:`539`.  (Contributed by Erik M. Bray and Masayuki
-  Yamamoto in :issue:`25658`.)
 
 * A full copy of libffi is no longer bundled for use when building the
   :mod:`_ctypes <ctypes>` module on non-OSX UNIX platforms.  An installed copy
