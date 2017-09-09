@@ -320,7 +320,8 @@ Build and C API Changes
   deprecating the existing API.  The change is motivated primarily by the fact
   that the old API uses int to represent TLS keys across all platforms, which
   is neither POSIX-compliant, nor portable in any practical sense.  For more
-  information, see :pep:`539` and :issue:`25658`.
+  information, see :pep:`539`.  (Contributed by Erik M. Bray and Masayuki
+  Yamamoto in :issue:`25658`.)
 
 * A full copy of libffi is no longer bundled for use when building the
   :mod:`_ctypes <ctypes>` module on non-OSX UNIX platforms.  An installed copy
