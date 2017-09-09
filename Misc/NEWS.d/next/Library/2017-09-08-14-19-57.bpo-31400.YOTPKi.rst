@@ -1,0 +1,1 @@
+Improves SSL error handling to avoid losing error numbers.
