@@ -133,6 +133,11 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
 
     if (PyFloat_Check(obj)) {
         double d = PyFloat_AsDouble(obj);
+        if (Py_IS_NAN(d)) {
+            *numerator = 0;
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
         return _PyTime_DoubleToDenominator(d, sec, numerator,
                                            denominator, round);
     }
@@ -154,6 +159,11 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         volatile double d;
 
         d = PyFloat_AsDouble(obj);
+        if (Py_IS_NAN(d)) {
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
+
         d = _PyTime_Round(d, round);
         (void)modf(d, &intpart);
 
@@ -301,6 +311,10 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
     if (PyFloat_Check(obj)) {
         double d;
         d = PyFloat_AsDouble(obj);
+        if (Py_IS_NAN(d)) {
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
         return _PyTime_FromFloatObject(t, d, round, unit_to_ns);
     }
     else {
