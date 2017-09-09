@@ -599,7 +599,12 @@ class IdleConf:
         return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
 # TODO make keyBindins a file or class attribute used for test above
-# and copied in function below
+# and copied in function below.
+
+    former_extension_events = {  #  Those with user-configurable keys.
+        '<<force-open-completions>>', '<<expand-word>>',
+        '<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
+         '<<run-module>>', '<<check-module>>', '<<zoom-height>>'}
 
     def GetCoreKeys(self, keySetName=None):
         """Return dict of core virtual-key keybindings for keySetName.
@@ -669,6 +674,7 @@ class IdleConf:
             '<<check-module>>': ['<Alt-Key-x>'],
             '<<zoom-height>>': ['<Alt-Key-2>'],
             }
+
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or
                     self.defaultCfg['keys'].has_section(keySetName)):
@@ -680,22 +686,19 @@ class IdleConf:
                 _warn(warning, 'keys', keySetName)
             else:
                 for event in keyBindings:
-                    if event not in {'<<try-open-calltip>>',
-                                     '<<try-open-completions>>',
-                                     '<<paren-closed>>'}:
-                        # do not allow calltips, etc. events/keys to be configured.
-                        binding = self.GetKeyBinding(keySetName, event)
-                        if binding:
-                            keyBindings[event] = binding
-                        else: #we are going to return a default, print warning
-                            warning = (
-                                '\n Warning: config.py - IdleConf.GetCoreKeys -\n'
-                                ' problem retrieving key binding for event %r\n'
-                                ' from key set %r.\n'
-                                ' returning default value: %r' %
-                                (event, keySetName, keyBindings[event])
-                            )
-                            _warn(warning, 'keys', keySetName, event)
+                    binding = self.GetKeyBinding(keySetName, event)
+                    if binding:
+                        keyBindings[event] = binding
+                    # Otherwise return default in keyBindings.
+                    elif event not in self.former_extension_events:
+                        warning = (
+                            '\n Warning: config.py - IdleConf.GetCoreKeys -\n'
+                            ' problem retrieving key binding for event %r\n'
+                            ' from key set %r.\n'
+                            ' returning default value: %r' %
+                            (event, keySetName, keyBindings[event])
+                        )
+                        _warn(warning, 'keys', keySetName, event)
         return keyBindings
 
     def GetExtraHelpSourceList(self, configSet):

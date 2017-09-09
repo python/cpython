@@ -283,11 +283,10 @@ class EditorWindow(object):
         self.askinteger = tkSimpleDialog.askinteger
         self.showerror = tkMessageBox.showerror
 
-
         # Add pseudoevents for former extension fixed keys.
         # (This probably needs to be done once in the process.)
         text.event_add('<<autocomplete>>', '<Key-Tab>')
-        text.event_add('<<try-open-completions>>', '<KeyRelease-period>'
+        text.event_add('<<try-open-completions>>', '<KeyRelease-period>',
                        '<KeyRelease-slash>', '<KeyRelease-backslash>')
         text.event_add('<<try-open-calltip>>', '<KeyRelease-parenleft>')
         text.event_add('<<refresh-calltip>>', '<KeyRelease-parenright>')
@@ -303,8 +302,6 @@ class EditorWindow(object):
         text.bind("<<force-open-completions>>",
                   autocomplete.force_open_completions_event)
         text.bind("<<expand-word>>", self.AutoExpand(self).expand_word_event)
-        text.bind("<<toggle-code-context>>",
-                  self.CodeContext(self).toggle_code_context_event)
         text.bind("<<format-paragraph>>",
                   self.FormatParagraph(self).format_paragraph_event)
         parenmatch = self.ParenMatch(self)
@@ -320,6 +317,8 @@ class EditorWindow(object):
         text.bind("<<refresh-calltip>>", calltips.refresh_calltip_event)
         text.bind("<<force-open-calltip>>", calltips.force_open_calltip_event)
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
+        text.bind("<<toggle-code-context>>",
+                  self.CodeContext(self).toggle_code_context_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
