@@ -864,12 +864,12 @@ class GeneralModuleTests(unittest.TestCase):
             self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
 
     def test_host_resolution(self):
-        for addr in [support.HOST, '10.0.0.1', '255.255.255.255']:
+        for addr in [support.HOSTv4, '10.0.0.1', '255.255.255.255']:
             self.assertEqual(socket.gethostbyname(addr), addr)
 
         # we don't test support.HOSTv6 because there's a chance it doesn't have
         # a matching name entry (e.g. 'ip6-localhost')
-        for host in [support.HOST]:
+        for host in [support.HOSTv4]:
             self.assertIn(host, socket.gethostbyaddr(host)[2])
 
     def test_host_resolution_bad_address(self):

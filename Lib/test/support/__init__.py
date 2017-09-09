@@ -601,9 +601,8 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
-# Don't use "localhost", since resolving it uses the DNS under recent
-# Windows versions (see issue #18792).
-HOST = "127.0.0.1"
+HOST = "localhost"
+HOSTv4 = "127.0.0.1"
 HOSTv6 = "::1"
 
 
