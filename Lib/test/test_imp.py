@@ -22,18 +22,6 @@ def requires_load_dynamic(meth):
     return unittest.skipIf(not hasattr(imp, 'load_dynamic'),
                            'imp.load_dynamic() required')(meth)
 
-def requires_create_dynamic(meth):
-    """A decorator for CPython-only tests that rely on imp.create_dynamic().
-
-    On some platforms, CPython might not provide imp.create_dynamic().
-    In such cases and in other implementations, this decorator causes
-    decorated tests to be skipped through the normal unittest mechanism.
-    """
-    meth = support.cpython_only(meth)
-    supported = hasattr(imp, 'create_dynamic')
-    deco = unittest.skipIf(not supported, 'imp.create_dynamic() required')
-    return deco(meth)
-
 
 @unittest.skipIf(_thread is None, '_thread module is required')
 class LockTests(unittest.TestCase):
@@ -330,15 +318,16 @@ class ImportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'embedded null'):
             imp.load_source(__name__, __file__ + "\0")
 
-    @requires_create_dynamic
+    @support.cpython_only
     def test_issue31315(self):
         # There shouldn't be an assertion failure in imp.create_dynamic(),
         # when spec.name is not a string.
+        create_dynamic = support.get_attribute(imp, 'create_dynamic')
         class BadSpec:
-            name = 42
+            name = None
             origin = 'foo'
         with self.assertRaises(TypeError):
-            imp.create_dynamic(BadSpec())
+            create_dynamic(BadSpec())
 
 
 class ReloadTests(unittest.TestCase):
