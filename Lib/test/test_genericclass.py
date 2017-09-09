@@ -195,7 +195,7 @@ class TestClassGetitem(unittest.TestCase):
         self.assertIs(B.called_with, None)
         B[int]
         self.assertIs(B.called_with, int)
-    
+
     def test_class_getitem_errors(self):
         class C_too_few:
             def __class_getitem__(cls):
