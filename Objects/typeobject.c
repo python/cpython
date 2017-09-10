@@ -2943,33 +2943,37 @@ PyType_GetSlot(PyTypeObject *type, int slot)
 }
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.
-   This returns a borrowed reference, and might set an exception! */
+   This returns a borrowed reference, and might set an exception.
+   'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
 static PyObject *
 _PyType_LookupUncached(PyTypeObject *type, PyObject *name, int *error)
 {
     Py_ssize_t i, n;
     PyObject *mro, *res, *base, *dict;
     Py_hash_t hash;
-    *error = 1;
-    /* Look in tp_dict of types in MRO */
-    mro = type->tp_mro;
-
-    if (mro == NULL) {
-        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0 &&
-                PyType_Ready(type) < 0) {
-            return NULL;
-        }
-        mro = type->tp_mro;
-        if (mro == NULL) {
-            return NULL;
-        }
-    }
 
     if (!PyUnicode_CheckExact(name) ||
         (hash = ((PyASCIIObject *) name)->hash) == -1)
     {
         hash = PyObject_Hash(name);
         if (hash == -1) {
+            *error = -1;
+            return NULL;
+        }
+    }
+
+    /* Look in tp_dict of types in MRO */
+    mro = type->tp_mro;
+
+    if (mro == NULL) {
+        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0 &&
+                PyType_Ready(type) < 0) {
+            *error = -1;
+            return NULL;
+        }
+        mro = type->tp_mro;
+        if (mro == NULL) {
+            *error = 1;
             return NULL;
         }
     }
@@ -2988,11 +2992,14 @@ _PyType_LookupUncached(PyTypeObject *type, PyObject *name, int *error)
         res = _PyDict_GetItem_KnownHash(dict, name, hash);
         if (res != NULL)
             break;
-        if (PyErr_Occurred())
-            return NULL;
+        if (PyErr_Occurred()) {
+            *error = -1;
+            goto done;
+        }
     }
-    Py_DECREF(mro);
     *error = 0;
+done:
+    Py_DECREF(mro);
     return res;
 }
 
@@ -3029,7 +3036,8 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
            the same type will call it again -- hopefully
            in a context that propagates the exception out.
         */
-        PyErr_Clear();
+        if (error == -1)
+            PyErr_Clear();
         return NULL;
     }
 
@@ -6995,7 +7003,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         /* Use faster uncached lookup as we won't get any cache hits during type setup. */
         descr = _PyType_LookupUncached(type, p->name_strobj, &error);
         if (descr == NULL) {
-            if (error) {
+            if (error == -1) {
                 /* It is unlikely by not impossible that there has been an exception
                    during lookup. Since this function originally expected no errors,
                    we ignore them here in order to keep up the interface. */
