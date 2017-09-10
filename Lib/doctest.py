@@ -1096,9 +1096,12 @@ class DocTestFinder:
         if inspect.isframe(obj): obj = obj.f_code
         if inspect.iscode(obj):
             lineno = getattr(obj, 'co_firstlineno', None)-1
-        if lineno is None and isinstance(obj, property) \
-                and obj.fget is not None \
-                and hasattr(obj.fget, "__code__"):
+
+        # lineno in properties defined by decorators are not
+        # found yet.
+        if (lineno is None and isinstance(obj, property)
+                and obj.fget is not None
+                and hasattr(obj.fget, "__code__")):
             obj = obj.fget.__code__
             # no need to subtract 1 because of decorator line
             lineno = getattr(obj, 'co_firstlineno', None)
