@@ -194,7 +194,6 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
         self.assertEqual(Point._fields, ('x', 'y'))
-        self.assertIn('class Point(tuple)', Point._source)
 
         self.assertRaises(ValueError, namedtuple, 'abc%', 'efg ghi')       # type has non-alpha char
         self.assertRaises(ValueError, namedtuple, 'class', 'efg ghi')      # type has keyword
@@ -366,11 +365,37 @@ class TestNamedTuple(unittest.TestCase):
         newt = t._replace(itemgetter=10, property=20, self=30, cls=40, tuple=50)
         self.assertEqual(newt, (10,20,30,40,50))
 
-        # Broader test of all interesting names in a template
-        with support.captured_stdout() as template:
-            T = namedtuple('T', 'x', verbose=True)
-        words = set(re.findall('[A-Za-z]+', template.getvalue()))
-        words -= set(keyword.kwlist)
+       # Broader test of all interesting names taken from the code, old
+       # template, and an example
+        words = {'Alias', 'At', 'AttributeError', 'Build', 'Bypass', 'Create',
+        'Encountered', 'Expected', 'Field', 'For', 'Got', 'Helper',
+        'IronPython', 'Jython', 'KeyError', 'Make', 'Modify', 'Note',
+        'OrderedDict', 'Point', 'Return', 'Returns', 'Type', 'TypeError',
+        'Used', 'Validate', 'ValueError', 'Variables', 'a', 'accessible', 'add',
+        'added', 'all', 'also', 'an', 'arg_list', 'args', 'arguments',
+        'automatically', 'be', 'build', 'builtins', 'but', 'by', 'cannot',
+        'class_namespace', 'classmethod', 'cls', 'collections', 'convert',
+        'copy', 'created', 'creation', 'd', 'debugging', 'defined', 'dict',
+        'dictionary', 'doc', 'docstring', 'docstrings', 'duplicate', 'effect',
+        'either', 'enumerate', 'environments', 'error', 'example', 'exec', 'f',
+        'f_globals', 'field', 'field_names', 'fields', 'formatted', 'frame',
+        'function', 'functions', 'generate', 'get', 'getter', 'got', 'greater',
+        'has', 'help', 'identifiers', 'index', 'indexable', 'instance',
+        'instantiate', 'interning', 'introspection', 'isidentifier',
+        'isinstance', 'itemgetter', 'iterable', 'join', 'keyword', 'keywords',
+        'kwds', 'len', 'like', 'list', 'map', 'maps', 'message', 'metadata',
+        'method', 'methods', 'module', 'module_name', 'must', 'name', 'named',
+        'namedtuple', 'namedtuple_', 'names', 'namespace', 'needs', 'new',
+        'nicely', 'num_fields', 'number', 'object', 'of', 'operator', 'option',
+        'p', 'particular', 'pickle', 'pickling', 'plain', 'pop', 'positional',
+        'property', 'r', 'regular', 'rename', 'replace', 'replacing', 'repr',
+        'repr_fmt', 'representation', 'result', 'reuse_itemgetter', 's', 'seen',
+        'self', 'sequence', 'set', 'side', 'specified', 'split', 'start',
+        'startswith', 'step', 'str', 'string', 'strings', 'subclass', 'sys',
+        'targets', 'than', 'the', 'their', 'this', 'to', 'tuple', 'tuple_new',
+        'type', 'typename', 'underscore', 'unexpected', 'unpack', 'up', 'use',
+        'used', 'user', 'valid', 'values', 'variable', 'verbose', 'where',
+        'which', 'work', 'x', 'y', 'z', 'zip'}
         T = namedtuple('T', words)
         # test __new__
         values = tuple(range(len(words)))
@@ -396,30 +421,15 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(t.__getnewargs__(), values)
 
     def test_repr(self):
-        with support.captured_stdout() as template:
-            A = namedtuple('A', 'x', verbose=True)
+        A = namedtuple('A', 'x')
         self.assertEqual(repr(A(1)), 'A(x=1)')
         # repr should show the name of the subclass
         class B(A):
             pass
         self.assertEqual(repr(B(1)), 'B(x=1)')
 
-    def test_source(self):
-        # verify that _source can be run through exec()
-        tmp = namedtuple('NTColor', 'red green blue')
-        globals().pop('NTColor', None)          # remove artifacts from other tests
-        exec(tmp._source, globals())
-        self.assertIn('NTColor', globals())
-        c = NTColor(10, 20, 30)
-        self.assertEqual((c.red, c.green, c.blue), (10, 20, 30))
-        self.assertEqual(NTColor._fields, ('red', 'green', 'blue'))
-        globals().pop('NTColor', None)          # clean-up after this test
-
     def test_keyword_only_arguments(self):
         # See issue 25628
-        with support.captured_stdout() as template:
-            NT = namedtuple('NT', ['x', 'y'], verbose=True)
-        self.assertIn('class NT', NT._source)
         with self.assertRaises(TypeError):
             NT = namedtuple('NT', ['x', 'y'], True)
 

@@ -1,0 +1,9 @@
+Changed the implementation strategy for collections.namedtuple() to
+substantially reduce the use of exec() in favor of precomputed methods. As a
+result, the *verbose* parameter and *_source* attribute are no longer
+supported.  The benefits include 1) having a smaller memory footprint for
+applications using multiple named tuples, 2) faster creation of the named
+tuple class (approx 4x to 6x depending on how it is measured), and 3) minor
+speed-ups for instance creation using __new__, _make, and _replace.  (The
+primary patch contributor is Jelle Zijlstra with further improvements by
+INADA Naoki, Serhiy Storchaka, and Raymond Hettinger.)

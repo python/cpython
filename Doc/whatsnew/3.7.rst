@@ -435,6 +435,12 @@ API and Feature Removals
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
 
+* :func:`collections.namedtuple` no longer supports the *verbose* parameter
+  or ``_source`` attribute which showed the generated source code for the
+  named tuple class.  This was part of an optimization designed to speed-up
+  class creation.  (Contributed by Jelle Zijlstra with further improvements
+  by INADA Naoki, Serhiy Storchaka, and Raymond Hettinger in :issue:`28638`.)
+
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now
   be passed only as positional argument.
