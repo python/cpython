@@ -1,0 +1,2 @@
+Fix crashes when comparing between a `decimal.Decimal` object and a bad
+`numbers.Rational` object. Patch by Oren Milman.
