@@ -463,7 +463,7 @@ profile-opt:
 	$(MAKE) profile-removal
 
 build_all_generate_profile:
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LIBS="$(LIBS)"
+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_GEN_FLAG)" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
 
 run_profile_task:
 	@ # FIXME: can't run for a cross build
@@ -473,7 +473,7 @@ build_all_merge_profile:
 	$(LLVM_PROF_MERGER)
 
 build_all_use_profile:
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_USE_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) @LTOFLAGS@"
+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_USE_FLAG)" LDFLAGS="$(LDFLAGS)"
 
 # Compile and run with gcov
 .PHONY=coverage coverage-lcov coverage-report
@@ -984,6 +984,12 @@ PYTHON_HEADERS= \
 		pyconfig.h \
 		$(PARSER_HEADERS) \
 		$(srcdir)/Include/Python-ast.h \
+		$(srcdir)/Include/internal/ceval.h \
+		$(srcdir)/Include/internal/gil.h \
+		$(srcdir)/Include/internal/mem.h \
+		$(srcdir)/Include/internal/pymalloc.h \
+		$(srcdir)/Include/internal/pystate.h \
+		$(srcdir)/Include/internal/warnings.h \
 		$(DTRACE_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)

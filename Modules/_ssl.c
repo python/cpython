@@ -66,6 +66,7 @@ static PySocketModule_APIObject PySocketModule;
 
 /* SSL error object */
 static PyObject *PySSLErrorObject;
+static PyObject *PySSLCertVerificationErrorObject;
 static PyObject *PySSLZeroReturnErrorObject;
 static PyObject *PySSLWantReadErrorObject;
 static PyObject *PySSLWantWriteErrorObject;
@@ -320,6 +321,11 @@ typedef struct {
     enum py_ssl_server_or_client socket_type;
     PyObject *owner; /* Python level "owner" passed to servername callback */
     PyObject *server_hostname;
+    int ssl_errno; /* last seen error from SSL */
+    int c_errno; /* last seen error from libc */
+#ifdef MS_WINDOWS
+    int ws_errno; /* last seen error from winsock */
+#endif
 } PySSLSocket;
 
 typedef struct {
@@ -338,6 +344,21 @@ static PyTypeObject PySSLContext_Type;
 static PyTypeObject PySSLSocket_Type;
 static PyTypeObject PySSLMemoryBIO_Type;
 static PyTypeObject PySSLSession_Type;
+
+#ifdef MS_WINDOWS
+#define _PySSL_UPDATE_ERRNO_IF(cond, sock, retcode) if (cond) { \
+        (sock)->ws_errno = WSAGetLastError(); \
+        _PySSL_FIX_ERRNO; \
+        (sock)->c_errno = errno; \
+        (sock)->ssl_errno = SSL_get_error((sock->ssl), (retcode)); \
+    } else { sock->ws_errno = 0; sock->c_errno = 0; sock->ssl_errno = 0; }
+#else
+#define _PySSL_UPDATE_ERRNO_IF(cond, sock, retcode) if (cond) { \
+        (sock)->c_errno = errno; \
+        (sock)->ssl_errno = SSL_get_error((sock->ssl), (retcode)); \
+    } else { (sock)->c_errno = 0; (sock)->ssl_errno = 0; }
+#endif
+#define _PySSL_UPDATE_ERRNO(sock, retcode) _PySSL_UPDATE_ERRNO_IF(1, (sock), (retcode))
 
 /*[clinic input]
 module _ssl
@@ -386,6 +407,9 @@ typedef enum {
 PyDoc_STRVAR(SSLError_doc,
 "An error occurred in the SSL implementation.");
 
+PyDoc_STRVAR(SSLCertVerificationError_doc,
+"A certificate could not be verified.");
+
 PyDoc_STRVAR(SSLZeroReturnError_doc,
 "SSL/TLS session closed cleanly.");
 
@@ -430,13 +454,16 @@ static PyType_Spec sslerror_type_spec = {
 };
 
 static void
-fill_and_set_sslerror(PyObject *type, int ssl_errno, const char *errstr,
-                      int lineno, unsigned long errcode)
+fill_and_set_sslerror(PySSLSocket *sslsock, PyObject *type, int ssl_errno,
+                      const char *errstr, int lineno, unsigned long errcode)
 {
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
+    PyObject *verify_obj = NULL, *verify_code_obj = NULL;
     PyObject *init_value, *msg, *key;
     _Py_IDENTIFIER(reason);
     _Py_IDENTIFIER(library);
+    _Py_IDENTIFIER(verify_message);
+    _Py_IDENTIFIER(verify_code);
 
     if (errcode != 0) {
         int lib, reason;
@@ -466,7 +493,55 @@ fill_and_set_sslerror(PyObject *type, int ssl_errno, const char *errstr,
     if (errstr == NULL)
         errstr = "unknown error";
 
-    if (reason_obj && lib_obj)
+    /* verify code for cert validation error */
+    if ((sslsock != NULL) && (type == PySSLCertVerificationErrorObject)) {
+        const char *verify_str = NULL;
+        long verify_code;
+
+        verify_code = SSL_get_verify_result(sslsock->ssl);
+        verify_code_obj = PyLong_FromLong(verify_code);
+        if (verify_code_obj == NULL) {
+            goto fail;
+        }
+
+        switch (verify_code) {
+#ifdef X509_V_ERR_HOSTNAME_MISMATCH
+        /* OpenSSL >= 1.0.2, LibreSSL >= 2.5.3 */
+        case X509_V_ERR_HOSTNAME_MISMATCH:
+            verify_obj = PyUnicode_FromFormat(
+                "Hostname mismatch, certificate is not valid for '%S'.",
+                sslsock->server_hostname
+            );
+            break;
+#endif
+#ifdef X509_V_ERR_IP_ADDRESS_MISMATCH
+        case X509_V_ERR_IP_ADDRESS_MISMATCH:
+            verify_obj = PyUnicode_FromFormat(
+                "IP address mismatch, certificate is not valid for '%S'.",
+                sslsock->server_hostname
+            );
+            break;
+#endif
+        default:
+            verify_str = X509_verify_cert_error_string(verify_code);
+            if (verify_str != NULL) {
+                verify_obj = PyUnicode_FromString(verify_str);
+            } else {
+                verify_obj = Py_None;
+                Py_INCREF(verify_obj);
+            }
+            break;
+        }
+        if (verify_obj == NULL) {
+            goto fail;
+        }
+    }
+
+    if (verify_obj && reason_obj && lib_obj)
+        msg = PyUnicode_FromFormat("[%S: %S] %s: %S (_ssl.c:%d)",
+                                   lib_obj, reason_obj, errstr, verify_obj,
+                                   lineno);
+    else if (reason_obj && lib_obj)
         msg = PyUnicode_FromFormat("[%S: %S] %s (_ssl.c:%d)",
                                    lib_obj, reason_obj, errstr, lineno);
     else if (lib_obj)
@@ -490,17 +565,30 @@ fill_and_set_sslerror(PyObject *type, int ssl_errno, const char *errstr,
         reason_obj = Py_None;
     if (_PyObject_SetAttrId(err_value, &PyId_reason, reason_obj))
         goto fail;
+
     if (lib_obj == NULL)
         lib_obj = Py_None;
     if (_PyObject_SetAttrId(err_value, &PyId_library, lib_obj))
         goto fail;
+
+    if ((sslsock != NULL) && (type == PySSLCertVerificationErrorObject)) {
+        /* Only set verify code / message for SSLCertVerificationError */
+        if (_PyObject_SetAttrId(err_value, &PyId_verify_code,
+                                verify_code_obj))
+            goto fail;
+        if (_PyObject_SetAttrId(err_value, &PyId_verify_message, verify_obj))
+            goto fail;
+    }
+
     PyErr_SetObject(type, err_value);
 fail:
     Py_XDECREF(err_value);
+    Py_XDECREF(verify_code_obj);
+    Py_XDECREF(verify_obj);
 }
 
 static PyObject *
-PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
+PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
 {
     PyObject *type = PySSLErrorObject;
     char *errstr = NULL;
@@ -511,8 +599,8 @@ PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
     assert(ret <= 0);
     e = ERR_peek_last_error();
 
-    if (obj->ssl != NULL) {
-        err = SSL_get_error(obj->ssl, ret);
+    if (sslsock->ssl != NULL) {
+        err = sslsock->ssl_errno;
 
         switch (err) {
         case SSL_ERROR_ZERO_RETURN:
@@ -541,15 +629,23 @@ PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
         case SSL_ERROR_SYSCALL:
         {
             if (e == 0) {
-                PySocketSockObject *s = GET_SOCKET(obj);
+                PySocketSockObject *s = GET_SOCKET(sslsock);
                 if (ret == 0 || (((PyObject *)s) == Py_None)) {
                     p = PY_SSL_ERROR_EOF;
                     type = PySSLEOFErrorObject;
                     errstr = "EOF occurred in violation of protocol";
                 } else if (s && ret == -1) {
                     /* underlying BIO reported an I/O error */
-                    Py_INCREF(s);
                     ERR_clear_error();
+#ifdef MS_WINDOWS
+                    if (sslsock->ws_errno)
+                        return PyErr_SetFromWindowsErr(sslsock->ws_errno);
+#endif
+                    if (sslsock->c_errno) {
+                        errno = sslsock->c_errno;
+                        return PyErr_SetFromErrno(PyExc_OSError);
+                    }
+                    Py_INCREF(s);
                     s->errorhandler();
                     Py_DECREF(s);
                     return NULL;
@@ -566,9 +662,14 @@ PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
         case SSL_ERROR_SSL:
         {
             p = PY_SSL_ERROR_SSL;
-            if (e == 0)
+            if (e == 0) {
                 /* possible? */
                 errstr = "A failure in the SSL library occurred";
+            }
+            if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
+                    ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
+                type = PySSLCertVerificationErrorObject;
+            }
             break;
         }
         default:
@@ -576,7 +677,7 @@ PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
             errstr = "Invalid error code";
         }
     }
-    fill_and_set_sslerror(type, p, errstr, lineno, e);
+    fill_and_set_sslerror(sslsock, type, p, errstr, lineno, e);
     ERR_clear_error();
     return NULL;
 }
@@ -588,14 +689,10 @@ _setSSLError (const char *errstr, int errcode, const char *filename, int lineno)
         errcode = ERR_peek_last_error();
     else
         errcode = 0;
-    fill_and_set_sslerror(PySSLErrorObject, errcode, errstr, lineno, errcode);
+    fill_and_set_sslerror(NULL, PySSLErrorObject, errcode, errstr, lineno, errcode);
     ERR_clear_error();
     return NULL;
 }
-
-/*
- * SSL objects
- */
 
 static PySSLSocket *
 newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
@@ -627,6 +724,11 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
         self->server_hostname = hostname;
     }
+    self->ssl_errno = 0;
+    self->c_errno = 0;
+#ifdef MS_WINDOWS
+    self->ws_errno = 0;
+#endif
 
     /* Make sure the SSL error state is initialized */
     (void) ERR_get_state();
@@ -656,7 +758,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     if (server_hostname != NULL)
         SSL_set_tlsext_host_name(self->ssl, server_hostname);
 #endif
-
     /* If the socket is in non-blocking mode or timeout mode, set the BIO
      * to non-blocking mode (blocking is the default)
      */
@@ -724,8 +825,9 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     do {
         PySSL_BEGIN_ALLOW_THREADS
         ret = SSL_do_handshake(self->ssl);
-        err = SSL_get_error(self->ssl, ret);
+        _PySSL_UPDATE_ERRNO_IF(ret < 1, self, ret);
         PySSL_END_ALLOW_THREADS
+        err = self->ssl_errno;
 
         if (PyErr_CheckSignals())
             goto error;
@@ -1996,8 +2098,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     do {
         PySSL_BEGIN_ALLOW_THREADS
         len = SSL_write(self->ssl, b->buf, (int)b->len);
-        err = SSL_get_error(self->ssl, len);
+        _PySSL_UPDATE_ERRNO_IF(len <= 0, self, len);
         PySSL_END_ALLOW_THREADS
+        err = self->ssl_errno;
 
         if (PyErr_CheckSignals())
             goto error;
@@ -2051,6 +2154,7 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self)
 
     PySSL_BEGIN_ALLOW_THREADS
     count = SSL_pending(self->ssl);
+    _PySSL_UPDATE_ERRNO_IF(count < 0, self, count);
     PySSL_END_ALLOW_THREADS
     if (count < 0)
         return PySSL_SetError(self, count, __FILE__, __LINE__);
@@ -2139,7 +2243,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
     do {
         PySSL_BEGIN_ALLOW_THREADS
         count = SSL_read(self->ssl, mem, len);
-        err = SSL_get_error(self->ssl, count);
+        _PySSL_UPDATE_ERRNO_IF(count <= 0, self, count);
         PySSL_END_ALLOW_THREADS
 
         if (PyErr_CheckSignals())
@@ -2148,6 +2252,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
         if (has_timeout)
             timeout = deadline - _PyTime_GetMonotonicClock();
 
+        err = self->ssl_errno;
         if (err == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
         } else if (err == SSL_ERROR_WANT_WRITE) {
@@ -2204,7 +2309,7 @@ static PyObject *
 _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 /*[clinic end generated code: output=ca1aa7ed9d25ca42 input=ede2cc1a2ddf0ee4]*/
 {
-    int err, ssl_err, sockstate, nonblocking;
+    int err, sockstate, nonblocking;
     int zeros = 0;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
@@ -2243,6 +2348,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
         if (self->shutdown_seen_zero)
             SSL_set_read_ahead(self->ssl, 0);
         err = SSL_shutdown(self->ssl);
+        _PySSL_UPDATE_ERRNO_IF(err < 0, self, err);
         PySSL_END_ALLOW_THREADS
 
         /* If err == 1, a secure shutdown with SSL_shutdown() is complete */
@@ -2263,16 +2369,16 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
             timeout = deadline - _PyTime_GetMonotonicClock();
 
         /* Possibly retry shutdown until timeout or failure */
-        ssl_err = SSL_get_error(self->ssl, err);
-        if (ssl_err == SSL_ERROR_WANT_READ)
+        _PySSL_UPDATE_ERRNO(self, err);
+        if (self->ssl_errno == SSL_ERROR_WANT_READ)
             sockstate = PySSL_select(sock, 0, timeout);
-        else if (ssl_err == SSL_ERROR_WANT_WRITE)
+        else if (self->ssl_errno == SSL_ERROR_WANT_WRITE)
             sockstate = PySSL_select(sock, 1, timeout);
         else
             break;
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            if (ssl_err == SSL_ERROR_WANT_READ)
+            if (self->ssl_errno == SSL_ERROR_WANT_READ)
                 PyErr_SetString(PySocketModule.timeout_error,
                                 "The read operation timed out");
             else
@@ -5130,7 +5236,7 @@ parse_openssl_version(unsigned long libver,
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
-    PyObject *m, *d, *r;
+    PyObject *m, *d, *r, *bases;
     unsigned long libver;
     unsigned int major, minor, fix, patch, status;
     PySocketModule_APIObject *socket_api;
@@ -5182,6 +5288,14 @@ PyInit__ssl(void)
     if (PySSLErrorObject == NULL)
         return NULL;
 
+    /* ssl.CertificateError used to be a subclass of ValueError */
+    bases = Py_BuildValue("OO", PySSLErrorObject, PyExc_ValueError);
+    if (bases == NULL)
+        return NULL;
+    PySSLCertVerificationErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLCertVerificationError", SSLCertVerificationError_doc,
+        bases, NULL);
+    Py_DECREF(bases);
     PySSLZeroReturnErrorObject = PyErr_NewExceptionWithDoc(
         "ssl.SSLZeroReturnError", SSLZeroReturnError_doc,
         PySSLErrorObject, NULL);
@@ -5197,13 +5311,16 @@ PyInit__ssl(void)
     PySSLEOFErrorObject = PyErr_NewExceptionWithDoc(
         "ssl.SSLEOFError", SSLEOFError_doc,
         PySSLErrorObject, NULL);
-    if (PySSLZeroReturnErrorObject == NULL
+    if (PySSLCertVerificationErrorObject == NULL
+        || PySSLZeroReturnErrorObject == NULL
         || PySSLWantReadErrorObject == NULL
         || PySSLWantWriteErrorObject == NULL
         || PySSLSyscallErrorObject == NULL
         || PySSLEOFErrorObject == NULL)
         return NULL;
     if (PyDict_SetItemString(d, "SSLError", PySSLErrorObject) != 0
+        || PyDict_SetItemString(d, "SSLCertVerificationError",
+                                PySSLCertVerificationErrorObject) != 0
         || PyDict_SetItemString(d, "SSLZeroReturnError", PySSLZeroReturnErrorObject) != 0
         || PyDict_SetItemString(d, "SSLWantReadError", PySSLWantReadErrorObject) != 0
         || PyDict_SetItemString(d, "SSLWantWriteError", PySSLWantWriteErrorObject) != 0
