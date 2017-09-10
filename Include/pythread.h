@@ -2,10 +2,6 @@
 #ifndef Py_PYTHREAD_H
 #define Py_PYTHREAD_H
 
-#if !(defined(_POSIX_THREADS) || defined(NT_THREADS))
-#   error "Require native threads. See https://bugs.python.org/issue31370"
-#endif
-
 typedef void *PyThread_type_lock;
 typedef void *PyThread_type_sema;
 
@@ -118,6 +114,8 @@ typedef struct _Py_tss_t Py_tss_t;
        but hardcode the unsigned long to avoid errors for include directive.
     */
 #   define NATIVE_TSS_KEY_T     unsigned long
+#else
+#   error "Require native threads. See https://bugs.python.org/issue30832"
 #endif
 
 /* When Py_LIMITED_API is not defined, the type layout of Py_tss_t is in
