@@ -1,0 +1,2 @@
+`wave.open()` now accepts PathLike objects. Contributed by Michael Scott
+Cuthbert.
