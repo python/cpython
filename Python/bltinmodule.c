@@ -1347,7 +1347,7 @@ builtin_noop(PyObject *self, PyObject *args, PyObject *keywords)
 PyDoc_STRVAR(noop_doc,
 "noop(*args, **kws)\n\
 \n\
-Do nothing except return None.")
+Do nothing except return None.");
 
 
 /*[clinic input]
