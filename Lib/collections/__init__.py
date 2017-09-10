@@ -430,10 +430,11 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
     cache = _nt_itemgetters
     for index, name in enumerate(field_names):
         try:
-            itemgetter_object = cache[index]
+            itemgetter_object, doc = cache[index]
         except KeyError:
-            itemgetter_object = cache[index] = _itemgetter(index)
-        doc = _sys.intern(f'Alias for field number {index}')
+            itemgetter_object = _itemgetter(index)
+            doc = f'Alias for field number {index}'
+            cache[index] = itemgetter_object, doc
         class_namespace[name] = property(itemgetter_object, doc=doc)
 
     result = type(typename, (tuple,), class_namespace)
