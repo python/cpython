@@ -2018,7 +2018,7 @@ def main(args=None):
         'and a wildcard such as **/*.py will recurse.  All recursion will',
         'skip any directories starting with . such as .git, etc. if',
         'you wish to include them you will need to add .**/* or similar as well.',
-        'Behavoir is as for the glob.iglob() function.'
+        'Behavior is as for the glob.iglob() function.'
     ])
     parser = argparse.ArgumentParser(description=description, epilog=epilog)
     parser.add_argument('-v', '--verbose', action='count')
@@ -2036,6 +2036,20 @@ def main(args=None):
                            help='Append files to zipfile')
     operation.add_argument('-t', '--test', metavar='<zipfile>',
                            help='Test if a zipfile is valid')
+    compression = parser.add_mutually_exclusive_group(required=False)
+    compression.add_argument('-s', '--store', dest='compression',
+                             action='store_const', const=ZIP_STORED,
+                             help="Add files with no compression.")
+    compression.add_argument('-d', '--deflate', dest='compression',
+                             action='store_const', const=ZIP_DEFLATED,
+                             help="Add files with deflate compression (Default).")
+    compression.add_argument('-b', '--bzip2', dest='compression',
+                             action='store_const', const=ZIP_BZIP2,
+                             help="Add files with BZIP2 compression.")
+    compression.add_argument('-z', '--lzma', dest='compression',
+                             action='store_const', const=ZIP_LZMA,
+                             help="Add files with LZMA compression.")
+    parser.set_defaults(compression=ZIP_DEFLATED)
     args = parser.parse_args(args)
 
     if args.test is not None:
@@ -2081,7 +2095,7 @@ def main(args=None):
             if os.path.isfile(path):
                 if args.verbose:
                     print("Add: {!r}".format(zippath))
-                zf.write(path, zippath, ZIP_DEFLATED)
+                zf.write(path, zippath, args.compression)
                 count += 1
             elif os.path.isdir(path):
                 if not os.path.split(path)[-1].startswith('.'):
