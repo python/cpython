@@ -1,4 +1,4 @@
-"""ParenMatch -- An IDLE extension for parenthesis matching.
+"""ParenMatch -- for parenthesis matching.
 
 When you hit a right paren, the cursor should move briefly to the left
 paren.  Paren here is used generically; the matching applies to
@@ -30,18 +30,6 @@ class ParenMatch:
     - Highlight when cursor is moved to the right of a closer.
       This might be too expensive to check.
     """
-    menudefs = [
-        ('edit', [
-            ("Show surrounding parens", "<<flash-paren>>"),
-        ])
-    ]
-    STYLE = idleConf.GetOption(
-            'extensions','ParenMatch','style', default='expression')
-    FLASH_DELAY = idleConf.GetOption(
-            'extensions','ParenMatch','flash-delay', type='int',default=500)
-    BELL = idleConf.GetOption(
-            'extensions','ParenMatch','bell', type='bool',default=1)
-    HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),'hilite')
 
     RESTORE_VIRTUAL_EVENT_NAME = "<<parenmatch-check-restore>>"
     # We want the restore event be called before the usual return and
@@ -61,6 +49,17 @@ class ParenMatch:
         self.counter = 0
         self.is_restore_active = 0
         self.set_style(self.STYLE)
+
+    @classmethod
+    def reload(cls):
+        cls.STYLE = idleConf.GetOption(
+            'extensions','ParenMatch','style', default='opener')
+        cls.FLASH_DELAY = idleConf.GetOption(
+                'extensions','ParenMatch','flash-delay', type='int',default=500)
+        cls.BELL = idleConf.GetOption(
+                'extensions','ParenMatch','bell', type='bool', default=1)
+        cls.HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),
+                                                  'hilite')
 
     def activate_restore(self):
         "Activate mechanism to restore text from highlighting."
@@ -179,6 +178,9 @@ class ParenMatch:
         self.editwin.text_frame.after(
             self.FLASH_DELAY,
             lambda self=self, c=self.counter: self.handle_restore_timer(c))
+
+
+ParenMatch.reload()
 
 
 if __name__ == '__main__':
