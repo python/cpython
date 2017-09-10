@@ -1749,6 +1749,19 @@ class UsabilityTest(unittest.TestCase):
             self.assertNotEqual(D('nan'), F(-9,123))
             self.assertNotEqual(F(-9,123), D('nan'))
 
+    def test_issue31406(self):
+        # A comparison between a Decimal object and a bad Rational
+        # object shouldn't crash the interpreter.
+        def _get_bad_rational(numer, denom):
+            class BadRational(fractions[self.decimal].Fraction):
+                numerator = numer
+                denominator = denom
+            return BadRational()
+
+        for numer, denom in [(None, 42), (42, None), (None, None)]:
+            with self.assertRaises(TypeError):
+                self.decimal.Decimal() < _get_bad_rational(numer, denom)
+
     def test_copy_and_deepcopy_methods(self):
         Decimal = self.decimal.Decimal
 

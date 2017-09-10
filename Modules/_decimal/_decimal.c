@@ -2840,6 +2840,13 @@ multiply_by_denominator(PyObject *v, PyObject *r, PyObject *context)
     if (tmp == NULL) {
         return NULL;
     }
+    if (!PyLong_Check(tmp)) {
+        PyErr_Format(PyExc_TypeError,
+                     "denominator must be integer, not '%.200s'",
+                     Py_TYPE(tmp)->tp_name);
+        Py_DECREF(tmp);
+        return NULL;
+    }
     denom = PyDec_FromLongExact(tmp, context);
     Py_DECREF(tmp);
     if (denom == NULL) {
@@ -2893,7 +2900,13 @@ numerator_as_decimal(PyObject *r, PyObject *context)
     if (tmp == NULL) {
         return NULL;
     }
-
+    if (!PyLong_Check(tmp)) {
+        PyErr_Format(PyExc_TypeError,
+                     "numerator must be integer, not '%.200s'",
+                     Py_TYPE(tmp)->tp_name);
+        Py_DECREF(tmp);
+        return NULL;
+    }
     num = PyDec_FromLongExact(tmp, context);
     Py_DECREF(tmp);
     return num;
