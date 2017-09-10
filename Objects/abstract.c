@@ -143,7 +143,7 @@ PyObject *
 PyObject_GetItem(PyObject *o, PyObject *key)
 {
     PyMappingMethods *m;
-    PyObject *meth, *stack[2] = {o, key};
+    PyObject *meth, *result, *stack[2] = {o, key};
 
     if (o == NULL || key == NULL) {
         return null_error();
@@ -175,9 +175,12 @@ PyObject_GetItem(PyObject *o, PyObject *key)
             if (!PyCallable_Check(meth)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "__class_getitem__ must be callable");
+                Py_DECREF(meth);
                 return NULL;
             }
-            return _PyObject_FastCall(meth, stack, 2);
+            result = _PyObject_FastCall(meth, stack, 2);
+            Py_DECREF(meth);
+            return result;
         }
         else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             return NULL;

@@ -49,9 +49,9 @@ _Py_IDENTIFIER(stderr);
 static PyObject*
 update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
 {
-    int i, ind, tot_nones;
-    PyObject *base, *new_base, *new_base_meth, *new_bases;
-    PyObject* stack[1] = {bases};
+    int i, ind, tot_nones = 0;
+    PyObject *base, *meth, *new_base, *new_bases;
+    PyObject *stack[1] = {bases};
     assert(PyTuple_Check(bases));
 
     /* We have a separate cycle to calculate replacements with the idea that in
@@ -61,45 +61,41 @@ update_bases(PyObject* bases, PyObject** args, int nargs, int* modified_bases)
         if (PyType_Check(base)) {
             continue;
         }
-        new_base_meth = PyObject_GetAttrString(base, "__subclass_base__");
-        if (!new_base_meth) {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
-                continue;
+        if (!(meth = PyObject_GetAttrString(base, "__subclass_base__"))) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                return NULL;
             }
-            return NULL;
+            PyErr_Clear();
+            continue;
         }
-        if (!PyCallable_Check(new_base_meth)) {
+        if (!PyCallable_Check(meth)) {
             PyErr_SetString(PyExc_TypeError,
                             "__subclass_base__ must be callable");
+            Py_DECREF(meth);
             return NULL;
         }
-        new_base = _PyObject_FastCall(new_base_meth, stack, 1);
-        if (!new_base){
+        if (!(new_base = _PyObject_FastCall(meth, stack, 1))){
+            Py_DECREF(meth);
             return NULL;
         }
-        Py_INCREF(new_base);
+        if (new_base == Py_None) {
+            tot_nones++;
+        }
+        Py_DECREF(base);
         args[i] = new_base;
         *modified_bases = 1;
+        Py_DECREF(meth);
     }
     if (!*modified_bases){
         return bases;
     }
-    /* Find out have many bases wants to be removed to pre-allocate
-       the tuple for new bases, then keep only non-None's in bases.*/
-    tot_nones = 0;
-    for (i = 2; i < nargs; i++) {
-        if (args[i] == Py_None) {
-            tot_nones++;
-        }
-    }
     new_bases = PyTuple_New(nargs - 2 - tot_nones);
     ind = 0;
     for (i = 2; i < nargs; i++) {
-        base = args[i];
-        if (base != Py_None) {
-            Py_INCREF(base);
-            PyTuple_SET_ITEM(new_bases, ind, base);
+        new_base = args[i];
+        if (new_base != Py_None) {
+            Py_INCREF(new_base);
+            PyTuple_SET_ITEM(new_bases, ind, new_base);
             ind++;
         }
     }
@@ -281,6 +277,9 @@ error:
     Py_DECREF(meta);
     Py_XDECREF(mkw);
     Py_DECREF(bases);
+    if (modified_bases) {
+        Py_DECREF(old_bases);
+    }
     return cls;
 }
 
