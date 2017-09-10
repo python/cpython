@@ -3,14 +3,8 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h" /* offsetof */
-
-#ifndef WITH_THREAD
-#error "Error!  The rest of Python is not compiled with thread support."
-#error "Rerun configure, adding a --with-threads option."
-#error "Then run `make clean' followed by `make'."
-#endif
-
 #include "pythread.h"
 
 static PyObject *ThreadError;

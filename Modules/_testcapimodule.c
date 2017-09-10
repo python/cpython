@@ -22,9 +22,7 @@
 #include <sys/wait.h>           /* For W_STOPCODE */
 #endif
 
-#ifdef WITH_THREAD
 #include "pythread.h"
-#endif /* WITH_THREAD */
 static PyObject *TestError;     /* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -2229,8 +2227,6 @@ test_datetime_capi(PyObject *self, PyObject *args) {
 }
 
 
-#ifdef WITH_THREAD
-
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
  * thread finishes, because the thread uses a PyObject (the callable) that
@@ -2348,7 +2344,6 @@ PyObject *pending_threadfunc(PyObject *self, PyObject *arg)
     }
     Py_RETURN_TRUE;
 }
-#endif
 
 /* Some tests of PyUnicode_FromFormat().  This needs more tests. */
 static PyObject *
@@ -3617,7 +3612,6 @@ PyDoc_STRVAR(docstring_with_signature_with_defaults,
 "and the parameters take defaults of varying types."
 );
 
-#ifdef WITH_THREAD
 typedef struct {
     PyThread_type_lock start_event;
     PyThread_type_lock exit_event;
@@ -3704,7 +3698,6 @@ exit:
         PyThread_free_lock(test_c_thread.exit_event);
     return res;
 }
-#endif   /* WITH_THREAD */
 
 static PyObject*
 test_raise_signal(PyObject* self, PyObject *args)
@@ -4420,10 +4413,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
-#ifdef WITH_THREAD
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
-#endif
 #ifdef HAVE_GETTIMEOFDAY
     {"profile_int",             profile_int,                     METH_NOARGS},
 #endif
@@ -4483,10 +4474,8 @@ static PyMethodDef TestMethods[] = {
         docstring_with_signature_with_defaults},
     {"raise_signal",
      (PyCFunction)test_raise_signal, METH_VARARGS},
-#ifdef WITH_THREAD
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
      PyDoc_STR("set_error_class(error_class) -> None")},
-#endif
     {"pymarshal_write_long_to_file",
         pymarshal_write_long_to_file, METH_VARARGS},
     {"pymarshal_write_object_to_file",

@@ -9,15 +9,13 @@ import select
 import signal
 import socket
 import tempfile
+import threading
 import unittest
 import socketserver
 
 import test.support
 from test.support import reap_children, reap_threads, verbose
-try:
-    import threading
-except ImportError:
-    threading = None
+
 
 test.support.requires("network")
 
@@ -68,7 +66,6 @@ def simple_subprocess(testcase):
     testcase.assertEqual(72 << 8, status)
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
@@ -306,12 +303,10 @@ class ErrorHandlerTest(unittest.TestCase):
             BaseErrorTestServer(SystemExit)
         self.check_result(handled=False)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threading_handled(self):
         ThreadingErrorTestServer(ValueError)
         self.check_result(handled=True)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threading_not_handled(self):
         ThreadingErrorTestServer(SystemExit)
         self.check_result(handled=False)
@@ -396,7 +391,6 @@ class SocketWriterTest(unittest.TestCase):
         self.assertIsInstance(server.wfile, io.BufferedIOBase)
         self.assertEqual(server.wfile_fileno, server.request_fileno)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_write(self):
         # Test that wfile.write() sends data immediately, and that it does
         # not truncate sends when interrupted by a Unix signal

@@ -7,6 +7,7 @@ import sys
 import time
 import errno
 import struct
+import threading
 
 from test import support
 from io import BytesIO
@@ -14,10 +15,6 @@ from io import BytesIO
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 TIMEOUT = 3
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
@@ -326,7 +323,6 @@ class DispatcherWithSendTests(unittest.TestCase):
     def tearDown(self):
         asyncore.close_all()
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_send(self):
         evt = threading.Event()
@@ -776,7 +772,6 @@ class BaseTestAPI:
                 self.assertTrue(s.socket.getsockopt(socket.SOL_SOCKET,
                                                      socket.SO_REUSEADDR))
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_quick_connect(self):
         # see: http://bugs.python.org/issue10340

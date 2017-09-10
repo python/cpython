@@ -2,6 +2,7 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
+#include "internal/pystate.h"
 
 #define GET_TSTATE() \
     ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
@@ -47,43 +48,31 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     runtime->gilstate.check_enabled = 1;
     runtime->gilstate.autoTLSkey = -1;
 
-#ifdef WITH_THREAD
     runtime->interpreters.mutex = PyThread_allocate_lock();
     if (runtime->interpreters.mutex == NULL)
         Py_FatalError("Can't initialize threads for interpreter");
-#endif
     runtime->interpreters.next_id = -1;
 }
 
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
-#ifdef WITH_THREAD
     if (runtime->interpreters.mutex != NULL) {
         PyThread_free_lock(runtime->interpreters.mutex);
         runtime->interpreters.mutex = NULL;
     }
-#endif
 }
 
-#ifdef WITH_THREAD
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
                                           WAIT_LOCK)
 #define HEAD_UNLOCK() PyThread_release_lock(_PyRuntime.interpreters.mutex)
-#else
-#define HEAD_LOCK() /* Nothing */
-#define HEAD_UNLOCK() /* Nothing */
-#endif
 
-#ifdef WITH_THREAD
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
-#endif
 
 void
 _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 {
     runtime->interpreters.next_id = 0;
-#ifdef WITH_THREAD
     /* Since we only call _PyRuntimeState_Init() once per process
        (see _PyRuntime_Initialize()), we make sure the mutex is
        initialized here. */
@@ -92,7 +81,6 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
         if (runtime->interpreters.mutex == NULL)
             Py_FatalError("Can't initialize threads for interpreter");
     }
-#endif
 }
 
 PyInterpreterState *
@@ -256,11 +244,7 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->use_tracing = 0;
         tstate->gilstate_counter = 0;
         tstate->async_exc = NULL;
-#ifdef WITH_THREAD
         tstate->thread_id = PyThread_get_thread_ident();
-#else
-        tstate->thread_id = 0;
-#endif
 
         tstate->dict = NULL;
 
@@ -318,9 +302,7 @@ _PyThreadState_Prealloc(PyInterpreterState *interp)
 void
 _PyThreadState_Init(PyThreadState *tstate)
 {
-#ifdef WITH_THREAD
     _PyGILState_NoteThreadState(tstate);
-#endif
 }
 
 PyObject*
@@ -502,18 +484,15 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     if (tstate == GET_TSTATE())
         Py_FatalError("PyThreadState_Delete: tstate is still current");
-#ifdef WITH_THREAD
     if (_PyRuntime.gilstate.autoInterpreterState &&
         PyThread_get_key_value(_PyRuntime.gilstate.autoTLSkey) == tstate)
     {
         PyThread_delete_key_value(_PyRuntime.gilstate.autoTLSkey);
     }
-#endif /* WITH_THREAD */
     tstate_delete_common(tstate);
 }
 
 
-#ifdef WITH_THREAD
 void
 PyThreadState_DeleteCurrent()
 {
@@ -530,7 +509,6 @@ PyThreadState_DeleteCurrent()
     SET_TSTATE(NULL);
     PyEval_ReleaseLock();
 }
-#endif /* WITH_THREAD */
 
 
 /*
@@ -598,7 +576,7 @@ PyThreadState_Swap(PyThreadState *newts)
        to be used for a thread.  Check this the best we can in debug
        builds.
     */
-#if defined(Py_DEBUG) && defined(WITH_THREAD)
+#if defined(Py_DEBUG)
     if (newts) {
         /* This can be called from PyEval_RestoreThread(). Similar
            to it, we need to ensure errno doesn't change.
@@ -759,7 +737,6 @@ _PyThread_CurrentFrames(void)
 }
 
 /* Python "auto thread state" API. */
-#ifdef WITH_THREAD
 
 /* Keep this as a static, as it is not reliable!  It can only
    ever be compared to the state for the *current* thread.
@@ -815,11 +792,9 @@ _PyGILState_Fini(void)
 void
 _PyGILState_Reinit(void)
 {
-#ifdef WITH_THREAD
     _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
     if (_PyRuntime.interpreters.mutex == NULL)
         Py_FatalError("Can't initialize threads for interpreter");
-#endif
     PyThreadState *tstate = PyGILState_GetThisThreadState();
     PyThread_delete_key(_PyRuntime.gilstate.autoTLSkey);
     if ((_PyRuntime.gilstate.autoTLSkey = PyThread_create_key()) == -1)
@@ -979,10 +954,7 @@ PyGILState_Release(PyGILState_STATE oldstate)
         PyEval_SaveThread();
 }
 
-#endif /* WITH_THREAD */
 
 #ifdef __cplusplus
 }
 #endif
-
-

@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "frameobject.h"
 
 #ifdef __cplusplus
@@ -428,23 +429,17 @@ _PyObject_Dump(PyObject* op)
     if (op == NULL)
         fprintf(stderr, "NULL\n");
     else {
-#ifdef WITH_THREAD
         PyGILState_STATE gil;
-#endif
         PyObject *error_type, *error_value, *error_traceback;
 
         fprintf(stderr, "object  : ");
-#ifdef WITH_THREAD
         gil = PyGILState_Ensure();
-#endif
 
         PyErr_Fetch(&error_type, &error_value, &error_traceback);
         (void)PyObject_Print(op, stderr, 0);
         PyErr_Restore(error_type, error_value, error_traceback);
 
-#ifdef WITH_THREAD
         PyGILState_Release(gil);
-#endif
         /* XXX(twouters) cast refcount to long until %zd is
            universally available */
         fprintf(stderr, "\n"

@@ -106,7 +106,11 @@ typedef struct _is {
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
 typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 
-/* The following values are used for 'what' for tracefunc functions: */
+/* The following values are used for 'what' for tracefunc functions
+ *
+ * To add a new kind of trace event, also update "trace_init" in
+ * Python/sysmodule.c to define the Python level event name
+ */
 #define PyTrace_CALL 0
 #define PyTrace_EXCEPTION 1
 #define PyTrace_LINE 2
@@ -114,6 +118,7 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_CALL 4
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
+#define PyTrace_OPCODE 7
 #endif
 
 #ifdef Py_LIMITED_API
@@ -229,12 +234,10 @@ PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 #endif /* !Py_LIMITED_API */
-#ifdef WITH_THREAD
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
 #endif /* !Py_LIMITED_API */
-#endif
 
 /* Return the current thread state. The global interpreter lock must be held.
  * When the current thread state is NULL, this issues a fatal error (so that
@@ -268,7 +271,6 @@ typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}
         PyGILState_STATE;
 
-#ifdef WITH_THREAD
 
 /* Ensure that the current thread is ready to call the Python
    C API, regardless of the current state of Python, or of its
@@ -326,7 +328,6 @@ PyAPI_FUNC(int) PyGILState_Check(void);
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 #endif
 
-#endif   /* #ifdef WITH_THREAD */
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
    thread id to that thread's current frame.

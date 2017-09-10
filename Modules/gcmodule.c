@@ -24,6 +24,8 @@
 */
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
 #include "pydtrace.h"
 #include "pytime.h"             /* for _PyTime_GetMonotonicClock() */
