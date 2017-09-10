@@ -49,7 +49,7 @@ echo.Fetching external libraries...
 
 set libraries=
 set libraries=%libraries%                                       bzip2-1.0.6
-if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-1.0.2k
+if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-1.1.0f
 set libraries=%libraries%                                       sqlite-3.14.2.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.6.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.6.0
@@ -72,7 +72,7 @@ for %%e in (%libraries%) do (
 echo.Fetching external binaries...
 
 set binaries=
-if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.0.2k
+if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.0f
 if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.6.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 
