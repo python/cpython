@@ -2966,12 +2966,13 @@ _PyType_LookupUncached(PyTypeObject *type, PyObject *name, int *error)
     mro = type->tp_mro;
 
     if (mro == NULL) {
-        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0 &&
-                PyType_Ready(type) < 0) {
-            *error = -1;
-            return NULL;
+        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0) {
+            if (PyType_Ready(type) < 0) {
+                *error = -1;
+                return NULL;
+            }
+            mro = type->tp_mro;
         }
-        mro = type->tp_mro;
         if (mro == NULL) {
             *error = 1;
             return NULL;
