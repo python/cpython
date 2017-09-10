@@ -146,7 +146,8 @@ a = A(destroyed)"""
         with self.assertRaises(TypeError):
             bad_getattr2.nope
         del sys.modules['test.bad_getattr']
-        del sys.modules['test.bad_getattr2']
+        if 'test.bad_getattr2' in sys.modules:
+            del sys.modules['test.bad_getattr2']
 
     def test_module_repr_minimal(self):
         # reprs when modules have no __file__, __name__, or __loader__
