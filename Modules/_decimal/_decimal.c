@@ -2163,13 +2163,17 @@ dec_from_long(PyTypeObject *type, const PyObject *v,
 /* Return a new PyDecObject from a PyLongObject. Use the context for
    conversion. */
 static PyObject *
-PyDecType_FromLong(PyTypeObject *type, const PyObject *pylong,
-                   PyObject *context)
+PyDecType_FromLong(PyTypeObject *type, const PyObject *v, PyObject *context)
 {
     PyObject *dec;
     uint32_t status = 0;
 
-    dec = dec_from_long(type, pylong, CTX(context), &status);
+    if (!PyLong_Check(v)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be an integer");
+        return NULL;
+    }
+
+    dec = dec_from_long(type, v, CTX(context), &status);
     if (dec == NULL) {
         return NULL;
     }
@@ -2185,15 +2189,20 @@ PyDecType_FromLong(PyTypeObject *type, const PyObject *pylong,
 /* Return a new PyDecObject from a PyLongObject. Use a maximum context
    for conversion. If the conversion is not exact, set InvalidOperation. */
 static PyObject *
-PyDecType_FromLongExact(PyTypeObject *type, const PyObject *pylong,
+PyDecType_FromLongExact(PyTypeObject *type, const PyObject *v,
                         PyObject *context)
 {
     PyObject *dec;
     uint32_t status = 0;
     mpd_context_t maxctx;
 
+    if (!PyLong_Check(v)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be an integer");
+        return NULL;
+    }
+
     mpd_maxcontext(&maxctx);
-    dec = dec_from_long(type, pylong, &maxctx, &status);
+    dec = dec_from_long(type, v, &maxctx, &status);
     if (dec == NULL) {
         return NULL;
     }
