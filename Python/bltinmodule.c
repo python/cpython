@@ -1337,6 +1337,19 @@ Return the next item from the iterator. If default is given and the iterator\n\
 is exhausted, it is returned instead of raising StopIteration.");
 
 
+static PyObject *
+builtin_noop(PyObject *self, PyObject *args, PyObject *keywords)
+{
+    Py_RETURN_NONE;
+}
+
+
+PyDoc_STRVAR(noop_doc,
+"noop(*args, **kws)\n\
+\n\
+Do nothing except return None.");
+
+
 /*[clinic input]
 setattr as builtin_setattr
 
@@ -2644,6 +2657,7 @@ static PyMethodDef builtin_methods[] = {
     {"max",             (PyCFunction)builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min",             (PyCFunction)builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
     {"next",            (PyCFunction)builtin_next,       METH_FASTCALL, next_doc},
+    {"noop",            (PyCFunction)builtin_noop,       METH_VARARGS | METH_KEYWORDS, noop_doc},
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
