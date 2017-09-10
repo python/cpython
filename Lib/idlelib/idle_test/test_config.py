@@ -437,78 +437,57 @@ class IdleConfTest(unittest.TestCase):
 
         eq = self.assertEqual
         eq(conf.GetExtensions(),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-            'ZoomHeight'])
+           ['ZzDummy'])
         eq(conf.GetExtensions(active_only=False),
-            ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-             'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-             'ZoomHeight', 'DISABLE'])
+            ['ZzDummy', 'DISABLE'])
         eq(conf.GetExtensions(editor_only=True),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-            'ZoomHeight'])
+           ['ZzDummy'])
         eq(conf.GetExtensions(shell_only=True),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'FormatParagraph',
-            'ParenMatch', 'ZoomHeight'])
+           [])
         eq(conf.GetExtensions(active_only=False, editor_only=True),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension',
-            'ScriptBinding', 'ZoomHeight', 'DISABLE'])
-        eq(conf.GetExtensions(active_only=False, shell_only=True),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-            'ZoomHeight', 'DISABLE'])
+           ['ZzDummy', 'DISABLE'])
 
         # Add user extensions
         conf.SetOption('extensions', 'Foobar', 'enable', 'True')
         eq(conf.GetExtensions(),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension',
-            'ScriptBinding', 'ZoomHeight', 'Foobar'])  # User extensions didn't sort
+           ['ZzDummy', 'Foobar'])  # User extensions didn't sort
         eq(conf.GetExtensions(active_only=False),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension',
-            'ScriptBinding', 'ZoomHeight', 'DISABLE', 'Foobar'])
+           ['ZzDummy', 'DISABLE', 'Foobar'])
 
     def test_remove_key_bind_names(self):
         conf = self.mock_config()
 
         self.assertCountEqual(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
-            ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-             'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-             'ZoomHeight'])
+            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch','ZzDummy'])
 
     def test_get_extn_name_for_event(self):
         conf = self.mock_config()
 
         eq = self.assertEqual
-        eq(conf.GetExtnNameForEvent('force-open-completions'), 'AutoComplete')
-        eq(conf.GetExtnNameForEvent('expand-word'), 'AutoExpand')
-        eq(conf.GetExtnNameForEvent('force-open-calltip'), 'CallTips')
-        eq(conf.GetExtnNameForEvent('zoom-height'), 'ZoomHeight')
+        eq(conf.GetExtnNameForEvent('z-in'), 'ZzDummy')
+        eq(conf.GetExtnNameForEvent('z-out'), None)
 
     def test_get_extension_keys(self):
         conf = self.mock_config()
 
         eq = self.assertEqual
-        eq(conf.GetExtensionKeys('AutoComplete'),
-           {'<<force-open-completions>>': ['<Control-Key-space>']})
-        eq(conf.GetExtensionKeys('ParenMatch'),
-           {'<<flash-paren>>': ['<Control-Key-0>']})
-
-        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
-        eq(conf.GetExtensionKeys('ZoomHeight'), {'<<zoom-height>>': key})
+        eq(conf.GetExtensionKeys('ZzDummy'),
+           {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
+# need option key test
+##        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
+##        eq(conf.GetExtensionKeys('ZoomHeight'), {'<<zoom-height>>': key})
 
     def test_get_extension_bindings(self):
         conf = self.mock_config()
 
         self.assertEqual(conf.GetExtensionBindings('NotExists'), {})
 
-        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
+        #key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
+        expect = {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>'],
+                  '<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']}
         self.assertEqual(
-            conf.GetExtensionBindings('ZoomHeight'), {'<<zoom-height>>': key})
+            conf.GetExtensionBindings('ZzDummy'), expect)
 
         # Add non-configuarable bindings
         conf.defaultCfg['extensions'].add_section('Foobar')
@@ -542,9 +521,11 @@ class IdleConfTest(unittest.TestCase):
         sys.platform = 'some-linux'
         self.assertEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
 
-        # This should not be the same, sicne replace <Alt- to <Option-
-        sys.platform = 'darwin'
-        self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
+        # This should not be the same, since replace <Alt- to <Option-.
+        # Above depended on config-extensions.def having Alt keys,
+        # which is no longer true.
+        # sys.platform = 'darwin'
+        # self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
 
         # Restore platform
         sys.platform = current_platform

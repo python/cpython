@@ -824,19 +824,20 @@ class KeysPageTest(unittest.TestCase):
         d.custom_name.set('my custom keys')
         d.bindingslist.delete(0, 'end')
         d.bindingslist.insert(0, 'copy')
-        d.bindingslist.insert(1, 'expand-word')
+        d.bindingslist.insert(1, 'z-in')
         d.bindingslist.selection_set(0)
         d.bindingslist.selection_anchor(0)
         # Core binding - adds to keys.
         d.keybinding.set('<Key-F11>')
         self.assertEqual(keyspage,
                          {'my custom keys': {'copy': '<Key-F11>'}})
+
         # Not a core binding - adds to extensions.
         d.bindingslist.selection_set(1)
         d.bindingslist.selection_anchor(1)
         d.keybinding.set('<Key-F11>')
         self.assertEqual(extpage,
-                         {'AutoExpand_cfgBindings': {'expand-word': '<Key-F11>'}})
+                         {'ZzDummy_cfgBindings': {'z-in': '<Key-F11>'}})
 
     def test_set_keys_type(self):
         eq = self.assertEqual
@@ -1125,13 +1126,6 @@ class GenPageTest(unittest.TestCase):
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '0'}})
 
-    def test_autosave(self):
-        d = self.page
-        d.save_auto_on.invoke()
-        self.assertEqual(mainpage, {'General': {'autosave': '1'}})
-        d.save_ask_on.invoke()
-        self.assertEqual(mainpage, {'General': {'autosave': '0'}})
-
     def test_editor_size(self):
         d = self.page
         d.win_height_int.insert(0, '1')
@@ -1139,6 +1133,37 @@ class GenPageTest(unittest.TestCase):
         changes.clear()
         d.win_width_int.insert(0, '1')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
+
+    def test_autocomplete_wait(self):
+        self.page.auto_wait_int.insert(0, '1')
+        self.assertEqual(extpage, {'AutoComplete': {'popupwait': '12000'}})
+
+    def test_parenmatch(self):
+        d = self.page
+        eq = self.assertEqual
+        d.paren_style_type['menu'].invoke(0)
+        eq(extpage, {'ParenMatch': {'style': 'opener'}})
+        changes.clear()
+        d.paren_flash_time.insert(0, '2')
+        eq(extpage, {'ParenMatch': {'flash-delay': '2500'}})
+        changes.clear()
+        d.bell_on.invoke()
+        eq(extpage, {'ParenMatch': {'bell': 'False'}})
+
+    def test_autosave(self):
+        d = self.page
+        d.save_auto_on.invoke()
+        self.assertEqual(mainpage, {'General': {'autosave': '1'}})
+        d.save_ask_on.invoke()
+        self.assertEqual(mainpage, {'General': {'autosave': '0'}})
+
+    def test_paragraph(self):
+        self.page.format_width_int.insert(0, '1')
+        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '172'}})
+
+    def test_context(self):
+        self.page.context_int.insert(0, '1')
+        self.assertEqual(extpage, {'CodeContext': {'numlines': '13'}})
 
     def test_source_selected(self):
         d = self.page
