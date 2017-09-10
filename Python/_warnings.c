@@ -437,7 +437,7 @@ warn_explicit(PyObject *category, PyObject *message,
         Py_RETURN_NONE;
 
     if (registry && !PyDict_Check(registry) && (registry != Py_None)) {
-        PyErr_SetString(PyExc_TypeError, "'registry' must be a dict");
+        PyErr_SetString(PyExc_TypeError, "'registry' must be a dict or None");
         return NULL;
     }
 
@@ -514,6 +514,11 @@ warn_explicit(PyObject *category, PyObject *message,
                 registry = get_once_registry();
                 if (registry == NULL)
                     goto cleanup;
+                if (!PyDict_Check(registry)) {
+                    PyErr_SetString(PyExc_TypeError,
+                                    "warnings.onceregistry must be a dict");
+                    goto cleanup;
+                }
             }
             /* _PyRuntime.warnings.once_registry[(text, category)] = 1 */
             rc = update_registry(registry, text, category, 0);
