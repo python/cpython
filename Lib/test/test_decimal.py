@@ -1749,6 +1749,7 @@ class UsabilityTest(unittest.TestCase):
             self.assertNotEqual(D('nan'), F(-9,123))
             self.assertNotEqual(F(-9,123), D('nan'))
 
+    @cpython_only
     def test_issue31406(self):
         # A comparison between a Decimal object and a bad Rational
         # object shouldn't crash the interpreter.
