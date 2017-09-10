@@ -803,8 +803,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             wmod.filterwarnings('once')
             with support.swap_attr(wmod, 'onceregistry', None):
                 with self.assertRaises(TypeError):
-                    wmod.warn_explicit(message='foo', category=Warning,
-                                       filename='bar', lineno=1, registry=None)
+                    wmod.warn_explicit('foo', Warning, 'bar', 1, registry=None)
 
 
 class WarningsDisplayTests(BaseTest):
