@@ -23,7 +23,7 @@ are always available.  They are listed here in alphabetical order.
 :func:`classmethod`  :func:`getattr`    :func:`locals`      |func-range|_     :func:`vars`
 :func:`compile`      :func:`globals`    :func:`map`         :func:`repr`      :func:`zip`
 :func:`complex`      :func:`hasattr`    :func:`max`         :func:`reversed`  :func:`__import__`
-:func:`delattr`      :func:`hash`       |func-memoryview|_  :func:`round`     
+:func:`delattr`      :func:`hash`       |func-memoryview|_  :func:`round`
 ===================  =================  ==================  ================  ====================
 
 .. using :func:`dict` would create a link to another page, so local targets are
