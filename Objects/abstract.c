@@ -143,6 +143,7 @@ PyObject *
 PyObject_GetItem(PyObject *o, PyObject *key)
 {
     PyMappingMethods *m;
+    PyObject *meth, *stack[2] = {o, key};
 
     if (o == NULL || key == NULL) {
         return null_error();
@@ -166,6 +167,22 @@ PyObject_GetItem(PyObject *o, PyObject *key)
         else if (o->ob_type->tp_as_sequence->sq_item)
             return type_error("sequence index must "
                               "be integer, not '%.200s'", key);
+    }
+
+    if (PyType_Check(o)) {
+        meth = PyObject_GetAttrString(o, "__class_getitem__");
+        if (meth) {
+            if (!PyCallable_Check(meth)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "__class_getitem__ must be callable");
+                return NULL;
+            }
+            return _PyObject_FastCall(meth, stack, 2);
+        }
+        else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return NULL;
+        }
+        PyErr_Clear();
     }
 
     return type_error("'%.200s' object is not subscriptable", o);
