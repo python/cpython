@@ -2946,7 +2946,7 @@ PyType_GetSlot(PyTypeObject *type, int slot)
    This returns a borrowed reference, and might set an exception.
    'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
 static PyObject *
-_PyType_LookupUncached(PyTypeObject *type, PyObject *name, int *error)
+find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
 {
     Py_ssize_t i, n;
     PyObject *mro, *res, *base, *dict;
@@ -3026,7 +3026,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         }
     }
 
-    res = _PyType_LookupUncached(type, name, &error);
+    res = find_name_in_mro(type, name, &error);
     /* Only put NULL results into cache if there was no error. */
     if (error) {
         /* It's not ideal to clear the error condition,
@@ -7003,7 +7003,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
     }
     do {
         /* Use faster uncached lookup as we won't get any cache hits during type setup. */
-        descr = _PyType_LookupUncached(type, p->name_strobj, &error);
+        descr = find_name_in_mro(type, p->name_strobj, &error);
         if (descr == NULL) {
             if (error == -1) {
                 /* It is unlikely by not impossible that there has been an exception
