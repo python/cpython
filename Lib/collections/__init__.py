@@ -414,15 +414,6 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
                    __repr__, _asdict, __getnewargs__):
         method.__qualname__ = f'{typename}.{method.__name__}'
 
-    # Helper function used in the class creation
-
-    def reuse_itemgetter(index, cache=_nt_itemgetters):
-        try:
-            return cache[index]
-        except KeyError:
-            itemgetter_object = cache[index] = _itemgetter(index)
-            return itemgetter_object
-
     # Build-up the class namespace dictionary
     # and use type() to build the result class
     class_namespace = {
@@ -436,9 +427,14 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
         '_asdict': _asdict,
         '__getnewargs__': __getnewargs__,
     }
+    cache = _nt_itemgetters
     for index, name in enumerate(field_names):
         doc = _sys.intern(f'Alias for field number {index}')
-        class_namespace[name] = property(reuse_itemgetter(index), doc=doc)
+        try:
+            itemgetter_object = cache[index]
+        except KeyError:
+            itemgetter_object = cache[index] = _itemgetter(index)
+        class_namespace[name] = property(itemgetter_object, doc=doc)
 
     result = type(typename, (tuple,), class_namespace)
 
