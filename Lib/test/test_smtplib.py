@@ -19,9 +19,8 @@ import threading
 
 import unittest
 from test import support, mock_socket
+from test.support import HOST, HOSTv4, HOSTv6
 
-
-HOST = support.HOST
 
 if sys.platform == 'darwin':
     # select.poll returns a select.POLLHUP at the end of the tests
@@ -208,8 +207,8 @@ class DebuggingServerTests(unittest.TestCase):
         # Pick a random unused port by passing 0 for the port number
         self.serv = smtpd.DebuggingServer((HOST, 0), ('nowhere', -1),
                                           decode_data=True)
-        # Keep a note of what port was assigned
-        self.port = self.serv.socket.getsockname()[1]
+        # Keep a note of what server host and port were assigned
+        self.host, self.port = self.serv.socket.getsockname()[:2]
         serv_args = (self.serv, self.serv_evt, self.client_evt)
         self.thread = threading.Thread(target=debugging_server, args=serv_args)
         self.thread.start()
@@ -231,6 +230,11 @@ class DebuggingServerTests(unittest.TestCase):
         smtpd.DEBUGSTREAM.close()
         smtpd.DEBUGSTREAM = self.old_DEBUGSTREAM
 
+    def get_output_without_xpeer(self):
+        test_output = self.output.getvalue()
+        return re.sub(r'(.*?)^X-Peer:\s*\S+\n(.*)', r'\1\2',
+                      test_output, flags=re.MULTILINE|re.DOTALL)
+
     def testBasic(self):
         # connect
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
@@ -238,16 +242,16 @@ class DebuggingServerTests(unittest.TestCase):
 
     def testSourceAddress(self):
         # connect
-        port = support.find_unused_port()
+        src_port = support.find_unused_port()
         try:
-            smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                    timeout=3, source_address=('127.0.0.1', port))
-            self.assertEqual(smtp.source_address, ('127.0.0.1', port))
+            smtp = smtplib.SMTP(self.host, self.port, local_hostname='localhost',
+                                timeout=3, source_address=(self.host, src_port))
+            self.assertEqual(smtp.source_address, (self.host, src_port))
             self.assertEqual(smtp.local_hostname, 'localhost')
             smtp.quit()
         except OSError as e:
             if e.errno == errno.EADDRINUSE:
-                self.skipTest("couldn't bind to port %d" % port)
+                self.skipTest("couldn't bind to source port %d" % src_port)
             raise
 
     def testNOOP(self):
@@ -374,10 +378,14 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds as figuring out
+        # exactly what IP address format is put there is not easy (and
+        # irrelevant to our test).  Typically 127.0.0.1 or ::1, but it is
+        # not always the same as socket.gethostbyname(HOST). :(
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
 
     def testSendMessageWithAddresses(self):
         m = email.mime.text.MIMEText('A test message')
@@ -397,12 +405,13 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         # The Bcc header should not be transmitted.
         del m['Bcc']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: foo@bar.com$", re.MULTILINE)
         self.assertRegex(debugout, sender)
@@ -426,10 +435,11 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: foo@bar.com$", re.MULTILINE)
         self.assertRegex(debugout, sender)
@@ -452,10 +462,11 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: joe@example.com$", re.MULTILINE)
         self.assertRegex(debugout, sender)
@@ -481,10 +492,11 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: the_rescuers@Rescue-Aid-Society.com$", re.MULTILINE)
         self.assertRegex(debugout, sender)
@@ -515,10 +527,11 @@ class DebuggingServerTests(unittest.TestCase):
         # The Resent-Bcc headers are deleted before serialization.
         del m['Bcc']
         del m['Resent-Bcc']
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: holy@grail.net$", re.MULTILINE)
         self.assertRegex(debugout, sender)
