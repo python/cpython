@@ -416,12 +416,12 @@ def namedtuple(typename, field_names, *, rename=False, module=None):
 
     # Helper function used in the class creation
 
-    def reuse_itemgetter(index):
+    def reuse_itemgetter(index, cache=_nt_itemgetters):
         try:
-            return _nt_itemgetters[index]
+            return cache[index]
         except KeyError:
-            getter = _nt_itemgetters[index] = _itemgetter(index)
-            return getter
+            itemgetter_object = cache[index] = _itemgetter(index)
+            return itemgetter_object
 
     # Build-up the class namespace dictionary
     # and use type() to build the result class
