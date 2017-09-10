@@ -1764,6 +1764,7 @@ class GenPage(Frame):
                     (*)helplist: ListBox
                     scroll_helplist: Scrollbar
         """
+        # Integer values need StringVar because int('') raises.
         self.startup_edit = tracers.add(
                 IntVar(self), ('main', 'General', 'editor-on-startup'))
         self.win_width = tracers.add(
@@ -1771,20 +1772,20 @@ class GenPage(Frame):
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
         self.autocomplete_wait = tracers.add(
-            IntVar(self), ('extensions', 'AutoComplete', 'popupwait'))
+                StringVar(self), ('extensions', 'AutoComplete', 'popupwait'))
         self.paren_style = tracers.add(
                 StringVar(self), ('extensions', 'ParenMatch', 'style'))
         self.flash_delay = tracers.add(
-                IntVar(self), ('extensions', 'ParenMatch', 'flash-delay'))
+                StringVar(self), ('extensions', 'ParenMatch', 'flash-delay'))
         self.paren_bell = tracers.add(
                 BooleanVar(self), ('extensions', 'ParenMatch', 'bell'))
 
         self.autosave = tracers.add(
                 IntVar(self), ('main', 'General', 'autosave'))
         self.format_width = tracers.add(
-                IntVar(self), ('extensions', 'FormatParagraph', 'max-width'))
+                StringVar(self), ('extensions', 'FormatParagraph', 'max-width'))
         self.context_lines = tracers.add(
-                IntVar(self), ('extensions', 'CodeContext', 'numlines'))
+                StringVar(self), ('extensions', 'CodeContext', 'numlines'))
 
         # Create widgets:
         # Section frames.
