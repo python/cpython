@@ -297,7 +297,7 @@ purposes.
 
      3DES was dropped from the default cipher string.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.6.3
 
      TLS 1.3 cipher suites TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384,
      and TLS_CHACHA20_POLY1305_SHA256 were added to the default cipher string.
@@ -776,7 +776,7 @@ Constants
    When Python has been compiled against an older version of OpenSSL, the
    flag defaults to *0*.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.6.3
 
 .. data:: OP_CIPHER_SERVER_PREFERENCE
 
@@ -856,7 +856,7 @@ Constants
 
    Whether the OpenSSL library has built-in support for the TLS 1.3 protocol.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.6.3
 
 .. data:: CHANNEL_BINDING_TYPES
 
