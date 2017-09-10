@@ -3037,8 +3037,9 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
            the same type will call it again -- hopefully
            in a context that propagates the exception out.
         */
-        if (error == -1)
+        if (error == -1) {
             PyErr_Clear();
+        }
         return NULL;
     }
 
