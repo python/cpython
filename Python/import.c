@@ -1666,10 +1666,42 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
+        static int import_level;
+        _Py_IDENTIFIER(importprofile);
+        int import_profile = 0;
+        _PyTime_t t1=0, t2;
+
         Py_XDECREF(mod);
+
+        /* XOptions is initialized after first some imports.
+         * So we can't have negative cache.
+         * Anyway, importlib.__find_and_load is much slower than
+         * _PyDict_GetItemId()
+         */
+        PyObject *xoptions = PySys_GetXOptions();
+        if (xoptions) {
+            PyObject *value = _PyDict_GetItemId(xoptions, &PyId_importprofile);
+            import_profile = (value == Py_True);
+        }
+
+        if (import_profile) {
+            import_level++;
+            t1 = _PyTime_GetMonotonicClock();
+        }
+
         mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                             &PyId__find_and_load, abs_name,
                                             interp->import_func, NULL);
+
+        if (import_profile) {
+            import_level--;
+            t2 = _PyTime_GetMonotonicClock();
+            fprintf(stderr, "%*s- %s %ld [us]\n",
+                    import_level*2, "",
+                    PyUnicode_AsUTF8(abs_name),
+                    (long)(t2 - t1) / 1000);
+        }
+
         if (mod == NULL) {
             goto error;
         }

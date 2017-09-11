@@ -407,6 +407,8 @@ Miscellaneous options
    * ``-X showalloccount`` to output the total count of allocated objects for
      each type when the program finishes. This only works when Python was built with
      ``COUNT_ALLOCS`` defined.
+   * ``-X importprofile`` to show how long each import takes. Nested imports are
+     indented. It can be used to optimize application's startup time.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -422,6 +424,9 @@ Miscellaneous options
 
    .. versionadded:: 3.6
       The ``-X showalloccount`` option.
+
+   .. versionadded:: 3.7
+      The ``-X importprofile`` option.
 
 
 Options you shouldn't use
