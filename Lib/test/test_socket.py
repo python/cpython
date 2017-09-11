@@ -733,6 +733,7 @@ class GeneralModuleTests(unittest.TestCase):
                 self.assertRaises(socket.timeout, c.sendall,
                                   b"x" * test_support.SOCK_MAX_SIZE)
         finally:
+            signal.alarm(0)
             signal.signal(signal.SIGALRM, old_alarm)
             c.close()
             s.close()
