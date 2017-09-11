@@ -2146,15 +2146,11 @@ _PySys_EndInit(PyObject *sysdict)
     SET_SYS_FROM_STRING_INT_RESULT("base_exec_prefix",
                         PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
 
-    PyObject *warnoptions = get_warnoptions();
-    if (warnoptions == NULL)
+    if (get_warnoptions() == NULL)
         return -1;
-    SET_SYS_FROM_STRING_BORROW_INT_RESULT("warnoptions", warnoptions);
 
-    PyObject *xoptions = get_xoptions();
-    if (xoptions == NULL)
+    if (get_xoptions() == NULL)
         return -1;
-    SET_SYS_FROM_STRING_BORROW_INT_RESULT("_xoptions", xoptions);
 
     if (PyErr_Occurred())
         return -1;
