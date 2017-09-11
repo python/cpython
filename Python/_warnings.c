@@ -111,8 +111,10 @@ get_default_action(void)
         return _PyRuntime.warnings.default_action;
     }
     if (!PyUnicode_Check(default_action)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "warnings.defaultaction must be a string");
+        PyErr_Format(PyExc_TypeError,
+                     MODULE_NAME ".defaultaction must be a string, "
+                     "not '%.200s'",
+                     Py_TYPE(default_action)->tp_name);
         Py_DECREF(default_action);
         return NULL;
     }
@@ -170,8 +172,9 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         ln_obj = PyTuple_GET_ITEM(tmp_item, 4);
 
         if (!PyUnicode_Check(action)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "action must be a string");
+            PyErr_Format(PyExc_TypeError,
+                         "action must be a string, not '%.200s'",
+                         Py_TYPE(action)->tp_name);
             Py_DECREF(tmp_item);
             return NULL;
         }
