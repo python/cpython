@@ -1708,8 +1708,11 @@ class SimpleBackgroundTests(unittest.TestCase):
         # A simple IO loop. Call func(*args) depending on the error we get
         # (WANT_READ or WANT_WRITE) move data between the socket and the BIOs.
         timeout = kwargs.get('timeout', 10)
+        deadline = time.monotonic() + timeout
         count = 0
         while True:
+            if time.monotonic() > deadline:
+                self.fail("timeout")
             errno = None
             count += 1
             try:
