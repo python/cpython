@@ -1491,6 +1491,7 @@ get_warnoptions(void)
             Py_DECREF(warnoptions);
             return NULL;
         }
+        Py_DECREF(warnoptions);
     }
     return warnoptions;
 }
@@ -1544,6 +1545,7 @@ get_xoptions(void)
             Py_DECREF(xoptions);
             return NULL;
         }
+        Py_DECREF(xoptions);
     }
     return xoptions;
 }
