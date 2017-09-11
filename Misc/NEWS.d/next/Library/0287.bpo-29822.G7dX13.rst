@@ -1,0 +1,2 @@
+inspect.isabstract() now works during __init_subclass__.  Patch by Nate
+Soares.

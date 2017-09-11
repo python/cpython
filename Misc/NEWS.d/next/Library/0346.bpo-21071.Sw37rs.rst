@@ -1,0 +1,1 @@
+struct.Struct.format type is now :class:`str` instead of :class:`bytes`.

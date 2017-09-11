@@ -1,0 +1,1 @@
+Many asserts in `multiprocessing` are now more informative, and some error types have been changed to more specific ones.

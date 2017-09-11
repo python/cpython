@@ -1,0 +1,2 @@
+Fixed possible crash in sqlite3.Connection.create_collation() if pass
+invalid string-like object as a name.  Patch by Xiang Zhang.

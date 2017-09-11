@@ -1,0 +1,2 @@
+Fix possible overflow when organize struct.pack_into error message.  Patch
+by Yuan Liu.

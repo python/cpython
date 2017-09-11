@@ -1,11 +1,12 @@
 Quick Start Guide
 -----------------
 
-1.  Install Microsoft Visual Studio 2015, any edition.
+1.  Install Microsoft Visual Studio 2017 with Python workload and
+    Python native development component.
 1a. Optionally install Python 3.6 or later.  If not installed,
-    get_externals.bat (build.bat -e) will download and use Python via
+    get_externals.bat (via build.bat) will download and use Python via
     NuGet.
-2.  Run "build.bat -e" to build Python in 32-bit Release configuration.
+2.  Run "build.bat" to build Python in 32-bit Release configuration.
 3.  (Optional, but recommended) Run the test suite with "rt.bat -q".
 
 
@@ -15,29 +16,14 @@ Building Python using Microsoft Visual C++
 This directory is used to build CPython for Microsoft Windows NT version
 6.0 or higher (Windows Vista, Windows Server 2008, or later) on 32 and 64
 bit platforms.  Using this directory requires an installation of
-Microsoft Visual C++ 2015 (MSVC 14.0) of any edition.  The specific
-requirements are as follows:
+Microsoft Visual Studio 2017 (MSVC 14.1) with the *Python workload* and
+its optional *Python native development* component selected. (For
+command-line builds, Visual Studio 2015 may also be used.)
 
-Visual Studio Express 2015 for Desktop
-Visual Studio Professional 2015
-    Either edition is sufficient for building all configurations except
-    for Profile Guided Optimization.
-    The Python build solution pcbuild.sln makes use of Solution Folders,
-    which this edition does not support.  Any time pcbuild.sln is opened
-    or reloaded by Visual Studio, a warning about Solution Folders will
-    be displayed, which can be safely dismissed with no impact on your
-    ability to build Python.
-    Required for building 64-bit Debug and Release configuration builds
-Visual Studio Premium 2015
-    Required for building Release configuration builds that make use of
-    Profile Guided Optimization (PGO), on either platform.
-
-All you need to do to build is open the solution "pcbuild.sln" in Visual
-Studio, select the desired combination of configuration and platform,
-then build with "Build Solution".  You can also build from the command
-line using the "build.bat" script in this directory; see below for
-details.  The solution is configured to build the projects in the correct
-order.
+Building from the command line is recommended in order to obtain any
+external dependencies. To build, simply run the "build.bat" script without
+any arguments. After this succeeds, you can open the "pcbuild.sln"
+solution in Visual Studio to continue development.
 
 The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into the
@@ -71,8 +57,8 @@ Building Python using the build.bat script
 
 In this directory you can find build.bat, a script designed to make
 building Python on Windows simpler.  This script will use the env.bat
-script to detect one of Visual Studio 2015, 2013, 2012, or 2010, any of
-which may be used to build Python, though only Visual Studio 2015 is
+script to detect either Visual Studio 2017 or 2015, either of
+which may be used to build Python. Currently Visual Studio 2017 is
 officially supported.
 
 By default, build.bat will build Python in Release configuration for
@@ -83,13 +69,14 @@ this behavior, try `build.bat -h` to learn more.
 C Runtime
 ---------
 
-Visual Studio 2015 uses version 14 of the C runtime (MSVCRT14).  The
-executables no longer use the "Side by Side" assemblies used in previous
-versions of the compiler.  This simplifies distribution of applications.
+Visual Studio 2017 uses version 14.0 of the C runtime (vcruntime140).
+The executables no longer use the "Side by Side" assemblies used in
+previous versions of the compiler.  This simplifies distribution of
+applications.
 
-The run time libraries are available under the VC/Redist folder of your
+The run time libraries are available under the redist folder of your
 Visual Studio distribution. For more info, see the Readme in the
-VC/Redist folder.
+redist folder.
 
 
 Sub-Projects
@@ -129,6 +116,8 @@ categories:
 _freeze_importlib
     _freeze_importlib.exe, used to regenerate Python\importlib.h after
     changes have been made to Lib\importlib\_bootstrap.py
+pyshellext
+    pyshellext.dll, the shell extension deployed with the launcher
 python3dll
     python3.dll, the PEP 384 Stable ABI dll
 xxlimited
@@ -138,6 +127,7 @@ xxlimited
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
 .pyd) of the same name as the project:
+_asyncio
 _ctypes
 _ctypes_test
 _decimal
@@ -147,9 +137,12 @@ _msi
 _multiprocessing
 _overlapped
 _socket
-_testcapi
 _testbuffer
+_testcapi
+_testconsole
 _testimportmultiple
+_testmultiphase
+_tkinter
 pyexpat
 select
 unicodedata
@@ -171,61 +164,46 @@ _lzma
         http://tukaani.org/xz/
 _ssl
     Python wrapper for version 1.0.2k of the OpenSSL secure sockets
-    library, which is built by ssl.vcxproj
+    library, which is downloaded from our binaries repository at
+    https://github.com/python/cpython-bin-deps.
+
     Homepage:
         http://www.openssl.org/
 
-    Building OpenSSL requires nasm.exe (the Netwide Assembler), version
-    2.10 or newer from
-        http://www.nasm.us/
-    to be somewhere on your PATH.  More recent versions of OpenSSL may
-    need a later version of NASM. If OpenSSL's self tests don't pass,
-    you should first try to update NASM and do a full rebuild of
-    OpenSSL.  If you use the PCbuild\get_externals.bat method
-    for getting sources, it also downloads a version of NASM which the
-    libeay/ssleay sub-projects use.
+    Building OpenSSL requires Perl on your path, and can be performed by
+    running PCbuild\prepare_ssl.bat. This will retrieve the version of
+    the sources matched to the current commit from the OpenSSL branch
+    in our source repository at
+    https://github.com/python/cpython-source-deps.
 
-    The libeay/ssleay sub-projects expect your OpenSSL sources to have
-    already been configured and be ready to build.  If you get your sources
-    from svn.python.org as suggested in the "Getting External Sources"
-    section below, the OpenSSL source will already be ready to go.  If
-    you want to build a different version, you will need to run
+    To use an alternative build of OpenSSL completely, you should replace
+    the files in the externals/openssl-bin-<version> folder with your own.
+    As long as this folder exists, its contents will not be downloaded
+    again when building.
 
-       PCbuild\prepare_ssl.py path\to\openssl-source-dir
-
-    That script will prepare your OpenSSL sources in the same way that
-    those available on svn.python.org have been prepared.  Note that
-    Perl must be installed and available on your PATH to configure
-    OpenSSL.  ActivePerl is recommended and is available from
-        http://www.activestate.com/activeperl/
-
-    The libeay and ssleay sub-projects will build the modules of OpenSSL
-    required by _ssl and _hashlib and may need to be manually updated when
-    upgrading to a newer version of OpenSSL or when adding new
-    functionality to _ssl or _hashlib. They will not clean up their output
-    with the normal Clean target; CleanAll should be used instead.
 _sqlite3
     Wraps SQLite 3.14.2.0, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter
-    Wraps version 8.6.6 of the Tk windowing system.
+    Wraps version 8.6.6 of the Tk windowing system, which is downloaded
+    from our binaries repository at
+    https://github.com/python/cpython-bin-deps.
+
     Homepage:
         http://www.tcl.tk/
 
-    Tkinter's dependencies are built by the tcl.vcxproj and tk.vcxproj
-    projects.  The tix.vcxproj project also builds the Tix extended
-    widget set for use with Tkinter.
+    Building Tcl and Tk can be performed by running
+    PCbuild\prepare_tcltk.bat. This will retrieve the version of the
+    sources matched to the current commit from the Tcl and Tk branches
+    in our source repository at
+    https://github.com/python/cpython-source-deps.
 
-    Those three projects install their respective components in a
+    The two projects install their respective components in a
     directory alongside the source directories called "tcltk" on
     Win32 and "tcltk64" on x64.  They also copy the Tcl and Tk DLLs
     into the current output directory, which should ensure that Tkinter
     is able to load Tcl/Tk without having to change your PATH.
-
-    The tcl, tk, and tix sub-projects do not clean their builds with
-    the normal Clean target; if you need to rebuild, you should use the
-    CleanAll target or manually delete their builds.
 
 
 Getting External Sources
@@ -254,8 +232,8 @@ as the values of certain properties in order for the build solution to
 find them.  This is an advanced topic and not necessarily fully
 supported.
 
-The get_externals.bat script is called automatically by build.bat when
-you pass the '-e' option to it.
+The get_externals.bat script is called automatically by build.bat
+unless you pass the '-E' option.
 
 
 Profile Guided Optimization
@@ -298,7 +276,7 @@ carefully modified by hand.
 The property files used are:
  * python (versions, directories and build names)
  * pyproject (base settings for all projects)
- * openssl (used by libeay and ssleay projects)
+ * openssl (used by projects dependent upon OpenSSL)
  * tcltk (used by _tkinter, tcl, tk and tix projects)
 
 The pyproject property file defines all of the build settings for each

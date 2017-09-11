@@ -1,0 +1,2 @@
+selectors does not take KeyboardInterrupt and SystemExit into account,
+leaving a fd in a bad state in case of error. Patch by Giampaolo Rodola'.
