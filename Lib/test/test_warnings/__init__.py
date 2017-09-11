@@ -794,6 +794,17 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         self.assertNotIn(b'Warning!', stderr)
         self.assertNotIn(b'Error', stderr)
 
+    @support.cpython_only
+    def test_issue31411(self):
+        # warn_explicit() shouldn't raise a SystemError in case
+        # warnings.onceregistry isn't a dictionary.
+        wmod = self.module
+        with original_warnings.catch_warnings(module=wmod):
+            wmod.filterwarnings('once')
+            with support.swap_attr(wmod, 'onceregistry', None):
+                with self.assertRaises(TypeError):
+                    wmod.warn_explicit('foo', Warning, 'bar', 1, registry=None)
+
 
 class WarningsDisplayTests(BaseTest):
 
