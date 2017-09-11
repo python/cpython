@@ -617,6 +617,12 @@ class IEEEFormatTestCase(unittest.TestCase):
                           ('<f', LE_FLOAT_NAN)]:
             struct.unpack(fmt, data)
 
+    @support.requires_IEEE_754
+    def test_serialized_float_rounding(self):
+        from _testcapi import FLT_MAX
+        self.assertEqual(struct.pack("<f", 3.40282356e38), struct.pack("<f", FLT_MAX))
+        self.assertEqual(struct.pack("<f", -3.40282356e38), struct.pack("<f", -FLT_MAX))
+
 class FormatTestCase(unittest.TestCase):
 
     def test_format(self):
