@@ -72,6 +72,12 @@ get_once_registry(void)
             return NULL;
         return _once_registry;
     }
+    if (!PyDict_Check(registry)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "warnings.onceregistry must be a dict");
+        Py_DECREF(registry);
+        return NULL;
+    }
     Py_DECREF(_once_registry);
     _once_registry = registry;
     return registry;
@@ -296,7 +302,7 @@ warn_explicit(PyObject *category, PyObject *message,
     int rc;
 
     if (registry && !PyDict_Check(registry) && (registry != Py_None)) {
-        PyErr_SetString(PyExc_TypeError, "'registry' must be a dict");
+        PyErr_SetString(PyExc_TypeError, "'registry' must be a dict or None");
         return NULL;
     }
 
