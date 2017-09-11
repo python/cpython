@@ -805,6 +805,21 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 with self.assertRaises(TypeError):
                     wmod.warn_explicit('foo', Warning, 'bar', 1, registry=None)
 
+    @support.cpython_only
+    def test_issue31416(self):
+        # warn_explicit() shouldn't cause an assertion failure in case of a
+        # bad warnings.filters or warnings.defaultaction.
+        wmod = self.module
+        with original_warnings.catch_warnings(module=wmod):
+            wmod.filters = [(None, None, Warning, None, 0)]
+            with self.assertRaises(TypeError):
+                wmod.warn_explicit('foo', Warning, 'bar', 1)
+
+            wmod.filters = []
+            with support.swap_attr(wmod, 'defaultaction', None), \
+                 self.assertRaises(TypeError):
+                wmod.warn_explicit('foo', Warning, 'bar', 1)
+
 
 class WarningsDisplayTests(BaseTest):
 
