@@ -31,7 +31,6 @@ from idlelib import windows
 TK_TABWIDTH_DEFAULT = 8
 _py_version = ' (%s)' % platform.python_version()
 
-
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
     major, minor, micro, level, serial = sys.version_info
@@ -52,11 +51,22 @@ class EditorWindow(object):
     from idlelib import mainmenu
     from tkinter import Toplevel
     from idlelib.statusbar import MultiStatusBar
+    from idlelib.autocomplete import AutoComplete
+    from idlelib.autoexpand import AutoExpand
+    from idlelib.calltips import CallTips
+    from idlelib.codecontext import CodeContext
+    from idlelib.paragraph import FormatParagraph
+    from idlelib.parenmatch import ParenMatch
+    from idlelib.rstrip import RstripExtension
+    from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
+        # Delay import: runscript imports pyshell imports EditorWindow.
+        from idlelib.runscript import ScriptBinding
+
         if EditorWindow.help_url is None:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
             if sys.platform.count('linux'):
@@ -84,7 +94,8 @@ class EditorWindow(object):
                     # Safari requires real file:-URLs
                     EditorWindow.help_url = 'file://' + EditorWindow.help_url
             else:
-                EditorWindow.help_url = "https://docs.python.org/%d.%d/" % sys.version_info[:2]
+                EditorWindow.help_url = ("https://docs.python.org/%d.%d/"
+                                         % sys.version_info[:2])
         self.flist = flist
         root = root or flist.root
         self.root = root
@@ -269,6 +280,43 @@ class EditorWindow(object):
         self.askyesno = tkMessageBox.askyesno
         self.askinteger = tkSimpleDialog.askinteger
         self.showerror = tkMessageBox.showerror
+
+        # Add pseudoevents for former extension fixed keys.
+        # (This probably needs to be done once in the process.)
+        text.event_add('<<autocomplete>>', '<Key-Tab>')
+        text.event_add('<<try-open-completions>>', '<KeyRelease-period>',
+                       '<KeyRelease-slash>', '<KeyRelease-backslash>')
+        text.event_add('<<try-open-calltip>>', '<KeyRelease-parenleft>')
+        text.event_add('<<refresh-calltip>>', '<KeyRelease-parenright>')
+        text.event_add('<<paren-closed>>', '<KeyRelease-parenright>',
+                       '<KeyRelease-bracketright>', '<KeyRelease-braceright>')
+
+        # Former extension bindings depends on frame.text being packed
+        # (called from self.ResetColorizer()).
+        autocomplete = self.AutoComplete(self)
+        text.bind("<<autocomplete>>", autocomplete.autocomplete_event)
+        text.bind("<<try-open-completions>>",
+                  autocomplete.try_open_completions_event)
+        text.bind("<<force-open-completions>>",
+                  autocomplete.force_open_completions_event)
+        text.bind("<<expand-word>>", self.AutoExpand(self).expand_word_event)
+        text.bind("<<format-paragraph>>",
+                  self.FormatParagraph(self).format_paragraph_event)
+        parenmatch = self.ParenMatch(self)
+        text.bind("<<flash-paren>>", parenmatch.flash_paren_event)
+        text.bind("<<paren-closed>>", parenmatch.paren_closed_event)
+        scriptbinding = ScriptBinding(self)
+        text.bind("<<check-module>>", scriptbinding.check_module_event)
+        text.bind("<<run-module>>", scriptbinding.run_module_event)
+        text.bind("<<do-rstrip>>", self.RstripExtension(self).do_rstrip)
+        calltips = self.CallTips(self)
+        text.bind("<<try-open-calltip>>", calltips.try_open_calltip_event)
+        #refresh-calltips must come after paren-closed to work right
+        text.bind("<<refresh-calltip>>", calltips.refresh_calltip_event)
+        text.bind("<<force-open-calltip>>", calltips.force_open_calltip_event)
+        text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
+        text.bind("<<toggle-code-context>>",
+                  self.CodeContext(self).toggle_code_context_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
@@ -981,16 +1029,8 @@ class EditorWindow(object):
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(editor_only=True)
 
-    extfiles = {  # map config-extension section names to new file names
-        'AutoComplete': 'autocomplete',
-        'AutoExpand': 'autoexpand',
-        'CallTips': 'calltips',
-        'CodeContext': 'codecontext',
-        'FormatParagraph': 'paragraph',
-        'ParenMatch': 'parenmatch',
-        'RstripExtension': 'rstrip',
-        'ScriptBinding': 'runscript',
-        'ZoomHeight': 'zoomheight',
+    extfiles = {  # Map built-in config-extension section names to file names.
+        'ZzDummy': 'zzdummy',
         }
 
     def load_extension(self, name):
