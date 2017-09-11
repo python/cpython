@@ -36,6 +36,7 @@ extern const char *PyWin_DLLVersionString;
 
 _Py_IDENTIFIER(_);
 _Py_IDENTIFIER(__sizeof__);
+_Py_IDENTIFIER(_xoptions);
 _Py_IDENTIFIER(buffer);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(encoding);
@@ -1533,13 +1534,16 @@ PySys_HasWarnOptions(void)
 static PyObject *
 get_xoptions(void)
 {
-    PyObject *xoptions = PyThreadState_GET()->interp->xoptions;
+    PyObject *xoptions = _PySys_GetObjectId(&PyId__xoptions);
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
         Py_XDECREF(xoptions);
         xoptions = PyDict_New();
         if (xoptions == NULL)
             return NULL;
-        PyThreadState_GET()->interp->xoptions = xoptions;
+        if (_PySys_SetObjectId(&PyId__xoptions, xoptions)) {
+            Py_DECREF(xoptions);
+            return NULL;
+        }
     }
     return xoptions;
 }
