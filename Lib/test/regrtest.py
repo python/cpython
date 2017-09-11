@@ -637,8 +637,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     def display_progress(test_index, test):
         # "[ 51/405/1] test_tcl"
         line = "{1:{0}}{2}".format(test_count_width, test_index, test_count)
-        if bad and not pgo:
-            line = '{}/{}'.format(line, len(bad))
+        fails = len(bad) + len(environment_changed)
+        if fails and not pgo:
+            line = '{}/{}'.format(line, fails)
         line = '[{}]'.format(line)
 
         # add the system load prefix: "load avg: 1.80 "
@@ -1038,6 +1039,9 @@ def runtest(test, verbose, quiet,
         test_support.use_resources = use_resources
     try:
         test_support.match_tests = match_tests
+        # reset the environment_altered flag to detect if a test altered
+        # the environment
+        test_support.environment_altered = False
         if failfast:
             test_support.failfast = True
         return runtest_inner(test, verbose, quiet, huntrleaks, pgo, testdir)
@@ -1178,6 +1182,9 @@ class saved_test_environment:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # Read support.environment_altered, set by support helper functions
+        self.changed |= test_support.environment_altered
+
         saved_values = self.saved_values
         del self.saved_values
         for name, get, restore in self.resource_info():
