@@ -2950,17 +2950,7 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
 {
     Py_ssize_t i, n;
     PyObject *mro, *res, *base, *dict;
-    Py_hash_t hash;
-
-    if (!PyUnicode_CheckExact(name) ||
-        (hash = ((PyASCIIObject *) name)->hash) == -1)
-    {
-        hash = PyObject_Hash(name);
-        if (hash == -1) {
-            *error = -1;
-            return NULL;
-        }
-    }
+    Py_hash_t hash = -1;
 
     /* Look in tp_dict of types in MRO */
     mro = type->tp_mro;
@@ -2990,9 +2980,22 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         assert(PyType_Check(base));
         dict = ((PyTypeObject *)base)->tp_dict;
         assert(dict);
+        /* Optimise for the extremely common case: dict for lookup, unicode name. */
         if (PyDict_CheckExact(dict)) {
+            if (hash == -1) {
+                if (!PyUnicode_CheckExact(name) ||
+                    (hash = ((PyASCIIObject *) name)->hash) == -1)
+                {
+                    hash = PyObject_Hash(name);
+                    if (hash == -1) {
+                        *error = -1;
+                        goto done;
+                    }
+                }
+            }
             res = _PyDict_GetItem_KnownHash(dict, name, hash);
         } else {
+            /* Every other combination is much less safe, so be conservative. */
             res = PyObject_GetItem(dict, name);
         }
         if (res != NULL)
