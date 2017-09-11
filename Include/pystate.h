@@ -60,7 +60,6 @@ typedef struct _is {
 
     /* Used in Python/sysmodule.c. */
     int check_interval;
-    PyObject *warnoptions;
     PyObject *xoptions;
 
     /* Used in Modules/_threadmodule.c. */

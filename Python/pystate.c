@@ -96,7 +96,6 @@ PyInterpreterState_New(void)
         interp->builtins_copy = NULL;
         interp->tstate_head = NULL;
         interp->check_interval = 100;
-        interp->warnoptions = NULL;
         interp->xoptions = NULL;
         interp->num_threads = 0;
         interp->pythread_stacksize = 0;
