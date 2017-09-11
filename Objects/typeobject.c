@@ -2989,12 +2989,8 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         base = PyTuple_GET_ITEM(mro, i);
         assert(PyType_Check(base));
         dict = ((PyTypeObject *)base)->tp_dict;
-        assert(dict);
-        if (PyDict_CheckExact(dict)) {
-            res = _PyDict_GetItem_KnownHash(dict, name, hash);
-        } else {
-            res = PyObject_GetItem(dict, name);
-        }
+        assert(dict && PyDict_Check(dict));
+        res = _PyDict_GetItem_KnownHash(dict, name, hash);
         if (res != NULL)
             break;
         if (PyErr_Occurred()) {
