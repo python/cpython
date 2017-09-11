@@ -1580,7 +1580,7 @@ autoconf:
 # Create a tags file for vi
 tags::
 	cd $(srcdir); \
-	ctags -w Include/*.h; \
+	ctags -w Include/*.h Include/internal/*.h; \
 	for i in $(SRCDIRS); do ctags -f tags -w -a $$i/*.[ch]; \
 	done; \
 	LC_ALL=C sort -o tags tags
@@ -1588,7 +1588,7 @@ tags::
 # Create a tags file for GNU Emacs
 TAGS::
 	cd $(srcdir); \
-	etags Include/*.h; \
+	etags Include/*.h Include/internal/*.h; \
 	for i in $(SRCDIRS); do etags -a $$i/*.[ch]; done
 
 # Sanitation targets -- clean leaves libraries, executables and tags
