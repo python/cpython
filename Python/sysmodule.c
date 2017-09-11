@@ -2094,16 +2094,6 @@ _PySys_BeginInit(void)
 #undef SET_SYS_FROM_STRING_BORROW
 
 /* Updating the sys namespace, returning integer error codes */
-#define SET_SYS_FROM_STRING_BORROW_INT_RESULT(key, value)  \
-    do {                                                   \
-        PyObject *v = (value);                             \
-        if (v == NULL)                                     \
-            return -1;                                     \
-        res = PyDict_SetItemString(sysdict, key, v);       \
-        if (res < 0) {                                     \
-            return res;                                    \
-        }                                                  \
-    } while (0)
 #define SET_SYS_FROM_STRING_INT_RESULT(key, value)         \
     do {                                                   \
         PyObject *v = (value);                             \
@@ -2160,7 +2150,6 @@ _PySys_EndInit(PyObject *sysdict)
 }
 
 #undef SET_SYS_FROM_STRING_INT_RESULT
-#undef SET_SYS_FROM_STRING_BORROW_INT_RESULT
 
 static PyObject *
 makepathobject(const wchar_t *path, wchar_t delim)
