@@ -1,0 +1,1 @@
+Improved exception reporting for problematic __set_name__ attributes.

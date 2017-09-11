@@ -1,0 +1,2 @@
+Add _utest option to textview; add new tests. Increase coverage to 100%.
+Patches by Louie Lu and Terry Jan Reedy.

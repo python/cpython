@@ -140,6 +140,15 @@ Improved Modules
 ================
 
 
+argparse
+--------
+
+The :meth:`~argparse.ArgumentParser.parse_intermixed_args` supports letting
+the user intermix options and positional arguments on the command line,
+as is possible in many unix commands.  It supports most but not all
+argparse features.  (Contributed by paul.j3 in :issue:`14191`.)
+
+
 binascii
 --------
 
@@ -222,6 +231,13 @@ on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
+
+string
+------
+
+:class:`string.Template` now lets you to optionally modify the regular
+expression pattern for braced placeholders and non-braced placeholders
+separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 
 unittest.mock
 -------------
@@ -328,6 +344,21 @@ Build and C API Changes
   download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
   Ware in :issue:`30450`.)
 
+* Support for building ``--without-threads`` is removed.
+  (Contributed by Antoine Pitrou in :issue:`31370`.).
+
+
+Other CPython Implementation Changes
+====================================
+
+* Trace hooks may now opt out of receiving ``line`` events from the interpreter
+  by setting the new ``f_trace_lines`` attribute to :const:`False` on the frame
+  being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
+
+* Trace hooks may now opt in to receiving ``opcode`` events from the interpreter
+  by setting the new ``f_trace_opcodes`` attribute to :const:`True` on the frame
+  being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
+
 
 Deprecated
 ==========
@@ -404,6 +435,12 @@ API and Feature Removals
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
 
+* :func:`collections.namedtuple` no longer supports the *verbose* parameter
+  or ``_source`` attribute which showed the generated source code for the
+  named tuple class.  This was part of an optimization designed to speed-up
+  class creation.  (Contributed by Jelle Zijlstra with further improvements
+  by INADA Naoki, Serhiy Storchaka, and Raymond Hettinger in :issue:`28638`.)
+
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now
   be passed only as positional argument.
@@ -448,6 +485,9 @@ Changes in the Python API
   anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
   and module are affected by this change. (Contributed by INADA Naoki and
   Eugene Toder in :issue:`29463`.)
+
+* ``PyInterpreterState`` no longer has a ``modules`` field.  Instead use
+  ``sys.modules``.
 
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
   permission bits of newly-created intermediate-level directories.

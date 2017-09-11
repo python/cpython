@@ -1,0 +1,5 @@
+Fixed the declaration of some public API functions. PyArg_VaParse() and
+PyArg_VaParseTupleAndKeywords() were not available in limited API.
+PyArg_ValidateKeywordArguments(), PyArg_UnpackTuple() and Py_BuildValue()
+were not available in limited API of version < 3.3 when PY_SSIZE_T_CLEAN is
+defined.

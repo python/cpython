@@ -1,0 +1,5 @@
+Remove support for building --without-threads.
+
+This option is not really useful anymore in the 21st century. Removing lots
+of conditional paths allows us to simplify the code base, including in
+difficult to maintain low-level internal code.

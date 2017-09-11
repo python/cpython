@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "internal/pystate.h"
 #include "frameobject.h"
 
 
@@ -854,9 +855,9 @@ _PyObject_FastCall_Prepend(PyObject *callable,
 
     /* use borrowed references */
     args2[0] = obj;
-    memcpy(&args2[1],
-           args,
-           (nargs - 1)* sizeof(PyObject *));
+    if (nargs > 1) {
+        memcpy(&args2[1], args, (nargs - 1) * sizeof(PyObject *));
+    }
 
     result = _PyObject_FastCall(callable, args2, nargs);
     if (args2 != small_stack) {

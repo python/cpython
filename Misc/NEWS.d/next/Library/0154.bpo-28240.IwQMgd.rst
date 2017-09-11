@@ -1,0 +1,2 @@
+timeit now repeats the benchmarks 5 times instead of only 3 to make
+benchmarks more reliable.

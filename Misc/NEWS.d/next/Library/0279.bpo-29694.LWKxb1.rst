@@ -1,0 +1,2 @@
+Fixed race condition in pathlib mkdir with flags parents=True.  Patch by
+Armin Rigo.

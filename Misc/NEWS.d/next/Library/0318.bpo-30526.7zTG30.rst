@@ -1,0 +1,1 @@
+Add TextIOWrapper.reconfigure() and a TextIOWrapper.write_through attribute.

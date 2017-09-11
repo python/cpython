@@ -1,0 +1,3 @@
+tarfile.open() with mode "r" or "r:" now tries to open a tar file with
+compression before trying to open it without compression.  Otherwise it had
+50% chance failed with ignore_zeros=True.

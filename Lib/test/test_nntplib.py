@@ -6,6 +6,8 @@ import unittest
 import functools
 import contextlib
 import os.path
+import threading
+
 from test import support
 from nntplib import NNTP, GroupInfo
 import nntplib
@@ -14,10 +16,7 @@ try:
     import ssl
 except ImportError:
     ssl = None
-try:
-    import threading
-except ImportError:
-    threading = None
+
 
 TIMEOUT = 30
 certfile = os.path.join(os.path.dirname(__file__), 'keycert3.pem')
@@ -1520,7 +1519,7 @@ class MockSslTests(MockSocketTests):
     def nntp_class(*pos, **kw):
         return nntplib.NNTP_SSL(*pos, ssl_context=bypass_context, **kw)
 
-@unittest.skipUnless(threading, 'requires multithreading')
+
 class LocalServerTests(unittest.TestCase):
     def setUp(self):
         sock = socket.socket()

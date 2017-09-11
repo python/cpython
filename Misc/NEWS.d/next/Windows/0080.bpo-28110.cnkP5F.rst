@@ -1,0 +1,1 @@
+launcher.msi has different product codes between 32-bit and 64-bit
