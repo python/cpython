@@ -118,7 +118,14 @@ get_default_action(void)
         }
         return _default_action;
     }
-
+    if (!PyUnicode_Check(default_action)) {
+        PyErr_Format(PyExc_TypeError,
+                     MODULE_NAME ".defaultaction must be a string, "
+                     "not '%.200s'",
+                     Py_TYPE(default_action)->tp_name);
+        Py_DECREF(default_action);
+        return NULL;
+    }
     Py_DECREF(_default_action);
     _default_action = default_action;
     return default_action;
@@ -171,6 +178,14 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         mod = PyTuple_GET_ITEM(tmp_item, 3);
         ln_obj = PyTuple_GET_ITEM(tmp_item, 4);
 
+        if (!PyUnicode_Check(action)) {
+            PyErr_Format(PyExc_TypeError,
+                         "action must be a string, not '%.200s'",
+                         Py_TYPE(action)->tp_name);
+            Py_DECREF(tmp_item);
+            return NULL;
+        }
+
         good_msg = check_matched(msg, text);
         if (good_msg == -1) {
             Py_DECREF(tmp_item);
@@ -210,8 +225,6 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         return action;
     }
 
-    PyErr_SetString(PyExc_ValueError,
-                    MODULE_NAME ".defaultaction not found");
     return NULL;
 }
 
