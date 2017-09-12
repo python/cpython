@@ -70,6 +70,24 @@ PyDoc_STRVAR(_elementtree_Element___deepcopy____doc__,
 #define _ELEMENTTREE_ELEMENT___DEEPCOPY___METHODDEF    \
     {"__deepcopy__", (PyCFunction)_elementtree_Element___deepcopy__, METH_O, _elementtree_Element___deepcopy____doc__},
 
+static PyObject *
+_elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo);
+
+static PyObject *
+_elementtree_Element___deepcopy__(ElementObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *memo;
+
+    if (!PyArg_Parse(arg, "O!:__deepcopy__", &PyDict_Type, &memo)) {
+        goto exit;
+    }
+    return_value = _elementtree_Element___deepcopy___impl(self, memo);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_elementtree_Element___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
@@ -731,4 +749,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject **args, Py_ssi
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=75d0ff80e20b830f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ed55bd5209c12364 input=a9049054013a1b77]*/
