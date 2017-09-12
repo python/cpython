@@ -65,9 +65,8 @@ def _reduce_ex(self, proto):
             raise TypeError("can't pickle %s objects" % base.__name__)
         state = base(self)
     args = (self.__class__, base, state)
-    try:
-        getstate = self.__getstate__
-    except AttributeError:
+    getstate = getcallable(self, '__getstate__', None)
+    if not getstate:
         if getattr(self, "__slots__", None):
             raise TypeError("a class that defines __slots__ without "
                             "defining __getstate__ cannot be pickled") from None
@@ -143,6 +142,36 @@ def _slotnames(cls):
         pass # But don't die if we can't
 
     return names
+
+def getcallable(obj, name, fallback=None):
+    """Specialized getattr(): swallows exceptions, checks callability."""
+    try:
+        arg = getattr(obj, name)
+    except Exception:
+        # Custom __getattr__ implementations can raise anything on an empty
+        # cls.__new__() instance, most commonly RecursionError.
+        return fallback
+
+    # Custom __getattr__ implementations might return anything on
+    # missing attributes.  We could do even more detailed checks here but
+    # that might break custom proxies.
+    if not callable(arg):
+        return fallback
+
+    if name == '__reduce_ex__':
+        # reduce_newobj in typeobject.c and _reduce_ex in copyreg.py are
+        # using the __getstate__ method if available.  Need to make sure
+        # that attribue is callable, too.
+        try:
+            getstate = getattr(obj, '__getstate__')
+            if not callable(getstate):
+                return fallback
+        except Exception:
+            # Custom __getattr__ implementations can raise anything on an empty
+            # cls.__new__() instance, most commonly RecursionError.
+            pass
+
+    return arg
 
 # A registry of extension codes.  This is an ad-hoc compression
 # mechanism.  Whenever a global reference to <module>, <name> is about

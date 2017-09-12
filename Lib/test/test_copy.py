@@ -881,6 +881,27 @@ class TestCopy(unittest.TestCase):
         self.assertIs(g.b.__self__, g)
         g.b()
 
+    def test_deepcopy_custom_getattr_recursion_limit_exceeded(self):
+        class Proxy(object):
+            def __init__(self, proxied_object):
+                self.proxied_object = proxied_object
+
+            def __getattr__(self, name):
+                return getattr(self.proxied_object, name)
+        one = Proxy(1)
+        two = copy.deepcopy(one)
+        self.assertEqual(one.proxied_object, two.proxied_object)
+
+    def test_deepcopy_custom_gettattr_non_callable(self):
+        class AttrDict(dict):
+            def __getattr__(self, name):
+                return self.get(name)
+
+        one = AttrDict()
+        one.update({'a': 1, 'b': 2})
+        two = copy.deepcopy(one)
+        self.assertEqual(one, two)
+
 
 def global_foo(x, y): return x+y
 
