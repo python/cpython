@@ -63,3 +63,13 @@ z-text= Z
 z-in= <Control-Shift-KeyRelease-Insert>
 [ZzDummy_bindings]
 z-out= <Control-Shift-KeyRelease-Delete>
+
+[ParenClose]
+enable = True
+paren_close = True
+tick_close = True
+skip_closures = True
+[ParenClose_cfgBindings]
+p-open = <Key-parenleft> <Key-bracketleft> <Key-braceleft>
+t-open = <Key-'> <Key-">
+p-close = <Key-parenright> <Key-bracketright> <Key-braceright>

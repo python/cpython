@@ -436,30 +436,31 @@ class IdleConfTest(unittest.TestCase):
         conf.SetOption('extensions', 'DISABLE', 'enable', 'False')
 
         eq = self.assertEqual
-        eq(conf.GetExtensions(),
-           ['ZzDummy'])
+        eq((conf.GetExtensions()),
+           ['ZzDummy', 'ParenClose'])
         eq(conf.GetExtensions(active_only=False),
-            ['ZzDummy', 'DISABLE'])
+            ['ZzDummy', 'ParenClose', 'DISABLE'])
         eq(conf.GetExtensions(editor_only=True),
-           ['ZzDummy'])
+           ['ZzDummy', 'ParenClose'])
         eq(conf.GetExtensions(shell_only=True),
-           [])
+           ['ParenClose'])
         eq(conf.GetExtensions(active_only=False, editor_only=True),
-           ['ZzDummy', 'DISABLE'])
+           ['ZzDummy', 'ParenClose', 'DISABLE'])
 
         # Add user extensions
         conf.SetOption('extensions', 'Foobar', 'enable', 'True')
         eq(conf.GetExtensions(),
-           ['ZzDummy', 'Foobar'])  # User extensions didn't sort
+           ['ZzDummy', 'ParenClose', 'Foobar'])  # User extensions didn't sort
         eq(conf.GetExtensions(active_only=False),
-           ['ZzDummy', 'DISABLE', 'Foobar'])
+           ['ZzDummy', 'ParenClose', 'DISABLE', 'Foobar'])
 
     def test_remove_key_bind_names(self):
         conf = self.mock_config()
 
         self.assertCountEqual(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
-            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch','ZzDummy'])
+            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenClose',
+             'ParenMatch','ZzDummy'])
 
     def test_get_extn_name_for_event(self):
         conf = self.mock_config()
