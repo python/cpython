@@ -413,6 +413,7 @@ class BaseFutureTests:
         self.assertTrue(asyncio.isfuture(f2))
         self.assertEqual(res, 'oi')
         self.assertNotEqual(ident, threading.get_ident())
+        ex.shutdown(wait=True)
 
     def test_wrap_future_future(self):
         f1 = self._new_future(loop=self.loop)
@@ -428,6 +429,7 @@ class BaseFutureTests:
             f1 = ex.submit(run, 'oi')
             f2 = asyncio.wrap_future(f1)
             self.assertIs(self.loop, f2._loop)
+            ex.shutdown(wait=True)
 
     def test_wrap_future_cancel(self):
         f1 = concurrent.futures.Future()
