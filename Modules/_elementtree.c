@@ -733,14 +733,14 @@ LOCAL(PyObject *) deepcopy(PyObject *, PyObject *);
 /*[clinic input]
 _elementtree.Element.__deepcopy__
 
-    memo: object
+    memo: object(subclass_of="&PyDict_Type")
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element___deepcopy__(ElementObject *self, PyObject *memo)
-/*[clinic end generated code: output=d1f19851d17bf239 input=df24c2b602430b77]*/
+_elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
+/*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
 {
     Py_ssize_t i;
     ElementObject* element;
@@ -849,7 +849,8 @@ deepcopy(PyObject *object, PyObject *memo)
             /* Fall through to general case */
         }
         else if (Element_CheckExact(object)) {
-            return _elementtree_Element___deepcopy__((ElementObject *)object, memo);
+            return _elementtree_Element___deepcopy___impl(
+                (ElementObject *)object, memo);
         }
     }
 
