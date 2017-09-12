@@ -95,7 +95,7 @@ PySys_SetObject(const char *name, PyObject *v)
 }
 
 static PyObject *
-sys_breakpointhook(PyObject *self, PyObject *noargs)
+sys_breakpointhook(PyObject *self, PyObject *args, PyObject *keywords)
 {
     char *envar = getenv("PYTHONBREAKPOINT");
 
@@ -153,7 +153,7 @@ sys_breakpointhook(PyObject *self, PyObject *noargs)
         /* Printing the warning raised an exception. */
         return NULL;
     }
-    PyObject *retval = PyObject_CallObject(hook, NULL);
+    PyObject *retval = PyObject_Call(hook, args, keywords);
     Py_DECREF(hook);
     return retval;
 }
@@ -1432,7 +1432,8 @@ sys_getandroidapilevel(PyObject *self)
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
-    {"breakpointhook",  sys_breakpointhook, METH_NOARGS, breakpointhook_doc},
+    {"breakpointhook",  (PyCFunction)sys_breakpointhook,
+     METH_VARARGS | METH_KEYWORDS, breakpointhook_doc},
     {"callstats", (PyCFunction)sys_callstats, METH_NOARGS,
      callstats_doc},
     {"_clear_type_cache",       sys_clear_type_cache,     METH_NOARGS,
