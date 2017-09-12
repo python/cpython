@@ -48,8 +48,6 @@ class ParenClose:
             'extensions', 'ParenClose', 'tick_close', default=True)
         self.skip_closures = idleConf.GetOption(
             'extensions', 'ParenClose', 'skip_closures', default=True)
-        self.comment_space = idleConf.GetOption(
-            'extensions', 'ParenClose', 'comment_space', default=True)
         #sometimes idleConf loads boolean False as string "False"
         if self.paren_close == 'False':
             self.paren_close = False
@@ -57,8 +55,6 @@ class ParenClose:
             self.tick_close = False
         if self.skip_closures == 'False':
             self.skip_closures = False
-        if self.comment_space == 'False':
-            self.comment_space = False
 
     def p_open_event(self, event):
         if self.paren_close:
