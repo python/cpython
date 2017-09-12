@@ -573,14 +573,14 @@ starting from a console (<code class="docutils literal"><span class="pre">python
 </div>
 <div class="section" id="idle-console-differences">
 <h3>25.5.3.3. IDLE-console differences<a class="headerlink" href="#idle-console-differences" title="Permalink to this headline">¶</a></h3>
-<p>As much as possible, the result of executing Python code with IDLE is the
-same as executing the same code in a console window.  However, the different
-interface and operation occasionally affect visible results.  For instance,
-<code class="docutils literal"><span class="pre">sys.modules</span></code> starts with more entries.</p>
+<p>With rare exceptions, the result of executing Python code with IDLE is
+intended to be the same as executing the same code in a console window.
+However, the different interface and operation occasionally affect
+visible results.  For instance, <code class="docutils literal"><span class="pre">sys.modules</span></code> starts with more entries.</p>
 <p>IDLE also replaces <code class="docutils literal"><span class="pre">sys.stdin</span></code>, <code class="docutils literal"><span class="pre">sys.stdout</span></code>, and <code class="docutils literal"><span class="pre">sys.stderr</span></code> with
 objects that get input from and send output to the Shell window.
-When this window has the focus, it controls the keyboard and screen.
-This is normally transparent, but functions that directly access the keyboard
+When Shell has the focus, it controls the keyboard and screen.  This is
+normally transparent, but functions that directly access the keyboard
 and screen will not work.  If <code class="docutils literal"><span class="pre">sys</span></code> is reset with <code class="docutils literal"><span class="pre">importlib.reload(sys)</span></code>,
 IDLE&#8217;s changes are lost and things like <code class="docutils literal"><span class="pre">input</span></code>, <code class="docutils literal"><span class="pre">raw_input</span></code>, and
 <code class="docutils literal"><span class="pre">print</span></code> will not work correctly.</p>
@@ -589,8 +589,28 @@ Some consoles only work with a single physical line at a time.  IDLE uses
 <code class="docutils literal"><span class="pre">exec</span></code> to run each statement.  As a result, <code class="docutils literal"><span class="pre">'__builtins__'</span></code> is always
 defined for each statement.</p>
 </div>
+<div class="section" id="developing-tkinter-applications">
+<h3>25.5.3.4. Developing tkinter applications<a class="headerlink" href="#developing-tkinter-applications" title="Permalink to this headline">¶</a></h3>
+<p>IDLE is intentionally different from standard Python in order to
+facilitate development of tkinter programs.  Enter <code class="docutils literal"><span class="pre">import</span> <span class="pre">tkinter</span> <span class="pre">as</span> <span class="pre">tk;</span>
+<span class="pre">root</span> <span class="pre">=</span> <span class="pre">tk.Tk()</span></code> in standard Python and nothing appears.  Enter the same
+in IDLE and a tk window appears.  In standard Python, one must also enter
+<code class="docutils literal"><span class="pre">root.update()</span></code> to see the window.  IDLE does the equivalent in the
+background, about 20 times a second, which is about every 50 milleseconds.
+Next enter <code class="docutils literal"><span class="pre">b</span> <span class="pre">=</span> <span class="pre">tk.Button(root,</span> <span class="pre">text='button');</span> <span class="pre">b.pack()</span></code>.  Again,
+nothing visibly changes in standard Python until one enters <code class="docutils literal"><span class="pre">root.update()</span></code>.</p>
+<p>Most tkinter programs run <code class="docutils literal"><span class="pre">root.mainloop()</span></code>, which usually does not
+return until the tk app is destroyed.  If the program is run with
+<code class="docutils literal"><span class="pre">python</span> <span class="pre">-i</span></code> or from an IDLE editor, a <code class="docutils literal"><span class="pre">&gt;&gt;&gt;</span></code> shell prompt does not
+appear until <code class="docutils literal"><span class="pre">mainloop()</span></code> returns, at which time there is nothing left
+to interact with.</p>
+<p>When running a tkinter program from an IDLE editor, one can comment out
+the mainloop call.  One then gets a shell prompt immediately and can
+interact with the live application.  One just has to remember to
+re-enable the mainloop call when running in standard Python.</p>
+</div>
 <div class="section" id="running-without-a-subprocess">
-<h3>25.5.3.4. Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Permalink to this headline">¶</a></h3>
+<h3>25.5.3.5. Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Permalink to this headline">¶</a></h3>
 <p>By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
 externally visible and no data is sent to or received from the Internet.
@@ -638,8 +658,7 @@ custom key set in the Configure IDLE dialog under the keys tab.</p>
 changed with the Extensions tab of the preferences dialog. See the
 beginning of config-extensions.def in the idlelib directory for further
 information.  The only current default extension is zzdummy, an example
-also used for testing.
-</p>
+also used for testing.</p>
 </div>
 </div>
 </div>
@@ -678,7 +697,8 @@ also used for testing.
 <li><a class="reference internal" href="#command-line-usage">25.5.3.1. Command line usage</a></li>
 <li><a class="reference internal" href="#startup-failure">25.5.3.2. Startup failure</a></li>
 <li><a class="reference internal" href="#idle-console-differences">25.5.3.3. IDLE-console differences</a></li>
-<li><a class="reference internal" href="#running-without-a-subprocess">25.5.3.4. Running without a subprocess</a></li>
+<li><a class="reference internal" href="#developing-tkinter-applications">25.5.3.4. Developing tkinter applications</a></li>
+<li><a class="reference internal" href="#running-without-a-subprocess">25.5.3.5. Running without a subprocess</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#help-and-preferences">25.5.4. Help and preferences</a><ul>
