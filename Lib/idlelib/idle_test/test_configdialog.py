@@ -1128,13 +1128,6 @@ class GenPageTest(unittest.TestCase):
 
     def test_editor_size(self):
         d = self.page
-<<<<<<< HEAD
-        d.win_height_int.insert(0, '1')
-        self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
-        changes.clear()
-        d.win_width_int.insert(0, '1')
-        self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
-=======
         d.win_height_int.delete(0, 'end')
         d.win_height_int.insert(0, '11')
         self.assertEqual(mainpage, {'EditorWindow': {'height': '11'}})
@@ -1177,7 +1170,6 @@ class GenPageTest(unittest.TestCase):
         self.page.context_int.delete(0, 'end')
         self.page.context_int.insert(0, '1')
         self.assertEqual(extpage, {'CodeContext': {'numlines': '1'}})
->>>>>>> upstream/master
 
     def test_autocomplete_wait(self):
         self.page.auto_wait_int.insert(0, '1')
