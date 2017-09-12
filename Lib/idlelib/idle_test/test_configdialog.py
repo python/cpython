@@ -1136,6 +1136,41 @@ class GenPageTest(unittest.TestCase):
         d.win_width_int.insert(0, '11')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
 
+    def test_autocomplete_wait(self):
+        self.page.auto_wait_int.delete(0, 'end')
+        self.page.auto_wait_int.insert(0, '11')
+        self.assertEqual(extpage, {'AutoComplete': {'popupwait': '11'}})
+
+    def test_parenmatch(self):
+        d = self.page
+        eq = self.assertEqual
+        d.paren_style_type['menu'].invoke(0)
+        eq(extpage, {'ParenMatch': {'style': 'opener'}})
+        changes.clear()
+        d.paren_flash_time.delete(0, 'end')
+        d.paren_flash_time.insert(0, '11')
+        eq(extpage, {'ParenMatch': {'flash-delay': '11'}})
+        changes.clear()
+        d.bell_on.invoke()
+        eq(extpage, {'ParenMatch': {'bell': 'False'}})
+
+    def test_autosave(self):
+        d = self.page
+        d.save_auto_on.invoke()
+        self.assertEqual(mainpage, {'General': {'autosave': '1'}})
+        d.save_ask_on.invoke()
+        self.assertEqual(mainpage, {'General': {'autosave': '0'}})
+
+    def test_paragraph(self):
+        self.page.format_width_int.delete(0, 'end')
+        self.page.format_width_int.insert(0, '11')
+        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
+
+    def test_context(self):
+        self.page.context_int.delete(0, 'end')
+        self.page.context_int.insert(0, '1')
+        self.assertEqual(extpage, {'CodeContext': {'numlines': '1'}})
+
     def test_source_selected(self):
         d = self.page
         d.set = d.set_add_delete_state
