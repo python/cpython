@@ -471,21 +471,43 @@ PyImport_Cleanup(void)
         if (PyErr_Occurred()) \
             PyErr_Clear(); \
     }
+#define CLEAR_MODULE(name, mod) \
+    if (PyModule_Check(mod)) { \
+        if (Py_VerboseFlag && PyUnicode_Check(name)) \
+            PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
+        STORE_MODULE_WEAKREF(name, mod); \
+        PyObject_SetItem(modules, name, Py_None); \
+    }
 
     /* Remove all modules from sys.modules, hoping that garbage collection
        can reclaim most of them. */
-    pos = 0;
-    while (PyDict_Next(modules, &pos, &key, &value)) {
-        if (PyModule_Check(value)) {
-            if (Py_VerboseFlag && PyUnicode_Check(key))
-                PySys_FormatStderr("# cleanup[2] removing %U\n", key);
-            STORE_MODULE_WEAKREF(key, value);
-            PyObject_SetItem(modules, key, Py_None);
+    if (PyDict_CheckExact(modules)) {
+        pos = 0;
+        while (PyDict_Next(modules, &pos, &key, &value)) {
+            CLEAR_MODULE(key, value);
+        }
+    }
+    else {
+        PyObject *iterator = PyObject_GetIter(modules);
+        if (iterator == NULL) {
+            PyErr_Clear();
+        }
+        else {
+            while ((value = PyIter_Next(iterator))) {
+                CLEAR_MODULE(key, value);
+            }
         }
     }
 
     /* Clear the modules dict. */
-    PyDict_Clear(modules);
+    if (PyDict_CheckExact(modules)) {
+        PyDict_Clear(modules);
+    }
+    else {
+        _Py_IDENTIFIER(clear);
+        if (_PyObject_CallMethodId(modules, &PyId_clear, "") == NULL)
+            PyErr_Clear();
+    }
     /* Restore the original builtins dict, to ensure that any
        user data gets cleared. */
     dict = PyDict_Copy(interp->builtins);
