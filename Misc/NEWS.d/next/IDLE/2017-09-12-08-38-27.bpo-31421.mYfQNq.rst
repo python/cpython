@@ -1,0 +1,4 @@
+Document how IDLE runs tkinter programs. IDLE calls tcl/tk update in the
+background in order to make live
+
+interaction and experimentatin with tkinter applications much easier.
