@@ -641,7 +641,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 /* only get special linkage if built as shared or platform is Cygwin */
 #if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
 #       if defined(HAVE_DECLSPEC_DLL)
-#               if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_MODULE)
+#               if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
 #                       define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
 #                       define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
         /* module init functions inside the core need no external linkage */
@@ -773,7 +773,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #define PY_LITTLE_ENDIAN 1
 #endif
 
-#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_MODULE)
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
 /*
  * Macros to protect CRT calls against instant termination when passed an
  * invalid parameter (issue23524).
