@@ -27,29 +27,35 @@ file_open = None  # Method...Item and Class...Item use this.
 def _traverse_node(node, name=None):
     """Return the immediate children for a node.
 
-    Node is the current node being traversed.  The return value is
-    a tuple with the first value being a dictionary of the
-    Class/Function instances of the node and the second is
-    a list of tuples with (lineno, name).
+    Args:
+        node: Current node to traverse.
+        name: Name of module to traverse.
+
+    Returns:
+        A tuple where the first value is a dictionary of the
+        Class/Function children instances of the node and the
+        second is a list of tuples of the form (lineno, name),
+        where lineno is the line number for the Class/Function
+        and name is the name of the child (and is also the key
+        to the returned dictionary).
     """
     items = []
     children = {}
-    for key, cl in node.items():
-        if name is None or cl.module == name:
-            s = key
-            if hasattr(cl, 'super') and cl.super:
+    for key, obj in node.items():
+        if name is None or obj.module == name:
+            if hasattr(obj, 'super') and obj.super:
                 supers = []
-                for sup in cl.super:
+                for sup in obj.super:
                     if type(sup) is type(''):
                         sname = sup
                     else:
                         sname = sup.name
-                        if sup.module != cl.module:
+                        if sup.module != obj.module:
                             sname = f'{sup.module}.{sname}'
                     supers.append(sname)
-                s += '({})'.format(', '.join(supers))
-            items.append((cl.lineno, s))
-            children[s] = cl
+                key += '({})'.format(', '.join(supers))
+            items.append((obj.lineno, key))
+            children[key] = obj
     return children, items
 
 
