@@ -1,7 +1,7 @@
 
 /* Core extension modules are built-in on some platforms (e.g. Windows). */
 #ifdef Py_BUILD_CORE
-#define Py_BUILD_CORE_MODULE
+#define Py_BUILD_CORE_BUILTIN
 #undef Py_BUILD_CORE
 #endif
 
