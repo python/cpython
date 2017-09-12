@@ -40,8 +40,8 @@ struct _pymem_runtime_state {
     size_t ntimes_arena_allocated;
     poolp usedpools[MAX_POOLS];
     Py_ssize_t num_allocated_blocks;
-    size_t serialno;     /* incremented on each debug {m,re}alloc */
 #endif /* WITH_PYMALLOC */
+    size_t serialno;     /* incremented on each debug {m,re}alloc */
 };
 
 PyAPI_FUNC(void) _PyMem_Initialize(struct _pymem_runtime_state *);
