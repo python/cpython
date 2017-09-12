@@ -97,20 +97,64 @@ PySys_SetObject(const char *name, PyObject *v)
 static PyObject *
 sys_breakpointhook(PyObject *self, PyObject *noargs)
 {
-    PyObject *pdb = PyImport_ImportModule("pdb");
-    PyObject *set_trace = NULL;
-    PyObject *retval = NULL;
+    char *envar = getenv("PYTHONBREAKPOINT");
 
-    if (pdb == NULL) {
+    if (envar == NULL || strlen(envar) == 0) {
+        envar = "pdb.set_trace";
+    }
+    else if (!strcmp(envar, "0")) {
+        /* The breakpoint is explicitly no-op'd. */
+        Py_RETURN_NONE;
+    }
+    char *last_dot = strrchr(envar, '.');
+    char *attrname = NULL;
+    PyObject *modulepath = NULL;
+
+    if (last_dot == NULL) {
+        /* The breakpoint is a built-in, e.g. PYTHONBREAKPOINT=int */
+        modulepath = PyUnicode_FromString("builtins");
+        attrname = envar;
+    }
+    else {
+        /* Split on the last dot; */
+        modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
+        attrname = last_dot + 1;
+    }
+    if (modulepath == NULL) {
         return NULL;
     }
-    set_trace = PyObject_GetAttrString(pdb, "set_trace");
-    Py_DECREF(pdb);
-    if (set_trace == NULL) {
+
+    PyObject *fromlist = Py_BuildValue("(s)", attrname);
+    if (fromlist == NULL) {
+        Py_DECREF(modulepath);
         return NULL;
     }
-    retval = PyObject_CallObject(set_trace, NULL);
-    Py_DECREF(set_trace);
+    PyObject *module = PyImport_ImportModuleLevelObject(
+        modulepath, NULL, NULL, fromlist, 0);
+    Py_DECREF(modulepath);
+    Py_DECREF(fromlist);
+
+    if (module == NULL) {
+        return NULL;
+    }
+
+    PyObject *hook = PyObject_GetAttrString(module, attrname);
+    Py_DECREF(module);
+
+    if (hook == NULL) {
+        PyErr_Clear();
+        int status = PyErr_WarnFormat(
+            PyExc_RuntimeWarning, 0,
+            "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
+        if (status == 0) {
+            /* The warning was (probably) issued. */
+            Py_RETURN_NONE;
+        }
+        /* Printing the warning raised an exception. */
+        return NULL;
+    }
+    PyObject *retval = PyObject_CallObject(hook, NULL);
+    Py_DECREF(hook);
     return retval;
 }
 
