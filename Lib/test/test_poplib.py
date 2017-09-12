@@ -9,10 +9,10 @@ import asynchat
 import socket
 import os
 import errno
+import threading
 
 from unittest import TestCase, skipUnless
 from test import support as test_support
-threading = test_support.import_module('threading')
 
 HOST = test_support.HOST
 PORT = 0

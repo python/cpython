@@ -187,12 +187,12 @@ class ConfigDialog(Toplevel):
         """Create textview for config dialog help.
 
         Attrbutes accessed:
-            tab_pages
+            note
 
         Methods:
             view_text: Method from textview module.
         """
-        page = self.tab_pages._current_page
+        page = self.note.tab(self.note.select(), option='text').strip()
         view_text(self, title='Help for IDLE preferences',
                  text=help_common+help_pages.get(page, ''))
 
@@ -2104,7 +2104,7 @@ machine. Some do not take affect until IDLE is restarted.
 [Cancel] only cancels changes made since the last save.
 '''
 help_pages = {
-    'Highlighting': '''
+    'Highlights': '''
 Highlighting:
 The IDLE Dark color theme is new in October 2015.  It can only
 be used with older IDLE releases if it is saved as a custom

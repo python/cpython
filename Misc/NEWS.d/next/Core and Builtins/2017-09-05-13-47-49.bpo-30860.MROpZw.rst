@@ -1,0 +1,2 @@
+Consolidate CPython's global runtime state under a single struct.  This
+improves discoverability of the runtime state.

@@ -25,17 +25,14 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import _thread
+import threading
 import time
 import types
 import unittest
 import urllib.error
 import warnings
 
-try:
-    import _thread, threading
-except ImportError:
-    _thread = None
-    threading = None
 try:
     import multiprocessing.process
 except ImportError:
@@ -604,9 +601,8 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
-# Don't use "localhost", since resolving it uses the DNS under recent
-# Windows versions (see issue #18792).
-HOST = "127.0.0.1"
+HOST = "localhost"
+HOSTv4 = "127.0.0.1"
 HOSTv6 = "::1"
 
 
@@ -2028,16 +2024,11 @@ environment_altered = False
 # at the end of a test run.
 
 def threading_setup():
-    if _thread:
-        return _thread._count(), threading._dangling.copy()
-    else:
-        return 1, ()
+    return _thread._count(), threading._dangling.copy()
 
 def threading_cleanup(*original_values):
     global environment_altered
 
-    if not _thread:
-        return
     _MAX_COUNT = 100
     t0 = time.monotonic()
     for count in range(_MAX_COUNT):
@@ -2061,9 +2052,6 @@ def reap_threads(func):
     ensure that the threads are cleaned up even when the test fails.
     If threading is unavailable this function does nothing.
     """
-    if not _thread:
-        return func
-
     @functools.wraps(func)
     def decorator(*args):
         key = threading_setup()
