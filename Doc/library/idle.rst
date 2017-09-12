@@ -671,7 +671,7 @@ Extensions
 ^^^^^^^^^^
 
 IDLE contains an extension facility.  Preferences for extensions can be
-changed with Configure Extensions. See the beginning of config-extensions.def
-in the idlelib directory for further information.  The only current default
-extension is zoomheight. It exists as an extension primarily to be an example
-and for testing purposes.
+changed with the Extensions tab of the preferences dialog. See the
+beginning of config-extensions.def in the idlelib directory for further
+information.  The only current default extension is zzdummy, an example
+also used for testing.
