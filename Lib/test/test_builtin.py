@@ -1620,6 +1620,18 @@ class TestBreakpoint(unittest.TestCase):
                     self.assertEqual(w.category, RuntimeWarning)
                     mock.assert_not_called()
 
+    def test_envar_ignored_when_hook_is_set(self):
+        with ExitStack() as resources:
+            env = resources.enter_context(EnvironmentVarGuard())
+            env['PYTHONBREAKPOINT'] = 'sys.exit'
+            mock = resources.enter_context(patch('sys.exit'))
+            try:
+                sys.breakpointhook = int
+                breakpoint()
+            finally:
+                sys.breakpointhook = sys.__breakpointhook__
+            mock.assert_not_called()
+
 
 @unittest.skipUnless(pty, "the pty and signal modules must be available")
 class PtyTests(unittest.TestCase):
