@@ -750,6 +750,13 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *memo)
     PyObject* tail;
     PyObject* id;
 
+    if (!PyDict_Check(memo)) {
+        PyErr_Format(PyExc_TypeError,
+                     "memo argument must be a dictionary, not '%.200s'",
+                     Py_TYPE(memo)->tp_name);
+        return NULL;
+    }
+
     tag = deepcopy(self->tag, memo);
     if (!tag)
         return NULL;
