@@ -1779,6 +1779,7 @@ unicode_dealloc(PyObject *unicode)
 
     case SSTATE_INTERNED_IMMORTAL:
         Py_FatalError("Immortal interned string died.");
+        /* fall through */
 
     default:
         Py_FatalError("Inconsistent interned string state.");
@@ -6816,7 +6817,7 @@ unicode_encode_ucs1(PyObject *unicode,
             case _Py_ERROR_REPLACE:
                 memset(str, '?', collend - collstart);
                 str += (collend - collstart);
-                /* fall through ignore error handler */
+                /* fall through */
             case _Py_ERROR_IGNORE:
                 pos = collend;
                 break;
@@ -6855,7 +6856,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     break;
                 collstart = pos;
                 assert(collstart != collend);
-                /* fallback to general error handling */
+                /* fall through */
 
             default:
                 rep = unicode_encode_call_errorhandler(errors, &error_handler_obj,
