@@ -103,7 +103,7 @@ class JSONEncoder(object):
     key_separator = ': '
     def __init__(self, *, skipkeys=False, ensure_ascii=True,
             check_circular=True, allow_nan=True, sort_keys=False,
-            indent=None, separators=None, default=None):
+            indent=None, separators=None, default=None, floatstr=None):
         """Constructor for JSONEncoder, with sensible defaults.
 
         If skipkeys is false, then it is a TypeError to attempt
@@ -156,6 +156,8 @@ class JSONEncoder(object):
             self.item_separator = ','
         if default is not None:
             self.default = default
+        if floatstr is not None:
+            self.floatstr = floatstr
 
     def default(self, o):
         """Implement this method in a subclass such that it returns
