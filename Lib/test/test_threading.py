@@ -921,7 +921,7 @@ class ThreadingExceptionTests(BaseTestCase):
 
     def test_joining_current_thread(self):
         current_thread = threading.current_thread()
-        self.assertRaises(RuntimeError, current_thread.join);
+        self.assertRaises(RuntimeError, current_thread.join)
 
     def test_joining_inactive_thread(self):
         thread = threading.Thread()

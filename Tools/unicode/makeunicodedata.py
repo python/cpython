@@ -1203,7 +1203,7 @@ class Hash:
             if v is None:
                 table[i] = value
                 continue
-            incr = (h ^ (h >> 3)) & mask;
+            incr = (h ^ (h >> 3)) & mask
             if not incr:
                 incr = mask
             while 1:

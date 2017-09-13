@@ -184,8 +184,8 @@ class TestWeakSet(unittest.TestCase):
         self.assertEqual(s, self.s)
         s.__init__(self.items2)
         self.assertEqual(s, WeakSet(self.items2))
-        self.assertRaises(TypeError, s.__init__, s, 2);
-        self.assertRaises(TypeError, s.__init__, 1);
+        self.assertRaises(TypeError, s.__init__, s, 2)
+        self.assertRaises(TypeError, s.__init__, 1)
 
     def test_constructor_identity(self):
         s = WeakSet(self.items)

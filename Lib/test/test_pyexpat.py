@@ -569,7 +569,7 @@ class ChardataBufferTest(unittest.TestCase):
     def test_disabling_buffer(self):
         xml1 = b"<?xml version='1.0' encoding='iso8859'?><a>" + b'a' * 512
         xml2 = b'b' * 1024
-        xml3 = b'c' * 1024 + b'</a>';
+        xml3 = b'c' * 1024 + b'</a>'
         parser = expat.ParserCreate()
         parser.CharacterDataHandler = self.counting_handler
         parser.buffer_text = 1
