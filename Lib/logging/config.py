@@ -887,7 +887,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                 logging._acquireLock()
                 abort = self.abort
                 logging._releaseLock()
-            self.socket.close()
+            self.server_close()
 
     class Server(threading.Thread):
 
