@@ -988,6 +988,8 @@ class TestTimeouts(TestCase):
     def tearDown(self):
         ftplib.FTP.port = self.old_port
         self.server_thread.join()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server_thread = None
 
     def server(self):
         # This method sets the evt 3 times:
