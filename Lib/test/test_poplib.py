@@ -488,7 +488,7 @@ class TestTimeouts(TestCase):
         finally:
             socket.setdefaulttimeout(None)
         self.assertEqual(pop.sock.gettimeout(), 30)
-        pop.sock.close()
+        pop.close()
 
     def testTimeoutNone(self):
         self.assertIsNone(socket.getdefaulttimeout())
@@ -498,12 +498,12 @@ class TestTimeouts(TestCase):
         finally:
             socket.setdefaulttimeout(None)
         self.assertIsNone(pop.sock.gettimeout())
-        pop.sock.close()
+        pop.close()
 
     def testTimeoutValue(self):
         pop = poplib.POP3(HOST, self.port, timeout=30)
         self.assertEqual(pop.sock.gettimeout(), 30)
-        pop.sock.close()
+        pop.close()
 
 
 def test_main():
