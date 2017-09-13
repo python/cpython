@@ -1,2 +1,0 @@
-Minor updates to the ``typing`` module.  Original PRs by Ivan Levkivskyi and
-Mitar.
