@@ -196,6 +196,8 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     files are kept - the oldest ones are deleted.
     """
     def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False, atTime=None):
+        if filename is not none:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
         BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
         self.when = when.upper()
         self.backupCount = backupCount
