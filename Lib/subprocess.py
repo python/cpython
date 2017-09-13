@@ -800,9 +800,9 @@ class Popen(object):
                 raise
 
     def communicate(self, input=None, timeout=None):
-        """Interact with process: Send data to stdin.  Read data from
-        stdout and stderr, until end-of-file is reached.  Wait for
-        process to terminate.
+        """Interact with process: Send data to stdin and close it.
+        Read data from stdout and stderr, until end-of-file is
+        reached.  Wait for process to terminate.
 
         The optional "input" argument should be data to be sent to the
         child process (if self.universal_newlines is True, this should
