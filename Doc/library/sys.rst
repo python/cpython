@@ -122,6 +122,25 @@ always available.
    its ``*args`` and ``**kws`` straight through.  Whatever
    ``breakpointhooks()`` returns is returned from ``breakpoint()``.
 
+   The default implementation first consults the environment variable
+   ``$PYTHONBREAKPOINT``.  If that is set to ``"0"`` then this function
+   returns immediately; i.e. it is a no-op.  If the environment variable is
+   not set, or is set to the empty string, ``pdb.set_trace()`` is called.
+   Otherwise this variable should name a function to run, using Python's
+   dotted-import nomenclature, e.g. ``package.subpackage.module.function``.
+   In this case, ``package.subpackage.module`` would be imported and the
+   resulting module must have a callable named ``function()``.  This is run,
+   passing in ``*args`` and ``**kws``, and whatever ``function()`` returns,
+   ``sys.breakpointhook()`` returns to the built-in :func:`breakpoint`
+   function.
+
+   Note that if anything goes wrong while importing the callable named by
+   ``$PYTHONBREAKPOINT``, a :exc:`RuntimeWarning` is reported and the
+   breakpoint is ignored.
+
+   Also note that if ``sys.breakpointhook()`` is overridden programmatically,
+   ``$PYTHONBREAKPOINT`` is *not* consulted.
+
    .. versionadded:: 3.7
 
 .. function:: _debugmallocstats()
