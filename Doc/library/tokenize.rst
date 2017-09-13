@@ -16,8 +16,9 @@ implemented in Python.  The scanner in this module returns comments as tokens
 as well, making it useful for implementing "pretty-printers," including
 colorizers for on-screen displays.
 
-To simplify token stream handling, all :ref:`operators` and :ref:`delimiters`
-tokens are returned using the generic :data:`token.OP` token type.  The exact
+To simplify token stream handling, all :ref:`operator <operators>` and
+:ref:`delimiter <delimiters>` tokens and :data:`Ellipsis` are returned using
+the generic :data:`~token.OP` token type.  The exact
 type can be determined by checking the ``exact_type`` property on the
 :term:`named tuple` returned from :func:`tokenize.tokenize`.
 
