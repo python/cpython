@@ -1,2 +1,2 @@
-Fix an assertion failure in case of an exception with a bad __module__
+Fix an assertion failure in case of an exception with a bad ``__module__``
 attribute. Patch by Oren Milman.
