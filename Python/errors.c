@@ -961,7 +961,7 @@ PyErr_WriteUnraisable(PyObject *obj)
     }
 
     moduleName = _PyObject_GetAttrId(t, &PyId___module__);
-    if (moduleName == NULL) {
+    if (moduleName == NULL || !PyUnicode_Check(moduleName)) {
         PyErr_Clear();
         if (PyFile_WriteString("<unknown>", f) < 0)
             goto done;
