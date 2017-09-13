@@ -1,0 +1,2 @@
+Fix an assertion failure in the write() method of `io.TextIOWrapper`, when
+the encoder doesn't return a bytes object. Patch by Oren Milman.

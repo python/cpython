@@ -40,6 +40,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "internal/pystate.h"
 #include "ucnhash.h"
 #include "bytes_methods.h"
 #include "stringlib/eq.h"
@@ -1794,6 +1795,7 @@ unicode_dealloc(PyObject *unicode)
 
     case SSTATE_INTERNED_IMMORTAL:
         Py_FatalError("Immortal interned string died.");
+        /* fall through */
 
     default:
         Py_FatalError("Inconsistent interned string state.");
@@ -4183,8 +4185,11 @@ PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
     void *data;
     int kind;
 
-    if (!PyUnicode_Check(unicode) || PyUnicode_READY(unicode) == -1) {
+    if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
+        return (Py_UCS4)-1;
+    }
+    if (PyUnicode_READY(unicode) == -1) {
         return (Py_UCS4)-1;
     }
     if (index < 0 || index >= PyUnicode_GET_LENGTH(unicode)) {
@@ -6778,7 +6783,7 @@ unicode_encode_ucs1(PyObject *unicode,
             case _Py_ERROR_REPLACE:
                 memset(str, '?', collend - collstart);
                 str += (collend - collstart);
-                /* fall through ignore error handler */
+                /* fall through */
             case _Py_ERROR_IGNORE:
                 pos = collend;
                 break;
@@ -6817,7 +6822,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     break;
                 collstart = pos;
                 assert(collstart != collend);
-                /* fallback to general error handling */
+                /* fall through */
 
             default:
                 rep = unicode_encode_call_errorhandler(errors, &error_handler_obj,
@@ -11666,8 +11671,11 @@ unicode_getitem(PyObject *self, Py_ssize_t index)
     enum PyUnicode_Kind kind;
     Py_UCS4 ch;
 
-    if (!PyUnicode_Check(self) || PyUnicode_READY(self) == -1) {
+    if (!PyUnicode_Check(self)) {
         PyErr_BadArgument();
+        return NULL;
+    }
+    if (PyUnicode_READY(self) == -1) {
         return NULL;
     }
     if (index < 0 || index >= PyUnicode_GET_LENGTH(self)) {

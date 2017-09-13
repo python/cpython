@@ -53,8 +53,9 @@ code.
 .. class:: Bytecode(x, *, first_line=None, current_offset=None)
 
 
-   Analyse the bytecode corresponding to a function, generator, method, string
-   of source code, or a code object (as returned by :func:`compile`).
+   Analyse the bytecode corresponding to a function, generator, asynchronous
+   generator, coroutine, method, string of source code, or a code object (as
+   returned by :func:`compile`).
 
    This is a convenience wrapper around many of the functions listed below, most
    notably :func:`get_instructions`, as iterating over a :class:`Bytecode`
@@ -92,6 +93,9 @@ code.
       Return a formatted multi-line string with detailed information about the
       code object, like :func:`code_info`.
 
+   .. versionchanged:: 3.7
+      This can now handle coroutine and asynchronous generator objects.
+
 Example::
 
     >>> bytecode = dis.Bytecode(myfunc)
@@ -114,13 +118,17 @@ operation is being performed, so the intermediate analysis object isn't useful:
 .. function:: code_info(x)
 
    Return a formatted multi-line string with detailed code object information
-   for the supplied function, generator, method, source code string or code object.
+   for the supplied function, generator, asynchronous generator, coroutine,
+   method, source code string or code object.
 
    Note that the exact contents of code info strings are highly implementation
    dependent and they may change arbitrarily across Python VMs or Python
    releases.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.7
+      This can now handle coroutine and asynchronous generator objects.
 
 
 .. function:: show_code(x, *, file=None)
@@ -141,12 +149,13 @@ operation is being performed, so the intermediate analysis object isn't useful:
 .. function:: dis(x=None, *, file=None, depth=None)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
-   method, a function, a generator, a code object, a string of source code or
-   a byte sequence of raw bytecode.  For a module, it disassembles all functions.
-   For a class, it disassembles all methods (including class and static methods).
-   For a code object or sequence of raw bytecode, it prints one line per bytecode
-   instruction.  It also recursively disassembles nested code objects (the code
-   of comprehensions, generator expressions and nested functions, and the code
+   method, a function, a generator, an asynchronous generator, a couroutine,
+   a code object, a string of source code or a byte sequence of raw bytecode.
+   For a module, it disassembles all functions. For a class, it disassembles
+   all methods (including class and static methods). For a code object or
+   sequence of raw bytecode, it prints one line per bytecode instruction.
+   It also recursively disassembles nested code objects (the code of
+   comprehensions, generator expressions and nested functions, and the code
    used for building nested classes).
    Strings are first compiled to code objects with the :func:`compile`
    built-in function before being disassembled.  If no object is provided, this
@@ -163,6 +172,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
    .. versionchanged:: 3.7
       Implemented recursive disassembling and added *depth* parameter.
+
+   .. versionchanged:: 3.7
+      This can now handle coroutine and asynchronous generator objects.
 
 
 .. function:: distb(tb=None, *, file=None)

@@ -9,8 +9,8 @@ from test.support.script_helper import assert_python_ok, assert_python_failure
 
 import random
 import sys
-_thread = import_module('_thread')
-threading = import_module('threading')
+import _thread
+import threading
 import time
 import unittest
 import weakref
@@ -1069,6 +1069,8 @@ class ThreadingExceptionTests(BaseTestCase):
         thread.join()
         self.assertIsNotNone(thread.exc)
         self.assertIsInstance(thread.exc, RuntimeError)
+        # explicitly break the reference cycle to not leak a dangling thread
+        thread.exc = None
 
 class TimerTests(BaseTestCase):
 

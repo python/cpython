@@ -1,0 +1,3 @@
+The deprecation warning is emitted if __complex__ returns an instance of a
+strict subclass of complex.  In a future versions of Python this can be an
+error.

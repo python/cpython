@@ -28,7 +28,7 @@ General Information
 - Source code: https://github.com/python/cpython
 - Issue tracker: https://bugs.python.org
 - Documentation: https://docs.python.org
-- Developer's Guide: https://docs.python.org/devguide/
+- Developer's Guide: https://devguide.python.org/
 
 Contributing to CPython
 -----------------------
@@ -36,7 +36,7 @@ Contributing to CPython
 For more complete instructions on contributing to CPython development,
 see the `Developer Guide`_.
 
-.. _Developer Guide: https://docs.python.org/devguide/
+.. _Developer Guide: https://devguide.python.org/
 
 Using Python
 ------------
@@ -233,7 +233,8 @@ Copyright and License Information
 ---------------------------------
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016 Python Software Foundation.  All rights reserved.
+2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
+reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

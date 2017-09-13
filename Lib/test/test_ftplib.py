@@ -10,6 +10,7 @@ import socket
 import io
 import errno
 import os
+import threading
 import time
 try:
     import ssl
@@ -19,7 +20,6 @@ except ImportError:
 from unittest import TestCase, skipUnless
 from test import support
 from test.support import HOST, HOSTv6
-threading = support.import_module('threading')
 
 TIMEOUT = 3
 # the dummy data returned by server over the data channel when
@@ -470,6 +470,8 @@ class TestFTPClass(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
         asyncore.close_all(ignore_all=True)
 
     def check_data(self, received, expected):
@@ -800,6 +802,8 @@ class TestIPv6Environment(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
         asyncore.close_all(ignore_all=True)
 
     def test_af(self):
@@ -859,6 +863,8 @@ class TestTLS_FTPClass(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
         asyncore.close_all(ignore_all=True)
 
     def test_control_connection(self):

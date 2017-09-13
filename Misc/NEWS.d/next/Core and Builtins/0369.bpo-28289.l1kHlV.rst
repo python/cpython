@@ -1,0 +1,1 @@
+ImportError.__init__ now resets not specified attributes.

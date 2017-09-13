@@ -20,6 +20,7 @@ import urllib.parse
 import xml.etree
 import xml.etree.ElementTree
 import textwrap
+import threading
 from io import StringIO
 from collections import namedtuple
 from test.support.script_helper import assert_python_ok
@@ -30,10 +31,6 @@ from test.support import (
 )
 from test import pydoc_mod
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 class nonascii:
     'Це не латиниця'
@@ -902,7 +899,6 @@ class TestDescriptions(unittest.TestCase):
             "stat(path, *, dir_fd=None, follow_symlinks=True)")
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 

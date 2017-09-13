@@ -6,6 +6,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "osdefs.h"
 
@@ -1352,11 +1354,16 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
 
         Py_DECREF(info);
 
-        /* Issue #21669: Custom error for 'print' & 'exec' as statements */
-        if (self->text && PyUnicode_Check(self->text)) {
-            if (_report_missing_parentheses(self) < 0) {
-                return -1;
-            }
+        /*
+         * Issue #21669: Custom error for 'print' & 'exec' as statements
+         *
+         * Only applies to SyntaxError instances, not to subclasses such
+         * as TabError or IndentationError (see issue #31161)
+         */
+        if ((PyObject*)Py_TYPE(self) == PyExc_SyntaxError &&
+                self->text && PyUnicode_Check(self->text) &&
+                _report_missing_parentheses(self) < 0) {
+            return -1;
         }
     }
     return 0;
