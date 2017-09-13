@@ -629,6 +629,9 @@ class ThreadingMixIn:
     # Decides how threads will act upon termination of the
     # main process
     daemon_threads = False
+    # For non-daemonic threads, list of threading.Threading objects
+    # used by server_close() to wait for all threads completion.
+    _threads = None
 
     def process_request_thread(self, request, client_address):
         """Same as in BaseServer but as a thread.
@@ -648,7 +651,19 @@ class ThreadingMixIn:
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         t.daemon = self.daemon_threads
+        if not t.daemon:
+            if self._threads is None:
+                self._threads = []
+            self._threads.append(t)
         t.start()
+
+    def server_close(self):
+        super().server_close()
+        threads = self._threads
+        self._threads = None
+        if threads:
+            for thread in threads:
+                thread.join()
 
 
 if hasattr(os, "fork"):
