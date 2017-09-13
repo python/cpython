@@ -313,6 +313,7 @@ class RLockTests(BaseLockTests):
             self.assertRaises(RuntimeError, lock.release)
         finally:
             b.do_finish()
+        b.wait_for_finished()
 
     def test__is_owned(self):
         lock = self.locktype()
