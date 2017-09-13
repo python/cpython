@@ -3313,13 +3313,18 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
     self->target = target;
 
     self->handle_start = PyObject_GetAttrString(target, "start");
+    PyErr_Clear();
     self->handle_data = PyObject_GetAttrString(target, "data");
+    PyErr_Clear();
     self->handle_end = PyObject_GetAttrString(target, "end");
+    PyErr_Clear();
     self->handle_comment = PyObject_GetAttrString(target, "comment");
+    PyErr_Clear();
     self->handle_pi = PyObject_GetAttrString(target, "pi");
+    PyErr_Clear();
     self->handle_close = PyObject_GetAttrString(target, "close");
+    PyErr_Clear();
     self->handle_doctype = PyObject_GetAttrString(target, "doctype");
-
     PyErr_Clear();
 
     /* configure parser */
