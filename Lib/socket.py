@@ -711,6 +711,8 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
             if source_address:
                 sock.bind(source_address)
             sock.connect(sa)
+            # Break explicitly a reference cycle
+            err = None
             return sock
 
         except error as _:

@@ -1,0 +1,2 @@
+socket.create_connection() now fixes manually a reference cycle: clear the
+variable storing the last exception on success.
