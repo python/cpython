@@ -2,7 +2,6 @@
 '''
 from idlelib.ParenClose import ParenClose
 import unittest
-from unittest.mock import Mock
 from tkinter import Text  # mocktk doesn't do text position addition correctly
 
 
@@ -66,10 +65,10 @@ class ParenCloseTest(unittest.TestCase):
                'pink = {', '1.8')
 
               ]:
-                    # The actual delete and backspace events do not occur in this
-                    # test. We are checking to make sure everything is correct before
-                    # they would delete or backspace.
-                    
+                    # The actual delete and backspace events do not occur in
+                    # this test. We are checking to make sure everything is
+                    # correct before they would delete or backspace.
+
                     # Reset text and self.
                     p.paren_close = paren_close_set
                     p.tick_close = tick_close_set
@@ -88,6 +87,7 @@ class ParenCloseTest(unittest.TestCase):
                     pos = p.text.index('insert')
                     actual = p.text.get('1.0', 'end')
                     self.assertTupleEqual((actual, pos), (result+'\n', posend))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

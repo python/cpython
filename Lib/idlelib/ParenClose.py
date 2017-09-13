@@ -15,7 +15,7 @@ Add to the end of config-extensions.def :
     enable = True
     paren_close = True
     tick_close = True
-    skip_closures = True   
+    skip_closures = True
     mutual_delete = True
     [ParenClose_cfgBindings]
     p-open = <Key-parenleft> <Key-bracketleft> <Key-braceleft>
@@ -39,29 +39,33 @@ class ParenClose:
     deleted before the new one is typed, effectively skipping over the closure.
     '''
 
-    closers = {'(': ')', '[': ']', '{': '}', "'":"'", '"':'"'}
-    
+    closers = {'(': ')', '[': ']', '{': '}', "'": "'", '"': '"'}
+
     def __init__(self, editwin=None):
         # Setting default to none makes testing easier.
         if editwin:
             self.text = editwin.text
         else:
-            self.text=None
+            self.text = None
         self.paren_close = idleConf.GetOption(
-            'extensions', 'ParenClose', 'paren_close', type = bool, default=True)
+            'extensions', 'ParenClose', 'paren_close',
+            type=bool, default=True)
         self.tick_close = idleConf.GetOption(
-            'extensions', 'ParenClose', 'tick_close', type = bool, default=True)
+            'extensions', 'ParenClose', 'tick_close',
+            type=bool, default=True)
         self.skip_closures = idleConf.GetOption(
-            'extensions', 'ParenClose', 'skip_closures', type = bool, default=True)
+            'extensions', 'ParenClose', 'skip_closures',
+            type=bool, default=True)
         self.mutual_delete = idleConf.GetOption(
-            'extensions', 'ParenClose', 'mutual_delete', default=True)
+            'extensions', 'ParenClose', 'mutual_delete',
+            type=bool, default=True)
+
     def delcheck(self, pos):
         symbol1 = self.text.get(pos + '-1c', pos)
         symbol2 = self.text.get(pos, pos + '+1c')
-        
-        return self.mutual_delete and symbol1 in self.closers \
-           and self.closers[symbol1] == symbol2
-           
+        return (self.mutual_delete and symbol1 in self.closers
+                and self.closers[symbol1] == symbol2)
+
     def back_event(self, event):
         pos = self.text.index('insert')
         if self.delcheck(pos):
@@ -71,13 +75,13 @@ class ParenClose:
         pos = self.text.index('insert')
         if self.delcheck(pos):
             self.text.delete(pos + '-1c', pos)
-            
+
     def p_open_event(self, event):
         if self.paren_close:
             pos = self.text.index('insert')
             self.text.insert(pos, self.closers[event.char])
             self.text.mark_set('insert', pos)
-    
+
     def p_close_event(self, event):
         pos = self.text.index('insert')
         if self.skip_closures \
@@ -97,6 +101,7 @@ class ParenClose:
                 self.text.mark_set('insert', pos)
             elif not self.p_close_event(event):
                 self.p_open_event(event)
+
 
 if __name__ == '__main__':
     import unittest
