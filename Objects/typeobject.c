@@ -2993,10 +2993,9 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         res = _PyDict_GetItem_KnownHash(dict, name, hash);
         if (res != NULL)
             break;
-        if (PyErr_Occurred()) {
-            *error = -1;
-            goto done;
-        }
+        /* _PyType_Lookup() ignored and cleared lookup errors and we keep this
+           bad behaviour, instead of returning NULL and setting error = -1. */
+        PyErr_Clear();
     }
     *error = 0;
 done:
