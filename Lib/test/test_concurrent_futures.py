@@ -222,11 +222,14 @@ class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCa
         list(executor.map(abs, range(-5, 5)))
         queue_management_thread = executor._queue_management_thread
         processes = executor._processes
+        call_queue = executor._call_queue
         del executor
 
         queue_management_thread.join()
         for p in processes.values():
             p.join()
+        call_queue.close()
+        call_queue.join_thread()
 
 
 class WaitTests:
