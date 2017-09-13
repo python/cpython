@@ -2866,8 +2866,6 @@ class ConfigDictTest(BaseTest):
             logging.warning('Exclamation')
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
 
-    # listen() uses ConfigSocketReceiver which is based
-    # on socketserver.ThreadingTCPServer
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
         # Ask for a randomly assigned port (by using port 0)
