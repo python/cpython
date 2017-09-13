@@ -15,13 +15,14 @@ Add to the end of config-extensions.def :
     enable = True
     paren_close = True
     tick_close = True
-    skip_closures = True
-    comment_space = True
+    skip_closures = True   
+    mutual_delete = True
     [ParenClose_cfgBindings]
     p-open = <Key-parenleft> <Key-bracketleft> <Key-braceleft>
     t-open = <Key-quotedbl> <Key-quoteright>
     p-close = <Key-parenright> <Key-bracketright> <Key-braceright>
-
+    back = <Key-BackSpace>
+    delete = <Key-Delete>
 """
 
 from idlelib.config import idleConf
@@ -37,7 +38,11 @@ class ParenClose:
     symbol is typed and the same one is to the right of it, that symbols is
     deleted before the new one is typed, effectively skipping over the closure.
     '''
-    def __init__(self, editwin=None): # Setting default to none makes testing easier.
+
+    closers = {'(': ')', '[': ']', '{': '}', "'":"'", '"':'"'}
+    
+    def __init__(self, editwin=None):
+        # Setting default to none makes testing easier.
         if editwin:
             self.text = editwin.text
         else:
@@ -48,12 +53,29 @@ class ParenClose:
             'extensions', 'ParenClose', 'tick_close', type = bool, default=True)
         self.skip_closures = idleConf.GetOption(
             'extensions', 'ParenClose', 'skip_closures', type = bool, default=True)
+        self.mutual_delete = idleConf.GetOption(
+            'extensions', 'ParenClose', 'mutual_delete', default=True)
+    def delcheck(self, pos):
+        symbol1 = self.text.get(pos + '-1c', pos)
+        symbol2 = self.text.get(pos, pos + '+1c')
+        
+        return self.mutual_delete and symbol1 in self.closers \
+           and self.closers[symbol1] == symbol2
+           
+    def back_event(self, event):
+        pos = self.text.index('insert')
+        if self.delcheck(pos):
+            self.text.delete(pos, pos + '+1c')
 
+    def delete_event(self, event):
+        pos = self.text.index('insert')
+        if self.delcheck(pos):
+            self.text.delete(pos + '-1c', pos)
+            
     def p_open_event(self, event):
         if self.paren_close:
-            closer = {'(': ')', '[': ']', '{': '}', "'":"'", '"':'"'}[event.char]
             pos = self.text.index('insert')
-            self.text.insert(pos, closer)
+            self.text.insert(pos, self.closers[event.char])
             self.text.mark_set('insert', pos)
     
     def p_close_event(self, event):

@@ -69,7 +69,10 @@ enable = True
 paren_close = True
 tick_close = True
 skip_closures = True
+mutual_delete = True
 [ParenClose_bindings]
 p-open = <Key-parenleft> <Key-bracketleft> <Key-braceleft>
-t-open = <Key-quoteright> <Key-quotedbl>
+t-open = <Key-quotedbl> <Key-quoteright>
 p-close = <Key-parenright> <Key-bracketright> <Key-braceright>
+back = <Key-BackSpace>
+delete = <Key-Delete>
