@@ -69,7 +69,7 @@ enable = True
 paren_close = True
 tick_close = True
 skip_closures = True
-[ParenClose_cfgBindings]
+[ParenClose_bindings]
 p-open = <Key-parenleft> <Key-bracketleft> <Key-braceleft>
-t-open = <Key-'> <Key-">
+t-open = <Key-quoteright> <Key-quotedbl>
 p-close = <Key-parenright> <Key-bracketright> <Key-braceright>
