@@ -49,16 +49,16 @@ class ParenClose:
             self.text = None
         self.paren_close = idleConf.GetOption(
             'extensions', 'ParenClose', 'paren_close',
-            type=bool, default=True)
+            type='bool', default=True)
         self.tick_close = idleConf.GetOption(
             'extensions', 'ParenClose', 'tick_close',
-            type=bool, default=True)
+            type='bool', default=True)
         self.skip_closures = idleConf.GetOption(
             'extensions', 'ParenClose', 'skip_closures',
-            type=bool, default=True)
+            type='bool', default=True)
         self.mutual_delete = idleConf.GetOption(
             'extensions', 'ParenClose', 'mutual_delete',
-            type=bool, default=True)
+            type='bool', default=True)
 
     def delcheck(self, pos):
         symbol1 = self.text.get(pos + '-1c', pos)
