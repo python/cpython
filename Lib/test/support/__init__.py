@@ -2004,6 +2004,14 @@ def modules_cleanup(oldmodules):
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
 
+# Flag used by saved_test_environment of test.libregrtest.save_env,
+# to check if a test modified the environment. The flag should be set to False
+# before running a new test.
+#
+# For example, threading_cleanup() sets the flag is the function fails
+# to cleanup threads.
+environment_altered = False
+
 # NOTE: we use thread._count() rather than threading.enumerate() (or the
 # moral equivalent thereof) because a threading.Thread object is still alive
 # until its __bootstrap() method has returned, even after it has been
@@ -2019,16 +2027,27 @@ def threading_setup():
         return 1, ()
 
 def threading_cleanup(*original_values):
+    global environment_altered
+
     if not _thread:
         return
     _MAX_COUNT = 100
+    t0 = time.monotonic()
     for count in range(_MAX_COUNT):
         values = _thread._count(), threading._dangling
         if values == original_values:
             break
         time.sleep(0.01)
         gc_collect()
-    # XXX print a warning in case of failure?
+    else:
+        environment_altered = True
+
+        dt = time.monotonic() - t0
+        print("Warning -- threading_cleanup() failed to cleanup %s threads "
+              "after %.0f sec (count: %s, dangling: %s)"
+              % (values[0] - original_values[0], dt,
+                 values[0], len(values[1])),
+              file=sys.stderr)
 
 def reap_threads(func):
     """Use this function when threads are being used.  This will
@@ -2047,26 +2066,35 @@ def reap_threads(func):
             threading_cleanup(*key)
     return decorator
 
+
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
     are started.  This will help ensure that no extra children (zombies)
     stick around to hog resources and create problems when looking
     for refleaks.
     """
+    global environment_altered
+
+    # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
+    if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
+        return
+
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
-    if hasattr(os, 'waitpid'):
-        any_process = -1
-        while True:
-            try:
-                # This will raise an exception on Windows.  That's ok.
-                pid, status = os.waitpid(any_process, os.WNOHANG)
-                if pid == 0:
-                    break
-                print("Warning -- reap_children() reaped child process %s"
-                      % pid, file=sys.stderr)
-            except:
-                break
+    while True:
+        try:
+            # Read the exit status of any child process which already completed
+            pid, status = os.waitpid(-1, os.WNOHANG)
+        except OSError:
+            break
+
+        if pid == 0:
+            break
+
+        print("Warning -- reap_children() reaped child process %s"
+              % pid, file=sys.stderr)
+        environment_altered = True
+
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
