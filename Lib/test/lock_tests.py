@@ -54,6 +54,13 @@ class Bunch(object):
     def wait_for_finished(self):
         while len(self.finished) < self.n:
             _wait()
+        # Wait a little bit longer to prevent the "threading_cleanup()
+        # failed to cleanup X threads" warning. The loop above is a weak
+        # synchronization. At the C level, t_bootstrap() can still be
+        # running and so _thread.count() still accounts the "almost dead"
+        # thead.
+        for _ in range(self.n):
+            _wait()
 
     def do_finish(self):
         self._can_exit = True
@@ -304,6 +311,7 @@ class RLockTests(BaseLockTests):
             self.assertRaises(RuntimeError, lock.release)
         finally:
             b.do_finish()
+        b.wait_for_finished()
 
     def test__is_owned(self):
         lock = self.locktype()
