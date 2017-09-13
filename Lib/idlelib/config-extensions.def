@@ -19,7 +19,7 @@ max-width= 72
 style= expression
 flash-delay= 500
 bell= True
-
+highlighting = hilite
 # IDLE reads several config files to determine user preferences.  This
 # file is the default configuration file for IDLE extensions settings.
 #

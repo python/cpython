@@ -59,7 +59,9 @@ class ParenMatch:
         cls.BELL = idleConf.GetOption(
                 'extensions','ParenMatch','bell', type='bool', default=1)
         cls.HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),
-                                                  'hilite')
+                idleConf.GetOption(
+                'extensions','ParenMatch','highlighting', type='string',
+                default='hilite'))
 
     def activate_restore(self):
         "Activate mechanism to restore text from highlighting."
