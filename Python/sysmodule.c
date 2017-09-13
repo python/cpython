@@ -137,27 +137,31 @@ sys_breakpointhook(PyObject *self, PyObject *args, PyObject *keywords)
     Py_DECREF(fromlist);
 
     if (module == NULL) {
-        return NULL;
+        goto error;
     }
 
     PyObject *hook = PyObject_GetAttrString(module, attrname);
     Py_DECREF(module);
 
     if (hook == NULL) {
-        PyErr_Clear();
-        int status = PyErr_WarnFormat(
-            PyExc_RuntimeWarning, 0,
-            "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
-        if (status == 0) {
-            /* The warning was (probably) issued. */
-            Py_RETURN_NONE;
-        }
-        /* Printing the warning raised an exception. */
-        return NULL;
+        goto error;
     }
     PyObject *retval = PyObject_Call(hook, args, keywords);
     Py_DECREF(hook);
     return retval;
+
+  error:
+    /* If any of the imports went wrong, then warn and ignore. */
+    PyErr_Clear();
+    int status = PyErr_WarnFormat(
+        PyExc_RuntimeWarning, 0,
+        "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
+    if (status == 0) {
+        /* The warning was (probably) issued. */
+        Py_RETURN_NONE;
+    }
+    /* Printing the warning raised an exception. */
+    return NULL;
 }
 
 PyDoc_STRVAR(breakpointhook_doc,
