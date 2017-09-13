@@ -1369,7 +1369,7 @@ class LWPCookieTests(unittest.TestCase):
 
         cookie = interact_2965(c, 'http://www.acme.com/acme/pickitem',
                                'Part_Number="Rocket_Launcher_0001"; '
-                               'Version="1"; Path="/acme"');
+                               'Version="1"; Path="/acme"')
         self.assertRegex(cookie,
             r'^\$Version="?1"?; Customer="?WILE_E_COYOTE"?; \$Path="/acme"$')
 
@@ -1583,7 +1583,7 @@ class LWPCookieTests(unittest.TestCase):
 
         cookie = interact_2965(
             c, "http://www.acme.com/foo%2f%25/<<%0anew\345/\346\370\345",
-            'bar=baz; path="/foo/"; version=1');
+            'bar=baz; path="/foo/"; version=1')
         version_re = re.compile(r'^\$version=\"?1\"?', re.I)
         self.assertIn("foo=bar", cookie)
         self.assertRegex(cookie, version_re)

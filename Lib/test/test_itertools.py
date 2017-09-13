@@ -117,7 +117,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(a, b)
         if compare:
             c = expand(compare[took:])
-            self.assertEqual(a, c);
+            self.assertEqual(a, c)
 
     def test_accumulate(self):
         self.assertEqual(list(accumulate(range(10))),               # one positional arg

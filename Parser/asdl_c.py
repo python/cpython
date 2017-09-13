@@ -170,7 +170,7 @@ class StructVisitor(EmitVisitor):
             # rudimentary attribute handling
             type = str(field.type)
             assert type in asdl.builtin_types, type
-            emit("%s %s;" % (type, field.name), depth + 1);
+            emit("%s %s;" % (type, field.name), depth + 1)
         emit("};")
         emit("")
 
@@ -203,7 +203,7 @@ class StructVisitor(EmitVisitor):
             # rudimentary attribute handling
             type = str(field.type)
             assert type in asdl.builtin_types, type
-            self.emit("%s %s;" % (type, field.name), depth + 1);
+            self.emit("%s %s;" % (type, field.name), depth + 1)
         self.emit("};", depth)
         self.emit("", depth)
 
@@ -306,7 +306,7 @@ class FunctionVisitor(PrototypeVisitor):
                 emit('return NULL;', 2)
                 emit('}', 1)
 
-        emit("p = (%s)PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
+        emit("p = (%s)PyArena_Malloc(arena, sizeof(*p));" % ctype, 1)
         emit("if (!p)", 1)
         emit("return NULL;", 2)
         if union:
@@ -980,7 +980,7 @@ static int exists_not_none(PyObject *obj, _Py_Identifier *id)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("initialized = 1;", 1)
-        self.emit("return 1;", 1);
+        self.emit("return 1;", 1)
         self.emit("}", 0)
 
     def visitProduct(self, prod, name):
@@ -1146,7 +1146,7 @@ class ObjVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
         self.func_begin(name)
-        self.emit("result = PyType_GenericNew(%s_type, NULL, NULL);" % name, 1);
+        self.emit("result = PyType_GenericNew(%s_type, NULL, NULL);" % name, 1)
         self.emit("if (!result) return NULL;", 1)
         for field in prod.fields:
             self.visitField(field, name, 1, True)
@@ -1160,7 +1160,7 @@ class ObjVisitor(PickleVisitor):
 
     def visitConstructor(self, cons, enum, name):
         self.emit("case %s_kind:" % cons.name, 1)
-        self.emit("result = PyType_GenericNew(%s_type, NULL, NULL);" % cons.name, 2);
+        self.emit("result = PyType_GenericNew(%s_type, NULL, NULL);" % cons.name, 2)
         self.emit("if (!result) goto failed;", 2)
         for f in cons.fields:
             self.visitField(f, cons.name, 2, False)

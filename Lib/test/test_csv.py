@@ -143,7 +143,7 @@ class Test_Csv(unittest.TestCase):
         # Check that exceptions are passed up the chain
         class BadList:
             def __len__(self):
-                return 10;
+                return 10
             def __getitem__(self, i):
                 if i > 2:
                     raise OSError
