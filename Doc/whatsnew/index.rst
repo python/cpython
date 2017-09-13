@@ -28,7 +28,7 @@ anyone wishing to stay up-to-date after a new release.
    2.1.rst
    2.0.rst
 
-The "Changelog" is a HTML version of the file :source:`Misc/NEWS` which
+The "Changelog" is a HTML version of the file :source:`Misc/NEWS.d` which
 contains *all* nontrivial changes to Python for the current version.
 
 .. toctree::

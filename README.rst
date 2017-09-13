@@ -128,7 +128,7 @@ What's New
 We have a comprehensive overview of the changes in the `What's New in Python
 3.7 <https://docs.python.org/3.7/whatsnew/3.7.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/master/Misc/NEWS>`_, but a full
+<https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/master>`_.
 
