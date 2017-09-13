@@ -115,6 +115,7 @@ except ImportError:
 
 
 from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_TLSv1_3
+from _ssl import _DEFAULT_CIPHERS
 from _ssl import _OPENSSL_API_VERSION
 
 
@@ -174,48 +175,7 @@ else:
 HAS_NEVER_CHECK_COMMON_NAME = hasattr(_ssl, 'HOSTFLAG_NEVER_CHECK_SUBJECT')
 
 
-# Disable weak or insecure ciphers by default
-# (OpenSSL's default setting is 'DEFAULT:!aNULL:!eNULL')
-# Enable a better set of ciphers by default
-# This list has been explicitly chosen to:
-#   * TLS 1.3 ChaCha20 and AES-GCM cipher suites
-#   * Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE)
-#   * Prefer ECDHE over DHE for better performance
-#   * Prefer AEAD over CBC for better performance and security
-#   * Prefer AES-GCM over ChaCha20 because most platforms have AES-NI
-#     (ChaCha20 needs OpenSSL 1.1.0 or patched 1.0.2)
-#   * Prefer any AES-GCM and ChaCha20 over any AES-CBC for better
-#     performance and security
-#   * Then Use HIGH cipher suites as a fallback
-#   * Disable NULL authentication, NULL encryption, 3DES and MD5 MACs
-#     for security reasons
-_DEFAULT_CIPHERS = (
-    'TLS13-AES-256-GCM-SHA384:TLS13-CHACHA20-POLY1305-SHA256:'
-    'TLS13-AES-128-GCM-SHA256:'
-    'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:'
-    'ECDH+AES128:DH+AES:ECDH+HIGH:DH+HIGH:RSA+AESGCM:RSA+AES:RSA+HIGH:'
-    '!aNULL:!eNULL:!MD5:!3DES'
-    )
-
-# Restricted and more secure ciphers for the server side
-# This list has been explicitly chosen to:
-#   * TLS 1.3 ChaCha20 and AES-GCM cipher suites
-#   * Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE)
-#   * Prefer ECDHE over DHE for better performance
-#   * Prefer AEAD over CBC for better performance and security
-#   * Prefer AES-GCM over ChaCha20 because most platforms have AES-NI
-#   * Prefer any AES-GCM and ChaCha20 over any AES-CBC for better
-#     performance and security
-#   * Then Use HIGH cipher suites as a fallback
-#   * Disable NULL authentication, NULL encryption, MD5 MACs, DSS, RC4, and
-#     3DES for security reasons
-_RESTRICTED_SERVER_CIPHERS = (
-    'TLS13-AES-256-GCM-SHA384:TLS13-CHACHA20-POLY1305-SHA256:'
-    'TLS13-AES-128-GCM-SHA256:'
-    'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:'
-    'ECDH+AES128:DH+AES:ECDH+HIGH:DH+HIGH:RSA+AESGCM:RSA+AES:RSA+HIGH:'
-    '!aNULL:!eNULL:!MD5:!DSS:!RC4:!3DES'
-)
+_RESTRICTED_SERVER_CIPHERS = _DEFAULT_CIPHERS
 
 CertificateError = SSLCertVerificationError
 
@@ -393,8 +353,6 @@ class SSLContext(_SSLContext):
 
     def __new__(cls, protocol=PROTOCOL_TLS, *args, **kwargs):
         self = _SSLContext.__new__(cls, protocol)
-        if protocol != _SSLv2_IF_EXISTS:
-            self.set_ciphers(_DEFAULT_CIPHERS)
         return self
 
     def __init__(self, protocol=PROTOCOL_TLS):
@@ -530,8 +488,6 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         # verify certs and host name in client mode
         context.verify_mode = CERT_REQUIRED
         context.check_hostname = True
-    elif purpose == Purpose.CLIENT_AUTH:
-        context.set_ciphers(_RESTRICTED_SERVER_CIPHERS)
 
     if cafile or capath or cadata:
         context.load_verify_locations(cafile, capath, cadata)
