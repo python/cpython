@@ -1775,6 +1775,8 @@ class GenPage(Frame):
                 StringVar(self), ('extensions', 'AutoComplete', 'popupwait'))
         self.paren_style = tracers.add(
                 StringVar(self), ('extensions', 'ParenMatch', 'style'))
+        self.paren_highlight = tracers.add(
+                StringVar(self), ('extensions', 'ParenMatch', 'highlight'))
         self.flash_delay = tracers.add(
                 StringVar(self), ('extensions', 'ParenMatch', 'flash-delay'))
         self.paren_bell = tracers.add(
@@ -1826,6 +1828,12 @@ class GenPage(Frame):
         self.paren_style_type = OptionMenu(
                 frame_paren1, self.paren_style, 'expression',
                 "opener","parens","expression")
+        paren_highlight_title = Label(frame_paren1,
+                                      text='          Paren Match Colors')
+        self.paren_highlight_type = OptionMenu(
+                frame_paren1, self.paren_highlight, 'hilite',
+                'normal','keyword','definition','builtin','comment','string',
+                'hilite','hit','cursor','break','stdout','stderr')
         frame_paren2 = Frame(frame_window, borderwidth=0)
         paren_time_title = Label(
                 frame_paren2, text='Time Match Displayed (milliseconds)\n'
@@ -1900,8 +1908,10 @@ class GenPage(Frame):
         self.auto_wait_int.pack(side=TOP, padx=10, pady=5)
         # frame_paren.
         frame_paren1.pack(side=TOP, padx=5, pady=0, fill=X)
-        paren_style_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.paren_style_type.pack(side=TOP, padx=10, pady=5)
+        paren_style_title.pack(side=LEFT, anchor=W, padx=5, pady=0)
+        self.paren_style_type.pack(side=LEFT, padx=5, pady=0)
+        paren_highlight_title.pack(side=LEFT, anchor=W, padx=5, pady=0)
+        self.paren_highlight_type.pack(side=LEFT, padx=5, pady=0)
         frame_paren2.pack(side=TOP, padx=5, pady=0, fill=X)
         paren_time_title.pack(side=LEFT, anchor=W, padx=5)
         self.bell_on.pack(side=RIGHT, anchor=E, padx=15, pady=5)
@@ -1943,6 +1953,8 @@ class GenPage(Frame):
                 'extensions', 'AutoComplete', 'popupwait', type='int'))
         self.paren_style.set(idleConf.GetOption(
                 'extensions', 'ParenMatch', 'style'))
+        self.paren_highlight.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'highlight'))
         self.flash_delay.set(idleConf.GetOption(
                 'extensions', 'ParenMatch', 'flash-delay', type='int'))
         self.paren_bell.set(idleConf.GetOption(
