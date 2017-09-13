@@ -254,6 +254,8 @@ class TestPOP3Class(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
 
     def test_getwelcome(self):
         self.assertEqual(self.client.getwelcome(),
@@ -436,6 +438,8 @@ class TestPOP3_TLSClass(TestPOP3Class):
                 # this exception
                 self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
 
     def test_stls(self):
         self.assertRaises(poplib.error_proto, self.client.stls)
@@ -461,7 +465,8 @@ class TestTimeouts(TestCase):
 
     def tearDown(self):
         self.thread.join()
-        del self.thread  # Clear out any dangling Thread objects.
+        # Explicitly clear the attribute to prevent dangling thread
+        self.thread = None
 
     def server(self, evt, serv):
         serv.listen()
