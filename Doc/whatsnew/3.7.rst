@@ -126,6 +126,20 @@ interpreter, while deprecating the existing API.  The TSS API uses a new type
 this will allow to build CPython on platforms where the native TLS key is
 defined in a way that cannot be safely cast to ``int``.
 
+A TLS key has been initialized previously like:
+
+.. code-block:: c
+
+    int key = PyThread_create_key();
+    int fail = key == -1;
+
+With the change, a TSS key is initialized like:
+
+.. code-block:: c
+
+    Py_tss_t key = Py_tss_NEEDS_INIT;
+    int fail = PyThread_tss_create(&key);
+
 Moreover, on platforms where the native TLS key is defined in a way that cannot
 be safely cast to ``int``, ``PyThread_create_key`` will return immediately with
 a failure status, and the other TLS functions will all be no-ops on such
