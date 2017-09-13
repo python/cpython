@@ -1,0 +1,2 @@
+socketserver.ThreadingMixIn now keeps a list of non-daemonic threads to wait
+until all these threads complete in server_close().

@@ -1465,7 +1465,6 @@ class ConfigFileTest(BaseTest):
         self.assertFalse(logger.disabled)
 
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 class SocketHandlerTest(BaseTest):
 
     """Test for SocketHandler objects."""
@@ -1502,11 +1501,11 @@ class SocketHandlerTest(BaseTest):
     def tearDown(self):
         """Shutdown the TCP server."""
         try:
-            if self.server:
-                self.server.stop(2.0)
             if self.sock_hdlr:
                 self.root_logger.removeHandler(self.sock_hdlr)
                 self.sock_hdlr.close()
+            if self.server:
+                self.server.stop(2.0)
         finally:
             BaseTest.tearDown(self)
 
@@ -1563,7 +1562,6 @@ def _get_temp_domain_socket():
     os.remove(fn)
     return fn
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSocketHandlerTest(SocketHandlerTest):
 
@@ -1581,7 +1579,6 @@ class UnixSocketHandlerTest(SocketHandlerTest):
         SocketHandlerTest.tearDown(self)
         support.unlink(self.address)
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 class DatagramHandlerTest(BaseTest):
 
     """Test for DatagramHandler."""
@@ -1646,7 +1643,6 @@ class DatagramHandlerTest(BaseTest):
         self.handled.wait()
         self.assertEqual(self.log_output, "spam\neggs\n")
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixDatagramHandlerTest(DatagramHandlerTest):
 
@@ -1731,7 +1727,6 @@ class SysLogHandlerTest(BaseTest):
         self.handled.wait()
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSysLogHandlerTest(SysLogHandlerTest):
 
@@ -1749,7 +1744,6 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         SysLogHandlerTest.tearDown(self)
         support.unlink(self.address)
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(support.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 class IPv6SysLogHandlerTest(SysLogHandlerTest):
@@ -2872,9 +2866,6 @@ class ConfigDictTest(BaseTest):
             logging.warning('Exclamation')
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
 
-    # listen() uses ConfigSocketReceiver which is based
-    # on socketserver.ThreadingTCPServer
-    @unittest.skipIf(True, "FIXME: bpo-30830")
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
         # Ask for a randomly assigned port (by using port 0)
