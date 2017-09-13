@@ -1,0 +1,2 @@
+SSLContext.check_hostname now automatically sets SSLContext.verify_mode to
+ssl.CERT_REQUIRED instead of failing with a ValueError.
