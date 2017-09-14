@@ -567,6 +567,8 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         *pbuf = PyBytes_AS_STRING(result);
         *plen = PyBytes_GET_SIZE(result);
         return result;
+    } else if (PyErr_Occurred()) {
+        return NULL;
     }
     /* does it support buffer protocol? */
     if (PyObject_CheckBuffer(v)) {
