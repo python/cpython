@@ -26,6 +26,7 @@ testcfg = {}
 usermain = testcfg['main'] = config.IdleUserConfParser('')
 userhigh = testcfg['highlight'] = config.IdleUserConfParser('')
 userkeys = testcfg['keys'] = config.IdleUserConfParser('')
+userextn = testcfg['extensions'] = config.IdleUserConfParser('')
 
 def setUpModule():
     idleConf.userCfg = testcfg
@@ -430,29 +431,22 @@ class IdleConfTest(unittest.TestCase):
         sys.platform = current_platform
 
     def test_get_extensions(self):
-        conf = self.mock_config()
-
-        # Add disable extensions
-        conf.SetOption('extensions', 'DISABLE', 'enable', 'False')
-
+        userextn.read_string('''
+            [ZzDummy]
+            enable = True
+            [DISABLE]
+            enable = False
+            ''')
         eq = self.assertEqual
-        eq(conf.GetExtensions(),
-           ['ZzDummy'])
-        eq(conf.GetExtensions(active_only=False),
-            ['ZzDummy', 'DISABLE'])
-        eq(conf.GetExtensions(editor_only=True),
-           ['ZzDummy'])
-        eq(conf.GetExtensions(shell_only=True),
-           [])
-        eq(conf.GetExtensions(active_only=False, editor_only=True),
-           ['ZzDummy', 'DISABLE'])
+        iGE = idleConf.GetExtensions
+        eq(iGE(shell_only=True), [])
+        eq(iGE(), ['ZzDummy'])
+        eq(iGE(editor_only=True), ['ZzDummy'])
+        eq(iGE(active_only=False), ['ZzDummy', 'DISABLE'])
+        eq(iGE(active_only=False, editor_only=True), ['ZzDummy', 'DISABLE'])
+        userextn.remove_section('ZzDummy')
+        userextn.remove_section('DISABLE')
 
-        # Add user extensions
-        conf.SetOption('extensions', 'Foobar', 'enable', 'True')
-        eq(conf.GetExtensions(),
-           ['ZzDummy', 'Foobar'])  # User extensions didn't sort
-        eq(conf.GetExtensions(active_only=False),
-           ['ZzDummy', 'DISABLE', 'Foobar'])
 
     def test_remove_key_bind_names(self):
         conf = self.mock_config()
@@ -462,39 +456,39 @@ class IdleConfTest(unittest.TestCase):
             ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch','ZzDummy'])
 
     def test_get_extn_name_for_event(self):
-        conf = self.mock_config()
-
+        userextn.read_string('''
+            [ZzDummy]
+            enable = True
+            ''')
         eq = self.assertEqual
-        eq(conf.GetExtnNameForEvent('z-in'), 'ZzDummy')
-        eq(conf.GetExtnNameForEvent('z-out'), None)
+        eq(idleConf.GetExtnNameForEvent('z-in'), 'ZzDummy')
+        eq(idleConf.GetExtnNameForEvent('z-out'), None)
+        userextn.remove_section('ZzDummy')
 
     def test_get_extension_keys(self):
-        conf = self.mock_config()
-
-        eq = self.assertEqual
-        eq(conf.GetExtensionKeys('ZzDummy'),
+        userextn.read_string('''
+            [ZzDummy]
+            enable = True
+            ''')
+        self.assertEqual(idleConf.GetExtensionKeys('ZzDummy'),
            {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
+        userextn.remove_section('ZzDummy')
 # need option key test
 ##        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
 ##        eq(conf.GetExtensionKeys('ZoomHeight'), {'<<zoom-height>>': key})
 
     def test_get_extension_bindings(self):
-        conf = self.mock_config()
-
-        self.assertEqual(conf.GetExtensionBindings('NotExists'), {})
-
-        #key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
+        userextn.read_string('''
+            [ZzDummy]
+            enable = True
+            ''')
+        eq = self.assertEqual
+        iGEB = idleConf.GetExtensionBindings
+        eq(iGEB('NotExists'), {})
         expect = {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>'],
                   '<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']}
-        self.assertEqual(
-            conf.GetExtensionBindings('ZzDummy'), expect)
-
-        # Add non-configuarable bindings
-        conf.defaultCfg['extensions'].add_section('Foobar')
-        conf.defaultCfg['extensions'].add_section('Foobar_bindings')
-        conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
-        conf.defaultCfg['extensions'].set('Foobar_bindings', 'foobar', '<Key-F>')
-        self.assertEqual(conf.GetExtensionBindings('Foobar'), {'<<foobar>>': ['<Key-F>']})
+        eq(iGEB('ZzDummy'), expect)
+        userextn.remove_section('ZzDummy')
 
     def test_get_keybinding(self):
         conf = self.mock_config()
