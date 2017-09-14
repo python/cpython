@@ -3026,6 +3026,9 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         }
     }
 
+    /* We may end up clearing live exceptions below, so make sure it's ours. */
+    assert(!PyErr_Occurred());
+
     res = find_name_in_mro(type, name, &error);
     /* Only put NULL results into cache if there was no error. */
     if (error) {
@@ -7001,6 +7004,8 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         } while (p->offset == offset);
         return p;
     }
+    /* We may end up clearing live exceptions below, so make sure it's ours. */
+    assert(!PyErr_Occurred());
     do {
         /* Use faster uncached lookup as we won't get any cache hits during type setup. */
         descr = find_name_in_mro(type, p->name_strobj, &error);
