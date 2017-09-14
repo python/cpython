@@ -1654,9 +1654,7 @@ static PyObject *
 whichmodule(PyObject *global, PyObject *dotted_path)
 {
     PyObject *module_name;
-    PyObject *modules_dict;
-    PyObject *module;
-    Py_ssize_t i;
+    PyObject *modules;
     _Py_IDENTIFIER(__module__);
     _Py_IDENTIFIER(modules);
     _Py_IDENTIFIER(__main__);
@@ -1679,15 +1677,16 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     assert(module_name == NULL);
 
     /* Fallback on walking sys.modules */
-    modules_dict = _PySys_GetObjectId(&PyId_modules);
-    if (modules_dict == NULL) {
+    modules = _PySys_GetObjectId(&PyId_modules);
+    if (modules == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
     }
 
-    i = 0;
-    while (PyDict_Next(modules_dict, &i, &module_name, &module)) {
+    PyObject *iterator = PyObject_GetIter(modules);
+    while ((module_name = PyIter_Next(iterator))) {
         PyObject *candidate;
+        PyObject *module = PyObject_GetItem(modules, module_name);
         if (PyUnicode_Check(module_name) &&
             _PyUnicode_EqualToASCIIString(module_name, "__main__"))
             continue;
