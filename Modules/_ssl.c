@@ -3024,6 +3024,12 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
 /*[clinic end generated code: output=87599a7f76651a9b input=9bba964595d519be]*/
 {
 #ifdef HAVE_ALPN
+    if ((size_t)protos->len > UINT_MAX) {
+        PyErr_Format(PyExc_OverflowError,
+            "protocols longer than %d bytes", UINT_MAX);
+        return NULL;
+    }
+
     PyMem_FREE(self->alpn_protocols);
     self->alpn_protocols = PyMem_Malloc(protos->len);
     if (!self->alpn_protocols)
