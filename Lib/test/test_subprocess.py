@@ -2742,6 +2742,15 @@ class Win32ProcessTestCase(BaseTestCase):
                           stdout=subprocess.PIPE,
                           close_fds=True)
 
+    @support.cpython_only
+    def test_issue31471(self):
+        # There shouldn't be an assertion failure in Popen() in case the env
+        # argument has a bad keys() method.
+        class BadEnv(dict):
+            keys = None
+        with self.assertRaises(TypeError):
+            subprocess.Popen([sys.executable, "-c", "pass"], env=BadEnv())
+
     def test_close_fds(self):
         # close file descriptors
         rc = subprocess.call([sys.executable, "-c",

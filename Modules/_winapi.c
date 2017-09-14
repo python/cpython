@@ -723,9 +723,13 @@ getenvironment(PyObject* environment)
     }
 
     keys = PyMapping_Keys(environment);
+    if (!keys) {
+        return NULL;
+    }
     values = PyMapping_Values(environment);
-    if (!keys || !values)
+    if (!values) {
         goto error;
+    }
 
     envsize = PySequence_Fast_GET_SIZE(keys);
     if (PySequence_Fast_GET_SIZE(values) != envsize) {
