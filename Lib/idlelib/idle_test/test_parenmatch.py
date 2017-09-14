@@ -6,7 +6,6 @@ several text methods not defined on idlelib.idle_test.mock_tk.Text.
 from idlelib.parenmatch import ParenMatch
 from test.support import requires
 requires('gui')
-
 import unittest
 from unittest.mock import Mock
 from tkinter import Tk, Text
@@ -53,28 +52,26 @@ class ParenMatchTest(unittest.TestCase):
         pm = self.get_parenmatch()
         for style, range1, range2 in (
                 ('opener', ('1.10', '1.11'), ('1.10', '1.11')),
-                ('default',('1.10', '1.11'),('1.10', '1.11')),
+                ('default', ('1.10', '1.11'), ('1.10', '1.11')),
                 ('parens', ('1.14', '1.15'), ('1.15', '1.16')),
                 ('expression', ('1.10', '1.15'), ('1.10', '1.16'))):
             with self.subTest(style=style):
                 text.delete('1.0', 'end')
                 pm.set_style(style)
                 text.insert('insert', 'def foobar(a, b')
-
                 pm.flash_paren_event('event')
-                self.assertIn('<<parenmatch-check-restore>>', text.event_info())
+                self.assertIn('<<parenmatch-check-restore>>',
+                              text.event_info())
                 if style == 'parens':
                     self.assertTupleEqual(text.tag_nextrange('paren', '1.0'),
                                           ('1.10', '1.11'))
                 self.assertTupleEqual(
                         text.tag_prevrange('paren', 'end'), range1)
-
                 text.insert('insert', ')')
                 pm.restore_event()
                 self.assertNotIn('<<parenmatch-check-restore>>',
                                  text.event_info())
                 self.assertEqual(text.tag_prevrange('paren', 'end'), ())
-
                 pm.paren_closed_event('event')
                 self.assertTupleEqual(
                         text.tag_prevrange('paren', 'end'), range2)
@@ -87,14 +84,11 @@ class ParenMatchTest(unittest.TestCase):
         """
         text = self.text
         pm = self.get_parenmatch()
-
         text.insert('insert', '# this is a commen)')
         pm.paren_closed_event('event')
-
         text.insert('insert', '\ndef')
         pm.flash_paren_event('event')
         pm.paren_closed_event('event')
-
         text.insert('insert', ' a, *arg)')
         pm.paren_closed_event('event')
 

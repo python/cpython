@@ -7,8 +7,9 @@ parentheses, square brackets, and curly braces.
 from idlelib.hyperparser import HyperParser
 from idlelib.config import idleConf
 
-_openers = {')':'(',']':'[','}':'{'}
-CHECK_DELAY = 100 # milliseconds
+_openers = {')': '(', ']': '[', '}': '{'}
+CHECK_DELAY = 100  # milliseconds
+
 
 class ParenMatch:
     """Highlight matching openers and closers, (), [], and {}.
@@ -53,15 +54,17 @@ class ParenMatch:
     @classmethod
     def reload(cls):
         cls.STYLE = idleConf.GetOption(
-            'extensions','ParenMatch','style', default='opener')
+            'extensions', 'ParenMatch', 'style', default='opener')
         cls.FLASH_DELAY = idleConf.GetOption(
-                'extensions','ParenMatch','flash-delay', type='int',default=500)
+                'extensions', 'ParenMatch', 'flash-delay', type='int',
+                default=500)
         cls.BELL = idleConf.GetOption(
-                'extensions','ParenMatch','bell', type='bool', default=1)
-        cls.HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),
-                idleConf.GetOption(
-                'extensions','ParenMatch','highlighting', type='string',
-                default='hilite'))
+                'extensions', 'ParenMatch', 'bell', type='bool', default=1)
+        cls.HILITE_CONFIG = idleConf.GetHighlight(
+            idleConf.CurrentTheme(), idleConf.GetOption(
+                'extensions', 'ParenMatch', 'highlighting', type='string',
+                default='hilite')
+            )
 
     def activate_restore(self):
         "Activate mechanism to restore text from highlighting."
@@ -142,7 +145,8 @@ class ParenMatch:
             rightindex = indices[1]+"+1c"
         else:
             rightindex = indices[1]
-        self.text.tag_add("paren", indices[0], indices[0]+"+1c", rightindex+"-1c", rightindex)
+        self.text.tag_add("paren", indices[0], indices[0] + "+1c",
+                          rightindex + "-1c", rightindex)
         self.text.tag_config("paren", self.HILITE_CONFIG)
 
     def create_tag_expression(self, indices):
@@ -164,6 +168,7 @@ class ParenMatch:
         # if the event is for the most recent timer and the insert has changed,
         # or schedules another call for itself.
         self.counter += 1
+
         def callme(callme, self=self, c=self.counter,
                    index=self.text.index("insert")):
             if index != self.text.index("insert"):
@@ -173,7 +178,8 @@ class ParenMatch:
         self.editwin.text_frame.after(CHECK_DELAY, callme, callme)
 
     def set_timeout_last(self):
-        """The last highlight created will be removed after FLASH_DELAY millisecs"""
+        """The last highlight created will be removed
+        after FLASH_DELAY millisecs"""
         # associate a counter with an event; only disable the "paren"
         # tag if the event is for the most recent timer.
         self.counter += 1
