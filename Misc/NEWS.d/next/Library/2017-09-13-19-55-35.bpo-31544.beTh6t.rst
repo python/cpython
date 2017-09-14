@@ -1,0 +1,2 @@
+The C accelerator module of ElementTree ignored exceptions raised when
+looking up TreeBuilder target methods in XMLParser().
