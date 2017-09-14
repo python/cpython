@@ -4935,7 +4935,7 @@ import_from(PyObject *v, PyObject *name)
         Py_DECREF(pkgname);
         return NULL;
     }
-    x = _PyImport_GetModule(fullmodname);
+    x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
     Py_DECREF(fullmodname);
     if (x == NULL) {
         goto error;
