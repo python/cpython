@@ -220,7 +220,9 @@ class NewIMAPTestsMixin():
         # cleanup the server
         self.server.shutdown()
         self.server.server_close()
-        self.thread.join(3.0)
+        support.join_thread(self.thread, 3.0)
+        # Explicitly clear the attribute to prevent dangling thread
+        self.thread = None
 
     def test_EOF_without_complete_welcome_message(self):
         # http://bugs.python.org/issue5949

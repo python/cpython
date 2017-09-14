@@ -2107,6 +2107,16 @@ def wait_threads_exit(timeout=60.0):
             gc_collect()
 
 
+def join_thread(thread, timeout=30.0):
+    """Join a thread. Raise an AssertionError if the thread is still alive
+    after timeout seconds.
+    """
+    thread.join(timeout)
+    if thread.is_alive():
+        msg = f"failed to join the thread in {timeout:.1f} seconds"
+        raise AssertionError(msg)
+
+
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
     are started.  This will help ensure that no extra children (zombies)

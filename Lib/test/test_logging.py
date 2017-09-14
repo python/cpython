@@ -791,13 +791,10 @@ class TestSMTPServer(smtpd.SMTPServer):
                         to terminate.
         """
         self.close()
-        self._thread.join(timeout)
+        support.join_thread(self._thread, timeout)
+        self._thread = None
         asyncore.close_all(map=self._map, ignore_all=True)
 
-        alive = self._thread.is_alive()
-        self._thread = None
-        if alive:
-            self.fail("join() timed out")
 
 class ControlMixin(object):
     """
@@ -847,11 +844,8 @@ class ControlMixin(object):
         """
         self.shutdown()
         if self._thread is not None:
-            self._thread.join(timeout)
-            alive = self._thread.is_alive()
+            support.join_thread(self._thread, timeout)
             self._thread = None
-            if alive:
-                self.fail("join() timed out")
         self.server_close()
         self.ready.clear()
 
@@ -2892,9 +2886,7 @@ class ConfigDictTest(BaseTest):
         finally:
             t.ready.wait(2.0)
             logging.config.stopListening()
-            t.join(2.0)
-            if t.is_alive():
-                self.fail("join() timed out")
+            support.join_thread(t, 2.0)
 
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
