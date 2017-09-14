@@ -1011,6 +1011,11 @@ Py_FinalizeEx(void)
     while (_PyGC_CollectIfEnabled() > 0)
         /* nothing */;
 #endif
+
+#ifdef Py_REF_DEBUG
+    PyObject *showrefcount = _PyDebug_XOptionShowRefCount();
+#endif
+
     /* Destroy all modules */
     PyImport_Cleanup();
 
@@ -1058,7 +1063,10 @@ Py_FinalizeEx(void)
     /* dump hash stats */
     _PyHash_Fini();
 
-    _PY_DEBUG_PRINT_TOTAL_REFS();
+#ifdef Py_REF_DEBUG
+        if (showrefcount == Py_True)
+            _PyDebug_PrintTotalRefs();
+#endif
 
 #ifdef Py_TRACE_REFS
     /* Display all objects still alive -- this can invoke arbitrary
