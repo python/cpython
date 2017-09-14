@@ -486,9 +486,6 @@ Changes in the Python API
   and module are affected by this change. (Contributed by INADA Naoki and
   Eugene Toder in :issue:`29463`.)
 
-* ``PyInterpreterState`` no longer has a ``modules`` field.  Instead use
-  ``sys.modules``.
-
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
   permission bits of newly-created intermediate-level directories.
   To set their file permission bits you can set the umask before invoking
