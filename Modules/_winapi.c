@@ -713,7 +713,7 @@ getenvironment(PyObject* environment)
 {
     Py_ssize_t i, envsize, totalsize;
     Py_UCS4 *buffer = NULL, *p, *end;
-    PyObject *keys, *values = NULL, *res;
+    PyObject *keys, *values, *res;
 
     /* convert environment dictionary to windows environment string */
     if (! PyMapping_Check(environment)) {
@@ -724,7 +724,7 @@ getenvironment(PyObject* environment)
 
     keys = PyMapping_Keys(environment);
     if (!keys) {
-        goto error;
+        return NULL;
     }
     values = PyMapping_Values(environment);
     if (!values) {
