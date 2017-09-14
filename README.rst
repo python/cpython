@@ -127,7 +127,7 @@ What's New
 We have a comprehensive overview of the changes in the `What's New in Python
 3.6 <https://docs.python.org/3.6/whatsnew/3.6.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/3.6/Misc/NEWS>`_, but a full
+<https://github.com/python/cpython/blob/3.6/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/3.6>`_.
 
