@@ -1,0 +1,2 @@
+typing.get_type_hints now finds the right globalns for classes and modules
+by default (when no ``globalns`` was specified by the caller).

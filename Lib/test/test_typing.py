@@ -3,7 +3,7 @@ import collections
 import pickle
 import re
 import sys
-from unittest import TestCase, main, skipUnless, SkipTest
+from unittest import TestCase, main, skipUnless, SkipTest, expectedFailure
 from copy import copy, deepcopy
 
 from typing import Any, NoReturn
@@ -28,6 +28,13 @@ try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # Fallback for PY3.2.
+
+
+try:
+    import mod_generics_cache
+except ImportError:
+    # try to use the builtin one, Python 3.5+
+    from test import mod_generics_cache
 
 
 class BaseTestCase(TestCase):
@@ -836,10 +843,6 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Callable[..., GenericMeta].__args__, (Ellipsis, GenericMeta))
 
     def test_generic_hashes(self):
-        try:
-            from test import mod_generics_cache
-        except ImportError:  # for Python 3.4 and previous versions
-            import mod_generics_cache
         class A(Generic[T]):
             ...
 
@@ -1619,6 +1622,10 @@ class XRepr(NamedTuple):
     def __add__(self, other):
         return 0
 
+class HasForeignBaseClass(mod_generics_cache.A):
+    some_xrepr: 'XRepr'
+    other_a: 'mod_generics_cache.A'
+
 async def g_with(am: AsyncContextManager[int]):
     x: int
     async with am as x:
@@ -1659,8 +1666,18 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(ann_module3), {})
 
     @skipUnless(PY36, 'Python 3.6 required')
+    @expectedFailure
+    def test_get_type_hints_modules_forwardref(self):
+        # FIXME: This currently exposes a bug in typing. Cached forward references
+        # don't account for the case where there are multiple types of the same
+        # name coming from different modules in the same program.
+        mgc_hints = {'default_a': Optional[mod_generics_cache.A],
+                     'default_b': Optional[mod_generics_cache.B]}
+        self.assertEqual(gth(mod_generics_cache), mgc_hints)
+
+    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_classes(self):
-        self.assertEqual(gth(ann_module.C, ann_module.__dict__),
+        self.assertEqual(gth(ann_module.C),  # gth will find the right globalns
                          {'y': Optional[ann_module.C]})
         self.assertIsInstance(gth(ann_module.j_class), dict)
         self.assertEqual(gth(ann_module.M), {'123': 123, 'o': type})
@@ -1671,8 +1688,15 @@ class GetTypeHintTests(BaseTestCase):
                          {'y': Optional[ann_module.C]})
         self.assertEqual(gth(ann_module.S), {'x': str, 'y': str})
         self.assertEqual(gth(ann_module.foo), {'x': int})
-        self.assertEqual(gth(NoneAndForward, globals()),
+        self.assertEqual(gth(NoneAndForward),
                          {'parent': NoneAndForward, 'meaning': type(None)})
+        self.assertEqual(gth(HasForeignBaseClass),
+                         {'some_xrepr': XRepr, 'other_a': mod_generics_cache.A,
+                          'some_b': mod_generics_cache.B})
+        self.assertEqual(gth(mod_generics_cache.B),
+                         {'my_inner_a1': mod_generics_cache.B.A,
+                          'my_inner_a2': mod_generics_cache.B.A,
+                          'my_outer_a': mod_generics_cache.A})
 
     @skipUnless(PY36, 'Python 3.6 required')
     def test_respect_no_type_check(self):

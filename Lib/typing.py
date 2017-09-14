@@ -1481,8 +1481,9 @@ def get_type_hints(obj, globalns=None, localns=None):
     search order is locals first, then globals.
 
     - If no dict arguments are passed, an attempt is made to use the
-      globals from obj, and these are also used as the locals.  If the
-      object does not appear to have globals, an exception is raised.
+      globals from obj (or the respective module's globals for classes),
+      and these are also used as the locals.  If the object does not appear
+      to have globals, an empty dictionary is used.
 
     - If one dict argument is passed, it is used for both globals and
       locals.
@@ -1493,25 +1494,33 @@ def get_type_hints(obj, globalns=None, localns=None):
 
     if getattr(obj, '__no_type_check__', None):
         return {}
-    if globalns is None:
-        globalns = getattr(obj, '__globals__', {})
-        if localns is None:
-            localns = globalns
-    elif localns is None:
-        localns = globalns
     # Classes require a special treatment.
     if isinstance(obj, type):
         hints = {}
         for base in reversed(obj.__mro__):
+            if globalns is None:
+                base_globals = sys.modules[base.__module__].__dict__
+            else:
+                base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
             for name, value in ann.items():
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
                     value = _ForwardRef(value)
-                value = _eval_type(value, globalns, localns)
+                value = _eval_type(value, base_globals, localns)
                 hints[name] = value
         return hints
+
+    if globalns is None:
+        if isinstance(obj, types.ModuleType):
+            globalns = obj.__dict__
+        else:
+            globalns = getattr(obj, '__globals__', {})
+        if localns is None:
+            localns = globalns
+    elif localns is None:
+        localns = globalns
     hints = getattr(obj, '__annotations__', None)
     if hints is None:
         # Return empty annotations for something that _could_ have them.
