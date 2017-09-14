@@ -909,8 +909,8 @@ class PydocServerTest(unittest.TestCase):
             text = 'the URL sent was: (%s, %s)' % (url, content_type)
             return text
 
-        serverthread = pydoc._start_server(my_url_handler, port=0)
-        self.assertIn('localhost', serverthread.docserver.address)
+        serverthread = pydoc._start_server(my_url_handler, hostname='0.0.0.0', port=0)
+        self.assertIn('0.0.0.0', serverthread.docserver.address)
 
         starttime = time.time()
         timeout = 1  #seconds
