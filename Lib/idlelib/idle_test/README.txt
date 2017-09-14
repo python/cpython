@@ -164,7 +164,7 @@ python -m idlelib.idle_test.htest
 5. Test Coverage
 
 Install the coverage package into your Python 3.6 site-packages
-directory.  (Its exact location depends on the OS). 
+directory.  (Its exact location depends on the OS).
 > python3 -m pip install coverage
 (On Windows, replace 'python3 with 'py -3.6' or perhaps just 'python'.)
 
