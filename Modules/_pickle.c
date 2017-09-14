@@ -6425,7 +6425,9 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
 /*[clinic end generated code: output=becc08d7f9ed41e3 input=e2e6a865de093ef4]*/
 {
     PyObject *global;
+    PyObject *modules_dict;
     PyObject *module;
+    _Py_IDENTIFIER(modules);
 
     /* Try to map the old names used in Python 2.x to the new ones used in
        Python 3.x.  We do this only with old pickle protocols and when the
@@ -6482,7 +6484,13 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
         }
     }
 
-    module = PyImport_GetModule(module_name);
+    modules_dict = _PySys_GetObjectId(&PyId_modules);
+    if (modules_dict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
+        return NULL;
+    }
+
+    module = PyDict_GetItemWithError(modules_dict, module_name);
     if (module == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -6490,11 +6498,11 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
         if (module == NULL)
             return NULL;
         global = getattribute(module, global_name, self->proto >= 4);
+        Py_DECREF(module);
     }
     else {
         global = getattribute(module, global_name, self->proto >= 4);
     }
-    Py_DECREF(module);
     return global;
 }
 

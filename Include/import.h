@@ -38,24 +38,10 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleObject(
     );
 #endif
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(int) _PyImport_IsInitialized(PyInterpreterState *);
-#endif
-PyAPI_FUNC(PyObject *) PyImport_GetModule(PyObject *name);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyImport_GetModule(PyObject *name);
-PyAPI_FUNC(PyObject *) _PyImport_GetModuleWithError(PyObject *name);
-PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(struct _Py_Identifier *name);
-PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
-PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
-#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
     PyObject *name
     );
-#endif
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyImport_AddModuleObject(PyObject *, PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyImport_AddModule(
     const char *name            /* UTF-8 encoded string */
@@ -106,19 +92,14 @@ PyAPI_FUNC(int) _PyImport_ReleaseLock(void);
 PyAPI_FUNC(void) _PyImport_ReInitLock(void);
 
 PyAPI_FUNC(PyObject *) _PyImport_FindBuiltin(
-    const char *name,            /* UTF-8 encoded string */
-    PyObject *modules
+    const char *name            /* UTF-8 encoded string */
     );
 PyAPI_FUNC(PyObject *) _PyImport_FindExtensionObject(PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyImport_FindExtensionObjectEx(PyObject *, PyObject *,
-                                                       PyObject *);
 PyAPI_FUNC(int) _PyImport_FixupBuiltin(
     PyObject *mod,
-    const char *name,            /* UTF-8 encoded string */
-    PyObject *modules
+    const char *name            /* UTF-8 encoded string */
     );
-PyAPI_FUNC(int) _PyImport_FixupExtensionObject(PyObject*, PyObject *,
-                                               PyObject *, PyObject *);
+PyAPI_FUNC(int) _PyImport_FixupExtensionObject(PyObject*, PyObject *, PyObject *);
 
 struct _inittab {
     const char *name;           /* ASCII encoded string */

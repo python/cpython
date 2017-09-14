@@ -191,10 +191,6 @@ PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
 
 PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef*,
                                      int apiver);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyModule_CreateInitialized(struct PyModuleDef*,
-                                                   int apiver);
-#endif
 
 #ifdef Py_LIMITED_API
 #define PyModule_Create(module) \

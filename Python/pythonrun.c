@@ -113,10 +113,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     err = -1;
     for (;;) {
         ret = PyRun_InteractiveOneObject(fp, filename, flags);
-#ifdef Py_REF_DEBUG
-        if (_PyDebug_XOptionShowRefCount() == Py_True)
-            _PyDebug_PrintTotalRefs();
-#endif
+        _PY_DEBUG_PRINT_TOTAL_REFS();
         if (ret == E_EOF) {
             err = 0;
             break;

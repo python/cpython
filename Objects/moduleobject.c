@@ -162,17 +162,11 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
-    if (!_PyImport_IsInitialized(PyThreadState_GET()->interp))
-        Py_FatalError("Python import machinery not initialized");
-    return _PyModule_CreateInitialized(module, module_api_version);
-}
-
-PyObject *
-_PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
-{
     const char* name;
     PyModuleObject *m;
-
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    if (interp->modules == NULL)
+        Py_FatalError("Python import machinery not initialized");
     if (!PyModuleDef_Init(module))
         return NULL;
     name = module->m_name;

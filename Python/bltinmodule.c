@@ -2685,7 +2685,7 @@ _PyBuiltin_Init(void)
         PyType_Ready(&PyZip_Type) < 0)
         return NULL;
 
-    mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
+    mod = PyModule_Create(&builtinsmodule);
     if (mod == NULL)
         return NULL;
     dict = PyModule_GetDict(mod);
