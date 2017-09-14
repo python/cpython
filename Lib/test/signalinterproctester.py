@@ -75,9 +75,12 @@ class InterProcessSignalTests(unittest.TestCase):
             child.wait()
 
         signal.alarm(1)
-        self.wait_signal(None, 'SIGALRM', KeyboardInterrupt)
-        self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 1,
-                                            'SIGALRM': 0})
+        try:
+            self.wait_signal(None, 'SIGALRM', KeyboardInterrupt)
+            self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 1,
+                                                'SIGALRM': 0})
+        finally:
+            signal.signal(0)
 
 
 if __name__ == "__main__":
