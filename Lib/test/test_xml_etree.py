@@ -2400,29 +2400,6 @@ class TreeBuilderTest(unittest.TestCase):
         self.assertEqual(child.tail, 'tail')
         self.assertEqual(child.attrib, {})
 
-    def test_exceptions(self):
-        class RaisingBuilder:
-            def __init__(self, raise_in=None, what=ValueError):
-                self.raise_in = raise_in
-                self.what = what
-
-            def __getattr__(self, name):
-                if name == self.raise_in:
-                    raise self.what(self.raise_in)
-                def handle(*args):
-                    pass
-                return handle
-
-        ET.XMLParser(target=RaisingBuilder())
-        # cET also checks for 'close' and 'doctype', PyET does it only at need
-        for event in ('start', 'data', 'end', 'comment', 'pi'):
-            with self.assertRaisesRegex(ValueError, event):
-                ET.XMLParser(target=RaisingBuilder(event))
-
-        ET.XMLParser(target=RaisingBuilder(what=AttributeError))
-        for event in ('start', 'data', 'end', 'comment', 'pi'):
-            ET.XMLParser(target=RaisingBuilder(event, what=AttributeError))
-
     def test_dummy_builder(self):
         class BaseDummyBuilder:
             def close(self):
@@ -2520,6 +2497,31 @@ class TreeBuilderTest(unittest.TestCase):
         self.assertEqual(parser.close(),
             ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+
+    def test_builder_lookup_errors(self):
+        class RaisingBuilder:
+            def __init__(self, raise_in=None, what=ValueError):
+                self.raise_in = raise_in
+                self.what = what
+
+            def __getattr__(self, name):
+                if name == self.raise_in:
+                    raise self.what(self.raise_in)
+                def handle(*args):
+                    pass
+                return handle
+
+        ET.XMLParser(target=RaisingBuilder())
+        # cET also checks for 'close' and 'doctype', PyET does it only at need
+        for event in ('start', 'data', 'end', 'comment', 'pi'):
+            with self.assertRaisesRegex(ValueError, event):
+                ET.XMLParser(target=RaisingBuilder(event))
+
+        ET.XMLParser(target=RaisingBuilder(what=AttributeError))
+        for event in ('start', 'data', 'end', 'comment', 'pi'):
+            parser = ET.XMLParser(target=RaisingBuilder(event, what=AttributeError))
+            parser.feed(self.sample1)
+            self.assertIsNone(parser.close())
 
 
 class XMLParserTest(unittest.TestCase):
