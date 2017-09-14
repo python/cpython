@@ -23,7 +23,7 @@
 
    Unlike the dictionary implementation, the lookkey function can return
    NULL if the rich comparison returns an error.
-   
+
    Use cases for sets differ considerably from dictionaries where looked-up
    keys are more likely to be present.  In contrast, sets are primarily
    about membership testing where the presence of an element is not known in

@@ -2018,7 +2018,7 @@ class TestSignatureObject(unittest.TestCase):
                          ((('args', ..., ..., 'var_positional'),), ...))
         self.assertEqual(self.signature(A.f3),
                          ((('args', ..., ..., 'var_positional'),), ...))
-        self.assertEqual(self.signature(A.f4), 
+        self.assertEqual(self.signature(A.f4),
                          ((('args', ..., ..., 'var_positional'),
                             ('kwargs', ..., ..., 'var_keyword')), ...))
     @cpython_only

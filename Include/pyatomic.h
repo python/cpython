@@ -11,7 +11,7 @@
 #endif
 
 
-#if defined(_MSC_VER) 
+#if defined(_MSC_VER)
 #include <intrin.h>
 #include <immintrin.h>
 #endif
@@ -223,7 +223,7 @@ _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
         result; \
     })
 
-#elif defined(_MSC_VER) 
+#elif defined(_MSC_VER)
 /*  _Interlocked* functions provide a full memory barrier and are therefore
     enough for acq_rel and seq_cst. If the HLE variants aren't available
     in hardware they will fall back to a full memory barrier as well.
@@ -249,7 +249,7 @@ typedef struct _Py_atomic_int {
 } _Py_atomic_int;
 
 
-#if defined(_M_X64) 
+#if defined(_M_X64)
 #define _Py_atomic_store_64bit(ATOMIC_VAL, NEW_VAL, ORDER) \
     switch (ORDER) { \
     case _Py_memory_order_acquire: \
@@ -312,7 +312,7 @@ inline intptr_t _Py_atomic_load_64bit(volatile uintptr_t* value, int order) {
       break;
     }
     }
-    return old; 
+    return old;
 }
 
 #else
@@ -347,7 +347,7 @@ inline int _Py_atomic_load_32bit(volatile int* value, int order) {
       break;
     }
     }
-    return old; 
+    return old;
 }
 
 #define _Py_atomic_store_explicit(ATOMIC_VAL, NEW_VAL, ORDER) \
@@ -379,7 +379,7 @@ typedef struct _Py_atomic_int {
 } _Py_atomic_int;
 
 
-#if defined(_M_ARM64) 
+#if defined(_M_ARM64)
 #define _Py_atomic_store_64bit(ATOMIC_VAL, NEW_VAL, ORDER) \
     switch (ORDER) { \
     case _Py_memory_order_acquire: \
@@ -442,7 +442,7 @@ inline intptr_t _Py_atomic_load_64bit(volatile uintptr_t* value, int order) {
       break;
     }
     }
-    return old; 
+    return old;
 }
 
 #else
@@ -477,13 +477,13 @@ inline int _Py_atomic_load_32bit(volatile int* value, int order) {
       break;
     }
     }
-    return old; 
+    return old;
 }
 
 #define _Py_atomic_store_explicit(ATOMIC_VAL, NEW_VAL, ORDER) \
   if (sizeof(*ATOMIC_VAL._value) == 8) { \
     _Py_atomic_store_64bit(ATOMIC_VAL._value, NEW_VAL, ORDER) } else { \
-    _Py_atomic_store_32bit(ATOMIC_VAL._value, NEW_VAL, ORDER) } 
+    _Py_atomic_store_32bit(ATOMIC_VAL._value, NEW_VAL, ORDER) }
 
 #define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER) \
   ( \

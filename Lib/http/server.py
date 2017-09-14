@@ -717,7 +717,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             fs.st_mtime, datetime.timezone.utc)
                         # remove microseconds, like in If-Modified-Since
                         last_modif = last_modif.replace(microsecond=0)
-                        
+
                         if last_modif <= ims:
                             self.send_response(HTTPStatus.NOT_MODIFIED)
                             self.end_headers()
@@ -727,7 +727,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
             self.send_header("Content-Length", str(fs[6]))
-            self.send_header("Last-Modified", 
+            self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
             self.end_headers()
             return f
