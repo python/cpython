@@ -759,7 +759,9 @@ class BaseServerTestCase(unittest.TestCase):
         self.evt = threading.Event()
         # start server thread to handle requests
         serv_args = (self.evt, self.request_count, self.requestHandler)
-        threading.Thread(target=self.threadFunc, args=serv_args).start()
+        thread = threading.Thread(target=self.threadFunc, args=serv_args)
+        thread.start()
+        self.addCleanup(thread.join)
 
         # wait for the server to be ready
         self.evt.wait()
@@ -1211,7 +1213,9 @@ class FailingServerTestCase(unittest.TestCase):
         self.evt = threading.Event()
         # start server thread to handle requests
         serv_args = (self.evt, 1)
-        threading.Thread(target=http_server, args=serv_args).start()
+        thread = threading.Thread(target=http_server, args=serv_args)
+        thread.start()
+        self.addCleanup(thread.join)
 
         # wait for the server to be ready
         self.evt.wait()

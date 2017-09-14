@@ -776,6 +776,7 @@ class FutureTests(BaseTestCase):
         t.start()
 
         self.assertEqual(f1.result(timeout=5), 42)
+        t.join()
 
     def test_result_with_cancel(self):
         # TODO(brian@sweetapp.com): This test is timing dependent.
@@ -789,6 +790,7 @@ class FutureTests(BaseTestCase):
         t.start()
 
         self.assertRaises(futures.CancelledError, f1.result, timeout=5)
+        t.join()
 
     def test_exception_with_timeout(self):
         self.assertRaises(futures.TimeoutError,
@@ -817,6 +819,7 @@ class FutureTests(BaseTestCase):
         t.start()
 
         self.assertTrue(isinstance(f1.exception(timeout=5), OSError))
+        t.join()
 
 @test.support.reap_threads
 def test_main():
