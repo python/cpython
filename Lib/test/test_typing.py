@@ -1069,6 +1069,13 @@ class GenericTests(BaseTestCase):
         for t in things + [Any]:
             self.assertEqual(t, copy(t))
             self.assertEqual(t, deepcopy(t))
+            if sys.version_info >= (3, 3):
+                # From copy module documentation:
+                # It does "copy" functions and classes (shallow and deeply), by returning
+                # the original object unchanged; this is compatible with the way these
+                # are treated by the pickle module.
+                self.assertTrue(t is copy(t))
+                self.assertTrue(t is deepcopy(t))
 
     def test_weakref_all(self):
         T = TypeVar('T')
