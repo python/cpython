@@ -36,14 +36,12 @@ extern const char *PyWin_DLLVersionString;
 
 _Py_IDENTIFIER(_);
 _Py_IDENTIFIER(__sizeof__);
-_Py_IDENTIFIER(_xoptions);
 _Py_IDENTIFIER(buffer);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(encoding);
 _Py_IDENTIFIER(path);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
-_Py_IDENTIFIER(warnoptions);
 _Py_IDENTIFIER(write);
 
 PyObject *
@@ -162,11 +160,13 @@ static PyObject *
 sys_displayhook(PyObject *self, PyObject *o)
 {
     PyObject *outf;
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyObject *modules = interp->modules;
     PyObject *builtins;
     static PyObject *newline = NULL;
     int err;
 
-    builtins = _PyImport_GetModuleId(&PyId_builtins);
+    builtins = _PyDict_GetItemId(modules, &PyId_builtins);
     if (builtins == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
         return NULL;
@@ -1481,17 +1481,13 @@ list_builtin_module_names(void)
 static PyObject *
 get_warnoptions(void)
 {
-    PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
+    PyObject *warnoptions = PyThreadState_GET()->interp->warnoptions;
     if (warnoptions == NULL || !PyList_Check(warnoptions)) {
         Py_XDECREF(warnoptions);
         warnoptions = PyList_New(0);
         if (warnoptions == NULL)
             return NULL;
-        if (_PySys_SetObjectId(&PyId_warnoptions, warnoptions)) {
-            Py_DECREF(warnoptions);
-            return NULL;
-        }
-        Py_DECREF(warnoptions);
+        PyThreadState_GET()->interp->warnoptions = warnoptions;
     }
     return warnoptions;
 }
@@ -1499,7 +1495,7 @@ get_warnoptions(void)
 void
 PySys_ResetWarnOptions(void)
 {
-    PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
+    PyObject *warnoptions = PyThreadState_GET()->interp->warnoptions;
     if (warnoptions == NULL || !PyList_Check(warnoptions))
         return;
     PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
@@ -1528,24 +1524,20 @@ PySys_AddWarnOption(const wchar_t *s)
 int
 PySys_HasWarnOptions(void)
 {
-    PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
+    PyObject *warnoptions = PyThreadState_GET()->interp->warnoptions;
     return (warnoptions != NULL && (PyList_Size(warnoptions) > 0)) ? 1 : 0;
 }
 
 static PyObject *
 get_xoptions(void)
 {
-    PyObject *xoptions = _PySys_GetObjectId(&PyId__xoptions);
+    PyObject *xoptions = PyThreadState_GET()->interp->xoptions;
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
         Py_XDECREF(xoptions);
         xoptions = PyDict_New();
         if (xoptions == NULL)
             return NULL;
-        if (_PySys_SetObjectId(&PyId__xoptions, xoptions)) {
-            Py_DECREF(xoptions);
-            return NULL;
-        }
-        Py_DECREF(xoptions);
+        PyThreadState_GET()->interp->xoptions = xoptions;
     }
     return xoptions;
 }
@@ -1947,7 +1939,7 @@ _PySys_BeginInit(void)
     PyObject *m, *sysdict, *version_info;
     int res;
 
-    m = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
+    m = PyModule_Create(&sysmodule);
     if (m == NULL)
         return NULL;
     sysdict = PyModule_GetDict(m);
@@ -2094,6 +2086,16 @@ _PySys_BeginInit(void)
 #undef SET_SYS_FROM_STRING_BORROW
 
 /* Updating the sys namespace, returning integer error codes */
+#define SET_SYS_FROM_STRING_BORROW_INT_RESULT(key, value)  \
+    do {                                                   \
+        PyObject *v = (value);                             \
+        if (v == NULL)                                     \
+            return -1;                                     \
+        res = PyDict_SetItemString(sysdict, key, v);       \
+        if (res < 0) {                                     \
+            return res;                                    \
+        }                                                  \
+    } while (0)
 #define SET_SYS_FROM_STRING_INT_RESULT(key, value)         \
     do {                                                   \
         PyObject *v = (value);                             \
@@ -2138,11 +2140,15 @@ _PySys_EndInit(PyObject *sysdict)
     SET_SYS_FROM_STRING_INT_RESULT("base_exec_prefix",
                         PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
 
-    if (get_warnoptions() == NULL)
+    PyObject *warnoptions = get_warnoptions();
+    if (warnoptions == NULL)
         return -1;
+    SET_SYS_FROM_STRING_BORROW_INT_RESULT("warnoptions", warnoptions);
 
-    if (get_xoptions() == NULL)
+    PyObject *xoptions = get_xoptions();
+    if (xoptions == NULL)
         return -1;
+    SET_SYS_FROM_STRING_BORROW_INT_RESULT("_xoptions", xoptions);
 
     if (PyErr_Occurred())
         return -1;
@@ -2150,6 +2156,7 @@ _PySys_EndInit(PyObject *sysdict)
 }
 
 #undef SET_SYS_FROM_STRING_INT_RESULT
+#undef SET_SYS_FROM_STRING_BORROW_INT_RESULT
 
 static PyObject *
 makepathobject(const wchar_t *path, wchar_t delim)

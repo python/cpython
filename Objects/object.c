@@ -29,23 +29,20 @@ _Py_GetRefTotal(void)
     return total;
 }
 
-PyObject *
-_PyDebug_XOptionShowRefCount(void)
-{
-    PyObject *xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
-        return NULL;
-
-    _Py_IDENTIFIER(showrefcount);
-    return _PyDict_GetItemId(xoptions, &PyId_showrefcount);
-}
-
 void
 _PyDebug_PrintTotalRefs(void) {
-    fprintf(stderr,
-            "[%" PY_FORMAT_SIZE_T "d refs, "
-            "%" PY_FORMAT_SIZE_T "d blocks]\n",
-            _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+    PyObject *xoptions, *value;
+    _Py_IDENTIFIER(showrefcount);
+
+    xoptions = PySys_GetXOptions();
+    if (xoptions == NULL)
+        return;
+    value = _PyDict_GetItemId(xoptions, &PyId_showrefcount);
+    if (value == Py_True)
+        fprintf(stderr,
+                "[%" PY_FORMAT_SIZE_T "d refs, "
+                "%" PY_FORMAT_SIZE_T "d blocks]\n",
+                _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
 
