@@ -2448,19 +2448,19 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # =====================
     def print_usage(self, file=None):
         if file is None:
-            file = _sys.stdout
-        self._print_message(self.format_usage(), file)
+            file = _sys.stdout.buffer if int(_sys.version_info[0]) is 3 else _sys.stdout
+        self._print_message(self.format_usage().encode('utf8'), file)
 
     def print_help(self, file=None):
         if file is None:
-            file = _sys.stdout
-        self._print_message(self.format_help(), file)
+            file = _sys.stdout.buffer if int(_sys.version_info[0]) is 3 else _sys.stdout
+        self._print_message(self.format_help().encode('utf8'), file)
 
     def _print_message(self, message, file=None):
         if message:
             if file is None:
-                file = _sys.stderr
-            file.write(message)
+                file = _sys.stderr.buffer if int(_sys.version_info[0]) is 3 else _sys.stderr
+            file.write(message if type(message) == bytes else message.encode('utf8'))
 
     # ===============
     # Exiting methods
