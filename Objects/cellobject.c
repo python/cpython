@@ -151,7 +151,7 @@ cell_set_contents(PyCellObject *op, PyObject *obj)
 }
 
 static PyGetSetDef cell_getsetlist[] = {
-    {"cell_contents", (getter)cell_get_contents, 
+    {"cell_contents", (getter)cell_get_contents,
                       (setter)cell_set_contents, NULL},
     {NULL} /* sentinel */
 };
