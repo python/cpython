@@ -583,13 +583,13 @@ set_tp_print(PySetObject *so, FILE *fp, int flags)
         if (status < 0)
             return status;
         Py_BEGIN_ALLOW_THREADS
-        fprintf(fp, "%s(...)", so->ob_type->tp_name);
+        fprintf(fp, "%s(...)", Py_TYPE(so)->tp_name);
         Py_END_ALLOW_THREADS
         return 0;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    fprintf(fp, "%s([", so->ob_type->tp_name);
+    fprintf(fp, "%s([", Py_TYPE(so)->tp_name);
     Py_END_ALLOW_THREADS
     while (set_next(so, &pos, &entry)) {
         Py_BEGIN_ALLOW_THREADS
@@ -617,7 +617,7 @@ set_repr(PySetObject *so)
     if (status != 0) {
         if (status < 0)
             return NULL;
-        return PyString_FromFormat("%s(...)", so->ob_type->tp_name);
+        return PyString_FromFormat("%s(...)", Py_TYPE(so)->tp_name);
     }
 
     keys = PySequence_List((PyObject *)so);
@@ -628,7 +628,7 @@ set_repr(PySetObject *so)
     if (listrepr == NULL)
         goto done;
 
-    result = PyString_FromFormat("%s(%s)", so->ob_type->tp_name,
+    result = PyString_FromFormat("%s(%s)", Py_TYPE(so)->tp_name,
         PyString_AS_STRING(listrepr));
     Py_DECREF(listrepr);
 done:

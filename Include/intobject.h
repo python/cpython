@@ -28,8 +28,8 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyInt_Type;
 
 #define PyInt_Check(op) \
-		 PyType_FastSubclass((op)->ob_type, Py_TPFLAGS_INT_SUBCLASS)
-#define PyInt_CheckExact(op) ((op)->ob_type == &PyInt_Type)
+		 PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_INT_SUBCLASS)
+#define PyInt_CheckExact(op) (Py_TYPE(op) == &PyInt_Type)
 
 PyAPI_FUNC(PyObject *) PyInt_FromString(char*, char**, int);
 #ifdef Py_USING_UNICODE

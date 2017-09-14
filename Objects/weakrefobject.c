@@ -196,7 +196,7 @@ weakref_repr(PyWeakReference *self)
 static PyObject *
 weakref_richcompare(PyWeakReference* self, PyWeakReference* other, int op)
 {
-    if ((op != Py_EQ && op != Py_NE) || self->ob_type != other->ob_type) {
+    if ((op != Py_EQ && op != Py_NE) || Py_TYPE(self) != Py_TYPE(other)) {
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
     }
@@ -914,7 +914,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 
     if (object == NULL
         || !PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))
-        || object->ob_refcnt != 0) {
+        || Py_REFCNT(object) != 0) {
         PyErr_BadInternalCall();
         return;
     }
@@ -937,7 +937,7 @@ PyObject_ClearWeakRefs(PyObject *object)
             current->wr_callback = NULL;
             clear_weakref(current);
             if (callback != NULL) {
-                if (current->ob_refcnt > 0)
+                if (Py_REFCNT(current) > 0)
                     handle_callback(current, callback);
                 Py_DECREF(callback);
             }
@@ -955,7 +955,7 @@ PyObject_ClearWeakRefs(PyObject *object)
             for (i = 0; i < count; ++i) {
                 PyWeakReference *next = current->wr_next;
 
-                if (current->ob_refcnt > 0)
+                if (Py_REFCNT(current) > 0)
                 {
                     Py_INCREF(current);
                     PyTuple_SET_ITEM(tuple, i * 2, (PyObject *) current);
