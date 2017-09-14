@@ -245,6 +245,9 @@ class ThreadableTest:
         self.server_ready.set()
 
     def _setUp(self):
+        self.wait_threads = support.wait_threads_exit()
+        self.wait_threads.__enter__()
+
         self.server_ready = threading.Event()
         self.client_ready = threading.Event()
         self.done = threading.Event()
@@ -271,6 +274,7 @@ class ThreadableTest:
     def _tearDown(self):
         self.__tearDown()
         self.done.wait()
+        self.wait_threads.__exit__(None, None, None)
 
         if self.queue.qsize():
             exc = self.queue.get()

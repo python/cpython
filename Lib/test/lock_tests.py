@@ -31,6 +31,9 @@ class Bunch(object):
         self.started = []
         self.finished = []
         self._can_exit = not wait_before_exit
+        self.wait_thread = support.wait_threads_exit()
+        self.wait_thread.__enter__()
+
         def task():
             tid = threading.get_ident()
             self.started.append(tid)
@@ -40,6 +43,7 @@ class Bunch(object):
                 self.finished.append(tid)
                 while not self._can_exit:
                     _wait()
+
         try:
             for i in range(n):
                 start_new_thread(task, ())
@@ -54,6 +58,8 @@ class Bunch(object):
     def wait_for_finished(self):
         while len(self.finished) < self.n:
             _wait()
+        # Wait for threads exit
+        self.wait_thread.__exit__(None, None, None)
 
     def do_finish(self):
         self._can_exit = True
@@ -220,20 +226,23 @@ class LockTests(BaseLockTests):
         # Lock needs to be released before re-acquiring.
         lock = self.locktype()
         phase = []
+
         def f():
             lock.acquire()
             phase.append(None)
             lock.acquire()
             phase.append(None)
-        start_new_thread(f, ())
-        while len(phase) == 0:
+
+        with support.wait_threads_exit():
+            start_new_thread(f, ())
+            while len(phase) == 0:
+                _wait()
             _wait()
-        _wait()
-        self.assertEqual(len(phase), 1)
-        lock.release()
-        while len(phase) == 1:
-            _wait()
-        self.assertEqual(len(phase), 2)
+            self.assertEqual(len(phase), 1)
+            lock.release()
+            while len(phase) == 1:
+                _wait()
+            self.assertEqual(len(phase), 2)
 
     def test_different_thread(self):
         # Lock can be released from a different thread.
