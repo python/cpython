@@ -1,0 +1,1 @@
+Allows the user to modify the fomat of floats when dumping a json file.
