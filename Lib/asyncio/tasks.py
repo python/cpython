@@ -625,6 +625,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
         elif fut._exception is not None:
             res = fut.exception()  # Mark exception retrieved.
             if not return_exceptions:
+                outer.cancel()
                 outer.set_exception(res)
                 return
         else:
