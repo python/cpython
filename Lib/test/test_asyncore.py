@@ -360,9 +360,7 @@ class DispatcherWithSendTests(unittest.TestCase):
 
             self.assertEqual(cap.getvalue(), data*2)
         finally:
-            t.join(timeout=TIMEOUT)
-            if t.is_alive():
-                self.fail("join() timed out")
+            support.join_thread(t, timeout=TIMEOUT)
 
 
 @unittest.skipUnless(hasattr(asyncore, 'file_wrapper'),
@@ -794,9 +792,7 @@ class BaseTestAPI:
                 except OSError:
                     pass
         finally:
-            t.join(timeout=TIMEOUT)
-            if t.is_alive():
-                self.fail("join() timed out")
+            support.join_thread(t, timeout=TIMEOUT)
 
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
     family = socket.AF_INET
