@@ -205,25 +205,25 @@ class JSONEncoder(object):
 
     def floatstr(o, allow_nan=self.allow_nan,
                 _repr=float.__repr__, _inf=INFINITY, _neginf=-INFINITY):
-            # Check for specials.  Note that this type of test is processor
-            # and/or platform-specific, so do tests which don't depend on the
-            # internals.
+        # Check for specials.  Note that this type of test is processor
+        # and/or platform-specific, so do tests which don't depend on the
+        # internals.
 
-            if o != o:
-                text = 'NaN'
-            elif o == _inf:
-                text = 'Infinity'
-            elif o == _neginf:
-                text = '-Infinity'
-            else:
-                return _repr(o)
+        if o != o:
+            text = 'NaN'
+        elif o == _inf:
+            text = 'Infinity'
+        elif o == _neginf:
+            text = '-Infinity'
+        else:
+            return _repr(o)
 
-            if not allow_nan:
-                raise ValueError(
-                    "Out of range float values are not JSON compliant: " +
-                    repr(o))
+        if not allow_nan:
+            raise ValueError(
+                "Out of range float values are not JSON compliant: " +
+                repr(o))
 
-            return text
+        return text
 
     def iterencode(self, o, _one_shot=False):
         """Encode the given object and yield each string
