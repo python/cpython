@@ -1643,8 +1643,8 @@ class OptionParser (OptionContainer):
         help text provided with them, to 'file' (default stdout).
         """
         if file is None:
-            file = sys.stdout
-        file.write(self.format_help())
+            file = sys.stdout.buffer if int(sys.version_info[0]) is 3 else sys.stdout
+        file.write(self.format_help().encode('utf8'))
 
 # class OptionParser
 
