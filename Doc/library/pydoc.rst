@@ -107,4 +107,3 @@ Reference Manual pages.
 
 .. versionchanged:: 3.7
    Added the ``-n`` option.
-
