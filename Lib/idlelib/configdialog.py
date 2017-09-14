@@ -149,17 +149,19 @@ class ConfigDialog(Toplevel):
         else:
             padding_args = {'padding': (6, 3)}
         outer = Frame(self, padding=2)
-        buttons = Frame(outer, padding=2)
+        buttons_frame = Frame(outer, padding=2)
+        self.buttons = {}
         for txt, cmd in (
             ('Ok', self.ok),
             ('Apply', self.apply),
             ('Cancel', self.cancel),
             ('Help', self.help)):
-            Button(buttons, text=txt, command=cmd, takefocus=FALSE,
-                   **padding_args).pack(side=LEFT, padx=5)
+            self.buttons[txt] = Button(buttons_frame, text=txt, command=cmd,
+                       takefocus=FALSE, **padding_args)
+            self.buttons[txt].pack(side=LEFT, padx=5)
         # Add space above buttons.
         Frame(outer, height=2, borderwidth=0).pack(side=TOP)
-        buttons.pack(side=BOTTOM)
+        buttons_frame.pack(side=BOTTOM)
         return outer
 
     def ok(self):
@@ -209,8 +211,9 @@ class ConfigDialog(Toplevel):
             view_text: Method from textview module.
         """
         page = self.note.tab(self.note.select(), option='text').strip()
-        view_text(self, title='Help for IDLE preferences',
-                 text=help_common+help_pages.get(page, ''))
+        self._current_viewtext = view_text(
+                self, title='Help for IDLE preferences',
+                text=help_common+help_pages.get(page, ''))
 
     def deactivate_current_config(self):
         """Remove current key bindings.
@@ -851,6 +854,8 @@ class HighPage(Frame):
         text.configure(
                 font=('courier', 12, ''), cursor='hand2', width=1, height=1,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
+        # Override to prevent double click and motion from propagating to
+        # other handlers.
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         string_tags=(
