@@ -160,11 +160,13 @@ static PyObject *
 sys_displayhook(PyObject *self, PyObject *o)
 {
     PyObject *outf;
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyObject *modules = interp->modules;
     PyObject *builtins;
     static PyObject *newline = NULL;
     int err;
 
-    builtins = _PyImport_GetModuleId(&PyId_builtins);
+    builtins = _PyDict_GetItemId(modules, &PyId_builtins);
     if (builtins == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
         return NULL;
@@ -1937,7 +1939,7 @@ _PySys_BeginInit(void)
     PyObject *m, *sysdict, *version_info;
     int res;
 
-    m = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
+    m = PyModule_Create(&sysmodule);
     if (m == NULL)
         return NULL;
     sysdict = PyModule_GetDict(m);

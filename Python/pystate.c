@@ -90,6 +90,7 @@ PyInterpreterState_New(void)
                                  PyMem_RawMalloc(sizeof(PyInterpreterState));
 
     if (interp != NULL) {
+        interp->modules = NULL;
         interp->modules_by_index = NULL;
         interp->sysdict = NULL;
         interp->builtins = NULL;
@@ -155,6 +156,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
+    Py_CLEAR(interp->modules);
     Py_CLEAR(interp->modules_by_index);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
