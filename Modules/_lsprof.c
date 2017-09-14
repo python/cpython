@@ -817,8 +817,7 @@ Profiler(custom_timer=None, time_unit=None, subcalls=True, builtins=True)\n\
 ");
 
 statichere PyTypeObject PyProfiler_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                      /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_lsprof.Profiler",                     /* tp_name */
     sizeof(ProfilerObject),                 /* tp_basicsize */
     0,                                      /* tp_itemsize */

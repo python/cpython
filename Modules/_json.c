@@ -1767,8 +1767,7 @@ PyDoc_STRVAR(scanner_doc, "JSON scanner object");
 
 static
 PyTypeObject PyScannerType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                    /* tp_internal */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_json.Scanner",       /* tp_name */
     sizeof(PyScannerObject), /* tp_basicsize */
     0,                    /* tp_itemsize */
@@ -2344,8 +2343,7 @@ PyDoc_STRVAR(encoder_doc, "_iterencode(obj, _current_indent_level) -> iterable")
 
 static
 PyTypeObject PyEncoderType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                    /* tp_internal */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_json.Encoder",       /* tp_name */
     sizeof(PyEncoderObject), /* tp_basicsize */
     0,                    /* tp_itemsize */

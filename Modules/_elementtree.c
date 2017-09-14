@@ -1661,8 +1661,8 @@ static PyMappingMethods element_as_mapping = {
 };
 
 statichere PyTypeObject Element_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0, "Element", sizeof(ElementObject), 0,
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "Element", sizeof(ElementObject), 0,
     /* methods */
     (destructor)element_dealloc, /* tp_dealloc */
     0, /* tp_print */
@@ -2031,8 +2031,8 @@ treebuilder_getattr(TreeBuilderObject* self, char* name)
 }
 
 statichere PyTypeObject TreeBuilder_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0, "TreeBuilder", sizeof(TreeBuilderObject), 0,
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "TreeBuilder", sizeof(TreeBuilderObject), 0,
     /* methods */
     (destructor)treebuilder_dealloc, /* tp_dealloc */
     0, /* tp_print */
@@ -2897,8 +2897,8 @@ xmlparser_getattr(XMLParserObject* self, char* name)
 }
 
 statichere PyTypeObject XMLParser_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0, "XMLParser", sizeof(XMLParserObject), 0,
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "XMLParser", sizeof(XMLParserObject), 0,
     /* methods */
     (destructor)xmlparser_dealloc, /* tp_dealloc */
     0, /* tp_print */

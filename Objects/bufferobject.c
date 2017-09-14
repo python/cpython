@@ -34,7 +34,7 @@ get_buf(PyBufferObject *self, void **ptr, Py_ssize_t *size,
     else {
         Py_ssize_t count, offset;
         readbufferproc proc = 0;
-        PyBufferProcs *bp = self->b_base->ob_type->tp_as_buffer;
+        PyBufferProcs *bp = Py_TYPE(self->b_base)->tp_as_buffer;
         if ((*bp->bf_getsegcount)(self->b_base, NULL) != 1) {
             PyErr_SetString(PyExc_TypeError,
                 "single-segment buffer object expected");
@@ -47,7 +47,7 @@ get_buf(PyBufferObject *self, void **ptr, Py_ssize_t *size,
             (buffer_type == ANY_BUFFER))
             proc = (readbufferproc)bp->bf_getwritebuffer;
         else if (buffer_type == CHAR_BUFFER) {
-            if (!PyType_HasFeature(self->ob_type,
+            if (!PyType_HasFeature(Py_TYPE(self),
                         Py_TPFLAGS_HAVE_GETCHARBUFFER)) {
             PyErr_SetString(PyExc_TypeError,
                 "Py_TPFLAGS_HAVE_GETCHARBUFFER needed");

@@ -427,7 +427,7 @@ close_the_file(PyFileObject *f)
     if (local_fp != NULL) {
         local_close = f->f_close;
         if (local_close != NULL && f->unlocked_count > 0) {
-            if (f->ob_refcnt > 0) {
+            if (Py_REFCNT(f) > 0) {
                 PyErr_SetString(PyExc_IOError,
                     "close() called during concurrent "
                     "operation on the same file object.");

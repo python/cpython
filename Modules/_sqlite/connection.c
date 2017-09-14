@@ -293,7 +293,7 @@ void pysqlite_connection_dealloc(pysqlite_Connection* self)
     Py_XDECREF(self->statements);
     Py_XDECREF(self->cursors);
 
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 /*
