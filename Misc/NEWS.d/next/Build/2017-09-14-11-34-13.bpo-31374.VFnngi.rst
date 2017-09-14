@@ -1,0 +1,2 @@
+Generate expat_config.h with autoconf. This fixes a build warning in Python's
+copy of expat library.

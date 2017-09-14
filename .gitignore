@@ -35,6 +35,7 @@ Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
 Modules/ld_so_aix
+Modules/expat/expat_config.h
 Programs/_freeze_importlib
 Programs/_freeze_importlib.exe
 Programs/_testembed

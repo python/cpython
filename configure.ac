@@ -3684,9 +3684,6 @@ AC_CHECK_FUNCS(forkpty,,
    )
 )
 
-# Stuff for expat.
-AC_CHECK_FUNCS(memmove)
-
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
 
@@ -4585,6 +4582,27 @@ AC_MSG_RESULT($HAVE_USABLE_WCHAR_T)
 # check for endianness
 AC_C_BIGENDIAN
 
+# Stuff for expat.
+case "$ac_cv_c_bigendian" in
+    yes)
+        BYTEORDER=4321
+        ;;
+    no)
+        BYTEORDER=1234
+        ;;
+    *)
+        AC_MSG_ERROR([unknown endianness $ac_cv_c_bigendian])
+        ;;
+esac
+AC_SUBST([BYTEORDER])
+
+AC_CHECK_FUNCS(memmove,
+  [DEFINE_HAVE_MEMMOVE='#define HAVE_MEMMOVE 1'],
+  [DEFINE_HAVE_MEMMOVE='#undef HAVE_MEMMOVE'],
+)
+AC_SUBST([DEFINE_HAVE_MEMMOVE])
+AC_CONFIG_FILES([Modules/expat/expat_config.h])
+
 # ABI version string for Python extension modules.  This appears between the
 # periods in shared library file names, e.g. foo.<SOABI>.so.  It is calculated
 # from the following attributes which affect the ABI of this Python build (in
@@ -5386,7 +5404,7 @@ if test "$have_getrandom" = yes; then
 fi
 
 # generate output files
-AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
+AC_CONFIG_FILES([Makefile.pre Misc/python.pc Misc/python-config.sh])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
