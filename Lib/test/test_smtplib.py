@@ -611,7 +611,9 @@ class TooLongLineTests(unittest.TestCase):
         self.sock.settimeout(15)
         self.port = support.bind_port(self.sock)
         servargs = (self.evt, self.respdata, self.sock)
-        threading.Thread(target=server, args=servargs).start()
+        thread = threading.Thread(target=server, args=servargs)
+        thread.start()
+        self.addCleanup(thread.join)
         self.evt.wait()
         self.evt.clear()
 
