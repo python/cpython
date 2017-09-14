@@ -55,7 +55,7 @@ bell= True
 # A fake extension for testing and example purposes.  When enabled and
 # invoked, inserts or deletes z-text at beginning of every line.
 [ZzDummy]
-enable= True
+enable= False
 enable_shell = False
 enable_editor = True
 z-text= Z

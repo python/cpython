@@ -1,0 +1,1 @@
+IDLE - make tests pass with zzdummy extension disabled by default.
