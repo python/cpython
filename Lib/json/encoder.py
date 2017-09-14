@@ -203,11 +203,13 @@ class JSONEncoder(object):
             chunks = list(chunks)
         return ''.join(chunks)
 
-    def floatstr(self, o, allow_nan=self.allow_nan,
+    def floatstr(self, o, allow_nan=None,
                 _repr=float.__repr__, _inf=INFINITY, _neginf=-INFINITY):
         # Check for specials.  Note that this type of test is processor
         # and/or platform-specific, so do tests which don't depend on the
         # internals.
+        if allow_nan is None:
+            allow_nan = self.allow_nan
 
         if o != o:
             text = 'NaN'
