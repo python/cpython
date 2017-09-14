@@ -1080,46 +1080,56 @@ class TestClassesAndFunctions(unittest.TestCase):
 class TestIsDataDescriptor(unittest.TestCase):
 
     def test_custom_descriptors(self):
-        class NonDataDescriptor(object):
-            def __get__(self, value, type=None): ""
-        class DataDescriptor0(object):
-            def __set__(self, name, value): ""
-        class DataDescriptor1(object):
-            def __delete__(self, name): ""
-        class DataDescriptor2(object):
+        class NonDataDescriptor:
+            def __get__(self, value, type=None): pass
+        class DataDescriptor0:
+            def __set__(self, name, value): pass
+        class DataDescriptor1:
+            def __delete__(self, name): pass
+        class DataDescriptor2:
             __set__ = None
-        self.assertFalse(inspect.isdatadescriptor(NonDataDescriptor),
+        self.assertFalse(inspect.isdatadescriptor(NonDataDescriptor()),
                          'class with only __get__ not a data descriptor')
-        self.assertTrue(inspect.isdatadescriptor(DataDescriptor0),
+        self.assertTrue(inspect.isdatadescriptor(DataDescriptor0()),
                         'class with __set__ is a data descriptor')
-        self.assertTrue(inspect.isdatadescriptor(DataDescriptor1),
+        self.assertTrue(inspect.isdatadescriptor(DataDescriptor1()),
                         'class with __delete__ is a data descriptor')
-        self.assertTrue(inspect.isdatadescriptor(DataDescriptor2),
+        self.assertTrue(inspect.isdatadescriptor(DataDescriptor2()),
                         'class with __set__ = None is a data descriptor')
 
     def test_slot(self):
-        class Slotted(object): __slots__ = 'foo',
-        self.assertTrue(inspect.isdatadescriptor(type(Slotted.foo)),
+        class Slotted:
+            __slots__ = 'foo',
+        self.assertTrue(inspect.isdatadescriptor(Slotted.foo),
                         'a slot is a data descriptor')
 
     def test_property(self):
-        self.assertTrue(inspect.isdatadescriptor(property),
-                        'property is a data descriptor')
+        class Propertied:
+            @property
+            def a_property(self):
+                pass
+        self.assertTrue(inspect.isdatadescriptor(Propertied.a_property),
+                        'a property is a data descriptor')
 
     def test_functions(self):
         class Test(object):
-            def instance_method(self): ''
-        def function(): ''
-        a_lambda = lambda: ''
-        self.assertFalse(inspect.isdatadescriptor(type(Test().instance_method)),
+            def instance_method(self): pass
+            @classmethod
+            def class_method(cls): pass
+            @staticmethod
+            def static_method(): pass
+        def function():
+            pass
+        a_lambda = lambda: None
+        self.assertFalse(inspect.isdatadescriptor(Test().instance_method),
                          'a instance method is not a data descriptor')
-        self.assertFalse(inspect.isdatadescriptor(classmethod),
+        self.assertFalse(inspect.isdatadescriptor(Test().class_method),
                          'a class method is not a data descriptor')
-        self.assertFalse(inspect.isdatadescriptor(staticmethod),
+        self.assertFalse(inspect.isdatadescriptor(Test().static_method),
                          'a static method is not a data descriptor')
-        self.assertFalse(inspect.isdatadescriptor(type(function)),
+        self.assertFalse(inspect.isdatadescriptor(function),
                          'a function is not a data descriptor')
-        self.assertFalse(inspect.isdatadescriptor(type(a_lambda)),
+        self.assertFalse(inspect.isdatadescriptor(a_lambda),
                          'a lambda is not a data descriptor')
 
 
@@ -3758,7 +3768,7 @@ def test_main():
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
         TestBoundArguments, TestSignaturePrivateHelpers,
-        TestSignatureDefinitions,
+        TestSignatureDefinitions, TestIsDataDescriptor,
         TestGetClosureVars, TestUnwrap, TestMain, TestReload,
         TestGetCoroutineState
     )
