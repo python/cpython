@@ -363,8 +363,8 @@ class PEP3147Tests(unittest.TestCase):
         # Given the path to a .py file, return the path to its PEP 3147
         # defined .pyc file (i.e. under __pycache__).
         path = os.path.join('foo', 'bar', 'baz', 'qux.py')
-        expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
-                              'qux.{}.pyc'.format(self.tag))
+        pyc = 'qux.{}.{}-0.pyc'.format(self.tag, sys.implementation.optim_tag)
+        expect = os.path.join('foo', 'bar', 'baz', '__pycache__', pyc)
         self.assertEqual(imp.cache_from_source(path, True), expect)
 
     @unittest.skipUnless(sys.implementation.cache_tag is not None,

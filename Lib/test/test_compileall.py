@@ -312,10 +312,11 @@ class CommandLineTests(unittest.TestCase):
 
     # Ensure that the default behavior of compileall's CLI is to create
     # PEP 3147/PEP 488 pyc files.
+    optim_tag = sys.implementation.optim_tag
     for name, ext, switch in [
-        ('normal', 'pyc', []),
-        ('optimize', 'opt-1.pyc', ['-O']),
-        ('doubleoptimize', 'opt-2.pyc', ['-OO']),
+        ('normal', '%s-0.pyc' % optim_tag, ['-o', optim_tag]),
+        ('optimize', '%s-1.pyc' % optim_tag, ['-o', optim_tag, '-O']),
+        ('doubleoptimize', '%s-2.pyc' % optim_tag, ['-o', optim_tag, '-OO']),
     ]:
         def f(self, ext=ext, switch=switch):
             script_helper.assert_python_ok(*(switch +

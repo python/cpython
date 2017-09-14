@@ -1818,6 +1818,9 @@ _Py_ReadyTypes(void)
 
     if (PyType_Ready(&_PyCoroWrapper_Type) < 0)
         Py_FatalError("Can't initialize coroutine wrapper type");
+
+    if (PyType_Ready(&_PyPeepholeOptimizer_Type) < 0)
+        Py_FatalError("Can't initialize peephole optimizer type");
 }
 
 

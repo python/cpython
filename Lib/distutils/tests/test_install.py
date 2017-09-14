@@ -191,7 +191,9 @@ class InstallTestCase(support.TempdirManager,
             f.close()
 
         found = [os.path.basename(line) for line in content.splitlines()]
-        expected = ['hello.py', 'hello.%s.pyc' % sys.implementation.cache_tag,
+        fn_pyc = 'hello.%s.%s-0.pyc' % (sys.implementation.cache_tag,
+                                        sys.implementation.optim_tag)
+        expected = ['hello.py', fn_pyc,
                     'sayhi',
                     'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
         self.assertEqual(found, expected)

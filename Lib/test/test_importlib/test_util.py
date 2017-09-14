@@ -556,6 +556,12 @@ class PEP3147Tests:
     """Tests of PEP 3147-related functions: cache_from_source and source_from_cache."""
 
     tag = sys.implementation.cache_tag
+    optim_tag = sys.implementation.optim_tag
+
+    def pyc_filename(self, name, optim_level=0, name_dot=True):
+        if name_dot:
+            name += '.'
+        return f'{name}{self.tag}.{self.optim_tag}-{optim_level}.pyc'
 
     @unittest.skipUnless(sys.implementation.cache_tag is not None,
                          'requires sys.implementation.cache_tag not be None')
@@ -563,8 +569,9 @@ class PEP3147Tests:
         # Given the path to a .py file, return the path to its PEP 3147
         # defined .pyc file (i.e. under __pycache__).
         path = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        filename = self.pyc_filename('qux')
         expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
-                              'qux.{}.pyc'.format(self.tag))
+                              filename)
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
@@ -577,8 +584,8 @@ class PEP3147Tests:
     def test_cache_from_source_no_dot(self):
         # Directory with a dot, filename without dot.
         path = os.path.join('foo.bar', 'file')
-        expect = os.path.join('foo.bar', '__pycache__',
-                              'file{}.pyc'.format(self.tag))
+        filename = self.pyc_filename('file', name_dot=False)
+        expect = os.path.join('foo.bar', '__pycache__', filename)
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
@@ -601,7 +608,8 @@ class PEP3147Tests:
 
     def test_cache_from_source_cwd(self):
         path = 'foo.py'
-        expect = os.path.join('__pycache__', 'foo.{}.pyc'.format(self.tag))
+        filename = self.pyc_filename('foo')
+        expect = os.path.join('__pycache__', filename)
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
@@ -626,7 +634,8 @@ class PEP3147Tests:
     def test_cache_from_source_optimization_empty_string(self):
         # Setting 'optimization' to '' leads to no optimization tag (PEP 488).
         path = 'foo.py'
-        expect = os.path.join('__pycache__', 'foo.{}.pyc'.format(self.tag))
+        filename = self.pyc_filename('foo')
+        expect = os.path.join('__pycache__', filename)
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
@@ -635,30 +644,31 @@ class PEP3147Tests:
         # (PEP 488)
         path = 'foo.py'
         optimization_level = sys.flags.optimize
-        almost_expect = os.path.join('__pycache__', 'foo.{}'.format(self.tag))
-        if optimization_level == 0:
-            expect = almost_expect + '.pyc'
-        elif optimization_level <= 2:
-            expect = almost_expect + '.opt-{}.pyc'.format(optimization_level)
+        if optimization_level <= 2:
+            filename = self.pyc_filename('foo', optimization_level)
         else:
             msg = '{!r} is a non-standard optimization level'.format(optimization_level)
             self.skipTest(msg)
         self.assertEqual(self.util.cache_from_source(path, optimization=None),
-                         expect)
+                         os.path.join('__pycache__', filename))
 
     def test_cache_from_source_optimization_set(self):
         # The 'optimization' parameter accepts anything that has a string repr
         # that passes str.alnum().
         path = 'foo.py'
         valid_characters = string.ascii_letters + string.digits
-        almost_expect = os.path.join('__pycache__', 'foo.{}'.format(self.tag))
+
         got = self.util.cache_from_source(path, optimization=valid_characters)
         # Test all valid characters are accepted.
+        filename = self.pyc_filename('foo', valid_characters)
         self.assertEqual(got,
-                         almost_expect + '.opt-{}.pyc'.format(valid_characters))
+                         os.path.join('__pycache__', filename))
+
         # str() should be called on argument.
+        filename = self.pyc_filename('foo', 42)
         self.assertEqual(self.util.cache_from_source(path, optimization=42),
-                         almost_expect + '.opt-42.pyc')
+                         os.path.join('__pycache__', filename))
+
         # Invalid characters raise ValueError.
         with self.assertRaises(ValueError):
             self.util.cache_from_source(path, optimization='path/is/bad')
@@ -724,7 +734,7 @@ class PEP3147Tests:
     def test_source_from_cache_too_many_dots(self):
         with self.assertRaises(ValueError):
             self.util.source_from_cache(
-                    '__pycache__/foo.cpython-32.opt-1.foo.pyc')
+                    '__pycache__/foo.cpython-32.{}-1.foo.pyc'.format(self.optim_tag))
 
     def test_source_from_cache_not_opt(self):
         # Non-`opt-` path component -> ValueError
@@ -740,12 +750,12 @@ class PEP3147Tests:
 
     def test_source_from_cache_optimized_bytecode(self):
         # Optimized bytecode is not an issue.
-        path = os.path.join('__pycache__', 'foo.{}.opt-1.pyc'.format(self.tag))
+        path = os.path.join('__pycache__', self.pyc_filename('foo', 1))
         self.assertEqual(self.util.source_from_cache(path), 'foo.py')
 
     def test_source_from_cache_missing_optimization(self):
         # An empty optimization level is a no-no.
-        path = os.path.join('__pycache__', 'foo.{}.opt-.pyc'.format(self.tag))
+        path = os.path.join('__pycache__', self.pyc_filename('foo', ''))
         with self.assertRaises(ValueError):
             self.util.source_from_cache(path)
 

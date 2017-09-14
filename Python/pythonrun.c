@@ -1040,7 +1040,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         PyArena_Free(arena);
         return NULL;
     }
-    if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
+    if (flags && (flags->cf_flags & (PyCF_ONLY_AST | PyCF_TRANSFORMED_AST))) {
         PyObject *result = PyAST_mod2obj(mod);
         PyArena_Free(arena);
         return result;
@@ -1108,6 +1108,111 @@ Py_SymtableString(const char *str, const char *filename_str, int start)
     return st;
 }
 
+static PyObject*
+ast_transformers_context(PyObject *filename)
+{
+    PyObject *dict, *namespace;
+
+    dict = PyDict_New();
+    if (dict == NULL)
+        return NULL;
+
+    if (PyDict_SetItemString(dict, "filename", filename) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+
+    namespace = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return namespace;
+}
+
+static mod_ty
+ast_transformers(mod_ty mod, PyArena *arena, int cf_flags,
+                 PyObject *filename, int start)
+{
+    PyObject *ast, *context = NULL;
+    int mode;
+    _PySys_CodeTransformer *transformers;
+    Py_ssize_t i, ntransformer, nasttransformer;
+
+    assert(filename != NULL);
+
+    if (cf_flags & PyCF_ONLY_AST)
+        return mod;
+
+    if (_PySys_GetCodeTransformers(&transformers, &ntransformer) < 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                "failed to get code transformers");
+        return NULL;
+    }
+
+    nasttransformer = 0;
+    for (i=0; i < ntransformer; i++) {
+        if (transformers[i].ast_transformer)
+            nasttransformer++;
+    }
+    if (nasttransformer == 0) {
+        /* No AST transformer registered: nothing to do.
+         * Optimization to avoid calling the expensive functions
+         * PyAST_mod2obj(), PyAST_obj2mod(), PyAST_Validate(). */
+        return mod;
+    }
+
+    /* FIXME: the AST transformer can technically call
+     * sys.set_code_transformers(), we need to keep a strong reference on each
+     * AST transformer */
+
+    context = ast_transformers_context(filename);
+
+    if (start == Py_file_input)
+        mode = 0; /* exec */
+    else if (start == Py_eval_input)
+        mode = 1; /* eval */
+    else {
+        assert(start == Py_single_input);
+        mode = 2; /* single */
+    }
+
+    ast = PyAST_mod2obj(mod);
+    if (ast == NULL)
+        goto error;
+
+    for (i=0; i < ntransformer; i++) {
+        PyObject *ast_transformer, *new_ast;
+
+        ast_transformer = transformers[i].ast_transformer;
+        if (ast_transformer == NULL)
+            continue;
+
+        new_ast = PyObject_CallFunction(ast_transformer, "OO", ast, context);
+        Py_DECREF(ast);
+
+        if (new_ast == NULL) {
+            /* FIXME: raise a better exception and chain the previous one */
+            goto error;
+        }
+
+        ast = new_ast;
+    }
+
+    mod = PyAST_obj2mod(ast, arena, mode);
+    Py_DECREF(ast);
+    if (mod == NULL)
+        goto error;
+
+    if (!PyAST_Validate(mod))
+        goto error;
+
+    Py_DECREF(context);
+    return mod;
+
+error:
+    /* FIXME: release reference to AST transformers */
+    Py_XDECREF(context);
+    return NULL;
+}
+
 /* Preferred access to parser is through AST. */
 mod_ty
 PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
@@ -1135,7 +1240,10 @@ PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
         mod = NULL;
     }
     err_free(&err);
-    return mod;
+    if (mod == NULL)
+        return NULL;
+
+    return ast_transformers(mod, arena, flags->cf_flags, filename, start);
 }
 
 mod_ty
@@ -1182,7 +1290,10 @@ PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
         mod = NULL;
     }
     err_free(&err);
-    return mod;
+    if (mod == NULL)
+        return NULL;
+
+    return ast_transformers(mod, arena, flags->cf_flags, filename, start);
 }
 
 mod_ty

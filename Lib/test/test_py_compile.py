@@ -107,11 +107,11 @@ class PyCompileTests(unittest.TestCase):
         pyc_path = weird_path + 'c'
         head, tail = os.path.split(cache_path)
         penultimate_tail = os.path.basename(head)
+        pyc = 'foo.bar.{}.{}-0.pyc'.format(sys.implementation.cache_tag,
+                                           sys.implementation.optim_tag)
         self.assertEqual(
             os.path.join(penultimate_tail, tail),
-            os.path.join(
-                '__pycache__',
-                'foo.bar.{}.pyc'.format(sys.implementation.cache_tag)))
+            os.path.join( '__pycache__', pyc))
         with open(weird_path, 'w') as file:
             file.write('x = 123\n')
         py_compile.compile(weird_path)
@@ -120,7 +120,8 @@ class PyCompileTests(unittest.TestCase):
 
     def test_optimization_path(self):
         # Specifying optimized bytecode should lead to a path reflecting that.
-        self.assertIn('opt-2', py_compile.compile(self.source_path, optimize=2))
+        expected = '{}-2'.format(sys.implementation.optim_tag)
+        self.assertIn(expected, py_compile.compile(self.source_path, optimize=2))
 
 
 if __name__ == "__main__":

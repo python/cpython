@@ -40,11 +40,26 @@ _Py_IDENTIFIER(_xoptions);
 _Py_IDENTIFIER(buffer);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(encoding);
+_Py_IDENTIFIER(name);
 _Py_IDENTIFIER(path);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(warnoptions);
 _Py_IDENTIFIER(write);
+
+/* State of the sys module, per PEP 3121. */
+typedef struct {
+    Py_ssize_t ntransformer;
+    /* FIXME: free memory at exit */
+    _PySys_CodeTransformer *transformers;
+} PySysState;
+
+/* Given a module object, get its per-module state. */
+static PySysState *
+_PySys_GetState(PyObject *module)
+{
+    return (PySysState *)PyModule_GetState(module);
+}
 
 PyObject *
 _PySys_GetObjectId(_Py_Identifier *key)
@@ -786,6 +801,263 @@ Return a namedtuple of installed asynchronous generators hooks \
 );
 
 
+static void
+code_transformers_dealloc(Py_ssize_t ntransformer,
+                          _PySys_CodeTransformer *transformers)
+{
+    Py_ssize_t i;
+
+    for (i=0; i < ntransformer; i++) {
+        Py_DECREF(transformers[i].transformer);
+        Py_DECREF(transformers[i].name);
+        Py_XDECREF(transformers[i].ast_transformer);
+        Py_XDECREF(transformers[i].code_transformer);
+    }
+    PyMem_Free(transformers);
+}
+
+static int
+sys_check_code_transformer_name(PyObject *name, Py_ssize_t len, Py_UCS4 ch)
+{
+    Py_ssize_t pos;
+
+    pos = PyUnicode_FindChar(name, ch, 0, len, 1);
+    if (pos == -2)
+        return -1;
+    if (pos != -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "invalid transformer name");
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
+sys_init_code_transformer(_PySys_CodeTransformer *self, PyObject *transformer)
+{
+    PyObject *name = NULL, *ast_transformer = NULL, *code_transformer = NULL;
+    Py_ssize_t len;
+    int res = -1;
+
+    name = _PyObject_GetAttrId(transformer, &PyId_name);
+    if (name == NULL)
+        goto exit;
+
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "transformer name type must be str, got %s",
+                     Py_TYPE(name)->tp_name);
+        goto exit;
+    }
+
+    if (PyUnicode_READY(name) == -1)
+        goto exit;
+    len = PyUnicode_GET_LENGTH(name);
+
+    if (len == 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "transformer name must be non-empty");
+        goto exit;
+    }
+
+    if (sys_check_code_transformer_name(name, len, '-') < 0)
+        goto exit;
+    if (sys_check_code_transformer_name(name, len, '.') < 0)
+        goto exit;
+    if (sys_check_code_transformer_name(name, len, '\0') < 0)
+        goto exit;
+    if (sys_check_code_transformer_name(name, len, SEP) < 0)
+        goto exit;
+#ifdef ALTSEP
+    if (sys_check_code_transformer_name(name, len, ALTSEP) < 0)
+        goto exit;
+#endif
+
+    ast_transformer = PyObject_GetAttrString(transformer, "ast_transformer");
+    if (ast_transformer == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+            goto exit;
+        PyErr_Clear();
+    }
+
+    code_transformer = PyObject_GetAttrString(transformer, "code_transformer");
+    if (code_transformer == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+            goto exit;
+        PyErr_Clear();
+    }
+
+    if (ast_transformer == NULL && code_transformer == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "a code transformer must have a code_transformer() "
+                        "and/or a ast_transformer() method");
+        goto exit;
+    }
+
+    Py_INCREF(transformer);
+    self->transformer = transformer;
+    Py_INCREF(name);
+    self->name = name;
+    Py_XINCREF(ast_transformer);
+    self->ast_transformer = ast_transformer;
+    Py_XINCREF(code_transformer);
+    self->code_transformer = code_transformer;
+    res = 0;
+
+exit:
+    Py_XDECREF(name);
+    Py_XDECREF(code_transformer);
+    Py_XDECREF(ast_transformer);
+    return res;
+}
+
+static PyObject *
+sys_set_code_transformers(PyObject *self, PyObject *transformers_seq)
+{
+    PySysState *st = _PySys_GetState(self);
+    PyObject *seq = NULL;
+    PyObject *names = NULL, *optim_tag, *implementation;
+    _PySys_CodeTransformer *transformers = NULL;
+    Py_ssize_t i, ntransformer, ninitialized = 0, size;
+
+    implementation = PySys_GetObject("implementation");
+    if (implementation == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.implementation");
+        goto error;
+    }
+
+    seq = PySequence_Fast(transformers_seq,
+                          "transformers must be a sequence "
+                          "of code transformers");
+    if (seq == NULL)
+        goto error;
+
+    ntransformer = PySequence_Fast_GET_SIZE(seq);
+
+    if (ntransformer > PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(transformers[0])) {
+        PyErr_NoMemory();
+        goto error;
+    }
+    size = ntransformer * sizeof(transformers[0]);
+    transformers = PyMem_Malloc(size);
+    if (transformers == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+
+    names = PyList_New(0);
+    if (names == NULL)
+        goto error;
+
+    for (i=0; i < ntransformer; i++) {
+        PyObject *transformer = PySequence_Fast_GET_ITEM(seq, i);
+        if (sys_init_code_transformer(&transformers[i], transformer) < 0)
+            goto error;
+        ninitialized++;
+
+        if (PyList_Append(names, transformers[i].name) < 0)
+            goto error;
+    }
+
+    if (PyList_GET_SIZE(names) > 0) {
+        PyObject *dash = PyUnicode_FromString("-");
+        if (dash == NULL)
+            goto error;
+
+        optim_tag = PyUnicode_Join(dash, names);
+        Py_DECREF(dash);
+    }
+    else {
+        optim_tag = PyUnicode_FromString("noopt");
+        if (optim_tag == NULL)
+            goto error;
+    }
+
+    if (PyObject_SetAttrString(implementation, "optim_tag", optim_tag) < 0) {
+        Py_DECREF(optim_tag);
+        goto error;
+    }
+    Py_DECREF(optim_tag);
+
+    /* release memory */
+    Py_DECREF(names);
+    Py_DECREF(seq);
+
+    code_transformers_dealloc(st->ntransformer, st->transformers);
+    st->ntransformer = ntransformer;
+    st->transformers = transformers;
+
+    Py_RETURN_NONE;
+
+error:
+    Py_XDECREF(seq);
+    code_transformers_dealloc(ninitialized, transformers);
+    Py_XDECREF(names);
+    return NULL;
+}
+
+PyDoc_STRVAR(set_code_transformers_doc,
+"set_code_transformers(transformers)\n"
+"\n"
+"Set code transformers.");
+
+static PyObject*
+sys_get_module(void)
+{
+    PyThreadState *tstate;
+    tstate = PyThreadState_GET();
+    return PyDict_GetItemString(tstate->interp->modules, "sys");
+}
+
+int
+_PySys_GetCodeTransformers(_PySys_CodeTransformer **transformers,
+                           Py_ssize_t *ntransformer)
+{
+    PyObject *sysmod;
+    PySysState *st;
+
+    sysmod = sys_get_module();
+    if (sysmod == NULL) {
+        return -1;
+    }
+
+    st = _PySys_GetState(sysmod);
+    if (st == NULL) {
+        return -1;
+    }
+
+    *ntransformer = st->ntransformer;
+    *transformers = st->transformers;
+    return 0;
+}
+
+static PyObject *
+sys_get_code_transformers(PyObject *self, PyObject *args)
+{
+    PySysState *st = _PySys_GetState(self);
+    PyObject *list;
+    Py_ssize_t i;
+
+    list = PyList_New(st->ntransformer);
+    if (list == NULL)
+        return NULL;
+
+    for (i=0; i < st->ntransformer; i++) {
+        PyObject *transformer = st->transformers[i].transformer;
+        Py_INCREF(transformer);
+        PyList_SET_ITEM(list, i, transformer);
+    }
+
+    return list;
+}
+
+PyDoc_STRVAR(get_code_transformers_doc,
+"get_code_transformers() -> list\n"
+"\n"
+"Return the list of code transformers.");
+
+
 static PyTypeObject Hash_InfoType;
 
 PyDoc_STRVAR(hash_info_doc,
@@ -1450,6 +1722,10 @@ static PyMethodDef sys_methods[] = {
     {"getandroidapilevel", (PyCFunction)sys_getandroidapilevel, METH_NOARGS,
      getandroidapilevel_doc},
 #endif
+    {"set_code_transformers", sys_set_code_transformers, METH_O,
+     set_code_transformers_doc},
+    {"get_code_transformers", sys_get_code_transformers, METH_NOARGS,
+     get_code_transformers_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1875,6 +2151,20 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
+    if (_Py_OptimTag) {
+        Py_INCREF(_Py_OptimTag);
+        value = _Py_OptimTag;
+    }
+    else {
+        value = PyUnicode_FromString("opt");
+        if (value == NULL)
+            goto error;
+    }
+    res = PyDict_SetItemString(impl_info, "optim_tag", value);
+    Py_DECREF(value);
+    if (res < 0)
+        goto error;
+
     res = PyDict_SetItemString(impl_info, "version", version_info);
     if (res < 0)
         goto error;
@@ -1908,17 +2198,84 @@ error:
     return NULL;
 }
 
+static int
+sys_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PySysState *st = _PySys_GetState(self);
+    Py_ssize_t i;
+
+    for (i=0; i < st->ntransformer; i++) {
+        Py_VISIT(st->transformers[i].transformer);
+    }
+    return 0;
+}
+
+static int
+sys_clear(PyObject *self)
+{
+    PySysState *st = _PySys_GetState(self);
+
+    code_transformers_dealloc(st->ntransformer, st->transformers);
+
+    st->ntransformer = 0;
+    st->transformers = NULL;
+    return 0;
+}
+
+static void
+sys_free(void *self)
+{
+    sys_clear((PyObject *)self);
+}
+
 static struct PyModuleDef sysmodule = {
     PyModuleDef_HEAD_INIT,
     "sys",
     sys_doc,
-    -1, /* multiple "initialization" just copies the module dict. */
+    sizeof(PySysState), /* multiple "initialization" just copies the module dict. */
     sys_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    sys_traverse,
+    sys_clear,
+    sys_free
 };
+
+static int
+set_peephole_optimizer(void)
+{
+    PyObject *sysmod;
+    PySysState *st;
+    PyObject *optimizer;
+
+    sysmod = sys_get_module();
+    if (sysmod == NULL) {
+        return -1;
+    }
+    st = _PySys_GetState(sysmod);
+
+    assert(st->ntransformer == 0);
+    assert(st->transformers == NULL);
+
+    optimizer = PyObject_CallFunction((PyObject *)&_PyPeepholeOptimizer_Type, NULL);
+    if (optimizer == NULL)
+        return -1;
+
+    st->transformers = PyMem_Malloc(sizeof(st->transformers[0]));
+    if (st->transformers == NULL) {
+        PyErr_NoMemory();
+        Py_DECREF(optimizer);
+        return -1;
+    }
+
+    if (sys_init_code_transformer(&st->transformers[0], optimizer) < 0) {
+        Py_DECREF(optimizer);
+        return -1;
+    }
+    Py_DECREF(optimizer);
+
+    st->ntransformer = 1;
+    return 0;
+}
 
 /* Updating the sys namespace, returning NULL pointer on error */
 #define SET_SYS_FROM_STRING_BORROW(key, value)             \
@@ -1946,8 +2303,12 @@ static struct PyModuleDef sysmodule = {
 PyObject *
 _PySys_BeginInit(void)
 {
-    PyObject *m, *sysdict, *version_info;
+    PyObject *m, *sysdict;
     int res;
+
+    /* Py_NewInterpreter() calls _PyImport_FindBuiltin("sys") which requires
+     * an init method because the sys module has a state. */
+    sysmodule.m_base.m_init = _PySys_BeginInit;
 
     m = PyModule_Create(&sysmodule);
     if (m == NULL)
@@ -2034,17 +2395,12 @@ _PySys_BeginInit(void)
                                        &version_info_desc) < 0)
             return NULL;
     }
-    version_info = make_version_info();
-    SET_SYS_FROM_STRING("version_info", version_info);
     /* prevent user from creating new instances */
     VersionInfoType.tp_init = NULL;
     VersionInfoType.tp_new = NULL;
     res = PyDict_DelItemString(VersionInfoType.tp_dict, "__new__");
     if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
         PyErr_Clear();
-
-    /* implementation */
-    SET_SYS_FROM_STRING("implementation", make_impl_info(version_info));
 
     /* flags */
     if (FlagsType.tp_name == 0) {
@@ -2145,6 +2501,21 @@ _PySys_EndInit(PyObject *sysdict)
 
     if (get_xoptions() == NULL)
         return -1;
+
+    /* FIXME: move version_info init back to _PySys_BeginInit,
+       get it from the dict */
+    PyObject *version_info = make_version_info();
+    SET_SYS_FROM_STRING_INT_RESULT("version_info", version_info);
+
+    /* implementation */
+    SET_SYS_FROM_STRING_INT_RESULT("implementation", make_impl_info(version_info));
+
+    if (!_Py_OptimTag
+       || PyUnicode_CompareWithASCIIString(_Py_OptimTag, "opt") == 0) {
+        if (set_peephole_optimizer() < 0) {
+            return -1;
+        }
+    }
 
     if (PyErr_Occurred())
         return -1;

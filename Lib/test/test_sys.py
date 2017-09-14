@@ -1203,8 +1203,94 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(cur.finalizer)
 
 
+class MyCodeTransformer:
+    name = 'mytransformer'
+
+    def code_transformer(self, bytecode):
+        # no-op
+        return bytecode
+
+    def ast_transformers(self, tree, context):
+        # no-op
+        return tree
+
+
+class CodeTransformersTests(unittest.TestCase):
+    def setUp(self):
+        transformers = sys.get_code_transformers()
+        self.addCleanup(sys.set_code_transformers, transformers)
+
+    def test_sys_get_transformers(self):
+        transformers = sys.get_code_transformers()
+        self.assertIsInstance(transformers, list)
+        for transformer in transformers:
+            self.assertIsInstance(transformer.name, str)
+
+    def test_sys_set_code_transformers(self):
+        transformer = MyCodeTransformer()
+        sys.set_code_transformers([transformer])
+
+        transformers = sys.get_code_transformers()
+        self.assertEqual(len(transformers), 1)
+        self.assertIs(transformers[0], transformer)
+
+    def test_optim_tag(self):
+        transformer1 = MyCodeTransformer()
+        transformer1.name = "a"
+        sys.set_code_transformers([transformer1])
+        self.assertEqual(sys.implementation.optim_tag, "a")
+
+        transformer2 = MyCodeTransformer()
+        transformer2.name = "b"
+        sys.set_code_transformers([transformer1, transformer2])
+        self.assertEqual(sys.implementation.optim_tag, "a-b")
+
+        sys.set_code_transformers([])
+        self.assertEqual(sys.implementation.optim_tag, "noopt")
+
+    def test_invalid_type(self):
+        with self.assertRaises(AttributeError):
+            sys.set_code_transformers([123])
+
+    def test_invalid_name(self):
+        transformer = MyCodeTransformer()
+
+        # None name
+        with self.assertRaises(TypeError):
+            transformer.name = None
+            sys.set_code_transformers([transformer])
+
+        # empty name
+        with self.assertRaises(ValueError):
+            transformer.name = ''
+            sys.set_code_transformers([transformer])
+
+        # invalid characters
+        invalid_chars = '.-' + os.path.sep
+        if os.path.altsep:
+            invalid_chars += os.path.altsep
+        for invalid_char in invalid_chars:
+            with self.assertRaises(ValueError):
+                transformer.name = 'a%sb' % invalid_char
+                sys.set_code_transformers([transformer])
+
+    def test_no_transformation(self):
+        class InvalidTransformer:
+            name = "invalid"
+
+        transformer = InvalidTransformer()
+
+        # a code transformer must have a code_transformer()
+        # and/or a ast_transformer() method
+        with self.assertRaises(ValueError):
+            sys.set_code_transformers([transformer])
+
+
 def test_main():
-    test.support.run_unittest(SysModuleTest, SizeofTest)
+    test.support.run_unittest(SysModuleTest,
+                              SizeofTest,
+                              CodeTransformersTests)
+
 
 if __name__ == "__main__":
     test_main()

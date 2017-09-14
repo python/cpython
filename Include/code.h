@@ -149,6 +149,8 @@ PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
 #endif
 
+PyAPI_DATA(PyTypeObject) _PyPeepholeOptimizer_Type;
+
 #ifdef __cplusplus
 }
 #endif

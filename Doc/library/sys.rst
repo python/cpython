@@ -413,6 +413,13 @@ always available.
    .. versionadded:: 3.7
 
 
+.. function:: get_code_transformers()
+
+   Return the list of code transformers.; see :func:`set_code_transformers`.
+
+   .. versionadded:: 3.6
+
+
 .. function:: getcheckinterval()
 
    Return the interpreter's "check interval"; see :func:`setcheckinterval`.
@@ -719,6 +726,9 @@ always available.
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
+   *optim_tag* is the optimized tag used by the import machinery in the
+   filenames of cached modules.
+
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
    an underscore, and are not described here.  Regardless of its contents,
@@ -727,6 +737,9 @@ always available.
    language versions, however.)  See :pep:`421` for more information.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.6
+      Added *optim_tag* attribute.
 
 
 .. data:: int_info
@@ -976,6 +989,13 @@ always available.
    assigned to either variable, its :func:`str` is re-evaluated each time the
    interpreter prepares to read a new interactive command; this can be used to
    implement a dynamic prompt.
+
+
+.. function:: set_code_transformers(transformers)
+
+   Set code transformers: *transformers* is a sequence of code transformers.
+
+   .. versionadded:: 3.6
 
 
 .. function:: setcheckinterval(interval)

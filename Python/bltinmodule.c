@@ -697,7 +697,8 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     cf.cf_flags = flags | PyCF_SOURCE_IS_UTF8;
 
     if (flags &
-        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST))
+        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT
+                    | PyCF_ONLY_AST | PyCF_TRANSFORMED_AST))
     {
         PyErr_SetString(PyExc_ValueError,
                         "compile(): unrecognised flags");
@@ -731,7 +732,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (is_ast == -1)
         goto error;
     if (is_ast) {
-        if (flags & PyCF_ONLY_AST) {
+        if (flags & (PyCF_ONLY_AST | PyCF_TRANSFORMED_AST)) {
             Py_INCREF(source);
             result = source;
         }

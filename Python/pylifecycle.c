@@ -127,6 +127,7 @@ int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
+PyObject* _Py_OptimTag = NULL; /* optimization tag for importlib */
 
 /* Hack to force loading of object files */
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \

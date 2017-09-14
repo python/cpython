@@ -5288,6 +5288,96 @@ compute_code_flags(struct compiler *c)
     return flags;
 }
 
+static PyObject*
+code_transformers_context(struct compiler *c)
+{
+    PyObject *dict, *namespace;
+
+    dict = PyDict_New();
+    if (dict == NULL)
+        return NULL;
+
+    if (PyDict_SetItemString(dict, "filename", c->c_filename) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+
+    namespace = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return namespace;
+}
+
+static PyObject*
+code_transformers(struct compiler *c, PyObject *code_orig)
+{
+    PyObject *code = NULL;
+    PyObject *context = NULL;
+    _PySys_CodeTransformer *transformers;
+    Py_ssize_t i, ntransformer, nbytecodetransformer;
+
+    if (_PySys_GetCodeTransformers(&transformers, &ntransformer) < 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                "failed to get code transformers");
+        return NULL;
+    }
+
+    nbytecodetransformer = 0;
+    for (i=0; i < ntransformer; i++) {
+        if (transformers[i].code_transformer)
+            nbytecodetransformer++;
+    }
+    if (nbytecodetransformer == 0) {
+        /* No AST transformer registered: nothing to do.
+         * Optimization to avoid calling the expensive functions
+         * PyAST_mod2obj(), PyAST_obj2mod(), PyAST_Validate(). */
+        Py_INCREF(code_orig);
+        return code_orig;
+    }
+
+    /* FIXME: the bytecode transformer can technically call
+     * sys.set_code_transformers(), we need to keep a strong reference on each
+     * bytecode transformer */
+
+    context = code_transformers_context(c);
+
+    Py_INCREF(code_orig);
+    code = code_orig;
+
+    for (i=0; i < ntransformer; i++) {
+        PyObject *transformer, *new_code;
+
+        transformer = transformers[i].code_transformer;
+        if (transformer == NULL)
+            continue;
+
+        new_code = PyObject_CallFunction(transformer, "OO", code, context);
+        if (new_code == NULL) {
+            /* FIXME: raise a better exception and chain the previous one */
+            goto error;
+        }
+
+        if (!PyCode_Check(new_code)) {
+            PyErr_Format(PyExc_ValueError,
+                         "bytecode transformer must return "
+                         "a code object, got %s",
+                         Py_TYPE(new_code)->tp_name);
+            Py_DECREF(new_code);
+            return NULL;
+        }
+
+        Py_SETREF(code, new_code);
+    }
+
+    Py_DECREF(context);
+    return code;
+
+error:
+    /* FIXME: release reference to code transformers */
+    Py_XDECREF(context);
+    Py_XDECREF(code);
+    return NULL;
+}
+
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a)
 {
@@ -5300,6 +5390,7 @@ makecode(struct compiler *c, struct assembler *a)
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
     PyObject *bytecode = NULL;
+    PyObject *lnotab = NULL;
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
@@ -5331,9 +5422,10 @@ makecode(struct compiler *c, struct assembler *a)
     if (flags < 0)
         goto error;
 
-    bytecode = PyCode_Optimize(a->a_bytecode, consts, names, a->a_lnotab);
-    if (!bytecode)
-        goto error;
+    bytecode = a->a_bytecode;
+    lnotab = a->a_lnotab;
+    a->a_bytecode = NULL;
+    a->a_lnotab = NULL;
 
     tmp = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
     if (!tmp)
@@ -5349,7 +5441,14 @@ makecode(struct compiler *c, struct assembler *a)
                     freevars, cellvars,
                     c->c_filename, c->u->u_name,
                     c->u->u_firstlineno,
-                    a->a_lnotab);
+                    lnotab);
+    if (co == NULL)
+        goto error;
+
+    tmp = code_transformers(c, (PyObject *)co);
+    Py_DECREF(co);
+    co = (PyCodeObject *)tmp;
+
  error:
     Py_XDECREF(consts);
     Py_XDECREF(names);
