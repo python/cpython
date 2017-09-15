@@ -259,16 +259,27 @@ random_seed(RandomObject *self, PyObject *args)
      * So: if the arg is a PyLong, use its absolute value.
      * Otherwise use its hash value, cast to unsigned.
      */
-    if (PyLong_Check(arg))
+    if (PyLong_Check(arg)) {
         n = PyNumber_Absolute(arg);
+        if (n == NULL) {
+            goto Done;
+        }
+        if (!PyLong_Check(n)) {
+            PyErr_Format(PyExc_TypeError,
+                         "abs(a) must return an integer, not '%.200s'",
+                         Py_TYPE(n)->tp_name);
+            goto Done;
+        }
+    }
     else {
         Py_hash_t hash = PyObject_Hash(arg);
         if (hash == -1)
             goto Done;
         n = PyLong_FromSize_t((size_t)hash);
+        if (n == NULL) {
+            goto Done;
+        }
     }
-    if (n == NULL)
-        goto Done;
 
     /* Now split n into 32-bit chunks, from the right. */
     bits = _PyLong_NumBits(n);

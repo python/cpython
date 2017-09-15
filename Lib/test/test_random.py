@@ -430,6 +430,16 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             ['0x1.b0580f98a7dbep-1', '0x1.84129978f9c1ap-1',
              '0x1.aeaa51052e978p-2', '0x1.092178fb945a6p-2'])
 
+    @support.cpython_only
+    def test_issue31478(self):
+        # There shouldn't be an assertion failure in seed() in case the 'a'
+        # argument has a bad __abs__() method.
+        class BadInt(int):
+            def __abs__(self):
+                return None
+        with self.assertRaises(TypeError):
+            self.gen.seed(BadInt())
+
     def test_setstate_first_arg(self):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))
 
