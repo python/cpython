@@ -1650,6 +1650,33 @@ getattribute(PyObject *obj, PyObject *name, int allow_qualname)
     return attr;
 }
 
+static int
+_checkmodule(PyObject *module_name, PyObject *module,
+             PyObject *global, PyObject *dotted_path)
+{
+    if (module == Py_None) {
+        return -1;
+    }
+    if (PyUnicode_Check(module_name) &&
+            _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
+        return -1;
+    }
+
+    PyObject *candidate = get_deep_attribute(module, dotted_path, NULL);
+    if (candidate == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
+        return -1;
+    }
+    if (candidate != global) {
+        Py_DECREF(candidate);
+        return -1;
+    }
+    Py_DECREF(candidate);
+    return 0;
+}
+
 static PyObject *
 whichmodule(PyObject *global, PyObject *dotted_path)
 {
@@ -1687,27 +1714,13 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     if (PyDict_CheckExact(modules)) {
         i = 0;
         while (PyDict_Next(modules, &i, &module_name, &module)) {
-            PyObject *candidate;
-            if (PyUnicode_Check(module_name) &&
-                _PyUnicode_EqualToASCIIString(module_name, "__main__"))
-                continue;
-            if (module == Py_None)
-                continue;
-
-            candidate = get_deep_attribute(module, dotted_path, NULL);
-            if (candidate == NULL) {
-                if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-                    return NULL;
-                PyErr_Clear();
-                continue;
-            }
-
-            if (candidate == global) {
+            if (_checkmodule(module_name, module, global, dotted_path) == 0) {
                 Py_INCREF(module_name);
-                Py_DECREF(candidate);
                 return module_name;
             }
-            Py_DECREF(candidate);
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
 		}
 	}
     else {
@@ -1722,38 +1735,17 @@ whichmodule(PyObject *global, PyObject *dotted_path)
                 Py_DECREF(iterator);
                 return NULL;
             }
-            if (module == Py_None) {
-                Py_DECREF(module);
-                Py_DECREF(module_name);
-                continue;
-            }
-            if (PyUnicode_Check(module_name) &&
-                    _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
-                Py_DECREF(module);
-                Py_DECREF(module_name);
-                continue;
-            }
-
-            PyObject *candidate = get_deep_attribute(module, dotted_path, NULL);
-            if (candidate == NULL) {
-                Py_DECREF(module);
-                Py_DECREF(module_name);
-                if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    PyErr_Clear();
-                    continue;
-                }
-                Py_DECREF(iterator);
-                return NULL;
-            }
-            if (candidate == global) {
-                Py_DECREF(candidate);
+            if (_checkmodule(module_name, module, global, dotted_path) == 0) {
                 Py_DECREF(module);
                 Py_DECREF(iterator);
                 return module_name;
             }
-            Py_DECREF(candidate);
             Py_DECREF(module);
             Py_DECREF(module_name);
+            if (PyErr_Occurred()) {
+                Py_DECREF(iterator);
+                return NULL;
+            }
         }
         Py_DECREF(iterator);
     }
