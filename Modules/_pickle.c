@@ -1684,7 +1684,6 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     Py_ssize_t i;
     PyObject *modules;
     _Py_IDENTIFIER(__module__);
-    _Py_IDENTIFIER(modules);
     _Py_IDENTIFIER(__main__);
 
     module_name = _PyObject_GetAttrId(global, &PyId___module__);
@@ -1705,7 +1704,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     assert(module_name == NULL);
 
     /* Fallback on walking sys.modules */
-    modules = _PySys_GetObjectId(&PyId_modules);
+    modules = PyImport_GetModuleDict();
     if (modules == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
