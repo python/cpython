@@ -1363,24 +1363,45 @@ class ContextTests(unittest.TestCase):
     def test_check_hostname(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         self.assertFalse(ctx.check_hostname)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
 
-        # Requires CERT_REQUIRED or CERT_OPTIONAL
-        with self.assertRaises(ValueError):
-            ctx.check_hostname = True
+        # Auto set CERT_REQUIRED
+        ctx.check_hostname = True
+        self.assertTrue(ctx.check_hostname)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_REQUIRED
         self.assertFalse(ctx.check_hostname)
-        ctx.check_hostname = True
-        self.assertTrue(ctx.check_hostname)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
 
-        ctx.verify_mode = ssl.CERT_OPTIONAL
+        # Changing verify_mode does not affect check_hostname
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        ctx.check_hostname = False
+        self.assertFalse(ctx.check_hostname)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+        # Auto set
         ctx.check_hostname = True
         self.assertTrue(ctx.check_hostname)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_OPTIONAL
+        ctx.check_hostname = False
+        self.assertFalse(ctx.check_hostname)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_OPTIONAL)
+        # keep CERT_OPTIONAL
+        ctx.check_hostname = True
+        self.assertTrue(ctx.check_hostname)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_OPTIONAL)
 
         # Cannot set CERT_NONE with check_hostname enabled
         with self.assertRaises(ValueError):
             ctx.verify_mode = ssl.CERT_NONE
         ctx.check_hostname = False
         self.assertFalse(ctx.check_hostname)
+        ctx.verify_mode = ssl.CERT_NONE
+        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
 
     def test_context_client_server(self):
         # PROTOCOL_TLS_CLIENT has sane defaults

@@ -3227,10 +3227,10 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
         return -1;
     if (check_hostname &&
             SSL_CTX_get_verify_mode(self->ctx) == SSL_VERIFY_NONE) {
-        PyErr_SetString(PyExc_ValueError,
-                        "check_hostname needs a SSL context with either "
-                        "CERT_OPTIONAL or CERT_REQUIRED");
-        return -1;
+        /* check_hostname = True sets verify_mode = CERT_REQUIRED */
+        if (_set_verify_mode(self->ctx, PY_SSL_CERT_REQUIRED) == -1) {
+            return -1;
+        }
     }
     self->check_hostname = check_hostname;
     return 0;

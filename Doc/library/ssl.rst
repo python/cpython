@@ -1674,7 +1674,10 @@ to speed up repeated connections from the same clients.
    :meth:`SSLSocket.do_handshake`. The context's
    :attr:`~SSLContext.verify_mode` must be set to :data:`CERT_OPTIONAL` or
    :data:`CERT_REQUIRED`, and you must pass *server_hostname* to
-   :meth:`~SSLContext.wrap_socket` in order to match the hostname.
+   :meth:`~SSLContext.wrap_socket` in order to match the hostname.  Enabling
+   hostname checking automatically sets :attr:`~SSLContext.verify_mode` from
+   :data:`CERT_NONE` to :data:`CERT_REQUIRED`.  It cannot be set back to
+   :data:`CERT_NONE` as long as hostname checking is enabled.
 
    Example::
 
@@ -1690,6 +1693,13 @@ to speed up repeated connections from the same clients.
       ssl_sock.connect(('www.verisign.com', 443))
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.7
+
+      :attr:`~SSLContext.verify_mode` is now automatically changed
+      to :data:`CERT_REQUIRED`  when hostname checking is enabled and
+      :attr:`~SSLContext.verify_mode` is :data:`CERT_NONE`. Previously
+      the same operation would have failed with a :exc:`ValueError`.
 
    .. note::
 
