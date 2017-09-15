@@ -926,7 +926,8 @@ Text I/O
       *errors* is not specified.
 
       It is not possible to change the encoding if some data has already
-      been read from the stream.
+      been read from the stream. On the other hand, changing encoding
+      after write is possible.
 
       This method does an implicit stream flush before setting the
       new parameters.
