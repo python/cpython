@@ -1,0 +1,2 @@
+IDLE -- fix tk entry box tests by deleting first. Adding to an int entry is
+not the same as deleting and inserting because int('') will fail.

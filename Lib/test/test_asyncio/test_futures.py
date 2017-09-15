@@ -100,8 +100,8 @@ class DuckTests(test_utils.TestCase):
 
 class BaseFutureTests:
 
-    def _new_future(self, loop=None):
-        raise NotImplementedError
+    def _new_future(self,  *args, **kwargs):
+        return self.cls(*args, **kwargs)
 
     def setUp(self):
         super().setUp()
@@ -146,6 +146,39 @@ class BaseFutureTests:
     def test_constructor_positional(self):
         # Make sure Future doesn't accept a positional argument
         self.assertRaises(TypeError, self._new_future, 42)
+
+    def test_uninitialized(self):
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        self.assertRaises(asyncio.InvalidStateError, fut.result)
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        self.assertRaises(asyncio.InvalidStateError, fut.exception)
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        with self.assertRaises((RuntimeError, AttributeError)):
+            fut.set_result(None)
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        with self.assertRaises((RuntimeError, AttributeError)):
+            fut.set_exception(Exception)
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        with self.assertRaises((RuntimeError, AttributeError)):
+            fut.cancel()
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        with self.assertRaises((RuntimeError, AttributeError)):
+            fut.add_done_callback(lambda f: None)
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        with self.assertRaises((RuntimeError, AttributeError)):
+            fut.remove_done_callback(lambda f: None)
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        with self.assertRaises((RuntimeError, AttributeError)):
+            fut._schedule_callbacks()
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        try:
+            repr(fut)
+        except AttributeError:
+            pass
+        fut = self.cls.__new__(self.cls, loop=self.loop)
+        fut.cancelled()
+        fut.done()
+        iter(fut)
 
     def test_cancel(self):
         f = self._new_future(loop=self.loop)
@@ -380,6 +413,7 @@ class BaseFutureTests:
         self.assertTrue(asyncio.isfuture(f2))
         self.assertEqual(res, 'oi')
         self.assertNotEqual(ident, threading.get_ident())
+        ex.shutdown(wait=True)
 
     def test_wrap_future_future(self):
         f1 = self._new_future(loop=self.loop)
@@ -395,6 +429,7 @@ class BaseFutureTests:
             f1 = ex.submit(run, 'oi')
             f2 = asyncio.wrap_future(f1)
             self.assertIs(self.loop, f2._loop)
+            ex.shutdown(wait=True)
 
     def test_wrap_future_cancel(self):
         f1 = concurrent.futures.Future()
@@ -499,15 +534,11 @@ class BaseFutureTests:
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
 class CFutureTests(BaseFutureTests, test_utils.TestCase):
-
-    def _new_future(self,  *args, **kwargs):
-        return futures._CFuture(*args, **kwargs)
+    cls = getattr(futures, '_CFuture')
 
 
 class PyFutureTests(BaseFutureTests, test_utils.TestCase):
-
-    def _new_future(self, *args, **kwargs):
-        return futures._PyFuture(*args, **kwargs)
+    cls = futures._PyFuture
 
 
 class BaseFutureDoneCallbackTests():

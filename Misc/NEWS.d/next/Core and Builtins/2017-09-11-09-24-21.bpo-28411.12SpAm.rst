@@ -1,0 +1,3 @@
+Change direct usage of PyInterpreterState.modules to PyImport_GetModuleDict().
+Also introduce more uniformity in other code that deals with sys.modules.
+This helps reduce complications when working on sys.modules.

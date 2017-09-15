@@ -4804,6 +4804,93 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(v=3, spam=True, badger="B"), args)
         self.assertEqual(["C", "--foo", "4"], extras)
 
+# ===========================
+# parse_intermixed_args tests
+# ===========================
+
+class TestIntermixedArgs(TestCase):
+    def test_basic(self):
+        # test parsing intermixed optionals and positionals
+        parser = argparse.ArgumentParser(prog='PROG')
+        parser.add_argument('--foo', dest='foo')
+        bar = parser.add_argument('--bar', dest='bar', required=True)
+        parser.add_argument('cmd')
+        parser.add_argument('rest', nargs='*', type=int)
+        argv = 'cmd --foo x 1 --bar y 2 3'.split()
+        args = parser.parse_intermixed_args(argv)
+        # rest gets [1,2,3] despite the foo and bar strings
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+
+        args, extras = parser.parse_known_args(argv)
+        # cannot parse the '1,2,3'
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[]), args)
+        self.assertEqual(["1", "2", "3"], extras)
+
+        argv = 'cmd --foo x 1 --error 2 --bar y 3'.split()
+        args, extras = parser.parse_known_intermixed_args(argv)
+        # unknown optionals go into extras
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
+        self.assertEqual(['--error', '2', '3'], extras)
+
+        # restores attributes that were temporarily changed
+        self.assertIsNone(parser.usage)
+        self.assertEqual(bar.required, True)
+
+    def test_remainder(self):
+        # Intermixed and remainder are incompatible
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        parser.add_argument('-z')
+        parser.add_argument('x')
+        parser.add_argument('y', nargs='...')
+        argv = 'X A B -z Z'.split()
+        # intermixed fails with '...' (also 'A...')
+        # self.assertRaises(TypeError, parser.parse_intermixed_args, argv)
+        with self.assertRaises(TypeError) as cm:
+            parser.parse_intermixed_args(argv)
+        self.assertRegex(str(cm.exception), r'\.\.\.')
+
+    def test_exclusive(self):
+        # mutually exclusive group; intermixed works fine
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--foo', action='store_true', help='FOO')
+        group.add_argument('--spam', help='SPAM')
+        parser.add_argument('badger', nargs='*', default='X', help='BADGER')
+        args = parser.parse_intermixed_args('1 --foo 2'.split())
+        self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
+        self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, '1 2'.split())
+        self.assertEqual(group.required, True)
+
+    def test_exclusive_incompatible(self):
+        # mutually exclusive group including positional - fail
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--foo', action='store_true', help='FOO')
+        group.add_argument('--spam', help='SPAM')
+        group.add_argument('badger', nargs='*', default='X', help='BADGER')
+        self.assertRaises(TypeError, parser.parse_intermixed_args, [])
+        self.assertEqual(group.required, True)
+
+class TestIntermixedMessageContentError(TestCase):
+    # case where Intermixed gives different error message
+    # error is raised by 1st parsing step
+    def test_missing_argument_name_in_message(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG', usage='')
+        parser.add_argument('req_pos', type=str)
+        parser.add_argument('-req_opt', type=int, required=True)
+
+        with self.assertRaises(ArgumentParserError) as cm:
+            parser.parse_args([])
+        msg = str(cm.exception)
+        self.assertRegex(msg, 'req_pos')
+        self.assertRegex(msg, 'req_opt')
+
+        with self.assertRaises(ArgumentParserError) as cm:
+            parser.parse_intermixed_args([])
+        msg = str(cm.exception)
+        self.assertNotRegex(msg, 'req_pos')
+        self.assertRegex(msg, 'req_opt')
+
 # ==========================
 # add_argument metavar tests
 # ==========================

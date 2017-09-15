@@ -1,0 +1,1 @@
+PyUnicode_CompareWithASCIIString() now never raises exceptions.

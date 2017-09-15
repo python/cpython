@@ -4,10 +4,6 @@ import test.support
 test.support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 test.support.import_module('multiprocessing.synchronize')
-# import threading after _multiprocessing to raise a more relevant error
-# message: "No module named _multiprocessing". _multiprocessing is not compiled
-# without thread support.
-test.support.import_module('threading')
 
 from test.support.script_helper import assert_python_ok
 
@@ -57,6 +53,10 @@ def sleep_and_print(t, msg):
 class MyObject(object):
     def my_method(self):
         pass
+
+
+def make_dummy_object(_):
+    return MyObject()
 
 
 class BaseTestCase(unittest.TestCase):
@@ -222,11 +222,14 @@ class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCa
         list(executor.map(abs, range(-5, 5)))
         queue_management_thread = executor._queue_management_thread
         processes = executor._processes
+        call_queue = executor._call_queue
         del executor
 
         queue_management_thread.join()
         for p in processes.values():
             p.join()
+        call_queue.close()
+        call_queue.join_thread()
 
 
 class WaitTests:
@@ -396,6 +399,38 @@ class AsCompletedTests:
         completed = [f for f in futures.as_completed([future1,future1])]
         self.assertEqual(len(completed), 1)
 
+    def test_free_reference_yielded_future(self):
+        # Issue #14406: Generator should not keep references
+        # to finished futures.
+        futures_list = [Future() for _ in range(8)]
+        futures_list.append(create_future(state=CANCELLED_AND_NOTIFIED))
+        futures_list.append(create_future(state=FINISHED, result=42))
+
+        with self.assertRaises(futures.TimeoutError):
+            for future in futures.as_completed(futures_list, timeout=0):
+                futures_list.remove(future)
+                wr = weakref.ref(future)
+                del future
+                self.assertIsNone(wr())
+
+        futures_list[0].set_result("test")
+        for future in futures.as_completed(futures_list):
+            futures_list.remove(future)
+            wr = weakref.ref(future)
+            del future
+            self.assertIsNone(wr())
+            if futures_list:
+                futures_list[0].set_result("test")
+
+    def test_correct_timeout_exception_msg(self):
+        futures_list = [CANCELLED_AND_NOTIFIED_FUTURE, PENDING_FUTURE,
+                        RUNNING_FUTURE, SUCCESSFUL_FUTURE]
+
+        with self.assertRaises(futures.TimeoutError) as cm:
+            list(futures.as_completed(futures_list, timeout=0))
+
+        self.assertEqual(str(cm.exception), '2 (of 4) futures unfinished')
+
 
 class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, BaseTestCase):
     pass
@@ -419,6 +454,10 @@ class ExecutorTest:
     def test_map(self):
         self.assertEqual(
                 list(self.executor.map(pow, range(10), range(10))),
+                list(map(pow, range(10), range(10))))
+
+        self.assertEqual(
+                list(self.executor.map(pow, range(10), range(10), chunksize=3)),
                 list(map(pow, range(10), range(10))))
 
     def test_map_exception(self):
@@ -470,6 +509,14 @@ class ExecutorTest:
                                         "max_workers must be greater "
                                         "than 0"):
                 self.executor_type(max_workers=number)
+
+    def test_free_reference(self):
+        # Issue #14406: Result iterator should not keep an internal
+        # reference to result objects.
+        for obj in self.executor.map(make_dummy_object, range(10)):
+            wr = weakref.ref(obj)
+            del obj
+            self.assertIsNone(wr())
 
 
 class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
@@ -725,6 +772,7 @@ class FutureTests(BaseTestCase):
         t.start()
 
         self.assertEqual(f1.result(timeout=5), 42)
+        t.join()
 
     def test_result_with_cancel(self):
         # TODO(brian@sweetapp.com): This test is timing dependent.
@@ -738,6 +786,7 @@ class FutureTests(BaseTestCase):
         t.start()
 
         self.assertRaises(futures.CancelledError, f1.result, timeout=5)
+        t.join()
 
     def test_exception_with_timeout(self):
         self.assertRaises(futures.TimeoutError,
@@ -766,6 +815,7 @@ class FutureTests(BaseTestCase):
         t.start()
 
         self.assertTrue(isinstance(f1.exception(timeout=5), OSError))
+        t.join()
 
 @test.support.reap_threads
 def test_main():

@@ -1,3 +1,10 @@
+
+/* Core extension modules are built-in on some platforms (e.g. Windows). */
+#ifdef Py_BUILD_CORE
+#define Py_BUILD_CORE_BUILTIN
+#undef Py_BUILD_CORE
+#endif
+
 #include "Python.h"
 #include "structmember.h"
 
@@ -743,8 +750,7 @@ _PyMemoTable_Lookup(PyMemoTable *self, PyObject *key)
         if (entry->me_key == NULL || entry->me_key == key)
             return entry;
     }
-    assert(0);  /* Never reached */
-    return NULL;
+    Py_UNREACHABLE();
 }
 
 /* Returns -1 on failure, 0 on success. */
@@ -1705,7 +1711,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
 
     /* If no module is found, use __main__. */
     module_name = _PyUnicode_FromId(&PyId___main__);
-    Py_INCREF(module_name);
+    Py_XINCREF(module_name);
     return module_name;
 }
 

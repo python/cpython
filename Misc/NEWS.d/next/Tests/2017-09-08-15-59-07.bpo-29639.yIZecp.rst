@@ -1,0 +1,2 @@
+test.support.HOST is now "localhost", a new HOSTv4 constant has been added
+for your ``127.0.0.1`` needs, similar to the existing HOSTv6 constant.

@@ -258,8 +258,8 @@ class EventLoopTestsMixin:
         if not self.loop.is_closed():
             test_utils.run_briefly(self.loop)
 
-        self.loop.close()
-        gc.collect()
+        self.doCleanups()
+        support.gc_collect()
         super().tearDown()
 
     def test_run_until_complete_nesting(self):
@@ -808,7 +808,7 @@ class EventLoopTestsMixin:
         proto.transport.close()
         lsock.close()
 
-        thread.join(1)
+        support.join_thread(thread, timeout=1)
         self.assertFalse(thread.is_alive())
         self.assertEqual(proto.state, 'CLOSED')
         self.assertEqual(proto.nbytes, len(message))
