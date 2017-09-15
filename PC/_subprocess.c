@@ -341,9 +341,13 @@ getenvironment(PyObject* environment)
     envsize = PyMapping_Length(environment);
 
     keys = PyMapping_Keys(environment);
+    if (!keys) {
+        return NULL;
+    }
     values = PyMapping_Values(environment);
-    if (!keys || !values)
+    if (!values) {
         goto error;
+    }
 
     out = PyString_FromStringAndSize(NULL, 2048);
     if (! out)
