@@ -322,6 +322,7 @@ _PyImport_GetModule(PyObject *name)
     if (PyErr_Occurred()) {
         PyErr_Clear();
     }
+    /* Return a borrowed reference instead of a new one. */
     Py_XDECREF(mod);
     return mod;
 }
@@ -340,6 +341,8 @@ _PyImport_GetModuleWithError(PyObject *name)
     if (PyErr_ExceptionMatches(PyExc_KeyError)) {
         PyErr_Clear();
     }
+    /* Return a borrowed reference instead of a new one. */
+    Py_XDECREF(mod);
     return mod;
 }
 
