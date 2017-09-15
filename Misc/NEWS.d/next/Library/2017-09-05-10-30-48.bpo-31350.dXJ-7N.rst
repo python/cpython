@@ -1,0 +1,1 @@
+Micro-optimize :func:`asyncio._get_running_loop` to become up to 10% faster.

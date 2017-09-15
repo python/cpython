@@ -41,9 +41,7 @@ static void print_subinterp(void)
 static int test_repeated_init_and_subinterpreters(void)
 {
     PyThreadState *mainstate, *substate;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate;
-#endif
     int i, j;
 
     for (i=0; i<15; i++) {
@@ -51,12 +49,10 @@ static int test_repeated_init_and_subinterpreters(void)
         _testembed_Py_Initialize();
         mainstate = PyThreadState_Get();
 
-#ifdef WITH_THREAD
         PyEval_InitThreads();
         PyEval_ReleaseThread(mainstate);
 
         gilstate = PyGILState_Ensure();
-#endif
         print_subinterp();
         PyThreadState_Swap(NULL);
 
@@ -68,9 +64,7 @@ static int test_repeated_init_and_subinterpreters(void)
 
         PyThreadState_Swap(mainstate);
         print_subinterp();
-#ifdef WITH_THREAD
         PyGILState_Release(gilstate);
-#endif
 
         PyEval_RestoreThread(mainstate);
         Py_Finalize();
@@ -133,7 +127,7 @@ static int test_forced_io_encoding(void)
 
 /* *********************************************************
  * List of test cases and the function that implements it.
- * 
+ *
  * Names are compared case-sensitively with the first
  * argument. If no match is found, or no first argument was
  * provided, the names of all test cases are printed and
@@ -141,7 +135,7 @@ static int test_forced_io_encoding(void)
  *
  * The int returned from test functions is used as the exit
  * code, and test_capi treats all non-zero exit codes as a
- * failed test. 
+ * failed test.
  *********************************************************/
 struct TestCase
 {

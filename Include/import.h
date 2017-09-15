@@ -41,14 +41,6 @@ PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyImport_IsInitialized(PyInterpreterState *);
 #endif
-PyAPI_FUNC(PyObject *) PyImport_GetModule(PyObject *name);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyImport_GetModule(PyObject *name);
-PyAPI_FUNC(PyObject *) _PyImport_GetModuleWithError(PyObject *name);
-PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(struct _Py_Identifier *name);
-PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
-PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
-#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
     PyObject *name
@@ -100,13 +92,8 @@ PyAPI_FUNC(int) PyImport_ImportFrozenModule(
     );
 
 #ifndef Py_LIMITED_API
-#ifdef WITH_THREAD
 PyAPI_FUNC(void) _PyImport_AcquireLock(void);
 PyAPI_FUNC(int) _PyImport_ReleaseLock(void);
-#else
-#define _PyImport_AcquireLock()
-#define _PyImport_ReleaseLock() 1
-#endif
 
 PyAPI_FUNC(void) _PyImport_ReInitLock(void);
 

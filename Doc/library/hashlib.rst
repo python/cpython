@@ -506,8 +506,9 @@ to users and later verify them to make sure they weren't tampered with::
     >>> AUTH_SIZE = 16
     >>>
     >>> def sign(cookie):
-    ...     h = blake2b(data=cookie, digest_size=AUTH_SIZE, key=SECRET_KEY)
-    ...     return h.hexdigest()
+    ...     h = blake2b(digest_size=AUTH_SIZE, key=SECRET_KEY)
+    ...     h.update(cookie)
+    ...     return h.hexdigest().encode('utf-8')
     >>>
     >>> cookie = b'user:vatrogasac'
     >>> sig = sign(cookie)
@@ -517,7 +518,7 @@ to users and later verify them to make sure they weren't tampered with::
     True
     >>> compare_digest(b'user:policajac', sig)
     False
-    >>> compare_digesty(cookie, '0102030405060708090a0b0c0d0e0f00')
+    >>> compare_digest(cookie, b'0102030405060708090a0b0c0d0e0f00')
     False
 
 Even though there's a native keyed hashing mode, BLAKE2 can, of course, be used

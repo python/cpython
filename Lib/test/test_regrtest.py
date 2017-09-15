@@ -15,6 +15,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import threading
 import unittest
 from test import libregrtest
 from test import support
@@ -741,12 +742,7 @@ class ArgsTestCase(BaseTestCase):
         code = TEST_INTERRUPTED
         test = self.create_test("sigint", code=code)
 
-        try:
-            import threading
-            tests = (False, True)
-        except ImportError:
-            tests = (False,)
-        for multiprocessing in tests:
+        for multiprocessing in (False, True):
             if multiprocessing:
                 args = ("--slowest", "-j2", test)
             else:

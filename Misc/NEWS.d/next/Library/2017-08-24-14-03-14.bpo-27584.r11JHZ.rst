@@ -1,0 +1,2 @@
+``AF_VSOCK`` has been added to the socket interface which allows
+communication between virtual machines and their host.
