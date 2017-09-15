@@ -1359,6 +1359,22 @@ class ContextTests(unittest.TestCase):
         self.assertFalse(ctx.check_hostname)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
 
+    def test_context_custom_class(self):
+        class MySSLSocket(ssl.SSLSocket):
+            pass
+
+        class MySSLObject(ssl.SSLObject):
+            pass
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.sslsocket_class = MySSLSocket
+        ctx.sslobject_class = MySSLObject
+
+        with ctx.wrap_socket(socket.socket(), server_side=True) as sock:
+            self.assertIsInstance(sock, MySSLSocket)
+        obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
+        self.assertIsInstance(obj, MySSLObject)
+
 
 class SSLErrorTests(unittest.TestCase):
 
