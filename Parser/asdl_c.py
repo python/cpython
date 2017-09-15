@@ -94,8 +94,9 @@ class EmitVisitor(asdl.VisitorBase):
         else:
             lines = [s]
         for line in lines:
-            line = (" " * TABSIZE * depth) + line + "\n"
-            self.file.write(line)
+            if line:
+                line = (" " * TABSIZE * depth) + line
+            self.file.write(line + "\n")
 
 
 class TypeDefVisitor(EmitVisitor):
