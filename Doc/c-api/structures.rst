@@ -304,25 +304,25 @@ definition with the same method name.
    +-------------+------------------+-----------------------------------+
    | Field       | C Type           | Meaning                           |
    +=============+==================+===================================+
-   | name        | const char \*    | attribute name.                   |
+   | name        | const char \*    | attribute name                    |
    +-------------+------------------+-----------------------------------+
    | get         | getter           | C Function to get the attribute   |
    +-------------+------------------+-----------------------------------+
    | set         | setter           | optional C function to set or     |
-   |             |                  | delete the attribute.  If omitted |
-   |             |                  | the attribute is readonly.        |
+   |             |                  | delete the attribute, if omitted  |
+   |             |                  | the attribute is readonly         |
    +-------------+------------------+-----------------------------------+
    | doc         | const char \*    | optional docstring                |
    +-------------+------------------+-----------------------------------+
    | closure     | void \*          | optional function pointer,        |
    |             |                  | providing additional data for     |
-   |             |                  | getter and setter.                |
+   |             |                  | getter and setter                 |
    +-------------+------------------+-----------------------------------+
 
    The ``get`` function takes one :c:type:`PyObject\*` parameter (the
    instance) and a function pointer (the associated ``closure``)::
 
-       typedef PyObject *(*getter)(PyObject *, void *);
+      typedef PyObject *(*getter)(PyObject *, void *);
 
    It should return a new reference on success or *NULL* with a set exception
    on failure.
@@ -330,7 +330,7 @@ definition with the same method name.
    ``set`` functions take two :c:type:`PyObject\*` parameters (the instance and
    the value to be set) and a function pointer (the associated ``closure``)::
 
-       typedef int (*setter)(PyObject *, PyObject *, void *);
+      typedef int (*setter)(PyObject *, PyObject *, void *);
 
    In case the attribute should be deleted the second parameter is *NULL*.
    Should return ``0`` on success or ``-1`` with a set exception on failure.
