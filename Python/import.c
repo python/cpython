@@ -497,9 +497,13 @@ PyImport_Cleanup(void)
             PyErr_Clear();
         }
         else {
-            while ((value = PyIter_Next(iterator))) {
+            while ((key = PyIter_Next(iterator))) {
+                value = PyObject_GetItem(modules, key);
                 CLEAR_MODULE(key, value);
+                Py_DECREF(value);
+                Py_DECREF(key);
             }
+            Py_DECREF(iterator);
         }
     }
 

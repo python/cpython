@@ -1685,29 +1685,39 @@ whichmodule(PyObject *global, PyObject *dotted_path)
 
     PyObject *iterator = PyObject_GetIter(modules);
     while ((module_name = PyIter_Next(iterator))) {
-        PyObject *candidate;
-        PyObject *module = PyObject_GetItem(modules, module_name);
         if (PyUnicode_Check(module_name) &&
-            _PyUnicode_EqualToASCIIString(module_name, "__main__"))
+                _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
+            Py_DECREF(module_name);
             continue;
-        if (module == Py_None)
-            continue;
+        }
 
-        candidate = get_deep_attribute(module, dotted_path, NULL);
+        PyObject *module = PyObject_GetItem(modules, module_name);
+        if (module == Py_None) {
+            Py_DECREF(module_name);
+            continue;
+        }
+
+        PyObject *candidate = get_deep_attribute(module, dotted_path, NULL);
         if (candidate == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                Py_DECREF(module_name);
+                Py_DECREF(iterator);
                 return NULL;
+            }
             PyErr_Clear();
+            Py_DECREF(module_name);
             continue;
         }
 
         if (candidate == global) {
-            Py_INCREF(module_name);
             Py_DECREF(candidate);
+            Py_DECREF(iterator);
             return module_name;
         }
         Py_DECREF(candidate);
+        Py_DECREF(module_name);
     }
+    Py_DECREF(iterator);
 
     /* If no module is found, use __main__. */
     module_name = _PyUnicode_FromId(&PyId___main__);
@@ -6488,11 +6498,8 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
         module = PyImport_Import(module_name);
         if (module == NULL)
             return NULL;
-        global = getattribute(module, global_name, self->proto >= 4);
     }
-    else {
-        global = getattribute(module, global_name, self->proto >= 4);
-    }
+    global = getattribute(module, global_name, self->proto >= 4);
     Py_DECREF(module);
     return global;
 }
