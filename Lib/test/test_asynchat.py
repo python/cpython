@@ -123,9 +123,7 @@ class TestAsynchat(unittest.TestCase):
         c.push(b"I'm not dead yet!" + term)
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [b"hello world", b"I'm not dead yet!"])
 
@@ -156,9 +154,7 @@ class TestAsynchat(unittest.TestCase):
         c.push(data)
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [data[:termlen]])
 
@@ -178,9 +174,7 @@ class TestAsynchat(unittest.TestCase):
         c.push(data)
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [])
         self.assertEqual(c.buffer, data)
@@ -192,9 +186,7 @@ class TestAsynchat(unittest.TestCase):
         p = asynchat.simple_producer(data+SERVER_QUIT, buffer_size=8)
         c.push_with_producer(p)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [b"hello world", b"I'm not dead yet!"])
 
@@ -204,9 +196,7 @@ class TestAsynchat(unittest.TestCase):
         data = b"hello world\nI'm not dead yet!\n"
         c.push_with_producer(data+SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [b"hello world", b"I'm not dead yet!"])
 
@@ -217,9 +207,7 @@ class TestAsynchat(unittest.TestCase):
         c.push(b"hello world\n\nI'm not dead yet!\n")
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents,
                          [b"hello world", b"", b"I'm not dead yet!"])
@@ -238,9 +226,7 @@ class TestAsynchat(unittest.TestCase):
         # where the server echoes all of its data before we can check that it
         # got any down below.
         s.start_resend_event.set()
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [])
         # the server might have been able to send a byte or two back, but this
@@ -261,7 +247,7 @@ class TestAsynchat(unittest.TestCase):
         self.assertRaises(TypeError, c.push, 'unicode')
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
+        support.join_thread(s, timeout=TIMEOUT)
         self.assertEqual(c.contents, [b'bytes', b'bytes', b'bytes'])
 
 

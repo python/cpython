@@ -42,7 +42,6 @@ _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
-_Py_IDENTIFIER(threading);
 
 #ifdef __cplusplus
 extern "C" {
@@ -284,6 +283,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
 {
     PyObject *importlib;
     PyObject *impmod;
+    PyObject *sys_modules;
     PyObject *value;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
@@ -314,7 +314,11 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     else if (Py_VerboseFlag) {
         PySys_FormatStderr("import _imp # builtin\n");
     }
-    if (_PyImport_SetModuleString("_imp", impmod) < 0) {
+    sys_modules = PyImport_GetModuleDict();
+    if (Py_VerboseFlag) {
+        PySys_FormatStderr("import sys # builtin\n");
+    }
+    if (PyDict_SetItemString(sys_modules, "_imp", impmod) < 0) {
         Py_FatalError("Py_Initialize: can't save _imp to sys.modules");
     }
 
@@ -674,6 +678,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     PyObject *modules = PyDict_New();
     if (modules == NULL)
         Py_FatalError("Py_InitializeCore: can't make modules dictionary");
+    interp->modules = modules;
 
     sysmod = _PySys_BeginInit();
     if (sysmod == NULL)
@@ -1209,6 +1214,7 @@ Py_NewInterpreter(void)
     PyObject *modules = PyDict_New();
     if (modules == NULL)
         Py_FatalError("Py_NewInterpreter: can't make modules dictionary");
+    interp->modules = modules;
 
     sysmod = _PyImport_FindBuiltin("sys", modules);
     if (sysmod != NULL) {
@@ -1910,13 +1916,13 @@ wait_for_thread_shutdown(void)
 {
     _Py_IDENTIFIER(_shutdown);
     PyObject *result;
-    PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
+    PyObject *modules = PyImport_GetModuleDict();
+    PyObject *threading = PyMapping_GetItemString(modules, "threading");
     if (threading == NULL) {
         /* threading not imported */
         PyErr_Clear();
         return;
     }
-    Py_INCREF(threading);
     result = _PyObject_CallMethodId(threading, &PyId__shutdown, NULL);
     if (result == NULL) {
         PyErr_WriteUnraisable(threading);

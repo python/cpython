@@ -1,0 +1,2 @@
+Fix an assertion failure in `PyErr_WriteUnraisable()` in case of an
+exception with a bad ``__module__`` attribute. Patch by Oren Milman.
