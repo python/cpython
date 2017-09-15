@@ -1654,6 +1654,8 @@ static PyObject *
 whichmodule(PyObject *global, PyObject *dotted_path)
 {
     PyObject *module_name;
+    PyObject *module = NULL;
+    Py_ssize_t i;
     PyObject *modules;
     _Py_IDENTIFIER(__module__);
     _Py_IDENTIFIER(modules);
@@ -1682,42 +1684,79 @@ whichmodule(PyObject *global, PyObject *dotted_path)
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
     }
+    if (PyDict_CheckExact(modules)) {
+        i = 0;
+        while (PyDict_Next(modules, &i, &module_name, &module)) {
+            PyObject *candidate;
+            if (PyUnicode_Check(module_name) &&
+                _PyUnicode_EqualToASCIIString(module_name, "__main__"))
+                continue;
+            if (module == Py_None)
+                continue;
 
-    PyObject *iterator = PyObject_GetIter(modules);
-    while ((module_name = PyIter_Next(iterator))) {
-        if (PyUnicode_Check(module_name) &&
-                _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
-            Py_DECREF(module_name);
-            continue;
+            candidate = get_deep_attribute(module, dotted_path, NULL);
+            if (candidate == NULL) {
+                if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+                    return NULL;
+                PyErr_Clear();
+                continue;
+            }
+
+            if (candidate == global) {
+                Py_INCREF(module_name);
+                Py_DECREF(candidate);
+                return module_name;
+            }
+            Py_DECREF(candidate);
+		}
+	}
+    else {
+        PyObject *iterator = PyObject_GetIter(modules);
+        if (iterator == NULL) {
+            return NULL;
         }
-
-        PyObject *module = PyObject_GetItem(modules, module_name);
-        if (module == Py_None) {
-            Py_DECREF(module_name);
-            continue;
-        }
-
-        PyObject *candidate = get_deep_attribute(module, dotted_path, NULL);
-        if (candidate == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        while ((module_name = PyIter_Next(iterator))) {
+            module = PyObject_GetItem(modules, module_name);
+            if (module == NULL) {
                 Py_DECREF(module_name);
                 Py_DECREF(iterator);
                 return NULL;
             }
-            PyErr_Clear();
-            Py_DECREF(module_name);
-            continue;
-        }
+            if (module == Py_None) {
+                Py_DECREF(module);
+                Py_DECREF(module_name);
+                continue;
+            }
+            if (PyUnicode_Check(module_name) &&
+                    _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
+                Py_DECREF(module);
+                Py_DECREF(module_name);
+                continue;
+            }
 
-        if (candidate == global) {
+            PyObject *candidate = get_deep_attribute(module, dotted_path, NULL);
+            if (candidate == NULL) {
+                Py_DECREF(module);
+                Py_DECREF(module_name);
+                if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                    PyErr_Clear();
+                    continue;
+                }
+                Py_DECREF(iterator);
+                return NULL;
+            }
+            if (candidate == global) {
+                Py_DECREF(candidate);
+                Py_DECREF(module);
+                Py_DECREF(iterator);
+                return module_name;
+            }
             Py_DECREF(candidate);
-            Py_DECREF(iterator);
-            return module_name;
+            Py_DECREF(module);
+            Py_DECREF(module_name);
         }
-        Py_DECREF(candidate);
-        Py_DECREF(module_name);
+        Py_DECREF(iterator);
     }
-    Py_DECREF(iterator);
 
     /* If no module is found, use __main__. */
     module_name = _PyUnicode_FromId(&PyId___main__);
