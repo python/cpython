@@ -310,50 +310,13 @@ _PyImport_IsInitialized(PyInterpreterState *interp)
 }
 
 PyObject *
-_PyImport_GetModule(PyObject *name)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_CheckExact(modules)) {
-        return PyDict_GetItem(modules, name);
-    }
-
-    PyObject *mod = PyObject_GetItem(modules, name);
-    // For backward-comaptibility we copy the behavior of PyDict_GetItem().
-    if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
-    /* Return a borrowed reference instead of a new one. */
-    Py_XDECREF(mod);
-    return mod;
-}
-
-PyObject *
-_PyImport_GetModuleWithError(PyObject *name)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_CheckExact(modules)) {
-        return PyDict_GetItemWithError(modules, name);
-    }
-
-    PyObject *mod = PyObject_GetItem(modules, name);
-    // For backward-comaptibility we copy the behavior
-    // of PyDict_GetItemWithError().
-    if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-        PyErr_Clear();
-    }
-    /* Return a borrowed reference instead of a new one. */
-    Py_XDECREF(mod);
-    return mod;
-}
-
-PyObject *
 _PyImport_GetModuleId(struct _Py_Identifier *nameid)
 {
     PyObject *name = _PyUnicode_FromId(nameid); /* borrowed */
     if (name == NULL) {
         return NULL;
     }
-    return _PyImport_GetModule(name);
+    return PyImport_GetModule(name);
 }
 
 int
@@ -960,15 +923,13 @@ exec_code_in_module(PyObject *name, PyObject *module_dict, PyObject *code_object
     }
     Py_DECREF(v);
 
-    m = _PyImport_GetModule(name);
+    m = PyImport_GetModule(name);
     if (m == NULL) {
         PyErr_Format(PyExc_ImportError,
                      "Loaded module %R not found in sys.modules",
                      name);
         return NULL;
     }
-
-    Py_INCREF(m);
 
     return m;
 }
@@ -1668,7 +1629,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         Py_INCREF(abs_name);
     }
 
-    mod = _PyImport_GetModule(abs_name);
+    mod = PyImport_GetModule(abs_name);
     if (mod != NULL && mod != Py_None) {
         _Py_IDENTIFIER(__spec__);
         _Py_IDENTIFIER(_initializing);
@@ -1677,7 +1638,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         PyObject *spec;
         int initializing = 0;
 
-        Py_INCREF(mod);
         /* Optimization: only call _bootstrap._lock_unlock_module() if
            __spec__._initializing is true.
            NOTE: because of this, initializing must be set *before*
@@ -1706,6 +1666,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
+        Py_XDECREF(mod);
         mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                             &PyId__find_and_load, abs_name,
                                             interp->import_func, NULL);
@@ -1755,7 +1716,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                     goto error;
                 }
 
-                final_mod = _PyImport_GetModule(to_return);
+                final_mod = PyImport_GetModule(to_return);
                 Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     PyErr_Format(PyExc_KeyError,
@@ -1763,7 +1724,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                  to_return);
                     goto error;
                 }
-                Py_INCREF(final_mod);
             }
         }
         else {
@@ -1817,9 +1777,6 @@ PyImport_ReloadModule(PyObject *m)
         if (imp == NULL) {
             return NULL;
         }
-    }
-    else {
-        Py_INCREF(imp);
     }
 
     reloaded_module = _PyObject_CallMethodIdObjArgs(imp, &PyId_reload, m, NULL);
@@ -1900,11 +1857,8 @@ PyImport_Import(PyObject *module_name)
         goto err;
     Py_DECREF(r);
 
-    r = _PyImport_GetModule(module_name);
-    if (r != NULL) {
-        Py_INCREF(r);
-    }
-    else if (!PyErr_Occurred()) {
+    r = PyImport_GetModule(module_name);
+    if (r == NULL && !PyErr_Occurred()) {
         PyErr_SetObject(PyExc_KeyError, module_name);
     }
 

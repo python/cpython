@@ -1918,7 +1918,6 @@ wait_for_thread_shutdown(void)
         PyErr_Clear();
         return;
     }
-    Py_INCREF(threading);
     result = _PyObject_CallMethodId(threading, &PyId__shutdown, NULL);
     if (result == NULL) {
         PyErr_WriteUnraisable(threading);
