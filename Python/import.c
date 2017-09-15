@@ -290,17 +290,10 @@ _PyImport_Fini(void)
 PyObject *
 PyImport_GetModuleDict(void)
 {
-    PyObject *sysdict = PyThreadState_GET()->interp->sysdict;
-    if (sysdict == NULL) {
-        Py_FatalError("PyImport_GetModuleDict: no sys module!");
-    }
-
-    _Py_IDENTIFIER(modules);
-    PyObject *modules = _PyDict_GetItemId(sysdict, &PyId_modules);
-    if (modules == NULL) {
-        Py_FatalError("lost sys.modules");
-    }
-    return modules;
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    if (interp->modules == NULL)
+        Py_FatalError("PyImport_GetModuleDict: no module dictionary!");
+    return interp->modules;
 }
 
 /* In some corner cases it is important to be sure that the import
@@ -310,97 +303,10 @@ PyImport_GetModuleDict(void)
 int
 _PyImport_IsInitialized(PyInterpreterState *interp)
 {
-    if (interp->sysdict == NULL)
-        return 0;
-    _Py_IDENTIFIER(modules);
-    PyObject *modules = _PyDict_GetItemId(interp->sysdict, &PyId_modules);
-    if (modules == NULL)
+    if (interp->modules == NULL)
         return 0;
     return 1;
 }
-
-PyObject *
-_PyImport_GetModule(PyObject *name)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_CheckExact(modules)) {
-        return PyDict_GetItem(modules, name);
-    }
-
-    PyObject *mod = PyObject_GetItem(modules, name);
-    // For backward-comaptibility we copy the behavior of PyDict_GetItem().
-    if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
-    Py_XDECREF(mod);
-    return mod;
-}
-
-PyObject *
-_PyImport_GetModuleWithError(PyObject *name)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_CheckExact(modules)) {
-        return PyDict_GetItemWithError(modules, name);
-    }
-
-    PyObject *mod = PyObject_GetItem(modules, name);
-    // For backward-comaptibility we copy the behavior
-    // of PyDict_GetItemWithError().
-    if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-        PyErr_Clear();
-    }
-    return mod;
-}
-
-PyObject *
-_PyImport_GetModuleId(struct _Py_Identifier *nameid)
-{
-    PyObject *name = _PyUnicode_FromId(nameid); /* borrowed */
-    if (name == NULL) {
-        return NULL;
-    }
-    return _PyImport_GetModule(name);
-}
-
-int
-_PyImport_SetModule(PyObject *name, PyObject *m)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    return PyObject_SetItem(modules, name, m);
-}
-
-int
-_PyImport_SetModuleString(const char *name, PyObject *m)
-{
-    PyObject *modules = PyImport_GetModuleDict();
-    return PyMapping_SetItemString(modules, name, m);
-}
-
-PyObject *
-PyImport_GetModule(PyObject *name)
-{
-    PyObject *m;
-    PyObject *modules = PyImport_GetModuleDict();
-    if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
-        return NULL;
-    }
-    Py_INCREF(modules);
-    if (PyDict_CheckExact(modules)) {
-        m = PyDict_GetItemWithError(modules, name);  /* borrowed */
-        Py_XINCREF(m);
-    }
-    else {
-        m = PyObject_GetItem(modules, name);
-        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_Clear();
-        }
-    }
-    Py_DECREF(modules);
-    return m;
-}
-
 
 /* List of names to clear in sys */
 static const char * const sys_deletes[] = {
@@ -490,7 +396,7 @@ PyImport_Cleanup(void)
             if (Py_VerboseFlag && PyUnicode_Check(key))
                 PySys_FormatStderr("# cleanup[2] removing %U\n", key);
             STORE_MODULE_WEAKREF(key, value);
-            PyObject_SetItem(modules, key, Py_None);
+            PyDict_SetItem(modules, key, Py_None);
         }
     }
 
@@ -557,6 +463,7 @@ PyImport_Cleanup(void)
     /* Clear and delete the modules directory.  Actual modules will
        still be there only if imported during the execution of some
        destructor. */
+    interp->modules = NULL;
     Py_DECREF(modules);
 
     /* Once more */
@@ -634,10 +541,10 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         PyErr_BadInternalCall();
         return -1;
     }
-    if (PyObject_SetItem(modules, name, mod) < 0)
+    if (PyDict_SetItem(modules, name, mod) < 0)
         return -1;
     if (_PyState_AddModule(mod, def) < 0) {
-        PyMapping_DelItem(modules, name);
+        PyDict_DelItem(modules, name);
         return -1;
     }
     if (def->m_size == -1) {
@@ -718,14 +625,14 @@ _PyImport_FindExtensionObjectEx(PyObject *name, PyObject *filename,
         mod = def->m_base.m_init();
         if (mod == NULL)
             return NULL;
-        if (PyObject_SetItem(modules, name, mod) == -1) {
+        if (PyDict_SetItem(modules, name, mod) == -1) {
             Py_DECREF(mod);
             return NULL;
         }
         Py_DECREF(mod);
     }
     if (_PyState_AddModule(mod, def) < 0) {
-        PyMapping_DelItem(modules, name);
+        PyDict_DelItem(modules, name);
         Py_DECREF(mod);
         return NULL;
     }
@@ -765,27 +672,18 @@ PyObject *
 _PyImport_AddModuleObject(PyObject *name, PyObject *modules)
 {
     PyObject *m;
-    if (PyDict_CheckExact(modules)) {
-        m = PyDict_GetItemWithError(modules, name);
-    }
-    else {
-        m = PyObject_GetItem(modules, name);
-        // For backward-comaptibility we copy the behavior
-        // of PyDict_GetItemWithError().
-        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_Clear();
-        }
+
+    if ((m = PyDict_GetItemWithError(modules, name)) != NULL &&
+        PyModule_Check(m)) {
+        return m;
     }
     if (PyErr_Occurred()) {
         return NULL;
     }
-    if (m != NULL && PyModule_Check(m)) {
-        return m;
-    }
     m = PyModule_NewObject(name);
     if (m == NULL)
         return NULL;
-    if (PyObject_SetItem(modules, name, m) != 0) {
+    if (PyDict_SetItem(modules, name, m) != 0) {
         Py_DECREF(m);
         return NULL;
     }
@@ -812,13 +710,11 @@ static void
 remove_module(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    if (PyMapping_DelItem(modules, name) < 0) {
-        if (!PyMapping_HasKey(modules, name)) {
-            return;
-        }
+    if (PyDict_GetItem(modules, name) == NULL)
+        return;
+    if (PyDict_DelItem(modules, name) < 0)
         Py_FatalError("import:  deleting existing key in"
                       "sys.modules failed");
-    }
 }
 
 
@@ -927,6 +823,7 @@ module_dict_for_exec(PyObject *name)
 static PyObject *
 exec_code_in_module(PyObject *name, PyObject *module_dict, PyObject *code_object)
 {
+    PyObject *modules = PyImport_GetModuleDict();
     PyObject *v, *m;
 
     v = PyEval_EvalCode(code_object, module_dict, module_dict);
@@ -936,8 +833,7 @@ exec_code_in_module(PyObject *name, PyObject *module_dict, PyObject *code_object
     }
     Py_DECREF(v);
 
-    m = _PyImport_GetModule(name);
-    if (m == NULL) {
+    if ((m = PyDict_GetItem(modules, name)) == NULL) {
         PyErr_Format(PyExc_ImportError,
                      "Loaded module %R not found in sys.modules",
                      name);
@@ -1644,7 +1540,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         Py_INCREF(abs_name);
     }
 
-    mod = _PyImport_GetModule(abs_name);
+    PyObject *modules = PyImport_GetModuleDict();
+    mod = PyDict_GetItem(modules, abs_name);
     if (mod != NULL && mod != Py_None) {
         _Py_IDENTIFIER(__spec__);
         _Py_IDENTIFIER(_initializing);
@@ -1731,7 +1628,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                     goto error;
                 }
 
-                final_mod = _PyImport_GetModule(to_return);
+                PyObject *modules = PyImport_GetModuleDict();
+                final_mod = PyDict_GetItem(modules, to_return);
                 Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     PyErr_Format(PyExc_KeyError,
@@ -1784,10 +1682,10 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
 PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
-    _Py_IDENTIFIER(imp);
     _Py_IDENTIFIER(reload);
     PyObject *reloaded_module = NULL;
-    PyObject *imp = _PyImport_GetModuleId(&PyId_imp);
+    PyObject *modules = PyImport_GetModuleDict();
+    PyObject *imp = PyDict_GetItemString(modules, "imp");
     if (imp == NULL) {
         imp = PyImport_ImportModule("imp");
         if (imp == NULL) {
@@ -1822,6 +1720,7 @@ PyImport_Import(PyObject *module_name)
     PyObject *globals = NULL;
     PyObject *import = NULL;
     PyObject *builtins = NULL;
+    PyObject *modules = NULL;
     PyObject *r = NULL;
 
     /* Initialize constant string objects */
@@ -1876,7 +1775,8 @@ PyImport_Import(PyObject *module_name)
         goto err;
     Py_DECREF(r);
 
-    r = _PyImport_GetModule(module_name);
+    modules = PyImport_GetModuleDict();
+    r = PyDict_GetItemWithError(modules, module_name);
     if (r != NULL) {
         Py_INCREF(r);
     }

@@ -254,6 +254,8 @@ class TestPOP3Class(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
 
     def test_getwelcome(self):
         self.assertEqual(self.client.getwelcome(),
@@ -436,6 +438,8 @@ class TestPOP3_TLSClass(TestPOP3Class):
                 # this exception
                 self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
 
     def test_stls(self):
         self.assertRaises(poplib.error_proto, self.client.stls)
@@ -461,7 +465,8 @@ class TestTimeouts(TestCase):
 
     def tearDown(self):
         self.thread.join()
-        del self.thread  # Clear out any dangling Thread objects.
+        # Explicitly clear the attribute to prevent dangling thread
+        self.thread = None
 
     def server(self, evt, serv):
         serv.listen()
@@ -483,7 +488,7 @@ class TestTimeouts(TestCase):
         finally:
             socket.setdefaulttimeout(None)
         self.assertEqual(pop.sock.gettimeout(), 30)
-        pop.sock.close()
+        pop.close()
 
     def testTimeoutNone(self):
         self.assertIsNone(socket.getdefaulttimeout())
@@ -493,12 +498,12 @@ class TestTimeouts(TestCase):
         finally:
             socket.setdefaulttimeout(None)
         self.assertIsNone(pop.sock.gettimeout())
-        pop.sock.close()
+        pop.close()
 
     def testTimeoutValue(self):
         pop = poplib.POP3(HOST, self.port, timeout=30)
         self.assertEqual(pop.sock.gettimeout(), 30)
-        pop.sock.close()
+        pop.close()
 
 
 def test_main():

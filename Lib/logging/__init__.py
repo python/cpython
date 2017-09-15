@@ -1739,6 +1739,27 @@ class LoggerAdapter(object):
         """
         return self.logger.hasHandlers()
 
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+        """
+        Low-level log implementation, proxied to allow nested logger adapters.
+        """
+        return self.logger._log(
+            level,
+            msg,
+            args,
+            exc_info=exc_info,
+            extra=extra,
+            stack_info=stack_info,
+        )
+
+    @property
+    def manager(self):
+        return self.logger.manager
+
+    @manager.setter
+    def set_manager(self, value):
+        self.logger.manager = value
+
     def __repr__(self):
         logger = self.logger
         level = getLevelName(logger.getEffectiveLevel())

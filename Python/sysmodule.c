@@ -162,11 +162,14 @@ static PyObject *
 sys_displayhook(PyObject *self, PyObject *o)
 {
     PyObject *outf;
+    PyObject *modules = PyImport_GetModuleDict();
+    if (modules == NULL)
+        return NULL;
     PyObject *builtins;
     static PyObject *newline = NULL;
     int err;
 
-    builtins = _PyImport_GetModuleId(&PyId_builtins);
+    builtins = _PyDict_GetItemId(modules, &PyId_builtins);
     if (builtins == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
         return NULL;

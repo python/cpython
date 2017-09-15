@@ -3260,6 +3260,18 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+static int
+ignore_attribute_error(PyObject *value)
+{
+    if (value == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
+    }
+    return 0;
+}
+
 /*[clinic input]
 _elementtree.XMLParser.__init__
 
@@ -3314,14 +3326,33 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
     self->target = target;
 
     self->handle_start = PyObject_GetAttrString(target, "start");
+    if (ignore_attribute_error(self->handle_start)) {
+        return -1;
+    }
     self->handle_data = PyObject_GetAttrString(target, "data");
+    if (ignore_attribute_error(self->handle_data)) {
+        return -1;
+    }
     self->handle_end = PyObject_GetAttrString(target, "end");
+    if (ignore_attribute_error(self->handle_end)) {
+        return -1;
+    }
     self->handle_comment = PyObject_GetAttrString(target, "comment");
+    if (ignore_attribute_error(self->handle_comment)) {
+        return -1;
+    }
     self->handle_pi = PyObject_GetAttrString(target, "pi");
+    if (ignore_attribute_error(self->handle_pi)) {
+        return -1;
+    }
     self->handle_close = PyObject_GetAttrString(target, "close");
+    if (ignore_attribute_error(self->handle_close)) {
+        return -1;
+    }
     self->handle_doctype = PyObject_GetAttrString(target, "doctype");
-
-    PyErr_Clear();
+    if (ignore_attribute_error(self->handle_doctype)) {
+        return -1;
+    }
 
     /* configure parser */
     EXPAT(SetUserData)(self->parser, self);
