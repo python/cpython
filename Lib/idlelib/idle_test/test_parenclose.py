@@ -63,7 +63,6 @@ class ParenCloseTest(unittest.TestCase):
                'chiz = ]', '1.7'),
               (0, 0, 0, 1, 'pink = {}', back, '1.8', '',
                'pink = {', '1.8')
-
               ]:
                     # The actual delete and backspace events do not occur in
                     # this test. We are checking to make sure everything is
