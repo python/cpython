@@ -1099,6 +1099,8 @@ class TimerTests(BaseTestCase):
         self.callback_event.wait()
         self.assertEqual(len(self.callback_args), 2)
         self.assertEqual(self.callback_args, [((), {}), ((), {})])
+        timer1.join()
+        timer2.join()
 
     def _callback_spy(self, *args, **kwargs):
         self.callback_args.append((args[:], kwargs.copy()))
