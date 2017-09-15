@@ -2,7 +2,7 @@
 '''
 from idlelib.ParenClose import ParenClose
 import unittest
-from tkinter import Text  # mocktk doesn't do text position addition correctly
+from tkinter import Text, Tk
 
 
 class MockEvent(object):
@@ -13,7 +13,7 @@ class MockEvent(object):
 class ParenCloseTest(unittest.TestCase):
     def test_parenClose(self):
         p = ParenClose()
-        p.text = Text()
+        p.text = Text(Tk())
         p_open = p.p_open_event
         p_close = p.p_close_event
         t_open = p.t_open_event
