@@ -229,6 +229,10 @@ static _Py_Identifier *static_strings = NULL;
    shared as well. */
 static PyObject *unicode_latin1[256] = {NULL};
 
+/* Single character Unicode strings in BMP are cached. */
+#define BMP_CACHE_SIZE 256
+static PyObject *unicode_bmp_cache[BMP_CACHE_SIZE*2] = {NULL};
+
 /* Fast detection of the most frequent whitespace characters */
 const unsigned char _Py_ascii_whitespace[] = {
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -263,6 +267,7 @@ const unsigned char _Py_ascii_whitespace[] = {
 /* forward */
 static PyUnicodeObject *_PyUnicode_New(Py_ssize_t length);
 static PyObject* get_latin1_char(unsigned char ch);
+static PyObject* get_bmp_char(Py_UCS2 ch);
 static int unicode_modifiable(PyObject *unicode);
 
 
@@ -506,6 +511,14 @@ unicode_result_wchar(PyObject *unicode)
             Py_DECREF(unicode);
             return latin1_char;
         }
+#if SIZEOF_WCHAR_T > 2
+        if ((Py_UCS4)ch < 0x10000)
+#endif
+        {
+            PyObject *bmp_char = get_bmp_char((Py_UCS2)ch);
+            Py_DECREF(unicode);
+            return bmp_char;
+        }
     }
 
     if (_PyUnicode_Ready(unicode) < 0) {
@@ -537,10 +550,9 @@ unicode_result_ready(PyObject *unicode)
     }
 
     if (length == 1) {
-        void *data = PyUnicode_DATA(unicode);
         int kind = PyUnicode_KIND(unicode);
-        Py_UCS4 ch = PyUnicode_READ(kind, data, 0);
-        if (ch < 256) {
+        if (kind == PyUnicode_1BYTE_KIND) {
+            Py_UCS1 ch = PyUnicode_1BYTE_DATA(unicode)[0];
             PyObject *latin1_char = unicode_latin1[ch];
             if (latin1_char != NULL) {
                 if (unicode != latin1_char) {
@@ -555,6 +567,35 @@ unicode_result_ready(PyObject *unicode)
                 unicode_latin1[ch] = unicode;
                 return unicode;
             }
+        }
+        if (kind == PyUnicode_2BYTE_KIND) {
+            Py_UCS2 ch = PyUnicode_2BYTE_DATA(unicode)[0];
+            PyObject **cell = &unicode_bmp_cache[(ch % BMP_CACHE_SIZE) * 2];
+            PyObject *bmp_char = cell[0];
+            if (bmp_char) {
+                if (PyUnicode_2BYTE_DATA(bmp_char)[0] == ch) {
+found:
+                    if (unicode != bmp_char) {
+                        Py_INCREF(bmp_char);
+                        Py_DECREF(unicode);
+                    }
+                    return bmp_char;
+                }
+                bmp_char = cell[1];
+                if (bmp_char && PyUnicode_2BYTE_DATA(bmp_char)[0] == ch) {
+                    /* move found character to front */
+                    cell[1] = cell[0];
+                    cell[0] = bmp_char;
+                    goto found;
+                }
+            }
+            assert(_PyUnicode_CheckConsistency(unicode, 1));
+            /* insert new character at front */
+            Py_XDECREF(cell[1]);
+            cell[1] = cell[0];
+            cell[0] = unicode;
+            Py_INCREF(unicode);
+            return unicode;
         }
     }
 
@@ -1976,6 +2017,39 @@ get_latin1_char(unsigned char ch)
     return unicode;
 }
 
+static PyObject *
+get_bmp_char(Py_UCS2 ch)
+{
+    PyObject **cell = &unicode_bmp_cache[(ch % BMP_CACHE_SIZE) * 2];
+    PyObject *unicode = cell[0];
+    if (unicode) {
+        if (PyUnicode_2BYTE_DATA(unicode)[0] == ch) {
+            goto done;
+        }
+        unicode = cell[1];
+        if (unicode && PyUnicode_2BYTE_DATA(unicode)[0] == ch) {
+            /* move found character at front */
+            cell[1] = cell[0];
+            cell[0] = unicode;
+            goto done;
+        }
+    }
+    unicode = PyUnicode_New(1, ch);
+    if (!unicode) {
+        return NULL;
+    }
+    PyUnicode_2BYTE_DATA(unicode)[0] = ch;
+    assert(_PyUnicode_CheckConsistency(unicode, 1));
+    /* insert new character at front */
+    Py_XDECREF(cell[1]);
+    cell[1] = cell[0];
+    cell[0] = unicode;
+
+done:
+    Py_INCREF(unicode);
+    return unicode;
+}
+
 static PyObject*
 unicode_char(Py_UCS4 ch)
 {
@@ -1983,20 +2057,18 @@ unicode_char(Py_UCS4 ch)
 
     assert(ch <= MAX_UNICODE);
 
-    if (ch < 256)
+    if (ch < 256) {
         return get_latin1_char(ch);
-
-    unicode = PyUnicode_New(1, ch);
-    if (unicode == NULL)
-        return NULL;
-
-    assert(PyUnicode_KIND(unicode) != PyUnicode_1BYTE_KIND);
-    if (PyUnicode_KIND(unicode) == PyUnicode_2BYTE_KIND) {
-        PyUnicode_2BYTE_DATA(unicode)[0] = (Py_UCS2)ch;
-    } else {
-        assert(PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
-        PyUnicode_4BYTE_DATA(unicode)[0] = ch;
     }
+    if (ch < 0x10000) {
+        return get_bmp_char(ch);
+    }
+    unicode = PyUnicode_New(1, ch);
+    if (unicode == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
+    PyUnicode_4BYTE_DATA(unicode)[0] = ch;
     assert(_PyUnicode_CheckConsistency(unicode, 1));
     return unicode;
 }
@@ -2038,10 +2110,11 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
     if (size == 0)
         _Py_RETURN_UNICODE_EMPTY();
 
-    /* Single character Unicode objects in the Latin-1 range are
-       shared when using this constructor */
-    if (size == 1 && (Py_UCS4)*u < 256)
-        return get_latin1_char((unsigned char)*u);
+    /* Single character Unicode objects can be shared when using this
+       constructor. */
+    if (size == 1) {
+        return unicode_char((Py_UCS4)*u);
+    }
 
     /* If not empty and not single character, copy the Unicode data
        into the new object */
@@ -15264,6 +15337,8 @@ _PyUnicode_Fini(void)
 
     for (i = 0; i < 256; i++)
         Py_CLEAR(unicode_latin1[i]);
+    for (i = 0; i < BMP_CACHE_SIZE*2; i++)
+        Py_CLEAR(unicode_bmp_cache[i]);
     _PyUnicode_ClearStaticStrings();
     (void)PyUnicode_ClearFreeList();
 }
