@@ -750,8 +750,7 @@ _PyMemoTable_Lookup(PyMemoTable *self, PyObject *key)
         if (entry->me_key == NULL || entry->me_key == key)
             return entry;
     }
-    assert(0);  /* Never reached */
-    return NULL;
+    Py_UNREACHABLE();
 }
 
 /* Returns -1 on failure, 0 on success. */

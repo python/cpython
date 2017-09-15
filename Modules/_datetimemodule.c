@@ -1453,8 +1453,7 @@ diff_to_bool(int diff, int op)
         case Py_LT: istrue = diff < 0; break;
         case Py_GT: istrue = diff > 0; break;
         default:
-            assert(! "op unknown");
-            istrue = 0; /* To shut up compiler */
+            Py_UNREACHABLE();
     }
     result = istrue ? Py_True : Py_False;
     Py_INCREF(result);
