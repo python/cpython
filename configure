@@ -3258,6 +3258,9 @@ then
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
+	*-*-vxworks*)
+		ac_sys_system=VxWorks
+		;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -3302,6 +3305,9 @@ if test "$cross_compiling" = yes; then
 	*-*-cygwin*)
 		_host_cpu=
 		;;
+	*-*-vxworks*)
+		_host_cpu=
+		;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -3320,6 +3326,10 @@ fi
 # wildcard, and that the wildcard does not include future systems
 # (which may remove their limitations).
 case $ac_sys_system/$ac_sys_release in
+  # On VxWorks if _XOPEN_SOURCE is defined the socket.h header 
+  # has undefined types.
+  VxWorks* )
+    define_xopen_source=no;;
   # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
   # even though select is a POSIX function. Reported by J. Ribbens.
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
