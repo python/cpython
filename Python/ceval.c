@@ -4935,13 +4935,12 @@ import_from(PyObject *v, PyObject *name)
         Py_DECREF(pkgname);
         return NULL;
     }
-    x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
+    x = PyImport_GetModule(fullmodname);
     Py_DECREF(fullmodname);
     if (x == NULL) {
         goto error;
     }
     Py_DECREF(pkgname);
-    Py_INCREF(x);
     return x;
  error:
     pkgpath = PyModule_GetFilenameObject(v);
