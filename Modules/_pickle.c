@@ -1721,8 +1721,8 @@ whichmodule(PyObject *global, PyObject *dotted_path)
             if (PyErr_Occurred()) {
                 return NULL;
             }
-		}
-	}
+        }
+    }
     else {
         PyObject *iterator = PyObject_GetIter(modules);
         if (iterator == NULL) {
