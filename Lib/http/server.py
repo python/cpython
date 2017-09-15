@@ -832,10 +832,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
-<<<<<<< HEAD
-=======
-            self.send_header("Content-Length", str(fs[6]))
->>>>>>> upstream2/master
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
 
