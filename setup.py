@@ -275,6 +275,14 @@ class PyBuildExt(build_ext):
         if compiler is not None:
             (ccshared,cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
+            
+            #VxWorks uses '@filepath' extension to add include paths without overflowing windows cmd line buffer  
+            if host_platform == 'vxworks':
+                cppflags = sysconfig.get_config_var('CPPFLAGS').split()
+                for item in cppflags:
+                    self.announce('ITEM: "%s"' % item )
+                    if item.startswith('@'):
+                        args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags + ' '+ item 
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)
@@ -503,7 +511,7 @@ class PyBuildExt(build_ext):
 
     def detect_math_libs(self):
         # Check for MacOS X, which doesn't need libm.a at all
-        if host_platform == 'darwin':
+        if (host_platform == 'darwin' or host_platform == 'vxworks'):
             return []
         else:
             return ['m']
@@ -516,7 +524,7 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
         # only change this for cross builds for 3.3, issues on Mageia
-        if cross_compiling:
+        if ( cross_compiling and not host_platform == 'vxworks'):
             self.add_gcc_paths()
         self.add_multiarch_paths()
 
@@ -554,9 +562,10 @@ class PyBuildExt(build_ext):
                     for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
 
-        if (not cross_compiling and
+        if ((not cross_compiling and
                 os.path.normpath(sys.base_prefix) != '/usr' and
-                not sysconfig.get_config_var('PYTHONFRAMEWORK')):
+                not sysconfig.get_config_var('PYTHONFRAMEWORK')) or
+                host_platform == 'vxworks'):
             # OSX note: Don't add LIBDIR and INCLUDEDIR to building a framework
             # (PYTHONFRAMEWORK is set) to avoid # linking problems when
             # building a framework with different architectures than
@@ -565,6 +574,14 @@ class PyBuildExt(build_ext):
                             sysconfig.get_config_var("LIBDIR"))
             add_dir_to_list(self.compiler.include_dirs,
                             sysconfig.get_config_var("INCLUDEDIR"))
+
+        #VxWorks requires some macros from CPPFLAGS to select the correct CPU headers
+        if host_platform == 'vxworks':
+            cppflags = sysconfig.get_config_var('CPPFLAGS').split()
+            for item in cppflags:
+                self.announce('ITEM: "%s"' % item )
+                if item.startswith('-D'):
+                    self.compiler.define_macro(item[2:])
 
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
@@ -694,7 +711,8 @@ class PyBuildExt(build_ext):
         # pwd(3)
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
-        exts.append( Extension('grp', ['grpmodule.c']) )
+        if host_platform != 'vxworks':
+            exts.append( Extension('grp', ['grpmodule.c']) )
         # spwd, shadow passwords
         if (config_h_vars.get('HAVE_GETSPNAM', False) or
                 config_h_vars.get('HAVE_GETSPENT', False)):
@@ -827,13 +845,15 @@ class PyBuildExt(build_ext):
             libs = ['crypt']
         else:
             libs = []
-        exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
+        if host_platform != 'vxworks':
+            exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
 
         # CSV files
         exts.append( Extension('_csv', ['_csv.c']) )
 
         # POSIX subprocess module helper.
-        exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
+        if host_platform != 'vxworks':
+            exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
 
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
@@ -851,20 +871,31 @@ class PyBuildExt(build_ext):
                                ['/usr/kerberos/include'])
             if krb5_h:
                 ssl_incs += krb5_h
-        ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
+            if host_platform == 'vxworks':
+                ssl_libs = find_library_file(self.compiler, 'OPENSSL',lib_dirs, [] )
+                if (ssl_incs is not None and
+                    ssl_libs is not None):
+                    exts.append( Extension('_ssl', ['_ssl.c'],
+                                   include_dirs = ssl_incs,
+                                   library_dirs = ssl_libs,
+                                   libraries = ['OPENSSL', 'HASH'],
+                                   depends = ['socketmodule.h']), )
+                else:
+                    missing.append('_ssl')
+            else:
+                ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
                                      ['/usr/local/ssl/lib',
                                       '/usr/contrib/ssl/lib/'
                                      ] )
-
-        if (ssl_incs is not None and
-            ssl_libs is not None):
-            exts.append( Extension('_ssl', ['_ssl.c'],
+                if (ssl_incs is not None and
+                    ssl_libs is not None):
+                    exts.append( Extension('_ssl', ['_ssl.c'],
                                    include_dirs = ssl_incs,
                                    library_dirs = ssl_libs,
                                    libraries = ['ssl', 'crypto'],
                                    depends = ['socketmodule.h']), )
-        else:
-            missing.append('_ssl')
+                else:
+                    missing.append('_ssl')
 
         # find out which version of OpenSSL we have
         openssl_ver = 0
@@ -898,11 +929,18 @@ class PyBuildExt(build_ext):
             if have_usable_openssl:
                 # The _hashlib module wraps optimized implementations
                 # of hash functions from the OpenSSL library.
-                exts.append( Extension('_hashlib', ['_hashopenssl.c'],
+                if host_platform != 'vxworks':
+                    exts.append( Extension('_hashlib', ['_hashopenssl.c'],
                                        depends = ['hashlib.h'],
                                        include_dirs = ssl_incs,
                                        library_dirs = ssl_libs,
                                        libraries = ['ssl', 'crypto']) )
+                else :
+                    exts.append( Extension('_hashlib', ['_hashopenssl.c'],
+                                       depends = ['hashlib.h'],
+                                       include_dirs = ssl_incs,
+                                       library_dirs = ssl_libs,
+                                       libraries = ['OPENSSL', 'HASH']) )
             else:
                 print("warning: openssl 0x%08x is too old for _hashlib" %
                       openssl_ver)
@@ -1354,7 +1392,7 @@ class PyBuildExt(build_ext):
             missing.append('_gdbm')
 
         # Unix-only modules
-        if host_platform != 'win32':
+        if host_platform != 'win32' and host_platform != 'vxworks':
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface

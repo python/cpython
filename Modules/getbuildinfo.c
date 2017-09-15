@@ -4,6 +4,11 @@
 #include <stdio.h>
 #endif
 
+#ifdef __VXWORKS__
+#undef DATE
+#undef TIME
+#endif
+
 #ifndef DATE
 #ifdef __DATE__
 #define DATE __DATE__
