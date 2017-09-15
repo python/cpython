@@ -351,8 +351,7 @@ calc_padding(Py_ssize_t nchars, Py_ssize_t width, Py_UCS4 align,
         *n_lpadding = 0;
     else {
         /* We should never have an unspecified alignment. */
-        *n_lpadding = 0;
-        assert(0);
+        Py_UNREACHABLE();
     }
 
     *n_rpadding = *n_total - nchars - *n_lpadding;
@@ -569,9 +568,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
             break;
         default:
             /* Shouldn't get here, but treat it as '>' */
-            spec->n_lpadding = n_padding;
-            assert(0);
-            break;
+            Py_UNREACHABLE();
         }
     }
 

@@ -431,8 +431,8 @@ _Py_string_to_number_with_underscores(
   error:
     PyMem_Free(dup);
     PyErr_Format(PyExc_ValueError,
-		 "could not convert string to %s: "
-		 "%R", what, obj);
+                 "could not convert string to %s: "
+                 "%R", what, obj);
     return NULL;
 }
 
@@ -1061,7 +1061,7 @@ format_float_short(double d, char format_code,
                something starting with a digit, an 'I',  or 'N' */
             strncpy(p, "ERR", 3);
             /* p += 3; */
-            assert(0);
+            Py_UNREACHABLE();
         }
         goto exit;
     }

@@ -175,7 +175,7 @@ _Py_HashBytes(const void *src, Py_ssize_t len)
             case 2: hash = ((hash << 5) + hash) + *p++; /* fallthrough */
             case 1: hash = ((hash << 5) + hash) + *p++; break;
             default:
-                assert(0);
+                Py_UNREACHABLE();
         }
         hash ^= len;
         hash ^= (Py_uhash_t) _Py_HashSecret.djbx33a.suffix;

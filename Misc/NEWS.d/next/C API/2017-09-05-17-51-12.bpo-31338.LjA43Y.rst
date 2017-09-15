@@ -1,0 +1,3 @@
+Added the ``Py_UNREACHABLE()`` macro for code paths which are never expected
+to be reached.  This and a few other useful macros are now documented in the
+C API manual.

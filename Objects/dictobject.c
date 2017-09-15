@@ -643,8 +643,7 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
-    assert(0);          /* NOT REACHED */
-    return DKIX_ERROR;
+    Py_UNREACHABLE();
 }
 
 /*
@@ -723,8 +722,7 @@ top:
         perturb >>= PERTURB_SHIFT;
         i = (i*5 + perturb + 1) & mask;
     }
-    assert(0);          /* NOT REACHED */
-    return 0;
+    Py_UNREACHABLE();
 }
 
 /* Specialized version for string-only keys */
@@ -766,9 +764,7 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
-
-    assert(0);          /* NOT REACHED */
-    return 0;
+    Py_UNREACHABLE();
 }
 
 /* Faster version of lookdict_unicode when it is known that no <dummy> keys
@@ -810,8 +806,7 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
-    assert(0);          /* NOT REACHED */
-    return 0;
+    Py_UNREACHABLE();
 }
 
 /* Version of lookdict for split tables.
@@ -856,8 +851,7 @@ lookdict_split(PyDictObject *mp, PyObject *key,
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
-    assert(0);          /* NOT REACHED */
-    return 0;
+    Py_UNREACHABLE();
 }
 
 int
@@ -3603,7 +3597,7 @@ dictiter_reduce(dictiterobject *di)
         else if (Py_TYPE(di) == &PyDictIterValue_Type)
             element = dictiter_iternextvalue(&tmp);
         else
-            assert(0);
+            Py_UNREACHABLE();
         if (element) {
             if (PyList_Append(list, element)) {
                 Py_DECREF(element);
