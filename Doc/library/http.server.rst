@@ -265,7 +265,6 @@ of which this module provides three different variants:
       the message to :meth:`log_message`, so it takes the same arguments
       (*format* and additional values).
 
-
    .. method:: log_message(format, ...)
 
       Logs an arbitrary message to ``sys.stderr``. This is typically overridden
@@ -331,18 +330,24 @@ of which this module provides three different variants:
    .. attribute:: compressed_types
 
       The list of content types for which HTTP compression is applied. Set by
-      default to : ``["text/plain", "text/html", "text/css", "text/xml",
-      "text/javascript", "application/javascript", "application/json"]``. To
-      disable compression, set the attribute to the empty list.
+      default to the empty list, which means that by default, compression is
+      disabled. It can be set to a list of types, for instance :
+      ``["text/plain", "text/html", "text/css"]``. A list of commonly
+      compressed types is provided as ``commonly_compressed_types`` at the
+      module level.
+
+      .. versionadded:: 3.7
 
    .. attribute:: compressions
 
-      A mapping between compression encodings (eg. "gzip") and a generator
+      A mapping between a compression encoding (eg. "gzip") and a generator
       that takes a file object as argument and yields data read from the file
       object, compressed with the encoding. By default, "gzip" and "deflate"
       compressions are supported. To support other algorithms,
       :attr:`compressions` can be extended ; see :func:`_gzip_producer` in
       the source code for an example of a compressed data generator.
+
+      .. versionadded:: 3.7
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -389,7 +394,7 @@ of which this module provides three different variants:
       For example usage, see the implementation of the :func:`test` function
       invocation in the :mod:`http.server` module.
 
-      .. versionchanged:: 3.7
+      .. versionadded:: 3.7
          Support of the ``'If-Modified-Since'`` header and of HTTP
          compression.
 
@@ -433,6 +438,12 @@ the following command uses a specific directory::
 
 .. versionadded:: 3.7
     ``--directory`` specify alternate directory
+
+By default, HTTP compression is not supported. Setting the option ``--gzip``
+enables gzip compression on the content types defined in
+``commonly_compressed_types``.
+
+.. versionadded:: 3.7
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
