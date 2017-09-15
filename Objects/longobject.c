@@ -2168,8 +2168,8 @@ PyLong_FromString(const char *str, char **pend, int base)
         }
     }
     if (str[0] == '_') {
-	    /* May not start with underscores. */
-	    goto onError;
+        /* May not start with underscores. */
+        goto onError;
     }
 
     start = str;
