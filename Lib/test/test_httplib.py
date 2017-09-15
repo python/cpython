@@ -1583,8 +1583,9 @@ class HTTPSTest(TestCase):
         import ssl
         support.requires('network')
         with support.transient_internet('self-signed.pythontest.net'):
-            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            context.verify_mode = ssl.CERT_REQUIRED
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+            self.assertEqual(context.check_hostname, True)
             context.load_verify_locations(CERT_selfsigned_pythontestdotnet)
             h = client.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
             h.request('GET', '/')
@@ -1599,8 +1600,7 @@ class HTTPSTest(TestCase):
         import ssl
         support.requires('network')
         with support.transient_internet('self-signed.pythontest.net'):
-            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            context.verify_mode = ssl.CERT_REQUIRED
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             context.load_verify_locations(CERT_localhost)
             h = client.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
             with self.assertRaises(ssl.SSLError) as exc_info:
@@ -1620,8 +1620,7 @@ class HTTPSTest(TestCase):
         # The (valid) cert validates the HTTP hostname
         import ssl
         server = self.make_server(CERT_localhost)
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        context.verify_mode = ssl.CERT_REQUIRED
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.load_verify_locations(CERT_localhost)
         h = client.HTTPSConnection('localhost', server.port, context=context)
         self.addCleanup(h.close)
@@ -1634,9 +1633,7 @@ class HTTPSTest(TestCase):
         # The (valid) cert doesn't validate the HTTP hostname
         import ssl
         server = self.make_server(CERT_fakehostname)
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        context.verify_mode = ssl.CERT_REQUIRED
-        context.check_hostname = True
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.load_verify_locations(CERT_fakehostname)
         h = client.HTTPSConnection('localhost', server.port, context=context)
         with self.assertRaises(ssl.CertificateError):

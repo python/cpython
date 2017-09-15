@@ -522,7 +522,7 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         context.load_default_certs(purpose)
     return context
 
-def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=None,
+def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=CERT_NONE,
                            check_hostname=False, purpose=Purpose.SERVER_AUTH,
                            certfile=None, keyfile=None,
                            cafile=None, capath=None, cadata=None):
@@ -541,9 +541,12 @@ def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=None,
     # by default.
     context = SSLContext(protocol)
 
+    if not check_hostname:
+        context.check_hostname = False
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
-    context.check_hostname = check_hostname
+    if check_hostname:
+        context.check_hostname = True
 
     if keyfile and not certfile:
         raise ValueError("certfile must be specified")
