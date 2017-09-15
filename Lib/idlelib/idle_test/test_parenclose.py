@@ -64,28 +64,28 @@ class ParenCloseTest(unittest.TestCase):
               (0, 0, 0, 1, 'pink = {}', back, '1.8', '',
                'pink = {', '1.8')
               ]:
-                    # The actual delete and backspace events do not occur in
-                    # this test. We are checking to make sure everything is
-                    # correct before they would delete or backspace.
+            # The actual delete and backspace events do not occur in
+            # this test. We are checking to make sure everything is
+            # correct before they would delete or backspace.
 
-                    # Reset text and self.
-                    p.paren_close = paren_close_set
-                    p.tick_close = tick_close_set
-                    p.skip_closures = skip_closures_set
-                    p.mutual_delete = mutual_set
-                    p.text.delete('1.0', 'end')
-                    # Write text, move to current position, write character.
-                    p.text.insert('1.0', insert)
-                    p.text.mark_set('insert', pos)
-                    event = MockEvent(char)
-                    func(event)
-                    pos = p.text.index('insert')
-                    p.text.insert(pos, char)
-                    # Checking position and text at the same time
-                    # makes it easier to spot where errors occur.
-                    pos = p.text.index('insert')
-                    actual = p.text.get('1.0', 'end')
-                    self.assertTupleEqual((actual, pos), (result+'\n', posend))
+            # Reset text and self.
+            p.paren_close = paren_close_set
+            p.tick_close = tick_close_set
+            p.skip_closures = skip_closures_set
+            p.mutual_delete = mutual_set
+            p.text.delete('1.0', 'end')
+            # Write text, move to current position, write character.
+            p.text.insert('1.0', insert)
+            p.text.mark_set('insert', pos)
+            event = MockEvent(char)
+            func(event)
+            pos = p.text.index('insert')
+            p.text.insert(pos, char)
+            # Checking position and text at the same time
+            # makes it easier to spot where errors occur.
+            pos = p.text.index('insert')
+            actual = p.text.get('1.0', 'end')
+            self.assertTupleEqual((actual, pos), (result+'\n', posend))
 
 
 if __name__ == '__main__':
