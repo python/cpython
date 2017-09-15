@@ -427,7 +427,6 @@ PyImport_Cleanup(void)
 
     if (modules == NULL)
         return; /* Already done */
-    Py_INCREF(modules);
 
     /* Delete some special variables first.  These are common
        places where user values hide and people complain when their
