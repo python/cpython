@@ -2927,7 +2927,7 @@ $as_echo_n "checking for python interpreter for cross build... " >&6; }
 	    if $interp -c "import sys;sys.exit(not '.'.join(str(n) for n in sys.version_info[:2]) == '$PACKAGE_VERSION')"; then
 	        break
 	    fi
-            interp=
+ 
 	done
         if test x$interp = x; then
 	    as_fn_error $? "python$PACKAGE_VERSION interpreter not found" "$LINENO" 5
