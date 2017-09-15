@@ -1748,16 +1748,14 @@ class BugsTest(unittest.TestCase):
     def test_expat224_utf8_bug(self):
         # bpo-31170: Expat 2.2.3 had a bug in its UTF-8 decoder.
         # Check that Expat 2.2.4 fixed the bug.
+        #
+        # Test buffer bounds at odd and even positions.
 
-        # 1 KB buffer
-        text = b'x' * 1023 + b'\xc3\xa0'
-        self.check_expat224_utf8_bug(text)
-
-        # 2 KB buffer
+        # 2 KiB buffer (even)
         text = b'\xc3\xa0' * 1024
         self.check_expat224_utf8_bug(text)
 
-        # 2 KB + 1 B buffer
+        # 2 KiB + 1 B buffer (odd)
         text = b'x' + b'\xc3\xa0' * 1024
         self.check_expat224_utf8_bug(text)
 
