@@ -174,6 +174,7 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_FSYNC      1
 #define fsync _commit
 #else
+#ifndef __VXWORKS__
 /* Unix functions that the configure script doesn't check for */
 #define HAVE_EXECV      1
 #define HAVE_FORK       1
@@ -184,6 +185,7 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_GETEUID    1
 #define HAVE_GETGID     1
 #define HAVE_GETPPID    1
+#endif
 #define HAVE_GETUID     1
 #define HAVE_KILL       1
 #define HAVE_OPENDIR    1

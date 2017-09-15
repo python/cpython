@@ -103,6 +103,10 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define SCOPE_OFFSET 11
 #define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
 
+#ifdef __VXWORKS__
+  #undef LOCAL
+#endif
+
 #define LOCAL 1
 #define GLOBAL_EXPLICIT 2
 #define GLOBAL_IMPLICIT 3
