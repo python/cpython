@@ -383,9 +383,10 @@ class Purpose(_ASN1Object, _Enum):
 class SSLContext(_SSLContext):
     """An SSLContext holds various SSL-related configuration options and
     data, such as certificates and possibly a private key."""
-
-    __slots__ = ('protocol', '__weakref__')
     _windows_cert_stores = ("CA", "ROOT")
+
+    sslsocket_class = None  # SSLSocket is assigned later.
+    sslobject_class = None  # SSLObject is assigned later.
 
     def __new__(cls, protocol=PROTOCOL_TLS, *args, **kwargs):
         self = _SSLContext.__new__(cls, protocol)
@@ -400,17 +401,21 @@ class SSLContext(_SSLContext):
                     do_handshake_on_connect=True,
                     suppress_ragged_eofs=True,
                     server_hostname=None, session=None):
-        return SSLSocket(sock=sock, server_side=server_side,
-                         do_handshake_on_connect=do_handshake_on_connect,
-                         suppress_ragged_eofs=suppress_ragged_eofs,
-                         server_hostname=server_hostname,
-                         _context=self, _session=session)
+        return self.sslsocket_class(
+            sock=sock,
+            server_side=server_side,
+            do_handshake_on_connect=do_handshake_on_connect,
+            suppress_ragged_eofs=suppress_ragged_eofs,
+            server_hostname=server_hostname,
+            _context=self,
+            _session=session
+        )
 
     def wrap_bio(self, incoming, outgoing, server_side=False,
                  server_hostname=None, session=None):
         sslobj = self._wrap_bio(incoming, outgoing, server_side=server_side,
                                 server_hostname=server_hostname)
-        return SSLObject(sslobj, session=session)
+        return self.sslobject_class(sslobj, session=session)
 
     def set_npn_protocols(self, npn_protocols):
         protos = bytearray()
@@ -1133,6 +1138,11 @@ class SSLSocket(socket):
         if self._sslobj is None:
             return None
         return self._sslobj.version()
+
+
+# Python does not support forward declaration of types.
+SSLContext.sslsocket_class = SSLSocket
+SSLContext.sslobject_class = SSLObject
 
 
 def wrap_socket(sock, keyfile=None, certfile=None,

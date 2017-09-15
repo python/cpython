@@ -1593,8 +1593,9 @@ to speed up repeated connections from the same clients.
       do_handshake_on_connect=True, suppress_ragged_eofs=True, \
       server_hostname=None, session=None)
 
-   Wrap an existing Python socket *sock* and return an :class:`SSLSocket`
-   object.  *sock* must be a :data:`~socket.SOCK_STREAM` socket; other socket
+   Wrap an existing Python socket *sock* and return an instance of
+   :attr:`SSLContext.sslsocket_class` (default :class:`SSLSocket`).
+   *sock* must be a :data:`~socket.SOCK_STREAM` socket; other socket
    types are unsupported.
 
    The returned SSL socket is tied to the context, its settings and
@@ -1617,18 +1618,43 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       *session* argument was added.
 
+    .. versionchanged:: 3.7
+      The method returns on instance of :attr:`SSLContext.sslsocket_class`
+      instead of hard-coded :class:`SSLSocket`.
+
+.. attribute:: SSLContext.sslsocket_class
+
+   The return type of :meth:`SSLContext.wrap_sockets`, defaults to
+   :class:`SSLSocket`. The attribute can be overridden on instance of class
+   in order to return a custom subclass of :class:`SSLSocket`.
+
+   .. versionadded:: 3.7
+
 .. method:: SSLContext.wrap_bio(incoming, outgoing, server_side=False, \
                                 server_hostname=None, session=None)
 
-   Create a new :class:`SSLObject` instance by wrapping the BIO objects
-   *incoming* and *outgoing*. The SSL routines will read input data from the
-   incoming BIO and write data to the outgoing BIO.
+   Wrap the BIO objects *incoming* and *outgoing* and return an instance of
+   attr:`SSLContext.sslobject_class` (default :class:`SSLObject`). The SSL
+   routines will read input data from the incoming BIO and write data to the
+   outgoing BIO.
 
    The *server_side*, *server_hostname* and *session* parameters have the
    same meaning as in :meth:`SSLContext.wrap_socket`.
 
    .. versionchanged:: 3.6
       *session* argument was added.
+
+   .. versionchanged:: 3.7
+      The method returns on instance of :attr:`SSLContext.sslobject_class`
+      instead of hard-coded :class:`SSLObject`.
+
+.. attribute:: SSLContext.sslobject_class
+
+   The return type of :meth:`SSLContext.wrap_bio`, defaults to
+   :class:`SSLObject`. The attribute can be overridden on instance of class
+   in order to return a custom subclass of :class:`SSLObject`.
+
+   .. versionadded:: 3.7
 
 .. method:: SSLContext.session_stats()
 
