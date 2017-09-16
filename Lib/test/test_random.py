@@ -432,7 +432,9 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
 
     def test_bug_31482(self):
         # Verify that version 1 seeds are unaffected by hash randomization
-        # when the seeds are expressed as bytes rather than strings
+        # when the seeds are expressed as bytes rather than strings.
+        # The hash(b) values listed are the Python2.7 hash() values
+        # which were used for seeding.
 
         self.gen.seed(b'nofar', version=1)   # hash('nofar') == 5990528763808513177
         self.assertEqual([self.gen.random().hex() for i in range(4)],
@@ -448,6 +450,12 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual([self.gen.random().hex() for i in range(4)],
             ['0x1.b0580f98a7dbep-1', '0x1.84129978f9c1ap-1',
              '0x1.aeaa51052e978p-2', '0x1.092178fb945a6p-2'])
+
+        b = b'\x00\x20\x40\x60\x80\xA0\xC0\xE0\xF0'
+        self.gen.seed(b, version=1)         # hash(b) == 5015594239749365497
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.52c2fde444d23p-1', '0x1.875174f0daea4p-2',
+             '0x1.9e9b2c50e5cd2p-1', '0x1.fa57768bd321cp-2'])
 
     def test_setstate_first_arg(self):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))
