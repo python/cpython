@@ -667,7 +667,7 @@ class Option:
             elif not isinstance(self.choices, (tuple, list)):
                 raise OptionError(
                     "choices must be a list of strings ('%s' supplied)"
-                    % str(type(self.choices)).split("'")[1], self)
+                    % type(self.choices), self)
         elif self.choices is not None:
             raise OptionError(
                 "must not supply choices for type %r" % self.type, self)

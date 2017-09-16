@@ -701,6 +701,27 @@ module_getattro(PyModuleObject *m, PyObject *name)
     return NULL;
 }
 
+static PyObject *
+module_str(PyModuleObject *m)
+{
+    PyObject *name, *str;
+
+    name = PyModule_GetNameObject((PyObject *)m);
+    if (name == NULL) {
+        /* XXX PyUnicode_FromStringAndSize is documented as part of
+           the legacy API   */
+        PyErr_Clear();
+        name = PyUnicode_FromStringAndSize("?", 1);
+        if (name == NULL)   /* */
+            return NULL;
+    }
+
+    str = PyUnicode_FromFormat("%U", name);
+
+    Py_DECREF(name);
+    return str;
+}
+
 static int
 module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 {

@@ -901,6 +901,21 @@ type_repr(PyTypeObject *type)
 }
 
 static PyObject *
+type_str(PyTypeObject *type)
+{
+    PyObject *name, *rtn;
+
+    name = type_qualname(type, NULL);
+    if (name == NULL)
+        return NULL;
+
+    rtn = PyUnicode_FromFormat("%U", name);
+
+    Py_DECREF(name);
+    return rtn;
+}
+
+static PyObject *
 type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *obj;
@@ -3452,7 +3467,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
     (ternaryfunc)type_call,                     /* tp_call */
-    0,                                          /* tp_str */
+    (reprfunc)type_str,                         /* tp_str */
     (getattrofunc)type_getattro,                /* tp_getattro */
     (setattrofunc)type_setattro,                /* tp_setattro */
     0,                                          /* tp_as_buffer */
