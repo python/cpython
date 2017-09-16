@@ -1023,7 +1023,7 @@ ConfigParser Objects
       .. versionadded:: 3.6.1
          The *filenames* parameter accepts a :term:`path-like object`.
 
-      .. versionadded:: 3.7.0
+      .. versionadded:: 3.7
          The *filenames* parameter accepts a :class:`bytes` object.
 
 
