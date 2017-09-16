@@ -994,14 +994,14 @@ ConfigParser Objects
 
       Attempt to read and parse a list of filenames, returning a list of
       filenames which were successfully parsed.
-
-      If *filenames* is a string, a :class:`bytes` object or
-      :term:`path-like object`, it is treated as a single filename.  If a file
-      named in *filenames* cannot be opened, that file will be ignored.  This
-      is designed so that you can specify a list of potential configuration
-      file locations (for example, the current directory, the user's home
-      directory, and some system-wide directory), and all existing
-      configuration files in the list will be read.
+      
+      If *filenames* is a string, a :class:`bytes` object or a
+      :term:`path-like object`, it is treated as
+      a single filename.  If a file named in *filenames* cannot be opened, that
+      file will be ignored.  This is designed so that you can specify a list of
+      potential configuration file locations (for example, the current
+      directory, the user's home directory, and some system-wide directory),
+      and all existing configuration files in the list will be read.
 
       If none of the named files exist, the :class:`ConfigParser`
       instance will contain an empty dataset.  An application which requires
