@@ -45,10 +45,8 @@ class ParenMatch:
         # and deactivate_restore (which calls event_delete).
         editwin.text.bind(self.RESTORE_VIRTUAL_EVENT_NAME,
                           self.restore_event)
-        self.bell = self.text.bell if self.BELL else lambda: None
         self.counter = 0
         self.is_restore_active = 0
-        self.set_style(self.STYLE)
 
     @classmethod
     def reload(cls):
@@ -75,27 +73,11 @@ class ParenMatch:
                 self.text.event_delete(self.RESTORE_VIRTUAL_EVENT_NAME, seq)
             self.is_restore_active = False
 
-    def set_style(self, style):
-        "Set tag and timeout functions."
-        self.STYLE = style
-        self.create_tag = (
-                self.create_tag_opener if style in {"opener", "default"} else
-                self.create_tag_parens if style == "parens" else
-                self.create_tag_expression)  # "expression" or unknown
-
-        self.set_timeout = (self.set_timeout_last if self.FLASH_DELAY else
-                            self.set_timeout_none)
-
     def flash_paren_event(self, event):
         "Handle editor 'show surrounding parens' event (menu or shortcut)."
         indices = (HyperParser(self.editwin, "insert")
                    .get_surrounding_brackets())
-        if indices is None:
-            self.bell()
-            return "break"
-        self.activate_restore()
-        self.create_tag(indices)
-        self.set_timeout()
+        self.finish_paren_event(indices)
         return "break"
 
     def paren_closed_event(self, event):
@@ -108,13 +90,19 @@ class ParenMatch:
         if not hp.is_in_code():
             return
         indices = hp.get_surrounding_brackets(_openers[closer], True)
-        if indices is None:
-            self.bell()
+        self.finish_paren_event(indices)
+        return  # Allow calltips to see ')'
+
+    def finish_paren_event(self, indices):
+        if indices is None and self.BELL:
+            self.text.bell()
             return
         self.activate_restore()
-        self.create_tag(indices)
-        self.set_timeout()
-        return
+        # self.create_tag(indices)
+        self.tagfuncs.get(self.STYLE, self.create_tag_expression)(self, indices)
+        # self.set_timeout()
+        (self.set_timeout_last if self.FLASH_DELAY else
+                            self.set_timeout_none)()
 
     def restore_event(self, event=None):
         "Remove effect of doing match."
@@ -151,6 +139,13 @@ class ParenMatch:
             rightindex = indices[1]
         self.text.tag_add("paren", indices[0], rightindex)
         self.text.tag_config("paren", self.HILITE_CONFIG)
+
+    tagfuncs = {
+        'opener': create_tag_opener,
+        'default': create_tag_opener,
+        'parens': create_tag_parens,
+        'expression': create_tag_expression,
+        }
 
     # any one of the set_timeout_XXX methods can be used depending on
     # the style

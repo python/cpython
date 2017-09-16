@@ -27,8 +27,14 @@ from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
 from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
+from idlelib.autocomplete import AutoComplete
+from idlelib.codecontext import CodeContext
+from idlelib.parenmatch import ParenMatch
+from idlelib.paragraph import FormatParagraph
 
 changes = ConfigChanges()
+# Reload changed options in the following classes.
+reloadables = (AutoComplete, CodeContext, ParenMatch, FormatParagraph)
 
 
 class ConfigDialog(Toplevel):
@@ -220,6 +226,8 @@ class ConfigDialog(Toplevel):
             instance.set_notabs_indentwidth()
             instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
+        for klass in reloadables:
+            klass.reload()
 
     def create_page_extensions(self):
         """Part of the config dialog used for configuring IDLE extensions.
