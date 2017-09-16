@@ -1,0 +1,1 @@
+Change str(x) to return only the qualname for classes, functions and modules
