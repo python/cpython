@@ -341,8 +341,7 @@ class CCompiler:
         pp_opts = gen_preprocess_options(macros, incdirs)
 
         build = {}
-        for i in range(len(sources)):
-            src = sources[i]
+        for i, src in enumerate(sources):
             obj = objects[i]
             ext = os.path.splitext(src)[1]
             self.mkpath(os.path.dirname(obj))

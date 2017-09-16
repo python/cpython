@@ -795,14 +795,14 @@ def findsource(object):
         # use the one with the least indentation, which is the one
         # that's most probably not inside a function definition.
         candidates = []
-        for i in range(len(lines)):
-            match = pat.match(lines[i])
+        for linenum, line in enumerate(lines):
+            match = pat.match(line)
             if match:
                 # if it's at toplevel, it's already the best one
-                if lines[i][0] == 'c':
-                    return lines, i
+                if line[0] == 'c':
+                    return lines, linenum
                 # else add whitespace to candidate list
-                candidates.append((match.group(1), i))
+                candidates.append((match.group(1), linenum))
         if candidates:
             # this will sort by whitespace, and by line number,
             # less whitespace first
@@ -1258,8 +1258,8 @@ def formatargvalues(args, varargs, varkw, locals,
                 formatarg=formatarg, formatvalue=formatvalue):
         return formatarg(name) + formatvalue(locals[name])
     specs = []
-    for i in range(len(args)):
-        specs.append(convert(args[i]))
+    for i, arg in enumerate(args):
+        specs.append(convert(arg))
     if varargs:
         specs.append(formatvarargs(varargs) + formatvalue(locals[varargs]))
     if varkw:

@@ -217,8 +217,8 @@ class MimeTypes:
             if not line:
                 break
             words = line.split()
-            for i in range(len(words)):
-                if words[i][0] == '#':
+            for i, word in enumerate(words):
+                if word[0] == '#':
                     del words[i:]
                     break
             if not words:
