@@ -1075,21 +1075,31 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     self->has_read1 = _PyObject_HasAttrId(buffer, &PyId_read1);
 
-    self->encoding_start_of_stream = 0;
     if (self->seekable && self->encoder) {
         PyObject *cookieObj;
         int cmp;
 
         self->encoding_start_of_stream = 1;
 
-        cookieObj = PyObject_CallMethodObjArgs(buffer, _PyIO_str_tell, NULL);
-        if (cookieObj == NULL)
-            goto error;
+        if (Py_TYPE(buffer) == &PyBufferedWriter_Type
+           || Py_TYPE(buffer) == &PyBufferedRandom_Type) {
+            /* Fast-path for _io.BufferedWriter and _io.BufferedRandom:
+               read directly the private abs_pos attribute */
+            _PyIO_buffered *bw = (_PyIO_buffered *)buffer;
+            /* _buffered_init() sets abs_pos (if the file is seekable) */
+            assert(bw->abs_pos >= 0);
+            cmp = (bw->abs_pos == 0);
+        }
+        else {
+            cookieObj = PyObject_CallMethodObjArgs(buffer, _PyIO_str_tell, NULL);
+            if (cookieObj == NULL)
+                goto error;
 
-        cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
-        Py_DECREF(cookieObj);
-        if (cmp < 0) {
-            goto error;
+            cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
+            Py_DECREF(cookieObj);
+            if (cmp < 0) {
+                goto error;
+            }
         }
 
         if (cmp == 0) {
@@ -1100,6 +1110,9 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                 goto error;
             Py_DECREF(res);
         }
+    }
+    else {
+        self->encoding_start_of_stream = 0;
     }
 
     self->ok = 1;
