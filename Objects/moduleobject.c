@@ -680,6 +680,7 @@ static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
     PyObject *attr, *mod_name;
+    assert(PyUnicode_Check(name));
     attr = PyObject_GenericGetAttr((PyObject *)m, name);
     if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError))
         return attr;
