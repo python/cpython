@@ -825,21 +825,6 @@ The next fields, up to and including :c:member:`~PyTypeObject.tp_weaklist`, only
    This field is not inherited by subtypes (computed attributes are inherited
    through a different mechanism).
 
-   .. XXX belongs elsewhere
-
-   Docs for PyGetSetDef::
-
-      typedef PyObject *(*getter)(PyObject *, void *);
-      typedef int (*setter)(PyObject *, PyObject *, void *);
-
-      typedef struct PyGetSetDef {
-          char *name;    /* attribute name */
-          getter get;    /* C function to get the attribute */
-          setter set;    /* C function to set or delete the attribute */
-          char *doc;     /* optional doc string */
-          void *closure; /* optional additional data for getter and setter */
-      } PyGetSetDef;
-
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_base
 
