@@ -1,2 +1,1 @@
-Allow use of bytes object as a single argument in
-``configparser.ConfigParser.read()``.
+Allow use of bytes objects for arguments to :func:`configparser.ConfigParser.read`.
