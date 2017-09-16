@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 2.7.14?
+============================
+
+*Release date: 2017-09-16*
+
+Extension Modules
+-----------------
+
+- bpo-31170: Update vendorized expat to 2.2.4.
+
+
 What's New in Python 2.7.14 release candidate 1?
 ================================================
 
