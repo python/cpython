@@ -80,7 +80,7 @@ class InterProcessSignalTests(unittest.TestCase):
             self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 1,
                                                 'SIGALRM': 0})
         finally:
-            signal.signal(0)
+            signal.alarm(0)
 
 
 if __name__ == "__main__":

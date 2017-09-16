@@ -400,8 +400,9 @@ class BaseSelectorTestCase(unittest.TestCase):
         orig_alrm_handler = signal.signal(signal.SIGALRM, handler)
         self.addCleanup(signal.signal, signal.SIGALRM, orig_alrm_handler)
 
-        signal.alarm(1)
         try:
+            signal.alarm(1)
+
             s.register(rd, selectors.EVENT_READ)
             t = time()
             # select() is interrupted by a signal which raises an exception
@@ -410,7 +411,7 @@ class BaseSelectorTestCase(unittest.TestCase):
             # select() was interrupted before the timeout of 30 seconds
             self.assertLess(time() - t, 5.0)
         finally:
-            signal.signal(0)
+            signal.alarm(0)
 
     @unittest.skipUnless(hasattr(signal, "alarm"),
                          "signal.alarm() required for this test")
@@ -423,8 +424,9 @@ class BaseSelectorTestCase(unittest.TestCase):
         orig_alrm_handler = signal.signal(signal.SIGALRM, lambda *args: None)
         self.addCleanup(signal.signal, signal.SIGALRM, orig_alrm_handler)
 
-        signal.alarm(1)
         try:
+            signal.alarm(1)
+
             s.register(rd, selectors.EVENT_READ)
             t = time()
             # select() is interrupted by a signal, but the signal handler doesn't
@@ -433,7 +435,7 @@ class BaseSelectorTestCase(unittest.TestCase):
             self.assertFalse(s.select(1.5))
             self.assertGreaterEqual(time() - t, 1.0)
         finally:
-            signal.signal(0)
+            signal.alarm(0)
 
 
 class ScalableSelectorMixIn:
