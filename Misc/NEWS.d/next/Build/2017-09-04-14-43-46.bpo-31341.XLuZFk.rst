@@ -1,0 +1,1 @@
+Per PEP 11, support for the IRIX operating system was removed.

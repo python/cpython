@@ -67,7 +67,7 @@ extern Py_ssize_t _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
     int kind, const char *start, const char *end, Py_ssize_t *consumed);
 
-/* Return 1 if an EnvironmentError with errno == EINTR is set (and then
+/* Return 1 if an OSError with errno == EINTR is set (and then
    clears the error indicator), 0 otherwise.
    Should only be called when PyErr_Occurred() is true.
 */

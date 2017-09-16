@@ -1,0 +1,4 @@
+Fix too many fds in processes started with the "forkserver" method.
+
+A child process would inherit as many fds as the number of still-running
+children.

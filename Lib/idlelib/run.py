@@ -52,7 +52,7 @@ def idle_showwarning_subproc(
     try:
         file.write(idle_formatwarning(
                 message, category, filename, lineno, line))
-    except IOError:
+    except OSError:
         pass # the file (probably stderr) is invalid - this warning gets lost.
 
 _warnings_showwarning = None
@@ -180,19 +180,16 @@ def manage_socket(address):
     server.handle_request() # A single request only
 
 def show_socket_error(err, address):
+    "Display socket error from manage_socket."
     import tkinter
-    import tkinter.messagebox as tkMessageBox
+    from tkinter.messagebox import showerror
     root = tkinter.Tk()
     root.withdraw()
-    if err.args[0] == 61: # connection refused
-        msg = "IDLE's subprocess can't connect to %s:%d.  This may be due "\
-              "to your personal firewall configuration.  It is safe to "\
-              "allow this internal connection because no data is visible on "\
-              "external ports." % address
-        tkMessageBox.showerror("IDLE Subprocess Error", msg, parent=root)
-    else:
-        tkMessageBox.showerror("IDLE Subprocess Error",
-                               "Socket Error: %s" % err.args[1], parent=root)
+    msg = f"IDLE's subprocess can't connect to {address[0]}:{address[1]}.\n"\
+          f"Fatal OSError #{err.errno}: {err.strerror}.\n"\
+          f"See the 'Startup failure' section of the IDLE doc, online at\n"\
+          f"https://docs.python.org/3/library/idle.html#startup-failure"
+    showerror("IDLE Subprocess Error", msg, parent=root)
     root.destroy()
 
 def print_exception():

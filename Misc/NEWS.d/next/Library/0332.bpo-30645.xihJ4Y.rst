@@ -1,0 +1,2 @@
+Fix path calculation in `imp.load_package()`, fixing it for cases when a
+package is only shipped with bytecodes. Patch by Alexandru Ardelean.

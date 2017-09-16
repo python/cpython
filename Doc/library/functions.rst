@@ -16,8 +16,8 @@ are always available.  They are listed here in alphabetical order.
 :func:`ascii`        :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
 :func:`bin`          :func:`eval`       :func:`int`         :func:`open`      |func-str|_
 :func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
-:func:`bytearray`    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
-:func:`bytes`        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
+|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
+|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
 :func:`callable`     :func:`format`     :func:`len`         :func:`property`  :func:`type`
 :func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_     :func:`vars`
 :func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
@@ -37,7 +37,8 @@ are always available.  They are listed here in alphabetical order.
 .. |func-str| replace:: ``str()``
 .. |func-tuple| replace:: ``tuple()``
 .. |func-range| replace:: ``range()``
-
+.. |func-bytearray| replace:: ``bytearray()``
+.. |func-bytes| replace:: ``bytes()``
 
 .. function:: abs(x)
 
@@ -80,9 +81,24 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: bin(x)
 
-   Convert an integer number to a binary string. The result is a valid Python
-   expression.  If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer.
+   Convert an integer number to a binary string prefixed with "0b". The result
+   is a valid Python expression. If *x* is not a Python :class:`int` object, it
+   has to define an :meth:`__index__` method that returns an integer. Some
+   examples:
+
+      >>> bin(3)
+      '0b11'
+      >>> bin(-10)
+      '-0b1010'
+
+   If prefix "0b" is desired or not, you can use either of the following ways.
+
+      >>> format(14, '#b'), format(14, 'b')
+      ('0b1110', '1110')
+      >>> f'{14:#b}', f'{14:b}'
+      ('0b1110', '1110')
+
+  See also :func:`format` for more information.
 
 
 .. class:: bool([x])
@@ -99,6 +115,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-bytearray:
 .. class:: bytearray([source[, encoding[, errors]]])
+   :noindex:
 
    Return a new array of bytes.  The :class:`bytearray` class is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
@@ -128,6 +145,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-bytes:
 .. class:: bytes([source[, encoding[, errors]]])
+   :noindex:
 
    Return a new "bytes" object, which is an immutable sequence of integers in
    the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
@@ -328,7 +346,7 @@ are always available.  They are listed here in alphabetical order.
    The resulting list is sorted alphabetically.  For example:
 
       >>> import struct
-      >>> dir()   # show the names in the module namespace
+      >>> dir()   # show the names in the module namespace  # doctest: +SKIP
       ['__builtins__', '__name__', 'struct']
       >>> dir(struct)   # show the names in the struct module # doctest: +SKIP
       ['Struct', '__all__', '__builtins__', '__cached__', '__doc__', '__file__',
@@ -610,7 +628,7 @@ are always available.  They are listed here in alphabetical order.
 
   .. note::
 
-    For object's with custom :meth:`__hash__` methods, note that :func:`hash`
+    For objects with custom :meth:`__hash__` methods, note that :func:`hash`
     truncates the return value based on the bit width of the host machine.
     See :meth:`__hash__` for details.
 
@@ -632,16 +650,26 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: hex(x)
 
-   Convert an integer number to a lowercase hexadecimal string
-   prefixed with "0x", for example:
+   Convert an integer number to a lowercase hexadecimal string prefixed with
+   "0x". If x is not a Python :class:`int` object, it has to define an
+   __index__() method that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
       >>> hex(-42)
       '-0x2a'
 
-   If x is not a Python :class:`int` object, it has to define an __index__()
-   method that returns an integer.
+   If you want to convert an integer number to an uppercase or lower hexadecimal
+   string with prefix or not, you can use either of the following ways:
+
+     >>> '%#x' % 255, '%x' % 255, '%X' % 255
+     ('0xff', 'ff', 'FF')
+     >>> format(255, '#x'), format(255, 'x'), format(255, 'X')
+     ('0xff', 'ff', 'FF')
+     >>> f'{255:#x}', f'{255:x}', f'{255:X}'
+     ('0xff', 'ff', 'FF')
+
+   See also :func:`format` for more information.
 
    See also :func:`int` for converting a hexadecimal string to an
    integer using a base of 16.
@@ -875,10 +903,27 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: oct(x)
 
-   Convert an integer number to an octal string.  The result is a valid Python
-   expression.  If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer.
+  Convert an integer number to an octal string prefixed with "0o".  The result
+  is a valid Python expression. If *x* is not a Python :class:`int` object, it
+  has to define an :meth:`__index__` method that returns an integer. For
+  example:
 
+      >>> oct(8)
+      '0o10'
+      >>> oct(-56)
+      '-0o70'
+
+  If you want to convert an integer number to octal string either with prefix
+  "0o" or not, you can use either of the following ways.
+
+      >>> '%#o' % 10, '%o' % 10
+      ('0o12', '12')
+      >>> format(10, '#o'), format(10, 'o')
+      ('0o12', '12')
+      >>> f'{10:#o}', f'{10:o}'
+      ('0o12', '12')
+
+  See also :func:`format` for more information.
 
    .. index::
       single: file object; open() built-in function
@@ -1125,7 +1170,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
-   by *end*.  *sep*, *end* and *file*, if present, must be given as keyword
+   by *end*.  *sep*, *end*, *file* and *flush*, if present, must be given as keyword
    arguments.
 
    All non-keyword arguments are converted to strings like :func:`str` does and
@@ -1316,7 +1361,7 @@ are always available.  They are listed here in alphabetical order.
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
 
-.. function:: sorted(iterable[, key][, reverse])
+.. function:: sorted(iterable, *, key=None, reverse=False)
 
    Return a new sorted list from the items in *iterable*.
 

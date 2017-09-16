@@ -1,6 +1,8 @@
 /* Cell object implementation */
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 
 PyObject *
 PyCell_New(PyObject *obj)
@@ -140,8 +142,17 @@ cell_get_contents(PyCellObject *op, void *closure)
     return op->ob_ref;
 }
 
+int
+cell_set_contents(PyCellObject *op, PyObject *obj)
+{
+    Py_XINCREF(obj);
+    Py_XSETREF(op->ob_ref, obj);
+    return 0;
+}
+
 static PyGetSetDef cell_getsetlist[] = {
-    {"cell_contents", (getter)cell_get_contents, NULL},
+    {"cell_contents", (getter)cell_get_contents,
+                      (setter)cell_set_contents, NULL},
     {NULL} /* sentinel */
 };
 

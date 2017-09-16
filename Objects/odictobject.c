@@ -470,6 +470,7 @@ later:
 */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "dict-common.h"
 #include <stddef.h>
@@ -546,7 +547,7 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
     Py_ssize_t ix;
 
-    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value, NULL);
+    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value);
     if (ix == DKIX_EMPTY) {
         return keys->dk_nentries;  /* index of new entry */
     }
@@ -882,8 +883,7 @@ odict_eq(PyObject *a, PyObject *b)
 
 PyDoc_STRVAR(odict_init__doc__,
 "Initialize an ordered dictionary.  The signature is the same as\n\
-        regular dictionaries, but keyword arguments are not recommended because\n\
-        their insertion order is arbitrary.\n\
+        regular dictionaries.  Keyword argument order is preserved.\n\
 \n\
         ");
 
@@ -1519,7 +1519,7 @@ odict_repr(PyODictObject *self)
             count++;
         }
         if (count < PyList_GET_SIZE(pieces))
-            PyList_GET_SIZE(pieces) = count;
+            Py_SIZE(pieces) = count;
     }
     else {
         PyObject *items = _PyObject_CallMethodIdObjArgs((PyObject *)self,

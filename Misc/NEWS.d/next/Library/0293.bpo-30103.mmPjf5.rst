@@ -1,0 +1,2 @@
+binascii.b2a_uu() and uu.encode() now support using ``'`'`` as zero instead
+of space.

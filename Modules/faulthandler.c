@@ -17,9 +17,7 @@
 /* Allocate at maximum 100 MB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
 
-#ifdef WITH_THREAD
-#  define FAULTHANDLER_LATER
-#endif
+#define FAULTHANDLER_LATER
 
 #ifndef MS_WINDOWS
    /* register() is useless on Windows, because only SIGSEGV, SIGABRT and
@@ -55,6 +53,9 @@ static struct {
     int fd;
     int all_threads;
     PyInterpreterState *interp;
+#ifdef MS_WINDOWS
+    void *exc_handler;
+#endif
 } fatal_error = {0, NULL, -1, 0};
 
 #ifdef FAULTHANDLER_LATER
@@ -225,7 +226,6 @@ faulthandler_dump_traceback(int fd, int all_threads,
 
     reentrant = 1;
 
-#ifdef WITH_THREAD
     /* SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals and
        are thus delivered to the thread that caused the fault. Get the Python
        thread state of the current thread.
@@ -235,9 +235,6 @@ faulthandler_dump_traceback(int fd, int all_threads,
        used. Read the thread local storage (TLS) instead: call
        PyGILState_GetThisThreadState(). */
     tstate = PyGILState_GetThisThreadState();
-#else
-    tstate = _PyThreadState_UncheckedGet();
-#endif
 
     if (all_threads) {
         (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
@@ -370,8 +367,8 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     DWORD code = exc_info->ExceptionRecord->ExceptionCode;
     DWORD flags = exc_info->ExceptionRecord->ExceptionFlags;
 
-    /* only log fatal exceptions */
-    if (flags & EXCEPTION_NONCONTINUABLE) {
+    /* bpo-30557: only log fatal exceptions */
+    if (!(code & 0x80000000)) {
         /* call the next exception handler */
         return EXCEPTION_CONTINUE_SEARCH;
     }
@@ -388,15 +385,14 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     case EXCEPTION_IN_PAGE_ERROR: PUTS(fd, "page error"); break;
     case EXCEPTION_STACK_OVERFLOW: PUTS(fd, "stack overflow"); break;
     default:
-        PUTS(fd, "code ");
-        _Py_DumpDecimal(fd, code);
+        PUTS(fd, "code 0x");
+        _Py_DumpHexadecimal(fd, code, 8);
     }
     PUTS(fd, "\n\n");
 
     if (code == EXCEPTION_ACCESS_VIOLATION) {
         /* disable signal handler for SIGSEGV */
-        size_t i;
-        for (i=0; i < faulthandler_nsignals; i++) {
+        for (size_t i=0; i < faulthandler_nsignals; i++) {
             fault_handler_t *handler = &faulthandler_handlers[i];
             if (handler->signum == SIGSEGV) {
                 faulthandler_disable_fatal_handler(handler);
@@ -418,14 +414,12 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 static int
 faulthandler_enable(void)
 {
-    size_t i;
-
     if (fatal_error.enabled) {
         return 0;
     }
     fatal_error.enabled = 1;
 
-    for (i=0; i < faulthandler_nsignals; i++) {
+    for (size_t i=0; i < faulthandler_nsignals; i++) {
         fault_handler_t *handler;
 #ifdef HAVE_SIGACTION
         struct sigaction action;
@@ -462,7 +456,8 @@ faulthandler_enable(void)
     }
 
 #ifdef MS_WINDOWS
-    AddVectoredExceptionHandler(1, faulthandler_exc_handler);
+    assert(fatal_error.exc_handler == NULL);
+    fatal_error.exc_handler = AddVectoredExceptionHandler(1, faulthandler_exc_handler);
 #endif
     return 0;
 }
@@ -504,17 +499,20 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
 static void
 faulthandler_disable(void)
 {
-    unsigned int i;
-    fault_handler_t *handler;
-
     if (fatal_error.enabled) {
         fatal_error.enabled = 0;
-        for (i=0; i < faulthandler_nsignals; i++) {
+        for (size_t i=0; i < faulthandler_nsignals; i++) {
+            fault_handler_t *handler;
             handler = &faulthandler_handlers[i];
             faulthandler_disable_fatal_handler(handler);
         }
     }
-
+#ifdef MS_WINDOWS
+    if (fatal_error.exc_handler != NULL) {
+        RemoveVectoredExceptionHandler(fatal_error.exc_handler);
+        fatal_error.exc_handler = NULL;
+    }
+#endif
     Py_CLEAR(fatal_error.file);
 }
 
@@ -777,9 +775,7 @@ faulthandler_user(int signum)
 static int
 check_signum(int signum)
 {
-    unsigned int i;
-
-    for (i=0; i < faulthandler_nsignals; i++) {
+    for (size_t i=0; i < faulthandler_nsignals; i++) {
         if (faulthandler_handlers[i].signum == signum) {
             PyErr_Format(PyExc_RuntimeError,
                          "signal %i cannot be registered, "
@@ -975,7 +971,6 @@ faulthandler_sigsegv(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-#ifdef WITH_THREAD
 static void
 faulthandler_fatal_error_thread(void *plock)
 {
@@ -1025,7 +1020,6 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
 
     Py_RETURN_NONE;
 }
-#endif
 
 static PyObject *
 faulthandler_sigfpe(PyObject *self, PyObject *args)
@@ -1122,16 +1116,12 @@ faulthandler_stack_overflow(PyObject *self)
 static int
 faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
 {
-#ifdef FAULTHANDLER_USER
-    unsigned int signum;
-#endif
-
 #ifdef FAULTHANDLER_LATER
     Py_VISIT(thread.file);
 #endif
 #ifdef FAULTHANDLER_USER
     if (user_signals != NULL) {
-        for (signum=0; signum < NSIG; signum++)
+        for (size_t signum=0; signum < NSIG; signum++)
             Py_VISIT(user_signals[signum].file);
     }
 #endif
@@ -1200,11 +1190,9 @@ static PyMethodDef module_methods[] = {
                "a SIGSEGV or SIGBUS signal depending on the platform")},
     {"_sigsegv", faulthandler_sigsegv, METH_VARARGS,
      PyDoc_STR("_sigsegv(release_gil=False): raise a SIGSEGV signal")},
-#ifdef WITH_THREAD
     {"_fatal_error_c_thread", faulthandler_fatal_error_c_thread, METH_NOARGS,
      PyDoc_STR("fatal_error_c_thread(): "
                "call Py_FatalError() in a new C thread.")},
-#endif
     {"_sigabrt", faulthandler_sigabrt, METH_NOARGS,
      PyDoc_STR("_sigabrt(): raise a SIGABRT signal")},
     {"_sigfpe", (PyCFunction)faulthandler_sigfpe, METH_NOARGS,
@@ -1342,10 +1330,6 @@ int _PyFaulthandler_Init(void)
 
 void _PyFaulthandler_Fini(void)
 {
-#ifdef FAULTHANDLER_USER
-    unsigned int signum;
-#endif
-
 #ifdef FAULTHANDLER_LATER
     /* later */
     if (thread.cancel_event) {
@@ -1363,8 +1347,9 @@ void _PyFaulthandler_Fini(void)
 #ifdef FAULTHANDLER_USER
     /* user */
     if (user_signals != NULL) {
-        for (signum=0; signum < NSIG; signum++)
+        for (size_t signum=0; signum < NSIG; signum++) {
             faulthandler_unregister(&user_signals[signum], signum);
+        }
         PyMem_Free(user_signals);
         user_signals = NULL;
     }

@@ -221,8 +221,8 @@ class ReplaceDialogTest(unittest.TestCase):
         self.assertIn('Invalid Replace Expression', showerror.message)
 
         # test access method
-        self.engine.setcookedpat("\'")
-        equal(pv.get(), "\\'")
+        self.engine.setcookedpat("?")
+        equal(pv.get(), "\\?")
 
     def test_replace_backwards(self):
         equal = self.assertEqual

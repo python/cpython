@@ -1,0 +1,2 @@
+Remove obsolete code in readline module for platforms where GNU readline is
+older than 2.1 or where select() is not available.

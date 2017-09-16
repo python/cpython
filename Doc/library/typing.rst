@@ -508,6 +508,14 @@ The module defines the following classes, functions and decorators:
 
     An ABC with one abstract method ``__float__``.
 
+.. class:: SupportsComplex
+
+    An ABC with one abstract method ``__complex__``.
+
+.. class:: SupportsBytes
+
+    An ABC with one abstract method ``__bytes__``.
+
 .. class:: SupportsAbs
 
     An ABC with one abstract method ``__abs__`` that is covariant
@@ -658,7 +666,19 @@ The module defines the following classes, functions and decorators:
 
 .. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
-   A generic version of :class:`collections.defaultdict`
+   A generic version of :class:`collections.defaultdict`.
+
+.. class:: Counter(collections.Counter, Dict[T, int])
+
+   A generic version of :class:`collections.Counter`.
+
+   .. versionadded:: 3.6.1
+
+.. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.ChainMap`.
+
+   .. versionadded:: 3.6.1
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
@@ -742,8 +762,11 @@ The module defines the following classes, functions and decorators:
 
    This defines the generic type ``IO[AnyStr]`` and aliases ``TextIO``
    and ``BinaryIO`` for respectively ``IO[str]`` and ``IO[bytes]``.
-   These representing the types of I/O streams such as returned by
+   These represent the types of I/O streams such as returned by
    :func:`open`.
+
+   These types are also accessible directly as ``typing.IO``,
+   ``typing.TextIO``, and ``typing.BinaryIO``.
 
 .. class:: re
 
@@ -755,6 +778,9 @@ The module defines the following classes, functions and decorators:
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
+
+   These types are also accessible directly as ``typing.Pattern``
+   and ``typing.Match``.
 
 .. class:: NamedTuple
 
@@ -782,9 +808,19 @@ The module defines the following classes, functions and decorators:
    Fields with a default value must come after any fields without a default.
 
    The resulting class has two extra attributes: ``_field_types``,
-   giving a dict mapping field names to types, and ``field_defaults``, a dict
+   giving a dict mapping field names to types, and ``_field_defaults``, a dict
    mapping field names to default values.  (The field names are in the
    ``_fields`` attribute, which is part of the namedtuple API.)
+
+   ``NamedTuple`` subclasses can also have docstrings and methods::
+
+      class Employee(NamedTuple):
+          """Represents an employee."""
+          name: str
+          id: int = 3
+
+          def __repr__(self) -> str:
+              return f'<Employee {self.name}, id={self.id}>'
 
    Backward-compatible usage::
 
@@ -794,7 +830,7 @@ The module defines the following classes, functions and decorators:
       Added support for :pep:`526` variable annotation syntax.
 
    .. versionchanged:: 3.6.1
-      Added support for default values.
+      Added support for default values, methods, and docstrings.
 
 .. function:: NewType(typ)
 
@@ -903,7 +939,7 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * When a class and its subclass are present, the former is skipped, e.g.::
+   * When a class and its subclass are present, the latter is skipped, e.g.::
 
        Union[int, object] == object
 
@@ -972,9 +1008,9 @@ The module defines the following classes, functions and decorators:
 
    :data:`ClassVar` is not a class itself, and should not
    be used with :func:`isinstance` or :func:`issubclass`.
-   Note that :data:`ClassVar` does not change Python runtime behavior;
-   it can be used by 3rd party type checkers, so that the following
-   code might flagged as an error by those::
+   :data:`ClassVar` does not change Python runtime behavior, but
+   it can be used by third-party type checkers. For example, a type checker
+   might flag the following code as an error::
 
       enterprise_d = Starship(3000)
       enterprise_d.stats = {} # Error, setting class variable on instance
@@ -1005,5 +1041,10 @@ The module defines the following classes, functions and decorators:
       if TYPE_CHECKING:
           import expensive_mod
 
-      def fun():
-          local_var: expensive_mod.some_type = other_fun()
+      def fun(arg: 'expensive_mod.SomeType') -> None:
+          local_var: expensive_mod.AnotherType = other_fun()
+
+   Note that the first type annotation must be enclosed in quotes, making it a
+   "forward reference", to hide the ``expensive_mod`` reference from the
+   interpreter runtime.  Type annotations for local variables are not
+   evaluated, so the second annotation does not need to be enclosed in quotes.

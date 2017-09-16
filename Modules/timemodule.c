@@ -278,7 +278,7 @@ static PyTypeObject StructTimeType;
 static PyObject *
 tmtotuple(struct tm *p
 #ifndef HAVE_STRUCT_TM_TM_ZONE
-        , const char *zone, int gmtoff
+        , const char *zone, time_t gmtoff
 #endif
 )
 {
@@ -304,7 +304,7 @@ tmtotuple(struct tm *p
 #else
     PyStructSequence_SET_ITEM(v, 9,
         PyUnicode_DecodeLocale(zone, "surrogateescape"));
-    SET(10, gmtoff);
+    PyStructSequence_SET_ITEM(v, 10, _PyLong_FromTime_t(gmtoff));
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
 #undef SET
     if (PyErr_Occurred()) {
@@ -396,7 +396,7 @@ time_localtime(PyObject *self, PyObject *args)
     {
         struct tm local = buf;
         char zone[100];
-        int gmtoff;
+        time_t gmtoff;
         strftime(zone, sizeof(zone), "%Z", &buf);
         gmtoff = timegm(&buf) - when;
         return tmtotuple(&local, zone, gmtoff);
@@ -415,7 +415,7 @@ When 'seconds' is not passed in, convert the current time instead.");
  * an exception and return 0 on error.
  */
 static int
-gettmarg(PyObject *args, struct tm *p)
+gettmarg(PyObject *args, struct tm *p, const char *format)
 {
     int y;
 
@@ -427,7 +427,7 @@ gettmarg(PyObject *args, struct tm *p)
         return 0;
     }
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiii",
+    if (!PyArg_ParseTuple(args, format,
                           &y, &p->tm_mon, &p->tm_mday,
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
@@ -440,7 +440,7 @@ gettmarg(PyObject *args, struct tm *p)
     if (Py_TYPE(args) == &StructTimeType) {
         PyObject *item;
         item = PyTuple_GET_ITEM(args, 9);
-        p->tm_zone = item == Py_None ? NULL : PyUnicode_AsUTF8(item);
+        p->tm_zone = item == Py_None ? NULL : (char*)PyUnicode_AsUTF8(item);
         item = PyTuple_GET_ITEM(args, 10);
         p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
         if (PyErr_Occurred())
@@ -586,8 +586,12 @@ time_strftime(PyObject *self, PyObject *args)
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
-    else if (!gettmarg(tup, &buf) || !checktm(&buf))
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;strftime(): illegal time tuple argument") ||
+             !checktm(&buf))
+    {
         return NULL;
+    }
 
 #if defined(_MSC_VER) || defined(sun) || defined(_AIX)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
@@ -776,9 +780,13 @@ time_asctime(PyObject *self, PyObject *args)
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
-
-    } else if (!gettmarg(tup, &buf) || !checktm(&buf))
+    }
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;asctime(): illegal time tuple argument") ||
+             !checktm(&buf))
+    {
         return NULL;
+    }
     return _asctime(&buf);
 }
 
@@ -814,8 +822,11 @@ time_mktime(PyObject *self, PyObject *tup)
 {
     struct tm buf;
     time_t tt;
-    if (!gettmarg(tup, &buf))
+    if (!gettmarg(tup, &buf,
+                  "iiiiiiiii;mktime(): illegal time tuple argument"))
+    {
         return NULL;
+    }
 #ifdef _AIX
     /* year < 1902 or year > 2037 */
     if (buf.tm_year < 2 || buf.tm_year > 137) {
@@ -1160,6 +1171,7 @@ PyDoc_STRVAR(get_clock_info_doc,
 \n\
 Get information of the specified clock.");
 
+#if !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__)
 static void
 get_zone(char *zone, int n, struct tm *p)
 {
@@ -1180,6 +1192,7 @@ get_gmtoff(time_t t, struct tm *p)
     return timegm(p) - t;
 #endif
 }
+#endif /* !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__) */
 
 static void
 PyInit_timezone(PyObject *m) {

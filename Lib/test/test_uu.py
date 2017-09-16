@@ -10,11 +10,11 @@ import sys, os
 import uu
 import io
 
-plaintext = b"The smooth-scaled python crept over the sleeping dog\n"
+plaintext = b"The symbols on top of your keyboard are !@#$%^&*()_+|~\n"
 
 encodedtext = b"""\
-M5&AE('-M;V]T:\"US8V%L960@<'ET:&]N(&-R97!T(&]V97(@=&AE('-L965P
-(:6YG(&1O9PH """
+M5&AE('-Y;6)O;',@;VX@=&]P(&]F('EO=7(@:V5Y8F]A<F0@87)E("% (R0E
+*7B8J*"E?*WQ^"@  """
 
 # Stolen from io.py
 class FakeIO(io.TextIOWrapper):
@@ -44,9 +44,14 @@ class FakeIO(io.TextIOWrapper):
         return self.buffer.getvalue().decode(self._encoding, self._errors)
 
 
-def encodedtextwrapped(mode, filename):
-    return (bytes("begin %03o %s\n" % (mode, filename), "ascii") +
-            encodedtext + b"\n \nend\n")
+def encodedtextwrapped(mode, filename, backtick=False):
+    if backtick:
+        res = (bytes("begin %03o %s\n" % (mode, filename), "ascii") +
+               encodedtext.replace(b' ', b'`') + b"\n`\nend\n")
+    else:
+        res = (bytes("begin %03o %s\n" % (mode, filename), "ascii") +
+               encodedtext + b"\n \nend\n")
+    return res
 
 class UUTest(unittest.TestCase):
 
@@ -59,20 +64,27 @@ class UUTest(unittest.TestCase):
         out = io.BytesIO()
         uu.encode(inp, out, "t1", 0o644)
         self.assertEqual(out.getvalue(), encodedtextwrapped(0o644, "t1"))
+        inp = io.BytesIO(plaintext)
+        out = io.BytesIO()
+        uu.encode(inp, out, "t1", backtick=True)
+        self.assertEqual(out.getvalue(), encodedtextwrapped(0o666, "t1", True))
+        with self.assertRaises(TypeError):
+            uu.encode(inp, out, "t1", 0o644, True)
 
     def test_decode(self):
-        inp = io.BytesIO(encodedtextwrapped(0o666, "t1"))
-        out = io.BytesIO()
-        uu.decode(inp, out)
-        self.assertEqual(out.getvalue(), plaintext)
-        inp = io.BytesIO(
-            b"UUencoded files may contain many lines,\n" +
-            b"even some that have 'begin' in them.\n" +
-            encodedtextwrapped(0o666, "t1")
-        )
-        out = io.BytesIO()
-        uu.decode(inp, out)
-        self.assertEqual(out.getvalue(), plaintext)
+        for backtick in True, False:
+            inp = io.BytesIO(encodedtextwrapped(0o666, "t1", backtick=backtick))
+            out = io.BytesIO()
+            uu.decode(inp, out)
+            self.assertEqual(out.getvalue(), plaintext)
+            inp = io.BytesIO(
+                b"UUencoded files may contain many lines,\n" +
+                b"even some that have 'begin' in them.\n" +
+                encodedtextwrapped(0o666, "t1", backtick=backtick)
+            )
+            out = io.BytesIO()
+            uu.decode(inp, out)
+            self.assertEqual(out.getvalue(), plaintext)
 
     def test_truncatedinput(self):
         inp = io.BytesIO(b"begin 644 t1\n" + encodedtext)
@@ -94,25 +106,33 @@ class UUTest(unittest.TestCase):
 
     def test_garbage_padding(self):
         # Issue #22406
-        encodedtext = (
+        encodedtext1 = (
             b"begin 644 file\n"
             # length 1; bits 001100 111111 111111 111111
             b"\x21\x2C\x5F\x5F\x5F\n"
             b"\x20\n"
             b"end\n"
         )
+        encodedtext2 = (
+            b"begin 644 file\n"
+            # length 1; bits 001100 111111 111111 111111
+            b"\x21\x2C\x5F\x5F\x5F\n"
+            b"\x60\n"
+            b"end\n"
+        )
         plaintext = b"\x33"  # 00110011
 
-        with self.subTest("uu.decode()"):
-            inp = io.BytesIO(encodedtext)
-            out = io.BytesIO()
-            uu.decode(inp, out, quiet=True)
-            self.assertEqual(out.getvalue(), plaintext)
+        for encodedtext in encodedtext1, encodedtext2:
+            with self.subTest("uu.decode()"):
+                inp = io.BytesIO(encodedtext)
+                out = io.BytesIO()
+                uu.decode(inp, out, quiet=True)
+                self.assertEqual(out.getvalue(), plaintext)
 
-        with self.subTest("uu_codec"):
-            import codecs
-            decoded = codecs.decode(encodedtext, "uu_codec")
-            self.assertEqual(decoded, plaintext)
+            with self.subTest("uu_codec"):
+                import codecs
+                decoded = codecs.decode(encodedtext, "uu_codec")
+                self.assertEqual(decoded, plaintext)
 
 class UUStdIOTest(unittest.TestCase):
 
@@ -250,11 +270,6 @@ class UUFileTest(unittest.TestCase):
         finally:
             self._kill(f)
 
-def test_main():
-    support.run_unittest(UUTest,
-                              UUStdIOTest,
-                              UUFileTest,
-                              )
 
 if __name__=="__main__":
-    test_main()
+    unittest.main()

@@ -1,0 +1,4 @@
+Fix several problems with IDLE's autocompletion box. The following should
+now work: clicking on selection box items; using the scrollbar; selecting an
+item by hitting Return. Hangs on MacOSX should no longer happen. Patch by
+Louie Lu.

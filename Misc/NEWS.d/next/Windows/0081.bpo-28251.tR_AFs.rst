@@ -1,0 +1,1 @@
+Improvements to help manuals on Windows.

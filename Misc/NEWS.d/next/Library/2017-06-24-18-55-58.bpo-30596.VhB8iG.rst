@@ -1,0 +1,1 @@
+Add a ``close()`` method to ``multiprocessing.Process``.

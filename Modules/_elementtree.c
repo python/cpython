@@ -627,6 +627,7 @@ element_gc_clear(ElementObject *self)
 static void
 element_dealloc(ElementObject* self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_SAFE_BEGIN(self)
 
@@ -732,14 +733,14 @@ LOCAL(PyObject *) deepcopy(PyObject *, PyObject *);
 /*[clinic input]
 _elementtree.Element.__deepcopy__
 
-    memo: object
+    memo: object(subclass_of="&PyDict_Type")
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element___deepcopy__(ElementObject *self, PyObject *memo)
-/*[clinic end generated code: output=d1f19851d17bf239 input=df24c2b602430b77]*/
+_elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
+/*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
 {
     Py_ssize_t i;
     ElementObject* element;
@@ -848,7 +849,8 @@ deepcopy(PyObject *object, PyObject *memo)
             /* Fall through to general case */
         }
         else if (Element_CheckExact(object)) {
-            return _elementtree_Element___deepcopy__((ElementObject *)object, memo);
+            return _elementtree_Element___deepcopy___impl(
+                (ElementObject *)object, memo);
         }
     }
 
@@ -1878,7 +1880,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 );
             return -1;
         }
-        newlen = PySequence_Size(seq);
+        newlen = PySequence_Fast_GET_SIZE(seq);
 
         if (step !=  1 && newlen != slicelen)
         {
@@ -2076,6 +2078,8 @@ elementiter_dealloc(ElementIterObject *it)
 {
     Py_ssize_t i = it->parent_stack_used;
     it->parent_stack_used = 0;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(it);
     while (i--)
         Py_XDECREF(it->parent_stack[i].parent);
     PyMem_Free(it->parent_stack);
@@ -2083,7 +2087,6 @@ elementiter_dealloc(ElementIterObject *it)
     Py_XDECREF(it->sought_tag);
     Py_XDECREF(it->root_element);
 
-    PyObject_GC_UnTrack(it);
     PyObject_GC_Del(it);
 }
 
@@ -2774,7 +2777,7 @@ typedef struct {
 } XMLParserObject;
 
 static PyObject*
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames);
+_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_t nargs);
 static PyObject *
 _elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
                                     PyObject *pubid, PyObject *system);
@@ -3257,6 +3260,18 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+static int
+ignore_attribute_error(PyObject *value)
+{
+    if (value == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
+    }
+    return 0;
+}
+
 /*[clinic input]
 _elementtree.XMLParser.__init__
 
@@ -3311,14 +3326,33 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
     self->target = target;
 
     self->handle_start = PyObject_GetAttrString(target, "start");
+    if (ignore_attribute_error(self->handle_start)) {
+        return -1;
+    }
     self->handle_data = PyObject_GetAttrString(target, "data");
+    if (ignore_attribute_error(self->handle_data)) {
+        return -1;
+    }
     self->handle_end = PyObject_GetAttrString(target, "end");
+    if (ignore_attribute_error(self->handle_end)) {
+        return -1;
+    }
     self->handle_comment = PyObject_GetAttrString(target, "comment");
+    if (ignore_attribute_error(self->handle_comment)) {
+        return -1;
+    }
     self->handle_pi = PyObject_GetAttrString(target, "pi");
+    if (ignore_attribute_error(self->handle_pi)) {
+        return -1;
+    }
     self->handle_close = PyObject_GetAttrString(target, "close");
+    if (ignore_attribute_error(self->handle_close)) {
+        return -1;
+    }
     self->handle_doctype = PyObject_GetAttrString(target, "doctype");
-
-    PyErr_Clear();
+    if (ignore_attribute_error(self->handle_doctype)) {
+        return -1;
+    }
 
     /* configure parser */
     EXPAT(SetUserData)(self->parser, self);
@@ -3660,7 +3694,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
         return NULL;
     }
 
-    for (i = 0; i < PySequence_Size(events_seq); ++i) {
+    for (i = 0; i < PySequence_Fast_GET_SIZE(events_seq); ++i) {
         PyObject *event_name_obj = PySequence_Fast_GET_ITEM(events_seq, i);
         const char *event_name = NULL;
         if (PyUnicode_Check(event_name_obj)) {
@@ -3990,6 +4024,11 @@ PyInit__elementtree(void)
     st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
+    if (st->deepcopy_obj == NULL) {
+        return NULL;
+    }
+
+    assert(!PyErr_Occurred());
     if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
         return NULL;
 

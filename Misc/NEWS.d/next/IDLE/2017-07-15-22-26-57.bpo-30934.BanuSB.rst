@@ -1,0 +1,7 @@
+Document coverage details for idlelib tests.
+
+* Add section to idlelib/idle-test/README.txt.
+
+* Include check that branches are taken both ways.
+
+* Exclude IDLE-specific code that does not run during unit tests.

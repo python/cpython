@@ -1,21 +1,19 @@
 import abc
 import builtins
 import collections
+import collections.abc
 import copy
 from itertools import permutations
 import pickle
 from random import choice
 import sys
 from test import support
+import threading
 import time
 import unittest
 import unittest.mock
 from weakref import proxy
 import contextlib
-try:
-    import threading
-except ImportError:
-    threading = None
 
 import functools
 
@@ -910,7 +908,7 @@ class TestCmpToKey:
         key = self.cmp_to_key(mycmp)
         k = key(10)
         self.assertRaises(TypeError, hash, k)
-        self.assertNotIsInstance(k, collections.Hashable)
+        self.assertNotIsInstance(k, collections.abc.Hashable)
 
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
@@ -1252,7 +1250,7 @@ class TestLRU:
         self.assertEqual(mock_int.__hash__.call_count, 2)
         self.assertEqual(f.cache_info(), (1, 1, 1, 1))
 
-        # Cache eviction: No use as an argument gives no additonal call
+        # Cache eviction: No use as an argument gives no additional call
         self.assertEqual(f(6, 2), 20)
         self.assertEqual(mock_int.__hash__.call_count, 2)
         self.assertEqual(f.cache_info(), (1, 2, 1, 1))
@@ -1405,7 +1403,6 @@ class TestLRU:
         for attr in self.module.WRAPPER_ASSIGNMENTS:
             self.assertEqual(getattr(g, attr), getattr(f, attr))
 
-    @unittest.skipUnless(threading, 'This test requires threading.')
     def test_lru_cache_threaded(self):
         n, m = 5, 11
         def orig(x, y):
@@ -1454,7 +1451,6 @@ class TestLRU:
         finally:
             sys.setswitchinterval(orig_si)
 
-    @unittest.skipUnless(threading, 'This test requires threading.')
     def test_lru_cache_threaded2(self):
         # Simultaneous call with the same arguments
         n, m = 5, 7
@@ -1482,7 +1478,6 @@ class TestLRU:
                 pause.reset()
                 self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1))
 
-    @unittest.skipUnless(threading, 'This test requires threading.')
     def test_lru_cache_threaded3(self):
         @self.module.lru_cache(maxsize=2)
         def f(x):
@@ -1707,7 +1702,7 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_compose_mro(self):
         # None of the examples in this test depend on haystack ordering.
-        c = collections
+        c = collections.abc
         mro = functools._compose_mro
         bases = [c.Sequence, c.MutableMapping, c.Mapping, c.Set]
         for haystack in permutations(bases):
@@ -1715,10 +1710,10 @@ class TestSingleDispatch(unittest.TestCase):
             self.assertEqual(m, [dict, c.MutableMapping, c.Mapping,
                                  c.Collection, c.Sized, c.Iterable,
                                  c.Container, object])
-        bases = [c.Container, c.Mapping, c.MutableMapping, c.OrderedDict]
+        bases = [c.Container, c.Mapping, c.MutableMapping, collections.OrderedDict]
         for haystack in permutations(bases):
-            m = mro(c.ChainMap, haystack)
-            self.assertEqual(m, [c.ChainMap, c.MutableMapping, c.Mapping,
+            m = mro(collections.ChainMap, haystack)
+            self.assertEqual(m, [collections.ChainMap, c.MutableMapping, c.Mapping,
                                  c.Collection, c.Sized, c.Iterable,
                                  c.Container, object])
 
@@ -1728,39 +1723,39 @@ class TestSingleDispatch(unittest.TestCase):
         # test_mro_conflicts).
         bases = [c.Container, c.Sized, str]
         for haystack in permutations(bases):
-            m = mro(c.defaultdict, [c.Sized, c.Container, str])
-            self.assertEqual(m, [c.defaultdict, dict, c.Sized, c.Container,
-                                 object])
+            m = mro(collections.defaultdict, [c.Sized, c.Container, str])
+            self.assertEqual(m, [collections.defaultdict, dict, c.Sized,
+                                 c.Container, object])
 
         # MutableSequence below is registered directly on D. In other words, it
         # precedes MutableMapping which means single dispatch will always
         # choose MutableSequence here.
-        class D(c.defaultdict):
+        class D(collections.defaultdict):
             pass
         c.MutableSequence.register(D)
         bases = [c.MutableSequence, c.MutableMapping]
         for haystack in permutations(bases):
             m = mro(D, bases)
             self.assertEqual(m, [D, c.MutableSequence, c.Sequence, c.Reversible,
-                                 c.defaultdict, dict, c.MutableMapping, c.Mapping,
+                                 collections.defaultdict, dict, c.MutableMapping, c.Mapping,
                                  c.Collection, c.Sized, c.Iterable, c.Container,
                                  object])
 
         # Container and Callable are registered on different base classes and
         # a generic function supporting both should always pick the Callable
         # implementation if a C instance is passed.
-        class C(c.defaultdict):
+        class C(collections.defaultdict):
             def __call__(self):
                 pass
         bases = [c.Sized, c.Callable, c.Container, c.Mapping]
         for haystack in permutations(bases):
             m = mro(C, haystack)
-            self.assertEqual(m, [C, c.Callable, c.defaultdict, dict, c.Mapping,
+            self.assertEqual(m, [C, c.Callable, collections.defaultdict, dict, c.Mapping,
                                  c.Collection, c.Sized, c.Iterable,
                                  c.Container, object])
 
     def test_register_abc(self):
-        c = collections
+        c = collections.abc
         d = {"a": "b"}
         l = [1, 2, 3]
         s = {object(), None}
@@ -1786,7 +1781,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(g(s), "sized")
         self.assertEqual(g(f), "sized")
         self.assertEqual(g(t), "sized")
-        g.register(c.ChainMap, lambda obj: "chainmap")
+        g.register(collections.ChainMap, lambda obj: "chainmap")
         self.assertEqual(g(d), "mutablemapping")  # irrelevant ABCs registered
         self.assertEqual(g(l), "sized")
         self.assertEqual(g(s), "sized")
@@ -1854,7 +1849,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(g(t), "tuple")
 
     def test_c3_abc(self):
-        c = collections
+        c = collections.abc
         mro = functools._c3_mro
         class A(object):
             pass
@@ -1895,7 +1890,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(fun(aa), 'fun A')
 
     def test_mro_conflicts(self):
-        c = collections
+        c = collections.abc
         @functools.singledispatch
         def g(arg):
             return "base"
@@ -1956,7 +1951,7 @@ class TestSingleDispatch(unittest.TestCase):
         # MutableMapping's bases implicit as well from defaultdict's
         # perspective.
         with self.assertRaises(RuntimeError) as re_two:
-            h(c.defaultdict(lambda: 0))
+            h(collections.defaultdict(lambda: 0))
         self.assertIn(
             str(re_two.exception),
             (("Ambiguous dispatch: <class 'collections.abc.Container'> "
@@ -1964,7 +1959,7 @@ class TestSingleDispatch(unittest.TestCase):
              ("Ambiguous dispatch: <class 'collections.abc.Sized'> "
               "or <class 'collections.abc.Container'>")),
         )
-        class R(c.defaultdict):
+        class R(collections.defaultdict):
             pass
         c.MutableSequence.register(R)
         @functools.singledispatch
@@ -2041,7 +2036,7 @@ class TestSingleDispatch(unittest.TestCase):
         _orig_wkd = functools.WeakKeyDictionary
         td = TracingDict()
         functools.WeakKeyDictionary = lambda: td
-        c = collections
+        c = collections.abc
         @functools.singledispatch
         def g(arg):
             return "base"

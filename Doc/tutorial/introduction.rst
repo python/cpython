@@ -100,10 +100,8 @@ give you an error::
 There is full support for floating point; operators with mixed type operands
 convert the integer operand to floating point::
 
-   >>> 3 * 3.75 / 1.5
-   7.5
-   >>> 7.0 / 2
-   3.5
+   >>> 4 * 3.75 - 1
+   14.0
 
 In interactive mode, the last printed expression is assigned to the variable
 ``_``.  This means that when you are using Python as a desk calculator, it is

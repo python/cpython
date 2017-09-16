@@ -1,0 +1,1 @@
+Add a missing xmlns to python.manifest so that it matches the schema.

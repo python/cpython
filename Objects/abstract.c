@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include <ctype.h>
 #include "structmember.h" /* we need the offsetof() macro from there */
 #include "longintrepr.h"
@@ -52,8 +53,11 @@ PyObject_Size(PyObject *o)
     }
 
     m = o->ob_type->tp_as_sequence;
-    if (m && m->sq_length)
-        return m->sq_length(o);
+    if (m && m->sq_length) {
+        Py_ssize_t len = m->sq_length(o);
+        assert(len >= 0 || PyErr_Occurred());
+        return len;
+    }
 
     return PyMapping_Size(o);
 }
@@ -86,7 +90,8 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
     _Py_IDENTIFIER(__length_hint__);
     if (_PyObject_HasLen(o)) {
         res = PyObject_Length(o);
-        if (res < 0 && PyErr_Occurred()) {
+        if (res < 0) {
+            assert(PyErr_Occurred());
             if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
                 return -1;
             }
@@ -815,6 +820,21 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     PyObject *result = binary_op1(v, w, op_slot);
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
+
+        if (op_slot == NB_SLOT(nb_rshift) &&
+            PyCFunction_Check(v) &&
+            strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
+        {
+            PyErr_Format(PyExc_TypeError,
+                "unsupported operand type(s) for %.100s: "
+                "'%.100s' and '%.100s'. Did you mean \"print(<message>, "
+                "file=<output_stream>)\"?",
+                op_name,
+                v->ob_type->tp_name,
+                w->ob_type->tp_name);
+            return NULL;
+        }
+
         return binop_type_error(v, w, op_name);
     }
     return result;
@@ -1483,8 +1503,11 @@ PySequence_Size(PyObject *s)
     }
 
     m = s->ob_type->tp_as_sequence;
-    if (m && m->sq_length)
-        return m->sq_length(s);
+    if (m && m->sq_length) {
+        Py_ssize_t len = m->sq_length(s);
+        assert(len >= 0 || PyErr_Occurred());
+        return len;
+    }
 
     type_error("object of type '%.200s' has no len()", s);
     return -1;
@@ -1673,8 +1696,10 @@ PySequence_SetItem(PyObject *s, Py_ssize_t i, PyObject *o)
         if (i < 0) {
             if (m->sq_length) {
                 Py_ssize_t l = (*m->sq_length)(s);
-                if (l < 0)
+                if (l < 0) {
+                    assert(PyErr_Occurred());
                     return -1;
+                }
                 i += l;
             }
         }
@@ -1700,8 +1725,10 @@ PySequence_DelItem(PyObject *s, Py_ssize_t i)
         if (i < 0) {
             if (m->sq_length) {
                 Py_ssize_t l = (*m->sq_length)(s);
-                if (l < 0)
+                if (l < 0) {
+                    assert(PyErr_Occurred());
                     return -1;
+                }
                 i += l;
             }
         }
@@ -1957,7 +1984,7 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
                 goto Done;
 
             default:
-                assert(!"unknown operation");
+                Py_UNREACHABLE();
             }
         }
 
@@ -2038,8 +2065,11 @@ PyMapping_Size(PyObject *o)
     }
 
     m = o->ob_type->tp_as_mapping;
-    if (m && m->mp_length)
-        return m->mp_length(o);
+    if (m && m->mp_length) {
+        Py_ssize_t len = m->mp_length(o);
+        assert(len >= 0 || PyErr_Occurred());
+        return len;
+    }
 
     type_error("object of type '%.200s' has no len()", o);
     return -1;
@@ -2544,8 +2574,8 @@ _PySequence_BytesToCharpArray(PyObject* self)
             array[i] = NULL;
             goto fail;
         }
-        data = PyBytes_AsString(item);
-        if (data == NULL) {
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(item, &data, NULL) < 0) {
             /* NULL terminate before freeing. */
             array[i] = NULL;
             goto fail;

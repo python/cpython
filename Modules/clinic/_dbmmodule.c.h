@@ -52,7 +52,7 @@ _dbm_dbm_get_impl(dbmobject *self, const char *key,
                   Py_ssize_clean_t key_length, PyObject *default_value);
 
 static PyObject *
-_dbm_dbm_get(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_dbm_dbm_get(dbmobject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *key;
@@ -61,10 +61,6 @@ _dbm_dbm_get(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
 
     if (!_PyArg_ParseStack(args, nargs, "s#|O:get",
         &key, &key_length, &default_value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("get", kwnames)) {
         goto exit;
     }
     return_value = _dbm_dbm_get_impl(self, key, key_length, default_value);
@@ -90,7 +86,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, const char *key,
                          PyObject *default_value);
 
 static PyObject *
-_dbm_dbm_setdefault(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_dbm_dbm_setdefault(dbmobject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *key;
@@ -99,10 +95,6 @@ _dbm_dbm_setdefault(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObject
 
     if (!_PyArg_ParseStack(args, nargs, "s#|O:setdefault",
         &key, &key_length, &default_value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("setdefault", kwnames)) {
         goto exit;
     }
     return_value = _dbm_dbm_setdefault_impl(self, key, key_length, default_value);
@@ -133,7 +125,7 @@ dbmopen_impl(PyObject *module, const char *filename, const char *flags,
              int mode);
 
 static PyObject *
-dbmopen(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dbmopen(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *filename;
@@ -144,13 +136,9 @@ dbmopen(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
         &filename, &flags, &mode)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("open", kwnames)) {
-        goto exit;
-    }
     return_value = dbmopen_impl(module, filename, flags, mode);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4fdb7be8bd03cbce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=627d28ce1f3188dc input=a9049054013a1b77]*/

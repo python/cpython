@@ -577,10 +577,10 @@ class TypesTests(unittest.TestCase):
         self.assertGreater(tuple.__itemsize__, 0)
 
     def test_slot_wrapper_types(self):
-        self.assertIsInstance(object.__init__, types.SlotWrapperType)
-        self.assertIsInstance(object.__str__, types.SlotWrapperType)
-        self.assertIsInstance(object.__lt__, types.SlotWrapperType)
-        self.assertIsInstance(int.__lt__, types.SlotWrapperType)
+        self.assertIsInstance(object.__init__, types.WrapperDescriptorType)
+        self.assertIsInstance(object.__str__, types.WrapperDescriptorType)
+        self.assertIsInstance(object.__lt__, types.WrapperDescriptorType)
+        self.assertIsInstance(int.__lt__, types.WrapperDescriptorType)
 
     def test_method_wrapper_types(self):
         self.assertIsInstance(object().__init__, types.MethodWrapperType)

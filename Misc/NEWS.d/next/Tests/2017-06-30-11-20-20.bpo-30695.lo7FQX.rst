@@ -1,0 +1,2 @@
+Add the `set_nomemory(start, stop)` and `remove_mem_hooks()` functions to
+the _testcapi module.

@@ -451,44 +451,44 @@ APIs:
    | :attr:`%c`        | int                 | A single character,            |
    |                   |                     | represented as a C int.        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%d`        | int                 | Exactly equivalent to          |
-   |                   |                     | ``printf("%d")``.              |
+   | :attr:`%d`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%d")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%u`        | unsigned int        | Exactly equivalent to          |
-   |                   |                     | ``printf("%u")``.              |
+   | :attr:`%u`        | unsigned int        | Equivalent to                  |
+   |                   |                     | ``printf("%u")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%ld`       | long                | Exactly equivalent to          |
-   |                   |                     | ``printf("%ld")``.             |
+   | :attr:`%ld`       | long                | Equivalent to                  |
+   |                   |                     | ``printf("%ld")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%li`       | long                | Exactly equivalent to          |
-   |                   |                     | ``printf("%li")``.             |
+   | :attr:`%li`       | long                | Equivalent to                  |
+   |                   |                     | ``printf("%li")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lu`       | unsigned long       | Exactly equivalent to          |
-   |                   |                     | ``printf("%lu")``.             |
+   | :attr:`%lu`       | unsigned long       | Equivalent to                  |
+   |                   |                     | ``printf("%lu")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lld`      | long long           | Exactly equivalent to          |
-   |                   |                     | ``printf("%lld")``.            |
+   | :attr:`%lld`      | long long           | Equivalent to                  |
+   |                   |                     | ``printf("%lld")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lli`      | long long           | Exactly equivalent to          |
-   |                   |                     | ``printf("%lli")``.            |
+   | :attr:`%lli`      | long long           | Equivalent to                  |
+   |                   |                     | ``printf("%lli")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%llu`      | unsigned long long  | Exactly equivalent to          |
-   |                   |                     | ``printf("%llu")``.            |
+   | :attr:`%llu`      | unsigned long long  | Equivalent to                  |
+   |                   |                     | ``printf("%llu")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t          | Exactly equivalent to          |
-   |                   |                     | ``printf("%zd")``.             |
+   | :attr:`%zd`       | Py_ssize_t          | Equivalent to                  |
+   |                   |                     | ``printf("%zd")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zi`       | Py_ssize_t          | Exactly equivalent to          |
-   |                   |                     | ``printf("%zi")``.             |
+   | :attr:`%zi`       | Py_ssize_t          | Equivalent to                  |
+   |                   |                     | ``printf("%zi")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zu`       | size_t              | Exactly equivalent to          |
-   |                   |                     | ``printf("%zu")``.             |
+   | :attr:`%zu`       | size_t              | Equivalent to                  |
+   |                   |                     | ``printf("%zu")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%i`        | int                 | Exactly equivalent to          |
-   |                   |                     | ``printf("%i")``.              |
+   | :attr:`%i`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%i")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%x`        | int                 | Exactly equivalent to          |
-   |                   |                     | ``printf("%x")``.              |
+   | :attr:`%x`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%x")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%s`        | const char\*        | A null-terminated C character  |
    |                   |                     | array.                         |
@@ -529,6 +529,9 @@ APIs:
       ``"%V"`` (if the ``PyObject*`` argument is NULL), and a number of
       characters for ``"%A"``, ``"%U"``, ``"%S"``, ``"%R"`` and ``"%V"``
       (if the ``PyObject*`` argument is not NULL).
+
+   .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
+      zu, i, x): the 0-conversion flag has effect even when a precision is given.
 
    .. versionchanged:: 3.2
       Support for ``"%lld"`` and ``"%llu"`` added.
@@ -931,15 +934,21 @@ wchar_t Support
    Convert the Unicode object to a wide character string. The output string
    always ends with a null character. If *size* is not *NULL*, write the number
    of wide characters (excluding the trailing null termination character) into
-   *\*size*.
+   *\*size*. Note that the resulting :c:type:`wchar_t` string might contain
+   null characters, which would cause the string to be truncated when used with
+   most C functions. If *size* is *NULL* and the :c:type:`wchar_t*` string
+   contains null characters a :exc:`ValueError` is raised.
 
    Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
-   :c:func:`PyMem_Free` to free it) on success. On error, returns *NULL*,
-   *\*size* is undefined and raises a :exc:`MemoryError`. Note that the
-   resulting :c:type:`wchar_t` string might contain null characters, which
-   would cause the string to be truncated when used with most C functions.
+   :c:func:`PyMem_Free` to free it) on success. On error, returns *NULL*
+   and *\*size* is undefined. Raises a :exc:`MemoryError` if memory allocation
+   is failed.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.7
+      Raises a :exc:`ValueError` if *size* is *NULL* and the :c:type:`wchar_t*`
+      string contains null characters.
 
 
 .. _builtincodecs:

@@ -1,0 +1,4 @@
+ttk: fix the destroy() method of LabeledScale and OptionMenu classes.
+Call the parent destroy() method even if the used attribute doesn't
+exist. The LabeledScale.destroy() method now also explicitly clears label and
+scale attributes to help the garbage collector to destroy all widgets.

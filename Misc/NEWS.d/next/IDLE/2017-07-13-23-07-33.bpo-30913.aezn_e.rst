@@ -1,0 +1,3 @@
+IDLE: Document ConfigDialog tk Vars, methods, and widgets in docstrings This
+will facilitate improving the dialog and splitting up the class. Original
+patch by Cheryl Sabella.

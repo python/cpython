@@ -1,0 +1,2 @@
+Fix an assertion failure in `subprocess.Popen()` on Windows, in case the env
+argument has a bad keys() method. Patch by Oren Milman.

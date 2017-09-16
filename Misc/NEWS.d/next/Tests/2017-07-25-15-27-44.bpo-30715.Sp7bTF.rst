@@ -1,0 +1,2 @@
+Address ALPN callback changes for OpenSSL 1.1.0f. The latest version behaves
+like OpenSSL 1.0.2 and no longer aborts handshake.

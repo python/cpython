@@ -1,0 +1,4 @@
+configparser: reading defaults in the ``ConfigParser()`` constructor is now
+using ``read_dict()``, making its behavior consistent with the rest of the
+parser.  Non-string keys and values in the defaults dictionary are now being
+implicitly converted to strings.  Patch by James Tocknell.

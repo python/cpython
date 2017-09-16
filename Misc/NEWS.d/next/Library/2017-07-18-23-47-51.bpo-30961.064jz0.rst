@@ -1,0 +1,1 @@
+Fix decrementing a borrowed reference in tracemalloc.

@@ -1,0 +1,8 @@
+IDLE: Factor ConfigChanges class from configdialog, put in config; test. *
+In config, put dump test code in a function; run it and unittest in   'if
+__name__ == '__main__'. * Add class config.ConfigChanges based on
+changes_class_v4.py on bpo issue. * Add class test_config.ChangesTest,
+partly using configdialog_tests_v1.py. * Revise configdialog to use
+ConfigChanges; see tracker msg297804. * Revise test_configdialog to match
+configdialog changes. * Remove configdialog functions unused or moved to
+ConfigChanges. Cheryl Sabella contributed parts of the patch.

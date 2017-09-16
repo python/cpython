@@ -29,7 +29,7 @@ AC_SUBST(GITVERSION)
 AC_SUBST(GITTAG)
 AC_SUBST(GITBRANCH)
 
-if test -e $srcdir/.git/HEAD
+if test -e $srcdir/.git
 then
 AC_CHECK_PROG(HAS_GIT, git, found, not-found)
 else
@@ -56,13 +56,8 @@ AC_SUBST(host)
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
 
-AC_CHECK_PROGS(PYTHON_FOR_GEN, python$PACKAGE_VERSION python3 python, not-found)
-if test "$PYTHON_FOR_GEN" = not-found; then
-    PYTHON_FOR_GEN='@echo "Cannot generate $@, python not found !" && \
-    echo "To skip re-generation of $@ run <make touch> or <make -t $@>." && \
-    echo "Otherwise, set python in PATH and run configure or run <make PYTHON_FOR_GEN=python>." && false &&'
-fi
-AC_SUBST(PYTHON_FOR_GEN)
+AC_CHECK_PROGS(PYTHON_FOR_REGEN, python$PACKAGE_VERSION python3 python, python3)
+AC_SUBST(PYTHON_FOR_REGEN)
 
 if test "$cross_compiling" = yes; then
     AC_MSG_CHECKING([for python interpreter for cross build])
@@ -80,16 +75,12 @@ if test "$cross_compiling" = yes; then
         AC_MSG_RESULT($interp)
 	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$interp
     fi
-    # Used to comment out stuff for rebuilding generated files
-    GENERATED_COMMENT='#'
 elif test "$cross_compiling" = maybe; then
     AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])
 else
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
-    GENERATED_COMMENT=''
 fi
 AC_SUBST(PYTHON_FOR_BUILD)
-AC_SUBST(GENERATED_COMMENT)
 
 dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and
@@ -141,10 +132,6 @@ AC_DEFINE(_NETBSD_SOURCE, 1, [Define on NetBSD to activate all library features]
 # certain features on FreeBSD, so we need __BSD_VISIBLE to re-enable
 # them.
 AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features])
-
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
-# u_int on Irix 5.3. Defining _BSD_TYPES brings it back.
-AC_DEFINE(_BSD_TYPES, 1, [Define on Irix to enable u_int])
 
 # The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
@@ -364,6 +351,8 @@ AC_SUBST(FRAMEWORKPYTHONW)
 AC_SUBST(FRAMEWORKUNIXTOOLSPREFIX)
 AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 
+AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
+
 ##AC_ARG_WITH(dyld,
 ##            AS_HELP_STRING([--with-dyld],
 ##                           [Use (OpenStep|Rhapsody) dynamic linker]))
@@ -413,7 +402,6 @@ then
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
-	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
 fi
@@ -552,24 +540,6 @@ if test $define_stdc_a1 = yes
 then
   AC_DEFINE(_INCLUDE__STDC_A1_SOURCE, 1, Define to include mbstate_t for mbrtowc)
 fi
-
-#
-# SGI compilers allow the specification of the both the ABI and the
-# ISA on the command line.  Depending on the values of these switches,
-# different and often incompatible code will be generated.
-#
-# The SGI_ABI variable can be used to modify the CC and LDFLAGS and
-# thus supply support for various ABI/ISA combinations.  The MACHDEP
-# variable is also adjusted.
-#
-AC_SUBST(SGI_ABI)
-if test ! -z "$SGI_ABI"
-then
-        CC="cc $SGI_ABI"
-        LDFLAGS="$SGI_ABI $LDFLAGS"
-        MACHDEP=`echo "${MACHDEP}${SGI_ABI}" | sed 's/ *//g'`
-fi
-AC_MSG_RESULT($MACHDEP)
 
 # Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
 # it may influence the way we can build extensions, so distutils
@@ -1078,13 +1048,6 @@ case `"$ac_prog" -V 2>&1 < /dev/null` in
 esac
 AC_MSG_RESULT($GNULD)
 
-AC_C_INLINE
-if test "$ac_cv_c_inline" != no ; then
-        AC_DEFINE(USE_INLINE, 1, [Define to use the C99 inline keyword.])
-        AC_SUBST(USE_INLINE)
-fi
-
-
 AC_MSG_CHECKING(for --enable-shared)
 AC_ARG_ENABLE(shared,
               AS_HELP_STRING([--enable-shared], [disable/enable building shared python library]))
@@ -1267,12 +1230,33 @@ else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
 
+# Check for --with-assertions. Py_DEBUG implies assertions, but also changes
+# the ABI. This allows enabling assertions without changing the ABI.
+assertions='false'
+AC_MSG_CHECKING(for --with-assertions)
+AC_ARG_WITH(assertions,
+            AC_HELP_STRING([--with-assertions], [build with C assertions enabled]),
+[
+if test "$withval" != no
+then
+  assertions='true'
+fi],
+[])
+if test "$assertions" = 'true'; then
+  AC_MSG_RESULT(yes)
+elif test "$Py_DEBUG" = 'true'; then
+  assertions='true'
+  AC_MSG_RESULT(implied by --with-pydebug)
+else
+  AC_MSG_RESULT(no)
+fi
+
 # Enable optimization flags
 AC_SUBST(DEF_MAKE_ALL_RULE)
 AC_SUBST(DEF_MAKE_RULE)
 Py_OPT='false'
 AC_MSG_CHECKING(for --enable-optimizations)
-AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive optimizations (PGO, etc).  Disabled by default.]),
+AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive, stable optimizations (PGO, etc).  Disabled by default.]),
 [
 if test "$enableval" != no
 then
@@ -1298,9 +1282,8 @@ else
 fi
 
 # Enable LTO flags
-AC_SUBST(LTOFLAGS)
 AC_MSG_CHECKING(for --with-lto)
-AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in PGO builds. Disabled by default.]),
+AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in any build. Disabled by default.]),
 [
 if test "$withval" != no
 then
@@ -1335,6 +1318,8 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+  CFLAGS="$CFLAGS $LTOFLAGS"
+  LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
 
 # Enable PGO flags.
@@ -1447,6 +1432,7 @@ esac
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
+AC_SUBST(CFLAGS_ALIASING)
 if test "${OPT-unset}" = "unset"
 then
     case $GCC in
@@ -1459,11 +1445,27 @@ then
            WRAP="-fwrapv"
         fi
 
-        # Clang also needs -fwrapv
         case $CC in
-            *clang*) WRAP="-fwrapv"
-            ;;
+            *clang*)
+                cc_is_clang=1
+                ;;
+            *)
+                if $CC --version 2>&1 | grep -q clang
+                then
+                    cc_is_clang=1
+                else
+                    cc_is_clang=
+                fi
         esac
+
+        if test -n "${cc_is_clang}"
+        then
+            # Clang also needs -fwrapv
+            WRAP="-fwrapv"
+            # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
+            # see Makefile.pre.in for more information
+            CFLAGS_ALIASING="-fno-strict-aliasing"
+        fi
 
 	case $ac_cv_prog_cc_g in
 	yes)
@@ -1471,18 +1473,21 @@ then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
                 if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall $STRICT_PROTO"
+                    OPT="-g -Og -Wall"
                 else
-                    OPT="-g -O0 -Wall $STRICT_PROTO"
+                    OPT="-g -O0 -Wall"
                 fi
 	    else
-		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
+		OPT="-g $WRAP -O3 -Wall"
 	    fi
 	    ;;
 	*)
-	    OPT="-O3 -Wall $STRICT_PROTO"
+	    OPT="-O3 -Wall"
 	    ;;
 	esac
+
+	OPT="$OPT $STRICT_PROTO"
+
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
@@ -1864,7 +1869,7 @@ case "$CC" in
     ;;
 esac
 
-if test "$Py_DEBUG" = 'true'; then
+if test "$assertions" = 'true'; then
   :
 else
   OPT="-DNDEBUG $OPT"
@@ -2056,7 +2061,7 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h)
+sys/endian.h sys/sysmacros.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -2088,6 +2093,12 @@ AC_CHECK_HEADERS(linux/netlink.h,,,[
 #ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
 #endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+])
+
+AC_CHECK_HEADERS(linux/vm_sockets.h,,,[
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -2141,25 +2152,7 @@ if test "$ac_cv_has_le64toh" = "yes"; then
     AC_DEFINE(HAVE_HTOLE64, 1, [Define this if you have le64toh()])
 fi
 
-# Enabling LFS on Solaris (2.6 to 9) with gcc 2.95 triggers a bug in
-# the system headers: If _XOPEN_SOURCE and _LARGEFILE_SOURCE are
-# defined, but the compiler does not support pragma redefine_extname,
-# and _LARGEFILE64_SOURCE is not defined, the headers refer to 64-bit
-# structures (such as rlimit64) without declaring them. As a
-# work-around, disable LFS on such configurations
-
 use_lfs=yes
-AC_MSG_CHECKING(Solaris LFS bug)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#define _LARGEFILE_SOURCE 1
-#define _FILE_OFFSET_BITS 64
-#include <sys/resource.h>
-]], [[struct rlimit foo;]])],[sol_lfs_bug=no],[sol_lfs_bug=yes])
-AC_MSG_RESULT($sol_lfs_bug)
-if test "$sol_lfs_bug" = "yes"; then
-  use_lfs=no
-fi
-
 # Don't use largefile support for GNU/Hurd
 case $ac_sys_system in GNU*)
   use_lfs=no
@@ -2411,7 +2404,7 @@ fi
 AC_MSG_RESULT($SHLIB_SUFFIX)
 
 # LDSHARED is the ld *command* used to create shared library
-# -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
+# -- "cc -G" on SunOS 5.x.
 # (Shared libraries in this instance are shared modules to be loaded into
 # Python, as opposed to building Python itself as a shared library.)
 AC_MSG_CHECKING(LDSHARED)
@@ -2422,8 +2415,6 @@ then
 		BLDSHARED="Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
-	IRIX/5*) LDSHARED="ld -shared";;
-	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/5*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
@@ -2581,10 +2572,6 @@ then
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
-	IRIX*/6*)  case $CC in
-		   *gcc*) CCSHARED="-shared";;
-		   *) CCSHARED="";;
-		   esac;;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -2716,7 +2703,8 @@ esac
 
 # check for systems that require aligned memory access
 AC_MSG_CHECKING(aligned memory access is required)
-AC_TRY_RUN([
+AC_CACHE_VAL(ac_cv_aligned_required,
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
     char s[16];
@@ -2728,18 +2716,16 @@ int main()
     if (*p1 == *p2)
         return 1;
     return 0;
-}
-              ],
-     [aligned_required=no],
-     [aligned_required=yes],
-     [aligned_required=yes])
-
-if test "$aligned_required" = yes ; then
+}]])],
+[ac_cv_aligned_required=no],
+[ac_cv_aligned_required=yes],
+[ac_cv_aligned_required=yes])
+])
+AC_MSG_RESULT($ac_cv_aligned_required)
+if test "$ac_cv_aligned_required" = yes ; then
   AC_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
     [Define if aligned memory access is required])
 fi
-AC_MSG_RESULT($aligned_required)
-
 
 # str, bytes and memoryview hash algorithm
 AH_TEMPLATE(Py_HASH_ALGORITHM,
@@ -2900,73 +2886,39 @@ else
 fi])
 AC_MSG_RESULT($with_dbmliborder)
 
-# This is used to generate Setup.config
-AC_SUBST(USE_THREAD_MODULE)
-USE_THREAD_MODULE=""
-
 AC_SUBST(LDLAST)
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
 AH_TEMPLATE(_REENTRANT,
   [Define to force use of thread-safe errno, h_errno, and other functions])
-AH_TEMPLATE(WITH_THREAD,
-  [Define if you want to compile in rudimentary thread support])
 
-AC_MSG_CHECKING(for --with-threads)
-dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-AC_ARG_WITH(threads,
-            AS_HELP_STRING([--with(out)-threads@<:@=DIRECTORY@:>@], [disable/enable thread support]))
-
-# --with-thread is deprecated, but check for it anyway
-dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-AC_ARG_WITH(thread,
-            AS_HELP_STRING([--with(out)-thread@<:@=DIRECTORY@:>@], [deprecated; use --with(out)-threads]),
-            [with_threads=$with_thread])
-
-if test -z "$with_threads"
-then with_threads="yes"
-fi
-AC_MSG_RESULT($with_threads)
-
-AC_SUBST(THREADOBJ)
-if test "$with_threads" = "no"
+if test "$ac_cv_pthread_is_default" = yes
 then
-    USE_THREAD_MODULE="#"
-elif test "$ac_cv_pthread_is_default" = yes
-then
-    AC_DEFINE(WITH_THREAD)
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kpthread"
     fi
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kthread" = "yes"
 then
     CC="$CC -Kthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kthread"
     fi
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_pthread" = "yes"
 then
     CC="$CC -pthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -pthread"
     fi
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 else
     if test ! -z "$with_threads" -a -d "$with_threads"
     then LDFLAGS="$LDFLAGS -L$with_threads"
@@ -3002,43 +2954,36 @@ yes
 void * start_routine (void *arg) { exit (0); }]], [[
 pthread_create (NULL, NULL, start_routine, NULL)]])],[
     AC_MSG_RESULT(yes)
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"],[
+    ],[
     LIBS=$_libs
-    AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
+    AC_CHECK_FUNC(pthread_detach, [
     posix_threads=yes
-    THREADOBJ="Python/thread.o"],[
-    AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
+    ],[
+    AC_CHECK_LIB(pthreads, pthread_create, [
     posix_threads=yes
     LIBS="$LIBS -lpthreads"
-    THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
+    ], [
+    AC_CHECK_LIB(c_r, pthread_create, [
     posix_threads=yes
     LIBS="$LIBS -lc_r"
-    THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
+    ], [
+    AC_CHECK_LIB(pthread, __pthread_create_system, [
     posix_threads=yes
     LIBS="$LIBS -lpthread"
-    THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
+    ], [
+    AC_CHECK_LIB(cma, pthread_create, [
     posix_threads=yes
     LIBS="$LIBS -lcma"
-    THREADOBJ="Python/thread.o"],[
-    USE_THREAD_MODULE="#"])
+    ],[
+    AC_MSG_ERROR([could not find pthreads on your system])
+    ])
     ])])])])])
 
-    AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
+    AC_CHECK_LIB(mpc, usconfig, [
     LIBS="$LIBS -lmpc"
-    THREADOBJ="Python/thread.o"
-    USE_THREAD_MODULE=""])
+    ])
 
-    if test "$posix_threads" != "yes"; then
-      AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
-      LIBS="$LIBS -lthread"
-      THREADOBJ="Python/thread.o"
-      USE_THREAD_MODULE=""])
-    fi
 fi
 
 if test "$posix_threads" = "yes"; then
@@ -3301,6 +3246,40 @@ then
 fi
 AC_MSG_RESULT($with_pymalloc)
 
+# Check for --with-c-locale-coercion
+AC_MSG_CHECKING(for --with-c-locale-coercion)
+AC_ARG_WITH(c-locale-coercion,
+            AS_HELP_STRING([--with(out)-c-locale-coercion],
+              [disable/enable C locale coercion to a UTF-8 based locale]))
+
+if test -z "$with_c_locale_coercion"
+then
+    with_c_locale_coercion="yes"
+fi
+if test "$with_c_locale_coercion" != "no"
+then
+    AC_DEFINE(PY_COERCE_C_LOCALE, 1,
+      [Define if you want to coerce the C locale to a UTF-8 based locale])
+fi
+AC_MSG_RESULT($with_c_locale_coercion)
+
+# Check for --with-c-locale-warning
+AC_MSG_CHECKING(for --with-c-locale-warning)
+AC_ARG_WITH(c-locale-warning,
+            AS_HELP_STRING([--with(out)-c-locale-warning],
+              [disable/enable locale compatibility warning in the C locale]))
+
+if test -z "$with_c_locale_warning"
+then
+    with_c_locale_warning="yes"
+fi
+if test "$with_c_locale_warning" != "no"
+then
+    AC_DEFINE(PY_WARN_ON_C_LOCALE, 1,
+      [Define to emit a locale compatibility warning in the C locale])
+fi
+AC_MSG_RESULT($with_c_locale_warning)
+
 # Check for Valgrind support
 AC_MSG_CHECKING([for --with-valgrind])
 AC_ARG_WITH([valgrind],
@@ -3425,7 +3404,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
  pthread_init pthread_kill putenv pwrite readlink readlinkat readv realpath renameat \
- select sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
+ sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
@@ -4019,14 +3998,6 @@ fi
 
 AC_C_CHAR_UNSIGNED
 AC_C_CONST
-
-works=no
-AC_MSG_CHECKING(for working volatile)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[volatile int x; x = 0;]])],
-  [works=yes],
-  [AC_DEFINE(volatile, , [Define to empty if the keyword does not work.])]
-)
-AC_MSG_RESULT($works)
 
 works=no
 AC_MSG_CHECKING(for working signed char)
@@ -4726,11 +4697,6 @@ else
     [Define if you have the readline library (-lreadline).])
 fi
 
-# check for readline 2.1
-AC_CHECK_LIB(readline, rl_callback_handler_install,
-	AC_DEFINE(HAVE_RL_CALLBACK, 1,
-        [Define if you have readline 2.1]), ,$READLINE_LIBS)
-
 # check for readline 2.2
 AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
   [have_readline=yes],
@@ -5420,7 +5386,7 @@ if test "$have_getrandom" = yes; then
 fi
 
 # generate output files
-AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh)
+AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
@@ -5438,14 +5404,14 @@ fi
 
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
-			-s Modules Modules/Setup.config \
+			-s Modules \
 			Modules/Setup.local Modules/Setup
 mv config.c Modules
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
-    echo "If you want a release build with all optimizations active (LTO, PGO, etc)," >&AS_MESSAGE_FD
+    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&AS_MESSAGE_FD
     echo "please run ./configure --enable-optimizations" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD

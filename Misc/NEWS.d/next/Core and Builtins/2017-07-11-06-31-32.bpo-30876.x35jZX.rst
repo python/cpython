@@ -1,0 +1,3 @@
+Relative import from unloaded package now reimports the package instead of
+failing with SystemError.  Relative import from non-package now fails with
+ImportError rather than SystemError.

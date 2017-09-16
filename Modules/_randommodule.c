@@ -348,6 +348,7 @@ random_setstate(RandomObject *self, PyObject *state)
     int i;
     unsigned long element;
     long index;
+    uint32_t new_state[N];
 
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError,
@@ -364,7 +365,7 @@ random_setstate(RandomObject *self, PyObject *state)
         element = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(state, i));
         if (element == (unsigned long)-1 && PyErr_Occurred())
             return NULL;
-        self->state[i] = (uint32_t)element;
+        new_state[i] = (uint32_t)element;
     }
 
     index = PyLong_AsLong(PyTuple_GET_ITEM(state, i));
@@ -375,6 +376,8 @@ random_setstate(RandomObject *self, PyObject *state)
         return NULL;
     }
     self->index = (int)index;
+    for (i = 0; i < N; i++)
+        self->state[i] = new_state[i];
 
     Py_RETURN_NONE;
 }
@@ -432,7 +435,7 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     RandomObject *self;
     PyObject *tmp;
 
-    if (type == &Random_Type && !_PyArg_NoKeywords("Random()", kwds))
+    if (type == &Random_Type && !_PyArg_NoKeywords("Random", kwds))
         return NULL;
 
     self = (RandomObject *)type->tp_alloc(type, 0);

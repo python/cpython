@@ -173,12 +173,9 @@ typedef int Py_ssize_clean_t;
 /* fastest possible local call under MSVC */
 #define Py_LOCAL(type) static type __fastcall
 #define Py_LOCAL_INLINE(type) static __inline type __fastcall
-#elif defined(USE_INLINE)
-#define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static inline type
 #else
 #define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static type
+#define Py_LOCAL_INLINE(type) static inline type
 #endif
 
 /* Py_MEMCPY is kept for backwards compatibility,
@@ -644,7 +641,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 /* only get special linkage if built as shared or platform is Cygwin */
 #if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
 #       if defined(HAVE_DECLSPEC_DLL)
-#               ifdef Py_BUILD_CORE
+#               if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
 #                       define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
 #                       define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
         /* module init functions inside the core need no external linkage */
@@ -776,7 +773,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #define PY_LITTLE_ENDIAN 1
 #endif
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
 /*
  * Macros to protect CRT calls against instant termination when passed an
  * invalid parameter (issue23524).
@@ -798,6 +795,14 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 
 #ifdef __ANDROID__
 #include <android/api-level.h>
+#endif
+
+/* This macro used to tell whether Python was built with multithreading
+ * enabled.  Now multithreading is always enabled, but keep the macro
+ * for compatibility.
+ */
+#ifndef WITH_THREAD
+#define WITH_THREAD
 #endif
 
 #endif /* Py_PYPORT_H */

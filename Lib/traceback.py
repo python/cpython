@@ -253,8 +253,7 @@ class FrameSummary:
         self._line = line
         if lookup_line:
             self.line
-        self.locals = \
-            dict((k, repr(v)) for k, v in locals.items()) if locals else None
+        self.locals = {k: repr(v) for k, v in locals.items()} if locals else None
 
     def __eq__(self, other):
         if isinstance(other, FrameSummary):

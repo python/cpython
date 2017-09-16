@@ -93,14 +93,11 @@ def get_python_inc(plat_specific=0, prefix=None):
             # the build directory may not be the source directory, we
             # must use "srcdir" from the makefile to find the "Include"
             # directory.
-            base = _sys_home or project_base
             if plat_specific:
-                return base
-            if _sys_home:
-                incdir = os.path.join(_sys_home, get_config_var('AST_H_DIR'))
+                return _sys_home or project_base
             else:
                 incdir = os.path.join(get_config_var('srcdir'), 'Include')
-            return os.path.normpath(incdir)
+                return os.path.normpath(incdir)
         python_dir = 'python' + get_python_version() + build_flags
         return os.path.join(prefix, "include", python_dir)
     elif os.name == "nt":

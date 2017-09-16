@@ -1,0 +1,6 @@
+Improve signal delivery.
+
+Avoid using Py_AddPendingCall from signal handler, to avoid calling signal-
+unsafe functions. The tests I'm adding here fail without the rest of the
+patch, on Linux and OS X. This means our signal delivery logic had defects
+(some signals could be lost).
