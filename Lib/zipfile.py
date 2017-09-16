@@ -2008,14 +2008,16 @@ def main(args=None):
     mode = None
 
     description = 'A simple command-line interface for zipfile module.'
-    epilog = ' '.join([
-        'If a directory is passed as a parameter to create or append',
-        'it will be recursively added. Wildcards are supported, glob style,',
-        'and a wildcard such as **/*.py will recurse.  All recursion will',
-        'skip any directories starting with . such as .git, etc. if',
-        'you wish to include them you will need to add .**/* or similar as well.',
-        'Behavior is as for the glob.iglob() function.'
-    ])
+    epilog = (
+        'If a directory is passed as a parameter to create or append '
+        'it will be recursively added. Wildcards are supported, glob style, '
+        'and a wildcard such as **/*.py will recurse.  Recursion will '
+        'skip any directories starting with . such as .git, etc. if '
+        'you wish to include them you will need to add .**/* or similar, '
+        '(this is as the glob.iglob function).'
+        'N.B. You can only specify a single compression per invocation but '
+        'later adds do not have to use the same compression as previously used.'
+    )
     parser = argparse.ArgumentParser(description=description, epilog=epilog)
     parser.add_argument('-v', '--verbose', action='count')
     operation = parser.add_mutually_exclusive_group(required=True)
@@ -2023,29 +2025,38 @@ def main(args=None):
                            help='Show listing of a zipfile')
     operation.add_argument('-e', '--extract', nargs=2,
                            metavar=('<zipfile>', '<output_dir>'),
-                           help='Extract zipfile into target dir')
+                           help='Extract zipfile content into an output dir')
     operation.add_argument('-c', '--create', nargs='+',
                            metavar=('<name>', '<file>'),
-                           help='Create zipfile from files')
+                           help='Create a zip file from files')
     operation.add_argument('-a', '--append', nargs='+',
                            metavar=('<name>', '<file>'),
-                           help='Append files to zipfile')
+                           help='Append files to a new or existing zip file')
     operation.add_argument('-t', '--test', metavar='<zipfile>',
-                           help='Test if a zipfile is valid')
+                           help='Test if a zip file is valid')
     compression = parser.add_mutually_exclusive_group(required=False)
     compression.add_argument('-s', '--store', dest='compression',
                              action='store_const', const=ZIP_STORED,
-                             help="Add files with no compression.")
-    compression.add_argument('-d', '--deflate', dest='compression',
-                             action='store_const', const=ZIP_DEFLATED,
-                             help="Add files with deflate compression (Default).")
-    compression.add_argument('-b', '--bzip2', dest='compression',
-                             action='store_const', const=ZIP_BZIP2,
-                             help="Add files with BZIP2 compression.")
-    compression.add_argument('-z', '--lzma', dest='compression',
-                             action='store_const', const=ZIP_LZMA,
-                             help="Add files with LZMA compression.")
-    parser.set_defaults(compression=ZIP_DEFLATED)
+                             help="Store files (no compression)")
+    # For the following only give the option if it is currently available
+    if zlib:
+        compression.add_argument('-d', '--deflate', dest='compression',
+                                 action='store_const', const=ZIP_DEFLATED,
+                                 help="Use deflate compression (Default).")
+    if bz2:
+        compression.add_argument('-b', '--bzip2', dest='compression',
+                                 action='store_const', const=ZIP_BZIP2,
+                                 help="Use BZIP2 compression.")
+    if lzma:
+        compression.add_argument('-z', '--lzma', dest='compression',
+                                 action='store_const', const=ZIP_LZMA,
+                                 help="Use LZMA compression.")
+    # Set the default according to what is available
+    if zlib:
+        parser.set_defaults(compression=ZIP_DEFLATED)
+    else:
+        parser.set_defaults(compression=ZIP_STORED)
+
     args = parser.parse_args(args)
 
     if args.test is not None:
@@ -2056,7 +2067,8 @@ def main(args=None):
             badfile = zf.testzip()
         if badfile:
             print("The following enclosed file is corrupted: {!r}".format(badfile))
-        print("Done testing")
+        else:
+            print("No problems found.")
 
     elif args.list is not None:
         src = args.list

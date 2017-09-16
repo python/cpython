@@ -2196,7 +2196,7 @@ class CommandLineTest(unittest.TestCase):
         zip_name = findfile('zipdir.zip')
         for opt in '-t', '--test':
             out = self.zipfilecmd(opt, zip_name)
-            self.assertEqual(out.rstrip(), b'Done testing')
+            self.assertEqual(out.rstrip(), b'No problems found.')
         zip_name = findfile('testtar.tar')
         rc, out, err = self.zipfilecmd_failure('-t', zip_name)
         self.assertEqual(out, b'')

@@ -1875,7 +1875,7 @@ class TarFile(object):
         """
         self._check()
 
-        if members is None or members == []:  # None or empty list
+        if members is None or members == []:  # Members can be missing or empty
             members = self
         for tarinfo in members:
             if verbose:
@@ -2446,35 +2446,55 @@ open = TarFile.open
 
 
 def main():
+    """ Command line operation."""
     import argparse
-    compressions = {
-        # gz
-        '.gz': 'gz',
-        '.tgz': 'gz',
-        # xz
-        '.xz': 'xz',
-        '.txz': 'xz',
-        # bz2
-        '.bz2': 'bz2',
-        '.tbz': 'bz2',
-        '.tbz2': 'bz2',
-        '.tb2': 'bz2',
-    }
+    # We need to test which compression methods are available
+    try:
+        import zlib
+    except ImportError:
+        zlib = None
+    try:
+        import bz2
+    except ImportError:
+        bz2 = None
+    try:
+        import lzma
+    except ImportError:
+        lzma = None
+
+    compressions = {}  # Map of extension to method
+    if zlib:
+        compressions['.gz'] = 'gz'
+        compressions['.tgz'] = 'gz'
+    if lzma:
+        compressions['.xz'] = 'xz'
+        compressions['.txz'] = 'xz'
+    if bz2:
+        compressions['.bz2'] = 'bz2'
+        compressions['.tbz'] = 'bz2'
+        compressions['.tbz2'] = 'bz2'
+        compressions['.tb2'] = 'bz2'
+
+    available_compressions = ', '.join(compressions)
     tar_files = []
     tar_name = None
     tar_mode = None
 
     description = 'A simple command-line interface for tarfile module.'
-    epilog= ' '.join([
-        'When creating a tarfile, compression is determined by the filename\'s',
-        'final extention of any of %s. ' % ', '.join(compressions.keys()),
-        'If a directory is passed as a parameter to create or append',
-        'it will be recursively added. Wildcards are supported, glob style,',
-        'and a wildcard such as **/*.py will recurse, this recursion will',
-        'skip any files & directories starting with . such as .git, etc. if',
-        'you wish to include them you will need to add .**/* or similar as well.',
-        'Behavoir is as for the glob.iglob() function.'
-    ])
+    epilog= (
+        'If a directory is passed as a parameter to create or append '
+        'it will be recursively added. Wildcards are supported, glob style, '
+        'and wildcards such as **/*.py will recurse. Recursion will '
+        'skip any files & directories starting with . such as .git, etc., if '
+        'you wish to include them you will need to add .**/* or similar, '
+        '(this is as the glob.iglob function).'
+    )
+    if len(available_compressions):
+        epilog += (
+            '  When creating a tarfile, compression is determined by the '
+            'filename\'s final extension, (any of tar, '
+            f'{available_compressions}). '
+        )
     parser = argparse.ArgumentParser(
         description=description,
         epilog=epilog,
