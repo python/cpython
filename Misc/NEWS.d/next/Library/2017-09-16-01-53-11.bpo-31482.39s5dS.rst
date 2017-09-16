@@ -1,0 +1,1 @@
+``random.seed()`` now works with bytes in version=1
