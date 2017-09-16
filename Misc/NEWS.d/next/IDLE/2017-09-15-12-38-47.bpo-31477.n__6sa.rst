@@ -1,0 +1,2 @@
+IDLE - Improve rstrip entry in doc. Strip trailing whitespace strips more
+than blank spaces.  Multiline string literals are not skipped.

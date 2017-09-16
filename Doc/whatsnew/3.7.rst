@@ -296,9 +296,8 @@ Optimizations
   (Contributed by Serhiy Storchaka in :issue:`24821`.)
 
 * Fast implementation from standard C library is now used for functions
-  :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
-  :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
-  Storchaka in :issue:`26121`.)
+  :func:`~math.erf` and :func:`~math.erfc` in the :mod:`math` module.
+  (Contributed by Serhiy Storchaka in :issue:`26121`.)
 
 * The :func:`os.fwalk` function has been sped up by 2 times.  This was done
   using the :func:`os.scandir` function.
@@ -435,6 +434,12 @@ API and Feature Removals
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
 
+* :func:`collections.namedtuple` no longer supports the *verbose* parameter
+  or ``_source`` attribute which showed the generated source code for the
+  named tuple class.  This was part of an optimization designed to speed-up
+  class creation.  (Contributed by Jelle Zijlstra with further improvements
+  by INADA Naoki, Serhiy Storchaka, and Raymond Hettinger in :issue:`28638`.)
+
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now
   be passed only as positional argument.
@@ -479,9 +484,6 @@ Changes in the Python API
   anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
   and module are affected by this change. (Contributed by INADA Naoki and
   Eugene Toder in :issue:`29463`.)
-
-* ``PyInterpreterState`` no longer has a ``modules`` field.  Instead use
-  ``sys.modules``.
 
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
   permission bits of newly-created intermediate-level directories.

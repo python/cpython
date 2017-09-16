@@ -52,6 +52,11 @@ menudefs = [
    ('Find in Files...', '<<find-in-files>>'),
    ('R_eplace...', '<<replace>>'),
    ('Go to _Line', '<<goto-line>>'),
+   ('S_how Completions', '<<force-open-completions>>'),
+   ('E_xpand Word', '<<expand-word>>'),
+   ('Show C_all Tip', '<<force-open-calltip>>'),
+   ('Show Surrounding P_arens', '<<flash-paren>>'),
+
   ]),
 ('format', [
    ('_Indent Region', '<<indent-region>>'),
@@ -62,9 +67,13 @@ menudefs = [
    ('Untabify Region', '<<untabify-region>>'),
    ('Toggle Tabs', '<<toggle-tabs>>'),
    ('New Indent Width', '<<change-indentwidth>>'),
+   ('F_ormat Paragraph', '<<format-paragraph>>'),
+   ('S_trip Trailing Whitespace', '<<do-rstrip>>'),
    ]),
  ('run', [
    ('Python Shell', '<<open-python-shell>>'),
+   ('C_heck Module', '<<check-module>>'),
+   ('R_un Module', '<<run-module>>'),
    ]),
  ('shell', [
    ('_View Last Restart', '<<view-restart>>'),
@@ -80,7 +89,10 @@ menudefs = [
    ]),
  ('options', [
    ('Configure _IDLE', '<<open-config-dialog>>'),
-   None,
+   ('_Code Context', '<<toggle-code-context>>'),
+   ]),
+ ('windows', [
+   ('Zoom Height', '<<zoom-height>>'),
    ]),
  ('help', [
    ('_About IDLE', '<<about-idle>>'),
