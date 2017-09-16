@@ -820,6 +820,7 @@ class KeysPageTest(unittest.TestCase):
         self.assertEqual(d.load_keys_list.called, 1)
 
     def test_keybinding(self):
+        idleConf.SetOption('extensions', 'ZzDummy', 'enable', 'True')
         d = self.page
         d.custom_name.set('my custom keys')
         d.bindingslist.delete(0, 'end')
