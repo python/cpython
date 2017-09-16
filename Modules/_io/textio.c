@@ -1232,22 +1232,26 @@ convert_optional_bool(PyObject *obj, int default_value)
 
 static int
 textiowrapper_change_encoding(textio *self, PyObject *encoding,
-                              PyObject *errors)
+                              PyObject *errors, int newline_changed)
 {
-    const char *c_errors = PyUnicode_AsUTF8(errors);
-    if (c_errors == NULL) {
-        return -1;
-    }
     /* Use existing settings where new settings are not specified */
-    if (encoding == Py_None && errors == Py_None) {
+    if (encoding == Py_None && errors == Py_None && !newline_changed) {
         return 0;  // no change
     }
 
     if (encoding == Py_None) {
         encoding = self->encoding;
+        if (errors == Py_None) {
+            errors = self->errors;
+        }
     }
     else if (errors == Py_None) {
         errors = _PyUnicode_FromId(&PyId_strict);
+    }
+
+    const char *c_errors = PyUnicode_AsUTF8(errors);
+    if (c_errors == NULL) {
+        return -1;
     }
 
     // Create new encoder & decoder
@@ -1306,7 +1310,7 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
         }
     }
 
-    if (newline_obj != NULL) {
+    if (newline_obj != NULL && newline_obj != Py_None) {
         newline = PyUnicode_AsUTF8(newline_obj);
         if (newline == NULL || validate_newline(newline) < 0) {
             return NULL;
@@ -1328,11 +1332,12 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
     Py_DECREF(res);
     self->b2cratio = 0;
 
-    if (textiowrapper_change_encoding(self, encoding, errors) < 0) {
+    if (newline_obj != NULL && set_newline(self, newline) < 0) {
         return NULL;
     }
 
-    if (newline_obj != NULL && set_newline(self, newline) < 0) {
+    if (textiowrapper_change_encoding(
+            self, encoding, errors, newline_obj != NULL) < 0) {
         return NULL;
     }
 
