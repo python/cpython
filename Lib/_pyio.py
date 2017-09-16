@@ -2047,6 +2047,14 @@ class TextIOWrapper(TextIOBase):
 
         This also flushes the stream.
         """
+        if errors is None:
+            if encoding is None:
+                errors = self._errors
+            else:
+                errors = 'strict'
+        elif not isinstance(errors, str):
+            raise TypeError("invalid errors: %r" % errors)
+
         if encoding is None:
             encoding = self._encoding
         else:
@@ -2056,11 +2064,6 @@ class TextIOWrapper(TextIOBase):
             new_encoding = codecs.lookup(encoding).name
             if old_encoding == new_encoding:
                 encoding = self._encoding
-
-        if errors is None:
-            errors = self._errors
-        elif not isinstance(errors, str):
-            raise TypeError("invalid errors: %r" % errors)
 
         if (self._decoder is not None
                 and (encoding != self._encoding or errors != self._errors)):
