@@ -4931,7 +4931,7 @@ import_from(PyObject *v, PyObject *name)
         goto error;
     }
     if (!PyUnicode_Check(pkgname)) {
-        Py_DECREF(pkgname);
+        Py_CLEAR(pkgname);
         goto error;
     }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
@@ -4948,7 +4948,7 @@ import_from(PyObject *v, PyObject *name)
     return x;
  error:
     pkgpath = PyModule_GetFilenameObject(v);
-    if (pkgname == NULL || !PyUnicode_Check(pkgname)) {
+    if (pkgname == NULL) {
         pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
         if (pkgname_or_unknown == NULL) {
             Py_XDECREF(pkgpath);
