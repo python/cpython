@@ -994,7 +994,7 @@ ConfigParser Objects
 
       Attempt to read and parse a list of filenames, returning a list of
       filenames which were successfully parsed.
-      
+
       If *filenames* is a string, a :class:`bytes` object or a
       :term:`path-like object`, it is treated as
       a single filename.  If a file named in *filenames* cannot be opened, that
