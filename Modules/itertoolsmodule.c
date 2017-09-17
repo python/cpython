@@ -4630,7 +4630,7 @@ PyInit_itertools(void)
 {
     int i;
     PyObject *m;
-    char *name;
+    const char *name;
     PyTypeObject *typelist[] = {
         &accumulate_type,
         &combinations_type,
@@ -4663,10 +4663,9 @@ PyInit_itertools(void)
     for (i=0 ; typelist[i] != NULL ; i++) {
         if (PyType_Ready(typelist[i]) < 0)
             return NULL;
-        name = strchr(typelist[i]->tp_name, '.');
-        assert (name != NULL);
+        name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
+        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
     }
 
     return m;

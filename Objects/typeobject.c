@@ -388,11 +388,22 @@ check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *nam
     return 1;
 }
 
+const char *
+_PyType_Name(PyTypeObject *type)
+{
+    const char *s = strrchr(type->tp_name, '.');
+    if (s == NULL) {
+        s = type->tp_name;
+    }
+    else {
+        s++;
+    }
+    return s;
+}
+
 static PyObject *
 type_name(PyTypeObject *type, void *context)
 {
-    const char *s;
-
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)type;
 
@@ -400,12 +411,7 @@ type_name(PyTypeObject *type, void *context)
         return et->ht_name;
     }
     else {
-        s = strrchr(type->tp_name, '.');
-        if (s == NULL)
-            s = type->tp_name;
-        else
-            s++;
-        return PyUnicode_FromString(s);
+        return PyUnicode_FromString(_PyType_Name(type));
     }
 }
 
@@ -418,7 +424,7 @@ type_qualname(PyTypeObject *type, void *context)
         return et->ht_qualname;
     }
     else {
-        return type_name(type, context);
+        return PyUnicode_FromString(_PyType_Name(type));
     }
 }
 

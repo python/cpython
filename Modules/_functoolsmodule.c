@@ -1284,7 +1284,7 @@ PyInit__functools(void)
 {
     int i;
     PyObject *m;
-    char *name;
+    const char *name;
     PyTypeObject *typelist[] = {
         &partial_type,
         &lru_cache_type,
@@ -1306,10 +1306,9 @@ PyInit__functools(void)
             Py_DECREF(m);
             return NULL;
         }
-        name = strchr(typelist[i]->tp_name, '.');
-        assert (name != NULL);
+        name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
+        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
     }
     return m;
 }
