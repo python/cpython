@@ -414,6 +414,21 @@ class EditorWindow(object):
 
 
     def createmenubar(self):
+        """Populate the menu bar widget for the editor window.
+
+        Each option on the menubar is itself a cascade-type Menu widget
+        with the menubar as the parent.  The names, labels, and menu
+        shortcuts for the menubar items are stored in menu_specs.  Each
+        submenu is subsequently populated in fill_menus(), except for
+        'Recent Files' which is added to the File menu here.
+
+        Instance variables:
+        menubar: Menu widget containing first level menu items.
+        menudict: Dictionary of {menuname: Menu instance} items.  The keys
+            represent the valid menu items for this window and may be a
+            subset of all the menudefs available.
+        recent_files_menu: Menu widget contained within the 'file' menudict.
+        """
         mbar = self.menubar
         self.menudict = menudict = {}
         for name, label in self.menu_specs:
@@ -760,7 +775,13 @@ class EditorWindow(object):
         self.text['font'] = idleConf.GetFont(self.root, 'main','EditorWindow')
 
     def RemoveKeybindings(self):
-        "Remove the keybindings before they are changed."
+        """Remove the virtual, configurable keybindings.
+
+        This should be called before the keybindings are applied
+        in ApplyKeyBindings() otherwise the old bindings will still exist.
+        Note: this does not remove the Tk/Tcl keybindings attached to
+        Text widgets by default.
+        """
         # Called from configdialog.py
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         for event, keylist in keydefs.items():
@@ -772,7 +793,12 @@ class EditorWindow(object):
                     self.text.event_delete(event, *keylist)
 
     def ApplyKeybindings(self):
-        "Update the keybindings after they are changed"
+        """Apply the virtual, configurable keybindings.
+
+        The binding events are attached to self.text.  Also, the
+        menu accelerator keys are updated to match the current
+        configuration.
+        """
         # Called from configdialog.py
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         self.apply_bindings()
@@ -780,7 +806,8 @@ class EditorWindow(object):
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
             if xkeydefs:
                 self.apply_bindings(xkeydefs)
-        #update menu accelerators
+        # Update menu accelerators.
+        # XXX - split into its own function and call it from here?
         menuEventDict = {}
         for menu in self.mainmenu.menudefs:
             menuEventDict[menu[0]] = {}
@@ -815,24 +842,35 @@ class EditorWindow(object):
                                                   type='int')
 
     def reset_help_menu_entries(self):
-        "Update the additional help entries on the Help menu"
+        """Update the additional help entries on the Help menu.
+
+        First the existing additional help entries are removed from
+        the help menu, then the new help entries are added from idleConf.
+        """
         help_list = idleConf.GetAllExtraHelpSourcesList()
         helpmenu = self.menudict['help']
-        # first delete the extra help entries, if any
+        # First delete the extra help entries, if any.
         helpmenu_length = helpmenu.index(END)
         if helpmenu_length > self.base_helpmenu_length:
             helpmenu.delete((self.base_helpmenu_length + 1), helpmenu_length)
-        # then rebuild them
+        # Then rebuild them.
         if help_list:
             helpmenu.add_separator()
             for entry in help_list:
                 cmd = self.__extra_help_callback(entry[1])
                 helpmenu.add_command(label=entry[0], command=cmd)
-        # and update the menu dictionary
+        # And update the menu dictionary.
         self.menudict['help'] = helpmenu
 
     def __extra_help_callback(self, helpfile):
-        "Create a callback with the helpfile value frozen at definition time"
+        """Create a callback with the helpfile value frozen at definition time.
+
+        Args:
+            helpfile: Filename or website to open.
+
+        Returns:
+            Function to open the helpfile.
+        """
         def display_extra_help(helpfile=helpfile):
             if not helpfile.startswith(('www', 'http')):
                 helpfile = os.path.normpath(helpfile)
@@ -840,7 +878,7 @@ class EditorWindow(object):
                 try:
                     os.startfile(helpfile)
                 except OSError as why:
-                    tkMessageBox.showerror(title='Document Start Failure',
+                    self.showerror(title='Document Start Failure',
                         message=str(why), parent=self.text)
             else:
                 webbrowser.open(helpfile)
@@ -999,6 +1037,8 @@ class EditorWindow(object):
         if self.color:
             self.color.close(False)
             self.color = None
+        # Allow code context to close its text.after calls.
+        self.text.unbind('<<toggle-code-context>>')
         self.text = None
         self.tkinter_vars = None
         self.per.close()
@@ -1062,6 +1102,11 @@ class EditorWindow(object):
                     self.text.bind(vevent, getattr(ins, methodname))
 
     def apply_bindings(self, keydefs=None):
+        """Add the event bindings in keydefs to self.text.
+
+        Args:
+            keydefs: Virtual events and keybinding definitions.
+        """
         if keydefs is None:
             keydefs = self.mainmenu.default_keydefs
         text = self.text
@@ -1071,9 +1116,28 @@ class EditorWindow(object):
                 text.event_add(event, *keylist)
 
     def fill_menus(self, menudefs=None, keydefs=None):
-        """Add appropriate entries to the menus and submenus
+        """Add appropriate entries to the menus and submenus.
 
-        Menus that are absent or None in self.menudict are ignored.
+        The default menudefs and keydefs are loaded from idlelib.mainmenu.
+        Menus that are absent or None in self.menudict are ignored.  The
+        default menu type created for submenus from menudefs is `command`.
+        A submenu item of None results in a `separator` menu type.
+        A submenu name beginning with ! represents a `checkbutton` type.
+
+        The menus are stored in self.menudict.
+
+        Args:
+            menudefs: Menu and submenu names, underlines (shortcuts),
+                and events which is a list of tuples of the form:
+                [(menu1, [(submenu1a, '<<virtual event>>'),
+                          (submenu1b, '<<virtual event>>'), ...]),
+                 (menu2, [(submenu2a, '<<virtual event>>'),
+                          (submenu2b, '<<virtual event>>'), ...]),
+                ]
+            keydefs: Virtual events and keybinding definitions.  Used for
+                the 'accelerator' text on the menu.  Stored as a
+                dictionary of
+                {'<<virtual event>>': ['<binding1>', '<binding2>'],}
         """
         if menudefs is None:
             menudefs = self.mainmenu.menudefs
@@ -1123,6 +1187,17 @@ class EditorWindow(object):
             raise NameError(name)
 
     def get_var_obj(self, name, vartype=None):
+        """Return a tkinter variable instance for the event.
+
+        Cache vars in self.tkinter_vars as {name: Var instance}.
+
+        Args:
+            name: Event name.
+            vartype: Tkinter Var type.
+
+        Returns:
+            Tkinter Var instance.
+        """
         var = self.tkinter_vars.get(name)
         if not var and vartype:
             # create a Tkinter variable object with self.text as master:
@@ -1630,8 +1705,16 @@ class IndentSearcher(object):
 ### end autoindent code ###
 
 def prepstr(s):
-    # Helper to extract the underscore from a string, e.g.
-    # prepstr("Co_py") returns (2, "Copy").
+    """Extract the underscore from a string.
+
+    For example, prepstr("Co_py") returns (2, "Copy").
+
+    Args:
+        s: String with underscore.
+
+    Returns:
+        Tuple of (position of underscore, string without underscore).
+    """
     i = s.find('_')
     if i >= 0:
         s = s[:i] + s[i+1:]
@@ -1645,6 +1728,18 @@ keynames = {
 }
 
 def get_accelerator(keydefs, eventname):
+    """Return a formatted string for the keybinding of an event.
+
+    Convert the first keybinding for a given event to a form that
+    can be displayed as an accelerator on the menu.
+
+    Args:
+        keydefs: Dictionary of valid events to keybindings.
+        eventname: Event to retrieve keybinding for.
+
+    Returns:
+        Formatted string of the keybinding.
+    """
     keylist = keydefs.get(eventname)
     # issue10940: temporary workaround to prevent hang with OS X Cocoa Tk 8.5
     # if not keylist:
@@ -1654,14 +1749,23 @@ def get_accelerator(keydefs, eventname):
                             "<<change-indentwidth>>"}):
         return ""
     s = keylist[0]
+    # Convert strings of the form -singlelowercase to -singleuppercase.
     s = re.sub(r"-[a-z]\b", lambda m: m.group().upper(), s)
+    # Convert certain keynames to their symbol.
     s = re.sub(r"\b\w+\b", lambda m: keynames.get(m.group(), m.group()), s)
+    # Remove Key- from string.
     s = re.sub("Key-", "", s)
-    s = re.sub("Cancel","Ctrl-Break",s)   # dscherer@cmu.edu
+    # Convert Cancel to Ctrl-Break.
+    s = re.sub("Cancel", "Ctrl-Break", s)   # dscherer@cmu.edu
+    # Convert Control to Ctrl-.
     s = re.sub("Control-", "Ctrl-", s)
+    # Change - to +.
     s = re.sub("-", "+", s)
+    # Change >< to space.
     s = re.sub("><", " ", s)
+    # Remove <.
     s = re.sub("<", "", s)
+    # Remove >.
     s = re.sub(">", "", s)
     return s
 
