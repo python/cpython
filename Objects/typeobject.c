@@ -580,7 +580,7 @@ static int add_subclass(PyTypeObject*, PyTypeObject*);
 static int add_all_subclasses(PyTypeObject *type, PyObject *bases);
 static void remove_subclass(PyTypeObject *, PyTypeObject *);
 static void remove_all_subclasses(PyTypeObject *type, PyObject *bases);
-static void update_all_slots(PyTypeObject *);
+static int update_all_slots(PyTypeObject *);
 
 typedef int (*update_callback)(PyTypeObject *, void *);
 static int update_subclasses(PyTypeObject *type, PyObject *name,
@@ -736,7 +736,10 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
            add to all new_bases */
         remove_all_subclasses(type, old_bases);
         res = add_all_subclasses(type, new_bases);
-        update_all_slots(type);
+        /* FIXME: unclear if we must update the slots even on errors or not */
+        if (res == 0) {
+            res = update_all_slots(type);
+        }
     }
 
     Py_DECREF(old_bases);
@@ -1405,7 +1408,7 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 
    Variants:
 
-   - _PyObject_LookupSpecial() returns NULL without raising an exception
+   - _PyObject_LookupSpecial() returns NULL with or without raising an exception
      when the _PyType_Lookup() call fails;
 
    - lookup_maybe_method() and lookup_method() are internal routines similar
@@ -1418,8 +1421,9 @@ PyObject *
 _PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
 {
     PyObject *res;
+    int ignore;
 
-    res = _PyType_LookupId(Py_TYPE(self), attrid);
+    res = _PyType_LookupId(Py_TYPE(self), attrid, &ignore);
     if (res != NULL) {
         descrgetfunc f;
         if ((f = Py_TYPE(res)->tp_descr_get) == NULL)
@@ -1433,7 +1437,8 @@ _PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
 static PyObject *
 lookup_maybe_method(PyObject *self, _Py_Identifier *attrid, int *unbound)
 {
-    PyObject *res = _PyType_LookupId(Py_TYPE(self), attrid);
+    int ignore;
+    PyObject *res = _PyType_LookupId(Py_TYPE(self), attrid, &ignore);
     if (res == NULL) {
         return NULL;
     }
@@ -2074,7 +2079,7 @@ solid_base(PyTypeObject *type)
 static void object_dealloc(PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *);
-static void fixup_slot_dispatchers(PyTypeObject *);
+static int fixup_slot_dispatchers(PyTypeObject *);
 static int set_names(PyTypeObject *);
 static int init_subclass(PyTypeObject *, PyObject *);
 
@@ -2099,8 +2104,9 @@ static PyObject *
 get_dict_descriptor(PyTypeObject *type)
 {
     PyObject *descr;
+    int ignore;
 
-    descr = _PyType_LookupId(type, &PyId___dict__);
+    descr = _PyType_LookupId(type, &PyId___dict__, &ignore);
     if (descr == NULL || !PyDescr_IsData(descr))
         return NULL;
 
@@ -2361,34 +2367,38 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                           &bases, &PyDict_Type, &orig_dict))
         return NULL;
 
-    /* Determine the proper metatype to deal with this: */
-    winner = _PyType_CalculateMetaclass(metatype, bases);
-    if (winner == NULL) {
-        return NULL;
-    }
-
-    if (winner != metatype) {
-        if (winner->tp_new != type_new) /* Pass it to the winner */
-            return winner->tp_new(winner, args, kwds);
-        metatype = winner;
-    }
-
     /* Adjust for empty tuple bases */
     nbases = PyTuple_GET_SIZE(bases);
     if (nbases == 0) {
-        bases = PyTuple_Pack(1, &PyBaseObject_Type);
+        base = &PyBaseObject_Type;
+        bases = PyTuple_Pack(1, base);
         if (bases == NULL)
-            goto error;
+            return NULL;
         nbases = 1;
     }
-    else
-        Py_INCREF(bases);
+    else {
+        /* Search the bases for the proper metatype to deal with this: */
+        winner = _PyType_CalculateMetaclass(metatype, bases);
+        if (winner == NULL) {
+            return NULL;
+        }
 
-    /* Calculate best base, and check that all bases are type objects */
-    base = best_base(bases);
-    if (base == NULL) {
-        goto error;
+        if (winner != metatype) {
+            if (winner->tp_new != type_new) /* Pass it to the winner */
+                return winner->tp_new(winner, args, kwds);
+            metatype = winner;
+        }
+
+        /* Calculate best base, and check that all bases are type objects */
+        base = best_base(bases);
+        if (base == NULL) {
+            return NULL;
+        }
+
+        Py_INCREF(bases);
     }
+
+    /* Use "goto error" from this point on as we now own the reference to "bases". */
 
     dict = PyDict_Copy(orig_dict);
     if (dict == NULL)
@@ -2747,7 +2757,9 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         goto error;
 
     /* Put the proper slots in place */
-    fixup_slot_dispatchers(type);
+    if (fixup_slot_dispatchers(type) < 0) {
+        goto error;
+    }
 
     if (type->tp_dictoffset) {
         et->ht_cached_keys = _PyDict_NewKeysForClass();
@@ -2939,13 +2951,75 @@ PyType_GetSlot(PyTypeObject *type, int slot)
     return  *(void**)(((char*)type) + slotoffsets[slot]);
 }
 
-/* Internal API to look for a name through the MRO.
-   This returns a borrowed reference, and doesn't set an exception! */
-PyObject *
-_PyType_Lookup(PyTypeObject *type, PyObject *name)
+/* Internal API to look for a name through the MRO, bypassing the method cache.
+   This returns a borrowed reference, and might set an exception.
+   'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
+static PyObject *
+find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
 {
     Py_ssize_t i, n;
     PyObject *mro, *res, *base, *dict;
+    Py_hash_t hash;
+
+    if (!PyUnicode_CheckExact(name) ||
+        (hash = ((PyASCIIObject *) name)->hash) == -1)
+    {
+        hash = PyObject_Hash(name);
+        if (hash == -1) {
+            *error = -1;
+            return NULL;
+        }
+    }
+
+    /* Look in tp_dict of types in MRO */
+    mro = type->tp_mro;
+
+    if (mro == NULL) {
+        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0) {
+            if (PyType_Ready(type) < 0) {
+                *error = -1;
+                return NULL;
+            }
+            mro = type->tp_mro;
+        }
+        if (mro == NULL) {
+            *error = 1;
+            return NULL;
+        }
+    }
+
+    res = NULL;
+    /* Keep a strong reference to mro because type->tp_mro can be replaced
+       during dict lookup, e.g. when comparing to non-string keys. */
+    Py_INCREF(mro);
+    assert(PyTuple_Check(mro));
+    n = PyTuple_GET_SIZE(mro);
+    for (i = 0; i < n; i++) {
+        base = PyTuple_GET_ITEM(mro, i);
+        assert(PyType_Check(base));
+        dict = ((PyTypeObject *)base)->tp_dict;
+        assert(dict && PyDict_Check(dict));
+        res = _PyDict_GetItem_KnownHash(dict, name, hash);
+        if (res != NULL)
+            break;
+        if (PyErr_Occurred()) {
+            *error = -1;
+            goto done;
+        }
+    }
+    *error = 0;
+done:
+    Py_DECREF(mro);
+    return res;
+}
+
+/* Internal API to look for a name through the MRO.
+   This returns a borrowed reference, and might set an exception.
+   'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
+PyObject *
+_PyType_Lookup(PyTypeObject *type, PyObject *name, int *error)
+{
+    PyObject *res;
     unsigned int h;
 
     if (MCACHE_CACHEABLE_NAME(name) &&
@@ -2957,49 +3031,20 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 #if MCACHE_STATS
             method_cache_hits++;
 #endif
+            *error = 0;
             return method_cache[h].value;
         }
     }
 
-    /* Look in tp_dict of types in MRO */
-    mro = type->tp_mro;
+    /* We may end up clearing live exceptions below, so make sure it's ours. */
+    assert(!PyErr_Occurred());
 
-    if (mro == NULL) {
-        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0 &&
-            PyType_Ready(type) < 0) {
-            /* It's not ideal to clear the error condition,
-               but this function is documented as not setting
-               an exception, and I don't want to change that.
-               When PyType_Ready() can't proceed, it won't
-               set the "ready" flag, so future attempts to ready
-               the same type will call it again -- hopefully
-               in a context that propagates the exception out.
-            */
-            PyErr_Clear();
-            return NULL;
-        }
-        mro = type->tp_mro;
-        if (mro == NULL) {
-            return NULL;
-        }
+    res = find_name_in_mro(type, name, error);
+    /* Only put NULL results into cache if there was no error. */
+    if (*error) {
+        assert(*error == 1 || PyErr_Occurred());
+        return NULL;
     }
-
-    res = NULL;
-    /* keep a strong reference to mro because type->tp_mro can be replaced
-       during PyDict_GetItem(dict, name)  */
-    Py_INCREF(mro);
-    assert(PyTuple_Check(mro));
-    n = PyTuple_GET_SIZE(mro);
-    for (i = 0; i < n; i++) {
-        base = PyTuple_GET_ITEM(mro, i);
-        assert(PyType_Check(base));
-        dict = ((PyTypeObject *)base)->tp_dict;
-        assert(dict && PyDict_Check(dict));
-        res = PyDict_GetItem(dict, name);
-        if (res != NULL)
-            break;
-    }
-    Py_DECREF(mro);
 
     if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
         h = MCACHE_HASH_METHOD(type, name);
@@ -3015,17 +3060,20 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 #endif
         Py_SETREF(method_cache[h].name, name);
     }
+    *error = 0;
     return res;
 }
 
 PyObject *
-_PyType_LookupId(PyTypeObject *type, struct _Py_Identifier *name)
+_PyType_LookupId(PyTypeObject *type, struct _Py_Identifier *name, int *error)
 {
     PyObject *oname;
     oname = _PyUnicode_FromId(name);   /* borrowed */
-    if (oname == NULL)
+    if (oname == NULL) {
+        *error = -1;
         return NULL;
-    return _PyType_Lookup(type, oname);
+    }
+    return _PyType_Lookup(type, oname, error);
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
@@ -3036,6 +3084,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
     PyTypeObject *metatype = Py_TYPE(type);
     PyObject *meta_attribute, *attribute;
     descrgetfunc meta_get;
+    int error;
 
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
@@ -3054,7 +3103,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
     meta_get = NULL;
 
     /* Look for the attribute in the metatype */
-    meta_attribute = _PyType_Lookup(metatype, name);
+    meta_attribute = _PyType_Lookup(metatype, name, &error);
 
     if (meta_attribute != NULL) {
         meta_get = Py_TYPE(meta_attribute)->tp_descr_get;
@@ -3068,11 +3117,13 @@ type_getattro(PyTypeObject *type, PyObject *name)
                             (PyObject *)metatype);
         }
         Py_INCREF(meta_attribute);
+    } else if (error == -1) {
+        return NULL;
     }
 
     /* No data descriptor found on metatype. Look in tp_dict of this
      * type and its bases */
-    attribute = _PyType_Lookup(type, name);
+    attribute = _PyType_Lookup(type, name, &error);
     if (attribute != NULL) {
         /* Implement descriptor functionality, if any */
         descrgetfunc local_get = Py_TYPE(attribute)->tp_descr_get;
@@ -3088,6 +3139,9 @@ type_getattro(PyTypeObject *type, PyObject *name)
 
         Py_INCREF(attribute);
         return attribute;
+    } else if (error == -1) {
+        Py_XDECREF(meta_attribute);
+        return NULL;
     }
 
     /* No attribute found in local __dict__ (or bases): use the
@@ -6305,14 +6359,18 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *getattr, *getattribute, *res;
     _Py_IDENTIFIER(__getattr__);
+    int error;
 
     /* speed hack: we could use lookup_maybe, but that would resolve the
        method fully for each attribute lookup for classes with
        __getattr__, even when the attribute is present. So we use
        _PyType_Lookup and create the method only when needed, with
        call_attribute. */
-    getattr = _PyType_LookupId(tp, &PyId___getattr__);
+    getattr = _PyType_LookupId(tp, &PyId___getattr__, &error);
     if (getattr == NULL) {
+        if (error == -1) {
+            return NULL;
+        }
         /* No __getattr__ hook: use a simpler dispatcher */
         tp->tp_getattro = slot_tp_getattro;
         return slot_tp_getattro(self, name);
@@ -6323,13 +6381,17 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
        __getattr__, even when self has the default __getattribute__
        method. So we use _PyType_Lookup and create the method only when
        needed, with call_attribute. */
-    getattribute = _PyType_LookupId(tp, &PyId___getattribute__);
+    getattribute = _PyType_LookupId(tp, &PyId___getattribute__, &error);
+    if (getattribute == NULL && error == -1) {
+        Py_DECREF(getattr);
+        return NULL;
+    }
     if (getattribute == NULL ||
-        (Py_TYPE(getattribute) == &PyWrapperDescr_Type &&
-         ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
-         (void *)PyObject_GenericGetAttr))
+            (Py_TYPE(getattribute) == &PyWrapperDescr_Type &&
+             ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
+             (void *)PyObject_GenericGetAttr)) {
         res = PyObject_GenericGetAttr(self, name);
-    else {
+    } else {
         Py_INCREF(getattribute);
         res = call_attribute(self, getattribute, name);
         Py_DECREF(getattribute);
@@ -6438,9 +6500,13 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *get;
     _Py_IDENTIFIER(__get__);
+    int error;
 
-    get = _PyType_LookupId(tp, &PyId___get__);
+    get = _PyType_LookupId(tp, &PyId___get__, &error);
     if (get == NULL) {
+        if (error == -1) {
+            return NULL;
+        }
         /* Avoid further slowdowns */
         if (tp->tp_descr_get == slot_tp_descr_get)
             tp->tp_descr_get = NULL;
@@ -6948,6 +7014,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
     void *generic = NULL, *specific = NULL;
     int use_generic = 0;
     int offset = p->offset;
+    int error;
     void **ptr = slotptr(type, offset);
 
     if (ptr == NULL) {
@@ -6956,9 +7023,15 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         } while (p->offset == offset);
         return p;
     }
+    /* We may end up clearing live exceptions below, so make sure it's ours. */
+    assert(!PyErr_Occurred());
     do {
-        descr = _PyType_Lookup(type, p->name_strobj);
+        /* Use faster uncached lookup as we won't get any cache hits during type setup. */
+        descr = find_name_in_mro(type, p->name_strobj, &error);
         if (descr == NULL) {
+            if (error == -1) {
+                return NULL;
+            }
             if (ptr == (void**)&type->tp_iternext) {
                 specific = (void *)_PyObject_NextNotImplemented;
             }
@@ -7028,8 +7101,11 @@ update_slots_callback(PyTypeObject *type, void *data)
 {
     slotdef **pp = (slotdef **)data;
 
-    for (; *pp; pp++)
-        update_one_slot(type, *pp);
+    for (; *pp; pp++) {
+        if (update_one_slot(type, *pp) == NULL) {
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -7105,26 +7181,30 @@ update_slot(PyTypeObject *type, PyObject *name)
 /* Store the proper functions in the slot dispatches at class (type)
    definition time, based upon which operations the class overrides in its
    dict. */
-static void
+static int
 fixup_slot_dispatchers(PyTypeObject *type)
 {
     slotdef *p;
 
     init_slotdefs();
-    for (p = slotdefs; p->name; )
+    for (p = slotdefs; p && p->name; ) {
         p = update_one_slot(type, p);
+    }
+    return (p == NULL) ? -1 : 0;
 }
 
-static void
+static int
 update_all_slots(PyTypeObject* type)
 {
     slotdef *p;
 
     init_slotdefs();
     for (p = slotdefs; p->name; p++) {
-        /* update_slot returns int but can't actually fail */
-        update_slot(type, p->name_strobj);
+        if (update_slot(type, p->name_strobj) < 0) {
+            return -1;
+        }
     }
+    return 0;
 }
 
 /* Call __set_name__ on all descriptors in a newly generated type */

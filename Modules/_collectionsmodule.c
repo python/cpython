@@ -2257,6 +2257,7 @@ _count_elements(PyObject *self, PyObject *args)
     PyObject *dict_get;
     PyObject *mapping_setitem;
     PyObject *dict_setitem;
+    int error;
 
     if (!PyArg_UnpackTuple(args, "_count_elements", 2, 2, &mapping, &iterable))
         return NULL;
@@ -2268,10 +2269,22 @@ _count_elements(PyObject *self, PyObject *args)
     /* Only take the fast path when get() and __setitem__()
      * have not been overridden.
      */
-    mapping_get = _PyType_LookupId(Py_TYPE(mapping), &PyId_get);
-    dict_get = _PyType_LookupId(&PyDict_Type, &PyId_get);
-    mapping_setitem = _PyType_LookupId(Py_TYPE(mapping), &PyId___setitem__);
-    dict_setitem = _PyType_LookupId(&PyDict_Type, &PyId___setitem__);
+    mapping_get = _PyType_LookupId(Py_TYPE(mapping), &PyId_get, &error);
+    if (error == -1) {
+        goto done;
+    }
+    dict_get = _PyType_LookupId(&PyDict_Type, &PyId_get, &error);
+    if (error == -1) {
+        goto done;
+    }
+    mapping_setitem = _PyType_LookupId(Py_TYPE(mapping), &PyId___setitem__, &error);
+    if (error == -1) {
+        goto done;
+    }
+    dict_setitem = _PyType_LookupId(&PyDict_Type, &PyId___setitem__, &error);
+    if (error == -1) {
+        goto done;
+    }
 
     if (mapping_get != NULL && mapping_get == dict_get &&
         mapping_setitem != NULL && mapping_setitem == dict_setitem) {

@@ -1043,6 +1043,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     PyObject **dictptr, *dict;
     PyObject *attr;
     int meth_found = 0;
+    int error;
 
     assert(*method == NULL);
 
@@ -1055,7 +1056,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     if (tp->tp_dict == NULL && PyType_Ready(tp) < 0)
         return 0;
 
-    descr = _PyType_Lookup(tp, name);
+    descr = _PyType_Lookup(tp, name, &error);
     if (descr != NULL) {
         Py_INCREF(descr);
         if (PyFunction_Check(descr) ||
@@ -1069,6 +1070,8 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
                 return 0;
             }
         }
+    } else if (error == -1) {
+        return 0;
     }
 
     dictptr = _PyObject_GetDictPtr(obj);
@@ -1122,6 +1125,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
     descrgetfunc f;
     Py_ssize_t dictoffset;
     PyObject **dictptr;
+    int error;
 
     if (!PyUnicode_Check(name)){
         PyErr_Format(PyExc_TypeError,
@@ -1136,7 +1140,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
             goto done;
     }
 
-    descr = _PyType_Lookup(tp, name);
+    descr = _PyType_Lookup(tp, name, &error);
 
     f = NULL;
     if (descr != NULL) {
@@ -1146,6 +1150,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
             res = f(descr, obj, (PyObject *)obj->ob_type);
             goto done;
         }
+    } else if (error == -1) {
+        goto done;
     }
 
     if (dict == NULL) {
@@ -1216,6 +1222,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     descrsetfunc f;
     PyObject **dictptr;
     int res = -1;
+    int error;
 
     if (!PyUnicode_Check(name)){
         PyErr_Format(PyExc_TypeError,
@@ -1229,7 +1236,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
 
     Py_INCREF(name);
 
-    descr = _PyType_Lookup(tp, name);
+    descr = _PyType_Lookup(tp, name, &error);
 
     if (descr != NULL) {
         Py_INCREF(descr);
@@ -1238,6 +1245,8 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             res = f(descr, obj, value);
             goto done;
         }
+    } else if (error == -1) {
+        goto done;
     }
 
     if (dict == NULL) {

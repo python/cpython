@@ -199,9 +199,10 @@ normalizeUserObj(PyObject *obj)
         PyObject *self = fn->m_self;
         PyObject *name = PyUnicode_FromString(fn->m_ml->ml_name);
         PyObject *modname = fn->m_module;
+        int ignore;
 
         if (name != NULL) {
-            PyObject *mo = _PyType_Lookup(Py_TYPE(self), name);
+            PyObject *mo = _PyType_Lookup(Py_TYPE(self), name, &ignore);
             Py_XINCREF(mo);
             Py_DECREF(name);
             if (mo != NULL) {

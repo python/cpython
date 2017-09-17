@@ -138,13 +138,14 @@ method_getattro(PyObject *obj, PyObject *name)
     PyMethodObject *im = (PyMethodObject *)obj;
     PyTypeObject *tp = obj->ob_type;
     PyObject *descr = NULL;
+    int error;
 
     {
         if (tp->tp_dict == NULL) {
             if (PyType_Ready(tp) < 0)
                 return NULL;
         }
-        descr = _PyType_Lookup(tp, name);
+        descr = _PyType_Lookup(tp, name, &error);
     }
 
     if (descr != NULL) {
@@ -155,6 +156,8 @@ method_getattro(PyObject *obj, PyObject *name)
             Py_INCREF(descr);
             return descr;
         }
+    } else if (error == -1) {
+        return NULL;
     }
 
     return PyObject_GetAttr(im->im_func, name);
@@ -462,12 +465,13 @@ instancemethod_getattro(PyObject *self, PyObject *name)
 {
     PyTypeObject *tp = self->ob_type;
     PyObject *descr = NULL;
+    int error;
 
     if (tp->tp_dict == NULL) {
         if (PyType_Ready(tp) < 0)
             return NULL;
     }
-    descr = _PyType_Lookup(tp, name);
+    descr = _PyType_Lookup(tp, name, &error);
 
     if (descr != NULL) {
         descrgetfunc f = TP_DESCR_GET(descr->ob_type);
@@ -477,6 +481,8 @@ instancemethod_getattro(PyObject *self, PyObject *name)
             Py_INCREF(descr);
             return descr;
         }
+    } else if (error == -1) {
+        return NULL;
     }
 
     return PyObject_GetAttr(PyInstanceMethod_GET_FUNCTION(self), name);
