@@ -349,7 +349,10 @@ _pythread_nt_set_stacksize(size_t size)
 #define THREAD_SET_STACKSIZE(x) _pythread_nt_set_stacksize(x)
 
 
-/* Thread Local Storage (TLS) API, DEPRECATED since Python 3.7 */
+/* Thread Local Storage (TLS) API
+
+   This API is DEPRECATED since Python 3.7.  See PEP 539 for details.
+*/
 
 int
 PyThread_create_key(void)
@@ -409,7 +412,7 @@ PyThread_ReInitTLS(void)
 
 /* Thread Specific Storage (TSS) API
 
-   Implementation part of platform-specific
+   Platform-specific components of TSS API implementation.
 */
 
 int

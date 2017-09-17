@@ -149,7 +149,7 @@ that calls to PyThread_tss_create() are serialized externally.
 
 /* Thread Specific Storage (TSS) API
 
-   Implementation part of common
+   Cross-platform components of TSS API implementation.
 */
 
 Py_tss_t *
