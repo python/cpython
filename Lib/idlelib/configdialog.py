@@ -1700,8 +1700,6 @@ class KeysPage(Frame):
         self.cd.deactivate_current_config()
         # Remove key set from changes, config, and file.
         changes.delete_section('keys', keyset_name)
-        idleConf.userCfg['keys'].remove_section(keyset_name)
-        idleConf.userCfg['keys'].Save()
         # Reload user key set list.
         item_list = idleConf.GetSectionList('user', 'keys')
         item_list.sort()
