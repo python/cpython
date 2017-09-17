@@ -3,6 +3,51 @@ Released on 2018-06-18?
 ========================
 
 
+bpo-bpo-31414: Fix tk entry box tests by deleting first.
+Adding to an int entry is not the same as deleting and inserting
+because int('') will fail.  Patch by Terry Jan Reedy.
+
+bpo-27099: Convert IDLE's built-in 'extensions' to regular features.
+  About 10 IDLE features were implemented as supposedly optional
+extensions.  Their different behavior could be confusing or worse for
+users and not good for maintenance.  Hence the conversion.
+  The main difference for users is that user configurable key bindings
+for builtin features are now handled uniformly.  Now, editing a binding
+in a keyset only affects its value in the keyset.  All bindings are
+defined together in the system-specific default keysets in config-
+extensions.def.  All custom keysets are saved as a whole in config-
+extension.cfg.  All take effect as soon as one clicks Apply or Ok.
+   The affected events are '<<force-open-completions>>',
+'<<expand-word>>', '<<force-open-calltip>>', '<<flash-paren>>',
+'<<format-paragraph>>', '<<run-module>>', '<<check-module>>', and
+'<<zoom-height>>'.  Any (global) customizations made before 3.6.3 will
+not affect their keyset-specific customization after 3.6.3. and vice
+versa.
+  Inital patch by Charles Wohlganger, revised by Terry Jan Reedy.
+
+bpo-31051:  Rearrange condigdialog General tab.
+Sort non-Help options into Window (Shell+Editor) and Editor (only).
+Leave room for the addition of new options.
+Patch by Terry Jan Reedy.
+
+bpo-30617: Add docstrings and tests for outwin subclass of editor.
+Move some data and functions from the class to module level.
+Patch by Cheryl Sabella.
+
+bpo-31287: Do not modify tkinter.messagebox in test_configdialog.
+Instead, mask it with an instance mock that can be deleted.
+Patch by Terry Jan Reedy.
+
+bpo-30781: Use ttk widgets in ConfigDialog pages.
+These should especially look better on MacOSX.
+Patches by Terry Jan Reedy and Cheryl Sabella.
+
+bpo-31206: Factor HighPage(Frame) class from ConfigDialog.
+Patch by Cheryl Sabella.
+
+bp0-31001: Add tests for configdialog highlight tab.
+Patch by Cheryl Sabella.
+
 bpo-31205: Factor KeysPage(Frame) class from ConfigDialog.
 The slightly modified tests continue to pass.
 Patch by Cheryl Sabella.
@@ -32,6 +77,7 @@ broken by the switch to ttk.Notebook is fixed.
 Patch mostly by Cheryl Sabella.
 
 bpo-30781: IDLE - Use ttk Notebook in ConfigDialog.
+This improves navigation by tabbing.
 Patch by Terry Jan Reedy.
 
 bpo-31060: IDLE - Finish rearranging methods of ConfigDialog.

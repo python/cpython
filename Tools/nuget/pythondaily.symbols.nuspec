@@ -18,7 +18,7 @@
     <file src="python*.pdb" target="tools" exclude="*_d*" />
     <file src="*.pdb" target="tools\DLLs" exclude="python*;*_test*;xx*;_freeze*;*_d*;py.*;pyw.*;pyshellext.*" />
     <file src="*.pyd" target="tools\DLLs" exclude="python*;*_test*;xx*;_freeze*;*_d*;py.*;pyw.*;pyshellext.*" />
-    <file src="libeay32.dll;ssleay32.dll;sqlite3.dll" target="tools\DLLs" />
-    <file src="libeay32.pdb;ssleay32.pdb;sqlite3.pdb" target="tools\DLLs" />
+    <file src="libcrypto*.dll;libssl*.dll;sqlite3.dll" target="tools\DLLs" />
+    <file src="libcrypto*.pdb;libssl*.pdb;sqlite3.pdb" target="tools\DLLs" />
   </files>
 </package>

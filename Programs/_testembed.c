@@ -127,7 +127,7 @@ static int test_forced_io_encoding(void)
 
 /* *********************************************************
  * List of test cases and the function that implements it.
- * 
+ *
  * Names are compared case-sensitively with the first
  * argument. If no match is found, or no first argument was
  * provided, the names of all test cases are printed and
@@ -135,7 +135,7 @@ static int test_forced_io_encoding(void)
  *
  * The int returned from test functions is used as the exit
  * code, and test_capi treats all non-zero exit codes as a
- * failed test. 
+ * failed test.
  *********************************************************/
 struct TestCase
 {

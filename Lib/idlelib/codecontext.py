@@ -1,4 +1,4 @@
-"""codecontext - Extension to display the block context above the edit window
+"""codecontext - display the block context above the edit window
 
 Once code has scrolled off the top of a window, it can be difficult to
 determine which block you are in.  This extension implements a pane at the top
@@ -22,17 +22,14 @@ BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
 UPDATEINTERVAL = 100 # millisec
 FONTUPDATEINTERVAL = 1000 # millisec
 
-getspacesfirstword =\
-                   lambda s, c=re.compile(r"^(\s*)(\w*)"): c.match(s).groups()
+def getspacesfirstword(s, c=re.compile(r"^(\s*)(\w*)")):
+    return c.match(s).groups()
+
 
 class CodeContext:
-    menudefs = [('options', [('!Code Conte_xt', '<<toggle-code-context>>')])]
-    context_depth = idleConf.GetOption("extensions", "CodeContext",
-                                       "numlines", type="int", default=3)
-    bgcolor = idleConf.GetOption("extensions", "CodeContext",
-                                 "bgcolor", type="str", default="LightGray")
-    fgcolor = idleConf.GetOption("extensions", "CodeContext",
-                                 "fgcolor", type="str", default="Black")
+    bgcolor = "LightGray"
+    fgcolor = "Black"
+
     def __init__(self, editwin):
         self.editwin = editwin
         self.text = editwin.text
@@ -45,14 +42,25 @@ class CodeContext:
         # starts the toplevel 'block' of the module.
         self.info = [(0, -1, "", False)]
         self.topvisible = 1
-        visible = idleConf.GetOption("extensions", "CodeContext",
-                                     "visible", type="bool", default=False)
-        if visible:
-            self.toggle_code_context_event()
-            self.editwin.setvar('<<toggle-code-context>>', True)
         # Start two update cycles, one for context lines, one for font changes.
-        self.text.after(UPDATEINTERVAL, self.timer_event)
-        self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+        self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
+        self.t2 = self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+
+    @classmethod
+    def reload(cls):
+        cls.context_depth = idleConf.GetOption("extensions", "CodeContext",
+                                       "numlines", type="int", default=3)
+##        cls.bgcolor = idleConf.GetOption("extensions", "CodeContext",
+##                                     "bgcolor", type="str", default="LightGray")
+##        cls.fgcolor = idleConf.GetOption("extensions", "CodeContext",
+##                                     "fgcolor", type="str", default="Black")
+
+    def __del__(self):
+        try:
+            self.text.after_cancel(self.t1)
+            self.text.after_cancel(self.t2)
+        except:
+            pass
 
     def toggle_code_context_event(self, event=None):
         if not self.label:
@@ -71,14 +79,12 @@ class CodeContext:
             border = 0
             for widget in widgets:
                 border += widget.tk.getint(widget.cget('border'))
-            self.label = tkinter.Label(self.editwin.top,
-                                       text="\n" * (self.context_depth - 1),
-                                       anchor=W, justify=LEFT,
-                                       font=self.textfont,
-                                       bg=self.bgcolor, fg=self.fgcolor,
-                                       width=1, #don't request more than we get
-                                       padx=padx, border=border,
-                                       relief=SUNKEN)
+            self.label = tkinter.Label(
+                    self.editwin.top, text="\n" * (self.context_depth - 1),
+                    anchor=W, justify=LEFT, font=self.textfont,
+                    bg=self.bgcolor, fg=self.fgcolor,
+                    width=1, #don't request more than we get
+                    padx=padx, border=border, relief=SUNKEN)
             # Pack the label widget before and above the text_frame widget,
             # thus ensuring that it will appear directly above text_frame
             self.label.pack(side=TOP, fill=X, expand=False,
@@ -86,9 +92,6 @@ class CodeContext:
         else:
             self.label.destroy()
             self.label = None
-        idleConf.SetOption("extensions", "CodeContext", "visible",
-                           str(self.label is not None))
-        idleConf.SaveUserCfgFiles()
         return "break"
 
     def get_line_info(self, linenum):
@@ -169,11 +172,14 @@ class CodeContext:
     def timer_event(self):
         if self.label:
             self.update_code_context()
-        self.text.after(UPDATEINTERVAL, self.timer_event)
+        self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
 
     def font_timer_event(self):
         newtextfont = self.text["font"]
         if self.label and newtextfont != self.textfont:
             self.textfont = newtextfont
             self.label["font"] = self.textfont
-        self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+        self.t2 = self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+
+
+CodeContext.reload()

@@ -3913,9 +3913,8 @@ import_copyreg(void)
        by storing a reference to the cached module in a static variable, but
        this broke when multiple embedded interpreters were in use (see issue
        #17408 and #19088). */
-    copyreg_module = _PyImport_GetModuleWithError(copyreg_str);
+    copyreg_module = PyImport_GetModule(copyreg_str);
     if (copyreg_module != NULL) {
-        Py_INCREF(copyreg_module);
         return copyreg_module;
     }
     if (PyErr_Occurred()) {
