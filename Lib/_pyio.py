@@ -2060,10 +2060,6 @@ class TextIOWrapper(TextIOBase):
         else:
             if not isinstance(encoding, str):
                 raise TypeError("invalid encoding: %r" % encoding)
-            old_encoding = codecs.lookup(self._encoding).name
-            new_encoding = codecs.lookup(encoding).name
-            if old_encoding == new_encoding:
-                encoding = self._encoding
 
         if (self._decoder is not None
                 and (encoding != self._encoding or errors != self._errors)):

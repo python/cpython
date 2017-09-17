@@ -3329,20 +3329,6 @@ class TextIOWrapperTest(unittest.TestCase):
         F.tell = lambda x: 0
         t = self.TextIOWrapper(F(), encoding='utf-8')
 
-    def test_reconfigure_encoding_same_codec(self):
-        data = 'foobar\n'.encode('latin1')
-        raw = self.BytesIO(data)
-        txt = self.TextIOWrapper(raw, encoding='latin1')
-        self.assertEqual(txt.encoding, 'latin1')
-
-        # Just an alias, shouldn't change anything
-        txt.reconfigure(encoding='ISO-8859-1')
-        self.assertEqual(txt.encoding, 'latin1')
-
-        # This is an actual change
-        txt.reconfigure(encoding='iso8859-15')
-        self.assertEqual(txt.encoding, 'iso8859-15')
-
     def test_reconfigure_encoding_read(self):
         # latin1 -> utf8
         # (latin1 can decode utf-8 encoded string)
