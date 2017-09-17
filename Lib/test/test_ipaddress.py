@@ -477,6 +477,26 @@ class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
 class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Network
 
+    def test_reverse_pointer(self):
+        self.assertEqual(self.factory('0.0.0.0/0').reverse_pointer,
+                         'in-addr.arpa')
+        self.assertEqual(self.factory('127.0.0.0/8').reverse_pointer,
+                         '127.in-addr.arpa')
+        self.assertEqual(self.factory('127.128.0.0/9').reverse_pointer,
+                         '127.in-addr.arpa')
+        self.assertEqual(self.factory('127.254.0.0/15').reverse_pointer,
+                         '127.in-addr.arpa')
+        self.assertEqual(self.factory('127.255.0.0/16').reverse_pointer,
+                         '255.127.in-addr.arpa')
+        self.assertEqual(self.factory('127.255.123.0/24').reverse_pointer,
+                         '123.255.127.in-addr.arpa')
+        self.assertEqual(self.factory('127.255.123.128/25').reverse_pointer,
+                         '123.255.127.in-addr.arpa')
+        self.assertEqual(self.factory('127.255.123.254/31').reverse_pointer,
+                         '123.255.127.in-addr.arpa')
+        self.assertEqual(self.factory('127.111.222.255/32').reverse_pointer,
+                         '255.222.111.127.in-addr.arpa')
+
 
 class NetmaskTestMixin_v6(CommonTestMixin_v6):
     """Input validation on interfaces and networks is very similar"""
@@ -539,6 +559,18 @@ class InterfaceTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
 
 class NetworkTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
     factory = ipaddress.IPv6Network
+
+    def test_reverse_pointer(self):
+        self.assertEqual(self.factory('::/0').reverse_pointer,
+                         'ip6.arpa')
+        self.assertEqual(self.factory('2001:db8::/32').reverse_pointer,
+                         '8.b.d.0.1.0.0.2.ip6.arpa')
+        self.assertEqual(self.factory('2001:db8:1234::/48').reverse_pointer,
+                         '4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa')
+        self.assertEqual(self.factory('2001:db8:1234::/49').reverse_pointer,
+                         '4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa')
+        self.assertEqual(self.factory('2001:db8:1234:5678:90ab:cdef:cafe:b100').reverse_pointer,
+                         '0.0.1.b.e.f.a.c.f.e.d.c.b.a.0.9.8.7.6.5.4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa')
 
 
 class FactoryFunctionErrors(BaseTestCase):

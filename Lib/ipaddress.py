@@ -1555,6 +1555,19 @@ class IPv4Network(_BaseV4, _BaseNetwork):
                     self.broadcast_address in IPv4Network('100.64.0.0/10')) and
                 not self.is_private)
 
+    def _reverse_pointer(self):
+        """Return the reverse DNS pointer name for the IPv4 address.
+
+        This implements the method described in RFC1035 3.5.
+
+        For networks for which no exact domain is matched the covering domain is returned.
+
+        >>> IPv4Network('127.0.0.0/13').reverse_pointer
+        '127.in-addr.arpa
+        """
+        octets = str(self.network_address).split('.')[:self.prefixlen // 8]
+        return '.'.join(reversed(['arpa', 'in-addr'] + octets))
+
 
 class _IPv4Constants:
     _linklocal_network = IPv4Network('169.254.0.0/16')
@@ -2261,6 +2274,15 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         """
         return (self.network_address.is_site_local and
                 self.broadcast_address.is_site_local)
+
+    def _reverse_pointer(self):
+        """Return the reverse DNS pointer name for the IPv6 network.
+
+        This implements the method described in RFC3596 2.5.
+
+        """
+        chars = self.exploded.replace(':', '')[:self.prefixlen // 4]
+        return '.'.join(reversed(['arpa', 'ip6'] + list(chars)))
 
 
 class _IPv6Constants:
