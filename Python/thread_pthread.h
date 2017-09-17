@@ -613,12 +613,16 @@ _pythread_pthread_set_stacksize(size_t size)
 /* Thread Local Storage (TLS) API
 
    This API is DEPRECATED since Python 3.7.  See PEP 539 for details.
+*/
 
-   Issue #25658: POSIX hasn't defined that pthread_key_t is compatible
-   with int.  Note that if incompatible with int, PyThread_create_key
-   returns immediately a failure status and the other TLS functions
-   all are no-ops.  Moreover, PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT will
-   be unnecessary after removing this API.
+/* Issue #25658: On platforms where native TLS key is defined in a way that
+   cannot be safely cast to int, PyThread_create_key returns immediately a
+   failure status and other TLS functions all are no-ops.  This indicates
+   clearly that the old API is not supported on platforms where it cannot be
+   used reliably, and that no effort will be made to add such support.
+
+   Note: PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT will be unnecessary after
+   removing this API.
 */
 
 int
