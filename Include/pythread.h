@@ -115,7 +115,7 @@ typedef struct _Py_tss_t Py_tss_t;
     */
 #   define NATIVE_TSS_KEY_T     unsigned long
 #else
-#   error "Require native threads. See https://bugs.python.org/issue30832"
+#   error "Require native threads. See https://bugs.python.org/issue31370"
 #endif
 
 /* When Py_LIMITED_API is not defined, the type layout of Py_tss_t is in
