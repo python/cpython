@@ -266,6 +266,7 @@ const unsigned char _Py_ascii_whitespace[] = {
 
 /* forward */
 static PyUnicodeObject *_PyUnicode_New(Py_ssize_t length);
+static PyObject* unicode_char(Py_UCS4 ch);
 static PyObject* get_latin1_char(unsigned char ch);
 static PyObject* get_bmp_char(Py_UCS2 ch);
 static int unicode_modifiable(PyObject *unicode);
@@ -506,19 +507,15 @@ unicode_result_wchar(PyObject *unicode)
 
     if (len == 1) {
         wchar_t ch = _PyUnicode_WSTR(unicode)[0];
-        if ((Py_UCS4)ch < 256) {
-            PyObject *latin1_char = get_latin1_char((unsigned char)ch);
+#if SIZEOF_WCHAR_T == 2
+        Py_DECREF(unicode);
+        return unicode_char((Py_UCS2)ch);
+#else
+        if ((Py_UCS4)ch < 0x10000) {
             Py_DECREF(unicode);
-            return latin1_char;
+            return unicode_char((Py_UCS4)ch);
         }
-#if SIZEOF_WCHAR_T > 2
-        if ((Py_UCS4)ch < 0x10000)
 #endif
-        {
-            PyObject *bmp_char = get_bmp_char((Py_UCS2)ch);
-            Py_DECREF(unicode);
-            return bmp_char;
-        }
     }
 
     if (_PyUnicode_Ready(unicode) < 0) {
@@ -2113,7 +2110,13 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
     /* Single character Unicode objects can be shared when using this
        constructor. */
     if (size == 1) {
-        return unicode_char((Py_UCS4)*u);
+#if SIZEOF_WCHAR_T == 2
+        return unicode_char((Py_UCS2)*u);
+#else
+        if ((Py_UCS4)*u <= MAX_UNICODE) {
+            return unicode_char((Py_UCS4)*u);
+        }
+#endif
     }
 
     /* If not empty and not single character, copy the Unicode data
