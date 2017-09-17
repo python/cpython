@@ -1237,7 +1237,7 @@ class HighPage(Frame):
 
     def askyesno(self, *args, **kwargs):
         # Make testing easier.  Could change implementation.
-        messagebox.askyesno(*args, **kwargs)
+        return messagebox.askyesno(*args, **kwargs)
 
     def delete_custom(self):
         """Handle event to delete custom theme.
@@ -1683,7 +1683,7 @@ class KeysPage(Frame):
 
     def askyesno(self, *args, **kwargs):
         # Make testing easier.  Could change implementation.
-        messagebox.askyesno(*args, **kwargs)
+        return messagebox.askyesno(*args, **kwargs)
 
     def delete_custom_keys(self):
         """Handle event to delete a custom key set.
@@ -1700,6 +1700,8 @@ class KeysPage(Frame):
         self.cd.deactivate_current_config()
         # Remove key set from changes, config, and file.
         changes.delete_section('keys', keyset_name)
+        idleConf.userCfg['keys'].remove_section(keyset_name)
+        idleConf.userCfg['keys'].Save()
         # Reload user key set list.
         item_list = idleConf.GetSectionList('user', 'keys')
         item_list.sort()
