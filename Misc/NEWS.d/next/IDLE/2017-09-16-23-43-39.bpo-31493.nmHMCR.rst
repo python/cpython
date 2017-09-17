@@ -1,0 +1,3 @@
+IDLE code context -- fix code update and font update timers.
+
+Canceling timers prevents a warning message when test_idle completes.
