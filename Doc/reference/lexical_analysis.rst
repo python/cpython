@@ -680,7 +680,7 @@ Some examples of formatted string literals::
    >>> f"{today:%b %d, %Y}"  # using date format specifier
    'January 27, 2017'
    >>> number = 1024
-   >>> f"{number:#0x}"  # using integer presentation type as format specifier
+   >>> f"{number:#0x}"  # using integer format specifier
    '0x400'
 
 A consequence of sharing the same syntax as regular string literals is
