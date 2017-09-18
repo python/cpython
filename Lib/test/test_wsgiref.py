@@ -18,6 +18,7 @@ import os
 import re
 import signal
 import sys
+import threading
 import unittest
 
 
@@ -253,7 +254,6 @@ class IntegrationTests(TestCase):
         # BaseHandler._write() and _flush() have to write all data, even if
         # it takes multiple send() calls.  Test this by interrupting a send()
         # call with a Unix signal.
-        threading = support.import_module("threading")
         pthread_kill = support.get_attribute(signal, "pthread_kill")
 
         def app(environ, start_response):

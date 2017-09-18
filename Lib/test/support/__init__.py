@@ -2060,7 +2060,6 @@ def threading_cleanup(*original_values):
 def reap_threads(func):
     """Use this function when threads are being used.  This will
     ensure that the threads are cleaned up even when the test fails.
-    If threading is unavailable this function does nothing.
     """
     @functools.wraps(func)
     def decorator(*args):

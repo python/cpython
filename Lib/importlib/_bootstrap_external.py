@@ -1411,11 +1411,7 @@ def _setup(_bootstrap_module):
     setattr(self_module, 'path_separators', ''.join(path_separators))
 
     # Directly load the _thread module (needed during bootstrap).
-    try:
-        thread_module = _bootstrap._builtin_from_name('_thread')
-    except ImportError:
-        # Python was built without threads
-        thread_module = None
+    thread_module = _bootstrap._builtin_from_name('_thread')
     setattr(self_module, '_thread', thread_module)
 
     # Directly load the _weakref module (needed during bootstrap).

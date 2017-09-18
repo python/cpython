@@ -5,6 +5,7 @@ import itertools
 import os
 import array
 import socket
+import threading
 
 import unittest
 TestCase = unittest.TestCase
@@ -1077,8 +1078,6 @@ class BasicTest(TestCase):
 
     def test_response_fileno(self):
         # Make sure fd returned by fileno is valid.
-        threading = support.import_module("threading")
-
         serv = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
         self.addCleanup(serv.close)
