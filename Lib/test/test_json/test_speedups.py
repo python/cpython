@@ -38,7 +38,7 @@ class TestEncode(CTest):
             None)
 
     @test.support.cpython_only
-    def test_issueXXXXX(self):
+    def test_issue31505(self):
         # There shouldn't be an assertion failure in case c_make_encoder()
         # receives a bad encoder() argument.
         def _bad_encoder1(*args):
