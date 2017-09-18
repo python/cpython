@@ -218,7 +218,7 @@ def parseaddr(addr):
     """
     Parse address – which should be the value of some address-containing field such as To or Cc
     – into its constituent realname and email address parts.
-    Returns a tuple of that information, unless the parse fails, 
+    Returns a tuple of that information, unless the parse fails,
     in which case a 2-tuple of ('', '') is returned.
     """
     addrs = _AddressList(addr).addresslist
