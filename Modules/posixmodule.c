@@ -7570,20 +7570,54 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 {
 #ifdef MS_WINDOWS
     DWORD result;
+    DWORD flags = 0;
+
+    /* Assumed true, set to false if detected to not be available. */
+    static int windows_has_symlink_unprivileged_flag = TRUE;
 #else
     int result;
 #endif
 
 #ifdef MS_WINDOWS
 
+    if (windows_has_symlink_unprivileged_flag) {
+        /* Allow non-admin symlinks if system allows it. */
+        flags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
-    /* if src is a directory, ensure target_is_directory==1 */
-    target_is_directory |= _check_dirW(src->wide, dst->wide);
-    result = CreateSymbolicLinkW(dst->wide, src->wide,
-                                 target_is_directory);
-    _Py_END_SUPPRESS_IPH
+    /* if src is a directory, ensure flags==1 (target_is_directory bit) */
+    flags |= target_is_directory | _check_dirW(src->wide, dst->wide);
+
+    result = CreateSymbolicLinkW(dst->wide, src->wide, flags);
+	_Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
+
+    if (windows_has_symlink_unprivileged_flag && !result &&
+        ERROR_INVALID_PARAMETER == GetLastError()) {
+
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        /* This error might be caused by
+        SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE not being supported.
+        Try again, and update windows_has_symlink_unprivileged_flag if we
+        are successful this time.
+
+        NOTE: There is a risk of a race condition here if there are other
+        conditions than the flag causing ERROR_INVALID_PARAMETER, and
+        another process (or thread) changes that condition in between our
+        calls to CreateSymbolicLink.
+        */
+        flags &= ~(SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE);
+        result = CreateSymbolicLinkW(dst->wide, src->wide, flags);
+	    _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
+
+        if (result || ERROR_INVALID_PARAMETER != GetLastError()) {
+            windows_has_symlink_unprivileged_flag = FALSE;
+        }
+    }
 
     if (!result)
         return path_error2(src, dst);
