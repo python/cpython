@@ -3412,8 +3412,9 @@ static int
 xmlparser_gc_clear(XMLParserObject *self)
 {
     if (self->parser != NULL) {
-        EXPAT(ParserFree)(self->parser);
+        XML_Parser parser = self->parser;
         self->parser = NULL;
+        EXPAT(ParserFree)(parser);
     }
 
     Py_CLEAR(self->handle_close);
