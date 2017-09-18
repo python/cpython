@@ -134,7 +134,7 @@ Using a Socket
 ==============
 
 The first thing to note, is that the web browser's "client" socket and the web
-server's "client" socket are identical beasts. That is, this is a "peer to peer"
+server's "server" socket are identical beasts. That is, this is a "peer to peer"
 conversation. Or to put it another way, *as the designer, you will have to
 decide what the rules of etiquette are for a conversation*. Normally, the
 ``connect``\ ing socket starts the conversation, by sending in a request, or
