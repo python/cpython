@@ -5,7 +5,7 @@ import signal
 import os
 import sys
 from test import support
-thread = support.import_module('_thread')
+import _thread as thread
 import time
 
 if (sys.platform[:3] == 'win'):
