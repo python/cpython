@@ -23,14 +23,10 @@ threading API built on top of this module.
    single: pthreads
    pair: threads; POSIX
 
-The module is optional.  It is supported on Windows, Linux, SGI IRIX, Solaris
-2.x, as well as on systems that have a POSIX thread (a.k.a. "pthread")
-implementation.  For systems lacking the :mod:`_thread` module, the
-:mod:`_dummy_thread` module is available. It duplicates this module's interface
-and can be used as a drop-in replacement.
+.. versionchanged:: 3.7
+   This module used to be optional, it is now always available.
 
-It defines the following constants and functions:
-
+This module defines the following constants and functions:
 
 .. exception:: error
 
