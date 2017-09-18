@@ -1430,12 +1430,10 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
 {
     /* Return the JSON representation of a string */
     PyObject *encoded;
-    if (s->fast_encode) {
-        encoded = s->fast_encode(NULL, obj);
-    }
-    else {
-        encoded = PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
-    }
+
+    if (s->fast_encode)
+        return s->fast_encode(NULL, obj);
+    encoded = PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
     if (encoded != NULL && !PyUnicode_Check(encoded)) {
         PyErr_Format(PyExc_TypeError,
                      "encoder() must return a string, not %.80s",
