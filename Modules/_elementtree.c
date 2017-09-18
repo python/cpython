@@ -3411,7 +3411,10 @@ xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
 static int
 xmlparser_gc_clear(XMLParserObject *self)
 {
-    EXPAT(ParserFree)(self->parser);
+    if (self->parser != NULL) {
+        EXPAT(ParserFree)(self->parser);
+        self->parser = NULL;
+    }
 
     Py_CLEAR(self->handle_close);
     Py_CLEAR(self->handle_pi);
