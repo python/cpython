@@ -183,7 +183,9 @@ def show_socket_error(err, address):
     "Display socket error from manage_socket."
     import tkinter
     from tkinter.messagebox import showerror
+    from idlelib.util import fix_scaling
     root = tkinter.Tk()
+    fix_scaling(root)
     root.withdraw()
     msg = f"IDLE's subprocess can't connect to {address[0]}:{address[1]}.\n"\
           f"Fatal OSError #{err.errno}: {err.strerror}.\n"\
