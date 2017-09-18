@@ -1431,8 +1431,9 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
     /* Return the JSON representation of a string */
     PyObject *encoded;
 
-    if (s->fast_encode)
+    if (s->fast_encode) {
         return s->fast_encode(NULL, obj);
+    }
     encoded = PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
     if (encoded != NULL && !PyUnicode_Check(encoded)) {
         PyErr_Format(PyExc_TypeError,
