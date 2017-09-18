@@ -1,1 +1,1 @@
-xml.etree: Fix a crash when a parser if part of a reference cycle.
+xml.etree: Fix a crash when a parser is part of a reference cycle.
