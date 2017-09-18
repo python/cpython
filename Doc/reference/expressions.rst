@@ -1692,8 +1692,8 @@ precedence and have a left-to-right chaining feature as described in the
 | ``+``, ``-``                                  | Addition and subtraction            |
 +-----------------------------------------------+-------------------------------------+
 | ``*``, ``@``, ``/``, ``//``, ``%``            | Multiplication, matrix              |
-|                                               | multiplication division,            |
-|                                               | remainder [#]_                      |
+|                                               | multiplication, division, floor     |
+|                                               | division, remainder [#]_            |
 +-----------------------------------------------+-------------------------------------+
 | ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
 +-----------------------------------------------+-------------------------------------+
