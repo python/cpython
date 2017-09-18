@@ -619,14 +619,13 @@ class UtimeTests(unittest.TestCase):
 
         if not self.support_subsecond(self.fname):
             delta = 1.0
-        elif os.name == 'nt':
+        else:
             # On Windows, the usual resolution of time.time() is 15.6 ms.
             # bpo-30649: Tolerate 50 ms for slow Windows buildbots.
+            #
+            # x86 Gentoo Refleaks 3.x once failed with dt=20.2 ms. So use
+            # also 50 ms on other platforms.
             delta = 0.050
-        else:
-            # bpo-30649: PPC64 Fedora 3.x buildbot requires
-            # at least a delta of 14 ms
-            delta = 0.020
         st = os.stat(self.fname)
         msg = ("st_time=%r, current=%r, dt=%r"
                % (st.st_mtime, current, st.st_mtime - current))
