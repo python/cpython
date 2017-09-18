@@ -1,3 +1,1 @@
-xml.etree: xmlparser_gc_clear() now sets self.parser to NULL to prevent a
-crash in xmlparser_dealloc() if xmlparser_gc_clear() was called previously
-by the garbage collector, because the parser was part of a reference cycle.
+xml.etree: Fix a crash when a parser if part of a reference cycle.
