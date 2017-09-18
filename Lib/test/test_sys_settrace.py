@@ -889,13 +889,56 @@ output.append(4)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
 
 
+class FrameLocalsTestCase(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        sys.settrace(None)
+
+    def test_closures_are_not_implicitly_reset_to_previous_state(self):
+        # See https://bugs.python.org/issue30744 for details
+        i_from_generator = []
+        x_from_generator = []
+        x_from_nested_ref = []
+        x_from_nested_locals = []
+        def outer():
+            x = 0
+
+            def update_nested_refs():
+                x_from_nested_ref.append(x)
+                x_from_nested_locals.append(locals()["x"])
+
+            yield update_nested_refs
+            for i in range(1, 10):
+                i_from_generator.append(i)
+                x += 1
+                yield x
+
+        incrementing_generator = outer()
+        update_nested_refs = next(incrementing_generator)
+
+        def tracefunc(frame, event, arg):
+            x_from_generator.append(next(incrementing_generator))
+            return tracefunc
+
+        sys.settrace(tracefunc)
+        try:
+            update_nested_refs()
+            update_nested_refs()
+        finally:
+            sys.settrace(None)
+        self.assertEqual(x_from_generator, i_from_generator)
+        self.assertEqual(x_from_nested_ref, [2, 6])
+        self.assertEqual(x_from_nested_locals, [3, 7])
+
+
 def test_main():
     support.run_unittest(
         TraceTestCase,
         SkipLineEventsTraceTestCase,
         TraceOpcodesTestCase,
         RaisingTraceFuncTestCase,
-        JumpTestCase
+        JumpTestCase,
+        FrameLocalsTestCase
     )
 
 if __name__ == "__main__":

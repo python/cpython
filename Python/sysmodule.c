@@ -458,7 +458,8 @@ call_trampoline(PyObject* callback,
     PyObject *result;
     PyObject *stack[3];
 
-    if (PyFrame_FastToLocalsWithError(frame) < 0) {
+    /* Put any cell references into locals as the actual cells */
+    if (_PyFrame_FastToLocalsInternal(frame, 0) < 0) {
         return NULL;
     }
 
@@ -469,6 +470,10 @@ call_trampoline(PyObject* callback,
     /* call the Python-level function */
     result = _PyObject_FastCall(callback, stack, 3);
 
+    /* All local references will be written back here, but cell references
+       will only be written back here if they were changed to refer to
+       something other than the cell itself.
+    */
     PyFrame_LocalsToFast(frame, 1);
     if (result == NULL) {
         PyTraceBack_Here(frame);

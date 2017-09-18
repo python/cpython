@@ -78,6 +78,9 @@ PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
 
 PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
+#ifdef Py_BUILD_CORE
+int _PyFrame_FastToLocalsInternal(PyFrameObject *f, int); /* For sys.settrace */
+#endif
 
 PyAPI_FUNC(int) PyFrame_ClearFreeList(void);
 

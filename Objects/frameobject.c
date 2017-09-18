@@ -10,6 +10,17 @@
 
 #define OFF(x) offsetof(PyFrameObject, x)
 
+/* PEP558:
+ *
+ * Forward declaration of fastlocalsproxy
+ * PyEval_GetLocals will need a new PyFrame_GetLocals() helper function
+ * that ensures it always gets the snapshot reference and never the proxy
+ * even when tracing is enabled.
+ * That should probably be a public API for the benefit of third party debuggers
+ * implemented in C.
+ *
+ */
+
 static PyMemberDef frame_memberlist[] = {
     {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
     {"f_code",          T_OBJECT,       OFF(f_code),      READONLY},
@@ -813,18 +824,20 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 
    map and values are input arguments.  map is a tuple of strings.
    values is an array of PyObject*.  At index i, map[i] is the name of
-   the variable with value values[i].  The function copies the first
-   nmap variable from map/values into dict.  If values[i] is NULL,
-   the variable is deleted from dict.
+   the variable with value values[i].  The function gets the new value
+   for values[i] by looking up map[i] in the dict.
+
+   If clear is true and map[i] is missing from the dict, then values[i] is
+   set to NULL. If clear is false, then values[i] is left alone in that case.
 
    If deref is true, then the values being copied are cell variables
-   and the value is extracted from the cell variable before being put
-   in dict.  If clear is true, then variables in map but not in dict
-   are set to NULL in map; if clear is false, variables missing in
-   dict are ignored.
+   and the value is inserted into the cell variable rather than overwriting
+   the value directly. If the value in the dict *is* the cell itself, then
+   the cell value is left alone, and instead that value is written back
+   into the dict (replacing the cell reference).
 
-   Exceptions raised while modifying the dict are silently ignored,
-   because there is no good way to report them.
+   Exceptions raised while reading or updating the dict or updating a cell
+   reference are silently ignored, because there is no good way to report them.
 */
 
 static void
@@ -847,7 +860,16 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
         }
         if (deref) {
             assert(PyCell_Check(values[j]));
-            if (PyCell_GET(values[j]) != value) {
+            PyObject *cell_value = PyCell_GET(values[j]);
+            if (values[j] == value) {
+                /* The dict currently contains the cell itself, so write the
+                   cell's value into the dict rather than the other way around
+                */
+                if (PyObject_SetItem(dict, key, cell_value) != 0) {
+                    PyErr_Clear();
+                }
+            } else if (cell_value != value) {
+                /* Write the value from the dict back into the cell */
                 if (PyCell_Set(values[j], value) < 0)
                     PyErr_Clear();
             }
@@ -860,7 +882,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 }
 
 int
-PyFrame_FastToLocalsWithError(PyFrameObject *f)
+_PyFrame_FastToLocalsInternal(PyFrameObject *f, int deref)
 {
     /* Merge fast locals into f->f_locals */
     PyObject *locals, *map;
@@ -879,6 +901,14 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         if (locals == NULL)
             return -1;
     }
+    /* PEP558:
+     *
+     *   If a trace function is active, ensure f_locals is a fastlocalsproxy
+     *   instance, while locals still refers to the underlying mapping.
+     *   If a trace function is *not* active, discard the proxy, if any (and
+     *   invalidate its reference back to the frame) to disallow further writes.
+     */
+
     co = f->f_code;
     map = co->co_varnames;
     if (!PyTuple_Check(map)) {
@@ -898,8 +928,17 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
     ncells = PyTuple_GET_SIZE(co->co_cellvars);
     nfreevars = PyTuple_GET_SIZE(co->co_freevars);
     if (ncells || nfreevars) {
+        /* If deref is true, we'll replace cells with their values in the
+           namespace. If it's false, we'll include the cells themselves, which
+           means PyFrame_LocalsToFast will skip writing them back (unless
+           they've actually been modified).
+
+           The trace hook implementation relies on this to allow debuggers to
+           inject changes to local variables without inadvertently resetting
+           closure variables to a previous value.
+        */
         if (map_to_dict(co->co_cellvars, ncells,
-                        locals, fast + co->co_nlocals, 1))
+                        locals, fast + co->co_nlocals, deref))
             return -1;
 
         /* If the namespace is unoptimized, then one of the
@@ -912,11 +951,18 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         */
         if (co->co_flags & CO_OPTIMIZED) {
             if (map_to_dict(co->co_freevars, nfreevars,
-                            locals, fast + co->co_nlocals + ncells, 1) < 0)
+                            locals, fast + co->co_nlocals + ncells, deref) < 0)
                 return -1;
         }
     }
+
     return 0;
+}
+
+int
+PyFrame_FastToLocalsWithError(PyFrameObject *f)
+{
+    return _PyFrame_FastToLocalsInternal(f, 1);
 }
 
 void

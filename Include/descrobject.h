@@ -99,6 +99,10 @@ PyAPI_FUNC(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
 #endif
 
 PyAPI_FUNC(PyObject *) PyDictProxy_New(PyObject *);
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(PyObject *) _PyDictProxy_GetMapping(PyObject *);
+#endif
+
 PyAPI_FUNC(PyObject *) PyWrapper_New(PyObject *, PyObject *);
 
 
