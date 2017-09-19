@@ -1,1 +1,0 @@
-Fix error building socket module when multithreading is disabled.

@@ -1,1 +1,0 @@
-Fixed a crash when pass the iterable keyword argument to sorted().
