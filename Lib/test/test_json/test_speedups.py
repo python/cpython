@@ -1,5 +1,4 @@
 from test.test_json import CTest
-import test.support
 
 
 class BadBool:
