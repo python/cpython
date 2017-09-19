@@ -279,12 +279,15 @@ def exit():
 
 
 def fix_scaling(root):
+    """Scale fonts on HiDPI displays."""
     import tkinter.font
-    for name in tkinter.font.names(root):
-        font = tkinter.font.Font(root=root, name=name, exists=True)
-        size = int(font['size'])
-        if size < 0:
-            font['size'] = -size
+    scaling = float(root.tk.call('tk', 'scaling'))
+    if scaling >= 1.2:
+        for name in tkinter.font.names(root):
+            font = tkinter.font.Font(root=root, name=name, exists=True)
+            size = int(font['size'])
+            if size < 0:
+                font['size'] = -size
 
 
 class MyRPCServer(rpc.RPCServer):
