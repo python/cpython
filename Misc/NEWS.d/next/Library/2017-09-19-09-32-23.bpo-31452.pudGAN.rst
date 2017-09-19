@@ -1,0 +1,2 @@
+`asyncio.gather` (without return_exceptions) should cancel pending tasks if
+one fails
