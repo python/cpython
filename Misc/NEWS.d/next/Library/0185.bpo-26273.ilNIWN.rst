@@ -1,3 +1,0 @@
-Add new :data:`socket.TCP_CONGESTION` (Linux 2.6.13) and
-:data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
-Omar Sandoval.

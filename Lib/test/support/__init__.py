@@ -2060,7 +2060,6 @@ def threading_cleanup(*original_values):
 def reap_threads(func):
     """Use this function when threads are being used.  This will
     ensure that the threads are cleaned up even when the test fails.
-    If threading is unavailable this function does nothing.
     """
     @functools.wraps(func)
     def decorator(*args):
@@ -2105,6 +2104,16 @@ def wait_threads_exit(timeout=60.0):
                 raise AssertionError(msg)
             time.sleep(0.010)
             gc_collect()
+
+
+def join_thread(thread, timeout=30.0):
+    """Join a thread. Raise an AssertionError if the thread is still alive
+    after timeout seconds.
+    """
+    thread.join(timeout)
+    if thread.is_alive():
+        msg = f"failed to join the thread in {timeout:.1f} seconds"
+        raise AssertionError(msg)
 
 
 def reap_children():

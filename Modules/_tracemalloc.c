@@ -726,7 +726,7 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
 
                The GIL and the table lock ensures that only one thread is
                allocating memory. */
-            assert(0 && "should never happen");
+            Py_UNREACHABLE();
         }
         TABLES_UNLOCK();
     }

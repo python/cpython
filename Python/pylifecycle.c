@@ -42,6 +42,7 @@ _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(threading);
 
 #ifdef __cplusplus
 extern "C" {
@@ -283,7 +284,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
 {
     PyObject *importlib;
     PyObject *impmod;
-    PyObject *sys_modules;
     PyObject *value;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
@@ -314,11 +314,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     else if (Py_VerboseFlag) {
         PySys_FormatStderr("import _imp # builtin\n");
     }
-    sys_modules = PyImport_GetModuleDict();
-    if (Py_VerboseFlag) {
-        PySys_FormatStderr("import sys # builtin\n");
-    }
-    if (PyDict_SetItemString(sys_modules, "_imp", impmod) < 0) {
+    if (_PyImport_SetModuleString("_imp", impmod) < 0) {
         Py_FatalError("Py_Initialize: can't save _imp to sys.modules");
     }
 
@@ -1916,8 +1912,7 @@ wait_for_thread_shutdown(void)
 {
     _Py_IDENTIFIER(_shutdown);
     PyObject *result;
-    PyObject *modules = PyImport_GetModuleDict();
-    PyObject *threading = PyMapping_GetItemString(modules, "threading");
+    PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
     if (threading == NULL) {
         /* threading not imported */
         PyErr_Clear();
