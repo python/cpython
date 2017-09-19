@@ -1,0 +1,3 @@
+Fix assertion failures in case of failing to import from a module with a bad
+``__name__`` attribute, and in case of failing to access an attribute of such
+a module. Patch by Oren Milman.
