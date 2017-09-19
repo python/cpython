@@ -1,0 +1,3 @@
+Fix regression in ``add_subparsers``: subparsers are now required by
+default. For optional subparsers, ``required=False`` may be passed as a
+keyword argument to ``add_subparsers``.  Patch by Anthony Sottile
