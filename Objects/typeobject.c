@@ -3161,6 +3161,13 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     return res;
 }
 
+int
+_PyType_SetAttrObject(PyTypeObject *type, PyObject *name, PyObject *value)
+{
+    return type_setattro(type, name, value);
+}
+
+
 extern void
 _PyDictKeys_DecRef(PyDictKeysObject *keys);
 
@@ -4650,6 +4657,53 @@ PyTypeObject PyBaseObject_Type = {
 };
 
 
+PyDoc_STRVAR(PyInstanceDescriptor_Type__doc__,
+    "InstanceDescriptor base class");
+
+PyTypeObject PyInstanceDescriptor_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "InstanceDescriptor",                       /* tp_name */
+    sizeof(PyObject),                           /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    object_dealloc,                             /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    object_repr,                                /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    (hashfunc)_Py_HashPointer,                  /* tp_hash */
+    0,                                          /* tp_call */
+    object_str,                                 /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    PyObject_GenericSetAttr,                    /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | 
+      Py_TPFLAGS_INSTANCE_DESCRIPTOR_SUBCLASS,  /* tp_flags */
+    PyInstanceDescriptor_Type__doc__,           /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    object_richcompare,                         /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    object_methods,                             /* tp_methods */
+    0,                                          /* tp_members */
+    object_getsets,                             /* tp_getset */
+    &PyBaseObject_Type,                         /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    object_init,                                /* tp_init */
+    PyType_GenericAlloc,                        /* tp_alloc */
+    object_new,                                 /* tp_new */
+    PyObject_Del,                               /* tp_free */
+};
+
+
 /* Add the methods from tp_methods to the __dict__ in a type object */
 
 static int
@@ -4802,6 +4856,8 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyDict_Type))
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
+    else if (PyType_IsSubtype(base, &PyInstanceDescriptor_Type))
+        type->tp_flags |= Py_TPFLAGS_INSTANCE_DESCRIPTOR_SUBCLASS;
 }
 
 static int

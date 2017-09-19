@@ -1110,7 +1110,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot. */
 
 PyObject *
-_PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
+_PyObject_GenericGetAttrWithDictNoError(PyObject *obj, PyObject *name, PyObject *dict)
 {
     /* Make sure the logic of _PyObject_GetMethod is in sync with
        this method.
@@ -1192,11 +1192,23 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
         goto done;
     }
 
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
-                 tp->tp_name, name);
   done:
     Py_XDECREF(descr);
+    Py_DECREF(name);
+    return res;
+}
+
+PyObject *
+_PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
+{
+    Py_INCREF(name);
+    PyObject *res = _PyObject_GenericGetAttrWithDictNoError(obj, name, dict);
+    if (!(res || PyErr_Occurred())) {
+        PyTypeObject *tp = Py_TYPE(obj);
+        PyErr_Format(PyExc_AttributeError,
+                     "'%.50s' object has no attribute '%U'",
+                     tp->tp_name, name);
+    }
     Py_DECREF(name);
     return res;
 }

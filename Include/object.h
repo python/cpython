@@ -513,6 +513,8 @@ PyAPI_FUNC(void) PyType_Modified(PyTypeObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
+
+PyAPI_FUNC(int) _PyType_SetAttrObject(PyTypeObject *type, PyObject *name, PyObject *value);
 #endif
 
 /* Generic operations on objects */
@@ -566,6 +568,8 @@ PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
 #ifndef Py_LIMITED_API
 /* Same as PyObject_Generic{Get,Set}Attr, but passing the attributes
    dict as the last parameter. */
+PyAPI_FUNC(PyObject *)
+_PyObject_GenericGetAttrWithDictNoError(PyObject *obj, PyObject *name, PyObject *dict);
 PyAPI_FUNC(PyObject *)
 _PyObject_GenericGetAttrWithDict(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int)
@@ -647,6 +651,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
 
 /* These flags are used to determine if a type is a subclass. */
+#define Py_TPFLAGS_INSTANCE_DESCRIPTOR_SUBCLASS (1UL << 23)
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
 #define Py_TPFLAGS_LIST_SUBCLASS        (1UL << 25)
 #define Py_TPFLAGS_TUPLE_SUBCLASS       (1UL << 26)
@@ -1068,6 +1073,9 @@ _PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
 PyAPI_FUNC(void)
 _PyObject_DebugTypeStats(FILE *out);
 #endif /* ifndef Py_LIMITED_API */
+
+/* Instance descriptor base type */
+PyAPI_DATA(PyTypeObject) PyInstanceDescriptor_Type;
 
 #ifdef __cplusplus
 }

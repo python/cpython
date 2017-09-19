@@ -676,29 +676,97 @@ module_repr(PyModuleObject *m)
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }
 
+
 static PyObject*
-module_getattro(PyModuleObject *m, PyObject *name)
+module_getattro_raise(PyModuleObject *m, PyObject *name,
+    const char *fmt_with_module, const char *fmt_without_module)
 {
-    PyObject *attr, *mod_name;
-    attr = PyObject_GenericGetAttr((PyObject *)m, name);
-    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError))
-        return attr;
-    PyErr_Clear();
+    PyObject *mod_name;
+
     if (m->md_dict) {
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name) {
             PyErr_Format(PyExc_AttributeError,
-                        "module '%U' has no attribute '%U'", mod_name, name);
+                        fmt_with_module, mod_name, name);
             return NULL;
         }
-        else if (PyErr_Occurred()) {
+
+        if (PyErr_Occurred()) {
             PyErr_Clear();
         }
     }
-    PyErr_Format(PyExc_AttributeError,
-                "module has no attribute '%U'", name);
+
+    PyErr_Format(PyExc_AttributeError, fmt_without_module, name);
     return NULL;
+}
+
+static PyObject*
+module_getattro(PyModuleObject *m, PyObject *name)
+{
+    PyObject *attr = PyObject_GenericGetAttr((PyObject *)m, name);
+    if (attr) {
+        if (!PyType_FastSubclass(Py_TYPE(attr),
+                Py_TPFLAGS_INSTANCE_DESCRIPTOR_SUBCLASS)) {
+            return attr;
+        }
+
+        descrgetfunc f = attr->ob_type->tp_descr_get;
+        if (f) {
+            PyObject *res = f(attr, (PyObject *)m,
+                (PyObject *)m->ob_base.ob_type);
+
+            if (res) {
+                return res;
+            }
+
+            /* don't stomp on an existing error */
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
+
+            return module_getattro_raise(m, name,
+                "module '%U' property '%U' is invalid",
+                "module property '%U' is invalid");
+        }
+
+        return module_getattro_raise(m, name,
+            "module '%U' property '%U' is not readable",
+            "module property '%U' is not readable");
+    }
+
+    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        return NULL;
+    }
+
+    PyErr_Clear();
+    return module_getattro_raise(m, name,
+        "module '%U' has no attribute '%U'",
+        "module has no attribute '%U'");
+}
+
+static int
+module_setattro(PyModuleObject *m, PyObject *name, PyObject *value)
+{
+    PyObject *attr = _PyObject_GenericGetAttrWithDictNoError((PyObject *)m, name, NULL);
+    if (!attr) {
+        PyErr_Clear();
+    }
+    else if (PyType_FastSubclass(Py_TYPE(attr), Py_TPFLAGS_INSTANCE_DESCRIPTOR_SUBCLASS)) {
+        descrsetfunc f = attr->ob_type->tp_descr_set;
+        if (f) {
+            int res = f(attr, (PyObject *)m, value);
+            if (res) {
+                module_getattro_raise(m, name,
+                    "module '%U' property '%U' is invalid",
+                    "module property '%U' is invalid");
+                return -1;
+            }
+            return res;
+        }
+    }
+
+    return _PyObject_GenericSetAttrWithDict((PyObject *)m, name, value, NULL);
 }
 
 static int
@@ -772,7 +840,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     (getattrofunc)module_getattro,              /* tp_getattro */
-    PyObject_GenericSetAttr,                    /* tp_setattro */
+    (setattrofunc)module_setattro,              /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
