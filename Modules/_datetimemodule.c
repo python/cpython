@@ -1651,6 +1651,33 @@ multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
 }
 
 static PyObject *
+get_float_as_integer_ratio(PyObject *floatobj)
+{
+    PyObject *ratio;
+
+    assert(floatobj && PyFloat_Check(floatobj));
+    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
+    if (ratio == NULL) {
+        return NULL;
+    }
+    if (!PyTuple_Check(ratio)) {
+        PyErr_Format(PyExc_TypeError,
+                     "unexpected return type from as_integer_ratio(): "
+                     "expected tuple, got '%.200s'",
+                     Py_TYPE(ratio)->tp_name);
+        Py_DECREF(ratio);
+        return NULL;
+    }
+    if (PyTuple_Size(ratio) != 2) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_integer_ratio() must return a 2-tuple");
+        Py_DECREF(ratio);
+        return NULL;
+    }
+    return ratio;
+}
+
+static PyObject *
 multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
 {
     PyObject *result = NULL;
@@ -1660,9 +1687,10 @@ multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
     pyus_in = delta_to_microseconds(delta);
     if (pyus_in == NULL)
         return NULL;
-    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
-    if (ratio == NULL)
+    ratio = get_float_as_integer_ratio(floatobj);
+    if (ratio == NULL) {
         goto error;
+    }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 0));
     Py_DECREF(pyus_in);
     pyus_in = NULL;
@@ -1758,9 +1786,10 @@ truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *f)
     pyus_in = delta_to_microseconds(delta);
     if (pyus_in == NULL)
         return NULL;
-    ratio = _PyObject_CallMethodId(f, &PyId_as_integer_ratio, NULL);
-    if (ratio == NULL)
+    ratio = get_float_as_integer_ratio(f);
+    if (ratio == NULL) {
         goto error;
+    }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 1));
     Py_DECREF(pyus_in);
     pyus_in = NULL;
