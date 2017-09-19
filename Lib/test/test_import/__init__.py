@@ -353,6 +353,18 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             from test_from_import_AttributeError import does_not_exist
 
+    @cpython_only
+    def test_issue31492(self):
+        # There shouldn't be an assertion failure in case of failing to import
+        # from a module with a bad __name__ attribute, or in case of failing
+        # to access an attribute of such a module.
+        with swap_attr(os, '__name__', None):
+            with self.assertRaises(ImportError):
+                from os import does_not_exist
+
+            with self.assertRaises(AttributeError):
+                os.does_not_exist
+
     def test_concurrency(self):
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
         try:
