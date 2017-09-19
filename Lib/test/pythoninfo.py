@@ -2,6 +2,7 @@
 Collect various informations about Python to help debugging test failures.
 """
 from __future__ import print_function
+import errno
 import re
 import sys
 import traceback
@@ -223,11 +224,17 @@ def collect_os(info_add):
     if hasattr(os, 'getrandom'):
         # PEP 524: Check if system urandom is initialized
         try:
-            os.getrandom(1, os.GRND_NONBLOCK)
-            state = 'ready (initialized)'
-        except BlockingIOError as exc:
-            state = 'not seeded yet (%s)' % exc
-        info_add('os.getrandom', state)
+            try:
+                os.getrandom(1, os.GRND_NONBLOCK)
+                state = 'ready (initialized)'
+            except BlockingIOError as exc:
+                state = 'not seeded yet (%s)' % exc
+            info_add('os.getrandom', state)
+        except OSError as exc:
+            # Python was compiled on a more recent Linux version
+            # than the current Linux kernel: ignore OSError(ENOSYS)
+            if exc.errno != errno.ENOSYS:
+                raise
 
 
 def collect_readline(info_add):
