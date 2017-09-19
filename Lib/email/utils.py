@@ -218,8 +218,8 @@ def parseaddr(addr):
     """
     Parse addr into its constituent realname and email address parts.
     
-    Return a tuple of realname and email address, unless the parse fails, in which
-    case return a 2-tuple of ('', '').
+    Return a tuple of realname and email address, unless the parse fails, in
+    which case return a 2-tuple of ('', '').
     """
     addrs = _AddressList(addr).addresslist
     if not addrs:
