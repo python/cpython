@@ -1,6 +1,7 @@
 /* Type object implementation */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "frameobject.h"
 #include "structmember.h"
 
@@ -29,9 +30,9 @@ class object "PyObject *" "&PyBaseObject_Type"
 #define MCACHE_HASH_METHOD(type, name)                                  \
         MCACHE_HASH((type)->tp_version_tag,                     \
                     ((PyASCIIObject *)(name))->hash)
-#define MCACHE_CACHEABLE_NAME(name)                                     \
-        PyUnicode_CheckExact(name) &&                            \
-        PyUnicode_READY(name) != -1 &&                      \
+#define MCACHE_CACHEABLE_NAME(name)                             \
+        PyUnicode_CheckExact(name) &&                           \
+        PyUnicode_IS_READY(name) &&                             \
         PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE
 
 struct method_cache_entry {
@@ -387,11 +388,22 @@ check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *nam
     return 1;
 }
 
+const char *
+_PyType_Name(PyTypeObject *type)
+{
+    const char *s = strrchr(type->tp_name, '.');
+    if (s == NULL) {
+        s = type->tp_name;
+    }
+    else {
+        s++;
+    }
+    return s;
+}
+
 static PyObject *
 type_name(PyTypeObject *type, void *context)
 {
-    const char *s;
-
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)type;
 
@@ -399,12 +411,7 @@ type_name(PyTypeObject *type, void *context)
         return et->ht_name;
     }
     else {
-        s = strrchr(type->tp_name, '.');
-        if (s == NULL)
-            s = type->tp_name;
-        else
-            s++;
-        return PyUnicode_FromString(s);
+        return PyUnicode_FromString(_PyType_Name(type));
     }
 }
 
@@ -417,7 +424,7 @@ type_qualname(PyTypeObject *type, void *context)
         return et->ht_qualname;
     }
     else {
-        return type_name(type, context);
+        return PyUnicode_FromString(_PyType_Name(type));
     }
 }
 
@@ -1157,10 +1164,10 @@ subtype_dealloc(PyObject *self)
     /* UnTrack and re-Track around the trashcan macro, alas */
     /* See explanation at end of function for full disclosure */
     PyObject_GC_UnTrack(self);
-    ++_PyTrash_delete_nesting;
+    ++_PyRuntime.gc.trash_delete_nesting;
     ++ tstate->trash_delete_nesting;
     Py_TRASHCAN_SAFE_BEGIN(self);
-    --_PyTrash_delete_nesting;
+    --_PyRuntime.gc.trash_delete_nesting;
     -- tstate->trash_delete_nesting;
 
     /* Find the nearest base with a different tp_dealloc */
@@ -1254,10 +1261,10 @@ subtype_dealloc(PyObject *self)
       Py_DECREF(type);
 
   endlabel:
-    ++_PyTrash_delete_nesting;
+    ++_PyRuntime.gc.trash_delete_nesting;
     ++ tstate->trash_delete_nesting;
     Py_TRASHCAN_SAFE_END(self);
-    --_PyTrash_delete_nesting;
+    --_PyRuntime.gc.trash_delete_nesting;
     -- tstate->trash_delete_nesting;
 
     /* Explanation of the weirdness around the trashcan macros:
@@ -1297,7 +1304,7 @@ subtype_dealloc(PyObject *self)
           a subtle disaster.
 
        Q. Why the bizarre (net-zero) manipulation of
-          _PyTrash_delete_nesting around the trashcan macros?
+          _PyRuntime.trash_delete_nesting around the trashcan macros?
 
        A. Some base classes (e.g. list) also use the trashcan mechanism.
           The following scenario used to be possible:
@@ -3901,7 +3908,6 @@ import_copyreg(void)
 {
     PyObject *copyreg_str;
     PyObject *copyreg_module;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
     _Py_IDENTIFIER(copyreg);
 
     copyreg_str = _PyUnicode_FromId(&PyId_copyreg);
@@ -3913,9 +3919,8 @@ import_copyreg(void)
        by storing a reference to the cached module in a static variable, but
        this broke when multiple embedded interpreters were in use (see issue
        #17408 and #19088). */
-    copyreg_module = PyDict_GetItemWithError(interp->modules, copyreg_str);
+    copyreg_module = PyImport_GetModule(copyreg_str);
     if (copyreg_module != NULL) {
-        Py_INCREF(copyreg_module);
         return copyreg_module;
     }
     if (PyErr_Occurred()) {

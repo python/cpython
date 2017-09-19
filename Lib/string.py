@@ -57,7 +57,7 @@ class _TemplateMetaclass(type):
     %(delim)s(?:
       (?P<escaped>%(delim)s) |   # Escape sequence of two delimiters
       (?P<named>%(id)s)      |   # delimiter and a Python identifier
-      {(?P<braced>%(id)s)}   |   # delimiter and a braced identifier
+      {(?P<braced>%(bid)s)}  |   # delimiter and a braced identifier
       (?P<invalid>)              # Other ill-formed delimiter exprs
     )
     """
@@ -70,6 +70,7 @@ class _TemplateMetaclass(type):
             pattern = _TemplateMetaclass.pattern % {
                 'delim' : _re.escape(cls.delimiter),
                 'id'    : cls.idpattern,
+                'bid'   : cls.braceidpattern or cls.idpattern,
                 }
         cls.pattern = _re.compile(pattern, cls.flags | _re.VERBOSE)
 
@@ -79,6 +80,7 @@ class Template(metaclass=_TemplateMetaclass):
 
     delimiter = '$'
     idpattern = r'[_a-z][_a-z0-9]*'
+    braceidpattern = None
     flags = _re.IGNORECASE
 
     def __init__(self, template):
