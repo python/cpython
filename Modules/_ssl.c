@@ -2746,6 +2746,34 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
 
+#ifdef SSL_CTX_set_min_proto_version
+    /* Workaround for Debian's OpenSSL patch
+     *
+     * Debian disables SSL 3.0, TLS 1.0, and TLS 1.1 by default. Python
+     * does not expose the new OpenSSL 1.1 API that is required  to
+     * re-enable the old protocols. Documentation also promises that
+     * PROTOCOL_TLS has TLS 1.0 and 1.1 enabled and SSLv3 can be enabled
+     * by changing SSLContext.options.
+     */
+    if ((proto_version == PY_SSL_VERSION_TLS) ||
+            (proto_version == PY_SSL_VERSION_TLS_CLIENT) ||
+            (proto_version == PY_SSL_VERSION_TLS_SERVER)) {
+#if !defined(OPENSSL_NO_SSL3)
+        result = SSL_CTX_set_min_proto_version(ctx, SSL3_VERSION);
+#elif !defined(OPENSSL_NO_TLS1)
+        result = SSL_CTX_set_min_proto_version(ctx, TLS1_VERSION);
+#elif !defined(OPENSSL_NO_TLS1_1)
+        result = SSL_CTX_set_min_proto_version(ctx, TLS1_1_VERSION);
+    #else
+        result = 1;
+    #endif
+        if (result == 0) {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+            return NULL;
+        }
+    }
+#endif /* SSL_CTX_set_min_proto_version */
+
     assert(type != NULL && type->tp_alloc != NULL);
     self = (PySSLContext *) type->tp_alloc(type, 0);
     if (self == NULL) {

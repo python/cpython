@@ -1,0 +1,4 @@
+Undo Debian Unstable's patching for SSL_CTX. Allow all protocols with
+SSL_CTX_set_min_proto_version() again so they can be enabled and disabled
+with SSL_CTX_set_options(). The set_min_proto_version is not supported by
+Python, set_options is available as SSLContext.options.
