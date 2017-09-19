@@ -216,12 +216,10 @@ def parsedate_to_datetime(data):
 
 def parseaddr(addr):
     """
-    Parse address into its constituent 
-    realname and email address parts
+    Parse addr into its constituent realname and email address parts.
     
-    Returns a tuple of realname and email address,
-    unless the parse fails,
-    in which case a 2-tuple of ('', '') is returned.
+    Return a tuple of realname and email address, unless the parse fails, in which
+    case return a 2-tuple of ('', '')
     """
     addrs = _AddressList(addr).addresslist
     if not addrs:
