@@ -660,8 +660,7 @@ class GenericTests(BaseTestCase):
         self.assertNotEqual(Z, Y[int])
         self.assertNotEqual(Z, Y[T])
 
-        self.assertTrue(str(Z).endswith(
-            '.C[typing.Tuple[str, int]]'))
+        self.assertTrue(repr(Z).endswith('.C[typing.Tuple[str, int]]'))
 
     def test_new_repr(self):
         T = TypeVar('T')

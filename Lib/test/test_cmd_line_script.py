@@ -157,7 +157,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(expected_msg.encode('utf-8'), err)
 
     def test_dash_c_loader(self):
-        rc, out, err = assert_python_ok("-c", "print(__loader__)")
+        rc, out, err = assert_python_ok("-c", "print(repr(__loader__))")
         expected = repr(importlib.machinery.BuiltinImporter).encode("utf-8")
         self.assertIn(expected, out)
 
@@ -167,7 +167,7 @@ class CmdLineTest(unittest.TestCase):
         # stdin is an interactive tty.
         p = spawn_python()
         try:
-            p.stdin.write(b"print(__loader__)\n")
+            p.stdin.write(b"print(repr(__loader__))\n")
             p.stdin.flush()
         finally:
             out = kill_python(p)

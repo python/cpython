@@ -910,13 +910,12 @@ class SimpleServerTestCase(BaseServerTestCase):
             result = multicall()
 
             # result.results contains;
-            # [{'faultCode': 1, 'faultString': '<class \'exceptions.Exception\'>:'
-            #   'method "this_is_not_exists" is not supported'>}]
+            # [{'faultCode': 1, 'faultString': 'exceptions.Exception:'
+            #   'method "this_is_not_exists" is not supported'}]
 
             self.assertEqual(result.results[0]['faultCode'], 1)
             self.assertEqual(result.results[0]['faultString'],
-                '<class \'Exception\'>:method "this_is_not_exists" '
-                'is not supported')
+                'Exception:method "this_is_not_exists" is not supported')
         except (xmlrpclib.ProtocolError, OSError) as e:
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e):

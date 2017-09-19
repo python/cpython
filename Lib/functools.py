@@ -738,7 +738,7 @@ def _find_impl(cls, registry):
             if (t in registry and t not in cls.__mro__
                               and match not in cls.__mro__
                               and not issubclass(match, t)):
-                raise RuntimeError("Ambiguous dispatch: {} or {}".format(
+                raise RuntimeError("Ambiguous dispatch: {!r} or {!r}".format(
                     match, t))
             break
         if t in registry:
