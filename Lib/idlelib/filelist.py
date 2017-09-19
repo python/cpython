@@ -113,7 +113,7 @@ class FileList:
 
 def _test():
     from idlelib.editor import fixwordbreaks
-    from idlelib.util import fix_scaling
+    from idlelib.run import fix_scaling
     import sys
     root = Tk()
     fix_scaling(root)

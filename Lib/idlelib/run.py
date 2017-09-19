@@ -183,7 +183,6 @@ def show_socket_error(err, address):
     "Display socket error from manage_socket."
     import tkinter
     from tkinter.messagebox import showerror
-    from idlelib.util import fix_scaling
     root = tkinter.Tk()
     fix_scaling(root)
     root.withdraw()
@@ -277,6 +276,15 @@ def exit():
         atexit._clear()
     capture_warnings(False)
     sys.exit(0)
+
+
+def fix_scaling(root):
+    import tkinter.font
+    for name in tkinter.font.names(root):
+        font = tkinter.font.Font(root=root, name=name, exists=True)
+        size = int(font['size'])
+        if size < 0:
+            font['size'] = -size
 
 
 class MyRPCServer(rpc.RPCServer):
