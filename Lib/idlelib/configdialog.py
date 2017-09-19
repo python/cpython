@@ -105,7 +105,7 @@ class ConfigDialog(Toplevel):
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
         """
-        self.note = note = Notebook(self, width=450, height=450)
+        self.note = note = Notebook(self)
         self.highpage = HighPage(note)
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = KeysPage(note)
