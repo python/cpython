@@ -1,1 +1,0 @@
-Use C library implementation for math functions erf() and erfc().

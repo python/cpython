@@ -1,1 +1,0 @@
-Avoid race condition in multiprocessing cleanup.
