@@ -1,1 +1,0 @@
-Fix handling of long oids in ssl.  Based on patch by Christian Heimes.
