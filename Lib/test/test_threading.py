@@ -351,7 +351,7 @@ class ThreadTests(BaseTestCase):
                     sleep(1)
                     # As a non-daemon thread we SHOULD wake up and nothing
                     # should be torn down yet
-                    print("Woke up, sleep function is:", sleep)
+                    print("Woke up, sleep function is: %r" % sleep)
 
                 threading.Thread(target=child).start()
                 raise SystemExit

@@ -222,6 +222,17 @@ meth_repr(PyCFunctionObject *m)
 }
 
 static PyObject *
+meth_str(PyCFunctionObject *m)
+{
+    if (m->m_self == NULL || PyModule_Check(m->m_self))
+        return PyUnicode_FromFormat("%s", m->m_ml->ml_name);
+    return PyUnicode_FromFormat("<built-in method %s of %s object at %p>",
+                               m->m_ml->ml_name,
+                               m->m_self->ob_type->tp_name,
+                               m->m_self);
+}
+
+static PyObject *
 meth_richcompare(PyObject *self, PyObject *other, int op)
 {
     PyCFunctionObject *a, *b;
@@ -284,11 +295,11 @@ PyTypeObject PyCFunction_Type = {
     0,                                          /* tp_as_mapping */
     (hashfunc)meth_hash,                        /* tp_hash */
     PyCFunction_Call,                           /* tp_call */
-    0,                                          /* tp_str */
+    (reprfunc)meth_str,                         /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)meth_traverse,                /* tp_traverse */
     0,                                          /* tp_clear */

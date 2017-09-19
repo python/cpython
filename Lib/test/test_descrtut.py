@@ -36,18 +36,18 @@ test_1 = """
 
 Here's the new type at work:
 
-    >>> print(defaultdict)              # show our type
+    >>> defaultdict                     # show our type
     <class 'test.test_descrtut.defaultdict'>
-    >>> print(type(defaultdict))        # its metatype
+    >>> type(defaultdict)               # its metatype
     <class 'type'>
     >>> a = defaultdict(default=0.0)    # create an instance
     >>> print(a)                        # show the instance
     {}
-    >>> print(type(a))                  # show its type
+    >>> type(a)                         # show its type
     <class 'test.test_descrtut.defaultdict'>
-    >>> print(a.__class__)              # show its class
+    >>> a.__class__                     # show its class
     <class 'test.test_descrtut.defaultdict'>
-    >>> print(type(a) is a.__class__)   # its type is its class
+    >>> type(a) is a.__class__          # its type is its class
     True
     >>> a[1] = 3.25                     # modify the instance
     >>> print(a)                        # show the new value
@@ -259,21 +259,21 @@ implicit first argument that is the *class* for which they are invoked.
     ...         print("classmethod", cls, y)
 
     >>> C.foo(1)
-    classmethod <class 'test.test_descrtut.C'> 1
+    classmethod C 1
     >>> c = C()
     >>> c.foo(1)
-    classmethod <class 'test.test_descrtut.C'> 1
+    classmethod C 1
 
     >>> class D(C):
     ...     pass
 
     >>> D.foo(1)
-    classmethod <class 'test.test_descrtut.D'> 1
+    classmethod D 1
     >>> d = D()
     >>> d.foo(1)
-    classmethod <class 'test.test_descrtut.D'> 1
+    classmethod D 1
 
-This prints "classmethod __main__.D 1" both times; in other words, the
+This prints "classmethod D 1" both times; in other words, the
 class passed as the first argument of foo() is the class involved in the
 call, not the class involved in the definition of foo().
 
@@ -287,11 +287,11 @@ But notice this:
 
     >>> E.foo(1)
     E.foo() called
-    classmethod <class 'test.test_descrtut.C'> 1
+    classmethod C 1
     >>> e = E()
     >>> e.foo(1)
     E.foo() called
-    classmethod <class 'test.test_descrtut.C'> 1
+    classmethod C 1
 
 In this example, the call to C.foo() from E.foo() will see class C as its
 first argument, not class E. This is to be expected, since the call
