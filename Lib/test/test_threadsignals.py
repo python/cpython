@@ -56,9 +56,11 @@ class ThreadSignals(unittest.TestCase):
         # wait for it return.
         if signal_blackboard[signal.SIGUSR1]['tripped'] == 0 \
            or signal_blackboard[signal.SIGUSR2]['tripped'] == 0:
-            signal.alarm(1)
-            signal.pause()
-            signal.alarm(0)
+            try:
+                signal.alarm(1)
+                signal.pause()
+            finally:
+                signal.alarm(0)
 
         self.assertEqual( signal_blackboard[signal.SIGUSR1]['tripped'], 1)
         self.assertEqual( signal_blackboard[signal.SIGUSR1]['tripped_by'],
@@ -98,6 +100,7 @@ class ThreadSignals(unittest.TestCase):
             # after timeout return of lock.acquire() (which can fool assertRaises).
             self.assertLess(dt, 3.0)
         finally:
+            signal.alarm(0)
             signal.signal(signal.SIGALRM, oldalrm)
 
     @unittest.skipIf(USING_PTHREAD_COND,
@@ -131,6 +134,7 @@ class ThreadSignals(unittest.TestCase):
                 # See rationale above in test_lock_acquire_interruption
                 self.assertLess(dt, 3.0)
         finally:
+            signal.alarm(0)
             signal.signal(signal.SIGALRM, oldalrm)
 
     def acquire_retries_on_intr(self, lock):
