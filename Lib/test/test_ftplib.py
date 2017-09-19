@@ -908,11 +908,11 @@ class TestTLS_FTPClass(TestCase):
             self.client.auth()
             self.assertRaises(ValueError, self.client.auth)
         finally:
-            self.client.ssl_version = ssl.PROTOCOL_TLSv1
+            self.client.ssl_version = ssl.PROTOCOL_TLS
 
     def test_context(self):
         self.client.quit()
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         self.assertRaises(ValueError, ftplib.FTP_TLS, keyfile=CERTFILE,
                           context=ctx)
         self.assertRaises(ValueError, ftplib.FTP_TLS, certfile=CERTFILE,
@@ -941,7 +941,7 @@ class TestTLS_FTPClass(TestCase):
 
     def test_check_hostname(self):
         self.client.quit()
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.check_hostname = True
         ctx.load_verify_locations(CAFILE)
