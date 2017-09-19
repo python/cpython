@@ -1,2 +1,0 @@
-Fix ssl sockets leaks when connection is aborted in asyncio/ssl
-implementation. Patch by Michaël Sghaïer.

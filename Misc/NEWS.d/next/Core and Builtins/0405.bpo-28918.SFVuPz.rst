@@ -1,2 +1,0 @@
-Fix the cross compilation of xxlimited when Python has been built with
-Py_DEBUG defined.

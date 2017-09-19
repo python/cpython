@@ -1,2 +1,0 @@
-len() now raises ValueError rather than OverflowError if __len__() returned
-a large negative integer.

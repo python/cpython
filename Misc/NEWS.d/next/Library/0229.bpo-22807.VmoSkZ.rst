@@ -1,3 +1,0 @@
-Add uuid.SafeUUID and uuid.UUID.is_safe to relay information from the
-platform about whether generated UUIDs are generated with a multiprocessing
-safe method.

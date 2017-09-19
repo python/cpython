@@ -1,2 +1,0 @@
-Release references to tasks, their arguments and their results as soon as
-they are finished in multiprocessing.Pool.

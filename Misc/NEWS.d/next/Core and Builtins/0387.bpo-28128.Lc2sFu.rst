@@ -1,3 +1,0 @@
-Deprecation warning for invalid str and byte escape sequences now prints
-better information about where the error occurs. Patch by Serhiy Storchaka
-and Eric Smith.

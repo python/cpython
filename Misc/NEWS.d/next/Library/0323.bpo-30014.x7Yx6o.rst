@@ -1,2 +1,0 @@
-modify() method of poll(), epoll() and devpoll() based classes of selectors
-module is around 10% faster.  Patch by Giampaolo Rodola'.

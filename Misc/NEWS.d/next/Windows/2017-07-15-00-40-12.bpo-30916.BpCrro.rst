@@ -1,1 +1,0 @@
-Pre-build OpenSSL, Tcl and Tk and include the binaries in the build.

@@ -1,2 +1,0 @@
-inspect.signature() now supports callables with variable-argument parameters
-wrapped with partialmethod. Patch by Dong-hee Na.

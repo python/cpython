@@ -1,2 +1,0 @@
-Makes Path.resolve() succeed on paths that do not exist. Patch by Vajrasky
-Kok

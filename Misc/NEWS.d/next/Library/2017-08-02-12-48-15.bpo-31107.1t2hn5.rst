@@ -1,2 +1,0 @@
-Fix `copyreg._slotnames()` mangled attribute calculation for classes whose
-name begins with an underscore. Patch by Shane Harvey.

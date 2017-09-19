@@ -1,3 +1,0 @@
-Fix an assertion failure in `ctypes` class definition, in case the class has
-an attribute whose name is specified in ``_anonymous_`` but not in
-``_fields_``. Patch by Oren Milman.

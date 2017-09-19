@@ -1,1 +1,0 @@
-Optimized case-insensitive matching and searching of regular expressions.
