@@ -1,2 +1,0 @@
-Make return types of SSLContext.wrap_bio() and SSLContext.wrap_socket()
-customizable.

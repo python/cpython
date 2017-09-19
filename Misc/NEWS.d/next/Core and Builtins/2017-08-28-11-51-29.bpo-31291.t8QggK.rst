@@ -1,3 +1,0 @@
-Fix an assertion failure in `zipimport.zipimporter.get_data` on Windows,
-when the return value of ``pathname.replace('/','\\')`` isn't a string.
-Patch by Oren Milman.
