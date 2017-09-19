@@ -88,12 +88,13 @@ class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
     def setUp(self):
+        self.addCleanup(signal_alarm, 0)
         signal_alarm(60)  # Kill deadlocks after 60 seconds.
         self.port_seed = 0
         self.test_files = []
 
     def tearDown(self):
-        signal_alarm(0)  # Didn't deadlock.
+        self.doCleanups()
         reap_children()
 
         for fn in self.test_files:
