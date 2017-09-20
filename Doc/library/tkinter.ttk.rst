@@ -1094,10 +1094,13 @@ ttk.Treeview
       the tree.
 
 
-   .. method:: selection(selop=None, items=None)
+   .. method:: selection()
 
-      If *selop* is not specified, returns selected items. Otherwise, it will
-      act according to the following selection methods.
+      Returns a tuple of selected items.
+
+      .. versionchanged:: 3.7
+         ``selection()`` no longer takes arguments.  For changing the selection
+         state use the following selection methods.
 
 
    .. method:: selection_set(items)
