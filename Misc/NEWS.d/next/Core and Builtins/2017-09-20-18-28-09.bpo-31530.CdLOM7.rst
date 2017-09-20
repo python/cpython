@@ -1,0 +1,1 @@
+Fixed crashes when iterating over a file on multiple threads.
