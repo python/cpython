@@ -538,17 +538,17 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
 
         rc = pysqlite_step(self->statement->st, self->connection);
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
-          if (PyErr_Occurred()) {
-            /* there was an error that occurred in a user-defined callback */
-            if (_enable_callback_tracebacks) {
-              PyErr_Print();
-            } else {
-              PyErr_Clear();
+            if (PyErr_Occurred()) {
+                /* there was an error that occurred in a user-defined callback */
+                if (_enable_callback_tracebacks) {
+                    PyErr_Print();
+                } else {
+                    PyErr_Clear();
+                }
             }
-          }
-          (void)pysqlite_statement_reset(self->statement);
-          _pysqlite_seterror(self->connection->db, NULL);
-          goto error;
+            (void)pysqlite_statement_reset(self->statement);
+            _pysqlite_seterror(self->connection->db, NULL);
+            goto error;
         }
 
         if (pysqlite_build_row_cast_map(self) != 0) {
@@ -561,24 +561,24 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         numcols = sqlite3_column_count(self->statement->st);
         Py_END_ALLOW_THREADS
         if (self->description == Py_None && numcols > 0) {
-          Py_SETREF(self->description, PyTuple_New(numcols));
-          if (!self->description) {
-            goto error;
-          }
-          for (i = 0; i < numcols; i++) {
-            descriptor = PyTuple_New(7);
-            if (!descriptor) {
-              goto error;
+            Py_SETREF(self->description, PyTuple_New(numcols));
+            if (!self->description) {
+                goto error;
             }
-            PyTuple_SetItem(descriptor, 0, _pysqlite_build_column_name(sqlite3_column_name(self->statement->st, i)));
-            Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 1, Py_None);
-            Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 2, Py_None);
-            Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 3, Py_None);
-            Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 4, Py_None);
-            Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 5, Py_None);
-            Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 6, Py_None);
-            PyTuple_SetItem(self->description, i, descriptor);
-          }
+            for (i = 0; i < numcols; i++) {
+                descriptor = PyTuple_New(7);
+                if (!descriptor) {
+                    goto error;
+                }
+                PyTuple_SetItem(descriptor, 0, _pysqlite_build_column_name(sqlite3_column_name(self->statement->st, i)));
+                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 1, Py_None);
+                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 2, Py_None);
+                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 3, Py_None);
+                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 4, Py_None);
+                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 5, Py_None);
+                Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 6, Py_None);
+                PyTuple_SetItem(self->description, i, descriptor);
+            }
         }
 
         if (self->statement->is_dml) {
