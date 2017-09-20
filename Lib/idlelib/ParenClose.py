@@ -37,6 +37,8 @@ class ParenClose:
     produce the closing symbols. If skip_closures is True, then when a closure
     symbol is typed and the same one is to the right of it, that symbols is
     deleted before the new one is typed, effectively skipping over the closure.
+    If the cursor is between two closures and mutual_delete or mutual_backspace
+    is True, when the respective command is given, both closures are deleted.
     '''
 
     closers = {'(': ')', '[': ']', '{': '}', "'": "'", '"': '"'}
@@ -59,22 +61,27 @@ class ParenClose:
         self.mutual_delete = idleConf.GetOption(
             'extensions', 'ParenClose', 'mutual_delete',
             type='bool', default=True)
+        self.mutual_backspace = idleConf.GetOption(
+            'extensions', 'ParenClose', 'mutual_backspace',
+            type='bool', default=True)
 
     def delcheck(self, pos):
         symbol1 = self.text.get(pos + '-1c', pos)
         symbol2 = self.text.get(pos, pos + '+1c')
-        return (self.mutual_delete and symbol1 in self.closers
+        return (symbol1 in self.closers
                 and self.closers[symbol1] == symbol2)
 
     def back_event(self, event):
-        pos = self.text.index('insert')
-        if self.delcheck(pos):
-            self.text.delete(pos, pos + '+1c')
+        if self.mutual_backspace:
+            pos = self.text.index('insert')
+            if self.delcheck(pos):
+                self.text.delete(pos, pos + '+1c')
 
     def delete_event(self, event):
-        pos = self.text.index('insert')
-        if self.delcheck(pos):
-            self.text.delete(pos + '-1c', pos)
+        if self.mutual_delete:
+            pos = self.text.index('insert')
+            if self.delcheck(pos):
+                self.text.delete(pos + '-1c', pos)
 
     def p_open_event(self, event):
         if self.paren_close:
