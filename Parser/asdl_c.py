@@ -1281,59 +1281,55 @@ def main(srcfile, dump_module=False):
         print(mod)
     if not asdl.check(mod):
         sys.exit(1)
-    if INC_DIR:
-        p = "%s/%s-ast.h" % (INC_DIR, mod.name)
-        f = open(p, "w")
-        f.write(auto_gen_msg)
-        f.write('#include "asdl.h"\n\n')
-        c = ChainOfVisitors(TypeDefVisitor(f),
-                            StructVisitor(f),
-                            PrototypeVisitor(f),
-                            )
-        c.visit(mod)
-        f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
-        f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
-        f.write("int PyAST_Check(PyObject* obj);\n")
-        f.close()
+    if H_FILE:
+        with open(H_FILE, "w") as f:
+            f.write(auto_gen_msg)
+            f.write('#include "asdl.h"\n\n')
+            c = ChainOfVisitors(TypeDefVisitor(f),
+                                StructVisitor(f),
+                                PrototypeVisitor(f),
+                                )
+            c.visit(mod)
+            f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
+            f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
+            f.write("int PyAST_Check(PyObject* obj);\n")
 
-    if SRC_DIR:
-        p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
-        f = open(p, "w")
-        f.write(auto_gen_msg)
-        f.write('#include <stddef.h>\n')
-        f.write('\n')
-        f.write('#include "Python.h"\n')
-        f.write('#include "%s-ast.h"\n' % mod.name)
-        f.write('\n')
-        f.write("static PyTypeObject AST_type;\n")
-        v = ChainOfVisitors(
-            PyTypesDeclareVisitor(f),
-            PyTypesVisitor(f),
-            Obj2ModPrototypeVisitor(f),
-            FunctionVisitor(f),
-            ObjVisitor(f),
-            Obj2ModVisitor(f),
-            ASTModuleVisitor(f),
-            PartingShots(f),
-            )
-        v.visit(mod)
-        f.close()
+    if C_FILE:
+        with open(C_FILE, "w") as f:
+            f.write(auto_gen_msg)
+            f.write('#include <stddef.h>\n')
+            f.write('\n')
+            f.write('#include "Python.h"\n')
+            f.write('#include "%s-ast.h"\n' % mod.name)
+            f.write('\n')
+            f.write("static PyTypeObject AST_type;\n")
+            v = ChainOfVisitors(
+                PyTypesDeclareVisitor(f),
+                PyTypesVisitor(f),
+                Obj2ModPrototypeVisitor(f),
+                FunctionVisitor(f),
+                ObjVisitor(f),
+                Obj2ModVisitor(f),
+                ASTModuleVisitor(f),
+                PartingShots(f),
+                )
+            v.visit(mod)
 
 if __name__ == "__main__":
     import getopt
 
-    INC_DIR = ''
-    SRC_DIR = ''
+    H_FILE = ''
+    C_FILE = ''
     dump_module = False
     opts, args = getopt.getopt(sys.argv[1:], "dh:c:")
     for o, v in opts:
         if o == '-h':
-            INC_DIR = v
+            H_FILE = v
         if o == '-c':
-            SRC_DIR = v
+            C_FILE = v
         if o == '-d':
             dump_module = True
-    if INC_DIR and SRC_DIR:
+    if H_FILE and C_FILE:
         print('Must specify exactly one output file')
         sys.exit(1)
     elif len(args) != 1:
