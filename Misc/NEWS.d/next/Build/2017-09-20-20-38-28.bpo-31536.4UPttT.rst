@@ -1,0 +1,1 @@
+Avoid wholesale rebuild after `make regen-opcode` if nothing changed.

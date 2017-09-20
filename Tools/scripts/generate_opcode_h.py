@@ -1,5 +1,7 @@
 # This script generates the opcode.h header file.
 
+import contextlib
+import os
 import sys
 import tokenize
 
@@ -34,6 +36,34 @@ enum cmp_op {PyCmp_LT=Py_LT, PyCmp_LE=Py_LE, PyCmp_EQ=Py_EQ, PyCmp_NE=Py_NE,
 #endif /* !Py_OPCODE_H */
 """
 
+@contextlib.contextmanager
+def open_for_replace(dest_path, mode):
+    """
+    Simulate opening *dest_path* with *mode*, but only overwrite it
+    if the contents changed at the end.
+    When the contents did not change, the original metadata is kept intact,
+    avoiding wholesale rebuilds.
+    """
+    tmp_path = '%s.tmp%s' % (dest_path, os.getpid())
+    try:
+        with open(tmp_path, mode) as f:
+            yield f
+    except:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+    else:
+        with open(dest_path, 'rb') as f:
+            old_contents = f.read()
+        with open(tmp_path, 'rb') as f:
+            new_contents = f.read()
+        if old_contents != new_contents:
+            os.replace(tmp_path, dest_path)
+        else:
+            os.unlink(tmp_path)
+
 
 def main(opcode_py, outfile='Include/opcode.h'):
     opcode = {}
@@ -45,7 +75,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
         code = fp.read()
     exec(code, opcode)
     opmap = opcode['opmap']
-    with open(outfile, 'w') as fobj:
+    with open_for_replace(outfile, 'w') as fobj:
         fobj.write(header)
         for name in opcode['opname']:
             if name in opmap:
