@@ -554,7 +554,7 @@ class ThreadTests(BaseTestCase):
             import gc, threading
 
             main_thread = threading.current_thread()
-            assert main_thread is threading.main_thread()
+            assert main_thread is threading.main_thread()  # sanity check
 
             class RefCycle:
                 def __init__(self):
@@ -567,7 +567,7 @@ class ThreadTests(BaseTestCase):
                           threading.enumerate() == [main_thread])
 
             RefCycle()
-            gc.collect()
+            gc.collect()  # sanity check
             x = RefCycle()
         """
         _, out, err = assert_python_ok("-c", code)
