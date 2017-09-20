@@ -652,6 +652,16 @@ class FileThreadingTests(unittest.TestCase):
             self.f.writelines('')
         self._test_close_open_io(io_func)
 
+    def test_iteration_torture(self):
+        with open(self.filename, "wb") as fp:
+            for i in xrange(2**20):
+                fp.write(b"0"*50 + b"\n")
+        with open(self.filename, "rb") as f:
+            def it():
+                for l in f:
+                    pass
+            self._run_workers(it, 10)
+
 
 @unittest.skipUnless(os.name == 'posix', 'test requires a posix system.')
 class TestFileSignalEINTR(unittest.TestCase):
