@@ -1911,7 +1911,8 @@ class TestAddSubparsers(TestCase):
         # Should parse the sub command
         ret = parser.parse_args(['run'])
         self.assertEqual(ret.command, 'run')
-        # Should error when missing the command
+
+        # Error when the command is missing
         self.assertArgumentParserError(parser.parse_args, ())
 
     def test_required_subparsers_via_attribute(self):
@@ -1937,6 +1938,7 @@ class TestAddSubparsers(TestCase):
         parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers(dest='command', required=False)
         subparsers.add_parser('run')
+        # No error here
         ret = parser.parse_args(())
         self.assertIsNone(ret.command)
 
