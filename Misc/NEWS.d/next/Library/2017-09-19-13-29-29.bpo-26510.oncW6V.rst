@@ -1,0 +1,3 @@
+argparse subparsers are now required by default.  This matches behaviour in Python 2.
+For optional subparsers, use the new parameter ``add_subparsers(required=False)``.
+Patch by Anthony Sottile.
