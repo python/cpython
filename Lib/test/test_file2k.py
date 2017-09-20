@@ -653,6 +653,7 @@ class FileThreadingTests(unittest.TestCase):
         self._test_close_open_io(io_func)
 
     def test_iteration_torture(self):
+        # bpo-31530: Crash when concurrently iterate over a file.
         with open(self.filename, "wb") as fp:
             for i in xrange(2**20):
                 fp.write(b"0"*50 + b"\n")
@@ -666,6 +667,7 @@ class FileThreadingTests(unittest.TestCase):
             self._run_workers(iterate, 10)
 
     def test_iteration_seek(self):
+        # bpo-31530: Crash when concurrently seek and iterate over a file.
         with open(self.filename, "wb") as fp:
             for i in xrange(10000):
                 fp.write(b"0"*50 + b"\n")
