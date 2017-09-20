@@ -1,2 +1,2 @@
-Fully implement `io.IOBase` abstract for `tempfile.SpooledTemporaryFile`.
-Patch by Gary Fernie
+Fully implement io.IOBase interface for tempfile.SpooledTemporaryFile.
+Patch by Gary Fernie.
