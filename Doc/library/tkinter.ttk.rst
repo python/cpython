@@ -1109,7 +1109,7 @@ ttk.Treeview
       *items* becomes the new selection.
 
       .. versionchanged:: 3.6
-         *items* can be passeed as separate arguments, not just as a single tuple.
+         *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: selection_add(*items)
@@ -1117,7 +1117,7 @@ ttk.Treeview
       Add *items* to the selection.
 
       .. versionchanged:: 3.6
-         *items* can be passeed as separate arguments, not just as a single tuple.
+         *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: selection_remove(*items)
@@ -1125,7 +1125,7 @@ ttk.Treeview
       Remove *items* from the selection.
 
       .. versionchanged:: 3.6
-         *items* can be passeed as separate arguments, not just as a single tuple.
+         *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: selection_toggle(*items)
@@ -1133,7 +1133,7 @@ ttk.Treeview
       Toggle the selection state of each item in *items*.
 
       .. versionchanged:: 3.6
-         *items* can be passeed as separate arguments, not just as a single tuple.
+         *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: set(item, column=None, value=None)
