@@ -80,6 +80,11 @@ _Py_CheckFunctionResult(PyObject *callable, PyObject *result, const char *where)
 
 /* --- Core PyObject call functions ------------------------------- */
 
+extern PyObject *
+_PyWrapperDesr_FastCallDict(PyObject *descr,
+                            PyObject **args, Py_ssize_t argc,
+                            PyObject *kwargs);
+
 PyObject *
 _PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
                        PyObject *kwargs)
@@ -99,6 +104,9 @@ _PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
     }
     else if (PyCFunction_Check(callable)) {
         return _PyCFunction_FastCallDict(callable, args, nargs, kwargs);
+    }
+    else if (Py_TYPE(callable) == &PyWrapperDescr_Type) {
+        return _PyWrapperDesr_FastCallDict(callable, args, nargs, kwargs);
     }
     else {
         PyObject *argstuple, *result;
@@ -132,6 +140,10 @@ _PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
     }
 }
 
+extern PyObject *
+_PyWrapperDesr_FastCallKeywords(PyObject *descr,
+                                PyObject **args, Py_ssize_t argc,
+                                PyObject *kwnames);
 
 PyObject *
 _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t nargs,
@@ -155,6 +167,9 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t narg
     if (PyCFunction_Check(callable)) {
         return _PyCFunction_FastCallKeywords(callable, stack, nargs, kwnames);
     }
+    else if (Py_TYPE(callable) == &PyWrapperDescr_Type) {
+        return _PyWrapperDesr_FastCallKeywords(callable, stack, nargs, kwnames);
+    }
     else {
         /* Slow-path: build a temporary tuple for positional arguments and a
            temporary dictionary for keyword arguments (if any) */
@@ -174,20 +189,9 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t narg
             return NULL;
         }
 
-        argstuple = _PyStack_AsTuple(stack, nargs);
-        if (argstuple == NULL) {
+        if (_PyStack_AsTupleAndDict(stack, nargs, kwnames,
+                                    &argstuple, &kwdict) < 0) {
             return NULL;
-        }
-
-        if (nkwargs > 0) {
-            kwdict = _PyStack_AsDict(stack + nargs, kwnames);
-            if (kwdict == NULL) {
-                Py_DECREF(argstuple);
-                return NULL;
-            }
-        }
-        else {
-            kwdict = NULL;
         }
 
         if (Py_EnterRecursiveCall(" while calling a Python object")) {
@@ -663,34 +667,32 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
     {
         /* Slow-path: create a temporary tuple for positional arguments
            and a temporary dict for keyword arguments */
-        PyObject *argtuple;
-
-        argtuple = _PyStack_AsTuple(args, nargs);
-        if (argtuple == NULL) {
-            goto exit;
-        }
 
         if (flags & METH_KEYWORDS) {
-            PyObject *kwdict;
+            PyObject *argtuple, *kwdict;
 
-            if (nkwargs > 0) {
-                kwdict = _PyStack_AsDict(args + nargs, kwnames);
-                if (kwdict == NULL) {
-                    Py_DECREF(argtuple);
-                    goto exit;
-                }
-            }
-            else {
-                kwdict = NULL;
+            if (_PyStack_AsTupleAndDict(args, nargs, kwnames,
+                                        &argtuple, &kwdict) < 0) {
+                return NULL;
             }
 
             result = (*(PyCFunctionWithKeywords)meth) (self, argtuple, kwdict);
+
+            Py_DECREF(argtuple);
             Py_XDECREF(kwdict);
         }
         else {
+            PyObject *argtuple;
+
+            argtuple = _PyStack_AsTuple(args, nargs);
+            if (argtuple == NULL) {
+                goto exit;
+            }
+
             result = (*meth) (self, argtuple);
+
+            Py_DECREF(argtuple);
         }
-        Py_DECREF(argtuple);
         break;
     }
 
@@ -1336,6 +1338,30 @@ _PyStack_AsDict(PyObject **values, PyObject *kwnames)
         }
     }
     return kwdict;
+}
+
+
+int
+_PyStack_AsTupleAndDict(PyObject **args, Py_ssize_t nargs, PyObject *kwnames,
+                        PyObject **tuple, PyObject **dict)
+{
+    *tuple = _PyStack_AsTuple(args, nargs);
+    if (*tuple == NULL) {
+        return -1;
+    }
+
+    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+    if (nkwargs > 0) {
+        *dict = _PyStack_AsDict(args + nargs, kwnames);
+        if (*dict == NULL) {
+            Py_DECREF(*tuple);
+            return -1;
+        }
+    }
+    else {
+        *dict = NULL;
+    }
+    return 0;
 }
 
 
