@@ -287,13 +287,15 @@ class ChildBrowserTreeItem(TreeItem):
 
 def _class_browser(parent): # htest #
     try:
+       file = sys.argv[1]  # If pass file on command line
+       # If this succeeds, unittest will fail.
+    except IndexError:
         file = __file__
-    except NameError:
-        file = sys.argv[0]
-        if sys.argv[1:]:
-            file = sys.argv[1]
-        else:
-            file = sys.argv[0]
+        # Add objects for htest
+        class Nested_in_func():
+            def nested_in_class(): pass
+        def closure():
+            class Nested_in_closure: pass
     dir, file = os.path.split(file)
     name = os.path.splitext(file)[0]
     flist = pyshell.PyShellFileList(parent)
