@@ -20,6 +20,7 @@ class EnsurepipMixin:
     def setUp(self):
         run_pip_patch = unittest.mock.patch("ensurepip._run_pip")
         self.run_pip = run_pip_patch.start()
+        self.run_pip.return_value = 0
         self.addCleanup(run_pip_patch.stop)
 
         # Avoid side effects on the actual os module
@@ -255,7 +256,7 @@ class TestBootstrappingMainFunction(EnsurepipMixin, unittest.TestCase):
         self.assertFalse(self.run_pip.called)
 
     def test_basic_bootstrapping(self):
-        ensurepip._main([])
+        exit_code = ensurepip._main([])
 
         self.run_pip.assert_called_once_with(
             [
@@ -267,6 +268,13 @@ class TestBootstrappingMainFunction(EnsurepipMixin, unittest.TestCase):
 
         additional_paths = self.run_pip.call_args[0][1]
         self.assertEqual(len(additional_paths), 2)
+        self.assertEqual(exit_code, 0)
+
+    def test_bootstrapping_error_code(self):
+        self.run_pip.return_value = 2
+        exit_code = ensurepip._main([])
+        self.assertEqual(exit_code, 2)
+
 
 class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
 
@@ -280,7 +288,7 @@ class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
 
     def test_basic_uninstall(self):
         with fake_pip():
-            ensurepip._uninstall._main([])
+            exit_code = ensurepip._uninstall._main([])
 
         self.run_pip.assert_called_once_with(
             [
@@ -289,6 +297,13 @@ class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
             ]
         )
 
+        self.assertEqual(exit_code, 0)
+
+    def test_uninstall_error_code(self):
+        with fake_pip():
+            self.run_pip.return_value = 2
+            exit_code = ensurepip._uninstall._main([])
+        self.assertEqual(exit_code, 2)
 
 
 if __name__ == "__main__":
