@@ -171,6 +171,7 @@ sys_displayhook(PyObject *self, PyObject *o)
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
         return NULL;
     }
+    Py_DECREF(builtins);
 
     /* Print value except if None */
     /* After printing, also assign to '_' */

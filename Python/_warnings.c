@@ -57,11 +57,9 @@ get_warnings_attr(const char *attr, int try_import)
         }
     }
     else {
-        warnings_module = _PyImport_GetModule(warnings_str);
+        warnings_module = PyImport_GetModule(warnings_str);
         if (warnings_module == NULL)
             return NULL;
-
-        Py_INCREF(warnings_module);
     }
 
     if (!PyObject_HasAttrString(warnings_module, attr)) {

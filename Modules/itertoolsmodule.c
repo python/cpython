@@ -4067,7 +4067,8 @@ static PyObject *
 count_repr(countobject *lz)
 {
     if (lz->cnt != PY_SSIZE_T_MAX)
-        return PyUnicode_FromFormat("count(%zd)", lz->cnt);
+        return PyUnicode_FromFormat("%s(%zd)",
+                                    _PyType_Name(Py_TYPE(lz)), lz->cnt);
 
     if (PyLong_Check(lz->long_step)) {
         long step = PyLong_AsLong(lz->long_step);
@@ -4076,11 +4077,14 @@ count_repr(countobject *lz)
         }
         if (step == 1) {
             /* Don't display step when it is an integer equal to 1 */
-            return PyUnicode_FromFormat("count(%R)", lz->long_cnt);
+            return PyUnicode_FromFormat("%s(%R)",
+                                        _PyType_Name(Py_TYPE(lz)),
+                                        lz->long_cnt);
         }
     }
-    return PyUnicode_FromFormat("count(%R, %R)",
-                                                            lz->long_cnt, lz->long_step);
+    return PyUnicode_FromFormat("%s(%R, %R)",
+                                _PyType_Name(Py_TYPE(lz)),
+                                lz->long_cnt, lz->long_step);
 }
 
 static PyObject *
@@ -4220,9 +4224,12 @@ static PyObject *
 repeat_repr(repeatobject *ro)
 {
     if (ro->cnt == -1)
-        return PyUnicode_FromFormat("repeat(%R)", ro->element);
+        return PyUnicode_FromFormat("%s(%R)",
+                                    _PyType_Name(Py_TYPE(ro)), ro->element);
     else
-        return PyUnicode_FromFormat("repeat(%R, %zd)", ro->element, ro->cnt);
+        return PyUnicode_FromFormat("%s(%R, %zd)",
+                                    _PyType_Name(Py_TYPE(ro)), ro->element,
+                                    ro->cnt);
 }
 
 static PyObject *
@@ -4630,7 +4637,7 @@ PyInit_itertools(void)
 {
     int i;
     PyObject *m;
-    char *name;
+    const char *name;
     PyTypeObject *typelist[] = {
         &accumulate_type,
         &combinations_type,
@@ -4663,10 +4670,9 @@ PyInit_itertools(void)
     for (i=0 ; typelist[i] != NULL ; i++) {
         if (PyType_Ready(typelist[i]) < 0)
             return NULL;
-        name = strchr(typelist[i]->tp_name, '.');
-        assert (name != NULL);
+        name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
+        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
     }
 
     return m;
