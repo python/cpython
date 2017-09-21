@@ -163,12 +163,20 @@ right error message? (Also check with other iterables.)
     Traceback (most recent call last):
       ...
     TypeError: myerror
+    >>> g(*range(1), *(broken() for i in range(1)))
+    Traceback (most recent call last):
+      ...
+    TypeError: myerror
 
     >>> class BrokenIterable1:
     ...     def __iter__(self):
     ...         raise TypeError('myerror')
     ...
     >>> g(*BrokenIterable1())
+    Traceback (most recent call last):
+      ...
+    TypeError: myerror
+    >>> g(*range(1), *BrokenIterable1())
     Traceback (most recent call last):
       ...
     TypeError: myerror
@@ -182,12 +190,20 @@ right error message? (Also check with other iterables.)
     Traceback (most recent call last):
       ...
     TypeError: myerror
+    >>> g(*range(1), *BrokenIterable2())
+    Traceback (most recent call last):
+      ...
+    TypeError: myerror
 
     >>> class BrokenSequence:
     ...     def __getitem__(self, idx):
     ...         raise TypeError('myerror')
     ...
     >>> g(*BrokenSequence())
+    Traceback (most recent call last):
+      ...
+    TypeError: myerror
+    >>> g(*range(1), *BrokenSequence())
     Traceback (most recent call last):
       ...
     TypeError: myerror

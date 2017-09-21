@@ -1,4 +1,4 @@
-# Sample extension: zoom a window to maximum height
+"Zoom a window to maximum height."
 
 import re
 import sys
@@ -8,18 +8,13 @@ from idlelib import macosx
 
 class ZoomHeight:
 
-    menudefs = [
-        ('windows', [
-            ('_Zoom Height', '<<zoom-height>>'),
-         ])
-    ]
-
     def __init__(self, editwin):
         self.editwin = editwin
 
     def zoom_height_event(self, event):
         top = self.editwin.top
         zoom_height(top)
+        return "break"
 
 
 def zoom_height(top):

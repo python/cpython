@@ -4,6 +4,8 @@
 Synchronization primitives
 ==========================
 
+**Source code:** :source:`Lib/asyncio/locks.py`
+
 Locks:
 
 * :class:`Lock`

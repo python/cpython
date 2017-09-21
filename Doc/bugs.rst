@@ -88,5 +88,5 @@ the `core-mentorship mailing list`_ is a friendly place to get answers to
 any and all questions pertaining to the process of fixing issues in Python.
 
 .. _Documentation bugs: https://bugs.python.org/issue?@filter=status&@filter=components&components=4&status=1&@columns=id,activity,title,status&@sort=-activity
-.. _Python Developer's Guide: https://docs.python.org/devguide/
+.. _Python Developer's Guide: https://devguide.python.org/
 .. _core-mentorship mailing list: https://mail.python.org/mailman/listinfo/core-mentorship/

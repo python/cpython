@@ -1,3 +1,10 @@
+
+/* Core extension modules are built-in on some platforms (e.g. Windows). */
+#ifdef Py_BUILD_CORE
+#define Py_BUILD_CORE_BUILTIN
+#undef Py_BUILD_CORE
+#endif
+
 #include "Python.h"
 #include "structmember.h"
 #include "accu.h"
@@ -18,7 +25,7 @@ static PyTypeObject PyEncoderType;
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
-    char strict;
+    signed char strict;
     PyObject *object_hook;
     PyObject *object_pairs_hook;
     PyObject *parse_float;
@@ -655,7 +662,8 @@ py_encode_basestring(PyObject* self UNUSED, PyObject *pystr)
 static void
 scanner_dealloc(PyObject *self)
 {
-    /* Deallocate scanner object */
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     scanner_clear(self);
     Py_TYPE(self)->tp_free(self);
 }
@@ -1589,8 +1597,10 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
     items = PyMapping_Items(dct);
     if (items == NULL)
         goto bail;
-    if (s->sort_keys && PyList_Sort(items) < 0)
+    if (s->sort_keys && PyList_Sort(items) < 0) {
+        Py_DECREF(items);
         goto bail;
+    }
     it = PyObject_GetIter(items);
     Py_DECREF(items);
     if (it == NULL)
@@ -1776,7 +1786,8 @@ bail:
 static void
 encoder_dealloc(PyObject *self)
 {
-    /* Deallocate Encoder */
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     encoder_clear(self);
     Py_TYPE(self)->tp_free(self);
 }
