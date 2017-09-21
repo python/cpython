@@ -62,6 +62,8 @@ def _traverse_node(node, name=None):
 class ClassBrowser:
     """Browse module classes and functions in IDLE.
     """
+    # This class is the base class for pathbrowser.PathBrowser.
+    # Init and close are inherited, other methods are overriden.
 
     def __init__(self, flist, name, path, _htest=False, _utest=False):
         # XXX This API should change, if the file doesn't end in ".py"
