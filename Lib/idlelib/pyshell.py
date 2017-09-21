@@ -12,6 +12,8 @@ import tkinter.messagebox as tkMessageBox
 if TkVersion < 8.5:
     root = Tk()  # otherwise create root in main
     root.withdraw()
+    from idlelib.run import fix_scaling
+    fix_scaling(root)
     tkMessageBox.showerror("Idle Cannot Start",
             "Idle requires tcl/tk 8.5+, not %s." % TkVersion,
             parent=root)
@@ -1457,6 +1459,8 @@ def main():
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
+    from idlelib.run import fix_scaling
+    fix_scaling(root)
 
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
