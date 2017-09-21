@@ -78,7 +78,7 @@ options:
 
 Providing both of the script selection options will trigger an exception.
 
-.. versionchanged:: 3.7.0
+.. versionchanged:: 3.6.3
    The exit status is non-zero if the command fails.
 
 
