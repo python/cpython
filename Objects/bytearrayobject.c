@@ -891,11 +891,12 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 bytearray_repr(PyByteArrayObject *self)
 {
-    const char *quote_prefix = "bytearray(b";
+    const char *className = _PyType_Name(Py_TYPE(self));
+    const char *quote_prefix = "(b";
     const char *quote_postfix = ")";
     Py_ssize_t length = Py_SIZE(self);
-    /* 15 == strlen(quote_prefix) + 2 + strlen(quote_postfix) + 1 */
-    size_t newsize;
+    /* 6 == strlen(quote_prefix) + 2 + strlen(quote_postfix) + 1 */
+    Py_ssize_t newsize;
     PyObject *v;
     Py_ssize_t i;
     char *bytes;
@@ -905,13 +906,14 @@ bytearray_repr(PyByteArrayObject *self)
     char *test, *start;
     char *buffer;
 
-    if (length > (PY_SSIZE_T_MAX - 15) / 4) {
+    newsize = strlen(className);
+    if (length > (PY_SSIZE_T_MAX - 6 - newsize) / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "bytearray object is too large to make repr");
         return NULL;
     }
 
-    newsize = 15 + length * 4;
+    newsize += 6 + length * 4;
     buffer = PyObject_Malloc(newsize);
     if (buffer == NULL) {
         PyErr_NoMemory();
@@ -931,6 +933,8 @@ bytearray_repr(PyByteArrayObject *self)
     }
 
     p = buffer;
+    while (*className)
+        *p++ = *className++;
     while (*quote_prefix)
         *p++ = *quote_prefix++;
     *p++ = quote;
@@ -966,7 +970,7 @@ bytearray_repr(PyByteArrayObject *self)
        *p++ = *quote_postfix++;
     }
 
-    v = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
+    v = PyUnicode_FromStringAndSize(buffer, p - buffer);
     PyObject_Free(buffer);
     return v;
 }
