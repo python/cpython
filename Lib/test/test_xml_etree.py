@@ -1751,11 +1751,9 @@ class BugsTest(unittest.TestCase):
         #
         # Test buffer bounds at odd and even positions.
 
-        # 2 KiB buffer (even)
         text = b'\xc3\xa0' * 1024
         self.check_expat224_utf8_bug(text)
 
-        # 2 KiB + 1 B buffer (odd)
         text = b'x' + b'\xc3\xa0' * 1024
         self.check_expat224_utf8_bug(text)
 
