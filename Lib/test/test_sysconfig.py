@@ -243,6 +243,7 @@ class TestSysConfig(unittest.TestCase):
         # is similar to the global posix_prefix one
         base = get_config_var('base')
         user = get_config_var('userbase')
+        platsubdir = get_config_var("platsubdir")
         # the global scheme mirrors the distinction between prefix and
         # exec-prefix but not the user scheme, so we have to adapt the paths
         # before comparing (issue #9100)
@@ -257,8 +258,19 @@ class TestSysConfig(unittest.TestCase):
                 # before comparing
                 global_path = global_path.replace(sys.base_prefix, sys.prefix)
                 base = base.replace(sys.base_prefix, sys.prefix)
+
+            if platsubdir != "lib":
+                platbase = os.path.join(base, platsubdir)
+                purebase = os.path.join(base, "lib")
+                userlib = os.path.join(user, "lib")
+                # replace platbase first because usually purebase is a prefix of platbase
+                # /usr/lib is prefix of /usr/lib64 and would get replaced first
+                modified_path = global_path.replace(platbase, userlib, 1).replace(purebase, userlib, 1)
+            else:
+                modified_path = global_path.replace(base, user, 1)
+
             user_path = get_path(name, 'posix_user')
-            self.assertEqual(user_path, global_path.replace(base, user, 1))
+            self.assertEqual(user_path, modified_path)
 
     def test_main(self):
         # just making sure _main() runs and returns things in the stdout

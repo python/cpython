@@ -30,7 +30,7 @@ WINDOWS_SCHEME = {
 INSTALL_SCHEMES = {
     'unix_prefix': {
         'purelib': '$base/lib/python$py_version_short/site-packages',
-        'platlib': '$platbase/lib/python$py_version_short/site-packages',
+        'platlib': '$platbase/$platsubdir/python$py_version_short/site-packages',
         'headers': '$base/include/python$py_version_short$abiflags/$dist_name',
         'scripts': '$base/bin',
         'data'   : '$base',
@@ -281,7 +281,7 @@ class install(Command):
         # about needing recursive variable expansion (shudder).
 
         py_version = sys.version.split()[0]
-        (prefix, exec_prefix) = get_config_vars('prefix', 'exec_prefix')
+        (prefix, exec_prefix, platsubdir) = get_config_vars('prefix', 'exec_prefix', 'platsubdir')
         try:
             abiflags = sys.abiflags
         except AttributeError:
@@ -298,6 +298,7 @@ class install(Command):
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
                             'abiflags': abiflags,
+                            'platsubdir': platsubdir,
                            }
 
         if HAS_USER_SITE:

@@ -137,13 +137,16 @@ exec_prefix=	@exec_prefix@
 # Install prefix for data files
 datarootdir=    @datarootdir@
 
+# Name of "lib" directory under prefix
+platsubdir=	@platsubdir@
+
 # Expanded directories
 BINDIR=		@bindir@
 LIBDIR=		@libdir@
 MANDIR=		@mandir@
 INCLUDEDIR=	@includedir@
 CONFINCLUDEDIR=	$(exec_prefix)/include
-SCRIPTDIR=	$(prefix)/lib
+SCRIPTDIR=	@libdir@
 ABIFLAGS=	@ABIFLAGS@
 
 # Detailed destination directories
@@ -752,6 +755,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 		-DEXEC_PREFIX='"$(exec_prefix)"' \
 		-DVERSION='"$(VERSION)"' \
 		-DVPATH='"$(VPATH)"' \
+		-DPLATSUBDIR='"$(platsubdir)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c

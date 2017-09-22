@@ -146,8 +146,9 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
             prefix = plat_specific and EXEC_PREFIX or PREFIX
 
     if os.name == "posix":
+        libdir = plat_specific and get_config_var("platsubdir") or "lib"
         libpython = os.path.join(prefix,
-                                 "lib", "python" + get_python_version())
+                                 libdir, "python" + get_python_version())
         if standard_lib:
             return libpython
         else:

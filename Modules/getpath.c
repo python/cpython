@@ -55,9 +55,10 @@
  * pybuilddir.txt.  If the landmark is found, we're done.
  *
  * For the remaining steps, the prefix landmark will always be
- * lib/python$VERSION/os.py and the exec_prefix will always be
- * lib/python$VERSION/lib-dynload, where $VERSION is Python's version
- * number as supplied by the Makefile.  Note that this means that no more
+ * $lib/python$VERSION/os.py and the exec_prefix will always be
+ * $lib/python$VERSION/lib-dynload, where $VERSION is Python's version
+ * number and $lib is PLATSUBDIR as supplied by the Makefile. (usually
+ * "lib", "lib32" or "lib64").  Note that this means that no more
  * build directory checking is performed; if the first step did not find
  * the landmarks, the assumption is that python is running from an
  * installed setup.
@@ -86,7 +87,7 @@
  * containing the shared library modules is appended.  The environment
  * variable $PYTHONPATH is inserted in front of it all.  Finally, the
  * prefix and exec_prefix globals are tweaked so they reflect the values
- * expected by other code, by stripping the "lib/python$VERSION/..." stuff
+ * expected by other code, by stripping the "$lib/python$VERSION/..." stuff
  * off.  If either points to the build directory, the globals are reset to
  * the corresponding preprocessor variables (so sys.prefix will reflect the
  * installation location, even though sys.path points into the build
@@ -105,8 +106,8 @@ extern "C" {
 #endif
 
 
-#if !defined(PREFIX) || !defined(EXEC_PREFIX) || !defined(VERSION) || !defined(VPATH)
-#error "PREFIX, EXEC_PREFIX, VERSION, and VPATH must be constant defined"
+#if !defined(PREFIX) || !defined(EXEC_PREFIX) || !defined(VERSION) || !defined(VPATH) || !defined(PLATSUBDIR)
+#error "PREFIX, EXEC_PREFIX, VERSION, VPATH and PLATSUBDIR must be constant defined"
 #endif
 
 #ifndef LANDMARK
@@ -1145,7 +1146,7 @@ calculate_init(PyCalculatePath *calculate,
     if (!calculate->prefix) {
         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
-    calculate->lib_python = Py_DecodeLocale("lib/python" VERSION, &len);
+    calculate->lib_python = Py_DecodeLocale(PLATSUBDIR "/python" VERSION, &len);
     if (!calculate->lib_python) {
         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }

@@ -631,6 +631,7 @@ SRCDIRS
 THREADHEADERS
 LIBPL
 PY_ENABLE_SHARED
+platsubdir
 LIBPYTHON
 EXT_SUFFIX
 ALT_SOABI
@@ -841,6 +842,7 @@ with_dtrace
 with_libm
 with_libc
 enable_big_digits
+with_custom_platsubdir
 with_computed_gotos
 with_ensurepip
 with_openssl
@@ -1537,6 +1539,10 @@ Optional Packages:
   --with(out)-dtrace      disable/enable DTrace support
   --with-libm=STRING      math library
   --with-libc=STRING      C library
+  --with-custom-platsubdir=<libdirname>
+                          name of the platform-specific lib subdirectory of
+                          $prefix. This is usually "lib", "lib32" or "lib64".
+                          Defaults to basename($libdir)
   --with(out)-computed-gotos
                           Use computed gotos in evaluation loop (enabled by
                           default on supported compilers)
@@ -15179,11 +15185,34 @@ else
   LIBPYTHON=''
 fi
 
+# platsubdir must be defined before LIBPL definition
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for custom platsubdir" >&5
+$as_echo_n "checking for custom platsubdir... " >&6; }
+
+# Check whether --with-custom-platsubdir was given.
+if test "${with_custom_platsubdir+set}" = set; then :
+  withval=$with_custom_platsubdir;
+else
+  with_custom_platsubdir=yes
+fi
+
+case $with_custom_platsubdir in #(
+  yes) :
+    platsubdir=`basename ${libdir}` ;; #(
+  no) :
+    platsubdir=lib ;; #(
+  *) :
+    platsubdir=$with_custom_platsubdir ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $platsubdir" >&5
+$as_echo "$platsubdir" >&6; }
+
+
 
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
+  LIBPL='$(prefix)'"/${platsubdir}/python${VERSION}/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(prefix)'"/${platsubdir}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 
 
