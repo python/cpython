@@ -674,6 +674,28 @@ class BaseTaskTests:
         ret = loop.run_until_complete(asyncio.wait_for(fut, 0, loop=loop))
 
         self.assertEqual(ret, 'done')
+        self.assertTrue(fut.done())
+        self.assertAlmostEqual(0, loop.time())
+
+    def test_wait_for_timeout_less_then_0_or_0_coroutine_do_not_started(self):
+        def gen():
+            when = yield
+            self.assertAlmostEqual(0, when)
+
+        loop = self.new_test_loop(gen)
+
+        foo_started = False
+
+        @asyncio.coroutine
+        def foo():
+            nonlocal foo_started
+            foo_started = True
+
+        with self.assertRaises(asyncio.TimeoutError):
+            loop.run_until_complete(asyncio.wait_for(foo(), 0, loop=loop))
+
+        self.assertAlmostEqual(0, loop.time())
+        self.assertEqual(foo_started, False)
 
     def test_wait_for_timeout_less_then_0_or_0(self):
         def gen():
