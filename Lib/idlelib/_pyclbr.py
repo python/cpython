@@ -1,3 +1,4 @@
+# A private copy of 3.7.0a1 pyclbr for use by idlelib.browser
 """Parse a Python module and describe its classes and functions.
 
 Parse enough of a Python file to recognize imports and class and
