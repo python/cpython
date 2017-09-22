@@ -10,9 +10,6 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
-- bpo-26103: Correct ``inspect.isdatadescriptor`` to look for
-  ``__set__`` or ``__delete__``.  Patch by Aaron Hall.
-
 - bpo-25324: Tokens needed for parsing in Python moved to C. ``COMMENT``,
   ``NL`` and ``ENCODING``. This way the tokens and tok_names in the token
   module don't get changed when you import the tokenize module.
