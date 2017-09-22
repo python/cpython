@@ -1,0 +1,7 @@
+Introduce a ``platsubdir`` sysconfig variable that contains the name of the
+platform-specific "lib" directory. This is used to construct paths that do
+not differ by prefix, i.e., ``/usr/lib`` vs ``/usr/lib64``. The
+``posix_prefix`` install scheme is changed to take this into account.
+
+By default, this is ``basename $libdir``, but can be overriden by
+``./configure --with-custom-platsubdir``.

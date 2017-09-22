@@ -131,6 +131,15 @@ Build and C API Changes
   way to call a callable Python object without any argument.
   (Contributed by Victor Stinner in :issue:`37194`.)
 
+* Introduce a ``platsubdir`` sysconfig variable that contains the name of the
+  platform-specific "lib" directory. This is used to construct paths that do
+  not differ by prefix, i.e., ``/usr/lib`` vs ``/usr/lib64``. The
+  ``posix_prefix`` install scheme is changed to take this into account.
+
+  By default, this is ``basename $libdir``, but can be overriden by
+  ``./configure --with-custom-platsubdir``.
+  (Contributed by matejcik in :issue:`1294959`.)
+
 
 
 Deprecated

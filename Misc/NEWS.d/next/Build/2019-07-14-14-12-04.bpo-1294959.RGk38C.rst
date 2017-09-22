@@ -1,0 +1,3 @@
+On 64bit Linux systems that use ``$prefix/lib64``, this is now the default
+install location for the standard library. Python will still be able to
+import modules installed in ``$prefix/lib``
