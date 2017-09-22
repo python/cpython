@@ -1581,8 +1581,11 @@ def runctx(statement, globals, locals):
 def runcall(*args, **kwds):
     return Pdb().runcall(*args, **kwds)
 
-def set_trace():
-    Pdb().set_trace(sys._getframe().f_back)
+def set_trace(*, header=None):
+    pdb = Pdb()
+    if header is not None:
+        pdb.message(header)
+    pdb.set_trace(sys._getframe().f_back)
 
 # Post-Mortem interface
 
