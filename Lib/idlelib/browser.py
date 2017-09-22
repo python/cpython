@@ -266,6 +266,19 @@ class ChildBrowserTreeItem(TreeItem):
             sublist.append(item)
         return sublist
 
+    def GetSubList(self):
+        """Return the list of ChildBrowserTreeItem items.
+
+        Each item returned from listclasses is the first level of
+        classes/functions within the module.
+        """
+        print("#### child sublist")
+        sublist = []
+        for name in self.listchildren():
+            item = ChildBrowserTreeItem(name, self.classes, self.file)
+            sublist.append(item)
+        return sublist
+
     def OnDoubleClick(self):
         "Open module with file_open and position to lineno, if it exists."
         if not os.path.exists(self.file):
@@ -286,6 +299,22 @@ class ChildBrowserTreeItem(TreeItem):
         result.sort()
         return [item[1:] for item in result]
 
+    def listchildren(self):
+        """Return list of classes and functions in the module.
+
+        The dictionary output from pyclbr is re-written as a
+        list of tuples in the form (lineno, name) and
+        then sorted so that the classes and functions are
+        processed in line number order.  The returned list only
+        contains the name and not the line number.  An instance
+        variable self.classes contains the pyclbr dictionary values,
+        which are instances of Class and Function.
+        """
+        print("CHILD  listchild ###", self.cl.children, self.cl.name)
+        self.classes, items = _traverse_node(self.cl.children)
+        items.sort()
+        return [s for item, s in items]
+
 
 def _class_browser(parent): # htest #
     try:
@@ -294,7 +323,7 @@ def _class_browser(parent): # htest #
     except IndexError:
         file = __file__
         # Add objects for htest
-        class Nested_in_func():
+        class Nested_in_func(TreeNode):
             def nested_in_class(): pass
         def closure():
             class Nested_in_closure: pass

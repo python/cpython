@@ -255,40 +255,40 @@ class ChildBrowserTreeItemTest(unittest.TestCase):
         del browser.file_open
 
 
-class NestedChildrenTest(unittest.TestCase):
-    "Test that all the nodes in a nested tree are added to the BrowserTree."
-
-    @classmethod
-    def setUpClass(cls):
-        cls.orig_readmodule_ex = browser.pyclbr.readmodule_ex
-        browser.pyclbr.readmodule_ex = mock.Mock(return_value=mock_pyclbr_tree)
-        cls.sublist = browser.ModuleBrowserTreeItem(fname).GetSubList()
-
-    @classmethod
-    def tearDownClass(cls):
-        browser.pyclbr.readmodule_ex = cls.orig_readmodule_ex
-        del cls.orig_readmodule_ex, cls.sublist
-
-    def test_nested(self):
-        queue = deque()
-        actual_names = []
-        # The tree items are processed in breadth first order.
-        # Verify that processing each sublist hits every node and
-        # in the right order.
-        expected_names = ['f0', 'C0(base)',
-                          'f1', 'c1', 'F1', 'C1()',
-                          'f2', 'C2',
-                          'F3']
-        queue.extend(self.sublist)
-        while queue:
-            cb = queue.popleft()
-            sublist = cb.GetSubList()
-            queue.extend(sublist)
-            self.assertIn(cb.name, cb.GetText())
-            self.assertIn(cb.GetIconName(), ('python', 'folder'))
-            self.assertIs(cb.IsExpandable(), sublist != [])
-            actual_names.append(cb.name)
-        self.assertEqual(actual_names, expected_names)
+##class NestedChildrenTest(unittest.TestCase):
+##    "Test that all the nodes in a nested tree are added to the BrowserTree."
+##
+##    @classmethod
+##    def setUpClass(cls):
+##        cls.orig_readmodule_ex = browser.pyclbr.readmodule_ex
+##        browser.pyclbr.readmodule_ex = mock.Mock(return_value=mock_pyclbr_tree)
+##        cls.sublist = browser.ModuleBrowserTreeItem(fname).GetSubList()
+##
+##    @classmethod
+##    def tearDownClass(cls):
+##        browser.pyclbr.readmodule_ex = cls.orig_readmodule_ex
+##        del cls.orig_readmodule_ex, cls.sublist
+##
+##    def test_nested(self):
+##        queue = deque()
+##        actual_names = []
+##        # The tree items are processed in breadth first order.
+##        # Verify that processing each sublist hits every node and
+##        # in the right order.
+##        expected_names = ['f0', 'C0(base)',
+##                          'f1', 'c1', 'F1', 'C1()',
+##                          'f2', 'C2',
+##                          'F3']
+##        queue.extend(self.sublist)
+##        while queue:
+##            cb = queue.popleft()
+##            sublist = cb.GetSubList()
+##            queue.extend(sublist)
+##            self.assertIn(cb.name, cb.GetText())
+##            self.assertIn(cb.GetIconName(), ('python', 'folder'))
+##            self.assertIs(cb.IsExpandable(), sublist != [])
+##            actual_names.append(cb.name)
+##        self.assertEqual(actual_names, expected_names)
 
 
 if __name__ == '__main__':
