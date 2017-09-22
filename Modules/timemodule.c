@@ -415,6 +415,8 @@ time_localtime(PyObject *self, PyObject *args)
         char zone[100];
 #endif
         time_t gmtoff;
+		/*bpo-16322, bpo-27426: For Windows use GetTimeZoneInformation() to avoid
+		wrong encoding of time zone names.*/
 #ifdef MS_WINDOWS
 		TIME_ZONE_INFORMATION tzi;
 		int tzid = GetTimeZoneInformation(&tzi);
