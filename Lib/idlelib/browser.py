@@ -157,16 +157,8 @@ class ModuleBrowserTreeItem(TreeItem):
         return "python"
 
     def GetSubList(self):
-        """Return the list of ChildBrowserTreeItem items.
-
-        Each item returned from listclasses is the first level of
-        classes/functions within the module.
-        """
-        sublist = []
-        for obj in self.listchildren():
-            treeobj = ChildBrowserTreeItem(obj)
-            sublist.append(treeobj)
-        return sublist
+        "Return ChildBrowserTreeItems for children."
+        return [ChildBrowserTreeItem(obj) for obj in self.listchildren()]
 
     def OnDoubleClick(self):
         "Open a module in an editor window when double clicked."
@@ -236,11 +228,7 @@ class ChildBrowserTreeItem(TreeItem):
 
     def GetSubList(self):
         "Return ChildBrowserTreeItems for children."
-        sublist = []
-        for obj in self.listchildren():
-            treeobj = ChildBrowserTreeItem(obj)
-            sublist.append(treeobj)
-        return sublist
+        return [ChildBrowserTreeItem(obj) for obj in self.listchildren()]
 
     def OnDoubleClick(self):
         "Open module with file_open and position to lineno, if it exists."
