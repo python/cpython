@@ -164,8 +164,8 @@ class ModuleBrowserTreeItem(TreeItem):
         """
         sublist = []
         for name in self.listchildren():
-            item = ChildBrowserTreeItem(name, self.classes, self.file)
-            sublist.append(item)
+            obj = ChildBrowserTreeItem(self.classes[name])
+            sublist.append(obj)
         return sublist
 
     def OnDoubleClick(self):
@@ -210,27 +210,12 @@ class ChildBrowserTreeItem(TreeItem):
     Uses TreeItem as the basis for the structure of the tree.
     """
 
-    def __init__(self, name, classes, file):
-        """Create a TreeItem for the class/function.
+    def __init__(self, obj):
+        """Create a TreeItem for a pyclbr class/function object."""
 
-        Args:
-            name: Name of the class/function.
-            classes: Dictonary of Class/Function instances from pyclbr.
-            file: Full path and module name.
-
-        Instance variables:
-            self.cl: Class/Function instance for the class/function name.
-            self.isfunction: True if self.cl is a Function.
-        """
-        self.name = name
-        # XXX - Does classes need to be an instance variable?
-        self.classes = classes
-        self.file = file
-        try:
-            self.cl = self.classes[self.name]
-        except (IndexError, KeyError):
-            self.cl = None
-        self.isfunction = isinstance(self.cl, pyclbr.Function)
+        self.obj = obj
+        self.name = obj.name
+        self.isfunction = isinstance(obj, pyclbr.Function)
 
     def GetText(self):
         "Return the name of the function/class to display."
@@ -247,35 +232,15 @@ class ChildBrowserTreeItem(TreeItem):
             return "folder"
 
     def IsExpandable(self):
-        "Return True if this class has methods."
-        if self.cl:
-            try:
-                return not not self.cl.children
-            except AttributeError:
-                return False
-        return None
+        "Return True if self.obj has nested objects."
+        return self.obj.children != {}
 
     def GetSubList(self):
-        "Return recursive list of ChildBrowserTreeItem items."
-        if not self.cl:
-            return []
-        sublist = []
-        for obj in self.listchildren():
-            classes, item_name = obj
-            item = ChildBrowserTreeItem(item_name, classes, self.file)
-            sublist.append(item)
-        return sublist
-
-    def GetSubList(self):
-        """Return the list of ChildBrowserTreeItem items.
-
-        Each item returned from listclasses is the first level of
-        classes/functions within the module.
-        """
+        "Return ChildBrowserTreeItems for children."
         sublist = []
         for name in self.listchildren():
-            item = ChildBrowserTreeItem(name, self.classes, self.file)
-            sublist.append(item)
+            obj = ChildBrowserTreeItem(self.classes[name])
+            sublist.append(obj)
         return sublist
 
     def OnDoubleClick(self):
@@ -288,17 +253,6 @@ class ChildBrowserTreeItem(TreeItem):
             edit.gotoline(lineno)
 
     def listchildren(self):
-        "Return list of nested classes/functions sorted by lineno."
-        if not self.cl:
-            return []
-        result = []
-        for name, ob in self.cl.children.items():
-            classes, items = _traverse_node({name: ob})
-            result.append((ob.lineno, classes, items[0][1]))
-        result.sort()
-        return [item[1:] for item in result]
-
-    def listchildren(self):
         """Return list of classes and functions in the module.
 
         The dictionary output from pyclbr is re-written as a
@@ -309,7 +263,7 @@ class ChildBrowserTreeItem(TreeItem):
         variable self.classes contains the pyclbr dictionary values,
         which are instances of Class and Function.
         """
-        self.classes, items = _traverse_node(self.cl.children)
+        self.classes, items = _traverse_node(self.obj.children)
         items.sort()
         return [s for item, s in items]
 
