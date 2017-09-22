@@ -1,4 +1,7 @@
 """ Test idlelib.browser.
+
+Coverage: 88%
+(Higher, because should exclude 3 lines that .coveragerc won't exclude.)
 """
 
 import os.path
