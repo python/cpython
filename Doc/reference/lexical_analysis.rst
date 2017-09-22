@@ -446,9 +446,6 @@ instance of the :class:`bytes` type instead of the :class:`str` type.  They
 may only contain ASCII characters; bytes with a numeric value of 128 or greater
 must be expressed with escapes.
 
-As of Python 3.3 it is possible again to prefix string literals with a
-``u`` prefix to simplify maintenance of dual 2.x and 3.x codebases.
-
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
 or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
 literal characters.  As a result, in string literals, ``'\U'`` and ``'\u'``
