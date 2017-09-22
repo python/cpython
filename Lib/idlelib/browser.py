@@ -227,8 +227,8 @@ class ChildBrowserTreeItem(TreeItem):
 
 def _class_browser(parent): # htest #
     try:
-       file = sys.argv[1]  # If pass file on command line
-       # If this succeeds, unittest will fail.
+        file = sys.argv[1]  # If pass file on command line
+        # If this succeeds, unittest will fail.
     except IndexError:
         file = __file__
         # Add objects for htest
