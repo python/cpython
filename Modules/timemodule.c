@@ -279,11 +279,11 @@ static PyObject *
 tmtotuple(struct tm *p
 #ifndef HAVE_STRUCT_TM_TM_ZONE
 #ifdef MS_WINDOWS
-	, const wchar_t *zone
+    , const wchar_t *zone
 #else
-	, const char *zone
+    , const char *zone
 #endif
-	, time_t gmtoff
+    , time_t gmtoff
 #endif
 )
 {
@@ -308,8 +308,8 @@ tmtotuple(struct tm *p
     SET(10, p->tm_gmtoff);
 #else
 #ifdef MS_WINDOWS
-	PyStructSequence_SET_ITEM(v, 9,
-		PyUnicode_FromWideChar(zone, -1));
+    PyStructSequence_SET_ITEM(v, 9,
+        PyUnicode_FromWideChar(zone, -1));
 #else
     PyStructSequence_SET_ITEM(v, 9,
         PyUnicode_DecodeLocale(zone, "surrogateescape"));
@@ -364,7 +364,7 @@ time_gmtime(PyObject *self, PyObject *args)
     return tmtotuple(&buf);
 #else
 #ifdef MS_WINDOWS
-	return tmtotuple(&buf, L"UTC", 0);
+    return tmtotuple(&buf, L"UTC", 0);
 #else
     return tmtotuple(&buf, "UTC", 0);
 #endif
@@ -410,22 +410,22 @@ time_localtime(PyObject *self, PyObject *args)
     {
         struct tm local = buf;
 #ifdef MS_WINDOWS
-		wchar_t *zone;
+        wchar_t *zone;
 #else
         char zone[100];
 #endif
         time_t gmtoff;
-		/*bpo-16322, bpo-27426: For Windows use GetTimeZoneInformation() to avoid
-		wrong encoding of time zone names.*/
+        /*bpo-16322, bpo-27426: For Windows use GetTimeZoneInformation() to avoid
+        wrong encoding of time zone names.*/
 #ifdef MS_WINDOWS
-		TIME_ZONE_INFORMATION tzi;
-		int tzid = GetTimeZoneInformation(&tzi);
-		if (tzid < 2) {
-			zone = tzi.StandardName;
-		}
-		else {
-			zone = tzi.DaylightName;
-		}
+        TIME_ZONE_INFORMATION tzi;
+        int tzid = GetTimeZoneInformation(&tzi);
+        if (tzid < 2) {
+            zone = tzi.StandardName;
+        }
+        else {
+            zone = tzi.DaylightName;
+        }
 #else
         strftime(zone, sizeof(zone), "%Z", &buf);
 #endif
@@ -551,10 +551,6 @@ checktm(struct tm* buf)
     return 1;
 }
 
-#ifdef MS_WINDOWS
-   /* wcsftime() doesn't format correctly time zones, see issue #10653 */
-#  undef HAVE_WCSFTIME
-#endif
 #define STRFTIME_FORMAT_CODES \
 "Commonly used format codes:\n\
 \n\
@@ -653,27 +649,27 @@ time_strftime(PyObject *self, PyObject *args)
     fmt = PyBytes_AS_STRING(format);
 #endif
 
-#if defined(MS_WINDOWS) && !defined(HAVE_WCSFTIME)
+#if defined(MS_WINDOWS) && defined(HAVE_WCSFTIME)
     /* check that the format string contains only valid directives */
-    for (outbuf = strchr(fmt, '%');
+    for (outbuf = wcschr(fmt, L'%');
         outbuf != NULL;
-        outbuf = strchr(outbuf+2, '%'))
+        outbuf = wcschr(outbuf + 2, L'%'))
     {
-        if (outbuf[1] == '#')
+        if (outbuf[1] == L'#')
             ++outbuf; /* not documented by python, */
-        if (outbuf[1] == '\0')
+        if (outbuf[1] == L'\0')
             break;
-        if ((outbuf[1] == 'y') && buf.tm_year < 0) {
+        if ((outbuf[1] == L'y') && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
                         "format %y requires year >= 1900 on Windows");
-            Py_DECREF(format);
+            PyMem_Free(format);
             return NULL;
         }
     }
 #elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
     for (outbuf = wcschr(fmt, '%');
         outbuf != NULL;
-        outbuf = wcschr(outbuf+2, '%'))
+        outbuf = wcschr(outbuf + 2, '%'))
     {
         if (outbuf[1] == L'\0')
             break;
@@ -1253,13 +1249,13 @@ PyInit_timezone(PyObject *m) {
     PyModule_AddIntConstant(m, "altzone", timezone-3600);
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
-	/*bpo-16322, bpo-27426: For Windows use GetTimeZoneInformation() to avoid
-	wrong encoding of time zone names.*/
+    /*bpo-16322, bpo-27426: For Windows use GetTimeZoneInformation() to avoid
+    wrong encoding of time zone names.*/
 #ifdef MS_WINDOWS
-	TIME_ZONE_INFORMATION tzi;
-	GetTimeZoneInformation(&tzi);
-	otz0 = PyUnicode_FromWideChar(tzi.StandardName, -1);
-	otz1 = PyUnicode_FromWideChar(tzi.DaylightName, -1);
+    TIME_ZONE_INFORMATION tzi;
+    GetTimeZoneInformation(&tzi);
+    otz0 = PyUnicode_FromWideChar(tzi.StandardName, -1);
+    otz1 = PyUnicode_FromWideChar(tzi.DaylightName, -1);
 #else
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
     otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
