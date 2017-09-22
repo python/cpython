@@ -95,8 +95,8 @@ latex_elements = {'inputenc': r'\usepackage[utf8x]{inputenc}', 'utf8extra': ''}
 # Additional stuff for the LaTeX preamble.
 latex_elements['preamble'] = r'''
 \authoraddress{
-  \strong{Python Software Foundation}\\
-  Email: \email{docs@python.org}
+  \sphinxstrong{Python Software Foundation}\\
+  Email: \sphinxemail{docs@python.org}
 }
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
