@@ -32,14 +32,15 @@ def transform_children(child_dict, modname=None):
     Augment class names with bases.
     Sort objects by line number.
 
-    Mutation of obj.name depends on this function being called once.
-    Current tree saves TreeItems once created.  Replacement would require
-    saving children and patching parent.children and each child.parent.
+    The current tree only calls this once per child_dic as it saves
+    TreeItems once created.  A future tree and tests might violate this,
+    so a check prevents multiple in-place augmentations.
     """
     obs = []  # Use list since values should already be sorted.
-    for obj in child_dict.values():
+    for key, obj in child_dict.items():
         if modname is None or obj.module == modname:
-            if hasattr(obj, 'super') and obj.super:
+            if hasattr(obj, 'super') and obj.super and obj.name == key:
+                # If obj.name != key, it has already been suffixed.
                 supers = []
                 for sup in obj.super:
                     if type(sup) is type(''):

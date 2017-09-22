@@ -90,6 +90,9 @@ class TransformChildrenTest(unittest.TestCase):
         eq(tcl[0], f0)
         eq(tcl[1], C0)
         eq(tcl[1].name, 'C0(base)')
+        # Check that second call does not add second '(base)' suffix.
+        tcl = list(browser.transform_children(mock_pyclbr_tree, 'test'))
+        eq(tcl[1].name, 'C0(base)')
         # Nothing to traverse if parameter name isn't same as tree module.
         tn = browser.transform_children(mock_pyclbr_tree, 'different name')
         self.assertEqual(list(tn), [])
