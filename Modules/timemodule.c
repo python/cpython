@@ -1222,8 +1222,17 @@ PyInit_timezone(PyObject *m) {
     PyModule_AddIntConstant(m, "altzone", timezone-3600);
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
+	/*bpo-16322, bpo-27426: For Windows use GetTimeZoneInformation() to avoid
+	wrong encoding of time zone names.*/
+#ifdef MS_WINDOWS
+	TIME_ZONE_INFORMATION tzi;
+	GetTimeZoneInformation(&tzi);
+	otz0 = PyUnicode_FromWideChar(tzi.StandardName, -1);
+	otz1 = PyUnicode_FromWideChar(tzi.DaylightName, -1);
+#else
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
     otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
+#endif
     PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
     {
