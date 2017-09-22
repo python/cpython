@@ -661,7 +661,21 @@ class BaseTaskTests:
         t.cancel()
         self.assertRaises(asyncio.CancelledError, loop.run_until_complete, t)
 
-    def test_wait_for_timeout_equals_0(self):
+    def test_wait_for_timeout_less_then_0_or_0_future_done(self):
+        def gen():
+            when = yield
+            self.assertAlmostEqual(0, when)
+
+        loop = self.new_test_loop(gen)
+
+        fut = self.new_future(loop)
+        fut.set_result('done')
+
+        ret = loop.run_until_complete(asyncio.wait_for(fut, 0, loop=loop))
+
+        self.assertEqual(ret, 'done')
+
+    def test_wait_for_timeout_less_then_0_or_0(self):
         def gen():
             when = yield
             self.assertAlmostEqual(0.2, when)

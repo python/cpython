@@ -335,6 +335,9 @@ def wait_for(fut, timeout, *, loop=None):
         return (yield from fut)
 
     if timeout <= 0:
+        if fut.done():
+            return fut.result()
+
         fut = ensure_future(fut, loop=loop)
         fut.cancel()
         raise futures.TimeoutError()
