@@ -32,9 +32,8 @@ def transform_children(child_dict, modname=None):
     Augment class names with bases.
     Sort objects by line number.
     """
-    items = []
-    children = {}
-    for key, obj in child_dict.items():
+    obs = []  # Use list since values should already be sorted.
+    for obj in child_dict.values():
         if modname is None or obj.module == modname:
             if hasattr(obj, 'super') and obj.super:
                 supers = []
@@ -46,10 +45,9 @@ def transform_children(child_dict, modname=None):
                         if sup.module != obj.module:
                             sname = f'{sup.module}.{sname}'
                     supers.append(sname)
-                key += '({})'.format(', '.join(supers))
-            items.append((obj.lineno, key))
-            children[key] = obj
-    return children, items
+                obj.name += '({})'.format(', '.join(supers))
+            obs.append(obj)
+    return sorted(obs, key=lambda o: o.lineno)
 
 
 class ClassBrowser:
@@ -166,16 +164,7 @@ class ModuleBrowserTreeItem(TreeItem):
         return os.path.normcase(self.file[-3:]) == ".py"
 
     def listchildren(self):
-        """Return list of classes and functions in the module.
-
-        The dictionary output from pyclbr is re-written as a
-        list of tuples in the form (lineno, name) and
-        then sorted so that the classes and functions are
-        processed in line number order.  The returned list only
-        contains the name and not the line number.  An instance
-        variable self.classes contains the pyclbr dictionary values,
-        which are instances of Class and Function.
-        """
+        "Return sequenced classes and functions in the module."
         dir, file = os.path.split(self.file)
         name, ext = os.path.splitext(file)
         if os.path.normcase(ext) != ".py":
@@ -184,8 +173,7 @@ class ModuleBrowserTreeItem(TreeItem):
             tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:
             return []
-        siblings, tagged_names = transform_children(tree, name)
-        return [siblings[name] for lineno, name in sorted(tagged_names)]
+        return transform_children(tree, name)
 
 
 class ChildBrowserTreeItem(TreeItem):
@@ -195,8 +183,7 @@ class ChildBrowserTreeItem(TreeItem):
     """
 
     def __init__(self, obj):
-        """Create a TreeItem for a pyclbr class/function object."""
-
+        "Create a TreeItem for a pyclbr class/function object."
         self.obj = obj
         self.name = obj.name
         self.isfunction = isinstance(obj, pyclbr.Function)
@@ -221,7 +208,8 @@ class ChildBrowserTreeItem(TreeItem):
 
     def GetSubList(self):
         "Return ChildBrowserTreeItems for children."
-        return [ChildBrowserTreeItem(obj) for obj in self.listchildren()]
+        return [ChildBrowserTreeItem(obj)
+                for obj in transform_children(self.obj.children)]
 
     def OnDoubleClick(self):
         "Open module with file_open and position to lineno, if it exists."
@@ -231,20 +219,6 @@ class ChildBrowserTreeItem(TreeItem):
         if hasattr(self.cl, 'lineno'):
             lineno = self.cl.lineno
             edit.gotoline(lineno)
-
-    def listchildren(self):
-        """Return classes and functions nested in self.obj.
-
-        The dictionary output from pyclbr is re-written as a
-        list of tuples in the form (lineno, name) and
-        then sorted so that the classes and functions are
-        processed in line number order.  The returned list only
-        contains the name and not the line number.  An instance
-        variable self.classes contains the pyclbr dictionary values,
-        which are instances of Class and Function.
-        """
-        siblings, tagged_names = transform_children(self.obj.children)
-        return [siblings[name] for lineno, name in sorted(tagged_names)]
 
 
 def _class_browser(parent): # htest #
