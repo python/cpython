@@ -278,7 +278,12 @@ static PyTypeObject StructTimeType;
 static PyObject *
 tmtotuple(struct tm *p
 #ifndef HAVE_STRUCT_TM_TM_ZONE
-        , const char *zone, time_t gmtoff
+#ifdef MS_WINDOWS
+	, const wchar_t *zone
+#else
+	, const char *zone
+#endif
+	, time_t gmtoff
 #endif
 )
 {
@@ -302,8 +307,13 @@ tmtotuple(struct tm *p
         PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
     SET(10, p->tm_gmtoff);
 #else
+#ifdef MS_WINDOWS
+	PyStructSequence_SET_ITEM(v, 9,
+		PyUnicode_FromWideChar(zone, -1));
+#else
     PyStructSequence_SET_ITEM(v, 9,
         PyUnicode_DecodeLocale(zone, "surrogateescape"));
+#endif
     PyStructSequence_SET_ITEM(v, 10, _PyLong_FromTime_t(gmtoff));
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
 #undef SET
@@ -353,7 +363,11 @@ time_gmtime(PyObject *self, PyObject *args)
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     return tmtotuple(&buf);
 #else
+#ifdef MS_WINDOWS
+	return tmtotuple(&buf, L"UTC", 0);
+#else
     return tmtotuple(&buf, "UTC", 0);
+#endif
 #endif
 }
 
@@ -395,9 +409,24 @@ time_localtime(PyObject *self, PyObject *args)
 #else
     {
         struct tm local = buf;
+#ifdef MS_WINDOWS
+		wchar_t *zone;
+#else
         char zone[100];
+#endif
         time_t gmtoff;
+#ifdef MS_WINDOWS
+		TIME_ZONE_INFORMATION tzi;
+		int tzid = GetTimeZoneInformation(&tzi);
+		if (tzid < 2) {
+			zone = tzi.StandardName;
+		}
+		else {
+			zone = tzi.DaylightName;
+		}
+#else
         strftime(zone, sizeof(zone), "%Z", &buf);
+#endif
         gmtoff = timegm(&buf) - when;
         return tmtotuple(&local, zone, gmtoff);
     }
