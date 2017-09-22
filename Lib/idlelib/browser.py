@@ -163,9 +163,9 @@ class ModuleBrowserTreeItem(TreeItem):
         classes/functions within the module.
         """
         sublist = []
-        for name in self.listchildren():
-            obj = ChildBrowserTreeItem(self.classes[name])
-            sublist.append(obj)
+        for obj in self.listchildren():
+            treeobj = ChildBrowserTreeItem(obj)
+            sublist.append(treeobj)
         return sublist
 
     def OnDoubleClick(self):
@@ -199,9 +199,8 @@ class ModuleBrowserTreeItem(TreeItem):
             tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:
             return []
-        self.classes, items = _traverse_node(tree, name)
-        items.sort()
-        return [s for item, s in items]
+        siblings, tagged_names = _traverse_node(tree, name)
+        return [siblings[name] for lineno, name in sorted(tagged_names)]
 
 
 class ChildBrowserTreeItem(TreeItem):
@@ -238,9 +237,9 @@ class ChildBrowserTreeItem(TreeItem):
     def GetSubList(self):
         "Return ChildBrowserTreeItems for children."
         sublist = []
-        for name in self.listchildren():
-            obj = ChildBrowserTreeItem(self.classes[name])
-            sublist.append(obj)
+        for obj in self.listchildren():
+            treeobj = ChildBrowserTreeItem(obj)
+            sublist.append(treeobj)
         return sublist
 
     def OnDoubleClick(self):
@@ -263,9 +262,8 @@ class ChildBrowserTreeItem(TreeItem):
         variable self.classes contains the pyclbr dictionary values,
         which are instances of Class and Function.
         """
-        self.classes, items = _traverse_node(self.obj.children)
-        items.sort()
-        return [s for item, s in items]
+        siblings, tagged_names = _traverse_node(self.obj.children)
+        return [siblings[name] for lineno, name in sorted(tagged_names)]
 
 
 def _class_browser(parent): # htest #
