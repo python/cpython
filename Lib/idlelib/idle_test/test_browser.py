@@ -215,7 +215,7 @@ class NestedChildrenTest(unittest.TestCase):
         # The tree items are processed in breadth first order.
         # Verify that processing each sublist hits every node and
         # in the right order.
-        expected_names = ['f0', 'C0',
+        expected_names = ['f0', 'C0',  # This is run before transform test.
                           'f1', 'c1', 'F1', 'C1()',
                           'f2', 'C2',
                           'F3']

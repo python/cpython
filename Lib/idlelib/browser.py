@@ -223,7 +223,7 @@ class ChildBrowserTreeItem(TreeItem):
             edit.gotoline(self.obj.lineno)
         except (OSError, AttributeError):
             pass
-            
+
 
 def _class_browser(parent): # htest #
     try:
