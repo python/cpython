@@ -272,7 +272,6 @@ class ChildBrowserTreeItem(TreeItem):
         Each item returned from listclasses is the first level of
         classes/functions within the module.
         """
-        print("#### child sublist")
         sublist = []
         for name in self.listchildren():
             item = ChildBrowserTreeItem(name, self.classes, self.file)
@@ -310,7 +309,6 @@ class ChildBrowserTreeItem(TreeItem):
         variable self.classes contains the pyclbr dictionary values,
         which are instances of Class and Function.
         """
-        print("CHILD  listchild ###", self.cl.children, self.cl.name)
         self.classes, items = _traverse_node(self.cl.children)
         items.sort()
         return [s for item, s in items]
