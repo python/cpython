@@ -334,6 +334,11 @@ def wait_for(fut, timeout, *, loop=None):
     if timeout is None:
         return (yield from fut)
 
+    if timeout == 0:
+        fut = ensure_future(fut, loop=loop)
+        fut.cancel()
+        raise futures.TimeoutError()
+
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
     cb = functools.partial(_release_waiter, waiter)

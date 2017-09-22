@@ -661,6 +661,37 @@ class BaseTaskTests:
         t.cancel()
         self.assertRaises(asyncio.CancelledError, loop.run_until_complete, t)
 
+    def test_wait_for_timeout_equals_0(self):
+        def gen():
+            when = yield
+            self.assertAlmostEqual(0.2, when)
+            when = yield 0
+            self.assertAlmostEqual(0, when)
+
+        loop = self.new_test_loop(gen)
+
+        foo_running = None
+
+        @asyncio.coroutine
+        def foo():
+            nonlocal foo_running
+            foo_running = True
+            try:
+                yield from asyncio.sleep(0.2, loop=loop)
+            finally:
+                foo_running = False
+            return 'done'
+
+        fut = self.new_task(loop, foo())
+
+        with self.assertRaises(asyncio.TimeoutError):
+            loop.run_until_complete(asyncio.wait_for(fut, 0, loop=loop))
+        self.assertTrue(fut.done())
+        # it should have been cancelled due to the timeout
+        self.assertTrue(fut.cancelled())
+        self.assertAlmostEqual(0, loop.time())
+        self.assertEqual(foo_running, False)
+
     def test_wait_for(self):
 
         def gen():
