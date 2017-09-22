@@ -76,76 +76,64 @@ C2 = mb._nest_class(C1, 'C2', 12)
 F3 = mb._nest_function(C2, 'F3', 14)
 mock_pyclbr_tree = {'f0': f0, 'C0': C0}
 
+# transform_children(mock_pyclbr_tree, 'test') mutates C0.name.
 
 class TransformChildrenTest(unittest.TestCase):
 
     def test_transform_children(self):
+        eq = self.assertEqual
+        # Parameter matches tree module.
+        tcl = list(browser.transform_children(mock_pyclbr_tree, 'test'))
+        eq(tcl[0], f0)
+        eq(tcl[1], C0)
+        eq(tcl[1].name, 'C0(base)')
         # Nothing to traverse if parameter name isn't same as tree module.
         tn = browser.transform_children(mock_pyclbr_tree, 'different name')
-        self.assertEqual(tn, ({}, []))
-
-        # Parameter matches tree module.
-        tn = browser.transform_children(mock_pyclbr_tree, 'test')
-        expected = ({'f0': f0, 'C0(base)': C0}, [(1, 'f0'), (6, 'C0(base)')])
-        self.assertEqual(tn, expected)
-
+        self.assertEqual(list(tn), [])
         # No name parameter.
-        tn = browser.transform_children({'f1': f1})
-        expected = ({'f1': f1}, [(2, 'f1')])
-        self.assertEqual(tn, expected)
+        tn = browser.transform_children({'f1': f1, 'c1': c1})
+        self.assertEqual(list(tn), [f1, c1])
 
 
 class ModuleBrowserTreeItemTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.orig_readmodule_ex = browser.pyclbr.readmodule_ex
-        browser.pyclbr.readmodule_ex = mock.Mock(return_value=mock_pyclbr_tree)
         cls.mbt = browser.ModuleBrowserTreeItem(fname)
 
-    @classmethod
-    def tearDownClass(cls):
-        browser.pyclbr.readmodule_ex = cls.orig_readmodule_ex
-        del cls.orig_readmodule_ex, cls.mbt
-
     def test_init(self):
-        mbt = self.mbt
-        self.assertEqual(mbt.file, fname)
+        self.assertEqual(self.mbt.file, fname)
 
     def test_gettext(self):
-        mbt = self.mbt
-        self.assertEqual(mbt.GetText(), fname)
+        self.assertEqual(self.mbt.GetText(), fname)
 
     def test_geticonname(self):
-        mbt = self.mbt
-        self.assertEqual(mbt.GetIconName(), 'python')
+        self.assertEqual(self.mbt.GetIconName(), 'python')
 
     def test_isexpandable(self):
-        mbt = self.mbt
-        self.assertTrue(mbt.IsExpandable())
+        self.assertTrue(self.mbt.IsExpandable())
 
     def test_listchildren(self):
-        mbt = self.mbt
-        expected_names = ['f0', 'C0(base)']
-        expected_classes = {'f0': f0, 'C0(base)': C0}
-        self.assertNotEqual(mbt.classes, expected_classes)
-
-        items = mbt.listchildren()
-        self.assertEqual(items, expected_names)
-        # self.classes is set in listchildren.
-        self.assertEqual(mbt.classes, expected_classes)
+        save_rex = browser.pyclbr.readmodule_ex
+        save_tc = browser.transform_children
+        browser.pyclbr.readmodule_ex = Func(result=mock_pyclbr_tree)
+        browser.transform_children = Func(result=[f0, C0])
+        try:
+            self.assertEqual(self.mbt.listchildren(), [f0, C0])
+        finally:
+            browser.pyclbr.readmodule_ex = save_rex
+            browser.transform_children = save_tc
 
     def test_getsublist(self):
         mbt = self.mbt
-        expected_names = ['f0', 'C0(base)']
-        expected_classes = {'f0': f0, 'C0(base)': C0}
-        sublist = mbt.GetSubList()
-        for index, item in enumerate(sublist):
-            self.assertIsInstance(item, browser.ChildBrowserTreeItem)
-            self.assertEqual(sublist[index].name, expected_names[index])
-            self.assertEqual(sublist[index].classes, expected_classes)
-            self.assertEqual(sublist[index].file, fname)
-        mbt.classes.clear()
+        mbt.listchildren = Func(result=[f0, C0])
+        sub0, sub1 = mbt.GetSubList()
+        del mbt.listchildren
+        self.assertIsInstance(sub0, browser.ChildBrowserTreeItem)
+        self.assertIsInstance(sub1, browser.ChildBrowserTreeItem)
+        self.assertEqual(sub0.name, 'f0')
+        self.assertEqual(sub1.name, 'C0')
+
 
     def test_ondoubleclick(self):
         mbt = self.mbt
@@ -167,128 +155,81 @@ class ChildBrowserTreeItemTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.cbt_C0 = browser.ChildBrowserTreeItem('C0', mock_pyclbr_tree, fname)
-        cls.f1_classes = {'f1': f1}
-        cls.cbt_f1 = browser.ChildBrowserTreeItem('f1', cls.f1_classes, fname)
-        cls.F1_classes = {'F1': F1}
-        cls.cbt_F1 = browser.ChildBrowserTreeItem('F1', cls.F1_classes, fname)
-        cls.cbt_C1 = browser.ChildBrowserTreeItem('F1', {'C1': C1}, fname)
+        CBT = browser.ChildBrowserTreeItem
+        cls.cbt_f1 = CBT(f1)
+        cls.cbt_C1 = CBT(C1)
+        cls.cbt_F1 = CBT(F1)
 
     @classmethod
     def tearDownClass(cls):
-        del cls.cbt_C0, cls.cbt_f1, cls.cbt_F1, cls.cbt_C1
+        del cls.cbt_C1, cls.cbt_f1, cls.cbt_F1
 
     def test_init(self):
-        cbt_C0 = self.cbt_C0
-        cbt_f1 = self.cbt_f1
         eq = self.assertEqual
-
-        eq(cbt_C0.name, 'C0')
-        eq(cbt_C0.classes, mock_pyclbr_tree)
-        eq(cbt_C0.file, fname)
-        eq(cbt_C0.cl, mock_pyclbr_tree['C0'])
-        self.assertFalse(cbt_C0.isfunction)
-
-        eq(cbt_f1.name, 'f1')
-        eq(cbt_f1.classes, self.f1_classes)
-        eq(cbt_f1.file, fname)
-        eq(cbt_f1.cl, self.f1_classes['f1'])
-        self.assertTrue(cbt_f1.isfunction)
+        eq(self.cbt_C1.name, 'C1')
+        self.assertFalse(self.cbt_C1.isfunction)
+        eq(self.cbt_f1.name, 'f1')
+        self.assertTrue(self.cbt_f1.isfunction)
 
     def test_gettext(self):
-        self.assertEqual(self.cbt_C0.GetText(), 'class C0')
+        self.assertEqual(self.cbt_C1.GetText(), 'class C1')
         self.assertEqual(self.cbt_f1.GetText(), 'def f1(...)')
 
     def test_geticonname(self):
-        self.assertEqual(self.cbt_C0.GetIconName(), 'folder')
+        self.assertEqual(self.cbt_C1.GetIconName(), 'folder')
         self.assertEqual(self.cbt_f1.GetIconName(), 'python')
 
     def test_isexpandable(self):
-        self.assertTrue(self.cbt_C0.IsExpandable())
+        self.assertTrue(self.cbt_C1.IsExpandable())
         self.assertTrue(self.cbt_f1.IsExpandable())
         self.assertFalse(self.cbt_F1.IsExpandable())
 
-    def test_listchildren(self):
-        self.assertEqual(self.cbt_C0.listchildren(), [({'F1': F1}, 'F1'),
-                                                      ({'C1()': C1}, 'C1()')])
-        self.assertEqual(self.cbt_f1.listchildren(), [({'f2': f2}, 'f2')])
-        self.assertEqual(self.cbt_F1.listchildren(), [])
-
     def test_getsublist(self):
         eq = self.assertEqual
-        # When GetSubList is called, additional ChildBrowserTreeItem
-        # instances are created for children of the current node.
-        # C0 has childen F1 and C1()   (test class with children)
-        C0_expected = [({'F1': F1}, 'F1'), ({'C1()': C1}, 'C1()')]
-        for i, sublist in enumerate(self.cbt_C0.GetSubList()):
-            self.assertIsInstance(sublist, browser.ChildBrowserTreeItem)
-            eq(sublist.name, C0_expected[i][1])
-            eq(sublist.classes, C0_expected[i][0])
-            eq(sublist.file, fname)
-            eq(sublist.cl, C0_expected[i][0][sublist.name])
+        CBT = browser.ChildBrowserTreeItem
 
-        # f1 has children f2.   (test function with children)
-        for sublist in self.cbt_f1.GetSubList():
-            self.assertIsInstance(sublist, browser.ChildBrowserTreeItem)
-            eq(sublist.name, 'f2')
-            eq(sublist.classes, {'f2': f2})
-            eq(sublist.file, fname)
-            eq(sublist.cl, f2)
+        f1sublist = self.cbt_f1.GetSubList()
+        self.assertIsInstance(f1sublist[0], CBT)
+        eq(len(f1sublist), 1)
+        eq(f1sublist[0].name, 'f2')
 
-        # F1 has no children.
         eq(self.cbt_F1.GetSubList(), [])
 
     def test_ondoubleclick(self):
         fopen = browser.file_open = mock.Mock()
         goto = fopen.return_value.gotoline = mock.Mock()
-
-        with mock.patch('os.path.exists', return_value=False):
-            self.cbt_C0.OnDoubleClick()
-            fopen.assert_not_called()
-
-        with mock.patch('os.path.exists', return_value=True):
-            self.cbt_F1.OnDoubleClick()
-            fopen.assert_called()
-            goto.assert_called()
-            goto.assert_called_with(self.cbt_F1.cl.lineno)
-
+        self.cbt_F1.OnDoubleClick()
+        fopen.assert_called()
+        goto.assert_called()
+        goto.assert_called_with(self.cbt_F1.obj.lineno)
         del browser.file_open
+        # Failure test would have to raise OSError or AttributeError.
 
 
-##class NestedChildrenTest(unittest.TestCase):
-##    "Test that all the nodes in a nested tree are added to the BrowserTree."
-##
-##    @classmethod
-##    def setUpClass(cls):
-##        cls.orig_readmodule_ex = browser.pyclbr.readmodule_ex
-##        browser.pyclbr.readmodule_ex = mock.Mock(return_value=mock_pyclbr_tree)
-##        cls.sublist = browser.ModuleBrowserTreeItem(fname).GetSubList()
-##
-##    @classmethod
-##    def tearDownClass(cls):
-##        browser.pyclbr.readmodule_ex = cls.orig_readmodule_ex
-##        del cls.orig_readmodule_ex, cls.sublist
-##
-##    def test_nested(self):
-##        queue = deque()
-##        actual_names = []
-##        # The tree items are processed in breadth first order.
-##        # Verify that processing each sublist hits every node and
-##        # in the right order.
-##        expected_names = ['f0', 'C0(base)',
-##                          'f1', 'c1', 'F1', 'C1()',
-##                          'f2', 'C2',
-##                          'F3']
-##        queue.extend(self.sublist)
-##        while queue:
-##            cb = queue.popleft()
-##            sublist = cb.GetSubList()
-##            queue.extend(sublist)
-##            self.assertIn(cb.name, cb.GetText())
-##            self.assertIn(cb.GetIconName(), ('python', 'folder'))
-##            self.assertIs(cb.IsExpandable(), sublist != [])
-##            actual_names.append(cb.name)
-##        self.assertEqual(actual_names, expected_names)
+class NestedChildrenTest(unittest.TestCase):
+    "Test that all the nodes in a nested tree are added to the BrowserTree."
+
+    def test_nested(self):
+        queue = deque()
+        actual_names = []
+        # The tree items are processed in breadth first order.
+        # Verify that processing each sublist hits every node and
+        # in the right order.
+        expected_names = ['f0', 'C0',
+                          'f1', 'c1', 'F1', 'C1()',
+                          'f2', 'C2',
+                          'F3']
+        CBT = browser.ChildBrowserTreeItem
+        queue.extend((CBT(f0), CBT(C0)))
+        while queue:
+            cb = queue.popleft()
+            sublist = cb.GetSubList()
+            queue.extend(sublist)
+            self.assertIn(cb.name, cb.GetText())
+            self.assertIn(cb.GetIconName(), ('python', 'folder'))
+            self.assertIs(cb.IsExpandable(), sublist != [])
+            actual_names.append(cb.name)
+        self.assertEqual(actual_names, expected_names)
 
 
 if __name__ == '__main__':

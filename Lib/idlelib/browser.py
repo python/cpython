@@ -31,6 +31,10 @@ def transform_children(child_dict, modname=None):
     Filter out imported objects.
     Augment class names with bases.
     Sort objects by line number.
+
+    Mutation of obj.name depends on this function being called once.
+    Current tree saves TreeItems once created.  Replacement would require
+    saving children and patching parent.children and each child.parent.
     """
     obs = []  # Use list since values should already be sorted.
     for obj in child_dict.values():
@@ -190,10 +194,11 @@ class ChildBrowserTreeItem(TreeItem):
 
     def GetText(self):
         "Return the name of the function/class to display."
+        name = self.name
         if self.isfunction:
-            return "def " + self.name + "(...)"
+            return "def " + name + "(...)"
         else:
-            return "class " + self.name
+            return "class " + name
 
     def GetIconName(self):
         "Return the name of the icon to display."
@@ -212,14 +217,13 @@ class ChildBrowserTreeItem(TreeItem):
                 for obj in transform_children(self.obj.children)]
 
     def OnDoubleClick(self):
-        "Open module with file_open and position to lineno, if it exists."
-        if not os.path.exists(self.file):
-            return
-        edit = file_open(self.file)
-        if hasattr(self.cl, 'lineno'):
-            lineno = self.cl.lineno
-            edit.gotoline(lineno)
-
+        "Open module with file_open and position to lineno."
+        try:
+            edit = file_open(self.obj.file)
+            edit.gotoline(self.obj.lineno)
+        except (OSError, AttributeError):
+            pass
+            
 
 def _class_browser(parent): # htest #
     try:
