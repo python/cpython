@@ -90,7 +90,11 @@ html_split_index = True
 # ------------------------
 
 # Get LaTeX to handle Unicode correctly
-latex_elements = {'inputenc': r'\usepackage[utf8x]{inputenc}', 'utf8extra': ''}
+latex_elements = {
+    'inputenc': r'\usepackage[utf8x]{inputenc}',
+    'utf8extra': '',
+    'fontenc': r'\usepackage[T1,T2A]{fontenc}',
+}
 
 # Additional stuff for the LaTeX preamble.
 latex_elements['preamble'] = r'''
