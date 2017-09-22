@@ -77,20 +77,20 @@ F3 = mb._nest_function(C2, 'F3', 14)
 mock_pyclbr_tree = {'f0': f0, 'C0': C0}
 
 
-class TraverseNodeTest(unittest.TestCase):
+class TransformChildrenTest(unittest.TestCase):
 
-    def test__traverse_node(self):
+    def test_transform_children(self):
         # Nothing to traverse if parameter name isn't same as tree module.
-        tn = browser._traverse_node(mock_pyclbr_tree, 'different name')
+        tn = browser.transform_children(mock_pyclbr_tree, 'different name')
         self.assertEqual(tn, ({}, []))
 
         # Parameter matches tree module.
-        tn = browser._traverse_node(mock_pyclbr_tree, 'test')
+        tn = browser.transform_children(mock_pyclbr_tree, 'test')
         expected = ({'f0': f0, 'C0(base)': C0}, [(1, 'f0'), (6, 'C0(base)')])
         self.assertEqual(tn, expected)
 
         # No name parameter.
-        tn = browser._traverse_node({'f1': f1})
+        tn = browser.transform_children({'f1': f1})
         expected = ({'f1': f1}, [(2, 'f1')])
         self.assertEqual(tn, expected)
 

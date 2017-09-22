@@ -24,25 +24,18 @@ file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.
 
 
-def _traverse_node(node, name=None):
-    """Return the immediate children for a node.
+def transform_children(child_dict, modname=None):
+    """Transform a child dictionary to an ordered sequence of objects.
 
-    Args:
-        node: Current node to traverse.
-        name: Name of module to traverse.
-
-    Returns:
-        A tuple where the first value is a dictionary of the
-        Class/Function children instances of the node and the
-        second is a list of tuples of the form (lineno, name),
-        where lineno is the line number for the Class/Function
-        and name is the name of the child (and is also the key
-        to the returned dictionary).
+    The dictionary maps names to pyclbr information objects.
+    Filter out imported objects.
+    Augment class names with bases.
+    Sort objects by line number.
     """
     items = []
     children = {}
-    for key, obj in node.items():
-        if name is None or obj.module == name:
+    for key, obj in child_dict.items():
+        if modname is None or obj.module == modname:
             if hasattr(obj, 'super') and obj.super:
                 supers = []
                 for sup in obj.super:
@@ -191,7 +184,7 @@ class ModuleBrowserTreeItem(TreeItem):
             tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:
             return []
-        siblings, tagged_names = _traverse_node(tree, name)
+        siblings, tagged_names = transform_children(tree, name)
         return [siblings[name] for lineno, name in sorted(tagged_names)]
 
 
@@ -240,7 +233,7 @@ class ChildBrowserTreeItem(TreeItem):
             edit.gotoline(lineno)
 
     def listchildren(self):
-        """Return list of classes and functions in the module.
+        """Return classes and functions nested in self.obj.
 
         The dictionary output from pyclbr is re-written as a
         list of tuples in the form (lineno, name) and
@@ -250,7 +243,7 @@ class ChildBrowserTreeItem(TreeItem):
         variable self.classes contains the pyclbr dictionary values,
         which are instances of Class and Function.
         """
-        siblings, tagged_names = _traverse_node(self.obj.children)
+        siblings, tagged_names = transform_children(self.obj.children)
         return [siblings[name] for lineno, name in sorted(tagged_names)]
 
 
