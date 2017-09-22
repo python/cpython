@@ -516,7 +516,7 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
         # only change this for cross builds for 3.3, issues on Mageia
-        if cross_compiling:
+        if ( cross_compiling and not host_platform == 'vxworks'):
             self.add_gcc_paths()
         self.add_multiarch_paths()
 
@@ -554,9 +554,10 @@ class PyBuildExt(build_ext):
                     for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
 
-        if (not cross_compiling and
+        if ((not cross_compiling and
                 os.path.normpath(sys.base_prefix) != '/usr' and
-                not sysconfig.get_config_var('PYTHONFRAMEWORK')):
+                not sysconfig.get_config_var('PYTHONFRAMEWORK')) or
+                host_platform == 'vxworks'):
             # OSX note: Don't add LIBDIR and INCLUDEDIR to building a framework
             # (PYTHONFRAMEWORK is set) to avoid # linking problems when
             # building a framework with different architectures than
@@ -565,6 +566,15 @@ class PyBuildExt(build_ext):
                             sysconfig.get_config_var("LIBDIR"))
             add_dir_to_list(self.compiler.include_dirs,
                             sysconfig.get_config_var("INCLUDEDIR"))
+
+        #VxWorks requires some macros from CPPFLAGS to select the correct CPU headers
+        extra_global_args = []
+        if host_platform == 'vxworks':
+            cppflags = sysconfig.get_config_var('CPPFLAGS').split()
+            for item in cppflags:
+                self.announce('ITEM: "%s"' % item )
+                if item.startswith('-D'):
+                    extra_global_args.append(item)
 
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
@@ -612,6 +622,7 @@ class PyBuildExt(build_ext):
             for item in ldflags.split():
                 if item.startswith('-L'):
                     lib_dirs.append(item[2:])
+
 
         math_libs = self.detect_math_libs()
 
@@ -1483,9 +1494,10 @@ class PyBuildExt(build_ext):
             libraries = ['z']
             extra_link_args = zlib_extra_link_args
         else:
-            extra_compile_args = []
             libraries = []
+            extra_compile_args = []
             extra_link_args = []
+        extra_compile_args.append( extra_global_args )
         exts.append( Extension('binascii', ['binascii.c'],
                                extra_compile_args = extra_compile_args,
                                libraries = libraries,
@@ -1536,7 +1548,6 @@ class PyBuildExt(build_ext):
                 # call XML_SetHashSalt(), expat entropy sources are not needed
                 ('XML_POOR_ENTROPY', '1'),
             ]
-            extra_compile_args = []
             expat_lib = []
             expat_sources = ['expat/xmlparse.c',
                              'expat/xmlrole.c',
@@ -1581,16 +1592,21 @@ class PyBuildExt(build_ext):
                                   sources = ['_elementtree.c'],
                                   depends = ['pyexpat.c'] + expat_sources +
                                       expat_depends,
+                                  extra_compile_args = extra_global_args,    
                                   ))
         else:
             missing.append('_elementtree')
 
         # Hye-Shik Chang's CJKCodecs modules.
         exts.append(Extension('_multibytecodec',
-                              ['cjkcodecs/multibytecodec.c']))
+                              ['cjkcodecs/multibytecodec.c'],
+                              extra_compile_args = extra_global_args,
+                              ))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
             exts.append(Extension('_codecs_%s' % loc,
-                                  ['cjkcodecs/_codecs_%s.c' % loc]))
+                                  ['cjkcodecs/_codecs_%s.c' % loc],
+                                  extra_compile_args = extra_global_args,
+                                  ))
 
         # Stefan Krah's _decimal module
         exts.append(self._decimal_ext())
@@ -1643,6 +1659,7 @@ class PyBuildExt(build_ext):
 
         exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
                                 define_macros=list(macros.items()),
+                                extra_compile_args = extra_global_args,
                                 include_dirs=["Modules/_multiprocessing"]))
         # End multiprocessing
 
@@ -1674,6 +1691,7 @@ class PyBuildExt(build_ext):
 
         if 'd' not in sysconfig.get_config_var('ABIFLAGS'):
             ext = Extension('xxlimited', ['xxlimited.c'],
+                            extra_compile_args = extra_global_args,
                             define_macros=[('Py_LIMITED_API', '0x03050000')])
             self.extensions.append(ext)
 
@@ -1708,7 +1726,6 @@ class PyBuildExt(build_ext):
         extra_link_args = tcltk_libs.split()
         ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                         define_macros=[('WITH_APPINIT', 1)],
-                        extra_compile_args = extra_compile_args,
                         extra_link_args = extra_link_args,
                         )
         self.extensions.append(ext)
@@ -1912,6 +1929,7 @@ class PyBuildExt(build_ext):
                         include_dirs = include_dirs,
                         libraries = libs,
                         library_dirs = added_lib_dirs,
+                        extra_compile_args = extra_global_args,
                         )
         self.extensions.append(ext)
 
@@ -1995,14 +2013,15 @@ class PyBuildExt(build_ext):
 
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,
-                        extra_compile_args=extra_compile_args,
-                        extra_link_args=extra_link_args,
+                        extra_compile_args = extra_compile_args,
                         libraries=[],
                         sources=sources,
                         depends=depends)
         # function my_sqrt() needs math library for sqrt()
         ext_test = Extension('_ctypes_test',
                      sources=['_ctypes/_ctypes_test.c'],
+                     extra_link_args=extra_link_args,
+                     extra_compile_args = extra_compile_args,
                      libraries=math_libs)
         self.extensions.extend([ext, ext_test])
 
