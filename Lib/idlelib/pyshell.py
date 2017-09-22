@@ -1247,6 +1247,18 @@ class PyShell(OutputWindow):
         self.interp.restart_subprocess(with_cwd=True)
 
     def showprompt(self):
+        """Display the prompt in the shell window.
+
+        Before the prompt is displayed, the text from the prior
+        prompt is stored in history and the text marks are moved
+        ahead to end of the text.  Once the prompt is written, the
+        text mark is set to capture insertions and the line and
+        column within the status bar is updated.  Also, the buffer
+        for undo and redo is cleared as the shell only allows
+        that functionality on the current line.  reset_undo is
+        called with a saved_flag of False so that clearing the
+        undo doesn't also get marked as a file save.
+        """
         self.resetoutput()
         try:
             s = str(sys.ps1)
@@ -1255,7 +1267,7 @@ class PyShell(OutputWindow):
         self.console.write(s)
         self.text.mark_set("insert", "end-1c")
         self.set_line_and_column()
-        self.io.reset_undo()
+        self.io.reset_undo(set_saved_flag=False)
 
     def resetoutput(self):
         source = self.text.get("iomark", "end-1c")

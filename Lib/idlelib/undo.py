@@ -47,12 +47,19 @@ class UndoDelegator(Delegator):
         pprint(self.undolist[self.pointer:])
         return "break"
 
-    def reset_undo(self):
+    def reset_undo(self, set_saved_flag=True):
+        """Reset the undo/redo history.
+
+        Clear the undo/redo history and optionally set the saved
+        status for the window based on the parameter.  If set_saved_flag
+        is True, then the window will look like it's been saved.  If
+        it's false, it will not be flagged as saved.
+        """
         self.was_saved = -1
         self.pointer = 0
         self.undolist = []
         self.undoblock = 0  # or a CommandSequence instance
-        self.set_saved(1)
+        self.set_saved(set_saved_flag)
 
     def set_saved(self, flag):
         if flag:
@@ -355,6 +362,8 @@ def _undo_delegator(parent):  # htest #
     undo.pack(side='left')
     redo = Button(undowin, text="Redo", command=lambda:d.redo_event(None))
     redo.pack(side='left')
+    reset = Button(undowin, text="Reset Undo", command=lambda:d.reset_undo())
+    reset.pack(side='left')
     dump = Button(undowin, text="Dump", command=lambda:d.dump_event(None))
     dump.pack(side='left')
 
