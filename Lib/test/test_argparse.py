@@ -2064,7 +2064,23 @@ class TestAddSubparsers(TestCase):
         parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers()
         subparsers.add_parser('run')
-        self.assertArgumentParserError(parser.parse_args, ())
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(())
+        self.assertRegex(
+            excinfo.exception.stderr,
+            'error: the following arguments are required: {run}\n$'
+        )
+
+    def test_wrong_argument_subparsers_no_destination_error(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers()
+        subparsers.add_parser('foo')
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('bar',))
+        self.assertRegex(
+            excinfo.exception.stderr,
+            r"error: argument {foo}: invalid choice: 'bar' \(choose from 'foo'\)\n$"
+        )
 
     def test_optional_subparsers(self):
         parser = ErrorRaisingArgumentParser()
