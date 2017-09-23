@@ -260,6 +260,8 @@ random_seed(RandomObject *self, PyObject *args)
      * Otherwise use its hash value, cast to unsigned.
      */
     if (PyLong_Check(arg)) {
+        /* Calling int.__abs__() prevents calling arg.__abs__(), which might
+           return an invalid value. See issue #31478. */
         n = PyLong_Type.tp_as_number->nb_absolute(arg);
     }
     else {
