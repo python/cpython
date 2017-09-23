@@ -465,21 +465,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     pysqlite_BaseTypeAdapted = 0;
 
-    /* Original comment from _bsddb.c in the Python core. This is also still
-     * needed nowadays for Python 2.3/2.4.
-     *
-     * PyEval_InitThreads is called here due to a quirk in python 1.5
-     * - 2.2.1 (at least) according to Russell Williamson <merel@wt.net>:
-     * The global interpreter lock is not initialized until the first
-     * thread is created using thread.start_new_thread() or fork() is
-     * called.  that would cause the ALLOW_THREADS here to segfault due
-     * to a null pointer reference if no threads or child processes
-     * have been created.  This works around that and is a no-op if
-     * threads have already been initialized.
-     *  (see pybsddb-users mailing list post on 2002-08-07)
-     */
-    PyEval_InitThreads();
-
 error:
     if (PyErr_Occurred())
     {
