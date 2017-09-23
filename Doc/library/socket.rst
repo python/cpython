@@ -161,6 +161,13 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.7
 
+- :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
+  with services running on co-processors in Qualcomm platforms. The address
+  family is represented as a ``(node, port)`` tuple where the node and port are
+  integers.
+
+  .. versionadded:: 3.7
+
 - Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
   support specific representations.
 

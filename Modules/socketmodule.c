@@ -7,8 +7,8 @@ This module provides an interface to Berkeley socket IPC.
 Limitations:
 
 - Only AF_INET, AF_INET6 and AF_UNIX address families are supported in a
-  portable manner, though AF_PACKET, AF_NETLINK and AF_TIPC are supported
-  under Linux.
+  portable manner, though AF_PACKET, AF_NETLINK, AF_QIPCRTR and AF_TIPC are
+  supported under Linux.
 - No read/write operations (use sendall/recv or makefile instead).
 - Additional restrictions apply on some non-Unix platforms (compensated
   for by socket.py).
@@ -1207,6 +1207,14 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
        }
 #endif /* AF_NETLINK */
 
+#if defined(AF_QIPCRTR)
+       case AF_QIPCRTR:
+       {
+           struct sockaddr_qrtr *a = (struct sockaddr_qrtr *) addr;
+           return Py_BuildValue("II", a->sq_node, a->sq_port);
+       }
+#endif /* AF_QIPCRTR */
+
 #if defined(AF_VSOCK)
        case AF_VSOCK:
        {
@@ -1578,6 +1586,30 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         return 1;
     }
 #endif /* AF_NETLINK */
+
+#if defined(AF_QIPCRTR)
+    case AF_QIPCRTR:
+    {
+        struct sockaddr_qrtr* addr;
+        int node, port;
+        addr = (struct sockaddr_qrtr *)addr_ret;
+        if (!PyTuple_Check(args)) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "getsockaddrarg: "
+                "AF_QIPCRTR address must be tuple, not %.500s",
+                Py_TYPE(args)->tp_name);
+            return 0;
+        }
+        if (!PyArg_ParseTuple(args, "II:getsockaddrarg", &node, &port))
+            return 0;
+        addr->sq_family = AF_QIPCRTR;
+        addr->sq_node = node;
+        addr->sq_port = port;
+        *len_ret = sizeof(*addr);
+        return 1;
+    }
+#endif
 
 #if defined(AF_VSOCK)
     case AF_VSOCK:
@@ -2124,6 +2156,14 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         return 1;
     }
 #endif /* AF_NETLINK */
+
+#if defined(AF_QIPCRTR)
+    case AF_QIPCRTR:
+    {
+        *len_ret = sizeof (struct sockaddr_qrtr);
+        return 1;
+    }
+#endif
 
 #if defined(AF_VSOCK)
        case AF_VSOCK:
@@ -6709,6 +6749,11 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, NETLINK_CRYPTO);
 #endif
 #endif /* AF_NETLINK */
+
+#ifdef AF_QIPCRTR
+    /* Qualcomm IPCROUTER */
+    PyModule_AddIntMacro(m, AF_QIPCRTR);
+#endif
 
 #ifdef AF_VSOCK
     PyModule_AddIntConstant(m, "AF_VSOCK", AF_VSOCK);
