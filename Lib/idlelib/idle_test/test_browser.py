@@ -65,7 +65,7 @@ class ClassBrowserTest(unittest.TestCase):
         del cb.top.destroy, cb.node.destroy
 
 
-# Nested tree as in test_pyclbr.py except for supers on C0. C1.
+# Nested tree same as in test_pyclbr.py except for supers on C0. C1.
 mb = pyclbr
 module, fname = 'test', 'test.py'
 f0 = mb.Function(module, 'f0', fname, 1)
@@ -80,27 +80,42 @@ F3 = mb._nest_function(C2, 'F3', 14)
 mock_pyclbr_tree = {'f0': f0, 'C0': C0}
 
 # Adjust C0.name, C1.name so tests do not depend on order.
-browser.transform_children(mock_pyclbr_tree, 'test')
-browser.transform_children(C0.children)
+browser.transform_children(mock_pyclbr_tree, 'test')  # C0(base)
+browser.transform_children(C0.children)  # C1()
+
+# The class below checks that the calls above are correct
+# and that duplicate calls have no effect.
+
 
 class TransformChildrenTest(unittest.TestCase):
 
-    def test_transform_children(self):
+    def test_transform_module_children(self):
         eq = self.assertEqual
+        transform = browser.transform_children
         # Parameter matches tree module.
-        tcl = list(browser.transform_children(mock_pyclbr_tree, 'test'))
-        eq(tcl[0], f0)
-        eq(tcl[1], C0)
+        tcl = list(transform(mock_pyclbr_tree, 'test'))
+        eq(tcl, [f0, C0])
+        eq(tcl[0].name, 'f0')
         eq(tcl[1].name, 'C0(base)')
-        # Check that second call does not add second '(base)' suffix.
-        tcl = list(browser.transform_children(mock_pyclbr_tree, 'test'))
+        # Check that second call does not change suffix.
+        tcl = list(transform(mock_pyclbr_tree, 'test'))
         eq(tcl[1].name, 'C0(base)')
         # Nothing to traverse if parameter name isn't same as tree module.
-        tn = browser.transform_children(mock_pyclbr_tree, 'different name')
-        self.assertEqual(list(tn), [])
-        # No name parameter.
-        tn = browser.transform_children({'f1': f1, 'c1': c1})
-        self.assertEqual(list(tn), [f1, c1])
+        tcl = list(transform(mock_pyclbr_tree, 'different name'))
+        eq(tcl, [])
+
+    def test_transform_node_children(self):
+        eq = self.assertEqual
+        transform = browser.transform_children
+        # Class with two children, one name altered.
+        tcl = list(transform(C0.children))
+        eq(tcl, [F1, C1])
+        eq(tcl[0].name, 'F1')
+        eq(tcl[1].name, 'C1()')
+        tcl = list(transform(C0.children))
+        eq(tcl[1].name, 'C1()')
+        # Function with two children.
+        eq(list(transform(f0.children)), [f1, c1])
 
 
 class ModuleBrowserTreeItemTest(unittest.TestCase):
