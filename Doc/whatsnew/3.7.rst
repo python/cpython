@@ -232,6 +232,13 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+pdb
+---
+
+:func:`~pdb.set_trace` now takes an optional ``header`` keyword-only
+argument.  If given, this is printed to the console just before debugging
+begins.
+
 string
 ------
 
@@ -296,9 +303,8 @@ Optimizations
   (Contributed by Serhiy Storchaka in :issue:`24821`.)
 
 * Fast implementation from standard C library is now used for functions
-  :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
-  :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
-  Storchaka in :issue:`26121`.)
+  :func:`~math.erf` and :func:`~math.erfc` in the :mod:`math` module.
+  (Contributed by Serhiy Storchaka in :issue:`26121`.)
 
 * The :func:`os.fwalk` function has been sped up by 2 times.  This was done
   using the :func:`os.scandir` function.

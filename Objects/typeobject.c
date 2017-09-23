@@ -388,11 +388,22 @@ check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *nam
     return 1;
 }
 
+const char *
+_PyType_Name(PyTypeObject *type)
+{
+    const char *s = strrchr(type->tp_name, '.');
+    if (s == NULL) {
+        s = type->tp_name;
+    }
+    else {
+        s++;
+    }
+    return s;
+}
+
 static PyObject *
 type_name(PyTypeObject *type, void *context)
 {
-    const char *s;
-
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)type;
 
@@ -400,12 +411,7 @@ type_name(PyTypeObject *type, void *context)
         return et->ht_name;
     }
     else {
-        s = strrchr(type->tp_name, '.');
-        if (s == NULL)
-            s = type->tp_name;
-        else
-            s++;
-        return PyUnicode_FromString(s);
+        return PyUnicode_FromString(_PyType_Name(type));
     }
 }
 
@@ -418,7 +424,7 @@ type_qualname(PyTypeObject *type, void *context)
         return et->ht_qualname;
     }
     else {
-        return type_name(type, context);
+        return PyUnicode_FromString(_PyType_Name(type));
     }
 }
 
@@ -3537,23 +3543,34 @@ excess_args(PyObject *args, PyObject *kwds)
 static int
 object_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    int err = 0;
     PyTypeObject *type = Py_TYPE(self);
-    if (excess_args(args, kwds) &&
-        (type->tp_new == object_new || type->tp_init != object_init)) {
-        PyErr_SetString(PyExc_TypeError, "object.__init__() takes no parameters");
-        err = -1;
+    if (excess_args(args, kwds)) {
+        if (type->tp_init != object_init) {
+            PyErr_SetString(PyExc_TypeError, "object() takes no arguments");
+            return -1;
+        }
+        if (type->tp_new == object_new) {
+            PyErr_Format(PyExc_TypeError, "%.200s() takes no arguments",
+                         type->tp_name);
+            return -1;
+        }
     }
-    return err;
+    return 0;
 }
 
 static PyObject *
 object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if (excess_args(args, kwds) &&
-        (type->tp_init == object_init || type->tp_new != object_new)) {
-        PyErr_SetString(PyExc_TypeError, "object() takes no parameters");
-        return NULL;
+    if (excess_args(args, kwds)) {
+        if (type->tp_new != object_new) {
+            PyErr_SetString(PyExc_TypeError, "object() takes no arguments");
+            return NULL;
+        }
+        if (type->tp_init == object_init) {
+            PyErr_Format(PyExc_TypeError, "%.200s() takes no arguments",
+                         type->tp_name);
+            return NULL;
+        }
     }
 
     if (type->tp_flags & Py_TPFLAGS_IS_ABSTRACT) {
@@ -3913,10 +3930,8 @@ import_copyreg(void)
        by storing a reference to the cached module in a static variable, but
        this broke when multiple embedded interpreters were in use (see issue
        #17408 and #19088). */
-    PyObject *modules = PyImport_GetModuleDict();
-    copyreg_module = PyDict_GetItemWithError(modules, copyreg_str);
+    copyreg_module = PyImport_GetModule(copyreg_str);
     if (copyreg_module != NULL) {
-        Py_INCREF(copyreg_module);
         return copyreg_module;
     }
     if (PyErr_Occurred()) {

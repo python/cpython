@@ -1,2 +1,0 @@
-Prohibited the '=' character in environment variable names in
-``os.putenv()`` and ``os.spawn*()``.
