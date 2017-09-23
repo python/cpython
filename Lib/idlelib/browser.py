@@ -1,4 +1,4 @@
-"""Class browser.
+"""Module browser.
 
 XXX TO DO:
 
@@ -55,7 +55,7 @@ def transform_children(child_dict, modname=None):
     return sorted(obs, key=lambda o: o.lineno)
 
 
-class ClassBrowser:
+class ModuleBrowser:
     """Browse module classes and functions in IDLE.
     """
     # This class is the base class for pathbrowser.PathBrowser.
@@ -122,8 +122,8 @@ class ClassBrowser:
 
     def settitle(self):
         "Set the window title."
-        self.top.wm_title("Class Browser - " + self.name)
-        self.top.wm_iconname("Class Browser")
+        self.top.wm_title("Module Browser - " + self.name)
+        self.top.wm_iconname("Module Browser")
 
     def rootnode(self):
         "Return a ModuleBrowserTreeItem as the root of the tree."
@@ -226,7 +226,7 @@ class ChildBrowserTreeItem(TreeItem):
             pass
 
 
-def _class_browser(parent): # htest #
+def _module_browser(parent): # htest #
     try:
         file = sys.argv[1]  # If pass file on command line
         # If this succeeds, unittest will fail.
@@ -242,10 +242,10 @@ def _class_browser(parent): # htest #
     flist = pyshell.PyShellFileList(parent)
     global file_open
     file_open = flist.open
-    ClassBrowser(flist, name, [dir], _htest=True)
+    ModuleBrowser(flist, name, [dir], _htest=True)
 
 if __name__ == "__main__":
     from unittest import main
     main('idlelib.idle_test.test_browser', verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
-    run(_class_browser)
+    run(_module_browser)
