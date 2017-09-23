@@ -1,0 +1,1 @@
+IDLE: Change ClassBrowser name to ModuleBrowser
