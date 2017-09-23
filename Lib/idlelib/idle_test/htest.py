@@ -86,7 +86,7 @@ _calltip_window_spec = {
            "Typing ') should hide the calltip.\n"
     }
 
-_class_browser_spec = {
+_module_browser_spec = {
     'file': 'browser',
     'kwds': {},
     'msg': "Inspect names of module, class(with superclass if "

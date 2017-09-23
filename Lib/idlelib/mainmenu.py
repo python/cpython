@@ -25,7 +25,7 @@ menudefs = [
    ('_New File', '<<open-new-window>>'),
    ('_Open...', '<<open-window-from-file>>'),
    ('Open _Module...', '<<open-module>>'),
-   ('Class _Browser', '<<open-class-browser>>'),
+   ('Module _Browser', '<<open-class-browser>>'),
    ('_Path Browser', '<<open-path-browser>>'),
    None,
    ('_Save', '<<save-window>>'),

@@ -17,7 +17,7 @@ from idlelib.idle_test.mock_idle import Func
 from collections import deque
 
 
-class ClassBrowserTest(unittest.TestCase):
+class ModuleBrowserTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -28,41 +28,41 @@ class ClassBrowserTest(unittest.TestCase):
         cls.file = __file__
         cls.path = os.path.dirname(cls.file)
         cls.module = os.path.basename(cls.file).rstrip('.py')
-        cls.cb = browser.ClassBrowser(cls.flist, cls.module, [cls.path], _utest=True)
+        cls.mb = browser.ModuleBrowser(cls.flist, cls.module, [cls.path], _utest=True)
 
     @classmethod
     def tearDownClass(cls):
-        cls.cb.close()
+        cls.mb.close()
         cls.root.destroy()
-        del cls.root, cls.flist, cls.cb
+        del cls.root, cls.flist, cls.mb
 
     def test_init(self):
-        cb = self.cb
+        mb = self.mb
         eq = self.assertEqual
-        eq(cb.name, self.module)
-        eq(cb.file, self.file)
-        eq(cb.flist, self.flist)
+        eq(mb.name, self.module)
+        eq(mb.file, self.file)
+        eq(mb.flist, self.flist)
         eq(pyclbr._modules, {})
-        self.assertIsInstance(cb.node, TreeNode)
+        self.assertIsInstance(mb.node, TreeNode)
 
     def test_settitle(self):
-        cb = self.cb
-        self.assertIn(self.module, cb.top.title())
-        self.assertEqual(cb.top.iconname(), 'Class Browser')
+        mb = self.mb
+        self.assertIn(self.module, mb.top.title())
+        self.assertEqual(mb.top.iconname(), 'Module Browser')
 
     def test_rootnode(self):
-        cb = self.cb
-        rn = cb.rootnode()
+        mb = self.mb
+        rn = mb.rootnode()
         self.assertIsInstance(rn, browser.ModuleBrowserTreeItem)
 
     def test_close(self):
-        cb = self.cb
-        cb.top.destroy = Func()
-        cb.node.destroy = Func()
-        cb.close()
-        self.assertTrue(cb.top.destroy.called)
-        self.assertTrue(cb.node.destroy.called)
-        del cb.top.destroy, cb.node.destroy
+        mb = self.mb
+        mb.top.destroy = Func()
+        mb.node.destroy = Func()
+        mb.close()
+        self.assertTrue(mb.top.destroy.called)
+        self.assertTrue(mb.node.destroy.called)
+        del mb.top.destroy, mb.node.destroy
 
 
 # Nested tree same as in test_pyclbr.py except for supers on C0. C1.

@@ -190,7 +190,7 @@ class EditorWindow(object):
                 flist.dict[key] = self
             text.bind("<<open-new-window>>", self.new_callback)
             text.bind("<<close-all-windows>>", self.flist.close_all_callback)
-            text.bind("<<open-class-browser>>", self.open_class_browser)
+            text.bind("<<open-class-browser>>", self.open_module_browser)
             text.bind("<<open-path-browser>>", self.open_path_browser)
             text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
@@ -632,10 +632,10 @@ class EditorWindow(object):
     def open_module(self):
         """Get module name from user and open it.
 
-        Return module path or None for calls by open_class_browser
+        Return module path or None for calls by open_module_browser
         when latter is not invoked in named editor window.
         """
-        # XXX This, open_class_browser, and open_path_browser
+        # XXX This, open_module_browser, and open_path_browser
         # would fit better in iomenu.IOBinding.
         try:
             name = self.text.get("sel.first", "sel.last").strip()
@@ -657,7 +657,7 @@ class EditorWindow(object):
         self.open_module()
         return "break"
 
-    def open_class_browser(self, event=None):
+    def open_module_browser(self, event=None):
         filename = self.io.filename
         if not (self.__class__.__name__ == 'PyShellEditorWindow'
                 and filename):
@@ -667,7 +667,7 @@ class EditorWindow(object):
         head, tail = os.path.split(filename)
         base, ext = os.path.splitext(tail)
         from idlelib import browser
-        browser.ClassBrowser(self.flist, base, [head])
+        browser.ModuleBrowser(self.flist, base, [head])
         return "break"
 
     def open_path_browser(self, event=None):
