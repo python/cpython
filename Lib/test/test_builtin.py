@@ -151,6 +151,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
+        # embedded null character
+        self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
 
     def test_abs(self):
         # int
@@ -1010,6 +1012,10 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(fp.read(300), 'XXX'*100)
             self.assertEqual(fp.read(1000), 'YYY'*100)
 
+        # embedded null bytes and characters
+        self.assertRaises(ValueError, open, 'a\x00b')
+        self.assertRaises(ValueError, open, b'a\x00b')
+
     def test_open_default_encoding(self):
         old_environ = dict(os.environ)
         try:
@@ -1562,6 +1568,10 @@ class PtyTests(unittest.TestCase):
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
         os.close(fd)
+
+        # Wait until the child process completes
+        os.waitpid(pid, 0)
+
         return lines
 
     def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):

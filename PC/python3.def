@@ -538,6 +538,7 @@ EXPORTS
   PySlice_Type=python37.PySlice_Type DATA
   PySlice_Unpack=python37.PySlice_Unpack
   PySortWrapper_Type=python37.PySortWrapper_Type DATA
+  PyInterpreterState_GetID=python37.PyInterpreterState_GetID
   PyState_AddModule=python37.PyState_AddModule
   PyState_FindModule=python37.PyState_FindModule
   PyState_RemoveModule=python37.PyState_RemoveModule

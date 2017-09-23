@@ -215,11 +215,11 @@ functions:
 
    and gathers profiling statistics from the execution. If no file name is
    present, then this function automatically creates a :class:`~pstats.Stats`
-   instance and prints a simple profiling report. If the sort value is specified
+   instance and prints a simple profiling report. If the sort value is specified,
    it is passed to this :class:`~pstats.Stats` instance to control how the
    results are sorted.
 
-.. function:: runctx(command, globals, locals, filename=None)
+.. function:: runctx(command, globals, locals, filename=None, sort=-1)
 
    This function is similar to :func:`run`, with added arguments to supply the
    globals and locals dictionaries for the *command* string. This routine

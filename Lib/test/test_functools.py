@@ -8,15 +8,12 @@ import pickle
 from random import choice
 import sys
 from test import support
+import threading
 import time
 import unittest
 import unittest.mock
 from weakref import proxy
 import contextlib
-try:
-    import threading
-except ImportError:
-    threading = None
 
 import functools
 
@@ -1253,7 +1250,7 @@ class TestLRU:
         self.assertEqual(mock_int.__hash__.call_count, 2)
         self.assertEqual(f.cache_info(), (1, 1, 1, 1))
 
-        # Cache eviction: No use as an argument gives no additonal call
+        # Cache eviction: No use as an argument gives no additional call
         self.assertEqual(f(6, 2), 20)
         self.assertEqual(mock_int.__hash__.call_count, 2)
         self.assertEqual(f.cache_info(), (1, 2, 1, 1))
@@ -1406,7 +1403,6 @@ class TestLRU:
         for attr in self.module.WRAPPER_ASSIGNMENTS:
             self.assertEqual(getattr(g, attr), getattr(f, attr))
 
-    @unittest.skipUnless(threading, 'This test requires threading.')
     def test_lru_cache_threaded(self):
         n, m = 5, 11
         def orig(x, y):
@@ -1455,7 +1451,6 @@ class TestLRU:
         finally:
             sys.setswitchinterval(orig_si)
 
-    @unittest.skipUnless(threading, 'This test requires threading.')
     def test_lru_cache_threaded2(self):
         # Simultaneous call with the same arguments
         n, m = 5, 7
@@ -1483,7 +1478,6 @@ class TestLRU:
                 pause.reset()
                 self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1))
 
-    @unittest.skipUnless(threading, 'This test requires threading.')
     def test_lru_cache_threaded3(self):
         @self.module.lru_cache(maxsize=2)
         def f(x):

@@ -371,7 +371,6 @@ class HTTPResponse(io.BufferedIOBase):
         if self.version == 11:
             # An HTTP/1.1 proxy is assumed to stay open unless
             # explicitly closed.
-            conn = self.headers.get("connection")
             if conn and "close" in conn.lower():
                 return True
             return False

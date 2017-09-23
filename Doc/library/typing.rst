@@ -939,7 +939,7 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * When a class and its subclass are present, the former is skipped, e.g.::
+   * When a class and its subclass are present, the latter is skipped, e.g.::
 
        Union[int, object] == object
 

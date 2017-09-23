@@ -727,10 +727,15 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         text = 'del _showwarnmsg test'
         with original_warnings.catch_warnings(module=self.module):
             self.module.filterwarnings("always", category=UserWarning)
-            del self.module._showwarnmsg
-            with support.captured_output('stderr') as stream:
-                self.module.warn(text)
-                result = stream.getvalue()
+
+            show = self.module._showwarnmsg
+            try:
+                del self.module._showwarnmsg
+                with support.captured_output('stderr') as stream:
+                    self.module.warn(text)
+                    result = stream.getvalue()
+            finally:
+                self.module._showwarnmsg = show
         self.assertIn(text, result)
 
     def test_showwarning_not_callable(self):
@@ -788,6 +793,32 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         self.assertEqual(stdout, b'')
         self.assertNotIn(b'Warning!', stderr)
         self.assertNotIn(b'Error', stderr)
+
+    @support.cpython_only
+    def test_issue31411(self):
+        # warn_explicit() shouldn't raise a SystemError in case
+        # warnings.onceregistry isn't a dictionary.
+        wmod = self.module
+        with original_warnings.catch_warnings(module=wmod):
+            wmod.filterwarnings('once')
+            with support.swap_attr(wmod, 'onceregistry', None):
+                with self.assertRaises(TypeError):
+                    wmod.warn_explicit('foo', Warning, 'bar', 1, registry=None)
+
+    @support.cpython_only
+    def test_issue31416(self):
+        # warn_explicit() shouldn't cause an assertion failure in case of a
+        # bad warnings.filters or warnings.defaultaction.
+        wmod = self.module
+        with original_warnings.catch_warnings(module=wmod):
+            wmod.filters = [(None, None, Warning, None, 0)]
+            with self.assertRaises(TypeError):
+                wmod.warn_explicit('foo', Warning, 'bar', 1)
+
+            wmod.filters = []
+            with support.swap_attr(wmod, 'defaultaction', None), \
+                 self.assertRaises(TypeError):
+                wmod.warn_explicit('foo', Warning, 'bar', 1)
 
 
 class WarningsDisplayTests(BaseTest):
@@ -945,7 +976,7 @@ class CatchWarningTests(BaseTest):
             self.assertIs(wmod.filters, orig_filters)
 
     def test_record_override_showwarning_before(self):
-        # Issue #28835: If warnings.showwarning() was overriden, make sure
+        # Issue #28835: If warnings.showwarning() was overridden, make sure
         # that catch_warnings(record=True) overrides it again.
         text = "This is a warning"
         wmod = self.module
