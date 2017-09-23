@@ -510,15 +510,19 @@ to users and later verify them to make sure they weren't tampered with::
     ...     h.update(cookie)
     ...     return h.hexdigest().encode('utf-8')
     >>>
-    >>> cookie = b'user:vatrogasac'
+    >>> def verify(cookie, sig):
+    ...     good_sig = sign(cookie)
+    ...     return compare_digest(good_sig, sig)
+    >>>
+    >>> cookie = b'user-alice'
     >>> sig = sign(cookie)
     >>> print("{0},{1}".format(cookie.decode('utf-8'), sig))
-    user:vatrogasac,349cf904533767ed2d755279a8df84d0
-    >>> compare_digest(cookie, sig)
+    user-alice,b'43b3c982cf697e0c5ab22172d1ca7421'
+    >>> verify(cookie, sig)
     True
-    >>> compare_digest(b'user:policajac', sig)
+    >>> verify(b'user-bob', sig)
     False
-    >>> compare_digest(cookie, b'0102030405060708090a0b0c0d0e0f00')
+    >>> verify(cookie, b'0102030405060708090a0b0c0d0e0f00')
     False
 
 Even though there's a native keyed hashing mode, BLAKE2 can, of course, be used
