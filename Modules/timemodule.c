@@ -683,6 +683,48 @@ time_strftime(PyObject *self, PyObject *args)
     }
 #endif
 
+#ifdef MS_WINDOWS
+    //Get time zone names with Windows API
+    wchar_t *zone;
+    TIME_ZONE_INFORMATION tzi;
+    int tzid = GetTimeZoneInformation(&tzi);
+    if (tzid < 2) {
+        zone = tzi.StandardName;
+    }
+    else {
+        zone = tzi.DaylightName;
+    }
+
+    wchar_t *result, *tmp;
+    const wchar_t *ins;    // the next insert point
+
+    size_t len_zone = wcslen(zone);
+    size_t len_front; // distance between new occurance of %Z and end of the last one
+    size_t count;
+
+    // Count the number of %Z occurences
+    ins = fmt;
+    for (count = 0; tmp = wcsstr(ins, L"%Z"); ++count) {
+        ins = tmp + 2;
+    }
+
+    //Replace %Z with time zone name
+    if (count)
+    {
+        size_t l = wcslen(fmt) + (len_zone - 2) * count + 1;
+        tmp = result = (time_char *)PyMem_Malloc(l * sizeof(time_char));
+        while (count--) {
+            ins = wcsstr(fmt, L"%Z");
+            len_front = ins - fmt;
+            tmp = wcsncpy(tmp, fmt, len_front) + len_front;
+            tmp = wcscpy(tmp, zone) + len_zone;
+            fmt += len_front + 2; // move to next "end of rep"
+        }
+        wcscpy(tmp, fmt);
+        fmt = result;
+    }
+#endif
+
     fmtlen = time_strlen(fmt);
 
     /* I hate these functions that presume you know how big the output
@@ -727,6 +769,12 @@ time_strftime(PyObject *self, PyObject *args)
     }
 #ifdef HAVE_WCSFTIME
     PyMem_Free(format);
+#ifdef MS_WINDOWS
+    if (count > 0)
+    {
+        PyMem_Free(result);
+    }
+#endif
 #else
     Py_DECREF(format);
 #endif
