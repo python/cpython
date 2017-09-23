@@ -1,0 +1,1 @@
+Remove test order dependence in idle_test.test_browser.
