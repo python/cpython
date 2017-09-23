@@ -734,6 +734,10 @@ class GCTests(unittest.TestCase):
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"] + 1)
 
+    def test_freeze(self):
+        gc.freeze()
+        self.assertGreater(gc.get_freeze_stats(), 0)
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):

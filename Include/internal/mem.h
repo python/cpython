@@ -185,6 +185,7 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
+    struct gc_generation permanent_generation;
 };
 
 PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_runtime_state *);

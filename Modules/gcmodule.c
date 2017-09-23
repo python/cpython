@@ -71,6 +71,10 @@ _PyGC_Initialize(struct _gc_runtime_state *state)
         state->generations[i] = generations[i];
     };
     state->generation0 = GEN_HEAD(0);
+    struct gc_generation permanent_generation = {
+          {{&permanent_generation.head, &permanent_generation.head, 0}}, 0, 0
+    };
+    state->permanent_generation = permanent_generation;
 }
 
 /*--------------------------------------------------------------------------
@@ -813,6 +817,8 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
         for (i = 0; i < NUM_GENERATIONS; i++)
             PySys_FormatStderr(" %zd",
                               gc_list_size(GEN_HEAD(i)));
+        PySys_WriteStderr("\ngc: objects in permanent generation: %d",
+                         gc_list_size(&_PyRuntime.gc.permanent_generation.head));
         t1 = _PyTime_GetMonotonicClock();
 
         PySys_WriteStderr("\n");
@@ -1405,6 +1411,36 @@ gc_is_tracked(PyObject *module, PyObject *obj)
     return result;
 }
 
+PyDoc_STRVAR(gc_freeze__doc__,
+"freeze() -> None\n"
+"\n"
+"Freeze all current tracked objects and ignore them for future collections.\n"
+"This can be used before a fork to make the gc copy-on-write friendly.\n"
+"Note: collection before a fork may free pages for future allocation\n"
+"which can cause copy-on-write.\n"
+);
+
+static PyObject *
+gc_freeze(PyObject *module)
+{
+    for (int i = 0; i < NUM_GENERATIONS; ++i) {
+        gc_list_merge(GEN_HEAD(i), &_PyRuntime.gc.permanent_generation.head);
+        _PyRuntime.gc.generations[i].count = 0;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(gc_get_freeze_stats__doc__,
+"get_freeze_stats() -> n\n"
+"\n"
+"Return the number of objects in permanent generations.\n"
+);
+
+static PyObject *
+gc_get_freeze_stats(PyObject *module) {
+    return Py_BuildValue("i", gc_list_size(&_PyRuntime.gc.permanent_generation.head));
+}
+
 
 PyDoc_STRVAR(gc__doc__,
 "This module provides access to the garbage collector for reference cycles.\n"
@@ -1422,7 +1458,9 @@ PyDoc_STRVAR(gc__doc__,
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
 "is_tracked() -- Returns true if a given object is tracked.\n"
 "get_referrers() -- Return the list of objects that refer to an object.\n"
-"get_referents() -- Return the list of objects that an object refers to.\n");
+"get_referents() -- Return the list of objects that an object refers to.\n"
+"freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
+"get_freeze_stats() -- Return the number of objects in the permanent generation.\n");
 
 static PyMethodDef GcMethods[] = {
     GC_ENABLE_METHODDEF
@@ -1441,6 +1479,8 @@ static PyMethodDef GcMethods[] = {
         gc_get_referrers__doc__},
     {"get_referents",  gc_get_referents, METH_VARARGS,
         gc_get_referents__doc__},
+    {"freeze", gc_freeze, METH_NOARGS, gc_freeze__doc__},
+    {"get_freeze_stats", gc_get_freeze_stats, METH_NOARGS, gc_get_freeze_stats__doc__},
     {NULL,      NULL}           /* Sentinel */
 };
 
