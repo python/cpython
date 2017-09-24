@@ -3684,9 +3684,6 @@ AC_CHECK_FUNCS(forkpty,,
    )
 )
 
-# Stuff for expat.
-AC_CHECK_FUNCS(memmove)
-
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
 
