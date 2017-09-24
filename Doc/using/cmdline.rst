@@ -409,7 +409,7 @@ Miscellaneous options
      ``COUNT_ALLOCS`` defined.
    * ``-X importtime`` to show how long each import takes. Nested imports are
      indented. It can be used to optimize application's startup time.
-     Note that it's output may be broken in multi threaded application.
+     Note that its output may be broken in multi threaded application.
      Typical usage is ``python3 -X importtime -c 'import asyncio'`.
 
    It also allows passing arbitrary values and retrieving them through the
