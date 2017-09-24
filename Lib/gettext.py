@@ -50,7 +50,6 @@ import locale
 import os
 import re
 import sys
-from errno import ENOENT
 
 
 __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
@@ -520,7 +519,9 @@ def translation(domain, localedir=None, languages=None,
     if not mofiles:
         if fallback:
             return NullTranslations()
-        raise OSError(ENOENT, 'No translation file found for domain', domain)
+        from errno import ENOENT
+        raise FileNotFoundError(ENOENT,
+                                'No translation file found for domain', domain)
     # Avoid opening, reading, and parsing the .mo file after it's been done
     # once.
     result = None
