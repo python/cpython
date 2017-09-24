@@ -12253,19 +12253,6 @@ fi
 done
 
 
-# Stuff for expat.
-for ac_func in memmove
-do :
-  ac_fn_c_check_func "$LINENO" "memmove" "ac_cv_func_memmove"
-if test "x$ac_cv_func_memmove" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_MEMMOVE 1
-_ACEOF
-
-fi
-done
-
-
 # check for long file support functions
 for ac_func in fseek64 fseeko fstatvfs ftell64 ftello statvfs
 do :
