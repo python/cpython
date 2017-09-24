@@ -1,0 +1,2 @@
+Fix an assertion failure in `_warnings.warn()` in case of a bad
+``__name__`` global. Patch by Oren Milman.
