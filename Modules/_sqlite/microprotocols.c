@@ -77,7 +77,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
 {
     _Py_IDENTIFIER(__adapt__);
     _Py_IDENTIFIER(__conform__);
-    PyObject *adapter, *key;
+    PyObject *adapter, *key, *adapted;
 
     /* we don't check for exact type conformance as specified in PEP 246
        because the pysqlite_PrepareProtocolType type is abstract and there is no
@@ -91,7 +91,8 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     adapter = PyDict_GetItemWithError(psyco_adapters, key);
     Py_DECREF(key);
     if (adapter) {
-        PyObject *adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
+        Py_INCREF(adapter);
+        adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
         Py_DECREF(adapter);
         return adapted;
     }
@@ -102,7 +103,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     /* try to have the protocol adapt this object */
     adapter = _PyObject_GetAttrId(proto, &PyId___adapt__);
     if (adapter) {
-        PyObject *adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
+        adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
         Py_DECREF(adapter);
 
         if (adapted == Py_None) {
@@ -128,7 +129,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     /* and finally try to have the object adapt itself */
     adapter = _PyObject_GetAttrId(obj, &PyId___conform__);
     if (adapter) {
-        PyObject *adapted = PyObject_CallFunctionObjArgs(adapter, proto, NULL);
+        adapted = PyObject_CallFunctionObjArgs(adapter, proto, NULL);
         Py_DECREF(adapter);
 
         if (adapted == Py_None) {
