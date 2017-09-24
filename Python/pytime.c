@@ -630,10 +630,7 @@ _PyTime_GetSystemClock(void)
     _PyTime_t t;
     if (pygettimeofday(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked the clock at startup */
-        assert(0);
-
-        /* use a fixed value instead of a random value from the stack */
-        t = 0;
+        Py_UNREACHABLE();
     }
     return t;
 }
@@ -663,7 +660,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             return -1;
         }
         /* Hello, time traveler! */
-        assert(0);
+        Py_UNREACHABLE();
     }
     *tp = t * MS_TO_NS;
 
@@ -771,10 +768,7 @@ _PyTime_GetMonotonicClock(void)
     if (pymonotonic(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked that monotonic clock at
            startup */
-        assert(0);
-
-        /* use a fixed value instead of a random value from the stack */
-        t = 0;
+        Py_UNREACHABLE();
     }
     return t;
 }

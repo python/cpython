@@ -1807,7 +1807,7 @@ class TestAddSubparsers(TestCase):
             'bar', type=float, help='bar help')
 
         # check that only one subparsers argument can be added
-        subparsers_kwargs = {}
+        subparsers_kwargs = {'required': False}
         if aliases:
             subparsers_kwargs['metavar'] = 'COMMAND'
             subparsers_kwargs['title'] = 'commands'
@@ -1906,6 +1906,41 @@ class TestAddSubparsers(TestCase):
         parser1.add_argument('baz')
         self.assertEqual(NS(foo=False, bar='1', baz='2'),
                          parser.parse_args('1 2'.split()))
+
+    def _test_required_subparsers(self, parser):
+        # Should parse the sub command
+        ret = parser.parse_args(['run'])
+        self.assertEqual(ret.command, 'run')
+
+        # Error when the command is missing
+        self.assertArgumentParserError(parser.parse_args, ())
+
+    def test_required_subparsers_via_attribute(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(dest='command')
+        subparsers.required = True
+        subparsers.add_parser('run')
+        self._test_required_subparsers(parser)
+
+    def test_required_subparsers_via_kwarg(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(dest='command', required=True)
+        subparsers.add_parser('run')
+        self._test_required_subparsers(parser)
+
+    def test_required_subparsers_default(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(dest='command')
+        subparsers.add_parser('run')
+        self._test_required_subparsers(parser)
+
+    def test_optional_subparsers(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(dest='command', required=False)
+        subparsers.add_parser('run')
+        # No error here
+        ret = parser.parse_args(())
+        self.assertIsNone(ret.command)
 
     def test_help(self):
         self.assertEqual(self.parser.format_usage(),
