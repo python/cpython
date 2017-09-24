@@ -1667,9 +1667,10 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
     else {
         static int import_level;
+        static _PyTime_t accumulated;
         _Py_IDENTIFIER(importtime);
         int ximporttime = 0;
-        _PyTime_t t1=0, t2;
+        _PyTime_t t1=0, accumulated_copy;
 
         Py_XDECREF(mod);
 
@@ -1687,6 +1688,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         if (ximporttime) {
             import_level++;
             t1 = _PyTime_GetMonotonicClock();
+            accumulated_copy = accumulated;
+            accumulated = 0;
         }
 
         mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
@@ -1694,12 +1697,18 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                             interp->import_func, NULL);
 
         if (ximporttime) {
+            _PyTime_t t2 = _PyTime_GetMonotonicClock();
+            long cum = t2 - t1;
+
             import_level--;
-            t2 = _PyTime_GetMonotonicClock();
-            fprintf(stderr, "import time: %*s- %s %ld us\n",
+            fprintf(stderr, "import time: %*s- %s %ld us (self %ld us)\n",
                     import_level*2, "",
                     PyUnicode_AsUTF8(abs_name),
-                    (long)_PyTime_AsMicroseconds(t2-t1, _PyTime_ROUND_CEILING));
+                    (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
+                    (long)_PyTime_AsMicroseconds(cum-accumulated,
+                                                 _PyTime_ROUND_CEILING));
+
+            accumulated = accumulated_copy + cum;
         }
 
         if (mod == NULL) {
