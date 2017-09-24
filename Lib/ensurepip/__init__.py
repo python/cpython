@@ -66,9 +66,9 @@ def bootstrap(root=None, upgrade=False, user=False,
                verbosity=verbosity)
 
 
-def _bootstrap(*, root=None, upgrade=False, user=False,
-              altinstall=False, default_pip=False,
-              verbosity=0):
+def _bootstrap(root=None, upgrade=False, user=False,
+               altinstall=False, default_pip=True,
+               verbosity=0):
     """
     Bootstrap pip into the current Python installation (or the given root
     directory). Returns pip command status code.
