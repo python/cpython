@@ -1098,29 +1098,41 @@ ttk.Treeview
 
       Returns a tuple of selected items.
 
-      .. versionchanged:: 3.7
+      .. versionchanged:: 3.8
          ``selection()`` no longer takes arguments.  For changing the selection
          state use the following selection methods.
 
 
-   .. method:: selection_set(items)
+   .. method:: selection_set(*items)
 
       *items* becomes the new selection.
 
+      .. versionchanged:: 3.6
+         *items* can be passed as separate arguments, not just as a single tuple.
 
-   .. method:: selection_add(items)
+
+   .. method:: selection_add(*items)
 
       Add *items* to the selection.
 
+      .. versionchanged:: 3.6
+         *items* can be passed as separate arguments, not just as a single tuple.
 
-   .. method:: selection_remove(items)
+
+   .. method:: selection_remove(*items)
 
       Remove *items* from the selection.
 
+      .. versionchanged:: 3.6
+         *items* can be passed as separate arguments, not just as a single tuple.
 
-   .. method:: selection_toggle(items)
+
+   .. method:: selection_toggle(*items)
 
       Toggle the selection state of each item in *items*.
+
+      .. versionchanged:: 3.6
+         *items* can be passed as separate arguments, not just as a single tuple.
 
 
    .. method:: set(item, column=None, value=None)
