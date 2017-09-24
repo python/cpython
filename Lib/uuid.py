@@ -366,6 +366,94 @@ def _find_mac(command, args, hw_identifiers, get_index):
     except OSError:
         pass
 
+def _is_darwin_greater_than_version(major_version_number):
+    """Checks if the operating system is Darwin newer than
+    the specified major version number."""
+    if sys.platform != "darwin":
+        return False
+    return int(os.uname().release.split(".")[0]) >= major_version_number
+
+# The uuid_generate_* functions are broken on MacOS X 10.5, as noted
+# in issue #8621 the function generates the same sequence of values
+# in the parent process and all children created using fork (unless
+# those children use exec as well).
+#
+# Assume that the uuid_generate functions are broken from 10.5 onward,
+# the test can be adjusted when a later version is fixed.
+try:
+    import ctypes
+except BaseException:
+    _no_uuid_generate_time_lookup = True
+else:
+    _no_uuid_generate_time_lookup = _is_darwin_greater_than_version(9)
+
+_uuid_generate_time = _UuidCreate = None
+
+# Thanks to Thomas Heller for ctypes and for his help with its use here.
+
+# If ctypes is available, use it to find system routines for UUID generation.
+# XXX This makes the module non-thread-safe!
+def _get_uuid_generate_time():
+    """Lazy-loading of _uuid_generate_time."""
+    global _no_uuid_generate_time_lookup
+    global _uuid_generate_time
+
+    if _no_uuid_generate_time_lookup or (_uuid_generate_time is not None):
+        return _uuid_generate_time
+
+    # After looking up _uuid_generate_time once, the result is memoized
+    _no_uuid_generate_time_lookup = True
+
+    try:
+        import ctypes.util
+        # The uuid_generate_* routines are provided by libuuid - at least
+        # on Linux. On FreeBSD and OS X they are provided by libc
+        _libnames = ['uuid']
+        if not sys.platform.startswith('win'):
+            if 'bsd' in sys.platform:
+                _libnames.insert(0, 'c')
+            else:
+                _libnames.append('c')
+        for libname in _libnames:
+            try:
+                lib = ctypes.CDLL(ctypes.util.find_library(libname))
+            except Exception:                           # pragma: nocover
+                continue
+            # Try to find the safe variety first.
+            if hasattr(lib, 'uuid_generate_time_safe'):
+                _uuid_generate_time = lib.uuid_generate_time_safe
+                # int uuid_generate_time_safe(uuid_t out);
+                break
+            elif hasattr(lib, 'uuid_generate_time'):    # pragma: nocover
+                _uuid_generate_time = lib.uuid_generate_time
+                # void uuid_generate_time(uuid_t out);
+                _uuid_generate_time.restype = None
+                break
+        del _libnames
+
+        # On Windows prior to 2000, UuidCreate gives a UUID containing the
+        # hardware address.  On Windows 2000 and later, UuidCreate makes a
+        # random UUID and UuidCreateSequential gives a UUID containing the
+        # hardware address.  These routines are provided by the RPC runtime.
+        # NOTE:  at least on Tim's WinXP Pro SP2 desktop box, while the last
+        # 6 bytes returned by UuidCreateSequential are fixed, they don't appear
+        # to bear any relationship to the MAC address of any network device
+        # on the box.
+        try:
+            lib = ctypes.windll.rpcrt4
+        except AttributeError:
+            lib = None
+        global _UuidCreate
+        _UuidCreate = getattr(
+            lib,
+            'UuidCreateSequential',
+            getattr(lib, 'UuidCreate', None)
+        )
+    except:
+        pass
+
+    return _uuid_generate_time
+
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
@@ -475,92 +563,8 @@ def _netbios_getnode():
             continue
         return int.from_bytes(bytes, 'big')
 
-def _is_darwin_greater_than_version(major_version_number):
-    """Checks if the operating system is Darwin newer than
-    the specified major version number."""
-    if sys.platform != "darwin":
-        return False
-    return int(os.uname().release.split(".")[0]) >= major_version_number
-
-# The uuid_generate_* functions are broken on MacOS X 10.5, as noted
-# in issue #8621 the function generates the same sequence of values
-# in the parent process and all children created using fork (unless
-# those children use exec as well).
-#
-# Assume that the uuid_generate functions are broken from 10.5 onward,
-# the test can be adjusted when a later version is fixed.
-_no_uuid_generate_time_lookup = _is_darwin_greater_than_version(9)
-_uuid_generate_time = _UuidCreate = None
-
-# Thanks to Thomas Heller for ctypes and for his help with its use here.
-
-# If ctypes is available, use it to find system routines for UUID generation.
-# XXX This makes the module non-thread-safe!
-def _get_uuid_generate_time():
-    """Lazy-loading of _uuid_generate_time."""
-    global _no_uuid_generate_time_lookup
-    global _uuid_generate_time
-
-    if _no_uuid_generate_time_lookup or (_uuid_generate_time is not None):
-        return _uuid_generate_time
-
-    # After looking up _uuid_generate_time once, the result is memoized
-    _no_uuid_generate_time_lookup = True
-
-    try:
-        import ctypes
-        import ctypes.util
-        # The uuid_generate_* routines are provided by libuuid - at least
-        # on Linux. On FreeBSD and OS X they are provided by libc
-        _libnames = ['uuid']
-        if not sys.platform.startswith('win'):
-            if 'bsd' in sys.platform:
-                _libnames.insert(0, 'c')
-            else:
-                _libnames.append('c')
-        for libname in _libnames:
-            try:
-                lib = ctypes.CDLL(ctypes.util.find_library(libname))
-            except Exception:                           # pragma: nocover
-                continue
-            # Try to find the safe variety first.
-            if hasattr(lib, 'uuid_generate_time_safe'):
-                _uuid_generate_time = lib.uuid_generate_time_safe
-                # int uuid_generate_time_safe(uuid_t out);
-                break
-            elif hasattr(lib, 'uuid_generate_time'):    # pragma: nocover
-                _uuid_generate_time = lib.uuid_generate_time
-                # void uuid_generate_time(uuid_t out);
-                _uuid_generate_time.restype = None
-                break
-        del _libnames
-
-        # On Windows prior to 2000, UuidCreate gives a UUID containing the
-        # hardware address.  On Windows 2000 and later, UuidCreate makes a
-        # random UUID and UuidCreateSequential gives a UUID containing the
-        # hardware address.  These routines are provided by the RPC runtime.
-        # NOTE:  at least on Tim's WinXP Pro SP2 desktop box, while the last
-        # 6 bytes returned by UuidCreateSequential are fixed, they don't appear
-        # to bear any relationship to the MAC address of any network device
-        # on the box.
-        try:
-            lib = ctypes.windll.rpcrt4
-        except AttributeError:
-            lib = None
-        global _UuidCreate
-        _UuidCreate = getattr(
-            lib,
-            'UuidCreateSequential',
-            getattr(lib, 'UuidCreate', None)
-        )
-    except:
-        pass
-
-    return _uuid_generate_time
-
 def _unixdll_getnode():
     """Get the hardware address on Unix using ctypes."""
-    import ctypes
     _buffer = ctypes.create_string_buffer(16)
     uuid_generate_time = _get_uuid_generate_time()
     uuid_generate_time(_buffer)
@@ -568,7 +572,6 @@ def _unixdll_getnode():
 
 def _windll_getnode():
     """Get the hardware address on Windows using ctypes."""
-    import ctypes
     _buffer = ctypes.create_string_buffer(16)
     _get_uuid_generate_time()
     if _UuidCreate(_buffer) == 0:
@@ -621,7 +624,6 @@ def uuid1(node=None, clock_seq=None):
     # use UuidCreate here because its UUIDs don't conform to RFC 4122).
     uuid_generate_time = _get_uuid_generate_time()
     if uuid_generate_time and node is clock_seq is None:
-        import ctypes
         _buffer = ctypes.create_string_buffer(16)
         safely_generated = uuid_generate_time(_buffer)
         try:
