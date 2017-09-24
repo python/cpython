@@ -684,7 +684,9 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     /* Setup module. */
     *module = PyDict_GetItemString(globals, "__name__");
-    if (*module == NULL || !PyUnicode_Check(*module)) {
+    if (*module == NULL ||
+        (*module != Py_None && !PyUnicode_Check(*module)))
+    {
         *module = PyUnicode_FromString("<string>");
         if (*module == NULL)
             goto handle_error;
