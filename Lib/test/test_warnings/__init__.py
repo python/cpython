@@ -820,6 +820,16 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                  self.assertRaises(TypeError):
                 wmod.warn_explicit('foo', Warning, 'bar', 1)
 
+    @support.cpython_only
+    def test_issue31566(self):
+        # warn() shouldn't cause an assertion failure in case of a bad
+        # __name__ global.
+        wmod = self.module
+        with support.swap_item(globals(), '__name__', b'foo'), \
+             support.swap_item(globals(), '__file__', None), \
+             support.captured_stderr():
+            wmod.warn('bar')
+
 
 class WarningsDisplayTests(BaseTest):
 
