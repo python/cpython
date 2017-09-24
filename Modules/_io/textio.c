@@ -1074,7 +1074,18 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         goto error;
     self->seekable = self->telling = r;
 
-    self->has_read1 = _PyObject_HasAttrId(buffer, &PyId_read1);
+    res = _PyObject_GetAttrId(buffer, &PyId_read1);
+    if (res != NULL) {
+        Py_DECREF(res);
+        self->has_read1 = 1;
+    }
+    else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Clear();
+        self->has_read1 = 0;
+    }
+    else {
+        goto error;
+    }
 
     self->encoding_start_of_stream = 0;
     if (self->seekable && self->encoder) {
