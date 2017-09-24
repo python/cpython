@@ -794,6 +794,42 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         self.assertNotIn(b'Warning!', stderr)
         self.assertNotIn(b'Error', stderr)
 
+    def test_issue31285(self):
+        # warn_explicit() should neither raise a SystemError nor cause an
+        # assertion failure, in case the return value of get_source() has a
+        # bad splitlines() method.
+        def get_bad_loader(splitlines_ret_val):
+            class BadLoader:
+                def get_source(self, fullname):
+                    class BadSource(str):
+                        def splitlines(self):
+                            return splitlines_ret_val
+                    return BadSource('spam')
+            return BadLoader()
+
+        wmod = self.module
+        with original_warnings.catch_warnings(module=wmod):
+            wmod.filterwarnings('default', category=UserWarning)
+
+            with support.captured_stderr() as stderr:
+                wmod.warn_explicit(
+                    'foo', UserWarning, 'bar', 1,
+                    module_globals={'__loader__': get_bad_loader(42),
+                                    '__name__': 'foobar'})
+            self.assertIn('UserWarning: foo', stderr.getvalue())
+
+            show = wmod._showwarnmsg
+            try:
+                del wmod._showwarnmsg
+                with support.captured_stderr() as stderr:
+                    wmod.warn_explicit(
+                        'eggs', UserWarning, 'bar', 1,
+                        module_globals={'__loader__': get_bad_loader([42]),
+                                        '__name__': 'foobar'})
+                self.assertIn('UserWarning: eggs', stderr.getvalue())
+            finally:
+                wmod._showwarnmsg = show
+
     @support.cpython_only
     def test_issue31411(self):
         # warn_explicit() shouldn't raise a SystemError in case
