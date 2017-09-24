@@ -313,7 +313,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/8.0.0/ucd/PropList.txt>`_ to support backwards
+  <http://www.unicode.org/Public/10.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -676,6 +676,12 @@ Some examples of formatted string literals::
    >>> value = decimal.Decimal("12.34567")
    >>> f"result: {value:{width}.{precision}}"  # nested fields
    'result:      12.35'
+   >>> today = datetime(year=2017, month=1, day=27)
+   >>> f"{today:%b %d, %Y}"  # using date format specifier
+   'January 27, 2017'
+   >>> number = 1024
+   >>> f"{number:#0x}"  # using integer format specifier
+   '0x400'
 
 A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
@@ -875,4 +881,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/8.0.0/ucd/NameAliases.txt
+.. [#] http://www.unicode.org/Public/10.0.0/ucd/NameAliases.txt

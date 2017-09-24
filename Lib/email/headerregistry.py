@@ -369,8 +369,8 @@ class AddressHeader:
     @property
     def addresses(self):
         if self._addresses is None:
-            self._addresses = tuple([address for group in self._groups
-                                             for address in group.addresses])
+            self._addresses = tuple(address for group in self._groups
+                                            for address in group.addresses)
         return self._addresses
 
 

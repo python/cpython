@@ -3,6 +3,10 @@
 Tasks and coroutines
 ====================
 
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
 .. _coroutine:
 
 Coroutines
@@ -539,6 +543,11 @@ Task functions
    A deprecated alias to :func:`ensure_future`.
 
    .. deprecated:: 3.4.4
+
+.. function:: wrap_future(future, \*, loop=None)
+
+   Wrap a :class:`concurrent.futures.Future` object in a :class:`Future`
+   object.
 
 .. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
 

@@ -1572,8 +1572,8 @@ do then it imports ``SomeClass`` from module a. If we use :func:`patch` to mock 
 reference to the *real* ``SomeClass`` and it looks like our patching had no
 effect.
 
-The key is to patch out ``SomeClass`` where it is used (or where it is looked up
-). In this case ``some_function`` will actually look up ``SomeClass`` in module b,
+The key is to patch out ``SomeClass`` where it is used (or where it is looked up).
+In this case ``some_function`` will actually look up ``SomeClass`` in module b,
 where we have imported it. The patching should look like::
 
     @patch('b.SomeClass')
