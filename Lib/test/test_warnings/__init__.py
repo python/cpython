@@ -798,7 +798,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         # warn_explicit() should neither raise a SystemError nor cause an
         # assertion failure, in case the return value of get_source() has a
         # bad splitlines() method.
-        def _get_bad_loader(splitlines_ret_val):
+        def get_bad_loader(splitlines_ret_val):
             class BadLoader:
                 def get_source(self, fullname):
                     class BadSource(str):
@@ -809,7 +809,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         with support.captured_stderr() as stderr:
             self.module.warn_explicit(
                 'foo', UserWarning, 'bar', 1,
-                module_globals={'__loader__': _get_bad_loader(42),
+                module_globals={'__loader__': get_bad_loader(42),
                                 '__name__': 'foobar'})
         self.assertIn('bar:1: UserWarning: foo', stderr.getvalue())
         show = self.module._showwarnmsg
@@ -818,7 +818,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             with support.captured_stderr() as stderr:
                 self.module.warn_explicit(
                     'foo', ArithmeticError, 'bar', 1,
-                    module_globals={'__loader__': _get_bad_loader([42]),
+                    module_globals={'__loader__': get_bad_loader([42]),
                                     '__name__': 'foobar'})
             self.assertIn('bar:1: ArithmeticError: foo', stderr.getvalue())
         finally:
