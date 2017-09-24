@@ -287,8 +287,10 @@ _grouper_next(_grouperobject *igo)
     PyObject *newvalue, *newkey, *r;
     int rcmp;
 
-    if (gbo->currgrouper != igo)
+    if (gbo->currgrouper != igo) {
+        PyErr_SetString(PyExc_RuntimeError, "group changed during iteration");
         return NULL;
+    }
     if (gbo->currvalue == NULL) {
         newvalue = PyIter_Next(gbo->it);
         if (newvalue == NULL)
@@ -327,7 +329,8 @@ static PyObject *
 _grouper_reduce(_grouperobject *lz)
 {
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        PyErr_SetString(PyExc_RuntimeError, "group changed during iteration");
+        return NULL;
     }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }

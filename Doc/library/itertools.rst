@@ -408,7 +408,11 @@ loops that truncate the stream.
               self.tgtkey = self.currkey
               return (self.currkey, self._grouper(self.tgtkey, self.id))
           def _grouper(self, tgtkey, id):
-              while self.id is id and self.currkey == tgtkey:
+              while True:
+                  if self.id is not id:
+                      raise PyExc_RuntimeError('group changed during iteration')
+                  if self.currkey != tgtkey:
+                      break
                   yield self.currvalue
                   try:
                       self.currvalue = next(self.it)
