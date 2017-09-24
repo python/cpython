@@ -109,6 +109,18 @@ win_perf_counter(_Py_clock_info_t *info)
     }
     return PyFloat_FromDouble(diff / (double)cpu_frequency);
 }
+
+static void get_windows_zone(wchar_t *zname)
+{
+    TIME_ZONE_INFORMATION tzi;
+    int tzid = GetTimeZoneInformation(&tzi);
+    if (tzid < 2) {
+        wcscpy(zname, tzi.StandardName);
+    }
+    else {
+        wcscpy(zname, tzi.DaylightName);
+    }
+}
 #endif   /* MS_WINDOWS */
 
 #if defined(WIN32_PERF_COUNTER) || defined(HAVE_CLOCK)
@@ -410,7 +422,7 @@ time_localtime(PyObject *self, PyObject *args)
     {
         struct tm local = buf;
 #ifdef MS_WINDOWS
-        wchar_t *zone;
+        wchar_t zone[128];
 #else
         char zone[100];
 #endif
@@ -418,14 +430,7 @@ time_localtime(PyObject *self, PyObject *args)
         /*bpo-16322, bpo-27426: For Windows use GetTimeZoneInformation() to avoid
         wrong encoding of time zone names.*/
 #ifdef MS_WINDOWS
-        TIME_ZONE_INFORMATION tzi;
-        int tzid = GetTimeZoneInformation(&tzi);
-        if (tzid < 2) {
-            zone = tzi.StandardName;
-        }
-        else {
-            zone = tzi.DaylightName;
-        }
+        get_windows_zone(zone);
 #else
         strftime(zone, sizeof(zone), "%Z", &buf);
 #endif
@@ -684,20 +689,12 @@ time_strftime(PyObject *self, PyObject *args)
 #endif
 
 #ifdef MS_WINDOWS
-    //Get time zone names with Windows API
-    wchar_t *zone;
-    TIME_ZONE_INFORMATION tzi;
-    int tzid = GetTimeZoneInformation(&tzi);
-    if (tzid < 2) {
-        zone = tzi.StandardName;
-    }
-    else {
-        zone = tzi.DaylightName;
-    }
-
+    /*For Windows firstly replace %Z with time zone name from Windows API
+    and not use format string containing %Z with wcsftime*/
     wchar_t *result, *tmp;
     const wchar_t *ins;    // the next insert point
-
+    wchar_t zone[128];
+    get_windows_zone(zone);
     size_t len_zone = wcslen(zone);
     size_t len_front; // distance between new occurance of %Z and end of the last one
     size_t count;
