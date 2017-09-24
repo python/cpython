@@ -806,23 +806,29 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                             return splitlines_ret_val
                     return BadSource('spam')
             return BadLoader()
-        with support.captured_stderr() as stderr:
-            self.module.warn_explicit(
-                'foo', UserWarning, 'bar', 1,
-                module_globals={'__loader__': get_bad_loader(42),
-                                '__name__': 'foobar'})
-        self.assertIn('bar:1: UserWarning: foo', stderr.getvalue())
-        show = self.module._showwarnmsg
-        try:
-            del self.module._showwarnmsg
+
+        wmod = self.module
+        with original_warnings.catch_warnings(module=wmod):
+            wmod.filterwarnings('default', category=UserWarning)
+
             with support.captured_stderr() as stderr:
-                self.module.warn_explicit(
-                    'foo', ArithmeticError, 'bar', 1,
-                    module_globals={'__loader__': get_bad_loader([42]),
+                wmod.warn_explicit(
+                    'foo', UserWarning, 'bar', 1,
+                    module_globals={'__loader__': get_bad_loader(42),
                                     '__name__': 'foobar'})
-            self.assertIn('bar:1: ArithmeticError: foo', stderr.getvalue())
-        finally:
-            self.module._showwarnmsg = show
+            self.assertIn('UserWarning: foo', stderr.getvalue())
+
+            show = wmod._showwarnmsg
+            try:
+                del wmod._showwarnmsg
+                with support.captured_stderr() as stderr:
+                    wmod.warn_explicit(
+                        'eggs', UserWarning, 'bar', 1,
+                        module_globals={'__loader__': get_bad_loader([42]),
+                                        '__name__': 'foobar'})
+                self.assertIn('UserWarning: eggs', stderr.getvalue())
+            finally:
+                wmod._showwarnmsg = show
 
     @support.cpython_only
     def test_issue31411(self):
