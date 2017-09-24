@@ -690,7 +690,7 @@ time_strftime(PyObject *self, PyObject *args)
 
 #ifdef MS_WINDOWS
     /*For Windows firstly replace %Z with time zone name from Windows API
-    and not use format string containing %Z with wcsftime*/
+    to not use format string containing %Z with wcsftime().*/
     wchar_t *result, *tmp;
     const wchar_t *ins;    // the next insert point
     wchar_t zone[128];
@@ -713,9 +713,18 @@ time_strftime(PyObject *self, PyObject *args)
         while (count--) {
             ins = wcsstr(fmt, L"%Z");
             len_front = ins - fmt;
-            tmp = wcsncpy(tmp, fmt, len_front) + len_front;
-            tmp = wcscpy(tmp, zone) + len_zone;
-            fmt += len_front + 2; // move to next "end of rep"
+            if (wcsncmp(ins - 1, L"%", 1) == 0)
+            {
+                len_front += 2;
+                tmp = wcsncpy(tmp, fmt, len_front) + len_front;
+                fmt += len_front;
+            }
+            else
+            {
+                tmp = wcsncpy(tmp, fmt, len_front) + len_front;
+                tmp = wcscpy(tmp, zone) + len_zone;
+                fmt += len_front + 2;
+            }
         }
         wcscpy(tmp, fmt);
         fmt = result;
