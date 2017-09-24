@@ -684,13 +684,14 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     /* Setup module. */
     *module = PyDict_GetItemString(globals, "__name__");
-    if (*module == NULL) {
+    if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
+        Py_INCREF(*module);
+    }
+    else {
         *module = PyUnicode_FromString("<string>");
         if (*module == NULL)
             goto handle_error;
     }
-    else
-        Py_INCREF(*module);
 
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
