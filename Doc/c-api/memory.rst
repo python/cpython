@@ -429,6 +429,28 @@ Customize pymalloc Arena Allocator
    Set the arena allocator.
 
 
+tracemalloc C API
+=================
+
+.. versionadded:: 3.7
+
+.. c:function: int PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr, size_t size)
+
+   Track an allocated memory block in the :mod:`tracemalloc` module.
+
+   Return 0 on success, return ``-1`` on error (failed to allocate memory to
+   store the trace). Return ``-2`` if tracemalloc is disabled.
+
+   If memory block is already tracked, update the existing trace.
+
+.. c:function: int PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
+
+   Untrack an allocated memory block in the :mod:`tracemalloc` module.
+   Do nothing if the block was not tracked.
+
+   Return ``-2`` if tracemalloc is disabled, otherwise return ``0``.
+
+
 .. _memoryexamples:
 
 Examples

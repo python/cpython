@@ -321,6 +321,9 @@ expect a function argument.
       >>> itemgetter(slice(2,None))('ABCDEFG')
       'CDEFG'
 
+      >>> soldier = dict(rank='captain', name='dotterbart')
+      >>> itemgetter('rank')(soldier)
+      'captain'
 
    Example of using :func:`itemgetter` to retrieve specific fields from a
    tuple record:

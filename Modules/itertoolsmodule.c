@@ -882,7 +882,7 @@ cycle_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *saved;
     cycleobject *lz;
 
-    if (type == &cycle_type && !_PyArg_NoKeywords("cycle()", kwds))
+    if (type == &cycle_type && !_PyArg_NoKeywords("cycle", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "cycle", 1, 1, &iterable))
@@ -1083,7 +1083,7 @@ dropwhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it;
     dropwhileobject *lz;
 
-    if (type == &dropwhile_type && !_PyArg_NoKeywords("dropwhile()", kwds))
+    if (type == &dropwhile_type && !_PyArg_NoKeywords("dropwhile", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "dropwhile", 2, 2, &func, &seq))
@@ -1251,7 +1251,7 @@ takewhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it;
     takewhileobject *lz;
 
-    if (type == &takewhile_type && !_PyArg_NoKeywords("takewhile()", kwds))
+    if (type == &takewhile_type && !_PyArg_NoKeywords("takewhile", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "takewhile", 2, 2, &func, &seq))
@@ -1419,7 +1419,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t numargs;
     isliceobject *lz;
 
-    if (type == &islice_type && !_PyArg_NoKeywords("islice()", kwds))
+    if (type == &islice_type && !_PyArg_NoKeywords("islice", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
@@ -1428,7 +1428,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     numargs = PyTuple_Size(args);
     if (numargs == 2) {
         if (a1 != Py_None) {
-            stop = PyLong_AsSsize_t(a1);
+            stop = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
@@ -1440,11 +1440,11 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     } else {
         if (a1 != Py_None)
-            start = PyLong_AsSsize_t(a1);
+            start = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
         if (start == -1 && PyErr_Occurred())
             PyErr_Clear();
         if (a2 != Py_None) {
-            stop = PyLong_AsSsize_t(a2);
+            stop = PyNumber_AsSsize_t(a2, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
@@ -1464,7 +1464,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (a3 != NULL) {
         if (a3 != Py_None)
-            step = PyLong_AsSsize_t(a3);
+            step = PyNumber_AsSsize_t(a3, PyExc_OverflowError);
         if (step == -1 && PyErr_Occurred())
             PyErr_Clear();
     }
@@ -1673,7 +1673,7 @@ starmap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it;
     starmapobject *lz;
 
-    if (type == &starmap_type && !_PyArg_NoKeywords("starmap()", kwds))
+    if (type == &starmap_type && !_PyArg_NoKeywords("starmap", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "starmap", 2, 2, &func, &seq))
@@ -1831,7 +1831,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *source;
 
-    if (type == &chain_type && !_PyArg_NoKeywords("chain()", kwds))
+    if (type == &chain_type && !_PyArg_NoKeywords("chain", kwds))
         return NULL;
 
     source = PyObject_GetIter(args);
@@ -3780,7 +3780,7 @@ filterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     filterfalseobject *lz;
 
     if (type == &filterfalse_type &&
-        !_PyArg_NoKeywords("filterfalse()", kwds))
+        !_PyArg_NoKeywords("filterfalse", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "filterfalse", 2, 2, &func, &seq))
@@ -4078,7 +4078,8 @@ static PyObject *
 count_repr(countobject *lz)
 {
     if (lz->cnt != PY_SSIZE_T_MAX)
-        return PyUnicode_FromFormat("count(%zd)", lz->cnt);
+        return PyUnicode_FromFormat("%s(%zd)",
+                                    _PyType_Name(Py_TYPE(lz)), lz->cnt);
 
     if (PyLong_Check(lz->long_step)) {
         long step = PyLong_AsLong(lz->long_step);
@@ -4087,11 +4088,14 @@ count_repr(countobject *lz)
         }
         if (step == 1) {
             /* Don't display step when it is an integer equal to 1 */
-            return PyUnicode_FromFormat("count(%R)", lz->long_cnt);
+            return PyUnicode_FromFormat("%s(%R)",
+                                        _PyType_Name(Py_TYPE(lz)),
+                                        lz->long_cnt);
         }
     }
-    return PyUnicode_FromFormat("count(%R, %R)",
-                                                            lz->long_cnt, lz->long_step);
+    return PyUnicode_FromFormat("%s(%R, %R)",
+                                _PyType_Name(Py_TYPE(lz)),
+                                lz->long_cnt, lz->long_step);
 }
 
 static PyObject *
@@ -4231,9 +4235,12 @@ static PyObject *
 repeat_repr(repeatobject *ro)
 {
     if (ro->cnt == -1)
-        return PyUnicode_FromFormat("repeat(%R)", ro->element);
+        return PyUnicode_FromFormat("%s(%R)",
+                                    _PyType_Name(Py_TYPE(ro)), ro->element);
     else
-        return PyUnicode_FromFormat("repeat(%R, %zd)", ro->element, ro->cnt);
+        return PyUnicode_FromFormat("%s(%R, %zd)",
+                                    _PyType_Name(Py_TYPE(ro)), ro->element,
+                                    ro->cnt);
 }
 
 static PyObject *
@@ -4641,7 +4648,7 @@ PyInit_itertools(void)
 {
     int i;
     PyObject *m;
-    char *name;
+    const char *name;
     PyTypeObject *typelist[] = {
         &accumulate_type,
         &combinations_type,
@@ -4674,10 +4681,9 @@ PyInit_itertools(void)
     for (i=0 ; typelist[i] != NULL ; i++) {
         if (PyType_Ready(typelist[i]) < 0)
             return NULL;
-        name = strchr(typelist[i]->tp_name, '.');
-        assert (name != NULL);
+        name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
+        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
     }
 
     return m;
