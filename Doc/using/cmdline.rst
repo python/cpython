@@ -429,7 +429,7 @@ Miscellaneous options
       The ``-X showalloccount`` option.
 
    .. versionadded:: 3.7
-      The ``-X importprofile`` option.
+      The ``-X importtime`` option.
 
 
 Options you shouldn't use
