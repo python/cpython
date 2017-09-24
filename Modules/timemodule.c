@@ -110,15 +110,17 @@ win_perf_counter(_Py_clock_info_t *info)
     return PyFloat_FromDouble(diff / (double)cpu_frequency);
 }
 
-static void get_windows_zone(wchar_t *zname)
+// Function to get time zone name with Windows API
+static void get_windows_zone(wchar_t *out)
 {
     TIME_ZONE_INFORMATION tzi;
-    int tzid = GetTimeZoneInformation(&tzi);
+    DWORD tzid = GetTimeZoneInformation(&tzi);
+
     if (tzid < 2) {
-        wcscpy(zname, tzi.StandardName);
+        wcscpy(out, tzi.StandardName);
     }
     else {
-        wcscpy(zname, tzi.DaylightName);
+        wcscpy(out, tzi.DaylightName);
     }
 }
 #endif   /* MS_WINDOWS */
@@ -692,12 +694,12 @@ time_strftime(PyObject *self, PyObject *args)
     /*For Windows firstly replace %Z with time zone name from Windows API
     to not use format string containing %Z with wcsftime().*/
     wchar_t *result, *tmp;
-    const wchar_t *ins;    // the next insert point
+    const wchar_t *ins;
     wchar_t zone[128];
+    size_t len_zone, len_copy, count;
+
     get_windows_zone(zone);
-    size_t len_zone = wcslen(zone);
-    size_t len_front; // distance between new occurance of %Z and end of the last one
-    size_t count;
+    len_zone = wcslen(zone);
 
     // Count the number of %Z occurences
     ins = fmt;
@@ -706,24 +708,21 @@ time_strftime(PyObject *self, PyObject *args)
     }
 
     //Replace %Z with time zone name
-    if (count)
-    {
+    if (count) {
         size_t l = wcslen(fmt) + (len_zone - 2) * count + 1;
         tmp = result = (time_char *)PyMem_Malloc(l * sizeof(time_char));
         while (count--) {
             ins = wcsstr(fmt, L"%Z");
-            len_front = ins - fmt;
-            if (wcsncmp(ins - 1, L"%", 1) == 0)
-            {
-                len_front += 2;
-                tmp = wcsncpy(tmp, fmt, len_front) + len_front;
-                fmt += len_front;
+            len_copy = ins - fmt;
+            if (wcsncmp(ins - 1, L"%", 1) == 0) {
+                len_copy += 2;
+                tmp = wcsncpy(tmp, fmt, len_copy) + len_copy;
+                fmt += len_copy;
             }
-            else
-            {
-                tmp = wcsncpy(tmp, fmt, len_front) + len_front;
+            else {
+                tmp = wcsncpy(tmp, fmt, len_copy) + len_copy;
                 tmp = wcscpy(tmp, zone) + len_zone;
-                fmt += len_front + 2;
+                fmt += len_copy + 2;
             }
         }
         wcscpy(tmp, fmt);
@@ -776,8 +775,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
     PyMem_Free(format);
 #ifdef MS_WINDOWS
-    if (count > 0)
-    {
+    if (count > 0) {
         PyMem_Free(result);
     }
 #endif
