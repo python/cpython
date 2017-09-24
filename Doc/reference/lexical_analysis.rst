@@ -796,10 +796,6 @@ Some examples of floating point literals::
 
    3.14    10.    .001    1e100    3.14e-10    0e0    3.14_15_93
 
-Note that numeric literals do not include a sign; a phrase like ``-1`` is
-actually an expression composed of the unary operator ``-`` and the literal
-``1``.
-
 .. versionchanged:: 3.6
    Underscores are now allowed for grouping purposes in literals.
 
