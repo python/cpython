@@ -76,7 +76,7 @@ options:
 * ``--no-default-pip``: if a non-default installation is request, the ``pip``
   script will *not* be installed.
 
-.. versionchanged:: 3.7.0
+.. versionchanged:: 2.7.15
    The exit status is non-zero if the command fails.
 
 
