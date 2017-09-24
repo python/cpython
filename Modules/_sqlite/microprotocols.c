@@ -75,6 +75,8 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
 PyObject *
 pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
 {
+    _Py_IDENTIFIER(__adapt__);
+    _Py_IDENTIFIER(__conform__);
     PyObject *adapter, *key;
 
     /* we don't check for exact type conformance as specified in PEP 246
@@ -86,46 +88,67 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     if (!key) {
         return NULL;
     }
-    adapter = PyDict_GetItem(psyco_adapters, key);
+    adapter = PyDict_GetItemWithError(psyco_adapters, key);
     Py_DECREF(key);
     if (adapter) {
         PyObject *adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
+        Py_DECREF(adapter);
         return adapted;
     }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
 
-    /* try to have the protocol adapt this object*/
-    if (PyObject_HasAttrString(proto, "__adapt__")) {
-        _Py_IDENTIFIER(__adapt__);
-        PyObject *adapted = _PyObject_CallMethodId(proto, &PyId___adapt__, "O", obj);
+    /* try to have the protocol adapt this object */
+    adapter = _PyObject_GetAttrId(proto, &PyId___adapt__);
+    if (adapter) {
+        PyObject *adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
+        Py_DECREF(adapter);
 
-        if (adapted) {
-            if (adapted != Py_None) {
-                return adapted;
-            } else {
-                Py_DECREF(adapted);
-            }
+        if (adapted == Py_None) {
+            Py_DECREF(adapted);
         }
-
-        if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_TypeError))
+        else if (adapted) {
+            return adapted;
+        }
+        else if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
             return NULL;
+        }
+        else {
+            PyErr_Clear();
+        }
+    }
+    else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        return NULL;
+    }
+    else {
+        PyErr_Clear();
     }
 
     /* and finally try to have the object adapt itself */
-    if (PyObject_HasAttrString(obj, "__conform__")) {
-        _Py_IDENTIFIER(__conform__);
-        PyObject *adapted = _PyObject_CallMethodId(obj, &PyId___conform__,"O", proto);
+    adapter = _PyObject_GetAttrId(obj, &PyId___conform__);
+    if (adapter) {
+        PyObject *adapted = PyObject_CallFunctionObjArgs(adapter, proto, NULL);
+        Py_DECREF(adapter);
 
-        if (adapted) {
-            if (adapted != Py_None) {
-                return adapted;
-            } else {
-                Py_DECREF(adapted);
-            }
+        if (adapted == Py_None) {
+            Py_DECREF(adapted);
         }
-
-        if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_TypeError)) {
+        else if (adapted) {
+            return adapted;
+        }
+        else if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
             return NULL;
         }
+        else {
+            PyErr_Clear();
+        }
+    }
+    else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        return NULL;
+    }
+    else {
+        PyErr_Clear();
     }
 
     /* else set the right exception and return NULL */
