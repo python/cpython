@@ -824,11 +824,10 @@ class _WarningsTests(BaseTest, unittest.TestCase):
     def test_issue31566(self):
         # warn() shouldn't cause an assertion failure in case of a bad
         # __name__ global.
-        wmod = self.module
         with support.swap_item(globals(), '__name__', b'foo'), \
              support.swap_item(globals(), '__file__', None), \
              support.captured_stderr():
-            wmod.warn('bar')
+            self.module.warn('bar')
 
 
 class WarningsDisplayTests(BaseTest):
