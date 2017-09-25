@@ -176,8 +176,9 @@ static PyMethodDef groupby_methods[] = {
 };
 
 PyDoc_STRVAR(groupby_doc,
-"groupby(iterable[, keyfunc]) -> create an iterator which returns\n\
-(key, sub-iterator) grouped by each value of key(value).\n");
+"groupby(iterable, key=None) -> make an iterator that returns consecutive\n\
+keys and groups from the iterable.  If the key function is not specified or\n\
+is None, the element itself is used for grouping.\n");
 
 static PyTypeObject groupby_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
