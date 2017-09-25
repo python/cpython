@@ -1,2 +1,0 @@
-Fixed a crash in itertools.groupby() when using the grouper iterator in the
-key function.

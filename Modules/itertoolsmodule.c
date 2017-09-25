@@ -74,9 +74,9 @@ groupby_traverse(groupbyobject *gbo, visitproc visit, void *arg)
 }
 
 Py_LOCAL_INLINE(int)
-groupby_advance(groupbyobject *gbo)
+groupby_step(groupbyobject *gbo)
 {
-    PyObject *newvalue, *newkey;
+    PyObject *newvalue, *newkey, *oldvalue;
 
     newvalue = PyIter_Next(gbo->it);
     if (newvalue == NULL)
@@ -93,8 +93,10 @@ groupby_advance(groupbyobject *gbo)
         }
     }
 
+    oldvalue = gbo->currvalue;
+    gbo->currvalue = newvalue;
     Py_XSETREF(gbo->currkey, newkey);
-    Py_XSETREF(gbo->currvalue, newvalue);
+    Py_XDECREF(oldvalue);
     return 0;
 }
 
@@ -120,7 +122,7 @@ groupby_next(groupbyobject *gbo)
                 break;
         }
 
-        if (groupby_advance(gbo) < 0)
+        if (groupby_step(gbo) < 0)
             return NULL;
     }
     Py_INCREF(gbo->currkey);
@@ -300,7 +302,7 @@ _grouper_next(_grouperobject *igo)
     if (gbo->currgrouper != igo)
         return NULL;
     if (gbo->currvalue == NULL) {
-        if (groupby_advance(gbo) < 0)
+        if (groupby_step(gbo) < 0)
             return NULL;
     }
 
@@ -310,7 +312,6 @@ _grouper_next(_grouperobject *igo)
         /* got any error or current group is end */
         return NULL;
 
-    assert(gbo->currvalue != NULL);
     r = gbo->currvalue;
     gbo->currvalue = NULL;
     Py_CLEAR(gbo->currkey);
