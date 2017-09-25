@@ -2679,8 +2679,8 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     }
     if (!PyDict_Check(mydict)) {
         PyErr_Format(PyExc_TypeError,
-                     "__dict__ must be a dictionary, not '%.200s'",
-                     mydict->ob_type->tp_name);
+                     "%.200s.__dict__ must be a dictionary, not %.200s",
+                     Py_TYPE(myself)->tp_name, Py_TYPE(mydict)->tp_name);
         Py_DECREF(mydict);
         return NULL;
     }
