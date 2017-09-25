@@ -1,0 +1,1 @@
+`functools.total_ordering()` now implements the `__ne__` method.
