@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <Import Project="wix.props" />
-    <Import Project="..\..\PCBuild\tcltk.props" />
+    <Import Project="..\..\PCbuild\tcltk.props" />
 
     <PropertyGroup>
         <!--

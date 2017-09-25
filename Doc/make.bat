@@ -5,7 +5,7 @@ pushd %~dp0
 
 set this=%~n0
 
-call ..\PCBuild\find_python.bat %PYTHON%
+call ..\PCbuild\find_python.bat %PYTHON%
 if not defined SPHINXBUILD if defined PYTHON (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (

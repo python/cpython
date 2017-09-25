@@ -45,7 +45,7 @@
     </Target>
     
     <Target Name="_MergeMiscNewsWithBlurb" AfterTargets="PrepareForBuild" Condition="$(Blurb) != '' and !Exists('$(PySourcePath)Misc\NEWS')">
-        <Exec Command="$(Blurb) merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCBuild)" />
+        <Exec Command="$(Blurb) merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
     </Target>
     
     <Target Name="_MergeMiscNewsWithPython" AfterTargets="PrepareForBuild" Condition="$(Blurb) == '' and !Exists('$(PySourcePath)Misc\NEWS')">
@@ -58,8 +58,8 @@
             <HostPython>@(HostPython)</HostPython>
             <HostPython Condition="$(HostPython.Contains(';'))">$(HostPython.Remove($(HostPython.IndexOf(';'))))</HostPython>
         </PropertyGroup>
-        <Exec Command="&quot;$(HostPython)&quot; -m pip install -U blurb" WorkingDirectory="$(PCBuild)" />
-        <Exec Command="&quot;$(HostPython)&quot; -m blurb merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCBuild)" />
+        <Exec Command="&quot;$(HostPython)&quot; -m pip install -U blurb" WorkingDirectory="$(PCbuild)" />
+        <Exec Command="&quot;$(HostPython)&quot; -m blurb merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
     </Target>
     
     <Import Project="..\msi.targets" />
