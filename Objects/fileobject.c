@@ -430,7 +430,7 @@ close_the_file(PyFileObject *f)
             if (Py_REFCNT(f) > 0) {
                 PyErr_SetString(PyExc_IOError,
                     "close() called during concurrent "
-                    "operation on the same file object.");
+                    "operation on the same file object");
             } else {
                 /* This should not happen unless someone is
                  * carelessly playing with the PyFileObject
@@ -438,7 +438,7 @@ close_the_file(PyFileObject *f)
                  * pointer. */
                 PyErr_SetString(PyExc_SystemError,
                     "PyFileObject locking error in "
-                    "destructor (refcnt <= 0 at close).");
+                    "destructor (refcnt <= 0 at close)");
             }
             return NULL;
         }
@@ -765,7 +765,7 @@ file_seek(PyFileObject *f, PyObject *args)
     if (f->unlocked_count > 0) {
         PyErr_SetString(PyExc_IOError,
             "seek() called during concurrent "
-            "operation on the same file object.");
+            "operation on the same file object");
         return NULL;
     }
     drop_readahead(f);
@@ -2338,7 +2338,7 @@ file_iternext(PyFileObject *f)
     if (f->unlocked_count > 0) {
         PyErr_SetString(PyExc_IOError,
             "next() called during concurrent "
-            "operation on the same file object.");
+            "operation on the same file object");
         return NULL;
     }
     l = readahead_get_line_skip(f, 0, READAHEAD_BUFSIZE);
@@ -2705,7 +2705,7 @@ int PyObject_AsFileDescriptor(PyObject *o)
     }
     else {
         PyErr_SetString(PyExc_TypeError,
-                        "argument must be an int, or have a fileno() method.");
+                        "argument must be an int, or have a fileno() method");
         return -1;
     }
 
