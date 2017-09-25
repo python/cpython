@@ -188,6 +188,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         from ctypes import Structure
 
         class BadStruct(Structure):
+            @property
             def __dict__(self):
                 pass
         with self.assertRaises(TypeError):
@@ -196,8 +197,8 @@ class SimpleTypesTestCase(unittest.TestCase):
         class WorseStruct(Structure):
             @property
             def __dict__(self):
-                raise ArithmeticError
-        with self.assertRaises(ArithmeticError):
+                1/0
+        with self.assertRaises(ZeroDivisionError):
             WorseStruct().__setstate__({}, b'foo')
 
 ################################################################
