@@ -5,8 +5,9 @@
 
 # You can set these variables from the command line.
 PYTHON       = python3
-SPHINXBUILD  = sphinx-build
-BLURB = $(PYTHON) -m blurb
+VENVDIR      = ./venv
+SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
+BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
@@ -118,11 +119,12 @@ htmlview: html
 	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
 
 clean:
-	-rm -rf build/* venv/*
+	-rm -rf build/* $(VENVDIR)/*
 
 venv:
-	$(PYTHON) -m venv venv
-	./venv/bin/python3 -m pip install -U Sphinx blurb
+	$(PYTHON) -m venv $(VENVDIR)
+	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
+	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
 	rm -rf dist
@@ -174,15 +176,20 @@ serve:
 	../Tools/scripts/serve.py build/html
 
 # Targets for daily automated doc build
+# By default, Sphinx only rebuilds pages where the page content has changed.
+# This means it doesn't always pick up changes to preferred link targets, etc
+# To ensure such changes are picked up, we build the published docs with
+# `-E` (to ignore the cached environment) and `-a` (to ignore already existing
+# output files)
 
 # for development releases: always build
 autobuild-dev:
-	make dist SPHINXOPTS='$(SPHINXOPTS) -A daily=1 -A versionswitcher=1'
+	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A versionswitcher=1'
 	-make suspicious
 
 # for quick rebuilds (HTML only)
 autobuild-dev-html:
-	make html SPHINXOPTS='$(SPHINXOPTS) -A daily=1 -A versionswitcher=1'
+	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A versionswitcher=1'
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage
