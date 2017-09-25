@@ -32,18 +32,65 @@ PyObject *
 PyStructSequence_New(PyTypeObject *type)
 {
     PyStructSequence *obj;
-    Py_ssize_t size = REAL_SIZE_TP(type), i;
+    PyObject *key, *value;
+    Py_ssize_t size, visible_size, i;
+
+    if (Py_TYPE(type) != &PyType_Type) {
+        goto wrong_type;
+    }
+    if (type->tp_base != &PyTuple_Type) {
+        goto wrong_type;
+    }
+
+    key = _PyUnicode_FromId(&PyId_n_fields);
+    if (key == NULL) {
+        return NULL;
+    }
+
+    value = PyDict_GetItemWithError(type->tp_dict, key);
+    if (value == NULL) {
+        if (!PyErr_Occurred()) {
+            goto wrong_type;
+        }
+        return NULL;
+    }
+
+    size = PyLong_AsSsize_t(value);
+    if (size == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    key = _PyUnicode_FromId(&PyId_n_sequence_fields);
+    if (key == NULL) {
+        return NULL;
+    }
+    value = PyDict_GetItemWithError(type->tp_dict, key);
+    if (value == NULL) {
+        if (!PyErr_Occurred()) {
+            goto wrong_type;
+        }
+        return NULL;
+    }
+    visible_size = PyLong_AsSsize_t(value);
+    if (visible_size == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
 
     obj = PyObject_GC_NewVar(PyStructSequence, type, size);
     if (obj == NULL)
         return NULL;
     /* Hack the size of the variable object, so invisible fields don't appear
      to Python code. */
-    Py_SIZE(obj) = VISIBLE_SIZE_TP(type);
+    Py_SIZE(obj) = visible_size;
     for (i = 0; i < size; i++)
         obj->ob_item[i] = NULL;
 
     return (PyObject*)obj;
+
+wrong_type:
+    PyErr_SetString(PyExc_TypeError,
+                    "PyStructSequence_New() expects a struct type");
+    return NULL;
 }
 
 void

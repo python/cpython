@@ -1,6 +1,11 @@
 import os
 import time
 import unittest
+from test import support
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
 
 
 class StructSeqTest(unittest.TestCase):
@@ -121,6 +126,54 @@ class StructSeqTest(unittest.TestCase):
                 for step in indices[1:]:
                     self.assertEqual(list(t[start:stop:step]),
                                      L[start:stop:step])
+
+    @support.cpython_only
+    @unittest.skipIf(ctypes is None, 'need ctypes')
+    def test_new_invalid_type(self):
+        # bpo-31573: PyStructSequence_New() expects a structseq type
+        PyStructSequence_New = ctypes.pythonapi.PyStructSequence_New
+        PyStructSequence_New.argtypes = (ctypes.py_object,)
+        PyStructSequence_New.restype = ctypes.py_object
+
+        with self.assertRaises(TypeError):
+            PyStructSequence_New(None)
+
+        class MissingNFields:
+            pass
+
+        with self.assertRaises(TypeError):
+            # missing n_fields attribute
+            PyStructSequence_New(MissingNFields)
+
+        class WrongNFieldType:
+            n_fields = None
+
+        with self.assertRaises(TypeError):
+            # n_fields has the wrong type
+            PyStructSequence_New(WrongNFieldType)
+
+        class MissingNSequenceFields:
+            n_fields = 5
+
+        with self.assertRaises(TypeError):
+            # missing n_sequence_fields attribute
+            PyStructSequence_New(MissingNSequenceFields)
+
+        class WrongNSequenceFieldsType:
+            n_fields = 5
+            n_sequence_fields = None
+
+        with self.assertRaises(TypeError):
+            # n_sequence_fields has the wrong type
+            PyStructSequence_New(WrongNSequenceFieldsType)
+
+        # class Ok(tuple):
+        #     n_fields = 5
+        #     n_sequence_fields = 5
+
+        # obj = PyStructSequence_New(Ok)
+        # obj = None
+
 
 if __name__ == "__main__":
     unittest.main()
