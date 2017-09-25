@@ -715,9 +715,8 @@ time_strftime(PyObject *self, PyObject *args)
             ins = wcsstr(fmt, L"%Z");
             len_copy = ins - fmt;
             if (wcsncmp(ins - 1, L"%", 1) == 0) {
-                len_copy += 2;
-                tmp = wcsncpy(tmp, fmt, len_copy) + len_copy;
-                fmt += len_copy;
+                tmp = wcsncpy(tmp, fmt, len_copy + 2) + len_copy + 2;
+                fmt += len_copy + 2;
             }
             else {
                 tmp = wcsncpy(tmp, fmt, len_copy) + len_copy;
