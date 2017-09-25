@@ -600,6 +600,59 @@ class TestTotalOrdering(unittest.TestCase):
         with self.assertRaises(TypeError):
             TestTO(8) <= ()
 
+    def test_bug_25732(self):
+        @functools.total_ordering
+        class A:
+            def __init__(self, value):
+                self.value = value
+            def __gt__(self, other):
+                return self.value > other.value
+            def __eq__(self, other):
+                return self.value == other.value
+        self.assertTrue(A(1) != A(2))
+        self.assertFalse(A(1) != A(1))
+
+        @functools.total_ordering
+        class A(object):
+            def __init__(self, value):
+                self.value = value
+            def __gt__(self, other):
+                return self.value > other.value
+            def __eq__(self, other):
+                return self.value == other.value
+        self.assertTrue(A(1) != A(2))
+        self.assertFalse(A(1) != A(1))
+
+        @functools.total_ordering
+        class A:
+            def __init__(self, value):
+                self.value = value
+            def __gt__(self, other):
+                return self.value > other.value
+            def __eq__(self, other):
+                return self.value == other.value
+            def __ne__(self, other):
+                raise RuntimeError(self, other)
+        with self.assertRaises(RuntimeError):
+            A(1) != A(2)
+        with self.assertRaises(RuntimeError):
+            A(1) != A(1)
+
+        @functools.total_ordering
+        class A(object):
+            def __init__(self, value):
+                self.value = value
+            def __gt__(self, other):
+                return self.value > other.value
+            def __eq__(self, other):
+                return self.value == other.value
+            def __ne__(self, other):
+                raise RuntimeError(self, other)
+        with self.assertRaises(RuntimeError):
+            A(1) != A(2)
+        with self.assertRaises(RuntimeError):
+            A(1) != A(1)
+
 def test_main(verbose=None):
     test_classes = (
         TestPartial,
