@@ -672,6 +672,7 @@ class UtimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.utime(self.fname, (5, 5), ns=(5, 5))
 
+    @support.cpython_only
     def test_issue31577(self):
         # The interpreter shouldn't crash in case utime() received a bad
         # ns argument.
