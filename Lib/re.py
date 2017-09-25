@@ -264,8 +264,36 @@ _cache = {}
 
 _pattern_type = type(sre_compile.compile("", 0))
 
+_compile_count = 0
+_compile_time = 0
+import atexit
+def report():
+    import sys; print(_compile_count, _compile_time, file=sys.stderr)
+atexit.register(report)
+
+
+class _DeferredPattern:
+    def __init__(self, pattern, flags):
+        self.pattern = pattern
+        self.flags = flags
+        self.compiled = None
+
+    def __getattribute__(self, attribute):
+        compiled = super().__getattribute__('compiled')
+        if compiled is None:
+            pattern = super().__getattribute__('pattern')
+            flags = super().__getattribute__('flags')
+            compiled = self.compiled = sre_compile.compile(pattern, flags)
+            if not (flags & DEBUG):
+                if len(_cache) >= _MAXCACHE:
+                    _cache.clear()
+                _cache[type(pattern), pattern, flags] = compiled
+        return getattr(compiled, attribute)
+
+
 _MAXCACHE = 512
 def _compile(pattern, flags):
+    global _compile_count, _compile_time
     # internal: compile pattern
     try:
         return _cache[type(pattern), pattern, flags]
@@ -278,11 +306,15 @@ def _compile(pattern, flags):
         return pattern
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
-    p = sre_compile.compile(pattern, flags)
-    if not (flags & DEBUG):
-        if len(_cache) >= _MAXCACHE:
-            _cache.clear()
-        _cache[type(pattern), pattern, flags] = p
+    import time; start = time.time()
+    p = _DeferredPattern(pattern, flags)
+    ## p =  sre_compile.compile(pattern, flags)
+    ## if not (flags & DEBUG):
+    ##     if len(_cache) >= _MAXCACHE:
+    ##         _cache.clear()
+    ##     _cache[type(pattern), pattern, flags] = p
+    _compile_time += time.time() - start
+    _compile_count += 1
     return p
 
 @functools.lru_cache(_MAXCACHE)
