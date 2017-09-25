@@ -275,6 +275,14 @@ class PyBuildExt(build_ext):
         if compiler is not None:
             (ccshared,cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
+            
+            #VxWorks uses '@filepath' extension to add include paths without overflowing windows cmd line buffer  
+            if host_platform == 'vxworks':
+                cppflags = sysconfig.get_config_var('CPPFLAGS').split()
+                for item in cppflags:
+                    self.announce('ITEM: "%s"' % item )
+                    if item.startswith('@'):
+                        args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags + ' '+ item 
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)
@@ -503,7 +511,7 @@ class PyBuildExt(build_ext):
 
     def detect_math_libs(self):
         # Check for MacOS X, which doesn't need libm.a at all
-        if host_platform == 'darwin':
+        if (host_platform == 'darwin' or host_platform == 'vxworks'):
             return []
         else:
             return ['m']
@@ -568,13 +576,12 @@ class PyBuildExt(build_ext):
                             sysconfig.get_config_var("INCLUDEDIR"))
 
         #VxWorks requires some macros from CPPFLAGS to select the correct CPU headers
-        extra_global_args = []
         if host_platform == 'vxworks':
             cppflags = sysconfig.get_config_var('CPPFLAGS').split()
             for item in cppflags:
                 self.announce('ITEM: "%s"' % item )
                 if item.startswith('-D'):
-                    extra_global_args.append(item)
+                    self.compiler.define_macro(item[2:])
 
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
@@ -683,7 +690,7 @@ class PyBuildExt(build_ext):
         # Test multi-phase extension module init (PEP 489)
         exts.append( Extension('_testmultiphase', ['_testmultiphase.c']) )
         # profiler (_lsprof is for cProfile.py)
-        exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']) )
+        exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c'] )
         # static Unicode character database
         exts.append( Extension('unicodedata', ['unicodedata.c'],
                                depends=['unicodedata_db.h', 'unicodename_db.h']) )
@@ -705,7 +712,8 @@ class PyBuildExt(build_ext):
         # pwd(3)
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
-        exts.append( Extension('grp', ['grpmodule.c']) )
+        if host_platform != 'vxworks':
+            exts.append( Extension('grp', ['grpmodule.c']) )
         # spwd, shadow passwords
         if (config_h_vars.get('HAVE_GETSPNAM', False) or
                 config_h_vars.get('HAVE_GETSPENT', False)):
@@ -838,17 +846,19 @@ class PyBuildExt(build_ext):
             libs = ['crypt']
         else:
             libs = []
-        exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
+        if host_platform != 'vxworks':
+            exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
 
         # CSV files
         exts.append( Extension('_csv', ['_csv.c']) )
 
         # POSIX subprocess module helper.
-        exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
+        if host_platform != 'vxworks':
+            exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
 
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
-                               depends = ['socketmodule.h']) )
+                               depends = ['socketmodule.h'] ) )
         # Detect SSL support for the socket module (via _ssl)
         search_for_ssl_incs_in = [
                               '/usr/local/ssl/include',
@@ -1365,7 +1375,7 @@ class PyBuildExt(build_ext):
             missing.append('_gdbm')
 
         # Unix-only modules
-        if host_platform != 'win32':
+        if host_platform != 'win32' and host_platform != 'vxworks':
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface
@@ -1497,7 +1507,6 @@ class PyBuildExt(build_ext):
             libraries = []
             extra_compile_args = []
             extra_link_args = []
-        extra_compile_args.append( extra_global_args )
         exts.append( Extension('binascii', ['binascii.c'],
                                extra_compile_args = extra_compile_args,
                                libraries = libraries,
@@ -1592,7 +1601,6 @@ class PyBuildExt(build_ext):
                                   sources = ['_elementtree.c'],
                                   depends = ['pyexpat.c'] + expat_sources +
                                       expat_depends,
-                                  extra_compile_args = extra_global_args,    
                                   ))
         else:
             missing.append('_elementtree')
@@ -1600,12 +1608,10 @@ class PyBuildExt(build_ext):
         # Hye-Shik Chang's CJKCodecs modules.
         exts.append(Extension('_multibytecodec',
                               ['cjkcodecs/multibytecodec.c'],
-                              extra_compile_args = extra_global_args,
                               ))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
             exts.append(Extension('_codecs_%s' % loc,
                                   ['cjkcodecs/_codecs_%s.c' % loc],
-                                  extra_compile_args = extra_global_args,
                                   ))
 
         # Stefan Krah's _decimal module
@@ -1659,7 +1665,6 @@ class PyBuildExt(build_ext):
 
         exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
                                 define_macros=list(macros.items()),
-                                extra_compile_args = extra_global_args,
                                 include_dirs=["Modules/_multiprocessing"]))
         # End multiprocessing
 
@@ -1691,7 +1696,6 @@ class PyBuildExt(build_ext):
 
         if 'd' not in sysconfig.get_config_var('ABIFLAGS'):
             ext = Extension('xxlimited', ['xxlimited.c'],
-                            extra_compile_args = extra_global_args,
                             define_macros=[('Py_LIMITED_API', '0x03050000')])
             self.extensions.append(ext)
 
@@ -1928,8 +1932,7 @@ class PyBuildExt(build_ext):
                         define_macros=[('WITH_APPINIT', 1)] + defs,
                         include_dirs = include_dirs,
                         libraries = libs,
-                        library_dirs = added_lib_dirs,
-                        extra_compile_args = extra_global_args,
+                        library_dirs = added_lib_dirs
                         )
         self.extensions.append(ext)
 
