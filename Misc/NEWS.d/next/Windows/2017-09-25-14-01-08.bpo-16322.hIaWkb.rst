@@ -1,0 +1,1 @@
+Use Windows APIs to avoid wrong encoding of time zone names.
