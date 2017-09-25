@@ -446,9 +446,6 @@ instance of the :class:`bytes` type instead of the :class:`str` type.  They
 may only contain ASCII characters; bytes with a numeric value of 128 or greater
 must be expressed with escapes.
 
-As of Python 3.3 it is possible again to prefix string literals with a
-``u`` prefix to simplify maintenance of dual 2.x and 3.x codebases.
-
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
 or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
 literal characters.  As a result, in string literals, ``'\U'`` and ``'\u'``
@@ -798,10 +795,6 @@ integer literals, underscores are supported for digit grouping.
 Some examples of floating point literals::
 
    3.14    10.    .001    1e100    3.14e-10    0e0    3.14_15_93
-
-Note that numeric literals do not include a sign; a phrase like ``-1`` is
-actually an expression composed of the unary operator ``-`` and the literal
-``1``.
 
 .. versionchanged:: 3.6
    Underscores are now allowed for grouping purposes in literals.
