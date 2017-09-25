@@ -1,4 +1,4 @@
-"""Class browser.
+"""Module browser.
 
 XXX TO DO:
 
@@ -19,30 +19,84 @@ from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 from idlelib.windows import ListedToplevel
 
+
 file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.
 
-class ClassBrowser:
 
-    def __init__(self, flist, name, path, _htest=False):
+def transform_children(child_dict, modname=None):
+    """Transform a child dictionary to an ordered sequence of objects.
+
+    The dictionary maps names to pyclbr information objects.
+    Filter out imported objects.
+    Augment class names with bases.
+    Sort objects by line number.
+
+    The current tree only calls this once per child_dic as it saves
+    TreeItems once created.  A future tree and tests might violate this,
+    so a check prevents multiple in-place augmentations.
+    """
+    obs = []  # Use list since values should already be sorted.
+    for key, obj in child_dict.items():
+        if modname is None or obj.module == modname:
+            if hasattr(obj, 'super') and obj.super and obj.name == key:
+                # If obj.name != key, it has already been suffixed.
+                supers = []
+                for sup in obj.super:
+                    if type(sup) is type(''):
+                        sname = sup
+                    else:
+                        sname = sup.name
+                        if sup.module != obj.module:
+                            sname = f'{sup.module}.{sname}'
+                    supers.append(sname)
+                obj.name += '({})'.format(', '.join(supers))
+            obs.append(obj)
+    return sorted(obs, key=lambda o: o.lineno)
+
+
+class ModuleBrowser:
+    """Browse module classes and functions in IDLE.
+    """
+    # This class is the base class for pathbrowser.PathBrowser.
+    # Init and close are inherited, other methods are overriden.
+
+    def __init__(self, flist, name, path, _htest=False, _utest=False):
         # XXX This API should change, if the file doesn't end in ".py"
         # XXX the code here is bogus!
-        """
-        _htest - bool, change box when location running htest.
+        """Create a window for browsing a module's structure.
+
+        Args:
+            flist: filelist.FileList instance used as the root for the window.
+            name: Python module to parse.
+            path: Module search path.
+            _htest - bool, change box when location running htest.
+
+        Global variables:
+            file_open: Function used for opening a file.
+
+        Instance variables:
+            name: Module name.
+            file: Full path and module with .py extension.  Used in
+                creating ModuleBrowserTreeItem as the rootnode for
+                the tree and subsequently in the children.
         """
         global file_open
-        if not _htest:
+        if not (_htest or _utest):
             file_open = pyshell.flist.open
         self.name = name
         self.file = os.path.join(path[0], self.name + ".py")
         self._htest = _htest
+        self._utest = _utest
         self.init(flist)
 
     def close(self, event=None):
+        "Dismiss the window and the tree nodes."
         self.top.destroy()
         self.node.destroy()
 
     def init(self, flist):
+        "Create browser tkinter widgets, including the tree."
         self.flist = flist
         # reset pyclbr
         pyclbr._modules.clear()
@@ -62,175 +116,136 @@ class ClassBrowser:
         sc.frame.pack(expand=1, fill="both")
         item = self.rootnode()
         self.node = node = TreeNode(sc.canvas, None, item)
-        node.update()
-        node.expand()
+        if not self._utest:
+            node.update()
+            node.expand()
 
     def settitle(self):
-        self.top.wm_title("Class Browser - " + self.name)
-        self.top.wm_iconname("Class Browser")
+        "Set the window title."
+        self.top.wm_title("Module Browser - " + self.name)
+        self.top.wm_iconname("Module Browser")
 
     def rootnode(self):
+        "Return a ModuleBrowserTreeItem as the root of the tree."
         return ModuleBrowserTreeItem(self.file)
 
+
 class ModuleBrowserTreeItem(TreeItem):
+    """Browser tree for Python module.
+
+    Uses TreeItem as the basis for the structure of the tree.
+    """
 
     def __init__(self, file):
+        """Create a TreeItem for the file.
+
+        Args:
+            file: Full path and module name.
+        """
         self.file = file
 
     def GetText(self):
+        "Return the module name as the text string to display."
         return os.path.basename(self.file)
 
     def GetIconName(self):
+        "Return the name of the icon to display."
         return "python"
 
     def GetSubList(self):
-        sublist = []
-        for name in self.listclasses():
-            item = ClassBrowserTreeItem(name, self.classes, self.file)
-            sublist.append(item)
-        return sublist
+        "Return ChildBrowserTreeItems for children."
+        return [ChildBrowserTreeItem(obj) for obj in self.listchildren()]
 
     def OnDoubleClick(self):
+        "Open a module in an editor window when double clicked."
         if os.path.normcase(self.file[-3:]) != ".py":
             return
         if not os.path.exists(self.file):
             return
-        pyshell.flist.open(self.file)
+        file_open(self.file)
 
     def IsExpandable(self):
+        "Return True if Python (.py) file."
         return os.path.normcase(self.file[-3:]) == ".py"
 
-    def listclasses(self):
+    def listchildren(self):
+        "Return sequenced classes and functions in the module."
         dir, file = os.path.split(self.file)
         name, ext = os.path.splitext(file)
         if os.path.normcase(ext) != ".py":
             return []
         try:
-            dict = pyclbr.readmodule_ex(name, [dir] + sys.path)
+            tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:
             return []
-        items = []
-        self.classes = {}
-        for key, cl in dict.items():
-            if cl.module == name:
-                s = key
-                if hasattr(cl, 'super') and cl.super:
-                    supers = []
-                    for sup in cl.super:
-                        if type(sup) is type(''):
-                            sname = sup
-                        else:
-                            sname = sup.name
-                            if sup.module != cl.module:
-                                sname = "%s.%s" % (sup.module, sname)
-                        supers.append(sname)
-                    s = s + "(%s)" % ", ".join(supers)
-                items.append((cl.lineno, s))
-                self.classes[s] = cl
-        items.sort()
-        list = []
-        for item, s in items:
-            list.append(s)
-        return list
+        return transform_children(tree, name)
 
-class ClassBrowserTreeItem(TreeItem):
 
-    def __init__(self, name, classes, file):
-        self.name = name
-        self.classes = classes
-        self.file = file
-        try:
-            self.cl = self.classes[self.name]
-        except (IndexError, KeyError):
-            self.cl = None
-        self.isfunction = isinstance(self.cl, pyclbr.Function)
+class ChildBrowserTreeItem(TreeItem):
+    """Browser tree for child nodes within the module.
+
+    Uses TreeItem as the basis for the structure of the tree.
+    """
+
+    def __init__(self, obj):
+        "Create a TreeItem for a pyclbr class/function object."
+        self.obj = obj
+        self.name = obj.name
+        self.isfunction = isinstance(obj, pyclbr.Function)
 
     def GetText(self):
+        "Return the name of the function/class to display."
+        name = self.name
         if self.isfunction:
-            return "def " + self.name + "(...)"
+            return "def " + name + "(...)"
         else:
-            return "class " + self.name
+            return "class " + name
 
     def GetIconName(self):
+        "Return the name of the icon to display."
         if self.isfunction:
             return "python"
         else:
             return "folder"
 
     def IsExpandable(self):
-        if self.cl:
-            try:
-                return not not self.cl.methods
-            except AttributeError:
-                return False
+        "Return True if self.obj has nested objects."
+        return self.obj.children != {}
 
     def GetSubList(self):
-        if not self.cl:
-            return []
-        sublist = []
-        for name in self.listmethods():
-            item = MethodBrowserTreeItem(name, self.cl, self.file)
-            sublist.append(item)
-        return sublist
+        "Return ChildBrowserTreeItems for children."
+        return [ChildBrowserTreeItem(obj)
+                for obj in transform_children(self.obj.children)]
 
     def OnDoubleClick(self):
-        if not os.path.exists(self.file):
-            return
-        edit = file_open(self.file)
-        if hasattr(self.cl, 'lineno'):
-            lineno = self.cl.lineno
-            edit.gotoline(lineno)
+        "Open module with file_open and position to lineno."
+        try:
+            edit = file_open(self.obj.file)
+            edit.gotoline(self.obj.lineno)
+        except (OSError, AttributeError):
+            pass
 
-    def listmethods(self):
-        if not self.cl:
-            return []
-        items = []
-        for name, lineno in self.cl.methods.items():
-            items.append((lineno, name))
-        items.sort()
-        list = []
-        for item, name in items:
-            list.append(name)
-        return list
 
-class MethodBrowserTreeItem(TreeItem):
-
-    def __init__(self, name, cl, file):
-        self.name = name
-        self.cl = cl
-        self.file = file
-
-    def GetText(self):
-        return "def " + self.name + "(...)"
-
-    def GetIconName(self):
-        return "python" # XXX
-
-    def IsExpandable(self):
-        return 0
-
-    def OnDoubleClick(self):
-        if not os.path.exists(self.file):
-            return
-        edit = file_open(self.file)
-        edit.gotoline(self.cl.methods[self.name])
-
-def _class_browser(parent): #Wrapper for htest
+def _module_browser(parent): # htest #
     try:
+        file = sys.argv[1]  # If pass file on command line
+        # If this succeeds, unittest will fail.
+    except IndexError:
         file = __file__
-    except NameError:
-        file = sys.argv[0]
-        if sys.argv[1:]:
-            file = sys.argv[1]
-        else:
-            file = sys.argv[0]
+        # Add objects for htest
+        class Nested_in_func(TreeNode):
+            def nested_in_class(): pass
+        def closure():
+            class Nested_in_closure: pass
     dir, file = os.path.split(file)
     name = os.path.splitext(file)[0]
     flist = pyshell.PyShellFileList(parent)
     global file_open
     file_open = flist.open
-    ClassBrowser(flist, name, [dir], _htest=True)
+    ModuleBrowser(flist, name, [dir], _htest=True)
 
 if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_browser', verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
-    run(_class_browser)
+    run(_module_browser)

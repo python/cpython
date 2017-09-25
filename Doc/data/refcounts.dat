@@ -216,6 +216,10 @@ PyDict_GetItem:PyObject*::0:0
 PyDict_GetItem:PyObject*:p:0:
 PyDict_GetItem:PyObject*:key:0:
 
+PyDict_GetItemWithError:PyObject*::0:0
+PyDict_GetItemWithError:PyObject*:p:0:
+PyDict_GetItemWithError:PyObject*:key:0:
+
 PyDict_GetItemString:PyObject*::0:
 PyDict_GetItemString:PyObject*:p:0:
 PyDict_GetItemString:const char*:key::

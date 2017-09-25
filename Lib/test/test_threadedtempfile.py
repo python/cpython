@@ -19,9 +19,9 @@ FILES_PER_THREAD = 50
 import tempfile
 
 from test.support import start_threads, import_module
-threading = import_module('threading')
 import unittest
 import io
+import threading
 from traceback import print_exc
 
 startEvent = threading.Event()

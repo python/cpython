@@ -108,7 +108,7 @@ DOMEventStream Objects
       :class:`xml.dom.minidom.Element` if event equals :data:`START_ELEMENT` or
       :data:`END_ELEMENT` or :class:`xml.dom.minidom.Text` if event equals
       :data:`CHARACTERS`.
-      The current node does not contain informations about its children, unless
+      The current node does not contain information about its children, unless
       :func:`expandNode` is called.
 
    .. method:: expandNode(node)

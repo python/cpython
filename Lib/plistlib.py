@@ -47,7 +47,7 @@ Parse Plist example:
 """
 __all__ = [
     "readPlist", "writePlist", "readPlistFromBytes", "writePlistToBytes",
-    "Plist", "Data", "Dict", "InvalidFileException", "FMT_XML", "FMT_BINARY",
+    "Data", "InvalidFileException", "FMT_XML", "FMT_BINARY",
     "load", "dump", "loads", "dumps"
 ]
 
@@ -76,44 +76,6 @@ globals().update(PlistFormat.__members__)
 #
 
 
-class _InternalDict(dict):
-
-    # This class is needed while Dict is scheduled for deprecation:
-    # we only need to warn when a *user* instantiates Dict or when
-    # the "attribute notation for dict keys" is used.
-    __slots__ = ()
-
-    def __getattr__(self, attr):
-        try:
-            value = self[attr]
-        except KeyError:
-            raise AttributeError(attr)
-        warn("Attribute access from plist dicts is deprecated, use d[key] "
-             "notation instead", DeprecationWarning, 2)
-        return value
-
-    def __setattr__(self, attr, value):
-        warn("Attribute access from plist dicts is deprecated, use d[key] "
-             "notation instead", DeprecationWarning, 2)
-        self[attr] = value
-
-    def __delattr__(self, attr):
-        try:
-            del self[attr]
-        except KeyError:
-            raise AttributeError(attr)
-        warn("Attribute access from plist dicts is deprecated, use d[key] "
-             "notation instead", DeprecationWarning, 2)
-
-
-class Dict(_InternalDict):
-
-    def __init__(self, **kwargs):
-        warn("The plistlib.Dict class is deprecated, use builtin dict instead",
-             DeprecationWarning, 2)
-        super().__init__(**kwargs)
-
-
 @contextlib.contextmanager
 def _maybe_open(pathOrFile, mode):
     if isinstance(pathOrFile, str):
@@ -122,31 +84,6 @@ def _maybe_open(pathOrFile, mode):
 
     else:
         yield pathOrFile
-
-
-class Plist(_InternalDict):
-    """This class has been deprecated. Use dump() and load()
-    functions instead, together with regular dict objects.
-    """
-
-    def __init__(self, **kwargs):
-        warn("The Plist class is deprecated, use the load() and "
-             "dump() functions instead", DeprecationWarning, 2)
-        super().__init__(**kwargs)
-
-    @classmethod
-    def fromFile(cls, pathOrFile):
-        """Deprecated. Use the load() function instead."""
-        with _maybe_open(pathOrFile, 'rb') as fp:
-            value = load(fp)
-        plist = cls()
-        plist.update(value)
-        return plist
-
-    def write(self, pathOrFile):
-        """Deprecated. Use the dump() function instead."""
-        with _maybe_open(pathOrFile, 'wb') as fp:
-            dump(self, fp)
 
 
 def readPlist(pathOrFile):
@@ -160,8 +97,7 @@ def readPlist(pathOrFile):
         DeprecationWarning, 2)
 
     with _maybe_open(pathOrFile, 'rb') as fp:
-        return load(fp, fmt=None, use_builtin_types=False,
-            dict_type=_InternalDict)
+        return load(fp, fmt=None, use_builtin_types=False)
 
 def writePlist(value, pathOrFile):
     """
@@ -184,8 +120,7 @@ def readPlistFromBytes(data):
     """
     warn("The readPlistFromBytes function is deprecated, use loads() instead",
         DeprecationWarning, 2)
-    return load(BytesIO(data), fmt=None, use_builtin_types=False,
-        dict_type=_InternalDict)
+    return load(BytesIO(data), fmt=None, use_builtin_types=False)
 
 
 def writePlistToBytes(value):
