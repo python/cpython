@@ -14,10 +14,9 @@ import sys
 import encodings
 import encodings.aliases
 import re
-import collections.abc
+import _collections_abc
 from builtins import str as _builtin_str
 import functools
-import warnings
 
 # Try importing the _locale module.
 #
@@ -215,7 +214,7 @@ def format_string(f, val, grouping=False, monetary=False):
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 
-    if isinstance(val, collections.abc.Mapping):
+    if isinstance(val, _collections_abc.Mapping):
         new_val = []
         for perc in percents:
             if perc.group()[-1]=='%':
@@ -244,6 +243,7 @@ def format_string(f, val, grouping=False, monetary=False):
 
 def format(percent, value, grouping=False, monetary=False, *additional):
     """Deprecated, use format_string instead."""
+    import warnings
     warnings.warn(
         "This method will be removed in a future version of Python. "
         "Use 'locale.format_string()' instead.",

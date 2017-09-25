@@ -1,7 +1,5 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
-from functools import reduce
-from operator import or_ as _or_
 
 # try _collections first to reduce startup cost
 try:
@@ -744,11 +742,10 @@ class Flag(Enum):
 
     def __invert__(self):
         members, uncovered = _decompose(self.__class__, self._value_)
-        inverted_members = [
-                m for m in self.__class__
-                if m not in members and not m._value_ & self._value_
-                ]
-        inverted = reduce(_or_, inverted_members, self.__class__(0))
+        inverted = self.__class__(0)
+        for m in self.__class__:
+            if m not in members and not (m._value_ & self._value_):
+                inverted = inverted | m
         return self.__class__(inverted)
 
 
