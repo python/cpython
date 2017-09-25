@@ -114,7 +114,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_Finalizing == NULL)
+        else if (_Py_IsFinalizing())
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
@@ -723,9 +723,13 @@ getenvironment(PyObject* environment)
     }
 
     keys = PyMapping_Keys(environment);
+    if (!keys) {
+        return NULL;
+    }
     values = PyMapping_Values(environment);
-    if (!keys || !values)
+    if (!values) {
         goto error;
+    }
 
     envsize = PySequence_Fast_GET_SIZE(keys);
     if (PySequence_Fast_GET_SIZE(values) != envsize) {

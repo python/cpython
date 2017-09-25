@@ -2665,8 +2665,11 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     int res;
     PyObject *dict, *mydict;
     CDataObject *self = (CDataObject *)myself;
-    if (!PyArg_ParseTuple(args, "Os#", &dict, &data, &len))
+    if (!PyArg_ParseTuple(args, "O!s#",
+                          &PyDict_Type, &dict, &data, &len))
+    {
         return NULL;
+    }
     if (len > self->b_size)
         len = self->b_size;
     memmove(self->b_ptr, data, len);
@@ -5419,9 +5422,7 @@ PyInit__ctypes(void)
    ob_type is the metatype (the 'type'), defaults to PyType_Type,
    tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
 */
-#ifdef WITH_THREAD
     PyEval_InitThreads();
-#endif
     m = PyModule_Create(&_ctypesmodule);
     if (!m)
         return NULL;

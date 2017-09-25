@@ -104,7 +104,7 @@ from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
 from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
-    SSLSyscallError, SSLEOFError,
+    SSLSyscallError, SSLEOFError, SSLCertVerificationError
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes, RAND_pseudo_bytes
@@ -115,7 +115,7 @@ except ImportError:
     pass
 
 
-from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN
+from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_TLSv1_3
 from _ssl import _OPENSSL_API_VERSION
 
 
@@ -178,6 +178,7 @@ else:
 # (OpenSSL's default setting is 'DEFAULT:!aNULL:!eNULL')
 # Enable a better set of ciphers by default
 # This list has been explicitly chosen to:
+#   * TLS 1.3 ChaCha20 and AES-GCM cipher suites
 #   * Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE)
 #   * Prefer ECDHE over DHE for better performance
 #   * Prefer AEAD over CBC for better performance and security
@@ -189,6 +190,8 @@ else:
 #   * Disable NULL authentication, NULL encryption, 3DES and MD5 MACs
 #     for security reasons
 _DEFAULT_CIPHERS = (
+    'TLS13-AES-256-GCM-SHA384:TLS13-CHACHA20-POLY1305-SHA256:'
+    'TLS13-AES-128-GCM-SHA256:'
     'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:'
     'ECDH+AES128:DH+AES:ECDH+HIGH:DH+HIGH:RSA+AESGCM:RSA+AES:RSA+HIGH:'
     '!aNULL:!eNULL:!MD5:!3DES'
@@ -196,6 +199,7 @@ _DEFAULT_CIPHERS = (
 
 # Restricted and more secure ciphers for the server side
 # This list has been explicitly chosen to:
+#   * TLS 1.3 ChaCha20 and AES-GCM cipher suites
 #   * Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE)
 #   * Prefer ECDHE over DHE for better performance
 #   * Prefer AEAD over CBC for better performance and security
@@ -206,6 +210,8 @@ _DEFAULT_CIPHERS = (
 #   * Disable NULL authentication, NULL encryption, MD5 MACs, DSS, RC4, and
 #     3DES for security reasons
 _RESTRICTED_SERVER_CIPHERS = (
+    'TLS13-AES-256-GCM-SHA384:TLS13-CHACHA20-POLY1305-SHA256:'
+    'TLS13-AES-128-GCM-SHA256:'
     'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:'
     'ECDH+AES128:DH+AES:ECDH+HIGH:DH+HIGH:RSA+AESGCM:RSA+AES:RSA+HIGH:'
     '!aNULL:!eNULL:!MD5:!DSS:!RC4:!3DES'
@@ -377,9 +383,10 @@ class Purpose(_ASN1Object, _Enum):
 class SSLContext(_SSLContext):
     """An SSLContext holds various SSL-related configuration options and
     data, such as certificates and possibly a private key."""
-
-    __slots__ = ('protocol', '__weakref__')
     _windows_cert_stores = ("CA", "ROOT")
+
+    sslsocket_class = None  # SSLSocket is assigned later.
+    sslobject_class = None  # SSLObject is assigned later.
 
     def __new__(cls, protocol=PROTOCOL_TLS, *args, **kwargs):
         self = _SSLContext.__new__(cls, protocol)
@@ -394,17 +401,21 @@ class SSLContext(_SSLContext):
                     do_handshake_on_connect=True,
                     suppress_ragged_eofs=True,
                     server_hostname=None, session=None):
-        return SSLSocket(sock=sock, server_side=server_side,
-                         do_handshake_on_connect=do_handshake_on_connect,
-                         suppress_ragged_eofs=suppress_ragged_eofs,
-                         server_hostname=server_hostname,
-                         _context=self, _session=session)
+        return self.sslsocket_class(
+            sock=sock,
+            server_side=server_side,
+            do_handshake_on_connect=do_handshake_on_connect,
+            suppress_ragged_eofs=suppress_ragged_eofs,
+            server_hostname=server_hostname,
+            _context=self,
+            _session=session
+        )
 
     def wrap_bio(self, incoming, outgoing, server_side=False,
                  server_hostname=None, session=None):
         sslobj = self._wrap_bio(incoming, outgoing, server_side=server_side,
                                 server_hostname=server_hostname)
-        return SSLObject(sslobj, session=session)
+        return self.sslobject_class(sslobj, session=session)
 
     def set_npn_protocols(self, npn_protocols):
         protos = bytearray()
@@ -511,7 +522,7 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         context.load_default_certs(purpose)
     return context
 
-def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=None,
+def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=CERT_NONE,
                            check_hostname=False, purpose=Purpose.SERVER_AUTH,
                            certfile=None, keyfile=None,
                            cafile=None, capath=None, cadata=None):
@@ -530,9 +541,12 @@ def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=None,
     # by default.
     context = SSLContext(protocol)
 
+    if not check_hostname:
+        context.check_hostname = False
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
-    context.check_hostname = check_hostname
+    if check_hostname:
+        context.check_hostname = True
 
     if keyfile and not certfile:
         raise ValueError("certfile must be specified")
@@ -959,11 +973,12 @@ class SSLSocket(socket):
                 raise ValueError(
                     "non-zero flags not allowed in calls to sendall() on %s" %
                     self.__class__)
-            amount = len(data)
             count = 0
-            while (count < amount):
-                v = self.send(data[count:])
-                count += v
+            with memoryview(data) as view, view.cast("B") as byte_view:
+                amount = len(byte_view)
+                while count < amount:
+                    v = self.send(byte_view[count:])
+                    count += v
         else:
             return socket.sendall(self, data, flags)
 
@@ -1126,6 +1141,11 @@ class SSLSocket(socket):
         if self._sslobj is None:
             return None
         return self._sslobj.version()
+
+
+# Python does not support forward declaration of types.
+SSLContext.sslsocket_class = SSLSocket
+SSLContext.sslobject_class = SSLObject
 
 
 def wrap_socket(sock, keyfile=None, certfile=None,

@@ -8,14 +8,10 @@ import sys
 from test import support
 from test.support import script_helper, is_android, requires_android_level
 import tempfile
+import threading
 import unittest
 from textwrap import dedent
 
-try:
-    import threading
-    HAVE_THREADS = True
-except ImportError:
-    HAVE_THREADS = False
 try:
     import _testcapi
 except ImportError:
@@ -154,7 +150,6 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @unittest.skipIf(not HAVE_THREADS, 'need threads')
     def test_fatal_error_c_thread(self):
         self.check_fatal_error("""
             import faulthandler
@@ -231,7 +226,7 @@ class FaultHandlerTests(unittest.TestCase):
             2,
             'xyz')
 
-    @unittest.skipIf(sys.platform.startswith('openbsd') and HAVE_THREADS,
+    @unittest.skipIf(sys.platform.startswith('openbsd'),
                      "Issue #12868: sigaltstack() doesn't work on "
                      "OpenBSD if Python is compiled with pthread")
     @unittest.skipIf(not hasattr(faulthandler, '_stack_overflow'),
@@ -456,7 +451,6 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertEqual(trace, expected)
         self.assertEqual(exitcode, 0)
 
-    @unittest.skipIf(not HAVE_THREADS, 'need threads')
     def check_dump_traceback_threads(self, filename):
         """
         Call explicitly dump_traceback(all_threads=True) and check the output.

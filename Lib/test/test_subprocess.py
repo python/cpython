@@ -14,6 +14,7 @@ import selectors
 import sysconfig
 import select
 import shutil
+import threading
 import gc
 import textwrap
 
@@ -23,11 +24,6 @@ except ImportError:
     ctypes = None
 else:
     import ctypes.util
-
-try:
-    import threading
-except ImportError:
-    threading = None
 
 try:
     import _testcapi
@@ -651,6 +647,7 @@ class ProcessTestCase(BaseTestCase):
             # on adding even when the environment in exec is empty.
             # Gentoo sandboxes also force LD_PRELOAD and SANDBOX_* to exist.
             return ('VERSIONER' in n or '__CF' in n or  # MacOS
+                    '__PYVENV_LAUNCHER__' in n or # MacOS framework build
                     n == 'LD_PRELOAD' or n.startswith('SANDBOX') or # Gentoo
                     n == 'LC_CTYPE') # Locale coercion triggered
 
@@ -1195,7 +1192,6 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stderr, "")
         self.assertEqual(proc.returncode, 0)
 
-    @unittest.skipIf(threading is None, "threading required")
     def test_double_close_on_error(self):
         # Issue #18851
         fds = []
@@ -1225,7 +1221,6 @@ class ProcessTestCase(BaseTestCase):
             if exc is not None:
                 raise exc
 
-    @unittest.skipIf(threading is None, "threading required")
     def test_threadsafe_wait(self):
         """Issue21291: Popen.wait() needs to be threadsafe for returncode."""
         proc = subprocess.Popen([sys.executable, '-c',
@@ -1540,6 +1535,53 @@ class POSIXProcessTestCase(BaseTestCase):
             self.assertEqual(desired_exception.strerror, e.strerror)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
+
+    # We mock the __del__ method for Popen in the next two tests
+    # because it does cleanup based on the pid returned by fork_exec
+    # along with issuing a resource warning if it still exists. Since
+    # we don't actually spawn a process in these tests we can forego
+    # the destructor. An alternative would be to set _child_created to
+    # False before the destructor is called but there is no easy way
+    # to do that
+    class PopenNoDestructor(subprocess.Popen):
+        def __del__(self):
+            pass
+
+    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    def test_exception_errpipe_normal(self, fork_exec):
+        """Test error passing done through errpipe_write in the good case"""
+        def proper_error(*args):
+            errpipe_write = args[13]
+            # Write the hex for the error code EISDIR: 'is a directory'
+            err_code = '{:x}'.format(errno.EISDIR).encode()
+            os.write(errpipe_write, b"OSError:" + err_code + b":")
+            return 0
+
+        fork_exec.side_effect = proper_error
+
+        with self.assertRaises(IsADirectoryError):
+            self.PopenNoDestructor(["non_existent_command"])
+
+    @mock.patch("subprocess._posixsubprocess.fork_exec")
+    def test_exception_errpipe_bad_data(self, fork_exec):
+        """Test error passing done through errpipe_write where its not
+        in the expected format"""
+        error_data = b"\xFF\x00\xDE\xAD"
+        def bad_error(*args):
+            errpipe_write = args[13]
+            # Anything can be in the pipe, no assumptions should
+            # be made about its encoding, so we'll write some
+            # arbitrary hex bytes to test it out
+            os.write(errpipe_write, error_data)
+            return 0
+
+        fork_exec.side_effect = bad_error
+
+        with self.assertRaises(subprocess.SubprocessError) as e:
+            self.PopenNoDestructor(["non_existent_command"])
+
+        self.assertIn(repr(error_data), str(e.exception))
+
 
     def test_restore_signals(self):
         # Code coverage for both values of restore_signals to make sure it
@@ -2699,6 +2741,15 @@ class Win32ProcessTestCase(BaseTestCase):
                            "import sys; sys.exit(47)"],
                           stdout=subprocess.PIPE,
                           close_fds=True)
+
+    @support.cpython_only
+    def test_issue31471(self):
+        # There shouldn't be an assertion failure in Popen() in case the env
+        # argument has a bad keys() method.
+        class BadEnv(dict):
+            keys = None
+        with self.assertRaises(TypeError):
+            subprocess.Popen([sys.executable, "-c", "pass"], env=BadEnv())
 
     def test_close_fds(self):
         # close file descriptors

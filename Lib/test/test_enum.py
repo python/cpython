@@ -2,15 +2,12 @@ import enum
 import inspect
 import pydoc
 import unittest
+import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
-try:
-    import threading
-except ImportError:
-    threading = None
 
 
 # for pickle tests
@@ -1988,7 +1985,6 @@ class TestFlag(unittest.TestCase):
             d = 6
         self.assertEqual(repr(Bizarre(7)), '<Bizarre.d|c|b: 7>')
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only
@@ -2339,7 +2335,6 @@ class TestIntFlag(unittest.TestCase):
         for f in Open:
             self.assertEqual(bool(f.value), bool(f))
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     @support.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only

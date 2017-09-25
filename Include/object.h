@@ -501,6 +501,7 @@ PyAPI_FUNC(PyObject *) PyType_GenericAlloc(PyTypeObject *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyType_GenericNew(PyTypeObject *,
                                                PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
+PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, _Py_Identifier *);
@@ -727,14 +728,13 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 /* Py_REF_DEBUG also controls the display of refcounts and memory block
  * allocations at the interactive prompt and at interpreter shutdown
  */
+PyAPI_FUNC(PyObject *) _PyDebug_XOptionShowRefCount(void);
 PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
-#define _PY_DEBUG_PRINT_TOTAL_REFS() _PyDebug_PrintTotalRefs()
 #else
 #define _Py_INC_REFTOTAL
 #define _Py_DEC_REFTOTAL
 #define _Py_REF_DEBUG_COMMA
 #define _Py_CHECK_REFCNT(OP)    /* a semicolon */;
-#define _PY_DEBUG_PRINT_TOTAL_REFS()
 #endif /* Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
@@ -1038,8 +1038,6 @@ with the call stack never exceeding a depth of PyTrash_UNWIND_LEVEL.
    Kept for binary compatibility of extensions using the stable ABI. */
 PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
 PyAPI_FUNC(void) _PyTrash_destroy_chain(void);
-PyAPI_DATA(int) _PyTrash_delete_nesting;
-PyAPI_DATA(PyObject *) _PyTrash_delete_later;
 #endif /* !Py_LIMITED_API */
 
 /* The new thread-safe private API, invoked by the macros below. */
