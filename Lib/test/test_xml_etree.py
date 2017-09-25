@@ -34,6 +34,7 @@ try:
 except UnicodeEncodeError:
     raise unittest.SkipTest("filename is not encodable to utf8")
 SIMPLE_NS_XMLFILE = findfile("simple-ns.xml", subdir="xmltestdata")
+UTF8_BUG_XMLFILE = findfile("expat224_utf8_bug.xml", subdir="xmltestdata")
 
 SAMPLE_XML = """\
 <body>
@@ -1738,6 +1739,37 @@ class BugsTest(unittest.TestCase):
         self.assertIsInstance(t.tag, Tag)
         self.assertIsInstance(e[0].tag, str)
         self.assertEqual(e[0].tag, 'changed')
+
+    def check_expat224_utf8_bug(self, text):
+        xml = b'<a b="%s"/>' % text
+        root = ET.XML(xml)
+        self.assertEqual(root.get('b'), text.decode('utf-8'))
+
+    def test_expat224_utf8_bug(self):
+        # bpo-31170: Expat 2.2.3 had a bug in its UTF-8 decoder.
+        # Check that Expat 2.2.4 fixed the bug.
+        #
+        # Test buffer bounds at odd and even positions.
+
+        text = b'\xc3\xa0' * 1024
+        self.check_expat224_utf8_bug(text)
+
+        text = b'x' + b'\xc3\xa0' * 1024
+        self.check_expat224_utf8_bug(text)
+
+    def test_expat224_utf8_bug_file(self):
+        with open(UTF8_BUG_XMLFILE, 'rb') as fp:
+            raw = fp.read()
+        root = ET.fromstring(raw)
+        xmlattr = root.get('b')
+
+        # "Parse" manually the XML file to extract the value of the 'b'
+        # attribute of the <a b='xxx' /> XML element
+        text = raw.decode('utf-8').strip()
+        text = text.replace('\r\n', ' ')
+        text = text[6:-4]
+        self.assertEqual(root.get('b'), text)
+
 
 
 # --------------------------------------------------------------------
