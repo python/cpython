@@ -32,6 +32,8 @@ struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
 static PyObject *initstr = NULL;
 
+static _PyTime_t import_start_time;
+
 /*[clinic input]
 module _imp
 [clinic start generated code]*/
@@ -41,10 +43,36 @@ module _imp
 
 /* Initialize things */
 
+static int
+import_xoptions_importtime(void)
+{
+    int has_key;
+
+    PyObject *xoptions = PySys_GetXOptions();
+    if (xoptions == NULL) {
+        return -1;
+    }
+
+    PyObject *key = PyUnicode_FromString("importtime");
+    if (key == NULL) {
+        return -1;
+    }
+
+    has_key = PyDict_Contains(xoptions, key);
+    Py_DECREF(key);
+    if (has_key < 0) {
+        return -1;
+    }
+    return has_key;
+}
+
 void
 _PyImport_Init(void)
 {
     PyInterpreterState *interp = PyThreadState_Get()->interp;
+
+    import_start_time = _PyTime_GetMonotonicClock();
+
     initstr = PyUnicode_InternFromString("__init__");
     if (initstr == NULL)
         Py_FatalError("Can't initialize import variables");
@@ -1667,46 +1695,65 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
     else {
         static int import_level;
-        static _PyTime_t accumulated;
-        _Py_IDENTIFIER(importtime);
-        int ximporttime = 0;
-        _PyTime_t t1=0, accumulated_copy;
+        static _PyTime_t accumulated = 0;
+        _PyTime_t t1 = 0, accumulated_copy;
+        int log_import_time;
+
+        {
+            int importtime = import_xoptions_importtime();
+            if (importtime < 0) {
+                Py_FatalError("import_xoptions_importtime() failed");
+            }
+            log_import_time = importtime;
+        }
 
         Py_XDECREF(mod);
 
-        /* XOptions is initialized after first some imports.
-         * So we can't have negative cache.
-         * Anyway, importlib.__find_and_load is much slower than
-         * _PyDict_GetItemId()
-         */
-        PyObject *xoptions = PySys_GetXOptions();
-        if (xoptions) {
-            PyObject *value = _PyDict_GetItemId(xoptions, &PyId_importtime);
-            ximporttime = (value == Py_True);
-        }
-
-        if (ximporttime) {
-            import_level++;
+        if (log_import_time) {
             t1 = _PyTime_GetMonotonicClock();
             accumulated_copy = accumulated;
             accumulated = 0;
+
+            time_t ts_sec;
+            int ts_usec;
+            (void)_PyTime_AsTimevalTime_t(t1 - import_start_time,
+                                          &ts_sec, &ts_usec,
+                                          _PyTime_ROUND_CEILING);
+
+            fprintf(stderr, "[%li.%06i] import time: %*simport %s\n",
+                    (long)ts_sec, ts_usec,
+                    import_level*2, "", PyUnicode_AsUTF8(abs_name));
+
+            import_level++;
         }
 
         mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                             &PyId__find_and_load, abs_name,
                                             interp->import_func, NULL);
 
-        if (ximporttime) {
+        if (log_import_time) {
             _PyTime_t t2 = _PyTime_GetMonotonicClock();
-            long cum = t2 - t1;
+            _PyTime_t cum = t2 - t1;
+            _PyTime_t tself, tcum;
+            time_t ts_sec;
+            int ts_usec;
+
+            (void)_PyTime_AsTimevalTime_t(t2 - import_start_time,
+                                          &ts_sec, &ts_usec,
+                                          _PyTime_ROUND_CEILING);
+            tcum = _PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING);
+            tself = _PyTime_AsMicroseconds(cum - accumulated,
+                                          _PyTime_ROUND_CEILING);
 
             import_level--;
-            fprintf(stderr, "import time: %*s- %s %ld us (self %ld us)\n",
-                    import_level*2, "",
-                    PyUnicode_AsUTF8(abs_name),
-                    (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
-                    (long)_PyTime_AsMicroseconds(cum-accumulated,
-                                                 _PyTime_ROUND_CEILING));
+            fprintf(stderr, "[%li.%06i] import time: %*simport %s took %lu us",
+                    (long)ts_sec, ts_usec,
+                    import_level*2, "", PyUnicode_AsUTF8(abs_name),
+                    (unsigned long)tself);
+            if (tcum != tself) {
+                fprintf(stderr, " (cumulative: %lu us)", (unsigned long)tcum);
+            }
+            fprintf(stderr, "\n");
 
             accumulated = accumulated_copy + cum;
         }
