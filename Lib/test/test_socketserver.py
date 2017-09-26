@@ -68,6 +68,20 @@ def simple_subprocess(testcase):
     testcase.assertEqual(72 << 8, status)
 
 
+def close_server(server):
+    server.server_close()
+
+    if hasattr(server, 'active_children'):
+        # ForkingMixIn: Manually reap all child processes, since server_close()
+        # calls waitpid() in non-blocking mode using the WNOHANG flag.
+        for pid in server.active_children.copy():
+            try:
+                os.waitpid(pid, 0)
+            except ChildProcessError:
+                pass
+        server.active_children.clear()
+
+
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
@@ -142,7 +156,7 @@ class SocketServerTest(unittest.TestCase):
         if verbose: print("waiting for server")
         server.shutdown()
         t.join()
-        server.server_close()
+        close_server(server)
         self.assertEqual(-1, server.socket.fileno())
         if verbose: print("done")
 
@@ -266,7 +280,7 @@ class SocketServerTest(unittest.TestCase):
             s.shutdown()
         for t, s in threads:
             t.join()
-            s.server_close()
+            close_server(s)
 
     def test_tcpserver_bind_leak(self):
         # Issue #22435: the server socket wouldn't be closed if bind()/listen()
@@ -292,6 +306,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
     def tearDown(self):
         test.support.unlink(test.support.TESTFN)
+        reap_children()
 
     def test_sync_handled(self):
         BaseErrorTestServer(ValueError)
@@ -337,7 +352,7 @@ class BaseErrorTestServer(socketserver.TCPServer):
         try:
             self.handle_request()
         finally:
-            self.server_close()
+            close_server(self)
         self.wait_done()
 
     def handle_error(self, request, client_address):
@@ -371,10 +386,7 @@ class ThreadingErrorTestServer(socketserver.ThreadingMixIn,
 
 if HAVE_FORKING:
     class ForkingErrorTestServer(socketserver.ForkingMixIn, BaseErrorTestServer):
-        def wait_done(self):
-            [child] = self.active_children
-            os.waitpid(child, 0)
-            self.active_children.clear()
+        pass
 
 
 class SocketWriterTest(unittest.TestCase):
@@ -386,7 +398,7 @@ class SocketWriterTest(unittest.TestCase):
                 self.server.request_fileno = self.request.fileno()
 
         server = socketserver.TCPServer((HOST, 0), Handler)
-        self.addCleanup(server.server_close)
+        self.addCleanup(close_server, server)
         s = socket.socket(
             server.address_family, socket.SOCK_STREAM, socket.IPPROTO_TCP)
         with s:
@@ -410,7 +422,7 @@ class SocketWriterTest(unittest.TestCase):
                 self.server.sent2 = self.wfile.write(big_chunk)
 
         server = socketserver.TCPServer((HOST, 0), Handler)
-        self.addCleanup(server.server_close)
+        self.addCleanup(close_server, server)
         interrupted = threading.Event()
 
         def signal_handler(signum, frame):
@@ -486,7 +498,7 @@ class MiscTestCase(unittest.TestCase):
         s.close()
         server.handle_request()
         self.assertEqual(server.shutdown_called, 1)
-        server.server_close()
+        close_server(server)
 
 
 if __name__ == "__main__":
