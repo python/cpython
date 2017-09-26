@@ -1,2 +1,2 @@
-Prevent raising a SystemError in class creation in case of a metaclass with
-a bad ``__prepare__()`` method. Patch by Oren Milman.
+Raise a `TypeError` instead of `SystemError` in case class creation failed due
+to a metaclass with a bad ``__prepare__()`` method. Patch by Oren Milman.

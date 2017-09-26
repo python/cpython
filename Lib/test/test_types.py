@@ -868,14 +868,14 @@ class ClassCreationTests(unittest.TestCase):
         # __prepare__() must return a mapping.
         class BadMeta(type):
             def __prepare__(*args):
-                pass
+                return None
         with self.assertRaises(TypeError):
             class Foo(metaclass=BadMeta):
                 pass
         # Also test the case in which the metaclass is not a type.
         class BadMeta:
             def __prepare__(*args):
-                pass
+                return None
         with self.assertRaises(TypeError):
             class Bar(metaclass=BadMeta()):
                 pass
