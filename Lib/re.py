@@ -158,6 +158,9 @@ class RegexFlag(enum.IntFlag):
     TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     T = TEMPLATE
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
+    # Deferred compilation of regexps.
+    IMMEDIATE = sre_compile.SRE_FLAG_IMMEDIATE
+    N = IMMEDIATE
 globals().update(RegexFlag.__members__)
 
 # sre exception
@@ -234,7 +237,7 @@ def compile(pattern, flags=0):
 
 def purge():
     "Clear the regular expression caches"
-    _cache.clear()
+    _compile_and_cache.cache_clear()
     _compile_repl.cache_clear()
 
 def template(pattern, flags=0):
@@ -260,16 +263,16 @@ def escape(pattern):
 # --------------------------------------------------------------------
 # internals
 
-_cache = {}
-
 _pattern_type = type(sre_compile.compile("", 0))
+_MAXCACHE = 512
 
-_compile_count = 0
-_compile_time = 0
-import atexit
-def report():
-    import sys; print(_compile_count, _compile_time, file=sys.stderr)
-atexit.register(report)
+@functools.lru_cache(_MAXCACHE)
+def _compile_and_cache(pattern_type, pattern, flags):
+    return sre_compile.compile(pattern, flags)
+
+
+def _compile_no_cache(pattern_type, pattern, flags):
+    return sre_compile.compile(pattern, flags)
 
 
 class _DeferredPattern:
@@ -283,22 +286,26 @@ class _DeferredPattern:
         if compiled is None:
             pattern = super().__getattribute__('pattern')
             flags = super().__getattribute__('flags')
-            compiled = self.compiled = sre_compile.compile(pattern, flags)
-            if not (flags & DEBUG):
-                if len(_cache) >= _MAXCACHE:
-                    _cache.clear()
-                _cache[type(pattern), pattern, flags] = compiled
+            compiled = (
+                _compile_no_cache
+                if flags & DEBUG
+                else _compile_and_cache)(type(pattern), pattern, flags)
+            self.compiled = compiled
+        if attribute == 'compiled':
+            return compiled
         return getattr(compiled, attribute)
 
+    def __repr__(self):
+        return repr(self.compiled)
 
-_MAXCACHE = 512
+    def __hash__(self):
+        return hash(self.compiled)
+
+    def __eq__(self, other):
+        return self.compiled == other.compiled
+
+
 def _compile(pattern, flags):
-    global _compile_count, _compile_time
-    # internal: compile pattern
-    try:
-        return _cache[type(pattern), pattern, flags]
-    except KeyError:
-        pass
     if isinstance(pattern, _pattern_type):
         if flags:
             raise ValueError(
@@ -306,16 +313,12 @@ def _compile(pattern, flags):
         return pattern
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
-    import time; start = time.time()
-    p = _DeferredPattern(pattern, flags)
-    ## p =  sre_compile.compile(pattern, flags)
-    ## if not (flags & DEBUG):
-    ##     if len(_cache) >= _MAXCACHE:
-    ##         _cache.clear()
-    ##     _cache[type(pattern), pattern, flags] = p
-    _compile_time += time.time() - start
-    _compile_count += 1
-    return p
+    if flags & (IMMEDIATE | DEBUG):
+        return (
+            _compile_no_cache
+            if flags & DEBUG
+            else _compile_and_cache)(type(pattern), pattern, flags)
+    return _DeferredPattern(pattern, flags)
 
 @functools.lru_cache(_MAXCACHE)
 def _compile_repl(repl, pattern):

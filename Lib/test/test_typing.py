@@ -2439,7 +2439,7 @@ class RETests(BaseTestCase):
     # Much of this is really testing _TypeAlias.
 
     def test_basics(self):
-        pat = re.compile('[a-z]+', re.I)
+        pat = re.compile('[a-z]+', re.I | re.N)
         self.assertIsSubclass(pat.__class__, Pattern)
         self.assertIsSubclass(type(pat), Pattern)
         self.assertIsInstance(pat, Pattern)

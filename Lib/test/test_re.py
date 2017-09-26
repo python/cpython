@@ -37,7 +37,7 @@ class ReTests(unittest.TestCase):
 
     def checkPatternError(self, pattern, errmsg, pos=None):
         with self.assertRaises(re.error) as cm:
-            re.compile(pattern)
+            re.compile(pattern, re.IMMEDIATE)
         with self.subTest(pattern=pattern):
             err = cm.exception
             self.assertEqual(err.msg, errmsg)
@@ -695,10 +695,10 @@ class ReTests(unittest.TestCase):
         re.purge()  # for warnings
         for c in 'ceghijklmopqyzCEFGHIJKLMNOPQRTVXY':
             with self.subTest(c):
-                self.assertRaises(re.error, re.compile, '\\%c' % c)
+                self.assertRaises(re.error, re.compile, '\\%c' % c, re.N)
         for c in 'ceghijklmopqyzABCEFGHIJKLMNOPQRTVXYZ':
             with self.subTest(c):
-                self.assertRaises(re.error, re.compile, '[\\%c]' % c)
+                self.assertRaises(re.error, re.compile, '[\\%c]' % c, re.N)
 
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713
@@ -789,14 +789,14 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(r'(?:(a)|(x))b(?<=(?(1)c|x))c', 'abc'))
         self.assertTrue(re.match(r'(?:(a)|(x))b(?<=(?(1)b|x))c', 'abc'))
         # Group used before defined.
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(?(2)b|x))(c)')
+        self.assertRaises(re.error, re.compile, r'(a)b(?<=(?(2)b|x))(c)', re.N)
         self.assertIsNone(re.match(r'(a)b(?<=(?(1)c|x))(c)', 'abc'))
         self.assertTrue(re.match(r'(a)b(?<=(?(1)b|x))(c)', 'abc'))
         # Group defined in the same lookbehind pattern
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(.)\2)(c)')
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(?P<a>.)(?P=a))(c)')
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(a)(?(2)b|x))(c)')
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(.)(?<=\2))(c)')
+        self.assertRaises(re.error, re.compile, r'(a)b(?<=(.)\2)(c)', re.N)
+        self.assertRaises(re.error, re.compile, r'(a)b(?<=(?P<a>.)(?P=a))(c)', re.N)
+        self.assertRaises(re.error, re.compile, r'(a)b(?<=(a)(?(2)b|x))(c)', re.N)
+        self.assertRaises(re.error, re.compile, r'(a)b(?<=(.)(?<=\2))(c)', re.N)
 
     def test_ignore_case(self):
         self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
@@ -978,7 +978,7 @@ class ReTests(unittest.TestCase):
 
     def test_pickling(self):
         import pickle
-        oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)', re.UNICODE)
+        oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)', re.UNICODE | re.N)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             pickled = pickle.dumps(oldpat, proto)
             newpat = pickle.loads(pickled)
@@ -988,7 +988,7 @@ class ReTests(unittest.TestCase):
 
     def test_copying(self):
         import copy
-        p = re.compile(r'(?P<int>\d+)(?:\.(?P<frac>\d*))?')
+        p = re.compile(r'(?P<int>\d+)(?:\.(?P<frac>\d*))?', re.N)
         self.assertIs(copy.copy(p), p)
         self.assertIs(copy.deepcopy(p), p)
         m = p.match('12.34')
@@ -1076,8 +1076,8 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"\x%02x" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"\x%02x0" % i).encode(), bytes([i])+b"0"))
             self.assertTrue(re.match((r"\x%02xz" % i).encode(), bytes([i])+b"z"))
-        self.assertRaises(re.error, re.compile, br"\u1234")
-        self.assertRaises(re.error, re.compile, br"\U00012345")
+        self.assertRaises(re.error, re.compile, br"\u1234", re.IMMEDIATE)
+        self.assertRaises(re.error, re.compile, br"\U00012345", re.IMMEDIATE)
         self.assertTrue(re.match(br"\0", b"\000"))
         self.assertTrue(re.match(br"\08", b"\0008"))
         self.assertTrue(re.match(br"\01", b"\001"))
@@ -1099,8 +1099,8 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"[\x%02x]" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"[\x%02x0]" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"[\x%02xz]" % i).encode(), bytes([i])))
-        self.assertRaises(re.error, re.compile, br"[\u1234]")
-        self.assertRaises(re.error, re.compile, br"[\U00012345]")
+        self.assertRaises(re.error, re.compile, br"[\u1234]", re.N)
+        self.assertRaises(re.error, re.compile, br"[\U00012345]", re.N)
         self.checkPatternError(br"[\567]",
                                r'octal escape value \567 outside of '
                                r'range 0-0o377', 1)
@@ -1370,7 +1370,7 @@ class ReTests(unittest.TestCase):
             str(warns.warnings[0].message),
             'Flags not at the start of the expression %r' % p
         )
-        self.assertEqual(warns.warnings[0].filename, __file__)
+        self.assertEqual(warns.warnings[0].filename, re.__file__)
 
         p = upper_char + '(?i)%s' % ('.?' * 100)
         with self.assertWarns(DeprecationWarning) as warns:
@@ -1379,19 +1379,19 @@ class ReTests(unittest.TestCase):
             str(warns.warnings[0].message),
             'Flags not at the start of the expression %r (truncated)' % p[:20]
         )
-        self.assertEqual(warns.warnings[0].filename, __file__)
+        self.assertEqual(warns.warnings[0].filename, re.__file__)
 
         # bpo-30605: Compiling a bytes instance regex was throwing a BytesWarning
         with warnings.catch_warnings():
             warnings.simplefilter('error', BytesWarning)
             p = b'A(?i)'
             with self.assertWarns(DeprecationWarning) as warns:
-                self.assertTrue(re.match(p, b'a'))
+                self.assertTrue(re.match(p, b'a', re.I))
             self.assertEqual(
                 str(warns.warnings[0].message),
                 'Flags not at the start of the expression %r' % p
             )
-            self.assertEqual(warns.warnings[0].filename, __file__)
+            self.assertEqual(warns.warnings[0].filename, re.__file__)
 
         with self.assertWarns(DeprecationWarning):
             self.assertTrue(re.match('(?s).(?i)' + upper_char, '\n' + lower_char))
@@ -1407,19 +1407,19 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match('(?:(?i)' + upper_char + ')', lower_char))
         self.assertRegex(str(warns.warnings[0].message),
                          'Flags not at the start')
-        self.assertEqual(warns.warnings[0].filename, __file__)
+        self.assertEqual(warns.warnings[0].filename, re.__file__)
         with self.assertWarns(DeprecationWarning) as warns:
             self.assertTrue(re.fullmatch('(^)?(?(1)(?i)' + upper_char + ')',
                                          lower_char))
         self.assertRegex(str(warns.warnings[0].message),
                          'Flags not at the start')
-        self.assertEqual(warns.warnings[0].filename, __file__)
+        self.assertEqual(warns.warnings[0].filename, re.__file__)
         with self.assertWarns(DeprecationWarning) as warns:
             self.assertTrue(re.fullmatch('($)?(?(1)|(?i)' + upper_char + ')',
                                          lower_char))
         self.assertRegex(str(warns.warnings[0].message),
                          'Flags not at the start')
-        self.assertEqual(warns.warnings[0].filename, __file__)
+        self.assertEqual(warns.warnings[0].filename, re.__file__)
 
 
     def test_dollar_matches_twice(self):
@@ -1469,12 +1469,15 @@ class ReTests(unittest.TestCase):
             pat = re.compile(br'\w', flags)
             self.assertIsNone(pat.match(b'\xe0'))
         # Incompatibilities
-        self.assertRaises(ValueError, re.compile, br'\w', re.UNICODE)
-        self.assertRaises(ValueError, re.compile, br'(?u)\w')
-        self.assertRaises(ValueError, re.compile, r'\w', re.UNICODE | re.ASCII)
-        self.assertRaises(ValueError, re.compile, r'(?u)\w', re.ASCII)
-        self.assertRaises(ValueError, re.compile, r'(?a)\w', re.UNICODE)
-        self.assertRaises(ValueError, re.compile, r'(?au)\w')
+        def recompile(pattern, flags=0):
+            flags |= re.IMMEDIATE
+            return re.compile(pattern, flags)
+        self.assertRaises(ValueError, recompile, br'\w', re.UNICODE)
+        self.assertRaises(ValueError, recompile, br'(?u)\w')
+        self.assertRaises(ValueError, recompile, r'\w', re.UNICODE | re.ASCII)
+        self.assertRaises(ValueError, recompile, r'(?u)\w', re.ASCII)
+        self.assertRaises(ValueError, recompile, r'(?a)\w', re.UNICODE)
+        self.assertRaises(ValueError, recompile, r'(?au)\w')
 
     def test_locale_flag(self):
         import locale
@@ -1515,12 +1518,15 @@ class ReTests(unittest.TestCase):
         if bletter:
             self.assertIsNone(pat.match(bletter))
         # Incompatibilities
-        self.assertRaises(ValueError, re.compile, '', re.LOCALE)
-        self.assertRaises(ValueError, re.compile, '(?L)')
-        self.assertRaises(ValueError, re.compile, b'', re.LOCALE | re.ASCII)
-        self.assertRaises(ValueError, re.compile, b'(?L)', re.ASCII)
-        self.assertRaises(ValueError, re.compile, b'(?a)', re.LOCALE)
-        self.assertRaises(ValueError, re.compile, b'(?aL)')
+        def recompile(pattern, flags=0):
+            flags |= re.IMMEDIATE
+            return re.compile(pattern, flags)
+        self.assertRaises(ValueError, recompile, '', re.LOCALE)
+        self.assertRaises(ValueError, recompile, '(?L)')
+        self.assertRaises(ValueError, recompile, b'', re.LOCALE | re.ASCII)
+        self.assertRaises(ValueError, recompile, b'(?L)', re.ASCII)
+        self.assertRaises(ValueError, recompile, b'(?a)', re.LOCALE)
+        self.assertRaises(ValueError, recompile, b'(?aL)')
 
     def test_scoped_flags(self):
         self.assertTrue(re.match(r'(?i:a)b', 'Ab'))
@@ -1638,10 +1644,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r".{,65536}", string).span(), (0, 65536))
         self.assertEqual(re.match(r".{65536,}?", string).span(), (0, 65536))
         # 2**128 should be big enough to overflow both SRE_CODE and Py_ssize_t.
-        self.assertRaises(OverflowError, re.compile, r".{%d}" % 2**128)
-        self.assertRaises(OverflowError, re.compile, r".{,%d}" % 2**128)
-        self.assertRaises(OverflowError, re.compile, r".{%d,}?" % 2**128)
-        self.assertRaises(OverflowError, re.compile, r".{%d,%d}" % (2**129, 2**128))
+        def recompile(pattern):
+            return re.compile(pattern, re.IMMEDIATE)
+        self.assertRaises(OverflowError, recompile, r".{%d}" % 2**128)
+        self.assertRaises(OverflowError, recompile, r".{,%d}" % 2**128)
+        self.assertRaises(OverflowError, recompile, r".{%d,}?" % 2**128)
+        self.assertRaises(OverflowError, recompile, r".{%d,%d}" % (2**129, 2**128))
 
     @cpython_only
     def test_repeat_minmax_overflow_maxrepeat(self):
@@ -1654,9 +1662,11 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r".{,%d}" % (MAXREPEAT - 1), string).span(),
                          (0, 100000))
         self.assertIsNone(re.match(r".{%d,}?" % (MAXREPEAT - 1), string))
-        self.assertRaises(OverflowError, re.compile, r".{%d}" % MAXREPEAT)
-        self.assertRaises(OverflowError, re.compile, r".{,%d}" % MAXREPEAT)
-        self.assertRaises(OverflowError, re.compile, r".{%d,}?" % MAXREPEAT)
+        def recompile(pattern):
+            return re.compile(pattern, re.IMMEDIATE)
+        self.assertRaises(OverflowError, recompile, r".{%d}" % MAXREPEAT)
+        self.assertRaises(OverflowError, recompile, r".{,%d}" % MAXREPEAT)
+        self.assertRaises(OverflowError, recompile, r".{%d,}?" % MAXREPEAT)
 
     def test_backref_group_name_in_exception(self):
         # Issue 17341: Poor error message when compiling invalid regex
@@ -1858,7 +1868,7 @@ ELSE
 
     def test_error(self):
         with self.assertRaises(re.error) as cm:
-            re.compile('(\u20ac))')
+            re.compile('(\u20ac))', re.N)
         err = cm.exception
         self.assertIsInstance(err.pattern, str)
         self.assertEqual(err.pattern, '(\u20ac))')
@@ -1870,7 +1880,7 @@ ELSE
         self.assertNotIn(' at position 3', err.msg)
         # Bytes pattern
         with self.assertRaises(re.error) as cm:
-            re.compile(b'(\xa4))')
+            re.compile(b'(\xa4))', re.N)
         err = cm.exception
         self.assertIsInstance(err.pattern, bytes)
         self.assertEqual(err.pattern, b'(\xa4))')
@@ -1883,7 +1893,7 @@ ELSE
                 )
                 )
                 (
-                """, re.VERBOSE)
+                """, re.VERBOSE | re.IMMEDIATE)
         err = cm.exception
         self.assertEqual(err.pos, 77)
         self.assertEqual(err.lineno, 5)
@@ -1995,6 +2005,11 @@ class PatternReprTests(unittest.TestCase):
                          "re.compile('random pattern', "
                          "re.IGNORECASE|re.DOTALL)")
 
+    def test_immediate_flag(self):
+        real_compiled = type(re.compile('.*', re.IMMEDIATE))
+        deferred_compiled = type(re.compile('.*'))
+        self.assertNotEqual(real_compiled, deferred_compiled)
+
     def test_inline_flags(self):
         self.check('(?i)pattern',
                    "re.compile('(?i)pattern', re.IGNORECASE)")
@@ -2081,7 +2096,7 @@ class ExternalTests(unittest.TestCase):
             with self.subTest(pattern=pattern, string=s):
                 if outcome == SYNTAX_ERROR:  # Expected a syntax error
                     with self.assertRaises(re.error):
-                        re.compile(pattern)
+                        re.compile(pattern, re.N)
                     continue
 
                 obj = re.compile(pattern)

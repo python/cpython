@@ -1277,6 +1277,7 @@ pattern_repr(PatternObject *obj)
         {"re.VERBOSE", SRE_FLAG_VERBOSE},
         {"re.DEBUG", SRE_FLAG_DEBUG},
         {"re.ASCII", SRE_FLAG_ASCII},
+        {"re.IMMEDIATE", SRE_FLAG_IMMEDIATE},
     };
     PyObject *result = NULL;
     PyObject *flag_items;
