@@ -1,0 +1,2 @@
+Fix an assertion failure in case of a bad `unicodedata.normalize()`. Patch
+by Oren Milman.

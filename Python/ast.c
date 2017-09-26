@@ -661,6 +661,14 @@ new_identifier(const char *n, struct compiling *c)
         Py_DECREF(id);
         if (!id2)
             return NULL;
+        if (!PyUnicode_Check(id2)) {
+            PyErr_Format(PyExc_TypeError,
+                         "unicodedata.normalize() must return a string, not "
+                         "%.200s",
+                         Py_TYPE(id2)->tp_name);
+            Py_DECREF(id2);
+            return NULL;
+        }
         id = id2;
     }
     PyUnicode_InternInPlace(&id);
