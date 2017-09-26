@@ -864,6 +864,15 @@ class ClassCreationTests(unittest.TestCase):
         self.assertIs(ns, expected_ns)
         self.assertEqual(len(kwds), 0)
 
+    def test_bad___prepare__(self):
+        # __prepare__() must return a mapping.
+        class BadMetaclass(type):
+            def __prepare__(*args):
+                pass
+        with self.assertRaises(TypeError):
+            class Foo(metaclass=BadMetaclass):
+                pass
+
     def test_metaclass_derivation(self):
         # issue1294232: correct metaclass calculation
         new_calls = []  # to check the order of __new__ calls
