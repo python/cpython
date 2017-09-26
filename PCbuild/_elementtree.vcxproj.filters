@@ -68,5 +68,11 @@
     <ClCompile Include="..\Modules\expat\xmltok.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\expat\loadlibrary.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
 </Project>
