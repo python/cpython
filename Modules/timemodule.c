@@ -111,7 +111,8 @@ win_perf_counter(_Py_clock_info_t *info)
 }
 
 // Function to get time zone name with Windows API
-static void get_windows_zone(wchar_t *out)
+static void
+get_windows_zone(wchar_t *out)
 {
     TIME_ZONE_INFORMATION tzi;
     DWORD tzid = GetTimeZoneInformation(&tzi);
