@@ -2019,6 +2019,8 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_cache_invalidation(self):
         from collections import UserDict
+        import weakref
+
         class TracingDict(UserDict):
             def __init__(self, *args, **kwargs):
                 super(TracingDict, self).__init__(*args, **kwargs)
@@ -2033,9 +2035,9 @@ class TestSingleDispatch(unittest.TestCase):
                 self.data[key] = value
             def clear(self):
                 self.data.clear()
-        _orig_wkd = functools.WeakKeyDictionary
+        _orig_wkd = weakref.WeakKeyDictionary
         td = TracingDict()
-        functools.WeakKeyDictionary = lambda: td
+        weakref.WeakKeyDictionary = lambda: td
         c = collections.abc
         @functools.singledispatch
         def g(arg):
@@ -2116,7 +2118,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(g(l), "list")
         g._clear_cache()
         self.assertEqual(len(td), 0)
-        functools.WeakKeyDictionary = _orig_wkd
+        weakref.WeakKeyDictionary = _orig_wkd
 
 
 if __name__ == '__main__':
