@@ -98,52 +98,6 @@ enum_traverse(enumobject *en, visitproc visit, void *arg)
 }
 
 static PyObject *
-enum_next_long(enumobject *en, PyObject* next_item)
-{
-    PyObject *result = en->en_result;
-    PyObject *next_index;
-    PyObject *stepped_up;
-    PyObject *old_index;
-    PyObject *old_item;
-
-    if (en->en_longindex == NULL) {
-        en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        if (en->en_longindex == NULL) {
-            Py_DECREF(next_item);
-            return NULL;
-        }
-    }
-    next_index = en->en_longindex;
-    assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, _PyLong_One);
-    if (stepped_up == NULL) {
-        Py_DECREF(next_item);
-        return NULL;
-    }
-    en->en_longindex = stepped_up;
-
-    if (result->ob_refcnt == 1) {
-        Py_INCREF(result);
-        old_index = PyTuple_GET_ITEM(result, 0);
-        old_item = PyTuple_GET_ITEM(result, 1);
-        PyTuple_SET_ITEM(result, 0, next_index);
-        PyTuple_SET_ITEM(result, 1, next_item);
-        Py_DECREF(old_index);
-        Py_DECREF(old_item);
-        return result;
-    }
-    result = PyTuple_New(2);
-    if (result == NULL) {
-        Py_DECREF(next_index);
-        Py_DECREF(next_item);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(result, 0, next_index);
-    PyTuple_SET_ITEM(result, 1, next_item);
-    return result;
-}
-
-static PyObject *
 enum_next(enumobject *en)
 {
     PyObject *next_index;
@@ -157,15 +111,32 @@ enum_next(enumobject *en)
     if (next_item == NULL)
         return NULL;
 
-    if (en->en_index == PY_SSIZE_T_MAX)
-        return enum_next_long(en, next_item);
-
-    next_index = PyLong_FromSsize_t(en->en_index);
-    if (next_index == NULL) {
-        Py_DECREF(next_item);
-        return NULL;
+    if (en->en_index == PY_SSIZE_T_MAX) {
+        PyObject *stepped_up;
+        if (en->en_longindex == NULL) {
+            en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
+            if (en->en_longindex == NULL) {
+                Py_DECREF(next_item);
+                return NULL;
+            }
+        }
+        next_index = en->en_longindex;
+        assert(next_index != NULL);
+        stepped_up = PyNumber_Add(next_index, _PyLong_One);
+        if (stepped_up == NULL) {
+            Py_DECREF(next_item);
+            return NULL;
+        }
+        en->en_longindex = stepped_up;
     }
-    en->en_index++;
+    else {
+        next_index = PyLong_FromSsize_t(en->en_index);
+        if (next_index == NULL) {
+            Py_DECREF(next_item);
+            return NULL;
+        }
+        en->en_index++;
+    }
 
     if (result->ob_refcnt == 1) {
         Py_INCREF(result);
