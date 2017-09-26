@@ -1,0 +1,3 @@
+``re.compile()`` now defers compilation of regular expressions by default,
+until their first use.  Use re.IMMEDIATE/re.N (or the inline ``n``) flag to
+force immediate compilation.
