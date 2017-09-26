@@ -752,6 +752,9 @@ def singledispatch(func):
     implementations can be registered using the register() attribute of the
     generic function.
     """
+    # There are many programs that use functools without singledispatch, so we
+    # trade-off making singledispatch marginally slower for the benefit of
+    # making start-up of such applications slightly faster.
     from types import MappingProxyType
     from weakref import WeakKeyDictionary
 
