@@ -117,11 +117,14 @@ get_windows_zone(wchar_t *out)
     TIME_ZONE_INFORMATION tzi;
     DWORD tzid = GetTimeZoneInformation(&tzi);
 
-    if (tzid < 2) {
-        wcscpy(out, tzi.StandardName);
+    if (tzid == TIME_ZONE_ID_INVALID) {
+        PyErr_SetFromWindowsErr(0);
+    }
+    else if (tzid == TIME_ZONE_ID_DAYLIGHT) {
+        wcscpy(out, tzi.DaylightName);
     }
     else {
-        wcscpy(out, tzi.DaylightName);
+        wcscpy(out, tzi.StandardName);
     }
 }
 #endif   /* MS_WINDOWS */
