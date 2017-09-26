@@ -1,0 +1,1 @@
+The regex cache no longer completely dump when full.
