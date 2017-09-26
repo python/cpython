@@ -19,8 +19,6 @@ except ImportError:
     pass
 from abc import get_cache_token
 from collections import namedtuple
-from types import MappingProxyType
-from weakref import WeakKeyDictionary
 from reprlib import recursive_repr
 from _thread import RLock
 
@@ -753,8 +751,10 @@ def singledispatch(func):
     function acts as the default implementation, and additional
     implementations can be registered using the register() attribute of the
     generic function.
-
     """
+    from types import MappingProxyType
+    from weakref import WeakKeyDictionary
+
     registry = {}
     dispatch_cache = WeakKeyDictionary()
     cache_token = None
