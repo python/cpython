@@ -1473,6 +1473,29 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(it)
 
+    def test_issue30347_1(self):
+        def f(n):
+            if n == 5:
+                list(b)
+            return n != 6
+        for (k, b) in groupby(range(10), f):
+            list(b)  # shouldn't crash
+
+    def test_issue30347_2(self):
+        class K(object):
+            i = 0
+            def __init__(self, v):
+                pass
+            def __eq__(self, other):
+                K.i += 1
+                if K.i == 1:
+                    next(g, None)
+                return True
+        g = next(groupby(range(10), K))[1]
+        for j in range(2):
+            next(g, None)  # shouldn't crash
+
+
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
         # count is not subclassable...
