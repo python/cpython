@@ -872,6 +872,12 @@ class ClassCreationTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             class Foo(metaclass=BadMetaclass):
                 pass
+        class BadMetaclass:
+            def __prepare__(*args):
+                pass
+        with self.assertRaises(TypeError):
+            class Bar(metaclass=BadMetaclass()):
+                pass
 
     def test_metaclass_derivation(self):
         # issue1294232: correct metaclass calculation
