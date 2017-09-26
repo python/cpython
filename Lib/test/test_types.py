@@ -866,17 +866,18 @@ class ClassCreationTests(unittest.TestCase):
 
     def test_bad___prepare__(self):
         # __prepare__() must return a mapping.
-        class BadMetaclass(type):
+        class BadMeta(type):
             def __prepare__(*args):
                 pass
         with self.assertRaises(TypeError):
-            class Foo(metaclass=BadMetaclass):
+            class Foo(metaclass=BadMeta):
                 pass
-        class BadMetaclass:
+        # Also test the case in which metaclass is not a type.
+        class BadMeta:
             def __prepare__(*args):
                 pass
         with self.assertRaises(TypeError):
-            class Bar(metaclass=BadMetaclass()):
+            class Bar(metaclass=BadMeta()):
                 pass
 
     def test_metaclass_derivation(self):
