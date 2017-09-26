@@ -872,7 +872,7 @@ class ClassCreationTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             class Foo(metaclass=BadMeta):
                 pass
-        # Also test the case in which metaclass is not a type.
+        # Also test the case in which the metaclass is not a type.
         class BadMeta:
             def __prepare__(*args):
                 pass
