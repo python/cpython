@@ -1,0 +1,2 @@
+Fix 2to3 for using with --add-suffix option without -o or --output-dir
+option for relative path to files in current directory.
