@@ -3038,6 +3038,7 @@ if test "$posix_threads" = "yes"; then
             ;;
         esac])
       AC_CHECK_FUNCS(pthread_atfork)
+      AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
 
 
