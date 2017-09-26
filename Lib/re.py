@@ -128,6 +128,13 @@ try:
 except ImportError:
     _locale = None
 
+# try _collections first to reduce startup cost
+try:
+    from _collections import OrderedDict
+except ImportError:
+    from collections import OrderedDict
+
+
 # public symbols
 __all__ = [
     "match", "fullmatch", "search", "sub", "subn", "split",
@@ -260,7 +267,7 @@ def escape(pattern):
 # --------------------------------------------------------------------
 # internals
 
-_cache = {}
+_cache = OrderedDict()
 
 _pattern_type = type(sre_compile.compile("", 0))
 
@@ -281,7 +288,10 @@ def _compile(pattern, flags):
     p = sre_compile.compile(pattern, flags)
     if not (flags & DEBUG):
         if len(_cache) >= _MAXCACHE:
-            _cache.clear()
+            try:
+                _cache.popitem(False)
+            except KeyError:
+                pass
         _cache[type(pattern), pattern, flags] = p
     return p
 
