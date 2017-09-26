@@ -1,0 +1,2 @@
+2to3 doesn't choke on a trailing comma following a generator expression
+anymore.
