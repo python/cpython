@@ -680,7 +680,7 @@ class CompressedZipImportTestCase(UncompressedZipImportTestCase):
         try:
             name = 'bar.py'
             data = b'spam'
-            z.writestr(name, data, self.compression)
+            z.writestr(name, data, ZIP_DEFLATED)
             z.close()
             zi = zipimport.zipimporter(TEMP_ZIP)
             with support.swap_attr(zlib, 'decompress', bad_decompress):
