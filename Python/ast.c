@@ -1623,6 +1623,7 @@ ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_se
     /* async_funcdef: 'async' funcdef */
     REQ(n, async_funcdef);
     REQ(CHILD(n, 0), NAME);
+    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
     REQ(CHILD(n, 1), funcdef);
 
     return ast_for_funcdef_impl(c, CHILD(n, 1), decorator_seq,
@@ -1644,6 +1645,7 @@ ast_for_async_stmt(struct compiling *c, const node *n)
     /* async_stmt: 'async' (funcdef | with_stmt | for_stmt) */
     REQ(n, async_stmt);
     REQ(CHILD(n, 0), NAME);
+    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
 
     switch (TYPE(CHILD(n, 1))) {
         case funcdef:
@@ -2475,7 +2477,7 @@ ast_for_atom_expr(struct compiling *c, const node *n)
     }
 
     if (start) {
-        /* there was an AWAIT */
+        /* there was an 'await' */
         return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
     }
     else {
@@ -2540,7 +2542,7 @@ ast_for_expr(struct compiling *c, const node *n)
        term: factor (('*'|'@'|'/'|'%'|'//') factor)*
        factor: ('+'|'-'|'~') factor | power
        power: atom_expr ['**' factor]
-       atom_expr: [AWAIT] atom trailer*
+       atom_expr: ['await'] atom trailer*
        yield_expr: 'yield' [yield_arg]
     */
 
