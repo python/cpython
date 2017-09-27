@@ -2389,8 +2389,7 @@ io.__name__ = __name__ + '.io'
 sys.modules[io.__name__] = io
 
 
-Pattern = _TypeAlias('Pattern', AnyStr,
-                     type(stdlib_re.compile('', stdlib_re.N)),
+Pattern = _TypeAlias('Pattern', AnyStr, type(stdlib_re.compile('')),
                      lambda p: p.pattern)
 Match = _TypeAlias('Match', AnyStr, type(stdlib_re.match('', '')),
                    lambda m: m.re.pattern)

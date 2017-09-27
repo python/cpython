@@ -79,7 +79,7 @@ class SearchEngine:
             self.report_error(pat, "Empty regular expression")
             return None
         pat = self.getcookedpat()
-        flags = re.IMMEDIATE
+        flags = 0
         if not self.iscase():
             flags = flags | re.IGNORECASE
         try:

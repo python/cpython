@@ -165,9 +165,6 @@ class RegexFlag(enum.IntFlag):
     TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     T = TEMPLATE
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-    # Deferred compilation of regexps.
-    IMMEDIATE = sre_compile.SRE_FLAG_IMMEDIATE
-    N = IMMEDIATE
 globals().update(RegexFlag.__members__)
 
 # sre exception
@@ -244,7 +241,7 @@ def compile(pattern, flags=0):
 
 def purge():
     "Clear the regular expression caches"
-    _compile_and_cache.cache_clear()
+    _cache.clear()
     _compile_repl.cache_clear()
 
 def template(pattern, flags=0):
@@ -273,6 +270,7 @@ def escape(pattern):
 _cache = OrderedDict()
 
 _pattern_type = type(sre_compile.compile("", 0))
+
 _MAXCACHE = 512
 
 
@@ -311,6 +309,11 @@ class _DeferredPattern:
 
 
 def _compile(pattern, flags, *, lazy=False):
+    # internal: compile pattern
+    try:
+        return _cache[type(pattern), pattern, flags]
+    except KeyError:
+        pass
     if isinstance(pattern, _pattern_type):
         if flags:
             raise ValueError(

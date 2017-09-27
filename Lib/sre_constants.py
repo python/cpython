@@ -190,7 +190,6 @@ SRE_FLAG_UNICODE = 32 # use unicode "locale"
 SRE_FLAG_VERBOSE = 64 # ignore whitespace and comments
 SRE_FLAG_DEBUG = 128 # debugging
 SRE_FLAG_ASCII = 256 # use ascii "locale"
-SRE_FLAG_IMMEDIATE = 512 # compile regexp immediately
 
 # flags for INFO primitive
 SRE_INFO_PREFIX = 1 # has prefix
