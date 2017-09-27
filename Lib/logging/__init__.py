@@ -185,14 +185,17 @@ _srcfile = os.path.normcase(addLevelName.__code__.co_filename)
 
 
 def _checkLevel(level):
+    rv = NOTSET
     if isinstance(level, int):
         rv = level
     elif str(level) == level:
-        if level not in _nameToLevel:
+        if level in _nameToLevel:
+            rv = _nameToLevel[level]
+        elif raiseExceptions:
             raise ValueError("Unknown level: %r" % level)
-        rv = _nameToLevel[level]
     else:
-        raise TypeError("Level not an integer or a valid string: %r" % level)
+        if raiseExceptions:
+            raise TypeError("Level not an integer or a valid string: %r" % level)
     return rv
 
 #---------------------------------------------------------------------------
@@ -569,7 +572,8 @@ class Formatter(object):
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
         s = self.formatMessage(record)
-        if record.exc_info:
+        if ((isinstance(record.exc_info, tuple) and all(record.exc_info))
+            or record.exc_info):
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
             if not record.exc_text:
@@ -1388,11 +1392,10 @@ class Logger(Filterer):
 
         logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
         """
-        if not isinstance(level, int):
-            if raiseExceptions:
-                raise TypeError("level must be an integer")
-            else:
-                return
+        try:
+            level = _checkLevel(level)
+        except (TypeError, ValueError):
+            raise
         if self.isEnabledFor(level):
             self._log(level, msg, args, **kwargs)
 
