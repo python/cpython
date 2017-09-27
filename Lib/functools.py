@@ -755,11 +755,10 @@ def singledispatch(func):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
-    from types import MappingProxyType
-    from weakref import WeakKeyDictionary
+    import types, weakref
 
     registry = {}
-    dispatch_cache = WeakKeyDictionary()
+    dispatch_cache = weakref.WeakKeyDictionary()
     cache_token = None
 
     def dispatch(cls):
@@ -806,7 +805,7 @@ def singledispatch(func):
     registry[object] = func
     wrapper.register = register
     wrapper.dispatch = dispatch
-    wrapper.registry = MappingProxyType(registry)
+    wrapper.registry = types.MappingProxyType(registry)
     wrapper._clear_cache = dispatch_cache.clear
     update_wrapper(wrapper, func)
     return wrapper
