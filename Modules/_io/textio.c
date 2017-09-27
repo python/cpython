@@ -907,6 +907,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     else {
         PyErr_SetString(PyExc_IOError,
                         "could not determine default encoding");
+        goto error;
     }
 
     /* Check we have been asked for a real text encoding */
