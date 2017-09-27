@@ -660,7 +660,8 @@ time_strftime(PyObject *self, PyObject *args)
     fmt = PyBytes_AS_STRING(format);
 #endif
 
-#if defined(MS_WINDOWS) && defined(HAVE_WCSFTIME)
+#if (defined(_AIX) || defined(sun) || defined(MS_WINDOWS)) && \
+    defined(HAVE_WCSFTIME)
     /* check that the format string contains only valid directives */
     for (outbuf = wcschr(fmt, L'%');
         outbuf != NULL;
@@ -670,25 +671,12 @@ time_strftime(PyObject *self, PyObject *args)
             ++outbuf; /* not documented by python, */
         if (outbuf[1] == L'\0')
             break;
+        /* Issue #19634: On AIX, wcsftime("y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
+        returns "0/" instead of "99" */
         if ((outbuf[1] == L'y') && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
-                        "format %y requires year >= 1900 on Windows");
+                        "format %y requires year >= 1900 on Windows and AIX");
             PyMem_Free(format);
-            return NULL;
-        }
-    }
-#elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
-    for (outbuf = wcschr(fmt, '%');
-        outbuf != NULL;
-        outbuf = wcschr(outbuf + 2, '%'))
-    {
-        if (outbuf[1] == L'\0')
-            break;
-        /* Issue #19634: On AIX, wcsftime("y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
-           returns "0/" instead of "99" */
-        if (outbuf[1] == L'y' && buf.tm_year < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "format %y requires year >= 1900 on AIX");
             return NULL;
         }
     }
