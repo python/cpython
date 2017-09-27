@@ -253,6 +253,7 @@
     <ClInclude Include="..\Modules\expat\xmltok.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Modules\expat\loadlibrary.c" />
     <ClCompile Include="..\Modules\_elementtree.c" />
     <ClCompile Include="..\Modules\expat\xmlparse.c" />
     <ClCompile Include="..\Modules\expat\xmlrole.c" />
