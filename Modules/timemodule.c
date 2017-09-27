@@ -703,6 +703,10 @@ time_strftime(PyObject *self, PyObject *args)
     size_t len_zone, len_copy, count;
 
     get_windows_zone(zone);
+    if (PyErr_Occurred()) {
+        PyMem_Free(format);
+        return NULL;
+    }
     len_zone = wcslen(zone);
 
     // Count the number of %Z occurences
