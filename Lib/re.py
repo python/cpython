@@ -239,6 +239,18 @@ def compile(pattern, flags=0):
     "Compile a regular expression pattern, returning a pattern object."
     return _compile(pattern, flags)
 
+def compile_od(pattern, flags=0):
+    """Compile a regular expression pattern On Demand.
+
+    If the re cache already contains a compile regular expression object
+    for the given pattern and flags, that is returned immediate.
+    Otherwise, this function returns a deferred pattern object, which
+    defers the expensive compilation work until its first use.  This can
+    be a more appropriate function to use for module global regular
+    expressions.
+    """
+    return _compile(pattern, flags, lazy=True)
+
 def purge():
     "Clear the regular expression caches"
     _cache.clear()
@@ -272,7 +284,43 @@ _cache = OrderedDict()
 _pattern_type = type(sre_compile.compile("", 0))
 
 _MAXCACHE = 512
-def _compile(pattern, flags):
+
+
+class _DeferredPattern:
+    def __init__(self, pattern, flags):
+        self.pattern = pattern
+        self.flags = flags
+        self.compiled = None
+
+    def __getattribute__(self, attribute):
+        compiled = super().__getattribute__('compiled')
+        if compiled is None:
+            pattern = super().__getattribute__('pattern')
+            flags = super().__getattribute__('flags')
+            compiled = sre_compile.compile(pattern, flags)
+            if not (flags & DEBUG):
+                if len(_cache) >= _MAXCACHE:
+                    try:
+                        _cache.popitem(last=False)
+                    except KeyError:
+                        pass
+                _cache[type(pattern), pattern, flags] = compiled
+            self.compiled = compiled
+        if attribute == 'compiled':
+            return compiled
+        return getattr(compiled, attribute)
+
+    def __repr__(self):
+        return repr(self.compiled)
+
+    def __hash__(self):
+        return hash(self.compiled)
+
+    def __eq__(self, other):
+        return self.compiled == other.compiled
+
+
+def _compile(pattern, flags, *, lazy=False):
     # internal: compile pattern
     try:
         return _cache[type(pattern), pattern, flags]
@@ -285,11 +333,13 @@ def _compile(pattern, flags):
         return pattern
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
+    if lazy:
+        return _DeferredPattern(pattern, flags)
     p = sre_compile.compile(pattern, flags)
     if not (flags & DEBUG):
         if len(_cache) >= _MAXCACHE:
             try:
-                _cache.popitem(False)
+                _cache.popitem(last=False)
             except KeyError:
                 pass
         _cache[type(pattern), pattern, flags] = p
