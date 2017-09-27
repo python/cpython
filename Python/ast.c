@@ -660,7 +660,8 @@ new_identifier(const char *n, struct compiling *c)
         /* Use _PyObject_FastCall() this way to conceal c->c_normalize_args
            from the user. */
         id2 = _PyObject_FastCall(c->c_normalize,
-                                 _PyList_ITEMS(c->c_normalize_args), 2);
+                                 ((PyTupleObject *)c->c_normalize_args)->ob_item,
+                                 2);
         Py_DECREF(id);
         if (!id2)
             return NULL;
