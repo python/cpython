@@ -289,7 +289,7 @@ def _compile(pattern, flags):
     if not (flags & DEBUG):
         if len(_cache) >= _MAXCACHE:
             try:
-                _cache.popitem(False)
+                _cache.popitem(last=False)
             except KeyError:
                 pass
         _cache[type(pattern), pattern, flags] = p
