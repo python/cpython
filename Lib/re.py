@@ -239,6 +239,18 @@ def compile(pattern, flags=0):
     "Compile a regular expression pattern, returning a pattern object."
     return _compile(pattern, flags)
 
+def compile_od(pattern, flags=0):
+    """Compile a regular expression pattern On Demand.
+
+    If the re cache already contains a compile regular expression object
+    for the given pattern and flags, that is returned immediate.
+    Otherwise, this function returns a deferred pattern object, which
+    defers the expensive compilation work until its first use.  This can
+    be a more appropriate function to use for module global regular
+    expressions.
+    """
+    return _compile(pattern, flags, lazy=True)
+
 def purge():
     "Clear the regular expression caches"
     _cache.clear()
