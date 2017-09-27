@@ -282,7 +282,15 @@ MakeAnonFields(PyObject *type)
             Py_DECREF(anon_names);
             return -1;
         }
-        assert(Py_TYPE(descr) == &PyCField_Type);
+        if (Py_TYPE(descr) != &PyCField_Type) {
+            PyErr_Format(PyExc_AttributeError,
+                         "'%U' is specified in _anonymous_ but not in "
+                         "_fields_",
+                         fname);
+            Py_DECREF(anon_names);
+            Py_DECREF(descr);
+            return -1;
+        }
         descr->anonymous = 1;
 
         /* descr is in the field descriptor. */
