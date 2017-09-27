@@ -1,0 +1,2 @@
+Add a new command *listsize* and allow to change the number of lines to
+print with the :pdbcmd:`list` command.

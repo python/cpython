@@ -412,6 +412,13 @@ by the local file.
 
    .. versionadded:: 3.2
 
+.. pdbcommand:: listsize [count]
+
+   If *count* is present, make the :pdbcmd:`list` command display *count* source
+   lines, otherwise display the number of lines that :pdbcmd:`list` prints.
+
+   .. versionadded:: 3.7
+
 .. pdbcommand:: a(rgs)
 
    Print the argument list of the current function.
