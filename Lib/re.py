@@ -128,6 +128,13 @@ try:
 except ImportError:
     _locale = None
 
+# try _collections first to reduce startup cost
+try:
+    from _collections import OrderedDict
+except ImportError:
+    from collections import OrderedDict
+
+
 # public symbols
 __all__ = [
     "match", "fullmatch", "search", "sub", "subn", "split",
@@ -263,16 +270,10 @@ def escape(pattern):
 # --------------------------------------------------------------------
 # internals
 
+_cache = OrderedDict()
+
 _pattern_type = type(sre_compile.compile("", 0))
 _MAXCACHE = 512
-
-@functools.lru_cache(_MAXCACHE)
-def _compile_and_cache(pattern_type, pattern, flags):
-    return sre_compile.compile(pattern, flags)
-
-
-def _compile_no_cache(pattern_type, pattern, flags):
-    return sre_compile.compile(pattern, flags)
 
 
 class _DeferredPattern:
@@ -286,10 +287,14 @@ class _DeferredPattern:
         if compiled is None:
             pattern = super().__getattribute__('pattern')
             flags = super().__getattribute__('flags')
-            compiled = (
-                _compile_no_cache
-                if flags & DEBUG
-                else _compile_and_cache)(type(pattern), pattern, flags)
+            compiled = sre_compile.compile(pattern, flags)
+            if not (flags & DEBUG):
+                if len(_cache) >= _MAXCACHE:
+                    try:
+                        _cache.popitem(last=False)
+                    except KeyError:
+                        pass
+                _cache[type(pattern), pattern, flags] = compiled
             self.compiled = compiled
         if attribute == 'compiled':
             return compiled
@@ -305,7 +310,7 @@ class _DeferredPattern:
         return self.compiled == other.compiled
 
 
-def _compile(pattern, flags):
+def _compile(pattern, flags, *, lazy=False):
     if isinstance(pattern, _pattern_type):
         if flags:
             raise ValueError(
@@ -313,12 +318,17 @@ def _compile(pattern, flags):
         return pattern
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
-    if flags & (IMMEDIATE | DEBUG):
-        return (
-            _compile_no_cache
-            if flags & DEBUG
-            else _compile_and_cache)(type(pattern), pattern, flags)
-    return _DeferredPattern(pattern, flags)
+    if lazy:
+        return _DeferredPattern(pattern, flags)
+    p = sre_compile.compile(pattern, flags)
+    if not (flags & DEBUG):
+        if len(_cache) >= _MAXCACHE:
+            try:
+                _cache.popitem(last=False)
+            except KeyError:
+                pass
+        _cache[type(pattern), pattern, flags] = p
+    return p
 
 @functools.lru_cache(_MAXCACHE)
 def _compile_repl(repl, pattern):
