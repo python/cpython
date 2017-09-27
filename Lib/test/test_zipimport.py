@@ -669,6 +669,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
 
+    @support.cpython_only
     def test_issue31602(self):
         # There shouldn't be an assertion failure in zipimporter.get_source()
         # in case of a bad zlib.decompress().
