@@ -657,7 +657,11 @@ new_identifier(const char *n, struct compiling *c)
             return NULL;
         }
         PyTuple_SET_ITEM(c->c_normalize_args, 1, id);
-        id2 = PyObject_Call(c->c_normalize, c->c_normalize_args, NULL);
+        /* Use _PyObject_FastCall() this way to conceal c->c_normalize_args
+           from the user. */
+        id2 = _PyObject_FastCall(c->c_normalize,
+                                 ((PyTupleObject *)c->c_normalize_args)->ob_item,
+                                 2);
         Py_DECREF(id);
         if (!id2)
             return NULL;
