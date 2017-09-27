@@ -1396,7 +1396,8 @@ class Logger(Filterer):
             level = _checkLevel(level)
         except (TypeError, ValueError):
             raise
-        if self.isEnabledFor(level):
+
+        if (isinstance(level, int) and self.isEnabledFor(level)):
             self._log(level, msg, args, **kwargs)
 
     def findCaller(self, stack_info=False):
