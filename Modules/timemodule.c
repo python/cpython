@@ -662,6 +662,9 @@ time_strftime(PyObject *self, PyObject *args)
 
 #if (defined(_AIX) || defined(sun) || defined(MS_WINDOWS)) && \
     defined(HAVE_WCSFTIME)
+#ifdef MS_WINDOWS
+    size_t count = 0;
+#endif
     /* check that the format string contains only valid directives */
     for (outbuf = wcschr(fmt, L'%');
         outbuf != NULL;
@@ -679,6 +682,12 @@ time_strftime(PyObject *self, PyObject *args)
             PyMem_Free(format);
             return NULL;
         }
+#ifdef MS_WINDOWS
+        // Count the number of %Z occurences
+        if (outbuf[1] == L'Z') {
+            ++count;
+        }
+#endif
     }
 #endif
 
@@ -688,7 +697,7 @@ time_strftime(PyObject *self, PyObject *args)
     wchar_t *result, *tmp;
     const wchar_t *ins;
     wchar_t zone[128];
-    size_t len_zone, len_copy, count;
+    size_t len_zone, len_copy;
 
     get_windows_zone(zone);
     if (PyErr_Occurred()) {
@@ -697,14 +706,11 @@ time_strftime(PyObject *self, PyObject *args)
     }
     len_zone = wcslen(zone);
 
-    // Count the number of %Z occurences
-    ins = fmt;
-    for (count = 0; tmp = wcsstr(ins, L"%Z"); ++count) {
-        ins = tmp + 2;
-    }
-
     //Replace %Z with time zone name
     if (count) {
+        if (len_zone - 2 > (PY_SSIZE_T_MAX / sizeof(time_char) - 1 - wcslen(fmt)) / count) {
+            return PyErr_NoMemory();
+        }
         size_t l = wcslen(fmt) + (len_zone - 2) * count + 1;
         tmp = result = (time_char *)PyMem_Malloc(l * sizeof(time_char));
         while (count--) {
