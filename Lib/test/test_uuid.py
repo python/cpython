@@ -6,6 +6,11 @@ import os
 import shutil
 import subprocess
 import uuid
+try:
+    import _uuid1
+except ImportError:
+    _uuid1 = None
+
 
 def importable(name):
     try:
@@ -13,6 +18,7 @@ def importable(name):
         return True
     except:
         return False
+
 
 class TestUUID(unittest.TestCase):
     def test_UUID(self):
@@ -340,50 +346,6 @@ class TestUUID(unittest.TestCase):
         equal(((u.clock_seq_hi_variant & 0x3f) << 8) |
                          u.clock_seq_low, 0x3fff)
 
-    requires_ugt = unittest.skipUnless(uuid._uuid_generate_time is not None,
-                                       'requires uuid_generate_time_safe(3)')
-
-    @requires_ugt
-    # bpo-29925: On Mac OS X Tiger, uuid.uuid1().is_safe returns
-    # uuid.SafeUUID.unknown
-    @support.requires_mac_ver(10, 5)
-    def test_uuid1_safe(self):
-        u = uuid.uuid1()
-        # uuid_generate_time_safe() may return 0 or -1 but what it returns is
-        # dependent on the underlying platform support.  At least it cannot be
-        # unknown (unless I suppose the platform is buggy).
-        self.assertNotEqual(u.is_safe, uuid.SafeUUID.unknown)
-
-    @requires_ugt
-    def test_uuid1_unknown(self):
-        # Even if the platform has uuid_generate_time_safe(), let's mock it to
-        # be uuid_generate_time() and ensure the safety is unknown.
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', None):
-            u = uuid.uuid1()
-            self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
-
-    @requires_ugt
-    def test_uuid1_is_safe(self):
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', lambda x: 0):
-            u = uuid.uuid1()
-            self.assertEqual(u.is_safe, uuid.SafeUUID.safe)
-
-    @requires_ugt
-    def test_uuid1_is_unsafe(self):
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', lambda x: -1):
-            u = uuid.uuid1()
-            self.assertEqual(u.is_safe, uuid.SafeUUID.unsafe)
-
-    @requires_ugt
-    def test_uuid1_bogus_return_value(self):
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', lambda x: 3):
-            u = uuid.uuid1()
-            self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
-
     def test_uuid3(self):
         equal = self.assertEqual
 
@@ -457,7 +419,49 @@ class TestUUID(unittest.TestCase):
             self.assertNotEqual(parent_value, child_value)
 
 
-class TestInternals(unittest.TestCase):
+@unittest.skipUnless(_uuid1 is not None
+                     and _uuid1._uuid_generate_time is not None,
+                     'requires uuid_generate_time_safe(3)')
+class TestGenerateTimeInternals(unittest.TestCase):
+    # bpo-29925: On Mac OS X Tiger, uuid.uuid1().is_safe returns
+    # uuid.SafeUUID.unknown
+    @support.requires_mac_ver(10, 5)
+    def test_uuid1_safe(self):
+        u = uuid.uuid1()
+        # uuid_generate_time_safe() may return 0 or -1 but what it returns is
+        # dependent on the underlying platform support.  At least it cannot be
+        # unknown (unless I suppose the platform is buggy).
+        self.assertNotEqual(u.is_safe, uuid.SafeUUID.unknown)
+
+    def test_uuid1_unknown(self):
+        # Even if the platform has uuid_generate_time_safe(), let's mock it to
+        # be uuid_generate_time() and ensure the safety is unknown.
+        with unittest.mock.patch.object(_uuid1._uuid_generate_time,
+                                        'restype', None):
+            u = uuid.uuid1()
+            self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
+
+    def test_uuid1_is_safe(self):
+        with unittest.mock.patch.object(_uuid1._uuid_generate_time,
+                                        'restype', lambda x: 0):
+            u = uuid.uuid1()
+            self.assertEqual(u.is_safe, uuid.SafeUUID.safe)
+
+    def test_uuid1_is_unsafe(self):
+        with unittest.mock.patch.object(_uuid1._uuid_generate_time,
+                                        'restype', lambda x: -1):
+            u = uuid.uuid1()
+            self.assertEqual(u.is_safe, uuid.SafeUUID.unsafe)
+
+    def test_uuid1_bogus_return_value(self):
+        with unittest.mock.patch.object(_uuid1._uuid_generate_time,
+                                        'restype', lambda x: 3):
+            u = uuid.uuid1()
+            self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
+
+
+@unittest.skipUnless(_uuid1 is not None, 'need _uuid1 module')
+class TestGetNodeInternals(unittest.TestCase):
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
         data = '''
@@ -473,7 +477,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
                                         return_value='/sbin/ifconfig'):
             with unittest.mock.patch.object(subprocess, 'Popen',
                                             return_value=popen):
-                mac = uuid._find_mac(
+                mac = _uuid1._find_mac(
                     command='ifconfig',
                     args='',
                     hw_identifiers=[b'hwaddr'],
@@ -497,42 +501,42 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ifconfig_getnode(self):
-        node = uuid._ifconfig_getnode()
+        node = _uuid1._ifconfig_getnode()
         self.check_node(node, 'ifconfig', True)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ip_getnode(self):
-        node = uuid._ip_getnode()
+        node = _uuid1._ip_getnode()
         self.check_node(node, 'ip', True)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_arp_getnode(self):
-        node = uuid._arp_getnode()
+        node = _uuid1._arp_getnode()
         self.check_node(node, 'arp', True)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_lanscan_getnode(self):
-        node = uuid._lanscan_getnode()
+        node = _uuid1._lanscan_getnode()
         self.check_node(node, 'lanscan', True)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_netstat_getnode(self):
-        node = uuid._netstat_getnode()
+        node = _uuid1._netstat_getnode()
         self.check_node(node, 'netstat', True)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_ipconfig_getnode(self):
-        node = uuid._ipconfig_getnode()
+        node = _uuid1._ipconfig_getnode()
         self.check_node(node, 'ipconfig', True)
 
     @unittest.skipUnless(importable('win32wnet'), 'requires win32wnet')
     @unittest.skipUnless(importable('netbios'), 'requires netbios')
     def test_netbios_getnode(self):
-        node = uuid._netbios_getnode()
+        node = _uuid1._netbios_getnode()
         self.check_node(node, network=True)
 
     def test_random_getnode(self):
-        node = uuid._random_getnode()
+        node = _uuid1._random_getnode()
         # Least significant bit of first octet must be set.
         self.assertTrue(node & 0x010000000000, '%012x' % node)
         self.check_node(node)
@@ -541,7 +545,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_unixdll_getnode(self):
         try: # Issues 1481, 3581: _uuid_generate_time() might be None.
-            node = uuid._unixdll_getnode()
+            node = _uuid1._unixdll_getnode()
         except TypeError:
             self.skipTest('requires uuid_generate_time')
         self.check_node(node)
@@ -549,7 +553,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_windll_getnode(self):
-        node = uuid._windll_getnode()
+        node = _uuid1._windll_getnode()
         self.check_node(node)
 
 
