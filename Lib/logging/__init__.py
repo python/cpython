@@ -185,17 +185,25 @@ _srcfile = os.path.normcase(addLevelName.__code__.co_filename)
 
 
 def _checkLevel(level):
+    """Check parameter against all defined values. Return NOTSET if invalid.
+
+    Since all logging.$level() functions choose to emit based on
+    numeric comparison, a default of ERROR would be more friendly.
+    """
     rv = NOTSET
-    if isinstance(level, int):
-        rv = level
-    elif str(level) == level:
-        if level in _nameToLevel:
+    try:
+        if int(level) in _levelToName:
+            rv = int(level)
+        elif level in _nameToLevel:
             rv = _nameToLevel[level]
-        elif raiseExceptions:
-            raise ValueError("Unknown level: %r" % level)
-    else:
+        else:
+            raise ValueError
+    except (TypeError, ValueError) as err:
         if raiseExceptions:
-            raise TypeError("Level not an integer or a valid string: %r" % level)
+            raise Exception('Unknown logging::level (%r)' % level) from err
+    except Exception:
+        pass
+
     return rv
 
 #---------------------------------------------------------------------------
