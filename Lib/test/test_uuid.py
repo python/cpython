@@ -571,7 +571,11 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
     def test_unix_getnode(self):
         if not importable('_uuid') and not importable('ctypes'):
             self.skipTest("neither _uuid extension nor ctypes available")
-        self.check_node(self.uuid._unix_getnode(), 'unix')
+        try: # Issues 1481, 3581: _uuid_generate_time() might be None.
+            node = self.uuid._unix_getnode()
+        except TypeError:
+            self.skipTest('requires uuid_generate_time')
+        self.check_node(node, 'unix')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
