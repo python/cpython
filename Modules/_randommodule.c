@@ -259,8 +259,11 @@ random_seed(RandomObject *self, PyObject *args)
      * So: if the arg is a PyLong, use its absolute value.
      * Otherwise use its hash value, cast to unsigned.
      */
-    if (PyLong_Check(arg))
-        n = PyNumber_Absolute(arg);
+    if (PyLong_Check(arg)) {
+        /* Calling int.__abs__() prevents calling arg.__abs__(), which might
+           return an invalid value. See issue #31478. */
+        n = PyLong_Type.tp_as_number->nb_absolute(arg);
+    }
     else {
         Py_hash_t hash = PyObject_Hash(arg);
         if (hash == -1)
