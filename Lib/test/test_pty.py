@@ -10,6 +10,7 @@ import sys
 import select
 import signal
 import socket
+import io # readline
 import unittest
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
@@ -53,18 +54,11 @@ def normalize_output(data):
 
     return data
 
-def _os_readline(fd):
-    """Use os.read() to read byte by byte until a newline is
-    encountered.  May block forever if no newline is read."""
-    buf = []
-    while True:
-        r = os.read(fd, 1)
-        if not r:
-            raise EOFError
-        buf.append(r)
-        if r == b'\n':
-            break
-    return b''.join(buf)
+def _readline(fd):
+    """Read one line.  May block forever if no newline is read."""
+    reader = io.FileIO(fd, mode='rb', closefd=False)
+    return reader.readline()
+
 
 
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
@@ -117,14 +111,14 @@ class PtyTest(unittest.TestCase):
 
         debug("Writing to slave_fd")
         os.write(slave_fd, TEST_STRING_1)
-        s1 = _os_readline(master_fd)
+        s1 = _readline(master_fd)
         self.assertEqual(b'I wish to buy a fish license.\n',
                          normalize_output(s1))
 
         debug("Writing chunked output")
         os.write(slave_fd, TEST_STRING_2[:5])
         os.write(slave_fd, TEST_STRING_2[5:])
-        s2 = _os_readline(master_fd)
+        s2 = _readline(master_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
         os.close(slave_fd)
