@@ -678,9 +678,7 @@ class CompressedZipImportTestCase(UncompressedZipImportTestCase):
             return None
         with ZipFile(TEMP_ZIP, 'w') as zip_file:
             self.addCleanup(support.unlink, TEMP_ZIP)
-            name = 'bar.py'
-            data = b'spam'
-            zip_file.writestr(name, data, ZIP_DEFLATED)
+            zip_file.writestr('bar.py', b'print("hello world")', ZIP_DEFLATED)
         zi = zipimport.zipimporter(TEMP_ZIP)
         with support.swap_attr(zlib, 'decompress', bad_decompress):
             self.assertRaises(TypeError, zi.get_source, 'bar')
