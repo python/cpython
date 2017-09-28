@@ -1896,8 +1896,8 @@ Metaclass example
 ^^^^^^^^^^^^^^^^^
 
 The potential uses for metaclasses are boundless. Some ideas that have been
-explored include logging, interface checking, automatic delegation, automatic
-property creation, proxies, frameworks, and automatic resource
+explored include enum, logging, interface checking, automatic delegation,
+automatic property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
 
 Here is an example of a metaclass that uses an :class:`collections.OrderedDict`

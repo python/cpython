@@ -133,6 +133,11 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
 
     if (PyFloat_Check(obj)) {
         double d = PyFloat_AsDouble(obj);
+        if (Py_IS_NAN(d)) {
+            *numerator = 0;
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
         return _PyTime_DoubleToDenominator(d, sec, numerator,
                                            denominator, round);
     }
@@ -154,6 +159,11 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         volatile double d;
 
         d = PyFloat_AsDouble(obj);
+        if (Py_IS_NAN(d)) {
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
+
         d = _PyTime_Round(d, round);
         (void)modf(d, &intpart);
 
@@ -301,6 +311,10 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
     if (PyFloat_Check(obj)) {
         double d;
         d = PyFloat_AsDouble(obj);
+        if (Py_IS_NAN(d)) {
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
         return _PyTime_FromFloatObject(t, d, round, unit_to_ns);
     }
     else {
@@ -616,10 +630,7 @@ _PyTime_GetSystemClock(void)
     _PyTime_t t;
     if (pygettimeofday(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked the clock at startup */
-        assert(0);
-
-        /* use a fixed value instead of a random value from the stack */
-        t = 0;
+        Py_UNREACHABLE();
     }
     return t;
 }
@@ -649,7 +660,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             return -1;
         }
         /* Hello, time traveler! */
-        assert(0);
+        Py_UNREACHABLE();
     }
     *tp = t * MS_TO_NS;
 
@@ -757,10 +768,7 @@ _PyTime_GetMonotonicClock(void)
     if (pymonotonic(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked that monotonic clock at
            startup */
-        assert(0);
-
-        /* use a fixed value instead of a random value from the stack */
-        t = 0;
+        Py_UNREACHABLE();
     }
     return t;
 }

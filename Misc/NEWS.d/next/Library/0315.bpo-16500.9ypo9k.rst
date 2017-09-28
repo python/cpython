@@ -1,1 +1,0 @@
-Allow registering at-fork handlers.

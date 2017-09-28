@@ -2233,13 +2233,13 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
 
     }
     else {
+        float y = (float)x;
         int i, incr = 1;
 
-        if (fabs(x) > FLT_MAX && !Py_IS_INFINITY(x))
+        if (Py_IS_INFINITY(y) && !Py_IS_INFINITY(x))
             goto Overflow;
 
         unsigned char s[sizeof(float)];
-        float y = (float)x;
         memcpy(s, &y, sizeof(float));
 
         if ((float_format == ieee_little_endian_format && !le)

@@ -297,9 +297,9 @@ _PyMem_Initialize(struct _pymem_runtime_state *state)
     state->allocators.obj = _pyobject;
 
 #ifdef WITH_PYMALLOC
+    Py_BUILD_ASSERT(NB_SMALL_SIZE_CLASSES == 64);
+
     for (int i = 0; i < 8; i++) {
-        if (NB_SMALL_SIZE_CLASSES <= i * 8)
-            break;
         for (int j = 0; j < 8; j++) {
             int x = i * 8 + j;
             poolp *addr = &(state->usedpools[2*(x)]);
