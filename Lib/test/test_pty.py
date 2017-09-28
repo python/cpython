@@ -102,16 +102,15 @@ class PtyTest(unittest.TestCase):
         os.write(slave_fd, TEST_STRING_2[:5])
         os.write(slave_fd, TEST_STRING_2[5:])
 
-        expected = b'For my pet fish, Eric.\n'
         s2 = os.read(master_fd, 1024)
         # bpo-31158: Sometimes, the first read only returns the first
         # written 5 bytes and a second read is need to get the second part.
-        while len(s2) < len(expected):
+        while len(s2) < len(TEST_STRING_2):
             chunk = os.read(master_fd, 1024)
             if not chunk:
                 break
             s2 += chunk
-        self.assertEqual(expected, normalize_output(s2))
+        self.assertEqual(TEST_STRING_2, normalize_output(s2))
 
         os.close(slave_fd)
         os.close(master_fd)
