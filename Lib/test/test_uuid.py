@@ -225,6 +225,7 @@ class BaseTestUUID:
         badvalue(lambda: self.uuid.UUID(bytes=b'abc'))
         badvalue(lambda: self.uuid.UUID(bytes=b'\0'*15))
         badvalue(lambda: self.uuid.UUID(bytes=b'\0'*17))
+        badtype(lambda: self.uuid.UUID(bytes=16))
 
         # Badly formed bytes_le.
         badtype(lambda: self.uuid.UUID(bytes_le='unicode'))
@@ -232,6 +233,7 @@ class BaseTestUUID:
         badvalue(lambda: self.uuid.UUID(bytes_le=b'abc'))
         badvalue(lambda: self.uuid.UUID(bytes_le=b'\0'*15))
         badvalue(lambda: self.uuid.UUID(bytes_le=b'\0'*17))
+        badtype(lambda: self.uuid.UUID(bytes_le=16))
 
         # Badly formed fields.
         badvalue(lambda: self.uuid.UUID(fields=(1,)))
