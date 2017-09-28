@@ -1,0 +1,3 @@
+uuid module: Move getnode() and uuid1() implementations to a new _uuid1
+submodule which is now loaded on demand to reduce side effects on "import
+uuid".
