@@ -579,6 +579,7 @@ def _unix_getnode():
 
 def _windll_getnode():
     """Get the hardware address on Windows using ctypes."""
+    import ctypes
     _load_system_functions()
     _buffer = ctypes.create_string_buffer(16)
     if _UuidCreate(_buffer) == 0:
