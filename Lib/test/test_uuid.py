@@ -456,6 +456,11 @@ class TestUUID(unittest.TestCase):
 
             self.assertNotEqual(parent_value, child_value)
 
+    def test_bytes_like(self):
+        u = uuid.uuid4()
+        self.assertEqual(uuid.UUID(bytes=memoryview(u.bytes)), u)
+        self.assertEqual(uuid.UUID(bytes=bytearray(u.bytes)), u)
+
 
 class TestInternals(unittest.TestCase):
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')

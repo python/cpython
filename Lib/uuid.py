@@ -166,7 +166,6 @@ class UUID:
         if bytes is not None:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
-            assert isinstance(bytes, bytes_), repr(bytes)
             int = int_.from_bytes(bytes, byteorder='big')
         if fields is not None:
             if len(fields) != 6:
