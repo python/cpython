@@ -5,7 +5,7 @@
 
 
 static PyObject *
-_uuid_generate_time_safe(void)
+py_uuid_generate_time_safe(void)
 {
     uuid_t out;
     int res;
@@ -16,20 +16,15 @@ _uuid_generate_time_safe(void)
 
 
 static PyMethodDef uuid_methods[] = {
-    {"generate_time_safe", (PyCFunction)_uuid_generate_time_safe, METH_NOARGS, NULL},
+    {"generate_time_safe", (PyCFunction) py_uuid_generate_time_safe, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}           /* sentinel */
 };
 
 static struct PyModuleDef uuidmodule = {
     PyModuleDef_HEAD_INIT,
-    "_uuid",
-    NULL,
-    -1,
-    uuid_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_uuid",
+    .m_size = -1,
+    .m_methods = uuid_methods,
 };
 
 PyMODINIT_FUNC
