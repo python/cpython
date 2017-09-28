@@ -31,8 +31,8 @@ else:
 # Beware, on my Linux system, if I put 'foo\n' into a terminal fd, I get
 # back 'foo\r\n' at the other end.  The behavior depends on the termios
 # setting.  The newline translation may be OS-specific.  To make the
-# test suite deterministic and OS-independent, _os_readline and
-# normalize_output can be used.
+# test suite deterministic and OS-independent, the functions _readline
+# and normalize_output can be used.
 
 def normalize_output(data):
     # Some operating systems do conversions on newline.  We could possibly fix
