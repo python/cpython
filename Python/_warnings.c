@@ -644,7 +644,6 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 
     if (module_globals) {
         static PyObject *get_source_name = NULL;
-        static PyObject *splitlines_name = NULL;
         PyObject *loader;
         PyObject *module_name;
         PyObject *source;
@@ -655,11 +654,6 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         if (get_source_name == NULL) {
             get_source_name = PyString_InternFromString("get_source");
             if (!get_source_name)
-                return NULL;
-        }
-        if (splitlines_name == NULL) {
-            splitlines_name = PyString_InternFromString("splitlines");
-            if (!splitlines_name)
                 return NULL;
         }
 
@@ -684,8 +678,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Split the source into lines. */
-        source_list = PyObject_CallMethodObjArgs(source, splitlines_name,
-                                                    NULL);
+        source_list = PyUnicode_Splitlines(source, 0);
         Py_DECREF(source);
         if (!source_list)
             return NULL;
