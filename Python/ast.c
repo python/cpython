@@ -645,18 +645,18 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
+        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        PyObject *form = PyUnicode_FromString("NFKC");
+        PyObject *form = _PyUnicode_FromId(&PyId_NFKC);
         if (form == NULL) {
             Py_DECREF(id);
             return NULL;
         }
         PyObject *args[2] = {form, id};
         id2 = _PyObject_FastCall(c->c_normalize, args, 2);
-        Py_DECREF(form);
         Py_DECREF(id);
         if (!id2)
             return NULL;
