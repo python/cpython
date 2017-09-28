@@ -7,6 +7,10 @@ import shutil
 import subprocess
 import uuid
 
+py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
+c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
+
+
 def importable(name):
     try:
         __import__(name)
@@ -340,7 +344,7 @@ class TestUUID(unittest.TestCase):
         equal(((u.clock_seq_hi_variant & 0x3f) << 8) |
                          u.clock_seq_low, 0x3fff)
 
-    requires_ugt = unittest.skipUnless(uuid._uuid_generate_time is not None,
+    requires_ugt = unittest.skipUnless(uuid._has_uuid_generate_time_safe,
                                        'requires uuid_generate_time_safe(3)')
 
     @requires_ugt
@@ -358,29 +362,33 @@ class TestUUID(unittest.TestCase):
     def test_uuid1_unknown(self):
         # Even if the platform has uuid_generate_time_safe(), let's mock it to
         # be uuid_generate_time() and ensure the safety is unknown.
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', None):
+        f = uuid._generate_time_safe
+        with unittest.mock.patch('uuid._generate_time_safe',
+                                 lambda: (f()[0], None)):
             u = uuid.uuid1()
             self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
 
     @requires_ugt
     def test_uuid1_is_safe(self):
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', lambda x: 0):
+        f = uuid._generate_time_safe
+        with unittest.mock.patch('uuid._generate_time_safe',
+                                 lambda: (f()[0], 0)):
             u = uuid.uuid1()
             self.assertEqual(u.is_safe, uuid.SafeUUID.safe)
 
     @requires_ugt
     def test_uuid1_is_unsafe(self):
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', lambda x: -1):
+        f = uuid._generate_time_safe
+        with unittest.mock.patch('uuid._generate_time_safe',
+                                 lambda: (f()[0], -1)):
             u = uuid.uuid1()
             self.assertEqual(u.is_safe, uuid.SafeUUID.unsafe)
 
     @requires_ugt
     def test_uuid1_bogus_return_value(self):
-        with unittest.mock.patch.object(uuid._uuid_generate_time,
-                                        'restype', lambda x: 3):
+        f = uuid._generate_time_safe
+        with unittest.mock.patch('uuid._generate_time_safe',
+                                 lambda: (f()[0], 3)):
             u = uuid.uuid1()
             self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
 
@@ -457,7 +465,8 @@ class TestUUID(unittest.TestCase):
             self.assertNotEqual(parent_value, child_value)
 
 
-class TestInternals(unittest.TestCase):
+class BaseTestInternals:
+
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
         data = '''
@@ -473,7 +482,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
                                         return_value='/sbin/ifconfig'):
             with unittest.mock.patch.object(subprocess, 'Popen',
                                             return_value=popen):
-                mac = uuid._find_mac(
+                mac = self.uuid._find_mac(
                     command='ifconfig',
                     args='',
                     hw_identifiers=[b'hwaddr'],
@@ -497,60 +506,65 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ifconfig_getnode(self):
-        node = uuid._ifconfig_getnode()
+        node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig', True)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ip_getnode(self):
-        node = uuid._ip_getnode()
+        node = self.uuid._ip_getnode()
         self.check_node(node, 'ip', True)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_arp_getnode(self):
-        node = uuid._arp_getnode()
+        node = self.uuid._arp_getnode()
         self.check_node(node, 'arp', True)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_lanscan_getnode(self):
-        node = uuid._lanscan_getnode()
+        node = self.uuid._lanscan_getnode()
         self.check_node(node, 'lanscan', True)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_netstat_getnode(self):
-        node = uuid._netstat_getnode()
+        node = self.uuid._netstat_getnode()
         self.check_node(node, 'netstat', True)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_ipconfig_getnode(self):
-        node = uuid._ipconfig_getnode()
+        node = self.uuid._ipconfig_getnode()
         self.check_node(node, 'ipconfig', True)
 
     @unittest.skipUnless(importable('win32wnet'), 'requires win32wnet')
     @unittest.skipUnless(importable('netbios'), 'requires netbios')
     def test_netbios_getnode(self):
-        node = uuid._netbios_getnode()
+        node = self.uuid._netbios_getnode()
         self.check_node(node, network=True)
 
     def test_random_getnode(self):
-        node = uuid._random_getnode()
+        node = self.uuid._random_getnode()
         # Least significant bit of first octet must be set.
         self.assertTrue(node & 0x010000000000, '%012x' % node)
         self.check_node(node)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
-    def test_unixdll_getnode(self):
-        try: # Issues 1481, 3581: _uuid_generate_time() might be None.
-            node = uuid._unixdll_getnode()
-        except TypeError:
-            self.skipTest('requires uuid_generate_time')
-        self.check_node(node)
+    def test_unix_getnode(self):
+        if not importable('_uuid') and not importable('ctypes'):
+            self.skipTest("neither _uuid extension nor ctypes available")
+        self.check_node(self.uuid._unix_getnode(), 'unix')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_windll_getnode(self):
-        node = uuid._windll_getnode()
+        node = self.uuid._windll_getnode()
         self.check_node(node)
+
+
+class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = py_uuid
+
+@unittest.skipUnless(c_uuid, 'requires the C _uuid module')
+class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = c_uuid
 
 
 if __name__ == '__main__':
