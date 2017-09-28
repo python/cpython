@@ -676,18 +676,14 @@ class CompressedZipImportTestCase(UncompressedZipImportTestCase):
         import zlib
         def bad_decompress(*args):
             return None
-        z = ZipFile(TEMP_ZIP, 'w')
-        try:
+        with ZipFile(TEMP_ZIP, 'w') as zip_file:
+            self.addCleanup(support.unlink, TEMP_ZIP)
             name = 'bar.py'
             data = b'spam'
-            z.writestr(name, data, ZIP_DEFLATED)
-            z.close()
-            zi = zipimport.zipimporter(TEMP_ZIP)
-            with support.swap_attr(zlib, 'decompress', bad_decompress):
-                self.assertRaises(TypeError, zi.get_source, 'bar')
-        finally:
-            z.close()
-            os.remove(TEMP_ZIP)
+            zip_file.writestr(name, data, ZIP_DEFLATED)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        with support.swap_attr(zlib, 'decompress', bad_decompress):
+            self.assertRaises(TypeError, zi.get_source, 'bar')
 
 
 class BadFileZipImportTestCase(unittest.TestCase):
