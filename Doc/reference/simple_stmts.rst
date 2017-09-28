@@ -630,11 +630,11 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information about handling exceptions is in section :ref:`try`.
 
 .. versionchanged:: 3.3
-    :const:`None` is now permitted as ``Y`` in ``raise X from Y``
+    :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
 
 .. versionadded:: 3.3
     The ``__suppress_context__`` attribute to suppress automatic display of the
-    exception context
+    exception context.
 
 .. _break:
 

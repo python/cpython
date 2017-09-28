@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include <ctype.h>
 #include "structmember.h" /* we need the offsetof() macro from there */
 #include "longintrepr.h"
@@ -819,6 +820,21 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     PyObject *result = binary_op1(v, w, op_slot);
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
+
+        if (op_slot == NB_SLOT(nb_rshift) &&
+            PyCFunction_Check(v) &&
+            strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
+        {
+            PyErr_Format(PyExc_TypeError,
+                "unsupported operand type(s) for %.100s: "
+                "'%.100s' and '%.100s'. Did you mean \"print(<message>, "
+                "file=<output_stream>)\"?",
+                op_name,
+                v->ob_type->tp_name,
+                w->ob_type->tp_name);
+            return NULL;
+        }
+
         return binop_type_error(v, w, op_name);
     }
     return result;
@@ -1968,7 +1984,7 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
                 goto Done;
 
             default:
-                assert(!"unknown operation");
+                Py_UNREACHABLE();
             }
         }
 
@@ -2558,8 +2574,8 @@ _PySequence_BytesToCharpArray(PyObject* self)
             array[i] = NULL;
             goto fail;
         }
-        data = PyBytes_AsString(item);
-        if (data == NULL) {
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(item, &data, NULL) < 0) {
             /* NULL terminate before freeing. */
             array[i] = NULL;
             goto fail;

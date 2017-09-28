@@ -1806,8 +1806,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
         bits = 1;
         break;
     default:
-        assert(0); /* shouldn't ever get here */
-        bits = 0; /* to silence gcc warning */
+        Py_UNREACHABLE();
     }
 
     /* Compute exact length 'sz' of output string. */
@@ -2169,8 +2168,8 @@ PyLong_FromString(const char *str, char **pend, int base)
         }
     }
     if (str[0] == '_') {
-	    /* May not start with underscores. */
-	    goto onError;
+        /* May not start with underscores. */
+        goto onError;
     }
 
     start = str;

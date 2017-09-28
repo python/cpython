@@ -8,14 +8,10 @@ import sys
 from test import support
 from test.support import script_helper, is_android, requires_android_level
 import tempfile
+import threading
 import unittest
 from textwrap import dedent
 
-try:
-    import threading
-    HAVE_THREADS = True
-except ImportError:
-    HAVE_THREADS = False
 try:
     import _testcapi
 except ImportError:
@@ -154,7 +150,6 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @unittest.skipIf(not HAVE_THREADS, 'need threads')
     def test_fatal_error_c_thread(self):
         self.check_fatal_error("""
             import faulthandler
@@ -231,7 +226,7 @@ class FaultHandlerTests(unittest.TestCase):
             2,
             'xyz')
 
-    @unittest.skipIf(sys.platform.startswith('openbsd') and HAVE_THREADS,
+    @unittest.skipIf(sys.platform.startswith('openbsd'),
                      "Issue #12868: sigaltstack() doesn't work on "
                      "OpenBSD if Python is compiled with pthread")
     @unittest.skipIf(not hasattr(faulthandler, '_stack_overflow'),
@@ -456,7 +451,6 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertEqual(trace, expected)
         self.assertEqual(exitcode, 0)
 
-    @unittest.skipIf(not HAVE_THREADS, 'need threads')
     def check_dump_traceback_threads(self, filename):
         """
         Call explicitly dump_traceback(all_threads=True) and check the output.
@@ -753,6 +747,34 @@ class FaultHandlerTests(unittest.TestCase):
                 """,
                 3,
                 name)
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_raise_nonfatal_exception(self):
+        # These exceptions are not strictly errors. Letting
+        # faulthandler display the traceback when they are
+        # raised is likely to result in noise. However, they
+        # may still terminate the process if there is no
+        # handler installed for them (which there typically
+        # is, e.g. for debug messages).
+        for exc in (
+            0x00000000,
+            0x34567890,
+            0x40000000,
+            0x40001000,
+            0x70000000,
+            0x7FFFFFFF,
+        ):
+            output, exitcode = self.get_output(f"""
+                import faulthandler
+                faulthandler.enable()
+                faulthandler._raise_exception(0x{exc:x})
+                """
+            )
+            self.assertEqual(output, [])
+            # On Windows older than 7 SP1, the actual exception code has
+            # bit 29 cleared.
+            self.assertIn(exitcode,
+                          (exc, exc & ~0x10000000))
 
     @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
     def test_disable_windows_exc_handler(self):

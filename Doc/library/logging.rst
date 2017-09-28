@@ -94,10 +94,14 @@ is the module's name in the Python package namespace.
    .. method:: Logger.setLevel(lvl)
 
       Sets the threshold for this logger to *lvl*. Logging messages which are less
-      severe than *lvl* will be ignored. When a logger is created, the level is set to
-      :const:`NOTSET` (which causes all messages to be processed when the logger is
-      the root logger, or delegation to the parent when the logger is a non-root
-      logger). Note that the root logger is created with level :const:`WARNING`.
+      severe than *lvl* will be ignored; logging messages which have severity *lvl*
+      or higher will be emitted by whichever handler or handlers service this logger,
+      unless a handler's level has been set to a higher severity level than *lvl*.
+
+      When a logger is created, the level is set to :const:`NOTSET` (which causes
+      all messages to be processed when the logger is the root logger, or delegation
+      to the parent when the logger is a non-root logger). Note that the root logger
+      is created with level :const:`WARNING`.
 
       The term 'delegation to the parent' means that if a logger has a level of
       NOTSET, its chain of ancestor loggers is traversed until either an ancestor with
@@ -323,6 +327,8 @@ is the module's name in the Python package namespace.
 
       .. versionadded:: 3.2
 
+   .. versionchanged:: 3.7
+      Loggers can now be picked and unpickled.
 
 .. _levels:
 

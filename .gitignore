@@ -19,6 +19,9 @@
 .gdb_history
 Doc/build/
 Doc/venv/
+Doc/.venv/
+Doc/env/
+Doc/.env/
 Include/pydtrace_probes.h
 Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
@@ -60,7 +63,7 @@ PCbuild/*.VC.opendb
 PCbuild/.vs/
 PCbuild/amd64/
 PCbuild/obj/
-PCBuild/win32/
+PCbuild/win32/
 .purify
 Parser/pgen
 Parser/pgen.exe
