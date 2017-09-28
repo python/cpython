@@ -323,9 +323,17 @@ class UUID:
             return int((self.int >> 76) & 0xf)
 
 
+_node = None
+
+
 def getnode():
+    global _node
+    if _node is not None:
+        return _node
+
     import _uuid1
-    return _uuid1.getnode()
+    _node = _uuid1.getnode()
+    return _node
 
 
 def uuid1(node=None, clock_seq=None):

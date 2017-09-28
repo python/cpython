@@ -1,3 +1,6 @@
+import sys
+
+
 bytes_ = bytes  # The built-in bytes type
 
 
@@ -174,7 +177,6 @@ def _netbios_getnode():
 _uuid_generate_time = _UuidCreate = None
 try:
     import ctypes, ctypes.util
-    import sys
 
     # The uuid_generate_* routines are provided by libuuid on at least
     # Linux and FreeBSD, and provided by libc on Mac OS X.
@@ -254,9 +256,6 @@ def _random_getnode():
     return random.getrandbits(48) | 0x010000000000
 
 
-_node = None
-
-
 def getnode():
     """Get the hardware address as a 48-bit positive integer.
 
@@ -265,12 +264,6 @@ def getnode():
     choose a random 48-bit number with its eighth bit set to 1 as recommended
     in RFC 4122.
     """
-
-    global _node
-    if _node is not None:
-        return _node
-
-    import sys
     if sys.platform == 'win32':
         getters = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
     else:
@@ -279,11 +272,11 @@ def getnode():
 
     for getter in getters + [_random_getnode]:
         try:
-            _node = getter()
+            node = getter()
         except:
             continue
-        if _node is not None:
-            return _node
+        if node is not None:
+            return node
 
 
 _last_timestamp = None
