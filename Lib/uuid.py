@@ -322,9 +322,11 @@ class UUID:
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
 
+
 def getnode():
     import _uuid1
     return _uuid1.getnode()
+
 
 def uuid1(node=None, clock_seq=None):
     """Generate a UUID from a host ID, sequence number, and the current time.
@@ -334,21 +336,25 @@ def uuid1(node=None, clock_seq=None):
     import _uuid1
     return _uuid1.uuid1(UUID, SafeUUID, node, clock_seq)
 
+
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     from hashlib import md5
     hash = md5(namespace.bytes + bytes(name, "utf-8")).digest()
     return UUID(bytes=hash[:16], version=3)
 
+
 def uuid4():
     """Generate a random UUID."""
     return UUID(bytes=os.urandom(16), version=4)
+
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
     from hashlib import sha1
     hash = sha1(namespace.bytes + bytes(name, "utf-8")).digest()
     return UUID(bytes=hash[:16], version=5)
+
 
 # The following standard UUIDs are for use with uuid3() or uuid5().
 

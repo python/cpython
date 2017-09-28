@@ -9,6 +9,7 @@ def _popen(command, *args):
         executable = shutil.which(command, path=path)
         if executable is None:
             return None
+
     # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
     # on stderr (Note: we don't have an example where the words we search
     # for are actually localized, but in theory some system could do so.)
@@ -20,11 +21,13 @@ def _popen(command, *args):
                             env=env)
     return proc
 
+
 def _find_mac(command, args, hw_identifiers, get_index):
     try:
         proc = _popen(command, *args.split())
         if not proc:
             return
+
         with proc:
             for line in proc.stdout:
                 words = line.lower().rstrip().split()
@@ -45,6 +48,7 @@ def _find_mac(command, args, hw_identifiers, get_index):
     except OSError:
         pass
 
+
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
@@ -53,12 +57,14 @@ def _ifconfig_getnode():
         if mac:
             return mac
 
+
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
     mac = _find_mac('ip', 'link list', [b'link/ether'], lambda i: i+1)
     if mac:
         return mac
+
 
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
@@ -71,10 +77,12 @@ def _arp_getnode():
     # Try getting the MAC addr from arp based on our IP address (Solaris).
     return _find_mac('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
 
+
 def _lanscan_getnode():
     """Get the hardware address on Unix by running lanscan."""
     # This might work on HP-UX.
     return _find_mac('lanscan', '-ai', [b'lan0'], lambda i: 0)
+
 
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
@@ -83,6 +91,7 @@ def _netstat_getnode():
         proc = _popen('netstat', '-ia')
         if not proc:
             return
+
         with proc:
             words = proc.stdout.readline().rstrip().split()
             try:
@@ -101,6 +110,7 @@ def _netstat_getnode():
                     pass
     except OSError:
         pass
+
 
 def _ipconfig_getnode():
     """Get the hardware address on Windows by running ipconfig.exe."""
@@ -124,6 +134,7 @@ def _ipconfig_getnode():
                 if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
                     return int(value.replace('-', ''), 16)
 
+
 def _netbios_getnode():
     """Get the hardware address on Windows using NetBIOS calls.
     See http://support.microsoft.com/kb/118623 for details."""
@@ -134,6 +145,7 @@ def _netbios_getnode():
     adapters._pack()
     if win32wnet.Netbios(ncb) != 0:
         return
+
     adapters._unpack()
     for i in range(adapters.length):
         ncb.Reset()
@@ -154,6 +166,7 @@ def _netbios_getnode():
             continue
         return int.from_bytes(bytes, 'big')
 
+
 # Thanks to Thomas Heller for ctypes and for his help with its use here.
 
 # If ctypes is available, use it to find system routines for UUID generation.
@@ -168,6 +181,7 @@ try:
     _libnames = ['uuid']
     if not sys.platform.startswith('win'):
         _libnames.append('c')
+
     for libname in _libnames:
         try:
             lib = ctypes.CDLL(ctypes.util.find_library(libname))
@@ -213,10 +227,12 @@ try:
 except:
     pass
 
+
 def _bytes_to_node(rawbytes):
     value = int.from_bytes(rawbytes, byteorder='big')
     node = value & 0xffffffffffff
     return node
+
 
 def _unixdll_getnode():
     """Get the hardware address on Unix using ctypes."""
@@ -224,18 +240,22 @@ def _unixdll_getnode():
     _uuid_generate_time(_buffer)
     return _bytes_to_node(bytes_(_buffer.raw))
 
+
 def _windll_getnode():
     """Get the hardware address on Windows using ctypes."""
     _buffer = ctypes.create_string_buffer(16)
     if _UuidCreate(_buffer) == 0:
         return _bytes_to_node(bytes_(_buffer.raw))
 
+
 def _random_getnode():
     """Get a random node ID, with eighth bit set as suggested by RFC 4122."""
     import random
     return random.getrandbits(48) | 0x010000000000
 
+
 _node = None
+
 
 def getnode():
     """Get the hardware address as a 48-bit positive integer.
@@ -265,7 +285,9 @@ def getnode():
         if _node is not None:
             return _node
 
+
 _last_timestamp = None
+
 
 def uuid1(UUID, SafeUUID, node, clock_seq):
     # When the system provides a version-1 UUID generator, use it (but don't
@@ -288,9 +310,11 @@ def uuid1(UUID, SafeUUID, node, clock_seq):
     if _last_timestamp is not None and timestamp <= _last_timestamp:
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp
+
     if clock_seq is None:
         import random
         clock_seq = random.getrandbits(14) # instead of stable storage
+
     time_low = timestamp & 0xffffffff
     time_mid = (timestamp >> 32) & 0xffff
     time_hi_version = (timestamp >> 48) & 0x0fff
@@ -298,6 +322,7 @@ def uuid1(UUID, SafeUUID, node, clock_seq):
     clock_seq_hi_variant = (clock_seq >> 8) & 0x3f
     if node is None:
         node = getnode()
+
     return UUID(fields=(time_low, time_mid, time_hi_version,
                         clock_seq_hi_variant, clock_seq_low, node),
                 version=1)
