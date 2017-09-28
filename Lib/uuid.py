@@ -480,6 +480,13 @@ def _netbios_getnode():
 _generate_time_safe = _UuidCreate = None
 _has_uuid_generate_time_safe = None
 
+# Import optional C extension at toplevel, to help disabling it when testing
+try:
+    import _uuid
+except ImportError:
+    _uuid = None
+
+
 def _load_system_functions():
     """
     Try to load platform-specific functions for generating uuids.
@@ -500,15 +507,10 @@ def _load_system_functions():
         # Assume that the uuid_generate functions are broken from 10.5 onward,
         # the test can be adjusted when a later version is fixed.
         pass
-    else:
-        try:
-            import _uuid
-        except ImportError:
-            pass
-        else:
-            _generate_time_safe = _uuid.generate_time_safe
-            _has_uuid_generate_time_safe = True
-            return
+    elif _uuid is not None:
+        _generate_time_safe = _uuid.generate_time_safe
+        _has_uuid_generate_time_safe = True
+        return
 
     try:
         # If we couldn't find an extension module, try ctypes to find
@@ -529,11 +531,11 @@ def _load_system_functions():
                 continue
             # Try to find the safe variety first.
             if hasattr(lib, 'uuid_generate_time_safe'):
-                _uuid_generate_time = lib.uuid_generate_time_safe
+                _uuid_generate_time_safe = lib.uuid_generate_time_safe
                 # int uuid_generate_time_safe(uuid_t out);
                 def _generate_time_safe():
                     _buffer = ctypes.create_string_buffer(16)
-                    res = _uuid_generate_time(_buffer)
+                    res = _uuid_generate_time_safe(_buffer)
                     return bytes(_buffer.raw), res
                 _has_uuid_generate_time_safe = True
                 break

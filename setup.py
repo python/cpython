@@ -1669,16 +1669,16 @@ class PyBuildExt(build_ext):
             missing.append('_tkinter')
 
         # Build the _uuid module if possible
-        build_uuid = False
-        if find_file("uuid.h", inc_dirs, ["/usr/include/uuid"]):
+        uuid_incs = find_file("uuid.h", inc_dirs, ["/usr/include/uuid"])
+        if uuid_incs:
             if self.compiler.find_library_file(lib_dirs, 'uuid'):
                 uuid_libs = ['uuid']
             else:
                 uuid_libs = []
-            build_uuid = True
-        if build_uuid:
+        if uuid_incs:
             self.extensions.append(Extension('_uuid', ['_uuidmodule.c'],
-                                   libraries=uuid_libs))
+                                   libraries=uuid_libs,
+                                   include_dirs=uuid_incs))
         else:
             missing.append('_uuid')
 

@@ -1,6 +1,7 @@
 import unittest.mock
 from test import support
 import builtins
+import contextlib
 import io
 import os
 import shutil
@@ -17,7 +18,9 @@ def importable(name):
     except:
         return False
 
+
 class BaseTestUUID:
+    uuid = None
 
     def test_UUID(self):
         equal = self.assertEqual
@@ -360,37 +363,44 @@ class BaseTestUUID:
         # unknown (unless I suppose the platform is buggy).
         self.assertNotEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
+    @contextlib.contextmanager
+    def mock_generate_time_safe(self, safe_value):
+        """
+        Mock uuid._generate_time_safe() to return a given *safe_value*.
+        """
+        if os.name != 'posix':
+            self.skipTest('POSIX-only test')
+        self.uuid._load_system_functions()
+        f = self.uuid._generate_time_safe
+        if f is None:
+            self.skipTest('need uuid._generate_time_safe')
+        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
+                                        lambda: (f()[0], safe_value)):
+            yield
+
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_unknown(self):
         # Even if the platform has uuid_generate_time_safe(), let's mock it to
         # be uuid_generate_time() and ensure the safety is unknown.
-        f = self.uuid._generate_time_safe
-        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
-                                        lambda: (f()[0], None)):
+        with self.mock_generate_time_safe(None):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_safe(self):
-        f = self.uuid._generate_time_safe
-        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
-                                        lambda: (f()[0], 0)):
+        with self.mock_generate_time_safe(0):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.safe)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_unsafe(self):
-        f = self.uuid._generate_time_safe
-        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
-                                        lambda: (f()[0], -1)):
+        with self.mock_generate_time_safe(-1):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unsafe)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_bogus_return_value(self):
-        f = self.uuid._generate_time_safe
-        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
-                                        lambda: (f()[0], 3)):
+        with self.mock_generate_time_safe(3):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
@@ -476,6 +486,7 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 
 
 class BaseTestInternals:
+    uuid = None
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
