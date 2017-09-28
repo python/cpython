@@ -159,14 +159,18 @@ class UUID:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = int_(hex, 16)
         if bytes_le is not None:
+            if not isinstance(bytes_le, (bytes_, bytearray)):
+                bytes_le = bytes_(bytes_le)
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
             bytes = (bytes_le[4-1::-1] + bytes_le[6-1:4-1:-1] +
                      bytes_le[8-1:6-1:-1] + bytes_le[8:])
         if bytes is not None:
+            int = int_.from_bytes(bytes, byteorder='big')
+            # test length after the conversion to raise a TypeError exception
+            # if 'bytes' type is str even if 'bytes' length is not 16
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
-            int = int_.from_bytes(bytes, byteorder='big')
         if fields is not None:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')

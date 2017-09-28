@@ -213,14 +213,18 @@ class TestUUID(unittest.TestCase):
         badvalue(lambda: uuid.UUID('123456781234567812345678z2345678'))
 
         # Badly formed bytes.
-        badvalue(lambda: uuid.UUID(bytes='abc'))
-        badvalue(lambda: uuid.UUID(bytes='\0'*15))
-        badvalue(lambda: uuid.UUID(bytes='\0'*17))
+        badtype(lambda: uuid.UUID(bytes='unicode'))
+        badtype(lambda: uuid.UUID(bytes='u'*16))
+        badvalue(lambda: uuid.UUID(bytes=b'abc'))
+        badvalue(lambda: uuid.UUID(bytes=b'\0'*15))
+        badvalue(lambda: uuid.UUID(bytes=b'\0'*17))
 
         # Badly formed bytes_le.
-        badvalue(lambda: uuid.UUID(bytes_le='abc'))
-        badvalue(lambda: uuid.UUID(bytes_le='\0'*15))
-        badvalue(lambda: uuid.UUID(bytes_le='\0'*17))
+        badtype(lambda: uuid.UUID(bytes_le='unicode'))
+        badtype(lambda: uuid.UUID(bytes_le='u'*16))
+        badvalue(lambda: uuid.UUID(bytes_le=b'abc'))
+        badvalue(lambda: uuid.UUID(bytes_le=b'\0'*15))
+        badvalue(lambda: uuid.UUID(bytes_le=b'\0'*17))
 
         # Badly formed fields.
         badvalue(lambda: uuid.UUID(fields=(1,)))
@@ -458,8 +462,12 @@ class TestUUID(unittest.TestCase):
 
     def test_bytes_like(self):
         u = uuid.uuid4()
+
         self.assertEqual(uuid.UUID(bytes=memoryview(u.bytes)), u)
         self.assertEqual(uuid.UUID(bytes=bytearray(u.bytes)), u)
+
+        self.assertEqual(uuid.UUID(bytes_le=memoryview(u.bytes_le)), u)
+        self.assertEqual(uuid.UUID(bytes_le=bytearray(u.bytes_le)), u)
 
 
 class TestInternals(unittest.TestCase):
