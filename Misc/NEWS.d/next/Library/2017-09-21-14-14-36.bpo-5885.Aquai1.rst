@@ -1,0 +1,4 @@
+uuid_generate_time is now lazily discovered and loaded. This ensures that
+libraries and programs which load uuid as (transient) dependency are not
+performance-impacted, unless they actually use the function ``uuid.uuid1()``
+that needs it. Patch by Stefan Grönke & Igor Galić
