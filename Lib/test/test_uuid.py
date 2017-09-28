@@ -308,7 +308,6 @@ class BaseTestUUID:
         node2 = self.uuid.getnode()
         self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
 
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_uuid1(self):
         equal = self.assertEqual
 
@@ -316,6 +315,9 @@ class BaseTestUUID:
         for u in [self.uuid.uuid1() for i in range(10)]:
             equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 1)
+            self.assertIn(u.is_safe, {self.uuid.SafeUUID.safe,
+                                      self.uuid.SafeUUID.unsafe,
+                                      self.uuid.SafeUUID.unknown})
 
         # Make sure the generated UUIDs are actually unique.
         uuids = {}
@@ -347,6 +349,7 @@ class BaseTestUUID:
     # bpo-29925: On Mac OS X Tiger, self.uuid.uuid1().is_safe returns
     # self.uuid.SafeUUID.unknown
     @support.requires_mac_ver(10, 5)
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_safe(self):
         if not self.uuid._has_uuid_generate_time_safe:
             self.skipTest('requires uuid_generate_time_safe(3)')
@@ -357,6 +360,7 @@ class BaseTestUUID:
         # unknown (unless I suppose the platform is buggy).
         self.assertNotEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_unknown(self):
         # Even if the platform has uuid_generate_time_safe(), let's mock it to
         # be uuid_generate_time() and ensure the safety is unknown.
@@ -366,6 +370,7 @@ class BaseTestUUID:
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_safe(self):
         f = self.uuid._generate_time_safe
         with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
@@ -373,6 +378,7 @@ class BaseTestUUID:
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.safe)
 
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_unsafe(self):
         f = self.uuid._generate_time_safe
         with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
@@ -380,6 +386,7 @@ class BaseTestUUID:
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unsafe)
 
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_bogus_return_value(self):
         f = self.uuid._generate_time_safe
         with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
