@@ -931,7 +931,7 @@ annotation.
 
 .. impl-detail::
 
-   The current implementation does not enforce some of these restriction, but
+   The current implementation does not enforce some of these restrictions, but
    programs should not abuse this freedom, as future implementations may enforce
    them or silently change the meaning of the program.
 
