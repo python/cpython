@@ -17,6 +17,10 @@ import doctest
 import inspect
 import io
 from traceback import extract_tb, extract_stack, print_tb
+try:
+    import zlib
+except ImportError:
+    zlib = None
 
 test_src = """\
 def get_name():
@@ -673,7 +677,6 @@ class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     def test_issue31602(self):
         # There shouldn't be an assertion failure in zipimporter.get_source()
         # in case of a bad zlib.decompress().
-        import zlib
         def bad_decompress(*args):
             return None
         with ZipFile(TEMP_ZIP, 'w') as zip_file:
