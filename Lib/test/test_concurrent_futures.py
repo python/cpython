@@ -7,6 +7,7 @@ test.support.import_module('multiprocessing.synchronize')
 
 from test.support.script_helper import assert_python_ok
 
+import itertools
 import os
 import sys
 import threading
@@ -395,8 +396,11 @@ class AsCompletedTests:
     def test_duplicate_futures(self):
         # Issue 20367. Duplicate futures should not raise exceptions or give
         # duplicate responses.
+        # Issue #31641: accept arbitrary iterables.
         future1 = self.executor.submit(time.sleep, 2)
-        completed = [f for f in futures.as_completed([future1,future1])]
+        completed = [
+            f for f in futures.as_completed(itertools.repeat(future1, 3))
+        ]
         self.assertEqual(len(completed), 1)
 
     def test_free_reference_yielded_future(self):

@@ -214,9 +214,8 @@ def as_completed(fs, timeout=None):
     if timeout is not None:
         end_time = timeout + time.time()
 
-    total_futures = len(fs)
-
     fs = set(fs)
+    total_futures = len(fs)
     with _AcquireFutures(fs):
         finished = set(
                 f for f in fs
