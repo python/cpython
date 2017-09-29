@@ -1628,6 +1628,23 @@ class PtyTests(unittest.TestCase):
         )
         self.assertSequenceEqual(lines, expected)
 
+    def test_input_override_stdin(self):
+        input_buf = io.StringIO('quux\n')
+        input_received = input(infile=input_buf)
+        self.assertSequenceEqual('quux', input_received)
+
+    def test_input_override_stdout(self):
+        output_buf = io.StringIO()
+        input_buf = io.StringIO('\n')
+        input('blah: ', infile=input_buf, outfile=output_buf)
+        self.assertSequenceEqual('blah: ', output_buf.getvalue())
+
+    def test_input_override_stderr(self):
+        error_buf = io.StringIO()
+        input_buf = io.StringIO('\n')
+        self.assertRaises(RuntimeError, input, 'blah: ', infile=input_buf,
+                          outfile=None, errfile=error_buf)
+
 class TestSorted(unittest.TestCase):
 
     def test_basic(self):

@@ -528,35 +528,43 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_input__doc__,
-"input($module, prompt=None, /)\n"
+"input($module, prompt=None, /, *, infile=None, outfile=None,\n"
+"      errfile=None)\n"
 "--\n"
 "\n"
 "Read a string from standard input.  The trailing newline is stripped.\n"
 "\n"
 "The prompt string, if given, is printed to standard output without a\n"
 "trailing newline before reading input.\n"
+"The defaults for infile, outfile, and errfile if they not provided are equivalent\n"
+"to sys.stdin, sys.stdout, and sys.stderr respectively.\n"
 "\n"
 "If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise EOFError.\n"
 "On *nix systems, readline is used if available.");
 
 #define BUILTIN_INPUT_METHODDEF    \
-    {"input", (PyCFunction)builtin_input, METH_FASTCALL, builtin_input__doc__},
+    {"input", (PyCFunction)builtin_input, METH_FASTCALL|METH_KEYWORDS, builtin_input__doc__},
 
 static PyObject *
-builtin_input_impl(PyObject *module, PyObject *prompt);
+builtin_input_impl(PyObject *module, PyObject *prompt, PyObject *infile,
+                   PyObject *outfile, PyObject *errfile);
 
 static PyObject *
-builtin_input(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_input(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "infile", "outfile", "errfile", NULL};
+    static _PyArg_Parser _parser = {"|O$OOO:input", _keywords, 0};
     PyObject *prompt = NULL;
+    PyObject *infile = _PySys_GetObjectId(&PyId_stdin);
+    PyObject *outfile = _PySys_GetObjectId(&PyId_stdout);
+    PyObject *errfile = _PySys_GetObjectId(&PyId_stderr);
 
-    if (!_PyArg_UnpackStack(args, nargs, "input",
-        0, 1,
-        &prompt)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &prompt, &infile, &outfile, &errfile)) {
         goto exit;
     }
-    return_value = builtin_input_impl(module, prompt);
+    return_value = builtin_input_impl(module, prompt, infile, outfile, errfile);
 
 exit:
     return return_value;
@@ -676,4 +684,4 @@ builtin_issubclass(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=09752daa8cdd6ec7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4ca8e7840e9e74f3 input=a9049054013a1b77]*/

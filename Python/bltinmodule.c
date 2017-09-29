@@ -1842,23 +1842,30 @@ input as builtin_input
 
     prompt: object(c_default="NULL") = None
     /
+    *
+    infile: object(c_default="_PySys_GetObjectId(&PyId_stdin)") = None
+    outfile: object(c_default="_PySys_GetObjectId(&PyId_stdout)") = None
+    errfile: object(c_default="_PySys_GetObjectId(&PyId_stderr)") = None
 
 Read a string from standard input.  The trailing newline is stripped.
 
 The prompt string, if given, is printed to standard output without a
 trailing newline before reading input.
+The defaults for infile, outfile, and errfile if they not provided are equivalent
+to sys.stdin, sys.stdout, and sys.stderr respectively.
 
 If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise EOFError.
 On *nix systems, readline is used if available.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_input_impl(PyObject *module, PyObject *prompt)
-/*[clinic end generated code: output=83db5a191e7a0d60 input=5e8bb70c2908fe3c]*/
+builtin_input_impl(PyObject *module, PyObject *prompt, PyObject *infile,
+                   PyObject *outfile, PyObject *errfile)
+/*[clinic end generated code: output=40acdfd4ce9e4222 input=f7d6c671b75027bc]*/
 {
-    PyObject *fin = _PySys_GetObjectId(&PyId_stdin);
-    PyObject *fout = _PySys_GetObjectId(&PyId_stdout);
-    PyObject *ferr = _PySys_GetObjectId(&PyId_stderr);
+    PyObject *fin = infile;
+    PyObject *fout = outfile;
+    PyObject *ferr = errfile;
     PyObject *tmp;
     long fd;
     int tty;
