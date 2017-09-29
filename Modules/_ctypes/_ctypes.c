@@ -1390,8 +1390,8 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     StgDictObject *stgdict;
     StgDictObject *itemdict;
     PyObject *length_attr, *type_attr;
-    int overflow;
     Py_ssize_t length;
+    int overflow;
     Py_ssize_t itemsize, itemalign;
 
     /* create the new instance (which is a class,
