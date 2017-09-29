@@ -285,8 +285,12 @@ zipapp
 ------
 
 Function :func:`zipapp.create_archive` now accepts an optional *filter*
-argument, to allow the user to select which files should be included in the
+argument to allow the user to select which files should be included in the
+archive, and an optional *compressed* argument to generate a compressed
 archive.
+
+A command line option ``--compress`` has also been added to support
+compression.
 
 
 Optimizations
