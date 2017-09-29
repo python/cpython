@@ -709,22 +709,24 @@ time_strftime(PyObject *self, PyObject *args)
     //Replace %Z with time zone name
     if (count) {
         if (len_zone - 2 > (PY_SSIZE_T_MAX / sizeof(time_char) - 1 - wcslen(fmt)) / count) {
+            PyMem_Free(format);
             return PyErr_NoMemory();
         }
         size_t l = wcslen(fmt) + (len_zone - 2) * count + 1;
         tmp = result = (time_char *)PyMem_Malloc(l * sizeof(time_char));
-        while (count--) {
-            ins = wcsstr(fmt, L"%Z");
+
+        while (count) {
+            ins = wcschr(fmt, L'%');
             len_copy = ins - fmt;
-            if (wcsncmp(ins - 1, L"%", 1) == 0) {
-                tmp = wcsncpy(tmp, fmt, len_copy + 2) + len_copy + 2;
-                fmt += len_copy + 2;
-            }
-            else {
+            if (ins[1] == L'Z') {
                 tmp = wcsncpy(tmp, fmt, len_copy) + len_copy;
                 tmp = wcscpy(tmp, zone) + len_zone;
-                fmt += len_copy + 2;
+                count--;
             }
+            else {
+                tmp = wcsncpy(tmp, fmt, len_copy + 2) + len_copy + 2;
+            }
+            fmt += len_copy + 2;;
         }
         wcscpy(tmp, fmt);
         fmt = result;
