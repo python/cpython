@@ -1,0 +1,2 @@
+Raise `ValueError` instead of `OverflowError` in case of a negative
+``_length_`` in a `ctypes.Array` subclass. Patch by Oren Milman.
