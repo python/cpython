@@ -865,7 +865,6 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 
     if (module_globals) {
         _Py_IDENTIFIER(get_source);
-        _Py_IDENTIFIER(splitlines);
         PyObject *tmp;
         PyObject *loader;
         PyObject *module_name;
@@ -875,8 +874,6 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject *returned;
 
         if ((tmp = _PyUnicode_FromId(&PyId_get_source)) == NULL)
-            return NULL;
-        if ((tmp = _PyUnicode_FromId(&PyId_splitlines)) == NULL)
             return NULL;
 
         /* Check/get the requisite pieces needed for the loader. */
