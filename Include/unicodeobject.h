@@ -104,10 +104,6 @@ typedef wchar_t Py_UNICODE /* Py_DEPRECATED(3.3) */;
 #endif
 
 #ifdef HAVE_WCHAR_H
-/* Work around a cosmetic bug in BSDI 4.x wchar.h; thanks to Thomas Wouters */
-# ifdef _HAVE_BSDI
-#  include <time.h>
-# endif
 #  include <wchar.h>
 #endif
 
