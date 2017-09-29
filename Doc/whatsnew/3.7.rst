@@ -140,6 +140,15 @@ Improved Modules
 ================
 
 
+argparse
+--------
+
+The :meth:`~argparse.ArgumentParser.parse_intermixed_args` supports letting
+the user intermix options and positional arguments on the command line,
+as is possible in many unix commands.  It supports most but not all
+argparse features.  (Contributed by paul.j3 in :issue:`14191`.)
+
+
 binascii
 --------
 
@@ -223,6 +232,20 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+pdb
+---
+
+:func:`~pdb.set_trace` now takes an optional ``header`` keyword-only
+argument.  If given, this is printed to the console just before debugging
+begins.
+
+string
+------
+
+:class:`string.Template` now lets you to optionally modify the regular
+expression pattern for braced placeholders and non-braced placeholders
+separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
 unittest.mock
 -------------
 
@@ -247,7 +270,7 @@ Peterson.)
 urllib.parse
 ------------
 
-:func:`urllib.parse.quote` has been updated to from RFC 2396 to RFC 3986,
+:func:`urllib.parse.quote` has been updated from RFC 2396 to RFC 3986,
 adding `~` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
 
@@ -257,6 +280,13 @@ uu
 Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+zipapp
+------
+
+Function :func:`zipapp.create_archive` now accepts an optional *filter*
+argument, to allow the user to select which files should be included in the
+archive.
 
 
 Optimizations
@@ -273,9 +303,8 @@ Optimizations
   (Contributed by Serhiy Storchaka in :issue:`24821`.)
 
 * Fast implementation from standard C library is now used for functions
-  :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
-  :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
-  Storchaka in :issue:`26121`.)
+  :func:`~math.erf` and :func:`~math.erfc` in the :mod:`math` module.
+  (Contributed by Serhiy Storchaka in :issue:`26121`.)
 
 * The :func:`os.fwalk` function has been sped up by 2 times.  This was done
   using the :func:`os.scandir` function.
@@ -320,6 +349,21 @@ Build and C API Changes
   If Python 3.6 is not found on the system (via ``py -3.6``), NuGet is used to
   download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
   Ware in :issue:`30450`.)
+
+* Support for building ``--without-threads`` is removed.
+  (Contributed by Antoine Pitrou in :issue:`31370`.).
+
+
+Other CPython Implementation Changes
+====================================
+
+* Trace hooks may now opt out of receiving ``line`` events from the interpreter
+  by setting the new ``f_trace_lines`` attribute to :const:`False` on the frame
+  being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
+
+* Trace hooks may now opt in to receiving ``opcode`` events from the interpreter
+  by setting the new ``f_trace_opcodes`` attribute to :const:`True` on the frame
+  being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
 
 
 Deprecated
@@ -396,6 +440,12 @@ API and Feature Removals
 * The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
+
+* :func:`collections.namedtuple` no longer supports the *verbose* parameter
+  or ``_source`` attribute which showed the generated source code for the
+  named tuple class.  This was part of an optimization designed to speed-up
+  class creation.  (Contributed by Jelle Zijlstra with further improvements
+  by INADA Naoki, Serhiy Storchaka, and Raymond Hettinger in :issue:`28638`.)
 
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now

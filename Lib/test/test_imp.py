@@ -1,7 +1,3 @@
-try:
-    import _thread
-except ImportError:
-    _thread = None
 import importlib
 import importlib.util
 import os
@@ -23,7 +19,6 @@ def requires_load_dynamic(meth):
                            'imp.load_dynamic() required')(meth)
 
 
-@unittest.skipIf(_thread is None, '_thread module is required')
 class LockTests(unittest.TestCase):
 
     """Very basic test of import lock functions."""
@@ -317,6 +312,17 @@ class ImportTests(unittest.TestCase):
     def test_load_source(self):
         with self.assertRaisesRegex(ValueError, 'embedded null'):
             imp.load_source(__name__, __file__ + "\0")
+
+    @support.cpython_only
+    def test_issue31315(self):
+        # There shouldn't be an assertion failure in imp.create_dynamic(),
+        # when spec.name is not a string.
+        create_dynamic = support.get_attribute(imp, 'create_dynamic')
+        class BadSpec:
+            name = None
+            origin = 'foo'
+        with self.assertRaises(TypeError):
+            create_dynamic(BadSpec())
 
 
 class ReloadTests(unittest.TestCase):

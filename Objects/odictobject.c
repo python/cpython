@@ -470,6 +470,7 @@ later:
 */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "dict-common.h"
 #include <stddef.h>
@@ -882,8 +883,7 @@ odict_eq(PyObject *a, PyObject *b)
 
 PyDoc_STRVAR(odict_init__doc__,
 "Initialize an ordered dictionary.  The signature is the same as\n\
-        regular dictionaries, but keyword arguments are not recommended because\n\
-        their insertion order is arbitrary.\n\
+        regular dictionaries.  Keyword argument order is preserved.\n\
 \n\
         ");
 
@@ -1471,16 +1471,9 @@ odict_repr(PyODictObject *self)
     int i;
     _Py_IDENTIFIER(items);
     PyObject *pieces = NULL, *result = NULL;
-    const char *classname;
-
-    classname = strrchr(Py_TYPE(self)->tp_name, '.');
-    if (classname == NULL)
-        classname = Py_TYPE(self)->tp_name;
-    else
-        classname++;
 
     if (PyODict_SIZE(self) == 0)
-        return PyUnicode_FromFormat("%s()", classname);
+        return PyUnicode_FromFormat("%s()", _PyType_Name(Py_TYPE(self)));
 
     i = Py_ReprEnter((PyObject *)self);
     if (i != 0) {
@@ -1532,7 +1525,8 @@ odict_repr(PyODictObject *self)
             goto Done;
     }
 
-    result = PyUnicode_FromFormat("%s(%R)", classname, pieces);
+    result = PyUnicode_FromFormat("%s(%R)",
+                                  _PyType_Name(Py_TYPE(self)), pieces);
 
 Done:
     Py_XDECREF(pieces);

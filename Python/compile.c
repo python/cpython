@@ -1350,8 +1350,7 @@ get_const_value(expr_ty e)
     case NameConstant_kind:
         return e->v.NameConstant.value;
     default:
-        assert(!is_const(e));
-        return NULL;
+        Py_UNREACHABLE();
     }
 }
 
@@ -2673,28 +2672,34 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
        If there is a dot in name, we need to split it and emit a
        IMPORT_FROM for each name.
     */
-    Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
-                                        PyUnicode_GET_LENGTH(name), 1);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(name);
+    Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, len, 1);
     if (dot == -2)
         return 0;
     if (dot != -1) {
         /* Consume the base module name to get the first attribute */
-        Py_ssize_t pos = dot + 1;
-        while (dot != -1) {
+        while (1) {
+            Py_ssize_t pos = dot + 1;
             PyObject *attr;
-            dot = PyUnicode_FindChar(name, '.', pos,
-                                     PyUnicode_GET_LENGTH(name), 1);
+            dot = PyUnicode_FindChar(name, '.', pos, len, 1);
             if (dot == -2)
                 return 0;
-            attr = PyUnicode_Substring(name, pos,
-                                       (dot != -1) ? dot :
-                                       PyUnicode_GET_LENGTH(name));
+            attr = PyUnicode_Substring(name, pos, (dot != -1) ? dot : len);
             if (!attr)
                 return 0;
             ADDOP_O(c, IMPORT_FROM, attr, names);
             Py_DECREF(attr);
-            pos = dot + 1;
+            if (dot == -1) {
+                break;
+            }
+            ADDOP(c, ROT_TWO);
+            ADDOP(c, POP_TOP);
         }
+        if (!compiler_nameop(c, asname, Store)) {
+            return 0;
+        }
+        ADDOP(c, POP_TOP);
+        return 1;
     }
     return compiler_nameop(c, asname, Store);
 }
@@ -4154,6 +4159,7 @@ expr_constant(struct compiler *c, expr_ty e)
         else if (o == Py_False)
             return 0;
     }
+    /* fall through */
     default:
         return -1;
     }
@@ -4446,13 +4452,13 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         switch (e->v.Attribute.ctx) {
         case AugLoad:
             ADDOP(c, DUP_TOP);
-            /* Fall through to load */
+            /* Fall through */
         case Load:
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case AugStore:
             ADDOP(c, ROT_TWO);
-            /* Fall through to save */
+            /* Fall through */
         case Store:
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;

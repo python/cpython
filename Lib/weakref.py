@@ -21,7 +21,7 @@ from _weakref import (
 
 from _weakrefset import WeakSet, _IterationGuard
 
-import collections.abc  # Import after _weakref to avoid circular import.
+import _collections_abc  # Import after _weakref to avoid circular import.
 import sys
 import itertools
 
@@ -87,7 +87,7 @@ class WeakMethod(ref):
     __hash__ = ref.__hash__
 
 
-class WeakValueDictionary(collections.abc.MutableMapping):
+class WeakValueDictionary(_collections_abc.MutableMapping):
     """Mapping class that references values weakly.
 
     Entries in the dictionary will be discarded when no strong
@@ -340,7 +340,7 @@ class KeyedRef(ref):
         super().__init__(ob, callback)
 
 
-class WeakKeyDictionary(collections.abc.MutableMapping):
+class WeakKeyDictionary(_collections_abc.MutableMapping):
     """ Mapping class that references keys weakly.
 
     Entries in the dictionary will be discarded when there is no

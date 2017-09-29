@@ -111,6 +111,7 @@ converting the dict to the combined table.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "dict-common.h"
 #include "stringlib/eq.h"    /* to get unicode_eq() */
 
@@ -642,8 +643,7 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
-    assert(0);          /* NOT REACHED */
-    return DKIX_ERROR;
+    Py_UNREACHABLE();
 }
 
 /*
@@ -722,8 +722,7 @@ top:
         perturb >>= PERTURB_SHIFT;
         i = (i*5 + perturb + 1) & mask;
     }
-    assert(0);          /* NOT REACHED */
-    return 0;
+    Py_UNREACHABLE();
 }
 
 /* Specialized version for string-only keys */
@@ -765,9 +764,7 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
-
-    assert(0);          /* NOT REACHED */
-    return 0;
+    Py_UNREACHABLE();
 }
 
 /* Faster version of lookdict_unicode when it is known that no <dummy> keys
@@ -809,8 +806,7 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
-    assert(0);          /* NOT REACHED */
-    return 0;
+    Py_UNREACHABLE();
 }
 
 /* Version of lookdict for split tables.
@@ -855,8 +851,7 @@ lookdict_split(PyDictObject *mp, PyObject *key,
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
-    assert(0);          /* NOT REACHED */
-    return 0;
+    Py_UNREACHABLE();
 }
 
 int
@@ -1847,6 +1842,8 @@ dict_dealloc(PyDictObject *mp)
     PyObject **values = mp->ma_values;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
+
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(mp);
     Py_TRASHCAN_SAFE_BEGIN(mp)
     if (values != NULL) {
@@ -3270,6 +3267,8 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 static void
 dictiter_dealloc(dictiterobject *di)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_dict);
     Py_XDECREF(di->di_result);
     PyObject_GC_Del(di);
@@ -3598,7 +3597,7 @@ dictiter_reduce(dictiterobject *di)
         else if (Py_TYPE(di) == &PyDictIterValue_Type)
             element = dictiter_iternextvalue(&tmp);
         else
-            assert(0);
+            Py_UNREACHABLE();
         if (element) {
             if (PyList_Append(list, element)) {
                 Py_DECREF(element);
@@ -3629,6 +3628,8 @@ dictiter_reduce(dictiterobject *di)
 static void
 dictview_dealloc(_PyDictViewObject *dv)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    _PyObject_GC_UNTRACK(dv);
     Py_XDECREF(dv->dv_dict);
     PyObject_GC_Del(dv);
 }
