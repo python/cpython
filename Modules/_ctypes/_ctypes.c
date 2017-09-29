@@ -1325,6 +1325,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     StgDictObject *stgdict;
     StgDictObject *itemdict;
     PyObject *length_attr, *type_attr;
+    int overflow;
     Py_ssize_t length;
     Py_ssize_t itemsize, itemalign;
 
@@ -1347,8 +1348,15 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_XDECREF(length_attr);
         goto error;
     }
-    length = PyLong_AsSsize_t(length_attr);
-    if (length == -1 && PyErr_Occurred()) {
+
+#if SIZEOF_SIZE_T <= SIZEOF_LONG
+    length = PyLong_AsLongAndOverflow(length_attr, &overflow);
+#else
+    length = PyLong_AsLongLongAndOverflow(length_attr, &overflow);
+#endif
+    if (overflow) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "The '_length_' attribute is too large");
         Py_DECREF(length_attr);
         goto error;
     }
