@@ -982,34 +982,21 @@ class TestSpooledTemporaryFile(BaseTestCase):
         f = self.do_create(max_size=100, pre="a", suf=".txt")
         self.assertFalse(f._rolled)
 
-    def test_iobase_abstract(self):
-        # SpooledTemporaryFile should implement the IOBase abstract
-        iobase_abstract = (
-            'close',
-            'closed',
-            'fileno',
-            'flush',
-            'isatty',
-            'read',
-            'readable',
-            'readinto',
-            'readline',
-            'readlines',
-            'seek',
-            'seekable',
-            'tell',
-            'truncate',
-            'write',
-            'writable',
-            'writelines',
-            '__del__',
+    def test_is_iobase(self):
+        # SpooledTemporaryFile should implement io.IOBase
+        self.assertIsInstance(self.do_create(), io.IOBase)
+
+    def test_iobase_interface(self):
+        # SpooledTemporaryFile should implement the io.IOBase interface.
+        # IOBase does not declare read(), readinto(), or write(), but
+        # they should be considered part of the interface.
+        iobase_abstract = {'read', 'readinto', 'write'}
+        spooledtempfile_abstract = set(dir(tempfile.SpooledTemporaryFile))
+        missing_attributes = iobase_abstract - spooledtempfile_abstract
+        self.assertFalse(
+            missing_attributes,
+            'io.IOBase attributes missing from SpooledTemporaryFile'
         )
-        f = self.do_create()
-        for attribute in iobase_abstract:
-            self.assertTrue(
-                hasattr(f, attribute),
-                '{} attribute missing'.format(attribute)
-            )
 
     def test_del_on_close(self):
         # A SpooledTemporaryFile is deleted when closed
