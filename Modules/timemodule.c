@@ -728,7 +728,6 @@ time_strftime(PyObject *self, PyObject *args)
             fmt += k + 2;
         }
         wcscpy(tmp, fmt);
-
         fmt = result;
     }
     PyMem_Free(points);
