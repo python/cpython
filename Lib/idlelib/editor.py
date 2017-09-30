@@ -665,7 +665,7 @@ class EditorWindow(object):
             if filename is None:
                 return "break"
         from idlelib import browser
-        browser.ModuleBrowser(self.flist, filename)
+        browser.ModuleBrowser(self.root, filename)
         return "break"
 
     def open_path_browser(self, event=None):
