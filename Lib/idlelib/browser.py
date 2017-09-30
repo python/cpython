@@ -5,9 +5,8 @@ XXX TO DO:
 - reparse when source changed (maybe just a button would be OK?)
     (or recheck on window popup)
 - add popup menu with more options (e.g. doc strings, base classes, imports)
-- show function argument list? (have to do pattern matching on source)
-- should the classes and methods lists also be in the module's menu bar?
 - add base classes to class browser tree
+- finish removing limitation to x.py files (ModuleBrowserTreeItem)
 """
 
 import os
@@ -62,13 +61,11 @@ class ModuleBrowser:
     # Init and close are inherited, other methods are overriden.
     # PathBrowser.__init__ does not call __init__ below.
 
-    def __init__(self, flist, path, *, _htest=False, _utest=False):
-        # XXX This API should change, if the file doesn't end in ".py"
-        # XXX the code here is bogus!
+    def __init__(self, master, path, *, _htest=False, _utest=False):
         """Create a window for browsing a module's structure.
 
         Args:
-            flist: filelist.FileList instance used to find root.
+            master: parent for widgets.
             path: full path of file to browse.
             _htest - bool; change box location when running htest.
             -utest - bool; suppress contents when running unittest.
@@ -85,19 +82,20 @@ class ModuleBrowser:
         global file_open
         if not (_htest or _utest):
             file_open = pyshell.flist.open
+        self.master = master
         self.path = path
         self._htest = _htest
         self._utest = _utest
-        self.init(flist)
+        self.init()
 
     def close(self, event=None):
         "Dismiss the window and the tree nodes."
         self.top.destroy()
         self.node.destroy()
 
-    def init(self, flist):
+    def init(self):
         "Create browser tkinter widgets, including the tree."
-        root = flist.root
+        root = self.master
         # reset pyclbr
         pyclbr._modules.clear()
         # create top
@@ -135,6 +133,7 @@ class ModuleBrowserTreeItem(TreeItem):
     """Browser tree for Python module.
 
     Uses TreeItem as the basis for the structure of the tree.
+    Used by both browsers.
     """
 
     def __init__(self, file):
@@ -232,15 +231,14 @@ def _module_browser(parent): # htest #
         file = sys.argv[1]
     else:
         file = __file__
-        # Add objects for htest
+        # Add nested objects for htest.
         class Nested_in_func(TreeNode):
             def nested_in_class(): pass
         def closure():
             class Nested_in_closure: pass
-    flist = pyshell.PyShellFileList(parent)
     global file_open
-    file_open = flist.open
-    ModuleBrowser(flist, file, _htest=True)
+    file_open = pyshell.PyShellFileList(parent).open
+    ModuleBrowser(parent, file, _htest=True)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:  # If pass file on command line, unittest fails.

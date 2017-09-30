@@ -24,15 +24,13 @@ class ModuleBrowserTest(unittest.TestCase):
         requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
-        cls.flist = filelist.FileList(cls.root)
-        cls.file = __file__
-        cls.mb = browser.ModuleBrowser(cls.flist, __file__, _utest=True)
+        cls.mb = browser.ModuleBrowser(cls.root, __file__, _utest=True)
 
     @classmethod
     def tearDownClass(cls):
         cls.mb.close()
         cls.root.destroy()
-        del cls.root, cls.flist, cls.mb
+        del cls.root, cls.mb
 
     def test_init(self):
         mb = self.mb
