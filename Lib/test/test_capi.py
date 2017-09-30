@@ -280,7 +280,7 @@ class CAPITest(unittest.TestCase):
                 return list(super().values())
             def items(self):
                 return list(super().items())
-        class MyMapping1(dict):
+        class MyMapping2(dict):
             def keys(self):
                 return tuple(super().keys())
             def values(self):
@@ -290,7 +290,7 @@ class CAPITest(unittest.TestCase):
         dict_obj = {'foo': 1, 'bar': 2, 'spam': 3}
         odict_obj = OrderedDict(dict_obj)
         mapping1 = MyMapping1(dict_obj)
-        mapping2 = MyMapping1(dict_obj)
+        mapping2 = MyMapping2(dict_obj)
 
         for mapping in [dict_obj, odict_obj, mapping1, mapping2]:
             self.assertListEqual(_testcapi.get_mapping_keys(mapping),
