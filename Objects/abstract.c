@@ -2148,15 +2148,23 @@ PyMapping_HasKey(PyObject *o, PyObject *key)
 }
 
 static PyObject *
-method_output_as_list(PyObject *o, const char *err_msg)
+method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
 {
-    PyObject *it, *result;
+    PyObject *it, *result, *meth_output;
 
     assert(o != NULL);
-    it = PyObject_GetIter(o);
+    meth_output = _PyObject_CallMethodId(o, meth_id, NULL);
+    if (meth_output == NULL || PyList_CheckExact(meth_output)) {
+        return meth_output;
+    }
+    it = PyObject_GetIter(meth_output);
+    Py_DECREF(meth_output);
     if (it == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_SetString(PyExc_TypeError, err_msg);
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s.%s() is not iterable",
+                         Py_TYPE(o)->tp_name,
+                         meth_id->string);
         }
         return NULL;
     }
@@ -2168,55 +2176,34 @@ method_output_as_list(PyObject *o, const char *err_msg)
 PyObject *
 PyMapping_Keys(PyObject *o)
 {
-    PyObject *keys;
-    PyObject *keys_list;
     _Py_IDENTIFIER(keys);
 
-    if (PyDict_CheckExact(o))
+    if (PyDict_CheckExact(o)) {
         return PyDict_Keys(o);
-    keys = _PyObject_CallMethodId(o, &PyId_keys, NULL);
-    if (keys == NULL || PyList_CheckExact(keys)) {
-        return keys;
     }
-    keys_list = method_output_as_list(keys, "o.keys() is not iterable");
-    Py_DECREF(keys);
-    return keys_list;
+    return method_output_as_list(o, &PyId_keys);
 }
 
 PyObject *
 PyMapping_Items(PyObject *o)
 {
-    PyObject *items;
-    PyObject *items_list;
     _Py_IDENTIFIER(items);
 
-    if (PyDict_CheckExact(o))
+    if (PyDict_CheckExact(o)) {
         return PyDict_Items(o);
-    items = _PyObject_CallMethodId(o, &PyId_items, NULL);
-    if (items == NULL || PyList_CheckExact(items)) {
-        return items;
     }
-    items_list = method_output_as_list(items, "o.items() is not iterable");
-    Py_DECREF(items);
-    return items_list;
+    return method_output_as_list(o, &PyId_items);
 }
 
 PyObject *
 PyMapping_Values(PyObject *o)
 {
-    PyObject *values;
-    PyObject *values_list;
     _Py_IDENTIFIER(values);
 
-    if (PyDict_CheckExact(o))
+    if (PyDict_CheckExact(o)) {
         return PyDict_Values(o);
-    values = _PyObject_CallMethodId(o, &PyId_values, NULL);
-    if (values == NULL || PyList_CheckExact(values)) {
-        return values;
     }
-    values_list = method_output_as_list(values, "o.values() is not iterable");
-    Py_DECREF(values);
-    return values_list;
+    return method_output_as_list(o, &PyId_values);
 }
 
 /* isinstance(), issubclass() */
