@@ -2162,7 +2162,7 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
     if (it == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s.%s() is not iterable",
+                         "%.200s.%s() must return an iterable",
                          Py_TYPE(o)->tp_name,
                          meth_id->string);
         }
