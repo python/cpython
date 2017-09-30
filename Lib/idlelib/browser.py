@@ -61,7 +61,7 @@ class ModuleBrowser:
     # This class is the base class for pathbrowser.PathBrowser.
     # Init and close are inherited, other methods are overriden.
 
-    def __init__(self, flist, name, path, _htest=False, _utest=False):
+    def __init__(self, flist, name, path, *, _htest=False, _utest=False):
         # XXX This API should change, if the file doesn't end in ".py"
         # XXX the code here is bogus!
         """Create a window for browsing a module's structure.
