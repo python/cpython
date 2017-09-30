@@ -288,11 +288,10 @@ class CAPITest(unittest.TestCase):
             def items(self):
                 return tuple(super().items())
         dict_obj = {'foo': 1, 'bar': 2, 'spam': 3}
-        odict_obj = OrderedDict(dict_obj)
-        mapping1 = Mapping1(dict_obj)
-        mapping2 = Mapping2(dict_obj)
 
-        for mapping in [dict_obj, odict_obj, mapping1, mapping2]:
+        for mapping in [{}, OrderedDict({}), Mapping1({}), Mapping2({}),
+                        dict_obj, OrderedDict(dict_obj),
+                        Mapping1(dict_obj), Mapping2(dict_obj)]:
             self.assertListEqual(_testcapi.get_mapping_keys(mapping),
                                  list(mapping.keys()))
             self.assertListEqual(_testcapi.get_mapping_values(mapping),
