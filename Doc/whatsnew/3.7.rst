@@ -281,6 +281,14 @@ Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
+xml.etree
+---------
+
+:ref:`ElementPath <elementtree-xpath>` predicates in the :meth:`find`
+methods can now compare text of the current node with ``[. = "text"]``,
+not only text in children.  Predicates also allow adding spaces for
+better readability.  (Contributed by Stefan Behnel in :issue:`31648`.)
+
 zipapp
 ------
 
