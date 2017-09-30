@@ -3465,8 +3465,8 @@ _openssl_use_certificate_chain_from_bio(SSL_CTX *ctx, BIO *bio)
 
     ERR_clear_error();
 
-    pwcb = ctx->default_passwd_callback;
-    pwcb_data = ctx->default_passwd_callback_userdata;
+    pwcb = SSL_CTX_get_default_passwd_cb(ctx);
+    pwcb_data = SSL_CTX_get_default_passwd_cb_userdata(ctx);
 
     usecert = PEM_read_bio_X509_AUX(bio, NULL, pwcb, pwcb_data);
     if (usecert == NULL)
@@ -3549,9 +3549,8 @@ _ssl__SSLContext__load_cert_chain_pem_from_bio_impl(PySSLContext *self,
     */
 
     EVP_PKEY *private_key = NULL;
-    pem_password_cb *orig_passwd_cb = self->ctx->default_passwd_callback;
-
-    void *orig_passwd_userdata = self->ctx->default_passwd_callback_userdata;
+    pem_password_cb *orig_passwd_cb = SSL_CTX_get_default_passwd_cb(self->ctx);
+    void *orig_passwd_userdata = SSL_CTX_get_default_passwd_cb_userdata(self->ctx);
     _PySSLPasswordInfo pw_info = { NULL, NULL, NULL, 0, 0 };
     int r;
 
@@ -3593,8 +3592,8 @@ _ssl__SSLContext__load_cert_chain_pem_from_bio_impl(PySSLContext *self,
     private_key = PEM_read_bio_PrivateKey(
         keybio->bio,
         NULL,
-        self->ctx->default_passwd_callback,
-        self->ctx->default_passwd_callback_userdata
+        SSL_CTX_get_default_passwd_cb(self->ctx),
+        SSL_CTX_get_default_passwd_cb_userdata(self->ctx)
         );
     PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
 
