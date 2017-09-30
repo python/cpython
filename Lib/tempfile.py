@@ -626,7 +626,7 @@ else:
             _os.close(fd)
             raise
 
-class SpooledTemporaryFile:
+class SpooledTemporaryFile(_io.IOBase):
     """Temporary file wrapper, specialized to switch from BytesIO
     or StringIO to a real file when it exceeds a certain size or
     when a fileno is needed.
