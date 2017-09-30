@@ -24,30 +24,24 @@ class ModuleBrowserTest(unittest.TestCase):
         requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
-        cls.flist = filelist.FileList(cls.root)
-        cls.file = __file__
-        cls.path = os.path.dirname(cls.file)
-        cls.module = os.path.basename(cls.file).rstrip('.py')
-        cls.mb = browser.ModuleBrowser(cls.flist, cls.module, [cls.path], _utest=True)
+        cls.mb = browser.ModuleBrowser(cls.root, __file__, _utest=True)
 
     @classmethod
     def tearDownClass(cls):
         cls.mb.close()
         cls.root.destroy()
-        del cls.root, cls.flist, cls.mb
+        del cls.root, cls.mb
 
     def test_init(self):
         mb = self.mb
         eq = self.assertEqual
-        eq(mb.name, self.module)
-        eq(mb.file, self.file)
-        eq(mb.flist, self.flist)
+        eq(mb.path, __file__)
         eq(pyclbr._modules, {})
         self.assertIsInstance(mb.node, TreeNode)
 
     def test_settitle(self):
         mb = self.mb
-        self.assertIn(self.module, mb.top.title())
+        self.assertIn(os.path.basename(__file__), mb.top.title())
         self.assertEqual(mb.top.iconname(), 'Module Browser')
 
     def test_rootnode(self):
