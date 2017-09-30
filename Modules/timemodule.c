@@ -1309,7 +1309,9 @@ PyInit_timezone(PyObject *m) {
     wrong encoding of time zone names.*/
 #ifdef MS_WINDOWS
     TIME_ZONE_INFORMATION tzi;
-    GetTimeZoneInformation(&tzi);
+    if (GetTimeZoneInformation(&tzi) == TIME_ZONE_ID_INVALID) {
+        PyErr_SetFromWindowsErr(0);
+    }
     otz0 = PyUnicode_FromWideChar(tzi.StandardName, -1);
     otz1 = PyUnicode_FromWideChar(tzi.DaylightName, -1);
 #else
