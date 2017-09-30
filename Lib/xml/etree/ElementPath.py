@@ -158,6 +158,7 @@ def prepare_predicate(next, token):
         if token[0] == "]":
             break
         if token == ('', ''):
+            # ignore whitespace
             continue
         if token[0] and token[0][:1] in "'\"":
             token = "'", token[0][1:-1]
