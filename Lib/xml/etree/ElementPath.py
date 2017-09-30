@@ -157,6 +157,8 @@ def prepare_predicate(next, token):
             return
         if token[0] == "]":
             break
+        if token == ('', ''):
+            continue
         if token[0] and token[0][:1] in "'\"":
             token = "'", token[0][1:-1]
         signature.append(token[0] or "-")
