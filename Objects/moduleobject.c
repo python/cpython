@@ -687,13 +687,10 @@ module_getattro(PyModuleObject *m, PyObject *name)
     if (m->md_dict) {
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
-        if (mod_name) {
+        if (mod_name && PyUnicode_Check(mod_name)) {
             PyErr_Format(PyExc_AttributeError,
                         "module '%U' has no attribute '%U'", mod_name, name);
             return NULL;
-        }
-        else if (PyErr_Occurred()) {
-            PyErr_Clear();
         }
     }
     PyErr_Format(PyExc_AttributeError,

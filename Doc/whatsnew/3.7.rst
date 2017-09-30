@@ -232,6 +232,13 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+pdb
+---
+
+:func:`~pdb.set_trace` now takes an optional ``header`` keyword-only
+argument.  If given, this is printed to the console just before debugging
+begins.
+
 string
 ------
 
@@ -278,8 +285,12 @@ zipapp
 ------
 
 Function :func:`zipapp.create_archive` now accepts an optional *filter*
-argument, to allow the user to select which files should be included in the
+argument to allow the user to select which files should be included in the
+archive, and an optional *compressed* argument to generate a compressed
 archive.
+
+A command line option ``--compress`` has also been added to support
+compression.
 
 
 Optimizations

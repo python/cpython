@@ -116,13 +116,7 @@ BaseException_str(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
-    const char *name;
-    const char *dot;
-
-    name = Py_TYPE(self)->tp_name;
-    dot = (const char *) strrchr(name, '.');
-    if (dot != NULL) name = dot+1;
-
+    const char *name = _PyType_Name(Py_TYPE(self));
     return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 

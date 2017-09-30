@@ -1236,6 +1236,14 @@ get_data(PyObject *archive, PyObject *toc_entry)
     data = PyObject_CallFunction(decompress, "Oi", raw_data, -15);
     Py_DECREF(decompress);
     Py_DECREF(raw_data);
+    if (data != NULL && !PyBytes_Check(data)) {
+        PyErr_Format(PyExc_TypeError,
+                     "zlib.decompress() must return a bytes object, not "
+                     "%.200s",
+                     Py_TYPE(data)->tp_name);
+        Py_DECREF(data);
+        return NULL;
+    }
     return data;
 
 eof_error:

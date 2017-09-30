@@ -12,6 +12,7 @@
 #include "frameobject.h"
 #include "osdefs.h"
 #include "importdl.h"
+#include "pydtrace.h"
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -1692,9 +1693,16 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
             accumulated = 0;
         }
 
+        if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
+            PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
+
         mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                             &PyId__find_and_load, abs_name,
                                             interp->import_func, NULL);
+
+        if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED())
+            PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
+                                           mod != NULL);
 
         if (ximporttime) {
             _PyTime_t t2 = _PyTime_GetMonotonicClock();
