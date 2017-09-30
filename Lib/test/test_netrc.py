@@ -1,7 +1,6 @@
-import netrc, os, unittest, sys, textwrap
+import netrc, os, unittest, sys, tempfile, textwrap
 from test import support
 
-temp_filename = support.TESTFN
 
 class NetrcTestCase(unittest.TestCase):
 
@@ -10,7 +9,8 @@ class NetrcTestCase(unittest.TestCase):
         mode = 'w'
         if sys.platform != 'cygwin':
             mode += 't'
-        with open(temp_filename, mode) as fp:
+        temp_fd, temp_filename = tempfile.mkstemp()
+        with os.fdopen(temp_fd, mode=mode) as fp:
             fp.write(test_data)
         self.addCleanup(os.unlink, temp_filename)
         return netrc.netrc(temp_filename)
@@ -23,6 +23,9 @@ class NetrcTestCase(unittest.TestCase):
         self.assertEqual(nrc.hosts['host1.domain.com'],
                          ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', None, 'pass2'))
+
+        nrc2 = self.make_nrc(nrc.__repr__())
+        self.assertEqual(nrc.hosts, nrc2.hosts)
 
     def test_macros(self):
         nrc = self.make_nrc("""\
