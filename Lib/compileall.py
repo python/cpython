@@ -52,7 +52,7 @@ def _walk_dir(dir, ddir=None, maxlevels=10, quiet=0):
                                  maxlevels=maxlevels - 1, quiet=quiet)
 
 def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
-                quiet=0, legacy=False, optimize=-1, workers=1):
+                quiet=0, legacy=False, optimize=-1, workers=1, cache_dir=None):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
@@ -67,6 +67,7 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
     optimize:  optimization level or -1 for level of the interpreter
     workers:   maximum number of parallel workers
+    cache_dir: alternative cache directory
     """
     if workers is not None and workers < 0:
         raise ValueError('workers must be greater or equal to 0')
@@ -81,18 +82,19 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
                                            ddir=ddir, force=force,
                                            rx=rx, quiet=quiet,
                                            legacy=legacy,
-                                           optimize=optimize),
+                                           optimize=optimize,
+                                           cache_dir=cache_dir),
                                    files)
             success = min(results, default=True)
     else:
         for file in files:
             if not compile_file(file, ddir, force, rx, quiet,
-                                legacy, optimize):
+                                legacy, optimize, cache_dir=cache_dir):
                 success = False
     return success
 
 def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
-                 legacy=False, optimize=-1):
+                 legacy=False, optimize=-1, cache_dir=None):
     """Byte-compile one file.
 
     Arguments (only fullname is required):
@@ -105,6 +107,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                no output with 2
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
     optimize:  optimization level or -1 for level of the interpreter
+    cache_dir: alternative cache directory
     """
     success = True
     if quiet < 2 and isinstance(fullname, os.PathLike):
@@ -128,7 +131,10 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                                 fullname, optimization=opt)
             else:
                 cfile = importlib.util.cache_from_source(fullname)
-            cache_dir = os.path.dirname(cfile)
+        if cache_dir and os.path.isdir(cache_dir):
+            cfile = os.path.join(cache_dir,
+                                 os.path.relpath(cfile,
+                                                 os.path.dirname(fullname)))
         head, tail = name[:-3], name[-3:]
         if tail == '.py':
             if not force:
@@ -175,7 +181,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     return success
 
 def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=0,
-                 legacy=False, optimize=-1):
+                 legacy=False, optimize=-1, cache_dir=None):
     """Byte-compile all module on sys.path.
 
     Arguments (all optional):
@@ -186,6 +192,7 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=0,
     quiet: as for compile_dir() (default 0)
     legacy: as for compile_dir() (default False)
     optimize: as for compile_dir() (default -1)
+    cache_dir: alternative cache directory (default None)
     """
     success = True
     for dir in sys.path:
@@ -195,7 +202,8 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=0,
         else:
             success = success and compile_dir(dir, maxlevels, None,
                                               force, quiet=quiet,
-                                              legacy=legacy, optimize=optimize)
+                                              legacy=legacy, optimize=optimize,
+                                              cache_dir=cache_dir)
     return success
 
 
@@ -219,6 +227,8 @@ def main():
                              'the error messages as well.')
     parser.add_argument('-b', action='store_true', dest='legacy',
                         help='use legacy (pre-PEP3147) compiled file locations')
+    parser.add_argument('-o', metavar='CACHEDIR',  dest='cache_dir', default=None,
+                        help=('alternative cache directory'))
     parser.add_argument('-d', metavar='DESTDIR',  dest='ddir', default=None,
                         help=('directory to prepend to file paths for use in '
                               'compile-time tracebacks and in runtime '
@@ -272,17 +282,19 @@ def main():
             for dest in compile_dests:
                 if os.path.isfile(dest):
                     if not compile_file(dest, args.ddir, args.force, args.rx,
-                                        args.quiet, args.legacy):
+                                        args.quiet, args.legacy, args.cache_dir):
                         success = False
                 else:
                     if not compile_dir(dest, maxlevels, args.ddir,
                                        args.force, args.rx, args.quiet,
-                                       args.legacy, workers=args.workers):
+                                       args.legacy, workers=args.workers,
+                                       cache_dir=args.cache_dir):
                         success = False
             return success
         else:
             return compile_path(legacy=args.legacy, force=args.force,
-                                quiet=args.quiet)
+                                quiet=args.quiet,
+                                cache_dir=args.cache_dir)
     except KeyboardInterrupt:
         if args.quiet < 2:
             print("\n[interrupted]")
