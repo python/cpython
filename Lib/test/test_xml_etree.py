@@ -2263,6 +2263,13 @@ class ElementFindTest(unittest.TestCase):
         self.assertEqual(summarize_list(e.findall(".//tag[.= ' subtext']")),
                          [])
 
+        # duplicate section => 2x tag matches
+        e[1] = e[2]
+        self.assertEqual(summarize_list(e.findall(".//section[tag = 'subtext']")),
+                         ['section', 'section'])
+        self.assertEqual(summarize_list(e.findall(".//tag[. = 'subtext']")),
+                         ['tag', 'tag'])
+
     def test_test_find_with_ns(self):
         e = ET.XML(SAMPLE_XML_NS)
         self.assertEqual(summarize_list(e.findall('tag')), [])

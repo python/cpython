@@ -206,7 +206,6 @@ def prepare_predicate(next, token):
                 for elem in result:
                     if "".join(elem.itertext()) == value:
                         yield elem
-                        break
         return select
     if signature == "-" or signature == "-()" or signature == "-()-":
         # [index] or [last()] or [last()-index]
