@@ -58,19 +58,20 @@ def transform_children(child_dict, modname=None):
 class ModuleBrowser:
     """Browse module classes and functions in IDLE.
     """
-    # This class is the base class for pathbrowser.PathBrowser.
+    # This class is also the base class for pathbrowser.PathBrowser.
     # Init and close are inherited, other methods are overriden.
+    # PathBrowser.__init__ does not call __init__ below.
 
-    def __init__(self, flist, name, path, _htest=False, _utest=False):
+    def __init__(self, flist, path, *, _htest=False, _utest=False):
         # XXX This API should change, if the file doesn't end in ".py"
         # XXX the code here is bogus!
         """Create a window for browsing a module's structure.
 
         Args:
-            flist: filelist.FileList instance used as the root for the window.
-            name: Python module to parse.
-            path: Module search path.
-            _htest - bool, change box when location running htest.
+            flist: filelist.FileList instance used to find root.
+            path: full path of file to browse.
+            _htest - bool; change box location when running htest.
+            -utest - bool; suppress contents when running unittest.
 
         Global variables:
             file_open: Function used for opening a file.
@@ -84,8 +85,7 @@ class ModuleBrowser:
         global file_open
         if not (_htest or _utest):
             file_open = pyshell.flist.open
-        self.name = name
-        self.file = os.path.join(path[0], self.name + ".py")
+        self.path = path
         self._htest = _htest
         self._utest = _utest
         self.init(flist)
@@ -97,22 +97,23 @@ class ModuleBrowser:
 
     def init(self, flist):
         "Create browser tkinter widgets, including the tree."
-        self.flist = flist
+        root = flist.root
         # reset pyclbr
         pyclbr._modules.clear()
         # create top
-        self.top = top = ListedToplevel(flist.root)
+        self.top = top = ListedToplevel(root)
         top.protocol("WM_DELETE_WINDOW", self.close)
         top.bind("<Escape>", self.close)
         if self._htest: # place dialog below parent if running htest
             top.geometry("+%d+%d" %
-                (flist.root.winfo_rootx(), flist.root.winfo_rooty() + 200))
+                (root.winfo_rootx(), root.winfo_rooty() + 200))
         self.settitle()
         top.focus_set()
         # create scrolled canvas
         theme = idleConf.CurrentTheme()
         background = idleConf.GetHighlight(theme, 'normal')['background']
-        sc = ScrolledCanvas(top, bg=background, highlightthickness=0, takefocus=1)
+        sc = ScrolledCanvas(top, bg=background, highlightthickness=0,
+                            takefocus=1)
         sc.frame.pack(expand=1, fill="both")
         item = self.rootnode()
         self.node = node = TreeNode(sc.canvas, None, item)
@@ -122,12 +123,12 @@ class ModuleBrowser:
 
     def settitle(self):
         "Set the window title."
-        self.top.wm_title("Module Browser - " + self.name)
+        self.top.wm_title("Module Browser - " + os.path.basename(self.path))
         self.top.wm_iconname("Module Browser")
 
     def rootnode(self):
         "Return a ModuleBrowserTreeItem as the root of the tree."
-        return ModuleBrowserTreeItem(self.file)
+        return ModuleBrowserTreeItem(self.path)
 
 
 class ModuleBrowserTreeItem(TreeItem):
@@ -170,8 +171,8 @@ class ModuleBrowserTreeItem(TreeItem):
 
     def listchildren(self):
         "Return sequenced classes and functions in the module."
-        dir, file = os.path.split(self.file)
-        name, ext = os.path.splitext(file)
+        dir, base = os.path.split(self.file)
+        name, ext = os.path.splitext(base)
         if os.path.normcase(ext) != ".py":
             return []
         try:
@@ -227,25 +228,23 @@ class ChildBrowserTreeItem(TreeItem):
 
 
 def _module_browser(parent): # htest #
-    try:
-        file = sys.argv[1]  # If pass file on command line
-        # If this succeeds, unittest will fail.
-    except IndexError:
+    if len(sys.argv) > 1:  # If pass file on command line.
+        file = sys.argv[1]
+    else:
         file = __file__
         # Add objects for htest
         class Nested_in_func(TreeNode):
             def nested_in_class(): pass
         def closure():
             class Nested_in_closure: pass
-    dir, file = os.path.split(file)
-    name = os.path.splitext(file)[0]
     flist = pyshell.PyShellFileList(parent)
     global file_open
     file_open = flist.open
-    ModuleBrowser(flist, name, [dir], _htest=True)
+    ModuleBrowser(flist, file, _htest=True)
 
 if __name__ == "__main__":
-    from unittest import main
-    main('idlelib.idle_test.test_browser', verbosity=2, exit=False)
+    if len(sys.argv) == 1:  # If pass file on command line, unittest fails.
+        from unittest import main
+        main('idlelib.idle_test.test_browser', verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
     run(_module_browser)
