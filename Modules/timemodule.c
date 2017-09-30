@@ -663,7 +663,10 @@ time_strftime(PyObject *self, PyObject *args)
 #if (defined(_AIX) || defined(sun) || defined(MS_WINDOWS)) && \
     defined(HAVE_WCSFTIME)
 #ifdef MS_WINDOWS
+    // Create an array of %Z occurences for subsequent replacement
     size_t count = 0;
+    size_t n = wcslen(format) / 2;
+    size_t *points = (size_t *)PyMem_Malloc(n * sizeof(size_t));
 #endif
     /* check that the format string contains only valid directives */
     for (outbuf = wcschr(fmt, L'%');
@@ -683,8 +686,9 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
 #ifdef MS_WINDOWS
-        // Count the number of %Z occurences
+        // Count the number of %Z occurences and fill the array
         if (outbuf[1] == L'Z') {
+            *(points + count)= outbuf - fmt;
             ++count;
         }
 #endif
@@ -695,19 +699,19 @@ time_strftime(PyObject *self, PyObject *args)
     /*For Windows firstly replace %Z with time zone name from Windows API
     to not use format string containing %Z with wcsftime().*/
     wchar_t *result, *tmp;
-    const wchar_t *ins;
-    wchar_t zone[128];
-    size_t len_zone, len_copy;
-
-    get_windows_zone(zone);
-    if (PyErr_Occurred()) {
-        PyMem_Free(format);
-        return NULL;
-    }
-    len_zone = wcslen(zone);
 
     //Replace %Z with time zone name
     if (count) {
+        wchar_t zone[128];
+        size_t len_zone;
+
+        get_windows_zone(zone);
+        if (PyErr_Occurred()) {
+            PyMem_Free(format);
+            return NULL;
+        }
+        len_zone = wcslen(zone);
+
         if (len_zone - 2 > (PY_SSIZE_T_MAX / sizeof(time_char) - 1 - wcslen(fmt)) / count) {
             PyMem_Free(format);
             return PyErr_NoMemory();
@@ -715,22 +719,19 @@ time_strftime(PyObject *self, PyObject *args)
         size_t l = wcslen(fmt) + (len_zone - 2) * count + 1;
         tmp = result = (time_char *)PyMem_Malloc(l * sizeof(time_char));
 
-        while (count) {
-            ins = wcschr(fmt, L'%');
-            len_copy = ins - fmt;
-            if (ins[1] == L'Z') {
-                tmp = wcsncpy(tmp, fmt, len_copy) + len_copy;
-                tmp = wcscpy(tmp, zone) + len_zone;
-                count--;
+        for (size_t i = 0, k = points[0]; i < count; ++i) {
+            if (i > 0) {
+                k = *(points + i) - *(points + i - 1) - 2;
             }
-            else {
-                tmp = wcsncpy(tmp, fmt, len_copy + 2) + len_copy + 2;
-            }
-            fmt += len_copy + 2;;
+            tmp = wcsncpy(tmp, fmt, k) + k;
+            tmp = wcscpy(tmp, zone) + len_zone;
+            fmt += k + 2;
         }
         wcscpy(tmp, fmt);
+
         fmt = result;
     }
+    PyMem_Free(points);
 #endif
 
     fmtlen = time_strlen(fmt);
