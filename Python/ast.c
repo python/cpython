@@ -594,7 +594,6 @@ struct compiling {
     PyArena *c_arena; /* Arena for allocating memory. */
     PyObject *c_filename; /* filename */
     PyObject *c_normalize; /* Normalization function from unicodedata. */
-    PyObject *c_normalize_args; /* Normalization argument tuple. */
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
@@ -631,12 +630,6 @@ init_normalization(struct compiling *c)
     Py_DECREF(m);
     if (!c->c_normalize)
         return 0;
-    c->c_normalize_args = Py_BuildValue("(sN)", "NFKC", Py_None);
-    if (!c->c_normalize_args) {
-        Py_CLEAR(c->c_normalize);
-        return 0;
-    }
-    PyTuple_SET_ITEM(c->c_normalize_args, 1, NULL);
     return 1;
 }
 
@@ -652,15 +645,29 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
+        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        PyTuple_SET_ITEM(c->c_normalize_args, 1, id);
-        id2 = PyObject_Call(c->c_normalize, c->c_normalize_args, NULL);
+        PyObject *form = _PyUnicode_FromId(&PyId_NFKC);
+        if (form == NULL) {
+            Py_DECREF(id);
+            return NULL;
+        }
+        PyObject *args[2] = {form, id};
+        id2 = _PyObject_FastCall(c->c_normalize, args, 2);
         Py_DECREF(id);
         if (!id2)
             return NULL;
+        if (!PyUnicode_Check(id2)) {
+            PyErr_Format(PyExc_TypeError,
+                         "unicodedata.normalize() must return a string, not "
+                         "%.200s",
+                         Py_TYPE(id2)->tp_name);
+            Py_DECREF(id2);
+            return NULL;
+        }
         id = id2;
     }
     PyUnicode_InternInPlace(&id);
@@ -779,7 +786,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
-    c.c_normalize_args = NULL;
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
@@ -872,8 +878,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
  out:
     if (c.c_normalize) {
         Py_DECREF(c.c_normalize);
-        PyTuple_SET_ITEM(c.c_normalize_args, 1, NULL);
-        Py_DECREF(c.c_normalize_args);
     }
     return res;
 }

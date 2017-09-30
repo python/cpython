@@ -431,6 +431,16 @@ class AST_Tests(unittest.TestCase):
             compile(empty_yield_from, "<test>", "exec")
         self.assertIn("field value is required", str(cm.exception))
 
+    @support.cpython_only
+    def test_issue31592(self):
+        # There shouldn't be an assertion failure in case of a bad
+        # unicodedata.normalize().
+        import unicodedata
+        def bad_normalize(*args):
+            return None
+        with support.swap_attr(unicodedata, 'normalize', bad_normalize):
+            self.assertRaises(TypeError, ast.parse, '\u03D5')
+
 
 class ASTHelpers_Test(unittest.TestCase):
 
