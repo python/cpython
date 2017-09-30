@@ -407,7 +407,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
     i = url.find(':')
     if i > 0:
         if url[:i] == 'http': # optimize the common case
-            scheme = url[:i].lower()
             url = url[i+1:]
             if url[:2] == '//':
                 netloc, url = _splitnetloc(url, 2)
@@ -418,7 +417,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
                 url, fragment = url.split('#', 1)
             if '?' in url:
                 url, query = url.split('?', 1)
-            v = SplitResult(scheme, netloc, url, query, fragment)
+            v = SplitResult('http', netloc, url, query, fragment)
             _parse_cache[key] = v
             return _coerce_result(v)
         for c in url[:i]:

@@ -81,7 +81,7 @@ class AboutDialog(Toplevel):
         logo = Label(frame_background, image=self.icon_image, bg=self.bg)
         logo.grid(row=0, column=0, sticky=W, rowspan=2, padx=10, pady=10)
 
-        byline_text = "Python's Integrated DeveLopment Environment" + 5*'\n'
+        byline_text = "Python's Integrated Development\nand Learning Environment" + 5*'\n'
         byline = Label(frame_background, text=byline_text, justify=LEFT,
                        fg=self.fg, bg=self.bg)
         byline.grid(row=2, column=0, sticky=W, columnspan=3, padx=10, pady=5)
