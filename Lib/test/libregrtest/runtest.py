@@ -146,6 +146,10 @@ def runtest(ns, test):
 runtest.stringio = None
 
 
+def post_test_cleanup():
+    support.reap_children()
+
+
 def runtest_inner(ns, test, display_failure=True):
     support.unload(test)
 
@@ -173,6 +177,7 @@ def runtest_inner(ns, test, display_failure=True):
             if ns.huntrleaks:
                 refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
             test_time = time.time() - start_time
+        post_test_cleanup()
     except support.ResourceDenied as msg:
         if not ns.quiet and not ns.pgo:
             print(test, "skipped --", msg, flush=True)

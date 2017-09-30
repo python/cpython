@@ -1,7 +1,7 @@
 """Test idlelib.configdialog.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 63%.
+Coverage: 95%.
 """
 from idlelib import configdialog
 from test.support import requires
@@ -9,7 +9,7 @@ requires('gui')
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
-from tkinter import Tk, Frame, IntVar, BooleanVar, DISABLED, NORMAL
+from tkinter import Tk, Frame, StringVar, IntVar, BooleanVar, DISABLED, NORMAL
 from idlelib import config
 from idlelib.configdialog import idleConf, changes, tracers
 
@@ -29,6 +29,7 @@ dialog = None
 mainpage = changes['main']
 highpage = changes['highlight']
 keyspage = changes['keys']
+extpage = changes['extensions']
 
 def setUpModule():
     global root, dialog
@@ -41,6 +42,8 @@ def tearDownModule():
     global root, dialog
     idleConf.userCfg = usercfg
     tracers.detach()
+    tracers.clear()
+    changes.clear()
     del dialog
     root.update_idletasks()
     root.destroy()
@@ -57,8 +60,6 @@ class FontPageTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         page = cls.page = dialog.fontpage
-        #dialog.note.insert(0, page, text='copy')
-        #dialog.note.add(page, text='copyfgfg')
         dialog.note.select(page)
         page.set_samples = Func()  # Mask instance method.
 
@@ -118,7 +119,7 @@ class FontPageTest(unittest.TestCase):
         # Click on item should select that item.
         d = self.page
         if d.fontlist.size() < 2:
-            cls.skipTest('need at least 2 fonts')
+            self.skipTest('need at least 2 fonts')
         fontlist = d.fontlist
         fontlist.activate(0)
 
@@ -138,7 +139,7 @@ class FontPageTest(unittest.TestCase):
         self.assertIn(d.font_name.get(), font1.lower())
 
     def test_sizelist(self):
-        # Click on number shouod select that number
+        # Click on number should select that number
         d = self.page
         d.sizelist.variable.set(40)
         self.assertEqual(d.font_size.get(), '40')
@@ -225,16 +226,852 @@ class IndentTest(unittest.TestCase):
         self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
 
 
-class HighlightTest(unittest.TestCase):
+class HighPageTest(unittest.TestCase):
+    """Test that highlight tab widgets enable users to make changes.
+
+    Test that widget actions set vars, that var changes add
+    options to changes and that themes work correctly.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        page = cls.page = dialog.highpage
+        dialog.note.select(page)
+        page.set_theme_type = Func()
+        page.paint_theme_sample = Func()
+        page.set_highlight_target = Func()
+        page.set_color_sample = Func()
+
+    @classmethod
+    def tearDownClass(cls):
+        d = cls.page
+        del d.set_theme_type, d.paint_theme_sample
+        del d.set_highlight_target, d.set_color_sample
 
     def setUp(self):
+        d = self.page
+        # The following is needed for test_load_key_cfg, _delete_custom_keys.
+        # This may indicate a defect in some test or function.
+        for section in idleConf.GetSectionList('user', 'highlight'):
+            idleConf.userCfg['highlight'].remove_section(section)
+        changes.clear()
+        d.set_theme_type.called = 0
+        d.paint_theme_sample.called = 0
+        d.set_highlight_target.called = 0
+        d.set_color_sample.called = 0
+
+    def test_load_theme_cfg(self):
+        tracers.detach()
+        d = self.page
+        eq = self.assertEqual
+
+        # Use builtin theme with no user themes created.
+        idleConf.CurrentTheme = mock.Mock(return_value='IDLE Classic')
+        d.load_theme_cfg()
+        self.assertTrue(d.theme_source.get())
+        # builtinlist sets variable builtin_name to the CurrentTheme default.
+        eq(d.builtin_name.get(), 'IDLE Classic')
+        eq(d.custom_name.get(), '- no custom themes -')
+        eq(d.custom_theme_on.state(), ('disabled',))
+        eq(d.set_theme_type.called, 1)
+        eq(d.paint_theme_sample.called, 1)
+        eq(d.set_highlight_target.called, 1)
+
+        # Builtin theme with non-empty user theme list.
+        idleConf.SetOption('highlight', 'test1', 'option', 'value')
+        idleConf.SetOption('highlight', 'test2', 'option2', 'value2')
+        d.load_theme_cfg()
+        eq(d.builtin_name.get(), 'IDLE Classic')
+        eq(d.custom_name.get(), 'test1')
+        eq(d.set_theme_type.called, 2)
+        eq(d.paint_theme_sample.called, 2)
+        eq(d.set_highlight_target.called, 2)
+
+        # Use custom theme.
+        idleConf.CurrentTheme = mock.Mock(return_value='test2')
+        idleConf.SetOption('main', 'Theme', 'default', '0')
+        d.load_theme_cfg()
+        self.assertFalse(d.theme_source.get())
+        eq(d.builtin_name.get(), 'IDLE Classic')
+        eq(d.custom_name.get(), 'test2')
+        eq(d.set_theme_type.called, 3)
+        eq(d.paint_theme_sample.called, 3)
+        eq(d.set_highlight_target.called, 3)
+
+        del idleConf.CurrentTheme
+        tracers.attach()
+
+    def test_theme_source(self):
+        eq = self.assertEqual
+        d = self.page
+        # Test these separately.
+        d.var_changed_builtin_name = Func()
+        d.var_changed_custom_name = Func()
+        # Builtin selected.
+        d.builtin_theme_on.invoke()
+        eq(mainpage, {'Theme': {'default': 'True'}})
+        eq(d.var_changed_builtin_name.called, 1)
+        eq(d.var_changed_custom_name.called, 0)
         changes.clear()
 
+        # Custom selected.
+        d.custom_theme_on.state(('!disabled',))
+        d.custom_theme_on.invoke()
+        self.assertEqual(mainpage, {'Theme': {'default': 'False'}})
+        eq(d.var_changed_builtin_name.called, 1)
+        eq(d.var_changed_custom_name.called, 1)
+        del d.var_changed_builtin_name, d.var_changed_custom_name
 
-class KeysTest(unittest.TestCase):
+    def test_builtin_name(self):
+        eq = self.assertEqual
+        d = self.page
+        item_list = ['IDLE Classic', 'IDLE Dark', 'IDLE New']
+
+        # Not in old_themes, defaults name to first item.
+        idleConf.SetOption('main', 'Theme', 'name', 'spam')
+        d.builtinlist.SetMenu(item_list, 'IDLE Dark')
+        eq(mainpage, {'Theme': {'name': 'IDLE Classic',
+                                'name2': 'IDLE Dark'}})
+        eq(d.theme_message['text'], 'New theme, see Help')
+        eq(d.paint_theme_sample.called, 1)
+
+        # Not in old themes - uses name2.
+        changes.clear()
+        idleConf.SetOption('main', 'Theme', 'name', 'IDLE New')
+        d.builtinlist.SetMenu(item_list, 'IDLE Dark')
+        eq(mainpage, {'Theme': {'name2': 'IDLE Dark'}})
+        eq(d.theme_message['text'], 'New theme, see Help')
+        eq(d.paint_theme_sample.called, 2)
+
+        # Builtin name in old_themes.
+        changes.clear()
+        d.builtinlist.SetMenu(item_list, 'IDLE Classic')
+        eq(mainpage, {'Theme': {'name': 'IDLE Classic', 'name2': ''}})
+        eq(d.theme_message['text'], '')
+        eq(d.paint_theme_sample.called, 3)
+
+    def test_custom_name(self):
+        d = self.page
+
+        # If no selections, doesn't get added.
+        d.customlist.SetMenu([], '- no custom themes -')
+        self.assertNotIn('Theme', mainpage)
+        self.assertEqual(d.paint_theme_sample.called, 0)
+
+        # Custom name selected.
+        changes.clear()
+        d.customlist.SetMenu(['a', 'b', 'c'], 'c')
+        self.assertEqual(mainpage, {'Theme': {'name': 'c'}})
+        self.assertEqual(d.paint_theme_sample.called, 1)
+
+    def test_color(self):
+        d = self.page
+        d.on_new_color_set = Func()
+        # self.color is only set in get_color through ColorChooser.
+        d.color.set('green')
+        self.assertEqual(d.on_new_color_set.called, 1)
+        del d.on_new_color_set
+
+    def test_highlight_target_list_mouse(self):
+        # Set highlight_target through targetlist.
+        eq = self.assertEqual
+        d = self.page
+
+        d.targetlist.SetMenu(['a', 'b', 'c'], 'c')
+        eq(d.highlight_target.get(), 'c')
+        eq(d.set_highlight_target.called, 1)
+
+    def test_highlight_target_text_mouse(self):
+        # Set highlight_target through clicking highlight_sample.
+        eq = self.assertEqual
+        d = self.page
+
+        elem = {}
+        count = 0
+        hs = d.highlight_sample
+        hs.focus_force()
+        hs.see(1.0)
+        hs.update_idletasks()
+
+        def tag_to_element(elem):
+            for element, tag in d.theme_elements.items():
+                elem[tag[0]] = element
+
+        def click_it(start):
+            x, y, dx, dy = hs.bbox(start)
+            x += dx // 2
+            y += dy // 2
+            hs.event_generate('<Enter>', x=0, y=0)
+            hs.event_generate('<Motion>', x=x, y=y)
+            hs.event_generate('<ButtonPress-1>', x=x, y=y)
+            hs.event_generate('<ButtonRelease-1>', x=x, y=y)
+
+        # Flip theme_elements to make the tag the key.
+        tag_to_element(elem)
+
+        # If highlight_sample has a tag that isn't in theme_elements, there
+        # will be a KeyError in the test run.
+        for tag in hs.tag_names():
+            for start_index in hs.tag_ranges(tag)[0::2]:
+                count += 1
+                click_it(start_index)
+                eq(d.highlight_target.get(), elem[tag])
+                eq(d.set_highlight_target.called, count)
+
+    def test_set_theme_type(self):
+        eq = self.assertEqual
+        d = self.page
+        del d.set_theme_type
+
+        # Builtin theme selected.
+        d.theme_source.set(True)
+        d.set_theme_type()
+        eq(d.builtinlist['state'], NORMAL)
+        eq(d.customlist['state'], DISABLED)
+        eq(d.button_delete_custom.state(), ('disabled',))
+
+        # Custom theme selected.
+        d.theme_source.set(False)
+        d.set_theme_type()
+        eq(d.builtinlist['state'], DISABLED)
+        eq(d.custom_theme_on.state(), ('selected',))
+        eq(d.customlist['state'], NORMAL)
+        eq(d.button_delete_custom.state(), ())
+        d.set_theme_type = Func()
+
+    def test_get_color(self):
+        eq = self.assertEqual
+        d = self.page
+        orig_chooser = configdialog.tkColorChooser.askcolor
+        chooser = configdialog.tkColorChooser.askcolor = Func()
+        gntn = d.get_new_theme_name = Func()
+
+        d.highlight_target.set('Editor Breakpoint')
+        d.color.set('#ffffff')
+
+        # Nothing selected.
+        chooser.result = (None, None)
+        d.button_set_color.invoke()
+        eq(d.color.get(), '#ffffff')
+
+        # Selection same as previous color.
+        chooser.result = ('', d.style.lookup(d.frame_color_set['style'], 'background'))
+        d.button_set_color.invoke()
+        eq(d.color.get(), '#ffffff')
+
+        # Select different color.
+        chooser.result = ((222.8671875, 0.0, 0.0), '#de0000')
+
+        # Default theme.
+        d.color.set('#ffffff')
+        d.theme_source.set(True)
+
+        # No theme name selected therefore color not saved.
+        gntn.result = ''
+        d.button_set_color.invoke()
+        eq(gntn.called, 1)
+        eq(d.color.get(), '#ffffff')
+        # Theme name selected.
+        gntn.result = 'My New Theme'
+        d.button_set_color.invoke()
+        eq(d.custom_name.get(), gntn.result)
+        eq(d.color.get(), '#de0000')
+
+        # Custom theme.
+        d.color.set('#ffffff')
+        d.theme_source.set(False)
+        d.button_set_color.invoke()
+        eq(d.color.get(), '#de0000')
+
+        del d.get_new_theme_name
+        configdialog.tkColorChooser.askcolor = orig_chooser
+
+    def test_on_new_color_set(self):
+        d = self.page
+        color = '#3f7cae'
+        d.custom_name.set('Python')
+        d.highlight_target.set('Selected Text')
+        d.fg_bg_toggle.set(True)
+
+        d.color.set(color)
+        self.assertEqual(d.style.lookup(d.frame_color_set['style'], 'background'), color)
+        self.assertEqual(d.highlight_sample.tag_cget('hilite', 'foreground'), color)
+        self.assertEqual(highpage,
+                         {'Python': {'hilite-foreground': color}})
+
+    def test_get_new_theme_name(self):
+        orig_sectionname = configdialog.SectionName
+        sn = configdialog.SectionName = Func(return_self=True)
+        d = self.page
+
+        sn.result = 'New Theme'
+        self.assertEqual(d.get_new_theme_name(''), 'New Theme')
+
+        configdialog.SectionName = orig_sectionname
+
+    def test_save_as_new_theme(self):
+        d = self.page
+        gntn = d.get_new_theme_name = Func()
+        d.theme_source.set(True)
+
+        # No name entered.
+        gntn.result = ''
+        d.button_save_custom.invoke()
+        self.assertNotIn(gntn.result, idleConf.userCfg['highlight'])
+
+        # Name entered.
+        gntn.result = 'my new theme'
+        gntn.called = 0
+        self.assertNotIn(gntn.result, idleConf.userCfg['highlight'])
+        d.button_save_custom.invoke()
+        self.assertIn(gntn.result, idleConf.userCfg['highlight'])
+
+        del d.get_new_theme_name
+
+    def test_create_new_and_save_new(self):
+        eq = self.assertEqual
+        d = self.page
+
+        # Use default as previously active theme.
+        d.theme_source.set(True)
+        d.builtin_name.set('IDLE Classic')
+        first_new = 'my new custom theme'
+        second_new = 'my second custom theme'
+
+        # No changes, so themes are an exact copy.
+        self.assertNotIn(first_new, idleConf.userCfg)
+        d.create_new(first_new)
+        eq(idleConf.GetSectionList('user', 'highlight'), [first_new])
+        eq(idleConf.GetThemeDict('default', 'IDLE Classic'),
+           idleConf.GetThemeDict('user', first_new))
+        eq(d.custom_name.get(), first_new)
+        self.assertFalse(d.theme_source.get())  # Use custom set.
+        eq(d.set_theme_type.called, 1)
+
+        # Test that changed targets are in new theme.
+        changes.add_option('highlight', first_new, 'hit-background', 'yellow')
+        self.assertNotIn(second_new, idleConf.userCfg)
+        d.create_new(second_new)
+        eq(idleConf.GetSectionList('user', 'highlight'), [first_new, second_new])
+        self.assertNotEqual(idleConf.GetThemeDict('user', first_new),
+                            idleConf.GetThemeDict('user', second_new))
+        # Check that difference in themes was in `hit-background` from `changes`.
+        idleConf.SetOption('highlight', first_new, 'hit-background', 'yellow')
+        eq(idleConf.GetThemeDict('user', first_new),
+           idleConf.GetThemeDict('user', second_new))
+
+    def test_set_highlight_target(self):
+        eq = self.assertEqual
+        d = self.page
+        del d.set_highlight_target
+
+        # Target is cursor.
+        d.highlight_target.set('Cursor')
+        eq(d.fg_on.state(), ('disabled', 'selected'))
+        eq(d.bg_on.state(), ('disabled',))
+        self.assertTrue(d.fg_bg_toggle)
+        eq(d.set_color_sample.called, 1)
+
+        # Target is not cursor.
+        d.highlight_target.set('Comment')
+        eq(d.fg_on.state(), ('selected',))
+        eq(d.bg_on.state(), ())
+        self.assertTrue(d.fg_bg_toggle)
+        eq(d.set_color_sample.called, 2)
+
+        d.set_highlight_target = Func()
+
+    def test_set_color_sample_binding(self):
+        d = self.page
+        scs = d.set_color_sample
+
+        d.fg_on.invoke()
+        self.assertEqual(scs.called, 1)
+
+        d.bg_on.invoke()
+        self.assertEqual(scs.called, 2)
+
+    def test_set_color_sample(self):
+        d = self.page
+        del d.set_color_sample
+        d.highlight_target.set('Selected Text')
+        d.fg_bg_toggle.set(True)
+        d.set_color_sample()
+        self.assertEqual(
+                d.style.lookup(d.frame_color_set['style'], 'background'),
+                d.highlight_sample.tag_cget('hilite', 'foreground'))
+        d.set_color_sample = Func()
+
+    def test_paint_theme_sample(self):
+        eq = self.assertEqual
+        d = self.page
+        del d.paint_theme_sample
+        hs_tag = d.highlight_sample.tag_cget
+        gh = idleConf.GetHighlight
+        fg = 'foreground'
+        bg = 'background'
+
+        # Create custom theme based on IDLE Dark.
+        d.theme_source.set(True)
+        d.builtin_name.set('IDLE Dark')
+        theme = 'IDLE Test'
+        d.create_new(theme)
+        d.set_color_sample.called = 0
+
+        # Base theme with nothing in `changes`.
+        d.paint_theme_sample()
+        eq(hs_tag('break', fg), gh(theme, 'break', fgBg='fg'))
+        eq(hs_tag('cursor', bg), gh(theme, 'normal', fgBg='bg'))
+        self.assertNotEqual(hs_tag('console', fg), 'blue')
+        self.assertNotEqual(hs_tag('console', bg), 'yellow')
+        eq(d.set_color_sample.called, 1)
+
+        # Apply changes.
+        changes.add_option('highlight', theme, 'console-foreground', 'blue')
+        changes.add_option('highlight', theme, 'console-background', 'yellow')
+        d.paint_theme_sample()
+
+        eq(hs_tag('break', fg), gh(theme, 'break', fgBg='fg'))
+        eq(hs_tag('cursor', bg), gh(theme, 'normal', fgBg='bg'))
+        eq(hs_tag('console', fg), 'blue')
+        eq(hs_tag('console', bg), 'yellow')
+        eq(d.set_color_sample.called, 2)
+
+        d.paint_theme_sample = Func()
+
+    def test_delete_custom(self):
+        eq = self.assertEqual
+        d = self.page
+        d.button_delete_custom.state(('!disabled',))
+        yesno = d.askyesno = Func()
+        dialog.deactivate_current_config = Func()
+        dialog.activate_config_changes = Func()
+
+        theme_name = 'spam theme'
+        idleConf.userCfg['highlight'].SetOption(theme_name, 'name', 'value')
+        highpage[theme_name] = {'option': 'True'}
+
+        # Force custom theme.
+        d.theme_source.set(False)
+        d.custom_name.set(theme_name)
+
+        # Cancel deletion.
+        yesno.result = False
+        d.button_delete_custom.invoke()
+        eq(yesno.called, 1)
+        eq(highpage[theme_name], {'option': 'True'})
+        eq(idleConf.GetSectionList('user', 'highlight'), ['spam theme'])
+        eq(dialog.deactivate_current_config.called, 0)
+        eq(dialog.activate_config_changes.called, 0)
+        eq(d.set_theme_type.called, 0)
+
+        # Confirm deletion.
+        yesno.result = True
+        d.button_delete_custom.invoke()
+        eq(yesno.called, 2)
+        self.assertNotIn(theme_name, highpage)
+        eq(idleConf.GetSectionList('user', 'highlight'), [])
+        eq(d.custom_theme_on.state(), ('disabled',))
+        eq(d.custom_name.get(), '- no custom themes -')
+        eq(dialog.deactivate_current_config.called, 1)
+        eq(dialog.activate_config_changes.called, 1)
+        eq(d.set_theme_type.called, 1)
+
+        del dialog.activate_config_changes, dialog.deactivate_current_config
+        del d.askyesno
+
+
+class KeysPageTest(unittest.TestCase):
+    """Test that keys tab widgets enable users to make changes.
+
+    Test that widget actions set vars, that var changes add
+    options to changes and that key sets works correctly.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        page = cls.page = dialog.keyspage
+        dialog.note.select(page)
+        page.set_keys_type = Func()
+        page.load_keys_list = Func()
+
+    @classmethod
+    def tearDownClass(cls):
+        page = cls.page
+        del page.set_keys_type, page.load_keys_list
 
     def setUp(self):
+        d = self.page
+        # The following is needed for test_load_key_cfg, _delete_custom_keys.
+        # This may indicate a defect in some test or function.
+        for section in idleConf.GetSectionList('user', 'keys'):
+            idleConf.userCfg['keys'].remove_section(section)
         changes.clear()
+        d.set_keys_type.called = 0
+        d.load_keys_list.called = 0
+
+    def test_load_key_cfg(self):
+        tracers.detach()
+        d = self.page
+        eq = self.assertEqual
+
+        # Use builtin keyset with no user keysets created.
+        idleConf.CurrentKeys = mock.Mock(return_value='IDLE Classic OSX')
+        d.load_key_cfg()
+        self.assertTrue(d.keyset_source.get())
+        # builtinlist sets variable builtin_name to the CurrentKeys default.
+        eq(d.builtin_name.get(), 'IDLE Classic OSX')
+        eq(d.custom_name.get(), '- no custom keys -')
+        eq(d.custom_keyset_on.state(), ('disabled',))
+        eq(d.set_keys_type.called, 1)
+        eq(d.load_keys_list.called, 1)
+        eq(d.load_keys_list.args, ('IDLE Classic OSX', ))
+
+        # Builtin keyset with non-empty user keyset list.
+        idleConf.SetOption('keys', 'test1', 'option', 'value')
+        idleConf.SetOption('keys', 'test2', 'option2', 'value2')
+        d.load_key_cfg()
+        eq(d.builtin_name.get(), 'IDLE Classic OSX')
+        eq(d.custom_name.get(), 'test1')
+        eq(d.set_keys_type.called, 2)
+        eq(d.load_keys_list.called, 2)
+        eq(d.load_keys_list.args, ('IDLE Classic OSX', ))
+
+        # Use custom keyset.
+        idleConf.CurrentKeys = mock.Mock(return_value='test2')
+        idleConf.default_keys = mock.Mock(return_value='IDLE Modern Unix')
+        idleConf.SetOption('main', 'Keys', 'default', '0')
+        d.load_key_cfg()
+        self.assertFalse(d.keyset_source.get())
+        eq(d.builtin_name.get(), 'IDLE Modern Unix')
+        eq(d.custom_name.get(), 'test2')
+        eq(d.set_keys_type.called, 3)
+        eq(d.load_keys_list.called, 3)
+        eq(d.load_keys_list.args, ('test2', ))
+
+        del idleConf.CurrentKeys, idleConf.default_keys
+        tracers.attach()
+
+    def test_keyset_source(self):
+        eq = self.assertEqual
+        d = self.page
+        # Test these separately.
+        d.var_changed_builtin_name = Func()
+        d.var_changed_custom_name = Func()
+        # Builtin selected.
+        d.builtin_keyset_on.invoke()
+        eq(mainpage, {'Keys': {'default': 'True'}})
+        eq(d.var_changed_builtin_name.called, 1)
+        eq(d.var_changed_custom_name.called, 0)
+        changes.clear()
+
+        # Custom selected.
+        d.custom_keyset_on.state(('!disabled',))
+        d.custom_keyset_on.invoke()
+        self.assertEqual(mainpage, {'Keys': {'default': 'False'}})
+        eq(d.var_changed_builtin_name.called, 1)
+        eq(d.var_changed_custom_name.called, 1)
+        del d.var_changed_builtin_name, d.var_changed_custom_name
+
+    def test_builtin_name(self):
+        eq = self.assertEqual
+        d = self.page
+        idleConf.userCfg['main'].remove_section('Keys')
+        item_list = ['IDLE Classic Windows', 'IDLE Classic OSX',
+                     'IDLE Modern UNIX']
+
+        # Not in old_keys, defaults name to first item.
+        d.builtinlist.SetMenu(item_list, 'IDLE Modern UNIX')
+        eq(mainpage, {'Keys': {'name': 'IDLE Classic Windows',
+                               'name2': 'IDLE Modern UNIX'}})
+        eq(d.keys_message['text'], 'New key set, see Help')
+        eq(d.load_keys_list.called, 1)
+        eq(d.load_keys_list.args, ('IDLE Modern UNIX', ))
+
+        # Not in old keys - uses name2.
+        changes.clear()
+        idleConf.SetOption('main', 'Keys', 'name', 'IDLE Classic Unix')
+        d.builtinlist.SetMenu(item_list, 'IDLE Modern UNIX')
+        eq(mainpage, {'Keys': {'name2': 'IDLE Modern UNIX'}})
+        eq(d.keys_message['text'], 'New key set, see Help')
+        eq(d.load_keys_list.called, 2)
+        eq(d.load_keys_list.args, ('IDLE Modern UNIX', ))
+
+        # Builtin name in old_keys.
+        changes.clear()
+        d.builtinlist.SetMenu(item_list, 'IDLE Classic OSX')
+        eq(mainpage, {'Keys': {'name': 'IDLE Classic OSX', 'name2': ''}})
+        eq(d.keys_message['text'], '')
+        eq(d.load_keys_list.called, 3)
+        eq(d.load_keys_list.args, ('IDLE Classic OSX', ))
+
+    def test_custom_name(self):
+        d = self.page
+
+        # If no selections, doesn't get added.
+        d.customlist.SetMenu([], '- no custom keys -')
+        self.assertNotIn('Keys', mainpage)
+        self.assertEqual(d.load_keys_list.called, 0)
+
+        # Custom name selected.
+        changes.clear()
+        d.customlist.SetMenu(['a', 'b', 'c'], 'c')
+        self.assertEqual(mainpage, {'Keys': {'name': 'c'}})
+        self.assertEqual(d.load_keys_list.called, 1)
+
+    def test_keybinding(self):
+        idleConf.SetOption('extensions', 'ZzDummy', 'enable', 'True')
+        d = self.page
+        d.custom_name.set('my custom keys')
+        d.bindingslist.delete(0, 'end')
+        d.bindingslist.insert(0, 'copy')
+        d.bindingslist.insert(1, 'z-in')
+        d.bindingslist.selection_set(0)
+        d.bindingslist.selection_anchor(0)
+        # Core binding - adds to keys.
+        d.keybinding.set('<Key-F11>')
+        self.assertEqual(keyspage,
+                         {'my custom keys': {'copy': '<Key-F11>'}})
+
+        # Not a core binding - adds to extensions.
+        d.bindingslist.selection_set(1)
+        d.bindingslist.selection_anchor(1)
+        d.keybinding.set('<Key-F11>')
+        self.assertEqual(extpage,
+                         {'ZzDummy_cfgBindings': {'z-in': '<Key-F11>'}})
+
+    def test_set_keys_type(self):
+        eq = self.assertEqual
+        d = self.page
+        del d.set_keys_type
+
+        # Builtin keyset selected.
+        d.keyset_source.set(True)
+        d.set_keys_type()
+        eq(d.builtinlist['state'], NORMAL)
+        eq(d.customlist['state'], DISABLED)
+        eq(d.button_delete_custom_keys.state(), ('disabled',))
+
+        # Custom keyset selected.
+        d.keyset_source.set(False)
+        d.set_keys_type()
+        eq(d.builtinlist['state'], DISABLED)
+        eq(d.custom_keyset_on.state(), ('selected',))
+        eq(d.customlist['state'], NORMAL)
+        eq(d.button_delete_custom_keys.state(), ())
+        d.set_keys_type = Func()
+
+    def test_get_new_keys(self):
+        eq = self.assertEqual
+        d = self.page
+        orig_getkeysdialog = configdialog.GetKeysDialog
+        gkd = configdialog.GetKeysDialog = Func(return_self=True)
+        gnkn = d.get_new_keys_name = Func()
+
+        d.button_new_keys.state(('!disabled',))
+        d.bindingslist.delete(0, 'end')
+        d.bindingslist.insert(0, 'copy - <Control-Shift-Key-C>')
+        d.bindingslist.selection_set(0)
+        d.bindingslist.selection_anchor(0)
+        d.keybinding.set('Key-a')
+        d.keyset_source.set(True)  # Default keyset.
+
+        # Default keyset; no change to binding.
+        gkd.result = ''
+        d.button_new_keys.invoke()
+        eq(d.bindingslist.get('anchor'), 'copy - <Control-Shift-Key-C>')
+        # Keybinding isn't changed when there isn't a change entered.
+        eq(d.keybinding.get(), 'Key-a')
+
+        # Default keyset; binding changed.
+        gkd.result = '<Key-F11>'
+        # No keyset name selected therefore binding not saved.
+        gnkn.result = ''
+        d.button_new_keys.invoke()
+        eq(gnkn.called, 1)
+        eq(d.bindingslist.get('anchor'), 'copy - <Control-Shift-Key-C>')
+        # Keyset name selected.
+        gnkn.result = 'My New Key Set'
+        d.button_new_keys.invoke()
+        eq(d.custom_name.get(), gnkn.result)
+        eq(d.bindingslist.get('anchor'), 'copy - <Key-F11>')
+        eq(d.keybinding.get(), '<Key-F11>')
+
+        # User keyset; binding changed.
+        d.keyset_source.set(False)  # Custom keyset.
+        gnkn.called = 0
+        gkd.result = '<Key-p>'
+        d.button_new_keys.invoke()
+        eq(gnkn.called, 0)
+        eq(d.bindingslist.get('anchor'), 'copy - <Key-p>')
+        eq(d.keybinding.get(), '<Key-p>')
+
+        del d.get_new_keys_name
+        configdialog.GetKeysDialog = orig_getkeysdialog
+
+    def test_get_new_keys_name(self):
+        orig_sectionname = configdialog.SectionName
+        sn = configdialog.SectionName = Func(return_self=True)
+        d = self.page
+
+        sn.result = 'New Keys'
+        self.assertEqual(d.get_new_keys_name(''), 'New Keys')
+
+        configdialog.SectionName = orig_sectionname
+
+    def test_save_as_new_key_set(self):
+        d = self.page
+        gnkn = d.get_new_keys_name = Func()
+        d.keyset_source.set(True)
+
+        # No name entered.
+        gnkn.result = ''
+        d.button_save_custom_keys.invoke()
+
+        # Name entered.
+        gnkn.result = 'my new key set'
+        gnkn.called = 0
+        self.assertNotIn(gnkn.result, idleConf.userCfg['keys'])
+        d.button_save_custom_keys.invoke()
+        self.assertIn(gnkn.result, idleConf.userCfg['keys'])
+
+        del d.get_new_keys_name
+
+    def test_on_bindingslist_select(self):
+        d = self.page
+        b = d.bindingslist
+        b.delete(0, 'end')
+        b.insert(0, 'copy')
+        b.insert(1, 'find')
+        b.activate(0)
+
+        b.focus_force()
+        b.see(1)
+        b.update()
+        x, y, dx, dy = b.bbox(1)
+        x += dx // 2
+        y += dy // 2
+        b.event_generate('<Enter>', x=0, y=0)
+        b.event_generate('<Motion>', x=x, y=y)
+        b.event_generate('<Button-1>', x=x, y=y)
+        b.event_generate('<ButtonRelease-1>', x=x, y=y)
+        self.assertEqual(b.get('anchor'), 'find')
+        self.assertEqual(d.button_new_keys.state(), ())
+
+    def test_create_new_key_set_and_save_new_key_set(self):
+        eq = self.assertEqual
+        d = self.page
+
+        # Use default as previously active keyset.
+        d.keyset_source.set(True)
+        d.builtin_name.set('IDLE Classic Windows')
+        first_new = 'my new custom key set'
+        second_new = 'my second custom keyset'
+
+        # No changes, so keysets are an exact copy.
+        self.assertNotIn(first_new, idleConf.userCfg)
+        d.create_new_key_set(first_new)
+        eq(idleConf.GetSectionList('user', 'keys'), [first_new])
+        eq(idleConf.GetKeySet('IDLE Classic Windows'),
+           idleConf.GetKeySet(first_new))
+        eq(d.custom_name.get(), first_new)
+        self.assertFalse(d.keyset_source.get())  # Use custom set.
+        eq(d.set_keys_type.called, 1)
+
+        # Test that changed keybindings are in new keyset.
+        changes.add_option('keys', first_new, 'copy', '<Key-F11>')
+        self.assertNotIn(second_new, idleConf.userCfg)
+        d.create_new_key_set(second_new)
+        eq(idleConf.GetSectionList('user', 'keys'), [first_new, second_new])
+        self.assertNotEqual(idleConf.GetKeySet(first_new),
+                            idleConf.GetKeySet(second_new))
+        # Check that difference in keysets was in option `copy` from `changes`.
+        idleConf.SetOption('keys', first_new, 'copy', '<Key-F11>')
+        eq(idleConf.GetKeySet(first_new), idleConf.GetKeySet(second_new))
+
+    def test_load_keys_list(self):
+        eq = self.assertEqual
+        d = self.page
+        gks = idleConf.GetKeySet = Func()
+        del d.load_keys_list
+        b = d.bindingslist
+
+        b.delete(0, 'end')
+        b.insert(0, '<<find>>')
+        b.insert(1, '<<help>>')
+        gks.result = {'<<copy>>': ['<Control-Key-c>', '<Control-Key-C>'],
+                      '<<force-open-completions>>': ['<Control-Key-space>'],
+                      '<<spam>>': ['<Key-F11>']}
+        changes.add_option('keys', 'my keys', 'spam', '<Shift-Key-a>')
+        expected = ('copy - <Control-Key-c> <Control-Key-C>',
+                    'force-open-completions - <Control-Key-space>',
+                    'spam - <Shift-Key-a>')
+
+        # No current selection.
+        d.load_keys_list('my keys')
+        eq(b.get(0, 'end'), expected)
+        eq(b.get('anchor'), '')
+        eq(b.curselection(), ())
+
+        # Check selection.
+        b.selection_set(1)
+        b.selection_anchor(1)
+        d.load_keys_list('my keys')
+        eq(b.get(0, 'end'), expected)
+        eq(b.get('anchor'), 'force-open-completions - <Control-Key-space>')
+        eq(b.curselection(), (1, ))
+
+        # Change selection.
+        b.selection_set(2)
+        b.selection_anchor(2)
+        d.load_keys_list('my keys')
+        eq(b.get(0, 'end'), expected)
+        eq(b.get('anchor'), 'spam - <Shift-Key-a>')
+        eq(b.curselection(), (2, ))
+        d.load_keys_list = Func()
+
+        del idleConf.GetKeySet
+
+    def test_delete_custom_keys(self):
+        eq = self.assertEqual
+        d = self.page
+        d.button_delete_custom_keys.state(('!disabled',))
+        yesno = d.askyesno = Func()
+        dialog.deactivate_current_config = Func()
+        dialog.activate_config_changes = Func()
+
+        keyset_name = 'spam key set'
+        idleConf.userCfg['keys'].SetOption(keyset_name, 'name', 'value')
+        keyspage[keyset_name] = {'option': 'True'}
+
+        # Force custom keyset.
+        d.keyset_source.set(False)
+        d.custom_name.set(keyset_name)
+
+        # Cancel deletion.
+        yesno.result = False
+        d.button_delete_custom_keys.invoke()
+        eq(yesno.called, 1)
+        eq(keyspage[keyset_name], {'option': 'True'})
+        eq(idleConf.GetSectionList('user', 'keys'), ['spam key set'])
+        eq(dialog.deactivate_current_config.called, 0)
+        eq(dialog.activate_config_changes.called, 0)
+        eq(d.set_keys_type.called, 0)
+
+        # Confirm deletion.
+        yesno.result = True
+        d.button_delete_custom_keys.invoke()
+        eq(yesno.called, 2)
+        self.assertNotIn(keyset_name, keyspage)
+        eq(idleConf.GetSectionList('user', 'keys'), [])
+        eq(d.custom_keyset_on.state(), ('disabled',))
+        eq(d.custom_name.get(), '- no custom keys -')
+        eq(dialog.deactivate_current_config.called, 1)
+        eq(dialog.activate_config_changes.called, 1)
+        eq(d.set_keys_type.called, 1)
+
+        del dialog.activate_config_changes, dialog.deactivate_current_config
+        del d.askyesno
 
 
 class GenPageTest(unittest.TestCase):
@@ -290,6 +1127,34 @@ class GenPageTest(unittest.TestCase):
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '0'}})
 
+    def test_editor_size(self):
+        d = self.page
+        d.win_height_int.delete(0, 'end')
+        d.win_height_int.insert(0, '11')
+        self.assertEqual(mainpage, {'EditorWindow': {'height': '11'}})
+        changes.clear()
+        d.win_width_int.delete(0, 'end')
+        d.win_width_int.insert(0, '11')
+        self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
+
+    def test_autocomplete_wait(self):
+        self.page.auto_wait_int.delete(0, 'end')
+        self.page.auto_wait_int.insert(0, '11')
+        self.assertEqual(extpage, {'AutoComplete': {'popupwait': '11'}})
+
+    def test_parenmatch(self):
+        d = self.page
+        eq = self.assertEqual
+        d.paren_style_type['menu'].invoke(0)
+        eq(extpage, {'ParenMatch': {'style': 'opener'}})
+        changes.clear()
+        d.paren_flash_time.delete(0, 'end')
+        d.paren_flash_time.insert(0, '11')
+        eq(extpage, {'ParenMatch': {'flash-delay': '11'}})
+        changes.clear()
+        d.bell_on.invoke()
+        eq(extpage, {'ParenMatch': {'bell': 'False'}})
+
     def test_autosave(self):
         d = self.page
         d.save_auto_on.invoke()
@@ -297,13 +1162,15 @@ class GenPageTest(unittest.TestCase):
         d.save_ask_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
-    def test_editor_size(self):
-        d = self.page
-        d.win_height_int.insert(0, '1')
-        self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
-        changes.clear()
-        d.win_width_int.insert(0, '1')
-        self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
+    def test_paragraph(self):
+        self.page.format_width_int.delete(0, 'end')
+        self.page.format_width_int.insert(0, '11')
+        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
+
+    def test_context(self):
+        self.page.context_int.delete(0, 'end')
+        self.page.context_int.insert(0, '1')
+        self.assertEqual(extpage, {'CodeContext': {'numlines': '1'}})
 
     def test_source_selected(self):
         d = self.page
@@ -339,18 +1206,18 @@ class GenPageTest(unittest.TestCase):
 
         h.delete(0, 'end')
         sad()
-        eq(d.button_helplist_edit['state'], DISABLED)
-        eq(d.button_helplist_remove['state'], DISABLED)
+        eq(d.button_helplist_edit.state(), ('disabled',))
+        eq(d.button_helplist_remove.state(), ('disabled',))
 
         h.insert(0, 'source')
         sad()
-        eq(d.button_helplist_edit['state'], DISABLED)
-        eq(d.button_helplist_remove['state'], DISABLED)
+        eq(d.button_helplist_edit.state(), ('disabled',))
+        eq(d.button_helplist_remove.state(), ('disabled',))
 
         h.selection_set(0)
         sad()
-        eq(d.button_helplist_edit['state'], NORMAL)
-        eq(d.button_helplist_remove['state'], NORMAL)
+        eq(d.button_helplist_edit.state(), ())
+        eq(d.button_helplist_remove.state(), ())
         d.set_add_delete_state = Func()  # Mask method.
 
     def test_helplist_item_add(self):
@@ -442,15 +1309,19 @@ class GenPageTest(unittest.TestCase):
 
 class VarTraceTest(unittest.TestCase):
 
-    def setUp(self):
-        changes.clear()
-        tracers.clear()
-        self.v1 = IntVar(root)
-        self.v2 = BooleanVar(root)
-        self.called = 0
+    @classmethod
+    def setUpClass(cls):
+        cls.tracers = configdialog.VarTrace()
+        cls.iv = IntVar(root)
+        cls.bv = BooleanVar(root)
 
-    def tearDown(self):
-        del self.v1, self.v2
+    @classmethod
+    def tearDownClass(cls):
+        del cls.tracers, cls.iv, cls.bv
+
+    def setUp(self):
+        self.tracers.clear()
+        self.called = 0
 
     def var_changed_increment(self, *params):
         self.called += 13
@@ -459,64 +1330,68 @@ class VarTraceTest(unittest.TestCase):
         pass
 
     def test_init(self):
-        tracers.__init__()
-        self.assertEqual(tracers.untraced, [])
-        self.assertEqual(tracers.traced, [])
+        tr = self.tracers
+        tr.__init__()
+        self.assertEqual(tr.untraced, [])
+        self.assertEqual(tr.traced, [])
 
     def test_clear(self):
-        tracers.untraced.append(0)
-        tracers.traced.append(1)
-        tracers.clear()
-        self.assertEqual(tracers.untraced, [])
-        self.assertEqual(tracers.traced, [])
+        tr = self.tracers
+        tr.untraced.append(0)
+        tr.traced.append(1)
+        tr.clear()
+        self.assertEqual(tr.untraced, [])
+        self.assertEqual(tr.traced, [])
 
     def test_add(self):
-        tr = tracers
+        tr = self.tracers
         func = Func()
         cb = tr.make_callback = mock.Mock(return_value=func)
 
-        v1 = tr.add(self.v1, self.var_changed_increment)
-        self.assertIsInstance(v1, IntVar)
-        v2 = tr.add(self.v2, self.var_changed_boolean)
-        self.assertIsInstance(v2, BooleanVar)
+        iv = tr.add(self.iv, self.var_changed_increment)
+        self.assertIs(iv, self.iv)
+        bv = tr.add(self.bv, self.var_changed_boolean)
+        self.assertIs(bv, self.bv)
 
-        v3 = IntVar(root)
-        v3 = tr.add(v3, ('main', 'section', 'option'))
+        sv = StringVar(root)
+        sv2 = tr.add(sv, ('main', 'section', 'option'))
+        self.assertIs(sv2, sv)
         cb.assert_called_once()
-        cb.assert_called_with(v3, ('main', 'section', 'option'))
+        cb.assert_called_with(sv, ('main', 'section', 'option'))
 
-        expected = [(v1, self.var_changed_increment),
-                    (v2, self.var_changed_boolean),
-                    (v3, func)]
+        expected = [(iv, self.var_changed_increment),
+                    (bv, self.var_changed_boolean),
+                    (sv, func)]
         self.assertEqual(tr.traced, [])
         self.assertEqual(tr.untraced, expected)
 
         del tr.make_callback
 
     def test_make_callback(self):
-        cb = tracers.make_callback(self.v1, ('main', 'section', 'option'))
+        cb = self.tracers.make_callback(self.iv, ('main', 'section', 'option'))
         self.assertTrue(callable(cb))
-        self.v1.set(42)
+        self.iv.set(42)
         # Not attached, so set didn't invoke the callback.
         self.assertNotIn('section', changes['main'])
         # Invoke callback manually.
         cb()
         self.assertIn('section', changes['main'])
         self.assertEqual(changes['main']['section']['option'], '42')
+        changes.clear()
 
     def test_attach_detach(self):
-        tr = tracers
-        v1 = tr.add(self.v1, self.var_changed_increment)
-        v2 = tr.add(self.v2, self.var_changed_boolean)
-        expected = [(v1, self.var_changed_increment),
-                    (v2, self.var_changed_boolean)]
+        tr = self.tracers
+        iv = tr.add(self.iv, self.var_changed_increment)
+        bv = tr.add(self.bv, self.var_changed_boolean)
+        expected = [(iv, self.var_changed_increment),
+                    (bv, self.var_changed_boolean)]
 
         # Attach callbacks and test call increment.
         tr.attach()
         self.assertEqual(tr.untraced, [])
         self.assertCountEqual(tr.traced, expected)
-        v1.set(1)
-        self.assertEqual(v1.get(), 1)
+        iv.set(1)
+        self.assertEqual(iv.get(), 1)
         self.assertEqual(self.called, 13)
 
         # Check that only one callback is attached to a variable.
@@ -524,7 +1399,7 @@ class VarTraceTest(unittest.TestCase):
         # would be called twice and the counter would be 2.
         self.called = 0
         tr.attach()
-        v1.set(1)
+        iv.set(1)
         self.assertEqual(self.called, 13)
 
         # Detach callbacks.
@@ -532,7 +1407,7 @@ class VarTraceTest(unittest.TestCase):
         tr.detach()
         self.assertEqual(tr.traced, [])
         self.assertCountEqual(tr.untraced, expected)
-        v1.set(1)
+        iv.set(1)
         self.assertEqual(self.called, 0)
 
 

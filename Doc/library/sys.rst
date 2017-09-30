@@ -1068,7 +1068,7 @@ always available.
    Trace functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
    ``'line'``, ``'return'``, ``'exception'``, ``'c_call'``, ``'c_return'``, or
-   ``'c_exception'``. *arg* depends on the event type.
+   ``'c_exception'``, ``'opcode'``. *arg* depends on the event type.
 
    The trace function is invoked (with *event* set to ``'call'``) whenever a new
    local scope is entered; it should return a reference to a local trace
@@ -1091,6 +1091,8 @@ always available.
       ``None``; the return value specifies the new local trace function.  See
       :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
       works.
+      Per-line events may be disabled for a frame by setting
+      :attr:`f_trace_lines` to :const:`False` on that frame.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
@@ -1113,6 +1115,14 @@ always available.
    ``'c_exception'``
       A C function has raised an exception.  *arg* is the C function object.
 
+   ``'opcode'``
+      The interpreter is about to execute a new opcode (see :mod:`dis` for
+      opcode details).  The local trace function is called; *arg* is
+      ``None``; the return value specifies the new local trace function.
+      Per-opcode events are not emitted by default: they must be explicitly
+      requested by setting :attr:`f_trace_opcodes` to :const:`True` on the
+      frame.
+
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.
 
@@ -1124,6 +1134,11 @@ always available.
       profilers, coverage tools and the like.  Its behavior is part of the
       implementation platform, rather than part of the language definition, and
       thus may not be available in all Python implementations.
+
+   .. versionchanged:: 3.7
+
+      ``'opcode'`` event type added; :attr:`f_trace_lines` and
+      :attr:`f_trace_opcodes` attributes added to frames
 
 .. function:: set_asyncgen_hooks(firstiter, finalizer)
 

@@ -1404,13 +1404,13 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
             import warnings
             warnings.warn(
                 "The selop=None argument of selection() is deprecated "
-                "and will be removed in Python 3.7",
+                "and will be removed in Python 3.8",
                 DeprecationWarning, 3)
         elif selop in ('set', 'add', 'remove', 'toggle'):
             import warnings
             warnings.warn(
                 "The selop argument of selection() is deprecated "
-                "and will be removed in Python 3.7, "
+                "and will be removed in Python 3.8, "
                 "use selection_%s() instead" % (selop,),
                 DeprecationWarning, 3)
         else:
@@ -1543,11 +1543,12 @@ class LabeledScale(Frame):
         try:
             self._variable.trace_vdelete('w', self.__tracecb)
         except AttributeError:
-            # widget has been destroyed already
             pass
         else:
             del self._variable
-            Frame.destroy(self)
+        super().destroy()
+        self.label = None
+        self.scale = None
 
 
     def _adjust(self, *args):
@@ -1644,5 +1645,8 @@ class OptionMenu(Menubutton):
 
     def destroy(self):
         """Destroy this widget and its associated variable."""
-        del self._variable
-        Menubutton.destroy(self)
+        try:
+            del self._variable
+        except AttributeError:
+            pass
+        super().destroy()

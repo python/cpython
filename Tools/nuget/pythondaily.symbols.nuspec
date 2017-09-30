@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>pythondaily.symbols</id>
+    <title>Python (Daily build)</title>
+    <version>0.0.0.0</version>
+    <authors>Python Software Foundation</authors>
+    <licenseUrl>https://docs.python.org/3/license.html</licenseUrl>
+    <projectUrl>https://www.python.org/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Contains symbols for the daily build of Python.</description>
+    <iconUrl>https://www.python.org/static/favicon.ico</iconUrl>
+    <tags>python</tags>
+  </metadata>
+  <files>
+    <file src="python*.dll" target="tools" exclude="*_d*" />
+    <file src="python*.exe" target="tools" exclude="*_d*" />
+    <file src="python*.pdb" target="tools" exclude="*_d*" />
+    <file src="*.pdb" target="tools\DLLs" exclude="python*;*_test*;xx*;_freeze*;*_d*;py.*;pyw.*;pyshellext.*" />
+    <file src="*.pyd" target="tools\DLLs" exclude="python*;*_test*;xx*;_freeze*;*_d*;py.*;pyw.*;pyshellext.*" />
+    <file src="libcrypto*.dll;libssl*.dll;sqlite3.dll" target="tools\DLLs" />
+    <file src="libcrypto*.pdb;libssl*.pdb;sqlite3.pdb" target="tools\DLLs" />
+  </files>
+</package>

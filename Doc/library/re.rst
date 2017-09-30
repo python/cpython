@@ -490,9 +490,10 @@ form.
 
 .. function:: compile(pattern, flags=0)
 
-   Compile a regular expression pattern into a regular expression object, which
-   can be used for matching using its :func:`~regex.match` and
-   :func:`~regex.search` methods, described below.
+   Compile a regular expression pattern into a :ref:`regular expression object
+   <re-objects>`, which can be used for matching using its
+   :func:`~regex.match`, :func:`~regex.search` and other methods, described
+   below.
 
    The expression's behaviour can be modified by specifying a *flags* value.
    Values can be any of the following variables, combined using bitwise OR (the

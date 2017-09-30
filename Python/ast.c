@@ -8,6 +8,7 @@
 #include "node.h"
 #include "ast.h"
 #include "token.h"
+#include "pythonrun.h"
 
 #include <assert.h>
 
@@ -99,8 +100,7 @@ expr_context_name(expr_context_ty ctx)
     case Param:
         return "Param";
     default:
-        assert(0);
-        return "(unknown)";
+        Py_UNREACHABLE();
     }
 }
 
@@ -594,7 +594,6 @@ struct compiling {
     PyArena *c_arena; /* Arena for allocating memory. */
     PyObject *c_filename; /* filename */
     PyObject *c_normalize; /* Normalization function from unicodedata. */
-    PyObject *c_normalize_args; /* Normalization argument tuple. */
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
@@ -631,12 +630,6 @@ init_normalization(struct compiling *c)
     Py_DECREF(m);
     if (!c->c_normalize)
         return 0;
-    c->c_normalize_args = Py_BuildValue("(sN)", "NFKC", Py_None);
-    if (!c->c_normalize_args) {
-        Py_CLEAR(c->c_normalize);
-        return 0;
-    }
-    PyTuple_SET_ITEM(c->c_normalize_args, 1, NULL);
     return 1;
 }
 
@@ -652,15 +645,29 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
+        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        PyTuple_SET_ITEM(c->c_normalize_args, 1, id);
-        id2 = PyObject_Call(c->c_normalize, c->c_normalize_args, NULL);
+        PyObject *form = _PyUnicode_FromId(&PyId_NFKC);
+        if (form == NULL) {
+            Py_DECREF(id);
+            return NULL;
+        }
+        PyObject *args[2] = {form, id};
+        id2 = _PyObject_FastCall(c->c_normalize, args, 2);
         Py_DECREF(id);
         if (!id2)
             return NULL;
+        if (!PyUnicode_Check(id2)) {
+            PyErr_Format(PyExc_TypeError,
+                         "unicodedata.normalize() must return a string, not "
+                         "%.200s",
+                         Py_TYPE(id2)->tp_name);
+            Py_DECREF(id2);
+            return NULL;
+        }
         id = id2;
     }
     PyUnicode_InternInPlace(&id);
@@ -758,8 +765,7 @@ num_stmts(const node *n)
             Py_FatalError(buf);
         }
     }
-    assert(0);
-    return 0;
+    Py_UNREACHABLE();
 }
 
 /* Transform the CST rooted at node * to the appropriate AST
@@ -780,7 +786,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
-    c.c_normalize_args = NULL;
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
@@ -873,8 +878,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
  out:
     if (c.c_normalize) {
         Py_DECREF(c.c_normalize);
-        PyTuple_SET_ITEM(c.c_normalize_args, 1, NULL);
-        Py_DECREF(c.c_normalize_args);
     }
     return res;
 }
@@ -1182,6 +1185,7 @@ ast_for_comp_op(struct compiling *c, const node *n)
                     return In;
                 if (strcmp(STR(n), "is") == 0)
                     return Is;
+                /* fall through */
             default:
                 PyErr_Format(PyExc_SystemError, "invalid comp_op: %s",
                              STR(n));
@@ -1196,6 +1200,7 @@ ast_for_comp_op(struct compiling *c, const node *n)
                     return NotIn;
                 if (strcmp(STR(CHILD(n, 0)), "is") == 0)
                     return IsNot;
+                /* fall through */
             default:
                 PyErr_Format(PyExc_SystemError, "invalid comp_op: %s %s",
                              STR(CHILD(n, 0)), STR(CHILD(n, 1)));
@@ -3147,6 +3152,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
                 }
                 return Raise(expression, cause, LINENO(n), n->n_col_offset, c->c_arena);
             }
+            /* fall through */
         default:
             PyErr_Format(PyExc_SystemError,
                          "unexpected flow_stmt: %d", TYPE(ch));
@@ -4267,6 +4273,55 @@ decode_bytes_with_escapes(struct compiling *c, const node *n, const char *s,
     return result;
 }
 
+/* Shift locations for the given node and all its children by adding `lineno`
+   and `col_offset` to existing locations. */
+static void fstring_shift_node_locations(node *n, int lineno, int col_offset)
+{
+    n->n_col_offset = n->n_col_offset + col_offset;
+    for (int i = 0; i < NCH(n); ++i) {
+        if (n->n_lineno && n->n_lineno < CHILD(n, i)->n_lineno) {
+            /* Shifting column offsets unnecessary if there's been newlines. */
+            col_offset = 0;
+        }
+        fstring_shift_node_locations(CHILD(n, i), lineno, col_offset);
+    }
+    n->n_lineno = n->n_lineno + lineno;
+}
+
+/* Fix locations for the given node and its children.
+
+   `parent` is the enclosing node.
+   `n` is the node which locations are going to be fixed relative to parent.
+   `expr_str` is the child node's string representation, incuding braces.
+*/
+static void
+fstring_fix_node_location(const node *parent, node *n, char *expr_str)
+{
+    char *substr = NULL;
+    char *start;
+    int lines = LINENO(parent) - 1;
+    int cols = parent->n_col_offset;
+    /* Find the full fstring to fix location information in `n`. */
+    while (parent && parent->n_type != STRING)
+        parent = parent->n_child;
+    if (parent && parent->n_str) {
+        substr = strstr(parent->n_str, expr_str);
+        if (substr) {
+            start = substr;
+            while (start > parent->n_str) {
+                if (start[0] == '\n')
+                    break;
+                start--;
+            }
+            cols += substr - start;
+            /* Fix lineno in mulitline strings. */
+            while ((substr = strchr(substr + 1, '\n')))
+                lines--;
+        }
+    }
+    fstring_shift_node_locations(n, lines, cols);
+}
+
 /* Compile this expression in to an expr_ty.  Add parens around the
    expression, in order to allow leading spaces in the expression. */
 static expr_ty
@@ -4275,6 +4330,7 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
 
 {
     PyCompilerFlags cf;
+    node *mod_n;
     mod_ty mod;
     char *str;
     Py_ssize_t len;
@@ -4284,9 +4340,10 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     assert(*(expr_start-1) == '{');
     assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
 
-    /* If the substring is all whitespace, it's an error.  We need to catch
-       this here, and not when we call PyParser_ASTFromString, because turning
-       the expression '' in to '()' would go from being invalid to valid. */
+    /* If the substring is all whitespace, it's an error.  We need to catch this
+       here, and not when we call PyParser_SimpleParseStringFlagsFilename,
+       because turning the expression '' in to '()' would go from being invalid
+       to valid. */
     for (s = expr_start; s != expr_end; s++) {
         char c = *s;
         /* The Python parser ignores only the following whitespace
@@ -4312,9 +4369,19 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+2] = 0;
 
     cf.cf_flags = PyCF_ONLY_AST;
-    mod = PyParser_ASTFromString(str, "<fstring>",
-                                 Py_eval_input, &cf, c->c_arena);
+    mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
+                                                    Py_eval_input, 0);
+    if (!mod_n) {
+        PyMem_RawFree(str);
+        return NULL;
+    }
+    /* Reuse str to find the correct column offset. */
+    str[0] = '{';
+    str[len+1] = '}';
+    fstring_fix_node_location(n, mod_n, str);
+    mod = PyAST_FromNode(mod_n, &cf, "<fstring>", c->c_arena);
     PyMem_RawFree(str);
+    PyNode_Free(mod_n);
     if (!mod)
         return NULL;
     return mod->v.Expression.body;
