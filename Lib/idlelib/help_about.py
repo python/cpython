@@ -23,7 +23,7 @@ class AboutDialog(Toplevel):
     """Modal about dialog for idle
 
     """
-    def __init__(self, parent, title=None, _htest=False, _utest=False):
+    def __init__(self, parent, title=None, *, _htest=False, _utest=False):
         """Create popup, do not return until tk widget destroyed.
 
         parent - parent of this dialog

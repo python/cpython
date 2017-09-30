@@ -14,7 +14,7 @@ class GetKeysDialog(Toplevel):
     keyerror_title = 'Key Sequence Error'
 
     def __init__(self, parent, title, action, currentKeySequences,
-                 _htest=False, _utest=False):
+                 *, _htest=False, _utest=False):
         """
         action - string, the name of the virtual event these keys will be
                  mapped to
