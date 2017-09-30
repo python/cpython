@@ -3385,6 +3385,8 @@ _ssl__SSLContext__load_cert_chain_pem_from_file_paths_impl(PySSLContext *self,
         SSL_CTX_set_default_passwd_cb_userdata(self->ctx, &pw_info);
     }
     PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state);
+    // Although not technically meaningful, certificate data may be encrypted
+    // in which case a user-defined callback might be invoked.
     r = SSL_CTX_use_certificate_chain_file(self->ctx,
         PyBytes_AS_STRING(certfile_bytes));
     PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
@@ -3452,7 +3454,7 @@ _openssl_use_certificate_chain_from_bio(SSL_CTX *ctx, BIO *bio)
     This function closely resembles the SSL_CTX_use_certificate_chain_file()
     implementation from OpenSSL 1.1.0.
 
-    That is, a return value of 0 means that an error occurred.
+    A return value of 0 means that an error occurred.
     */
 
     int ret = 0;
@@ -3532,11 +3534,11 @@ _ssl__SSLContext__load_cert_chain_pem_from_bio_impl(PySSLContext *self,
 /*[clinic end generated code: output=1fa9f45cbdeddf1c input=4ba4aff7f210d0fd]*/
 {
     /*
-    Note that _password_callback() starts by invoking
+    Note that _password_callback() starts with invoking
 
         PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
 
-    end finishes with invoking
+    and finishes with invoking
 
         PySSL_BEGIN_ALLOW_THREADS_S(pw_info->thread_state);
 
@@ -3546,6 +3548,11 @@ _ssl__SSLContext__load_cert_chain_pem_from_bio_impl(PySSLContext *self,
         PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state);
         [...]
         PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
+
+    `certbio` may contain key data besides certificate data and `keybio` is
+    allowed to contain certificate data besides key data. The OpenSSL API calls
+    that process that data only extract the relevant portions and ignore the
+    rest.
     */
 
     EVP_PKEY *private_key = NULL;
@@ -3570,6 +3577,8 @@ _ssl__SSLContext__load_cert_chain_pem_from_bio_impl(PySSLContext *self,
 
 
     PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state);
+    // Although not technically meaningful, certificate data may be encrypted
+    // in which case a user-defined callback might be invoked.
     r = _openssl_use_certificate_chain_from_bio(self->ctx, certbio->bio);
     PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
 
