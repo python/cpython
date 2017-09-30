@@ -2178,6 +2178,9 @@ PyMapping_Keys(PyObject *o)
 {
     _Py_IDENTIFIER(keys);
 
+    if (o == NULL) {
+        return null_error();
+    }
     if (PyDict_CheckExact(o)) {
         return PyDict_Keys(o);
     }
@@ -2189,6 +2192,9 @@ PyMapping_Items(PyObject *o)
 {
     _Py_IDENTIFIER(items);
 
+    if (o == NULL) {
+        return null_error();
+    }
     if (PyDict_CheckExact(o)) {
         return PyDict_Items(o);
     }
@@ -2200,6 +2206,9 @@ PyMapping_Values(PyObject *o)
 {
     _Py_IDENTIFIER(values);
 
+    if (o == NULL) {
+        return null_error();
+    }
     if (PyDict_CheckExact(o)) {
         return PyDict_Values(o);
     }
