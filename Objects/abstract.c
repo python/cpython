@@ -2147,55 +2147,76 @@ PyMapping_HasKey(PyObject *o, PyObject *key)
     return 0;
 }
 
+static PyObject *
+method_output_as_list(PyObject *o, const char *err_msg)
+{
+    PyObject *it, *result;
+
+    assert(o != NULL);
+    it = PyObject_GetIter(o);
+    if (it == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_SetString(PyExc_TypeError, err_msg);
+        }
+        return NULL;
+    }
+    result = PySequence_List(it);
+    Py_DECREF(it);
+    return result;
+}
+
 PyObject *
 PyMapping_Keys(PyObject *o)
 {
     PyObject *keys;
-    PyObject *fast;
+    PyObject *keys_list;
     _Py_IDENTIFIER(keys);
 
     if (PyDict_CheckExact(o))
         return PyDict_Keys(o);
     keys = _PyObject_CallMethodId(o, &PyId_keys, NULL);
-    if (keys == NULL)
-        return NULL;
-    fast = PySequence_Fast(keys, "o.keys() are not iterable");
+    if (keys == NULL || PyList_CheckExact(keys)) {
+        return keys;
+    }
+    keys_list = method_output_as_list(keys, "o.keys() is not iterable");
     Py_DECREF(keys);
-    return fast;
+    return keys_list;
 }
 
 PyObject *
 PyMapping_Items(PyObject *o)
 {
     PyObject *items;
-    PyObject *fast;
+    PyObject *items_list;
     _Py_IDENTIFIER(items);
 
     if (PyDict_CheckExact(o))
         return PyDict_Items(o);
     items = _PyObject_CallMethodId(o, &PyId_items, NULL);
-    if (items == NULL)
-        return NULL;
-    fast = PySequence_Fast(items, "o.items() are not iterable");
+    if (items == NULL || PyList_CheckExact(items)) {
+        return items;
+    }
+    items_list = method_output_as_list(items, "o.items() is not iterable");
     Py_DECREF(items);
-    return fast;
+    return items_list;
 }
 
 PyObject *
 PyMapping_Values(PyObject *o)
 {
     PyObject *values;
-    PyObject *fast;
+    PyObject *values_list;
     _Py_IDENTIFIER(values);
 
     if (PyDict_CheckExact(o))
         return PyDict_Values(o);
     values = _PyObject_CallMethodId(o, &PyId_values, NULL);
-    if (values == NULL)
-        return NULL;
-    fast = PySequence_Fast(values, "o.values() are not iterable");
+    if (values == NULL || PyList_CheckExact(values)) {
+        return values;
+    }
+    values_list = method_output_as_list(values, "o.values() is not iterable");
     Py_DECREF(values);
-    return fast;
+    return values_list;
 }
 
 /* isinstance(), issubclass() */

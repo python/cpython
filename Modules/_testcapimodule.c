@@ -4306,6 +4306,27 @@ py_w_stopcode(PyObject *self, PyObject *args)
 #endif
 
 
+static PyObject *
+get_mapping_keys(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Keys(obj);
+}
+
+
+static PyObject *
+get_mapping_values(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Values(obj);
+}
+
+
+static PyObject *
+get_mapping_items(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Items(obj);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4518,6 +4539,9 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
+    {"get_mapping_keys", get_mapping_keys, METH_O},
+    {"get_mapping_values", get_mapping_values, METH_O},
+    {"get_mapping_items", get_mapping_items, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
