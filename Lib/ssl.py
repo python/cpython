@@ -463,48 +463,48 @@ class SSLContext(_SSLContext):
         self.set_default_verify_paths()
 
     def load_cert_chain(self, certfile, keyfile=None, password=None):
-       # If `certfile` is bytes or string, treat it as file path.
-       if isinstance(certfile, str) or isinstance(certfile, bytes):
-           certfile_path = certfile
+        # If `certfile` is bytes or string, treat it as file path.
+        if isinstance(certfile, str) or isinstance(certfile, bytes):
+            certfile_path = certfile
 
-           # If no `keyfile` is given, read private key from `certfile`.
-           if keyfile is None:
-               keyfile_path = certfile_path
-           else:
-               # If `certfile` is bytes or string, expect `keyfile` to be
-               # a bytes or string file path, too.
-               keyfile_path = keyfile
+            # If no `keyfile` is given, read private key from `certfile`.
+            if keyfile is None:
+                keyfile_path = certfile_path
+            else:
+                # If `certfile` is bytes or string, expect `keyfile` to be
+                # a bytes or string file path, too.
+                keyfile_path = keyfile
 
-           # Pre CPython 3.7 behavior: let OpenSSL consume the files via
-           # SSL_CTX_use_certificate_chain_file().
-           return self._load_cert_chain_pem_from_file_paths(
-               certfile_path, keyfile_path, password)
+            # Pre CPython 3.7 behavior: let OpenSSL consume the files via
+            # SSL_CTX_use_certificate_chain_file().
+            return self._load_cert_chain_pem_from_file_paths(
+                certfile_path, keyfile_path, password)
 
-       # Expect `certfile` to be a file object, expect `keyfile` to be `None`
-       # or a file object. Read file(s) and prepare OpenSSL memory BIO
-       # objects. If file objects return text, encode it to bytes.
+        # Expect `certfile` to be a file object, expect `keyfile` to be `None`
+        # or a file object. Read file(s) and prepare OpenSSL memory BIO
+        # objects. If file objects return text, encode it to bytes.
 
-       certdata = certfile.read()
-       if isinstance(certdata, str):
-           certdata = certdata.encode('utf-8')
+        certdata = certfile.read()
+        if isinstance(certdata, str):
+            certdata = certdata.encode('utf-8')
 
-       if keyfile is not None:
-           keydata = keyfile.read()
-           if isinstance(keydata, str):
-               keydata = keydata.encode('utf-8')
-       else:
-           # Expect that `certdata` contains the private key, too.
-           keydata = certdata
+        if keyfile is not None:
+            keydata = keyfile.read()
+            if isinstance(keydata, str):
+                keydata = keydata.encode('utf-8')
+        else:
+            # Expect that `certdata` contains the private key, too.
+            keydata = certdata
 
-       certbio = MemoryBIO()
-       certbio.write(certdata)
-       certbio.write_eof()
+        certbio = MemoryBIO()
+        certbio.write(certdata)
+        certbio.write_eof()
 
-       keybio = MemoryBIO()
-       keybio.write(keydata)
-       keybio.write_eof()
+        keybio = MemoryBIO()
+        keybio.write(keydata)
+        keybio.write_eof()
 
-       return self._load_cert_chain_pem_from_bio(certbio, keybio, password)
+        return self._load_cert_chain_pem_from_bio(certbio, keybio, password)
 
 
     @property
