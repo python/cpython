@@ -684,13 +684,14 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     /* Setup module. */
     *module = PyDict_GetItemString(globals, "__name__");
-    if (*module == NULL) {
+    if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
+        Py_INCREF(*module);
+    }
+    else {
         *module = PyUnicode_FromString("<string>");
         if (*module == NULL)
             goto handle_error;
     }
-    else
-        Py_INCREF(*module);
 
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
@@ -858,7 +859,6 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 
     if (module_globals) {
         _Py_IDENTIFIER(get_source);
-        _Py_IDENTIFIER(splitlines);
         PyObject *tmp;
         PyObject *loader;
         PyObject *module_name;
@@ -868,8 +868,6 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject *returned;
 
         if ((tmp = _PyUnicode_FromId(&PyId_get_source)) == NULL)
-            return NULL;
-        if ((tmp = _PyUnicode_FromId(&PyId_splitlines)) == NULL)
             return NULL;
 
         /* Check/get the requisite pieces needed for the loader. */
@@ -893,9 +891,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Split the source into lines. */
-        source_list = PyObject_CallMethodObjArgs(source,
-                                                 PyId_splitlines.object,
-                                                 NULL);
+        source_list = PyUnicode_Splitlines(source, 0);
         Py_DECREF(source);
         if (!source_list)
             return NULL;
