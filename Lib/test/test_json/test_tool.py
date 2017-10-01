@@ -59,7 +59,7 @@ class TestTool(unittest.TestCase):
         }
     ]
     """)
-    
+
     jsonlines_data = """\
     {"ingredients":["frog", "water", "chocolate", "glucose"]}
     {"ingredients":["chocolate","steel bolts"]}\

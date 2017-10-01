@@ -55,7 +55,7 @@ def main():
     sort_keys = options.sort_keys
     jsonlines = options.jsonlines
     objs = []
-   
+
     if jsonlines:
         with infile:
             for line in infile:
