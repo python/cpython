@@ -606,30 +606,30 @@ class HTTPCompressionTestCase(BaseTestCase):
     def test_no_content_encoding_header(self):
         # no Content-Encoding header, no file extension
         response = self.request(self.base_url + '/test')
-        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertNotIn('Content-Encoding', response.headers)
         self.assertEqual(response.read(), self.data)
 
         # no Content-Encoding header, uncompressible file extension
         response = self.request(self.base_url + '/test.abc')
-        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertNotIn('Content-Encoding', response.headers)
         self.assertEqual(response.read(), self.data)
 
         # no Content-Encoding header, compressible file extension
         response = self.request(self.base_url + '/test.txt')
-        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertNotIn('Content-Encoding', response.headers)
         self.assertEqual(response.read(), self.data)
 
     def test_header_set_unsupported_extension(self):
         # no file extension
         response = self.request(self.base_url + '/test',
             headers={'Accept-Encoding': 'gzip'})
-        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertNotIn('Content-Encoding', response.headers)
         self.assertEqual(response.read(), self.data)
 
         # uncompressible file extension
         response = self.request(self.base_url + '/test.abc',
             headers={'Accept-Encoding': 'gzip'})
-        self.assertFalse('Content-Encoding' in response.headers)
+        self.assertNotIn('Content-Encoding', response.headers)
         self.assertEqual(response.read(), self.data)
 
     def test_header_set_supported_extension(self):
@@ -637,14 +637,14 @@ class HTTPCompressionTestCase(BaseTestCase):
         for ext in self.compressible_ext:
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip'})
-            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertIn('Content-Encoding', response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
 
         # test with encoding "deflate" instead of "gzip"
         for ext in self.compressible_ext:
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'deflate'})
-            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertIn('Content-Encoding', response.headers)
             self.assertEqual(zlib.decompress(response.read()), self.data)
 
         # alternative Accept-Encoding syntax
@@ -653,33 +653,33 @@ class HTTPCompressionTestCase(BaseTestCase):
             # x-gzip instead of gzip
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'x-gzip'})
-            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertIn('Content-Encoding', response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
 
             # add quality
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip; q=1'})
-            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertIn('Content-Encoding', response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
 
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip; q=0.1'})
-            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertIn('Content-Encoding', response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
 
             # all encodings supported
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': '*'})
-            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertIn('Content-Encoding', response.headers)
             self.assertEqual(gzip.decompress(response.read()), self.data)
 
         # Big files
         for ext in self.compressible_ext:
             response = self.request(self.base_url + '/test_big.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip'})
-            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertIn('Content-Encoding', response.headers)
             # on HTTP/1.0 Chunked Tranfer Encoding is not supported
-            self.assertFalse('Transfer-Encoding' in response.headers)
+            self.assertNotIn('Transfer-Encoding', response.headers)
             self.assertEqual(gzip.decompress(response.read()),
                 self.repeat * self.data)
 
@@ -690,15 +690,15 @@ class HTTPCompressionTestCase(BaseTestCase):
             # quality value set to 0 means that the value is not supported
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip;q=0'})
-            self.assertFalse('Content-Encoding' in response.headers)
+            self.assertNotIn('Content-Encoding', response.headers)
 
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': '*;q=0'})
-            self.assertFalse('Content-Encoding' in response.headers)
+            self.assertNotIn('Content-Encoding', response.headers)
 
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'dummy'})
-            self.assertFalse('Content-Encoding' in response.headers)
+            self.assertNotIn('Content-Encoding', response.headers)
 
     def test_user_defined_compressions(self):
         # test with encoding "bzip2" instead of "gzip"
@@ -726,7 +726,7 @@ class HTTPCompressionTestCase(BaseTestCase):
         for ext in self.compressible_ext:
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': 'bzip2'})
-            self.assertTrue('Content-Encoding' in response.headers)
+            self.assertIn('Content-Encoding', response.headers)
             self.assertEqual(bz2.decompress(response.read()), self.data)
 
 class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
@@ -745,8 +745,8 @@ class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
         for ext in self.compressible_ext:
             response = self.request(self.base_url + '/test_big.{}'.format(ext),
                 headers={'Accept-Encoding': 'gzip', 'Connection': 'close'})
-            self.assertTrue('Content-Encoding' in response.headers)
-            self.assertTrue('Transfer-Encoding' in response.headers)
+            self.assertIn('Content-Encoding', response.headers)
+            self.assertIn('Transfer-Encoding', response.headers)
             self.assertEqual(gzip.decompress(response.read()),
                 self.repeat * self.data)
 
