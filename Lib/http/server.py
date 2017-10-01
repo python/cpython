@@ -136,41 +136,42 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
 # List of commonly compressed content types, copied from
 # https://github.com/h5bp/server-configs-apache.
-# compressed_types is set to this list when the server is started with
-# command line option --gzip.
-commonly_compressed_types = [ "application/atom+xml",
-                              "application/javascript",
-                              "application/json",
-                              "application/ld+json",
-                              "application/manifest+json",
-                              "application/rdf+xml",
-                              "application/rss+xml",
-                              "application/schema+json",
-                              "application/vnd.geo+json",
-                              "application/vnd.ms-fontobject",
-                              "application/x-font-ttf",
-                              "application/x-javascript",
-                              "application/x-web-app-manifest+json",
-                              "application/xhtml+xml",
-                              "application/xml",
-                              "font/eot",
-                              "font/opentype",
-                              "image/bmp",
-                              "image/svg+xml",
-                              "image/vnd.microsoft.icon",
-                              "image/x-icon",
-                              "text/cache-manifest",
-                              "text/css",
-                              "text/html",
-                              "text/javascript",
-                              "text/plain",
-                              "text/vcard",
-                              "text/vnd.rim.location.xloc",
-                              "text/vtt",
-                              "text/x-component",
-                              "text/x-cross-domain-policy",
-                              "text/xml"
-                            ]
+# SimpleHTTPRequestHandler.compressed_types is set to this list when the
+# server is started with command line option --gzip.
+commonly_compressed_types = [
+    "application/atom+xml",
+    "application/javascript",
+    "application/json",
+    "application/ld+json",
+    "application/manifest+json",
+    "application/rdf+xml",
+    "application/rss+xml",
+    "application/schema+json",
+    "application/vnd.geo+json",
+    "application/vnd.ms-fontobject",
+    "application/x-font-ttf",
+    "application/x-javascript",
+    "application/x-web-app-manifest+json",
+    "application/xhtml+xml",
+    "application/xml",
+    "font/eot",
+    "font/opentype",
+    "image/bmp",
+    "image/svg+xml",
+    "image/vnd.microsoft.icon",
+    "image/x-icon",
+    "text/cache-manifest",
+    "text/css",
+    "text/html",
+    "text/javascript",
+    "text/plain",
+    "text/vcard",
+    "text/vnd.rim.location.xloc",
+    "text/vtt",
+    "text/x-component",
+    "text/x-cross-domain-policy",
+    "text/xml"
+]
 
 # Generators for HTTP compression
 
@@ -705,20 +706,20 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "SimpleHTTP/" + __version__
 
-    # List of Content Types that are returned with HTTP compression (gzip).
+    # List of Content Types that are returned with HTTP compression.
     # Set to the empty list by default (no compression).
     compressed_types = []
 
     # Dictionary mapping an encoding (in an Accept-Encoding header) to a
-    # generator of compressed data. By default, the only supported encoding is
-    # gzip (provided zlib is available).
-    # Override if a subclass wants to use another compression algorithm.
+    # generator of compressed data. By default, provided zlib is available,
+    # the supported encodings are gzip and deflate.
+    # Override if a subclass wants to use other compression algorithms.
     compressions = {}
     if zlib:
         compressions = {
             'deflate': _deflate_producer,
             'gzip': _gzip_producer,
-            'x-gzip': _gzip_producer
+            'x-gzip': _gzip_producer # alias for gzip
         }
 
     def __init__(self, *args, directory=None, **kwargs):
@@ -755,6 +756,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             f.close()
 
     def _make_chunk(self, data):
+        """Make a data chunk in Chunked Transfer Encoding format."""
         return f"{len(data):X}".encode("ascii") + b"\r\n" + data + b"\r\n"
 
     def send_head(self):
@@ -854,7 +856,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                         # Invalid quality : ignore encoding
                         q = 0
                 else:
-                    q = 1 # quality default to 1
+                    q = 1 # quality defaults to 1
                 if q:
                     encodings[encoding] = max(encodings.get(encoding, 0), q)
 
