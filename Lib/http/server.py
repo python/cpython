@@ -108,13 +108,11 @@ from functools import partial
 
 from http import HTTPStatus
 
-# Python might be built without gzip / zlib
+# Python might be built without zlib
 try:
-    import gzip
     import zlib
 except ImportError:
-    gzip = None
-
+    zlib = None
 
 # Default error message template
 DEFAULT_ERROR_MESSAGE = """\
@@ -834,7 +832,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
 
-            if not gzip or ctype not in self.compressed_types:
+            if not zlib or ctype not in self.compressed_types:
                 self.send_header("Content-Length", str(content_length))
                 self.end_headers()
                 return f
