@@ -671,7 +671,12 @@ class HTTPCompressionTestCase(BaseTestCase):
             response = self.request(self.base_url + '/test.{}'.format(ext),
                 headers={'Accept-Encoding': '*'})
             self.assertIn('Content-Encoding', response.headers)
-            self.assertEqual(gzip.decompress(response.read()), self.data)
+            encoding = response.headers['Content-Encoding']
+            if encoding in ['gzip', 'x-gzip']:
+                self.assertEqual(gzip.decompress(response.read()), self.data)
+            elif encoding == 'deflate':
+                self.assertEqual(zlib.decompress(response.read(), wbits=15),
+                    self.data)
 
         # Big files
         for ext in self.compressible_ext:
