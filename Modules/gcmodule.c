@@ -817,7 +817,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
         for (i = 0; i < NUM_GENERATIONS; i++)
             PySys_FormatStderr(" %zd",
                               gc_list_size(GEN_HEAD(i)));
-        PySys_WriteStderr("\ngc: objects in permanent generation: %d",
+        PySys_WriteStderr("\ngc: objects in permanent generation: %zd",
                          gc_list_size(&_PyRuntime.gc.permanent_generation.head));
         t1 = _PyTime_GetMonotonicClock();
 
@@ -1411,17 +1411,19 @@ gc_is_tracked(PyObject *module, PyObject *obj)
     return result;
 }
 
-PyDoc_STRVAR(gc_freeze__doc__,
-"freeze() -> None\n"
-"\n"
-"Freeze all current tracked objects and ignore them for future collections.\n"
-"This can be used before a fork to make the gc copy-on-write friendly.\n"
-"Note: collection before a fork may free pages for future allocation\n"
-"which can cause copy-on-write.\n"
-);
+/*[clinic input]
+gc.freeze
+
+Freeze all current tracked objects and ignore them for future collections.
+
+This can be used before a fork to make the gc copy-on-write friendly.
+Note: collection before a fork may free pages for future allocation
+which can cause copy-on-write.
+[clinic start generated code]*/
 
 static PyObject *
-gc_freeze(PyObject *module)
+gc_freeze_impl(PyObject *module)
+/*[clinic end generated code: output=502159d9cdc4c139 input=8798c406cd01d7c4]*/
 {
     for (int i = 0; i < NUM_GENERATIONS; ++i) {
         gc_list_merge(GEN_HEAD(i), &_PyRuntime.gc.permanent_generation.head);
@@ -1430,14 +1432,16 @@ gc_freeze(PyObject *module)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(gc_get_freeze_stats__doc__,
-"get_freeze_stats() -> n\n"
-"\n"
-"Return the number of objects in permanent generations.\n"
-);
+/*[clinic input]
+gc.get_freeze_count -> int
 
-static PyObject *
-gc_get_freeze_stats(PyObject *module) {
+Return the number of objects in permanent generations.
+[clinic start generated code]*/
+
+static int
+gc_get_freeze_count_impl(PyObject *module)
+/*[clinic end generated code: output=e4e2ebcc77e5cbf3 input=590241a6a398cfa2]*/
+{
     return Py_BuildValue("i", gc_list_size(&_PyRuntime.gc.permanent_generation.head));
 }
 
@@ -1460,7 +1464,7 @@ PyDoc_STRVAR(gc__doc__,
 "get_referrers() -- Return the list of objects that refer to an object.\n"
 "get_referents() -- Return the list of objects that an object refers to.\n"
 "freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
-"get_freeze_stats() -- Return the number of objects in the permanent generation.\n");
+"get_freeze_count() -- Return the number of objects in the permanent generation.\n");
 
 static PyMethodDef GcMethods[] = {
     GC_ENABLE_METHODDEF
@@ -1479,8 +1483,8 @@ static PyMethodDef GcMethods[] = {
         gc_get_referrers__doc__},
     {"get_referents",  gc_get_referents, METH_VARARGS,
         gc_get_referents__doc__},
-    {"freeze", gc_freeze, METH_NOARGS, gc_freeze__doc__},
-    {"get_freeze_stats", gc_get_freeze_stats, METH_NOARGS, gc_get_freeze_stats__doc__},
+    GC_FREEZE_METHODDEF
+    GC_GET_FREEZE_COUNT_METHODDEF
     {NULL,      NULL}           /* Sentinel */
 };
 

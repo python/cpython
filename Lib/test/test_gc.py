@@ -736,7 +736,7 @@ class GCTests(unittest.TestCase):
 
     def test_freeze(self):
         gc.freeze()
-        self.assertGreater(gc.get_freeze_stats(), 0)
+        self.assertGreater(gc.get_freeze_count(), 0)
 
 
 class GCCallbackTests(unittest.TestCase):

@@ -255,4 +255,54 @@ PyDoc_STRVAR(gc_is_tracked__doc__,
 
 #define GC_IS_TRACKED_METHODDEF    \
     {"is_tracked", (PyCFunction)gc_is_tracked, METH_O, gc_is_tracked__doc__},
-/*[clinic end generated code: output=5a58583f00ab018e input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(gc_freeze__doc__,
+"freeze($module, /)\n"
+"--\n"
+"\n"
+"Freeze all current tracked objects and ignore them for future collections.\n"
+"\n"
+"This can be used before a fork to make the gc copy-on-write friendly.\n"
+"Note: collection before a fork may free pages for future allocation\n"
+"which can cause copy-on-write.");
+
+#define GC_FREEZE_METHODDEF    \
+    {"freeze", (PyCFunction)gc_freeze, METH_NOARGS, gc_freeze__doc__},
+
+static PyObject *
+gc_freeze_impl(PyObject *module);
+
+static PyObject *
+gc_freeze(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return gc_freeze_impl(module);
+}
+
+PyDoc_STRVAR(gc_get_freeze_count__doc__,
+"get_freeze_count($module, /)\n"
+"--\n"
+"\n"
+"Return the number of objects in permanent generations.");
+
+#define GC_GET_FREEZE_COUNT_METHODDEF    \
+    {"get_freeze_count", (PyCFunction)gc_get_freeze_count, METH_NOARGS, gc_get_freeze_count__doc__},
+
+static int
+gc_get_freeze_count_impl(PyObject *module);
+
+static PyObject *
+gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = gc_get_freeze_count_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=004d91aafb1827f0 input=a9049054013a1b77]*/
