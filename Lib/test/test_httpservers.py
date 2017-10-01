@@ -599,10 +599,7 @@ class HTTPCompressionTestCase(BaseTestCase):
     def tearDown(self):
         try:
             os.chdir(self.cwd)
-            try:
-                shutil.rmtree(self.tempdir)
-            except:
-                pass
+            shutil.rmtree(self.tempdir, ignore_errors=True)
         finally:
             BaseTestCase.tearDown(self)
 
