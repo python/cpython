@@ -856,8 +856,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 else:
                     q = 1 # quality default to 1
                 if q:
-                    if encoding in encodings:
-                        print('encoding présent', encodings[encoding], 'nouveau', q)
                     encodings[encoding] = max(encodings.get(encoding, 0), q)
 
             compressions = set(encodings).intersection(self.compressions)
