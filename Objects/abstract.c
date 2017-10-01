@@ -2147,6 +2147,9 @@ PyMapping_HasKey(PyObject *o, PyObject *key)
     return 0;
 }
 
+/* This function is quite similar to PySequence_Fast(), but specialized to be
+   a helper for PyMapping_Keys(), PyMapping_Items() and PyMapping_Values().
+ */
 static PyObject *
 method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
 {
@@ -2158,16 +2161,18 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
         return meth_output;
     }
     it = PyObject_GetIter(meth_output);
-    Py_DECREF(meth_output);
     if (it == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s.%s() must return an iterable",
+                         "%.200s.%s() must return an iterable, not %.200s",
                          Py_TYPE(o)->tp_name,
-                         meth_id->string);
+                         meth_id->string,
+                         Py_TYPE(meth_output)->tp_name);
         }
+        Py_DECREF(meth_output);
         return NULL;
     }
+    Py_DECREF(meth_output);
     result = PySequence_List(it);
     Py_DECREF(it);
     return result;
