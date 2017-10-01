@@ -718,12 +718,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     # Dictionary mapping an encoding (in an Accept-Encoding header) to a
     # generator of compressed data. By default, the only supported encoding is
-    # gzip. Override if a subclass wants to use another compression algorithm.
-    compressions = {
-        'deflate': _deflate_producer,
-        'gzip': _gzip_producer,
-        'x-gzip': _gzip_producer
-    }
+    # gzip (provided zlib is available).
+    # Override if a subclass wants to use another compression algorithm.
+    compressions = {}
+    if zlib:
+        compressions = {
+            'deflate': _deflate_producer,
+            'gzip': _gzip_producer,
+            'x-gzip': _gzip_producer
+        }
 
     def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
@@ -832,7 +835,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
 
-            if not zlib or ctype not in self.compressed_types:
+            if ctype not in self.compressed_types:
                 self.send_header("Content-Length", str(content_length))
                 self.end_headers()
                 return f
