@@ -1667,11 +1667,12 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
+        static int ximporttime = 0;
         static int import_level;
         static _PyTime_t accumulated;
         _Py_IDENTIFIER(importtime);
-        int ximporttime = 0;
-        _PyTime_t t1=0, accumulated_copy;
+
+        _PyTime_t t1 = 0, accumulated_copy = accumulated;
 
         Py_XDECREF(mod);
 
@@ -1680,16 +1681,21 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
          * Anyway, importlib.__find_and_load is much slower than
          * _PyDict_GetItemId()
          */
-        PyObject *xoptions = PySys_GetXOptions();
-        if (xoptions) {
-            PyObject *value = _PyDict_GetItemId(xoptions, &PyId_importtime);
-            ximporttime = (value == Py_True);
+        if (ximporttime == 0) {
+            PyObject *xoptions = PySys_GetXOptions();
+            if (xoptions) {
+                PyObject *value = _PyDict_GetItemId(xoptions, &PyId_importtime);
+                ximporttime = (value == Py_True);
+            }
+            if (ximporttime) {
+                fputs("import time: self [us] | cumulative | imported package\n",
+                      stderr);
+            }
         }
 
         if (ximporttime) {
             import_level++;
             t1 = _PyTime_GetMonotonicClock();
-            accumulated_copy = accumulated;
             accumulated = 0;
         }
 
@@ -1705,16 +1711,13 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                            mod != NULL);
 
         if (ximporttime) {
-            _PyTime_t t2 = _PyTime_GetMonotonicClock();
-            long cum = t2 - t1;
+            _PyTime_t cum = _PyTime_GetMonotonicClock() - t1;
 
             import_level--;
-            fprintf(stderr, "import time: %*s- %s %ld us (self %ld us)\n",
-                    import_level*2, "",
-                    PyUnicode_AsUTF8(abs_name),
+            fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
+                    (long)_PyTime_AsMicroseconds(cum - accumulated, _PyTime_ROUND_CEILING),
                     (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
-                    (long)_PyTime_AsMicroseconds(cum-accumulated,
-                                                 _PyTime_ROUND_CEILING));
+                    import_level*2, "", PyUnicode_AsUTF8(abs_name));
 
             accumulated = accumulated_copy + cum;
         }
