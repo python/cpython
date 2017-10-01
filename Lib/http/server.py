@@ -102,7 +102,6 @@ import shutil
 import socket # For gethostbyaddr()
 import socketserver
 import sys
-import tempfile
 import time
 import urllib.parse
 from functools import partial
