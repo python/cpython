@@ -836,7 +836,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return f
 
-            # Use HTTP compression (gzip) if possible
+            # Use HTTP compression if possible
 
             # Get accepted encodings ; "encodings" is a dictionary mapping
             # encodings to their quality ; eg for header "gzip; q=0.8",
@@ -864,10 +864,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 # Take the encoding with highest quality
                 compression = max((encodings[enc], enc)
                     for enc in compressions)[1]
-            elif '*' in encodings:
+            elif '*' in encodings and self.compressions:
                 # If no specified encoding is supported but "*" is accepted,
-                # use gzip.
-                compression = "gzip"
+                # take one of the available compressions.
+                compression = list(self.compressions)[0]
             if compression:
                 # If at least one encoding is accepted, send data compressed
                 # with the selected compression algorithm.
