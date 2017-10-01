@@ -321,7 +321,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         expected_value = self.gen.random()
         for seed_arg in [42L, BadInt(42), BadLong(42)]:
             self.gen.seed(seed_arg)
-            self.assertEqual(expected_value, self.gen.random())
+            self.assertEqual(self.gen.random(), expected_value)
 
     def test_setstate_first_arg(self):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))
