@@ -175,10 +175,8 @@ commonly_compressed_types = [ "application/atom+xml",
 # Generators for HTTP compression
 
 def _zlib_producer(fileobj, wbits):
-    """Generator that yields pieces of compressed data read from the file
-    object fileobj, using the zlib library.
-    It yields non-empty bytes objects and ends by yielding b'', for compliance
-    with the Chunked Transfer Encoding protocol.
+    """Generator that yields data read from the file object fileobj,
+    compressed with the zlib library.
     wbits is the same argument as for zlib.compressobj.
     """
     bufsize = 2 << 17
@@ -187,14 +185,9 @@ def _zlib_producer(fileobj, wbits):
         while True:
             buf = fileobj.read(bufsize)
             if not buf: # end of file
-                data = producer.flush()
-                if data:
-                    yield data
-                yield b''
+                yield producer.flush()
                 return
-            data = producer.compress(buf)
-            if data:
-                yield data
+            yield producer.compress(buf)
 
 def _gzip_producer(fileobj):
     """Generator for gzip compression."""
@@ -744,8 +737,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 else:
                     # Generator for compressed data
                     if self.protocol_version >= "HTTP/1.1":
+                        # Chunked Transfer
                         for data in f:
-                            self.wfile.write(self._make_chunk(data))
+                            if data:
+                                self.wfile.write(self._make_chunk(data))
+                        self.wfile.write(self._make_chunk(b''))
                     else:
                         for data in f:
                             self.wfile.write(data)
@@ -860,6 +856,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 else:
                     q = 1 # quality default to 1
                 if q:
+                    if encoding in encodings:
+                        print('encoding présent', encodings[encoding], 'nouveau', q)
                     encodings[encoding] = max(encodings.get(encoding, 0), q)
 
             compressions = set(encodings).intersection(self.compressions)

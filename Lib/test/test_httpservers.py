@@ -711,14 +711,9 @@ class HTTPCompressionTestCase(BaseTestCase):
                 while True:
                     buf = fileobj.read(bufsize)
                     if not buf: # end of file
-                        data = producer.flush()
-                        if data:
-                            yield data
-                        yield b''
+                        yield producer.flush()
                         return
-                    data = producer.compress(buf)
-                    if data:
-                        yield data
+                    yield producer.compress(buf)
 
         # update dictionary "compressions" to support bzip2
         self.request_handler.compressions.update(bzip2=_bzip2_producer)
