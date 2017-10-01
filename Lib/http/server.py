@@ -866,8 +866,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             compression = None
             if compressions:
                 # Take the encoding with highest quality
-                compression = sorted((encodings[enc], enc)
-                    for enc in compressions)[-1][1]
+                compression = max((encodings[enc], enc)
+                    for enc in compressions)[1]
             elif '*' in encodings:
                 # If no specified encoding is supported but "*" is accepted,
                 # use gzip.
