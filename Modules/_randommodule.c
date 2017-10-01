@@ -231,8 +231,15 @@ random_seed(RandomObject *self, PyObject *args)
     /* If the arg is an int or long, use its absolute value; else use
      * the absolute value of its hash code.
      */
-    if (PyInt_Check(arg) || PyLong_Check(arg))
-        n = PyNumber_Absolute(arg);
+    if (PyInt_Check(arg)) {
+        /* Calling int.__abs__() (or long.__abs__()) prevents calling
+           arg.__abs__(), which might return an invalid value.
+           See issue #31478. */
+        n = PyInt_Type.tp_as_number->nb_absolute(arg);
+    }
+    else if (PyLong_Check(arg)) {
+        n = PyLong_Type.tp_as_number->nb_absolute(arg);
+    }
     else {
         long hash = PyObject_Hash(arg);
         if (hash == -1)
