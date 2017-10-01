@@ -240,6 +240,13 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+pdb
+---
+
+:func:`~pdb.set_trace` now takes an optional ``header`` keyword-only
+argument.  If given, this is printed to the console just before debugging
+begins.
+
 string
 ------
 
@@ -282,12 +289,24 @@ Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
+xml.etree
+---------
+
+:ref:`ElementPath <elementtree-xpath>` predicates in the :meth:`find`
+methods can now compare text of the current node with ``[. = "text"]``,
+not only text in children.  Predicates also allow adding spaces for
+better readability.  (Contributed by Stefan Behnel in :issue:`31648`.)
+
 zipapp
 ------
 
 Function :func:`zipapp.create_archive` now accepts an optional *filter*
-argument, to allow the user to select which files should be included in the
+argument to allow the user to select which files should be included in the
+archive, and an optional *compressed* argument to generate a compressed
 archive.
+
+A command line option ``--compress`` has also been added to support
+compression.
 
 
 Optimizations
@@ -304,9 +323,8 @@ Optimizations
   (Contributed by Serhiy Storchaka in :issue:`24821`.)
 
 * Fast implementation from standard C library is now used for functions
-  :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
-  :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
-  Storchaka in :issue:`26121`.)
+  :func:`~math.erf` and :func:`~math.erfc` in the :mod:`math` module.
+  (Contributed by Serhiy Storchaka in :issue:`26121`.)
 
 * The :func:`os.fwalk` function has been sped up by 2 times.  This was done
   using the :func:`os.scandir` function.

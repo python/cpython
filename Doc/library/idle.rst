@@ -190,7 +190,9 @@ Format Paragraph
    paragraph will be formatted to less than N columns, where N defaults to 72.
 
 Strip trailing whitespace
-   Remove any space characters after the last non-space character of a line.
+   Remove trailing space and other whitespace characters after the last
+   non-whitespace character of a line by applying str.rstrip to each line,
+   including lines within multiline strings.
 
 .. index::
    single: Run script

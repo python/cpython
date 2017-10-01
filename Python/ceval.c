@@ -4930,18 +4930,21 @@ import_from(PyObject *v, PyObject *name)
     if (pkgname == NULL) {
         goto error;
     }
+    if (!PyUnicode_Check(pkgname)) {
+        Py_CLEAR(pkgname);
+        goto error;
+    }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
     if (fullmodname == NULL) {
         Py_DECREF(pkgname);
         return NULL;
     }
-    x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
+    x = PyImport_GetModule(fullmodname);
     Py_DECREF(fullmodname);
     if (x == NULL) {
         goto error;
     }
     Py_DECREF(pkgname);
-    Py_INCREF(x);
     return x;
  error:
     pkgpath = PyModule_GetFilenameObject(v);
