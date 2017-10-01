@@ -2034,6 +2034,8 @@ def main(args=None):
                            help='Append files to a new or existing zip file')
     operation.add_argument('-t', '--test', metavar='<zipfile>',
                            help='Test if a zip file is valid')
+    parser.add_argument('--nozip64', action='store_false', dest='zip64',
+                        help="Disable Zip64 extension.")
     compression = parser.add_mutually_exclusive_group(required=False)
     compression.add_argument('-s', '--store', dest='compression',
                              action='store_const', const=ZIP_STORED,
@@ -2131,7 +2133,7 @@ def main(args=None):
             return count
         if len(files):
             count = 0
-            with ZipFile(zip_name, mode) as zf:
+            with ZipFile(zip_name, mode, allowZip64=args.zip64) as zf:
                 for path in files:
                     zippath = os.path.basename(path)
                     if not zippath:
