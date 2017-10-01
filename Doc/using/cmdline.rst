@@ -210,6 +210,19 @@ Miscellaneous options
    import of source modules.  See also :envvar:`PYTHONDONTWRITEBYTECODE`.
 
 
+.. cmdoption:: --check-hash-based-pycs default|always|never
+
+   Control the validation behavior of hash-based pycs. See
+   :ref:`pyc-invalidation`. When set to ``default``, checked and unchecked
+   hash-based bytecode cache files are validated according to their default
+   semantics. When set to ``always``, all hash-based pycs, whether checked or
+   unchecked, are validated against their corresponding source file. When set to
+   ``never``, hash-based pycs are not validated against their corresponding
+   source files.
+
+   The semantics of timestamp-based pycs are unaffected by this option.
+
+
 .. cmdoption:: -d
 
    Turn on parser debugging output (for expert only, depending on compilation

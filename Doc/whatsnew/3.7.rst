@@ -197,6 +197,32 @@ variable is not set in practice.
 
 See :option:`-X` ``dev`` for the details.
 
+Hash-based pycs
+---------------
+
+Python has traditionally checked the up-to-dateness of bytecode cache files
+(i.e., pycs) by comparing the source metadata (last-modified timestamp and size)
+with source metadata saved in the cache file header when it was generated. While
+effective, this invalidation method has its drawbacks. When filesystem
+timestamps are too coarse, Python can miss source updates, leading to user
+confusion. Additionally, having a timestamp in the cache file is problematic for
+`build reproduciblity <https://reproducible-builds.org/>`_ and content-based
+build systems.
+
+:pep:`552` extends the pyc format to allow the hash of the source file to be
+used for invalidation instead of the source timestamp. Such pycs are called
+"hash-based". By default, Python still uses timestamp-based invalidation and
+does not generate hash-based pycs at runtime. Hash-based pycs may be generated
+with :mod:`py_compile` or :mod:`compileall`.
+
+Hash-based pycs come in two variants: checked and unchecked. Python validates
+checked hash-based pycs against the source file at runtime but doesn't do so for
+unchecked hash-based pycs. Unchecked hash-based pycs are a useful performance
+optimization for environments where a system external to Python (e.g., the build
+system) is responsible for keeping pycs up-to-date.
+
+See :ref:`pyc-invalidation` for more information.
+
 
 Other Language Changes
 ======================

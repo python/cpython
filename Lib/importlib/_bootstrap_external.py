@@ -242,6 +242,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.6rc1 3379 (more thorough __class__ validation #23722)
 #     Python 3.7a0  3390 (add LOAD_METHOD and CALL_METHOD opcodes)
 #     Python 3.7a0  3391 (update GET_AITER #31709)
+#     Python 3.7a0  3392 (PEP 552: Deterministic pycs)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -250,7 +251,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3391).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3392).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -429,63 +430,70 @@ def _find_module_shim(self, fullname):
     return loader
 
 
-def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
-    """Validate the header of the passed-in bytecode against source_stats (if
-    given) and returning the bytecode that can be compiled by compile().
+def _classify_pyc(data, name, exc_details):
+    """Perform basic validity checking of a pyc header and return the flags field,
+    which determines how the pyc should be further validated against the source.
 
-    All other arguments are used to enhance error reporting.
-
-    ImportError is raised when the magic number is incorrect or the bytecode is
-    found to be stale. EOFError is raised when the data is found to be
-    truncated.
+    ImportError is raised when the magic number is incorrect or when the flags
+    field is invalid. EOFError is raised when the data is found to be truncated.
 
     """
-    exc_details = {}
-    if name is not None:
-        exc_details['name'] = name
-    else:
-        # To prevent having to make all messages have a conditional name.
-        name = '<bytecode>'
-    if path is not None:
-        exc_details['path'] = path
     magic = data[:4]
-    raw_timestamp = data[4:8]
-    raw_size = data[8:12]
     if magic != MAGIC_NUMBER:
         message = 'bad magic number in {!r}: {!r}'.format(name, magic)
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
-    elif len(raw_timestamp) != 4:
-        message = 'reached EOF while reading timestamp in {!r}'.format(name)
+    if len(data) < 16:
+        message = 'reached EOF while reading pyc header of {!r}'.format(name)
         _bootstrap._verbose_message('{}', message)
         raise EOFError(message)
-    elif len(raw_size) != 4:
-        message = 'reached EOF while reading size of source in {!r}'.format(name)
-        _bootstrap._verbose_message('{}', message)
-        raise EOFError(message)
-    if source_stats is not None:
-        try:
-            source_mtime = int(source_stats['mtime'])
-        except KeyError:
-            pass
-        else:
-            if _r_long(raw_timestamp) != source_mtime:
-                message = 'bytecode is stale for {!r}'.format(name)
-                _bootstrap._verbose_message('{}', message)
-                raise ImportError(message, **exc_details)
-        try:
-            source_size = source_stats['size'] & 0xFFFFFFFF
-        except KeyError:
-            pass
-        else:
-            if _r_long(raw_size) != source_size:
-                raise ImportError('bytecode is stale for {!r}'.format(name),
-                                  **exc_details)
-    return data[12:]
+    flags = _r_long(data[4:8])
+    # Only the first two flags are defined.
+    if flags & ~0b11:
+        raise ImportError('invalid flags {!r} in {!r}'.format(flags, name),
+                          **exc_details)
+    return flags
+
+
+def _validate_timestamp_pyc(data, source_stats, name, exc_details):
+    """Validate a pyc against the source mtime and size.
+
+    An ImportError is raised if the bytecode is stale.
+
+    """
+    try:
+        source_mtime = int(source_stats['mtime'])
+    except KeyError:
+        pass
+    else:
+        if _r_long(data[8:12]) != source_mtime:
+            message = 'bytecode is stale for {!r}'.format(name)
+            _bootstrap._verbose_message('{}', message)
+            raise ImportError(message, **exc_details)
+    try:
+        source_size = source_stats['size'] & 0xFFFFFFFF
+    except KeyError:
+        pass
+    else:
+        if _r_long(data[12:16]) != source_size:
+            raise ImportError('bytecode is stale for {!r}'.format(name),
+                              **exc_details)
+
+
+def _validate_hash_pyc(data, source_hash, name, exc_details):
+    """Validate a hash-based pyc by checking the real source hash against the one in
+    the pyc header.
+
+    """
+    if data[8:16] != source_hash:
+        raise ImportError(
+            'hash in bytecode doesn\'t match hash of source {!r}'.format(name),
+            **exc_details,
+        )
 
 
 def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
-    """Compile bytecode as returned by _validate_bytecode_header()."""
+    """Compile bytecode as found in a pyc."""
     code = marshal.loads(data)
     if isinstance(code, _code_type):
         _bootstrap._verbose_message('code object from {!r}', bytecode_path)
@@ -496,12 +504,24 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
         raise ImportError('Non-code object in {!r}'.format(bytecode_path),
                           name=name, path=bytecode_path)
 
-def _code_to_bytecode(code, mtime=0, source_size=0):
-    """Compile a code object into bytecode for writing out to a byte-compiled
-    file."""
+
+def _code_to_timestamp_pyc(code, mtime=0, source_size=0):
+    "Produce the data for a timestamp-based pyc."
     data = bytearray(MAGIC_NUMBER)
+    data.extend(_w_long(0))
     data.extend(_w_long(mtime))
     data.extend(_w_long(source_size))
+    data.extend(marshal.dumps(code))
+    return data
+
+
+def _code_to_hash_pyc(code, source_hash, checked=True):
+    "Produce the data for a hash-based pyc."
+    data = bytearray(MAGIC_NUMBER)
+    flags = 0b1 | checked << 1
+    data.extend(_w_long(flags))
+    assert len(source_hash) == 8
+    data.extend(source_hash)
     data.extend(marshal.dumps(code))
     return data
 
@@ -751,6 +771,10 @@ class SourceLoader(_LoaderBasics):
         """
         source_path = self.get_filename(fullname)
         source_mtime = None
+        source_bytes = None
+        source_hash = None
+        hash_based = False
+        check_source = True
         try:
             bytecode_path = cache_from_source(source_path)
         except NotImplementedError:
@@ -767,10 +791,29 @@ class SourceLoader(_LoaderBasics):
                 except OSError:
                     pass
                 else:
+                    exc_details = {
+                        'name': fullname,
+                        'path': bytecode_path,
+                    }
                     try:
-                        bytes_data = _validate_bytecode_header(data,
-                                source_stats=st, name=fullname,
-                                path=bytecode_path)
+                        flags = _classify_pyc(data, fullname, exc_details)
+                        bytes_data = data[16:]
+                        hash_based = flags & 0b1 != 0
+                        if hash_based:
+                            check_source = flags & 0b10 != 0
+                            if (_imp.check_hash_based_pycs != 'never' and
+                                (check_source or
+                                 _imp.check_hash_based_pycs == 'always')):
+                                source_bytes = self.get_data(source_path)
+                                source_hash = _imp.source_hash(
+                                    _RAW_MAGIC_NUMBER,
+                                    source_bytes,
+                                )
+                                _validate_hash_pyc(data, source_hash, fullname,
+                                                   exc_details)
+                        else:
+                            _validate_timestamp_pyc(data, st, fullname,
+                                                    exc_details)
                     except (ImportError, EOFError):
                         pass
                     else:
@@ -779,13 +822,19 @@ class SourceLoader(_LoaderBasics):
                         return _compile_bytecode(bytes_data, name=fullname,
                                                  bytecode_path=bytecode_path,
                                                  source_path=source_path)
-        source_bytes = self.get_data(source_path)
+        if source_bytes is None:
+            source_bytes = self.get_data(source_path)
         code_object = self.source_to_code(source_bytes, source_path)
         _bootstrap._verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
                 source_mtime is not None):
-            data = _code_to_bytecode(code_object, source_mtime,
-                    len(source_bytes))
+            if hash_based:
+                if source_hash is None:
+                    source_hash = _imp.source_hash(source_bytes)
+                data = _code_to_hash_pyc(code_object, source_hash, check_source)
+            else:
+                data = _code_to_timestamp_pyc(code_object, source_mtime,
+                                              len(source_bytes))
             try:
                 self._cache_bytecode(source_path, bytecode_path, data)
                 _bootstrap._verbose_message('wrote {!r}', bytecode_path)
@@ -887,8 +936,14 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
     def get_code(self, fullname):
         path = self.get_filename(fullname)
         data = self.get_data(path)
-        bytes_data = _validate_bytecode_header(data, name=fullname, path=path)
-        return _compile_bytecode(bytes_data, name=fullname, bytecode_path=path)
+        # Call _classify_pyc to do basic validation of the pyc but ignore the
+        # result. There's no source to check against.
+        exc_details = {
+            'name': fullname,
+            'path': path,
+        }
+        _classify_pyc(data, fullname, exc_details)
+        return _compile_bytecode(data[16:], name=fullname, bytecode_path=path)
 
     def get_source(self, fullname):
         """Return None as there is no source code."""

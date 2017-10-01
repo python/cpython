@@ -67,6 +67,9 @@ generically as an :term:`importer`) to participate in the import process.
     :pep:`489`
         Multi-phase extension module initialization
 
+    :pep:`552`
+        Deterministic pycs
+
     :pep:`3120`
         Using UTF-8 as the Default Source Encoding
 
@@ -1326,6 +1329,14 @@ an :term:`importer`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+.. function:: source_hash(source_bytes)
+
+   Return the hash of *source_bytes* as byte string. A hash-based pyc embeds the
+   :func:`source_hash` of the corresponding source file's contents in its
+   header.
+
+   .. versionadded:: 3.7
 
 .. class:: LazyLoader(loader)
 

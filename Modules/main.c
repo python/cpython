@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "osdefs.h"
+#include "internal/import.h"
 #include "internal/pystate.h"
 
 #include <locale.h>
@@ -60,6 +61,11 @@ static int orig_argc;
 #define BASE_OPTS L"bBc:dEhiIJm:OqRsStuvVW:xX:?"
 
 #define PROGRAM_OPTS BASE_OPTS
+
+static const _PyOS_LongOption longoptions[] = {
+    {L"check-hash-based-pycs", 1, 0},
+    {NULL, 0, 0},
+};
 
 /* Short usage message (with %s for argv0) */
 static const char usage_line[] =
@@ -393,6 +399,7 @@ typedef struct {
     int quiet_flag;              /* Py_QuietFlag, -q */
     int skip_first_line;         /* -x option */
     _Py_OptList xoptions;        /* -X options */
+    const char *check_hash_pycs_mode; /* --check-hash-based-pycs */
 #ifdef MS_WINDOWS
     int legacy_windows_fs_encoding;  /* Py_LegacyWindowsFSEncodingFlag,
                                         PYTHONLEGACYWINDOWSFSENCODING */
@@ -577,7 +584,9 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
 
     _PyOS_ResetGetOpt();
     do {
-        int c = _PyOS_GetOpt(pymain->argc, pymain->argv, PROGRAM_OPTS);
+        int longindex = -1;
+        int c = _PyOS_GetOpt(pymain->argc, pymain->argv, PROGRAM_OPTS,
+                             longoptions, &longindex);
         if (c == EOF) {
             break;
         }
@@ -608,6 +617,22 @@ pymain_parse_cmdline_impl(_PyMain *pymain)
         }
 
         switch (c) {
+        case 0:
+            // Handle long option.
+            assert(longindex == 0); // Only one long option now.
+            if (!wcscmp(_PyOS_optarg, L"always")) {
+                cmdline->check_hash_pycs_mode = "always";
+            } else if (!wcscmp(_PyOS_optarg, L"never")) {
+                cmdline->check_hash_pycs_mode = "never";
+            } else if (!wcscmp(_PyOS_optarg, L"default")) {
+                cmdline->check_hash_pycs_mode = "default";
+            } else {
+                fprintf(stderr, "--check-hash-based-pycs must be one of "
+                        "'default', 'always', or 'never'\n");
+                return 1;
+            }
+            break;
+
         case 'b':
             cmdline->bytes_warning++;
             break;
@@ -1085,6 +1110,8 @@ pymain_set_global_config(_PyMain *pymain)
     pymain_set_flag(&Py_UnbufferedStdioFlag, cmdline->use_unbuffered_io);
     pymain_set_flag(&Py_VerboseFlag, cmdline->verbosity);
     pymain_set_flag(&Py_QuietFlag, cmdline->quiet_flag);
+    if (cmdline->check_hash_pycs_mode)
+        _Py_CheckHashBasedPycsMode = cmdline->check_hash_pycs_mode;
 #ifdef MS_WINDOWS
     pymain_set_flag(&Py_LegacyWindowsFSEncodingFlag, cmdline->legacy_windows_fs_encoding);
     pymain_set_flag(&Py_LegacyWindowsStdioFlag, cmdline->legacy_windows_stdio);
