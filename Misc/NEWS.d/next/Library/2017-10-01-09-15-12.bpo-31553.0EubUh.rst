@@ -1,0 +1,2 @@
+Add the --jsonlines option to json.tool in order to be able to parse input
+sent using the jsonlines format.
