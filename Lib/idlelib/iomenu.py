@@ -487,11 +487,11 @@ class IOBinding:
     opendialog = None
     savedialog = None
 
-    filetypes = [
+    filetypes = (
         ("Python files", "*.py *.pyw", "TEXT"),
         ("Text files", "*.txt", "TEXT"),
         ("All files", "*"),
-        ]
+        )
 
     defaultextension = '.py' if sys.platform == 'darwin' else ''
 
