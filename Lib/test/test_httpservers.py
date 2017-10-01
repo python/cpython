@@ -734,7 +734,6 @@ class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
     class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
 
         protocol_version = 'HTTP/1.1'
-        default_request_version = 'HTTP/1.1'
 
         compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
             "text/javascript", "application/javascript", "application/json"]
