@@ -2164,9 +2164,9 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
     if (it == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s.%s() returned a non-iterable (type %.200s)",
+                         "%.200s.%U() returned a non-iterable (type %.200s)",
                          Py_TYPE(o)->tp_name,
-                         meth_id->string,
+                         meth_id->object,
                          Py_TYPE(meth_output)->tp_name);
         }
         Py_DECREF(meth_output);
