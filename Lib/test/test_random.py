@@ -317,7 +317,6 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         class BadLong(long):
             def __abs__(self):
                 1/0
-
         self.gen.seed(42)
         expected_value = self.gen.random()
         for seed_arg in [42L, BadInt(42), BadLong(42)]:
