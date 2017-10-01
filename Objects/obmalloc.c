@@ -1460,7 +1460,7 @@ static void *
 _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
-    uint8_t *q = (uint8_t *)p, *oldq;
+    uint8_t *q = (uint8_t *)p;
     uint8_t *tail;
     size_t total;       /* nbytes + 4*SST */
     size_t original_nbytes;
@@ -1477,18 +1477,20 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
         /* overflow:  can't represent total as a Py_ssize_t */
         return NULL;
 
+    if (nbytes < original_nbytes) {
+        /* shrinking:  mark old extra memory dead */
+        memset(q + nbytes, DEADBYTE, original_nbytes - nbytes + 2*SST);
+    }
     /* Resize and add decorations. We may get a new pointer here, in which
      * case we didn't get the chance to mark the old memory with DEADBYTE,
      * but we live with that.
      */
-    oldq = q;
     q = (uint8_t *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
-    if (q == NULL)
+    if (q == NULL) {
+        if (nbytes <= original_nbytes) {
+            Py_FatalError("Shrinking reallocation is failed");
+        }
         return NULL;
-
-    if (q == oldq && nbytes < original_nbytes) {
-        /* shrinking:  mark old extra memory dead */
-        memset(q + nbytes, DEADBYTE, original_nbytes - nbytes);
     }
 
     write_size_t(q, nbytes);
