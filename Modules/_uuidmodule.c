@@ -4,14 +4,27 @@
 #include <uuid/uuid.h>
 
 
+/* bpo-11063: libuuid on macOS doesn't provide uuid_generate_time_safe(),
+   only uuid_generate_time(). */
+#ifndef __APPLE__
+#  define HAVE_TIME_SAFE
+#endif
+
+
 static PyObject *
 py_uuid_generate_time_safe(void)
 {
+#ifdef HAVE_TIME_SAFE
     uuid_t out;
     int res;
 
     res = uuid_generate_time_safe(out);
     return Py_BuildValue("y#i", (const char *) out, sizeof(out), res);
+#else
+    uuid_t out;
+    uuid_generate_time(out);
+    return Py_BuildValue("y#O", (const char *) out, sizeof(out), Py_None);
+#endif
 }
 
 
@@ -30,6 +43,21 @@ static struct PyModuleDef uuidmodule = {
 PyMODINIT_FUNC
 PyInit__uuid(void)
 {
+    PyObject *mod;
     assert(sizeof(uuid_t) == 16);
-    return PyModule_Create(&uuidmodule);
+#ifdef HAVE_TIME_SAFE
+    int has_uuid_generate_time_safe = 1;
+#else
+    int has_uuid_generate_time_safe = 0;
+#endif
+    mod = PyModule_Create(&uuidmodule);
+    if (mod == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(mod, "has_uuid_generate_time_safe",
+                                has_uuid_generate_time_safe) < 0) {
+        return NULL;
+    }
+
+    return mod;
 }
