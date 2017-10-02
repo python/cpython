@@ -296,7 +296,7 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
                       PyObject *kwds)
 {
     Py_ssize_t argc;
-    PyObject *self, *func, *result, **stack;
+    PyObject *self, *result;
 
     /* Make sure that the first argument is acceptable as 'self' */
     assert(PyTuple_Check(args));
@@ -330,20 +330,38 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
         return NULL;
     }
 
-    func = PyCFunction_NewEx(descr->d_method, self, NULL);
-    if (func == NULL)
-        return NULL;
-    stack = &PyTuple_GET_ITEM(args, 1);
-    result = _PyObject_FastCallDict(func, stack, argc - 1, kwds);
-    Py_DECREF(func);
+    result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
+                                          &PyTuple_GET_ITEM(args, 1), argc - 1,
+                                          kwds);
+    result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
     return result;
+}
+
+Py_LOCAL_INLINE(PyObject *)
+wrapperdescr_raw_call(PyWrapperDescrObject *descr, PyObject *self,
+                      PyObject *args, PyObject *kwds)
+{
+    wrapperfunc wrapper = descr->d_base->wrapper;
+
+    if (descr->d_base->flags & PyWrapperFlag_KEYWORDS) {
+        wrapperfunc_kwds wk = (wrapperfunc_kwds)wrapper;
+        return (*wk)(self, args, descr->d_wrapped, kwds);
+    }
+
+    if (kwds != NULL && (!PyDict_Check(kwds) || PyDict_GET_SIZE(kwds) != 0)) {
+        PyErr_Format(PyExc_TypeError,
+                     "wrapper %s() takes no keyword arguments",
+                     descr->d_base->name);
+        return NULL;
+    }
+    return (*wrapper)(self, args, descr->d_wrapped);
 }
 
 static PyObject *
 wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
 {
     Py_ssize_t argc;
-    PyObject *self, *func, *result, **stack;
+    PyObject *self, *result;
 
     /* Make sure that the first argument is acceptable as 'self' */
     assert(PyTuple_Check(args));
@@ -369,15 +387,15 @@ wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    func = PyWrapper_New((PyObject *)descr, self);
-    if (func == NULL)
+    args = PyTuple_GetSlice(args, 1, argc);
+    if (args == NULL) {
         return NULL;
-
-    stack = &PyTuple_GET_ITEM(args, 1);
-    result = _PyObject_FastCallDict(func, stack, argc - 1, kwds);
-    Py_DECREF(func);
+    }
+    result = wrapperdescr_raw_call(descr, self, args, kwds);
+    Py_DECREF(args);
     return result;
 }
+
 
 static PyObject *
 method_get_doc(PyMethodDescrObject *descr, void *closure)
@@ -1167,21 +1185,7 @@ static PyGetSetDef wrapper_getsets[] = {
 static PyObject *
 wrapper_call(wrapperobject *wp, PyObject *args, PyObject *kwds)
 {
-    wrapperfunc wrapper = wp->descr->d_base->wrapper;
-    PyObject *self = wp->self;
-
-    if (wp->descr->d_base->flags & PyWrapperFlag_KEYWORDS) {
-        wrapperfunc_kwds wk = (wrapperfunc_kwds)wrapper;
-        return (*wk)(self, args, wp->descr->d_wrapped, kwds);
-    }
-
-    if (kwds != NULL && (!PyDict_Check(kwds) || PyDict_GET_SIZE(kwds) != 0)) {
-        PyErr_Format(PyExc_TypeError,
-                     "wrapper %s() takes no keyword arguments",
-                     wp->descr->d_base->name);
-        return NULL;
-    }
-    return (*wrapper)(self, args, wp->descr->d_wrapped);
+    return wrapperdescr_raw_call(wp->descr, wp->self, args, kwds);
 }
 
 static int

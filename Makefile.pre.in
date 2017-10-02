@@ -38,7 +38,6 @@ CXX=		@CXX@
 MAINCC=		@MAINCC@
 LINKCC=		@LINKCC@
 AR=		@AR@
-RANLIB=		@RANLIB@
 READELF=	@READELF@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
@@ -230,6 +229,7 @@ PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
 PYTHON_FOR_REGEN=@PYTHON_FOR_REGEN@
+UPDATE_FILE=@PYTHON_FOR_REGEN@ $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
@@ -576,16 +576,9 @@ sharedmods: $(BUILDPYTHON) pybuilddir.txt Modules/_math.o
 
 
 # Build static library
-# avoid long command lines, same as LIBRARY_OBJS
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ Modules/getbuildinfo.o
-	$(AR) $(ARFLAGS) $@ $(PARSER_OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJECT_OBJS)
-	$(AR) $(ARFLAGS) $@ $(PYTHON_OBJS) Python/frozen.o
-	$(AR) $(ARFLAGS) $@ $(MODULE_OBJS)
-	$(AR) $(ARFLAGS) $@ $(MODOBJS)
-	$(RANLIB) $@
+	$(AR) $(ARFLAGS) $@ $(LIBRARY_OBJS)
 
 libpython$(LDVERSION).so: $(LIBRARY_OBJS)
 	if test $(INSTSONAME) != $(LDLIBRARY); then \
@@ -691,12 +684,14 @@ regen-importlib: Programs/_freeze_importlib
 	# from Lib/importlib/_bootstrap_external.py using _freeze_importlib
 	./Programs/_freeze_importlib \
 	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
-	    $(srcdir)/Python/importlib_external.h
+	    $(srcdir)/Python/importlib_external.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
 	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
 	# using _freeze_importlib
 	./Programs/_freeze_importlib \
 	    $(srcdir)/Lib/importlib/_bootstrap.py \
-	    $(srcdir)/Python/importlib.h
+	    $(srcdir)/Python/importlib.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
 
 
 ############################################################################
@@ -770,8 +765,10 @@ regen-grammar: $(PGEN)
 	# from Grammar/Grammar using pgen
 	@$(MKDIR_P) Include
 	$(PGEN) $(srcdir)/Grammar/Grammar \
-		$(srcdir)/Include/graminit.h \
-		$(srcdir)/Python/graminit.c
+		$(srcdir)/Include/graminit.h.new \
+		$(srcdir)/Python/graminit.c.new
+	$(UPDATE_FILE) $(srcdir)/Include/graminit.h $(srcdir)/Include/graminit.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/graminit.c $(srcdir)/Python/graminit.c.new
 
 Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
 				$(srcdir)/Include/token.h \
@@ -789,13 +786,15 @@ regen-ast:
 	# Regenerate Include/Python-ast.h using Parser/asdl_c.py -h
 	$(MKDIR_P) $(srcdir)/Include
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
-		-h $(srcdir)/Include \
+		-h $(srcdir)/Include/Python-ast.h.new \
 		$(srcdir)/Parser/Python.asdl
+	$(UPDATE_FILE) $(srcdir)/Include/Python-ast.h $(srcdir)/Include/Python-ast.h.new
 	# Regenerate Python/Python-ast.c using Parser/asdl_c.py -c
 	$(MKDIR_P) $(srcdir)/Python
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
-		-c $(srcdir)/Python \
+		-c $(srcdir)/Python/Python-ast.c.new \
 		$(srcdir)/Parser/Python.asdl
+	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
 
 .PHONY: regen-opcode
 regen-opcode:
@@ -803,7 +802,8 @@ regen-opcode:
 	# using Tools/scripts/generate_opcode_h.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
-		$(srcdir)/Include/opcode.h
+		$(srcdir)/Include/opcode.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 
 Python/compile.o Python/symtable.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
 
@@ -860,7 +860,8 @@ regen-opcode-targets:
 	# Regenerate Python/opcode_targets.h from Lib/opcode.py
 	# using Python/makeopcodetargets.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Python/makeopcodetargets.py \
-		$(srcdir)/Python/opcode_targets.h
+		$(srcdir)/Python/opcode_targets.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h
 
@@ -887,7 +888,8 @@ regen-typeslots:
 	# using Objects/typeslots.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Objects/typeslots.py \
 		< $(srcdir)/Include/typeslots.h \
-		$(srcdir)/Objects/typeslots.inc
+		$(srcdir)/Objects/typeslots.inc.new
+	$(UPDATE_FILE) $(srcdir)/Objects/typeslots.inc $(srcdir)/Objects/typeslots.inc.new
 
 ############################################################################
 # Header files
@@ -1412,7 +1414,6 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 				$(INSTALL_DATA) $(LDLIBRARY) $(DESTDIR)$(LIBPL) ; \
 			else \
 				$(INSTALL_DATA) $(LIBRARY) $(DESTDIR)$(LIBPL)/$(LIBRARY) ; \
-				$(RANLIB) $(DESTDIR)$(LIBPL)/$(LIBRARY) ; \
 			fi; \
 		else \
 			echo Skip install of $(LIBRARY) - use make frameworkinstall; \

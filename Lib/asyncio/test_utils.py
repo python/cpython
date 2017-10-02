@@ -45,7 +45,7 @@ def dummy_ssl_context():
     if ssl is None:
         return None
     else:
-        return ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        return ssl.SSLContext(ssl.PROTOCOL_TLS)
 
 
 def run_briefly(loop):

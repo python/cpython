@@ -227,7 +227,9 @@ community is 4 spaces.</dd>
 multiline string or selected line in a string.  All lines in the
 paragraph will be formatted to less than N columns, where N defaults to 72.</dd>
 <dt>Strip trailing whitespace</dt>
-<dd>Remove any space characters after the last non-space character of a line.</dd>
+<dd>Remove trailing space and other whitespace characters after the last
+non-whitespace character of a line by applying str.rstrip to each line,
+including lines within multiline strings.</dd>
 </dl>
 </div>
 <div class="section" id="run-menu-editor-window-only">
@@ -779,7 +781,7 @@ also used for testing.</p>
     The Python Software Foundation is a non-profit corporation.
     <a href="https://www.python.org/psf/donations/">Please donate.</a>
     <br />
-    Last updated on Sep 12, 2017.
+    Last updated on Sep 15, 2017.
     <a href="../bugs.html">Found a bug</a>?
     <br />
     Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3.6.
