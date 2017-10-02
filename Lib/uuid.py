@@ -160,7 +160,6 @@ class UUID:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = int_(hex, 16)
         if bytes_le is not None:
-            # Don't cast int to bytes to get a TypeError above
             if not isinstance(bytes_le, (bytes_, bytearray, int_)):
                 bytes_le = bytes_(bytes_le)
             if len(bytes_le) != 16:
