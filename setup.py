@@ -615,8 +615,6 @@ class PyBuildExt(build_ext):
 
         math_libs = self.detect_math_libs()
 
-        # XXX Omitted modules: gl, pure, dl, SGI-specific modules
-
         #
         # The following modules are all pretty straightforward, and compile
         # on pretty much any POSIXish platform.
