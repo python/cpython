@@ -1158,8 +1158,8 @@ class Timer(Thread):
             self.function(*self.args, **self.kwargs)
         self.finished.set()
 
+
 # Special thread class to represent the main thread
-# This is garbage collected through an exit handler
 
 class _MainThread(Thread):
 
@@ -1272,7 +1272,6 @@ def _shutdown():
     while t:
         t.join()
         t = _pickSomeNonDaemonThread()
-    _main_thread._delete()
 
 def _pickSomeNonDaemonThread():
     for t in enumerate():
