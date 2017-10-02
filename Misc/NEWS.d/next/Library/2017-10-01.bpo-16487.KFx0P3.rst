@@ -1,0 +1,3 @@
+The `certfile` and `keyfile` arguments to `SSLContext.load_cert_chain()`
+can now be file objects which allows certificates to be loaded from memory.
+
