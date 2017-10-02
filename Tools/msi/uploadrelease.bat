@@ -22,9 +22,9 @@ if "%1" EQU "-t" (set TARGET=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--target" (set TARGET=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--dry-run" (set DRYRUN=true) && shift && goto CheckOpts
 if "%1" EQU "--skip-gpg" (set NOGPG=true) && shift && goto CheckOpts
-if "%1" EQU "--skip-purge" (set PURGE_OPTION=) && shift && godo CheckOpts
-if "%1" EQU "--skip-test" (set NOTEST=true) && shift && godo CheckOpts
-if "%1" EQU "-T" (set NOTEST=true) && shift && godo CheckOpts
+if "%1" EQU "--skip-purge" (set PURGE_OPTION=) && shift && goto CheckOpts
+if "%1" EQU "--skip-test" (set NOTEST=true) && shift && goto CheckOpts
+if "%1" EQU "-T" (set NOTEST=true) && shift && goto CheckOpts
 if "%1" NEQ "" echo Unexpected argument "%1" & exit /B 1
 
 if not defined PLINK where plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
