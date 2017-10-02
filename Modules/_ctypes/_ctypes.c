@@ -5319,7 +5319,7 @@ cast_check_pointertype(PyObject *arg)
     if (PyCFuncPtrTypeObject_Check(arg))
         return 1;
     dict = PyType_stgdict(arg);
-    if (dict) {
+    if (dict != NULL && dict->proto != NULL) {
         if (PyUnicode_Check(dict->proto)
             && (strchr("sPzUZXO", PyUnicode_AsUTF8(dict->proto)[0]))) {
             /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */

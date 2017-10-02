@@ -1,0 +1,2 @@
+Fix a crash in `ctypes.cast()` in case the type argument is a ctypes
+structured data type. Patch by Eryk Sun and Oren Milman.
