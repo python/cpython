@@ -509,7 +509,7 @@ def _load_system_functions():
         pass
     elif _uuid is not None:
         _generate_time_safe = _uuid.generate_time_safe
-        _has_uuid_generate_time_safe = True
+        _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
         return
 
     try:
