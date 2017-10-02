@@ -307,6 +307,22 @@ class SystemRandom_TestBasicOps(TestBasicOps):
 class MersenneTwister_TestBasicOps(TestBasicOps):
     gen = random.Random()
 
+    @test_support.cpython_only
+    def test_bug_31478(self):
+        # _random.Random.seed() should ignore the __abs__() method of a
+        # long/int subclass argument.
+        class BadInt(int):
+            def __abs__(self):
+                1/0
+        class BadLong(long):
+            def __abs__(self):
+                1/0
+        self.gen.seed(42)
+        expected_value = self.gen.random()
+        for seed_arg in [42L, BadInt(42), BadLong(42)]:
+            self.gen.seed(seed_arg)
+            self.assertEqual(self.gen.random(), expected_value)
+
     def test_setstate_first_arg(self):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))
 
