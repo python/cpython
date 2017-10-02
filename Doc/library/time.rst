@@ -166,12 +166,12 @@ The module defines the following functions and data items:
 
    Return the *clk_id* of the thread-specific CPU-time clock for the specified *thread_id*.
 
-   Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
    attribute of :class:`threading.Thread` objects to get a suitable value
    for *thread_id*.
 
    .. warning::
-      Passing an invalid or expired thread_id may result in
+      Passing an invalid or expired *thread_id* may result in
       undefined behavior, such as segmentation fault.
 
    Availability: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for

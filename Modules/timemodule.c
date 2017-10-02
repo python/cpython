@@ -241,7 +241,7 @@ time_pthread_getcpuclockid(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    return PyLong_FromLong((long)clk_id);
+    return PyLong_FromLong(clk_id);
 }
 
 PyDoc_STRVAR(pthread_getcpuclockid_doc,
