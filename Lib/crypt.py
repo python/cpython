@@ -19,7 +19,7 @@ class _Method(_namedtuple('_Method', 'name ident salt_chars total_size')):
         return '<crypt.METHOD_{}>'.format(self.name)
 
 
-def mksalt(method=None):
+def mksalt(method=None, *, log_rounds=12):
     """Generate a salt for the specified method.
 
     If not specified, the strongest available method will be used.
@@ -27,7 +27,16 @@ def mksalt(method=None):
     """
     if method is None:
         method = methods[0]
-    s = '${}$'.format(method.ident) if method.ident else ''
+    if not method.ident:
+        s = ''
+    elif method.ident == '_':
+        s = method.ident
+    elif method.ident[0] == '2':
+        s = f'${method.ident}${log_rounds:02d}$'
+    elif method.ident == '3':
+        return f'${method.ident}$$'
+    else:
+        s = f'${method.ident}$'
     s += ''.join(_sr.choice(_saltchars) for char in range(method.salt_chars))
     return s
 
@@ -48,14 +57,32 @@ def crypt(word, salt=None):
 
 
 #  available salting/crypto methods
-METHOD_CRYPT = _Method('CRYPT', None, 2, 13)
-METHOD_MD5 = _Method('MD5', '1', 8, 34)
-METHOD_SHA256 = _Method('SHA256', '5', 16, 63)
-METHOD_SHA512 = _Method('SHA512', '6', 16, 106)
-
 methods = []
-for _method in (METHOD_SHA512, METHOD_SHA256, METHOD_MD5, METHOD_CRYPT):
-    _result = crypt('', _method)
-    if _result and len(_result) == _method.total_size:
-        methods.append(_method)
-del _result, _method
+
+def _probe(method):
+    result = crypt('', method)
+    if result and len(result) == method.total_size:
+        methods.append(method)
+        return True
+    return False
+
+METHOD_SHA512 = _Method('SHA512', '6', 16, 106)
+_probe(METHOD_SHA512)
+METHOD_SHA256 = _Method('SHA256', '5', 16, 63)
+_probe(METHOD_SHA256)
+
+for _v in 'b', 'y', 'a', '':
+    METHOD_BLF = _Method('BLF', '2' + _v, 22, 59 + len(_v))
+    if _probe(METHOD_BLF):
+        break
+
+METHOD_MD5 = _Method('MD5', '1', 8, 34)
+_probe(METHOD_MD5)
+METHOD_DES = _Method('DES', '_', 8, 20)
+_probe(METHOD_DES)
+METHOD_NTH = _Method('NTH', '3', 0, 36)
+_probe(METHOD_NTH)
+METHOD_CRYPT = _Method('CRYPT', None, 2, 13)
+_probe(METHOD_CRYPT)
+
+del _v, _probe

@@ -48,10 +48,31 @@ are available on all platforms):
    Another Modular Crypt Format method with 16 character salt and 43
    character hash.
 
+.. data:: METHOD_BLF
+
+   Another Modular Crypt Format method with 22 character salt and 31
+   character hash.
+
+   .. versionadded:: 3.7
+
 .. data:: METHOD_MD5
 
    Another Modular Crypt Format method with 8 character salt and 22
    character hash.
+
+.. data:: METHOD_DES
+
+   Another Modular Crypt Format method with 8 character salt and 11
+   character hash.
+
+   .. versionadded:: 3.7
+
+.. data:: METHOD_NTH
+
+   Another Modular Crypt Format method without a salt and 32
+   hexadecimal characters of hash.
+
+   .. versionadded:: 3.7
 
 .. data:: METHOD_CRYPT
 
@@ -109,18 +130,23 @@ The :mod:`crypt` module defines the following functions:
       Accept ``crypt.METHOD_*`` values in addition to strings for *salt*.
 
 
-.. function:: mksalt(method=None)
+.. function:: mksalt(method=None, *, log_rounds=12)
 
    Return a randomly generated salt of the specified method.  If no
    *method* is given, the strongest method available as returned by
    :func:`methods` is used.
 
-   The return value is a string either of 2 characters in length for
-   ``crypt.METHOD_CRYPT``, or 19 characters starting with ``$digit$`` and
-   16 random characters from the set ``[./a-zA-Z0-9]``, suitable for
-   passing as the *salt* argument to :func:`crypt`.
+   The return value is a string suitable for passing as the *salt* argument
+   to :func:`crypt`.
+
+   *log_round* specifies the binary logarithm of the number of rounds
+   for ``crypt.METHOD_CRYPT``.  ``8`` specifies ``256`` rounds.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      Added the *log_round* parameter.
+
 
 Examples
 --------
