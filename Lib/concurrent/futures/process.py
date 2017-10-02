@@ -380,14 +380,14 @@ class BrokenProcessPool(RuntimeError):
 
 
 class ProcessPoolExecutor(_base.Executor):
-    def __init__(self, max_workers=None, context=None):
+    def __init__(self, max_workers=None, mp_context=None):
         """Initializes a new ProcessPoolExecutor instance.
 
         Args:
             max_workers: The maximum number of processes that can be used to
                 execute the given calls. If None or not given then as many
                 worker processes will be created as the machine has processors.
-            context: A multiprocessing context to launch the workers. This
+            mp_context: A multiprocessing context to launch the workers. This
                 object should provide SimpleQueue, Queue and Process.
         """
         _check_system_limits()
@@ -399,20 +399,20 @@ class ProcessPoolExecutor(_base.Executor):
                 raise ValueError("max_workers must be greater than 0")
 
             self._max_workers = max_workers
-        if context is None:
-            context = mp.get_context()
-        self._context = context
+        if mp_context is None:
+            mp_context = mp.get_context()
+        self._mp_context = mp_context
 
         # Make the call queue slightly larger than the number of processes to
         # prevent the worker processes from idling. But don't make it too big
         # because futures in the call queue cannot be cancelled.
         queue_size = self._max_workers + EXTRA_QUEUED_CALLS
-        self._call_queue = context.Queue(queue_size)
+        self._call_queue = mp_context.Queue(queue_size)
         # Killed worker processes can produce spurious "broken pipe"
         # tracebacks in the queue's own worker thread. But we detect killed
         # processes anyway, so silence the tracebacks.
         self._call_queue._ignore_epipe = True
-        self._result_queue = context.SimpleQueue()
+        self._result_queue = mp_context.SimpleQueue()
         self._work_ids = queue.Queue()
         self._queue_management_thread = None
         # Map of pids to processes
@@ -447,7 +447,7 @@ class ProcessPoolExecutor(_base.Executor):
 
     def _adjust_process_count(self):
         for _ in range(len(self._processes), self._max_workers):
-            p = self._context.Process(
+            p = self._mp_context.Process(
                 target=_process_worker,
                 args=(self._call_queue,
                       self._result_queue))

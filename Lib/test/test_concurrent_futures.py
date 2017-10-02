@@ -80,7 +80,7 @@ class ExecutorMixin:
             if hasattr(self, "ctx"):
                 self.executor = self.executor_type(
                     max_workers=self.worker_count,
-                    context=get_context(self.ctx))
+                    mp_context=get_context(self.ctx))
             else:
                 self.executor = self.executor_type(
                     max_workers=self.worker_count)
@@ -152,9 +152,16 @@ class ExecutorShutdownTest:
             from time import sleep
             from test.test_concurrent_futures import sleep_and_print
             if __name__ == "__main__":
-                t = {executor_type}(5)
+                context = '{context}'
+                if context == "":
+                    t = {executor_type}(5)
+                else:
+                    from multiprocessing import get_context
+                    context = get_context(context)
+                    t = {executor_type}(5, mp_context=context)
                 t.submit(sleep_and_print, 1.0, "apple")
-            """.format(executor_type=self.executor_type.__name__))
+            """.format(executor_type=self.executor_type.__name__,
+                       context=getattr(self, "ctx", "")))
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
         self.assertFalse(err)
