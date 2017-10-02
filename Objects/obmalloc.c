@@ -1486,12 +1486,8 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
      * but we live with that.
      */
     q = (uint8_t *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
-    if (q == NULL) {
-        if (nbytes <= original_nbytes) {
-            Py_FatalError("Shrinking reallocation is failed");
-        }
+    if (q == NULL)
         return NULL;
-    }
 
     write_size_t(q, nbytes);
     assert(q[SST] == (uint8_t)api->api_id);
