@@ -56,6 +56,15 @@ class MyObject(object):
         pass
 
 
+class EventfulGCObj():
+    def __init__(self, ctx):
+        mgr = get_context(ctx).Manager()
+        self.event = mgr.Event()
+
+    def __del__(self):
+        self.event.set()
+
+
 def make_dummy_object(_):
     return MyObject()
 
@@ -664,6 +673,15 @@ class ProcessPoolExecutorTest(ExecutorTest):
                 sys.excepthook(*sys.exc_info())
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
+
+    def test_ressources_gced_in_workers(self):
+        # Ensure that argument for a job are correctly gc-ed after the job
+        # is finished
+        obj = EventfulGCObj(self.ctx)
+        future = self.executor.submit(id, obj)
+        future.result()
+
+        assert obj.event.wait(timeout=1)
 
 
 class ProcessPoolForkExecutorTest(ProcessPoolForkMixin,
