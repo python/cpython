@@ -723,7 +723,8 @@ class ElementTree:
               xml_declaration=None,
               default_namespace=None,
               method=None, *,
-              short_empty_elements=True):
+              short_empty_elements=True,
+              indent=''):
         """Write element tree to a file as XML.
 
         Arguments:
@@ -772,8 +773,10 @@ class ElementTree:
                 _serialize_text(write, self._root)
             else:
                 qnames, namespaces = _namespaces(self._root, default_namespace)
+                newline = "\n" if len(indent) > 0 else ""
                 serialize = _serialize[method]
                 serialize(write, self._root, qnames, namespaces,
+                          indent='', addindent=indent, newline=newline,
                           short_empty_elements=short_empty_elements)
 
     def write_c14n(self, file):
@@ -896,24 +899,31 @@ def _namespaces(elem, default_namespace=None):
             add_qname(text.text)
     return qnames, namespaces
 
-def _serialize_xml(write, elem, qnames, namespaces,
-                   short_empty_elements, **kwargs):
+def _serialize_xml(write, elem, qnames, namespaces, short_empty_elements,
+                   indent='', addindent='', newline='', **kwargs):
+    pretty = len(addindent) > 0
     tag = elem.tag
     text = elem.text
     if tag is Comment:
-        write("<!--%s-->" % text)
+        write(indent + "<!--%s-->" % text)
     elif tag is ProcessingInstruction:
-        write("<?%s?>" % text)
+        write(indent + "<?%s?>" % text)
     else:
         tag = qnames[tag]
         if tag is None:
             if text:
-                write(_escape_cdata(text))
-            for e in elem:
+                write(indent + _escape_cdata(text, pretty))
+            for i, e in enumerate(elem):
+                if i > 0:
+                    write(newline)
                 _serialize_xml(write, e, qnames, None,
-                               short_empty_elements=short_empty_elements)
+                               short_empty_elements=short_empty_elements,
+                               indent=indent, addindent=addindent,
+                               newline=newline)
+            if len(elem) > 0:
+                write(newline + indent)
         else:
-            write("<" + tag)
+            write(indent + "<" + tag)
             items = list(elem.items())
             if items or namespaces:
                 if namespaces:
@@ -936,15 +946,20 @@ def _serialize_xml(write, elem, qnames, namespaces,
             if text or len(elem) or not short_empty_elements:
                 write(">")
                 if text:
-                    write(_escape_cdata(text))
+                    write(_escape_cdata(text, pretty))
                 for e in elem:
+                    write(newline)
                     _serialize_xml(write, e, qnames, None,
-                                   short_empty_elements=short_empty_elements)
+                                   short_empty_elements=short_empty_elements,
+                                   indent=indent+addindent, addindent=addindent,
+                                   newline=newline)
+                if len(elem) > 0:
+                    write(newline + indent)
                 write("</" + tag + ">")
             else:
                 write(" />")
     if elem.tail:
-        write(_escape_cdata(elem.tail))
+        write(_escape_cdata(elem.tail, pretty))
 
 HTML_EMPTY = ("area", "base", "basefont", "br", "col", "frame", "hr",
               "img", "input", "isindex", "link", "meta", "param")
@@ -1058,7 +1073,7 @@ def _raise_serialization_error(text):
         "cannot serialize %r (type %s)" % (text, type(text).__name__)
         )
 
-def _escape_cdata(text):
+def _escape_cdata(text, pretty=False):
     # escape character data
     try:
         # it's worth avoiding do-nothing calls for strings that are
@@ -1070,6 +1085,8 @@ def _escape_cdata(text):
             text = text.replace("<", "&lt;")
         if ">" in text:
             text = text.replace(">", "&gt;")
+        if pretty:  # ignore whitespace when pretty-printing
+            text = text.strip()
         return text
     except (TypeError, AttributeError):
         _raise_serialization_error(text)
@@ -1117,7 +1134,7 @@ def _escape_attrib_html(text):
 
 # --------------------------------------------------------------------
 
-def tostring(element, encoding=None, method=None, *,
+def tostring(element, encoding=None, method=None, pretty=False, indent='  ', *,
              short_empty_elements=True):
     """Generate string representation of XML element.
 
@@ -1132,8 +1149,12 @@ def tostring(element, encoding=None, method=None, *,
 
     """
     stream = io.StringIO() if encoding == 'unicode' else io.BytesIO()
+    if not pretty:
+        indent = ''
+
     ElementTree(element).write(stream, encoding, method=method,
-                               short_empty_elements=short_empty_elements)
+                               short_empty_elements=short_empty_elements,
+                               indent=indent)
     return stream.getvalue()
 
 class _ListDataStream(io.BufferedIOBase):
