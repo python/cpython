@@ -101,8 +101,16 @@ class PtyTest(unittest.TestCase):
         debug("Writing chunked output")
         os.write(slave_fd, TEST_STRING_2[:5])
         os.write(slave_fd, TEST_STRING_2[5:])
+
         s2 = os.read(master_fd, 1024)
-        self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
+        # bpo-31158: Sometimes, the first read only returns the first
+        # written 5 bytes and a second read is need to get the second part.
+        while len(s2) < len(TEST_STRING_2):
+            chunk = os.read(master_fd, 1024)
+            if not chunk:
+                break
+            s2 += chunk
+        self.assertEqual(TEST_STRING_2, normalize_output(s2))
 
         os.close(slave_fd)
         os.close(master_fd)
