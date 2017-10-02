@@ -41,38 +41,24 @@ are available on all platforms):
 .. data:: METHOD_SHA512
 
    A Modular Crypt Format method with 16 character salt and 86 character
-   hash.  This is the strongest method.
+   hash based on the SSH-512 hash function.  This is the strongest method.
 
 .. data:: METHOD_SHA256
 
    Another Modular Crypt Format method with 16 character salt and 43
-   character hash.
+   character hash based on the SSH-256 hash function.
 
 .. data:: METHOD_BLF
 
    Another Modular Crypt Format method with 22 character salt and 31
-   character hash.
+   character hash based on the Blowfish cipher.
 
    .. versionadded:: 3.7
 
 .. data:: METHOD_MD5
 
    Another Modular Crypt Format method with 8 character salt and 22
-   character hash.
-
-.. data:: METHOD_DES
-
-   Another Modular Crypt Format method with 8 character salt and 11
-   character hash.
-
-   .. versionadded:: 3.7
-
-.. data:: METHOD_NTH
-
-   Another Modular Crypt Format method without a salt and 32
-   hexadecimal characters of hash.
-
-   .. versionadded:: 3.7
+   character hash based on the MD5 hash function.
 
 .. data:: METHOD_CRYPT
 
@@ -140,7 +126,7 @@ The :mod:`crypt` module defines the following functions:
    to :func:`crypt`.
 
    *log_round* specifies the binary logarithm of the number of rounds
-   for ``crypt.METHOD_CRYPT``.  ``8`` specifies ``256`` rounds.
+   for ``crypt.METHOD_BLF``.  ``8`` specifies ``256`` rounds.
 
    .. versionadded:: 3.3
 

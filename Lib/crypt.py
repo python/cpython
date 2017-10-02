@@ -29,12 +29,8 @@ def mksalt(method=None, *, log_rounds=12):
         method = methods[0]
     if not method.ident:
         s = ''
-    elif method.ident == '_':
-        s = method.ident
     elif method.ident[0] == '2':
         s = f'${method.ident}${log_rounds:02d}$'
-    elif method.ident == '3':
-        return f'${method.ident}$$'
     else:
         s = f'${method.ident}$'
     s += ''.join(_sr.choice(_saltchars) for char in range(method.salt_chars))
@@ -59,30 +55,24 @@ def crypt(word, salt=None):
 #  available salting/crypto methods
 methods = []
 
-def _probe(method):
-    result = crypt('', method)
+def _add_method(name, *args):
+    method = _Method(name, *args)
+    globals()['METHOD_' + name] = method
+    salt = mksalt(method, log_rounds=4)
+    result = crypt('', salt)
     if result and len(result) == method.total_size:
         methods.append(method)
         return True
     return False
 
-METHOD_SHA512 = _Method('SHA512', '6', 16, 106)
-_probe(METHOD_SHA512)
-METHOD_SHA256 = _Method('SHA256', '5', 16, 63)
-_probe(METHOD_SHA256)
+_add_method('SHA512', '6', 16, 106)
+_add_method('SHA256', '5', 16, 63)
 
 for _v in 'b', 'y', 'a', '':
-    METHOD_BLF = _Method('BLF', '2' + _v, 22, 59 + len(_v))
-    if _probe(METHOD_BLF):
+    if _add_method('BLF', '2' + _v, 22, 59 + len(_v)):
         break
 
-METHOD_MD5 = _Method('MD5', '1', 8, 34)
-_probe(METHOD_MD5)
-METHOD_DES = _Method('DES', '_', 8, 20)
-_probe(METHOD_DES)
-METHOD_NTH = _Method('NTH', '3', 0, 36)
-_probe(METHOD_NTH)
-METHOD_CRYPT = _Method('CRYPT', None, 2, 13)
-_probe(METHOD_CRYPT)
+_add_method('MD5', '1', 8, 34)
+_add_method('CRYPT', None, 2, 13)
 
-del _v, _probe
+del _v, _add_method

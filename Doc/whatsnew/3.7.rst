@@ -181,7 +181,7 @@ Jelle Zijlstra in :issue:`29679`.)
 crypt
 -----
 
-Added support for Blowfish, extended DES and NT-Hash methods.
+Added support for the Blowfish method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
 
 dis
