@@ -49,7 +49,7 @@ Run an event loop
    that callbacks scheduled by callbacks will not run in that case;
    they will run the next time :meth:`run_forever` is called.
 
-   .. versionchanged:: 3.6
+   .. versionchanged:: 3.5.1
 
 .. method:: AbstractEventLoop.run_until_complete(future)
 
