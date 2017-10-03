@@ -304,18 +304,11 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         if (!d)
             return -1;
 
-        Py_ssize_t length;
-        name = PyUnicode_AsWideCharString(decodedname, &length);
+        name = PyUnicode_AsWideCharString(decodedname, NULL);
         console_type = _PyIO_get_console_type(decodedname);
         Py_CLEAR(decodedname);
         if (name == NULL)
             return -1;
-
-        if (wcslen(name) != length) {
-            PyMem_Free(name);
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
-            return -1;
-        }
     }
 
     s = mode;

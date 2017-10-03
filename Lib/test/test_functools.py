@@ -8,15 +8,12 @@ import pickle
 from random import choice
 import sys
 from test import support
+import threading
 import time
 import unittest
 import unittest.mock
 from weakref import proxy
 import contextlib
-try:
-    import threading
-except ImportError:
-    threading = None
 
 import functools
 
@@ -1253,7 +1250,7 @@ class TestLRU:
         self.assertEqual(mock_int.__hash__.call_count, 2)
         self.assertEqual(f.cache_info(), (1, 1, 1, 1))
 
-        # Cache eviction: No use as an argument gives no additonal call
+        # Cache eviction: No use as an argument gives no additional call
         self.assertEqual(f(6, 2), 20)
         self.assertEqual(mock_int.__hash__.call_count, 2)
         self.assertEqual(f.cache_info(), (1, 2, 1, 1))
@@ -1406,7 +1403,6 @@ class TestLRU:
         for attr in self.module.WRAPPER_ASSIGNMENTS:
             self.assertEqual(getattr(g, attr), getattr(f, attr))
 
-    @unittest.skipUnless(threading, 'This test requires threading.')
     def test_lru_cache_threaded(self):
         n, m = 5, 11
         def orig(x, y):
@@ -1455,7 +1451,6 @@ class TestLRU:
         finally:
             sys.setswitchinterval(orig_si)
 
-    @unittest.skipUnless(threading, 'This test requires threading.')
     def test_lru_cache_threaded2(self):
         # Simultaneous call with the same arguments
         n, m = 5, 7
@@ -1483,7 +1478,6 @@ class TestLRU:
                 pause.reset()
                 self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1))
 
-    @unittest.skipUnless(threading, 'This test requires threading.')
     def test_lru_cache_threaded3(self):
         @self.module.lru_cache(maxsize=2)
         def f(x):
@@ -2025,6 +2019,8 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_cache_invalidation(self):
         from collections import UserDict
+        import weakref
+
         class TracingDict(UserDict):
             def __init__(self, *args, **kwargs):
                 super(TracingDict, self).__init__(*args, **kwargs)
@@ -2039,90 +2035,89 @@ class TestSingleDispatch(unittest.TestCase):
                 self.data[key] = value
             def clear(self):
                 self.data.clear()
-        _orig_wkd = functools.WeakKeyDictionary
+
         td = TracingDict()
-        functools.WeakKeyDictionary = lambda: td
-        c = collections.abc
-        @functools.singledispatch
-        def g(arg):
-            return "base"
-        d = {}
-        l = []
-        self.assertEqual(len(td), 0)
-        self.assertEqual(g(d), "base")
-        self.assertEqual(len(td), 1)
-        self.assertEqual(td.get_ops, [])
-        self.assertEqual(td.set_ops, [dict])
-        self.assertEqual(td.data[dict], g.registry[object])
-        self.assertEqual(g(l), "base")
-        self.assertEqual(len(td), 2)
-        self.assertEqual(td.get_ops, [])
-        self.assertEqual(td.set_ops, [dict, list])
-        self.assertEqual(td.data[dict], g.registry[object])
-        self.assertEqual(td.data[list], g.registry[object])
-        self.assertEqual(td.data[dict], td.data[list])
-        self.assertEqual(g(l), "base")
-        self.assertEqual(g(d), "base")
-        self.assertEqual(td.get_ops, [list, dict])
-        self.assertEqual(td.set_ops, [dict, list])
-        g.register(list, lambda arg: "list")
-        self.assertEqual(td.get_ops, [list, dict])
-        self.assertEqual(len(td), 0)
-        self.assertEqual(g(d), "base")
-        self.assertEqual(len(td), 1)
-        self.assertEqual(td.get_ops, [list, dict])
-        self.assertEqual(td.set_ops, [dict, list, dict])
-        self.assertEqual(td.data[dict],
-                         functools._find_impl(dict, g.registry))
-        self.assertEqual(g(l), "list")
-        self.assertEqual(len(td), 2)
-        self.assertEqual(td.get_ops, [list, dict])
-        self.assertEqual(td.set_ops, [dict, list, dict, list])
-        self.assertEqual(td.data[list],
-                         functools._find_impl(list, g.registry))
-        class X:
-            pass
-        c.MutableMapping.register(X)   # Will not invalidate the cache,
-                                       # not using ABCs yet.
-        self.assertEqual(g(d), "base")
-        self.assertEqual(g(l), "list")
-        self.assertEqual(td.get_ops, [list, dict, dict, list])
-        self.assertEqual(td.set_ops, [dict, list, dict, list])
-        g.register(c.Sized, lambda arg: "sized")
-        self.assertEqual(len(td), 0)
-        self.assertEqual(g(d), "sized")
-        self.assertEqual(len(td), 1)
-        self.assertEqual(td.get_ops, [list, dict, dict, list])
-        self.assertEqual(td.set_ops, [dict, list, dict, list, dict])
-        self.assertEqual(g(l), "list")
-        self.assertEqual(len(td), 2)
-        self.assertEqual(td.get_ops, [list, dict, dict, list])
-        self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
-        self.assertEqual(g(l), "list")
-        self.assertEqual(g(d), "sized")
-        self.assertEqual(td.get_ops, [list, dict, dict, list, list, dict])
-        self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
-        g.dispatch(list)
-        g.dispatch(dict)
-        self.assertEqual(td.get_ops, [list, dict, dict, list, list, dict,
-                                      list, dict])
-        self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
-        c.MutableSet.register(X)       # Will invalidate the cache.
-        self.assertEqual(len(td), 2)   # Stale cache.
-        self.assertEqual(g(l), "list")
-        self.assertEqual(len(td), 1)
-        g.register(c.MutableMapping, lambda arg: "mutablemapping")
-        self.assertEqual(len(td), 0)
-        self.assertEqual(g(d), "mutablemapping")
-        self.assertEqual(len(td), 1)
-        self.assertEqual(g(l), "list")
-        self.assertEqual(len(td), 2)
-        g.register(dict, lambda arg: "dict")
-        self.assertEqual(g(d), "dict")
-        self.assertEqual(g(l), "list")
-        g._clear_cache()
-        self.assertEqual(len(td), 0)
-        functools.WeakKeyDictionary = _orig_wkd
+        with support.swap_attr(weakref, "WeakKeyDictionary", lambda: td):
+            c = collections.abc
+            @functools.singledispatch
+            def g(arg):
+                return "base"
+            d = {}
+            l = []
+            self.assertEqual(len(td), 0)
+            self.assertEqual(g(d), "base")
+            self.assertEqual(len(td), 1)
+            self.assertEqual(td.get_ops, [])
+            self.assertEqual(td.set_ops, [dict])
+            self.assertEqual(td.data[dict], g.registry[object])
+            self.assertEqual(g(l), "base")
+            self.assertEqual(len(td), 2)
+            self.assertEqual(td.get_ops, [])
+            self.assertEqual(td.set_ops, [dict, list])
+            self.assertEqual(td.data[dict], g.registry[object])
+            self.assertEqual(td.data[list], g.registry[object])
+            self.assertEqual(td.data[dict], td.data[list])
+            self.assertEqual(g(l), "base")
+            self.assertEqual(g(d), "base")
+            self.assertEqual(td.get_ops, [list, dict])
+            self.assertEqual(td.set_ops, [dict, list])
+            g.register(list, lambda arg: "list")
+            self.assertEqual(td.get_ops, [list, dict])
+            self.assertEqual(len(td), 0)
+            self.assertEqual(g(d), "base")
+            self.assertEqual(len(td), 1)
+            self.assertEqual(td.get_ops, [list, dict])
+            self.assertEqual(td.set_ops, [dict, list, dict])
+            self.assertEqual(td.data[dict],
+                             functools._find_impl(dict, g.registry))
+            self.assertEqual(g(l), "list")
+            self.assertEqual(len(td), 2)
+            self.assertEqual(td.get_ops, [list, dict])
+            self.assertEqual(td.set_ops, [dict, list, dict, list])
+            self.assertEqual(td.data[list],
+                             functools._find_impl(list, g.registry))
+            class X:
+                pass
+            c.MutableMapping.register(X)   # Will not invalidate the cache,
+                                           # not using ABCs yet.
+            self.assertEqual(g(d), "base")
+            self.assertEqual(g(l), "list")
+            self.assertEqual(td.get_ops, [list, dict, dict, list])
+            self.assertEqual(td.set_ops, [dict, list, dict, list])
+            g.register(c.Sized, lambda arg: "sized")
+            self.assertEqual(len(td), 0)
+            self.assertEqual(g(d), "sized")
+            self.assertEqual(len(td), 1)
+            self.assertEqual(td.get_ops, [list, dict, dict, list])
+            self.assertEqual(td.set_ops, [dict, list, dict, list, dict])
+            self.assertEqual(g(l), "list")
+            self.assertEqual(len(td), 2)
+            self.assertEqual(td.get_ops, [list, dict, dict, list])
+            self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
+            self.assertEqual(g(l), "list")
+            self.assertEqual(g(d), "sized")
+            self.assertEqual(td.get_ops, [list, dict, dict, list, list, dict])
+            self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
+            g.dispatch(list)
+            g.dispatch(dict)
+            self.assertEqual(td.get_ops, [list, dict, dict, list, list, dict,
+                                          list, dict])
+            self.assertEqual(td.set_ops, [dict, list, dict, list, dict, list])
+            c.MutableSet.register(X)       # Will invalidate the cache.
+            self.assertEqual(len(td), 2)   # Stale cache.
+            self.assertEqual(g(l), "list")
+            self.assertEqual(len(td), 1)
+            g.register(c.MutableMapping, lambda arg: "mutablemapping")
+            self.assertEqual(len(td), 0)
+            self.assertEqual(g(d), "mutablemapping")
+            self.assertEqual(len(td), 1)
+            self.assertEqual(g(l), "list")
+            self.assertEqual(len(td), 2)
+            g.register(dict, lambda arg: "dict")
+            self.assertEqual(g(d), "dict")
+            self.assertEqual(g(l), "list")
+            g._clear_cache()
+            self.assertEqual(len(td), 0)
 
 
 if __name__ == '__main__':

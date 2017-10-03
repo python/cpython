@@ -49,7 +49,7 @@ class Popen(popen_fork.Popen):
             set_spawning_popen(None)
 
         self.sentinel, w = forkserver.connect_to_new_process(self._fds)
-        util.Finalize(self, os.close, (self.sentinel,))
+        self.finalizer = util.Finalize(self, os.close, (self.sentinel,))
         with open(w, 'wb', closefd=True) as f:
             f.write(buf.getbuffer())
         self.pid = forkserver.read_signed(self.sentinel)

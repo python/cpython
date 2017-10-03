@@ -189,7 +189,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
 
                 if alive_r in rfds:
                     # EOF because no more client processes left
-                    assert os.read(alive_r, 1) == b''
+                    assert os.read(alive_r, 1) == b'', "Not at EOF?"
                     raise SystemExit
 
                 if sig_r in rfds:
@@ -208,10 +208,17 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                             if os.WIFSIGNALED(sts):
                                 returncode = -os.WTERMSIG(sts)
                             else:
-                                assert os.WIFEXITED(sts)
+                                if not os.WIFEXITED(sts):
+                                    raise AssertionError(
+                                        "Child {0:n} status is {1:n}".format(
+                                            pid,sts))
                                 returncode = os.WEXITSTATUS(sts)
-                            # Write the exit code to the pipe
-                            write_signed(child_w, returncode)
+                            # Send exit code to client process
+                            try:
+                                write_signed(child_w, returncode)
+                            except BrokenPipeError:
+                                # client vanished
+                                pass
                             os.close(child_w)
                         else:
                             # This shouldn't happen really
@@ -223,7 +230,10 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                     with listener.accept()[0] as s:
                         # Receive fds from client
                         fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
-                        assert len(fds) <= MAXFDS_TO_SEND
+                        if len(fds) > MAXFDS_TO_SEND:
+                            raise RuntimeError(
+                                "Too many ({0:n}) fds to send".format(
+                                    len(fds)))
                         child_r, child_w, *fds = fds
                         s.close()
                         pid = os.fork()
@@ -232,8 +242,11 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                             code = 1
                             try:
                                 listener.close()
+                                selector.close()
+                                unused_fds = [alive_r, child_w, sig_r, sig_w]
+                                unused_fds.extend(pid_to_fd.values())
                                 code = _serve_one(child_r, fds,
-                                                  (alive_r, child_w, sig_r, sig_w),
+                                                  unused_fds,
                                                   old_handlers)
                             except Exception:
                                 sys.excepthook(*sys.exc_info())
@@ -241,8 +254,12 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                             finally:
                                 os._exit(code)
                         else:
-                            # Send pid to client processes
-                            write_signed(child_w, pid)
+                            # Send pid to client process
+                            try:
+                                write_signed(child_w, pid)
+                            except BrokenPipeError:
+                                # client vanished
+                                pass
                             pid_to_fd[pid] = child_w
                             os.close(child_r)
                             for fd in fds:

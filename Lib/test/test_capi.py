@@ -11,19 +11,17 @@ import subprocess
 import sys
 import sysconfig
 import textwrap
+import threading
 import time
 import unittest
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 try:
     import _posixsubprocess
 except ImportError:
     _posixsubprocess = None
-try:
-    import threading
-except ImportError:
-    threading = None
+
 # Skip this test if the _testcapi module isn't available.
 _testcapi = support.import_module('_testcapi')
 
@@ -52,7 +50,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(testfunction.attribute, "test")
         self.assertRaises(AttributeError, setattr, inst.testfunction, "attribute", "test")
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_no_FatalError_infinite_loop(self):
         with support.SuppressCrashReport():
             p = subprocess.Popen([sys.executable, "-c",
@@ -243,8 +240,39 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
+    def test_set_nomemory(self):
+        code = """if 1:
+            import _testcapi
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
+            class C(): pass
+
+            # The first loop tests both functions and that remove_mem_hooks()
+            # can be called twice in a row. The second loop checks a call to
+            # set_nomemory() after a call to remove_mem_hooks(). The third
+            # loop checks the start and stop arguments of set_nomemory().
+            for outer_cnt in range(1, 4):
+                start = 10 * outer_cnt
+                for j in range(100):
+                    if j == 0:
+                        if outer_cnt != 3:
+                            _testcapi.set_nomemory(start)
+                        else:
+                            _testcapi.set_nomemory(start, start + 1)
+                    try:
+                        C()
+                    except MemoryError as e:
+                        if outer_cnt != 3:
+                            _testcapi.remove_mem_hooks()
+                        print('MemoryError', outer_cnt, j)
+                        _testcapi.remove_mem_hooks()
+                        break
+        """
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'MemoryError 1 10', out)
+        self.assertIn(b'MemoryError 2 20', out)
+        self.assertIn(b'MemoryError 3 30', out)
+
+
 class TestPendingCalls(unittest.TestCase):
 
     def pendingcalls_submit(self, l, n):
@@ -653,7 +681,6 @@ class SkipitemTest(unittest.TestCase):
             parse((1,), {}, 'O|OO', ['', 'a', ''])
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class TestThreadState(unittest.TestCase):
 
     @support.reap_threads
@@ -730,7 +757,6 @@ class PyMemDebugTests(unittest.TestCase):
         regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
-    @unittest.skipUnless(threading, 'Test requires a GIL (multithreading)')
     def check_malloc_without_gil(self, code):
         out = self.check(code)
         expected = ('Fatal Python error: Python memory allocator called '

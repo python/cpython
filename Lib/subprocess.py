@@ -38,7 +38,7 @@ check_output(...): Same as check_call() but returns the contents of
 getoutput(...): Runs a command in the shell, waits for it to complete,
     then returns the output
 getstatusoutput(...): Runs a command in the shell, waits for it to complete,
-    then returns a (status, output) tuple
+    then returns a (exitcode, output) tuple
 """
 
 import sys
@@ -138,10 +138,7 @@ else:
     import _posixsubprocess
     import select
     import selectors
-    try:
-        import threading
-    except ImportError:
-        import dummy_threading as threading
+    import threading
 
     # When select or poll has indicated that the file is writable,
     # we can write up to _PIPE_BUF bytes without risk of blocking.
@@ -495,7 +492,7 @@ def list2cmdline(seq):
 #
 
 def getstatusoutput(cmd):
-    """    Return (status, output) of executing cmd in a shell.
+    """Return (exitcode, output) of executing cmd in a shell.
 
     Execute the string 'cmd' in a shell with 'check_output' and
     return a 2-tuple (status, output). The locale encoding is used
@@ -509,19 +506,21 @@ def getstatusoutput(cmd):
     >>> subprocess.getstatusoutput('ls /bin/ls')
     (0, '/bin/ls')
     >>> subprocess.getstatusoutput('cat /bin/junk')
-    (256, 'cat: /bin/junk: No such file or directory')
+    (1, 'cat: /bin/junk: No such file or directory')
     >>> subprocess.getstatusoutput('/bin/junk')
-    (256, 'sh: /bin/junk: not found')
+    (127, 'sh: /bin/junk: not found')
+    >>> subprocess.getstatusoutput('/bin/kill $$')
+    (-15, '')
     """
     try:
         data = check_output(cmd, shell=True, universal_newlines=True, stderr=STDOUT)
-        status = 0
+        exitcode = 0
     except CalledProcessError as ex:
         data = ex.output
-        status = ex.returncode
+        exitcode = ex.returncode
     if data[-1:] == '\n':
         data = data[:-1]
-    return status, data
+    return exitcode, data
 
 def getoutput(cmd):
     """Return output (stdout or stderr) of executing cmd in a shell.
@@ -727,7 +726,10 @@ class Popen(object):
                     to_close.append(self._devnull)
                 for fd in to_close:
                     try:
-                        os.close(fd)
+                        if _mswindows and isinstance(fd, Handle):
+                            fd.Close()
+                        else:
+                            os.close(fd)
                     except OSError:
                         pass
 
@@ -798,9 +800,9 @@ class Popen(object):
                 raise
 
     def communicate(self, input=None, timeout=None):
-        """Interact with process: Send data to stdin.  Read data from
-        stdout and stderr, until end-of-file is reached.  Wait for
-        process to terminate.
+        """Interact with process: Send data to stdin and close it.
+        Read data from stdout and stderr, until end-of-file is
+        reached.  Wait for process to terminate.
 
         The optional "input" argument should be data to be sent to the
         child process (if self.universal_newlines is True, this should
@@ -1007,6 +1009,9 @@ class Popen(object):
                     errwrite.Close()
                 if hasattr(self, '_devnull'):
                     os.close(self._devnull)
+                # Prevent a double close of these handles/fds from __init__
+                # on error.
+                self._closed_child_pipe_fds = True
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
@@ -1238,8 +1243,12 @@ class Popen(object):
                     # and pass it to fork_exec()
 
                     if env is not None:
-                        env_list = [os.fsencode(k) + b'=' + os.fsencode(v)
-                                    for k, v in env.items()]
+                        env_list = []
+                        for k, v in env.items():
+                            k = os.fsencode(k)
+                            if b'=' in k:
+                                raise ValueError("illegal environment variable name")
+                            env_list.append(k + b'=' + os.fsencode(v))
                     else:
                         env_list = None  # Use execv instead of execve.
                     executable = os.fsencode(executable)
@@ -1303,29 +1312,32 @@ class Popen(object):
                 try:
                     exception_name, hex_errno, err_msg = (
                             errpipe_data.split(b':', 2))
+                    # The encoding here should match the encoding
+                    # written in by the subprocess implementations
+                    # like _posixsubprocess
+                    err_msg = err_msg.decode()
                 except ValueError:
                     exception_name = b'SubprocessError'
                     hex_errno = b'0'
-                    err_msg = (b'Bad exception data from child: ' +
-                               repr(errpipe_data))
+                    err_msg = 'Bad exception data from child: {!r}'.format(
+                                  bytes(errpipe_data))
                 child_exception_type = getattr(
                         builtins, exception_name.decode('ascii'),
                         SubprocessError)
-                err_msg = err_msg.decode(errors="surrogatepass")
                 if issubclass(child_exception_type, OSError) and hex_errno:
                     errno_num = int(hex_errno, 16)
                     child_exec_never_called = (err_msg == "noexec")
                     if child_exec_never_called:
                         err_msg = ""
+                        # The error must be from chdir(cwd).
+                        err_filename = cwd
+                    else:
+                        err_filename = orig_executable
                     if errno_num != 0:
                         err_msg = os.strerror(errno_num)
                         if errno_num == errno.ENOENT:
-                            if child_exec_never_called:
-                                # The error must be from chdir(cwd).
-                                err_msg += ': ' + repr(cwd)
-                            else:
-                                err_msg += ': ' + repr(orig_executable)
-                    raise child_exception_type(errno_num, err_msg)
+                            err_msg += ': ' + repr(err_filename)
+                    raise child_exception_type(errno_num, err_msg, err_filename)
                 raise child_exception_type(err_msg)
 
 

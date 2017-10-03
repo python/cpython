@@ -127,8 +127,17 @@ Pattern examples:
 """
 
 
-RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network',
-                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'tzdata')
+ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui')
+
+# Other resources excluded from --use=all:
+#
+# - extralagefile (ex: test_zipfile64): really too slow to be enabled
+#   "by default"
+# - tzdata: while needed to validate fully test_datetime, it makes
+#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
+#   default (see bpo-30822).
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
 
 class _ArgParser(argparse.ArgumentParser):
 
@@ -255,6 +264,9 @@ def _create_parser():
                             ' , don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization training')
+    group.add_argument('--fail-env-changed', action='store_true',
+                       help='if a test file alters the environment, mark '
+                            'the test as failed')
 
     return parser
 
@@ -341,7 +353,7 @@ def _parse_args(args, **kwargs):
         for a in ns.use:
             for r in a:
                 if r == 'all':
-                    ns.use_resources[:] = RESOURCE_NAMES
+                    ns.use_resources[:] = ALL_RESOURCES
                     continue
                 if r == 'none':
                     del ns.use_resources[:]

@@ -3,6 +3,7 @@
 import collections
 import contextlib
 import functools
+import gc
 import io
 import os
 import re
@@ -90,6 +91,20 @@ class BaseTaskTests:
         self.loop = self.new_test_loop()
         self.loop.set_task_factory(self.new_task)
         self.loop.create_future = lambda: self.new_future(self.loop)
+
+    def test_task_del_collect(self):
+        class Evil:
+            def __del__(self):
+                gc.collect()
+
+        @asyncio.coroutine
+        def run():
+            return Evil()
+
+        self.loop.run_until_complete(
+            asyncio.gather(*[
+                self.new_task(self.loop, run()) for _ in range(100)
+            ], loop=self.loop))
 
     def test_other_loop_future(self):
         other_loop = asyncio.new_event_loop()

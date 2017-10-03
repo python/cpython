@@ -140,6 +140,15 @@ Improved Modules
 ================
 
 
+argparse
+--------
+
+The :meth:`~argparse.ArgumentParser.parse_intermixed_args` supports letting
+the user intermix options and positional arguments on the command line,
+as is possible in many unix commands.  It supports most but not all
+argparse features.  (Contributed by paul.j3 in :issue:`14191`.)
+
+
 binascii
 --------
 
@@ -151,8 +160,8 @@ instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 calendar
 --------
 
-The :class:`~calendar.HTMLCalendar` has added new class attribute which ease the
-customisation the CSS classes in the produced HTML calendar.
+The class :class:`~calendar.HTMLCalendar` has new class attributes which ease
+the customisation of the CSS classes in the produced HTML calendar.
 (Contributed by Oz Tiram in :issue:`30095`.)
 
 cgi
@@ -223,6 +232,20 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+pdb
+---
+
+:func:`~pdb.set_trace` now takes an optional ``header`` keyword-only
+argument.  If given, this is printed to the console just before debugging
+begins.
+
+string
+------
+
+:class:`string.Template` now lets you to optionally modify the regular
+expression pattern for braced placeholders and non-braced placeholders
+separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
 unittest.mock
 -------------
 
@@ -237,10 +260,17 @@ xmlrpc.server
 its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
 :issue:`7769`.)
 
+unicodedata
+-----------
+
+The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
+<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
+Peterson.)
+
 urllib.parse
 ------------
 
-:func:`urllib.parse.quote` has been updated to from RFC 2396 to RFC 3986,
+:func:`urllib.parse.quote` has been updated from RFC 2396 to RFC 3986,
 adding `~` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
 
@@ -250,6 +280,25 @@ uu
 Function :func:`~uu.encode` now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+xml.etree
+---------
+
+:ref:`ElementPath <elementtree-xpath>` predicates in the :meth:`find`
+methods can now compare text of the current node with ``[. = "text"]``,
+not only text in children.  Predicates also allow adding spaces for
+better readability.  (Contributed by Stefan Behnel in :issue:`31648`.)
+
+zipapp
+------
+
+Function :func:`zipapp.create_archive` now accepts an optional *filter*
+argument to allow the user to select which files should be included in the
+archive, and an optional *compressed* argument to generate a compressed
+archive.
+
+A command line option ``--compress`` has also been added to support
+compression.
 
 
 Optimizations
@@ -266,9 +315,8 @@ Optimizations
   (Contributed by Serhiy Storchaka in :issue:`24821`.)
 
 * Fast implementation from standard C library is now used for functions
-  :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
-  :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
-  Storchaka in :issue:`26121`.)
+  :func:`~math.erf` and :func:`~math.erfc` in the :mod:`math` module.
+  (Contributed by Serhiy Storchaka in :issue:`26121`.)
 
 * The :func:`os.fwalk` function has been sped up by 2 times.  This was done
   using the :func:`os.scandir` function.
@@ -314,6 +362,21 @@ Build and C API Changes
   download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
   Ware in :issue:`30450`.)
 
+* Support for building ``--without-threads`` is removed.
+  (Contributed by Antoine Pitrou in :issue:`31370`.).
+
+
+Other CPython Implementation Changes
+====================================
+
+* Trace hooks may now opt out of receiving ``line`` events from the interpreter
+  by setting the new ``f_trace_lines`` attribute to :const:`False` on the frame
+  being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
+
+* Trace hooks may now opt in to receiving ``opcode`` events from the interpreter
+  by setting the new ``f_trace_opcodes`` attribute to :const:`True` on the frame
+  being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
+
 
 Deprecated
 ==========
@@ -353,6 +416,25 @@ Changes in the C API
   :c:type:`unsigned long`.
   (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
+- :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
+  second argument is *NULL* and the :c:type:`wchar_t*` string contains null
+  characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
+
+
+Windows Only
+------------
+- The python launcher, (py.exe), can accept 32 & 64 bit specifiers **without**
+  having to specify a minor version as well. So ``py -3-32`` and ``py -3-64``
+  become valid as well as ``py -3.7-32``, also the -*m*-64 and -*m.n*-64 forms
+  are now accepted to force 64 bit python even if 32 bit would have otherwise
+  been used. If the specified version is not available py.exe will error exit.
+  (Contributed by Steve Barnes in :issue:`30291`.)
+
+- The launcher can be run as "py -0" to produce a list of the installed pythons,
+  *with default marked with an asterix*. Running "py -0p" will include the paths.
+  If py is run with a version specifier that cannot be matched it will also print
+  the *short form* list of available specifiers.
+  (Contributed by Steve Barnes in :issue:`30362`.)
 
 Removed
 =======
@@ -371,9 +453,15 @@ API and Feature Removals
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
 
+* :func:`collections.namedtuple` no longer supports the *verbose* parameter
+  or ``_source`` attribute which showed the generated source code for the
+  named tuple class.  This was part of an optimization designed to speed-up
+  class creation.  (Contributed by Jelle Zijlstra with further improvements
+  by INADA Naoki, Serhiy Storchaka, and Raymond Hettinger in :issue:`28638`.)
+
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now
-  be passes only as positional argument.
+  be passed only as positional argument.
 
 * Removed previously deprecated in Python 2.4 classes ``Plist``, ``Dict`` and
   ``_InternalDict`` in the :mod:`plistlib` module.  Dict values in the result
@@ -421,6 +509,16 @@ Changes in the Python API
   To set their file permission bits you can set the umask before invoking
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
+
+* The :attr:`struct.Struct.format` type is now :class:`str` instead of
+  :class:`bytes`. (Contributed by Victor Stinner in :issue:`21071`.)
+
+* Due to internal changes in :mod:`socket` you won't be able to
+  :func:`socket.fromshare` a socket :func:`~socket.socket.share`-ed in older
+  Python versions.
+
+* ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
+  in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
 
 CPython bytecode changes
