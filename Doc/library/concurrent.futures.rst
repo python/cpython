@@ -198,10 +198,9 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    given, it will default to the number of processors on the machine.
    If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
    will be raised.
-   *mp_context* can be a multiprocessing context or any object providing a
-   SimpleQueue, Queue and Process. It will be used to launch the workers. If
-   *mp_context* is ``None`` or not given, the default multiprocessing context
-   is used.
+   *mp_context* can be a multiprocessing context or None. It will be used to
+   launch the workers. If *mp_context* is ``None`` or not given, the default
+   multiprocessing context is used.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a

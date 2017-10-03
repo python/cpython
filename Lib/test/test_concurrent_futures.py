@@ -681,7 +681,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         future = self.executor.submit(id, obj)
         future.result()
 
-        assert obj.event.wait(timeout=1)
+        self.assertTrue(obj.event.wait(timeout=1))
 
 
 class ProcessPoolForkExecutorTest(ProcessPoolForkMixin,
