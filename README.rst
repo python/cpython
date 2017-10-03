@@ -1,5 +1,5 @@
-This is Python version 3.6.3 release candidate 1
-================================================
+This is Python version 3.6.3
+============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=3.6
    :alt: CPython build status on Travis CI
@@ -232,7 +232,8 @@ Copyright and License Information
 ---------------------------------
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016 Python Software Foundation.  All rights reserved.
+2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
+reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 
