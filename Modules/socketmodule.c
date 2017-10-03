@@ -542,7 +542,7 @@ set_error(void)
     return PyErr_SetFromErrno(PyExc_OSError);
 }
 
-
+#ifndef __VXWORKS__
 static PyObject *
 set_herror(int h_error)
 {
@@ -560,7 +560,7 @@ set_herror(int h_error)
 
     return NULL;
 }
-
+#endif
 
 static PyObject *
 set_gaierror(int error)
@@ -913,7 +913,7 @@ init_sockobject(PySocketSockObject *s,
     return 0;
 }
 
-
+#ifdef HAVE_SOCKETPAIR
 /* Create a new socket object.
    This just creates the object and initializes it.
    If the creation fails, return NULL and set an exception (implicit
@@ -933,7 +933,7 @@ new_sockobject(SOCKET_T fd, int family, int type, int proto)
     }
     return s;
 }
-
+#endif
 
 /* Lock to allow python interpreter to continue, but only allow one
    thread to be in gethostbyname or getaddrinfo */
@@ -2324,17 +2324,17 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
     #endif
     if (msg->msg_controllen < 0)
         return 0;
+    if (space < cmsg_len_end)
+        space = cmsg_len_end;
+    cmsg_offset = (char *)cmsgh - (char *)msg->msg_control;
+    return (cmsg_offset <= (size_t)-1 - space &&
+            cmsg_offset + space <= msg->msg_controllen);
     #if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
     #pragma GCC diagnostic pop
     #endif
     #ifdef __clang__
     #pragma clang diagnostic pop
     #endif
-    if (space < cmsg_len_end)
-        space = cmsg_len_end;
-    cmsg_offset = (char *)cmsgh - (char *)msg->msg_control;
-    return (cmsg_offset <= (size_t)-1 - space &&
-            cmsg_offset + space <= msg->msg_controllen);
 }
 
 /* If pointer CMSG_DATA(cmsgh) is in buffer msg->msg_control, set
