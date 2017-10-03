@@ -65,7 +65,7 @@ and full support for mouse and keyboard input.
 The Python curses module
 ------------------------
 
-Thy Python module is a fairly simple wrapper over the C functions provided by
+The Python module is a fairly simple wrapper over the C functions provided by
 curses; if you're already familiar with curses programming in C, it's really
 easy to transfer that knowledge to Python.  The biggest difference is that the
 Python interface makes things simpler by merging different C functions such as
@@ -538,7 +538,7 @@ the Python interface.  Often this isn't because they're difficult to
 implement, but because no one has needed them yet.  Also, Python
 doesn't yet support the menu library associated with ncurses.
 Patches adding support for these would be welcome; see
-`the Python Developer's Guide <https://docs.python.org/devguide/>`_ to
+`the Python Developer's Guide <https://devguide.python.org/>`_ to
 learn more about submitting patches to Python.
 
 * `Writing Programs with NCURSES <http://invisible-island.net/ncurses/ncurses-intro.html>`_:

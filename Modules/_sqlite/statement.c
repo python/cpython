@@ -93,11 +93,11 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = SQLITE3_PREPARE(connection->db,
-                         sql_cstr,
-                         -1,
-                         &self->st,
-                         &tail);
+    rc = sqlite3_prepare_v2(connection->db,
+                            sql_cstr,
+                            -1,
+                            &self->st,
+                            &tail);
     Py_END_ALLOW_THREADS
 
     self->db = connection->db;
@@ -317,52 +317,6 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
     } else {
         PyErr_SetString(PyExc_ValueError, "parameters are of unsupported type");
     }
-}
-
-int pysqlite_statement_recompile(pysqlite_Statement* self, PyObject* params)
-{
-    const char* tail;
-    int rc;
-    const char* sql_cstr;
-    Py_ssize_t sql_len;
-    sqlite3_stmt* new_st;
-
-    sql_cstr = PyUnicode_AsUTF8AndSize(self->sql, &sql_len);
-    if (sql_cstr == NULL) {
-        rc = PYSQLITE_SQL_WRONG_TYPE;
-        return rc;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    rc = SQLITE3_PREPARE(self->db,
-                         sql_cstr,
-                         -1,
-                         &new_st,
-                         &tail);
-    Py_END_ALLOW_THREADS
-
-    if (rc == SQLITE_OK) {
-        /* The efficient sqlite3_transfer_bindings is only available in SQLite
-         * version 3.2.2 or later. For older SQLite releases, that might not
-         * even define SQLITE_VERSION_NUMBER, we do it the manual way.
-         */
-        #ifdef SQLITE_VERSION_NUMBER
-        #if SQLITE_VERSION_NUMBER >= 3002002
-        /* The check for the number of parameters is necessary to not trigger a
-         * bug in certain SQLite versions (experienced in 3.2.8 and 3.3.4). */
-        if (sqlite3_bind_parameter_count(self->st) > 0) {
-            (void)sqlite3_transfer_bindings(self->st, new_st);
-        }
-        #endif
-        #else
-        statement_bind_parameters(self, params);
-        #endif
-
-        (void)sqlite3_finalize(self->st);
-        self->st = new_st;
-    }
-
-    return rc;
 }
 
 int pysqlite_statement_finalize(pysqlite_Statement* self)

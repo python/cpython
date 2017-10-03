@@ -415,7 +415,7 @@ When 'seconds' is not passed in, convert the current time instead.");
  * an exception and return 0 on error.
  */
 static int
-gettmarg(PyObject *args, struct tm *p)
+gettmarg(PyObject *args, struct tm *p, const char *format)
 {
     int y;
 
@@ -427,7 +427,7 @@ gettmarg(PyObject *args, struct tm *p)
         return 0;
     }
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiii",
+    if (!PyArg_ParseTuple(args, format,
                           &y, &p->tm_mon, &p->tm_mday,
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
@@ -586,8 +586,12 @@ time_strftime(PyObject *self, PyObject *args)
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
-    else if (!gettmarg(tup, &buf) || !checktm(&buf))
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;strftime(): illegal time tuple argument") ||
+             !checktm(&buf))
+    {
         return NULL;
+    }
 
 #if defined(_MSC_VER) || defined(sun) || defined(_AIX)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
@@ -776,9 +780,13 @@ time_asctime(PyObject *self, PyObject *args)
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
-
-    } else if (!gettmarg(tup, &buf) || !checktm(&buf))
+    }
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;asctime(): illegal time tuple argument") ||
+             !checktm(&buf))
+    {
         return NULL;
+    }
     return _asctime(&buf);
 }
 
@@ -814,8 +822,11 @@ time_mktime(PyObject *self, PyObject *tup)
 {
     struct tm buf;
     time_t tt;
-    if (!gettmarg(tup, &buf))
+    if (!gettmarg(tup, &buf,
+                  "iiiiiiiii;mktime(): illegal time tuple argument"))
+    {
         return NULL;
+    }
 #ifdef _AIX
     /* year < 1902 or year > 2037 */
     if (buf.tm_year < 2 || buf.tm_year > 137) {

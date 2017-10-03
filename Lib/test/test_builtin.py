@@ -151,6 +151,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
+        # embedded null character
+        self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
 
     def test_abs(self):
         # int
@@ -326,19 +328,22 @@ class BuiltinTest(unittest.TestCase):
 
         codestr = '''def f():
         """doc"""
+        debug_enabled = False
+        if __debug__:
+            debug_enabled = True
         try:
             assert False
         except AssertionError:
-            return (True, f.__doc__)
+            return (True, f.__doc__, debug_enabled)
         else:
-            return (False, f.__doc__)
+            return (False, f.__doc__, debug_enabled)
         '''
         def f(): """doc"""
-        values = [(-1, __debug__, f.__doc__),
-                  (0, True, 'doc'),
-                  (1, False, 'doc'),
-                  (2, False, None)]
-        for optval, debugval, docstring in values:
+        values = [(-1, __debug__, f.__doc__, __debug__),
+                  (0, True, 'doc', True),
+                  (1, False, 'doc', False),
+                  (2, False, None, False)]
+        for optval, assertval, docstring, debugval in values:
             # test both direct compilation and compilation via AST
             codeobjs = []
             codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
@@ -348,7 +353,7 @@ class BuiltinTest(unittest.TestCase):
                 ns = {}
                 exec(code, ns)
                 rv = ns['f']()
-                self.assertEqual(rv, (debugval, docstring))
+                self.assertEqual(rv, (assertval, docstring, debugval))
 
     def test_delattr(self):
         sys.spam = 1
@@ -1010,6 +1015,10 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(fp.read(300), 'XXX'*100)
             self.assertEqual(fp.read(1000), 'YYY'*100)
 
+        # embedded null bytes and characters
+        self.assertRaises(ValueError, open, 'a\x00b')
+        self.assertRaises(ValueError, open, b'a\x00b')
+
     def test_open_default_encoding(self):
         old_environ = dict(os.environ)
         try:
@@ -1562,6 +1571,10 @@ class PtyTests(unittest.TestCase):
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
         os.close(fd)
+
+        # Wait until the child process completes
+        os.waitpid(pid, 0)
+
         return lines
 
     def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):

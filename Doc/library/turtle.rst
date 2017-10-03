@@ -2367,7 +2367,7 @@ The demo scripts are:
 | wikipedia      | a pattern from the wikipedia | :func:`clone`,        |
 |                | article on turtle graphics   | :func:`undo`          |
 +----------------+------------------------------+-----------------------+
-| yingyang       | another elementary example   | :func:`circle`        |
+| yinyang        | another elementary example   | :func:`circle`        |
 +----------------+------------------------------+-----------------------+
 
 Have fun!
