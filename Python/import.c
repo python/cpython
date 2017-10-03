@@ -1667,7 +1667,37 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
+        static int ximporttime = 0;
+        static int import_level;
+        static _PyTime_t accumulated;
+        _Py_IDENTIFIER(importtime);
+
+        _PyTime_t t1 = 0, accumulated_copy = accumulated;
+
         Py_XDECREF(mod);
+
+        /* XOptions is initialized after first some imports.
+         * So we can't have negative cache.
+         * Anyway, importlib.__find_and_load is much slower than
+         * _PyDict_GetItemId()
+         */
+        if (ximporttime == 0) {
+            PyObject *xoptions = PySys_GetXOptions();
+            if (xoptions) {
+                PyObject *value = _PyDict_GetItemId(xoptions, &PyId_importtime);
+                ximporttime = (value == Py_True);
+            }
+            if (ximporttime) {
+                fputs("import time: self [us] | cumulative | imported package\n",
+                      stderr);
+            }
+        }
+
+        if (ximporttime) {
+            import_level++;
+            t1 = _PyTime_GetMonotonicClock();
+            accumulated = 0;
+        }
 
         if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
             PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
@@ -1679,6 +1709,18 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED())
             PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
                                            mod != NULL);
+
+        if (ximporttime) {
+            _PyTime_t cum = _PyTime_GetMonotonicClock() - t1;
+
+            import_level--;
+            fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
+                    (long)_PyTime_AsMicroseconds(cum - accumulated, _PyTime_ROUND_CEILING),
+                    (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
+                    import_level*2, "", PyUnicode_AsUTF8(abs_name));
+
+            accumulated = accumulated_copy + cum;
+        }
 
         if (mod == NULL) {
             goto error;
