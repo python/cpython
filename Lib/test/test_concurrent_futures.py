@@ -14,11 +14,13 @@ import threading
 import time
 import unittest
 import weakref
+from pickle import PicklingError
 
 from concurrent import futures
 from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
-from concurrent.futures.process import BrokenProcessPool
+from concurrent.futures.process import BrokenProcessPool, ShutdownExecutorError
+from multiprocessing import get_context
 
 
 def create_future(state=PENDING, exception=None, result=None):
@@ -51,6 +53,11 @@ def sleep_and_print(t, msg):
     sys.stdout.flush()
 
 
+def sleep_and_return(t, x):
+    time.sleep(t)
+    return x
+
+
 class MyObject(object):
     def my_method(self):
         pass
@@ -77,7 +84,13 @@ class ExecutorMixin:
 
         self.t1 = time.time()
         try:
-            self.executor = self.executor_type(max_workers=self.worker_count)
+            if hasattr(self, "ctx"):
+                self.executor = self.executor_type(
+                    max_workers=self.worker_count,
+                    context=get_context(self.ctx))
+            else:
+                self.executor = self.executor_type(
+                    max_workers=self.worker_count)
         except NotImplementedError as e:
             self.skipTest(str(e))
         self._prime_executor()
@@ -107,8 +120,29 @@ class ThreadPoolMixin(ExecutorMixin):
     executor_type = futures.ThreadPoolExecutor
 
 
-class ProcessPoolMixin(ExecutorMixin):
+class ProcessPoolForkMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
+    ctx = "fork"
+
+    def setUp(self):
+        if sys.platform == "win32":
+            self.skipTest("require unix system")
+        super().setUp()
+
+
+class ProcessPoolSpawnMixin(ExecutorMixin):
+    executor_type = futures.ProcessPoolExecutor
+    ctx = "spawn"
+
+
+class ProcessPoolForkserverMixin(ExecutorMixin):
+    executor_type = futures.ProcessPoolExecutor
+    ctx = "forkserver"
+
+    def setUp(self):
+        if sys.platform == "win32":
+            self.skipTest("require unix system")
+        super().setUp()
 
 
 class ExecutorShutdownTest:
@@ -124,8 +158,9 @@ class ExecutorShutdownTest:
             from concurrent.futures import {executor_type}
             from time import sleep
             from test.test_concurrent_futures import sleep_and_print
-            t = {executor_type}(5)
-            t.submit(sleep_and_print, 1.0, "apple")
+            if __name__ == "__main__":
+                t = {executor_type}(5)
+                t.submit(sleep_and_print, 1.0, "apple")
             """.format(executor_type=self.executor_type.__name__))
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
@@ -194,9 +229,30 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
             t.join()
 
 
-class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCase):
+class ProcessPoolShutdownTest(ExecutorShutdownTest):
     def _prime_executor(self):
         pass
+
+    @staticmethod
+    def _id(x):
+        return x
+
+    def test_shutdown(self):
+        processes = [p for p in self.executor._processes.values()]
+        self.assertEqual(self.executor.submit(self._id, 42).result(), 42)
+        self.executor.shutdown(wait=True)
+
+        self.assertListEqual([p.exitcode for p in processes],
+                             [0 for _ in processes])
+
+    def test_shutdown_wait(self):
+        processes = [p for p in self.executor._processes.values()]
+        f = self.executor.submit(sleep_and_return, .5, 42)
+        self.executor.shutdown(wait=True)
+        self.assertEqual(f.result(), 42)
+
+        self.assertListEqual([p.exitcode for p in processes],
+                             [0 for _ in processes])
 
     def test_processes_terminate(self):
         self.executor.submit(mul, 21, 2)
@@ -231,6 +287,22 @@ class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCa
             p.join()
         call_queue.close()
         call_queue.join_thread()
+
+
+class ProcessPoolForkShutdownTest(ProcessPoolForkMixin, BaseTestCase,
+                                  ProcessPoolShutdownTest):
+    pass
+
+
+class ProcessPoolForkserverShutdownTest(ProcessPoolForkserverMixin,
+                                        BaseTestCase,
+                                        ProcessPoolShutdownTest):
+    pass
+
+
+class ProcessPoolSpawnShutdownTest(ProcessPoolSpawnMixin, BaseTestCase,
+                                   ProcessPoolShutdownTest):
+    pass
 
 
 class WaitTests:
@@ -352,7 +424,17 @@ class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
             sys.setswitchinterval(oldswitchinterval)
 
 
-class ProcessPoolWaitTests(ProcessPoolMixin, WaitTests, BaseTestCase):
+class ProcessPoolForkWaitTests(ProcessPoolForkMixin, WaitTests, BaseTestCase):
+    pass
+
+
+class ProcessPoolForkserverWaitTests(ProcessPoolForkserverMixin, WaitTests,
+                                     BaseTestCase):
+    pass
+
+
+class ProcessPoolSpawnWaitTests(ProcessPoolSpawnMixin, BaseTestCase,
+                                WaitTests):
     pass
 
 
@@ -440,7 +522,19 @@ class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, BaseTestCase
     pass
 
 
-class ProcessPoolAsCompletedTests(ProcessPoolMixin, AsCompletedTests, BaseTestCase):
+class ProcessPoolForkAsCompletedTests(ProcessPoolForkMixin, AsCompletedTests,
+                                      BaseTestCase):
+    pass
+
+
+class ProcessPoolForkserverAsCompletedTests(ProcessPoolForkserverMixin,
+                                            AsCompletedTests,
+                                            BaseTestCase):
+    pass
+
+
+class ProcessPoolSpawnAsCompletedTests(ProcessPoolSpawnMixin, AsCompletedTests,
+                                       BaseTestCase):
     pass
 
 
@@ -540,7 +634,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
                          (os.cpu_count() or 1) * 5)
 
 
-class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, BaseTestCase):
+class ProcessPoolExecutorTest(ExecutorTest):
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
         # "broken".
@@ -594,6 +688,283 @@ class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, BaseTestCase):
                 sys.excepthook(*sys.exc_info())
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
+
+
+class ProcessPoolForkExecutorTest(ProcessPoolForkMixin,
+                                  ProcessPoolExecutorTest,
+                                  BaseTestCase):
+    pass
+
+
+class ProcessPoolForkserverExecutorTest(ProcessPoolForkserverMixin,
+                                        ProcessPoolExecutorTest,
+                                        BaseTestCase):
+    pass
+
+
+class ProcessPoolSpawnExecutorTest(ProcessPoolSpawnMixin,
+                                   ProcessPoolExecutorTest,
+                                   BaseTestCase):
+    pass
+
+
+def hide_process_stderr():
+    import io
+    setattr(sys, "stderr", io.StringIO())
+
+
+def _crash():
+    """Induces a segfault"""
+    import faulthandler
+    faulthandler.disable()
+    faulthandler._sigsegv()
+
+
+def _exit():
+    """Induces a sys exit with exitcode 1"""
+    sys.exit(1)
+
+
+def _raise_error(Err):
+    """Function that raises an Exception in process"""
+    hide_process_stderr()
+    raise Err()
+
+
+def _return_instance(cls):
+    """Function that returns a instance of cls"""
+    hide_process_stderr()
+    return cls()
+
+
+class CrashAtPickle(object):
+    """Bad object that triggers a segfault at pickling time."""
+    def __reduce__(self):
+        _crash()
+
+
+class CrashAtUnpickle(object):
+    """Bad object that triggers a segfault at unpickling time."""
+    def __reduce__(self):
+        return _crash, ()
+
+
+class ExitAtPickle(object):
+    """Bad object that triggers a segfault at pickling time."""
+    def __reduce__(self):
+        _exit()
+
+
+class ExitAtUnpickle(object):
+    """Bad object that triggers a process exit at unpickling time."""
+    def __reduce__(self):
+        return _exit, ()
+
+
+class ErrorAtPickle(object):
+    """Bad object that triggers a segfault at pickling time."""
+    def __reduce__(self):
+        from pickle import PicklingError
+        raise PicklingError("Error in pickle")
+
+
+class ErrorAtUnpickle(object):
+    """Bad object that triggers a process exit at unpickling time."""
+    def __reduce__(self):
+        from pickle import UnpicklingError
+        return _raise_error, (UnpicklingError, )
+
+
+class TimingWrapper(object):
+    """Creates a wrapper for a function which records the time it takes to
+    finish
+    """
+    def __init__(self, func):
+        self.func = func
+        self.elapsed = None
+
+    def __call__(self, *args, **kwds):
+        t = time.time()
+        try:
+            return self.func(*args, **kwds)
+        finally:
+            self.elapsed = time.time() - t
+
+
+class ExecutorDeadlockTest:
+    # If ExecutorDeadlockTest takes more than 100secs to complete, it is very
+    # likely caught in a deadlock. As there is no easy way to detect it,
+    # faulthandler will print the traceback and exit.
+    TIMEOUT = 15
+
+    def _fail_on_deadlock(self, executor):
+        # If we did not recover before TIMEOUT seconds,
+        # consider that the executor is in a deadlock state
+        import faulthandler
+        from tempfile import TemporaryFile
+        with TemporaryFile(mode="w+") as f:
+            faulthandler.dump_traceback(file=f)
+            f.seek(0)
+            tb = f.read()
+        executor.shutdown(wait=True, kill_workers=False)
+        print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
+        self.fail(f"Deadlock executor:\n\n{tb}")
+
+    def test_crash(self):
+        # extensive testing for deadlock caused by crash in a pool
+        crash_cases = [
+            # Check problem occuring while pickling a task in
+            # the task_handler thread
+            (id, (ExitAtPickle(),), BrokenProcessPool, "exit at task pickle"),
+            (id, (ErrorAtPickle(),), PicklingError, "error at task pickle"),
+            # Check problem occuring while unpickling a task on workers
+            (id, (ExitAtUnpickle(),), BrokenProcessPool,
+             "exit at task unpickle"),
+            (id, (ErrorAtUnpickle(),), BrokenProcessPool,
+             "error at task unpickle"),
+            (id, (CrashAtUnpickle(),), BrokenProcessPool,
+             "crash at task unpickle"),
+            # Check problem occuring during func execution on workers
+            (_crash, (), BrokenProcessPool,
+             "crash during func execution on worker"),
+            (_exit, (), SystemExit,
+             "exit during func execution on worker"),
+            (_raise_error, (RuntimeError, ), RuntimeError,
+             "error during func execution on worker"),
+            # Check problem occuring while pickling a task result
+            # on workers
+            (_return_instance, (CrashAtPickle,), BrokenProcessPool,
+             "crash during result pickle on worker"),
+            (_return_instance, (ExitAtPickle,), BrokenProcessPool,
+             "exit during result pickle on worker"),
+            (_return_instance, (ErrorAtPickle,), PicklingError,
+             "error during result pickle on worker"),
+            # Check problem occuring while unpickling a task in
+            # the result_handler thread
+            (_return_instance, (ExitAtUnpickle,), BrokenProcessPool,
+             "exit during result unpickle in result_handler"),
+            (_return_instance, (ErrorAtUnpickle,), BrokenProcessPool,
+             "error during result unpickle in result_handler")
+        ]
+        for func, args, error, name in crash_cases:
+            with self.subTest(name):
+                # skip the test involving pickle errors with manager as it
+                # breaks the manager and not the pool in this cases
+                # skip the test involving pickle errors with thread as the
+                # tasks and results are not pickled in this case
+                with test.support.captured_stderr():
+                    executor = self.executor_type(
+                        max_workers=2, context=get_context(self.ctx))
+                    res = executor.submit(func, *args)
+                    with self.assertRaises(error):
+                        try:
+                            res.result(timeout=self.TIMEOUT)
+                        except futures.TimeoutError:
+                            # If we did not recover before TIMEOUT seconds,
+                            # consider that the executor is in a deadlock state
+                            self._fail_on_deadlock(executor)
+                    executor.shutdown(wait=True)
+
+    @classmethod
+    def _test_getpid(cls, a):
+        return os.getpid()
+
+    @classmethod
+    def _test_kill_worker(cls, pid=None, delay=0.01):
+        """Function that send SIGKILL at process pid after delay second"""
+        time.sleep(delay)
+        if pid is None:
+            pid = os.getpid()
+        try:
+            from signal import SIGKILL
+        except ImportError:
+            from signal import SIGTERM as SIGKILL
+        try:
+            os.kill(pid, SIGKILL)
+            time.sleep(.01)
+        except (ProcessLookupError, PermissionError):
+            pass
+
+    def test_crash_races(self):
+
+        from itertools import repeat
+        for n_proc in [1, 2, 5, 17]:
+            with self.subTest(n_proc=n_proc):
+                # Test for external crash signal comming from neighbor
+                # with various race setup
+                executor = self.executor_type(
+                    max_workers=2, context=get_context(self.ctx))
+                try:
+                    raise AttributeError()
+                    pids = [p.pid for p in executor._processes]
+                    assert len(pids) == n_proc
+                except AttributeError:
+                    pids = [pid for pid in executor.map(
+                            self._test_getpid, [None] * n_proc)]
+                assert None not in pids
+                res = self.executor.map(
+                    sleep_and_return,
+                    [.001 * (j // 2) for j in range(2 * n_proc)],
+                    repeat(True, 2 * n_proc),
+                    chunksize=1)
+                assert all(res)
+                res = executor.map(self._test_kill_worker, pids[::-1],
+                                   timeout=self.TIMEOUT)
+                with self.assertRaises(BrokenProcessPool):
+                    try:
+                        [v for v in res]
+                    except futures.TimeoutError:
+                        # If we did not recover before TIMEOUT seconds,
+                        # consider that the executor is in a deadlock state
+                        self._fail_on_deadlock(executor)
+                executor.shutdown(wait=True)
+
+    def test_shutdown_deadlock(self):
+        # Test that the pool calling shutdown do not cause deadlock
+        # if a worker failed
+
+        with self.executor_type(max_workers=2,
+                                context=get_context(self.ctx)) as executor:
+            executor.submit(self._test_kill_worker, ())
+            time.sleep(.01)
+            executor.shutdown()
+
+    def test_shutdown_kill(self):
+        """ProcessPoolExecutor does not wait job end and shutdowm with
+        kill_worker flag set to True. Ensure that the future returns
+        ShutdownExecutorError.
+        """
+        from itertools import repeat
+        executor = self.executor_type(max_workers=2,
+                                      context=get_context(self.ctx))
+        res1 = executor.map(sleep_and_return, repeat(.001), range(50))
+        res2 = executor.map(sleep_and_return, repeat(.1), range(50))
+        assert list(res1) == list(range(50))
+        # We should get an error as the executor shutdowned before we fetched
+        # the results from the operation.
+        shutdown = TimingWrapper(executor.shutdown)
+        shutdown(wait=True, kill_workers=True)
+        assert shutdown.elapsed < .5
+        with self.assertRaises(ShutdownExecutorError):
+            list(res2)
+
+
+class ProcessPoolForkExecutorDeadlockTest(ProcessPoolForkMixin,
+                                          ExecutorDeadlockTest,
+                                          unittest.TestCase):
+    pass
+
+
+class ProcessPoolForkserverExecutorDeadlockTest(ProcessPoolForkserverMixin,
+                                                ExecutorDeadlockTest,
+                                                unittest.TestCase):
+    pass
+
+
+class ProcessPoolSpawnExecutorDeadlockTest(ProcessPoolSpawnMixin,
+                                           ExecutorDeadlockTest,
+                                           unittest.TestCase):
+    pass
 
 
 class FutureTests(BaseTestCase):
