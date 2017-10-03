@@ -210,8 +210,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
    .. versionchanged:: 3.7
       The *mp_context* argument was added to allow users to control the
-      start_method for worker processes created by the pool for more flexible
-      control.
+      start_method for worker processes created by the pool.
 
 
 .. _processpoolexecutor-example:
