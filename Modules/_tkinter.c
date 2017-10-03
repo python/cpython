@@ -2291,7 +2291,11 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
     if (!PyArg_Parse(arg, "et:splitlist", "utf-8", &list))
         return NULL;
 
-    CHECK_STRING_LENGTH(list);
+    if (strlen(list) >= INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        PyMem_Free(list);
+        return NULL;
+    }
     if (Tcl_SplitList(Tkapp_Interp(self), list,
                       &argc, &argv) == TCL_ERROR)  {
         PyMem_Free(list);
@@ -2362,7 +2366,11 @@ _tkinter_tkapp_split(TkappObject *self, PyObject *arg)
 
     if (!PyArg_Parse(arg, "et:split", "utf-8", &list))
         return NULL;
-    CHECK_STRING_LENGTH(list);
+    if (strlen(list) >= INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        PyMem_Free(list);
+        return NULL;
+    }
     v = Split(list);
     PyMem_Free(list);
     return v;
