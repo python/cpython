@@ -168,7 +168,7 @@ exit:
 #if defined(HAVE_SETITIMER)
 
 PyDoc_STRVAR(signal_setitimer__doc__,
-"setitimer($module, which, seconds, interval=0.0, /)\n"
+"setitimer($module, which, seconds, interval=None, /)\n"
 "--\n"
 "\n"
 "Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).\n"
@@ -182,18 +182,18 @@ PyDoc_STRVAR(signal_setitimer__doc__,
     {"setitimer", (PyCFunction)signal_setitimer, METH_FASTCALL, signal_setitimer__doc__},
 
 static PyObject *
-signal_setitimer_impl(PyObject *module, int which, double seconds,
-                      double interval);
+signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
+                      PyObject *interval);
 
 static PyObject *
 signal_setitimer(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int which;
-    double seconds;
-    double interval = 0.0;
+    PyObject *seconds;
+    PyObject *interval = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "id|d:setitimer",
+    if (!_PyArg_ParseStack(args, nargs, "iO|O:setitimer",
         &which, &seconds, &interval)) {
         goto exit;
     }
@@ -440,4 +440,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=3f6e6298696f1b75 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d205eee344ed03f input=a9049054013a1b77]*/
