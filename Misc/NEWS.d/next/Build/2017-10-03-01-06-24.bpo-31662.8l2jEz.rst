@@ -1,2 +1,0 @@
-Fix typos in Windows ``uploadrelease.bat`` script.
-Fix Windows Doc build issues in ``Doc/make.bat``.

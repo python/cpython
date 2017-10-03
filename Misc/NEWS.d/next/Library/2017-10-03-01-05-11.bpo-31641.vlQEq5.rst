@@ -1,2 +1,0 @@
-Re-allow arbitrary iterables in `concurrent.futures.as_completed()`. Fixes
-regression in 3.6.3rc1.
