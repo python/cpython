@@ -10,9 +10,6 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
-- bpo-30404: The -u option now makes the stdout and stderr streams unbuffered
-  rather than line-buffered.
-
 - bpo-30682: Removed a too-strict assertion that failed for certain f-strings,
   such as eval("f'\\\n'") and eval("f'\\\r'").
 
