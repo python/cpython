@@ -1640,7 +1640,7 @@ _tkinter_tkapp_record_impl(TkappObject *self, const char *script)
 }
 
 /*[clinic input]
-_tkinter.tkapp.adderrinfo
+_tkinter.tkapp.adderrorinfo
 
     msg: str
     /
@@ -1648,8 +1648,8 @@ _tkinter.tkapp.adderrinfo
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_adderrinfo_impl(TkappObject *self, const char *msg)
-/*[clinic end generated code: output=0e222ee2050eb357 input=4971399317d4c136]*/
+_tkinter_tkapp_adderrorinfo_impl(TkappObject *self, const char *msg)
+/*[clinic end generated code: output=52162eaca2ee53cb input=f4b37aec7c7e8c77]*/
 {
     CHECK_STRING_LENGTH(msg);
     CHECK_TCL_APPARTMENT;
@@ -3253,7 +3253,7 @@ static PyMethodDef Tkapp_methods[] =
     _TKINTER_TKAPP_EVAL_METHODDEF
     _TKINTER_TKAPP_EVALFILE_METHODDEF
     _TKINTER_TKAPP_RECORD_METHODDEF
-    _TKINTER_TKAPP_ADDERRINFO_METHODDEF
+    _TKINTER_TKAPP_ADDERRORINFO_METHODDEF
     {"setvar",                 Tkapp_SetVar, METH_VARARGS},
     {"globalsetvar",       Tkapp_GlobalSetVar, METH_VARARGS},
     {"getvar",       Tkapp_GetVar, METH_VARARGS},
