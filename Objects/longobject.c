@@ -2059,7 +2059,7 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     *str = p;
     /* n <- # of Python digits needed, = ceiling(n/PyLong_SHIFT). */
     n = digits * bits_per_char + PyLong_SHIFT - 1;
-    if (n / bits_per_char < p - start) {
+    if (n / bits_per_char < digits) {
         PyErr_SetString(PyExc_ValueError,
                         "int string too large to convert");
         *res = NULL;
