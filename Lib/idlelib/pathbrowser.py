@@ -9,7 +9,7 @@ from idlelib.tree import TreeItem
 
 class PathBrowser(ModuleBrowser):
 
-    def __init__(self, flist, _htest=False, _utest=False):
+    def __init__(self, flist, *, _htest=False, _utest=False):
         """
         _htest - bool, change box location when running htest
         """
