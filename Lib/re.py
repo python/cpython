@@ -274,6 +274,7 @@ _pattern_type = type(sre_compile.compile("", 0))
 _MAXCACHE = 512
 def _compile(pattern, flags):
     # internal: compile pattern
+    flags = int(flags)
     try:
         return _cache[type(pattern), pattern, flags]
     except KeyError:
@@ -330,6 +331,7 @@ copyreg.pickle(_pattern_type, _pickle, _compile)
 class Scanner:
     def __init__(self, lexicon, flags=0):
         from sre_constants import BRANCH, SUBPATTERN
+        flags = int(flags)
         self.lexicon = lexicon
         # combine phrases into a compound pattern
         p = []
