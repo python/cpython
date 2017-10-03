@@ -1,3 +1,3 @@
-uuid.UUID now accepts bytes-like object. The constructor doesn't require the
-'bytes' and 'bytes_le' arguments to be an instance of bytes: accept bytes-like
-types, bytearray and memoryview for example.
+uuid.UUID now accepts bytes-like object of 16 bytes. The constructor doesn't
+require the 'bytes' and 'bytes_le' arguments to be an instance of bytes: accept
+bytes-like types, bytearray and memoryview for example.

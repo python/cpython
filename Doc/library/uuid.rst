@@ -76,8 +76,8 @@ which relays any information about the UUID's safety, using this enumeration:
    represent the UUID.
 
    .. versionchanged:: 3.7
-      *bytes* and *bytes_le* parameters now accept any bytes-like objects,
-      bytearray and memoryview for example, not only :class:`bytes`.
+      *bytes* and *bytes_le* parameters now accept any bytes-like objects of 16
+      bytes, bytearray and memoryview for example, not only :class:`bytes`.
 
 :class:`UUID` instances have these read-only attributes:
 
