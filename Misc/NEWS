@@ -345,10 +345,6 @@ Extension Modules
 Library
 -------
 
-- bpo-30397: The types of compiled regular objects and match objects are
-  exposed as re.Pattern and re.Match.  This adds information in pydoc
-  output for the re module.
-
 - bpo-30520: Loggers are now pickleable.
 
 - bpo-30557: faulthandler now correctly filters and displays exception codes
