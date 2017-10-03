@@ -941,6 +941,7 @@ application/vnd.zul				zir zirz
 application/vnd.zzazz.deck+xml			zaz
 application/voicexml+xml			vxml
 application/vq-rtcp-xr
+application/wasm				wasm
 application/watcherinfo+xml			wif
 application/whoispp-query
 application/whoispp-response

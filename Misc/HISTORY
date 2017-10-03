@@ -6683,6 +6683,8 @@ Library
 - Issue #15646: Prevent equivalent of a fork bomb when using `multiprocessing`
   on Windows without the ``if __name__ == '__main__'`` idiom.
 
+- Issue #31670: Associate .wasm with application/wasm.
+
 IDLE
 ----
 
