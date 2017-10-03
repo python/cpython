@@ -1,0 +1,1 @@
+pkgutil.get_data() does not leak open files
