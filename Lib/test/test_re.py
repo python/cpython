@@ -1967,6 +1967,23 @@ ELSE
         self.assertEqual(m.group(), b'xyz')
         self.assertEqual(m2.group(), b'')
 
+    def test_compile_cache_type(self):
+        # bpo-31671: Make sure that re.compile() cache checks the flags type
+
+        # Make sure that float flags is invalid when the cache is empty
+        re.purge()
+        with self.assertRaises(TypeError):
+            re.compile("abc", flags=float(re.IGNORECASE))
+
+        # Make sure that float flags is still seen as invalid
+        # when the cache is full: the cache must handle flags type
+        re.purge()
+        pattern1 = re.compile("abc", flags=re.IGNORECASE)
+        pattern2 = re.compile("abc", flags=int(re.IGNORECASE))
+        self.assertEqual(pattern1, pattern2)
+        with self.assertRaises(TypeError):
+            re.compile("abc", flags=float(re.IGNORECASE))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):

@@ -1,0 +1,3 @@
+re.compile() cache now checks the flags type. Make sure that float flags are
+rejected even if the cache has an entry with equal flags but flags of a
+different type.

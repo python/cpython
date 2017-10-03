@@ -274,8 +274,9 @@ _pattern_type = type(sre_compile.compile("", 0))
 _MAXCACHE = 512
 def _compile(pattern, flags):
     # internal: compile pattern
+    cache_key = (type(pattern), pattern, type(flags), flags)
     try:
-        return _cache[type(pattern), pattern, flags]
+        return _cache[cache_key]
     except KeyError:
         pass
     if isinstance(pattern, _pattern_type):
@@ -292,7 +293,7 @@ def _compile(pattern, flags):
                 _cache.popitem(last=False)
             except KeyError:
                 pass
-        _cache[type(pattern), pattern, flags] = p
+        _cache[cache_key] = p
     return p
 
 @functools.lru_cache(_MAXCACHE)
