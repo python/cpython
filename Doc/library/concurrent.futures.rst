@@ -191,19 +191,26 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
-.. class:: ProcessPoolExecutor(max_workers=None)
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
    given, it will default to the number of processors on the machine.
    If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
    will be raised.
+   *mp_context* can be a multiprocessing context or None. It will be used to
+   launch the workers. If *mp_context* is ``None`` or not given, the default
+   multiprocessing context is used.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
       :exc:`BrokenProcessPool` error is now raised.  Previously, behaviour
       was undefined but operations on the executor or its futures would often
       freeze or deadlock.
+
+   .. versionchanged:: 3.7
+      The *mp_context* argument was added to allow users to control the
+      start_method for worker processes created by the pool.
 
 
 .. _processpoolexecutor-example:
