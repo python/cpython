@@ -273,7 +273,7 @@ class HTTPResponse(io.BufferedIOBase):
             except ValueError:
                 # empty version will cause next test to fail.
                 version = ""
-        if not version.startswith("HTTP/"):
+        if not version.upper().startswith("HTTP/"):
             self._close_conn()
             raise BadStatusLine(line)
 
