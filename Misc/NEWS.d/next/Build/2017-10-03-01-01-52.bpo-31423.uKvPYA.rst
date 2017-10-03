@@ -1,0 +1,1 @@
+Fix building the PDF documentation with newer versions of Sphinx.
