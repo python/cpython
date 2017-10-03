@@ -81,7 +81,7 @@ class Template(metaclass=_TemplateMetaclass):
     delimiter = '$'
     idpattern = r'[_a-z][_a-z0-9]*'
     braceidpattern = None
-    flags = _re.IGNORECASE
+    flags = _re.IGNORECASE | _re.ASCII
 
     def __init__(self, template):
         self.template = template
@@ -156,6 +156,10 @@ class Template(metaclass=_TemplateMetaclass):
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
+
+# We use re.I | re.A when compiling Template.idpattern, but restore old flag
+# for backward compatibility.
+Template.flags = _re.IGNORECASE
 
 
 ########################################################################
