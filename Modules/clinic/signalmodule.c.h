@@ -168,7 +168,7 @@ exit:
 #if defined(HAVE_SETITIMER)
 
 PyDoc_STRVAR(signal_setitimer__doc__,
-"setitimer($module, which, seconds, interval=None, /)\n"
+"setitimer($module, which, seconds, interval=0.0, /)\n"
 "--\n"
 "\n"
 "Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).\n"
@@ -440,4 +440,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=9d205eee344ed03f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a003d3fea9a33daa input=a9049054013a1b77]*/
