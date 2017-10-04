@@ -81,6 +81,10 @@ class Template(metaclass=_TemplateMetaclass):
     delimiter = '$'
     idpattern = r'[_a-z][_a-z0-9]*'
     braceidpattern = None
+
+    # We use re.I | re.A while compiling Template.idpattern in the metaclass
+    # above, but since flags is part of the public API, we restore its original
+    # documented value after class creation for backward compatibility.
     flags = _re.IGNORECASE | _re.ASCII
 
     def __init__(self, template):
@@ -157,8 +161,7 @@ class Template(metaclass=_TemplateMetaclass):
         return self.pattern.sub(convert, self.template)
 
 
-# We use re.I | re.A when compiling Template.idpattern, but restore old flag
-# for backward compatibility.
+# Restore old, documented flag.  See Template.flags for detail.
 Template.flags = _re.IGNORECASE
 
 
