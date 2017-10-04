@@ -114,18 +114,6 @@ def getaddresses(fieldvalues):
     return a.addresslist
 
 
-
-ecre = re.compile(r'''
-  =\?                   # literal =?
-  (?P<charset>[^?]*?)   # non-greedy up to the next ? is the charset
-  \?                    # literal ?
-  (?P<encoding>[qb])    # either a "q" or a "b", case insensitive
-  \?                    # literal ?
-  (?P<atom>.*?)         # non-greedy up to the next ?= is the atom
-  \?=                   # literal ?=
-  ''', re.VERBOSE | re.IGNORECASE)
-
-
 def _format_timetuple_and_zone(timetuple, zone):
     return '%s, %02d %s %04d %02d:%02d:%02d %s' % (
         ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][timetuple[6]],
