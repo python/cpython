@@ -58,7 +58,7 @@ Slice Objects
       Its invocation should be replaced by a combination of
       :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices` where ::
 
-         if (PySlice_GetIndicesEx(slice, length, &start, &stop, &step, &slicelength) < 0) {
+         if (PySlice_GetIndicesEx(slice, &start, &stop, &step, &slicelength) < 0) {
              // return error
          }
 
