@@ -1020,8 +1020,7 @@ def _handle_fromlist(module, fromlist, import_):
                     # imports triggered by fromlist for modules that don't
                     # exist.
                     if (exc.name == from_name and
-                        from_name not in sys.modules):
-                        #sys.modules.get(from_name, _NEEDS_LOADING) is not None):
+                        sys.modules.get(from_name, _NEEDS_LOADING) is not None):
                         continue
                     raise
     return module

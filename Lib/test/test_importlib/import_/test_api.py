@@ -86,7 +86,7 @@ class APITest:
         # If fromlist entry is None, let a ModuleNotFoundError propagate.
         # issue31642
         mod = types.ModuleType(PKG_NAME)
-        mod.__path__ = ['XXX']
+        mod.__path__ = []
         with util.import_state(meta_path=[self.bad_finder_loader]):
             with util.uncache(PKG_NAME, SUBMOD_NAME):
                 sys.modules[PKG_NAME] = mod
