@@ -149,7 +149,7 @@ Class-based API
 
 The class-based API of the :mod:`gettext` module gives you more flexibility and
 greater convenience than the GNU :program:`gettext` API.  It is the recommended
-way of localizing your Python applications and modules.  :mod:`gettext` defines
+way of localizing your Python applications and modules.  :mod:`!gettext` defines
 a "translations" class which implements the parsing of GNU :file:`.mo` format
 files, and has methods for returning either standard 8-bit strings or Unicode
 strings. Instances of this "translations" class can also install themselves  in
@@ -239,7 +239,7 @@ Translation classes are what actually implement the translation of original
 source file message strings to translated message strings. The base class used
 by all translation classes is :class:`NullTranslations`; this provides the basic
 interface you can use to write your own specialized translation classes.  Here
-are the methods of :class:`NullTranslations`:
+are the methods of :class:`!NullTranslations`:
 
 
 .. class:: NullTranslations([fp])
@@ -268,14 +268,14 @@ are the methods of :class:`NullTranslations`:
 
    .. method:: gettext(message)
 
-      If a fallback has been set, forward :meth:`gettext` to the
+      If a fallback has been set, forward :meth:`!gettext` to the
       fallback. Otherwise, return the translated message.  Overridden in derived
       classes.
 
 
    .. method:: lgettext(message)
 
-      If a fallback has been set, forward :meth:`lgettext` to the
+      If a fallback has been set, forward :meth:`!lgettext` to the
       fallback. Otherwise, return the translated message.  Overridden in derived
       classes.
 
@@ -284,14 +284,14 @@ are the methods of :class:`NullTranslations`:
 
    .. method:: ugettext(message)
 
-      If a fallback has been set, forward :meth:`ugettext` to the
+      If a fallback has been set, forward :meth:`!ugettext` to the
       fallback. Otherwise, return the translated message as a Unicode
       string. Overridden in derived classes.
 
 
    .. method:: ngettext(singular, plural, n)
 
-      If a fallback has been set, forward :meth:`ngettext` to the
+      If a fallback has been set, forward :meth:`!ngettext` to the
       fallback. Otherwise, return the translated message.  Overridden in derived
       classes.
 
@@ -300,7 +300,7 @@ are the methods of :class:`NullTranslations`:
 
    .. method:: lngettext(singular, plural, n)
 
-      If a fallback has been set, forward :meth:`lngettext` to the
+      If a fallback has been set, forward :meth:`!lngettext` to the
       fallback. Otherwise, return the translated message.  Overridden in derived
       classes.
 
@@ -309,7 +309,7 @@ are the methods of :class:`NullTranslations`:
 
    .. method:: ungettext(singular, plural, n)
 
-      If a fallback has been set, forward :meth:`ungettext` to the fallback.
+      If a fallback has been set, forward :meth:`!ungettext` to the fallback.
       Otherwise, return the translated message as a Unicode string. Overridden
       in derived classes.
 
