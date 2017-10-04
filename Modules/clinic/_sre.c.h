@@ -190,7 +190,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern_fullmatch__doc__,
 "fullmatch($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
-"Matches against all of the string");
+"Matches against all of the string.");
 
 #define _SRE_SRE_PATTERN_FULLMATCH_METHODDEF    \
     {"fullmatch", (PyCFunction)_sre_SRE_Pattern_fullmatch, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_fullmatch__doc__},
@@ -682,7 +682,7 @@ PyDoc_STRVAR(_sre_SRE_Match_span__doc__,
 "span($self, group=0, /)\n"
 "--\n"
 "\n"
-"For MatchObject m, return the 2-tuple (m.start(group), m.end(group)).");
+"For match object m, return the 2-tuple (m.start(group), m.end(group)).");
 
 #define _SRE_SRE_MATCH_SPAN_METHODDEF    \
     {"span", (PyCFunction)_sre_SRE_Match_span, METH_FASTCALL, _sre_SRE_Match_span__doc__},
@@ -765,4 +765,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=6e3fb17fef1be436 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e6a1be31302df09 input=a9049054013a1b77]*/
