@@ -134,7 +134,7 @@ Class-based API
 
 The class-based API of the :mod:`gettext` module gives you more flexibility and
 greater convenience than the GNU :program:`gettext` API.  It is the recommended
-way of localizing your Python applications and modules.  :mod:`gettext` defines
+way of localizing your Python applications and modules.  :mod:`!gettext` defines
 a "translations" class which implements the parsing of GNU :file:`.mo` format
 files, and has methods for returning strings. Instances of this "translations"
 class can also install themselves in the built-in namespace as the function
@@ -219,7 +219,7 @@ Translation classes are what actually implement the translation of original
 source file message strings to translated message strings. The base class used
 by all translation classes is :class:`NullTranslations`; this provides the basic
 interface you can use to write your own specialized translation classes.  Here
-are the methods of :class:`NullTranslations`:
+are the methods of :class:`!NullTranslations`:
 
 
 .. class:: NullTranslations(fp=None)
@@ -247,13 +247,13 @@ are the methods of :class:`NullTranslations`:
 
    .. method:: gettext(message)
 
-      If a fallback has been set, forward :meth:`.gettext` to the fallback.
+      If a fallback has been set, forward :meth:`!gettext` to the fallback.
       Otherwise, return *message*.  Overridden in derived classes.
 
 
    .. method:: ngettext(singular, plural, n)
 
-      If a fallback has been set, forward :meth:`ngettext` to the fallback.
+      If a fallback has been set, forward :meth:`!ngettext` to the fallback.
       Otherwise, return *singular* if *n* is 1; return *plural* otherwise.
       Overridden in derived classes.
 
@@ -261,7 +261,7 @@ are the methods of :class:`NullTranslations`:
    .. method:: lgettext(message)
    .. method:: lngettext(singular, plural, n)
 
-      Equivalent to :meth:`.gettext` and :meth:`ngettext`, but the translation
+      Equivalent to :meth:`.gettext` and :meth:`.ngettext`, but the translation
       is returned as a byte string encoded in the preferred system encoding
       if no encoding was explicitly set with :meth:`set_output_charset`.
       Overridden in derived classes.
