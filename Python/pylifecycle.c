@@ -1498,7 +1498,7 @@ create_stdio(PyObject* io,
     PyObject *buf = NULL, *stream = NULL, *text = NULL, *raw = NULL, *res;
     const char* mode;
     const char* newline;
-    PyObject *line_buffering;
+    PyObject *line_buffering, *write_through;
     int buffering, isatty;
     _Py_IDENTIFIER(open);
     _Py_IDENTIFIER(isatty);
@@ -1555,7 +1555,11 @@ create_stdio(PyObject* io,
     Py_DECREF(res);
     if (isatty == -1)
         goto error;
-    if (isatty || Py_UnbufferedStdioFlag)
+    if (Py_UnbufferedStdioFlag)
+        write_through = Py_True;
+    else
+        write_through = Py_False;
+    if (isatty && !Py_UnbufferedStdioFlag)
         line_buffering = Py_True;
     else
         line_buffering = Py_False;
@@ -1574,9 +1578,9 @@ create_stdio(PyObject* io,
     newline = "\n";
 #endif
 
-    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OsssO",
+    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OsssOO",
                                     buf, encoding, errors,
-                                    newline, line_buffering);
+                                    newline, line_buffering, write_through);
     Py_CLEAR(buf);
     if (stream == NULL)
         goto error;
