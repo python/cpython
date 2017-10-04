@@ -501,8 +501,13 @@ class _TestProcess(BaseTestCase):
         for p in procs:
             join_process(p)
         if os.name != 'nt':
+            exitcodes = [-signal.SIGTERM]
+            if sys.platform == 'darwin':
+                # bpo-31510: On macOS, killing a freshly started process with
+                # SIGTERM sometimes kills the process with SIGKILL.
+                exitcodes.append(-signal.SIGKILL)
             for p in procs:
-                self.assertEqual(p.exitcode, -signal.SIGTERM)
+                self.assertIn(p.exitcode, exitcodes)
 
     def test_lose_target_ref(self):
         c = DummyCallable()
