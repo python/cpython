@@ -2332,7 +2332,11 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "et:splitlist", "utf-8", &list))
         return NULL;
 
-    CHECK_STRING_LENGTH(list);
+    if (strlen(list) >= INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        PyMem_Free(list);
+        return NULL;
+    }
     if (Tcl_SplitList(Tkapp_Interp(self), list,
                       &argc, &argv) == TCL_ERROR)  {
         PyMem_Free(list);
@@ -2394,7 +2398,11 @@ Tkapp_Split(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "et:split", "utf-8", &list))
         return NULL;
-    CHECK_STRING_LENGTH(list);
+    if (strlen(list) >= INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long");
+        PyMem_Free(list);
+        return NULL;
+    }
     v = Split(list);
     PyMem_Free(list);
     return v;
