@@ -492,7 +492,7 @@ form.
 
    Compile a regular expression pattern into a :ref:`regular expression object
    <re-objects>`, which can be used for matching using its
-   :func:`~regex.match`, :func:`~regex.search` and other methods, described
+   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
    below.
 
    The expression's behaviour can be modified by specifying a *flags* value.
@@ -747,7 +747,7 @@ form.
       >>> re.sub(r'\sAND\s', ' & ', 'Baked Beans And Spam', flags=re.IGNORECASE)
       'Baked Beans & Spam'
 
-   The pattern may be a string or an RE object.
+   The pattern may be a string or a :class:`Pattern` object.
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
@@ -861,7 +861,7 @@ Regular Expression Objects
 Compiled regular expression objects support the following methods and
 attributes:
 
-.. method:: regex.search(string[, pos[, endpos]])
+.. method:: Pattern.search(string[, pos[, endpos]])
 
    Scan through *string* looking for the first location where this regular
    expression produces a match, and return a corresponding :ref:`match object
@@ -884,11 +884,11 @@ attributes:
 
    >>> pattern = re.compile("d")
    >>> pattern.search("dog")     # Match at index 0
-   <_sre.SRE_Match object; span=(0, 1), match='d'>
+   <re.Match object; span=(0, 1), match='d'>
    >>> pattern.search("dog", 1)  # No match; search doesn't include the "d"
 
 
-.. method:: regex.match(string[, pos[, endpos]])
+.. method:: Pattern.match(string[, pos[, endpos]])
 
    If zero or more characters at the *beginning* of *string* match this regular
    expression, return a corresponding :ref:`match object <match-objects>`.
@@ -896,86 +896,86 @@ attributes:
    different from a zero-length match.
 
    The optional *pos* and *endpos* parameters have the same meaning as for the
-   :meth:`~regex.search` method.
+   :meth:`~Pattern.search` method.
 
    >>> pattern = re.compile("o")
    >>> pattern.match("dog")      # No match as "o" is not at the start of "dog".
    >>> pattern.match("dog", 1)   # Match as "o" is the 2nd character of "dog".
-   <_sre.SRE_Match object; span=(1, 2), match='o'>
+   <re.Match object; span=(1, 2), match='o'>
 
    If you want to locate a match anywhere in *string*, use
-   :meth:`~regex.search` instead (see also :ref:`search-vs-match`).
+   :meth:`~Pattern.search` instead (see also :ref:`search-vs-match`).
 
 
-.. method:: regex.fullmatch(string[, pos[, endpos]])
+.. method:: Pattern.fullmatch(string[, pos[, endpos]])
 
    If the whole *string* matches this regular expression, return a corresponding
    :ref:`match object <match-objects>`.  Return ``None`` if the string does not
    match the pattern; note that this is different from a zero-length match.
 
    The optional *pos* and *endpos* parameters have the same meaning as for the
-   :meth:`~regex.search` method.
+   :meth:`~Pattern.search` method.
 
    >>> pattern = re.compile("o[gh]")
    >>> pattern.fullmatch("dog")      # No match as "o" is not at the start of "dog".
    >>> pattern.fullmatch("ogre")     # No match as not the full string matches.
    >>> pattern.fullmatch("doggie", 1, 3)   # Matches within given limits.
-   <_sre.SRE_Match object; span=(1, 3), match='og'>
+   <re.Match object; span=(1, 3), match='og'>
 
    .. versionadded:: 3.4
 
 
-.. method:: regex.split(string, maxsplit=0)
+.. method:: Pattern.split(string, maxsplit=0)
 
    Identical to the :func:`split` function, using the compiled pattern.
 
 
-.. method:: regex.findall(string[, pos[, endpos]])
+.. method:: Pattern.findall(string[, pos[, endpos]])
 
    Similar to the :func:`findall` function, using the compiled pattern, but
    also accepts optional *pos* and *endpos* parameters that limit the search
    region like for :meth:`match`.
 
 
-.. method:: regex.finditer(string[, pos[, endpos]])
+.. method:: Pattern.finditer(string[, pos[, endpos]])
 
    Similar to the :func:`finditer` function, using the compiled pattern, but
    also accepts optional *pos* and *endpos* parameters that limit the search
    region like for :meth:`match`.
 
 
-.. method:: regex.sub(repl, string, count=0)
+.. method:: Pattern.sub(repl, string, count=0)
 
    Identical to the :func:`sub` function, using the compiled pattern.
 
 
-.. method:: regex.subn(repl, string, count=0)
+.. method:: Pattern.subn(repl, string, count=0)
 
    Identical to the :func:`subn` function, using the compiled pattern.
 
 
-.. attribute:: regex.flags
+.. attribute:: Pattern.flags
 
    The regex matching flags.  This is a combination of the flags given to
    :func:`.compile`, any ``(?...)`` inline flags in the pattern, and implicit
    flags such as :data:`UNICODE` if the pattern is a Unicode string.
 
 
-.. attribute:: regex.groups
+.. attribute:: Pattern.groups
 
    The number of capturing groups in the pattern.
 
 
-.. attribute:: regex.groupindex
+.. attribute:: Pattern.groupindex
 
    A dictionary mapping any symbolic group names defined by ``(?P<id>)`` to group
    numbers.  The dictionary is empty if no symbolic groups were used in the
    pattern.
 
 
-.. attribute:: regex.pattern
+.. attribute:: Pattern.pattern
 
-   The pattern string from which the RE object was compiled.
+   The pattern string from which the pattern object was compiled.
 
 
 .. versionchanged:: 3.7
@@ -989,7 +989,7 @@ Match Objects
 -------------
 
 Match objects always have a boolean value of ``True``.
-Since :meth:`~regex.match` and :meth:`~regex.search` return ``None``
+Since :meth:`~Pattern.match` and :meth:`~Pattern.search` return ``None``
 when there is no match, you can test whether there was a match with a simple
 ``if`` statement::
 
@@ -1000,10 +1000,10 @@ when there is no match, you can test whether there was a match with a simple
 Match objects support the following methods and attributes:
 
 
-.. method:: match.expand(template)
+.. method:: Match.expand(template)
 
    Return the string obtained by doing backslash substitution on the template
-   string *template*, as done by the :meth:`~regex.sub` method.
+   string *template*, as done by the :meth:`~Pattern.sub` method.
    Escapes such as ``\n`` are converted to the appropriate characters,
    and numeric backreferences (``\1``, ``\2``) and named backreferences
    (``\g<1>``, ``\g<name>``) are replaced by the contents of the
@@ -1012,7 +1012,7 @@ Match objects support the following methods and attributes:
    .. versionchanged:: 3.5
       Unmatched groups are replaced with an empty string.
 
-.. method:: match.group([group1, ...])
+.. method:: Match.group([group1, ...])
 
    Returns one or more subgroups of the match.  If there is a single argument, the
    result is a single string; if there are multiple arguments, the result is a
@@ -1063,7 +1063,7 @@ Match objects support the following methods and attributes:
       'c3'
 
 
-.. method:: match.__getitem__(g)
+.. method:: Match.__getitem__(g)
 
    This is identical to ``m.group(g)``.  This allows easier access to
    an individual group from a match:
@@ -1079,7 +1079,7 @@ Match objects support the following methods and attributes:
    .. versionadded:: 3.6
 
 
-.. method:: match.groups(default=None)
+.. method:: Match.groups(default=None)
 
    Return a tuple containing all the subgroups of the match, from 1 up to however
    many groups are in the pattern.  The *default* argument is used for groups that
@@ -1102,7 +1102,7 @@ Match objects support the following methods and attributes:
       ('24', '0')
 
 
-.. method:: match.groupdict(default=None)
+.. method:: Match.groupdict(default=None)
 
    Return a dictionary containing all the *named* subgroups of the match, keyed by
    the subgroup name.  The *default* argument is used for groups that did not
@@ -1113,8 +1113,8 @@ Match objects support the following methods and attributes:
       {'first_name': 'Malcolm', 'last_name': 'Reynolds'}
 
 
-.. method:: match.start([group])
-            match.end([group])
+.. method:: Match.start([group])
+            Match.end([group])
 
    Return the indices of the start and end of the substring matched by *group*;
    *group* defaults to zero (meaning the whole matched substring). Return ``-1`` if
@@ -1137,28 +1137,28 @@ Match objects support the following methods and attributes:
       'tony@tiger.net'
 
 
-.. method:: match.span([group])
+.. method:: Match.span([group])
 
    For a match *m*, return the 2-tuple ``(m.start(group), m.end(group))``. Note
    that if *group* did not contribute to the match, this is ``(-1, -1)``.
    *group* defaults to zero, the entire match.
 
 
-.. attribute:: match.pos
+.. attribute:: Match.pos
 
-   The value of *pos* which was passed to the :meth:`~regex.search` or
-   :meth:`~regex.match` method of a :ref:`regex object <re-objects>`.  This is
+   The value of *pos* which was passed to the :meth:`~Pattern.search` or
+   :meth:`~Pattern.match` method of a :ref:`regex object <re-objects>`.  This is
    the index into the string at which the RE engine started looking for a match.
 
 
-.. attribute:: match.endpos
+.. attribute:: Match.endpos
 
-   The value of *endpos* which was passed to the :meth:`~regex.search` or
-   :meth:`~regex.match` method of a :ref:`regex object <re-objects>`.  This is
+   The value of *endpos* which was passed to the :meth:`~Pattern.search` or
+   :meth:`~Pattern.match` method of a :ref:`regex object <re-objects>`.  This is
    the index into the string beyond which the RE engine will not go.
 
 
-.. attribute:: match.lastindex
+.. attribute:: Match.lastindex
 
    The integer index of the last matched capturing group, or ``None`` if no group
    was matched at all. For example, the expressions ``(a)b``, ``((a)(b))``, and
@@ -1167,21 +1167,21 @@ Match objects support the following methods and attributes:
    string.
 
 
-.. attribute:: match.lastgroup
+.. attribute:: Match.lastgroup
 
    The name of the last matched capturing group, or ``None`` if the group didn't
    have a name, or if no group was matched at all.
 
 
-.. attribute:: match.re
+.. attribute:: Match.re
 
-   The regular expression object whose :meth:`~regex.match` or
-   :meth:`~regex.search` method produced this match instance.
+   The regular expression object whose :meth:`~Pattern.match` or
+   :meth:`~Pattern.search` method produced this match instance.
 
 
-.. attribute:: match.string
+.. attribute:: Match.string
 
-   The string passed to :meth:`~regex.match` or :meth:`~regex.search`.
+   The string passed to :meth:`~Pattern.match` or :meth:`~Pattern.search`.
 
 
 .. versionchanged:: 3.7
@@ -1234,7 +1234,7 @@ To match this with a regular expression, one could use backreferences as such:
    "<Match: '354aa', groups=('a',)>"
 
 To find out what card the pair consists of, one could use the
-:meth:`~match.group` method of the match object in the following manner:
+:meth:`~Match.group` method of the match object in the following manner:
 
 .. doctest::
 
@@ -1314,7 +1314,7 @@ For example::
 
    >>> re.match("c", "abcdef")    # No match
    >>> re.search("c", "abcdef")   # Match
-   <_sre.SRE_Match object; span=(2, 3), match='c'>
+   <re.Match object; span=(2, 3), match='c'>
 
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
@@ -1322,7 +1322,7 @@ restrict the match at the beginning of the string::
    >>> re.match("c", "abcdef")    # No match
    >>> re.search("^c", "abcdef")  # No match
    >>> re.search("^a", "abcdef")  # Match
-   <_sre.SRE_Match object; span=(0, 1), match='a'>
+   <re.Match object; span=(0, 1), match='a'>
 
 Note however that in :const:`MULTILINE` mode :func:`match` only matches at the
 beginning of the string, whereas using :func:`search` with a regular expression
@@ -1330,7 +1330,7 @@ beginning with ``'^'`` will match at the beginning of each line.
 
    >>> re.match('X', 'A\nB\nX', re.MULTILINE)  # No match
    >>> re.search('^X', 'A\nB\nX', re.MULTILINE)  # Match
-   <_sre.SRE_Match object; span=(4, 5), match='X'>
+   <re.Match object; span=(4, 5), match='X'>
 
 
 Making a Phonebook
@@ -1449,9 +1449,9 @@ another one to escape it.  For example, the two following lines of code are
 functionally identical:
 
    >>> re.match(r"\W(.)\1\W", " ff ")
-   <_sre.SRE_Match object; span=(0, 4), match=' ff '>
+   <re.Match object; span=(0, 4), match=' ff '>
    >>> re.match("\\W(.)\\1\\W", " ff ")
-   <_sre.SRE_Match object; span=(0, 4), match=' ff '>
+   <re.Match object; span=(0, 4), match=' ff '>
 
 When one wants to match a literal backslash, it must be escaped in the regular
 expression.  With raw string notation, this means ``r"\\"``.  Without raw string
@@ -1459,9 +1459,9 @@ notation, one must use ``"\\\\"``, making the following lines of code
 functionally identical:
 
    >>> re.match(r"\\", r"\\")
-   <_sre.SRE_Match object; span=(0, 1), match='\\'>
+   <re.Match object; span=(0, 1), match='\\'>
    >>> re.match("\\\\", r"\\")
-   <_sre.SRE_Match object; span=(0, 1), match='\\'>
+   <re.Match object; span=(0, 1), match='\\'>
 
 
 Writing a Tokenizer
