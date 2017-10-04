@@ -193,6 +193,12 @@ README.rst is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
 
+ensurepip
+---------
+
+The ``wheel`` package will now be installed by :mod:`ensurepip`. Enabling pip's
+wheel cache by default.
+
 http.server
 -----------
 

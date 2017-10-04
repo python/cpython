@@ -12,9 +12,12 @@ _SETUPTOOLS_VERSION = "28.8.0"
 
 _PIP_VERSION = "9.0.1"
 
+_WHEEL_VERSION = "0.30.0"
+
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION),
     ("pip", _PIP_VERSION),
+    ("wheel", _WHEEL_VERSION),
 ]
 
 
