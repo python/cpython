@@ -580,9 +580,9 @@ class Formatter(object):
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
         s = self.formatMessage(record)
-        if (isinstance(record.exc_info, tuple) and all(record.exc_info)):
-            # Intercept 'Boolean' - causes subscript error, and 
-            # empty Tuples which emit 'NoneType None' into message.
+        if (isinstance(record.exc_info, tuple) and record.exc_info[0]):
+            # Intercept 'Boolean' - causes subscript error if passed to formatException,
+            # and empty Tuples which emit 'NoneType None' into message.
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
             if not record.exc_text:
