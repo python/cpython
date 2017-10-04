@@ -62,6 +62,11 @@ _equivalences = (
 _ignorecase_fixes = {i: tuple(j for j in t if i != j)
                      for t in _equivalences for i in t}
 
+def _combine_flags(flags, add_flags, del_flags, MODE_FLAGS=sre_parse.MODE_FLAGS):
+    if add_flags & MODE_FLAGS:
+        flags &= ~MODE_FLAGS
+    return (flags | add_flags) & ~del_flags
+
 def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
     emit = code.append
@@ -158,8 +163,8 @@ def _compile(code, pattern, flags):
             if group:
                 emit(MARK)
                 emit((group-1)*2)
-            # _compile_info(code, p, (flags | add_flags) & ~del_flags)
-            _compile(code, p, (flags | add_flags) & ~del_flags)
+            # _compile_info(code, p, _combine_flags(flags, add_flags, del_flags))
+            _compile(code, p, _combine_flags(flags, add_flags, del_flags))
             if group:
                 emit(MARK)
                 emit((group-1)*2+1)
@@ -465,7 +470,7 @@ def _get_literal_prefix(pattern, flags):
             prefixappend(av)
         elif op is SUBPATTERN:
             group, add_flags, del_flags, p = av
-            flags1 = (flags | add_flags) & ~del_flags
+            flags1 = _combine_flags(flags, add_flags, del_flags)
             if flags1 & SRE_FLAG_IGNORECASE and flags1 & SRE_FLAG_LOCALE:
                 break
             prefix1, prefix_skip1, got_all = _get_literal_prefix(p, flags1)
@@ -491,7 +496,7 @@ def _get_charset_prefix(pattern, flags):
         if op is not SUBPATTERN:
             break
         group, add_flags, del_flags, pattern = av
-        flags = (flags | add_flags) & ~del_flags
+        flags = _combine_flags(flags, add_flags, del_flags)
         if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
             return None
 

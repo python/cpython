@@ -1626,10 +1626,10 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_NOT_LITERAL:
         case SRE_OP_LITERAL_IGNORE:
         case SRE_OP_NOT_LITERAL_IGNORE:
-        case SRE_OP_LITERAL_LOC_IGNORE:
-        case SRE_OP_NOT_LITERAL_LOC_IGNORE:
         case SRE_OP_LITERAL_UNI_IGNORE:
         case SRE_OP_NOT_LITERAL_UNI_IGNORE:
+        case SRE_OP_LITERAL_LOC_IGNORE:
+        case SRE_OP_NOT_LITERAL_LOC_IGNORE:
             GET_ARG;
             /* The arg is just a character, nothing to check */
             break;
@@ -1667,8 +1667,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 
         case SRE_OP_IN:
         case SRE_OP_IN_IGNORE:
-        case SRE_OP_IN_LOC_IGNORE:
         case SRE_OP_IN_UNI_IGNORE:
+        case SRE_OP_IN_LOC_IGNORE:
             GET_SKIP;
             /* Stop 1 before the end; we check the FAILURE below */
             if (!_validate_charset(code, code+skip-2))
@@ -1804,8 +1804,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 
         case SRE_OP_GROUPREF:
         case SRE_OP_GROUPREF_IGNORE:
-        case SRE_OP_GROUPREF_LOC_IGNORE:
         case SRE_OP_GROUPREF_UNI_IGNORE:
+        case SRE_OP_GROUPREF_LOC_IGNORE:
             GET_ARG;
             if (arg >= (size_t)groups)
                 FAIL;
