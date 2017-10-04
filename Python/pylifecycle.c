@@ -1825,16 +1825,46 @@ _Py_FatalError_PrintExc(int fd)
 
 /* Print fatal error message and abort */
 
+#ifdef MS_WINDOWS
+static void
+fatal_output_debug(const char *msg)
+{
+    /* buffer of 256 bytes allocated on the stack */
+    WCHAR buffer[256 / sizeof(WCHAR)];
+    size_t buflen = Py_ARRAY_LENGTH(buffer) - 1;
+    size_t msglen;
+
+    OutputDebugStringW(L"Fatal Python error: ");
+
+    msglen = strlen(msg);
+    while (msglen) {
+        size_t i;
+
+        if (buflen > msglen) {
+            buflen = msglen;
+        }
+
+        /* Convert the message to wchar_t. This uses a simple one-to-one
+           conversion, assuming that the this error message actually uses
+           ASCII only. If this ceases to be true, we will have to convert. */
+        for (i=0; i < buflen; ++i) {
+            buffer[i] = msg[i];
+        }
+        buffer[i] = L'\0';
+        OutputDebugStringW(buffer);
+
+        msg += buflen;
+        msglen -= buflen;
+    }
+    OutputDebugStringW(L"\n");
+}
+#endif
+
 void
 Py_FatalError(const char *msg)
 {
     const int fd = fileno(stderr);
     static int reentrant = 0;
-#ifdef MS_WINDOWS
-    size_t len;
-    WCHAR* buffer;
-    size_t i;
-#endif
 
     if (reentrant) {
         /* Py_FatalError() caused a second fatal error.
@@ -1848,12 +1878,14 @@ Py_FatalError(const char *msg)
 
     /* Print the exception (if an exception is set) with its traceback,
      * or display the current Python stack. */
-    if (!_Py_FatalError_PrintExc(fd))
+    if (!_Py_FatalError_PrintExc(fd)) {
         _Py_FatalError_DumpTracebacks(fd);
+    }
 
-    /* The main purpose of faulthandler is to display the traceback. We already
-     * did our best to display it. So faulthandler can now be disabled.
-     * (Don't trigger it on abort().) */
+    /* The main purpose of faulthandler is to display the traceback.
+       This function already did its best to display a traceback.
+       Disable faulthandler to prevent writing a second traceback
+       on abort(). */
     _PyFaulthandler_Fini();
 
     /* Check if the current Python thread hold the GIL */
@@ -1863,17 +1895,7 @@ Py_FatalError(const char *msg)
     }
 
 #ifdef MS_WINDOWS
-    len = strlen(msg);
-
-    /* Convert the message to wchar_t. This uses a simple one-to-one
-    conversion, assuming that the this error message actually uses ASCII
-    only. If this ceases to be true, we will have to convert. */
-    buffer = alloca( (len+1) * (sizeof *buffer));
-    for( i=0; i<=len; ++i)
-        buffer[i] = msg[i];
-    OutputDebugStringW(L"Fatal Python error: ");
-    OutputDebugStringW(buffer);
-    OutputDebugStringW(L"\n");
+    fatal_output_debug(msg);
 #endif /* MS_WINDOWS */
 
 exit:
