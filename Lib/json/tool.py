@@ -47,7 +47,7 @@ def main():
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
     parser.add_argument('--jsonlines', action='store_true', default=False,
-                        help='Parse output using the jsonlines format.')
+                        help='parse input using the jsonlines format')
     options = parser.parse_args()
 
     infile = options.infile or sys.stdin
