@@ -10559,9 +10559,9 @@ check_ShellExecute()
     /* only recheck */
     if (-1 == has_ShellExecute) {
         Py_BEGIN_ALLOW_THREADS
-        /* Security note: this call is not vulnerable to "DLL injection".
-           SHELL32 is part of "KnownDLL" and so Windows always load
-           the system SHELL32.DLL, even if they are other SHELL32.DLL
+        /* Security note: this call is not vulnerable to "DLL hijacking".
+           SHELL32 is part of "KnownDLLs" and so Windows always load
+           the system SHELL32.DLL, even if there is another SHELL32.DLL
            in the DLL search path. */
         hShell32 = LoadLibraryW(L"SHELL32");
         Py_END_ALLOW_THREADS
