@@ -203,7 +203,8 @@ def _checkLevel(level):
             rv = int(level)
     except (TypeError, ValueError, KeyError) as err:
         if raiseExceptions:
-            raise Exception('Unknown logging::level (%r)' % level) from err
+            # test harness (../test/test_logging) expects 'TypeError'
+            raise TypeError('Invalid logging::level (%r)' % level) from err
     except Exception:
         pass
 
