@@ -97,7 +97,7 @@ PySys_SetObject(const char *name, PyObject *v)
 }
 
 static PyObject *
-sys_breakpointhook(PyObject *self, PyObject *args, PyObject *keywords)
+sys_breakpointhook(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
     char *envar = Py_GETENV("PYTHONBREAKPOINT");
@@ -147,7 +147,7 @@ sys_breakpointhook(PyObject *self, PyObject *args, PyObject *keywords)
     if (hook == NULL) {
         goto error;
     }
-    PyObject *retval = PyObject_Call(hook, args, keywords);
+    PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 
@@ -157,18 +157,18 @@ sys_breakpointhook(PyObject *self, PyObject *args, PyObject *keywords)
     int status = PyErr_WarnFormat(
         PyExc_RuntimeWarning, 0,
         "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
-    if (status == 0) {
-        /* The warning was (probably) issued. */
-        Py_RETURN_NONE;
+    if (status < 0) {
+        /* Printing the warning raised an exception. */
+        return NULL;
     }
-    /* Printing the warning raised an exception. */
-    return NULL;
+    /* The warning was (probably) issued. */
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(breakpointhook_doc,
-"breakpointhook()\n"
+"breakpointhook(*args, **kws)\n"
 "\n"
-"Called when the built-in breakpoint() function is called.\n"
+"This hook function is called by built-in breakpoint().\n"
 );
 
 /* Write repr(o) to sys.stdout using sys.stdout.encoding and 'backslashreplace'
@@ -1441,7 +1441,7 @@ sys_getandroidapilevel(PyObject *self)
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     {"breakpointhook",  (PyCFunction)sys_breakpointhook,
-     METH_VARARGS | METH_KEYWORDS, breakpointhook_doc},
+     METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     {"callstats", (PyCFunction)sys_callstats, METH_NOARGS,
      callstats_doc},
     {"_clear_type_cache",       sys_clear_type_cache,     METH_NOARGS,

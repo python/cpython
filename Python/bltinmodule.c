@@ -423,7 +423,7 @@ builtin_callable(PyObject *module, PyObject *obj)
 }
 
 static PyObject *
-builtin_breakpoint(PyObject *self, PyObject *args, PyObject *keywords)
+builtin_breakpoint(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *keywords)
 {
     PyObject *hook = PySys_GetObject("breakpointhook");
 
@@ -432,7 +432,7 @@ builtin_breakpoint(PyObject *self, PyObject *args, PyObject *keywords)
         return NULL;
     }
     Py_INCREF(hook);
-    PyObject *retval = PyObject_Call(hook, args, keywords);
+    PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 }
@@ -2649,7 +2649,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
-    {"breakpoint",      (PyCFunction)builtin_breakpoint, METH_VARARGS | METH_KEYWORDS, breakpoint_doc},
+    {"breakpoint",      (PyCFunction)builtin_breakpoint, METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
     BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
