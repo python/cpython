@@ -4023,11 +4023,11 @@ class LoggerTest(BaseTest):
 
     def test_log_invalid_level_with_raise(self):
         with support.swap_attr(logging, 'raiseExceptions', True):
-            self.assertRaises(TypeError, self.logger.log, '10', 'test message')
+            self.assertRaises(TypeError, self.logger.log, 'xx', 'test message')
 
     def test_log_invalid_level_no_raise(self):
         with support.swap_attr(logging, 'raiseExceptions', False):
-            self.logger.log('10', 'test message')  # no exception happens
+            self.logger.log('xx', 'test message')  # no exception happens
 
     def test_find_caller_with_stack_info(self):
         called = []
