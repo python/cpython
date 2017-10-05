@@ -1568,18 +1568,21 @@ class TestBreakpoint(unittest.TestCase):
         sys.breakpointhook = my_breakpointhook
         self.assertRaises(TypeError, breakpoint, 1, 2, 3, four=4, five=5)
 
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
     def test_envar_good_path_builtin(self):
         self.env['PYTHONBREAKPOINT'] = 'int'
         with patch('builtins.int') as mock:
             breakpoint('7')
             mock.assert_called_once_with('7')
 
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
     def test_envar_good_path_other(self):
         self.env['PYTHONBREAKPOINT'] = 'sys.exit'
         with patch('sys.exit') as mock:
             breakpoint()
             mock.assert_called_once_with()
 
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
     def test_envar_good_path_noop_0(self):
         self.env['PYTHONBREAKPOINT'] = '0'
         with patch('pdb.set_trace') as mock:
@@ -1593,6 +1596,7 @@ class TestBreakpoint(unittest.TestCase):
             breakpoint()
             mock.assert_called_once_with()
 
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
     def test_envar_unimportable(self):
         for envar in (
                 '.', '..', '.foo', 'foo.', '.int', 'int.'
