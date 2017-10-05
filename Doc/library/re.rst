@@ -201,13 +201,15 @@ The special characters are:
      place it at the beginning of the set.  For example, both ``[()[\]{}]`` and
      ``[]()[{}]`` will both match a parenthesis.
 
-   * The support of nested sets and set operations can be added in future.
-     But that syntax is treated differently in the older versions of Python.
-     For avoiding a breakage a :exc:`FutureWarning` will be raised in the
-     meanwhile in ambiguous cases.
-     That incluse sets starting with a literal ``'['`` or containing literal
-     character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  For
-     avoiding a warning escape them with a backslash.
+   * Support of nested sets and set operations as in `Unicode Technical
+     Standard #18`_ might be added in the future.  This would change the
+     syntax, so to facilitate this change a :exc:`FutureWarning` will be raised
+     in ambiguous cases for the time being.
+     That include sets starting with a literal ``'['`` or containing literal
+     character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
+     avoid a warning escape them with a backslash.
+
+   .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 
    .. versionchanged:: 3.7
       :exc:`FutureWarning` is raised if a character set contains constructs
