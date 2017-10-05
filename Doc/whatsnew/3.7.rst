@@ -107,6 +107,25 @@ locale remains active when the core interpreter is initialized.
     :pep:`538` -- Coercing the legacy C locale to a UTF-8 based locale
        PEP written and implemented by Nick Coghlan.
 
+.. _whatsnew37-pep553:
+
+PEP 553: Built-in breakpoint()
+------------------------------
+
+:pep:`553` describes a new built-in called ``breakpoint()`` which makes it
+easy and consistent to enter the Python debugger.  Built-in ``breakpoint()``
+calls ``sys.breakpointhook()``.  By default, this latter imports ``pdb`` and
+then calls ``pdb.set_trace()``, but by binding ``sys.breakpointhook()`` to the
+function of your choosing, ``breakpoint()`` can enter any debugger.  Or, the
+environment variable :envvar:`PYTHONBREAKPOINT` can be set to the callable of
+your debugger of choice.  Set ``PYTHONBREAKPOINT=0`` to completely disable
+built-in ``breakpoint()``.
+
+.. seealso::
+
+    :pep:`553` -- Built-in breakpoint()
+      PEP written and implemented by Barry Warsaw
+
 
 Other Language Changes
 ======================
