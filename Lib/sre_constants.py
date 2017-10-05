@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20170530
+MAGIC = 20171005
 
 from _sre import MAXREPEAT, MAXGROUPS
 
