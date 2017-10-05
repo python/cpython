@@ -43,11 +43,21 @@ class CryptTestCase(unittest.TestCase):
                         'requires support of Blowfish')
     def test_log_rounds(self):
         self.assertEqual(len(crypt._saltchars), 64)
-        for log_rounds in range(4, 13):
+        for log_rounds in range(4, 11):
             salt = crypt.mksalt(crypt.METHOD_BLF, log_rounds=log_rounds)
-            self.assertTrue(salt)
             self.assertIn('$%02d$' % log_rounds, salt)
             self.assertIn(len(salt) - crypt.METHOD_BLF.salt_chars, {6, 7})
+            cr = crypt.crypt('mypassword', salt)
+            self.assertTrue(cr)
+            cr2 = crypt.crypt('mypassword', cr)
+            self.assertEqual(cr2, cr)
+
+    @unittest.skipUnless(crypt.METHOD_BLF in crypt.methods,
+                        'requires support of Blowfish')
+    def test_invalid_log_rounds(self):
+        for log_rounds in (1, -1, 999):
+            salt = crypt.mksalt(crypt.METHOD_BLF, log_rounds=log_rounds)
+            self.assertIsNone(crypt.crypt('mypassword', salt))
 
 
 if __name__ == "__main__":
