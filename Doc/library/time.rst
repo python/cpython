@@ -162,6 +162,22 @@ The module defines the following functions and data items:
       :func:`perf_counter` or :func:`process_time` instead, depending on your
       requirements, to have a well defined behaviour.
 
+.. function:: pthread_getcpuclockid(thread_id)
+
+   Return the *clk_id* of the thread-specific CPU-time clock for the specified *thread_id*.
+
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
+   attribute of :class:`threading.Thread` objects to get a suitable value
+   for *thread_id*.
+
+   .. warning::
+      Passing an invalid or expired *thread_id* may result in
+      undefined behavior, such as segmentation fault.
+
+   Availability: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
+   further information)
+
+   .. versionadded:: 3.7
 
 .. function:: clock_getres(clk_id)
 
