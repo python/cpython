@@ -1460,53 +1460,25 @@ static void *
 _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
-    uint8_t *q = (uint8_t *)p, *oldq;
-    uint8_t *tail;
-    size_t total;       /* nbytes + 4*SST */
-    size_t original_nbytes;
-    int i;
+    void *q;
+    size_t old_size;
 
-    if (p == NULL)
-        return _PyMem_DebugRawAlloc(0, ctx, nbytes);
-
-    _PyMem_DebugCheckAddress(api->api_id, p);
-    bumpserialno();
-    original_nbytes = read_size_t(q - 2*SST);
-    total = nbytes + 4*SST;
-    if (nbytes > PY_SSIZE_T_MAX - 4*SST)
-        /* overflow:  can't represent total as a Py_ssize_t */
-        return NULL;
-
-    /* Resize and add decorations. We may get a new pointer here, in which
-     * case we didn't get the chance to mark the old memory with DEADBYTE,
-     * but we live with that.
-     */
-    oldq = q;
-    q = (uint8_t *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
-    if (q == NULL)
-        return NULL;
-
-    if (q == oldq && nbytes < original_nbytes) {
-        /* shrinking:  mark old extra memory dead */
-        memset(q + nbytes, DEADBYTE, original_nbytes - nbytes);
+    if (p != NULL) {
+        uint8_t *p2 = (uint8_t *)p - 2*SST;  /* address returned from malloc */
+        _PyMem_DebugCheckAddress(api->api_id, p);
+        old_size = read_size_t(p2);
     }
 
-    write_size_t(q, nbytes);
-    assert(q[SST] == (uint8_t)api->api_id);
-    for (i = 1; i < SST; ++i)
-        assert(q[SST + i] == FORBIDDENBYTE);
-    q += 2*SST;
-
-    tail = q + nbytes;
-    memset(tail, FORBIDDENBYTE, SST);
-    write_size_t(tail + SST, _PyRuntime.mem.serialno);
-
-    if (nbytes > original_nbytes) {
-        /* growing:  mark new extra memory clean */
-        memset(q + original_nbytes, CLEANBYTE,
-               nbytes - original_nbytes);
+    q = _PyMem_DebugRawAlloc(0, ctx, nbytes);
+    if (q == NULL) {
+        return NULL;
     }
 
+    if (p != NULL) {
+        size_t copied_bytes = Py_MIN(nbytes, old_size);
+        memcpy(q, p, copied_bytes);
+        _PyMem_DebugRawFree(ctx, p);
+    }
     return q;
 }
 

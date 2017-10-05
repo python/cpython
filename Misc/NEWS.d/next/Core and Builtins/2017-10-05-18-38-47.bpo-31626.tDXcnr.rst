@@ -1,0 +1,18 @@
+Rewrite _PyMem_DebugRawRealloc().
+
+Previously, _PyMem_DebugRawRealloc() expected that the old memory
+block remains readable and unchanged after realloc(). This assumption
+is wrong on OpenBSD.
+
+Rewrite _PyMem_DebugRawRealloc() as malloc()+free() rather than
+realloc(). Debug hooks are reused. The old memory block remains valid
+after the new memory block was allocated, so bytes can be safely
+copied in a portable way.
+
+The drawback is that _PyMem_DebugRawRealloc() now allocates a new
+memory block while the old memory block remains allocated, until the
+old memory block is freed, so the peak memory usage can be the double
+in the worst case.
+
+The second drawback is that the system realloc() is no more used in
+debug mode.
