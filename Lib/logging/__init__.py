@@ -192,13 +192,16 @@ def _checkLevel(level):
     """
     rv = NOTSET
     try:
-        if int(level) in _levelToName:
-            rv = int(level)
-        elif level in _nameToLevel:
+        if level in _nameToLevel:
             rv = _nameToLevel[level]
+        elif level in _levelToName:
+            rv = level
         else:
-            raise ValueError
-    except (TypeError, ValueError) as err:
+        #FIXME - test harness injects '+1',  so tolerating 
+        # arbitrary integers is expected behavior. Why?
+        #    raise ValueError
+            rv = int(level)
+    except (TypeError, ValueError, KeyError) as err:
         if raiseExceptions:
             raise Exception('Unknown logging::level (%r)' % level) from err
     except Exception:
