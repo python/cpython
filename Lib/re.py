@@ -277,9 +277,10 @@ def _compile(pattern, flags):
     # internal: compile pattern
     if isinstance(flags, RegexFlag):
         flags = flags.value
-    cache_key = (type(pattern), pattern, type(flags), flags)
+    elif not isinstance(flags, int):
+        raise TypeError(f"flags must be int or RegexFlag, got {flags!r}")
     try:
-        return _cache[cache_key]
+        return _cache[type(pattern), pattern, flags]
     except KeyError:
         pass
     if isinstance(pattern, Pattern):
@@ -296,7 +297,7 @@ def _compile(pattern, flags):
                 _cache.popitem(last=False)
             except KeyError:
                 pass
-        _cache[cache_key] = p
+        _cache[type(pattern), pattern, flags] = p
     return p
 
 @functools.lru_cache(_MAXCACHE)
