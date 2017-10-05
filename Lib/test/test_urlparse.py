@@ -723,10 +723,6 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(urllib.parse.urlparse(b"http://www.python.org:80"),
                 (b'http',b'www.python.org:80',b'',b'',b'',b''))
 
-    def test_usingsys(self):
-        # Issue 3314: sys module is used in the error
-        self.assertRaises(TypeError, urllib.parse.urlencode, "foo")
-
     def test_anyscheme(self):
         # Issue 7904: s3://foo.com/stuff has netloc "foo.com".
         self.assertEqual(urllib.parse.urlparse("s3://foo.com/stuff"),
@@ -901,6 +897,39 @@ class UrlParseTestCase(unittest.TestCase):
 
         result = urllib.parse.urlencode({'a': Trivial()}, True)
         self.assertEqual(result, 'a=trivial')
+
+    def test_urlencode_generators(self):
+        def gen():
+            yield from range(2)
+
+        result = urllib.parse.urlencode({'a': gen()}, True)
+        self.assertEqual(result, 'a=0&a=1')
+
+    def test_urlencode_iterable_of_iterable_pairs(self):
+        def pair(start):
+            yield ['key', range(start, start+2)]
+
+        def elements():
+            for i in [0, 2]:
+                yield from pair(i)
+
+        result = urllib.parse.urlencode(elements(), doseq=True)
+        self.assertEqual(result, 'key=0&key=1&key=2&key=3')
+
+        result = urllib.parse.urlencode(elements(), doseq=False)
+        # str is called on the range, resulting in values like 'range(0, 2)'
+        self.assertEqual(result, 'key=range%280%2C+2%29&key=range%282%2C+4%29')
+
+    def test_urlencode_two_chars(self):
+        """Do not interpret strings of length 2 as key value pair."""
+        self.assertRaises(TypeError, urllib.parse.urlencode, ['ab'], doseq=True)
+        self.assertRaises(TypeError, urllib.parse.urlencode, ['ab'], doseq=False)
+
+    def test_urlencode_sequence_of_non_pairs(self):
+        self.assertRaises(ValueError, urllib.parse.urlencode, [(1,)], doseq=True)
+        self.assertRaises(ValueError, urllib.parse.urlencode, [(1,)], doseq=False)
+        self.assertRaises(ValueError, urllib.parse.urlencode, [(1, 2, 3)], doseq=True)
+        self.assertRaises(ValueError, urllib.parse.urlencode, [(1, 2, 3)], doseq=False)
 
     def test_urlencode_quote_via(self):
         result = urllib.parse.urlencode({'a': 'some value'})

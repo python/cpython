@@ -599,7 +599,7 @@ task isn't already covered by the URL parsing functions above.
 .. function:: urlencode(query, doseq=False, safe='', encoding=None, \
                         errors=None, quote_via=quote_plus)
 
-   Convert a mapping object or a sequence of two-element tuples, which may
+   Convert a mapping object or an iterable of two-element iterables, which may
    contain :class:`str` or :class:`bytes` objects, to a percent-encoded ASCII
    text string.  If the resultant string is to be used as a *data* for POST
    operation with the :func:`~urllib.request.urlopen` function, then
@@ -616,13 +616,14 @@ task isn't already covered by the URL parsing functions above.
    and not encode '/' characters.  For maximum control of what is quoted, use
    ``quote`` and specify a value for *safe*.
 
-   When a sequence of two-element tuples is used as the *query*
-   argument, the first element of each tuple is a key and the second is a
-   value. The value element in itself can be a sequence and in that case, if
-   the optional parameter *doseq* is evaluates to ``True``, individual
-   ``key=value`` pairs separated by ``'&'`` are generated for each element of
-   the value sequence for the key.  The order of parameters in the encoded
-   string will match the order of parameter tuples in the sequence.
+   When an iterable of two-element iterables is used as the *query* argument,
+   the first element of each tuple is a key and the second is a value. The
+   value element is interpreted as a string when the *doseq* parameter
+   evaluates to ``False``. When it evaluates to ``True`` and value is an
+   iterable, then individual ``key=value`` pairs separated by ``'&'`` are
+   generated for each element of the value sequence for the key. The order of
+   parameters in the encoded string will match the order of parameter tuples in
+   the sequence.
 
    The *safe*, *encoding*, and *errors* parameters are passed down to
    *quote_via* (the *encoding* and *errors* parameters are only passed
@@ -639,6 +640,9 @@ task isn't already covered by the URL parsing functions above.
 
    .. versionadded:: 3.5
       *quote_via* parameter.
+
+   .. versionchanged:: 3.8
+      *doseq=True* iterates on generators and iterators.
 
 
 .. seealso::
