@@ -133,5 +133,5 @@ the :mod:`tokenize` module.
    Added :data:`COMMENT`, :data:`NL` and :data:`ENCODING` tokens.
 
 .. versionchanged:: 3.7
-   Removed :data:`AWAIT` and :data:`ASYNC` tokens again. "async" and
-   "await" are now tokenized as :data:`NAME` tokens.
+   Removed :data:`AWAIT` and :data:`ASYNC` tokens. "async" and "await" are
+   now tokenized as :data:`NAME` tokens.
