@@ -75,6 +75,10 @@ which relays any information about the UUID's safety, using this enumeration:
    ``12345678-1234-5678-1234-567812345678`` where the 32 hexadecimal digits
    represent the UUID.
 
+   .. versionchanged:: 3.7
+      *bytes* and *bytes_le* parameters now accept any bytes-like objects of 16
+      bytes, bytearray and memoryview for example, not only :class:`bytes`.
+
 :class:`UUID` instances have these read-only attributes:
 
 .. attribute:: UUID.bytes
