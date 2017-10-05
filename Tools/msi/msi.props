@@ -48,7 +48,7 @@
     </ItemGroup>
 
     <PropertyGroup>
-        <IntermediateOutputPath>$(Py_IntDir)\$(Configuration)_$(Platform)_Setup\$(OutputName)</IntermediateOutputPath>
+        <IntermediateOutputPath>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\msi_$(OutputName)</IntermediateOutputPath>
         <IntermediateOutputPath Condition="'$(OutputSuffix)' != ''">$(IntermediateOutputPath)_$(OutputSuffix)</IntermediateOutputPath>
         <OutputPath Condition="'$(OutputPath)' == ''">$(BuildPath)</OutputPath>
         <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
