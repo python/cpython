@@ -22,7 +22,7 @@ from operator import neg
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink)
 from test.support.script_helper import assert_python_ok
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 try:
     import pty, signal
 except ImportError:
@@ -1539,35 +1539,28 @@ class TestBreakpoint(unittest.TestCase):
         mock.assert_called_once()
 
     def test_breakpoint_with_breakpointhook_set(self):
-        call_status = 'Not called'
-        def my_breakpointhook():
-            nonlocal call_status
-            call_status = 'Called'
+        my_breakpointhook = MagicMock()
         sys.breakpointhook = my_breakpointhook
         breakpoint()
-        self.assertEqual(call_status, 'Called')
+        my_breakpointhook.assert_called_once_with()
 
     def test_breakpoint_with_breakpointhook_reset(self):
-        call_status = 'Not called'
-        def my_breakpointhook():
-            nonlocal call_status
-            call_status = 'Called'
+        my_breakpointhook = MagicMock()
         sys.breakpointhook = my_breakpointhook
         breakpoint()
-        self.assertEqual(call_status, 'Called')
+        my_breakpointhook.assert_called_once_with()
+        # Reset the hook and it will not be called again.
         sys.breakpointhook = sys.__breakpointhook__
         with patch('pdb.set_trace') as mock:
             breakpoint()
-            mock.assert_called_once()
+            mock.assert_called_once_with()
+        my_breakpointhook.assert_called_once_with()
 
     def test_breakpoint_with_args_and_keywords(self):
-        call_args = None
-        def my_breakpointhook(*args, **kws):
-            nonlocal call_args
-            call_args = args, kws
+        my_breakpointhook = MagicMock()
         sys.breakpointhook = my_breakpointhook
         breakpoint(1, 2, 3, four=4, five=5)
-        self.assertEqual(call_args, ((1, 2, 3), dict(four=4, five=5)))
+        my_breakpointhook.assert_called_once_with(1, 2, 3, four=4, five=5)
 
     def test_breakpoint_with_passthru_error(self):
         def my_breakpointhook():
