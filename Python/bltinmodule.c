@@ -440,9 +440,8 @@ builtin_breakpoint(PyObject *self, PyObject *args, PyObject *keywords)
 PyDoc_STRVAR(breakpoint_doc,
 "breakpoint(*args, **kws)\n\
 \n\
-Call the sys.breakpointhook() function, passing *args and **kws\n\
-through unchanged.  sys.breakpointhook() must accept the arguments\n\
-passed.\n\
+Call sys.breakpointhook(*args, **kws).  sys.breakpointhook() must accept\n\
+whatever arguments are passed.\n\
 \n\
 By default, this drops you into the pdb debugger.");
 

@@ -99,7 +99,8 @@ PySys_SetObject(const char *name, PyObject *v)
 static PyObject *
 sys_breakpointhook(PyObject *self, PyObject *args, PyObject *keywords)
 {
-    char *envar = getenv("PYTHONBREAKPOINT");
+    assert(!PyErr_Occurred());
+    char *envar = Py_GETENV("PYTHONBREAKPOINT");
 
     if (envar == NULL || strlen(envar) == 0) {
         envar = "pdb.set_trace";
