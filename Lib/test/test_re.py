@@ -468,7 +468,7 @@ class ReTests(unittest.TestCase):
             m[(0,)]
         with self.assertRaisesRegex(IndexError, 'no such group'):
             m[(0, 1)]
-        with self.assertRaisesRegex(KeyError, 'a2'):
+        with self.assertRaisesRegex(IndexError, 'no such group'):
             'a1={a2}'.format_map(m)
 
         m = pat.match('ac')
@@ -1419,16 +1419,30 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match(p, lower_char))
         self.assertEqual(
             str(warns.warnings[0].message),
-            'Flags not at the start of the expression %s' % p
+            'Flags not at the start of the expression %r' % p
         )
+        self.assertEqual(warns.warnings[0].filename, __file__)
 
         p = upper_char + '(?i)%s' % ('.?' * 100)
         with self.assertWarns(DeprecationWarning) as warns:
             self.assertTrue(re.match(p, lower_char))
         self.assertEqual(
             str(warns.warnings[0].message),
-            'Flags not at the start of the expression %s (truncated)' % p[:20]
+            'Flags not at the start of the expression %r (truncated)' % p[:20]
         )
+        self.assertEqual(warns.warnings[0].filename, __file__)
+
+        # bpo-30605: Compiling a bytes instance regex was throwing a BytesWarning
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', BytesWarning)
+            p = b'A(?i)'
+            with self.assertWarns(DeprecationWarning) as warns:
+                self.assertTrue(re.match(p, b'a'))
+            self.assertEqual(
+                str(warns.warnings[0].message),
+                'Flags not at the start of the expression %r' % p
+            )
+            self.assertEqual(warns.warnings[0].filename, __file__)
 
         with self.assertWarns(DeprecationWarning):
             self.assertTrue(re.match('(?s).(?i)' + upper_char, '\n' + lower_char))
@@ -1440,14 +1454,23 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match('^(?i)' + upper_char, lower_char))
         with self.assertWarns(DeprecationWarning):
             self.assertTrue(re.match('$|(?i)' + upper_char, lower_char))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(DeprecationWarning) as warns:
             self.assertTrue(re.match('(?:(?i)' + upper_char + ')', lower_char))
-        with self.assertWarns(DeprecationWarning):
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as warns:
             self.assertTrue(re.fullmatch('(^)?(?(1)(?i)' + upper_char + ')',
                                          lower_char))
-        with self.assertWarns(DeprecationWarning):
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as warns:
             self.assertTrue(re.fullmatch('($)?(?(1)|(?i)' + upper_char + ')',
                                          lower_char))
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
 
 
     def test_dollar_matches_twice(self):
@@ -1624,9 +1647,9 @@ class ReTests(unittest.TestCase):
     def test_compile(self):
         # Test return value when given string and pattern as parameter
         pattern = re.compile('random pattern')
-        self.assertIsInstance(pattern, re._pattern_type)
+        self.assertIsInstance(pattern, re.Pattern)
         same_pattern = re.compile(pattern)
-        self.assertIsInstance(same_pattern, re._pattern_type)
+        self.assertIsInstance(same_pattern, re.Pattern)
         self.assertIs(same_pattern, pattern)
         # Test behaviour when not given a string or pattern as parameter
         self.assertRaises(TypeError, re.compile, 0)
@@ -1739,27 +1762,52 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(m.group(1), "")
                 self.assertEqual(m.group(2), "y")
 
+    @cpython_only
     def test_debug_flag(self):
         pat = r'(\.)(?:[ch]|py)(?(1)$|: )'
         with captured_stdout() as out:
             re.compile(pat, re.DEBUG)
+        self.maxDiff = None
         dump = '''\
 SUBPATTERN 1 0 0
   LITERAL 46
-SUBPATTERN None 0 0
-  BRANCH
-    IN
-      LITERAL 99
-      LITERAL 104
-  OR
-    LITERAL 112
-    LITERAL 121
-SUBPATTERN None 0 0
-  GROUPREF_EXISTS 1
-    AT AT_END
-  ELSE
-    LITERAL 58
-    LITERAL 32
+BRANCH
+  IN
+    LITERAL 99
+    LITERAL 104
+OR
+  LITERAL 112
+  LITERAL 121
+GROUPREF_EXISTS 1
+  AT AT_END
+ELSE
+  LITERAL 58
+  LITERAL 32
+
+ 0. INFO 8 0b1 2 5 (to 9)
+      prefix_skip 0
+      prefix [0x2e] ('.')
+      overlap [0]
+ 9: MARK 0
+11. LITERAL 0x2e ('.')
+13. MARK 1
+15. BRANCH 10 (to 26)
+17.   IN 6 (to 24)
+19.     LITERAL 0x63 ('c')
+21.     LITERAL 0x68 ('h')
+23.     FAILURE
+24:   JUMP 9 (to 34)
+26: branch 7 (to 33)
+27.   LITERAL 0x70 ('p')
+29.   LITERAL 0x79 ('y')
+31.   JUMP 2 (to 34)
+33: FAILURE
+34: GROUPREF_EXISTS 0 6 (to 41)
+37. AT END
+39. JUMP 5 (to 45)
+41: LITERAL 0x3a (':')
+43. LITERAL 0x20 (' ')
+45: SUCCESS
 '''
         self.assertEqual(out.getvalue(), dump)
         # Debug output is output again even a second time (bypassing

@@ -1,5 +1,7 @@
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 /* _functools module written and maintained
@@ -113,6 +115,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 partial_dealloc(partialobject *pto)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(pto);
     if (pto->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) pto);
@@ -1073,7 +1076,11 @@ lru_cache_clear_list(lru_list_elem *link)
 static void
 lru_cache_dealloc(lru_cache_object *obj)
 {
-    lru_list_elem *list = lru_cache_unlink_list(obj);
+    lru_list_elem *list;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(obj);
+
+    list = lru_cache_unlink_list(obj);
     Py_XDECREF(obj->maxsize_O);
     Py_XDECREF(obj->func);
     Py_XDECREF(obj->cache);
@@ -1277,7 +1284,7 @@ PyInit__functools(void)
 {
     int i;
     PyObject *m;
-    char *name;
+    const char *name;
     PyTypeObject *typelist[] = {
         &partial_type,
         &lru_cache_type,
@@ -1299,10 +1306,9 @@ PyInit__functools(void)
             Py_DECREF(m);
             return NULL;
         }
-        name = strchr(typelist[i]->tp_name, '.');
-        assert (name != NULL);
+        name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
+        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
     }
     return m;
 }

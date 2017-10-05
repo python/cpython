@@ -133,13 +133,11 @@ The following functions are deprecated:
    This function calls :func:`load` to do the actual work, see the documentation
    of :func:`that function <load>` for an explanation of the keyword arguments.
 
-   .. note::
-
-      Dict values in the result have a ``__getattr__`` method that defers
-      to ``__getitem_``. This means that you can use attribute access to
-      access items of these dictionaries.
-
    .. deprecated:: 3.4 Use :func:`load` instead.
+
+   .. versionchanged:: 3.7
+      Dict values in the result are now normal dicts.  You no longer can use
+      attribute access to access items of these dictionaries.
 
 
 .. function:: writePlist(rootObject, pathOrFile)
@@ -156,13 +154,11 @@ The following functions are deprecated:
 
    See :func:`load` for a description of the keyword arguments.
 
-   .. note::
-
-      Dict values in the result have a ``__getattr__`` method that defers
-      to ``__getitem_``. This means that you can use attribute access to
-      access items of these dictionaries.
-
    .. deprecated:: 3.4 Use :func:`loads` instead.
+
+   .. versionchanged:: 3.7
+      Dict values in the result are now normal dicts.  You no longer can use
+      attribute access to access items of these dictionaries.
 
 
 .. function:: writePlistToBytes(rootObject)
@@ -173,18 +169,6 @@ The following functions are deprecated:
 
 
 The following classes are available:
-
-.. class:: Dict([dict]):
-
-   Return an extended mapping object with the same value as dictionary
-   *dict*.
-
-   This class is a subclass of :class:`dict` where attribute access can
-   be used to access items. That is, ``aDict.key`` is the same as
-   ``aDict['key']`` for getting, setting and deleting items in the mapping.
-
-   .. deprecated:: 3.0
-
 
 .. class:: Data(data)
 

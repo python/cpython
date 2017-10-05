@@ -2,7 +2,7 @@
 @echo off
 
 set D=%~dp0
-set PCBUILD=%D%..\..\PCBuild\
+set PCBUILD=%D%..\..\PCbuild\
 
 set HOST=
 set USER=
@@ -22,9 +22,9 @@ if "%1" EQU "-t" (set TARGET=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--target" (set TARGET=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--dry-run" (set DRYRUN=true) && shift && goto CheckOpts
 if "%1" EQU "--skip-gpg" (set NOGPG=true) && shift && goto CheckOpts
-if "%1" EQU "--skip-purge" (set PURGE_OPTION=) && shift && godo CheckOpts
-if "%1" EQU "--skip-test" (set NOTEST=true) && shift && godo CheckOpts
-if "%1" EQU "-T" (set NOTEST=true) && shift && godo CheckOpts
+if "%1" EQU "--skip-purge" (set PURGE_OPTION=) && shift && goto CheckOpts
+if "%1" EQU "--skip-test" (set NOTEST=true) && shift && goto CheckOpts
+if "%1" EQU "-T" (set NOTEST=true) && shift && goto CheckOpts
 if "%1" NEQ "" echo Unexpected argument "%1" & exit /B 1
 
 if not defined PLINK where plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
@@ -49,16 +49,17 @@ if defined NOGPG (
     echo Found gpg2.exe at %GPG%
 )
 
-call "%PCBUILD%env.bat" > nul 2> nul
+call "%PCBUILD%find_msbuild.bat" %MSBUILD%
+if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 pushd "%D%"
-msbuild /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x86 %PURGE_OPTION%
-msbuild /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x64 /p:IncludeDoc=false %PURGE_OPTION%
+%MSBUILD% /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x86 %PURGE_OPTION%
+%MSBUILD% /v:m /nologo uploadrelease.proj /t:Upload /p:Platform=x64 /p:IncludeDoc=false %PURGE_OPTION%
 if not defined NOTEST (
-    msbuild /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x86
-    msbuild /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x64
+    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x86
+    %MSBUILD% /v:m /nologo uploadrelease.proj /t:Test /p:Platform=x64
 )
-msbuild /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x86
-msbuild /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x64 /p:IncludeDoc=false
+%MSBUILD% /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x86
+%MSBUILD% /v:m /nologo uploadrelease.proj /t:ShowHashes /p:Platform=x64 /p:IncludeDoc=false
 popd
 exit /B 0
 
