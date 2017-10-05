@@ -1535,12 +1535,18 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r'(?-x: a) b', ' ab', re.VERBOSE))
         self.assertIsNone(re.match(r'(?-x: a) b', 'ab', re.VERBOSE))
 
-        #self.checkPatternError(r'(?a:\w)',
-        #                       'bad inline flags: cannot turn on global flag', 3)
+        self.assertTrue(re.match(r'\w(?a:\W)\w', '\xe0\xe0\xe0'))
+        self.assertTrue(re.match(r'(?a:\W(?u:\w)\W)', '\xe0\xe0\xe0'))
+        self.assertTrue(re.match(r'\W(?u:\w)\W', '\xe0\xe0\xe0', re.ASCII))
+
         self.checkPatternError(r'(?a)(?-a:\w)',
                                "bad inline flags: cannot turn off flags 'a', 'u' and 'L'", 8)
         self.checkPatternError(r'(?i-i:a)',
                                'bad inline flags: flag turned on and off', 5)
+        self.checkPatternError(r'(?au:a)',
+                               "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
+        self.checkPatternError(br'(?aL:a)',
+                               "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
 
         self.checkPatternError(r'(?-', 'missing flag', 3)
         self.checkPatternError(r'(?-+', 'missing flag', 3)

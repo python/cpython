@@ -1,0 +1,2 @@
+Allow to set the flags re.ASCII, re.LOCALE and re.UNICODE for the part of a
+regular expression.

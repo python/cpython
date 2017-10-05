@@ -65,7 +65,7 @@ FLAGS = {
     "u": SRE_FLAG_UNICODE,
 }
 
-MODE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
+TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
 GLOBAL_FLAGS = SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE
 
 class Verbose(Exception):
@@ -832,7 +832,7 @@ def _parse_flags(source, state, char):
                     msg = "bad inline flags: cannot use 'u' flag with a bytes pattern"
                     raise source.error(msg)
             add_flags |= flag
-            if (flag & MODE_FLAGS) and (add_flags & MODE_FLAGS) != flag:
+            if (flag & TYPE_FLAGS) and (add_flags & TYPE_FLAGS) != flag:
                 msg = "bad inline flags: flags 'a', 'u' and 'L' are incompatible"
                 raise source.error(msg)
             char = sourceget()
@@ -857,7 +857,7 @@ def _parse_flags(source, state, char):
             raise source.error(msg, len(char))
         while True:
             flag = FLAGS[char]
-            if flag & MODE_FLAGS:
+            if flag & TYPE_FLAGS:
                 msg = "bad inline flags: cannot turn off flags 'a', 'u' and 'L'"
                 raise source.error(msg)
             del_flags |= flag

@@ -62,9 +62,9 @@ _equivalences = (
 _ignorecase_fixes = {i: tuple(j for j in t if i != j)
                      for t in _equivalences for i in t}
 
-def _combine_flags(flags, add_flags, del_flags, MODE_FLAGS=sre_parse.MODE_FLAGS):
-    if add_flags & MODE_FLAGS:
-        flags &= ~MODE_FLAGS
+def _combine_flags(flags, add_flags, del_flags, TYPE_FLAGS=sre_parse.TYPE_FLAGS):
+    if add_flags & TYPE_FLAGS:
+        flags &= ~TYPE_FLAGS
     return (flags | add_flags) & ~del_flags
 
 def _compile(code, pattern, flags):

@@ -232,10 +232,11 @@ The special characters are:
    letters set the corresponding flags: :const:`re.A` (ASCII-only matching),
    :const:`re.I` (ignore case), :const:`re.L` (locale dependent),
    :const:`re.M` (multi-line), :const:`re.S` (dot matches all),
-   and :const:`re.X` (verbose), for the entire regular expression. (The
-   flags are described in :ref:`contents-of-module-re`.) This
-   is useful if you wish to include the flags as part of the regular
-   expression, instead of passing a *flag* argument to the
+   :const:`re.U` (Unicode matching), and :const:`re.X` (verbose),
+   for the entire regular expression.
+   (The flags are described in :ref:`contents-of-module-re`.)
+   This is useful if you wish to include the flags as part of the
+   regular expression, instead of passing a *flag* argument to the
    :func:`re.compile` function.  Flags should be used first in the
    expression string.
 
@@ -245,15 +246,23 @@ The special characters are:
    *cannot* be retrieved after performing a match or referenced later in the
    pattern.
 
-``(?imsx-imsx:...)``
-   (Zero or more letters from the set ``'i'``, ``'m'``, ``'s'``, ``'x'``,
-   optionally followed by ``'-'`` followed by one or more letters from the
-   same set.)  The letters set or removes the corresponding flags:
-   :const:`re.I` (ignore case), :const:`re.M` (multi-line), :const:`re.S`
-   (dot matches all), and :const:`re.X` (verbose), for the part of the
-   expression.  (The flags are described in :ref:`contents-of-module-re`.)
+``(?aiLmsux-imsx:...)``
+   (Zero or more letters from the set ``'a'``, ``'i'``, ``'L'``, ``'m'``,
+   ``'s'``, ``'u'``, ``'x'``, optionally followed by ``'-'`` followed by
+   one or more letters from the ``'i'``, ``'m'``, ``'s'``, ``'x'``.)
+   The letters set or removes the corresponding flags:
+   :const:`re.A` (ASCII-only matching), :const:`re.I` (ignore case),
+   :const:`re.L` (locale dependent), :const:`re.M` (multi-line),
+   :const:`re.S` (dot matches all), :const:`re.U` (Unicode matching),
+   and :const:`re.X` (verbose), for the part of the expression.
+   (The flags are described in :ref:`contents-of-module-re`.)
+   The letters ``'a'``, ``'L'`` and ``'u'`` can't be combined or follow
+   ``'-'``.  Instead using the one of them temporary removes other flags.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.7
+      The letters ``'a'``, ``'L'`` and ``'u'`` can be used in a scope.
 
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
