@@ -520,13 +520,14 @@ Changes in the Python API
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
-* Future versions of Python will support nested sets and set operations in
-  regular expressions, but this can break backward compatibility since that
-  syntax can be treated differently in older versions of Python.  For avoiding
-  a breakage a :exc:`FutureWarning` will be raised in the meanwhile in
-  ambiguous cases.  That incluse sets starting with a literal ``'['`` or
-  containing literal character sequences ``'--'``, ``'&&'``, ``'~~'``, and
-  ``'||'``.  For avoiding a warning escape them with a backslash.
+* The support of nested sets and set operations can be added in future.
+  But this can break backward compatibility since that syntax is treated
+  differently in the older versions of Python.
+  For avoiding a breakage a :exc:`FutureWarning` will be raised in the
+  meanwhile in ambiguous cases.
+  That incluse sets starting with a literal ``'['`` or containing literal
+  character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  For
+  avoiding a warning escape them with a backslash.
   (Contributed by Serhiy Storchaka in :issue:`30349`.)
 
 
