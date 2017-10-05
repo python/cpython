@@ -205,9 +205,9 @@ The special characters are:
      but this can break backward compatibility since that syntax can be treated
      differently in older versions of Python.  For avoiding a breakage a
      :exc:`FutureWarning` will be raised in the meanwhile in ambiguous cases.
-     That incluse sets containing a literal ``'['`` and literal character
-     sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  For avoiding a
-     warning escape them with a backslash.
+     That incluse sets starting with a literal ``'['`` or containing literal
+     character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  For
+     avoiding a warning escape them with a backslash.
 
    .. versionchanged:: 3.7
       :exc:`FutureWarning` is raised if a character set contains constructs

@@ -511,6 +511,12 @@ def _parse(source, state, verbose, first=False):
             setappend = set.append
 ##          if sourcematch(":"):
 ##              pass # handle character classes
+            if source.next == '[':
+                import warnings
+                warnings.warn(
+                    'Possible nested set at position %d' % source.tell(),
+                    FutureWarning, stacklevel=7
+                )
             if sourcematch("^"):
                 setappend((NEGATE, None))
             # check remaining characters
@@ -525,14 +531,7 @@ def _parse(source, state, verbose, first=False):
                 elif this[0] == "\\":
                     code1 = _class_escape(source, this)
                 else:
-                    if this == '[':
-                        import warnings
-                        warnings.warn(
-                            'Possible nested set at position %d' % (
-                                source.tell() - 1),
-                            FutureWarning, stacklevel=7
-                        )
-                    elif set != start and this in '-&~|' and source.next == this:
+                    if set != start and this in '-&~|' and source.next == this:
                         import warnings
                         warnings.warn(
                             'Possible set %s at position %d' % (
@@ -559,14 +558,7 @@ def _parse(source, state, verbose, first=False):
                     if that[0] == "\\":
                         code2 = _class_escape(source, that)
                     else:
-                        if that == '[':
-                            import warnings
-                            warnings.warn(
-                                'Possible nested set at position %d' % (
-                                    source.tell() - 1),
-                                FutureWarning, stacklevel=7
-                            )
-                        elif that == '-':
+                        if that == '-':
                             import warnings
                             warnings.warn(
                                 'Possible set difference at position %d' % (
