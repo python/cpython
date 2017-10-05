@@ -1,0 +1,1 @@
+Allow lowercase http responses (e.g. 'http/1.1 200 connection established\r\n') in proxy connections by changing the response string to uppercase before checking if it starts with HTTP.
