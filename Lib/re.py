@@ -277,6 +277,8 @@ def _compile(pattern, flags):
     # internal: compile pattern
     if isinstance(flags, RegexFlag):
         flags = flags.value
+    elif not isinstance(flags, int):
+        raise TypeError(f"flags must be int or RegexFlag, got {flags!r}")
     try:
         return _cache[type(pattern), pattern, flags]
     except KeyError:
