@@ -512,6 +512,7 @@ conflict.
    string "0" causes the default implementation of :func:`sys.breakpointhook`
    to do nothing but return immediately.
 
+   .. versionadded:: 3.7
 
 .. envvar:: PYTHONDEBUG
 
