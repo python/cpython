@@ -1,0 +1,3 @@
+Fix deadlocks in :class:`concurrent.futures.ProcessPoolExecutor`, caused by
+pickling or unpickling errors. This should make sure that calls to the
+:class:`ProcessPoolExecutor` API always return.
