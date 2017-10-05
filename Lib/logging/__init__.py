@@ -204,7 +204,7 @@ def _checkLevel(level):
     except (TypeError, ValueError, KeyError) as err:
         if raiseExceptions:
             # test harness (../test/test_logging) expects 'TypeError'
-            raise TypeError('Invalid logging::level (%r)' % level) from err
+            raise TypeError("Level not an integer or a valid string: %r" % level) from err
     except Exception:
         pass
 
