@@ -24,5 +24,5 @@
 const char *
 Py_GetCompiler(void)
 {
-	return COMPILER;
+    return COMPILER;
 }
