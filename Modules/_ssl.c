@@ -3310,8 +3310,7 @@ _password_callback(char *buf, int size, int rwflag, void *userdata)
     if (pw_info->callable) {
         fn_ret = _PyObject_CallNoArg(pw_info->callable);
         if (!fn_ret) {
-            /* TODO: It would be nice to move _ctypes_add_traceback() into the
-               core python API, so we could use it to add a frame here */
+            _PyTraceback_Add("_password_callback", __FILE__, __LINE__);
             goto error;
         }
 
