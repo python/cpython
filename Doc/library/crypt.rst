@@ -41,12 +41,12 @@ are available on all platforms):
 .. data:: METHOD_SHA512
 
    A Modular Crypt Format method with 16 character salt and 86 character
-   hash based on the SSH-512 hash function.  This is the strongest method.
+   hash based on the SHA-512 hash function.  This is the strongest method.
 
 .. data:: METHOD_SHA256
 
    Another Modular Crypt Format method with 16 character salt and 43
-   character hash based on the SSH-256 hash function.
+   character hash based on the SHA-256 hash function.
 
 .. data:: METHOD_BLF
 
@@ -125,13 +125,14 @@ The :mod:`crypt` module defines the following functions:
    The return value is a string suitable for passing as the *salt* argument
    to :func:`crypt`.
 
-   *log_round* specifies the binary logarithm of the number of rounds
-   for ``crypt.METHOD_BLF``.  ``8`` specifies ``256`` rounds.
+   *log_rounds* specifies the binary logarithm of the number of rounds
+   for ``crypt.METHOD_BLF``, and is ignored otherwise.  ``8`` specifies
+   ``256`` rounds.
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
-      Added the *log_round* parameter.
+      Added the *log_rounds* parameter.
 
 
 Examples

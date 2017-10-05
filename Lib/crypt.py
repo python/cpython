@@ -68,6 +68,11 @@ def _add_method(name, *args):
 _add_method('SHA512', '6', 16, 106)
 _add_method('SHA256', '5', 16, 63)
 
+# Choose the strongest supported version of Blowfish hashing.
+# Early versions have flaws.  Version 'a' fixes flaws of
+# the initial implementation, 'b' fixes flaws of 'a'.
+# 'y' is the same as 'b', for compatibility
+# with openwall crypt_blowfish.
 for _v in 'b', 'y', 'a', '':
     if _add_method('BLF', '2' + _v, 22, 59 + len(_v)):
         break
