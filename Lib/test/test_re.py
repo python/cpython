@@ -954,16 +954,10 @@ class ReTests(unittest.TestCase):
         with self.assertWarns(FutureWarning):
             p = re.compile(r'[[0-9]|]')
         self.assertEqual(p.findall(s), list('0123456789[]'))
-        with self.assertWarns(FutureWarning):
-            p = re.compile(r'[X-[0-9]|]')
-        self.assertEqual(p.findall(s), list('0123456789XYZ[]'))
 
         with self.assertWarns(FutureWarning):
             p = re.compile(r'[[:digit:]|]')
         self.assertEqual(p.findall(s), list(':[]dgit'))
-        with self.assertWarns(FutureWarning):
-            p = re.compile(r'[X-[:digit:]|]')
-        self.assertEqual(p.findall(s), list(':XYZ[]dgit'))
 
     def test_search_coverage(self):
         self.assertEqual(re.search(r"\s(b)", " b").group(1), "b")
