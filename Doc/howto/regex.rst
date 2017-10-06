@@ -226,7 +226,7 @@ Another repeating metacharacter is ``+``, which matches one or more times.  Pay
 careful attention to the difference between ``*`` and ``+``; ``*`` matches
 *zero* or more times, so whatever's being repeated may not be present at all,
 while ``+`` requires at least *one* occurrence.  To use a similar example,
-``ca+t`` will match ``'cat'`` (1 ``'a'``), ``'caaat'`` (3 ``a``'s), but won't
+``ca+t`` will match ``'cat'`` (1 ``'a'``), ``'caaat'`` (3 ``'a'``s), but won't
 match ``'ct'``.
 
 There are two more repeating qualifiers.  The question mark character, ``?``,
@@ -546,7 +546,7 @@ of each one.
    Perform case-insensitive matching; character class and literal strings will
    match letters by ignoring case.  For example, ``[A-Z]`` will match lowercase
    letters, too. Full Unicode matching also works unless the :const:`re.ASCII`
-   flag is also used to disable non-ASCII matches.  ``[A-Z]`` will also match
+   flag is used to disable non-ASCII matches.  ``[A-Z]`` will also match
    letters 'İ' (U+0130, Latin capital letter I with dot above), 'ı' (U+0131,
    Latin small letter dotless i), 'ſ' (U+017f, Latin small letter long s) and
    'K' (U+212a, Kelvin sign) in Unicode mode.  ``Spam`` will match ``Spam``,
@@ -568,16 +568,16 @@ of each one.
    match words, but ``\w`` only matches the character class ``[A-Za-z]`` in
    bytes patterns; it won't match bytes corresponding to ``'é'`` or ``'ç'``.
    If your system is configured properly and a French locale is selected,
-   certain C functions will tell the program that the byte corresponding
+   certain C functions will tell the program that the byte corresponding to
    ``'é'`` should also be considered a letter.
    Setting the :const:`LOCALE` flag when compiling a regular expression will cause
    the resulting compiled object to use these C functions for ``\w``; this is
    slower, but also enables ``\w+`` to match French words as you'd expect.
    The use of this flag is discouraged in Python 3 as the locale mechanism
-   is very unreliable, and it only handles one "culture" at a time anyway;
-   and it only works with 8-bit locales;
-   you should use Unicode matching instead, which is the default in Python 3
-   for Unicode (str) patterns.
+   is very unreliable, it only handles one "culture" at a time, and it only
+   works with 8-bit locales.  Unicode matching is already enabled by default
+   in Python 3 for Unicode (str) patterns, and it is able to handle different
+   locales/languages.
 
 
 .. data:: M
@@ -678,8 +678,8 @@ given location, they can obviously be matched an infinite number of times.
    Alternation, or the "or" operator.   If *A* and *B* are regular expressions,
    ``A|B`` will match any string that matches either *A* or *B*. ``|`` has very
    low precedence in order to make it work reasonably when you're alternating
-   multi-character strings. ``Crow|Servo`` will match either ``Crow`` or ``Servo``,
-   not ``Cro``, a ``'w'`` or an ``'S'``, and ``ervo``.
+   multi-character strings. ``Crow|Servo`` will match either ``'Crow'`` or ``'Servo'``,
+   not ``'Cro'``, a ``'w'`` or an ``'S'``, and ``'ervo'``.
 
    To match a literal ``'|'``, use ``\|``, or enclose it inside a character class,
    as in ``[|]``.
@@ -1292,7 +1292,7 @@ doesn't work because of the greedy nature of ``.*``. ::
    >>> print(re.match('<.*>', s).group())
    <html><head><title>Title</title>
 
-The RE matches the ``<`` in ``'<html>'``, and the ``.*`` consumes the rest of
+The RE matches the ``'<'`` in ``'<html>'``, and the ``.*`` consumes the rest of
 the string.  There's still more left in the RE, though, and the ``>`` can't
 match at the end of the string, so the regular expression engine has to
 backtrack character by character until it finds a match for the ``>``.   The
