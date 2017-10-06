@@ -309,8 +309,9 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
     nldecoder_object *self = (nldecoder_object *) myself;
 
     if (self->decoder == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "IncrementalNewlineDecoder.__init__ not called");
+        PyErr_Format(PyExc_ValueError,
+                     "%.200s.__init__() not called",
+                     Py_TYPE(self)->tp_name);
         return NULL;
     }
 
@@ -526,6 +527,12 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
     PyObject *buffer;
     unsigned long long flag;
 
+    if (self->decoder == NULL) {
+        PyErr_Format(PyExc_ValueError,
+                     "%.200s.__init__() not called",
+                     Py_TYPE(self)->tp_name);
+        return NULL;
+    }
     if (self->decoder != Py_None) {
         PyObject *state = PyObject_CallMethodObjArgs(self->decoder,
            _PyIO_str_getstate, NULL);
@@ -570,6 +577,12 @@ _io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
     PyObject *buffer;
     unsigned long long flag;
 
+    if (self->decoder == NULL) {
+        PyErr_Format(PyExc_ValueError,
+                     "%.200s.__init__() not called",
+                     Py_TYPE(self)->tp_name);
+        return NULL;
+    }
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError, "state argument must be a tuple");
         return NULL;
@@ -600,6 +613,12 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
 {
     self->seennl = 0;
     self->pendingcr = 0;
+    if (self->decoder == NULL) {
+        PyErr_Format(PyExc_ValueError,
+                     "%.200s.__init__() not called",
+                     Py_TYPE(self)->tp_name);
+        return NULL;
+    }
     if (self->decoder != Py_None)
         return PyObject_CallMethodObjArgs(self->decoder, _PyIO_str_reset, NULL);
     else
