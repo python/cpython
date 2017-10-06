@@ -99,10 +99,7 @@ PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
 /* New in 3.7 */
 /* Thread Specific Storage (TSS) API */
 
-/* Py_tss_t is an opaque data type the definition of which depends on the
-   underlying TSS implementation.
-*/
-typedef struct _Py_tss_t Py_tss_t;
+typedef struct _Py_tss_t Py_tss_t;  /* opaque */
 
 #ifndef Py_LIMITED_API
 #if defined(_POSIX_THREADS)
@@ -118,9 +115,9 @@ typedef struct _Py_tss_t Py_tss_t;
 #   error "Require native threads. See https://bugs.python.org/issue31370"
 #endif
 
-/* When Py_LIMITED_API is not defined, the type layout of Py_tss_t is in
-   public to allow static allocation in the API clients.  Even in this case,
-   you must handle TSS key through API functions due to compatibility.
+/* When Py_LIMITED_API is not defined, the type layout of Py_tss_t is
+   exposed to allow static allocation in the API clients.  Even in this case,
+   you must handle TSS keys through API functions due to compatibility.
 */
 struct _Py_tss_t {
     int _is_initialized;
@@ -138,10 +135,6 @@ PyAPI_FUNC(void) PyThread_tss_delete(Py_tss_t *key);
 PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t *key, void *value);
 PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t *key);
 
-/* In the limited API, Py_tss_t value must be allocated by PyThread_tss_alloc,
-   and free by PyThread_tss_free at the life cycle end of the CPython
-   interpreter.
-*/
 PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
 PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
 
