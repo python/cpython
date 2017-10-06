@@ -65,6 +65,26 @@ class MiscTests(unittest.TestCase):
         del root
         support.gc_collect()
 
+    def test_parser_ref_cycle(self):
+        # bpo-31499: xmlparser_dealloc() crashed with a segmentation fault when
+        # xmlparser_gc_clear() was called previously by the garbage collector,
+        # when the parser was part of a reference cycle.
+
+        def parser_ref_cycle():
+            parser = cET.XMLParser()
+            # Create a reference cycle using an exception to keep the frame
+            # alive, so the parser will be destroyed by the garbage collector
+            try:
+                raise ValueError
+            except ValueError as exc:
+                err = exc
+
+        # Create a parser part of reference cycle
+        parser_ref_cycle()
+        # Trigger an explicit garbage collection to break the reference cycle
+        # and so destroy the parser
+        support.gc_collect()
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):

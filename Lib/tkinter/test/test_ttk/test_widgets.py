@@ -1556,7 +1556,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.selection_toggle((c1, c3))
         self.assertEqual(self.tv.selection(), (c3, item2))
 
-        if sys.version_info >= (3, 7):
+        if sys.version_info >= (3, 8):
             import warnings
             warnings.warn(
                 'Deprecated API of Treeview.selection() should be removed')

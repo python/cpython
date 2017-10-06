@@ -1,1 +1,0 @@
-Fix callbacks race in asyncio.SelectorLoop.sock_connect.

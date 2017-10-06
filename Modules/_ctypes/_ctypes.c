@@ -2665,12 +2665,25 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     int res;
     PyObject *dict, *mydict;
     CDataObject *self = (CDataObject *)myself;
-    if (!PyArg_ParseTuple(args, "Os#", &dict, &data, &len))
+    if (!PyArg_ParseTuple(args, "O!s#",
+                          &PyDict_Type, &dict, &data, &len))
+    {
         return NULL;
+    }
     if (len > self->b_size)
         len = self->b_size;
     memmove(self->b_ptr, data, len);
     mydict = PyObject_GetAttrString(myself, "__dict__");
+    if (mydict == NULL) {
+        return NULL;
+    }
+    if (!PyDict_Check(mydict)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s.__dict__ must be a dictionary, not %.200s",
+                     Py_TYPE(myself)->tp_name, Py_TYPE(mydict)->tp_name);
+        Py_DECREF(mydict);
+        return NULL;
+    }
     res = PyDict_Update(mydict, dict);
     Py_DECREF(mydict);
     if (res == -1)

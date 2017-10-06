@@ -142,7 +142,7 @@ cell_get_contents(PyCellObject *op, void *closure)
     return op->ob_ref;
 }
 
-int
+static int
 cell_set_contents(PyCellObject *op, PyObject *obj)
 {
     Py_XINCREF(obj);

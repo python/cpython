@@ -948,13 +948,6 @@ else
 fi
 rmdir CaseSensitiveTestDir
 
-case $MACHDEP in
-bsdos*)
-    case $CC in
-    gcc) CC="$CC -D_HAVE_BSDI";;
-    esac;;
-esac
-
 case $ac_sys_system in
 hp*|HP*)
     case $CC in
@@ -1168,7 +1161,6 @@ fi
 
 AC_MSG_RESULT($LDLIBRARY)
 
-AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_TOOLS(AR, ar aal, ar)
 
@@ -1176,7 +1168,7 @@ AC_CHECK_TOOLS(AR, ar aal, ar)
 AC_SUBST(ARFLAGS)
 if test -z "$ARFLAGS"
 then
-        ARFLAGS="rc"
+        ARFLAGS="rcs"
 fi
 
 AC_CHECK_TOOLS([READELF], [readelf], [:])
@@ -1191,8 +1183,8 @@ AC_SUBST(READELF)
 
 
 case $MACHDEP in
-bsdos*|hp*|HP*)
-	# install -d does not work on BSDI or HP-UX
+hp*|HP*)
+	# install -d does not work on HP-UX
 	if test -z "$INSTALL"
 	then
 		INSTALL="${srcdir}/install-sh -c"
@@ -2511,9 +2503,6 @@ then
 	Linux*|GNU*|QNX*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	BSD/OS*/4*)
-		LDSHARED="gcc -shared"
-		LDCXXSHARED="g++ -shared";;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -2579,7 +2568,6 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
-	BSD/OS*/4*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
@@ -2604,7 +2592,6 @@ then
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s";;
 #	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
-	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
@@ -3057,6 +3044,7 @@ if test "$posix_threads" = "yes"; then
             ;;
         esac])
       AC_CHECK_FUNCS(pthread_atfork)
+      AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
 
 
@@ -3702,9 +3690,6 @@ AC_CHECK_FUNCS(forkpty,,
      AC_CHECK_LIB(bsd,forkpty, [AC_DEFINE(HAVE_FORKPTY) LIBS="$LIBS -lbsd"])
    )
 )
-
-# Stuff for expat.
-AC_CHECK_FUNCS(memmove)
 
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)

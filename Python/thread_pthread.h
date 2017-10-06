@@ -149,25 +149,6 @@ typedef struct {
 /*
  * Initialization.
  */
-
-#if defined(_HAVE_BSDI)
-static
-void _noop(void)
-{
-}
-
-static void
-PyThread__init_thread(void)
-{
-    /* DO AN INIT BY STARTING THE THREAD */
-    static int dummy = 0;
-    pthread_t thread1;
-    pthread_create(&thread1, NULL, (void *) _noop, &dummy);
-    pthread_join(thread1, NULL);
-}
-
-#else /* !_HAVE_BSDI */
-
 static void
 PyThread__init_thread(void)
 {
@@ -176,8 +157,6 @@ PyThread__init_thread(void)
     pthread_init();
 #endif
 }
-
-#endif /* !_HAVE_BSDI */
 
 /*
  * Thread support.

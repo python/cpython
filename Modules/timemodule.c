@@ -20,6 +20,10 @@
 #include <io.h>
 #endif
 
+#if defined(HAVE_PTHREAD_H)
+#  include <pthread.h>
+#endif
+
 #if defined(__WATCOMC__) && !defined(__QNX__)
 #include <i86.h>
 #else
@@ -220,6 +224,31 @@ PyDoc_STRVAR(clock_getres_doc,
 \n\
 Return the resolution (precision) of the specified clock clk_id.");
 #endif   /* HAVE_CLOCK_GETRES */
+
+#ifdef HAVE_PTHREAD_GETCPUCLOCKID
+static PyObject *
+time_pthread_getcpuclockid(PyObject *self, PyObject *args)
+{
+    unsigned long thread_id;
+    int err;
+    clockid_t clk_id;
+    if (!PyArg_ParseTuple(args, "k:pthread_getcpuclockid", &thread_id)) {
+        return NULL;
+    }
+    err = pthread_getcpuclockid((pthread_t)thread_id, &clk_id);
+    if (err) {
+        errno = err;
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return PyLong_FromLong(clk_id);
+}
+
+PyDoc_STRVAR(pthread_getcpuclockid_doc,
+"pthread_getcpuclockid(thread_id) -> int\n\
+\n\
+Return the clk_id of a thread's CPU time clock.");
+#endif /* HAVE_PTHREAD_GETCPUCLOCKID */
 
 static PyObject *
 time_sleep(PyObject *self, PyObject *obj)
@@ -1287,6 +1316,9 @@ static PyMethodDef time_methods[] = {
 #endif
 #ifdef HAVE_CLOCK_GETRES
     {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
+#endif
+#ifdef HAVE_PTHREAD_GETCPUCLOCKID
+    {"pthread_getcpuclockid", time_pthread_getcpuclockid, METH_VARARGS, pthread_getcpuclockid_doc},
 #endif
     {"sleep",           time_sleep, METH_O, sleep_doc},
     {"gmtime",          time_gmtime, METH_VARARGS, gmtime_doc},

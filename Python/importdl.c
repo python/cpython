@@ -103,6 +103,11 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     if (name_unicode == NULL) {
         return NULL;
     }
+    if (!PyUnicode_Check(name_unicode)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "spec.name must be a string");
+        goto error;
+    }
 
     name = get_encoded_name(name_unicode, &hook_prefix);
     if (name == NULL) {

@@ -1,1 +1,0 @@
-Rename --with-optimiations to --enable-optimizations.

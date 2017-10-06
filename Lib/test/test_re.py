@@ -1596,9 +1596,9 @@ class ReTests(unittest.TestCase):
     def test_compile(self):
         # Test return value when given string and pattern as parameter
         pattern = re.compile('random pattern')
-        self.assertIsInstance(pattern, re._pattern_type)
+        self.assertIsInstance(pattern, re.Pattern)
         same_pattern = re.compile(pattern)
-        self.assertIsInstance(same_pattern, re._pattern_type)
+        self.assertIsInstance(same_pattern, re.Pattern)
         self.assertIs(same_pattern, pattern)
         # Test behaviour when not given a string or pattern as parameter
         self.assertRaises(TypeError, re.compile, 0)

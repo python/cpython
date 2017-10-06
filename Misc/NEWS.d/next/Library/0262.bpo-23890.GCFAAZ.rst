@@ -1,2 +1,0 @@
-unittest.TestCase.assertRaises() now manually breaks a reference cycle to
-not keep objects alive longer than expected.

@@ -41,7 +41,7 @@ class ConfigDialog(Toplevel):
     """Config dialog for IDLE.
     """
 
-    def __init__(self, parent, title='', _htest=False, _utest=False):
+    def __init__(self, parent, title='', *, _htest=False, _utest=False):
         """Show the tabbed dialog for user configuration.
 
         Args:
@@ -105,7 +105,7 @@ class ConfigDialog(Toplevel):
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
         """
-        self.note = note = Notebook(self, width=450, height=450)
+        self.note = note = Notebook(self)
         self.highpage = HighPage(note)
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = KeysPage(note)
@@ -1237,7 +1237,7 @@ class HighPage(Frame):
 
     def askyesno(self, *args, **kwargs):
         # Make testing easier.  Could change implementation.
-        messagebox.askyesno(*args, **kwargs)
+        return messagebox.askyesno(*args, **kwargs)
 
     def delete_custom(self):
         """Handle event to delete custom theme.
@@ -1683,7 +1683,7 @@ class KeysPage(Frame):
 
     def askyesno(self, *args, **kwargs):
         # Make testing easier.  Could change implementation.
-        messagebox.askyesno(*args, **kwargs)
+        return messagebox.askyesno(*args, **kwargs)
 
     def delete_custom_keys(self):
         """Handle event to delete a custom key set.
