@@ -231,12 +231,6 @@ class BaseTaskTests:
         with self.assertRaises(TypeError):
             asyncio.ensure_future('ok')
 
-    def test_async_warning(self):
-        f = self.new_future(self.loop)
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   'function is deprecated, use ensure_'):
-            self.assertIs(f, asyncio.async(f))
-
     def test_get_stack(self):
         T = None
 

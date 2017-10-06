@@ -91,11 +91,12 @@ classdef = 333
 arglist = 334
 argument = 335
 comp_iter = 336
-comp_for = 337
-comp_if = 338
-encoding_decl = 339
-yield_expr = 340
-yield_arg = 341
+sync_comp_for = 337
+comp_for = 338
+comp_if = 339
+encoding_decl = 340
+yield_expr = 341
+yield_arg = 342
 #--end constants--
 
 sym_name = {}
