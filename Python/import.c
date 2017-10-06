@@ -656,7 +656,7 @@ int
 _PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
 {
     int res;
-    PyObject *nameobj;
+    PyObject *nameobj = NULL;
     nameobj = PyUnicode_InternFromString(name);
     if (nameobj == NULL)
         return -1;
