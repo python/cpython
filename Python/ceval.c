@@ -1708,7 +1708,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(GET_AITER) {
             unaryfunc getter = NULL;
             PyObject *iter = NULL;
-            PyObject *awaitable = NULL;
             PyObject *obj = TOP();
             PyTypeObject *type = Py_TYPE(obj);
 
@@ -1735,57 +1734,20 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 goto error;
             }
 
-            if (Py_TYPE(iter)->tp_as_async != NULL &&
-                    Py_TYPE(iter)->tp_as_async->am_anext != NULL) {
-
-                /* Starting with CPython 3.5.2 __aiter__ should return
-                   asynchronous iterators directly (not awaitables that
-                   resolve to asynchronous iterators.)
-
-                   Therefore, we check if the object that was returned
-                   from __aiter__ has an __anext__ method.  If it does,
-                   we wrap it in an awaitable that resolves to `iter`.
-
-                   See http://bugs.python.org/issue27243 for more
-                   details.
-                */
-
-                PyObject *wrapper = _PyAIterWrapper_New(iter);
-                Py_DECREF(iter);
-                SET_TOP(wrapper);
-                DISPATCH();
-            }
-
-            awaitable = _PyCoro_GetAwaitableIter(iter);
-            if (awaitable == NULL) {
-                _PyErr_FormatFromCause(
-                    PyExc_TypeError,
-                    "'async for' received an invalid object "
-                    "from __aiter__: %.100s",
-                    Py_TYPE(iter)->tp_name);
+            if (Py_TYPE(iter)->tp_as_async == NULL ||
+                    Py_TYPE(iter)->tp_as_async->am_anext == NULL) {
 
                 SET_TOP(NULL);
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "'async for' received an object from __aiter__ "
+                    "that does not implement __anext__: %.100s",
+                    Py_TYPE(iter)->tp_name);
                 Py_DECREF(iter);
                 goto error;
-            } else {
-                Py_DECREF(iter);
-
-                if (PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1,
-                        "'%.100s' implements legacy __aiter__ protocol; "
-                        "__aiter__ should return an asynchronous "
-                        "iterator, not awaitable",
-                        type->tp_name))
-                {
-                    /* Warning was converted to an error. */
-                    Py_DECREF(awaitable);
-                    SET_TOP(NULL);
-                    goto error;
-                }
             }
 
-            SET_TOP(awaitable);
-            PREDICT(LOAD_CONST);
+            SET_TOP(iter);
             DISPATCH();
         }
 
