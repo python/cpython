@@ -111,42 +111,6 @@ PyThread_set_stacksize(size_t size)
 }
 
 
-/* ------------------------------------------------------------------------
-Per-thread data ("key") support.
-
-Use PyThread_tss_create(&thekey) to create a new key.  This is typically shared
-across threads.
-
-Use PyThread_tss_set(&thekey, value) to associate void* value with
-thekey in the current thread.  Each thread has a distinct mapping of thekey
-to a void* value.  Caution:  if the current thread already has a mapping
-for thekey, value is ignored.
-
-Use PyThread_tss_get(&thekey) to retrieve the void* value associated
-with thekey in the current thread.  This returns NULL if no value is
-associated with thekey in the current thread.
-
-Use PyThread_tss_set(&thekey, NULL) to forget the current thread's associated
-value for thekey.  PyThread_tss_delete(&thekey) forgets the values associated
-with thekey across *all* threads.
-
-While some of these functions have error-return values, none set any
-Python exception.
-
-None of the functions does memory management on behalf of the void* values.
-You need to allocate and deallocate them yourself.  If the void* values
-happen to be PyObject*, these functions don't do refcount operations on
-them either.
-
-The GIL does not need to be held when calling these functions; they supply
-their own locking.  This isn't true of PyThread_tss_create(), though (see
-next paragraph).
-
-There's a hidden assumption that PyThread_tss_create() will be called before
-any of the other functions are called.  There's also a hidden assumption
-that calls to PyThread_tss_create() are serialized externally.
------------------------------------------------------------------------- */
-
 /* Thread Specific Storage (TSS) API
 
    Cross-platform components of TSS API implementation.
