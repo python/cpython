@@ -359,7 +359,7 @@ PyModule_ExecInModule(PyObject *module, PyModuleDef *def)
 {
     PyModuleDef_Slot *cur_slot;
     const char *name;
-    PyObject *nameobj;
+    PyObject *nameobj = NULL;
 
     if (!PyModule_Check(module)) {
         PyErr_BadInternalCall();
