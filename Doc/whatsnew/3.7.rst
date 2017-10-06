@@ -132,39 +132,26 @@ built-in ``breakpoint()``.
 PEP 539: A New C-API for Thread-Local Storage in CPython
 --------------------------------------------------------
 
-While CPython provides C API for the thread-local storage internally, the
-existing Thread Local Storage (TLS) API uses ``int`` to represent TLS keys
-across all platforms.  This has not generally been a problem for
-officially-support platforms, but that is neither POSIX-compliant, nor portable
-in any practical sense.
+While Python provides a C API for thread-local storage support; the existing
+:ref:`Thread Local Storage (TLS) API <thread-local-storage-api>` has used
+:c:type:`int` to represent TLS keys across all platforms.  This has not
+generally been a problem for officially-support platforms, but that is neither
+POSIX-compliant, nor portable in any practical sense.
 
-:pep:`539` changes this by providing the new Thread Specific Storage (TSS) API
-to CPython which would supersede use of the existing TLS API within the CPython
-interpreter, while deprecating the existing API.  The TSS API uses a new type
-``Py_tss_t`` to conceal the native TLS key via opaque data type, therefore,
-this will allow to build CPython on platforms where the native TLS key is
-defined in a way that cannot be safely cast to ``int``.
+:pep:`539` changes this by providing a new :ref:`Thread Specific Storage (TSS)
+API <thread-specific-storage-api>` to CPython which supersedes use of the
+existing TLS API within the CPython interpreter, while deprecating the existing
+API.  The TSS API uses a new type :c:type:`Py_tss_t` instead of :c:type:`int`
+to represent TSS keys--an opaque type the definition of which may depend on
+the underlying TLS implementation.  Therefore, this will allow to build CPython
+on platforms where the native TLS key is defined in a way that cannot be safely
+cast to :c:type:`int`.
 
-A TLS key has been initialized previously like:
-
-.. code-block:: c
-
-    int key = PyThread_create_key();
-    int fail = key == -1;
-
-With the change, a TSS key is initialized like:
-
-.. code-block:: c
-
-    Py_tss_t key = Py_tss_NEEDS_INIT;
-    int fail = PyThread_tss_create(&key);
-
-Moreover, on platforms where the native TLS key is defined in a way that cannot
-be safely cast to ``int``, ``PyThread_create_key`` will return immediately with
-a failure status, and the other TLS functions will all be no-ops on such
-platforms.  This indicates clearly that the old API is not supported on
-platforms where it cannot be used reliably, and that no effort will be made to
-add such support.
+Note that on platforms where the native TLS key is defined in a way that cannot
+be safely cast to :c:type:`int`, all functions of the existing TLS API will be
+no-op and immediately return failure. This indicates clearly that the old API
+is not supported on platforms where it cannot be used reliably, and that no
+effort will be made to add such support.
 
 .. seealso::
 
