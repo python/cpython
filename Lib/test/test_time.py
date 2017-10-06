@@ -85,20 +85,13 @@ class TimeTestCase(unittest.TestCase):
                          'need time.pthread_getcpuclockid()')
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
-    @unittest.skipUnless(hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'),
-                         'need time.CLOCK_THREAD_CPUTIME_ID')
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
         self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
-        # This should suffice to show that both calls are measuring the same clock.
         t1 = time.clock_gettime(clk_id)
-        t2 = time.clock_gettime(time.CLOCK_THREAD_CPUTIME_ID)
-        t3 = time.clock_gettime(clk_id)
-        t4 = time.clock_gettime(time.CLOCK_THREAD_CPUTIME_ID)
+        t2 = time.clock_gettime(clk_id)
         self.assertLessEqual(t1, t2)
-        self.assertLessEqual(t2, t3)
-        self.assertLessEqual(t3, t4)
 
     @unittest.skipUnless(hasattr(time, 'clock_getres'),
                          'need time.clock_getres()')
