@@ -91,6 +91,7 @@ FATAL = CRITICAL
 ERROR = 40
 WARNING = 30
 WARN = WARNING
+NOTICE = 25
 INFO = 20
 DEBUG = 10
 NOTSET = 0
@@ -99,6 +100,7 @@ _levelToName = {
     CRITICAL: 'CRITICAL',
     ERROR: 'ERROR',
     WARNING: 'WARNING',
+    NOTICE: 'NOTICE',
     INFO: 'INFO',
     DEBUG: 'DEBUG',
     NOTSET: 'NOTSET',
@@ -109,6 +111,7 @@ _nameToLevel = {
     'ERROR': ERROR,
     'WARN': WARNING,
     'WARNING': WARNING,
+    'NOTICE': NOTICE,
     'INFO': INFO,
     'DEBUG': DEBUG,
     'NOTSET': NOTSET,
@@ -126,16 +129,18 @@ def getLevelName(level):
     If a numeric value corresponding to one of the defined levels is passed
     in, the corresponding string representation is returned.
 
-    Otherwise, the string "Level %s" % level is returned.
+    Otherwise, the string representation of 'level' is returned.
     """
     # See Issues #22386, #27937 and #29220 for why it's this way
     result = _levelToName.get(level)
     if result is not None:
         return result
-    result = _nameToLevel.get(level)
+
+    result = _nameToLevel.get(level.upper())
     if result is not None:
-        return result
-    return "Level %s" % level
+        return level
+
+    return "%s" % level
 
 def addLevelName(level, levelName):
     """
