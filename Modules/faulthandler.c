@@ -232,7 +232,7 @@ faulthandler_dump_traceback(int fd, int all_threads,
 
        PyThreadState_Get() doesn't give the state of the thread that caused the
        fault if the thread released the GIL, and so this function cannot be
-       used. Read the thread local storage (TLS) instead: call
+       used. Read the thread specific storage (TSS) instead: call
        PyGILState_GetThisThreadState(). */
     tstate = PyGILState_GetThisThreadState();
 

@@ -760,7 +760,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
 
            PyThreadState_Get() doesn't give the state of the thread that caused
            the fault if the thread released the GIL, and so this function
-           cannot be used. Read the thread local storage (TLS) instead: call
+           cannot be used. Read the thread specific storage (TSS) instead: call
            PyGILState_GetThisThreadState(). */
         current_tstate = PyGILState_GetThisThreadState();
     }

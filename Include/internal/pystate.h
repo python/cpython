@@ -26,7 +26,7 @@ struct _gilstate_runtime_state {
     */
     /* TODO: Given interp_main, it may be possible to kill this ref */
     PyInterpreterState *autoInterpreterState;
-    int autoTLSkey;
+    Py_tss_t autoTSSkey;
 };
 
 /* hook for PyEval_GetFrame(), requested for Psyco */

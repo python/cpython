@@ -349,10 +349,15 @@ _pythread_nt_set_stacksize(size_t size)
 #define THREAD_SET_STACKSIZE(x) _pythread_nt_set_stacksize(x)
 
 
+/* Thread Local Storage (TLS) API
+
+   This API is DEPRECATED since Python 3.7.  See PEP 539 for details.
+*/
+
 int
 PyThread_create_key(void)
 {
-    DWORD result= TlsAlloc();
+    DWORD result = TlsAlloc();
     if (result == TLS_OUT_OF_INDEXES)
         return -1;
     return (int)result;
@@ -367,12 +372,8 @@ PyThread_delete_key(int key)
 int
 PyThread_set_key_value(int key, void *value)
 {
-    BOOL ok;
-
-    ok = TlsSetValue(key, value);
-    if (!ok)
-        return -1;
-    return 0;
+    BOOL ok = TlsSetValue(key, value);
+    return ok ? 0 : -1;
 }
 
 void *
@@ -399,9 +400,74 @@ PyThread_delete_key_value(int key)
     TlsSetValue(key, NULL);
 }
 
+
 /* reinitialization of TLS is not necessary after fork when using
  * the native TLS functions.  And forking isn't supported on Windows either.
  */
 void
 PyThread_ReInitTLS(void)
-{}
+{
+}
+
+
+/* Thread Specific Storage (TSS) API
+
+   Platform-specific components of TSS API implementation.
+*/
+
+int
+PyThread_tss_create(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has been created, function is silently skipped. */
+    if (key->_is_initialized) {
+        return 0;
+    }
+
+    DWORD result = TlsAlloc();
+    if (result == TLS_OUT_OF_INDEXES) {
+        return -1;
+    }
+    /* In Windows, platform-specific key type is DWORD. */
+    key->_key = result;
+    key->_is_initialized = 1;
+    return 0;
+}
+
+void
+PyThread_tss_delete(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has not been created, function is silently skipped. */
+    if (!key->_is_initialized) {
+        return;
+    }
+
+    TlsFree(key->_key);
+    key->_key = TLS_OUT_OF_INDEXES;
+    key->_is_initialized = 0;
+}
+
+int
+PyThread_tss_set(Py_tss_t *key, void *value)
+{
+    assert(key != NULL);
+    BOOL ok = TlsSetValue(key->_key, value);
+    return ok ? 0 : -1;
+}
+
+void *
+PyThread_tss_get(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* because TSS is used in the Py_END_ALLOW_THREAD macro,
+     * it is necessary to preserve the windows error state, because
+     * it is assumed to be preserved across the call to the macro.
+     * Ideally, the macro should be fixed, but it is simpler to
+     * do it here.
+     */
+    DWORD error = GetLastError();
+    void *result = TlsGetValue(key->_key);
+    SetLastError(error);
+    return result;
+}
