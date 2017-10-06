@@ -2,7 +2,7 @@
 
 from os import PathLike
 
-__all__ = ["what"]
+__all__ = ['what']
 
 #-------------------------#
 # Recognize image headers #
