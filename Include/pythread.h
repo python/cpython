@@ -130,15 +130,15 @@ struct _Py_tss_t {
 #define Py_tss_NEEDS_INIT   {0}
 #endif  /* !Py_LIMITED_API */
 
+PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
+PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
+
+/* The parameter key must not be NULL. */
+PyAPI_FUNC(int) PyThread_tss_is_created(Py_tss_t *key);
 PyAPI_FUNC(int) PyThread_tss_create(Py_tss_t *key);
 PyAPI_FUNC(void) PyThread_tss_delete(Py_tss_t *key);
 PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t *key, void *value);
 PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t *key);
-
-PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
-PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
-
-PyAPI_FUNC(int) PyThread_tss_is_created(Py_tss_t *key);
 #endif  /* New in 3.7 */
 
 #ifdef __cplusplus
