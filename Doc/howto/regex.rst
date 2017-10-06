@@ -226,7 +226,7 @@ Another repeating metacharacter is ``+``, which matches one or more times.  Pay
 careful attention to the difference between ``*`` and ``+``; ``*`` matches
 *zero* or more times, so whatever's being repeated may not be present at all,
 while ``+`` requires at least *one* occurrence.  To use a similar example,
-``ca+t`` will match ``'cat'`` (1 ``'a'``), ``'caaat'`` (3 ``'a'``s), but won't
+``ca+t`` will match ``'cat'`` (1 ``'a'``), ``'caaat'`` (3 ``'a'``\ s), but won't
 match ``'ct'``.
 
 There are two more repeating qualifiers.  The question mark character, ``?``,
@@ -549,10 +549,10 @@ of each one.
    flag is used to disable non-ASCII matches.  ``[A-Z]`` will also match
    letters 'İ' (U+0130, Latin capital letter I with dot above), 'ı' (U+0131,
    Latin small letter dotless i), 'ſ' (U+017f, Latin small letter long s) and
-   'K' (U+212a, Kelvin sign) in Unicode mode.  ``Spam`` will match ``Spam``,
-   ``spam``, ``spAM``, or ``ſpam`` (the latter is matched only in Unicode mode).
-   This lowercasing doesn't take the current locale into account; it will if
-   you also set the :const:`LOCALE` flag.
+   'K' (U+212a, Kelvin sign) in Unicode mode.  ``Spam`` will match ``'Spam'``,
+   ``'spam'``, ``'spAM'``, or ``'ſpam'`` (the latter is matched only in Unicode
+   mode).  This lowercasing doesn't take the current locale into account;
+   it will if you also set the :const:`LOCALE` flag.
 
 
 .. data:: L
@@ -566,10 +566,10 @@ of each one.
    that take account of language differences.  For example, if you're
    processing encoded French text, you'd want to be able to write ``\w+`` to
    match words, but ``\w`` only matches the character class ``[A-Za-z]`` in
-   bytes patterns; it won't match bytes corresponding to ``'é'`` or ``'ç'``.
+   bytes patterns; it won't match bytes corresponding to ``é`` or ``ç``.
    If your system is configured properly and a French locale is selected,
    certain C functions will tell the program that the byte corresponding to
-   ``'é'`` should also be considered a letter.
+   ``é`` should also be considered a letter.
    Setting the :const:`LOCALE` flag when compiling a regular expression will cause
    the resulting compiled object to use these C functions for ``\w``; this is
    slower, but also enables ``\w+`` to match French words as you'd expect.
