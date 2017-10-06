@@ -419,6 +419,8 @@ class WCmdLineTests(unittest.TestCase):
         rc, out, err = assert_python_ok("-Wxxx", "-c", "pass")
         self.assertIn(b"Invalid -W option ignored: invalid action: 'xxx'", err)
 
+    # Don't check stderr when COUNT_ALLOCS is defined
+    @test_support.requires_type_collecting
     def test_warnings_bootstrap(self):
         # Check that the warnings module does get loaded when -W<some option>
         # is used (see issue #10372 for an example of silent bootstrap failure).
@@ -575,6 +577,8 @@ class _WarningsTests(BaseTest):
         finally:
             globals_dict['__file__'] = oldfile
 
+    # Don't check stderr when COUNT_ALLOCS is defined
+    @test_support.requires_type_collecting
     def test_stderr_none(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stderr = None; "

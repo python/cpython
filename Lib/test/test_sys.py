@@ -129,7 +129,9 @@ class SysModuleTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', 'import sys; sys.exit()')
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
-        self.assertEqual(err, b'')
+        # If COUNT_ALLOCS is defined, don't check stderr
+        if not hasattr(sys, 'getcounts'):
+            self.assertEqual(err, b'')
 
         # call with integer argument
         with self.assertRaises(SystemExit) as cm:
@@ -157,23 +159,27 @@ class SysModuleTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', 'raise SystemExit, 46')
         self.assertEqual(rc, 46)
         self.assertEqual(out, b'')
-        self.assertEqual(err, b'')
+        if not hasattr(sys, 'getcounts'):
+            self.assertEqual(err, b'')
         # ... and normalized
         rc, out, err = assert_python_failure('-c', 'raise SystemExit(47)')
         self.assertEqual(rc, 47)
         self.assertEqual(out, b'')
-        self.assertEqual(err, b'')
+        if not hasattr(sys, 'getcounts'):
+            self.assertEqual(err, b'')
 
         # test that the exit machinery handles long exit codes
         rc, out, err = assert_python_failure('-c', 'raise SystemExit(47L)')
         self.assertEqual(rc, 47)
         self.assertEqual(out, b'')
-        self.assertEqual(err, b'')
+        if not hasattr(sys, 'getcounts'):
+            self.assertEqual(err, b'')
 
         rc, out, err = assert_python_ok('-c', 'raise SystemExit(0L)')
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
-        self.assertEqual(err, b'')
+        if not hasattr(sys, 'getcounts'):
+            self.assertEqual(err, b'')
 
         def check_exit_message(code, expected, **env_vars):
             rc, out, err = assert_python_failure('-c', code, **env_vars)
@@ -748,7 +754,10 @@ class SizeofTest(unittest.TestCase):
         # tupleiterator
         check(iter(()), size('lP'))
         # type
-        s = vsize('P2P15Pl4PP9PP11PI'   # PyTypeObject
+        fmt = 'P2P15Pl4PP9PP11PI'
+        if hasattr(sys, 'getcounts'):
+            fmt += '3P2P'
+        s = vsize(fmt +                 # PyTypeObject
                   '39P'                 # PyNumberMethods
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods

@@ -2610,7 +2610,9 @@ class TestNoForkBomb(unittest.TestCase):
         else:
             rc, out, err = test.script_helper.assert_python_ok(name)
             self.assertEqual(out.rstrip(), '123')
-            self.assertEqual(err, '')
+            # If COUNT_ALLOCS is defined, don't check stderr
+            if not hasattr(sys, 'getcounts'):
+                self.assertEqual(err, '')
 
 #
 # Issue 12098: check sys.flags of child matches that for parent

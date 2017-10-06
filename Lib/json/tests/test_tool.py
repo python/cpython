@@ -56,7 +56,9 @@ class TestTool(unittest.TestCase):
         infile = self._create_infile()
         rc, out, err = assert_python_ok('-m', 'json.tool', infile)
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
-        self.assertEqual(err, b'')
+        # If COUNT_ALLOCS is defined, don't check stderr
+        if not hasattr(sys, 'getcounts'):
+            self.assertEqual(err, b'')
 
     def test_infile_outfile(self):
         infile = self._create_infile()
@@ -66,4 +68,6 @@ class TestTool(unittest.TestCase):
         with open(outfile, "r") as fp:
             self.assertEqual(fp.read(), self.expect)
         self.assertEqual(out, b'')
-        self.assertEqual(err, b'')
+        # If COUNT_ALLOCS is defined, don't check stderr
+        if not hasattr(sys, 'getcounts'):
+            self.assertEqual(err, b'')

@@ -5,6 +5,7 @@
 
 import unittest, weakref
 from test import test_support
+from support import requires_type_collecting
 
 import abc
 from inspect import isabstract
@@ -208,6 +209,7 @@ class TestABC(unittest.TestCase):
         C()
         self.assertEqual(B.counter, 1)
 
+    @requires_type_collecting
     def test_cache_leak(self):
         # See issue #2521.
         class A(object):

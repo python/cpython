@@ -360,7 +360,9 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(stdout.strip(),
             "Woke up, sleep function is: <built-in function sleep>")
         stderr = re.sub(r"^\[\d+ refs\]", "", stderr, re.MULTILINE).strip()
-        self.assertEqual(stderr, "")
+        # If COUNT_ALLOCS is defined, don't check stderr
+        if not hasattr(sys, 'getcounts'):
+            self.assertEqual(stderr, "")
 
     def test_enumerate_after_join(self):
         # Try hard to trigger #1703448: a thread is still returned in
@@ -437,7 +439,9 @@ class ThreadTests(BaseTestCase):
         """
         _, out, err = assert_python_ok("-c", code)
         self.assertEqual(out, '')
-        self.assertEqual(err, '')
+        # If COUNT_ALLOCS is defined, don't check stderr
+        if not hasattr(sys, 'getcounts'):
+            self.assertEqual(err, '')
 
     @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
     def test_is_alive_after_fork(self):
