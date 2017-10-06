@@ -544,7 +544,7 @@ form.
 .. data:: DEBUG
 
    Display debug information about compiled expression.
-   Doesn't have corresponding inline flag.
+   No corresponding inline flag.
 
 
 .. data:: I
