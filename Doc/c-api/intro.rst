@@ -132,6 +132,11 @@ complete listing.
    Argument must be a character or an integer in the range [-128, 127] or [0,
    255].  This macro returns ``c`` cast to an ``unsigned char``.
 
+.. c:macro:: Py_GETENV(s)
+
+   Like ``getenv(s)``, but returns *NULL* if :option:`-E` was passed on the
+   command line (i.e. if ``Py_IgnoreEnvironmentFlag`` is set).
+
 
 .. _api-objects:
 
