@@ -522,20 +522,20 @@ of each one.
 +=================================+============================================+
 | :const:`ASCII`, :const:`A`      | Makes several escapes like ``\w``, ``\b``, |
 |                                 | ``\s`` and ``\d`` match only on ASCII      |
-|                                 | characters with the respective property    |
+|                                 | characters with the respective property.   |
 +---------------------------------+--------------------------------------------+
 | :const:`DOTALL`, :const:`S`     | Make ``.`` match any character, including  |
-|                                 | newlines                                   |
+|                                 | newlines.                                  |
 +---------------------------------+--------------------------------------------+
-| :const:`IGNORECASE`, :const:`I` | Do case-insensitive matches                |
+| :const:`IGNORECASE`, :const:`I` | Do case-insensitive matches.               |
 +---------------------------------+--------------------------------------------+
-| :const:`LOCALE`, :const:`L`     | Do a locale-aware match                    |
+| :const:`LOCALE`, :const:`L`     | Do a locale-aware match.                   |
 +---------------------------------+--------------------------------------------+
 | :const:`MULTILINE`, :const:`M`  | Multi-line matching, affecting ``^`` and   |
-|                                 | ``$``                                      |
+|                                 | ``$``.                                     |
 +---------------------------------+--------------------------------------------+
 | :const:`VERBOSE`, :const:`X`    | Enable verbose REs, which can be organized |
-| (for 'extended')                | more cleanly and understandably            |
+| (for 'extended')                | more cleanly and understandably.           |
 +---------------------------------+--------------------------------------------+
 
 
