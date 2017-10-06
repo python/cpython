@@ -20,6 +20,10 @@
 #include <io.h>
 #endif
 
+#if defined(HAVE_PTHREAD_H)
+#  include <pthread.h>
+#endif
+
 #if defined(__WATCOMC__) && !defined(__QNX__)
 #include <i86.h>
 #else
@@ -221,6 +225,31 @@ PyDoc_STRVAR(clock_getres_doc,
 Return the resolution (precision) of the specified clock clk_id.");
 #endif   /* HAVE_CLOCK_GETRES */
 
+#ifdef HAVE_PTHREAD_GETCPUCLOCKID
+static PyObject *
+time_pthread_getcpuclockid(PyObject *self, PyObject *args)
+{
+    unsigned long thread_id;
+    int err;
+    clockid_t clk_id;
+    if (!PyArg_ParseTuple(args, "k:pthread_getcpuclockid", &thread_id)) {
+        return NULL;
+    }
+    err = pthread_getcpuclockid((pthread_t)thread_id, &clk_id);
+    if (err) {
+        errno = err;
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return PyLong_FromLong(clk_id);
+}
+
+PyDoc_STRVAR(pthread_getcpuclockid_doc,
+"pthread_getcpuclockid(thread_id) -> int\n\
+\n\
+Return the clk_id of a thread's CPU time clock.");
+#endif /* HAVE_PTHREAD_GETCPUCLOCKID */
+
 static PyObject *
 time_sleep(PyObject *self, PyObject *obj)
 {
@@ -415,7 +444,7 @@ When 'seconds' is not passed in, convert the current time instead.");
  * an exception and return 0 on error.
  */
 static int
-gettmarg(PyObject *args, struct tm *p)
+gettmarg(PyObject *args, struct tm *p, const char *format)
 {
     int y;
 
@@ -427,7 +456,7 @@ gettmarg(PyObject *args, struct tm *p)
         return 0;
     }
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiii",
+    if (!PyArg_ParseTuple(args, format,
                           &y, &p->tm_mon, &p->tm_mday,
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
@@ -586,8 +615,12 @@ time_strftime(PyObject *self, PyObject *args)
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
-    else if (!gettmarg(tup, &buf) || !checktm(&buf))
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;strftime(): illegal time tuple argument") ||
+             !checktm(&buf))
+    {
         return NULL;
+    }
 
 #if defined(_MSC_VER) || defined(sun) || defined(_AIX)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
@@ -776,9 +809,13 @@ time_asctime(PyObject *self, PyObject *args)
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
-
-    } else if (!gettmarg(tup, &buf) || !checktm(&buf))
+    }
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;asctime(): illegal time tuple argument") ||
+             !checktm(&buf))
+    {
         return NULL;
+    }
     return _asctime(&buf);
 }
 
@@ -814,8 +851,11 @@ time_mktime(PyObject *self, PyObject *tup)
 {
     struct tm buf;
     time_t tt;
-    if (!gettmarg(tup, &buf))
+    if (!gettmarg(tup, &buf,
+                  "iiiiiiiii;mktime(): illegal time tuple argument"))
+    {
         return NULL;
+    }
 #ifdef _AIX
     /* year < 1902 or year > 2037 */
     if (buf.tm_year < 2 || buf.tm_year > 137) {
@@ -1276,6 +1316,9 @@ static PyMethodDef time_methods[] = {
 #endif
 #ifdef HAVE_CLOCK_GETRES
     {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
+#endif
+#ifdef HAVE_PTHREAD_GETCPUCLOCKID
+    {"pthread_getcpuclockid", time_pthread_getcpuclockid, METH_VARARGS, pthread_getcpuclockid_doc},
 #endif
     {"sleep",           time_sleep, METH_O, sleep_doc},
     {"gmtime",          time_gmtime, METH_VARARGS, gmtime_doc},

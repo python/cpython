@@ -1,0 +1,1 @@
+``threading.current_thread()`` should not return a dummy thread at shutdown.

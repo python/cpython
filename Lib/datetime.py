@@ -206,10 +206,16 @@ def _wrap_strftime(object, format, timetuple):
                                 if offset.days < 0:
                                     offset = -offset
                                     sign = '-'
-                                h, m = divmod(offset, timedelta(hours=1))
-                                assert not m % timedelta(minutes=1), "whole minute"
-                                m //= timedelta(minutes=1)
-                                zreplace = '%c%02d%02d' % (sign, h, m)
+                                h, rest = divmod(offset, timedelta(hours=1))
+                                m, rest = divmod(rest, timedelta(minutes=1))
+                                s = rest.seconds
+                                u = offset.microseconds
+                                if u:
+                                    zreplace = '%c%02d%02d%02d.%06d' % (sign, h, m, s, u)
+                                elif s:
+                                    zreplace = '%c%02d%02d%02d' % (sign, h, m, s)
+                                else:
+                                    zreplace = '%c%02d%02d' % (sign, h, m)
                     assert '%' not in zreplace
                     newformat.append(zreplace)
                 elif ch == 'Z':
@@ -241,7 +247,7 @@ def _check_tzname(name):
 # offset is what it returned.
 # If offset isn't None or timedelta, raises TypeError.
 # If offset is None, returns None.
-# Else offset is checked for being in range, and a whole # of minutes.
+# Else offset is checked for being in range.
 # If it is, its integer value is returned.  Else ValueError is raised.
 def _check_utc_offset(name, offset):
     assert name in ("utcoffset", "dst")
@@ -250,9 +256,6 @@ def _check_utc_offset(name, offset):
     if not isinstance(offset, timedelta):
         raise TypeError("tzinfo.%s() must return None "
                         "or timedelta, not '%s'" % (name, type(offset)))
-    if offset.microseconds:
-        raise ValueError("tzinfo.%s() must return a whole number "
-                         "of seconds, got %s" % (name, offset))
     if not -timedelta(1) < offset < timedelta(1):
         raise ValueError("%s()=%s, must be strictly between "
                          "-timedelta(hours=24) and timedelta(hours=24)" %
@@ -960,11 +963,11 @@ class tzinfo:
         raise NotImplementedError("tzinfo subclass must override tzname()")
 
     def utcoffset(self, dt):
-        "datetime -> minutes east of UTC (negative for west of UTC)"
+        "datetime -> timedelta, positive for east of UTC, negative for west of UTC"
         raise NotImplementedError("tzinfo subclass must override utcoffset()")
 
     def dst(self, dt):
-        """datetime -> DST offset in minutes east of UTC.
+        """datetime -> DST offset as timedelta, positive for east of UTC.
 
         Return 0 if DST not in effect.  utcoffset() must include the DST
         offset.
@@ -1262,8 +1265,8 @@ class time:
     # Timezone functions
 
     def utcoffset(self):
-        """Return the timezone offset in minutes east of UTC (negative west of
-        UTC)."""
+        """Return the timezone offset as timedelta, positive east of UTC
+         (negative west of UTC)."""
         if self._tzinfo is None:
             return None
         offset = self._tzinfo.utcoffset(None)
@@ -1284,8 +1287,8 @@ class time:
         return name
 
     def dst(self):
-        """Return 0 if DST is not in effect, or the DST offset (in minutes
-        eastward) if DST is in effect.
+        """Return 0 if DST is not in effect, or the DST offset (as timedelta
+        positive eastward) if DST is in effect.
 
         This is purely informational; the DST offset has already been added to
         the UTC offset returned by utcoffset() if applicable, so there's no
@@ -1714,7 +1717,7 @@ class datetime(date):
         return _strptime._strptime_datetime(cls, date_string, format)
 
     def utcoffset(self):
-        """Return the timezone offset in minutes east of UTC (negative west of
+        """Return the timezone offset as timedelta positive east of UTC (negative west of
         UTC)."""
         if self._tzinfo is None:
             return None
@@ -1736,8 +1739,8 @@ class datetime(date):
         return name
 
     def dst(self):
-        """Return 0 if DST is not in effect, or the DST offset (in minutes
-        eastward) if DST is in effect.
+        """Return 0 if DST is not in effect, or the DST offset (as timedelta
+        positive eastward) if DST is in effect.
 
         This is purely informational; the DST offset has already been added to
         the UTC offset returned by utcoffset() if applicable, so there's no
@@ -1962,9 +1965,6 @@ class timezone(tzinfo):
             raise ValueError("offset must be a timedelta "
                              "strictly between -timedelta(hours=24) and "
                              "timedelta(hours=24).")
-        if (offset.microseconds != 0 or offset.seconds % 60 != 0):
-            raise ValueError("offset must be a timedelta "
-                             "representing a whole number of minutes")
         return cls._create(offset, name)
 
     @classmethod
@@ -2053,8 +2053,15 @@ class timezone(tzinfo):
         else:
             sign = '+'
         hours, rest = divmod(delta, timedelta(hours=1))
-        minutes = rest // timedelta(minutes=1)
-        return 'UTC{}{:02d}:{:02d}'.format(sign, hours, minutes)
+        minutes, rest = divmod(rest, timedelta(minutes=1))
+        seconds = rest.seconds
+        microseconds = rest.microseconds
+        if microseconds:
+            return (f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
+                    f'.{microseconds:06d}')
+        if seconds:
+            return f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
+        return f'UTC{sign}{hours:02d}:{minutes:02d}'
 
 timezone.utc = timezone._create(timedelta(0))
 timezone.min = timezone._create(timezone._minoffset)

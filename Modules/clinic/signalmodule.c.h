@@ -363,7 +363,7 @@ exit:
 
 #endif /* defined(HAVE_SIGTIMEDWAIT) */
 
-#if (defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD))
+#if defined(HAVE_PTHREAD_KILL)
 
 PyDoc_STRVAR(signal_pthread_kill__doc__,
 "pthread_kill($module, thread_id, signalnum, /)\n"
@@ -395,7 +395,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD)) */
+#endif /* defined(HAVE_PTHREAD_KILL) */
 
 #ifndef SIGNAL_ALARM_METHODDEF
     #define SIGNAL_ALARM_METHODDEF
@@ -440,4 +440,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=9403ef0c5d0f7ee0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f6e6298696f1b75 input=a9049054013a1b77]*/

@@ -103,8 +103,6 @@ const char *_PyParser_TokenNames[] = {
     "ELLIPSIS",
     /* This table must match the #defines in token.h! */
     "OP",
-    "AWAIT",
-    "ASYNC",
     "<ERRORTOKEN>",
     "COMMENT",
     "NL",
@@ -150,10 +148,6 @@ tok_new(void)
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
 #endif
-
-    tok->async_def = 0;
-    tok->async_def_indent = 0;
-    tok->async_def_nl = 0;
 
     return tok;
 }
@@ -1471,21 +1465,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         }
     }
 
-    if (tok->async_def
-        && !blankline
-        && tok->level == 0
-        /* There was a NEWLINE after ASYNC DEF,
-           so we're past the signature. */
-        && tok->async_def_nl
-        /* Current indentation level is less than where
-           the async function was defined */
-        && tok->async_def_indent >= tok->indent)
-    {
-        tok->async_def = 0;
-        tok->async_def_indent = 0;
-        tok->async_def_nl = 0;
-    }
-
  again:
     tok->start = NULL;
     /* Skip spaces */
@@ -1550,43 +1529,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur;
 
-        /* async/await parsing block. */
-        if (tok->cur - tok->start == 5) {
-            /* Current token length is 5. */
-            if (tok->async_def) {
-                /* We're inside an 'async def' function. */
-                if (memcmp(tok->start, "async", 5) == 0) {
-                    return ASYNC;
-                }
-                if (memcmp(tok->start, "await", 5) == 0) {
-                    return AWAIT;
-                }
-            }
-            else if (memcmp(tok->start, "async", 5) == 0) {
-                /* The current token is 'async'.
-                   Look ahead one token.*/
-
-                struct tok_state ahead_tok;
-                char *ahead_tok_start = NULL, *ahead_tok_end = NULL;
-                int ahead_tok_kind;
-
-                memcpy(&ahead_tok, tok, sizeof(ahead_tok));
-                ahead_tok_kind = tok_get(&ahead_tok, &ahead_tok_start,
-                                         &ahead_tok_end);
-
-                if (ahead_tok_kind == NAME
-                    && ahead_tok.cur - ahead_tok.start == 3
-                    && memcmp(ahead_tok.start, "def", 3) == 0)
-                {
-                    /* The next token is going to be 'def', so instead of
-                       returning 'async' NAME token, we return ASYNC. */
-                    tok->async_def_indent = tok->indent;
-                    tok->async_def = 1;
-                    return ASYNC;
-                }
-            }
-        }
-
         return NAME;
     }
 
@@ -1599,11 +1541,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur - 1; /* Leave '\n' out of the string */
         tok->cont_line = 0;
-        if (tok->async_def) {
-            /* We're somewhere inside an 'async def' function, and
-               we've encountered a NEWLINE after its signature. */
-            tok->async_def_nl = 1;
-        }
         return NEWLINE;
     }
 

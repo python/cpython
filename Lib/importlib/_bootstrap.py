@@ -172,8 +172,18 @@ def _get_module_lock(name):
                 lock = _DummyModuleLock(name)
             else:
                 lock = _ModuleLock(name)
-            def cb(_):
-                del _module_locks[name]
+
+            def cb(ref, name=name):
+                _imp.acquire_lock()
+                try:
+                    # bpo-31070: Check if another thread created a new lock
+                    # after the previous lock was destroyed
+                    # but before the weakref callback was called.
+                    if _module_locks.get(name) is ref:
+                        del _module_locks[name]
+                finally:
+                    _imp.release_lock()
+
             _module_locks[name] = _weakref.ref(lock, cb)
     finally:
         _imp.release_lock()
@@ -1111,24 +1121,12 @@ def _setup(sys_module, _imp_module):
 
     # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]
-    for builtin_name in ('_warnings',):
+    for builtin_name in ('_thread', '_warnings', '_weakref'):
         if builtin_name not in sys.modules:
             builtin_module = _builtin_from_name(builtin_name)
         else:
             builtin_module = sys.modules[builtin_name]
         setattr(self_module, builtin_name, builtin_module)
-
-    # Directly load the _thread module (needed during bootstrap).
-    try:
-        thread_module = _builtin_from_name('_thread')
-    except ImportError:
-        # Python was built without threads
-        thread_module = None
-    setattr(self_module, '_thread', thread_module)
-
-    # Directly load the _weakref module (needed during bootstrap).
-    weakref_module = _builtin_from_name('_weakref')
-    setattr(self_module, '_weakref', weakref_module)
 
 
 def _install(sys_module, _imp_module):

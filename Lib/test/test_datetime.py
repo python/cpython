@@ -50,8 +50,6 @@ for module, suffix in zip(test_modules, test_suffixes):
         cls.tearDownClass = tearDownClass
     all_test_classes.extend(test_classes)
 
-    all_test_classes.extend(test_classes)
-
 def test_main():
     run_unittest(*all_test_classes)
 

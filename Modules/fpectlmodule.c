@@ -111,29 +111,8 @@ static void fpe_reset(Sigfunc *handler)
      * handler for SIGFPE to the given handler.
      */
 
-/*-- IRIX -----------------------------------------------------------------*/
-#if defined(sgi)
-    /* See man page on handle_sigfpes -- must link with -lfpe
-     * My usage doesn't follow the man page exactly.  Maybe somebody
-     * else can explain handle_sigfpes to me....
-     * cc -c -I/usr/local/python/include fpectlmodule.c
-     * ld -shared -o fpectlmodule.so fpectlmodule.o -lfpe
-     */
-#include <sigfpe.h>
-    typedef void user_routine (unsigned[5], int[2]);
-    typedef void abort_routine (unsigned long);
-    handle_sigfpes(_OFF, 0,
-                 (user_routine *)0,
-                 _TURN_OFF_HANDLER_ON_ERROR,
-                 NULL);
-    handle_sigfpes(_ON, _EN_OVERFL | _EN_DIVZERO | _EN_INVALID,
-                 (user_routine *)0,
-                 _ABORT_ON_ERROR,
-                 NULL);
-    PyOS_setsig(SIGFPE, handler);
-
 /*-- SunOS and Solaris ----------------------------------------------------*/
-#elif defined(sun)
+#if defined(sun)
     /* References: ieee_handler, ieee_sun, ieee_functions, and ieee_flags
        man pages (SunOS or Solaris)
        cc -c -I/usr/local/python/include fpectlmodule.c

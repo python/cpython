@@ -12,19 +12,27 @@
 
    To improve cache locality, each probe inspects a series of consecutive
    nearby entries before moving on to probes elsewhere in memory.  This leaves
-   us with a hybrid of linear probing and open addressing.  The linear probing
+   us with a hybrid of linear probing and randomized probing.  The linear probing
    reduces the cost of hash collisions because consecutive memory accesses
    tend to be much cheaper than scattered probes.  After LINEAR_PROBES steps,
-   we then use open addressing with the upper bits from the hash value.  This
-   helps break-up long chains of collisions.
+   we then use more of the upper bits from the hash value and apply a simple
+   linear congruential random number genearator.  This helps break-up long
+   chains of collisions.
 
    All arithmetic on hash should ignore overflow.
 
    Unlike the dictionary implementation, the lookkey function can return
    NULL if the rich comparison returns an error.
+
+   Use cases for sets differ considerably from dictionaries where looked-up
+   keys are more likely to be present.  In contrast, sets are primarily
+   about membership testing where the presence of an element is not known in
+   advance.  Accordingly, the set implementation needs to optimize for both
+   the found and not-found case.
 */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 /* Object used as dummy key to fill deleted entries */
@@ -553,6 +561,7 @@ set_dealloc(PySetObject *so)
     setentry *entry;
     Py_ssize_t used = so->used;
 
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
     Py_TRASHCAN_SAFE_BEGIN(so)
     if (so->weakreflist != NULL)
@@ -809,6 +818,8 @@ typedef struct {
 static void
 setiter_dealloc(setiterobject *si)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    _PyObject_GC_UNTRACK(si);
     Py_XDECREF(si->si_set);
     PyObject_GC_Del(si);
 }
