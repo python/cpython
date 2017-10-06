@@ -256,13 +256,17 @@ The special characters are:
    :const:`re.S` (dot matches all), :const:`re.U` (Unicode matching),
    and :const:`re.X` (verbose), for the part of the expression.
    (The flags are described in :ref:`contents-of-module-re`.)
-   The letters ``'a'``, ``'L'`` and ``'u'`` can't be combined or follow
-   ``'-'``.  Instead using the one of them temporary removes other flags.
+   The letters ``'a'``, ``'L'`` and ``'u'`` are mutually exclusive when used
+   as inline flags, so they can't be combined or follow ``'-'``.  Instead,
+   when one of them appears in an inline group, it overrides any of the other
+   two letters in the enclosing group.  This override is only in effect for
+   the narrow inline group, and the original flags are restored outside of
+   the group.
 
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.7
-      The letters ``'a'``, ``'L'`` and ``'u'`` can be used in a scope.
+      The letters ``'a'``, ``'L'`` and ``'u'`` also can be used in a group.
 
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is

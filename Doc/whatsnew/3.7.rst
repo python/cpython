@@ -243,7 +243,7 @@ re
 --
 
 The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
-can be set for the part of a regular expression.
+can be set within the scope of a group.
 (Contributed by Serhiy Storchaka in :issue:`31690`.)
 
 string
