@@ -2554,7 +2554,7 @@ An example of an asynchronous iterable object::
 .. versionchanged:: 3.7
    Prior to Python 3.7, ``__aiter__`` could return an *awaitable*
    that would resolve to an
-   :term:`asynchronous iterators <asynchronous iterator>`.
+   :term:`asynchronous iterator <asynchronous iterator>`.
 
    Starting with Python 3.7, ``__aiter__`` must return an
    asynchronous iterator object.  Returning anything else
