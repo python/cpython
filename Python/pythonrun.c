@@ -481,7 +481,7 @@ Py_Finalize(void)
 
     /* Debugging stuff */
 #ifdef COUNT_ALLOCS
-    dump_counts(stdout);
+    dump_counts(stderr);
 #endif
 
     PRINT_TOTAL_REFS();

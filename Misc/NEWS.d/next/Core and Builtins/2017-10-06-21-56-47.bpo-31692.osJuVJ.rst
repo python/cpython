@@ -1,0 +1,2 @@
+COUNT_ALLOCSi debug mode now writes allocations statistics into stderr,
+rather than stdout.
