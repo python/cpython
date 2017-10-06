@@ -1200,52 +1200,24 @@ Thread Local Storage Support
 
 .. sectionauthor:: Masayuki Yamamoto <ma3yuki.8mamo10@gmail.com>
 
-
 The Python interpreter provides low-level support for thread-local storage
-(TLS) which wrapped underlying TLS implementation to be compatible, besides the
-Python-level support (:class:`threading.local`).  CPython TLS APIs are similar
-to pthreads and Windows API: use a thread key and functions to associate a
-:c:type:`void\*` value per thread, a thread key is typically shared across
-threads and no destructor support like `pthread_key_create
-<http://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_key_create.html>`_.
-The GIL does not need to be held when calling these functions; they supply
+(TLS) which wraps the underlying native TLS implementation to support the
+Python-level thread local storage API (:class:`threading.local`).  The
+CPython C level APIs are similar to those offered by pthreads and Windows:
+use a thread key and functions to associate a :c:type:`void\*` value per
+thread.
+
+The GIL does *not* need to be held when calling these functions; they supply
 their own locking.
 
 Note that :file:`Python.h` does not include the declaration of the TLS APIs,
 you need to include :file:`pythread.h` to use thread-local storage.
 
 .. note::
-   None of the API functions does memory management on behalf of the
+   None of these API functions handle memory management on behalf of the
    :c:type:`void\*` values.  You need to allocate and deallocate them yourself.
    If the :c:type:`void\*` values happen to be :c:type:`PyObject\*`, these
    functions don't do refcount operations on them either.
-
-
-.. _thread-local-storage-api:
-
-Thread Local Storage (TLS) API
-------------------------------
-
-.. deprecated:: 3.7
-   This API is superseded by
-   :ref:`Thread Specific Storage (TSS) API <thread-specific-storage-api>`.
-
-.. note::
-   No support for platforms where the native TLS key is defined in a way that
-   cannot be safely cast to ``int``.  On such platforms,
-   :c:func:`PyThread_create_key` will return immediately with a failure status,
-   and the other TLS functions will all be no-ops on such platforms.
-
-There is no description because prevents us from use of this API.
-
-
-.. c:function:: int PyThread_create_key()
-.. c:function:: void PyThread_delete_key(int key)
-.. c:function:: int PyThread_set_key_value(int key, void *value)
-.. c:function:: void* PyThread_get_key_value(int key)
-.. c:function:: void PyThread_delete_key_value(int key)
-.. c:function:: void PyThread_ReInitTLS()
-
 
 .. _thread-specific-storage-api:
 
@@ -1281,7 +1253,7 @@ CPython interpreter.  This API uses a new type :c:type:`Py_tss_t` instead of
 Dynamic Allocation
 ~~~~~~~~~~~~~~~~~~
 
-Dynamic allocation of the :c:type:`Py_tss_t`, particularly in extension modules
+Dynamic allocation of the :c:type:`Py_tss_t`, required in extension modules
 built with :ref:`Py_LIMITED_API <stable>`, where static allocation of this type
 is not possible due to its implementation being opaque at build time.
 
@@ -1295,14 +1267,14 @@ is not possible due to its implementation being opaque at build time.
 
 .. c:function:: void PyThread_tss_free(Py_tss_t *key)
 
-   Free a TSS key value allocated by :c:func:`PyThread_tss_alloc`, or does
-   no-op if the value pointed to by the *key* argument is *NULL*.  In the case
-   of freeing, this behavior involves calling :c:func:`PyThread_tss_delete`
-   preventively.
+   Free the given *key* allocated by :c:func:`PyThread_tss_alloc`, after
+   first calling :c:func:`PyThread_tss_delete` to ensure any associated
+   thread locals have been unassigned. This is a no-op if the *key*
+   argument is `NULL`.
 
-   .. warning::
+   .. note::
       A freed key becomes a dangling pointer, you should reset the key to
-      *NULL*.
+      `NULL`.
 
 
 Methods
@@ -1322,10 +1294,10 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
 
 .. c:function:: int PyThread_tss_create(Py_tss_t *key)
 
-   Return a zero value on success an initialization of a TSS key.  The behavior
+   Return a zero value on successful initialization of a TSS key.  The behavior
    is undefined if the value pointed to by the *key* argument is not
    initialized by :c:macro:`Py_tss_NEEDS_INIT`.  This function can be called
-   repeatedly on the same key--calling it on an already initialized key is a
+   repeatedly on the same key -- calling it on an already initialized key is a
    no-op and immediately returns success.
 
 
@@ -1334,15 +1306,15 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
    Destroy a TSS key to forget the values associated with the key across all
    threads, and change the key's initialization state to uninitialized.  A
    destroyed key is able to be initialized again by
-   :c:func:`PyThread_tss_create`.  This function can be called repeatedly on
-   the same key--calling it on an already destroyed key is a no-op.
+   :c:func:`PyThread_tss_create`. This function can be called repeatedly on
+   the same key -- calling it on an already destroyed key is a no-op.
 
 
 .. c:function:: int PyThread_tss_set(Py_tss_t *key, void *value)
 
-   Return a zero value on success associated a :c:type:`void\*` value with a
-   TSS key in the current thread.  Each thread has a distinct mapping of the
-   key to a :c:type:`void\*` value.
+   Return a zero value to indicate successfully associating a :c:type:`void\*`
+   value with a TSS key in the current thread.  Each thread has a distinct
+   mapping of the key to a :c:type:`void\*` value.
 
 
 .. c:function:: void* PyThread_tss_get(Py_tss_t *key)
@@ -1350,3 +1322,30 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
    Return the :c:type:`void\*` value associated with a TSS key in the current
    thread.  This returns *NULL* if no value is associated with the key in the
    current thread.
+
+
+.. _thread-local-storage-api:
+
+Thread Local Storage (TLS) API
+------------------------------
+
+.. deprecated:: 3.7
+   This API is superseded by
+   :ref:`Thread Specific Storage (TSS) API <thread-specific-storage-api>`.
+
+.. note::
+   This version of the API does not support platforms where the native TLS key
+   is defined in a way that cannot be safely cast to ``int``.  On such platforms,
+   :c:func:`PyThread_create_key` will return immediately with a failure status,
+   and the other TLS functions will all be no-ops on such platforms.
+
+Due to the compatibility problem noted above, this version of the API should not
+be used in new code.
+
+.. c:function:: int PyThread_create_key()
+.. c:function:: void PyThread_delete_key(int key)
+.. c:function:: int PyThread_set_key_value(int key, void *value)
+.. c:function:: void* PyThread_get_key_value(int key)
+.. c:function:: void PyThread_delete_key_value(int key)
+.. c:function:: void PyThread_ReInitTLS()
+
