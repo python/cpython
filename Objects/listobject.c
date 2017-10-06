@@ -436,19 +436,25 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
     PyListObject *np;
     PyObject **src, **dest;
-    Py_ssize_t i, len;
+    Py_ssize_t alen, i, len;
+    alen = Py_SIZE(a);
     if (ilow < 0)
         ilow = 0;
-    else if (ilow > Py_SIZE(a))
-        ilow = Py_SIZE(a);
+    else if (ilow > alen)
+        ilow = alen;
     if (ihigh < ilow)
         ihigh = ilow;
-    else if (ihigh > Py_SIZE(a))
-        ihigh = Py_SIZE(a);
+    else if (ihigh > alen)
+        ihigh = alen;
     len = ihigh - ilow;
     np = (PyListObject *) PyList_New(len);
     if (np == NULL)
         return NULL;
+
+    if (Py_SIZE(a) != alen) {
+        PyErr_SetString(PyExc_RuntimeError, "list mutated during slicing");
+        return NULL;
+    }
 
     src = a->ob_item + ilow;
     dest = np->ob_item;
