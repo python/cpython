@@ -1382,7 +1382,7 @@ class CoroutineTest(unittest.TestCase):
             def __init__(self):
                 self.i = 0
 
-            async def __aiter__(self):
+            def __aiter__(self):
                 nonlocal aiter_calls
                 aiter_calls += 1
                 return self
@@ -1401,9 +1401,8 @@ class CoroutineTest(unittest.TestCase):
 
         buffer = []
         async def test1():
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i1, i2 in AsyncIter():
-                    buffer.append(i1 + i2)
+            async for i1, i2 in AsyncIter():
+                buffer.append(i1 + i2)
 
         yielded, _ = run_async(test1())
         # Make sure that __aiter__ was called only once
@@ -1415,13 +1414,12 @@ class CoroutineTest(unittest.TestCase):
         buffer = []
         async def test2():
             nonlocal buffer
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i in AsyncIter():
-                    buffer.append(i[0])
-                    if i[0] == 20:
-                        break
-                else:
-                    buffer.append('what?')
+            async for i in AsyncIter():
+                buffer.append(i[0])
+                if i[0] == 20:
+                    break
+            else:
+                buffer.append('what?')
             buffer.append('end')
 
         yielded, _ = run_async(test2())
@@ -1434,13 +1432,12 @@ class CoroutineTest(unittest.TestCase):
         buffer = []
         async def test3():
             nonlocal buffer
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i in AsyncIter():
-                    if i[0] > 20:
-                        continue
-                    buffer.append(i[0])
-                else:
-                    buffer.append('what?')
+            async for i in AsyncIter():
+                if i[0] > 20:
+                    continue
+                buffer.append(i[0])
+            else:
+                buffer.append('what?')
             buffer.append('end')
 
         yielded, _ = run_async(test3())
@@ -1479,7 +1476,7 @@ class CoroutineTest(unittest.TestCase):
 
         with self.assertRaisesRegex(
                 TypeError,
-                r"async for' received an invalid object.*__aiter.*\: I"):
+                r"that does not implement __anext__"):
 
             run_async(foo())
 
@@ -1507,25 +1504,6 @@ class CoroutineTest(unittest.TestCase):
             run_async(foo())
 
         self.assertEqual(sys.getrefcount(aiter), refs_before)
-
-    def test_for_5(self):
-        class I:
-            async def __aiter__(self):
-                return self
-
-            def __anext__(self):
-                return 123
-
-        async def foo():
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i in I():
-                    print('never going to happen')
-
-        with self.assertRaisesRegex(
-                TypeError,
-                "async for' received an invalid object.*__anext.*int"):
-
-            run_async(foo())
 
     def test_for_6(self):
         I = 0
@@ -1622,13 +1600,12 @@ class CoroutineTest(unittest.TestCase):
     def test_for_7(self):
         CNT = 0
         class AI:
-            async def __aiter__(self):
+            def __aiter__(self):
                 1/0
         async def foo():
             nonlocal CNT
-            with self.assertWarnsRegex(DeprecationWarning, "legacy"):
-                async for i in AI():
-                    CNT += 1
+            async for i in AI():
+                CNT += 1
             CNT += 10
         with self.assertRaises(ZeroDivisionError):
             run_async(foo())
@@ -1652,37 +1629,6 @@ class CoroutineTest(unittest.TestCase):
                 run_async(foo())
         self.assertEqual(CNT, 0)
 
-    def test_for_9(self):
-        # Test that DeprecationWarning can safely be converted into
-        # an exception (__aiter__ should not have a chance to raise
-        # a ZeroDivisionError.)
-        class AI:
-            async def __aiter__(self):
-                1/0
-        async def foo():
-            async for i in AI():
-                pass
-
-        with self.assertRaises(DeprecationWarning):
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                run_async(foo())
-
-    def test_for_10(self):
-        # Test that DeprecationWarning can safely be converted into
-        # an exception.
-        class AI:
-            async def __aiter__(self):
-                pass
-        async def foo():
-            async for i in AI():
-                pass
-
-        with self.assertRaises(DeprecationWarning):
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                run_async(foo())
-
     def test_for_11(self):
         class F:
             def __aiter__(self):
@@ -1698,24 +1644,6 @@ class CoroutineTest(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError,
                                     'an invalid object from __anext__') as c:
-            main().send(None)
-
-        err = c.exception
-        self.assertIsInstance(err.__cause__, ZeroDivisionError)
-
-    def test_for_12(self):
-        class F:
-            def __aiter__(self):
-                return self
-            def __await__(self):
-                1 / 0
-
-        async def main():
-            async for _ in F():
-                pass
-
-        with self.assertRaisesRegex(TypeError,
-                                    'an invalid object from __aiter__') as c:
             main().send(None)
 
         err = c.exception

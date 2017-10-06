@@ -676,20 +676,12 @@ class StreamReader:
         self._maybe_resume_transport()
         return data
 
-    if compat.PY35:
-        @coroutine
-        def __aiter__(self):
-            return self
+    def __aiter__(self):
+        return self
 
-        @coroutine
-        def __anext__(self):
-            val = yield from self.readline()
-            if val == b'':
-                raise StopAsyncIteration
-            return val
-
-    if compat.PY352:
-        # In Python 3.5.2 and greater, __aiter__ should return
-        # the asynchronous iterator directly.
-        def __aiter__(self):
-            return self
+    @coroutine
+    def __anext__(self):
+        val = yield from self.readline()
+        if val == b'':
+            raise StopAsyncIteration
+        return val
