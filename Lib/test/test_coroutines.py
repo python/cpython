@@ -150,6 +150,14 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             """,
 
             """def bar():
+                 {i: i async for i in els}
+            """,
+
+            """def bar():
+                 {i async for i in els}
+            """,
+
+            """def bar():
                  [await i for i in els]
             """,
 
