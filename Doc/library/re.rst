@@ -532,7 +532,7 @@ form.
    Make ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S``
    perform ASCII-only matching instead of full Unicode matching.  This is only
    meaningful for Unicode patterns, and is ignored for byte patterns.
-   Corresponds the inline flag ``(?a)``.
+   Corresponds to the inline flag ``(?a)``.
 
    Note that for backward compatibility, the :const:`re.U` flag still
    exists (as well as its synonym :const:`re.UNICODE` and its embedded
@@ -555,7 +555,7 @@ form.
    ``ü``) also works unless the :const:`re.ASCII` flag is used to disable
    non-ASCII matches.  The current locale does not change the effect of this
    flag unless the :const:`re.LOCALE` flag is also used.
-   Corresponds the inline flag ``(?i)``.
+   Corresponds to the inline flag ``(?i)``.
 
    Note that in Unicode patterns the expression ``[A-Z]`` will match not
    only letters 'A' to 'Z' and 'a' to 'z', but will also match letters 'İ'
@@ -576,7 +576,7 @@ form.
    works with 8-bit locales.  Unicode matching is already enabled by default
    in Python 3 for Unicode (str) patterns, and it is able to handle different
    locales/languages.
-   Corresponds the inline flag ``(?L)``.
+   Corresponds to the inline flag ``(?L)``.
 
    .. versionchanged:: 3.6
       :const:`re.LOCALE` can be used only with bytes patterns and is
@@ -597,7 +597,7 @@ form.
    end of each line (immediately preceding each newline).  By default, ``'^'``
    matches only at the beginning of the string, and ``'$'`` only at the end of the
    string and immediately before the newline (if any) at the end of the string.
-   Corresponds the inline flag ``(?m)``.
+   Corresponds to the inline flag ``(?m)``.
 
 
 .. data:: S
@@ -605,7 +605,7 @@ form.
 
    Make the ``'.'`` special character match any character at all, including a
    newline; without this flag, ``'.'`` will match anything *except* a newline.
-   Corresponds the inline flag ``(?s)``.
+   Corresponds to the inline flag ``(?s)``.
 
 
 .. data:: X
@@ -627,7 +627,7 @@ form.
                          \d *  # some fractional digits""", re.X)
       b = re.compile(r"\d+\.\d*")
 
-   Corresponds the inline flag ``(?x)``.
+   Corresponds to the inline flag ``(?x)``.
 
 
 .. function:: search(pattern, string, flags=0)
