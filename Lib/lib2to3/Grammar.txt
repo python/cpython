@@ -130,8 +130,8 @@ atom: ('(' [yield_expr|testlist_gexp] ')' |
        '{' [dictsetmaker] '}' |
        '`' testlist1 '`' |
        NAME | NUMBER | STRING+ | '.' '.' '.')
-listmaker: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
-testlist_gexp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+listmaker: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
+testlist_gexp: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
@@ -161,7 +161,7 @@ argument: ( test [comp_for] |
 	    star_expr )
 
 comp_iter: comp_for | comp_if
-comp_for: ['async'] 'for' exprlist 'in' testlist_safe [comp_iter]
+comp_for: ['async'] 'for' exprlist 'in' or_test [comp_iter]
 comp_if: 'if' old_test [comp_iter]
 
 # As noted above, testlist_safe extends the syntax allowed in list
@@ -180,7 +180,7 @@ comp_if: 'if' old_test [comp_iter]
 #
 # See https://bugs.python.org/issue27494
 old_comp_iter: old_comp_for | old_comp_if
-old_comp_for: [ASYNC] 'for' exprlist 'in' testlist_safe [old_comp_iter]
+old_comp_for: ['async'] 'for' exprlist 'in' testlist_safe [old_comp_iter]
 old_comp_if: 'if' old_test [old_comp_iter]
 
 testlist1: test (',' test)*
