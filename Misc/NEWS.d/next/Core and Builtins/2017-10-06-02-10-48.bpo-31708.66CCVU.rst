@@ -1,0 +1,1 @@
+Allow use of asynchronous generator expressions in synchronous functions.
