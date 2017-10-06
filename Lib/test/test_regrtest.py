@@ -543,6 +543,8 @@ class ArgsTestCase(BaseTestCase):
                                 testname)
         self.assertEqual(output.splitlines(), all_methods)
 
+    @unittest.skipIf(sys.platform.startswith('aix'),
+                     "support._crash_python() doesn't work on AIX")
     def test_crashed(self):
         # Any code which causes a crash
         code = 'import test.support; test.support._crash_python()'

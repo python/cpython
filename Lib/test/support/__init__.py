@@ -1960,6 +1960,6 @@ def _crash_python():
     Use SuppressCrashReport() to prevent a crash report from popping up.
     """
 
-    import ctypes
+    import _testcapi
     with SuppressCrashReport():
-        ctypes.string_at(0)
+        _testcapi._read_null()
