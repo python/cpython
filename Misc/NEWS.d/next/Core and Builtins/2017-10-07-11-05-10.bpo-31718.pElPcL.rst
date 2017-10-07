@@ -1,0 +1,2 @@
+Raise `ValueError` instead of `SystemError` when methods of uninitialized
+`io.IncrementalNewlineDecoder` objects are called. Patch by Oren Milman.
