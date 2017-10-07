@@ -1,8 +1,5 @@
 """Utilities to support packages."""
 
-# NOTE: This module must remain compatible with Python 2.3, as it is shared
-# by setuptools for distribution with Python 2.3 and up.
-
 import os
 import sys
 import imp
