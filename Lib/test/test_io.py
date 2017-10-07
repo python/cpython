@@ -3508,6 +3508,7 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         _check(dec)
 
 class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
+    @support.cpython_only
     def test_uninitialized(self):
         uninitialized = self.IncrementalNewlineDecoder.__new__(
             self.IncrementalNewlineDecoder)

@@ -248,19 +248,17 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *errors)
 /*[clinic end generated code: output=fbd04d443e764ec2 input=89db6b19c6b126bf]*/
 {
-    Py_XDECREF(self->decoder);
-    self->decoder = decoder;
+    Py_XSETREF(self->decoder, decoder);
     Py_INCREF(decoder);
 
-    Py_XDECREF(self->errors);
     if (errors == NULL) {
-        self->errors = PyUnicode_FromString("strict");
+        Py_XSETREF(self->errors, PyUnicode_FromString("strict"));
         if (self->errors == NULL)
             return -1;
     }
     else {
         Py_INCREF(errors);
-        self->errors = errors;
+        Py_XSETREF(self->errors, errors);
     }
 
     self->translate = translate;
@@ -311,9 +309,8 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
     nldecoder_object *self = (nldecoder_object *) myself;
 
     if (self->decoder == NULL) {
-        PyErr_Format(PyExc_ValueError,
-                     "%.200s.__init__() not called",
-                     Py_TYPE(self)->tp_name);
+        PyErr_SetString(PyExc_ValueError,
+                        "IncrementalNewlineDecoder.__init__ not called");
         return NULL;
     }
 
@@ -530,9 +527,8 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
     unsigned long long flag;
 
     if (self->decoder == NULL) {
-        PyErr_Format(PyExc_ValueError,
-                     "%.200s.__init__() not called",
-                     Py_TYPE(self)->tp_name);
+        PyErr_SetString(PyExc_ValueError,
+                        "IncrementalNewlineDecoder.__init__() not called");
         return NULL;
     }
     if (self->decoder != Py_None) {
@@ -580,9 +576,8 @@ _io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
     unsigned long long flag;
 
     if (self->decoder == NULL) {
-        PyErr_Format(PyExc_ValueError,
-                     "%.200s.__init__() not called",
-                     Py_TYPE(self)->tp_name);
+        PyErr_SetString(PyExc_ValueError,
+                        "IncrementalNewlineDecoder.__init__() not called");
         return NULL;
     }
     if (!PyTuple_Check(state)) {
@@ -616,9 +611,8 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
     self->seennl = 0;
     self->pendingcr = 0;
     if (self->decoder == NULL) {
-        PyErr_Format(PyExc_ValueError,
-                     "%.200s.__init__() not called",
-                     Py_TYPE(self)->tp_name);
+        PyErr_SetString(PyExc_ValueError,
+                        "IncrementalNewlineDecoder.__init__() not called");
         return NULL;
     }
     if (self->decoder != Py_None)
