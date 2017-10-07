@@ -507,11 +507,20 @@ static PyObject *
 teedataobject_reduce(teedataobject *tdo)
 {
     int i;
+    PyObject *values;
     /* create a temporary list of already iterated values */
-    PyObject *values = PyList_New(tdo->numread);
+  again:
+    values = PyList_New(tdo->numread);
 
     if (!values)
         return NULL;
+    if (PyList_GET_SIZE(values) != tdo->numread) {
+        /* Durnit.  The allocations caused the number of already iterated values to change.
+         * Just start over, this shouldn't normally happen.
+         */
+        Py_DECREF(values);
+        goto again;
+    }
     for (i=0 ; i<tdo->numread ; i++) {
         Py_INCREF(tdo->values[i]);
         PyList_SET_ITEM(values, i, tdo->values[i]);

@@ -912,9 +912,17 @@ _elementtree_Element___getstate___impl(ElementObject *self)
     PyObject *instancedict = NULL, *children;
 
     /* Build a list of children. */
+  again:
     children = PyList_New(self->extra ? self->extra->length : 0);
     if (!children)
         return NULL;
+    if (PyList_GET_SIZE(children) != (self->extra ? self->extra->length : 0)) {
+        /* Durnit.  The allocations caused the extra to resize.
+         * Just start over, this shouldn't normally happen.
+         */
+        Py_DECREF(children);
+        goto again;
+    }
     for (i = 0; i < PyList_GET_SIZE(children); i++) {
         PyObject *child = self->extra->children[i];
         Py_INCREF(child);
@@ -1375,12 +1383,20 @@ _elementtree_Element_getchildren_impl(ElementObject *self)
         return NULL;
     }
 
+  again:
     if (!self->extra)
         return PyList_New(0);
 
     list = PyList_New(self->extra->length);
     if (!list)
         return NULL;
+    if (PyList_GET_SIZE(list) != (self->extra ? self->extra->length : 0)) {
+        /* Durnit.  The allocations caused the extra to resize.
+         * Just start over, this shouldn't normally happen.
+         */
+        Py_DECREF(list);
+        goto again;
+    }
 
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
@@ -1739,6 +1755,7 @@ element_subscr(PyObject* self_, PyObject* item)
         Py_ssize_t start, stop, step, slicelen, cur, i;
         PyObject* list;
 
+  again:
         if (!self->extra)
             return PyList_New(0);
 
@@ -1754,6 +1771,13 @@ element_subscr(PyObject* self_, PyObject* item)
             list = PyList_New(slicelen);
             if (!list)
                 return NULL;
+            if (slicelen != (self->extra ? self->extra->length : 0)) {
+                /* Durnit.  The allocations caused the extra to resize.
+                 * Just start over, this shouldn't normally happen.
+                 */
+                Py_DECREF(list);
+                goto again;
+            }
 
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
@@ -1788,11 +1812,12 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         return element_setitem(self_, i, value);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelen, newlen, cur, i;
-
-        PyObject* recycle = NULL;
+        Py_ssize_t start, stop, step, slicelen, oldlen, newlen, cur, i;
+        PyObject* recycle;
         PyObject* seq;
 
+  again:
+        recycle = NULL;
         if (!self->extra) {
             if (create_extra(self, NULL) < 0)
                 return -1;
@@ -1801,6 +1826,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        oldlen = self->extra->length;
         slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
                                          step);
 
@@ -1827,8 +1853,14 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
              * scheduled for removal.
             */
             if (!(recycle = PyList_New(slicelen))) {
-                PyErr_NoMemory();
                 return -1;
+            }
+            if (oldlen != (self->extra ? self->extra->length : 0)) {
+                /* Durnit.  The allocations caused the extra to resize.
+                 * Just start over, this shouldn't normally happen.
+                 */
+                Py_DECREF(recycle);
+                goto again;
             }
 
             /* This loop walks over all the children that have to be deleted,
@@ -1899,6 +1931,14 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 Py_DECREF(seq);
                 return -1;
             }
+            oldlen += newlen - slicelen;
+            if (oldlen != (self->extra ? self->extra->length : 0)) {
+                /* Durnit.  The allocations caused the extra to resize.
+                 * Just start over, this shouldn't normally happen.
+                 */
+                Py_DECREF(seq);
+                goto again;
+            }
         }
 
         if (slicelen > 0) {
@@ -1909,6 +1949,14 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
             if (!recycle) {
                 Py_DECREF(seq);
                 return -1;
+            }
+            if (oldlen != (self->extra ? self->extra->length : 0)) {
+                /* Durnit.  The allocations caused the extra to resize.
+                 * Just start over, this shouldn't normally happen.
+                 */
+                Py_DECREF(seq);
+                Py_DECREF(recycle);
+                goto again;
             }
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++)

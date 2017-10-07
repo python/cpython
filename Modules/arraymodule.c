@@ -1565,15 +1565,32 @@ static PyObject *
 array_array_tolist_impl(arrayobject *self)
 /*[clinic end generated code: output=00b60cc9eab8ef89 input=a8d7784a94f86b53]*/
 {
-    PyObject *list = PyList_New(Py_SIZE(self));
+    PyObject *list;
     Py_ssize_t i;
 
+  again:
+    list = PyList_New(Py_SIZE(self));
     if (list == NULL)
         return NULL;
+    if (PyList_GET_SIZE(list) != Py_SIZE(self)) {
+        /* Durnit.  The allocations caused the array to resize.
+         * Just start over, this shouldn't normally happen.
+         */
+        Py_DECREF(list);
+        goto again;
+    }
     for (i = 0; i < Py_SIZE(self); i++) {
         PyObject *v = getarrayitem((PyObject *)self, i);
         if (v == NULL)
             goto error;
+        if (PyList_GET_SIZE(list) != Py_SIZE(self)) {
+            /* Durnit.  The allocations caused the array to resize.
+             * Just start over, this shouldn't normally happen.
+             */
+            Py_DECREF(v);
+            Py_DECREF(list);
+            goto again;
+        }
         if (PyList_SetItem(list, i, v) < 0)
             goto error;
     }
