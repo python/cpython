@@ -248,8 +248,8 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *errors)
 /*[clinic end generated code: output=fbd04d443e764ec2 input=89db6b19c6b126bf]*/
 {
-    Py_CLEAR(self->decoder);
-    Py_CLEAR(self->errors);
+    Py_XDECREF(self->decoder);
+    Py_XDECREF(self->errors);
 
     self->decoder = decoder;
     Py_INCREF(decoder);
