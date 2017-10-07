@@ -44,8 +44,12 @@ namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
         PyErr_Format(PyExc_TypeError, "no positional arguments expected");
         return -1;
     }
-    if (kwds == NULL)
+    if (kwds == NULL) {
         return 0;
+    }
+    if (!PyArg_ValidateKeywordArguments(kwds)) {
+        return -1;
+    }
     return PyDict_Update(ns->ns_dict, kwds);
 }
 
