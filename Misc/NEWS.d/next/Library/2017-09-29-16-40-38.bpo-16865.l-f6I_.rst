@@ -1,1 +1,1 @@
-Support arrays >=2GiB in `ctypes`
+Support arrays >=2GiB in `ctypes`.  Patch by Segev Finer.
