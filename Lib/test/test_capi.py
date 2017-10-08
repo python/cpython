@@ -1,7 +1,7 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import os
 import pickle
 import platform
@@ -271,6 +271,50 @@ class CAPITest(unittest.TestCase):
         self.assertIn(b'MemoryError 1 10', out)
         self.assertIn(b'MemoryError 2 20', out)
         self.assertIn(b'MemoryError 3 30', out)
+
+    def test_mapping_keys_values_items(self):
+        class Mapping1(dict):
+            def keys(self):
+                return list(super().keys())
+            def values(self):
+                return list(super().values())
+            def items(self):
+                return list(super().items())
+        class Mapping2(dict):
+            def keys(self):
+                return tuple(super().keys())
+            def values(self):
+                return tuple(super().values())
+            def items(self):
+                return tuple(super().items())
+        dict_obj = {'foo': 1, 'bar': 2, 'spam': 3}
+
+        for mapping in [{}, OrderedDict(), Mapping1(), Mapping2(),
+                        dict_obj, OrderedDict(dict_obj),
+                        Mapping1(dict_obj), Mapping2(dict_obj)]:
+            self.assertListEqual(_testcapi.get_mapping_keys(mapping),
+                                 list(mapping.keys()))
+            self.assertListEqual(_testcapi.get_mapping_values(mapping),
+                                 list(mapping.values()))
+            self.assertListEqual(_testcapi.get_mapping_items(mapping),
+                                 list(mapping.items()))
+
+    def test_mapping_keys_values_items_bad_arg(self):
+        self.assertRaises(AttributeError, _testcapi.get_mapping_keys, None)
+        self.assertRaises(AttributeError, _testcapi.get_mapping_values, None)
+        self.assertRaises(AttributeError, _testcapi.get_mapping_items, None)
+
+        class BadMapping:
+            def keys(self):
+                return None
+            def values(self):
+                return None
+            def items(self):
+                return None
+        bad_mapping = BadMapping()
+        self.assertRaises(TypeError, _testcapi.get_mapping_keys, bad_mapping)
+        self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
+        self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
 
 class TestPendingCalls(unittest.TestCase):

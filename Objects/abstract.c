@@ -2147,55 +2147,77 @@ PyMapping_HasKey(PyObject *o, PyObject *key)
     return 0;
 }
 
+/* This function is quite similar to PySequence_Fast(), but specialized to be
+   a helper for PyMapping_Keys(), PyMapping_Items() and PyMapping_Values().
+ */
+static PyObject *
+method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
+{
+    PyObject *it, *result, *meth_output;
+
+    assert(o != NULL);
+    meth_output = _PyObject_CallMethodId(o, meth_id, NULL);
+    if (meth_output == NULL || PyList_CheckExact(meth_output)) {
+        return meth_output;
+    }
+    it = PyObject_GetIter(meth_output);
+    if (it == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s.%U() returned a non-iterable (type %.200s)",
+                         Py_TYPE(o)->tp_name,
+                         meth_id->object,
+                         Py_TYPE(meth_output)->tp_name);
+        }
+        Py_DECREF(meth_output);
+        return NULL;
+    }
+    Py_DECREF(meth_output);
+    result = PySequence_List(it);
+    Py_DECREF(it);
+    return result;
+}
+
 PyObject *
 PyMapping_Keys(PyObject *o)
 {
-    PyObject *keys;
-    PyObject *fast;
     _Py_IDENTIFIER(keys);
 
-    if (PyDict_CheckExact(o))
+    if (o == NULL) {
+        return null_error();
+    }
+    if (PyDict_CheckExact(o)) {
         return PyDict_Keys(o);
-    keys = _PyObject_CallMethodId(o, &PyId_keys, NULL);
-    if (keys == NULL)
-        return NULL;
-    fast = PySequence_Fast(keys, "o.keys() are not iterable");
-    Py_DECREF(keys);
-    return fast;
+    }
+    return method_output_as_list(o, &PyId_keys);
 }
 
 PyObject *
 PyMapping_Items(PyObject *o)
 {
-    PyObject *items;
-    PyObject *fast;
     _Py_IDENTIFIER(items);
 
-    if (PyDict_CheckExact(o))
+    if (o == NULL) {
+        return null_error();
+    }
+    if (PyDict_CheckExact(o)) {
         return PyDict_Items(o);
-    items = _PyObject_CallMethodId(o, &PyId_items, NULL);
-    if (items == NULL)
-        return NULL;
-    fast = PySequence_Fast(items, "o.items() are not iterable");
-    Py_DECREF(items);
-    return fast;
+    }
+    return method_output_as_list(o, &PyId_items);
 }
 
 PyObject *
 PyMapping_Values(PyObject *o)
 {
-    PyObject *values;
-    PyObject *fast;
     _Py_IDENTIFIER(values);
 
-    if (PyDict_CheckExact(o))
+    if (o == NULL) {
+        return null_error();
+    }
+    if (PyDict_CheckExact(o)) {
         return PyDict_Values(o);
-    values = _PyObject_CallMethodId(o, &PyId_values, NULL);
-    if (values == NULL)
-        return NULL;
-    fast = PySequence_Fast(values, "o.values() are not iterable");
-    Py_DECREF(values);
-    return fast;
+    }
+    return method_output_as_list(o, &PyId_values);
 }
 
 /* isinstance(), issubclass() */

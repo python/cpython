@@ -404,6 +404,10 @@ Build and C API Changes
   is now of type ``const char *`` rather of ``char *``. (Contributed by Serhiy
   Storchaka in :issue:`28769`.)
 
+* The result of :c:func:`PyMapping_Keys`, :c:func:`PyMapping_Values` and
+  :c:func:`PyMapping_Items` is now always a list, rather than a list or a
+  tuple. (Contributed by Oren Milman in :issue:`28280`.)
+
 * Added functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`.
   (Contributed by Serhiy Storchaka in :issue:`27867`.)
 
