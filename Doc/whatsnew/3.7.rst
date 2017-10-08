@@ -581,6 +581,19 @@ Changes in the Python API
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
 
+Changes in the C API
+--------------------
+
+* The function :c:func:`PySlice_GetIndicesEx` is considered not safe for
+  resizable sequences.  If the slice indices are not instances of :class:`int`,
+  but objects that implement the :meth:`!__index__` method, the sequence can be
+  resized after passing its length to :c:func:`!PySlice_GetIndicesEx`.  This
+  can lead to returning indices out of the length of the sequence.  For
+  avoiding possible problems use new functions :c:func:`PySlice_Unpack` and
+  :c:func:`PySlice_AdjustIndices`.
+  (Contributed by Serhiy Storchaka in :issue:`27867`.)
+
+
 CPython bytecode changes
 ------------------------
 
