@@ -1019,7 +1019,8 @@ def _handle_fromlist(module, fromlist, import_):
                     # Backwards-compatibility dictates we ignore failed
                     # imports triggered by fromlist for modules that don't
                     # exist.
-                    if exc.name == from_name:
+                    if (exc.name == from_name and
+                        sys.modules.get(from_name, _NEEDS_LOADING) is not None):
                         continue
                     raise
     return module
