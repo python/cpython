@@ -221,13 +221,12 @@ class CmdLineTest(unittest.TestCase):
             rc, out, err = assert_python_ok('-u', '-c', code)
             data = err if stream == 'stderr' else out
             self.assertEqual(data, b'x', "binary %s not unbuffered" % stream)
-            # Text is line-buffered
-            code = ("import os, sys; sys.%s.write('x\\n'); os._exit(0)"
+            # Text is unbuffered
+            code = ("import os, sys; sys.%s.write('x'); os._exit(0)"
                 % stream)
             rc, out, err = assert_python_ok('-u', '-c', code)
             data = err if stream == 'stderr' else out
-            self.assertEqual(data.strip(), b'x',
-                "text %s not line-buffered" % stream)
+            self.assertEqual(data, b'x', "text %s not unbuffered" % stream)
 
     def test_unbuffered_input(self):
         # sys.stdin still works with '-u'
