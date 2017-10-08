@@ -142,6 +142,15 @@ And::
       control the threading.Thread names for worker threads created by
       the pool for easier debugging.
 
+   .. versionadded:: 3.7
+      The *worker_target* argument was added to allow users to
+      customize the execution for worker threads created by the pool.
+
+   .. versionadded:: 3.7
+      The *workitem_cls* argument was added to allow users to
+      control the work item's behaviour.
+
+
 .. _threadpoolexecutor-example:
 
 ThreadPoolExecutor Example
