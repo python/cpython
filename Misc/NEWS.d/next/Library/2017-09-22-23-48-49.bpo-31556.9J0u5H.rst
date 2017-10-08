@@ -1,0 +1,1 @@
+Cancel asyncio.wait_for future faster if timeout <= 0
