@@ -94,16 +94,16 @@ class MiscTests(unittest.TestCase):
                 elem.clear()
 
         elem.text = X()
-        elem.clear()
+        elem.clear()  # shouldn't crash
 
         elem.tail = X()
-        elem.clear()
+        elem.clear()  # shouldn't crash
 
         elem.text = X()
-        elem.text = X()
+        elem.text = X()  # shouldn't crash
 
         elem.tail = X()
-        elem.tail = X()
+        elem.tail = X()  # shouldn't crash
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
