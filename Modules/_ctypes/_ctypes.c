@@ -1391,7 +1391,6 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     StgDictObject *itemdict;
     PyObject *length_attr, *type_attr;
     Py_ssize_t length;
-    int overflow;
     Py_ssize_t itemsize, itemalign;
 
     /* create the new instance (which is a class,
@@ -1415,6 +1414,9 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     length = PyLong_AsSsize_t(length_attr);
     if (length == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            PyErr_SetString(PyExc_OverflowError,
+                            "The '_length_' attribute is too large");
         Py_DECREF(length_attr);
         goto error;
     }
