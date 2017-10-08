@@ -85,6 +85,26 @@ class MiscTests(unittest.TestCase):
         # and so destroy the parser
         support.gc_collect()
 
+    def test_bpo_31728(self):
+        # The interpreter shouldn't crash in case garbage collection triggers
+        # a call to clear() while a setter or clear() is already running.
+        e = cET.Element('elem')
+        class X:
+            def __del__(self):
+                e.clear()
+
+        e.text = X()
+        e.clear()
+
+        e.tail = X()
+        e.clear()
+
+        e.text = X()
+        e.text = X()
+
+        e.tail = X()
+        e.tail = X()
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):

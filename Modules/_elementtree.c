@@ -675,11 +675,11 @@ _elementtree_Element_clear_impl(ElementObject *self)
     dealloc_extra(self);
 
     Py_INCREF(Py_None);
-    Py_DECREF(JOIN_OBJ(self->text));
+    _clear_joined_ptr(&self->text);
     self->text = Py_None;
 
     Py_INCREF(Py_None);
-    Py_DECREF(JOIN_OBJ(self->tail));
+    _clear_joined_ptr(&self->tail);
     self->tail = Py_None;
 
     Py_RETURN_NONE;
@@ -2009,7 +2009,7 @@ element_text_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    Py_DECREF(JOIN_OBJ(self->text));
+    _clear_joined_ptr(&self->text);
     self->text = value;
     return 0;
 }
@@ -2019,7 +2019,7 @@ element_tail_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    Py_DECREF(JOIN_OBJ(self->tail));
+    _clear_joined_ptr(&self->tail);
     self->tail = value;
     return 0;
 }
