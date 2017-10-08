@@ -88,22 +88,22 @@ class MiscTests(unittest.TestCase):
     def test_bpo_31728(self):
         # The interpreter shouldn't crash in case garbage collection triggers
         # a call to clear() while a setter or clear() is already running.
-        e = cET.Element('elem')
+        elem = cET.Element('elem')
         class X:
             def __del__(self):
-                e.clear()
+                elem.clear()
 
-        e.text = X()
-        e.clear()
+        elem.text = X()
+        elem.clear()
 
-        e.tail = X()
-        e.clear()
+        elem.tail = X()
+        elem.clear()
 
-        e.text = X()
-        e.text = X()
+        elem.text = X()
+        elem.text = X()
 
-        e.tail = X()
-        e.tail = X()
+        elem.tail = X()
+        elem.tail = X()
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
