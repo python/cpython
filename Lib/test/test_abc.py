@@ -208,6 +208,7 @@ class TestABC(unittest.TestCase):
         C()
         self.assertEqual(B.counter, 1)
 
+    @test_support.requires_type_collecting
     def test_cache_leak(self):
         # See issue #2521.
         class A(object):

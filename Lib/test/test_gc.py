@@ -1,5 +1,6 @@
 import unittest
-from test.test_support import verbose, run_unittest, start_threads
+from test.support import (verbose, run_unittest, start_threads,
+                          requires_type_collecting)
 import sys
 import time
 import gc
@@ -90,6 +91,7 @@ class GCTests(unittest.TestCase):
         del a
         self.assertNotEqual(gc.collect(), 0)
 
+    @requires_type_collecting
     def test_newinstance(self):
         class A(object):
             pass
