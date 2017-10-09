@@ -397,6 +397,7 @@ class RegressionTests(unittest.TestCase):
             pass
         cache.get(None)  # Shouldn't raise a SystemError
 
+
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
     return unittest.TestSuite((regression_suite,))
