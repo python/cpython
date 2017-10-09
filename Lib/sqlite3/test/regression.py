@@ -387,15 +387,14 @@ class RegressionTests(unittest.TestCase):
     @support.cpython_only
     def CheckPartiallyInitializedCache(self):
         # bpo-31734: A failure of the __init__() method of an already
-        # initialized Cache object shouldn't result in the Cache object being
-        # partially initialized, which would cause its get() method to raise a
-        # SystemError.
+        # initialized Cache object shouldn't cause the Cache object to be
+        # partially initialized, and its get() method to raise a SystemError.
         cache = sqlite.Cache(str)
         try:
-            cache.__init__()
+            cache.__init__()  # invalid number of arguments
         except TypeError:
             pass
-        cache.get(None)  # Shouldn't raise a SystemError
+        self.assertRaises(ValueError, cache.get, None)
 
 
 def suite():

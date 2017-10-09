@@ -73,11 +73,20 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
     PyObject* factory;
     int size = 10;
 
+    if (self->decref_factory) {
+        self->decref_factory = 0;
+        Py_CLEAR(self->factory);
+    }
+    else {
+        self->factory = NULL;
+    }
+    deallocate_nodes(self);
+    Py_CLEAR(self->mapping);
+
     if (!PyArg_ParseTuple(args, "O|i", &factory, &size)) {
         return -1;
     }
 
-    deallocate_nodes(self);
     /* minimum cache size is 5 entries */
     if (size < 5) {
         size = 5;
@@ -86,19 +95,15 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
     self->first = NULL;
     self->last = NULL;
 
-    Py_XSETREF(self->mapping, PyDict_New());
+    self->mapping = PyDict_New();
     if (!self->mapping) {
         return -1;
     }
 
     Py_INCREF(factory);
-    if (self->decref_factory) {
-        Py_SETREF(self->factory, factory);
-    }
-    else {
-        self->factory = factory;
-        self->decref_factory = 1;
-    }
+    self->factory = factory;
+
+    self->decref_factory = 1;
 
     return 0;
 }
