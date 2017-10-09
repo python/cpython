@@ -1101,7 +1101,7 @@ The next fields, up to and including :c:member:`~PyTypeObject.tp_weaklist`, only
 The remaining fields are only defined if the feature test macro
 :const:`COUNT_ALLOCS` is defined, and are for internal use only. They are
 documented here for completeness.  None of these fields are inherited by
-subtypes.
+subtypes. See the :envvar:`PYTHONSHOWALLOCCOUNT` environment variable.
 
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_allocs
