@@ -164,10 +164,10 @@ zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *path)
     }
     else
         Py_INCREF(files);
-    self->files = files;
+    Py_XSETREF(self->files, files);
 
     /* Transfer reference */
-    self->archive = filename;
+    Py_XSETREF(self->archive, filename);
     filename = NULL;
 
     /* Check if there is a prefix directory following the filename. */
@@ -176,7 +176,7 @@ zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *path)
                                   PyUnicode_GET_LENGTH(path));
         if (tmp == NULL)
             goto error;
-        self->prefix = tmp;
+        Py_XSETREF(self->prefix, tmp);
         if (PyUnicode_READ_CHAR(path, len-1) != SEP) {
             /* add trailing SEP */
             tmp = PyUnicode_FromFormat("%U%c", self->prefix, SEP);
@@ -185,8 +185,9 @@ zipimport_zipimporter___init___impl(ZipImporter *self, PyObject *path)
             Py_SETREF(self->prefix, tmp);
         }
     }
-    else
-        self->prefix = PyUnicode_New(0, 0);
+    else {
+        Py_XSETREF(self->prefix, PyUnicode_New(0, 0));
+    }
     Py_DECREF(path);
     return 0;
 
