@@ -395,7 +395,7 @@ class RegressionTests(unittest.TestCase):
             cache.__init__()
         except TypeError:
             pass
-        cache.get(None)
+        cache.get(None)  # Shouldn't raise a SystemError
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
