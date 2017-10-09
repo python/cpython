@@ -1,0 +1,2 @@
+Fix email.message_from_string with an oversized header. Now 
+Patch by Dong-hee Na.

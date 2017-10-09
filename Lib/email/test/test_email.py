@@ -920,6 +920,18 @@ List: List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassass
 
 """)
 
+    def test_oversized_header_input(self):
+        raw_mail = """\
+From: <postmaster@example.com>
+To: <bounce@example.com>
+Subject: demo
+X-Overlong-Header-Name-causes-python-mail-to-crash-in-re-serialization-example:\x20
+
+Hello
+"""
+        mail = email.message_from_string(raw_mail)
+        message = mail.as_string()
+        self.assertEqual(message, raw_mail)
 
 
 # Test mangling of "From " lines in the body of a message
