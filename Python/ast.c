@@ -1622,8 +1622,7 @@ ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_se
 {
     /* async_funcdef: 'async' funcdef */
     REQ(n, async_funcdef);
-    REQ(CHILD(n, 0), NAME);
-    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+    REQ_NAME(CHILD(n, 0), "async");
     REQ(CHILD(n, 1), funcdef);
 
     return ast_for_funcdef_impl(c, CHILD(n, 1), decorator_seq,
@@ -1644,8 +1643,7 @@ ast_for_async_stmt(struct compiling *c, const node *n)
 {
     /* async_stmt: 'async' (funcdef | with_stmt | for_stmt) */
     REQ(n, async_stmt);
-    REQ(CHILD(n, 0), NAME);
-    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+    REQ_NAME(CHILD(n, 0), "async");
 
     switch (TYPE(CHILD(n, 1))) {
         case funcdef:
@@ -1763,8 +1761,7 @@ count_comp_fors(struct compiling *c, const node *n)
     n_fors++;
     REQ(n, comp_for);
     if (NCH(n) == 2) {
-        REQ(CHILD(n, 0), NAME);
-        assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+        REQ_NAME(CHILD(n, 0), "async");
         n = CHILD(n, 1);
     }
     else if (NCH(n) == 1) {
@@ -1849,8 +1846,7 @@ ast_for_comprehension(struct compiling *c, const node *n)
 
         if (NCH(n) == 2) {
             is_async = 1;
-            REQ(CHILD(n, 0), NAME);
-            assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+            REQ_NAME(CHILD(n, 0), "async");
             sync_n = CHILD(n, 1);
         }
         else {
@@ -2592,7 +2588,7 @@ ast_for_expr(struct compiling *c, const node *n)
             if (!strcmp(STR(CHILD(n, 1)), "and"))
                 return BoolOp(And, seq, LINENO(n), n->n_col_offset,
                               c->c_arena);
-            assert(!strcmp(STR(CHILD(n, 1)), "or"));
+            REQ_NAME(CHILD(n, 1), "or");
             return BoolOp(Or, seq, LINENO(n), n->n_col_offset, c->c_arena);
         case not_test:
             if (NCH(n) == 1) {

@@ -35,6 +35,11 @@ PyAPI_FUNC(Py_ssize_t) _PyNode_SizeOf(node *n);
 
 /* Assert that the type of a node is what we expect */
 #define REQ(n, type) assert(TYPE(n) == (type))
+/* Assert that a NAME node contains the expected name */
+#define REQ_NAME(node, name) do { \
+    REQ((node), NAME); \
+    assert(strcmp(STR((node)), (name)) == 0); \
+} while(0)
 
 PyAPI_FUNC(void) PyNode_ListTree(node *);
 
