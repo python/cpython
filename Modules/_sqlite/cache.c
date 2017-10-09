@@ -56,7 +56,8 @@ void pysqlite_node_dealloc(pysqlite_Node* self)
 
 /* Iterate over all nodes and deallocate them. If there aren't any nodes, do
    nothing. */
-static void deallocate_nodes(pysqlite_Cache* self) {
+static void deallocate_nodes(pysqlite_Cache* self)
+{
     pysqlite_Node* node;
     pysqlite_Node* delete_node;
 
