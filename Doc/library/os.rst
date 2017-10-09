@@ -1087,10 +1087,10 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pwrite(fd, str, offset)
+.. function:: pwrite(fd, buffer, offset)
 
-   Write *bytestring* to a file descriptor, *fd*, from *offset*,
-   leaving the file offset unchanged.
+   Write *buffer* to a file descriptor, *fd*, from *offset*,
+   leaving the file offset unchanged. Return the number of bytes actually written.
 
    Availability: Unix.
 
