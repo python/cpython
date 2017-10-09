@@ -385,7 +385,7 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(ValueError, cache.get, None)
 
     @support.cpython_only
-    def CheckPartiallyInitializedCache(self):
+    def Check__init__Fail(self):
         # bpo-31734: A failure of the __init__() method of an already
         # initialized Cache object shouldn't cause the Cache object to be
         # partially initialized, and its get() method to raise a SystemError.
