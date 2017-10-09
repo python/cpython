@@ -354,8 +354,13 @@ name is lost.
 +--------------+---------------+
 | ``DEBUG``    | 10            |
 +--------------+---------------+
+| ``TRACE``    | 5             |
++--------------+---------------+
 | ``NOTSET``   | 0             |
 +--------------+---------------+
+
+.. versionchanged:: 3.7
+   Added the :data:`TRACE` log level.
 
 
 .. _handler:
@@ -768,13 +773,13 @@ the options available to you.
 | funcName       | ``%(funcName)s``        | Name of function containing the logging call. |
 +----------------+-------------------------+-----------------------------------------------+
 | levelname      | ``%(levelname)s``       | Text logging level for the message            |
-|                |                         | (``'DEBUG'``, ``'INFO'``, ``'WARNING'``,      |
-|                |                         | ``'ERROR'``, ``'CRITICAL'``).                 |
+|                |                         | (``'TRACE'``, ``'DEBUG'``, ``'INFO'``,        |
+|                |                         | ``'WARNING'``, ``'ERROR'``, ``'CRITICAL'``).  |
 +----------------+-------------------------+-----------------------------------------------+
 | levelno        | ``%(levelno)s``         | Numeric logging level for the message         |
-|                |                         | (:const:`DEBUG`, :const:`INFO`,               |
-|                |                         | :const:`WARNING`, :const:`ERROR`,             |
-|                |                         | :const:`CRITICAL`).                           |
+|                |                         | (:const:`TRACE`, :const:`DEBUG`,              |
+|                |                         | :const:`INFO`, :const:`WARNING`,              |
+|                |                         | :const:`ERROR`, :const:`CRITICAL`).           |
 +----------------+-------------------------+-----------------------------------------------+
 | lineno         | ``%(lineno)d``          | Source line number where the logging call was |
 |                |                         | issued (if available).                        |
@@ -1009,6 +1014,12 @@ functions.
    are interpreted as for :func:`debug`.
 
 
+.. function:: trace(msg, *args, **kwargs)
+
+   Logs a message with level :const:`TRACE` on the root logger. The arguments are
+   interpreted as for :func:`debug`.
+
+
 .. function:: exception(msg, *args, **kwargs)
 
    Logs a message with level :const:`ERROR` on the root logger. The arguments are
@@ -1068,7 +1079,8 @@ functions.
 
    Returns the textual representation of logging level *lvl*. If the level is one
    of the predefined levels :const:`CRITICAL`, :const:`ERROR`, :const:`WARNING`,
-   :const:`INFO` or :const:`DEBUG` then you get the corresponding string. If you
+   :const:`INFO`, :const:`DEBUG` or :const:`TRACE`
+   then you get the corresponding string. If you
    have associated levels with names using :func:`addLevelName` then the name you
    have associated with *lvl* is returned. If a numeric value corresponding to one
    of the defined levels is passed in, the corresponding string representation is

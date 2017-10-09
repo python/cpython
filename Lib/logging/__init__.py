@@ -35,7 +35,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
            'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
-           'lastResort', 'raiseExceptions']
+           'lastResort', 'raiseExceptions', 'trace', 'TRACE']
 
 import threading
 
@@ -93,6 +93,7 @@ WARNING = 30
 WARN = WARNING
 INFO = 20
 DEBUG = 10
+TRACE = 5
 NOTSET = 0
 
 _levelToName = {
@@ -101,6 +102,7 @@ _levelToName = {
     WARNING: 'WARNING',
     INFO: 'INFO',
     DEBUG: 'DEBUG',
+    TRACE: 'TRACE',
     NOTSET: 'NOTSET',
 }
 _nameToLevel = {
@@ -111,6 +113,7 @@ _nameToLevel = {
     'WARNING': WARNING,
     'INFO': INFO,
     'DEBUG': DEBUG,
+    'TRACE': TRACE,
     'NOTSET': NOTSET,
 }
 
@@ -119,7 +122,7 @@ def getLevelName(level):
     Return the textual representation of logging level 'level'.
 
     If the level is one of the predefined levels (CRITICAL, ERROR, WARNING,
-    INFO, DEBUG) then you get the corresponding string. If you have
+    INFO, DEBUG, TRACE) then you get the corresponding string. If you have
     associated levels with names using addLevelName then the name you have
     associated with 'level' is returned.
 
@@ -433,10 +436,10 @@ class Formatter(object):
     attributes in a LogRecord are described by:
 
     %(name)s            Name of the logger (logging channel)
-    %(levelno)s         Numeric logging level for the message (DEBUG, INFO,
-                        WARNING, ERROR, CRITICAL)
-    %(levelname)s       Text logging level for the message ("DEBUG", "INFO",
-                        "WARNING", "ERROR", "CRITICAL")
+    %(levelno)s         Numeric logging level for the message (TRACE, DEBUG,
+                        INFO, WARNING, ERROR, CRITICAL)
+    %(levelname)s       Text logging level for the message ("TRACE", "DEBUG",
+                        "INFO", "WARNING", "ERROR", "CRITICAL")
     %(pathname)s        Full pathname of the source file where the logging
                         call was issued (if available)
     %(filename)s        Filename portion of pathname
@@ -1306,6 +1309,18 @@ class Logger(Filterer):
         self.level = _checkLevel(level)
         self.manager._clear_cache()
 
+    def trace(self, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'TRACE'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.trace("Houston, we have a %s", "thorny problem", exc_info=1)
+        """
+        if self.isEnabledFor(TRACE):
+            self._log(TRACE, msg, args, **kwargs)
+
     def debug(self, msg, *args, **kwargs):
         """
         Log 'msg % args' with severity 'DEBUG'.
@@ -1665,6 +1680,12 @@ class LoggerAdapter(object):
     #
     # Boilerplate convenience methods
     #
+    def trace(self, msg, *args, **kwargs):
+        """
+        Delegate a trace call to the underlying logger.
+        """
+        self.log(TRACE, msg, *args, **kwargs)
+
     def debug(self, msg, *args, **kwargs):
         """
         Delegate a debug call to the underlying logger.
@@ -1946,6 +1967,16 @@ def debug(msg, *args, **kwargs):
     if len(root.handlers) == 0:
         basicConfig()
     root.debug(msg, *args, **kwargs)
+
+def trace(msg, *args, **kwargs):
+    """
+    Log a message with severity 'TRACE' on the root logger. If the logger has
+    no handlers, call basicConfig() to add a console handler with a pre-defined
+    format.
+    """
+    if len(root.handlers) == 0:
+        basicConfig()
+    root.trace(msg, *args, **kwargs)
 
 def log(level, msg, *args, **kwargs):
     """
