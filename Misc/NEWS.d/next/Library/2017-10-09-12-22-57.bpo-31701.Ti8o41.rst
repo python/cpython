@@ -1,0 +1,3 @@
+On Windows, faulthandler.enable() now registers the exception handler as the
+last handler to be called, rather than the first to be called. It prevents
+handled C++ exceptions to be logged by faulthandler.
