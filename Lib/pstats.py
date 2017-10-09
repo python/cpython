@@ -520,7 +520,12 @@ def count_calls(callers):
 #**************************************************************************
 
 def f8(x):
-    return "%8.3f" % x
+    ret = "%8.3f" % x
+    # In case time is less than 0.5 millisecond,
+    # display the time in microseconds with an alternate formatting
+    if ret != '   0.000':
+        return ret
+    return "%6dµs" % (x * 10000000)
 
 #**************************************************************************
 # Statistics browser added by ESR, April 2001
