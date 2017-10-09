@@ -61,6 +61,8 @@ static void deallocate_nodes(pysqlite_Cache* self) {
     pysqlite_Node* delete_node;
 
     node = self->first;
+    self->first = NULL;
+    self->last = NULL;
     while (node) {
         delete_node = node;
         node = node->next;
@@ -81,8 +83,6 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
         self->factory = NULL;
     }
     deallocate_nodes(self);
-    self->first = NULL;
-    self->last = NULL;
     Py_CLEAR(self->mapping);
 
     if (!PyArg_ParseTuple(args, "O|i", &factory, &size)) {
