@@ -105,7 +105,7 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
 
 void pysqlite_cache_dealloc(pysqlite_Cache* self)
 {
-    if (self->factory) {
+    if (self->factory != NULL) {
         deallocate_nodes(self);
         if (self->decref_factory) {
             Py_DECREF(self->factory);
