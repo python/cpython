@@ -81,6 +81,8 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
         self->factory = NULL;
     }
     deallocate_nodes(self);
+    self->first = NULL;
+    self->last = NULL;
     Py_CLEAR(self->mapping);
 
     if (!PyArg_ParseTuple(args, "O|i", &factory, &size)) {
@@ -92,8 +94,6 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
         size = 5;
     }
     self->size = size;
-    self->first = NULL;
-    self->last = NULL;
 
     self->mapping = PyDict_New();
     if (!self->mapping) {
