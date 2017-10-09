@@ -457,7 +457,7 @@ faulthandler_enable(void)
 
 #ifdef MS_WINDOWS
     assert(fatal_error.exc_handler == NULL);
-    fatal_error.exc_handler = AddVectoredExceptionHandler(1, faulthandler_exc_handler);
+    fatal_error.exc_handler = AddVectoredExceptionHandler(0, faulthandler_exc_handler);
 #endif
     return 0;
 }
