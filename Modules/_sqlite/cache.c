@@ -76,12 +76,12 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
         return -1;
     }
 
+    deallocate_nodes(self);
     /* minimum cache size is 5 entries */
     if (size < 5) {
         size = 5;
     }
     self->size = size;
-    deallocate_nodes(self);
     self->first = NULL;
     self->last = NULL;
 
