@@ -73,14 +73,15 @@ static void _clear_joined_ptr(PyObject **p)
     }
 }
 
-/* Like Py_XSETREF for a PyObject* that uses a join flag, but set it to the
- * received value (without adding a join flag).
+/* Like Py_INCREF followed by Py_SETREF for a PyObject* that uses a join
+ * flag, but set it to the received value without adding a join flag.
  */
 static void _set_joined_ptr(PyObject **p, PyObject *new_val)
 {
+    Py_INCREF(JOIN_OBJ(new_val));
     PyObject *tmp = JOIN_OBJ(*p);
     *p = new_val;
-    Py_XDECREF(tmp);
+    Py_DECREF(tmp);
 }
 
 /* Types defined by this extension */
@@ -683,11 +684,7 @@ _elementtree_Element_clear_impl(ElementObject *self)
 /*[clinic end generated code: output=8bcd7a51f94cfff6 input=3c719ff94bf45dd6]*/
 {
     dealloc_extra(self);
-
-    Py_INCREF(Py_None);
     _set_joined_ptr(&self->text, Py_None);
-
-    Py_INCREF(Py_None);
     _set_joined_ptr(&self->tail, Py_None);
 
     Py_RETURN_NONE;
@@ -978,11 +975,8 @@ element_setstate_from_attributes(ElementObject *self,
 
     _set_joined_ptr(&self->text,
                     text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None);
-    Py_INCREF(JOIN_OBJ(self->text));
-
     _set_joined_ptr(&self->tail,
                     tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None);
-    Py_INCREF(JOIN_OBJ(self->tail));
 
     /* Handle ATTRIB and CHILDREN. */
     if (!children && !attrib)
@@ -2016,7 +2010,6 @@ static int
 element_text_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
-    Py_INCREF(value);
     _set_joined_ptr(&self->text, value);
     return 0;
 }
@@ -2025,7 +2018,6 @@ static int
 element_tail_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
-    Py_INCREF(value);
     _set_joined_ptr(&self->tail, value);
     return 0;
 }
