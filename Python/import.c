@@ -1695,7 +1695,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
 
         if (ximporttime) {
             import_level++;
-            t1 = _PyTime_GetMonotonicClock();
+            t1 = _PyTime_GetPerfCounter();
             accumulated = 0;
         }
 
@@ -1711,7 +1711,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                            mod != NULL);
 
         if (ximporttime) {
-            _PyTime_t cum = _PyTime_GetMonotonicClock() - t1;
+            _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
 
             import_level--;
             fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
