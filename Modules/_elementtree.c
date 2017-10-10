@@ -61,25 +61,23 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
 #define JOIN_SET(p, flag) ((void*) ((uintptr_t) (JOIN_OBJ(p)) | (flag)))
 #define JOIN_OBJ(p) ((PyObject*) ((uintptr_t) (p) & ~(uintptr_t)1))
 
+/* Py_SETREF for a PyObject* that uses a join flag. */
+Py_LOCAL_INLINE(void)
+_set_joined_ptr(PyObject **p, PyObject *new_joined_ptr)
+{
+    PyObject *tmp = JOIN_OBJ(*p);
+    *p = new_joined_ptr;
+    Py_DECREF(tmp);
+}
+
 /* Py_CLEAR for a PyObject* that uses a join flag. Pass the pointer by
  * reference since this function sets it to NULL.
 */
 static void _clear_joined_ptr(PyObject **p)
 {
     if (*p) {
-        PyObject *tmp = JOIN_OBJ(*p);
-        *p = NULL;
-        Py_DECREF(tmp);
+        _set_joined_ptr(p, NULL);
     }
-}
-
-/* Py_INCREF followed by Py_SETREF for a PyObject* that uses a join flag. */
-static void _set_joined_ptr(PyObject **p, PyObject *new_joined_ptr)
-{
-    Py_INCREF(JOIN_OBJ(new_joined_ptr));
-    PyObject *tmp = JOIN_OBJ(*p);
-    *p = new_joined_ptr;
-    Py_DECREF(tmp);
 }
 
 /* Types defined by this extension */
@@ -365,7 +363,6 @@ static int
 element_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *tag;
-    PyObject *tmp;
     PyObject *attrib = NULL;
     ElementObject *self_elem;
 
@@ -406,15 +403,11 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(tag);
     Py_XSETREF(self_elem->tag, tag);
 
-    tmp = self_elem->text;
     Py_INCREF(Py_None);
-    self_elem->text = Py_None;
-    Py_DECREF(JOIN_OBJ(tmp));
+    _set_joined_ptr(&self_elem->text, Py_None);
 
-    tmp = self_elem->tail;
     Py_INCREF(Py_None);
-    self_elem->tail = Py_None;
-    Py_DECREF(JOIN_OBJ(tmp));
+    _set_joined_ptr(&self_elem->tail, Py_None);
 
     return 0;
 }
@@ -682,7 +675,11 @@ _elementtree_Element_clear_impl(ElementObject *self)
 /*[clinic end generated code: output=8bcd7a51f94cfff6 input=3c719ff94bf45dd6]*/
 {
     dealloc_extra(self);
+
+    Py_INCREF(Py_None);
     _set_joined_ptr(&self->text, Py_None);
+
+    Py_INCREF(Py_None);
     _set_joined_ptr(&self->tail, Py_None);
 
     Py_RETURN_NONE;
@@ -705,12 +702,10 @@ _elementtree_Element___copy___impl(ElementObject *self)
     if (!element)
         return NULL;
 
-    Py_DECREF(JOIN_OBJ(element->text));
-    element->text = self->text;
+    _set_joined_ptr(&element->text, self->text);
     Py_INCREF(JOIN_OBJ(element->text));
 
-    Py_DECREF(JOIN_OBJ(element->tail));
-    element->tail = self->tail;
+    _set_joined_ptr(&element->tail, self->tail);
     Py_INCREF(JOIN_OBJ(element->tail));
 
     if (self->extra) {
@@ -779,14 +774,12 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     text = deepcopy(JOIN_OBJ(self->text), memo);
     if (!text)
         goto error;
-    Py_DECREF(element->text);
-    element->text = JOIN_SET(text, JOIN_GET(self->text));
+    _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
 
     tail = deepcopy(JOIN_OBJ(self->tail), memo);
     if (!tail)
         goto error;
-    Py_DECREF(element->tail);
-    element->tail = JOIN_SET(tail, JOIN_GET(self->tail));
+    _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
 
     if (self->extra) {
         if (element_resize(element, self->extra->length) < 0)
@@ -962,6 +955,7 @@ element_setstate_from_attributes(ElementObject *self,
                                  PyObject *children)
 {
     Py_ssize_t i, nchildren;
+    PyObject *new_val;
 
     if (!tag) {
         PyErr_SetString(PyExc_TypeError, "tag may not be NULL");
@@ -971,10 +965,13 @@ element_setstate_from_attributes(ElementObject *self,
     Py_INCREF(tag);
     Py_XSETREF(self->tag, tag);
 
-    _set_joined_ptr(&self->text,
-                    text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None);
-    _set_joined_ptr(&self->tail,
-                    tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None);
+    new_val = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
+    Py_INCREF(JOIN_OBJ(new_val));
+    _set_joined_ptr(&self->text, new_val);
+
+    new_val = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
+    Py_INCREF(JOIN_OBJ(new_val));
+    _set_joined_ptr(&self->tail, new_val);
 
     /* Handle ATTRIB and CHILDREN. */
     if (!children && !attrib)
@@ -2008,6 +2005,7 @@ static int
 element_text_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
+    Py_INCREF(value);
     _set_joined_ptr(&self->text, value);
     return 0;
 }
@@ -2016,6 +2014,7 @@ static int
 element_tail_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
+    Py_INCREF(value);
     _set_joined_ptr(&self->tail, value);
     return 0;
 }
