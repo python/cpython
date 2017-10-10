@@ -13,7 +13,6 @@ import sys
 __all__ = ['Fraction', 'gcd']
 
 
-
 def gcd(a, b):
     """Calculate the Greatest Common Divisor of a and b.
 
@@ -28,6 +27,7 @@ def gcd(a, b):
             return -math.gcd(a, b)
         return math.gcd(a, b)
     return _gcd(a, b)
+
 
 def _gcd(a, b):
     # Supports non-integers for backward compatibility.
@@ -162,7 +162,7 @@ class Fraction(numbers.Rational):
                                 "or a Rational instance")
 
         elif type(numerator) is int is type(denominator):
-            pass # *very* normal case
+            pass  # *very* normal case
 
         elif (isinstance(numerator, numbers.Rational) and
             isinstance(denominator, numbers.Rational)):
