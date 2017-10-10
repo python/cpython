@@ -32,7 +32,7 @@ def gcd(a, b):
 def _gcd(a, b):
     # Supports non-integers for backward compatibility.
     while b:
-        a, b = b, a%b
+        a, b = b, a % b
     return a
 
 # Constants related to the hash implementation;  hash(x) is based
