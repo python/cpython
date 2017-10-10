@@ -1,0 +1,2 @@
+Fix incorrect usage of ``get_history_length`` in readline documentation
+example code. Patch by Brad Smith.
