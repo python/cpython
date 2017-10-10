@@ -251,8 +251,8 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
 {
     self->ok = 0;
 
-    Py_XSETREF(self->decoder, decoder);
     Py_INCREF(decoder);
+    Py_XSETREF(self->decoder, decoder);
 
     if (errors == NULL) {
         Py_XSETREF(self->errors, PyUnicode_FromString("strict"));
