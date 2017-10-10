@@ -702,11 +702,11 @@ _elementtree_Element___copy___impl(ElementObject *self)
     if (!element)
         return NULL;
 
+    Py_INCREF(JOIN_OBJ(self->text));
     _set_joined_ptr(&element->text, self->text);
-    Py_INCREF(JOIN_OBJ(element->text));
 
+    Py_INCREF(JOIN_OBJ(self->tail));
     _set_joined_ptr(&element->tail, self->tail);
-    Py_INCREF(JOIN_OBJ(element->tail));
 
     if (self->extra) {
         if (element_resize(element, self->extra->length) < 0) {
@@ -955,7 +955,6 @@ element_setstate_from_attributes(ElementObject *self,
                                  PyObject *children)
 {
     Py_ssize_t i, nchildren;
-    PyObject *new_val;
 
     if (!tag) {
         PyErr_SetString(PyExc_TypeError, "tag may not be NULL");
@@ -965,13 +964,13 @@ element_setstate_from_attributes(ElementObject *self,
     Py_INCREF(tag);
     Py_XSETREF(self->tag, tag);
 
-    new_val = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
-    Py_INCREF(JOIN_OBJ(new_val));
-    _set_joined_ptr(&self->text, new_val);
+    text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
+    Py_INCREF(JOIN_OBJ(text));
+    _set_joined_ptr(&self->text, text);
 
-    new_val = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
-    Py_INCREF(JOIN_OBJ(new_val));
-    _set_joined_ptr(&self->tail, new_val);
+    tail = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
+    Py_INCREF(JOIN_OBJ(tail));
+    _set_joined_ptr(&self->tail, tail);
 
     /* Handle ATTRIB and CHILDREN. */
     if (!children && !attrib)
