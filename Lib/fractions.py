@@ -266,10 +266,7 @@ class Fraction(numbers.Rational):
         k = (max_denominator-q0)//q1
         bound1 = Fraction(p0+k*p1, q0+k*q1)
         bound2 = Fraction(p1, q1)
-        if abs(bound2 - self) <= abs(bound1-self):
-            return bound2
-        else:
-            return bound1
+        return bound2 if abs(bound2 - self) <= abs(bound1-self) else bound1
 
     @property
     def numerator(a):
