@@ -580,11 +580,8 @@ _io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
     PyObject *buffer;
     unsigned long long flag;
 
-    if (self->decoder == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "IncrementalNewlineDecoder.__init__() not called");
-        return NULL;
-    }
+    CHECK_INITIALIZED_DECODER(self);
+
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError, "state argument must be a tuple");
         return NULL;
@@ -626,6 +623,8 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
 static PyObject *
 incrementalnewlinedecoder_newlines_get(nldecoder_object *self, void *context)
 {
+    CHECK_INITIALIZED_DECODER(self);
+
     switch (self->seennl) {
     case SEEN_CR:
         return PyUnicode_FromString("\r");
