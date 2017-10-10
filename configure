@@ -3524,14 +3524,14 @@ then
 		for as_dir in $PATH
 		do
 			IFS=$as_save_IFS
-			if test -x $as_dir/gcc; then
+			if test -x "${as_dir}/gcc"; then
 				if test -z "${found_gcc}"; then
-					found_gcc=$as_dir/gcc
+					found_gcc="${as_dir}/gcc"
 				fi
 			fi
-			if test -x $as_dir/clang; then
+			if test -x "${as_dir}/clang"; then
 				if test -z "${found_clang}"; then
-					found_clang=$as_dir/clang
+					found_clang="${as_dir}/clang"
 				fi
 			fi
 		done
