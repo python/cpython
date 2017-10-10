@@ -219,6 +219,7 @@ PyTypeObject PyTextIOBase_Type = {
 
 typedef struct {
     PyObject_HEAD
+    int ok; /* initialized? */
     PyObject *decoder;
     PyObject *errors;
     unsigned int pendingcr: 1;
@@ -248,6 +249,8 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *errors)
 /*[clinic end generated code: output=fbd04d443e764ec2 input=89db6b19c6b126bf]*/
 {
+    self->ok = 0;
+
     Py_XSETREF(self->decoder, decoder);
     Py_INCREF(decoder);
 
@@ -265,12 +268,14 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
     self->seennl = 0;
     self->pendingcr = 0;
 
+    self->ok = 1;
     return 0;
 }
 
 static void
 incrementalnewlinedecoder_dealloc(nldecoder_object *self)
 {
+    self->ok = 0;
     Py_CLEAR(self->decoder);
     Py_CLEAR(self->errors);
     Py_TYPE(self)->tp_free((PyObject *)self);
@@ -295,6 +300,13 @@ check_decoded(PyObject *decoded)
     return 0;
 }
 
+#define CHECK_INITIALIZED_DECODER(self) \
+    if (self->ok <= 0) { \
+        PyErr_SetString(PyExc_ValueError, \
+                        "IncrementalNewlineDecoder.__init__() not called"); \
+        return NULL; \
+    }
+
 #define SEEN_CR   1
 #define SEEN_LF   2
 #define SEEN_CRLF 4
@@ -308,11 +320,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
     Py_ssize_t output_len;
     nldecoder_object *self = (nldecoder_object *) myself;
 
-    if (self->decoder == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "IncrementalNewlineDecoder.__init__ not called");
-        return NULL;
-    }
+    CHECK_INITIALIZED_DECODER(self);
 
     /* decode input (with the eventual \r from a previous pass) */
     if (self->decoder != Py_None) {
@@ -526,11 +534,8 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
     PyObject *buffer;
     unsigned long long flag;
 
-    if (self->decoder == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "IncrementalNewlineDecoder.__init__() not called");
-        return NULL;
-    }
+    CHECK_INITIALIZED_DECODER(self);
+
     if (self->decoder != Py_None) {
         PyObject *state = PyObject_CallMethodObjArgs(self->decoder,
            _PyIO_str_getstate, NULL);
@@ -608,13 +613,10 @@ static PyObject *
 _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
 /*[clinic end generated code: output=32fa40c7462aa8ff input=728678ddaea776df]*/
 {
+    CHECK_INITIALIZED_DECODER(self);
+
     self->seennl = 0;
     self->pendingcr = 0;
-    if (self->decoder == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "IncrementalNewlineDecoder.__init__() not called");
-        return NULL;
-    }
     if (self->decoder != Py_None)
         return PyObject_CallMethodObjArgs(self->decoder, _PyIO_str_reset, NULL);
     else
