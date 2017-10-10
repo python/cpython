@@ -60,6 +60,13 @@ Fractions of a second may be present if the system clock provides them.");
 #endif
 #endif
 
+static PyObject*
+_PyFloat_FromPyTime(_PyTime_t t)
+{
+    double d = _PyTime_AsSecondsDouble(t);
+    return PyFloat_FromDouble(d);
+}
+
 static PyObject *
 floatclock(_Py_clock_info_t *info)
 {
@@ -81,47 +88,19 @@ floatclock(_Py_clock_info_t *info)
 }
 #endif /* HAVE_CLOCK */
 
-#ifdef MS_WINDOWS
-#define WIN32_PERF_COUNTER
-/* Win32 has better clock replacement; we have our own version, due to Mark
-   Hammond and Tim Peters */
-static PyObject*
-win_perf_counter(_Py_clock_info_t *info)
-{
-    static LONGLONG cpu_frequency = 0;
-    static LONGLONG ctrStart;
-    LARGE_INTEGER now;
-    double diff;
-
-    if (cpu_frequency == 0) {
-        LARGE_INTEGER freq;
-        QueryPerformanceCounter(&now);
-        ctrStart = now.QuadPart;
-        if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
-            PyErr_SetFromWindowsErr(0);
-            return NULL;
-        }
-        cpu_frequency = freq.QuadPart;
-    }
-    QueryPerformanceCounter(&now);
-    diff = (double)(now.QuadPart - ctrStart);
-    if (info) {
-        info->implementation = "QueryPerformanceCounter()";
-        info->resolution = 1.0 / (double)cpu_frequency;
-        info->monotonic = 1;
-        info->adjustable = 0;
-    }
-    return PyFloat_FromDouble(diff / (double)cpu_frequency);
-}
-#endif   /* MS_WINDOWS */
-
-#if defined(WIN32_PERF_COUNTER) || defined(HAVE_CLOCK)
+#if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
 #define PYCLOCK
 static PyObject*
 pyclock(_Py_clock_info_t *info)
 {
-#ifdef WIN32_PERF_COUNTER
-    return win_perf_counter(info);
+#ifdef MS_WINDOWS
+    /* Win32 has better clock replacement; we have our own version, due to Mark
+       Hammond and Tim Peters */
+    _PyTime_t t;
+    if (_PyTime_GetWinPerfCounterWithInfo(&t, info) < 0) {
+        return NULL;
+    }
+    return _PyFloat_FromPyTime(t);
 #else
     return floatclock(info);
 #endif
@@ -939,13 +918,11 @@ static PyObject *
 pymonotonic(_Py_clock_info_t *info)
 {
     _PyTime_t t;
-    double d;
     if (_PyTime_GetMonotonicClockWithInfo(&t, info) < 0) {
         assert(info != NULL);
         return NULL;
     }
-    d = _PyTime_AsSecondsDouble(t);
-    return PyFloat_FromDouble(d);
+    return _PyFloat_FromPyTime(t);
 }
 
 static PyObject *
@@ -962,11 +939,11 @@ Monotonic clock, cannot go backward.");
 static PyObject*
 perf_counter(_Py_clock_info_t *info)
 {
-#ifdef WIN32_PERF_COUNTER
-    return win_perf_counter(info);
-#else
-    return pymonotonic(info);
-#endif
+    _PyTime_t t;
+    if (_PyTime_GetPerfCounterWithInfo(&t, info) < 0) {
+        return NULL;
+    }
+    return _PyFloat_FromPyTime(t);
 }
 
 static PyObject *
@@ -1448,13 +1425,11 @@ static PyObject*
 floattime(_Py_clock_info_t *info)
 {
     _PyTime_t t;
-    double d;
     if (_PyTime_GetSystemClockWithInfo(&t, info) < 0) {
         assert(info != NULL);
         return NULL;
     }
-    d = _PyTime_AsSecondsDouble(t);
-    return PyFloat_FromDouble(d);
+    return _PyFloat_FromPyTime(t);
 }
 
 
