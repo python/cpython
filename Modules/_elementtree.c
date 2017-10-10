@@ -73,14 +73,12 @@ static void _clear_joined_ptr(PyObject **p)
     }
 }
 
-/* Like Py_INCREF followed by Py_SETREF for a PyObject* that uses a join
- * flag, but set it to the received value without adding a join flag.
- */
-static void _set_joined_ptr(PyObject **p, PyObject *new_val)
+/* Py_INCREF followed by Py_SETREF for a PyObject* that uses a join flag. */
+static void _set_joined_ptr(PyObject **p, PyObject *new_joined_ptr)
 {
-    Py_INCREF(JOIN_OBJ(new_val));
+    Py_INCREF(JOIN_OBJ(new_joined_ptr));
     PyObject *tmp = JOIN_OBJ(*p);
-    *p = new_val;
+    *p = new_joined_ptr;
     Py_DECREF(tmp);
 }
 
