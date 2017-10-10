@@ -73,6 +73,16 @@ static void _clear_joined_ptr(PyObject **p)
     }
 }
 
+/* Like Py_XSETREF for a PyObject* that uses a join flag, but set it to the
+   received value (without adding a join flag).
+*/
+static void _set_joined_ptr(PyObject **p, PyObject *new_val)
+{
+    PyObject *tmp = JOIN_OBJ(*p);
+    *p = new_val;
+    Py_XDECREF(tmp);
+}
+
 /* Types defined by this extension */
 static PyTypeObject Element_Type;
 static PyTypeObject ElementIter_Type;
@@ -675,12 +685,10 @@ _elementtree_Element_clear_impl(ElementObject *self)
     dealloc_extra(self);
 
     Py_INCREF(Py_None);
-    _clear_joined_ptr(&self->text);
-    self->text = Py_None;
+    _set_joined_ptr(&self->text, Py_None);
 
     Py_INCREF(Py_None);
-    _clear_joined_ptr(&self->tail);
-    self->tail = Py_None;
+    _set_joined_ptr(&self->tail, Py_None);
 
     Py_RETURN_NONE;
 }
@@ -968,12 +976,12 @@ element_setstate_from_attributes(ElementObject *self,
     Py_INCREF(tag);
     Py_XSETREF(self->tag, tag);
 
-    _clear_joined_ptr(&self->text);
-    self->text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
+    _set_joined_ptr(&self->text,
+                    text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None);
     Py_INCREF(JOIN_OBJ(self->text));
 
-    _clear_joined_ptr(&self->tail);
-    self->tail = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
+    _set_joined_ptr(&self->tail,
+                    tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None);
     Py_INCREF(JOIN_OBJ(self->tail));
 
     /* Handle ATTRIB and CHILDREN. */
@@ -2009,8 +2017,7 @@ element_text_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    _clear_joined_ptr(&self->text);
-    self->text = value;
+    _set_joined_ptr(&self->text, value);
     return 0;
 }
 
@@ -2019,8 +2026,7 @@ element_tail_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    _clear_joined_ptr(&self->tail);
-    self->tail = value;
+    _set_joined_ptr(&self->tail, value);
     return 0;
 }
 
