@@ -63,6 +63,7 @@ static PySocketModule_APIObject PySocketModule;
 #include "openssl/err.h"
 #include "openssl/rand.h"
 #include "openssl/bio.h"
+#include "openssl/dh.h"
 
 /* SSL error object */
 static PyObject *PySSLErrorObject;
@@ -162,9 +163,17 @@ static void _PySSLFixErrno(void) {
 #else /* OpenSSL < 1.1.0 */
 #define HAVE_OPENSSL_CRYPTO_LOCK
 
+#ifndef OPENSSL_VERSION_1_1
 #define TLS_method SSLv23_method
 #define TLS_client_method SSLv23_client_method
 #define TLS_server_method SSLv23_server_method
+#define X509_get0_notBefore X509_get_notBefore
+#define X509_get0_notAfter X509_get_notAfter
+#define ASN1_STRING_get0_data ASN1_STRING_data
+#define OpenSSL_version_num SSLeay
+#define OpenSSL_version SSLeay_version
+#define OPENSSL_VERSION SSLEAY_VERSION
+#endif
 
 static int X509_NAME_ENTRY_set(const X509_NAME_ENTRY *ne)
 {
@@ -1123,7 +1132,7 @@ _get_peer_alt_names (X509 *certificate) {
                     goto fail;
                 }
                 PyTuple_SET_ITEM(t, 0, v);
-                v = PyUnicode_FromStringAndSize((char *)ASN1_STRING_data(as),
+                v = PyUnicode_FromStringAndSize((char *)ASN1_STRING_get0_data(as),
                                                 ASN1_STRING_length(as));
                 if (v == NULL) {
                     Py_DECREF(t);
@@ -1426,7 +1435,7 @@ _decode_certificate(X509 *certificate) {
     Py_DECREF(sn_obj);
 
     (void) BIO_reset(biobuf);
-    notBefore = X509_get_notBefore(certificate);
+    notBefore = X509_get0_notBefore(certificate);
     ASN1_TIME_print(biobuf, notBefore);
     len = BIO_gets(biobuf, buf, sizeof(buf)-1);
     if (len < 0) {
@@ -1443,7 +1452,7 @@ _decode_certificate(X509 *certificate) {
     Py_DECREF(pnotBefore);
 
     (void) BIO_reset(biobuf);
-    notAfter = X509_get_notAfter(certificate);
+    notAfter = X509_get0_notAfter(certificate);
     ASN1_TIME_print(biobuf, notAfter);
     len = BIO_gets(biobuf, buf, sizeof(buf)-1);
     if (len < 0) {
@@ -2822,7 +2831,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
        conservative and assume it wasn't fixed until release. We do this check
        at runtime to avoid problems from the dynamic linker.
        See #25672 for more on this. */
-    libver = SSLeay();
+    libver = OpenSSL_version_num();
     if (!(libver >= 0x10001000UL && libver < 0x1000108fUL) &&
         !(libver >= 0x10000000UL && libver < 0x100000dfUL)) {
         SSL_CTX_set_mode(self->ctx, SSL_MODE_RELEASE_BUFFERS);
@@ -4625,7 +4634,11 @@ PySSL_RAND(int len, int pseudo)
     if (bytes == NULL)
         return NULL;
     if (pseudo) {
+#ifdef OPENSSL_VERSION_1_1
+        ok = RAND_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
+#else
         ok = RAND_pseudo_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
+#endif
         if (ok == 0 || ok == 1)
             return Py_BuildValue("NO", bytes, ok == 1 ? Py_True : Py_False);
     }
@@ -5264,7 +5277,9 @@ PyInit__ssl(void)
         return NULL;
     PySocketModule = *socket_api;
 
-#ifndef OPENSSL_VERSION_1_1
+#ifdef OPENSSL_VERSION_1_1
+    OPENSSL_init_ssl(0, NULL);
+#else
     /* Load all algorithms and initialize cpuid */
     OPENSSL_add_all_algorithms_noconf();
     /* Init OpenSSL */
@@ -5573,10 +5588,10 @@ PyInit__ssl(void)
         return NULL;
 
     /* OpenSSL version */
-    /* SSLeay() gives us the version of the library linked against,
+    /* OpenSSL_version_num() gives us the version of the library linked against,
        which could be different from the headers version.
     */
-    libver = SSLeay();
+    libver = OpenSSL_version_num();
     r = PyLong_FromUnsignedLong(libver);
     if (r == NULL)
         return NULL;
@@ -5586,7 +5601,7 @@ PyInit__ssl(void)
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
     if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
         return NULL;
-    r = PyUnicode_FromString(SSLeay_version(SSLEAY_VERSION));
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
     if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
         return NULL;
 
