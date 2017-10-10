@@ -543,7 +543,6 @@ class FontPage(Frame):
         frame_font_sample.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         self.font_sample.pack(expand=TRUE, fill=BOTH)
         # frame_indent.
-        frame_indent.pack(side=TOP, fill=X)
         indent_title.pack(side=TOP, anchor=W, padx=5)
         self.indent_scale.pack(side=TOP, padx=5, fill=X)
 
