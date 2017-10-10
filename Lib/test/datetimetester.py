@@ -886,6 +886,26 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             with self.assertRaises(ValueError):
                 timedelta() * get_bad_float(bad_ratio)
 
+    def test_issue31752(self):
+        # The interpreter shouldn't crash because divmod() returns negative
+        # remainder.
+        class BadInt(int):
+            def __mul__(self, other):
+                return Prod()
+
+        class Prod:
+            def __radd__(self, other):
+                return Sum()
+
+        class Sum(int):
+            def __divmod__(self, other):
+                # negative remainder
+                return (0, -1)
+
+        timedelta(microseconds=BadInt(1))
+        timedelta(hours=BadInt(1))
+        timedelta(weeks=BadInt(1))
+
 
 #############################################################################
 # date tests

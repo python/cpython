@@ -1537,6 +1537,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     if (x2 == NULL)
         goto Done;
     result = PyNumber_Add(x1, x2);
+    assert(result == NULL || PyLong_CheckExact(result));
 
 Done:
     Py_XDECREF(x1);
@@ -1559,6 +1560,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
+    assert(PyLong_CheckExact(pyus));
     tuple = PyNumber_Divmod(pyus, us_per_second);
     if (tuple == NULL)
         goto Done;
@@ -2081,11 +2083,13 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
     assert(num != NULL);
 
     if (PyLong_Check(num)) {
-        prod = PyNumber_Multiply(num, factor);
+        prod = PyNumber_Multiply(factor, num);
         if (prod == NULL)
             return NULL;
+        assert(PyLong_CheckExact(prod));
         sum = PyNumber_Add(sofar, prod);
         Py_DECREF(prod);
+        assert(sum == NULL || PyLong_CheckExact(sum));
         return sum;
     }
 
@@ -2128,7 +2132,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
          * fractional part requires float arithmetic, and may
          * lose a little info.
          */
-        assert(PyLong_Check(factor));
+        assert(PyLong_CheckExact(factor));
         dnum = PyLong_AsDouble(factor);
 
         dnum *= fracpart;
@@ -2143,6 +2147,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
         Py_DECREF(sum);
         Py_DECREF(x);
         *leftover += fracpart;
+        assert(y == NULL || PyLong_CheckExact(y));
         return y;
     }
 
