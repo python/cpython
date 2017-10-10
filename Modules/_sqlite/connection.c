@@ -250,6 +250,12 @@ pysqlite_connection_dealloc(pysqlite_Connection *self)
  */
 int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor)
 {
+    if (!connection || !connection->cursors) {
+        PyErr_Format(PyExc_RuntimeError,
+                        "Tried to get a cursor of an uninitialized connection."
+                    );
+                    goto error;
+    }
     PyObject* weakref;
 
     weakref = PyWeakref_NewRef((PyObject*)cursor, NULL);
@@ -1225,6 +1231,9 @@ int pysqlite_check_thread(pysqlite_Connection* self)
 
 static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* self, void* unused)
 {
+    if (!self || !self->isolation_level) {
+        Py_RETURN_NONE;
+    }
     return Py_NewRef(self->isolation_level);
 }
 
