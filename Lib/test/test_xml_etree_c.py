@@ -85,6 +85,38 @@ class MiscTests(unittest.TestCase):
         # and so destroy the parser
         support.gc_collect()
 
+    def test_bpo_31728(self):
+        # A crash or an assertion failure shouldn't happen, in case garbage
+        # collection triggers a call to clear() or a reading of text or tail,
+        # while a setter or clear() or __setstate__() is already running.
+        elem = cET.Element('elem')
+        class X:
+            def __del__(self):
+                elem.text
+                elem.tail
+                elem.clear()
+
+        elem.text = X()
+        elem.clear()  # shouldn't crash
+
+        elem.tail = X()
+        elem.clear()  # shouldn't crash
+
+        elem.text = X()
+        elem.text = X()  # shouldn't crash
+        elem.clear()
+
+        elem.tail = X()
+        elem.tail = X()  # shouldn't crash
+        elem.clear()
+
+        elem.text = X()
+        elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
+        elem.clear()
+
+        elem.tail = X()
+        elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):
