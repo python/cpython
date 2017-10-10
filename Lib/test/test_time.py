@@ -7,6 +7,7 @@ import platform
 import sys
 import sysconfig
 import time
+import threading
 import unittest
 try:
     import _testcapi
@@ -79,6 +80,18 @@ class TimeTestCase(unittest.TestCase):
         a = time.clock_gettime(time.CLOCK_MONOTONIC)
         b = time.clock_gettime(time.CLOCK_MONOTONIC)
         self.assertLessEqual(a, b)
+
+    @unittest.skipUnless(hasattr(time, 'pthread_getcpuclockid'),
+                         'need time.pthread_getcpuclockid()')
+    @unittest.skipUnless(hasattr(time, 'clock_gettime'),
+                         'need time.clock_gettime()')
+    def test_pthread_getcpuclockid(self):
+        clk_id = time.pthread_getcpuclockid(threading.get_ident())
+        self.assertTrue(type(clk_id) is int)
+        self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        t1 = time.clock_gettime(clk_id)
+        t2 = time.clock_gettime(clk_id)
+        self.assertLessEqual(t1, t2)
 
     @unittest.skipUnless(hasattr(time, 'clock_getres'),
                          'need time.clock_getres()')

@@ -192,6 +192,22 @@ PyAPI_FUNC(int) _PyTime_localtime(time_t t, struct tm *tm);
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
 
+#ifdef MS_WINDOWS
+PyAPI_FUNC(int) _PyTime_GetWinPerfCounterWithInfo(
+    _PyTime_t *t,
+    _Py_clock_info_t *info);
+#endif
+
+/* Get the performance counter: clock with the highest available resolution to
+   measure a short duration. */
+PyAPI_FUNC(_PyTime_t) _PyTime_GetPerfCounter(void);
+
+/* Similar to _PyTime_GetPerfCounter(),
+   but get also clock info if info is non-NULL. */
+PyAPI_FUNC(int) _PyTime_GetPerfCounterWithInfo(
+    _PyTime_t *t,
+    _Py_clock_info_t *info);
+
 #ifdef __cplusplus
 }
 #endif

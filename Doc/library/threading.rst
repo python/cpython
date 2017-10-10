@@ -291,10 +291,10 @@ since it is impossible to detect the termination of alien threads.
    .. attribute:: ident
 
       The 'thread identifier' of this thread or ``None`` if the thread has not
-      been started.  This is a nonzero integer.  See the
-      :func:`_thread.get_ident()` function.  Thread identifiers may be recycled
-      when a thread exits and another thread is created.  The identifier is
-      available even after the thread has exited.
+      been started.  This is a nonzero integer.  See the :func:`get_ident`
+      function.  Thread identifiers may be recycled when a thread exits and
+      another thread is created.  The identifier is available even after the
+      thread has exited.
 
    .. method:: is_alive()
 
