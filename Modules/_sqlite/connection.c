@@ -97,15 +97,15 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
 
     self->begin_statement = NULL;
 
-    self->statement_cache = NULL;
-    self->statements = NULL;
-    self->cursors = NULL;
+    Py_CLEAR(self->statement_cache);
+    Py_CLEAR(self->statements);
+    Py_CLEAR(self->cursors);
 
     Py_INCREF(Py_None);
-    self->row_factory = Py_None;
+    Py_XSETREF(self->row_factory, Py_None);
 
     Py_INCREF(&PyUnicode_Type);
-    self->text_factory = (PyObject*)&PyUnicode_Type;
+    Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
 
 #ifdef SQLITE_OPEN_URI
     Py_BEGIN_ALLOW_THREADS
@@ -137,7 +137,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     } else {
         Py_INCREF(isolation_level);
     }
-    self->isolation_level = NULL;
+    Py_CLEAR(self->isolation_level);
     if (pysqlite_connection_set_isolation_level(self, isolation_level) < 0) {
         Py_DECREF(isolation_level);
         return -1;
@@ -177,12 +177,12 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
     self->check_same_thread = check_same_thread;
 
-    self->function_pinboard = PyDict_New();
+    Py_XSETREF(self->function_pinboard, PyDict_New());
     if (!self->function_pinboard) {
         return -1;
     }
 
-    self->collations = PyDict_New();
+    Py_XSETREF(self->collations, PyDict_New());
     if (!self->collations) {
         return -1;
     }
