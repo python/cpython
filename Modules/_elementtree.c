@@ -74,8 +74,8 @@ static void _clear_joined_ptr(PyObject **p)
 }
 
 /* Like Py_XSETREF for a PyObject* that uses a join flag, but set it to the
-   received value (without adding a join flag).
-*/
+ * received value (without adding a join flag).
+ */
 static void _set_joined_ptr(PyObject **p, PyObject *new_val)
 {
     PyObject *tmp = JOIN_OBJ(*p);
