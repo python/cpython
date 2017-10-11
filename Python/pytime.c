@@ -71,7 +71,6 @@ _PyTime_GCD(_PyTime_t a, _PyTime_t b)
 Py_LOCAL_INLINE(_PyTime_t)
 _PyTime_MulDiv(_PyTime_t t, _PyTime_t mul, _PyTime_t div)
 {
-    _PyTime_t t = *tp;
     assert(mul >= 1);
     assert(mul <= MAX_MULTIPLIER);
     assert(div >= 1);
