@@ -126,7 +126,7 @@ def getLevelName(level):
     If a numeric value corresponding to one of the defined levels is passed
     in, the corresponding string representation is returned.
 
-    Otherwise, the string "Level %s" % level is returned.
+    Otherwise, the string "%s" % level is returned.
     """
     # See Issues #22386, #27937 and #29220 for why it's this way
     result = _levelToName.get(level)
@@ -135,7 +135,7 @@ def getLevelName(level):
     result = _nameToLevel.get(level)
     if result is not None:
         return result
-    return "Level %s" % level
+    return "%s" % level
 
 def addLevelName(level, levelName):
     """
