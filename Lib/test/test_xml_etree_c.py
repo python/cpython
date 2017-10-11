@@ -126,7 +126,7 @@ class MiscTests(unittest.TestCase):
 
         refs_before = sys.gettotalrefcount()
         elem.__setstate__({'tag': 'elem', '_children': []})
-        self.assertAlmostEqual(sys.gettotalrefcount() - refs_before, -999,
+        self.assertAlmostEqual(sys.gettotalrefcount() - refs_before, -1000,
                                delta=10)
 
 
