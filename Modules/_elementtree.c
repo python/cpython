@@ -994,6 +994,10 @@ element_setstate_from_attributes(ElementObject *self,
     }
     assert(self->extra && self->extra->allocated >= nchildren);
 
+    /* Decref each of the old children. */
+    for (i = 0; i < self->extra->length; i++) {
+        Py_DECREF(self->extra->children[i]);
+    }
     /* Copy children */
     for (i = 0; i < nchildren; i++) {
         self->extra->children[i] = PyList_GET_ITEM(children, i);
@@ -3288,11 +3292,11 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
         }
     }
 
-    self->entity = PyDict_New();
+    Py_XSETREF(self->entity, PyDict_New());
     if (!self->entity)
         return -1;
 
-    self->names = PyDict_New();
+    Py_XSETREF(self->names, PyDict_New());
     if (!self->names) {
         Py_CLEAR(self->entity);
         return -1;
@@ -3317,33 +3321,35 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
             return -1;
         }
     }
-    self->target = target;
+    Py_XSETREF(self->target, target);
 
-    self->handle_start = PyObject_GetAttrString(target, "start");
+    Py_XSETREF(self->handle_start, PyObject_GetAttrString(target, "start"));
     if (ignore_attribute_error(self->handle_start)) {
         return -1;
     }
-    self->handle_data = PyObject_GetAttrString(target, "data");
+    Py_XSETREF(self->handle_data, PyObject_GetAttrString(target, "data"));
     if (ignore_attribute_error(self->handle_data)) {
         return -1;
     }
-    self->handle_end = PyObject_GetAttrString(target, "end");
+    Py_XSETREF(self->handle_end, PyObject_GetAttrString(target, "end"));
     if (ignore_attribute_error(self->handle_end)) {
         return -1;
     }
-    self->handle_comment = PyObject_GetAttrString(target, "comment");
+    Py_XSETREF(self->handle_comment,
+               PyObject_GetAttrString(target, "comment"));
     if (ignore_attribute_error(self->handle_comment)) {
         return -1;
     }
-    self->handle_pi = PyObject_GetAttrString(target, "pi");
+    Py_XSETREF(self->handle_pi, PyObject_GetAttrString(target, "pi"));
     if (ignore_attribute_error(self->handle_pi)) {
         return -1;
     }
-    self->handle_close = PyObject_GetAttrString(target, "close");
+    Py_XSETREF(self->handle_close, PyObject_GetAttrString(target, "close"));
     if (ignore_attribute_error(self->handle_close)) {
         return -1;
     }
-    self->handle_doctype = PyObject_GetAttrString(target, "doctype");
+    Py_XSETREF(self->handle_doctype,
+               PyObject_GetAttrString(target, "doctype"));
     if (ignore_attribute_error(self->handle_doctype)) {
         return -1;
     }

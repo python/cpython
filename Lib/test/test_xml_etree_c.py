@@ -4,6 +4,7 @@ from test import support
 from test.support import import_fresh_module
 import types
 import unittest
+import sys
 
 cET = import_fresh_module('xml.etree.ElementTree',
                           fresh=['_elementtree'])
@@ -116,6 +117,15 @@ class MiscTests(unittest.TestCase):
 
         elem.tail = X()
         elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
+
+    def test_refleaks_in_Element___setstate__(self):
+        elem = cET.Element('elem')
+        elem.__setstate__({'tag': 'elem', '_children': list(range(1000))})
+
+        refs_before = sys.gettotalrefcount()
+        elem.__setstate__({'tag': 'elem', '_children': []})
+        self.assertAlmostEqual(sys.gettotalrefcount() - refs_before, -1000,
+                               delta=10)
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')

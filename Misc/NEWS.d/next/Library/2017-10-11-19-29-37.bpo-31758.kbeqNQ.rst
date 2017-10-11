@@ -1,0 +1,2 @@
+Prevent reference leaks in ``_elementtree.Element.__setstate__()``. Patch by
+Oren Milman.
