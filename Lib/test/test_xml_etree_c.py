@@ -119,12 +119,14 @@ class MiscTests(unittest.TestCase):
         elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
 
     def test_refleaks_in_Element___setstate__(self):
+        # bpo-31758: Make sure that __setstate__() doesn't leak references of
+        # the old children of the Element object.
         elem = cET.Element('elem')
-        elem.__setstate__({'tag': 'elem', '_children': list(range(1000))})
+        elem[:] = range(1000)
 
         refs_before = sys.gettotalrefcount()
         elem.__setstate__({'tag': 'elem', '_children': []})
-        self.assertAlmostEqual(sys.gettotalrefcount() - refs_before, -1000,
+        self.assertAlmostEqual(sys.gettotalrefcount() - refs_before, -998,
                                delta=10)
 
 
