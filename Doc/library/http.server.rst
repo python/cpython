@@ -341,11 +341,12 @@ of which this module provides three different variants:
    .. attribute:: compressions
 
       A mapping between a compression encoding (eg. "gzip") and a generator
-      that takes a file object as an argument and yields data read from the
-      file object, compressed with the encoding. By default, "gzip" and
-      "deflate" compressions are supported. To support other algorithms,
-      :attr:`compressions` can be extended ; see :func:`_gzip_producer` in
-      the source code for an example of a compressed data generator.
+      that takes a file object as an argument, reads the file content by
+      chunks, compresses each chunk with the specified encoding, and yields
+      the compressed data as a bytes object.
+      By default, if the :mod:`zlib` module is available, "gzip" and "deflate"
+      compressions are supported. To support other algorithms,
+      :attr:`compressions` can be extended.
 
       .. versionadded:: 3.7
 
@@ -439,8 +440,8 @@ the following command uses a specific directory::
 .. versionadded:: 3.7
     ``--directory`` specify alternate directory
 
-By default, HTTP compression is not supported. Setting the option ``--gzip``
-enables gzip compression on the content types defined in
+By default, HTTP compression is not supported. Setting the option
+``--compressed`` enables compression on the content types defined in
 ``commonly_compressed_types``.
 
 .. versionadded:: 3.7
