@@ -1406,7 +1406,7 @@ if __name__ == '__main__':
     parser.add_argument('--directory', '-d', default=os.getcwd(),
                         help='Specify alternative directory '
                         '[default:current directory]')
-    parser.add_argument('--gzip', action="store_true",
+    parser.add_argument('--compressed', action="store_true",
                         help="Enable HTTP compression")
     parser.add_argument('port', action='store',
                         default=8000, type=int,
@@ -1415,7 +1415,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
-    elif args.gzip:
+    elif args.compressed and zlib:
         class GzipHandler(SimpleHTTPRequestHandler):
             compressed_types = commonly_compressed_types
         handler_class = GzipHandler
