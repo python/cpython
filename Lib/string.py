@@ -79,13 +79,13 @@ class Template(metaclass=_TemplateMetaclass):
     """A string class for supporting $-substitutions."""
 
     delimiter = '$'
-    idpattern = r'[_a-z][_a-z0-9]*'
+    # r'[a-z]' matches to non-ASCII letters when used with IGNORECASE,
+    # but without ASCII flag.  We can't add re.ASCII to flags because of
+    # backward compatibility.  So we use local -i flag and [a-zA-Z] pattern.
+    # See https://bugs.python.org/issue31672
+    idpattern = r'(?-i:[_a-zA-Z][_a-zA-Z0-9]*)'
     braceidpattern = None
-
-    # We use re.I | re.A while compiling Template.idpattern in the metaclass
-    # above, but since flags is part of the public API, we restore its original
-    # documented value after class creation for backward compatibility.
-    flags = _re.IGNORECASE | _re.ASCII
+    flags = _re.IGNORECASE
 
     def __init__(self, template):
         self.template = template
@@ -160,9 +160,6 @@ class Template(metaclass=_TemplateMetaclass):
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
-
-# Restore old, documented flag.  See Template.flags for detail.
-Template.flags = _re.IGNORECASE
 
 
 ########################################################################
