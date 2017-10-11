@@ -949,28 +949,6 @@ forbidden_name(struct compiling *c, identifier name, const node *n,
         ast_error(c, n, "assignment to keyword");
         return 1;
     }
-    if (_PyUnicode_EqualToASCIIString(name, "async") ||
-        _PyUnicode_EqualToASCIIString(name, "await"))
-    {
-        PyObject *message = PyUnicode_FromString(
-            "'async' and 'await' will become reserved keywords"
-            " in Python 3.7");
-        int ret;
-        if (message == NULL) {
-            return 1;
-        }
-        ret = PyErr_WarnExplicitObject(
-                PyExc_DeprecationWarning,
-                message,
-                c->c_filename,
-                LINENO(n),
-                NULL,
-                NULL);
-        Py_DECREF(message);
-        if (ret < 0) {
-            return 1;
-        }
-    }
     if (full_checks) {
         const char * const *p;
         for (p = FORBIDDEN; *p; p++) {
@@ -1642,9 +1620,10 @@ ast_for_funcdef_impl(struct compiling *c, const node *n,
 static stmt_ty
 ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
-    /* async_funcdef: ASYNC funcdef */
+    /* async_funcdef: 'async' funcdef */
     REQ(n, async_funcdef);
-    REQ(CHILD(n, 0), ASYNC);
+    REQ(CHILD(n, 0), NAME);
+    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
     REQ(CHILD(n, 1), funcdef);
 
     return ast_for_funcdef_impl(c, CHILD(n, 1), decorator_seq,
@@ -1663,9 +1642,10 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 static stmt_ty
 ast_for_async_stmt(struct compiling *c, const node *n)
 {
-    /* async_stmt: ASYNC (funcdef | with_stmt | for_stmt) */
+    /* async_stmt: 'async' (funcdef | with_stmt | for_stmt) */
     REQ(n, async_stmt);
-    REQ(CHILD(n, 0), ASYNC);
+    REQ(CHILD(n, 0), NAME);
+    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
 
     switch (TYPE(CHILD(n, 1))) {
         case funcdef:
@@ -1778,17 +1758,23 @@ static int
 count_comp_fors(struct compiling *c, const node *n)
 {
     int n_fors = 0;
-    int is_async;
 
   count_comp_for:
-    is_async = 0;
     n_fors++;
     REQ(n, comp_for);
-    if (TYPE(CHILD(n, 0)) == ASYNC) {
-        is_async = 1;
+    if (NCH(n) == 2) {
+        REQ(CHILD(n, 0), NAME);
+        assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+        n = CHILD(n, 1);
     }
-    if (NCH(n) == (5 + is_async)) {
-        n = CHILD(n, 4 + is_async);
+    else if (NCH(n) == 1) {
+        n = CHILD(n, 0);
+    }
+    else {
+        goto error;
+    }
+    if (NCH(n) == (5)) {
+        n = CHILD(n, 4);
     }
     else {
         return n_fors;
@@ -1807,6 +1793,7 @@ count_comp_fors(struct compiling *c, const node *n)
             return n_fors;
     }
 
+  error:
     /* Should never be reached */
     PyErr_SetString(PyExc_SystemError,
                     "logic error in count_comp_fors");
@@ -1855,19 +1842,27 @@ ast_for_comprehension(struct compiling *c, const node *n)
         asdl_seq *t;
         expr_ty expression, first;
         node *for_ch;
+        node *sync_n;
         int is_async = 0;
 
         REQ(n, comp_for);
 
-        if (TYPE(CHILD(n, 0)) == ASYNC) {
+        if (NCH(n) == 2) {
             is_async = 1;
+            REQ(CHILD(n, 0), NAME);
+            assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+            sync_n = CHILD(n, 1);
         }
+        else {
+            sync_n = CHILD(n, 0);
+        }
+        REQ(sync_n, sync_comp_for);
 
-        for_ch = CHILD(n, 1 + is_async);
+        for_ch = CHILD(sync_n, 1);
         t = ast_for_exprlist(c, for_ch, Store);
         if (!t)
             return NULL;
-        expression = ast_for_expr(c, CHILD(n, 3 + is_async));
+        expression = ast_for_expr(c, CHILD(sync_n, 3));
         if (!expression)
             return NULL;
 
@@ -1884,11 +1879,11 @@ ast_for_comprehension(struct compiling *c, const node *n)
         if (!comp)
             return NULL;
 
-        if (NCH(n) == (5 + is_async)) {
+        if (NCH(sync_n) == 5) {
             int j, n_ifs;
             asdl_seq *ifs;
 
-            n = CHILD(n, 4 + is_async);
+            n = CHILD(sync_n, 4);
             n_ifs = count_comp_ifs(c, n);
             if (n_ifs == -1)
                 return NULL;
@@ -2470,7 +2465,7 @@ ast_for_atom_expr(struct compiling *c, const node *n)
     REQ(n, atom_expr);
     nch = NCH(n);
 
-    if (TYPE(CHILD(n, 0)) == AWAIT) {
+    if (TYPE(CHILD(n, 0)) == NAME && strcmp(STR(CHILD(n, 0)), "await") == 0) {
         start = 1;
         assert(nch > 1);
     }
@@ -2497,7 +2492,7 @@ ast_for_atom_expr(struct compiling *c, const node *n)
     }
 
     if (start) {
-        /* there was an AWAIT */
+        /* there was an 'await' */
         return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
     }
     else {
@@ -2562,7 +2557,7 @@ ast_for_expr(struct compiling *c, const node *n)
        term: factor (('*'|'@'|'/'|'%'|'//') factor)*
        factor: ('+'|'-'|'~') factor | power
        power: atom_expr ['**' factor]
-       atom_expr: [AWAIT] atom trailer*
+       atom_expr: ['await'] atom trailer*
        yield_expr: 'yield' [yield_arg]
     */
 

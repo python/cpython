@@ -74,7 +74,7 @@ class Get_signatureTest(unittest.TestCase):
 non-overlapping occurrences of the pattern in string by the
 replacement repl.  repl can be either a string or a callable;
 if a string, backslash escapes in it are processed.  If it is
-a callable, it's passed the match object and must return''')
+a callable, it's passed the Match object and must return''')
         gtest(p.sub, '''(repl, string, count=0)\nReturn the string obtained by replacing the leftmost non-overlapping occurrences o...''')
 
     def test_signature_wrap(self):

@@ -285,8 +285,8 @@ _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
 #endif
 
 static int
-_PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
-                        long unit_to_ns)
+_PyTime_FromDouble(_PyTime_t *t, double value, _PyTime_round_t round,
+                   long unit_to_ns)
 {
     /* volatile avoids optimization changing how numbers are rounded */
     volatile double d;
@@ -315,7 +315,7 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
         }
-        return _PyTime_FromFloatObject(t, d, round, unit_to_ns);
+        return _PyTime_FromDouble(t, d, round, unit_to_ns);
     }
     else {
         long long sec;
@@ -779,19 +779,80 @@ _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     return pymonotonic(tp, info, 1);
 }
 
+
+#ifdef MS_WINDOWS
+int
+_PyTime_GetWinPerfCounterWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
+{
+    static LONGLONG cpu_frequency = 0;
+    static LONGLONG ctrStart;
+    LARGE_INTEGER now;
+    double diff;
+
+    if (cpu_frequency == 0) {
+        LARGE_INTEGER freq;
+        QueryPerformanceCounter(&now);
+        ctrStart = now.QuadPart;
+        if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
+        cpu_frequency = freq.QuadPart;
+    }
+    QueryPerformanceCounter(&now);
+    diff = (double)(now.QuadPart - ctrStart);
+    if (info) {
+        info->implementation = "QueryPerformanceCounter()";
+        info->resolution = 1.0 / (double)cpu_frequency;
+        info->monotonic = 1;
+        info->adjustable = 0;
+    }
+
+    diff = diff / (double)cpu_frequency;
+    return _PyTime_FromDouble(t, diff, _PyTime_ROUND_FLOOR, SEC_TO_NS);
+}
+#endif
+
+
+int
+_PyTime_GetPerfCounterWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
+{
+#ifdef MS_WINDOWS
+    return _PyTime_GetWinPerfCounterWithInfo(t, info);
+#else
+    return _PyTime_GetMonotonicClockWithInfo(t, info);
+#endif
+}
+
+
+_PyTime_t
+_PyTime_GetPerfCounter(void)
+{
+    _PyTime_t t;
+    if (_PyTime_GetPerfCounterWithInfo(&t, NULL) < 0) {
+        /* should not happen, _PyTime_Init() checked the clock at startup */
+        Py_UNREACHABLE();
+    }
+    return t;
+}
+
+
 int
 _PyTime_Init(void)
 {
+    /* check that the 3 most important clocks are working properly
+       to not have to check for exceptions at runtime. If a clock works once,
+       it cannot fail in next calls. */
     _PyTime_t t;
-
-    /* ensure that the system clock works */
-    if (_PyTime_GetSystemClockWithInfo(&t, NULL) < 0)
+    if (_PyTime_GetSystemClockWithInfo(&t, NULL) < 0) {
         return -1;
-
-    /* ensure that the operating system provides a monotonic clock */
-    if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) < 0)
+    }
+    if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) < 0) {
         return -1;
-
+    }
+    if (_PyTime_GetPerfCounterWithInfo(&t, NULL) < 0) {
+        return -1;
+    }
     return 0;
 }
 
