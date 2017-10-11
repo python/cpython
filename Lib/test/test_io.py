@@ -2667,8 +2667,8 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(t.read(), u'a')
 
     def test_illegal_encoder(self):
-        # bpo-31271: A TypeError error should be raise in case the return
-        # value of encoder's encode() is invalid.
+        # bpo-31271: A TypeError should be raise in case the return value of
+        # encoder's encode() is invalid.
         class BadEncoder:
             def encode(self, dummy):
                 return u'spam'
