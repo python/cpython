@@ -1,2 +1,2 @@
-Prevent a crash in `sqlite3.Cursor.close()` in case the Cursor object is
+Prevent a crash in `sqlite3.Cursor.close()` in case the `Cursor` object is
 uninitialized. Patch by Oren Milman.
