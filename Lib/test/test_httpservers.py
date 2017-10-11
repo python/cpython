@@ -12,9 +12,6 @@ import os
 import sys
 import re
 import base64
-import gzip
-import zlib
-import bz2
 import ntpath
 import shutil
 import email.message
@@ -32,6 +29,16 @@ from io import BytesIO
 import unittest
 from test import support
 
+try:
+    import gzip
+    import zlib
+except ImportError:
+    zlib = None
+
+try:
+    import bz2
+except ImportError:
+    bz2 = None
 
 class NoLogRequestHandler:
     def log_message(self, *args):
@@ -603,6 +610,7 @@ class HTTPCompressionTestCase(BaseTestCase):
         finally:
             BaseTestCase.tearDown(self)
 
+    @unittest.skipIf(zlib is None, 'zlib is not available')
     def test_no_content_encoding_header(self):
         # no Content-Encoding header, no file extension
         response = self.request(self.base_url + '/test')
@@ -619,6 +627,7 @@ class HTTPCompressionTestCase(BaseTestCase):
         self.assertNotIn('Content-Encoding', response.headers)
         self.assertEqual(response.read(), self.data)
 
+    @unittest.skipIf(zlib is None, 'zlib is not available')
     def test_header_set_unsupported_extension(self):
         # no file extension
         response = self.request(self.base_url + '/test',
@@ -632,6 +641,7 @@ class HTTPCompressionTestCase(BaseTestCase):
         self.assertNotIn('Content-Encoding', response.headers)
         self.assertEqual(response.read(), self.data)
 
+    @unittest.skipIf(zlib is None, 'zlib is not available')
     def test_header_set_supported_extension(self):
         # Accept-Encoding header set, compressible file extension
         for ext in self.compressible_ext:
@@ -688,6 +698,7 @@ class HTTPCompressionTestCase(BaseTestCase):
             self.assertEqual(gzip.decompress(response.read()),
                 self.repeat * self.data)
 
+    @unittest.skipIf(zlib is None, 'zlib is not available')
     def test_header_set_to_wrong_value_supported_extension(self):
         # Content-Encoding header set to a value that doesn't include gzip,
         # compressible file extension
@@ -705,6 +716,7 @@ class HTTPCompressionTestCase(BaseTestCase):
                 headers={'Accept-Encoding': 'dummy'})
             self.assertNotIn('Content-Encoding', response.headers)
 
+    @unittest.skipIf(bz2 is None, 'bz2 is not available')
     def test_user_defined_compressions(self):
         # test with encoding "bzip2" instead of "gzip"
 
@@ -729,6 +741,21 @@ class HTTPCompressionTestCase(BaseTestCase):
             self.assertIn('Content-Encoding', response.headers)
             self.assertEqual(bz2.decompress(response.read()), self.data)
 
+    def test_no_zlib(self):
+        """Simulate the case when zlib is not supported."""
+        save_zlib = server.zlib
+        save_compressions = self.request_handler.compressions
+
+        server.zlib = None
+        self.request_handler.compressions = {}
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip'})
+            self.assertNotIn('Content-Encoding', response.headers)
+            self.assertEqual(response.read(), self.data)
+        server.zlib = save_zlib
+        self.request_handler.compressions = save_compressions
+
 class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
 
     class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
@@ -738,6 +765,7 @@ class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
         compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
             "text/javascript", "application/javascript", "application/json"]
 
+    @unittest.skipIf(zlib is None, 'zlib is not available')
     def test_header_set_supported_extension(self):
         # with protocol set to HTTP/1.1, big files are sent with
         # Chunked Tranfer Encoding
