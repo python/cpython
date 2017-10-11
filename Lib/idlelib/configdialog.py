@@ -12,7 +12,7 @@ Refer to comments in EditorWindow autoindent code for details.
 from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
-                     NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
+                     NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW, CENTER,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
 from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
                          OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
@@ -479,8 +479,8 @@ class FontPage(Frame):
                     font_size_title: Label
                     (*)sizelist: DynOptionMenu - font_size
                     (*)bold_toggle: Checkbutton - font_bold
-                frame_font_sample: Frame
-                    (*)font_sample: Label
+            frame_sample: LabelFrame
+                (*)font_sample: Label
             frame_indent: LabelFrame
                     indent_title: Label
                     (*)indent_scale: Scale - space_num
@@ -490,10 +490,11 @@ class FontPage(Frame):
         self.font_bold = tracers.add(BooleanVar(self), self.var_changed_font)
         self.space_num = tracers.add(IntVar(self), ('main', 'Indent', 'num-spaces'))
 
-        # Create widgets:
-        # body and body section frames.
+        # Define frames and widgets.
         frame_font = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
+                self, borderwidth=2, relief=GROOVE, text=' Shell/Editor Font ')
+        frame_sample = LabelFrame(
+                self, borderwidth=2, relief=GROOVE, text=' Font Sample ')
         frame_indent = LabelFrame(
                 self, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
         # frame_font.
@@ -501,7 +502,7 @@ class FontPage(Frame):
         frame_font_param = Frame(frame_font)
         font_name_title = Label(
                 frame_font_name, justify=LEFT, text='Font Face :')
-        self.fontlist = Listbox(frame_font_name, height=5,
+        self.fontlist = Listbox(frame_font_name, height=15,
                                 takefocus=True, exportselection=FALSE)
         self.fontlist.bind('<ButtonRelease-1>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Up>', self.on_fontlist_select)
@@ -514,11 +515,34 @@ class FontPage(Frame):
         self.bold_toggle = Checkbutton(
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
-        frame_font_sample = Frame(frame_font, relief=SOLID, borderwidth=1)
+        # frame_sample.
+        sample = (
+            '<ASCII/Latin1>\n'
+            'AaBbCcDdEeFfGgHhIiJj\n1234567890#:+=(){}[]\n'
+            '\u00a1\u00a2\u00a3\u00a5\u00a7\u00a9\u00ab\u00ae\u00b6\u00bd'
+            '\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5\u00c7\u00d0\u00d8\u00df\n'
+            '\n<IPA,Greek,Cyrillic>\n'
+            '\u0250\u0255\u0258\u025e\u025f\u0264\u026b\u026e\u0270\u0277'
+            '\u027b\u0281\u0283\u0286\u028e\u029e\u02a2\u02ab\u02ad\u02af\n'
+            '\u0391\u03b1\u0392\u03b2\u0393\u03b3\u0394\u03b4\u0395\u03b5'
+            '\u0396\u03b6\u0397\u03b7\u0398\u03b8\u0399\u03b9\u039a\u03ba\n'
+            '\u0411\u0431\u0414\u0434\u0416\u0436\u041f\u043f\u0424\u0444'
+            '\u0427\u0447\u042a\u044a\u042d\u044d\u0460\u0464\u046c\u04dc\n'
+            '\n<Hebrew, Arabic>\n'
+            '\u05d0\u05d1\u05d2\u05d3\u05d4\u05d5\u05d6\u05d7\u05d8\u05d9'
+            '\u05da\u05db\u05dc\u05dd\u05de\u05df\u05e0\u05e1\u05e2\u05e3\n'
+            '\u0627\u0628\u062c\u062f\u0647\u0648\u0632\u062d\u0637\u064a'
+            '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669\n'
+            '\n<Devanagari>\n'
+            '\u0966\u0967\u0968\u0969\u096a\u096b\u096c\u096d\u096e\u096f'
+            '\u0905\u0906\u0907\u0908\u0909\u090a\u090f\u0910\u0913\u0914\n'
+            '\u0915\u0917\u0919\u091a\u091c\u091e\u0924\u0926\u0928\u092a'
+            '\u092c\u092e\u092f\u0930\u0932\u0935\u0936\u0938\u0939\u0965\n'
+            '\n<East Asian>\n'
+            '\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d'
+            )
         temp_font = tkFont.Font(self, ('courier', 10, 'normal'))
-        self.font_sample = Label(
-                frame_font_sample, justify=LEFT, font=temp_font,
-                text='AaBbCcDdEe\nFfGgHhIiJj\n1234567890\n#:+=(){}[]')
+        self.font_sample = Label(frame_sample, font=temp_font, text=sample)
         # frame_indent.
         indent_title = Label(
                 frame_indent, justify=LEFT,
@@ -527,10 +551,12 @@ class FontPage(Frame):
                 frame_indent, variable=self.space_num,
                 orient='horizontal', tickinterval=2, from_=2, to=16)
 
-        # Pack widgets:
-        # body.
-        frame_font.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_indent.pack(side=LEFT, padx=5, pady=5, fill=Y)
+        # Grid and pack widgets:
+        self.columnconfigure(1, weight=1)
+        frame_font.grid(row=0, column=0, padx=5, pady=5)
+        frame_sample.grid(row=0, column=1, rowspan=2, padx=5, pady=5,
+                          sticky='nsew')
+        frame_indent.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
         # frame_font.
         frame_font_name.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_font_param.pack(side=TOP, padx=5, pady=5, fill=X)
@@ -540,7 +566,7 @@ class FontPage(Frame):
         font_size_title.pack(side=LEFT, anchor=W)
         self.sizelist.pack(side=LEFT, anchor=W)
         self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
-        frame_font_sample.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        # frame_sample.
         self.font_sample.pack(expand=TRUE, fill=BOTH)
         # frame_indent.
         indent_title.pack(side=TOP, anchor=W, padx=5)
