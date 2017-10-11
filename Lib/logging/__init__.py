@@ -126,7 +126,7 @@ def getLevelName(level):
     If a numeric value corresponding to one of the defined levels is passed
     in, the corresponding string representation is returned.
 
-    Otherwise, the string "Level %s" % level is returned.
+    Otherwise, the string "%s" % level is returned.
     """
     # See Issues #22386, #27937 and #29220 for why it's this way
     result = _levelToName.get(level)
@@ -135,7 +135,7 @@ def getLevelName(level):
     result = _nameToLevel.get(level)
     if result is not None:
         return result
-    return "Level %s" % level
+    return "%s" % level
 
 def addLevelName(level, levelName):
     """
@@ -185,14 +185,29 @@ _srcfile = os.path.normcase(addLevelName.__code__.co_filename)
 
 
 def _checkLevel(level):
-    if isinstance(level, int):
-        rv = level
-    elif str(level) == level:
-        if level not in _nameToLevel:
-            raise ValueError("Unknown level: %r" % level)
-        rv = _nameToLevel[level]
-    else:
-        raise TypeError("Level not an integer or a valid string: %r" % level)
+    """Check parameter against all defined values. Return NOTSET if invalid.
+
+    Since all logging.$level() functions choose to emit based on
+    numeric comparison, a default of ERROR would be more friendly.
+    """
+    rv = NOTSET
+    try:
+        if level in _nameToLevel:
+            rv = _nameToLevel[level]
+        elif level in _levelToName:
+            rv = level
+        else:
+        #FIXME - test harness injects '+1',  so tolerating 
+        # arbitrary integers is expected behavior. Why?
+        #    raise ValueError
+            rv = int(level)
+    except (TypeError, ValueError, KeyError) as err:
+        if raiseExceptions:
+            # test harness (../test/test_logging) expects 'TypeError'
+            raise TypeError("Level not an integer or a valid string: %r" % level) from err
+    except Exception:
+        pass
+
     return rv
 
 #---------------------------------------------------------------------------
@@ -569,7 +584,9 @@ class Formatter(object):
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
         s = self.formatMessage(record)
-        if record.exc_info:
+        if (isinstance(record.exc_info, tuple) and record.exc_info[0]):
+            # Intercept 'Boolean' - causes subscript error if passed to formatException,
+            # and empty Tuples which emit 'NoneType None' into message.
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
             if not record.exc_text:
@@ -1388,12 +1405,12 @@ class Logger(Filterer):
 
         logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
         """
-        if not isinstance(level, int):
-            if raiseExceptions:
-                raise TypeError("level must be an integer")
-            else:
-                return
-        if self.isEnabledFor(level):
+        try:
+            level = _checkLevel(level)
+        except (TypeError, ValueError):
+            raise
+
+        if (isinstance(level, int) and self.isEnabledFor(level)):
             self._log(level, msg, args, **kwargs)
 
     def findCaller(self, stack_info=False):

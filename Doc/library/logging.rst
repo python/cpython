@@ -1072,7 +1072,7 @@ functions.
    have associated levels with names using :func:`addLevelName` then the name you
    have associated with *lvl* is returned. If a numeric value corresponding to one
    of the defined levels is passed in, the corresponding string representation is
-   returned. Otherwise, the string 'Level %s' % lvl is returned.
+   returned. Otherwise, the string '%s' % lvl is returned.
 
    .. note:: Levels are internally integers (as they need to be compared in the
       logging logic). This function is used to convert between an integer level
