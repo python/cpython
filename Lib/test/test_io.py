@@ -2672,11 +2672,11 @@ class TextIOWrapperTest(unittest.TestCase):
         class BadEncoder:
             def encode(self, dummy):
                 return u'spam'
-        def _get_bad_encoder(dummy):
+        def get_bad_encoder(dummy):
             return BadEncoder()
         rot13 = codecs.lookup("rot13")
         with support.swap_attr(rot13, '_is_text_encoding', True), \
-             support.swap_attr(rot13, 'incrementalencoder', _get_bad_encoder):
+             support.swap_attr(rot13, 'incrementalencoder', get_bad_encoder):
             t = io.TextIOWrapper(io.BytesIO(b'foo'), encoding="rot13")
         with self.assertRaises(TypeError):
             t.write('bar')
