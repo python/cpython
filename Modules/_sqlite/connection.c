@@ -123,6 +123,9 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     } else {
         Py_INCREF(isolation_level);
     }
+    
+    self->initialized = 1;
+    
     Py_CLEAR(self->isolation_level);
     if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) < 0) {
         Py_DECREF(isolation_level);
@@ -251,7 +254,7 @@ pysqlite_connection_dealloc(pysqlite_Connection *self)
 int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor)
 {
     if (!connection || !connection->cursors) {
-        PyErr_Format(PyExc_RuntimeError,
+        PyErr_Format(pysqlite_ProgrammingError,
                         "Tried to get a cursor of an uninitialized connection."
                     );
                     goto error;
@@ -329,6 +332,11 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=a546a0da212c9b97 input=3d58064bbffaa3d3]*/
 {
     int rc;
+    
+    if (!self->statements) {
+        PyErr_SetString(pysqlite_ProgrammingError, "Trying to close connection which was not initialized properly.");
+        return NULL;
+    }
 
     if (!pysqlite_check_thread(self)) {
         return NULL;

@@ -414,6 +414,37 @@ class RegressionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, b'')
 
+    def CheckUninitializedIsolationLevel(self):
+        """
+        Previously trying to get the isolation level of an uninitialized Connection
+        caused a segfault, now it should just return None.
+        """
+        conn = sqlite.Connection.__new__(sqlite.Connection)
+        self.assertEqual(conn.isolation_level, None)
+
+
+    def CheckCursorInvalidIsolationLevel(self):
+        """
+        When trying to call conn.corsor() when conn is a Connection object that
+        was not initialized properly, it caused a segfault. Now it should raise
+        a ProgrammingError.
+        """
+        try:
+            conn = sqlite.Connection.__new__(sqlite.Connection)
+            conn.__init__('', isolation_level='invalid isolation level')
+        except ValueError:
+            pass
+
+        self.assertRaises(sqlite.ProgrammingError, conn.cursor)
+
+
+    def CheckCloseInvalidConnection(self):
+        """
+        Trying to call close() on a connection which was not initialized properly,
+        it caused a segfault. Now it should raise a ProgrammingError.
+        """
+        conn = sqlite.Connection.__new__(sqlite.Connection)
+        self.assertRaises(sqlite.ProgrammingError, conn.close)
 
 def suite():
     tests = [
