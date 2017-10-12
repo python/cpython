@@ -1537,7 +1537,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     int i = 0;
     PyObject *otimeout = NULL;
     PyObject *ch = NULL;
-    PyObject *it = NULL, *ei = NULL;
+    PyObject *seq = NULL, *ei = NULL;
     PyObject *result = NULL;
     struct kevent *evl = NULL;
     struct kevent *chl = NULL;
@@ -1593,37 +1593,34 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     }
 
     if (ch != NULL && ch != Py_None) {
-        it = PyObject_GetIter(ch);
-        if (it == NULL) {
-            PyErr_SetString(PyExc_TypeError,
-                            "changelist is not iterable");
+        seq = PySequence_Fast(ch, "changelist is not iterable");
+        if (seq == NULL) {
             return NULL;
         }
-        nchanges = PyObject_Size(ch);
-        if (nchanges < 0) {
+        if (PySequence_Fast_GET_SIZE(seq) > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "changelist is too long");
             goto error;
         }
+        nchanges = (int)PySequence_Fast_GET_SIZE(seq);
 
         chl = PyMem_New(struct kevent, nchanges);
         if (chl == NULL) {
             PyErr_NoMemory();
             goto error;
         }
-        i = 0;
-        while ((ei = PyIter_Next(it)) != NULL) {
+        for (i = 0; i < nchanges; ++i) {
+            ei = PySequence_Fast_GET_ITEM(seq, i);
             if (!kqueue_event_Check(ei)) {
-                Py_DECREF(ei);
                 PyErr_SetString(PyExc_TypeError,
                     "changelist must be an iterable of "
                     "select.kevent objects");
                 goto error;
-            } else {
-                chl[i++] = ((kqueue_event_Object *)ei)->e;
             }
-            Py_DECREF(ei);
+            chl[i] = ((kqueue_event_Object *)ei)->e;
         }
+        Py_CLEAR(seq);
     }
-    Py_CLEAR(it);
 
     /* event list */
     if (nevents) {
@@ -1667,7 +1664,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     PyMem_Free(chl);
     PyMem_Free(evl);
     Py_XDECREF(result);
-    Py_XDECREF(it);
+    Py_XDECREF(seq);
     return NULL;
 }
 
@@ -1675,7 +1672,7 @@ PyDoc_STRVAR(kqueue_queue_control_doc,
 "control(changelist, max_events[, timeout=None]) -> eventlist\n\
 \n\
 Calls the kernel kevent function.\n\
-- changelist must be a list of kevent objects describing the changes\n\
+- changelist must be an iterable of kevent objects describing the changes\n\
   to be made to the kernel's watch list or None.\n\
 - max_events lets you specify the maximum number of events that the\n\
   kernel will return.\n\
