@@ -198,7 +198,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. decorator:: classmethod
 
-   Transforms a method into a class method.
+   Transform a method into a class method.
 
    A class method receives the class as implicit first argument, just like an
    instance method receives the instance. To declare a class method, use this
@@ -1400,7 +1400,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. decorator:: staticmethod
 
-   Transforms a method into a static method.
+   Transform a method into a static method.
 
    A static method does not receive an implicit first argument. To declare a static
    method, use this idiom::
