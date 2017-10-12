@@ -1,7 +1,6 @@
 import atexit
 import faulthandler
 import os
-import io
 import signal
 import sys
 import unittest
@@ -17,9 +16,12 @@ from test.libregrtest.refleak import warm_caches
 def setup_tests(ns):
     try:
         stderr_fd = sys.stderr.fileno()
-    except io.UnsupportedOperation:
+    except ValueError:
         # For example, in IDLE, sys.stderr has no file descriptor,
         # so faulthandler cannot be used.
+        #
+        # Catch ValueError to catch io.UnsupportedOperation on TextIOBase
+        # and ValueError on a closed stream.
         stderr_fd = None
     else:
         # Display the Python traceback on fatal errors (e.g. segfault)
@@ -119,9 +121,12 @@ def replace_stdout():
     stdout = sys.stdout
     try:
         fd = stdout.fileno()
-    except io.UnsupportedOperation:
+    except ValueError:
         # On IDLE, sys.stdout has no file descriptor and is not a TextIOWrapper
         # object. Leaving sys.stdout unchanged.
+        #
+        # Catch ValueError to catch io.UnsupportedOperation on TextIOBase
+        # and ValueError on a closed stream.
         return
 
     sys.stdout = open(fd, 'w',
