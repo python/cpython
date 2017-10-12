@@ -1,0 +1,2 @@
+The width of the terminal is now used as default width in pprint() if the
+output stream is connected to a terminal.
