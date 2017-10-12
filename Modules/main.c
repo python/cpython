@@ -73,7 +73,6 @@ static const char usage_2[] = "\
 static const char usage_3[] = "\
 -u     : force the stdout and stderr streams to be unbuffered;\n\
          stdin is always buffered; also PYTHONUNBUFFERED=x\n\
-         see man page for details on internal buffering relating to '-u'\n\
 -v     : verbose (trace import statements); also PYTHONVERBOSE=x\n\
          can be supplied multiple times to increase verbosity\n\
 -V     : print the Python version number and exit (also --version)\n\
