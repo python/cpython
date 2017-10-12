@@ -1669,10 +1669,10 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     else {
         static int ximporttime = 0;
         static int import_level;
-        static _PyTime_t accumulated;
+        static double accumulated;
         _Py_IDENTIFIER(importtime);
 
-        _PyTime_t t1 = 0, accumulated_copy = accumulated;
+        double t1 = 0, accumulated_copy = accumulated;
 
         Py_XDECREF(mod);
 
@@ -1695,7 +1695,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
 
         if (ximporttime) {
             import_level++;
-            t1 = _PyTime_GetPerfCounter();
+            t1 = _PyTime_GetPerfCounterDouble();
             accumulated = 0;
         }
 
@@ -1711,12 +1711,12 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                            mod != NULL);
 
         if (ximporttime) {
-            _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
+            double cum = _PyTime_GetPerfCounterDouble() - t1;
 
             import_level--;
             fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
-                    (long)_PyTime_AsMicroseconds(cum - accumulated, _PyTime_ROUND_CEILING),
-                    (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
+                    (long)ceil((cum - accumulated) * 1e6),
+                    (long)ceil(cum * 1e6),
                     import_level*2, "", PyUnicode_AsUTF8(abs_name));
 
             accumulated = accumulated_copy + cum;
