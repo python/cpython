@@ -1471,8 +1471,8 @@ class ForwardRefTests(BaseTestCase):
     def test_meta_no_type_check(self):
 
         @no_type_check_decorator
-        def magic_decorator(deco):
-            return deco
+        def magic_decorator(func):
+            return func
 
         self.assertEqual(magic_decorator.__name__, 'magic_decorator')
 
