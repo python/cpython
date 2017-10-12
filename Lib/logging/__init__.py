@@ -520,7 +520,7 @@ class Formatter(object):
         """
         # check parameter for Tuple since it can be any "Truthy" type.
         # if sys.exc_info() didn't locate a stack frame, output is pointless
-        if not isinstance(ei, tuple) or ei[0] is None:
+        if not isinstance(ei, tuple) or (len(ei) < 3) or ei[0] is None:
             return ""
         sio = io.StringIO()
         tb = ei[2]
