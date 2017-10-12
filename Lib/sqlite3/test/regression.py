@@ -186,10 +186,12 @@ class RegressionTests(unittest.TestCase):
 
         con = sqlite.connect(":memory:")
         cur = Cursor(con)
-        with self.assertRaises(sqlite.ProgrammingError):
+        with self.assertRaisesRegex(sqlite.ProgrammingError,
+                                    r'^Base Cursor\.__init__ not called\.$'):
             cur.execute("select 4+5").fetchall()
-        self.assertRaises(sqlite.ProgrammingError, cur.close)
-
+        with self.assertRaisesRegex(sqlite.ProgrammingError,
+                                    r'^Base Cursor\.__init__ not called\.$'):
+            cur.close()
     def CheckStrSubclass(self):
         """
         The Python 3.0 port of the module didn't cope with values of subclasses of str.
