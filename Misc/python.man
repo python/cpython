@@ -179,7 +179,7 @@ is explicitly imported later.
 .TP
 .B \-u
 Force the stdout and stderr streams to be unbuffered.
-The stdin stream is always unbuffered.
+This option has no effect on the stdin stream.
 .TP
 .B \-v
 Print a message each time a module is initialized, showing the place
