@@ -1419,12 +1419,21 @@ are always available.  They are listed here in alphabetical order.
    :func:`classmethod` for a variant that is useful for creating alternate class
    constructors.
 
+   Like all decorators, it is also possible to call ``staticmethod`` as
+   a regular function and do something with its result.  This is needed
+   in some cases where you need a reference to a function from a class
+   body and you want to avoid the automatic transformation to instance
+   method.  For these cases, use this idiom:
+
+      class C:
+          builtin_open = staticmethod(open)
+
    For more information on static methods, consult the documentation on the
    standard type hierarchy in :ref:`types`.
 
-   .. index::
-      single: string; str() (built-in function)
 
+.. index::
+   single: string; str() (built-in function)
 
 .. _func-str:
 .. class:: str(object='')
