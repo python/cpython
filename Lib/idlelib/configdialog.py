@@ -533,11 +533,11 @@ class FontPage(Frame):
             '\u05da\u05db\u05dc\u05dd\u05de\u05df\u05e0\u05e1\u05e2\u05e3\n'
             '\u0627\u0628\u062c\u062f\u0647\u0648\u0632\u062d\u0637\u064a'
             '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669\n'
-            '\n<Devanagari>\n'
+            '\n<Devanagari, Tamil>\n'
             '\u0966\u0967\u0968\u0969\u096a\u096b\u096c\u096d\u096e\u096f'
             '\u0905\u0906\u0907\u0908\u0909\u090a\u090f\u0910\u0913\u0914\n'
-            '\u0915\u0917\u0919\u091a\u091c\u091e\u0924\u0926\u0928\u092a'
-            '\u092c\u092e\u092f\u0930\u0932\u0935\u0936\u0938\u0939\u0965\n'
+            '\u0be6\u0be7\u0be8\u0be9\u0bea\u0beb\u0bec\u0bed\u0bee\u0bef'
+            '\u0b85\u0b87\u0b89\u0b8e\n'
             '\n<East Asian>\n'
             '\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\n'
             '\u6c49\u5b57\u6f22\u5b57\u4eba\u6728\u706b\u571f\u91d1\u6c34\n'
@@ -2145,12 +2145,14 @@ unicode characters look like for the current font selection.  If the
 selected font does not define a character, Tk attempts to find another
 font that does.  Substitute glyphs depend on what is available on a
 particular system and will not necessarily have the same size as the
-font selected.  Each line contains 20 characters or 10 for East Asia.
+font selected.  Line contains 20 characters up to Devanagari, 14 for
+Tamil, and 10 for East Asia.
 
 Hebrew and Arabic letters should display right to left, starting with
-alef, \u05d0 and \u0627.  Arabic numerals display left to right.  The
-Devanagari starts with digits.  The East Asian lines are Chinese digits,
-Chinese Hanzi, Korean Hangul, and Japanese Hiragana and Katakana.
+alef, \u05d0 and \u0627.  Arabic digits display left to right.  The
+Devanagari and Tamil lines start with digits.  The East Asian lines
+are Chinese digits, Chinese Hanzi, Korean Hangul, and Japanese
+Hiragana and Katakana.
 ''',
     'Highlights': '''
 Highlighting:
