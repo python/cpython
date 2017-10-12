@@ -5,6 +5,7 @@ import time
 import locale
 import re
 import os
+import sys
 from test import support
 from datetime import date as datetime_date
 
@@ -482,6 +483,8 @@ class CalculationTests(unittest.TestCase):
         _ymd_excluded = ()
         _formats_excluded = ()
 
+    @unittest.skipIf(sys.platform.startswith('aix'),
+                     'bpo-29972: broken test on AIX')
     def test_week_of_year_and_day_of_week_calculation(self):
         # Should be able to infer date if given year, week of year (%U or %W)
         # and day of the week

@@ -34,8 +34,8 @@ can be customized by end users easily.
 .. seealso::
 
    Module :mod:`shlex`
-      Support for a creating Unix shell-like mini-languages which can be used
-      as an alternate format for application configuration files.
+      Support for creating Unix shell-like mini-languages which can be used as
+      an alternate format for application configuration files.
 
    Module :mod:`json`
       The json module implements a subset of JavaScript syntax which can also
@@ -944,6 +944,11 @@ ConfigParser Objects
    .. versionchanged:: 3.5
       The *converters* argument was added.
 
+   .. versionchanged:: 3.7
+      The *defaults* argument is read with :meth:`read_dict()`,
+      providing consistent behavior across the parser: non-string
+      keys and values are implicitly converted to strings.
+
 
    .. method:: defaults()
 
@@ -1208,8 +1213,10 @@ RawConfigParser Objects
                            default_section=configparser.DEFAULTSECT[, \
                            interpolation])
 
-   Legacy variant of the :class:`ConfigParser` with interpolation disabled
-   by default and unsafe ``add_section`` and ``set`` methods.
+   Legacy variant of the :class:`ConfigParser`.  It has interpolation
+   disabled by default and allows for non-string section names, option
+   names, and values via its unsafe ``add_section`` and ``set`` methods,
+   as well as the legacy ``defaults=`` keyword argument handling.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
@@ -1325,4 +1332,3 @@ Exceptions
 .. [1] Config parsers allow for heavy customization.  If you are interested in
        changing the behaviour outlined by the footnote reference, consult the
        `Customizing Parser Behaviour`_ section.
-

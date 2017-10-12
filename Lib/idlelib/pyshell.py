@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+import sys
+
 try:
     from tkinter import *
 except ImportError:
@@ -10,35 +12,32 @@ import tkinter.messagebox as tkMessageBox
 if TkVersion < 8.5:
     root = Tk()  # otherwise create root in main
     root.withdraw()
+    from idlelib.run import fix_scaling
+    fix_scaling(root)
     tkMessageBox.showerror("Idle Cannot Start",
             "Idle requires tcl/tk 8.5+, not %s." % TkVersion,
             parent=root)
     raise SystemExit(1)
 
 from code import InteractiveInterpreter
-import getopt
-import io
 import linecache
 import os
 import os.path
-from platform import python_version, system
+from platform import python_version
 import re
 import socket
 import subprocess
-import sys
 import threading
 import time
 import tokenize
 import warnings
 
-from idlelib import testing  # bool value
 from idlelib.colorizer import ColorDelegator
 from idlelib.config import idleConf
 from idlelib import debugger
 from idlelib import debugger_r
 from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
-from idlelib import macosx
 from idlelib.outwin import OutputWindow
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
@@ -120,8 +119,8 @@ class PyShellEditorWindow(EditorWindow):
         self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
-        self.breakpointPath = os.path.join(idleConf.GetUserCfgDir(),
-                                           'breakpoints.lst')
+        self.breakpointPath = os.path.join(
+                idleConf.userdir, 'breakpoints.lst')
         # whenever a file is changed, restore breakpoints
         def filename_changed_hook(old_hook=self.io.filename_change_hook,
                                   self=self):
@@ -895,7 +894,7 @@ class PyShell(OutputWindow):
         try:
             # page help() text to shell.
             import pydoc # import must be done here to capture i/o rebinding.
-            # XXX KBK 27Dec07 use TextViewer someday, but must work w/o subproc
+            # XXX KBK 27Dec07 use text viewer someday, but must work w/o subproc
             pydoc.pager = pydoc.plainpager
         except:
             sys.stderr = sys.__stderr__
@@ -1371,6 +1370,11 @@ echo "import sys; print(sys.argv)" | idle - "foobar"
 """
 
 def main():
+    import getopt
+    from platform import system
+    from idlelib import testing  # bool value
+    from idlelib import macosx
+
     global flist, root, use_subprocess
 
     capture_warnings(True)
@@ -1455,6 +1459,8 @@ def main():
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
+    from idlelib.run import fix_scaling
+    fix_scaling(root)
 
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')

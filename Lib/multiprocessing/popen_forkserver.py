@@ -49,10 +49,10 @@ class Popen(popen_fork.Popen):
             set_spawning_popen(None)
 
         self.sentinel, w = forkserver.connect_to_new_process(self._fds)
-        util.Finalize(self, os.close, (self.sentinel,))
+        self.finalizer = util.Finalize(self, os.close, (self.sentinel,))
         with open(w, 'wb', closefd=True) as f:
             f.write(buf.getbuffer())
-        self.pid = forkserver.read_unsigned(self.sentinel)
+        self.pid = forkserver.read_signed(self.sentinel)
 
     def poll(self, flag=os.WNOHANG):
         if self.returncode is None:
@@ -61,8 +61,10 @@ class Popen(popen_fork.Popen):
             if not wait([self.sentinel], timeout):
                 return None
             try:
-                self.returncode = forkserver.read_unsigned(self.sentinel)
+                self.returncode = forkserver.read_signed(self.sentinel)
             except (OSError, EOFError):
-                # The process ended abnormally perhaps because of a signal
+                # This should not happen usually, but perhaps the forkserver
+                # process itself got killed
                 self.returncode = 255
+
         return self.returncode

@@ -36,9 +36,7 @@ class ZipAppError(ValueError):
 
 @contextlib.contextmanager
 def _maybe_open(archive, mode):
-    if isinstance(archive, pathlib.Path):
-        archive = str(archive)
-    if isinstance(archive, str):
+    if isinstance(archive, (str, os.PathLike)):
         with open(archive, mode) as f:
             yield f
     else:
@@ -75,7 +73,8 @@ def _copy_archive(archive, new_archive, interpreter=None):
         os.chmod(new_archive, os.stat(new_archive).st_mode | stat.S_IEXEC)
 
 
-def create_archive(source, target=None, interpreter=None, main=None):
+def create_archive(source, target=None, interpreter=None, main=None,
+                   filter=None, compressed=False):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -134,11 +133,13 @@ def create_archive(source, target=None, interpreter=None, main=None):
 
     with _maybe_open(target, 'wb') as fd:
         _write_file_prefix(fd, interpreter)
-        with zipfile.ZipFile(fd, 'w') as z:
-            root = pathlib.Path(source)
-            for child in root.rglob('*'):
-                arcname = str(child.relative_to(root))
-                z.write(str(child), arcname)
+        compression = (zipfile.ZIP_DEFLATED if compressed else
+                       zipfile.ZIP_STORED)
+        with zipfile.ZipFile(fd, 'w', compression=compression) as z:
+            for child in source.rglob('*'):
+                arcname = child.relative_to(source)
+                if filter is None or filter(arcname):
+                    z.write(child, arcname.as_posix())
             if main_py:
                 z.writestr('__main__.py', main_py.encode('utf-8'))
 
@@ -171,6 +172,9 @@ def main(args=None):
     parser.add_argument('--main', '-m', default=None,
             help="The main function of the application "
                  "(default: use an existing __main__.py).")
+    parser.add_argument('--compress', '-c', action='store_true',
+            help="Compress files with the deflate method. "
+                 "Files are stored uncompressed by default.")
     parser.add_argument('--info', default=False, action='store_true',
             help="Display the interpreter from the archive.")
     parser.add_argument('source',
@@ -194,7 +198,8 @@ def main(args=None):
             raise SystemExit("Cannot change the main function when copying")
 
     create_archive(args.source, args.output,
-                   interpreter=args.python, main=args.main)
+                   interpreter=args.python, main=args.main,
+                   compressed=args.compress)
 
 
 if __name__ == '__main__':

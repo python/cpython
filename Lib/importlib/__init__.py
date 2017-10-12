@@ -137,7 +137,7 @@ def reload(module):
 
     """
     if not module or not isinstance(module, types.ModuleType):
-        raise TypeError("reload() argument must be module")
+        raise TypeError("reload() argument must be a module")
     try:
         name = module.__spec__.name
     except AttributeError:
@@ -164,6 +164,8 @@ def reload(module):
             pkgpath = None
         target = module
         spec = module.__spec__ = _bootstrap._find_spec(name, pkgpath, target)
+        if spec is None:
+            raise ModuleNotFoundError(f"spec not found for the module {name!r}", name=name)
         _bootstrap._exec(spec, module)
         # The module may have replaced itself in sys.modules!
         return sys.modules[name]

@@ -149,25 +149,6 @@ typedef struct {
 /*
  * Initialization.
  */
-
-#if defined(_HAVE_BSDI)
-static
-void _noop(void)
-{
-}
-
-static void
-PyThread__init_thread(void)
-{
-    /* DO AN INIT BY STARTING THE THREAD */
-    static int dummy = 0;
-    pthread_t thread1;
-    pthread_create(&thread1, NULL, (void *) _noop, &dummy);
-    pthread_join(thread1, NULL);
-}
-
-#else /* !_HAVE_BSDI */
-
 static void
 PyThread__init_thread(void)
 {
@@ -177,14 +158,12 @@ PyThread__init_thread(void)
 #endif
 }
 
-#endif /* !_HAVE_BSDI */
-
 /*
  * Thread support.
  */
 
 
-long
+unsigned long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
     pthread_t th;
@@ -202,15 +181,16 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     if (pthread_attr_init(&attrs) != 0)
-        return -1;
+        return PYTHREAD_INVALID_THREAD_ID;
 #endif
 #if defined(THREAD_STACK_SIZE)
-    tss = (_pythread_stacksize != 0) ? _pythread_stacksize
-                                     : THREAD_STACK_SIZE;
+    PyThreadState *tstate = PyThreadState_GET();
+    size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
+    tss = (stacksize != 0) ? stacksize : THREAD_STACK_SIZE;
     if (tss != 0) {
         if (pthread_attr_setstacksize(&attrs, tss) != 0) {
             pthread_attr_destroy(&attrs);
-            return -1;
+            return PYTHREAD_INVALID_THREAD_ID;
         }
     }
 #endif
@@ -232,31 +212,31 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     pthread_attr_destroy(&attrs);
 #endif
     if (status != 0)
-        return -1;
+        return PYTHREAD_INVALID_THREAD_ID;
 
     pthread_detach(th);
 
 #if SIZEOF_PTHREAD_T <= SIZEOF_LONG
-    return (long) th;
+    return (unsigned long) th;
 #else
-    return (long) *(long *) &th;
+    return (unsigned long) *(unsigned long *) &th;
 #endif
 }
 
 /* XXX This implementation is considered (to quote Tim Peters) "inherently
    hosed" because:
      - It does not guarantee the promise that a non-zero integer is returned.
-     - The cast to long is inherently unsafe.
+     - The cast to unsigned long is inherently unsafe.
      - It is not clear that the 'volatile' (for AIX?) are any longer necessary.
 */
-long
+unsigned long
 PyThread_get_thread_ident(void)
 {
     volatile pthread_t threadid;
     if (!initialized)
         PyThread_init_thread();
     threadid = pthread_self();
-    return (long) threadid;
+    return (unsigned long) threadid;
 }
 
 void
@@ -466,61 +446,66 @@ PyLockStatus
 PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
                             int intr_flag)
 {
-    PyLockStatus success;
+    PyLockStatus success = PY_LOCK_FAILURE;
     pthread_lock *thelock = (pthread_lock *)lock;
     int status, error = 0;
 
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
-    status = pthread_mutex_lock( &thelock->mut );
-    CHECK_STATUS_PTHREAD("pthread_mutex_lock[1]");
+    if (microseconds == 0) {
+        status = pthread_mutex_trylock( &thelock->mut );
+        if (status != EBUSY)
+            CHECK_STATUS_PTHREAD("pthread_mutex_trylock[1]");
+    }
+    else {
+        status = pthread_mutex_lock( &thelock->mut );
+        CHECK_STATUS_PTHREAD("pthread_mutex_lock[1]");
+    }
+    if (status == 0) {
+        if (thelock->locked == 0) {
+            success = PY_LOCK_ACQUIRED;
+        }
+        else if (microseconds != 0) {
+            struct timespec ts;
+            if (microseconds > 0)
+                MICROSECONDS_TO_TIMESPEC(microseconds, ts);
+            /* continue trying until we get the lock */
 
-    if (thelock->locked == 0) {
-        success = PY_LOCK_ACQUIRED;
-    } else if (microseconds == 0) {
-        success = PY_LOCK_FAILURE;
-    } else {
-        struct timespec ts;
-        if (microseconds > 0)
-            MICROSECONDS_TO_TIMESPEC(microseconds, ts);
-        /* continue trying until we get the lock */
+            /* mut must be locked by me -- part of the condition
+             * protocol */
+            while (success == PY_LOCK_FAILURE) {
+                if (microseconds > 0) {
+                    status = pthread_cond_timedwait(
+                        &thelock->lock_released,
+                        &thelock->mut, &ts);
+                    if (status == ETIMEDOUT)
+                        break;
+                    CHECK_STATUS_PTHREAD("pthread_cond_timed_wait");
+                }
+                else {
+                    status = pthread_cond_wait(
+                        &thelock->lock_released,
+                        &thelock->mut);
+                    CHECK_STATUS_PTHREAD("pthread_cond_wait");
+                }
 
-        /* mut must be locked by me -- part of the condition
-         * protocol */
-        success = PY_LOCK_FAILURE;
-        while (success == PY_LOCK_FAILURE) {
-            if (microseconds > 0) {
-                status = pthread_cond_timedwait(
-                    &thelock->lock_released,
-                    &thelock->mut, &ts);
-                if (status == ETIMEDOUT)
+                if (intr_flag && status == 0 && thelock->locked) {
+                    /* We were woken up, but didn't get the lock.  We probably received
+                     * a signal.  Return PY_LOCK_INTR to allow the caller to handle
+                     * it and retry.  */
+                    success = PY_LOCK_INTR;
                     break;
-                CHECK_STATUS_PTHREAD("pthread_cond_timed_wait");
-            }
-            else {
-                status = pthread_cond_wait(
-                    &thelock->lock_released,
-                    &thelock->mut);
-                CHECK_STATUS_PTHREAD("pthread_cond_wait");
-            }
-
-            if (intr_flag && status == 0 && thelock->locked) {
-                /* We were woken up, but didn't get the lock.  We probably received
-                 * a signal.  Return PY_LOCK_INTR to allow the caller to handle
-                 * it and retry.  */
-                success = PY_LOCK_INTR;
-                break;
-            } else if (status == 0 && !thelock->locked) {
-                success = PY_LOCK_ACQUIRED;
-            } else {
-                success = PY_LOCK_FAILURE;
+                }
+                else if (status == 0 && !thelock->locked) {
+                    success = PY_LOCK_ACQUIRED;
+                }
             }
         }
+        if (success == PY_LOCK_ACQUIRED) thelock->locked = 1;
+        status = pthread_mutex_unlock( &thelock->mut );
+        CHECK_STATUS_PTHREAD("pthread_mutex_unlock[1]");
     }
-    if (success == PY_LOCK_ACQUIRED) thelock->locked = 1;
-    status = pthread_mutex_unlock( &thelock->mut );
-    CHECK_STATUS_PTHREAD("pthread_mutex_unlock[1]");
 
     if (error) success = PY_LOCK_FAILURE;
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
@@ -573,7 +558,7 @@ _pythread_pthread_set_stacksize(size_t size)
 
     /* set to default */
     if (size == 0) {
-        _pythread_stacksize = 0;
+        PyThreadState_GET()->interp->pythread_stacksize = 0;
         return 0;
     }
 
@@ -590,7 +575,7 @@ _pythread_pthread_set_stacksize(size_t size)
             rc = pthread_attr_setstacksize(&attrs, size);
             pthread_attr_destroy(&attrs);
             if (rc == 0) {
-                _pythread_stacksize = size;
+                PyThreadState_GET()->interp->pythread_stacksize = size;
                 return 0;
             }
         }
@@ -603,11 +588,26 @@ _pythread_pthread_set_stacksize(size_t size)
 
 #define THREAD_SET_STACKSIZE(x) _pythread_pthread_set_stacksize(x)
 
-#define Py_HAVE_NATIVE_TLS
+
+/* Thread Local Storage (TLS) API
+
+   This API is DEPRECATED since Python 3.7.  See PEP 539 for details.
+*/
+
+/* Issue #25658: On platforms where native TLS key is defined in a way that
+   cannot be safely cast to int, PyThread_create_key returns immediately a
+   failure status and other TLS functions all are no-ops.  This indicates
+   clearly that the old API is not supported on platforms where it cannot be
+   used reliably, and that no effort will be made to add such support.
+
+   Note: PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT will be unnecessary after
+   removing this API.
+*/
 
 int
 PyThread_create_key(void)
 {
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
     pthread_key_t key;
     int fail = pthread_key_create(&key, NULL);
     if (fail)
@@ -619,34 +619,102 @@ PyThread_create_key(void)
         return -1;
     }
     return (int)key;
+#else
+    return -1;  /* never return valid key value. */
+#endif
 }
 
 void
 PyThread_delete_key(int key)
 {
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
     pthread_key_delete(key);
+#endif
 }
 
 void
 PyThread_delete_key_value(int key)
 {
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
     pthread_setspecific(key, NULL);
+#endif
 }
 
 int
 PyThread_set_key_value(int key, void *value)
 {
-    int fail;
-    fail = pthread_setspecific(key, value);
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+    int fail = pthread_setspecific(key, value);
     return fail ? -1 : 0;
+#else
+    return -1;
+#endif
 }
 
 void *
 PyThread_get_key_value(int key)
 {
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
     return pthread_getspecific(key);
+#else
+    return NULL;
+#endif
 }
+
 
 void
 PyThread_ReInitTLS(void)
-{}
+{
+}
+
+
+/* Thread Specific Storage (TSS) API
+
+   Platform-specific components of TSS API implementation.
+*/
+
+int
+PyThread_tss_create(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has been created, function is silently skipped. */
+    if (key->_is_initialized) {
+        return 0;
+    }
+
+    int fail = pthread_key_create(&(key->_key), NULL);
+    if (fail) {
+        return -1;
+    }
+    key->_is_initialized = 1;
+    return 0;
+}
+
+void
+PyThread_tss_delete(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has not been created, function is silently skipped. */
+    if (!key->_is_initialized) {
+        return;
+    }
+
+    pthread_key_delete(key->_key);
+    /* pthread has not provided the defined invalid value for the key. */
+    key->_is_initialized = 0;
+}
+
+int
+PyThread_tss_set(Py_tss_t *key, void *value)
+{
+    assert(key != NULL);
+    int fail = pthread_setspecific(key->_key, value);
+    return fail ? -1 : 0;
+}
+
+void *
+PyThread_tss_get(Py_tss_t *key)
+{
+    assert(key != NULL);
+    return pthread_getspecific(key->_key);
+}

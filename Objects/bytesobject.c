@@ -3,6 +3,8 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 
 #include "bytes_methods.h"
 #include "pystrhex.h"
@@ -866,7 +868,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     switch(c)
                     {
                         default:
-                            assert(0 && "'type' not in [diuoxX]");
+                            Py_UNREACHABLE();
                         case 'd':
                         case 'i':
                         case 'u':
@@ -1683,11 +1685,11 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
         char* result_buf;
         PyObject* result;
 
-        if (PySlice_GetIndicesEx(item,
-                         PyBytes_GET_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyBytes_GET_SIZE(self), &start,
+                                            &stop, step);
 
         if (slicelength <= 0) {
             return PyBytes_FromStringAndSize("", 0);

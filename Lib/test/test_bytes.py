@@ -1170,7 +1170,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b += b"def"
         self.assertEqual(b, b"abcdef")
         self.assertEqual(b, b1)
-        self.assertTrue(b is b1)
+        self.assertIs(b, b1)
         b += b"xyz"
         self.assertEqual(b, b"abcdefxyz")
         try:
@@ -1186,7 +1186,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b *= 3
         self.assertEqual(b, b"abcabcabc")
         self.assertEqual(b, b1)
-        self.assertTrue(b is b1)
+        self.assertIs(b, b1)
 
     def test_irepeat_1char(self):
         b = bytearray(b"x")
@@ -1194,12 +1194,12 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b *= 100
         self.assertEqual(b, b"x"*100)
         self.assertEqual(b, b1)
-        self.assertTrue(b is b1)
+        self.assertIs(b, b1)
 
     def test_alloc(self):
         b = bytearray()
         alloc = b.__alloc__()
-        self.assertTrue(alloc >= 0)
+        self.assertGreaterEqual(alloc, 0)
         seq = [alloc]
         for i in range(100):
             b += b"x"
@@ -1319,17 +1319,17 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # Issue 4348.  Make sure that operations that don't mutate the array
         # copy the bytes.
         b = bytearray(b'abc')
-        self.assertFalse(b is b.replace(b'abc', b'cde', 0))
+        self.assertIsNot(b, b.replace(b'abc', b'cde', 0))
 
         t = bytearray([i for i in range(256)])
         x = bytearray(b'')
-        self.assertFalse(x is x.translate(t))
+        self.assertIsNot(x, x.translate(t))
 
     def test_partition_bytearray_doesnt_share_nullstring(self):
         a, b, c = bytearray(b"x").partition(b"y")
         self.assertEqual(b, b"")
         self.assertEqual(c, b"")
-        self.assertTrue(b is not c)
+        self.assertIsNot(b, c)
         b += b"!"
         self.assertEqual(c, b"")
         a, b, c = bytearray(b"x").partition(b"y")
@@ -1339,7 +1339,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b, c, a = bytearray(b"x").rpartition(b"y")
         self.assertEqual(b, b"")
         self.assertEqual(c, b"")
-        self.assertTrue(b is not c)
+        self.assertIsNot(b, c)
         b += b"!"
         self.assertEqual(c, b"")
         c, b, a = bytearray(b"x").rpartition(b"y")
@@ -1529,7 +1529,7 @@ class AssortedBytesTest(unittest.TestCase):
     def test_return_self(self):
         # bytearray.replace must always return a new bytearray
         b = bytearray()
-        self.assertFalse(b.replace(b'', b'') is b)
+        self.assertIsNot(b.replace(b'', b''), b)
 
     @unittest.skipUnless(sys.flags.bytes_warning,
                          "BytesWarning is needed for this test: use -bb option")
@@ -1588,14 +1588,14 @@ class BytearrayPEP3137Test(unittest.TestCase):
             method = getattr(val, methname)
             newval = method(3)
             self.assertEqual(val, newval)
-            self.assertTrue(val is not newval,
+            self.assertIsNot(val, newval,
                             methname+' returned self on a mutable object')
         for expr in ('val.split()[0]', 'val.rsplit()[0]',
                      'val.partition(b".")[0]', 'val.rpartition(b".")[2]',
                      'val.splitlines()[0]', 'val.replace(b"", b"")'):
             newval = eval(expr)
             self.assertEqual(val, newval)
-            self.assertTrue(val is not newval,
+            self.assertIsNot(val, newval,
                             expr+' returned val on a mutable object')
         sep = self.marshal(b'')
         newval = sep.join([val])
@@ -1634,7 +1634,7 @@ class SubclassTest:
         self.assertTrue(_a <= _b)
         self.assertTrue(_b >= _a)
         self.assertTrue(_b > _a)
-        self.assertTrue(_a is not a)
+        self.assertIsNot(_a, a)
 
         # test concat of subclass instances
         self.assertEqual(a + b, _a + _b)
@@ -1650,12 +1650,12 @@ class SubclassTest:
         # Make sure that it is of the appropriate type.
         s1 = self.type2test(b"abcd")
         s2 = self.basetype().join([s1])
-        self.assertTrue(s1 is not s2)
-        self.assertTrue(type(s2) is self.basetype, type(s2))
+        self.assertIsNot(s1, s2)
+        self.assertIs(type(s2), self.basetype, type(s2))
 
         # Test reverse, calling join on subclass
         s3 = s1.join([b"abcd"])
-        self.assertTrue(type(s3) is self.basetype)
+        self.assertIs(type(s3), self.basetype)
 
     def test_pickle(self):
         a = self.type2test(b"abcd")

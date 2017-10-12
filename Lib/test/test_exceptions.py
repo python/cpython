@@ -1,5 +1,6 @@
 # Python test set -- part 5, built-in exceptions
 
+import copy
 import os
 import sys
 import unittest
@@ -154,6 +155,34 @@ class ExceptionTests(unittest.TestCase):
 
         ckmsg(s, "'continue' not properly in loop")
         ckmsg("continue\n", "'continue' not properly in loop")
+
+    def testSyntaxErrorMissingParens(self):
+        def ckmsg(src, msg, exception=SyntaxError):
+            try:
+                compile(src, '<fragment>', 'exec')
+            except exception as e:
+                if e.msg != msg:
+                    self.fail("expected %s, got %s" % (msg, e.msg))
+            else:
+                self.fail("failed to get expected SyntaxError")
+
+        s = '''print "old style"'''
+        ckmsg(s, "Missing parentheses in call to 'print'. "
+                 "Did you mean print(\"old style\")?")
+
+        s = '''print "old style",'''
+        ckmsg(s, "Missing parentheses in call to 'print'. "
+                 "Did you mean print(\"old style\", end=\" \")?")
+
+        s = '''exec "old style"'''
+        ckmsg(s, "Missing parentheses in call to 'exec'")
+
+        # should not apply to subclasses, see issue #31161
+        s = '''if True:\nprint "No indent"'''
+        ckmsg(s, "expected an indented block", IndentationError)
+
+        s = '''if True:\n        print()\n\texec "mixed tabs and spaces"'''
+        ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
     def testSyntaxErrorOffset(self):
         def check(src, lineno, offset):
@@ -537,7 +566,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         obj = None
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # Qualified "except" without "as"
         obj = MyObj()
@@ -548,7 +577,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         obj = None
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # Bare "except"
         obj = MyObj()
@@ -559,7 +588,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         obj = None
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # "except" with premature block leave
         obj = MyObj()
@@ -571,7 +600,7 @@ class ExceptionTests(unittest.TestCase):
                 break
         obj = None
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # "except" block raising another exception
         obj = MyObj()
@@ -592,7 +621,7 @@ class ExceptionTests(unittest.TestCase):
             # guarantee no ref cycles on CPython (don't gc_collect)
             if check_impl_detail(cpython=False):
                 gc_collect()
-            self.assertTrue(obj is None, "%s" % obj)
+            self.assertIsNone(obj)
 
         # Some complicated construct
         obj = MyObj()
@@ -611,7 +640,7 @@ class ExceptionTests(unittest.TestCase):
         if check_impl_detail(cpython=False):
             gc_collect()
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # Inside an exception-silencing "with" block
         class Context:
@@ -627,7 +656,7 @@ class ExceptionTests(unittest.TestCase):
         if check_impl_detail(cpython=False):
             gc_collect()
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
     def test_exception_target_in_nested_scope(self):
         # issue 4617: This used to raise a SyntaxError
@@ -779,7 +808,7 @@ class ExceptionTests(unittest.TestCase):
         testfunc(g)
         g = obj = None
         obj = wr()
-        self.assertIs(obj, None)
+        self.assertIsNone(obj)
 
     def test_generator_throw_cleanup_exc_state(self):
         def do_throw(g):
@@ -904,7 +933,7 @@ class ExceptionTests(unittest.TestCase):
             except RecursionError:
                 return sys.exc_info()
         e, v, tb = g()
-        self.assertTrue(isinstance(v, RecursionError), type(v))
+        self.assertIsInstance(v, RecursionError, type(v))
         self.assertIn("maximum recursion depth exceeded", str(v))
 
 
@@ -1089,7 +1118,7 @@ class ImportErrorTests(unittest.TestCase):
         self.assertEqual(exc.name, 'somename')
         self.assertEqual(exc.path, 'somepath')
 
-        msg = "'invalid' is an invalid keyword argument for this function"
+        msg = "'invalid' is an invalid keyword argument for ImportError"
         with self.assertRaisesRegex(TypeError, msg):
             ImportError('test', invalid='keyword')
 
@@ -1125,6 +1154,25 @@ class ImportErrorTests(unittest.TestCase):
             arg = b'abc'
             exc = ImportError(arg)
             self.assertEqual(str(arg), str(exc))
+
+    def test_copy_pickle(self):
+        for kwargs in (dict(),
+                       dict(name='somename'),
+                       dict(path='somepath'),
+                       dict(name='somename', path='somepath')):
+            orig = ImportError('test', **kwargs)
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                exc = pickle.loads(pickle.dumps(orig, proto))
+                self.assertEqual(exc.args, ('test',))
+                self.assertEqual(exc.msg, 'test')
+                self.assertEqual(exc.name, orig.name)
+                self.assertEqual(exc.path, orig.path)
+            for c in copy.copy, copy.deepcopy:
+                exc = c(orig)
+                self.assertEqual(exc.args, ('test',))
+                self.assertEqual(exc.msg, 'test')
+                self.assertEqual(exc.name, orig.name)
+                self.assertEqual(exc.path, orig.path)
 
 
 if __name__ == '__main__':

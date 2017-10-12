@@ -229,11 +229,14 @@ class PyBuildExt(build_ext):
         headers = [sysconfig.get_config_h_filename()]
         headers += glob(os.path.join(sysconfig.get_path('include'), "*.h"))
 
-        # The sysconfig variable built by makesetup, listing the already
-        # built modules as configured by the Setup files.
-        modnames = sysconfig.get_config_var('MODNAMES').split()
+        # The sysconfig variables built by makesetup that list the already
+        # built modules and the disabled modules as configured by the Setup
+        # files.
+        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
+        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
 
-        removed_modules = []
+        mods_built = []
+        mods_disabled = []
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
@@ -245,14 +248,22 @@ class PyBuildExt(build_ext):
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
-            # If a module has already been built by the Makefile,
-            # don't build it here.
-            if ext.name in modnames:
-                removed_modules.append(ext)
+            # If a module has already been built or has been disabled in the
+            # Setup files, don't build it here.
+            if ext.name in sysconf_built:
+                mods_built.append(ext)
+            if ext.name in sysconf_dis:
+                mods_disabled.append(ext)
 
-        if removed_modules:
+        mods_configured = mods_built + mods_disabled
+        if mods_configured:
             self.extensions = [x for x in self.extensions if x not in
-                               removed_modules]
+                               mods_configured]
+            # Remove the shared libraries built by a previous build.
+            for ext in mods_configured:
+                fullpath = self.get_ext_fullpath(ext.name)
+                if os.path.exists(fullpath):
+                    os.unlink(fullpath)
 
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
@@ -295,12 +306,22 @@ class PyBuildExt(build_ext):
                   " detect_modules() for the module's name.")
             print()
 
-        if removed_modules:
+        if mods_built:
+            print()
             print("The following modules found by detect_modules() in"
             " setup.py, have been")
             print("built by the Makefile instead, as configured by the"
             " Setup files:")
-            print_three_column([ext.name for ext in removed_modules])
+            print_three_column([ext.name for ext in mods_built])
+            print()
+
+        if mods_disabled:
+            print()
+            print("The following modules found by detect_modules() in"
+            " setup.py have not")
+            print("been built, they are *disabled* in the Setup files:")
+            print_three_column([ext.name for ext in mods_disabled])
+            print()
 
         if self.failed:
             failed = self.failed[:]
@@ -594,8 +615,6 @@ class PyBuildExt(build_ext):
 
         math_libs = self.detect_math_libs()
 
-        # XXX Omitted modules: gl, pure, dl, SGI-specific modules
-
         #
         # The following modules are all pretty straightforward, and compile
         # on pretty much any POSIXish platform.
@@ -693,6 +712,12 @@ class PyBuildExt(build_ext):
         # Lance Ellinghaus's syslog module
         # syslog daemon interface
         exts.append( Extension('syslog', ['syslogmodule.c']) )
+
+        # Fuzz tests.
+        exts.append( Extension(
+            '_xxtestfuzz',
+            ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c'])
+        )
 
         #
         # Here ends the simple stuff.  From here on, modules need certain
@@ -898,8 +923,11 @@ class PyBuildExt(build_ext):
         blake2_deps.append('hashlib.h')
 
         blake2_macros = []
-        if not cross_compiling and os.uname().machine == "x86_64":
-            # Every x86_64 machine has at least SSE2.
+        if (not cross_compiling and
+                os.uname().machine == "x86_64" and
+                sys.maxsize >  2**32):
+            # Every x86_64 machine has at least SSE2.  Check for sys.maxsize
+            # in case that kernel is 64-bit but userspace is 32-bit.
             blake2_macros.append(('BLAKE2_USE_SSE', '1'))
 
         exts.append( Extension('_blake2',
@@ -1494,6 +1522,7 @@ class PyBuildExt(build_ext):
         if '--with-system-expat' in sysconfig.get_config_var("CONFIG_ARGS"):
             expat_inc = []
             define_macros = []
+            extra_compile_args = []
             expat_lib = ['expat']
             expat_sources = []
             expat_depends = []
@@ -1501,7 +1530,11 @@ class PyBuildExt(build_ext):
             expat_inc = [os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')]
             define_macros = [
                 ('HAVE_EXPAT_CONFIG_H', '1'),
+                # bpo-30947: Python uses best available entropy sources to
+                # call XML_SetHashSalt(), expat entropy sources are not needed
+                ('XML_POOR_ENTROPY', '1'),
             ]
+            extra_compile_args = []
             expat_lib = []
             expat_sources = ['expat/xmlparse.c',
                              'expat/xmlrole.c',
@@ -1519,8 +1552,15 @@ class PyBuildExt(build_ext):
                              'expat/xmltok_impl.h'
                              ]
 
+            cc = sysconfig.get_config_var('CC').split()[0]
+            ret = os.system(
+                      '"%s" -Werror -Wimplicit-fallthrough -E -xc /dev/null >/dev/null 2>&1' % cc)
+            if ret >> 8 == 0:
+                extra_compile_args.append('-Wno-implicit-fallthrough')
+
         exts.append(Extension('pyexpat',
                               define_macros = define_macros,
+                              extra_compile_args = extra_compile_args,
                               include_dirs = expat_inc,
                               libraries = expat_lib,
                               sources = ['pyexpat.c'] + expat_sources,
@@ -1599,12 +1639,9 @@ class PyBuildExt(build_ext):
                 sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
 
-        if sysconfig.get_config_var('WITH_THREAD'):
-            exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
-                                    define_macros=list(macros.items()),
-                                    include_dirs=["Modules/_multiprocessing"]))
-        else:
-            missing.append('_multiprocessing')
+        exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
+                                define_macros=list(macros.items()),
+                                include_dirs=["Modules/_multiprocessing"]))
         # End multiprocessing
 
         # Platform-specific libraries
@@ -1628,6 +1665,20 @@ class PyBuildExt(build_ext):
 
         if '_tkinter' not in [e.name for e in self.extensions]:
             missing.append('_tkinter')
+
+        # Build the _uuid module if possible
+        uuid_incs = find_file("uuid.h", inc_dirs, ["/usr/include/uuid"])
+        if uuid_incs:
+            if self.compiler.find_library_file(lib_dirs, 'uuid'):
+                uuid_libs = ['uuid']
+            else:
+                uuid_libs = []
+        if uuid_incs:
+            self.extensions.append(Extension('_uuid', ['_uuidmodule.c'],
+                                   libraries=uuid_libs,
+                                   include_dirs=uuid_incs))
+        else:
+            missing.append('_uuid')
 
 ##         # Uncomment these lines if you want to play with xxmodule.c
 ##         ext = Extension('xx', ['xxmodule.c'])
@@ -1979,16 +2030,9 @@ class PyBuildExt(build_ext):
             ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
-            with open(ffi_h) as f:
-                for line in f:
-                    line = line.strip()
-                    if line.startswith(('#define LIBFFI_H',
-                                        '#define ffi_wrapper_h')):
-                        break
-                else:
-                    ffi_inc = None
-                    print('Header file {} does not define LIBFFI_H or '
-                          'ffi_wrapper_h'.format(ffi_h))
+            if not os.path.exists(ffi_h):
+                ffi_inc = None
+                print('Header file {} does not exist'.format(ffi_h))
         ffi_lib = None
         if ffi_inc is not None:
             for lib_name in ('ffi', 'ffi_pic'):
@@ -2105,10 +2149,6 @@ class PyBuildExt(build_ext):
             # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
             # http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
             undef_macros.append('_FORTIFY_SOURCE')
-
-        # Faster version without thread local contexts:
-        if not sysconfig.get_config_var('WITH_THREAD'):
-            define_macros.append(('WITHOUT_THREADS', 1))
 
         # Uncomment for extra functionality:
         #define_macros.append(('EXTRA_FUNCTIONALITY', 1))

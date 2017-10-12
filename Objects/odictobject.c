@@ -470,6 +470,7 @@ later:
 */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "dict-common.h"
 #include <stddef.h>
@@ -546,7 +547,7 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
     Py_ssize_t ix;
 
-    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value, NULL);
+    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value);
     if (ix == DKIX_EMPTY) {
         return keys->dk_nentries;  /* index of new entry */
     }
@@ -882,8 +883,7 @@ odict_eq(PyObject *a, PyObject *b)
 
 PyDoc_STRVAR(odict_init__doc__,
 "Initialize an ordered dictionary.  The signature is the same as\n\
-        regular dictionaries, but keyword arguments are not recommended because\n\
-        their insertion order is arbitrary.\n\
+        regular dictionaries.  Keyword argument order is preserved.\n\
 \n\
         ");
 
@@ -1471,16 +1471,9 @@ odict_repr(PyODictObject *self)
     int i;
     _Py_IDENTIFIER(items);
     PyObject *pieces = NULL, *result = NULL;
-    const char *classname;
-
-    classname = strrchr(Py_TYPE(self)->tp_name, '.');
-    if (classname == NULL)
-        classname = Py_TYPE(self)->tp_name;
-    else
-        classname++;
 
     if (PyODict_SIZE(self) == 0)
-        return PyUnicode_FromFormat("%s()", classname);
+        return PyUnicode_FromFormat("%s()", _PyType_Name(Py_TYPE(self)));
 
     i = Py_ReprEnter((PyObject *)self);
     if (i != 0) {
@@ -1519,7 +1512,7 @@ odict_repr(PyODictObject *self)
             count++;
         }
         if (count < PyList_GET_SIZE(pieces))
-            PyList_GET_SIZE(pieces) = count;
+            Py_SIZE(pieces) = count;
     }
     else {
         PyObject *items = _PyObject_CallMethodIdObjArgs((PyObject *)self,
@@ -1532,7 +1525,8 @@ odict_repr(PyODictObject *self)
             goto Done;
     }
 
-    result = PyUnicode_FromFormat("%s(%R)", classname, pieces);
+    result = PyUnicode_FromFormat("%s(%R)",
+                                  _PyType_Name(Py_TYPE(self)), pieces);
 
 Done:
     Py_XDECREF(pieces);

@@ -54,6 +54,7 @@ PyAPI_FUNC(int) PyEval_MergeCompilerFlags(PyCompilerFlags *cf);
 #endif
 
 PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
+PyAPI_FUNC(void) _PyEval_SignalReceived(void);
 PyAPI_FUNC(int) Py_MakePendingCalls(void);
 
 /* Protection against deeply nested recursive calls
@@ -92,6 +93,11 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
       PyThreadState_GET()->overflowed = 0;  \
     } while(0)
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char *where);
+/* XXX _Py_CheckRecursionLimit should be changed to
+   _PyRuntime.ceval.check_recursion_limit.  However, due to the macros
+   in which it's used, _Py_CheckRecursionLimit is stuck in the stable
+   ABI.  It should be removed therefrom when possible.
+*/
 PyAPI_DATA(int) _Py_CheckRecursionLimit;
 
 #ifdef USE_STACKCHECK
@@ -153,7 +159,7 @@ PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(struct _frame *f, int exc);
 
     if (...premature_exit...) {
         Py_BLOCK_THREADS
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -161,7 +167,7 @@ PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(struct _frame *f, int exc);
 
     Py_BLOCK_THREADS
     if (...premature_exit...) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     Py_UNBLOCK_THREADS
@@ -181,8 +187,6 @@ PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(struct _frame *f, int exc);
 
 PyAPI_FUNC(PyThreadState *) PyEval_SaveThread(void);
 PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
-
-#ifdef WITH_THREAD
 
 PyAPI_FUNC(int)  PyEval_ThreadsInitialized(void);
 PyAPI_FUNC(void) PyEval_InitThreads(void);
@@ -212,18 +216,9 @@ PyAPI_FUNC(Py_ssize_t) _PyEval_RequestCodeExtraIndex(freefunc);
 #define Py_END_ALLOW_THREADS    PyEval_RestoreThread(_save); \
                  }
 
-#else /* !WITH_THREAD */
-
-#define Py_BEGIN_ALLOW_THREADS {
-#define Py_BLOCK_THREADS
-#define Py_UNBLOCK_THREADS
-#define Py_END_ALLOW_THREADS }
-
-#endif /* !WITH_THREAD */
-
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyEval_SliceIndex(PyObject *, Py_ssize_t *);
-PyAPI_FUNC(int) _PyEval_SliceIndexOrNone(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) _PyEval_SliceIndexNotNone(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(void);
 #endif
 

@@ -550,9 +550,9 @@ Shebang Lines
 
 If the first line of a script file starts with ``#!``, it is known as a
 "shebang" line.  Linux and other Unix like operating systems have native
-support for such lines and are commonly used on such systems to indicate how
-a script should be executed.  This launcher allows the same facilities to be
-using with Python scripts on Windows and the examples above demonstrate their
+support for such lines and they are commonly used on such systems to indicate
+how a script should be executed.  This launcher allows the same facilities to
+be used with Python scripts on Windows and the examples above demonstrate their
 use.
 
 To allow shebang lines in Python scripts to be portable between Unix and
@@ -896,7 +896,7 @@ Compiling Python on Windows
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
 latest release's source or just grab a fresh `checkout
-<https://docs.python.org/devguide/setup.html#getting-the-source-code>`_.
+<https://devguide.python.org/setup/#getting-the-source-code>`_.
 
 The source tree contains a build solution and project files for Microsoft
 Visual Studio 2015, which is the compiler used to build the official Python

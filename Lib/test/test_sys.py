@@ -9,17 +9,13 @@ import operator
 import codecs
 import gc
 import sysconfig
-import platform
 import locale
+import threading
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
 numruns = 0
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 class SysModuleTest(unittest.TestCase):
 
@@ -173,7 +169,6 @@ class SysModuleTest(unittest.TestCase):
                 sys.setcheckinterval(n)
                 self.assertEqual(sys.getcheckinterval(), n)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_switchinterval(self):
         self.assertRaises(TypeError, sys.setswitchinterval)
         self.assertRaises(TypeError, sys.setswitchinterval, "a")
@@ -349,21 +344,8 @@ class SysModuleTest(unittest.TestCase):
         )
 
     # sys._current_frames() is a CPython-only gimmick.
-    def test_current_frames(self):
-        have_threads = True
-        try:
-            import _thread
-        except ImportError:
-            have_threads = False
-
-        if have_threads:
-            self.current_frames_with_threads()
-        else:
-            self.current_frames_without_threads()
-
-    # Test sys._current_frames() in a WITH_THREADS build.
     @test.support.reap_threads
-    def current_frames_with_threads(self):
+    def test_current_frames(self):
         import threading
         import traceback
 
@@ -393,6 +375,9 @@ class SysModuleTest(unittest.TestCase):
         thread_id = thread_info[0]
 
         d = sys._current_frames()
+        for tid in d:
+            self.assertIsInstance(tid, int)
+            self.assertGreater(tid, 0)
 
         main_id = threading.get_ident()
         self.assertIn(main_id, d)
@@ -423,15 +408,6 @@ class SysModuleTest(unittest.TestCase):
         # Reap the spawned thread.
         leave_g.set()
         t.join()
-
-    # Test sys._current_frames() when thread support doesn't exist.
-    def current_frames_without_threads(self):
-        # Not much happens here:  there is only one thread, with artificial
-        # "thread id" 0.
-        d = sys._current_frames()
-        self.assertEqual(len(d), 1)
-        self.assertIn(0, d)
-        self.assertTrue(d[0] is sys._getframe())
 
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
@@ -514,8 +490,6 @@ class SysModuleTest(unittest.TestCase):
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
 
-    @unittest.skipUnless(hasattr(sys, 'thread_info'),
-                         'Threading required for this test.')
     def test_thread_info(self):
         info = sys.thread_info
         self.assertEqual(len(info), 3)
@@ -680,6 +654,7 @@ class SysModuleTest(unittest.TestCase):
         # Force the POSIX locale
         env = os.environ.copy()
         env["LC_ALL"] = "C"
+        env["PYTHONCOERCECLOCALE"] = "0"
         code = '\n'.join((
             'import sys',
             'def dump(name):',
@@ -920,13 +895,15 @@ class SizeofTest(unittest.TestCase):
             return inner
         check(get_cell().__closure__[0], size('P'))
         # code
-        check(get_cell().__code__, size('6i13P'))
-        check(get_cell.__code__, size('6i13P'))
+        def check_code_size(a, expected_size):
+            self.assertGreaterEqual(sys.getsizeof(a), expected_size)
+        check_code_size(get_cell().__code__, size('6i13P'))
+        check_code_size(get_cell.__code__, size('6i13P'))
         def get_cell2(x):
             def inner():
                 return x
             return inner
-        check(get_cell2.__code__, size('6i13P') + calcsize('n'))
+        check_code_size(get_cell2.__code__, size('6i13P') + calcsize('n'))
         # complex
         check(complex(0,1), size('2d'))
         # method_descriptor (descriptor object)
@@ -994,7 +971,7 @@ class SizeofTest(unittest.TestCase):
         nfrees = len(x.f_code.co_freevars)
         extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
                   ncells + nfrees - 1
-        check(x, vsize('12P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        check(x, vsize('8P2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
         check(func, size('12P'))

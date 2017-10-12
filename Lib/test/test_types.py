@@ -381,8 +381,8 @@ class TypesTests(unittest.TestCase):
 
         for i in range(-10, 10):
             x = 1234567890.0 * (10.0 ** i)
-            self.assertEqual(locale.format('%g', x, grouping=True), format(x, 'n'))
-            self.assertEqual(locale.format('%.10g', x, grouping=True), format(x, '.10n'))
+            self.assertEqual(locale.format_string('%g', x, grouping=True), format(x, 'n'))
+            self.assertEqual(locale.format_string('%.10g', x, grouping=True), format(x, '.10n'))
 
     @run_with_locale('LC_NUMERIC', 'en_US.UTF8')
     def test_int__format__locale(self):
@@ -390,7 +390,7 @@ class TypesTests(unittest.TestCase):
 
         x = 123456789012345678901234567890
         for i in range(0, 30):
-            self.assertEqual(locale.format('%d', x, grouping=True), format(x, 'n'))
+            self.assertEqual(locale.format_string('%d', x, grouping=True), format(x, 'n'))
 
             # move to the next integer to test
             x = x // 10
@@ -577,10 +577,10 @@ class TypesTests(unittest.TestCase):
         self.assertGreater(tuple.__itemsize__, 0)
 
     def test_slot_wrapper_types(self):
-        self.assertIsInstance(object.__init__, types.SlotWrapperType)
-        self.assertIsInstance(object.__str__, types.SlotWrapperType)
-        self.assertIsInstance(object.__lt__, types.SlotWrapperType)
-        self.assertIsInstance(int.__lt__, types.SlotWrapperType)
+        self.assertIsInstance(object.__init__, types.WrapperDescriptorType)
+        self.assertIsInstance(object.__str__, types.WrapperDescriptorType)
+        self.assertIsInstance(object.__lt__, types.WrapperDescriptorType)
+        self.assertIsInstance(int.__lt__, types.WrapperDescriptorType)
 
     def test_method_wrapper_types(self):
         self.assertIsInstance(object().__init__, types.MethodWrapperType)
@@ -864,6 +864,28 @@ class ClassCreationTests(unittest.TestCase):
         self.assertIs(ns, expected_ns)
         self.assertEqual(len(kwds), 0)
 
+    def test_bad___prepare__(self):
+        # __prepare__() must return a mapping.
+        class BadMeta(type):
+            @classmethod
+            def __prepare__(*args):
+                return None
+        with self.assertRaisesRegex(TypeError,
+                                    r'^BadMeta\.__prepare__\(\) must '
+                                    r'return a mapping, not NoneType$'):
+            class Foo(metaclass=BadMeta):
+                pass
+        # Also test the case in which the metaclass is not a type.
+        class BadMeta:
+            @classmethod
+            def __prepare__(*args):
+                return None
+        with self.assertRaisesRegex(TypeError,
+                                    r'^<metaclass>\.__prepare__\(\) must '
+                                    r'return a mapping, not NoneType$'):
+            class Bar(metaclass=BadMeta()):
+                pass
+
     def test_metaclass_derivation(self):
         # issue1294232: correct metaclass calculation
         new_calls = []  # to check the order of __new__ calls
@@ -1047,6 +1069,8 @@ class SimpleNamespaceTests(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             types.SimpleNamespace(1, 2, 3)
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(**{1: 2})
 
         self.assertEqual(len(ns1.__dict__), 0)
         self.assertEqual(vars(ns1), {})

@@ -859,12 +859,6 @@ new_timezone(PyObject *offset, PyObject *name)
         Py_INCREF(PyDateTime_TimeZone_UTC);
         return PyDateTime_TimeZone_UTC;
     }
-    if (GET_TD_MICROSECONDS(offset) != 0 || GET_TD_SECONDS(offset) % 60 != 0) {
-        PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
-                     " representing a whole number of minutes,"
-                     " not %R.", offset);
-        return NULL;
-    }
     if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
         GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
@@ -935,12 +929,6 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
     if (offset == Py_None || offset == NULL)
         return offset;
     if (PyDelta_Check(offset)) {
-        if (GET_TD_MICROSECONDS(offset) != 0) {
-            Py_DECREF(offset);
-            PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
-                         " representing a whole number of seconds");
-            return NULL;
-        }
         if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
             GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
             Py_DECREF(offset);
@@ -966,9 +954,9 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
  * result.  tzinfo must be an instance of the tzinfo class.  If utcoffset()
  * returns None, call_utcoffset returns 0 and sets *none to 1.  If uctoffset()
  * doesn't return None or timedelta, TypeError is raised and this returns -1.
- * If utcoffset() returns an invalid timedelta (out of range, or not a whole
- * # of minutes), ValueError is raised and this returns -1.  Else *none is
- * set to 0 and the offset is returned (as int # of minutes east of UTC).
+ * If utcoffset() returns an out of range timedelta,
+ * ValueError is raised and this returns -1.  Else *none is
+ * set to 0 and the offset is returned (as timedelta, positive east of UTC).
  */
 static PyObject *
 call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
@@ -979,10 +967,10 @@ call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
 /* Call tzinfo.dst(tzinfoarg), and extract an integer from the
  * result.  tzinfo must be an instance of the tzinfo class.  If dst()
  * returns None, call_dst returns 0 and sets *none to 1.  If dst()
- & doesn't return None or timedelta, TypeError is raised and this
+ * doesn't return None or timedelta, TypeError is raised and this
  * returns -1.  If dst() returns an invalid timedelta for a UTC offset,
  * ValueError is raised and this returns -1.  Else *none is set to 0 and
- * the offset is returned (as an int # of minutes east of UTC).
+ * the offset is returned (as timedelta, positive east of UTC).
  */
 static PyObject *
 call_dst(PyObject *tzinfo, PyObject *tzinfoarg)
@@ -1100,13 +1088,13 @@ format_ctime(PyDateTime_Date *date, int hours, int minutes, int seconds)
 
 static PyObject *delta_negative(PyDateTime_Delta *self);
 
-/* Add an hours & minutes UTC offset string to buf.  buf has no more than
+/* Add formatted UTC offset string to buf.  buf has no more than
  * buflen bytes remaining.  The UTC offset is gotten by calling
  * tzinfo.uctoffset(tzinfoarg).  If that returns None, \0 is stored into
  * *buf, and that's all.  Else the returned value is checked for sanity (an
  * integer in range), and if that's OK it's converted to an hours & minutes
  * string of the form
- *   sign HH sep MM
+ *   sign HH sep MM [sep SS [. UUUUUU]]
  * Returns 0 if everything is OK.  If the return value from utcoffset() is
  * bogus, an appropriate exception is set and -1 is returned.
  */
@@ -1115,7 +1103,7 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
                 PyObject *tzinfo, PyObject *tzinfoarg)
 {
     PyObject *offset;
-    int hours, minutes, seconds;
+    int hours, minutes, seconds, microseconds;
     char sign;
 
     assert(buflen >= 1);
@@ -1139,15 +1127,22 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
         sign = '+';
     }
     /* Offset is not negative here. */
+    microseconds = GET_TD_MICROSECONDS(offset);
     seconds = GET_TD_SECONDS(offset);
     Py_DECREF(offset);
     minutes = divmod(seconds, 60, &seconds);
     hours = divmod(minutes, 60, &minutes);
-    if (seconds == 0)
-        PyOS_snprintf(buf, buflen, "%c%02d%s%02d", sign, hours, sep, minutes);
-    else
+    if (microseconds) {
+        PyOS_snprintf(buf, buflen, "%c%02d%s%02d%s%02d.%06d", sign,
+                      hours, sep, minutes, sep, seconds, microseconds);
+        return 0;
+    }
+    if (seconds) {
         PyOS_snprintf(buf, buflen, "%c%02d%s%02d%s%02d", sign, hours,
                       sep, minutes, sep, seconds);
+        return 0;
+    }
+    PyOS_snprintf(buf, buflen, "%c%02d%s%02d", sign, hours, sep, minutes);
     return 0;
 }
 
@@ -1458,8 +1453,7 @@ diff_to_bool(int diff, int op)
         case Py_LT: istrue = diff < 0; break;
         case Py_GT: istrue = diff > 0; break;
         default:
-            assert(! "op unknown");
-            istrue = 0; /* To shut up compiler */
+            Py_UNREACHABLE();
     }
     result = istrue ? Py_True : Py_False;
     Py_INCREF(result);
@@ -1481,7 +1475,6 @@ cmperror(PyObject *a, PyObject *b)
  */
 
 /* Conversion factors. */
-static PyObject *one = NULL;      /* 1 */
 static PyObject *us_per_ms = NULL;      /* 1000 */
 static PyObject *us_per_second = NULL;  /* 1000000 */
 static PyObject *us_per_minute = NULL;  /* 1e6 * 60 as Python int */
@@ -1658,7 +1651,35 @@ multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
 }
 
 static PyObject *
-multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
+get_float_as_integer_ratio(PyObject *floatobj)
+{
+    PyObject *ratio;
+
+    assert(floatobj && PyFloat_Check(floatobj));
+    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
+    if (ratio == NULL) {
+        return NULL;
+    }
+    if (!PyTuple_Check(ratio)) {
+        PyErr_Format(PyExc_TypeError,
+                     "unexpected return type from as_integer_ratio(): "
+                     "expected tuple, got '%.200s'",
+                     Py_TYPE(ratio)->tp_name);
+        Py_DECREF(ratio);
+        return NULL;
+    }
+    if (PyTuple_Size(ratio) != 2) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_integer_ratio() must return a 2-tuple");
+        Py_DECREF(ratio);
+        return NULL;
+    }
+    return ratio;
+}
+
+/* op is 0 for multiplication, 1 for division */
+static PyObject *
+multiply_truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *floatobj, int op)
 {
     PyObject *result = NULL;
     PyObject *pyus_in = NULL, *temp, *pyus_out;
@@ -1667,15 +1688,16 @@ multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
     pyus_in = delta_to_microseconds(delta);
     if (pyus_in == NULL)
         return NULL;
-    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
-    if (ratio == NULL)
+    ratio = get_float_as_integer_ratio(floatobj);
+    if (ratio == NULL) {
         goto error;
-    temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 0));
+    }
+    temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, op));
     Py_DECREF(pyus_in);
     pyus_in = NULL;
     if (temp == NULL)
         goto error;
-    pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, 1));
+    pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, !op));
     Py_DECREF(temp);
     if (pyus_out == NULL)
         goto error;
@@ -1752,37 +1774,6 @@ truedivide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
     result = PyNumber_TrueDivide(pyus_left, pyus_right);
     Py_DECREF(pyus_left);
     Py_DECREF(pyus_right);
-    return result;
-}
-
-static PyObject *
-truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *f)
-{
-    PyObject *result = NULL;
-    PyObject *pyus_in = NULL, *temp, *pyus_out;
-    PyObject *ratio = NULL;
-
-    pyus_in = delta_to_microseconds(delta);
-    if (pyus_in == NULL)
-        return NULL;
-    ratio = _PyObject_CallMethodId(f, &PyId_as_integer_ratio, NULL);
-    if (ratio == NULL)
-        goto error;
-    temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 1));
-    Py_DECREF(pyus_in);
-    pyus_in = NULL;
-    if (temp == NULL)
-        goto error;
-    pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, 0));
-    Py_DECREF(temp);
-    if (pyus_out == NULL)
-        goto error;
-    result = microseconds_to_delta(pyus_out);
-    Py_DECREF(pyus_out);
- error:
-    Py_XDECREF(pyus_in);
-    Py_XDECREF(ratio);
-
     return result;
 }
 
@@ -1936,15 +1927,15 @@ delta_multiply(PyObject *left, PyObject *right)
             result = multiply_int_timedelta(right,
                             (PyDateTime_Delta *) left);
         else if (PyFloat_Check(right))
-            result = multiply_float_timedelta(right,
-                            (PyDateTime_Delta *) left);
+            result = multiply_truedivide_timedelta_float(
+                            (PyDateTime_Delta *) left, right, 0);
     }
     else if (PyLong_Check(left))
         result = multiply_int_timedelta(left,
                         (PyDateTime_Delta *) right);
     else if (PyFloat_Check(left))
-        result = multiply_float_timedelta(left,
-                        (PyDateTime_Delta *) right);
+        result = multiply_truedivide_timedelta_float(
+                        (PyDateTime_Delta *) right, left, 0);
 
     if (result == Py_NotImplemented)
         Py_INCREF(result);
@@ -1984,8 +1975,8 @@ delta_truedivide(PyObject *left, PyObject *right)
                             (PyDateTime_Delta *)left,
                             (PyDateTime_Delta *)right);
         else if (PyFloat_Check(right))
-            result = truedivide_timedelta_float(
-                            (PyDateTime_Delta *)left, right);
+            result = multiply_truedivide_timedelta_float(
+                            (PyDateTime_Delta *)left, right, 1);
         else if (PyLong_Check(right))
             result = truedivide_timedelta_int(
                             (PyDateTime_Delta *)left, right);
@@ -2201,7 +2192,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         goto Done
 
     if (us) {
-        y = accum("microseconds", x, us, one, &leftover_us);
+        y = accum("microseconds", x, us, _PyLong_One, &leftover_us);
         CLEANUP;
     }
     if (ms) {
@@ -2241,7 +2232,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
              * is odd. Note that x is odd when it's last bit is 1. The
              * code below uses bitwise and operation to check the last
              * bit. */
-            temp = PyNumber_And(x, one);  /* temp <- x & 1 */
+            temp = PyNumber_And(x, _PyLong_One);  /* temp <- x & 1 */
             if (temp == NULL) {
                 Py_DECREF(x);
                 goto Done;
@@ -2285,21 +2276,50 @@ delta_bool(PyDateTime_Delta *self)
 static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
-    if (GET_TD_MICROSECONDS(self) != 0)
-        return PyUnicode_FromFormat("%s(%d, %d, %d)",
-                                    Py_TYPE(self)->tp_name,
-                                    GET_TD_DAYS(self),
-                                    GET_TD_SECONDS(self),
-                                    GET_TD_MICROSECONDS(self));
-    if (GET_TD_SECONDS(self) != 0)
-        return PyUnicode_FromFormat("%s(%d, %d)",
-                                    Py_TYPE(self)->tp_name,
-                                    GET_TD_DAYS(self),
-                                    GET_TD_SECONDS(self));
+    PyObject *args = PyUnicode_FromString("");
 
-    return PyUnicode_FromFormat("%s(%d)",
-                                Py_TYPE(self)->tp_name,
-                                GET_TD_DAYS(self));
+    if (args == NULL) {
+        return NULL;
+    }
+
+    const char *sep = "";
+
+    if (GET_TD_DAYS(self) != 0) {
+        Py_SETREF(args, PyUnicode_FromFormat("days=%d", GET_TD_DAYS(self)));
+        if (args == NULL) {
+            return NULL;
+        }
+        sep = ", ";
+    }
+
+    if (GET_TD_SECONDS(self) != 0) {
+        Py_SETREF(args, PyUnicode_FromFormat("%U%sseconds=%d", args, sep,
+                                             GET_TD_SECONDS(self)));
+        if (args == NULL) {
+            return NULL;
+        }
+        sep = ", ";
+    }
+
+    if (GET_TD_MICROSECONDS(self) != 0) {
+        Py_SETREF(args, PyUnicode_FromFormat("%U%smicroseconds=%d", args, sep,
+                                             GET_TD_MICROSECONDS(self)));
+        if (args == NULL) {
+            return NULL;
+        }
+    }
+
+    if (PyUnicode_GET_LENGTH(args) == 0) {
+        Py_SETREF(args, PyUnicode_FromString("0"));
+        if (args == NULL) {
+            return NULL;
+        }
+    }
+
+    PyObject *repr = PyUnicode_FromFormat("%s(%S)", Py_TYPE(self)->tp_name,
+                                          args);
+    Py_DECREF(args);
+    return repr;
 }
 
 static PyObject *
@@ -3213,7 +3233,7 @@ static PyMethodDef tzinfo_methods[] = {
            "values indicating West of UTC")},
 
     {"dst",             (PyCFunction)tzinfo_dst,                METH_O,
-     PyDoc_STR("datetime -> DST offset in minutes east of UTC.")},
+     PyDoc_STR("datetime -> DST offset as timedelta positive east of UTC.")},
 
     {"fromutc",         (PyCFunction)tzinfo_fromutc,            METH_O,
      PyDoc_STR("datetime in UTC -> datetime in local time.")},
@@ -3347,7 +3367,7 @@ timezone_repr(PyDateTime_TimeZone *self)
 static PyObject *
 timezone_str(PyDateTime_TimeZone *self)
 {
-    int hours, minutes, seconds;
+    int hours, minutes, seconds, microseconds;
     PyObject *offset;
     char sign;
 
@@ -3373,12 +3393,20 @@ timezone_str(PyDateTime_TimeZone *self)
         Py_INCREF(offset);
     }
     /* Offset is not negative here. */
+    microseconds = GET_TD_MICROSECONDS(offset);
     seconds = GET_TD_SECONDS(offset);
     Py_DECREF(offset);
     minutes = divmod(seconds, 60, &seconds);
     hours = divmod(minutes, 60, &minutes);
-    /* XXX ignore sub-minute data, currently not allowed. */
-    assert(seconds == 0);
+    if (microseconds != 0) {
+        return PyUnicode_FromFormat("UTC%c%02d:%02d:%02d.%06d",
+                                    sign, hours, minutes,
+                                    seconds, microseconds);
+    }
+    if (seconds != 0) {
+        return PyUnicode_FromFormat("UTC%c%02d:%02d:%02d",
+                                    sign, hours, minutes, seconds);
+    }
     return PyUnicode_FromFormat("UTC%c%02d:%02d", sign, hours, minutes);
 }
 
@@ -3938,16 +3966,16 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
                                       time_kws,
                                       &hh, &mm, &ss, &us, &tzinfo, &fold))
         return NULL;
+    if (fold != 0 && fold != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fold must be either 0 or 1");
+        return NULL;
+    }
     tuple = Py_BuildValue("iiiiO", hh, mm, ss, us, tzinfo);
     if (tuple == NULL)
         return NULL;
     clone = time_new(Py_TYPE(self), tuple, NULL);
     if (clone != NULL) {
-        if (fold != 0 && fold != 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "fold must be either 0 or 1");
-            return NULL;
-        }
         TIME_SET_FOLD(clone, fold);
     }
     Py_DECREF(tuple);
@@ -5031,17 +5059,16 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
                                       &y, &m, &d, &hh, &mm, &ss, &us,
                                       &tzinfo, &fold))
         return NULL;
+    if (fold != 0 && fold != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fold must be either 0 or 1");
+        return NULL;
+    }
     tuple = Py_BuildValue("iiiiiiiO", y, m, d, hh, mm, ss, us, tzinfo);
     if (tuple == NULL)
         return NULL;
     clone = datetime_new(Py_TYPE(self), tuple, NULL);
-
     if (clone != NULL) {
-        if (fold != 0 && fold != 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "fold must be either 0 or 1");
-            return NULL;
-        }
         DATE_SET_FOLD(clone, fold);
     }
     Py_DECREF(tuple);
@@ -5839,12 +5866,11 @@ PyInit__datetime(void)
     Py_BUILD_ASSERT(DI100Y == 25 * DI4Y - 1);
     assert(DI100Y == days_before_year(100+1));
 
-    one = PyLong_FromLong(1);
     us_per_ms = PyLong_FromLong(1000);
     us_per_second = PyLong_FromLong(1000000);
     us_per_minute = PyLong_FromLong(60000000);
     seconds_per_day = PyLong_FromLong(24 * 3600);
-    if (one == NULL || us_per_ms == NULL || us_per_second == NULL ||
+    if (us_per_ms == NULL || us_per_second == NULL ||
         us_per_minute == NULL || seconds_per_day == NULL)
         return NULL;
 

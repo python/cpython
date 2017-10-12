@@ -450,7 +450,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
             double fracpart;
             double intpart;
             PyObject *result = NULL;
-            PyObject *one = NULL;
             PyObject *vv = NULL;
             PyObject *ww = w;
 
@@ -473,23 +472,19 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                  */
                 PyObject *temp;
 
-                one = PyLong_FromLong(1);
-                if (one == NULL)
-                    goto Error;
-
-                temp = PyNumber_Lshift(ww, one);
+                temp = PyNumber_Lshift(ww, _PyLong_One);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(ww);
                 ww = temp;
 
-                temp = PyNumber_Lshift(vv, one);
+                temp = PyNumber_Lshift(vv, _PyLong_One);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
                 vv = temp;
 
-                temp = PyNumber_Or(vv, one);
+                temp = PyNumber_Or(vv, _PyLong_One);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
@@ -503,7 +498,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
          Error:
             Py_XDECREF(vv);
             Py_XDECREF(ww);
-            Py_XDECREF(one);
             return result;
         }
     } /* else if (PyLong_Check(w)) */
@@ -1624,7 +1618,7 @@ float_subtype_new(PyTypeObject *type, PyObject *x);
 /*[clinic input]
 @classmethod
 float.__new__ as float_new
-    x: object(c_default="Py_False") = 0
+    x: object(c_default="_PyLong_Zero") = 0
     /
 
 Convert a string or number to a floating point number, if possible.
@@ -1632,7 +1626,7 @@ Convert a string or number to a floating point number, if possible.
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=c98d8e811ad2037a]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=540ee77c204ff87a]*/
 {
     if (type != &PyFloat_Type)
         return float_subtype_new(type, x); /* Wimp out */
@@ -2247,11 +2241,13 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
     }
     else {
         float y = (float)x;
-        const unsigned char *s = (unsigned char*)&y;
         int i, incr = 1;
 
         if (Py_IS_INFINITY(y) && !Py_IS_INFINITY(x))
             goto Overflow;
+
+        unsigned char s[sizeof(float)];
+        memcpy(s, &y, sizeof(float));
 
         if ((float_format == ieee_little_endian_format && !le)
             || (float_format == ieee_big_endian_format && le)) {
@@ -2260,7 +2256,7 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
         }
 
         for (i = 0; i < 4; i++) {
-            *p = *s++;
+            *p = s[i];
             p += incr;
         }
         return 0;

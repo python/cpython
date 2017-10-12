@@ -25,9 +25,11 @@ This is the full module API reference—for an overview and introduction, see
 .. versionadded:: 3.3
 
 .. testsetup::
-   >>> import ipaddress
-   >>> from ipaddress import (ip_network, IPv4Address, IPv4Interface,
-   ...                        IPv4Network)
+
+   import ipaddress
+   from ipaddress import (
+       ip_network, IPv4Address, IPv4Interface, IPv4Network,
+   )
 
 Convenience factory functions
 -----------------------------
@@ -553,6 +555,9 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
          1
          >>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.1/32'))
          0
+
+      .. deprecated:: 3.7
+         It uses the same ordering and comparison algorithm as "<", "==", and ">"
 
 
 .. class:: IPv6Network(address, strict=True)

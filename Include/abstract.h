@@ -170,7 +170,7 @@ PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
    format to a Python dictionary ("kwargs" dict).
 
    The type of kwnames keys is not checked. The final function getting
-   arguments is reponsible to check if all keys are strings, for example using
+   arguments is responsible to check if all keys are strings, for example using
    PyArg_ParseTupleAndKeywords() or PyArg_ValidateKeywordArguments().
 
    Duplicate keys are merged using the last value. If duplicate keys must raise
@@ -1097,6 +1097,9 @@ PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
 PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
+
+/* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
+PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 #endif /* !Py_LIMITED_API */
 
 

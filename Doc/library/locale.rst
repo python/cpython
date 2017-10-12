@@ -352,7 +352,7 @@ The :mod:`locale` module defines the following exception and functions:
    sequence of strings.
 
 
-.. function:: format(format, val, grouping=False, monetary=False)
+.. function:: format_string(format, val, grouping=False, monetary=False)
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
    The format follows the conventions of the ``%`` operator.  For floating point
@@ -362,14 +362,23 @@ The :mod:`locale` module defines the following exception and functions:
    If *monetary* is true, the conversion uses monetary thousands separator and
    grouping strings.
 
-   Please note that this function will only work for exactly one %char specifier.
-   For whole format strings, use :func:`format_string`.
-
-
-.. function:: format_string(format, val, grouping=False)
-
    Processes formatting specifiers as in ``format % val``, but takes the current
    locale settings into account.
+
+   .. versionchanged:: 3.7
+      The *monetary* keyword parameter was added.
+
+
+.. function:: format(format, val, grouping=False, monetary=False)
+
+   Please note that this function works like :meth:`format_string` but will
+   only work for exactly one ``%char`` specifier.  For example, ``'%f'`` and
+   ``'%.0f'`` are both valid specifiers, but ``'%f kB'`` is not.
+
+   For whole format strings, use :func:`format_string`.
+
+   .. deprecated:: 3.7
+      Use :meth:`format_string` instead.
 
 
 .. function:: currency(val, symbol=True, grouping=False, international=False)
@@ -542,17 +551,23 @@ library.
 Access to message catalogs
 --------------------------
 
+.. function:: gettext(msg)
+.. function:: dgettext(domain, msg)
+.. function:: dcgettext(domain, msg, category)
+.. function:: textdomain(domain)
+.. function:: bindtextdomain(domain, dir)
+
 The locale module exposes the C library's gettext interface on systems that
-provide this interface.  It consists of the functions :func:`gettext`,
-:func:`dgettext`, :func:`dcgettext`, :func:`textdomain`, :func:`bindtextdomain`,
-and :func:`bind_textdomain_codeset`.  These are similar to the same functions in
+provide this interface.  It consists of the functions :func:`!gettext`,
+:func:`!dgettext`, :func:`!dcgettext`, :func:`!textdomain`, :func:`!bindtextdomain`,
+and :func:`!bind_textdomain_codeset`.  These are similar to the same functions in
 the :mod:`gettext` module, but use the C library's binary format for message
 catalogs, and the C library's search algorithms for locating message catalogs.
 
 Python applications should normally find no need to invoke these functions, and
 should use :mod:`gettext` instead.  A known exception to this rule are
 applications that link with additional C libraries which internally invoke
-:c:func:`gettext` or :func:`dcgettext`.  For these applications, it may be
+:c:func:`gettext` or :c:func:`dcgettext`.  For these applications, it may be
 necessary to bind the text domain, so that the libraries can properly locate
 their message catalogs.
 

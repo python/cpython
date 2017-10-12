@@ -1,10 +1,18 @@
 
-/* Python interpreter top-level routines, including init/exit */
+/* Top level execution of Python code (including in __main__) */
+
+/* To help control the interfaces between the startup, execution and
+ * shutdown code, the phases are split across separate modules (boostrap,
+ * pythonrun, shutdown)
+ */
+
+/* TODO: Cull includes following phase split */
 
 #include "Python.h"
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/pystate.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -59,7 +67,6 @@ static void err_input(perrdetail *);
 static void err_free(perrdetail *);
 
 /* Parse input from a file and execute it */
-
 int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
@@ -106,7 +113,10 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     err = -1;
     for (;;) {
         ret = PyRun_InteractiveOneObject(fp, filename, flags);
-        _PY_DEBUG_PRINT_TOTAL_REFS();
+#ifdef Py_REF_DEBUG
+        if (_PyDebug_XOptionShowRefCount() == Py_True)
+            _PyDebug_PrintTotalRefs();
+#endif
         if (ret == E_EOF) {
             err = 0;
             break;

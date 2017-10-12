@@ -1,5 +1,7 @@
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 /* _functools module written and maintained
@@ -66,24 +68,18 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         Py_DECREF(pto);
         return NULL;
     }
-    if (pargs == NULL || PyTuple_GET_SIZE(pargs) == 0) {
+    if (pargs == NULL) {
         pto->args = nargs;
-        Py_INCREF(nargs);
-    }
-    else if (PyTuple_GET_SIZE(nargs) == 0) {
-        pto->args = pargs;
-        Py_INCREF(pargs);
     }
     else {
         pto->args = PySequence_Concat(pargs, nargs);
+        Py_DECREF(nargs);
         if (pto->args == NULL) {
-            Py_DECREF(nargs);
             Py_DECREF(pto);
             return NULL;
         }
         assert(PyTuple_Check(pto->args));
     }
-    Py_DECREF(nargs);
 
     if (pkw == NULL || PyDict_GET_SIZE(pkw) == 0) {
         if (kw == NULL) {
@@ -119,6 +115,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 partial_dealloc(partialobject *pto)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(pto);
     if (pto->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) pto);
@@ -535,14 +532,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     PyObject *y;
     PyObject *compare;
     PyObject *answer;
-    static PyObject *zero;
     PyObject* stack[2];
-
-    if (zero == NULL) {
-        zero = PyLong_FromLong(0);
-        if (!zero)
-            return NULL;
-    }
 
     if (Py_TYPE(other) != &keyobject_type){
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
@@ -567,7 +557,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
         return NULL;
     }
 
-    answer = PyObject_RichCompare(res, zero, op);
+    answer = PyObject_RichCompare(res, _PyLong_Zero, op);
     Py_DECREF(res);
     return answer;
 }
@@ -1086,7 +1076,11 @@ lru_cache_clear_list(lru_list_elem *link)
 static void
 lru_cache_dealloc(lru_cache_object *obj)
 {
-    lru_list_elem *list = lru_cache_unlink_list(obj);
+    lru_list_elem *list;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(obj);
+
+    list = lru_cache_unlink_list(obj);
     Py_XDECREF(obj->maxsize_O);
     Py_XDECREF(obj->func);
     Py_XDECREF(obj->cache);
@@ -1290,7 +1284,7 @@ PyInit__functools(void)
 {
     int i;
     PyObject *m;
-    char *name;
+    const char *name;
     PyTypeObject *typelist[] = {
         &partial_type,
         &lru_cache_type,
@@ -1312,10 +1306,9 @@ PyInit__functools(void)
             Py_DECREF(m);
             return NULL;
         }
-        name = strchr(typelist[i]->tp_name, '.');
-        assert (name != NULL);
+        name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
+        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
     }
     return m;
 }

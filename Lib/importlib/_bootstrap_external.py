@@ -241,6 +241,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.6b2  3378 (add BUILD_TUPLE_UNPACK_WITH_CALL #28257)
 #     Python 3.6rc1 3379 (more thorough __class__ validation #23722)
 #     Python 3.7a0  3390 (add LOAD_METHOD and CALL_METHOD opcodes)
+#     Python 3.7a0  3391 (update GET_AITER #31709)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -249,7 +250,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3390).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3391).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -689,9 +690,9 @@ class SourceLoader(_LoaderBasics):
         """Optional method that returns the modification time (an int) for the
         specified path, where path is a str.
 
-        Raises IOError when the path cannot be handled.
+        Raises OSError when the path cannot be handled.
         """
-        raise IOError
+        raise OSError
 
     def path_stats(self, path):
         """Optional method returning a metadata dict for the specified path
@@ -702,7 +703,7 @@ class SourceLoader(_LoaderBasics):
         - 'size' (optional) is the size in bytes of the source code.
 
         Implementing this method allows the loader to read bytecode files.
-        Raises IOError when the path cannot be handled.
+        Raises OSError when the path cannot be handled.
         """
         return {'mtime': self.path_mtime(path)}
 
@@ -757,7 +758,7 @@ class SourceLoader(_LoaderBasics):
         else:
             try:
                 st = self.path_stats(source_path)
-            except IOError:
+            except OSError:
                 pass
             else:
                 source_mtime = int(st['mtime'])
@@ -1411,11 +1412,7 @@ def _setup(_bootstrap_module):
     setattr(self_module, 'path_separators', ''.join(path_separators))
 
     # Directly load the _thread module (needed during bootstrap).
-    try:
-        thread_module = _bootstrap._builtin_from_name('_thread')
-    except ImportError:
-        # Python was built without threads
-        thread_module = None
+    thread_module = _bootstrap._builtin_from_name('_thread')
     setattr(self_module, '_thread', thread_module)
 
     # Directly load the _weakref module (needed during bootstrap).
