@@ -379,8 +379,8 @@ class RegressionTests(unittest.TestCase):
 
     def CheckBpo31770(self):
         """
-        The interpreter shouldn't crash in case __init__() is called more than
-        once.
+        The interpreter shouldn't crash in case Cursor.__init__() is called
+        more than once.
         """
         def callback(*args):
             pass
