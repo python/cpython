@@ -418,7 +418,7 @@ class HTMLParser(_markupbase.ParserBase):
                 self.handle_data(rawdata[i:gtpos])
                 return gtpos
 
-        self.handle_endtag(elem.lower())
+        self.handle_endtag(elem)
         self.clear_cdata_mode()
         return gtpos
 

@@ -443,6 +443,9 @@ The :mod:`struct` module also defines the following type:
 
       The format string used to construct this Struct object.
 
+      .. versionchanged:: 3.7
+         The format string type is now :class:`str` instead of :class:`bytes`.
+
    .. attribute:: size
 
       The calculated size of the struct (and hence of the bytes object produced

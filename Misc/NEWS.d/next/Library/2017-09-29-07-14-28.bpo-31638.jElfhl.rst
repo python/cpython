@@ -1,0 +1,2 @@
+Add optional argument ``compressed`` to ``zipapp.create_archive``, and add
+option ``--compress`` to the command line interface of ``zipapp``.
