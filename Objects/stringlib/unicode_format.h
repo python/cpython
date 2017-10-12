@@ -989,6 +989,24 @@ formatteriter_dealloc(formatteriterobject *it)
    format_spec is the string after the ':'.  mibht be None
    conversion is either None, or the string after the '!'
 */
+
+static PyStructSequence_Field formatter_iter_result_fields[] = {
+    {"literal_text", "Span of literal text."},
+    {"field_name", "Specifies the object whose value is to be formatted."},
+    {"format_spec", "Contains a specification of how the value should be presented."},
+    {"conversion", "The conversion to be used. One of: ‘s’ (str), ‘r’ (repr) and ‘a’ (ascii)."},
+    {NULL}
+};
+
+static PyTypeObject FormatterIterResultType;
+
+static PyStructSequence_Desc formatter_iter_result_desc = {
+    "FormatterItem",
+    NULL,
+    formatter_iter_result_fields,
+    4
+};
+
 static PyObject *
 formatteriter_next(formatteriterobject *it)
 {
@@ -1013,7 +1031,7 @@ formatteriter_next(formatteriterobject *it)
         PyObject *field_name_str = NULL;
         PyObject *format_spec_str = NULL;
         PyObject *conversion_str = NULL;
-        PyObject *tuple = NULL;
+        PyObject* res = NULL;
 
         literal_str = SubString_new_object(&literal);
         if (literal_str == NULL)
@@ -1044,14 +1062,28 @@ formatteriter_next(formatteriterobject *it)
         if (conversion_str == NULL)
             goto done;
 
-        tuple = PyTuple_Pack(4, literal_str, field_name_str, format_spec_str,
-                             conversion_str);
+        Py_XINCREF(literal_str);
+        Py_XINCREF(field_name_str);
+        Py_XINCREF(format_spec_str);
+        Py_XINCREF(conversion_str);
+
+        PyStructSequence_InitType(&FormatterIterResultType, &formatter_iter_result_desc);
+        Py_INCREF((PyObject *) &FormatterIterResultType);
+        res = PyStructSequence_New(&FormatterIterResultType);
+
+        PyStructSequence_SET_ITEM(res, 0, literal_str); 
+        PyStructSequence_SET_ITEM(res, 1, field_name_str);
+        PyStructSequence_SET_ITEM(res, 2, format_spec_str); 
+        PyStructSequence_SET_ITEM(res, 3, conversion_str); 
+
+
     done:
         Py_XDECREF(literal_str);
         Py_XDECREF(field_name_str);
         Py_XDECREF(format_spec_str);
         Py_XDECREF(conversion_str);
-        return tuple;
+
+        return res;
     }
 }
 
