@@ -14,7 +14,7 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 
 /* The objects representing an empty tuple.
    Empty tuples are used all over the place and applications may
-   rely on the fact that an empty tuple is a singleton. */
+   rely on the fact that the empty tuple is a singleton. */
 
 static struct {
     PyGC_Head gc_head;
