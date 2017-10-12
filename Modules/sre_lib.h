@@ -101,6 +101,14 @@ SRE(at)(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 }
 
 LOCAL(int)
+SRE(char_loc_ignore)(SRE_STATE* state, SRE_CODE pattern, SRE_CODE ch)
+{
+    return ch == pattern
+        || (SRE_CODE) state->lower(ch) == pattern
+        || (SRE_CODE) state->upper(ch) == pattern;
+}
+
+LOCAL(int)
 SRE(charset)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
 {
     /* check if character is a member of the given set */
@@ -187,6 +195,18 @@ SRE(charset)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
     }
 }
 
+LOCAL(int)
+SRE(charset_loc_ignore)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
+{
+    SRE_CODE lo, up;
+    lo = state->lower(ch);
+    if (SRE(charset)(state, set, lo))
+       return 1;
+
+    up = state->upper(ch);
+    return up != lo && SRE(charset)(state, set, up);
+}
+
 LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int match_all);
 
 LOCAL(Py_ssize_t)
@@ -247,6 +267,14 @@ SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
             ptr++;
         break;
 
+    case SRE_OP_LITERAL_LOC_IGNORE:
+        /* repeated literal */
+        chr = pattern[1];
+        TRACE(("|%p|%p|COUNT LITERAL_LOC_IGNORE %d\n", pattern, ptr, chr));
+        while (ptr < end && SRE(char_loc_ignore)(state, chr, *ptr))
+            ptr++;
+        break;
+
     case SRE_OP_NOT_LITERAL:
         /* repeated non-literal */
         chr = pattern[1];
@@ -266,6 +294,14 @@ SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT NOT_LITERAL_IGNORE %d\n", pattern, ptr, chr));
         while (ptr < end && (SRE_CODE) state->lower(*ptr) != chr)
+            ptr++;
+        break;
+
+    case SRE_OP_NOT_LITERAL_LOC_IGNORE:
+        /* repeated non-literal */
+        chr = pattern[1];
+        TRACE(("|%p|%p|COUNT NOT_LITERAL_LOC_IGNORE %d\n", pattern, ptr, chr));
+        while (ptr < end && !SRE(char_loc_ignore)(state, chr, *ptr))
             ptr++;
         break;
 
@@ -651,7 +687,17 @@ entrance:
             TRACE(("|%p|%p|LITERAL_IGNORE %d\n",
                    ctx->pattern, ctx->ptr, ctx->pattern[0]));
             if (ctx->ptr >= end ||
-                state->lower(*ctx->ptr) != state->lower(*ctx->pattern))
+                state->lower(*ctx->ptr) != *ctx->pattern)
+                RETURN_FAILURE;
+            ctx->pattern++;
+            ctx->ptr++;
+            break;
+
+        case SRE_OP_LITERAL_LOC_IGNORE:
+            TRACE(("|%p|%p|LITERAL_LOC_IGNORE %d\n",
+                   ctx->pattern, ctx->ptr, ctx->pattern[0]));
+            if (ctx->ptr >= end
+                || !SRE(char_loc_ignore)(state, *ctx->pattern, *ctx->ptr))
                 RETURN_FAILURE;
             ctx->pattern++;
             ctx->ptr++;
@@ -661,7 +707,17 @@ entrance:
             TRACE(("|%p|%p|NOT_LITERAL_IGNORE %d\n",
                    ctx->pattern, ctx->ptr, *ctx->pattern));
             if (ctx->ptr >= end ||
-                state->lower(*ctx->ptr) == state->lower(*ctx->pattern))
+                state->lower(*ctx->ptr) == *ctx->pattern)
+                RETURN_FAILURE;
+            ctx->pattern++;
+            ctx->ptr++;
+            break;
+
+        case SRE_OP_NOT_LITERAL_LOC_IGNORE:
+            TRACE(("|%p|%p|NOT_LITERAL_LOC_IGNORE %d\n",
+                   ctx->pattern, ctx->ptr, *ctx->pattern));
+            if (ctx->ptr >= end
+                || SRE(char_loc_ignore)(state, *ctx->pattern, *ctx->ptr))
                 RETURN_FAILURE;
             ctx->pattern++;
             ctx->ptr++;
@@ -672,6 +728,15 @@ entrance:
             if (ctx->ptr >= end
                 || !SRE(charset)(state, ctx->pattern+1,
                                  (SRE_CODE)state->lower(*ctx->ptr)))
+                RETURN_FAILURE;
+            ctx->pattern += ctx->pattern[0];
+            ctx->ptr++;
+            break;
+
+        case SRE_OP_IN_LOC_IGNORE:
+            TRACE(("|%p|%p|IN_LOC_IGNORE\n", ctx->pattern, ctx->ptr));
+            if (ctx->ptr >= end
+                || !SRE(charset_loc_ignore)(state, ctx->pattern+1, *ctx->ptr))
                 RETURN_FAILURE;
             ctx->pattern += ctx->pattern[0];
             ctx->ptr++;

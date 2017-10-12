@@ -39,31 +39,26 @@ Truth Value Testing
    single: false
 
 Any object can be tested for truth value, for use in an :keyword:`if` or
-:keyword:`while` condition or as operand of the Boolean operations below. The
-following values are considered false:
-
-  .. index:: single: None (Built-in object)
-
-* ``None``
-
-  .. index:: single: False (Built-in object)
-
-* ``False``
-
-* zero of any numeric type, for example, ``0``, ``0.0``, ``0j``.
-
-* any empty sequence, for example, ``''``, ``()``, ``[]``.
-
-* any empty mapping, for example, ``{}``.
-
-* instances of user-defined classes, if the class defines a :meth:`__bool__` or
-  :meth:`__len__` method, when that method returns the integer zero or
-  :class:`bool` value ``False``. [1]_
+:keyword:`while` condition or as operand of the Boolean operations below.
 
 .. index:: single: true
 
-All other values are considered true --- so objects of many types are always
-true.
+By default, an object is considered true unless its class defines either a
+:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+returns zero, when called with the object. [1]_  Here are most of the built-in
+objects considered false:
+
+  .. index::
+     single: None (Built-in object)
+     single: False (Built-in object)
+
+* constants defined to be false: ``None`` and ``False``.
+
+* zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
+  ``Fraction(0, 1)``
+
+* empty sequences and collections: ``''``, ``()``, ``[]``, ``{}``, ``set()``,
+  ``range(0)``
 
 .. index::
    operator: or
@@ -354,7 +349,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/8.0.0/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/10.0.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -394,10 +389,12 @@ Bitwise Operations on Integer Types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
+   operator: |
    operator: ^
    operator: &
    operator: <<
    operator: >>
+   operator: ~
 
 Bitwise operations only make sense for integers.  Negative numbers are treated
 as their 2's complement value (this assumes that there are enough bits so that
@@ -829,7 +826,7 @@ restrictions imposed by *s*.
 
 The ``in`` and ``not in`` operations have the same priorities as the
 comparison operations. The ``+`` (concatenation) and ``*`` (repetition)
-operations have the same priority as the corresponding numeric operations.
+operations have the same priority as the corresponding numeric operations. [3]_
 
 .. index::
    triple: operations on; sequence; types
@@ -1159,7 +1156,7 @@ application).
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
 
-   .. method:: list.sort(*, key=None, reverse=None)
+   .. method:: list.sort(*, key=None, reverse=False)
 
       This method sorts the list in place, using only ``<`` comparisons
       between items. Exceptions are not suppressed - if any comparison operations
@@ -1719,10 +1716,10 @@ expression support in the :mod:`re` module).
 
 .. method:: str.join(iterable)
 
-   Return a string which is the concatenation of the strings in the
-   :term:`iterable` *iterable*.  A :exc:`TypeError` will be raised if there are
-   any non-string values in *iterable*, including :class:`bytes` objects.  The
-   separator between elements is the string providing this method.
+   Return a string which is the concatenation of the strings in *iterable*.
+   A :exc:`TypeError` will be raised if there are any non-string values in
+   *iterable*, including :class:`bytes` objects.  The separator between
+   elements is the string providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])
@@ -2265,8 +2262,8 @@ The :mod:`array` module supports efficient storage of basic data types like
 
 .. _typebytes:
 
-Bytes
------
+Bytes Objects
+-------------
 
 .. index:: object: bytes
 
@@ -2275,69 +2272,71 @@ binary protocols are based on the ASCII text encoding, bytes objects offer
 several methods that are only valid when working with ASCII compatible
 data and are closely related to string objects in a variety of other ways.
 
-Firstly, the syntax for bytes literals is largely the same as that for string
-literals, except that a ``b`` prefix is added:
+.. class:: bytes([source[, encoding[, errors]]])
 
-* Single quotes: ``b'still allows embedded "double" quotes'``
-* Double quotes: ``b"still allows embedded 'single' quotes"``.
-* Triple quoted: ``b'''3 single quotes'''``, ``b"""3 double quotes"""``
+   Firstly, the syntax for bytes literals is largely the same as that for string
+   literals, except that a ``b`` prefix is added:
 
-Only ASCII characters are permitted in bytes literals (regardless of the
-declared source code encoding). Any binary values over 127 must be entered
-into bytes literals using the appropriate escape sequence.
+   * Single quotes: ``b'still allows embedded "double" quotes'``
+   * Double quotes: ``b"still allows embedded 'single' quotes"``.
+   * Triple quoted: ``b'''3 single quotes'''``, ``b"""3 double quotes"""``
 
-As with string literals, bytes literals may also use a ``r`` prefix to disable
-processing of escape sequences. See :ref:`strings` for more about the various
-forms of bytes literal, including supported escape sequences.
+   Only ASCII characters are permitted in bytes literals (regardless of the
+   declared source code encoding). Any binary values over 127 must be entered
+   into bytes literals using the appropriate escape sequence.
 
-While bytes literals and representations are based on ASCII text, bytes
-objects actually behave like immutable sequences of integers, with each
-value in the sequence restricted such that ``0 <= x < 256`` (attempts to
-violate this restriction will trigger :exc:`ValueError`. This is done
-deliberately to emphasise that while many binary formats include ASCII based
-elements and can be usefully manipulated with some text-oriented algorithms,
-this is not generally the case for arbitrary binary data (blindly applying
-text processing algorithms to binary data formats that are not ASCII
-compatible will usually lead to data corruption).
+   As with string literals, bytes literals may also use a ``r`` prefix to disable
+   processing of escape sequences. See :ref:`strings` for more about the various
+   forms of bytes literal, including supported escape sequences.
 
-In addition to the literal forms, bytes objects can be created in a number of
-other ways:
+   While bytes literals and representations are based on ASCII text, bytes
+   objects actually behave like immutable sequences of integers, with each
+   value in the sequence restricted such that ``0 <= x < 256`` (attempts to
+   violate this restriction will trigger :exc:`ValueError`. This is done
+   deliberately to emphasise that while many binary formats include ASCII based
+   elements and can be usefully manipulated with some text-oriented algorithms,
+   this is not generally the case for arbitrary binary data (blindly applying
+   text processing algorithms to binary data formats that are not ASCII
+   compatible will usually lead to data corruption).
 
-* A zero-filled bytes object of a specified length: ``bytes(10)``
-* From an iterable of integers: ``bytes(range(20))``
-* Copying existing binary data via the buffer protocol:  ``bytes(obj)``
+   In addition to the literal forms, bytes objects can be created in a number of
+   other ways:
 
-Also see the :ref:`bytes <func-bytes>` built-in.
+   * A zero-filled bytes object of a specified length: ``bytes(10)``
+   * From an iterable of integers: ``bytes(range(20))``
+   * Copying existing binary data via the buffer protocol:  ``bytes(obj)``
 
-Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
-numbers are a commonly used format for describing binary data. Accordingly,
-the bytes type has an additional class method to read data in that format:
+   Also see the :ref:`bytes <func-bytes>` built-in.
 
-.. classmethod:: bytes.fromhex(string)
+   Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
+   numbers are a commonly used format for describing binary data. Accordingly,
+   the bytes type has an additional class method to read data in that format:
 
-   This :class:`bytes` class method returns a bytes object, decoding the
-   given string object.  The string must contain two hexadecimal digits per
-   byte, with ASCII whitespace being ignored.
+   .. classmethod:: fromhex(string)
 
-   >>> bytes.fromhex('2Ef0 F1f2  ')
-   b'.\xf0\xf1\xf2'
+      This :class:`bytes` class method returns a bytes object, decoding the
+      given string object.  The string must contain two hexadecimal digits per
+      byte, with ASCII whitespace being ignored.
 
-   .. versionchanged:: 3.7
-      :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
-      not just spaces.
+      >>> bytes.fromhex('2Ef0 F1f2  ')
+      b'.\xf0\xf1\xf2'
 
-A reverse conversion function exists to transform a bytes object into its
-hexadecimal representation.
+      .. versionchanged:: 3.7
+         :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
+         not just spaces.
 
-.. method:: bytes.hex()
+   A reverse conversion function exists to transform a bytes object into its
+   hexadecimal representation.
 
-   Return a string object containing two hexadecimal digits for each
-   byte in the instance.
+   .. method:: hex()
 
-   >>> b'\xf0\xf1\xf2'.hex()
-   'f0f1f2'
+      Return a string object containing two hexadecimal digits for each
+      byte in the instance.
 
-   .. versionadded:: 3.5
+      >>> b'\xf0\xf1\xf2'.hex()
+      'f0f1f2'
+
+      .. versionadded:: 3.5
 
 Since bytes objects are sequences of integers (akin to a tuple), for a bytes
 object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
@@ -2367,49 +2366,53 @@ Bytearray Objects
 .. index:: object: bytearray
 
 :class:`bytearray` objects are a mutable counterpart to :class:`bytes`
-objects. There is no dedicated literal syntax for bytearray objects, instead
-they are always created by calling the constructor:
+objects.
 
-* Creating an empty instance: ``bytearray()``
-* Creating a zero-filled instance with a given length: ``bytearray(10)``
-* From an iterable of integers: ``bytearray(range(20))``
-* Copying existing binary data via the buffer protocol:  ``bytearray(b'Hi!')``
+.. class:: bytearray([source[, encoding[, errors]]])
 
-As bytearray objects are mutable, they support the
-:ref:`mutable <typesseq-mutable>` sequence operations in addition to the
-common bytes and bytearray operations described in :ref:`bytes-methods`.
+   There is no dedicated literal syntax for bytearray objects, instead
+   they are always created by calling the constructor:
 
-Also see the :ref:`bytearray <func-bytearray>` built-in.
+   * Creating an empty instance: ``bytearray()``
+   * Creating a zero-filled instance with a given length: ``bytearray(10)``
+   * From an iterable of integers: ``bytearray(range(20))``
+   * Copying existing binary data via the buffer protocol:  ``bytearray(b'Hi!')``
 
-Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
-numbers are a commonly used format for describing binary data. Accordingly,
-the bytearray type has an additional class method to read data in that format:
+   As bytearray objects are mutable, they support the
+   :ref:`mutable <typesseq-mutable>` sequence operations in addition to the
+   common bytes and bytearray operations described in :ref:`bytes-methods`.
 
-.. classmethod:: bytearray.fromhex(string)
+   Also see the :ref:`bytearray <func-bytearray>` built-in.
 
-   This :class:`bytearray` class method returns bytearray object, decoding
-   the given string object.  The string must contain two hexadecimal digits
-   per byte, with ASCII whitespace being ignored.
+   Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
+   numbers are a commonly used format for describing binary data. Accordingly,
+   the bytearray type has an additional class method to read data in that format:
 
-   >>> bytearray.fromhex('2Ef0 F1f2  ')
-   bytearray(b'.\xf0\xf1\xf2')
+   .. classmethod:: fromhex(string)
 
-   .. versionchanged:: 3.7
-      :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
-      not just spaces.
+      This :class:`bytearray` class method returns bytearray object, decoding
+      the given string object.  The string must contain two hexadecimal digits
+      per byte, with ASCII whitespace being ignored.
 
-A reverse conversion function exists to transform a bytearray object into its
-hexadecimal representation.
+      >>> bytearray.fromhex('2Ef0 F1f2  ')
+      bytearray(b'.\xf0\xf1\xf2')
 
-.. method:: bytearray.hex()
+      .. versionchanged:: 3.7
+         :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
+         not just spaces.
 
-   Return a string object containing two hexadecimal digits for each
-   byte in the instance.
+   A reverse conversion function exists to transform a bytearray object into its
+   hexadecimal representation.
 
-   >>> bytearray(b'\xf0\xf1\xf2').hex()
-   'f0f1f2'
+   .. method:: hex()
 
-   .. versionadded:: 3.5
+      Return a string object containing two hexadecimal digits for each
+      byte in the instance.
+
+      >>> bytearray(b'\xf0\xf1\xf2').hex()
+      'f0f1f2'
+
+      .. versionadded:: 3.5
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -2548,11 +2551,11 @@ arbitrary binary data.
             bytearray.join(iterable)
 
    Return a bytes or bytearray object which is the concatenation of the
-   binary data sequences in the :term:`iterable` *iterable*.  A
-   :exc:`TypeError` will be raised if there are any values in *iterable*
-   that are not :term:`bytes-like objects <bytes-like object>`, including
-   :class:`str` objects.  The separator between elements is the contents
-   of the bytes or bytearray object providing this method.
+   binary data sequences in *iterable*.  A :exc:`TypeError` will be raised
+   if there are any values in *iterable* that are not :term:`bytes-like
+   objects <bytes-like object>`, including :class:`str` objects.  The
+   separator between elements is the contents of the bytes or
+   bytearray object providing this method.
 
 
 .. staticmethod:: bytes.maketrans(from, to)
@@ -3991,9 +3994,7 @@ The constructors for both classes work the same:
 
    Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
    :meth:`discard` methods may be a set.  To support searching for an equivalent
-   frozenset, the *elem* set is temporarily mutated during the search and then
-   restored.  During the search, the *elem* set should not be read or mutated
-   since it does not have a meaningful value.
+   frozenset, a temporary one is created from *elem*.
 
 
 .. _typesmapping:

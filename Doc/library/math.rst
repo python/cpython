@@ -42,14 +42,17 @@ Number-theoretic and representation functions
    *y*.  On platforms that support signed zeros, ``copysign(1.0, -0.0)``
    returns *-1.0*.
 
+
 .. function:: fabs(x)
 
    Return the absolute value of *x*.
+
 
 .. function:: factorial(x)
 
    Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
+
 
 .. function:: floor(x)
 
@@ -220,12 +223,15 @@ Power and logarithmic functions
 
 .. function:: exp(x)
 
-   Return e raised to the power *x*, where e = 2.718281... is the base
-   of natural logarithms.
+   Return *e* raised to the power *x*, where *e* = 2.718281... is the base
+   of natural logarithms.  This is usually more accurate than ``math.e ** x``
+   or ``pow(math.e, x)``.
+
 
 .. function:: expm1(x)
 
-   Return ``e**x - 1``.  For small floats *x*, the subtraction in ``exp(x) - 1``
+   Return *e* raised to the power *x*, minus 1.  Here *e* is the base of natural
+   logarithms.  For small floats *x*, the subtraction in ``exp(x) - 1``
    can result in a `significant loss of precision
    <https://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
    function provides a way to compute this quantity to full precision::
@@ -290,9 +296,9 @@ Power and logarithmic functions
 
    Return the square root of *x*.
 
+
 Trigonometric functions
 -----------------------
-
 
 .. function:: acos(x)
 
@@ -339,9 +345,9 @@ Trigonometric functions
 
    Return the tangent of *x* radians.
 
+
 Angular conversion
 ------------------
-
 
 .. function:: degrees(x)
 
@@ -351,6 +357,7 @@ Angular conversion
 .. function:: radians(x)
 
    Convert angle *x* from degrees to radians.
+
 
 Hyperbolic functions
 --------------------
@@ -440,22 +447,24 @@ Constants
 
 .. data:: pi
 
-   The mathematical constant π = 3.141592..., to available precision.
+   The mathematical constant *π* = 3.141592..., to available precision.
 
 
 .. data:: e
 
-   The mathematical constant e = 2.718281..., to available precision.
+   The mathematical constant *e* = 2.718281..., to available precision.
+
 
 .. data:: tau
 
-   The mathematical constant τ = 6.283185..., to available precision.
-   Tau is a circle constant equal to 2π, the ratio of a circle's circumference to
+   The mathematical constant *τ* = 6.283185..., to available precision.
+   Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
    Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
    `Tau day <http://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
+
 
 .. data:: inf
 

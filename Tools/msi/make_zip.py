@@ -47,8 +47,6 @@ EXCLUDE_FILE_FROM_LIBRARY = {
 
 EXCLUDE_FILE_FROM_LIBS = {
     'liblzma',
-    'ssleay',
-    'libeay',
     'python3stub',
 }
 
@@ -106,23 +104,23 @@ def include_in_tools(p):
 BASE_NAME = 'python{0.major}{0.minor}'.format(sys.version_info)
 
 FULL_LAYOUT = [
-    ('/', 'PCBuild/$arch', 'python.exe', is_not_debug),
-    ('/', 'PCBuild/$arch', 'pythonw.exe', is_not_debug),
-    ('/', 'PCBuild/$arch', 'python{}.dll'.format(sys.version_info.major), is_not_debug),
-    ('/', 'PCBuild/$arch', '{}.dll'.format(BASE_NAME), is_not_debug),
-    ('DLLs/', 'PCBuild/$arch', '*.pyd', is_not_debug),
-    ('DLLs/', 'PCBuild/$arch', '*.dll', is_not_debug_or_python),
+    ('/', '$build', 'python.exe', is_not_debug),
+    ('/', '$build', 'pythonw.exe', is_not_debug),
+    ('/', '$build', 'python{}.dll'.format(sys.version_info.major), is_not_debug),
+    ('/', '$build', '{}.dll'.format(BASE_NAME), is_not_debug),
+    ('DLLs/', '$build', '*.pyd', is_not_debug),
+    ('DLLs/', '$build', '*.dll', is_not_debug_or_python),
     ('include/', 'include', '*.h', None),
     ('include/', 'PC', 'pyconfig.h', None),
     ('Lib/', 'Lib', '**/*', include_in_lib),
-    ('libs/', 'PCBuild/$arch', '*.lib', include_in_libs),
+    ('libs/', '$build', '*.lib', include_in_libs),
     ('Tools/', 'Tools', '**/*', include_in_tools),
 ]
 
 EMBED_LAYOUT = [
-    ('/', 'PCBuild/$arch', 'python*.exe', is_not_debug),
-    ('/', 'PCBuild/$arch', '*.pyd', is_not_debug),
-    ('/', 'PCBuild/$arch', '*.dll', is_not_debug),
+    ('/', '$build', 'python*.exe', is_not_debug),
+    ('/', '$build', '*.pyd', is_not_debug),
+    ('/', '$build', '*.dll', is_not_debug),
     ('{}.zip'.format(BASE_NAME), 'Lib', '**/*', include_in_embeddable_lib),
 ]
 
@@ -187,15 +185,15 @@ def main():
     parser.add_argument('-o', '--out', metavar='file', help='The name of the output archive', type=Path, default=None)
     parser.add_argument('-t', '--temp', metavar='dir', help='A directory to temporarily extract files into', type=Path, default=None)
     parser.add_argument('-e', '--embed', help='Create an embedding layout', action='store_true', default=False)
-    parser.add_argument('-a', '--arch', help='Specify the architecture to use (win32/amd64)', type=str, default="win32")
+    parser.add_argument('-b', '--build', help='Specify the build directory', type=Path, default=None)
     ns = parser.parse_args()
 
     source = ns.source or (Path(__file__).resolve().parent.parent.parent)
     out = ns.out
-    arch = ns.arch
+    build = ns.build or Path(sys.exec_prefix)
     assert isinstance(source, Path)
     assert not out or isinstance(out, Path)
-    assert isinstance(arch, str)
+    assert isinstance(build, Path)
 
     if ns.temp:
         temp = ns.temp
@@ -218,7 +216,10 @@ def main():
 
     try:
         for t, s, p, c in layout:
-            fs = source / s.replace("$arch", arch)
+            if s == '$build':
+                fs = build
+            else:
+                fs = source / s
             files = rglob(fs, p, c)
             extra_files = []
             if s == 'Lib' and p == '**/*':

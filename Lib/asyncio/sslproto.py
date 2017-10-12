@@ -6,7 +6,6 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
-from . import compat
 from . import protocols
 from . import transports
 from .log import logger
@@ -325,15 +324,11 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         self._closed = True
         self._ssl_protocol._start_shutdown()
 
-    # On Python 3.3 and older, objects with a destructor part of a reference
-    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
-    # to the PEP 442.
-    if compat.PY34:
-        def __del__(self):
-            if not self._closed:
-                warnings.warn("unclosed transport %r" % self, ResourceWarning,
-                              source=self)
-                self.close()
+    def __del__(self):
+        if not self._closed:
+            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+                          source=self)
+            self.close()
 
     def pause_reading(self):
         """Pause the receiving end.
@@ -551,8 +546,11 @@ class SSLProtocol(protocols.Protocol):
     def _start_shutdown(self):
         if self._in_shutdown:
             return
-        self._in_shutdown = True
-        self._write_appdata(b'')
+        if self._in_handshake:
+            self._abort()
+        else:
+            self._in_shutdown = True
+            self._write_appdata(b'')
 
     def _write_appdata(self, data):
         self._write_backlog.append((data, 0))
@@ -683,12 +681,14 @@ class SSLProtocol(protocols.Protocol):
             self._transport._force_close(exc)
 
     def _finalize(self):
+        self._sslpipe = None
+
         if self._transport is not None:
             self._transport.close()
 
     def _abort(self):
-        if self._transport is not None:
-            try:
+        try:
+            if self._transport is not None:
                 self._transport.abort()
-            finally:
-                self._finalize()
+        finally:
+            self._finalize()

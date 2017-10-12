@@ -111,8 +111,7 @@ More precisely, the expression ``some_value is Derived(some_value)`` is always
 true at runtime.
 
 This also means that it is not possible to create a subtype of ``Derived``
-since it is an identity function at runtime, not an actual type. Similarly, it
-is not possible to create another :func:`NewType` based on a ``Derived`` type::
+since it is an identity function at runtime, not an actual type::
 
    from typing import NewType
 
@@ -121,8 +120,15 @@ is not possible to create another :func:`NewType` based on a ``Derived`` type::
    # Fails at runtime and does not typecheck
    class AdminUserId(UserId): pass
 
-   # Also does not typecheck
+However, it is possible to create a :func:`NewType` based on a 'derived' ``NewType``::
+
+   from typing import NewType
+
+   UserId = NewType('UserId', int)
+
    ProUserId = NewType('ProUserId', UserId)
+
+and typechecking for ``ProUserId`` will work as expected.
 
 See :pep:`484` for more details.
 
@@ -939,7 +945,7 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * When a class and its subclass are present, the former is skipped, e.g.::
+   * When a class and its subclass are present, the latter is skipped, e.g.::
 
        Union[int, object] == object
 
@@ -1041,5 +1047,10 @@ The module defines the following classes, functions and decorators:
       if TYPE_CHECKING:
           import expensive_mod
 
-      def fun():
-          local_var: expensive_mod.some_type = other_fun()
+      def fun(arg: 'expensive_mod.SomeType') -> None:
+          local_var: expensive_mod.AnotherType = other_fun()
+
+   Note that the first type annotation must be enclosed in quotes, making it a
+   "forward reference", to hide the ``expensive_mod`` reference from the
+   interpreter runtime.  Type annotations for local variables are not
+   evaluated, so the second annotation does not need to be enclosed in quotes.
