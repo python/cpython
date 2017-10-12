@@ -1,0 +1,1 @@
+Added the --duplicate option for CLI of timeit.

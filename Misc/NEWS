@@ -341,8 +341,6 @@ Extension Modules
 Library
 -------
 
-- bpo-30080: Added the --duplicate option for CLI of timeit.
-
 - bpo-16500: Allow registering at-fork handlers.
 
 - bpo-30470: Deprecate invalid ctypes call protection on Windows.  Patch by
