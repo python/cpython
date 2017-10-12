@@ -32,7 +32,7 @@ generically as an :term:`importer`) to participate in the import process.
     :ref:`import`
         The language reference for the :keyword:`import` statement.
 
-    `Packages specification <http://legacy.python.org/doc/essays/packages.html>`__
+    `Packages specification <https://www.python.org/doc/essays/packages/>`__
         Original specification of packages. Some semantics have changed since
         the writing of this document (e.g. redirecting based on ``None``
         in :data:`sys.modules`).
@@ -1214,6 +1214,11 @@ an :term:`importer`.
    **name** and **package** work the same as for :func:`import_module`.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.7
+      Raises :exc:`ModuleNotFoundError` instead of :exc:`AttributeError` if
+      **package** is in fact not a package (i.e. lacks a :attr:`__path__`
+      attribute).
 
 .. function:: module_from_spec(spec)
 

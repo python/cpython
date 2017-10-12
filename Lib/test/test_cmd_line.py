@@ -8,8 +8,9 @@ import sys
 import subprocess
 import tempfile
 from test.support import script_helper, is_android
-from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
-    assert_python_failure)
+from test.support.script_helper import (
+    spawn_python, kill_python, assert_python_ok, assert_python_failure
+)
 
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
@@ -150,6 +151,7 @@ class CmdLineTest(unittest.TestCase):
         env = os.environ.copy()
         # Use C locale to get ascii for the locale encoding
         env['LC_ALL'] = 'C'
+        env['PYTHONCOERCECLOCALE'] = '0'
         code = (
             b'import locale; '
             b'print(ascii("' + undecodable + b'"), '
@@ -219,13 +221,12 @@ class CmdLineTest(unittest.TestCase):
             rc, out, err = assert_python_ok('-u', '-c', code)
             data = err if stream == 'stderr' else out
             self.assertEqual(data, b'x', "binary %s not unbuffered" % stream)
-            # Text is line-buffered
-            code = ("import os, sys; sys.%s.write('x\\n'); os._exit(0)"
+            # Text is unbuffered
+            code = ("import os, sys; sys.%s.write('x'); os._exit(0)"
                 % stream)
             rc, out, err = assert_python_ok('-u', '-c', code)
             data = err if stream == 'stderr' else out
-            self.assertEqual(data.strip(), b'x',
-                "text %s not line-buffered" % stream)
+            self.assertEqual(data, b'x', "text %s not unbuffered" % stream)
 
     def test_unbuffered_input(self):
         # sys.stdin still works with '-u'
