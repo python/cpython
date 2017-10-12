@@ -1,0 +1,2 @@
+Use namedtuple (structseq ovbject) in string.Formatter.parse iterator
+response.
