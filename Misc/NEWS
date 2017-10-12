@@ -1247,9 +1247,6 @@ Windows
 C API
 -----
 
-- bpo-30863: PyUnicode_AsWideChar() and PyUnicode_AsWideCharString() no longer
-  cache the wchar_t\* representation of string objects.
-
 - bpo-30708: PyUnicode_AsWideCharString() now raises a ValueError if the
   second argument is NULL and the wchar_t\* string contains null
   characters.
