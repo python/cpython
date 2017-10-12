@@ -2146,10 +2146,11 @@ selected font does not define a character, Tk attempts to find another
 font that does.  Substitute glyphs depend on what is available on a
 particular system and will not necessarily have the same size as the
 font selected.  Each line contains 20 characters or 10 for East Asia.
+
 Hebrew and Arabic letters should display right to left, starting with
 alef, \u05d0 and \u0627.  Arabic numerals display left to right.  The
-East Asian samples are Chinese digits followed by Chinese Hanzi, Korean
-Hangul, and Japanese Hiragana and Katakana.
+Devanagari sample start with digits.  The East Asian lines are Chinese
+digits, Chinese Hanzi, Korean Hangul, and Japanese Hiragana and Katakana.
 ''',
     'Highlights': '''
 Highlighting:
