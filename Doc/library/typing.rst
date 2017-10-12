@@ -901,7 +901,7 @@ The module defines the following classes, functions and decorators:
 
    Decorator to indicate that annotations are not type hints.
 
-   The argument must be a class or function; if it is a class, it
+   This works as class or function :term:`decorator`.  With a class, it
    applies recursively to all methods defined in that class (but not
    to methods defined in its superclasses or subclasses).
 
