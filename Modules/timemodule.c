@@ -94,13 +94,13 @@ static PyObject*
 pyclock(_Py_clock_info_t *info)
 {
 #ifdef MS_WINDOWS
+    double d;
     /* Win32 has better clock replacement; we have our own version, due to Mark
        Hammond and Tim Peters */
-    _PyTime_t t;
-    if (_PyTime_GetWinPerfCounterWithInfo(&t, info) < 0) {
+    if (_PyTime_GetPerfCounterDoubleWithInfo(&d, info) < 0) {
         return NULL;
     }
-    return _PyFloat_FromPyTime(t);
+    return PyFloat_FromDouble(d);
 #else
     return floatclock(info);
 #endif
@@ -939,11 +939,11 @@ Monotonic clock, cannot go backward.");
 static PyObject*
 perf_counter(_Py_clock_info_t *info)
 {
-    _PyTime_t t;
-    if (_PyTime_GetPerfCounterWithInfo(&t, info) < 0) {
+    double t;
+    if (_PyTime_GetPerfCounterDoubleWithInfo(&t, info) < 0) {
         return NULL;
     }
-    return _PyFloat_FromPyTime(t);
+    return PyFloat_FromDouble(t);
 }
 
 static PyObject *
