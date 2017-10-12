@@ -542,7 +542,7 @@ class FontPage(Frame):
             '\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\n'
             '\u6c49\u5b57\u6f22\u5b57\u4eba\u6728\u706b\u571f\u91d1\u6c34\n'
             '\u1161\u1166\u1169\u11a8\u11ab\uac00\uacb0\uac75\uacf4\uadf9\n'
-            '\u3042\u3044\u3046\u3048\u304a\u304b\u3055\u305f\u306a\u307e\n'
+            '\u3042\u3044\u3046\u3048\u304a\u30a2\u30a4\u30a6\u30a8\u30aa\n'
             )
         temp_font = tkFont.Font(self, ('courier', 10, 'normal'))
         self.font_sample = Label(frame_sample, text=sample, font=temp_font)
@@ -2147,7 +2147,7 @@ glyphs will not necessarily have the same size as the font selected.
 Hebrew and Arabic letters should display right to left, starting with
 alef, \u05d0 and \u0627.  Arabic numerals display left to right.  The
 East Asian samples are Chinese digits followed by Chinese Hanzi, Korean
-Hangul, and Japanese Hiragana.
+Hangul, and Japanese Hiragana and Katakana.
 ''',
     'Highlights': '''
 Highlighting:
