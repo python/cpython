@@ -2164,7 +2164,6 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
             PyErr_NoMemory();
             goto error;
         }
-        i = 0;
         for (i = 0; i < nchanges; ++i) {
             ei = PySequence_Fast_GET_ITEM(seq, i);
             if (!kqueue_event_Check(ei)) {
@@ -2172,12 +2171,11 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
                     "changelist must be an iterable of "
                     "select.kevent objects");
                 goto error;
-            } else {
-                chl[i++] = ((kqueue_event_Object *)ei)->e;
             }
+            chl[i] = ((kqueue_event_Object *)ei)->e;
         }
+        Py_CLEAR(seq);
     }
-    Py_CLEAR(seq);
 
     /* event list */
     if (nevents) {

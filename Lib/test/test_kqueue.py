@@ -223,8 +223,7 @@ class TestKQueue(unittest.TestCase):
                 return 0
             def __iter__(self):
                 for i in range(100):
-                    yield select.kevent(a, select.KQ_FILTER_READ,
-                                        select.KQ_EV_ADD | select.KQ_EV_ENABLE)
+                    yield ev
         kq.control(BadList(), 0)
         # doesn't have __len__
         kq.control(iter([ev]), 0)
