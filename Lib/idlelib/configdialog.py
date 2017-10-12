@@ -2136,10 +2136,19 @@ When you click either the Apply or Ok buttons, settings in this
 dialog that are different from IDLE's default are saved in
 a .idlerc directory in your home directory. Except as noted,
 these changes apply to all versions of IDLE installed on this
-machine. Some do not take affect until IDLE is restarted.
-[Cancel] only cancels changes made since the last save.
+machine. [Cancel] only cancels changes made since the last save.
 '''
 help_pages = {
+    'Fonts/Tabs':'''
+Font sample: This shows what a selection of BMP unicode characters look
+like for the current font selection.  If a font face does not define a
+character, Tk attempts to find another font that does.  Substitute
+glyphs will not necessarily have the same size as the font selected.
+Hebrew and Arabic letters should display right to left, starting with
+alef, \u05d0 and \u0627.  Arabic numerals display left to right.  The
+East Asian samples are Chinese digits followed by Chinese Hanzi, Korean
+Hangul, and Japanese Hiragana.
+''',
     'Highlights': '''
 Highlighting:
 The IDLE Dark color theme is new in October 2015.  It can only
