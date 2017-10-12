@@ -88,19 +88,23 @@ floatclock(_Py_clock_info_t *info)
 }
 #endif /* HAVE_CLOCK */
 
+static PyObject*
+perf_counter(_Py_clock_info_t *info)
+{
+    double t;
+    if (_PyTime_GetPerfCounterDoubleWithInfo(&t, info) < 0) {
+        return NULL;
+    }
+    return PyFloat_FromDouble(t);
+}
+
 #if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
 #define PYCLOCK
 static PyObject*
 pyclock(_Py_clock_info_t *info)
 {
 #ifdef MS_WINDOWS
-    double d;
-    /* Win32 has better clock replacement; we have our own version, due to Mark
-       Hammond and Tim Peters */
-    if (_PyTime_GetPerfCounterDoubleWithInfo(&d, info) < 0) {
-        return NULL;
-    }
-    return PyFloat_FromDouble(d);
+    return perf_counter(info);
 #else
     return floatclock(info);
 #endif
@@ -935,16 +939,6 @@ PyDoc_STRVAR(monotonic_doc,
 "monotonic() -> float\n\
 \n\
 Monotonic clock, cannot go backward.");
-
-static PyObject*
-perf_counter(_Py_clock_info_t *info)
-{
-    double t;
-    if (_PyTime_GetPerfCounterDoubleWithInfo(&t, info) < 0) {
-        return NULL;
-    }
-    return PyFloat_FromDouble(t);
-}
 
 static PyObject *
 time_perf_counter(PyObject *self, PyObject *unused)

@@ -839,7 +839,7 @@ int
 _PyTime_GetPerfCounterDoubleWithInfo(double *d, _Py_clock_info_t *info)
 {
 #ifdef MS_WINDOWS
-    return win_perf_counter(&d, info);
+    return win_perf_counter(d, info);
 #else
     _PyTime_t t;
     if (_PyTime_GetMonotonicClockWithInfo(&t, info) < 0) {
