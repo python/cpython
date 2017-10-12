@@ -10,8 +10,6 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
-- bpo-30156: Fixed a crash in debug build when PYTHONDUMPREFS is set.
-
 - bpo-29104: Fixed parsing backslashes in f-strings.
 
 - bpo-27945: Fixed various segfaults with dict when input collections are
