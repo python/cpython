@@ -47,8 +47,8 @@ copy operations:
 * Recursive objects (compound objects that, directly or indirectly, contain a
   reference to themselves) may cause a recursive loop.
 
-* Because deep copy copies *everything* it may copy too much, e.g.,
-  even administrative data structures that should be shared even between copies.
+* Because deep copy copies everything it may copy too much, such as data
+  which is intended to be shared between copies.
 
 The :func:`deepcopy` function avoids these problems by:
 

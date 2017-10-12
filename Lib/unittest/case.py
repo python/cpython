@@ -338,6 +338,16 @@ class _AssertLogsContext(_BaseTestCaseContext):
                 .format(logging.getLevelName(self.level), self.logger.name))
 
 
+class _OrderedChainMap(collections.ChainMap):
+    def __iter__(self):
+        seen = set()
+        for mapping in self.maps:
+            for k in mapping:
+                if k not in seen:
+                    seen.add(k)
+                    yield k
+
+
 class TestCase(object):
     """A class whose instances are single test cases.
 
@@ -514,7 +524,7 @@ class TestCase(object):
             return
         parent = self._subtest
         if parent is None:
-            params_map = collections.ChainMap(params)
+            params_map = _OrderedChainMap(params)
         else:
             params_map = parent.params.new_child(params)
         self._subtest = _SubTest(self, msg, params_map)
@@ -856,23 +866,28 @@ class TestCase(object):
         if delta is not None and places is not None:
             raise TypeError("specify delta or places not both")
 
+        diff = abs(first - second)
         if delta is not None:
-            if abs(first - second) <= delta:
+            if diff <= delta:
                 return
 
-            standardMsg = '%s != %s within %s delta' % (safe_repr(first),
-                                                        safe_repr(second),
-                                                        safe_repr(delta))
+            standardMsg = '%s != %s within %s delta (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(delta),
+                safe_repr(diff))
         else:
             if places is None:
                 places = 7
 
-            if round(abs(second-first), places) == 0:
+            if round(diff, places) == 0:
                 return
 
-            standardMsg = '%s != %s within %r places' % (safe_repr(first),
-                                                          safe_repr(second),
-                                                          places)
+            standardMsg = '%s != %s within %r places (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                places,
+                safe_repr(diff))
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
 
@@ -890,16 +905,19 @@ class TestCase(object):
         """
         if delta is not None and places is not None:
             raise TypeError("specify delta or places not both")
+        diff = abs(first - second)
         if delta is not None:
-            if not (first == second) and abs(first - second) > delta:
+            if not (first == second) and diff > delta:
                 return
-            standardMsg = '%s == %s within %s delta' % (safe_repr(first),
-                                                        safe_repr(second),
-                                                        safe_repr(delta))
+            standardMsg = '%s == %s within %s delta (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(delta),
+                safe_repr(diff))
         else:
             if places is None:
                 places = 7
-            if not (first == second) and round(abs(second-first), places) != 0:
+            if not (first == second) and round(diff, places) != 0:
                 return
             standardMsg = '%s == %s within %r places' % (safe_repr(first),
                                                          safe_repr(second),
@@ -907,7 +925,6 @@ class TestCase(object):
 
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
-
 
     def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None):
         """An equality assertion for ordered sequences (like lists and tuples).
@@ -1256,7 +1273,7 @@ class TestCase(object):
 
         Args:
             expected_exception: Exception class expected to be raised.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
@@ -1275,7 +1292,7 @@ class TestCase(object):
 
         Args:
             expected_warning: Warning class expected to be triggered.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
@@ -1411,7 +1428,7 @@ class _SubTest(TestCase):
         if self.params:
             params_desc = ', '.join(
                 "{}={!r}".format(k, v)
-                for (k, v) in sorted(self.params.items()))
+                for (k, v) in self.params.items())
             parts.append("({})".format(params_desc))
         return " ".join(parts) or '(<subtest>)'
 

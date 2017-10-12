@@ -197,8 +197,6 @@ class FindLoaderPEP302Tests(FindLoaderTests):
 
 class ReloadTests:
 
-    """Test module reloading for builtin and extension modules."""
-
     def test_reload_modules(self):
         for mod in ('tokenize', 'time', 'marshal'):
             with self.subTest(module=mod):
@@ -360,6 +358,18 @@ class ReloadTests:
             ham = self.init.import_module(fullname)
             reloaded = self.init.reload(ham)
             self.assertIs(reloaded, ham)
+
+    def test_module_missing_spec(self):
+        #Test that reload() throws ModuleNotFounderror when reloading
+        # a module who's missing a spec. (bpo-29851)
+        name = 'spam'
+        with test_util.uncache(name):
+            module = sys.modules[name] = types.ModuleType(name)
+            # Sanity check by attempting an import.
+            module = self.init.import_module(name)
+            self.assertIsNone(module.__spec__)
+            with self.assertRaises(ModuleNotFoundError):
+                self.init.reload(module)
 
 
 (Frozen_ReloadTests,

@@ -1,0 +1,2 @@
+Fixed memory leaks in Tkinter's methods splitlist() and split() when pass a
+string larger than 2 GiB.

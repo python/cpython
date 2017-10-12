@@ -132,7 +132,7 @@ Standard names are defined for the following types:
    C".)
 
 
-.. data:: SlotWrapperType
+.. data:: WrapperDescriptorType
 
    The type of methods of some built-in data types and base classes such as
    :meth:`object.__init__` or :meth:`object.__lt__`.
