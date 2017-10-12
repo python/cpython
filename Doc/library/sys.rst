@@ -1279,7 +1279,7 @@ always available.
      are block-buffered like regular text files.
 
    * You can make ``stdout`` and ``stderr`` streams unbuffered by using the
-     the :option:`-u` command-line option.
+     :option:`-u` command-line option.
 
    .. note::
 
