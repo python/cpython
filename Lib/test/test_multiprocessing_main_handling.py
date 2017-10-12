@@ -1,7 +1,6 @@
 # tests __main__ module handling in multiprocessing
 from test import support
-# Skip tests if _thread or _multiprocessing wasn't built.
-support.import_module('_thread')
+# Skip tests if _multiprocessing wasn't built.
 support.import_module('_multiprocessing')
 
 import importlib
@@ -58,7 +57,7 @@ if __name__ == '__main__':
     p = Pool(5)
     results = []
     p.map_async(f, [1, 2, 3], callback=results.extend)
-    deadline = time.time() + 10 # up to 10 s to report the results
+    deadline = time.time() + 60 # up to 60 s to report the results
     while not results:
         time.sleep(0.05)
         if time.time() > deadline:

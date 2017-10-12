@@ -255,7 +255,7 @@ class TestMockingMagicMethods(unittest.TestCase):
 
         for entry in _magics:
             self.assertTrue(hasattr(mock, entry))
-        self.assertFalse(hasattr(mock, '__imaginery__'))
+        self.assertFalse(hasattr(mock, '__imaginary__'))
 
 
     def test_magic_mock_equality(self):

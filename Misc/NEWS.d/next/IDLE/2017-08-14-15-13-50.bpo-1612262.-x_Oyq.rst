@@ -1,0 +1,3 @@
+IDLE module browser now shows nested classes and functions.
+Original patches for code and tests by Guilherme Polo and
+Cheryl Sabella, respectively.

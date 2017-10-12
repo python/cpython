@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include <ctype.h>
 #include "structmember.h" /* we need the offsetof() macro from there */
 #include "longintrepr.h"
@@ -819,6 +820,21 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     PyObject *result = binary_op1(v, w, op_slot);
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
+
+        if (op_slot == NB_SLOT(nb_rshift) &&
+            PyCFunction_Check(v) &&
+            strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
+        {
+            PyErr_Format(PyExc_TypeError,
+                "unsupported operand type(s) for %.100s: "
+                "'%.100s' and '%.100s'. Did you mean \"print(<message>, "
+                "file=<output_stream>)\"?",
+                op_name,
+                v->ob_type->tp_name,
+                w->ob_type->tp_name);
+            return NULL;
+        }
+
         return binop_type_error(v, w, op_name);
     }
     return result;
@@ -1968,7 +1984,7 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
                 goto Done;
 
             default:
-                assert(!"unknown operation");
+                Py_UNREACHABLE();
             }
         }
 
@@ -2131,55 +2147,77 @@ PyMapping_HasKey(PyObject *o, PyObject *key)
     return 0;
 }
 
+/* This function is quite similar to PySequence_Fast(), but specialized to be
+   a helper for PyMapping_Keys(), PyMapping_Items() and PyMapping_Values().
+ */
+static PyObject *
+method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
+{
+    PyObject *it, *result, *meth_output;
+
+    assert(o != NULL);
+    meth_output = _PyObject_CallMethodId(o, meth_id, NULL);
+    if (meth_output == NULL || PyList_CheckExact(meth_output)) {
+        return meth_output;
+    }
+    it = PyObject_GetIter(meth_output);
+    if (it == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s.%U() returned a non-iterable (type %.200s)",
+                         Py_TYPE(o)->tp_name,
+                         meth_id->object,
+                         Py_TYPE(meth_output)->tp_name);
+        }
+        Py_DECREF(meth_output);
+        return NULL;
+    }
+    Py_DECREF(meth_output);
+    result = PySequence_List(it);
+    Py_DECREF(it);
+    return result;
+}
+
 PyObject *
 PyMapping_Keys(PyObject *o)
 {
-    PyObject *keys;
-    PyObject *fast;
     _Py_IDENTIFIER(keys);
 
-    if (PyDict_CheckExact(o))
+    if (o == NULL) {
+        return null_error();
+    }
+    if (PyDict_CheckExact(o)) {
         return PyDict_Keys(o);
-    keys = _PyObject_CallMethodId(o, &PyId_keys, NULL);
-    if (keys == NULL)
-        return NULL;
-    fast = PySequence_Fast(keys, "o.keys() are not iterable");
-    Py_DECREF(keys);
-    return fast;
+    }
+    return method_output_as_list(o, &PyId_keys);
 }
 
 PyObject *
 PyMapping_Items(PyObject *o)
 {
-    PyObject *items;
-    PyObject *fast;
     _Py_IDENTIFIER(items);
 
-    if (PyDict_CheckExact(o))
+    if (o == NULL) {
+        return null_error();
+    }
+    if (PyDict_CheckExact(o)) {
         return PyDict_Items(o);
-    items = _PyObject_CallMethodId(o, &PyId_items, NULL);
-    if (items == NULL)
-        return NULL;
-    fast = PySequence_Fast(items, "o.items() are not iterable");
-    Py_DECREF(items);
-    return fast;
+    }
+    return method_output_as_list(o, &PyId_items);
 }
 
 PyObject *
 PyMapping_Values(PyObject *o)
 {
-    PyObject *values;
-    PyObject *fast;
     _Py_IDENTIFIER(values);
 
-    if (PyDict_CheckExact(o))
+    if (o == NULL) {
+        return null_error();
+    }
+    if (PyDict_CheckExact(o)) {
         return PyDict_Values(o);
-    values = _PyObject_CallMethodId(o, &PyId_values, NULL);
-    if (values == NULL)
-        return NULL;
-    fast = PySequence_Fast(values, "o.values() are not iterable");
-    Py_DECREF(values);
-    return fast;
+    }
+    return method_output_as_list(o, &PyId_values);
 }
 
 /* isinstance(), issubclass() */
@@ -2558,8 +2596,8 @@ _PySequence_BytesToCharpArray(PyObject* self)
             array[i] = NULL;
             goto fail;
         }
-        data = PyBytes_AsString(item);
-        if (data == NULL) {
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(item, &data, NULL) < 0) {
             /* NULL terminate before freeing. */
             array[i] = NULL;
             goto fail;
