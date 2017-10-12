@@ -468,6 +468,20 @@ class SourceLoaderBadBytecodeTest:
                 bytecode_file.seek(4)
                 self.assertEqual(bytecode_file.read(4), source_timestamp)
 
+    # [bad mtime]
+    @util.writes_bytecode_files
+    def test_old_mtime(self):
+        # When the bytecode mtime is not newer than the source, regenerate it
+        with util.create_modules('_temp') as mapping:
+            py_compile.compile(mapping['_temp'])
+            bytecode_path = self.util.cache_from_source(mapping['_temp'])
+
+            os.utime(bytecode_path, (0,0))
+            old_mtime = os.path.getmtime(bytecode_path)
+            self.import_(mapping['_temp'], '_temp')
+
+            self.assertNotEqual(old_mtime, os.path.getmtime(bytecode_path))
+
     # [bytecode read-only]
     @util.writes_bytecode_files
     def test_read_only_bytecode(self):

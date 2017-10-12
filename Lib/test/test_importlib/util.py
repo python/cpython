@@ -11,7 +11,7 @@ import unittest
 import sys
 import tempfile
 import types
-
+import time
 
 BUILTINS = types.SimpleNamespace()
 BUILTINS.good_name = None
@@ -355,6 +355,10 @@ def create_modules(*names):
             file_path = os.path.join(file_path, name_parts[-1] + '.py')
             with open(file_path, 'w') as file:
                 file.write(source.format(name))
+
+            # create the module in the past so bytecode caches will be valid
+            os.utime(file_path, (time.time() - 1, time.time() - 1))
+
             created_paths.append(file_path)
             mapping[name] = file_path
         uncache_manager = uncache(*import_names)
