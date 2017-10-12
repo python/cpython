@@ -1,0 +1,2 @@
+Fix missing "raise from None" for a exception chain located at
+/Lib/xml/etree/ElementPath.py
