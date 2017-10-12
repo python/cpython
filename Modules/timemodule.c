@@ -20,6 +20,10 @@
 #include <io.h>
 #endif
 
+#if defined(HAVE_PTHREAD_H)
+#  include <pthread.h>
+#endif
+
 #if defined(__WATCOMC__) && !defined(__QNX__)
 #include <i86.h>
 #else
@@ -56,6 +60,13 @@ Fractions of a second may be present if the system clock provides them.");
 #endif
 #endif
 
+static PyObject*
+_PyFloat_FromPyTime(_PyTime_t t)
+{
+    double d = _PyTime_AsSecondsDouble(t);
+    return PyFloat_FromDouble(d);
+}
+
 static PyObject *
 floatclock(_Py_clock_info_t *info)
 {
@@ -77,47 +88,23 @@ floatclock(_Py_clock_info_t *info)
 }
 #endif /* HAVE_CLOCK */
 
-#ifdef MS_WINDOWS
-#define WIN32_PERF_COUNTER
-/* Win32 has better clock replacement; we have our own version, due to Mark
-   Hammond and Tim Peters */
 static PyObject*
-win_perf_counter(_Py_clock_info_t *info)
+perf_counter(_Py_clock_info_t *info)
 {
-    static LONGLONG cpu_frequency = 0;
-    static LONGLONG ctrStart;
-    LARGE_INTEGER now;
-    double diff;
-
-    if (cpu_frequency == 0) {
-        LARGE_INTEGER freq;
-        QueryPerformanceCounter(&now);
-        ctrStart = now.QuadPart;
-        if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
-            PyErr_SetFromWindowsErr(0);
-            return NULL;
-        }
-        cpu_frequency = freq.QuadPart;
+    double t;
+    if (_PyTime_GetPerfCounterDoubleWithInfo(&t, info) < 0) {
+        return NULL;
     }
-    QueryPerformanceCounter(&now);
-    diff = (double)(now.QuadPart - ctrStart);
-    if (info) {
-        info->implementation = "QueryPerformanceCounter()";
-        info->resolution = 1.0 / (double)cpu_frequency;
-        info->monotonic = 1;
-        info->adjustable = 0;
-    }
-    return PyFloat_FromDouble(diff / (double)cpu_frequency);
+    return PyFloat_FromDouble(t);
 }
-#endif   /* MS_WINDOWS */
 
-#if defined(WIN32_PERF_COUNTER) || defined(HAVE_CLOCK)
+#if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
 #define PYCLOCK
 static PyObject*
 pyclock(_Py_clock_info_t *info)
 {
-#ifdef WIN32_PERF_COUNTER
-    return win_perf_counter(info);
+#ifdef MS_WINDOWS
+    return perf_counter(info);
 #else
     return floatclock(info);
 #endif
@@ -220,6 +207,31 @@ PyDoc_STRVAR(clock_getres_doc,
 \n\
 Return the resolution (precision) of the specified clock clk_id.");
 #endif   /* HAVE_CLOCK_GETRES */
+
+#ifdef HAVE_PTHREAD_GETCPUCLOCKID
+static PyObject *
+time_pthread_getcpuclockid(PyObject *self, PyObject *args)
+{
+    unsigned long thread_id;
+    int err;
+    clockid_t clk_id;
+    if (!PyArg_ParseTuple(args, "k:pthread_getcpuclockid", &thread_id)) {
+        return NULL;
+    }
+    err = pthread_getcpuclockid((pthread_t)thread_id, &clk_id);
+    if (err) {
+        errno = err;
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return PyLong_FromLong(clk_id);
+}
+
+PyDoc_STRVAR(pthread_getcpuclockid_doc,
+"pthread_getcpuclockid(thread_id) -> int\n\
+\n\
+Return the clk_id of a thread's CPU time clock.");
+#endif /* HAVE_PTHREAD_GETCPUCLOCKID */
 
 static PyObject *
 time_sleep(PyObject *self, PyObject *obj)
@@ -415,7 +427,7 @@ When 'seconds' is not passed in, convert the current time instead.");
  * an exception and return 0 on error.
  */
 static int
-gettmarg(PyObject *args, struct tm *p)
+gettmarg(PyObject *args, struct tm *p, const char *format)
 {
     int y;
 
@@ -427,7 +439,7 @@ gettmarg(PyObject *args, struct tm *p)
         return 0;
     }
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiii",
+    if (!PyArg_ParseTuple(args, format,
                           &y, &p->tm_mon, &p->tm_mday,
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
@@ -586,8 +598,12 @@ time_strftime(PyObject *self, PyObject *args)
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
-    else if (!gettmarg(tup, &buf) || !checktm(&buf))
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;strftime(): illegal time tuple argument") ||
+             !checktm(&buf))
+    {
         return NULL;
+    }
 
 #if defined(_MSC_VER) || defined(sun) || defined(_AIX)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
@@ -776,9 +792,13 @@ time_asctime(PyObject *self, PyObject *args)
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
-
-    } else if (!gettmarg(tup, &buf) || !checktm(&buf))
+    }
+    else if (!gettmarg(tup, &buf,
+                       "iiiiiiiii;asctime(): illegal time tuple argument") ||
+             !checktm(&buf))
+    {
         return NULL;
+    }
     return _asctime(&buf);
 }
 
@@ -814,8 +834,11 @@ time_mktime(PyObject *self, PyObject *tup)
 {
     struct tm buf;
     time_t tt;
-    if (!gettmarg(tup, &buf))
+    if (!gettmarg(tup, &buf,
+                  "iiiiiiiii;mktime(): illegal time tuple argument"))
+    {
         return NULL;
+    }
 #ifdef _AIX
     /* year < 1902 or year > 2037 */
     if (buf.tm_year < 2 || buf.tm_year > 137) {
@@ -899,13 +922,11 @@ static PyObject *
 pymonotonic(_Py_clock_info_t *info)
 {
     _PyTime_t t;
-    double d;
     if (_PyTime_GetMonotonicClockWithInfo(&t, info) < 0) {
         assert(info != NULL);
         return NULL;
     }
-    d = _PyTime_AsSecondsDouble(t);
-    return PyFloat_FromDouble(d);
+    return _PyFloat_FromPyTime(t);
 }
 
 static PyObject *
@@ -918,16 +939,6 @@ PyDoc_STRVAR(monotonic_doc,
 "monotonic() -> float\n\
 \n\
 Monotonic clock, cannot go backward.");
-
-static PyObject*
-perf_counter(_Py_clock_info_t *info)
-{
-#ifdef WIN32_PERF_COUNTER
-    return win_perf_counter(info);
-#else
-    return pymonotonic(info);
-#endif
-}
 
 static PyObject *
 time_perf_counter(PyObject *self, PyObject *unused)
@@ -1277,6 +1288,9 @@ static PyMethodDef time_methods[] = {
 #ifdef HAVE_CLOCK_GETRES
     {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
 #endif
+#ifdef HAVE_PTHREAD_GETCPUCLOCKID
+    {"pthread_getcpuclockid", time_pthread_getcpuclockid, METH_VARARGS, pthread_getcpuclockid_doc},
+#endif
     {"sleep",           time_sleep, METH_O, sleep_doc},
     {"gmtime",          time_gmtime, METH_VARARGS, gmtime_doc},
     {"localtime",       time_localtime, METH_VARARGS, localtime_doc},
@@ -1322,28 +1336,7 @@ The tuple items are:\n\
   DST (Daylight Savings Time) flag (-1, 0 or 1)\n\
 If the DST flag is 0, the time is given in the regular time zone;\n\
 if it is 1, the time is given in the DST time zone;\n\
-if it is -1, mktime() should guess based on the date and time.\n\
-\n\
-Variables:\n\
-\n\
-timezone -- difference in seconds between UTC and local standard time\n\
-altzone -- difference in  seconds between UTC and local DST time\n\
-daylight -- whether local time should reflect DST\n\
-tzname -- tuple of (standard time zone name, DST time zone name)\n\
-\n\
-Functions:\n\
-\n\
-time() -- return current time in seconds since the Epoch as a float\n\
-clock() -- return CPU time since process start as a float\n\
-sleep() -- delay for a number of seconds given as a float\n\
-gmtime() -- convert seconds since Epoch to UTC tuple\n\
-localtime() -- convert seconds since Epoch to local time tuple\n\
-asctime() -- convert time tuple to string\n\
-ctime() -- convert time in seconds to string\n\
-mktime() -- convert local time tuple to seconds since Epoch\n\
-strftime() -- convert time tuple to string according to format specification\n\
-strptime() -- parse string to time tuple according to format specification\n\
-tzset() -- change the local timezone");
+if it is -1, mktime() should guess based on the date and time.\n");
 
 
 
@@ -1405,13 +1398,11 @@ static PyObject*
 floattime(_Py_clock_info_t *info)
 {
     _PyTime_t t;
-    double d;
     if (_PyTime_GetSystemClockWithInfo(&t, info) < 0) {
         assert(info != NULL);
         return NULL;
     }
-    d = _PyTime_AsSecondsDouble(t);
-    return PyFloat_FromDouble(d);
+    return _PyFloat_FromPyTime(t);
 }
 
 

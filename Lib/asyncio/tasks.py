@@ -144,6 +144,7 @@ class Task(futures.Future):
         terminates with a CancelledError exception (even if cancel()
         was not called).
         """
+        self._log_traceback = False
         if self.done():
             return False
         if self._fut_waiter is not None:
@@ -332,6 +333,15 @@ def wait_for(fut, timeout, *, loop=None):
 
     if timeout is None:
         return (yield from fut)
+
+    if timeout <= 0:
+        fut = ensure_future(fut, loop=loop)
+
+        if fut.done():
+            return fut.result()
+
+        fut.cancel()
+        raise futures.TimeoutError()
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)

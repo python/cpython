@@ -6,7 +6,7 @@
                 <File Name="LICENSE.txt" Source="LICENSE" KeyPath="yes" />
             </Component>
             <Component Id="NEWS.txt" Directory="InstallDirectory" Guid="*">
-                <File Name="NEWS.txt" Source="!(bindpath.src)Misc\NEWS" KeyPath="yes" />
+                <File Name="NEWS.txt" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>

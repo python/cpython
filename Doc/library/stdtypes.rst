@@ -39,31 +39,26 @@ Truth Value Testing
    single: false
 
 Any object can be tested for truth value, for use in an :keyword:`if` or
-:keyword:`while` condition or as operand of the Boolean operations below. The
-following values are considered false:
-
-  .. index:: single: None (Built-in object)
-
-* ``None``
-
-  .. index:: single: False (Built-in object)
-
-* ``False``
-
-* zero of any numeric type, for example, ``0``, ``0.0``, ``0j``.
-
-* any empty sequence, for example, ``''``, ``()``, ``[]``.
-
-* any empty mapping, for example, ``{}``.
-
-* instances of user-defined classes, if the class defines a :meth:`__bool__` or
-  :meth:`__len__` method, when that method returns the integer zero or
-  :class:`bool` value ``False``. [1]_
+:keyword:`while` condition or as operand of the Boolean operations below.
 
 .. index:: single: true
 
-All other values are considered true --- so objects of many types are always
-true.
+By default, an object is considered true unless its class defines either a
+:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+returns zero, when called with the object. [1]_  Here are most of the built-in
+objects considered false:
+
+  .. index::
+     single: None (Built-in object)
+     single: False (Built-in object)
+
+* constants defined to be false: ``None`` and ``False``.
+
+* zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
+  ``Fraction(0, 1)``
+
+* empty sequences and collections: ``''``, ``()``, ``[]``, ``{}``, ``set()``,
+  ``range(0)``
 
 .. index::
    operator: or
@@ -354,7 +349,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/8.0.0/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/10.0.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -394,10 +389,12 @@ Bitwise Operations on Integer Types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
+   operator: |
    operator: ^
    operator: &
    operator: <<
    operator: >>
+   operator: ~
 
 Bitwise operations only make sense for integers.  Negative numbers are treated
 as their 2's complement value (this assumes that there are enough bits so that
@@ -1159,7 +1156,7 @@ application).
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
 
-   .. method:: list.sort(*, key=None, reverse=None)
+   .. method:: list.sort(*, key=None, reverse=False)
 
       This method sorts the list in place, using only ``<`` comparisons
       between items. Exceptions are not suppressed - if any comparison operations
@@ -1719,10 +1716,10 @@ expression support in the :mod:`re` module).
 
 .. method:: str.join(iterable)
 
-   Return a string which is the concatenation of the strings in the
-   :term:`iterable` *iterable*.  A :exc:`TypeError` will be raised if there are
-   any non-string values in *iterable*, including :class:`bytes` objects.  The
-   separator between elements is the string providing this method.
+   Return a string which is the concatenation of the strings in *iterable*.
+   A :exc:`TypeError` will be raised if there are any non-string values in
+   *iterable*, including :class:`bytes` objects.  The separator between
+   elements is the string providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])
@@ -2554,11 +2551,11 @@ arbitrary binary data.
             bytearray.join(iterable)
 
    Return a bytes or bytearray object which is the concatenation of the
-   binary data sequences in the :term:`iterable` *iterable*.  A
-   :exc:`TypeError` will be raised if there are any values in *iterable*
-   that are not :term:`bytes-like objects <bytes-like object>`, including
-   :class:`str` objects.  The separator between elements is the contents
-   of the bytes or bytearray object providing this method.
+   binary data sequences in *iterable*.  A :exc:`TypeError` will be raised
+   if there are any values in *iterable* that are not :term:`bytes-like
+   objects <bytes-like object>`, including :class:`str` objects.  The
+   separator between elements is the contents of the bytes or
+   bytearray object providing this method.
 
 
 .. staticmethod:: bytes.maketrans(from, to)
@@ -3997,9 +3994,7 @@ The constructors for both classes work the same:
 
    Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
    :meth:`discard` methods may be a set.  To support searching for an equivalent
-   frozenset, the *elem* set is temporarily mutated during the search and then
-   restored.  During the search, the *elem* set should not be read or mutated
-   since it does not have a meaningful value.
+   frozenset, a temporary one is created from *elem*.
 
 
 .. _typesmapping:

@@ -308,7 +308,7 @@ static PyTypeObject Null_Type = {
     0,                          /*tp_dictoffset*/
     0,                          /*tp_init*/
     0,                          /*tp_alloc*/
-    0, /* see PyInit_xx */      /*tp_new*/
+    PyType_GenericNew,          /*tp_new*/
     0,                          /*tp_free*/
     0,                          /*tp_is_gc*/
 };
@@ -338,11 +338,19 @@ PyDoc_STRVAR(module_doc,
 static int
 xx_exec(PyObject *m)
 {
-    /* Due to cross platform compiler issues the slots must be filled
-     * here. It's required for portability to Windows without requiring
-     * C++. */
+    /* Slot initialization is subject to the rules of initializing globals.
+       C99 requires the initializers to be "address constants".  Function
+       designators like 'PyType_GenericNew', with implicit conversion to
+       a pointer, are valid C99 address constants.
+
+       However, the unary '&' operator applied to a non-static variable
+       like 'PyBaseObject_Type' is not required to produce an address
+       constant.  Compilers may support this (gcc does), MSVC does not.
+
+       Both compilers are strictly standard conforming in this particular
+       behavior.
+    */
     Null_Type.tp_base = &PyBaseObject_Type;
-    Null_Type.tp_new = PyType_GenericNew;
     Str_Type.tp_base = &PyUnicode_Type;
 
     /* Finalize the type object including setting type of the new type
