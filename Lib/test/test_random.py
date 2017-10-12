@@ -1,6 +1,7 @@
 import unittest
 import unittest.mock
 import random
+import os
 import time
 import pickle
 import warnings
@@ -8,6 +9,7 @@ from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
+
 
 class TestBasicOps:
     # Superclass with tests common to all generators.
@@ -50,7 +52,7 @@ class TestBasicOps:
     @unittest.mock.patch('random._urandom') # os.urandom
     def test_seed_when_randomness_source_not_found(self, urandom_mock):
         # Random.seed() uses time.time() when an operating system specific
-        # randomness source is not found. To test this on machines were it
+        # randomness source is not found. To test this on machines where it
         # exists, run the above test, test_seedargs(), again after mocking
         # os.urandom() so that it raises the exception expected when the
         # randomness source is not available.
@@ -88,6 +90,15 @@ class TestBasicOps:
         self.assertTrue(lst != shuffled_lst)
         shuffle(lst)
         self.assertTrue(lst != shuffled_lst)
+        self.assertRaises(TypeError, shuffle, (1, 2, 3))
+
+    def test_shuffle_random_argument(self):
+        # Test random argument to shuffle.
+        shuffle = self.gen.shuffle
+        mock_random = unittest.mock.Mock(return_value=0.5)
+        seq = bytearray(b'abcdefghijk')
+        shuffle(seq, mock_random)
+        mock_random.assert_called_with()
 
     def test_choice(self):
         choice = self.gen.choice
@@ -418,6 +429,44 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual([self.gen.random().hex() for i in range(4)],
             ['0x1.b0580f98a7dbep-1', '0x1.84129978f9c1ap-1',
              '0x1.aeaa51052e978p-2', '0x1.092178fb945a6p-2'])
+
+    def test_bug_31478(self):
+        # There shouldn't be an assertion failure in _random.Random.seed() in
+        # case the argument has a bad __abs__() method.
+        class BadInt(int):
+            def __abs__(self):
+                return None
+        try:
+            self.gen.seed(BadInt())
+        except TypeError:
+            pass
+
+    def test_bug_31482(self):
+        # Verify that version 1 seeds are unaffected by hash randomization
+        # when the seeds are expressed as bytes rather than strings.
+        # The hash(b) values listed are the Python2.7 hash() values
+        # which were used for seeding.
+
+        self.gen.seed(b'nofar', version=1)   # hash('nofar') == 5990528763808513177
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.8645314505ad7p-1', '0x1.afb1f82e40a40p-5',
+             '0x1.2a59d2285e971p-1', '0x1.56977142a7880p-6'])
+
+        self.gen.seed(b'rachel', version=1)  # hash('rachel') == -9091735575445484789
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.0b294cc856fcdp-1', '0x1.2ad22d79e77b8p-3',
+             '0x1.3052b9c072678p-2', '0x1.578f332106574p-3'])
+
+        self.gen.seed(b'', version=1)        # hash('') == 0
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.b0580f98a7dbep-1', '0x1.84129978f9c1ap-1',
+             '0x1.aeaa51052e978p-2', '0x1.092178fb945a6p-2'])
+
+        b = b'\x00\x20\x40\x60\x80\xA0\xC0\xE0\xF0'
+        self.gen.seed(b, version=1)         # hash(b) == 5015594239749365497
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.52c2fde444d23p-1', '0x1.875174f0daea4p-2',
+             '0x1.9e9b2c50e5cd2p-1', '0x1.fa57768bd321cp-2'])
 
     def test_setstate_first_arg(self):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))
@@ -891,6 +940,30 @@ class TestModule(unittest.TestCase):
             def __init__(self, newarg=None):
                 random.Random.__init__(self)
         Subclass(newarg=1)
+
+    @unittest.skipUnless(hasattr(os, "fork"), "fork() required")
+    def test_after_fork(self):
+        # Test the global Random instance gets reseeded in child
+        r, w = os.pipe()
+        pid = os.fork()
+        if pid == 0:
+            # child process
+            try:
+                val = random.getrandbits(128)
+                with open(w, "w") as f:
+                    f.write(str(val))
+            finally:
+                os._exit(0)
+        else:
+            # parent process
+            os.close(w)
+            val = random.getrandbits(128)
+            with open(r, "r") as f:
+                child_val = eval(f.read())
+            self.assertNotEqual(val, child_val)
+
+            pid, status = os.waitpid(pid, 0)
+            self.assertEqual(status, 0)
 
 
 if __name__ == "__main__":

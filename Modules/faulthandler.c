@@ -17,9 +17,7 @@
 /* Allocate at maximum 100 MB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
 
-#ifdef WITH_THREAD
-#  define FAULTHANDLER_LATER
-#endif
+#define FAULTHANDLER_LATER
 
 #ifndef MS_WINDOWS
    /* register() is useless on Windows, because only SIGSEGV, SIGABRT and
@@ -228,19 +226,15 @@ faulthandler_dump_traceback(int fd, int all_threads,
 
     reentrant = 1;
 
-#ifdef WITH_THREAD
     /* SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals and
        are thus delivered to the thread that caused the fault. Get the Python
        thread state of the current thread.
 
        PyThreadState_Get() doesn't give the state of the thread that caused the
        fault if the thread released the GIL, and so this function cannot be
-       used. Read the thread local storage (TLS) instead: call
+       used. Read the thread specific storage (TSS) instead: call
        PyGILState_GetThisThreadState(). */
     tstate = PyGILState_GetThisThreadState();
-#else
-    tstate = _PyThreadState_UncheckedGet();
-#endif
 
     if (all_threads) {
         (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
@@ -366,6 +360,23 @@ faulthandler_fatal_error(int signum)
 }
 
 #ifdef MS_WINDOWS
+static int
+faulthandler_ignore_exception(DWORD code)
+{
+    /* bpo-30557: ignore exceptions which are not errors */
+    if (!(code & 0x80000000)) {
+        return 1;
+    }
+    /* bpo-31701: ignore MSC and COM exceptions
+       E0000000 + code */
+    if (code == 0xE06D7363 /* MSC exception ("Emsc") */
+        || code == 0xE0434352 /* COM Callable Runtime exception ("ECCR") */) {
+        return 1;
+    }
+    /* Interesting exception: log it with the Python traceback */
+    return 0;
+}
+
 static LONG WINAPI
 faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 {
@@ -373,9 +384,8 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     DWORD code = exc_info->ExceptionRecord->ExceptionCode;
     DWORD flags = exc_info->ExceptionRecord->ExceptionFlags;
 
-    /* only log fatal exceptions */
-    if (flags & EXCEPTION_NONCONTINUABLE) {
-        /* call the next exception handler */
+    if (faulthandler_ignore_exception(code)) {
+        /* ignore the exception: call the next exception handler */
         return EXCEPTION_CONTINUE_SEARCH;
     }
 
@@ -391,8 +401,8 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     case EXCEPTION_IN_PAGE_ERROR: PUTS(fd, "page error"); break;
     case EXCEPTION_STACK_OVERFLOW: PUTS(fd, "stack overflow"); break;
     default:
-        PUTS(fd, "code ");
-        _Py_DumpDecimal(fd, code);
+        PUTS(fd, "code 0x");
+        _Py_DumpHexadecimal(fd, code, 8);
     }
     PUTS(fd, "\n\n");
 
@@ -977,7 +987,6 @@ faulthandler_sigsegv(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-#ifdef WITH_THREAD
 static void
 faulthandler_fatal_error_thread(void *plock)
 {
@@ -1027,7 +1036,6 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
 
     Py_RETURN_NONE;
 }
-#endif
 
 static PyObject *
 faulthandler_sigfpe(PyObject *self, PyObject *args)
@@ -1198,11 +1206,9 @@ static PyMethodDef module_methods[] = {
                "a SIGSEGV or SIGBUS signal depending on the platform")},
     {"_sigsegv", faulthandler_sigsegv, METH_VARARGS,
      PyDoc_STR("_sigsegv(release_gil=False): raise a SIGSEGV signal")},
-#ifdef WITH_THREAD
     {"_fatal_error_c_thread", faulthandler_fatal_error_c_thread, METH_NOARGS,
      PyDoc_STR("fatal_error_c_thread(): "
                "call Py_FatalError() in a new C thread.")},
-#endif
     {"_sigabrt", faulthandler_sigabrt, METH_NOARGS,
      PyDoc_STR("_sigabrt(): raise a SIGABRT signal")},
     {"_sigfpe", (PyCFunction)faulthandler_sigfpe, METH_NOARGS,
