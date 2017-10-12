@@ -196,9 +196,9 @@ are always available.  They are listed here in alphabetical order.
    base 16).  :exc:`ValueError` will be raised if *i* is outside that range.
 
 
-.. function:: classmethod(function)
+.. decorator:: classmethod
 
-   Return a class method for *function*.
+   Transform a method into a class method.
 
    A class method receives the class as implicit first argument, just like an
    instance method receives the instance. To declare a class method, use this
@@ -1398,9 +1398,9 @@ are always available.  They are listed here in alphabetical order.
 
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
-.. function:: staticmethod(function)
+.. decorator:: staticmethod
 
-   Return a static method for *function*.
+   Transform a method into a static method.
 
    A static method does not receive an implicit first argument. To declare a static
    method, use this idiom::
