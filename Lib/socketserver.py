@@ -127,10 +127,7 @@ import socket
 import selectors
 import os
 import sys
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
+import threading
 from io import BufferedIOBase
 from time import monotonic as time
 
@@ -547,7 +544,7 @@ if hasattr(os, "fork"):
         active_children = None
         max_children = 40
 
-        def collect_children(self):
+        def collect_children(self, *, blocking=False):
             """Internal routine to wait for children that have exited."""
             if self.active_children is None:
                 return
@@ -571,7 +568,8 @@ if hasattr(os, "fork"):
             # Now reap all defunct children.
             for pid in self.active_children.copy():
                 try:
-                    pid, _ = os.waitpid(pid, os.WNOHANG)
+                    flags = 0 if blocking else os.WNOHANG
+                    pid, _ = os.waitpid(pid, flags)
                     # if the child hasn't exited yet, pid will be 0 and ignored by
                     # discard() below
                     self.active_children.discard(pid)
@@ -620,6 +618,10 @@ if hasattr(os, "fork"):
                     finally:
                         os._exit(status)
 
+        def server_close(self):
+            super().server_close()
+            self.collect_children(blocking=True)
+
 
 class ThreadingMixIn:
     """Mix-in class to handle each request in a new thread."""
@@ -627,6 +629,9 @@ class ThreadingMixIn:
     # Decides how threads will act upon termination of the
     # main process
     daemon_threads = False
+    # For non-daemonic threads, list of threading.Threading objects
+    # used by server_close() to wait for all threads completion.
+    _threads = None
 
     def process_request_thread(self, request, client_address):
         """Same as in BaseServer but as a thread.
@@ -646,7 +651,19 @@ class ThreadingMixIn:
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         t.daemon = self.daemon_threads
+        if not t.daemon:
+            if self._threads is None:
+                self._threads = []
+            self._threads.append(t)
         t.start()
+
+    def server_close(self):
+        super().server_close()
+        threads = self._threads
+        self._threads = None
+        if threads:
+            for thread in threads:
+                thread.join()
 
 
 if hasattr(os, "fork"):

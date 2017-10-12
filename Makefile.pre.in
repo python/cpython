@@ -38,7 +38,6 @@ CXX=		@CXX@
 MAINCC=		@MAINCC@
 LINKCC=		@LINKCC@
 AR=		@AR@
-RANLIB=		@RANLIB@
 READELF=	@READELF@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
@@ -220,7 +219,6 @@ LIBC=		@LIBC@
 SYSLIBS=	$(LIBM) $(LIBC)
 SHLIBS=		@SHLIBS@
 
-THREADOBJ=	@THREADOBJ@
 DLINCLDIR=	@DLINCLDIR@
 DYNLOADFILE=	@DYNLOADFILE@
 MACHDEP_OBJS=	@MACHDEP_OBJS@
@@ -231,6 +229,7 @@ PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
 PYTHON_FOR_REGEN=@PYTHON_FOR_REGEN@
+UPDATE_FILE=@PYTHON_FOR_REGEN@ $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
@@ -354,6 +353,7 @@ PYTHON_OBJS=	\
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
+		Python/thread.o \
 		Python/traceback.o \
 		Python/getopt.o \
 		Python/pystrcmp.o \
@@ -365,7 +365,6 @@ PYTHON_OBJS=	\
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
-		$(THREADOBJ) \
 		$(DTRACE_OBJS)
 
 
@@ -464,7 +463,7 @@ profile-opt:
 	$(MAKE) profile-removal
 
 build_all_generate_profile:
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LIBS="$(LIBS)"
+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_GEN_FLAG)" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
 
 run_profile_task:
 	@ # FIXME: can't run for a cross build
@@ -474,7 +473,7 @@ build_all_merge_profile:
 	$(LLVM_PROF_MERGER)
 
 build_all_use_profile:
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_USE_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) @LTOFLAGS@"
+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_USE_FLAG)" LDFLAGS="$(LDFLAGS)"
 
 # Compile and run with gcov
 .PHONY=coverage coverage-lcov coverage-report
@@ -577,16 +576,9 @@ sharedmods: $(BUILDPYTHON) pybuilddir.txt Modules/_math.o
 
 
 # Build static library
-# avoid long command lines, same as LIBRARY_OBJS
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ Modules/getbuildinfo.o
-	$(AR) $(ARFLAGS) $@ $(PARSER_OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJECT_OBJS)
-	$(AR) $(ARFLAGS) $@ $(PYTHON_OBJS) Python/frozen.o
-	$(AR) $(ARFLAGS) $@ $(MODULE_OBJS)
-	$(AR) $(ARFLAGS) $@ $(MODOBJS)
-	$(RANLIB) $@
+	$(AR) $(ARFLAGS) $@ $(LIBRARY_OBJS)
 
 libpython$(LDVERSION).so: $(LIBRARY_OBJS)
 	if test $(INSTSONAME) != $(LDLIBRARY); then \
@@ -655,12 +647,10 @@ oldsharedmods: $(SHAREDMODS)
 Makefile Modules/config.c: Makefile.pre \
 				$(srcdir)/Modules/config.c.in \
 				$(MAKESETUP) \
-				Modules/Setup.config \
 				Modules/Setup \
 				Modules/Setup.local
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
-				Modules/Setup.config \
 				Modules/Setup.local \
 				Modules/Setup
 	@mv config.c Modules
@@ -694,12 +684,14 @@ regen-importlib: Programs/_freeze_importlib
 	# from Lib/importlib/_bootstrap_external.py using _freeze_importlib
 	./Programs/_freeze_importlib \
 	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
-	    $(srcdir)/Python/importlib_external.h
+	    $(srcdir)/Python/importlib_external.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
 	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
 	# using _freeze_importlib
 	./Programs/_freeze_importlib \
 	    $(srcdir)/Lib/importlib/_bootstrap.py \
-	    $(srcdir)/Python/importlib.h
+	    $(srcdir)/Python/importlib.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
 
 
 ############################################################################
@@ -773,8 +765,10 @@ regen-grammar: $(PGEN)
 	# from Grammar/Grammar using pgen
 	@$(MKDIR_P) Include
 	$(PGEN) $(srcdir)/Grammar/Grammar \
-		$(srcdir)/Include/graminit.h \
-		$(srcdir)/Python/graminit.c
+		$(srcdir)/Include/graminit.h.new \
+		$(srcdir)/Python/graminit.c.new
+	$(UPDATE_FILE) $(srcdir)/Include/graminit.h $(srcdir)/Include/graminit.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/graminit.c $(srcdir)/Python/graminit.c.new
 
 Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
 				$(srcdir)/Include/token.h \
@@ -792,13 +786,15 @@ regen-ast:
 	# Regenerate Include/Python-ast.h using Parser/asdl_c.py -h
 	$(MKDIR_P) $(srcdir)/Include
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
-		-h $(srcdir)/Include \
+		-h $(srcdir)/Include/Python-ast.h.new \
 		$(srcdir)/Parser/Python.asdl
+	$(UPDATE_FILE) $(srcdir)/Include/Python-ast.h $(srcdir)/Include/Python-ast.h.new
 	# Regenerate Python/Python-ast.c using Parser/asdl_c.py -c
 	$(MKDIR_P) $(srcdir)/Python
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
-		-c $(srcdir)/Python \
+		-c $(srcdir)/Python/Python-ast.c.new \
 		$(srcdir)/Parser/Python.asdl
+	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
 
 .PHONY: regen-opcode
 regen-opcode:
@@ -806,7 +802,8 @@ regen-opcode:
 	# using Tools/scripts/generate_opcode_h.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
-		$(srcdir)/Include/opcode.h
+		$(srcdir)/Include/opcode.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 
 Python/compile.o Python/symtable.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
 
@@ -863,7 +860,8 @@ regen-opcode-targets:
 	# Regenerate Python/opcode_targets.h from Lib/opcode.py
 	# using Python/makeopcodetargets.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Python/makeopcodetargets.py \
-		$(srcdir)/Python/opcode_targets.h
+		$(srcdir)/Python/opcode_targets.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h
 
@@ -890,7 +888,8 @@ regen-typeslots:
 	# using Objects/typeslots.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Objects/typeslots.py \
 		< $(srcdir)/Include/typeslots.h \
-		$(srcdir)/Objects/typeslots.inc
+		$(srcdir)/Objects/typeslots.inc.new
+	$(UPDATE_FILE) $(srcdir)/Objects/typeslots.inc $(srcdir)/Objects/typeslots.inc.new
 
 ############################################################################
 # Header files
@@ -987,6 +986,12 @@ PYTHON_HEADERS= \
 		pyconfig.h \
 		$(PARSER_HEADERS) \
 		$(srcdir)/Include/Python-ast.h \
+		$(srcdir)/Include/internal/ceval.h \
+		$(srcdir)/Include/internal/gil.h \
+		$(srcdir)/Include/internal/mem.h \
+		$(srcdir)/Include/internal/pymalloc.h \
+		$(srcdir)/Include/internal/pystate.h \
+		$(srcdir)/Include/internal/warnings.h \
 		$(DTRACE_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
@@ -998,6 +1003,8 @@ TESTOPTS=	$(EXTRATESTOPTS)
 TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) $(TESTPYTHONOPTS)
 TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
 TESTTIMEOUT=	1200
+
+.PHONY: test testall testuniversal buildbottest pythoninfo
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
@@ -1037,6 +1044,9 @@ buildbottest:	build_all platform
 		fi
 		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
+pythoninfo: build_all
+		$(RUNSHARED) ./$(BUILDPYTHON) -m test.pythoninfo
+
 QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multibytecodec test_urllib2_localnet test_itertools \
 		test_multiprocessing_fork test_multiprocessing_spawn \
@@ -1046,6 +1056,13 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 quicktest:	@DEF_MAKE_RULE@ platform
 		$(TESTRUNNER) $(QUICKTESTOPTS)
 
+# SSL tests
+.PHONY: multisslcompile multissltest
+multisslcompile: build_all
+	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py --compile-only
+
+multissltest: build_all
+	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py
 
 install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
@@ -1204,6 +1221,8 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
 		test/test_import/data/circular_imports/subpkg \
+		test/test_import/data/package \
+		test/test_import/data/package2 \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
@@ -1395,7 +1414,6 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 				$(INSTALL_DATA) $(LDLIBRARY) $(DESTDIR)$(LIBPL) ; \
 			else \
 				$(INSTALL_DATA) $(LIBRARY) $(DESTDIR)$(LIBPL)/$(LIBRARY) ; \
-				$(RANLIB) $(DESTDIR)$(LIBPL)/$(LIBRARY) ; \
 			fi; \
 		else \
 			echo Skip install of $(LIBRARY) - use make frameworkinstall; \
@@ -1407,7 +1425,6 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
 	$(INSTALL_DATA) Modules/Setup $(DESTDIR)$(LIBPL)/Setup
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
-	$(INSTALL_DATA) Modules/Setup.config $(DESTDIR)$(LIBPL)/Setup.config
 	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
@@ -1564,7 +1581,7 @@ autoconf:
 # Create a tags file for vi
 tags::
 	cd $(srcdir); \
-	ctags -w Include/*.h; \
+	ctags -w Include/*.h Include/internal/*.h; \
 	for i in $(SRCDIRS); do ctags -f tags -w -a $$i/*.[ch]; \
 	done; \
 	LC_ALL=C sort -o tags tags
@@ -1572,7 +1589,7 @@ tags::
 # Create a tags file for GNU Emacs
 TAGS::
 	cd $(srcdir); \
-	etags Include/*.h; \
+	etags Include/*.h Include/internal/*.h; \
 	for i in $(SRCDIRS); do etags -a $$i/*.[ch]; done
 
 # Sanitation targets -- clean leaves libraries, executables and tags
@@ -1628,7 +1645,7 @@ distclean: clobber
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
 	done
 	-rm -f core Makefile Makefile.pre config.status \
-		Modules/Setup Modules/Setup.local Modules/Setup.config \
+		Modules/Setup Modules/Setup.local \
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-config.sh
 	-rm -f python*-gdb.py

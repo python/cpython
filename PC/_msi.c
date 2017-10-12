@@ -948,8 +948,8 @@ static PyTypeObject msidb_Type = {
 };
 
 #define Py_NOT_PERSIST(x, flag)                        \
-    (x != (int)(flag) &&                      \
-    x != ((int)(flag) | MSIDBOPEN_PATCHFILE))
+    (x != (SIZE_T)(flag) &&                      \
+    x != ((SIZE_T)(flag) | MSIDBOPEN_PATCHFILE))
 
 #define Py_INVALID_PERSIST(x)                \
     (Py_NOT_PERSIST(x, MSIDBOPEN_READONLY) &&  \
@@ -972,7 +972,7 @@ static PyObject* msiopendb(PyObject *obj, PyObject *args)
        behavior. */
     if (Py_INVALID_PERSIST(persist))
         return msierror(ERROR_INVALID_PARAMETER);
-    status = MsiOpenDatabase(path, (LPCSTR)persist, &h);
+    status = MsiOpenDatabase(path, (LPCSTR)(SIZE_T)persist, &h);
     if (status != ERROR_SUCCESS)
         return msierror(status);
 
@@ -1038,12 +1038,12 @@ PyInit__msi(void)
     if (m == NULL)
         return NULL;
 
-    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATEDIRECT", (long)MSIDBOPEN_CREATEDIRECT);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATE", (long)MSIDBOPEN_CREATE);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_DIRECT", (long)MSIDBOPEN_DIRECT);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_READONLY", (long)MSIDBOPEN_READONLY);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_TRANSACT", (long)MSIDBOPEN_TRANSACT);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_PATCHFILE", (long)MSIDBOPEN_PATCHFILE);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATEDIRECT", (long)(SIZE_T)MSIDBOPEN_CREATEDIRECT);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATE", (long)(SIZE_T)MSIDBOPEN_CREATE);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_DIRECT", (long)(SIZE_T)MSIDBOPEN_DIRECT);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_READONLY", (long)(SIZE_T)MSIDBOPEN_READONLY);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_TRANSACT", (long)(SIZE_T)MSIDBOPEN_TRANSACT);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_PATCHFILE", (long)(SIZE_T)MSIDBOPEN_PATCHFILE);
 
     PyModule_AddIntMacro(m, MSICOLINFO_NAMES);
     PyModule_AddIntMacro(m, MSICOLINFO_TYPES);

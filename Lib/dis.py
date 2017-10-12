@@ -32,20 +32,30 @@ def _try_compile(source, name):
     return c
 
 def dis(x=None, *, file=None, depth=None):
-    """Disassemble classes, methods, functions, generators, or code.
+    """Disassemble classes, methods, functions, and other compiled objects.
 
     With no argument, disassemble the last traceback.
 
+    Compiled objects currently include generator objects, async generator
+    objects, and coroutine objects, all of which store their code object
+    in a special attribute.
     """
     if x is None:
         distb(file=file)
         return
-    if hasattr(x, '__func__'):  # Method
+    # Extract functions from methods.
+    if hasattr(x, '__func__'):
         x = x.__func__
-    if hasattr(x, '__code__'):  # Function
+    # Extract compiled code objects from...
+    if hasattr(x, '__code__'):  # ...a function, or
         x = x.__code__
-    if hasattr(x, 'gi_code'):  # Generator
+    elif hasattr(x, 'gi_code'):  #...a generator object, or
         x = x.gi_code
+    elif hasattr(x, 'ag_code'):  #...an asynchronous generator object, or
+        x = x.ag_code
+    elif hasattr(x, 'cr_code'):  #...a coroutine.
+        x = x.cr_code
+    # Perform the disassembly.
     if hasattr(x, '__dict__'):  # Class or module
         items = sorted(x.__dict__.items())
         for name, x1 in items:
@@ -107,16 +117,24 @@ def pretty_flags(flags):
     return ", ".join(names)
 
 def _get_code_object(x):
-    """Helper to handle methods, functions, generators, strings and raw code objects"""
-    if hasattr(x, '__func__'): # Method
+    """Helper to handle methods, compiled or raw code objects, and strings."""
+    # Extract functions from methods.
+    if hasattr(x, '__func__'):
         x = x.__func__
-    if hasattr(x, '__code__'): # Function
+    # Extract compiled code objects from...
+    if hasattr(x, '__code__'):  # ...a function, or
         x = x.__code__
-    if hasattr(x, 'gi_code'):  # Generator
+    elif hasattr(x, 'gi_code'):  #...a generator object, or
         x = x.gi_code
-    if isinstance(x, str):     # Source code
+    elif hasattr(x, 'ag_code'):  #...an asynchronous generator object, or
+        x = x.ag_code
+    elif hasattr(x, 'cr_code'):  #...a coroutine.
+        x = x.cr_code
+    # Handle source code.
+    if isinstance(x, str):
         x = _try_compile(x, "<disassembly>")
-    if hasattr(x, 'co_code'):  # Code object
+    # By now, if we don't have a code object, we can't disassemble x.
+    if hasattr(x, 'co_code'):
         return x
     raise TypeError("don't know how to disassemble %s objects" %
                     type(x).__name__)
@@ -443,8 +461,8 @@ def findlinestarts(code):
 class Bytecode:
     """The bytecode operations of a piece of code
 
-    Instantiate this with a function, method, string of code, or a code object
-    (as returned by compile()).
+    Instantiate this with a function, method, other compiled object, string of
+    code, or a code object (as returned by compile()).
 
     Iterating over this yields the bytecode operations as Instruction instances.
     """

@@ -85,15 +85,13 @@ module signal
    thread.  XXX This is a hack.
 */
 
-#ifdef WITH_THREAD
 #include <sys/types.h> /* For pid_t */
 #include "pythread.h"
 static unsigned long main_thread;
 static pid_t main_pid;
-#endif
 
 static volatile struct {
-    sig_atomic_t tripped;
+    _Py_atomic_int tripped;
     PyObject *func;
 } Handlers[NSIG];
 
@@ -113,7 +111,7 @@ static volatile sig_atomic_t wakeup_fd = -1;
 #endif
 
 /* Speed up sigcheck() when none tripped */
-static volatile sig_atomic_t is_tripped = 0;
+static _Py_atomic_int is_tripped;
 
 static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
@@ -240,11 +238,13 @@ trip_signal(int sig_num)
     int fd;
     Py_ssize_t rc;
 
-    Handlers[sig_num].tripped = 1;
+    _Py_atomic_store_relaxed(&Handlers[sig_num].tripped, 1);
 
     /* Set is_tripped after setting .tripped, as it gets
        cleared in PyErr_CheckSignals() before .tripped. */
-    is_tripped = 1;
+    _Py_atomic_store(&is_tripped, 1);
+
+    /* Notify ceval.c */
     _PyEval_SignalReceived();
 
     /* And then write to the wakeup fd *after* setting all the globals and
@@ -314,10 +314,8 @@ signal_handler(int sig_num)
 {
     int save_errno = errno;
 
-#ifdef WITH_THREAD
     /* See NOTES section above */
     if (getpid() == main_pid)
-#endif
     {
         trip_signal(sig_num);
     }
@@ -437,13 +435,11 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
             return NULL;
     }
 #endif
-#ifdef WITH_THREAD
     if (PyThread_get_thread_ident() != main_thread) {
         PyErr_SetString(PyExc_ValueError,
                         "signal only works in main thread");
         return NULL;
     }
-#endif
     if (signalnum < 1 || signalnum >= NSIG) {
         PyErr_SetString(PyExc_ValueError,
                         "signal number out of range");
@@ -465,7 +461,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
         return NULL;
     }
     old_handler = Handlers[signalnum].func;
-    Handlers[signalnum].tripped = 0;
+    _Py_atomic_store_relaxed(&Handlers[signalnum].tripped, 0);
     Py_INCREF(handler);
     Handlers[signalnum].func = handler;
     if (old_handler != NULL)
@@ -569,13 +565,11 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         return NULL;
 #endif
 
-#ifdef WITH_THREAD
     if (PyThread_get_thread_ident() != main_thread) {
         PyErr_SetString(PyExc_ValueError,
                         "set_wakeup_fd only works in main thread");
         return NULL;
     }
-#endif
 
 #ifdef MS_WINDOWS
     is_socket = 0;
@@ -1102,7 +1096,7 @@ signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
 #endif   /* #ifdef HAVE_SIGTIMEDWAIT */
 
 
-#if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD)
+#if defined(HAVE_PTHREAD_KILL)
 
 /*[clinic input]
 signal.pthread_kill
@@ -1135,7 +1129,7 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
     Py_RETURN_NONE;
 }
 
-#endif   /* #if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD) */
+#endif   /* #if defined(HAVE_PTHREAD_KILL) */
 
 
 
@@ -1215,10 +1209,8 @@ PyInit__signal(void)
     PyObject *m, *d, *x;
     int i;
 
-#ifdef WITH_THREAD
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
-#endif
 
     /* Create the module and add the functions */
     m = PyModule_Create(&signalmodule);
@@ -1269,11 +1261,11 @@ PyInit__signal(void)
         goto finally;
     Py_INCREF(IntHandler);
 
-    Handlers[0].tripped = 0;
+    _Py_atomic_store_relaxed(&Handlers[0].tripped, 0);
     for (i = 1; i < NSIG; i++) {
         void (*t)(int);
         t = PyOS_getsig(i);
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         if (t == SIG_DFL)
             Handlers[i].func = DefaultHandler;
         else if (t == SIG_IGN)
@@ -1497,7 +1489,7 @@ finisignal(void)
 
     for (i = 1; i < NSIG; i++) {
         func = Handlers[i].func;
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         Handlers[i].func = NULL;
         if (i != SIGINT && func != NULL && func != Py_None &&
             func != DefaultHandler && func != IgnoreHandler)
@@ -1518,13 +1510,11 @@ PyErr_CheckSignals(void)
     int i;
     PyObject *f;
 
-    if (!is_tripped)
+    if (!_Py_atomic_load(&is_tripped))
         return 0;
 
-#ifdef WITH_THREAD
     if (PyThread_get_thread_ident() != main_thread)
         return 0;
-#endif
 
     /*
      * The is_tripped variable is meant to speed up the calls to
@@ -1540,16 +1530,16 @@ PyErr_CheckSignals(void)
      *       we receive a signal i after we zero is_tripped and before we
      *       check Handlers[i].tripped.
      */
-    is_tripped = 0;
+    _Py_atomic_store(&is_tripped, 0);
 
     if (!(f = (PyObject *)PyEval_GetFrame()))
         f = Py_None;
 
     for (i = 1; i < NSIG; i++) {
-        if (Handlers[i].tripped) {
+        if (_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
             PyObject *result = NULL;
             PyObject *arglist = Py_BuildValue("(iO)", i, f);
-            Handlers[i].tripped = 0;
+            _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
 
             if (arglist) {
                 result = PyEval_CallObject(Handlers[i].func,
@@ -1557,7 +1547,7 @@ PyErr_CheckSignals(void)
                 Py_DECREF(arglist);
             }
             if (!result) {
-                is_tripped = 1;
+                _Py_atomic_store(&is_tripped, 1);
                 return -1;
             }
 
@@ -1596,12 +1586,10 @@ PyOS_FiniInterrupts(void)
 int
 PyOS_InterruptOccurred(void)
 {
-    if (Handlers[SIGINT].tripped) {
-#ifdef WITH_THREAD
+    if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
         if (PyThread_get_thread_ident() != main_thread)
             return 0;
-#endif
-        Handlers[SIGINT].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
         return 1;
     }
     return 0;
@@ -1611,11 +1599,11 @@ static void
 _clear_pending_signals(void)
 {
     int i;
-    if (!is_tripped)
+    if (!_Py_atomic_load(&is_tripped))
         return;
-    is_tripped = 0;
+    _Py_atomic_store(&is_tripped, 0);
     for (i = 1; i < NSIG; ++i) {
-        Handlers[i].tripped = 0;
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
     }
 }
 
@@ -1626,20 +1614,14 @@ _PySignal_AfterFork(void)
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
-#ifdef WITH_THREAD
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
-#endif
 }
 
 int
 _PyOS_IsMainThread(void)
 {
-#ifdef WITH_THREAD
     return PyThread_get_thread_ident() == main_thread;
-#else
-    return 1;
-#endif
 }
 
 #ifdef MS_WINDOWS

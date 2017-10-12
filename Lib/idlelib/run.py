@@ -184,6 +184,7 @@ def show_socket_error(err, address):
     import tkinter
     from tkinter.messagebox import showerror
     root = tkinter.Tk()
+    fix_scaling(root)
     root.withdraw()
     msg = f"IDLE's subprocess can't connect to {address[0]}:{address[1]}.\n"\
           f"Fatal OSError #{err.errno}: {err.strerror}.\n"\
@@ -275,6 +276,18 @@ def exit():
         atexit._clear()
     capture_warnings(False)
     sys.exit(0)
+
+
+def fix_scaling(root):
+    """Scale fonts on HiDPI displays."""
+    import tkinter.font
+    scaling = float(root.tk.call('tk', 'scaling'))
+    if scaling > 1.4:
+        for name in tkinter.font.names(root):
+            font = tkinter.font.Font(root=root, name=name, exists=True)
+            size = int(font['size'])
+            if size < 0:
+                font['size'] = round(-0.75*size)
 
 
 class MyRPCServer(rpc.RPCServer):

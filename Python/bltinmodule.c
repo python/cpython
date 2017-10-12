@@ -157,6 +157,13 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
         Py_DECREF(bases);
         return NULL;
     }
+    if (!PyMapping_Check(ns)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s.__prepare__() must return a mapping, not %.200s",
+                     isclass ? ((PyTypeObject *)meta)->tp_name : "<metaclass>",
+                     Py_TYPE(ns)->tp_name);
+        goto error;
+    }
     cell = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
@@ -415,6 +422,28 @@ builtin_callable(PyObject *module, PyObject *obj)
     return PyBool_FromLong((long)PyCallable_Check(obj));
 }
 
+static PyObject *
+builtin_breakpoint(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *keywords)
+{
+    PyObject *hook = PySys_GetObject("breakpointhook");
+
+    if (hook == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.breakpointhook");
+        return NULL;
+    }
+    Py_INCREF(hook);
+    PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
+    Py_DECREF(hook);
+    return retval;
+}
+
+PyDoc_STRVAR(breakpoint_doc,
+"breakpoint(*args, **kws)\n\
+\n\
+Call sys.breakpointhook(*args, **kws).  sys.breakpointhook() must accept\n\
+whatever arguments are passed.\n\
+\n\
+By default, this drops you into the pdb debugger.");
 
 typedef struct {
     PyObject_HEAD
@@ -1519,8 +1548,9 @@ min_max(PyObject *args, PyObject *kwds, int op)
     emptytuple = PyTuple_New(0);
     if (emptytuple == NULL)
         return NULL;
-    ret = PyArg_ParseTupleAndKeywords(emptytuple, kwds, "|$OO", kwlist,
-                                      &keyfunc, &defaultval);
+    ret = PyArg_ParseTupleAndKeywords(emptytuple, kwds,
+                                      (op == Py_LT) ? "|$OO:min" : "|$OO:max",
+                                      kwlist, &keyfunc, &defaultval);
     Py_DECREF(emptytuple);
     if (!ret)
         return NULL;
@@ -2619,6 +2649,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
+    {"breakpoint",      (PyCFunction)builtin_breakpoint, METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
     BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
@@ -2684,7 +2715,7 @@ _PyBuiltin_Init(void)
         PyType_Ready(&PyZip_Type) < 0)
         return NULL;
 
-    mod = PyModule_Create(&builtinsmodule);
+    mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
     if (mod == NULL)
         return NULL;
     dict = PyModule_GetDict(mod);

@@ -1,7 +1,7 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import os
 import pickle
 import platform
@@ -11,6 +11,7 @@ import subprocess
 import sys
 import sysconfig
 import textwrap
+import threading
 import time
 import unittest
 from test import support
@@ -20,10 +21,7 @@ try:
     import _posixsubprocess
 except ImportError:
     _posixsubprocess = None
-try:
-    import threading
-except ImportError:
-    threading = None
+
 # Skip this test if the _testcapi module isn't available.
 _testcapi = support.import_module('_testcapi')
 
@@ -52,7 +50,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(testfunction.attribute, "test")
         self.assertRaises(AttributeError, setattr, inst.testfunction, "attribute", "test")
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_no_FatalError_infinite_loop(self):
         with support.SuppressCrashReport():
             p = subprocess.Popen([sys.executable, "-c",
@@ -275,8 +272,51 @@ class CAPITest(unittest.TestCase):
         self.assertIn(b'MemoryError 2 20', out)
         self.assertIn(b'MemoryError 3 30', out)
 
+    def test_mapping_keys_values_items(self):
+        class Mapping1(dict):
+            def keys(self):
+                return list(super().keys())
+            def values(self):
+                return list(super().values())
+            def items(self):
+                return list(super().items())
+        class Mapping2(dict):
+            def keys(self):
+                return tuple(super().keys())
+            def values(self):
+                return tuple(super().values())
+            def items(self):
+                return tuple(super().items())
+        dict_obj = {'foo': 1, 'bar': 2, 'spam': 3}
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
+        for mapping in [{}, OrderedDict(), Mapping1(), Mapping2(),
+                        dict_obj, OrderedDict(dict_obj),
+                        Mapping1(dict_obj), Mapping2(dict_obj)]:
+            self.assertListEqual(_testcapi.get_mapping_keys(mapping),
+                                 list(mapping.keys()))
+            self.assertListEqual(_testcapi.get_mapping_values(mapping),
+                                 list(mapping.values()))
+            self.assertListEqual(_testcapi.get_mapping_items(mapping),
+                                 list(mapping.items()))
+
+    def test_mapping_keys_values_items_bad_arg(self):
+        self.assertRaises(AttributeError, _testcapi.get_mapping_keys, None)
+        self.assertRaises(AttributeError, _testcapi.get_mapping_values, None)
+        self.assertRaises(AttributeError, _testcapi.get_mapping_items, None)
+
+        class BadMapping:
+            def keys(self):
+                return None
+            def values(self):
+                return None
+            def items(self):
+                return None
+        bad_mapping = BadMapping()
+        self.assertRaises(TypeError, _testcapi.get_mapping_keys, bad_mapping)
+        self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
+        self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
+
+
 class TestPendingCalls(unittest.TestCase):
 
     def pendingcalls_submit(self, l, n):
@@ -685,7 +725,6 @@ class SkipitemTest(unittest.TestCase):
             parse((1,), {}, 'O|OO', ['', 'a', ''])
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class TestThreadState(unittest.TestCase):
 
     @support.reap_threads
@@ -762,7 +801,6 @@ class PyMemDebugTests(unittest.TestCase):
         regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
-    @unittest.skipUnless(threading, 'Test requires a GIL (multithreading)')
     def check_malloc_without_gil(self, code):
         out = self.check(code)
         expected = ('Fatal Python error: Python memory allocator called '

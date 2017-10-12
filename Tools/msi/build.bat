@@ -1,7 +1,7 @@
 @echo off
 setlocal
 set D=%~dp0
-set PCBUILD=%D%..\..\PCBuild\
+set PCBUILD=%D%..\..\PCbuild\
 
 set BUILDX86=
 set BUILDX64=

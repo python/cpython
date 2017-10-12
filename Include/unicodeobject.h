@@ -104,10 +104,6 @@ typedef wchar_t Py_UNICODE /* Py_DEPRECATED(3.3) */;
 #endif
 
 #ifdef HAVE_WCHAR_H
-/* Work around a cosmetic bug in BSDI 4.x wchar.h; thanks to Thomas Wouters */
-# ifdef _HAVE_BSDI
-#  include <time.h>
-# endif
 #  include <wchar.h>
 #endif
 
@@ -1227,7 +1223,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_Encode(
 /* Encodes a Unicode object and returns the result as Python
    object.
 
-   This API is DEPRECATED.  It is superceeded by PyUnicode_AsEncodedString()
+   This API is DEPRECATED.  It is superseded by PyUnicode_AsEncodedString()
    since all standard encodings (except rot13) encode str to bytes.
    Use PyCodec_Encode() for encoding with rot13 and non-standard codecs
    that encode form str to non-bytes. */
