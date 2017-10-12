@@ -36,6 +36,10 @@ highlight_language = 'python3'
 # Require Sphinx 1.2 for build.
 needs_sphinx = '1.2'
 
+# Ignore any .rst files in the venv/ directory.
+venvdir = os.getenv('VENVDIR', 'venv')
+exclude_patterns = [venvdir+'/*', 'README.rst']
+
 
 # Options for HTML output
 # -----------------------
