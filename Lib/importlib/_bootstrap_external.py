@@ -761,13 +761,18 @@ class SourceLoader(_LoaderBasics):
             except OSError:
                 pass
             else:
-                source_mtime = int(st['mtime'])
+                source_mtime = st['mtime']
                 try:
                     data = self.get_data(bytecode_path)
+                    bytecode_mtime = self.path_stats(bytecode_path)['mtime']
                 except OSError:
                     pass
                 else:
                     try:
+                        # equal mtime means the cache could be stale; play it safe
+                        if bytecode_mtime <= source_mtime:
+                            raise ImportError('bytecode may be stale')
+
                         bytes_data = _validate_bytecode_header(data,
                                 source_stats=st, name=fullname,
                                 path=bytecode_path)
@@ -784,7 +789,7 @@ class SourceLoader(_LoaderBasics):
         _bootstrap._verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
                 source_mtime is not None):
-            data = _code_to_bytecode(code_object, source_mtime,
+            data = _code_to_bytecode(code_object, int(source_mtime),
                     len(source_bytes))
             try:
                 self._cache_bytecode(source_path, bytecode_path, data)
