@@ -1,0 +1,2 @@
+Avoid using stale bytecode when importing python source files modified twice
+in one second.
