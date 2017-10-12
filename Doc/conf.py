@@ -38,7 +38,8 @@ highlight_language = 'python3'
 needs_sphinx = '1.2'
 
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*', 'README.rst']
+venvdir = os.getenv('VENVDIR', 'venv')
+exclude_patterns = [venvdir+'/*', 'README.rst']
 
 
 # Options for HTML output
