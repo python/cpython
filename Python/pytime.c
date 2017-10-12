@@ -28,6 +28,11 @@
 #define NS_TO_MS (1000 * 1000)
 #define NS_TO_US (1000)
 
+/* Maximum _PyTime_t multipler which allows to store up to 1 year
+   using the worst case, a leap year of 366 days. With _PyTime_t defined as
+   int64_t, the constant is equal to 291. */
+#define MAX_MULTIPLIER (_PyTime_MAX / ((_PyTime_t)SEC_TO_NS * 60 * 60 * 24 * 366))
+
 static void
 error_time_t_overflow(void)
 {
@@ -41,6 +46,45 @@ _PyTime_overflow(void)
     PyErr_SetString(PyExc_OverflowError,
                     "timestamp too large to convert to C _PyTime_t");
 }
+
+#if defined(__APPLE__) || defined(MS_WINDOWS)
+/* Euclidean algorithm to compute the greatest common divisor of a and b. */
+static _PyTime_t
+_PyTime_GCD(_PyTime_t a, _PyTime_t b)
+{
+    assert(a >= 1);
+    assert(b >= 1);
+    if (a < b) {
+        _PyTime_t tmp = b;
+        a = b;
+        b = tmp;
+    }
+    while (b != 0) {
+        _PyTime_t tmp = b;
+        b = a % b;
+        a = tmp;
+    }
+    return a;
+}
+
+/* Compute t * mul / div */
+Py_LOCAL_INLINE(_PyTime_t)
+_PyTime_MulDiv(_PyTime_t t, _PyTime_t mul, _PyTime_t div)
+{
+    assert(mul >= 1);
+    assert(mul <= MAX_MULTIPLIER);
+    assert(div >= 1);
+
+    /* bpo-31415: Since 'mul' maximum value is MAX_MULTIPLIER, an integer
+       overflow is unlikely. Only use an assertion in debug mode, not at
+       runtime, for performance. */
+    assert(t <= _PyTime_MAX / mul);
+
+    t *= mul;
+    t /= div;
+    return t;
+}
+#endif   /* defined(__APPLE__) || defined(MS_WINDOWS) */
 
 time_t
 _PyLong_AsTime_t(PyObject *obj)
@@ -700,21 +744,34 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
 #elif defined(__APPLE__)
     static mach_timebase_info_data_t timebase;
-    uint64_t time;
+    uint64_t ut64;
+    _PyTime_t t;
 
     if (timebase.denom == 0) {
+        uint64_t gcd;
         /* According to the Technical Q&A QA1398, mach_timebase_info() cannot
            fail: https://developer.apple.com/library/mac/#qa/qa1398/ */
         (void)mach_timebase_info(&timebase);
+        gcd = _PyTime_GCD(timebase.numer, timebase.denom);
+        timebase.numer /= gcd;
+        timebase.denom /= gcd;
+        if (timebase.numer < 1 || timebase.denom < 1) {
+            return -1;
+        }
+        if (timebase.numer > MAX_MULTIPLIER) {
+            /* On macOS, numer and denom are always equal to 1, so this case
+               test should never happen. Check once here to avoid sanity
+               checks each time later.*/
+            return -1;
+        }
     }
 
-    time = mach_absolute_time();
+    ut64 = mach_absolute_time();
+    assert(u64 <= _PyTime_MAX);
+    t = (_PyTime_t)ut64;
 
     /* apply timebase factor */
-    time *= timebase.numer;
-    time /= timebase.denom;
-
-    *tp = time;
+    *tp = _PyTime_MulDiv(t, timebase.numer, timebase.denom);
 
     if (info) {
         info->implementation = "mach_absolute_time()";
@@ -801,35 +858,77 @@ _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 
 
 #ifdef MS_WINDOWS
-int
-_PyTime_GetWinPerfCounterWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
+static int
+init_win_perf_counter(LONGLONG *t0, _PyTime_t *num_p, _PyTime_t *den_p)
 {
-    static LONGLONG cpu_frequency = 0;
-    static LONGLONG ctrStart;
     LARGE_INTEGER now;
-    double diff;
+    LARGE_INTEGER freq;
+    _PyTime_t num, den, gcd;
 
-    if (cpu_frequency == 0) {
-        LARGE_INTEGER freq;
-        QueryPerformanceCounter(&now);
-        ctrStart = now.QuadPart;
-        if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
-            PyErr_SetFromWindowsErr(0);
+    QueryPerformanceCounter(&now);
+    if (!QueryPerformanceFrequency(&freq)) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+    if (freq.QuadPart < 1) {
+        return -1;
+    }
+
+    *t0 = now.QuadPart;
+
+    /* Compute the greatest common divisor to minimize numerator and
+       denominator, to reduce the risk of integer overflow in
+       _PyTime_GetWinPerfCounterWithInfo(). */
+    num = SEC_TO_NS;
+    den = freq.QuadPart;
+    gcd = _PyTime_GCD(num, den);
+    num /= gcd;
+    den /= gcd;
+    if (num < 1 || den < 1) {
+        /* This case should not happen in practice. Check once here to avoid
+           sanity checks each time later. */
+        return -1;
+    }
+    if (num > MAX_MULTIPLIER) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "perf_counter clock multiplier is too big: %lli",
+                     (long long)num);
+        return -1;
+    }
+
+    *num_p = num;
+    *den_p = den;
+    return 0;
+}
+
+int
+_PyTime_GetWinPerfCounterWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+{
+    static _PyTime_t numer = 0, denom = 0;
+    static LONGLONG t0 = 0;
+    LARGE_INTEGER now;
+    LONGLONG llt;
+    _PyTime_t t;
+
+    if (denom == 0) {
+        if (init_win_perf_counter(&t0, &numer, &denom) < 0) {
             return -1;
         }
-        cpu_frequency = freq.QuadPart;
     }
-    QueryPerformanceCounter(&now);
-    diff = (double)(now.QuadPart - ctrStart);
     if (info) {
         info->implementation = "QueryPerformanceCounter()";
-        info->resolution = 1.0 / (double)cpu_frequency;
+        info->resolution = (double)numer / ((double)SEC_TO_NS * (double)denom);
         info->monotonic = 1;
         info->adjustable = 0;
     }
 
-    diff = diff / (double)cpu_frequency;
-    return _PyTime_FromDouble(t, diff, _PyTime_ROUND_FLOOR, SEC_TO_NS);
+    QueryPerformanceCounter(&now);
+    llt = (now.QuadPart - t0);
+    assert(_PyTime_MIN <= llt && llt <= _PyTime_MAX);
+    t = (_PyTime_t)llt;
+
+    *tp = _PyTime_MulDiv(t, numer, denom);
+    return 0;
 }
 #endif
 
