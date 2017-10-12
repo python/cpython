@@ -41,7 +41,7 @@ class ConfigDialog(Toplevel):
     """Config dialog for IDLE.
     """
 
-    def __init__(self, parent, title='', _htest=False, _utest=False):
+    def __init__(self, parent, title='', *, _htest=False, _utest=False):
         """Show the tabbed dialog for user configuration.
 
         Args:
