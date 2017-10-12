@@ -801,8 +801,8 @@ _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 
 
 #ifdef MS_WINDOWS
-int
-_PyTime_GetWinPerfCounterWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
+static int
+win_perf_counter(double *tp, _Py_clock_info_t *info)
 {
     static LONGLONG cpu_frequency = 0;
     static LONGLONG ctrStart;
@@ -829,28 +829,33 @@ _PyTime_GetWinPerfCounterWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
     }
 
     diff = diff / (double)cpu_frequency;
-    return _PyTime_FromDouble(t, diff, _PyTime_ROUND_FLOOR, SEC_TO_NS);
+    *tp = diff;
+    return 0;
 }
 #endif
 
 
 int
-_PyTime_GetPerfCounterWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
+_PyTime_GetPerfCounterDoubleWithInfo(double *d, _Py_clock_info_t *info)
 {
 #ifdef MS_WINDOWS
-    return _PyTime_GetWinPerfCounterWithInfo(t, info);
+    return win_perf_counter(d, info);
 #else
-    return _PyTime_GetMonotonicClockWithInfo(t, info);
+    _PyTime_t t;
+    if (_PyTime_GetMonotonicClockWithInfo(&t, info) < 0) {
+        return -1;
+    }
+    *d = _PyTime_AsSecondsDouble(t);
+    return 0;
 #endif
 }
 
 
-_PyTime_t
-_PyTime_GetPerfCounter(void)
+double
+_PyTime_GetPerfCounterDouble(void)
 {
-    _PyTime_t t;
-    if (_PyTime_GetPerfCounterWithInfo(&t, NULL) < 0) {
-        /* should not happen, _PyTime_Init() checked the clock at startup */
+    double t;
+    if (_PyTime_GetPerfCounterDoubleWithInfo(&t, NULL)) {
         Py_UNREACHABLE();
     }
     return t;
@@ -860,17 +865,18 @@ _PyTime_GetPerfCounter(void)
 int
 _PyTime_Init(void)
 {
-    /* check that the 3 most important clocks are working properly
-       to not have to check for exceptions at runtime. If a clock works once,
-       it cannot fail in next calls. */
+    /* check that time.time(), time.monotonic() and time.perf_counter() clocks
+       are working properly to not have to check for exceptions at runtime. If
+       a clock works once, it cannot fail in next calls. */
     _PyTime_t t;
+    double d;
     if (_PyTime_GetSystemClockWithInfo(&t, NULL) < 0) {
         return -1;
     }
     if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) < 0) {
         return -1;
     }
-    if (_PyTime_GetPerfCounterWithInfo(&t, NULL) < 0) {
+    if (_PyTime_GetPerfCounterDoubleWithInfo(&d, NULL) < 0) {
         return -1;
     }
     return 0;
