@@ -303,7 +303,8 @@ Miscellaneous options
 
 .. cmdoption:: -u
 
-   Force the stdout and stderr streams to be unbuffered.
+   Force the stdout and stderr streams to be unbuffered.  The stdin stream is
+   always buffered.
 
    See also :envvar:`PYTHONUNBUFFERED`.
 
