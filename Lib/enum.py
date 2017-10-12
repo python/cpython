@@ -1,7 +1,5 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
-from functools import reduce
-from operator import or_ as _or_
 
 # try _collections first to reduce startup cost
 try:
@@ -381,7 +379,7 @@ class EnumMeta(type):
         # special processing needed for names?
         if isinstance(names, str):
             names = names.replace(',', ' ').split()
-        if isinstance(names, (tuple, list)) and isinstance(names[0], str):
+        if isinstance(names, (tuple, list)) and names and isinstance(names[0], str):
             original_names, names = names, []
             last_values = []
             for count, name in enumerate(original_names):
@@ -744,11 +742,10 @@ class Flag(Enum):
 
     def __invert__(self):
         members, uncovered = _decompose(self.__class__, self._value_)
-        inverted_members = [
-                m for m in self.__class__
-                if m not in members and not m._value_ & self._value_
-                ]
-        inverted = reduce(_or_, inverted_members, self.__class__(0))
+        inverted = self.__class__(0)
+        for m in self.__class__:
+            if m not in members and not (m._value_ & self._value_):
+                inverted = inverted | m
         return self.__class__(inverted)
 
 
@@ -840,7 +837,7 @@ def _decompose(flag, value):
     not_covered = value
     negative = value < 0
     # issue29167: wrap accesses to _value2member_map_ in a list to avoid race
-    #             conditions between iterating over it and having more psuedo-
+    #             conditions between iterating over it and having more pseudo-
     #             members added to it
     if negative:
         # only check for named flags

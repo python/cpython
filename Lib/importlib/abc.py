@@ -193,7 +193,7 @@ class ResourceLoader(Loader):
     def get_data(self, path):
         """Abstract method which when implemented should return the bytes for
         the specified path.  The path must be a str."""
-        raise IOError
+        raise OSError
 
 
 class InspectLoader(Loader):
@@ -315,7 +315,7 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
     def path_mtime(self, path):
         """Return the (int) modification time for the path (str)."""
         if self.path_stats.__func__ is SourceLoader.path_stats:
-            raise IOError
+            raise OSError
         return int(self.path_stats(path)['mtime'])
 
     def path_stats(self, path):
@@ -326,7 +326,7 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
         - 'size' (optional) is the size in bytes of the source code.
         """
         if self.path_mtime.__func__ is SourceLoader.path_mtime:
-            raise IOError
+            raise OSError
         return {'mtime': self.path_mtime(path)}
 
     def set_data(self, path, data):

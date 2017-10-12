@@ -1,4 +1,4 @@
-from test.support import verbose, is_android
+from test.support import verbose, is_android, check_warnings
 import unittest
 import locale
 import sys
@@ -144,8 +144,9 @@ class BaseFormattingTest(object):
             func(format, value, **format_opts), out)
 
     def _test_format(self, format, value, out, **format_opts):
-        self._test_formatfunc(format, value, out,
-            func=locale.format, **format_opts)
+        with check_warnings(('', DeprecationWarning)):
+            self._test_formatfunc(format, value, out,
+                func=locale.format, **format_opts)
 
     def _test_format_string(self, format, value, out, **format_opts):
         self._test_formatfunc(format, value, out,
@@ -232,14 +233,15 @@ class TestFormatPatternArg(unittest.TestCase):
     # Test handling of pattern argument of format
 
     def test_onlyOnePattern(self):
-        # Issue 2522: accept exactly one % pattern, and no extra chars.
-        self.assertRaises(ValueError, locale.format, "%f\n", 'foo')
-        self.assertRaises(ValueError, locale.format, "%f\r", 'foo')
-        self.assertRaises(ValueError, locale.format, "%f\r\n", 'foo')
-        self.assertRaises(ValueError, locale.format, " %f", 'foo')
-        self.assertRaises(ValueError, locale.format, "%fg", 'foo')
-        self.assertRaises(ValueError, locale.format, "%^g", 'foo')
-        self.assertRaises(ValueError, locale.format, "%f%%", 'foo')
+        with check_warnings(('', DeprecationWarning)):
+            # Issue 2522: accept exactly one % pattern, and no extra chars.
+            self.assertRaises(ValueError, locale.format, "%f\n", 'foo')
+            self.assertRaises(ValueError, locale.format, "%f\r", 'foo')
+            self.assertRaises(ValueError, locale.format, "%f\r\n", 'foo')
+            self.assertRaises(ValueError, locale.format, " %f", 'foo')
+            self.assertRaises(ValueError, locale.format, "%fg", 'foo')
+            self.assertRaises(ValueError, locale.format, "%^g", 'foo')
+            self.assertRaises(ValueError, locale.format, "%f%%", 'foo')
 
 
 class TestLocaleFormatString(unittest.TestCase):
@@ -344,9 +346,14 @@ class TestCollation(unittest.TestCase):
         self.assertLess(locale.strcoll('a', 'b'), 0)
         self.assertEqual(locale.strcoll('a', 'a'), 0)
         self.assertGreater(locale.strcoll('b', 'a'), 0)
+        # embedded null character
+        self.assertRaises(ValueError, locale.strcoll, 'a\0', 'a')
+        self.assertRaises(ValueError, locale.strcoll, 'a', 'a\0')
 
     def test_strxfrm(self):
         self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
+        # embedded null character
+        self.assertRaises(ValueError, locale.strxfrm, 'a\0')
 
 
 class TestEnUSCollation(BaseLocalizedTest, TestCollation):
@@ -363,9 +370,13 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
             raise unittest.SkipTest('wcscoll/wcsxfrm have known bugs')
         BaseLocalizedTest.setUp(self)
 
+    @unittest.skipIf(sys.platform.startswith('aix'),
+                     'bpo-29972: broken test on AIX')
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
+    @unittest.skipIf(sys.platform.startswith('aix'),
+                     'bpo-29972: broken test on AIX')
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 

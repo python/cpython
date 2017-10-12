@@ -209,7 +209,7 @@ def _setoption(arg):
             if lineno < 0:
                 raise ValueError
         except (ValueError, OverflowError):
-            raise _OptionError("invalid lineno %r" % (lineno,))
+            raise _OptionError("invalid lineno %r" % (lineno,)) from None
     else:
         lineno = 0
     filterwarnings(action, message, category, module, lineno)
@@ -233,7 +233,7 @@ def _getcategory(category):
         try:
             cat = eval(category)
         except NameError:
-            raise _OptionError("unknown warning category: %r" % (category,))
+            raise _OptionError("unknown warning category: %r" % (category,)) from None
     else:
         i = category.rfind(".")
         module = category[:i]
@@ -241,11 +241,11 @@ def _getcategory(category):
         try:
             m = __import__(module, None, None, [klass])
         except ImportError:
-            raise _OptionError("invalid module name: %r" % (module,))
+            raise _OptionError("invalid module name: %r" % (module,)) from None
         try:
             cat = getattr(m, klass)
         except AttributeError:
-            raise _OptionError("unknown warning category: %r" % (category,))
+            raise _OptionError("unknown warning category: %r" % (category,)) from None
     if not issubclass(cat, Warning):
         raise _OptionError("invalid warning category: %r" % (category,))
     return cat
@@ -397,9 +397,13 @@ class WarningMessage(object):
 
     def __init__(self, message, category, filename, lineno, file=None,
                  line=None, source=None):
-        local_values = locals()
-        for attr in self._WARNING_DETAILS:
-            setattr(self, attr, local_values[attr])
+        self.message = message
+        self.category = category
+        self.filename = filename
+        self.lineno = lineno
+        self.file = file
+        self.line = line
+        self.source = source
         self._category_name = category.__name__ if category else None
 
     def __str__(self):

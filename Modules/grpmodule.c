@@ -151,6 +151,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
 
     if ((bytes = PyUnicode_EncodeFSDefault(name)) == NULL)
         return NULL;
+    /* check for embedded null bytes */
     if (PyBytes_AsStringAndSize(bytes, &name_chars, NULL) == -1)
         goto out;
 

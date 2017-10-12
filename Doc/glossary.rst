@@ -467,9 +467,9 @@ Glossary
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      All of Python's immutable built-in objects are hashable, while no mutable
-      containers (such as lists or dictionaries) are.  Objects which are
-      instances of user-defined classes are hashable by default; they all
+      All of Python's immutable built-in objects are hashable; mutable
+      containers (such as lists or dictionaries) are not.  Objects which are
+      instances of user-defined classes are hashable by default.  They all
       compare unequal (except with themselves), and their hash value is derived
       from their :func:`id`.
 
@@ -535,7 +535,10 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`__iter__` or :meth:`__getitem__` method.  Iterables can be
+      with an :meth:`__iter__` method or with a :meth:`__getitem__` method
+      that implements :term:`Sequence` semantics.
+
+      Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
       needed (:func:`zip`, :func:`map`, ...).  When an iterable object is passed
       as an argument to the built-in function :func:`iter`, it returns an

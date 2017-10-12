@@ -207,7 +207,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
                                   PyObject *global_name);
 
 static PyObject *
-_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *module_name;
@@ -216,10 +216,6 @@ _pickle_Unpickler_find_class(UnpicklerObject *self, PyObject **args, Py_ssize_t 
     if (!_PyArg_UnpackStack(args, nargs, "find_class",
         2, 2,
         &module_name, &global_name)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("find_class", kwnames)) {
         goto exit;
     }
     return_value = _pickle_Unpickler_find_class_impl(self, module_name, global_name);
@@ -388,7 +384,7 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "2, so that the pickle data stream is readable with Python 2.");
 
 #define _PICKLE_DUMP_METHODDEF    \
-    {"dump", (PyCFunction)_pickle_dump, METH_FASTCALL, _pickle_dump__doc__},
+    {"dump", (PyCFunction)_pickle_dump, METH_FASTCALL|METH_KEYWORDS, _pickle_dump__doc__},
 
 static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
@@ -434,7 +430,7 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "Python 2, so that the pickle data stream is readable with Python 2.");
 
 #define _PICKLE_DUMPS_METHODDEF    \
-    {"dumps", (PyCFunction)_pickle_dumps, METH_FASTCALL, _pickle_dumps__doc__},
+    {"dumps", (PyCFunction)_pickle_dumps, METH_FASTCALL|METH_KEYWORDS, _pickle_dumps__doc__},
 
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
@@ -490,7 +486,7 @@ PyDoc_STRVAR(_pickle_load__doc__,
 "string instances as bytes objects.");
 
 #define _PICKLE_LOAD_METHODDEF    \
-    {"load", (PyCFunction)_pickle_load, METH_FASTCALL, _pickle_load__doc__},
+    {"load", (PyCFunction)_pickle_load, METH_FASTCALL|METH_KEYWORDS, _pickle_load__doc__},
 
 static PyObject *
 _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
@@ -538,7 +534,7 @@ PyDoc_STRVAR(_pickle_loads__doc__,
 "string instances as bytes objects.");
 
 #define _PICKLE_LOADS_METHODDEF    \
-    {"loads", (PyCFunction)_pickle_loads, METH_FASTCALL, _pickle_loads__doc__},
+    {"loads", (PyCFunction)_pickle_loads, METH_FASTCALL|METH_KEYWORDS, _pickle_loads__doc__},
 
 static PyObject *
 _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
@@ -564,4 +560,4 @@ _pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b921d325b2f7a096 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a6243aaa6ea98732 input=a9049054013a1b77]*/

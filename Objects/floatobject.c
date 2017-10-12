@@ -1619,7 +1619,7 @@ Convert a string or number to a floating point number, if possible.
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=c98d8e811ad2037a]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=540ee77c204ff87a]*/
 {
     if (type != &PyFloat_Type)
         return float_subtype_new(type, x); /* Wimp out */
@@ -2234,11 +2234,13 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
     }
     else {
         float y = (float)x;
-        const unsigned char *s = (unsigned char*)&y;
         int i, incr = 1;
 
         if (Py_IS_INFINITY(y) && !Py_IS_INFINITY(x))
             goto Overflow;
+
+        unsigned char s[sizeof(float)];
+        memcpy(s, &y, sizeof(float));
 
         if ((float_format == ieee_little_endian_format && !le)
             || (float_format == ieee_big_endian_format && le)) {
@@ -2247,7 +2249,7 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
         }
 
         for (i = 0; i < 4; i++) {
-            *p = *s++;
+            *p = s[i];
             p += incr;
         }
         return 0;

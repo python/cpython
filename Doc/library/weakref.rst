@@ -478,7 +478,7 @@ the constructor when it was created.
     >>> obj = Object()
     >>> f = weakref.finalize(obj, callback, 1, 2, z=3)
     >>> f.detach()                                           #doctest:+ELLIPSIS
-    (<__main__.Object object ...>, <function callback ...>, (1, 2), {'z': 3})
+    (<...Object object ...>, <function callback ...>, (1, 2), {'z': 3})
     >>> newobj, func, args, kwargs = _
     >>> assert not f.alive
     >>> assert newobj is obj

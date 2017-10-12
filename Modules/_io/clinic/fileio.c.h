@@ -208,17 +208,13 @@ static PyObject *
 _io_FileIO_read_impl(fileio *self, Py_ssize_t size);
 
 static PyObject *
-_io_FileIO_read(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_FileIO_read(fileio *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read",
         _Py_convert_optional_to_ssize_t, &size)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
     return_value = _io_FileIO_read_impl(self, size);
@@ -284,7 +280,7 @@ static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence);
 
 static PyObject *
-_io_FileIO_seek(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_FileIO_seek(fileio *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pos;
@@ -292,10 +288,6 @@ _io_FileIO_seek(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
 
     if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
         &pos, &whence)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
         goto exit;
     }
     return_value = _io_FileIO_seek_impl(self, pos, whence);
@@ -342,7 +334,7 @@ static PyObject *
 _io_FileIO_truncate_impl(fileio *self, PyObject *posobj);
 
 static PyObject *
-_io_FileIO_truncate(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_FileIO_truncate(fileio *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *posobj = NULL;
@@ -350,10 +342,6 @@ _io_FileIO_truncate(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *k
     if (!_PyArg_UnpackStack(args, nargs, "truncate",
         0, 1,
         &posobj)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
         goto exit;
     }
     return_value = _io_FileIO_truncate_impl(self, posobj);
@@ -385,4 +373,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=a4044e2d878248d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1af8b4031633b763 input=a9049054013a1b77]*/

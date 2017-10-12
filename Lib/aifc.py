@@ -149,25 +149,25 @@ def _read_long(file):
     try:
         return struct.unpack('>l', file.read(4))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_ulong(file):
     try:
         return struct.unpack('>L', file.read(4))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_short(file):
     try:
         return struct.unpack('>h', file.read(2))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_ushort(file):
     try:
         return struct.unpack('>H', file.read(2))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_string(file):
     length = ord(file.read(1))

@@ -70,7 +70,7 @@ def _reduce_ex(self, proto):
     except AttributeError:
         if getattr(self, "__slots__", None):
             raise TypeError("a class that defines __slots__ without "
-                            "defining __getstate__ cannot be pickled")
+                            "defining __getstate__ cannot be pickled") from None
         try:
             dict = self.__dict__
         except AttributeError:
@@ -128,7 +128,11 @@ def _slotnames(cls):
                         continue
                     # mangled names
                     elif name.startswith('__') and not name.endswith('__'):
-                        names.append('_%s%s' % (c.__name__, name))
+                        stripped = c.__name__.lstrip('_')
+                        if stripped:
+                            names.append('_%s%s' % (stripped, name))
+                        else:
+                            names.append(name)
                     else:
                         names.append(name)
 
