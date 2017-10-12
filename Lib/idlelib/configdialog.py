@@ -2140,10 +2140,12 @@ machine. [Cancel] only cancels changes made since the last save.
 '''
 help_pages = {
     'Fonts/Tabs':'''
-Font sample: This shows what a selection of BMP unicode characters look
-like for the current font selection.  If a font face does not define a
-character, Tk attempts to find another font that does.  Substitute
-glyphs will not necessarily have the same size as the font selected.
+Font sample: This shows what a selection of Basic Multilingual Plane
+unicode characters look like for the current font selection.  If the
+selected font does not define a character, Tk attempts to find another
+font that does.  Substitute glyphs depend on what is available on a
+particular system and will not necessarily have the same size as the
+font selected.  Each line contains 20 characters or 10 for East Asia.
 Hebrew and Arabic letters should display right to left, starting with
 alef, \u05d0 and \u0627.  Arabic numerals display left to right.  The
 East Asian samples are Chinese digits followed by Chinese Hanzi, Korean
