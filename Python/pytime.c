@@ -739,14 +739,19 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         /* Sanity check: make sure that ticks * timebase.numer cannot overflow
            in _PyTime_MulDiv(), with ticks < timebase.denom.
 
-           Known timebase values:
-           * (1, 1) on Intel since OS X
+           Known time bases:
+
+           * always (1, 1) on Intel
            * (1000000000, 33333335) or (1000000000, 25000000) on PowerPC
 
-           None of these timebases can overflow with 64-bit _PyTime_t. */
-        if (timebase.numer > _PyTime_MAX / (timebase.denom - 1)) {
+           None of these time bases can overflow with 64-bit _PyTime_t.
+
+           Check also that timebase.numer and timebase.denom can be casted to
+           _PyTime_t. */
+        if (timebase.numer > _PyTime_MAX / timebase.denom
+            || timebase.denom > _PyTime_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "QueryPerformanceFrequency is too large");
+                            "mach_timebase_info is too large");
             return -1;
         }
 
@@ -755,7 +760,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
     if (info) {
         info->implementation = "mach_absolute_time()";
-        info->resolution = (double)timebase.numer / timebase.denom * 1e-9;
+        info->resolution = (double)timebase.numer / (double)timebase.denom * 1e-9;
         info->monotonic = 1;
         info->adjustable = 0;
     }
@@ -764,7 +769,9 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     /* Use a "time zero" to reduce precision loss when converting time
        to floatting point number, as in time.monotonic(). */
     ticks -= t0;
-    *tp = _PyTime_MulDiv(ticks, timebase.numer, timebase.denom);
+    *tp = _PyTime_MulDiv(ticks,
+                         (_PyTime_t)timebase.numer,
+                         (_PyTime_t)timebase.denom);
 
 #elif defined(__hpux)
     hrtime_t time;
