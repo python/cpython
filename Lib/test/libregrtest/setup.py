@@ -15,13 +15,15 @@ from test.libregrtest.refleak import warm_caches
 
 def setup_tests(ns):
     try:
-        stderr_fd = sys.stderr.fileno()
-    except ValueError:
-        # For example, in IDLE, sys.stderr has no file descriptor,
-        # so faulthandler cannot be used.
+        stderr_fd = sys.__stderr__.fileno()
+    except (ValueError, AttributeError):
+        # In IDLE, sys.stderr.fileno() raises io.UnsupportedOperation: the
+        # stream has no file descriptor, and so faulthandler cannot be used.
         #
         # Catch ValueError to catch io.UnsupportedOperation on TextIOBase
         # and ValueError on a closed stream.
+        #
+        # Catch also AttributeError for stderr being None.
         stderr_fd = None
     else:
         # Display the Python traceback on fatal errors (e.g. segfault)
