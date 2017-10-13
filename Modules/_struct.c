@@ -1514,6 +1514,16 @@ fail:
     return NULL;
 }
 
+Py_LOCAL_INLINE(int)
+_check_struct(PyStructObject *self)
+{
+    if (self->s_format == NULL || self->s_codes == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Struct.__init__() not called");
+        return 0;
+    }
+    return 1;
+}
 
 /*[clinic input]
 Struct.unpack
@@ -1533,7 +1543,9 @@ static PyObject *
 Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=873a24faf02e848a input=3113f8e7038b2f6c]*/
 {
-    assert(self->s_codes != NULL);
+    if (!_check_struct(self)) {
+        return NULL;
+    }
     if (buffer->len != self->s_size) {
         PyErr_Format(StructError,
                      "unpack requires a buffer of %zd bytes",
@@ -1563,7 +1575,9 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset)
 /*[clinic end generated code: output=57fac875e0977316 input=97ade52422f8962f]*/
 {
-    assert(self->s_codes != NULL);
+    if (!_check_struct(self)) {
+        return NULL;
+    }
 
     if (offset < 0)
         offset += buffer->len;
@@ -1691,7 +1705,9 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
 {
     unpackiterobject *iter;
 
-    assert(self->s_codes != NULL);
+    if (!_check_struct(self)) {
+        return NULL;
+    }
 
     if (self->s_size == 0) {
         PyErr_Format(StructError,
@@ -1828,7 +1844,9 @@ s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
     /* Validate arguments. */
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
-    assert(soself->s_codes != NULL);
+    if (!_check_struct(soself)) {
+        return NULL;
+    }
     if (nargs != soself->s_len)
     {
         PyErr_Format(StructError,
@@ -1868,7 +1886,9 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
     /* Validate arguments.  +1 is for the first arg as buffer. */
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
-    assert(soself->s_codes != NULL);
+    if (!_check_struct(soself)) {
+        return NULL;
+    }
     if (nargs != (soself->s_len + 2))
     {
         if (nargs == 0) {
@@ -1954,6 +1974,9 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
 static PyObject *
 s_get_format(PyStructObject *self, void *unused)
 {
+    if (!_check_struct(self)) {
+        return NULL;
+    }
     return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
                                        PyBytes_GET_SIZE(self->s_format));
 }
@@ -1973,6 +1996,9 @@ s_sizeof(PyStructObject *self, void *unused)
     Py_ssize_t size;
     formatcode *code;
 
+    if (!_check_struct(self)) {
+        return NULL;
+    }
     size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
     for (code = self->s_codes; code->fmtdef != NULL; code++)
         size += sizeof(formatcode);

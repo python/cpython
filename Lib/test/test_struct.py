@@ -626,6 +626,20 @@ class StructTest(unittest.TestCase):
         s2 = struct.Struct(s.format.encode())
         self.assertEqual(s2.format, s.format)
 
+    @support.cpython_only
+    def test_uninitialized(self):
+        # A crash or an assertion failure shouldn't happen in case of calling
+        # methods or accessing attributes of an uninitialized Struct object.
+        s = struct.Struct.__new__(struct.Struct)
+        self.assertRaises(ValueError, s.iter_unpack, b'foo')
+        self.assertRaises(ValueError, s.pack)
+        self.assertRaises(ValueError, s.pack_into)
+        self.assertRaises(ValueError, s.unpack, b'bar')
+        self.assertRaises(ValueError, s.unpack_from, b'spam')
+        self.assertRaises(ValueError, s.__sizeof__)
+        with self.assertRaises(ValueError):
+            s.format
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """

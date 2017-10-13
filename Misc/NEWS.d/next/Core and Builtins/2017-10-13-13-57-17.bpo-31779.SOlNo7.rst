@@ -1,0 +1,2 @@
+Prevent assertion failures and a crash when using an uninitialized
+``struct.Struct`` object. Patch by Oren Milman.
