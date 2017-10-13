@@ -186,7 +186,7 @@ class BuiltinLevelsTest(BaseTest):
         INF = logging.LoggerAdapter(logging.getLogger("INF"), {})
         INF.setLevel(logging.INFO)
         DEB = logging.getLogger("DEB")
-        DEB.setLevel(logging.DEBUG)
+        DEB.setLevel(logging.TRACE)
 
         # These should log.
         ERR.log(logging.CRITICAL, m())
@@ -202,13 +202,16 @@ class BuiltinLevelsTest(BaseTest):
         DEB.warning(m())
         DEB.info(m())
         DEB.debug(m())
+        DEB.trace(m())
 
         # These should not log.
         ERR.warning(m())
         ERR.info(m())
         ERR.debug(m())
+        ERR.trace(m())
 
         INF.debug(m())
+        INF.trace(m())
 
         self.assert_log_lines([
             ('ERR', 'CRITICAL', '1'),
@@ -222,6 +225,7 @@ class BuiltinLevelsTest(BaseTest):
             ('DEB', 'WARNING', '9'),
             ('DEB', 'INFO', '10'),
             ('DEB', 'DEBUG', '11'),
+            ('DEB', 'TRACE', '12'),
         ])
 
     def test_nested_explicit(self):

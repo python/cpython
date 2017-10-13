@@ -1,0 +1,1 @@
+logging module: add TRACE level, trace() function and Logger.trace() method.

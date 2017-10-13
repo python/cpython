@@ -745,6 +745,7 @@ class SysLogHandler(logging.Handler):
         "crit":     LOG_CRIT,
         "critical": LOG_CRIT,
         "debug":    LOG_DEBUG,
+        "trace":    LOG_DEBUG,
         "emerg":    LOG_EMERG,
         "err":      LOG_ERR,
         "error":    LOG_ERR,        #  DEPRECATED
@@ -784,6 +785,7 @@ class SysLogHandler(logging.Handler):
     #gives unexpected results. See SF #1524081: in the Turkish locale,
     #"INFO".lower() != "info"
     priority_map = {
+        "TRACE" : "trace",
         "DEBUG" : "debug",
         "INFO" : "info",
         "WARNING" : "warning",
@@ -1047,6 +1049,7 @@ class NTEventLogHandler(logging.Handler):
             self._welu.AddSourceToRegistry(appname, dllname, logtype)
             self.deftype = win32evtlog.EVENTLOG_ERROR_TYPE
             self.typemap = {
+                logging.TRACE   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
                 logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
                 logging.INFO    : win32evtlog.EVENTLOG_INFORMATION_TYPE,
                 logging.WARNING : win32evtlog.EVENTLOG_WARNING_TYPE,
