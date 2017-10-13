@@ -48,12 +48,13 @@ Py_LOCAL_INLINE(_PyTime_t)
 _PyTime_MulDiv(_PyTime_t ticks, _PyTime_t mul, _PyTime_t div)
 {
     _PyTime_t sec, nsec;
-    /* Compute ticks * mul / div in two parts to prevent integer overflow:
+    /* Compute (ticks * mul / div) in two parts to prevent integer overflow:
        compute the number of seconds ("integer part"), and then the remaining
        number of nanoseconds ("floating part").
 
-       The caller has to check that ticks * mul, with ticks < div, cannot
-       overflow. */
+       (ticks * mul) / div == (ticks / div) * mul + (ticks % div) * mul / div
+
+       The caller must ensure that "(div - 1) * mul" cannot overflow. */
     sec = ticks / div;
     ticks %= div;
     nsec = ticks * mul;
@@ -748,8 +749,8 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
            Check also that timebase.numer and timebase.denom can be casted to
            _PyTime_t. */
-        if (timebase.numer > _PyTime_MAX / timebase.denom
-            || timebase.denom > _PyTime_MAX) {
+        if (timebase.denom > _PyTime_MAX
+            || timebase.numer > _PyTime_MAX / timebase.denom) {
             PyErr_SetString(PyExc_OverflowError,
                             "mach_timebase_info is too large");
             return -1;
