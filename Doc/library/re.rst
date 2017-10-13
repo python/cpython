@@ -557,11 +557,12 @@ form.
    flag unless the :const:`re.LOCALE` flag is also used.
    Corresponds to the inline flag ``(?i)``.
 
-   Note that in Unicode patterns the expression ``[A-Z]`` will match not
-   only letters 'A' to 'Z' and 'a' to 'z', but will also match letters 'İ'
-   (U+0130, Latin capital letter I with dot above), 'ı' (U+0131, Latin small
-   letter dotless i), 'ſ' (U+017f, Latin small letter long s) and 'K' (U+212a,
-   Kelvin sign).  If the :const:`ASCII` flag is used, only letters 'a' to 'z'
+   Note that when the Unicode patterns ``[a-z]`` or ``[A-Z]`` are used in
+   combination with the :const:`IGNORECASE` flag, they will match the 52 ASCII
+   letters and 4 additional non-ASCII letters: 'İ' (U+0130, Latin capital
+   letter I with dot above), 'ı' (U+0131, Latin small letter dotless i),
+   'ſ' (U+017F, Latin small letter long s) and 'K' (U+212A, Kelvin sign).
+   If the :const:`ASCII` flag is used, only letters 'a' to 'z'
    and 'A' to 'Z' are matched (but the flag affects the entire regular
    expression, so in such cases using an explicit ``(?-i:[a-zA-Z])`` may be
    a better choice).

@@ -545,13 +545,15 @@ of each one.
 
    Perform case-insensitive matching; character class and literal strings will
    match letters by ignoring case.  For example, ``[A-Z]`` will match lowercase
-   letters, too. Full Unicode matching also works unless the :const:`re.ASCII`
-   flag is used to disable non-ASCII matches.  ``[A-Z]`` will also match
-   letters 'İ' (U+0130, Latin capital letter I with dot above), 'ı' (U+0131,
-   Latin small letter dotless i), 'ſ' (U+017f, Latin small letter long s) and
-   'K' (U+212a, Kelvin sign) in Unicode mode.  ``Spam`` will match ``'Spam'``,
-   ``'spam'``, ``'spAM'``, or ``'ſpam'`` (the latter is matched only in Unicode
-   mode).  This lowercasing doesn't take the current locale into account;
+   letters, too. Full Unicode matching also works unless the :const:`ASCII`
+   flag is used to disable non-ASCII matches.  When the Unicode patterns
+   ``[a-z]`` or ``[A-Z]`` are used in combination with the :const:`IGNORECASE`
+   flag, they will match the 52 ASCII letters and 4 additional non-ASCII
+   letters: 'İ' (U+0130, Latin capital letter I with dot above), 'ı' (U+0131,
+   Latin small letter dotless i), 'ſ' (U+017F, Latin small letter long s) and
+   'K' (U+212A, Kelvin sign).  ``Spam`` will match ``'Spam'``, ``'spam'``,
+   ``'spAM'``, or ``'ſpam'`` (the latter is matched only in Unicode mode).
+   This lowercasing doesn't take the current locale into account;
    it will if you also set the :const:`LOCALE` flag.
 
 
