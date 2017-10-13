@@ -425,16 +425,12 @@ class RegressionTests(unittest.TestCase):
 
     def CheckCursorInvalidIsolationLevel(self):
         """
-        When trying to call conn.corsor() when conn is a Connection object that
+        When trying to call conn.cursor() when conn is a Connection object that
         was not initialized properly, it caused a segfault. Now it should raise
         a ProgrammingError.
         """
-        try:
-            conn = sqlite.Connection.__new__(sqlite.Connection)
-            conn.__init__('', isolation_level='invalid isolation level')
-        except ValueError:
-            pass
-
+        conn = sqlite.Connection.__new__(sqlite.Connection)
+        self.assertRaises(ValueError, conn.__init__, '', isolation_level='invalid isolation level')
         self.assertRaises(sqlite.ProgrammingError, conn.cursor)
 
 

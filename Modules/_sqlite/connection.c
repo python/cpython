@@ -255,9 +255,8 @@ int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObjec
 {
     if (!connection || !connection->cursors) {
         PyErr_Format(pysqlite_ProgrammingError,
-                        "Tried to get a cursor of an uninitialized connection."
-                    );
-                    goto error;
+                        "Tried to get a cursor of an uninitialized connection.");
+        goto error;
     }
     PyObject* weakref;
 
