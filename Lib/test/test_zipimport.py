@@ -680,6 +680,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertRaises(ValueError, zi.is_package, 'foo')
         self.assertRaises(ValueError, zi.get_data, 'foo')
         self.assertRaises(ValueError, zi.get_code, 'foo')
+        self.assertRaises(ValueError, zi.get_source, 'foo')
 
 
 @support.requires_zlib
