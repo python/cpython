@@ -1519,7 +1519,7 @@ check_struct(PyStructObject *self)
 {
     if (self->s_codes == NULL) {
         PyErr_SetString(PyExc_ValueError,
-                        "Struct.__init__() not called");
+                        "Struct.__init__() wasn't called");
         return 0;
     }
     return 1;
