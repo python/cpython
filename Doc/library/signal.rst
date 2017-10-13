@@ -273,13 +273,14 @@ The :mod:`signal` module defines the following functions:
    .. versionadded:: 3.3
 
 
-.. function:: setitimer(which, seconds[, interval])
+.. function:: setitimer(which, seconds, interval=0.0)
 
    Sets given interval timer (one of :const:`signal.ITIMER_REAL`,
    :const:`signal.ITIMER_VIRTUAL` or :const:`signal.ITIMER_PROF`) specified
    by *which* to fire after *seconds* (float is accepted, different from
-   :func:`alarm`) and after that every *interval* seconds. The interval
-   timer specified by *which* can be cleared by setting seconds to zero.
+   :func:`alarm`) and after that every *interval* seconds (if *interval*
+   is non-zero). The interval timer specified by *which* can be cleared by
+   setting *seconds* to zero.
 
    When an interval timer fires, a signal is sent to the process.
    The signal sent is dependent on the timer being used;
