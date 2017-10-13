@@ -761,7 +761,7 @@ attributes:
   .. note::
 
      Default *flags* is ``re.IGNORECASE``.  So the pattern ``[a-z]`` can match
-     with some non-ASCII characters.  That's why We use local ``-i`` flag here.
+     with some non-ASCII characters.  That's why we use local ``-i`` flag here.
 
      While *flags* is kept to ``re.IGNORECASE`` for backward compatibility,
      you can override it to ``0`` or ``re.IGNORECASE | re.ASCII`` when
