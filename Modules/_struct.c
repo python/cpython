@@ -1517,7 +1517,7 @@ fail:
 Py_LOCAL_INLINE(int)
 _check_struct(PyStructObject *self)
 {
-    if (self->s_format == NULL || self->s_codes == NULL) {
+    if (self->s_codes == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "Struct.__init__() not called");
         return 0;
