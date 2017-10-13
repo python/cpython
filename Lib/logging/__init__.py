@@ -518,6 +518,10 @@ class Formatter(object):
         This default implementation just uses
         traceback.print_exception()
         """
+        # check parameter for Tuple since it can be any "Truthy" type.
+        # if sys.exc_info() didn't locate a stack frame, output is pointless
+        if not isinstance(ei, tuple) or (len(ei) < 3) or ei[0] is None:
+            return ""
         sio = io.StringIO()
         tb = ei[2]
         # See issues #9427, #1553375. Commented out for now.
