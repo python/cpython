@@ -88,25 +88,15 @@ floatclock(_Py_clock_info_t *info)
 }
 #endif /* HAVE_CLOCK */
 
-#ifdef MS_WINDOWS
-// Function to get time zone name with Windows API
-static void
-get_windows_zone(wchar_t *out)
+static PyObject*
+perf_counter(_Py_clock_info_t *info)
 {
-    TIME_ZONE_INFORMATION tzi;
-    DWORD tzid = GetTimeZoneInformation(&tzi);
-
-    if (tzid == TIME_ZONE_ID_INVALID) {
-        PyErr_SetFromWindowsErr(0);
+    double t;
+    if (_PyTime_GetPerfCounterDoubleWithInfo(&t, info) < 0) {
+        return NULL;
     }
-    else if (tzid == TIME_ZONE_ID_DAYLIGHT) {
-        wcscpy(out, tzi.DaylightName);
-    }
-    else {
-        wcscpy(out, tzi.StandardName);
-    }
+    return PyFloat_FromDouble(t);
 }
-#endif   // MS_WINDOWS
 
 #if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
 #define PYCLOCK
@@ -114,13 +104,7 @@ static PyObject*
 pyclock(_Py_clock_info_t *info)
 {
 #ifdef MS_WINDOWS
-    /* Win32 has better clock replacement; we have our own version, due to Mark
-       Hammond and Tim Peters */
-    _PyTime_t t;
-    if (_PyTime_GetWinPerfCounterWithInfo(&t, info) < 0) {
-        return NULL;
-    }
-    return _PyFloat_FromPyTime(t);
+    return perf_counter(info);
 #else
     return floatclock(info);
 #endif
@@ -270,6 +254,26 @@ PyDoc_STRVAR(sleep_doc,
 \n\
 Delay execution for a given number of seconds.  The argument may be\n\
 a floating point number for subsecond precision.");
+
+#ifdef MS_WINDOWS
+// Function to get time zone name with Windows API
+static void
+get_windows_zone(wchar_t *out)
+{
+    TIME_ZONE_INFORMATION tzi;
+    DWORD tzid = GetTimeZoneInformation(&tzi);
+
+    if (tzid == TIME_ZONE_ID_INVALID) {
+        PyErr_SetFromWindowsErr(0);
+    }
+    else if (tzid == TIME_ZONE_ID_DAYLIGHT) {
+        wcscpy(out, tzi.DaylightName);
+    }
+    else {
+        wcscpy(out, tzi.StandardName);
+    }
+}
+#endif   // MS_WINDOWS
 
 static PyStructSequence_Field struct_time_type_fields[] = {
     {"tm_year", "year, for example, 1993"},
@@ -1020,16 +1024,6 @@ PyDoc_STRVAR(monotonic_doc,
 \n\
 Monotonic clock, cannot go backward.");
 
-static PyObject*
-perf_counter(_Py_clock_info_t *info)
-{
-    _PyTime_t t;
-    if (_PyTime_GetPerfCounterWithInfo(&t, info) < 0) {
-        return NULL;
-    }
-    return _PyFloat_FromPyTime(t);
-}
-
 static PyObject *
 time_perf_counter(PyObject *self, PyObject *unused)
 {
@@ -1437,28 +1431,7 @@ The tuple items are:\n\
   DST (Daylight Savings Time) flag (-1, 0 or 1)\n\
 If the DST flag is 0, the time is given in the regular time zone;\n\
 if it is 1, the time is given in the DST time zone;\n\
-if it is -1, mktime() should guess based on the date and time.\n\
-\n\
-Variables:\n\
-\n\
-timezone -- difference in seconds between UTC and local standard time\n\
-altzone -- difference in  seconds between UTC and local DST time\n\
-daylight -- whether local time should reflect DST\n\
-tzname -- tuple of (standard time zone name, DST time zone name)\n\
-\n\
-Functions:\n\
-\n\
-time() -- return current time in seconds since the Epoch as a float\n\
-clock() -- return CPU time since process start as a float\n\
-sleep() -- delay for a number of seconds given as a float\n\
-gmtime() -- convert seconds since Epoch to UTC tuple\n\
-localtime() -- convert seconds since Epoch to local time tuple\n\
-asctime() -- convert time tuple to string\n\
-ctime() -- convert time in seconds to string\n\
-mktime() -- convert local time tuple to seconds since Epoch\n\
-strftime() -- convert time tuple to string according to format specification\n\
-strptime() -- parse string to time tuple according to format specification\n\
-tzset() -- change the local timezone");
+if it is -1, mktime() should guess based on the date and time.\n");
 
 
 
