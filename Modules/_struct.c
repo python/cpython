@@ -1515,7 +1515,7 @@ fail:
 }
 
 Py_LOCAL_INLINE(int)
-_check_struct(PyStructObject *self)
+check_struct(PyStructObject *self)
 {
     if (self->s_codes == NULL) {
         PyErr_SetString(PyExc_ValueError,
@@ -1543,7 +1543,7 @@ static PyObject *
 Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=873a24faf02e848a input=3113f8e7038b2f6c]*/
 {
-    if (!_check_struct(self)) {
+    if (!check_struct(self)) {
         return NULL;
     }
     if (buffer->len != self->s_size) {
@@ -1575,7 +1575,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset)
 /*[clinic end generated code: output=57fac875e0977316 input=97ade52422f8962f]*/
 {
-    if (!_check_struct(self)) {
+    if (!check_struct(self)) {
         return NULL;
     }
 
@@ -1705,7 +1705,7 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
 {
     unpackiterobject *iter;
 
-    if (!_check_struct(self)) {
+    if (!check_struct(self)) {
         return NULL;
     }
 
@@ -1844,7 +1844,7 @@ s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
     /* Validate arguments. */
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
-    if (!_check_struct(soself)) {
+    if (!check_struct(soself)) {
         return NULL;
     }
     if (nargs != soself->s_len)
@@ -1886,7 +1886,7 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
     /* Validate arguments.  +1 is for the first arg as buffer. */
     soself = (PyStructObject *)self;
     assert(PyStruct_Check(self));
-    if (!_check_struct(soself)) {
+    if (!check_struct(soself)) {
         return NULL;
     }
     if (nargs != (soself->s_len + 2))
@@ -1974,7 +1974,7 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
 static PyObject *
 s_get_format(PyStructObject *self, void *unused)
 {
-    if (!_check_struct(self)) {
+    if (!check_struct(self)) {
         return NULL;
     }
     return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
@@ -1996,7 +1996,7 @@ s_sizeof(PyStructObject *self, void *unused)
     Py_ssize_t size;
     formatcode *code;
 
-    if (!_check_struct(self)) {
+    if (!check_struct(self)) {
         return NULL;
     }
     size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
