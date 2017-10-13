@@ -2286,6 +2286,12 @@ readahead_get_line_skip(PyFileObject *f, Py_ssize_t skip, Py_ssize_t bufsize)
     char *buf;
     Py_ssize_t len;
 
+    if (f->unlocked_count > 0) {
+        PyErr_SetString(PyExc_IOError,
+            "next() called during concurrent "
+            "operation on the same file object");
+        return NULL;
+    }
     if (f->f_buf == NULL)
         if (readahead(f, bufsize) < 0)
             return NULL;
@@ -2335,12 +2341,6 @@ file_iternext(PyFileObject *f)
     if (!f->readable)
         return err_mode("reading");
 
-    if (f->unlocked_count > 0) {
-        PyErr_SetString(PyExc_IOError,
-            "next() called during concurrent "
-            "operation on the same file object");
-        return NULL;
-    }
     l = readahead_get_line_skip(f, 0, READAHEAD_BUFSIZE);
     if (l == NULL || PyString_GET_SIZE(l) == 0) {
         Py_XDECREF(l);
