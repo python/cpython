@@ -272,7 +272,9 @@ class TestTemplate(unittest.TestCase):
         raises(ValueError, s.substitute, dict(who='tim'))
         # Template.idpattern should match to only ASCII characters.
         # https://bugs.python.org/issue31672
-        s = Template("$who likes $ı")  # (0x131, DOTLESS I)
+        s = Template("$who likes $\u0131")  # (DOTLESS I)
+        raises(ValueError, s.substitute, dict(who='tim'))
+        s = Template("$who likes $\u0130")  # (LATIN CAPITAL LETTER I WITH DOT ABOVE)
         raises(ValueError, s.substitute, dict(who='tim'))
 
     def test_idpattern_override(self):
