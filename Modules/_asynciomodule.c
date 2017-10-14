@@ -1336,12 +1336,12 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
         return -1;
     }
 
-    self->task_fut_waiter = NULL;
+    Py_CLEAR(self->task_fut_waiter);
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
 
     Py_INCREF(coro);
-    self->task_coro = coro;
+    Py_XSETREF(self->task_coro, coro);
 
     if (task_call_step_soon(self, NULL)) {
         return -1;
