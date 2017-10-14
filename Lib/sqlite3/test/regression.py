@@ -25,6 +25,7 @@ import datetime
 import unittest
 import sqlite3 as sqlite
 import weakref
+from test import support
 
 class RegressionTests(unittest.TestCase):
     def setUp(self):
@@ -389,7 +390,7 @@ class RegressionTests(unittest.TestCase):
         ref = weakref.ref(cur, callback)
         cur.__init__(con)
         del cur
-        del ref  # shouldn't crash
+        support.gc_collect()  # shouldn't crash
 
 
 def suite():
