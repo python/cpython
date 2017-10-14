@@ -118,7 +118,7 @@ class MiscTests(unittest.TestCase):
         elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
 
     @support.cpython_only
-    def test_uninitialized(self):
+    def test_uninitialized_parser(self):
         # The interpreter shouldn't crash in case of calling methods or
         # accessing attributes of uninitialized XMLParser objects.
         parser = cET.XMLParser.__new__(cET.XMLParser)
