@@ -756,7 +756,7 @@ to parse template strings.  To do this, you can override these class attributes:
 
      While *flags* is kept to ``re.IGNORECASE`` for backward compatibility,
      you can override it to ``0`` or ``re.IGNORECASE | re.ASCII`` when
-     subclassing.  It's simple way to avoid unexpected match like above example.
+     subclassing.
 
 
 * *flags* -- The regular expression flags that will be applied when compiling
