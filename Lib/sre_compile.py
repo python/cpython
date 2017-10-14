@@ -62,7 +62,8 @@ _equivalences = (
 _ignorecase_fixes = {i: tuple(j for j in t if i != j)
                      for t in _equivalences for i in t}
 
-def _combine_flags(flags, add_flags, del_flags, TYPE_FLAGS=sre_parse.TYPE_FLAGS):
+def _combine_flags(flags, add_flags, del_flags,
+                   TYPE_FLAGS=sre_parse.TYPE_FLAGS):
     if add_flags & TYPE_FLAGS:
         flags &= ~TYPE_FLAGS
     return (flags | add_flags) & ~del_flags
@@ -686,7 +687,8 @@ def dis(code):
                     print_2(_hex_code(code[i: i + 256//_CODEBITS]))
                     i += 256//_CODEBITS
                 level -= 1
-            elif op in (MARK, GROUPREF, GROUPREF_IGNORE, GROUPREF_UNI_IGNORE, GROUPREF_LOC_IGNORE):
+            elif op in (MARK, GROUPREF, GROUPREF_IGNORE, GROUPREF_UNI_IGNORE,
+                        GROUPREF_LOC_IGNORE):
                 arg = code[i]
                 i += 1
                 print_(op, arg)

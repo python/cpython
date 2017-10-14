@@ -1540,13 +1540,13 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r'\W(?u:\w)\W', '\xe0\xe0\xe0', re.ASCII))
 
         self.checkPatternError(r'(?a)(?-a:\w)',
-                               "bad inline flags: cannot turn off flags 'a', 'u' and 'L'", 8)
+                "bad inline flags: cannot turn off flags 'a', 'u' and 'L'", 8)
         self.checkPatternError(r'(?i-i:a)',
-                               'bad inline flags: flag turned on and off', 5)
+                'bad inline flags: flag turned on and off', 5)
         self.checkPatternError(r'(?au:a)',
-                               "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
+                "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
         self.checkPatternError(br'(?aL:a)',
-                               "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
+                "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
 
         self.checkPatternError(r'(?-', 'missing flag', 3)
         self.checkPatternError(r'(?-+', 'missing flag', 3)
