@@ -621,14 +621,14 @@ then
 		for as_dir in $PATH
 		do
 			IFS=$as_save_IFS
-			if test -x $as_dir/gcc; then
+			if test -x "${as_dir}/gcc"; then
 				if test -z "${found_gcc}"; then
-					found_gcc=$as_dir/gcc
+					found_gcc="${as_dir}/gcc"
 				fi
 			fi
-			if test -x $as_dir/clang; then
+			if test -x "${as_dir}/clang"; then
 				if test -z "${found_clang}"; then
-					found_clang=$as_dir/clang
+					found_clang="${as_dir}/clang"
 				fi
 			fi
 		done
@@ -948,13 +948,6 @@ else
 fi
 rmdir CaseSensitiveTestDir
 
-case $MACHDEP in
-bsdos*)
-    case $CC in
-    gcc) CC="$CC -D_HAVE_BSDI";;
-    esac;;
-esac
-
 case $ac_sys_system in
 hp*|HP*)
     case $CC in
@@ -1168,7 +1161,6 @@ fi
 
 AC_MSG_RESULT($LDLIBRARY)
 
-AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_TOOLS(AR, ar aal, ar)
 
@@ -1176,7 +1168,7 @@ AC_CHECK_TOOLS(AR, ar aal, ar)
 AC_SUBST(ARFLAGS)
 if test -z "$ARFLAGS"
 then
-        ARFLAGS="rc"
+        ARFLAGS="rcs"
 fi
 
 AC_CHECK_TOOLS([READELF], [readelf], [:])
@@ -1191,8 +1183,8 @@ AC_SUBST(READELF)
 
 
 case $MACHDEP in
-bsdos*|hp*|HP*)
-	# install -d does not work on BSDI or HP-UX
+hp*|HP*)
+	# install -d does not work on HP-UX
 	if test -z "$INSTALL"
 	then
 		INSTALL="${srcdir}/install-sh -c"
@@ -2271,6 +2263,25 @@ if test "$have_pthread_t" = yes ; then
 #endif
   ])
 fi
+
+# Issue #25658: POSIX hasn't defined that pthread_key_t is compatible with int.
+# This checking will be unnecessary after removing deprecated TLS API.
+AC_CHECK_SIZEOF(pthread_key_t, [], [[#include <pthread.h>]])
+AC_MSG_CHECKING(whether pthread_key_t is compatible with int)
+if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_key_t k; k * 1;]])],
+    [ac_pthread_key_t_is_arithmetic_type=yes],
+    [ac_pthread_key_t_is_arithmetic_type=no]
+  )
+  AC_MSG_RESULT($ac_pthread_key_t_is_arithmetic_type)
+  if test "$ac_pthread_key_t_is_arithmetic_type" = yes ; then
+    AC_DEFINE(PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT, 1,
+              [Define if pthread_key_t is compatible with int.])
+  fi
+else
+  AC_MSG_RESULT(no)
+fi
 CC="$ac_save_cc"
 
 AC_SUBST(OTHER_LIBTOOL_OPT)
@@ -2492,9 +2503,6 @@ then
 	Linux*|GNU*|QNX*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	BSD/OS*/4*)
-		LDSHARED="gcc -shared"
-		LDCXXSHARED="g++ -shared";;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -2560,7 +2568,6 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
-	BSD/OS*/4*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
@@ -2585,7 +2592,6 @@ then
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s";;
 #	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
-	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
@@ -3038,6 +3044,7 @@ if test "$posix_threads" = "yes"; then
             ;;
         esac])
       AC_CHECK_FUNCS(pthread_atfork)
+      AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
 
 

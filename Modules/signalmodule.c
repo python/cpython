@@ -131,16 +131,21 @@ static HANDLE sigint_event = NULL;
 #ifdef HAVE_GETITIMER
 static PyObject *ItimerError;
 
-/* auxiliary functions for setitimer/getitimer */
-static void
-timeval_from_double(double d, struct timeval *tv)
+/* auxiliary functions for setitimer */
+static int
+timeval_from_double(PyObject *obj, struct timeval *tv)
 {
-    tv->tv_sec = floor(d);
-    tv->tv_usec = fmod(d, 1.0) * 1000000.0;
-    /* Don't disable the timer if the computation above rounds down to zero. */
-    if (d > 0.0 && tv->tv_sec == 0 && tv->tv_usec == 0) {
-        tv->tv_usec = 1;
+    if (obj == NULL) {
+        tv->tv_sec = 0;
+        tv->tv_usec = 0;
+        return 0;
     }
+
+    _PyTime_t t;
+    if (_PyTime_FromSecondsObject(&t, obj, _PyTime_ROUND_CEILING) < 0) {
+        return -1;
+    }
+    return _PyTime_AsTimeval(t, tv, _PyTime_ROUND_CEILING);
 }
 
 Py_LOCAL_INLINE(double)
@@ -677,8 +682,8 @@ PySignal_SetWakeupFd(int fd)
 signal.setitimer
 
     which:    int
-    seconds:  double
-    interval: double = 0.0
+    seconds:  object
+    interval: object(c_default="NULL") = 0.0
     /
 
 Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).
@@ -690,14 +695,19 @@ Returns old values as a tuple: (delay, interval).
 [clinic start generated code]*/
 
 static PyObject *
-signal_setitimer_impl(PyObject *module, int which, double seconds,
-                      double interval)
-/*[clinic end generated code: output=6f51da0fe0787f2c input=0d27d417cfcbd51a]*/
+signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
+                      PyObject *interval)
+/*[clinic end generated code: output=65f9dcbddc35527b input=de43daf194e6f66f]*/
 {
     struct itimerval new, old;
 
-    timeval_from_double(seconds, &new.it_value);
-    timeval_from_double(interval, &new.it_interval);
+    if (timeval_from_double(seconds, &new.it_value) < 0) {
+        return NULL;
+    }
+    if (timeval_from_double(interval, &new.it_interval) < 0) {
+        return NULL;
+    }
+
     /* Let OS check "which" value */
     if (setitimer(which, &new, &old) != 0) {
         PyErr_SetFromErrno(ItimerError);

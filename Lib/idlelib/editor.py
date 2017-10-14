@@ -664,10 +664,8 @@ class EditorWindow(object):
             filename = self.open_module()
             if filename is None:
                 return "break"
-        head, tail = os.path.split(filename)
-        base, ext = os.path.splitext(tail)
         from idlelib import browser
-        browser.ModuleBrowser(self.flist, base, [head])
+        browser.ModuleBrowser(self.root, filename)
         return "break"
 
     def open_path_browser(self, event=None):
