@@ -3439,7 +3439,7 @@ _check_xmlparser(XMLParserObject* self)
 {
     if (self->target == NULL) {
         PyErr_SetString(PyExc_ValueError,
-                        "XMLParser.__init__() not called");
+                        "XMLParser.__init__() wasn't called");
         return 0;
     }
     return 1;
