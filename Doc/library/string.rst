@@ -746,8 +746,18 @@ to parse template strings.  To do this, you can override these class attributes:
 
 * *idpattern* -- This is the regular expression describing the pattern for
   non-braced placeholders (the braces will be added automatically as
-  appropriate).  The default value is the regular expression
-  ``[_a-z][_a-z0-9]*``.
+  appropriate). The default value is the regular expression
+  ``(?-i:[_a-zA-Z][_a-zA-Z0-9]*)``.
+
+  .. note::
+
+     Since default *flags* is ``re.IGNORECASE``, pattern ``[a-z]`` can match
+     with some non-ASCII characters. That's why we use local ``-i`` flag here.
+
+     While *flags* is kept to ``re.IGNORECASE`` for backward compatibility,
+     you can override it to ``0`` or ``re.IGNORECASE | re.ASCII`` when
+     subclassing.
+
 
 * *flags* -- The regular expression flags that will be applied when compiling
   the regular expression used for recognizing substitutions.  The default value
