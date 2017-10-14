@@ -765,7 +765,7 @@ attributes:
 
      While *flags* is kept to ``re.IGNORECASE`` for backward compatibility,
      you can override it to ``0`` or ``re.IGNORECASE | re.ASCII`` when
-     subclassing.  It's simple way to avoid unexpected match like above example.
+     subclassing.
 
   .. versionchanged:: 3.7
      *braceidpattern* can be used to define separate patterns used inside and
