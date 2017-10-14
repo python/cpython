@@ -130,7 +130,7 @@ class PollTests(unittest.TestCase):
         p = proc.stdout
         pollster = select.poll()
         pollster.register( p, select.POLLIN )
-        for tout in (0, 500, 1000, 2000, 4000, 8000, 16000, None, -1000) + (-1,)*3:
+        for tout in (0, 500, 1000, 2000, 4000, 8000, 16000, None, -1000) + (-1,)*8:
             fdlist = pollster.poll(tout)
             if (fdlist == []):
                 continue
