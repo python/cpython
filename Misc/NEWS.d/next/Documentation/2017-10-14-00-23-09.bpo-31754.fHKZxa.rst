@@ -1,0 +1,1 @@
+Fix document entry in c-api/buffer.html. Patch by Aniket Vyas
