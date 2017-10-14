@@ -2510,6 +2510,18 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
 
+static int
+ignore_attribute_error(PyObject *value)
+{
+    if (value == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
+    }
+    return 0;
+}
+
 static PyObject*
 xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
 {
@@ -2578,14 +2590,33 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
     self->target = target;
 
     self->handle_xml = PyObject_GetAttrString(target, "xml");
+    if (ignore_attribute_error(self->handle_xml)) {
+        return NULL;
+    }
     self->handle_start = PyObject_GetAttrString(target, "start");
+    if (ignore_attribute_error(self->handle_start)) {
+        return NULL;
+    }
     self->handle_data = PyObject_GetAttrString(target, "data");
+    if (ignore_attribute_error(self->handle_data)) {
+        return NULL;
+    }
     self->handle_end = PyObject_GetAttrString(target, "end");
+    if (ignore_attribute_error(self->handle_end)) {
+        return NULL;
+    }
     self->handle_comment = PyObject_GetAttrString(target, "comment");
+    if (ignore_attribute_error(self->handle_comment)) {
+        return NULL;
+    }
     self->handle_pi = PyObject_GetAttrString(target, "pi");
+    if (ignore_attribute_error(self->handle_pi)) {
+        return NULL;
+    }
     self->handle_close = PyObject_GetAttrString(target, "close");
-
-    PyErr_Clear();
+    if (ignore_attribute_error(self->handle_close)) {
+        return NULL;
+    }
 
     /* configure parser */
     EXPAT(SetUserData)(self->parser, self);
