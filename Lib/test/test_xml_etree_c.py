@@ -117,6 +117,23 @@ class MiscTests(unittest.TestCase):
         elem.tail = X()
         elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
 
+    @support.cpython_only
+    def test_uninitialized(self):
+        # The interpreter shouldn't crash in case of calling methods or
+        # accessing attributes of uninitialized XMLParser objects.
+        parser = cET.XMLParser.__new__(cET.XMLParser)
+        self.assertRaises(ValueError, parser.close)
+        self.assertRaises(ValueError, parser.feed, 'foo')
+        class MockFile:
+            def read(*args):
+                return ''
+        self.assertRaises(ValueError, parser._parse_whole, MockFile())
+        self.assertRaises(ValueError, parser._setevents, None)
+        with self.assertRaises(ValueError):
+            parser.entity
+        with self.assertRaises(ValueError):
+            parser.target
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):

@@ -3439,6 +3439,11 @@ expat_parse(XMLParserObject* self, const char* data, int data_len, int final)
 {
     int ok;
 
+    if (self->parser == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "XMLParser.__init__() not called");
+        return NULL;
+    }
     assert(!PyErr_Occurred());
     ok = EXPAT(Parse)(self->parser, data, data_len, final);
 
@@ -3659,6 +3664,11 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     TreeBuilderObject *target;
     PyObject *events_append, *events_seq;
 
+    if (self->target == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "XMLParser.__init__() not called");
+        return NULL;
+    }
     if (!TreeBuilder_CheckExact(self->target)) {
         PyErr_SetString(
             PyExc_TypeError,
@@ -3754,6 +3764,11 @@ xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
         else
             goto generic;
 
+        if (res == NULL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "XMLParser.__init__() not called");
+            return NULL;
+        }
         Py_INCREF(res);
         return res;
     }
