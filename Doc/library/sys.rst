@@ -1275,9 +1275,9 @@ always available.
      Under all platforms though, you can override this value by setting the
      :envvar:`PYTHONIOENCODING` environment variable before starting Python.
 
-   * When interactive, standard streams are line-buffered.  Otherwise, they
-     are block-buffered like regular text files.  You can override this
-     value with the :option:`-u` command-line option.
+   * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
+     Otherwise, they are block-buffered like regular text files.  You can
+     override this value with the :option:`-u` command-line option.
 
    .. note::
 
