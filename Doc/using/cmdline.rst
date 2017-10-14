@@ -303,12 +303,13 @@ Miscellaneous options
 
 .. cmdoption:: -u
 
-   Force the binary layer of the stdout and stderr streams (which is
-   available as their ``buffer`` attribute) to be unbuffered. The text I/O
-   layer will still be line-buffered if writing to the console, or
-   block-buffered if redirected to a non-interactive file.
+   Force the stdout and stderr streams to be unbuffered.  This option has no
+   effect on the stdin stream.
 
    See also :envvar:`PYTHONUNBUFFERED`.
+
+   .. versionchanged:: 3.7
+      The text layer of the stdout and stderr streams now is unbuffered.
 
 
 .. cmdoption:: -v
@@ -501,6 +502,18 @@ conflict.
    :option:`-O` option.  If set to an integer, it is equivalent to specifying
    :option:`-O` multiple times.
 
+
+.. envvar:: PYTHONBREAKPOINT
+
+   If this is set, it names a callable using dotted-path notation.  The module
+   containing the callable will be imported and then the callable will be run
+   by the default implementation of :func:`sys.breakpointhook` which itself is
+   called by built-in :func:`breakpoint`.  If not set, or set to the empty
+   string, it is equivalent to the value "pdb.set_trace".  Setting this to the
+   string "0" causes the default implementation of :func:`sys.breakpointhook`
+   to do nothing but return immediately.
+
+   .. versionadded:: 3.7
 
 .. envvar:: PYTHONDEBUG
 

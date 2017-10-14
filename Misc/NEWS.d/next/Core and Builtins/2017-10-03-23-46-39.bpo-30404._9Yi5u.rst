@@ -1,0 +1,2 @@
+The -u option now makes the stdout and stderr streams unbuffered rather than
+line-buffered.

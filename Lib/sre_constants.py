@@ -32,6 +32,8 @@ class error(Exception):
         colno: The column corresponding to pos (may be None)
     """
 
+    __module__ = 're'
+
     def __init__(self, msg, pattern=None, pos=None):
         self.msg = msg
         self.pattern = pattern
