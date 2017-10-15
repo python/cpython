@@ -103,6 +103,7 @@ _PyTime_Round(double x, _PyTime_round_t round)
         d = floor(d);
     }
     else {
+        assert(round == _PyTime_ROUND_UP);
         d = (d < 0.0) ? floor(d) : ceil(d);
     }
     return d;
