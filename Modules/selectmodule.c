@@ -1521,7 +1521,7 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
             return NULL;
         }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_UP);
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
         if (ms < INT_MIN || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
@@ -1565,7 +1565,7 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
                 nfds = 0;
                 break;
             }
-            ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_UP);
+            ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
             /* retry epoll_wait() with the recomputed timeout */
         }
     } while(1);
