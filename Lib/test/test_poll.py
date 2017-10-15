@@ -204,17 +204,35 @@ class PollTests(unittest.TestCase):
             os.write(w, b'spam')
             t.join()
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    @reap_threads
     def test_poll_blocks_with_negative_ms(self):
 
-        def poll_exec():
-            pollster = select.poll()
-            pollster.poll(-1e-100)
+        # GIVEN
 
-        poll_thread = threading.Thread(target=poll_exec)
-        poll_thread.daemon = True
+        # Create two file descriptors. This will be used to unlock
+        # the blocking call to poll.poll inside the thread
+
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+
+        pollster = select.poll()
+        pollster.register(r, select.POLLIN)
+
+        # WHEN
+
+        poll_thread = threading.Thread(target=pollster.poll, args=(-1e-100,))
         poll_thread.start()
         poll_thread.join(timeout=0.1)
+
+        # THEN
         self.assertTrue(poll_thread.is_alive())
+
+        # Write to the pipe so pollster.poll unblocks and the thread ends.
+        os.write(w, b'spam')
+        poll_thread.join()
+        self.assertFalse(poll_thread.is_alive())
 
 
 
