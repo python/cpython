@@ -32,11 +32,11 @@ invalid_comma_type(Py_UCS4 presentation_type)
 {
     if (presentation_type > 32 && presentation_type < 128)
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' or '_' with '%c'.",
+                     "Cannot specify ',' with '%c'.",
                      (char)presentation_type);
     else
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' or '_' with '\\x%x'.",
+                     "Cannot specify ',' with '\\x%x'.",
                      (unsigned int)presentation_type);
 }
 
