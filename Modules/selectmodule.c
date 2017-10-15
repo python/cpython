@@ -576,7 +576,7 @@ poll_poll(pollObject *self, PyObject *args)
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        poll_result = poll(self->ufds, self->ufd_len, (int)ms);
+        poll_result = poll(self->ufds, self->ufd_len, ms > 0 ? (int)ms : -1);
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)
