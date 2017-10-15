@@ -29,7 +29,10 @@ typedef enum {
     _PyTime_ROUND_CEILING=1,
     /* Round to nearest with ties going to nearest even integer.
        For example, used to round from a Python float. */
-    _PyTime_ROUND_HALF_EVEN
+    _PyTime_ROUND_HALF_EVEN=2,
+    /* Round away from zero 
+       For example, used for timeout if negative values are allowed. */
+    _PyTime_ROUND_UP=3
 } _PyTime_round_t;
 
 /* Convert a time_t to a PyLong. */

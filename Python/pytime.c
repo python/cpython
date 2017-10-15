@@ -99,8 +99,11 @@ _PyTime_Round(double x, _PyTime_round_t round)
     else if (round == _PyTime_ROUND_CEILING) {
         d = ceil(d);
     }
-    else {
+    else if (round == _PyTime_ROUND_FLOOR) {
         d = floor(d);
+    }
+    else {
+        d = (d < 0.0) ? floor(d) : ceil(d);
     }
     return d;
 }
