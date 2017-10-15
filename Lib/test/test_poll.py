@@ -204,6 +204,19 @@ class PollTests(unittest.TestCase):
             os.write(w, b'spam')
             t.join()
 
+    def test_poll_blocks_with_negative_ms(self):
+
+        def poll_exec():
+            pollster = select.poll()
+            pollster.poll(-1e-100)
+
+        poll_thread = threading.Thread(target=poll_exec)
+        poll_thread.daemon = True
+        poll_thread.start()
+        poll_thread.join(timeout=0.1)
+        self.assertTrue(poll_thread.is_alive())
+
+
 
 def test_main():
     run_unittest(PollTests)
