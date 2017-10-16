@@ -737,9 +737,13 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         }
 
         /* Check that timebase.numer and timebase.denom can be casted to
-           _PyTime_t.
+           _PyTime_t. In pratice, timebase uses uint32_t, so casting cannot
+           overflow. At the end, only make sure that the type is uint32_t
+           (_PyTime_t is 64-bit long). */
+        assert(sizeof(timebase.numer) < sizeof(_PyTime_t));
+        assert(sizeof(timebase.denom) < sizeof(_PyTime_t));
 
-           Make also sure that (ticks * timebase.numer) cannot overflow in
+        /* Make sure that (ticks * timebase.numer) cannot overflow in
            _PyTime_MulDiv(), with ticks < timebase.denom.
 
            Known time bases:
@@ -749,9 +753,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
            None of these time bases can overflow with 64-bit _PyTime_t, but
            check for overflow, just in case. */
-        if (timebase.denom > _PyTime_MAX
-            || timebase.numer > _PyTime_MAX
-            || timebase.numer > _PyTime_MAX / timebase.denom) {
+        if ((_PyTime_t)timebase.numer > _PyTime_MAX / (_PyTime_t)timebase.denom) {
             PyErr_SetString(PyExc_OverflowError,
                             "mach_timebase_info is too large");
             return -1;
