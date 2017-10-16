@@ -1183,12 +1183,16 @@ class _ListDataStream(io.BufferedIOBase):
     def tell(self):
         return len(self.lst)
 
-def tostringlist(element, encoding=None, method=None, *,
-                 short_empty_elements=True):
+def tostringlist(element, encoding=None, method=None, pretty=False, indent='  ',
+                 *, short_empty_elements=True):
     lst = []
     stream = _ListDataStream(lst)
+    if not pretty:
+        indent = ''
+
     ElementTree(element).write(stream, encoding, method=method,
-                               short_empty_elements=short_empty_elements)
+                               short_empty_elements=short_empty_elements,
+                               indent=indent)
     return lst
 
 
