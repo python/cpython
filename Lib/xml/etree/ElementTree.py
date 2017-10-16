@@ -972,22 +972,29 @@ try:
 except NameError:
     pass
 
-def _serialize_html(write, elem, qnames, namespaces, **kwargs):
+def _serialize_html(write, elem, qnames, namespaces, indent='', addindent='',
+                    newline='',  **kwargs):
+    pretty = len(addindent) > 0
     tag = elem.tag
     text = elem.text
     if tag is Comment:
-        write("<!--%s-->" % _escape_cdata(text))
+        write(indent + "<!--%s-->" % _escape_cdata(text, pretty))
     elif tag is ProcessingInstruction:
-        write("<?%s?>" % _escape_cdata(text))
+        write(indent + "<?%s?>" % _escape_cdata(text, pretty))
     else:
         tag = qnames[tag]
         if tag is None:
             if text:
-                write(_escape_cdata(text))
-            for e in elem:
-                _serialize_html(write, e, qnames, None)
+                write(indent + _escape_cdata(text, pretty))
+            for i, e in enumerate(elem):
+                if i > 0:
+                    write(newline)
+                _serialize_html(write, e, qnames, None, indent=indent,
+                                addindent=addindent, newline=newline)
+            if len(elem) > 0:
+                write(newline + indent)
         else:
-            write("<" + tag)
+            write(indent + "<" + tag)
             items = list(elem.items())
             if items or namespaces:
                 if namespaces:
@@ -1012,15 +1019,24 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
             ltag = tag.lower()
             if text:
                 if ltag == "script" or ltag == "style":
+                    write(newline)
+                    if pretty:
+                        text = text.lstrip("\n\r").rstrip()
                     write(text)
+                    write(newline + indent)
                 else:
-                    write(_escape_cdata(text))
+                    write(_escape_cdata(text, pretty))
             for e in elem:
-                _serialize_html(write, e, qnames, None)
+                write(newline)
+                _serialize_html(write, e, qnames, None, indent=indent+addindent,
+                                addindent=addindent, newline=newline)
+            if len(elem) > 0:
+                write(newline + indent)
+
             if ltag not in HTML_EMPTY:
                 write("</" + tag + ">")
     if elem.tail:
-        write(_escape_cdata(elem.tail))
+        write(_escape_cdata(elem.tail, pretty))
 
 def _serialize_text(write, elem):
     for part in elem.itertext():
