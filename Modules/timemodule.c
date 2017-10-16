@@ -91,11 +91,12 @@ floatclock(_Py_clock_info_t *info)
 static PyObject*
 perf_counter(_Py_clock_info_t *info)
 {
-    double t;
-    if (_PyTime_GetPerfCounterDoubleWithInfo(&t, info) < 0) {
+    _PyTime_t t;
+    if (_PyTime_GetPerfCounterWithInfo(&t, info) < 0) {
         return NULL;
     }
-    return PyFloat_FromDouble(t);
+    double d = _PyTime_AsSecondsDouble(t);
+    return PyFloat_FromDouble(d);
 }
 
 #if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
