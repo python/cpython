@@ -877,6 +877,25 @@ win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
             return -1;
         }
 
+        /* Check that frequency can be casted to _PyTime_t.
+
+           Make also sure that (ticks * SEC_TO_NS) cannot overflow in
+           _PyTime_MulDiv(), with ticks < frequency.
+
+           Known QueryPerformanceFrequency() values:
+
+           * 10,000,000 (10 MHz): 100 ns resolution
+           * 3,579,545 Hz (3.6 MHz): 279 ns resolution
+
+           None of these time bases can overflow with 64-bit _PyTime_t, but
+           check for overflow, just in case. */
+        if (frequency > _PyTime_MAX
+            || frequency > (LONGLONG)_PyTime_MAX / (LONGLONG)SEC_TO_NS) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "QueryPerformanceFrequency is too large");
+            return -1;
+        }
+
         QueryPerformanceCounter(&now);
         t0 = now.QuadPart;
     }
@@ -895,12 +914,12 @@ win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
        to floatting point number, as in time.perf_counter(). */
     ticksll -= t0;
 
-    /* Make sure that cast to _PyTime_t cannot overflow,
+    /* Make sure that casting LONGLONG to _PyTime_t cannot overflow,
        both types are signed */
-    Py_BUILD_ASSERT(sizeof(ticksll) == sizeof(ticks));
+    Py_BUILD_ASSERT(sizeof(ticksll) <= sizeof(ticks));
     ticks = (_PyTime_t)ticksll;
 
-    *tp = _PyTime_MulDiv(ticks, SEC_TO_NS, frequency);
+    *tp = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)frequency);
     return 0;
 }
 #endif
