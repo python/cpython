@@ -1,0 +1,5 @@
+``gc.freeze()`` is a new API that allows for moving all objects currently
+tracked by the garbage collector to a permanent generation, effectively
+removing them from future collection events. This can be used to protect
+those objects from having their PyGC_Head mutated. In effect, this enables
+great copy-on-write stability at fork().
