@@ -1030,6 +1030,47 @@ class ElementTreeTest(unittest.TestCase):
                                        method='html')
                 self.assertEqual(serialized, expected)
 
+    def test_pretty_print_xml(self):
+        pi = ET.ProcessingInstruction('pi')
+        comment = ET.Comment('comment')
+
+        root = ET.Element(None)
+        root.append(pi)
+
+        child1 = ET.SubElement(root, 'child1')
+        child1.append(comment)
+        elem = ET.SubElement(child1, 'elem')
+        elem.set('a', '1')
+        elem.set('b', 'txt')
+        elem.text = 'Oh, wow, some text!'
+
+        child2 = ET.SubElement(root, 'child2')
+        elem1 = ET.SubElement(child2, 'elem1')
+        elem21 = ET.SubElement(elem1, 'elem21')
+        elem22 = ET.SubElement(elem1, 'elem22')
+        elem3 = ET.SubElement(elem21, 'elem3')
+
+        elem21.append(pi)
+        elem22.append(comment)
+
+        self.assertEqual(serialize(root, method='xml', indent='    '),
+            '<?pi?>\n'
+            '<child1>\n'
+            '    <!--comment-->\n'
+            '    <elem a="1" b="txt">Oh, wow, some text!</elem>\n'
+            '</child1>\n'
+            '<child2>\n'
+            '    <elem1>\n'
+            '        <elem21>\n'
+            '            <elem3 />\n'
+            '            <?pi?>\n'
+            '        </elem21>\n'
+            '        <elem22>\n'
+            '            <!--comment-->\n'
+            '        </elem22>\n'
+            '    </elem1>\n'
+            '</child2>\n')
+
 
 class XMLPullParserTest(unittest.TestCase):
 
