@@ -47,19 +47,18 @@ _PyTime_overflow(void)
 Py_LOCAL_INLINE(_PyTime_t)
 _PyTime_MulDiv(_PyTime_t ticks, _PyTime_t mul, _PyTime_t div)
 {
-    _PyTime_t sec, nsec;
+    _PyTime_t intpart, remaining;
     /* Compute (ticks * mul / div) in two parts to prevent integer overflow:
-       compute the number of seconds ("integer part"), and then the remaining
-       number of nanoseconds ("floating part").
+       compute integer part, and then the remaining part.
 
        (ticks * mul) / div == (ticks / div) * mul + (ticks % div) * mul / div
 
        The caller must ensure that "(div - 1) * mul" cannot overflow. */
-    sec = ticks / div;
+    intpart = ticks / div;
     ticks %= div;
-    nsec = ticks * mul;
-    nsec /= div;
-    return sec * mul + nsec;
+    remaining = ticks * mul;
+    remaining /= div;
+    return intpart * mul + remaining;
 }
 #endif   /* defined(MS_WINDOWS) || defined(__APPLE__) */
 
