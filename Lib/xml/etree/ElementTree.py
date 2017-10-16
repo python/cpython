@@ -747,6 +747,9 @@ class ElementTree:
                                     tag, otherwise they are emitted as a pair
                                     of start/end tags
 
+          *indent* -- enables and set indentation level for the human-readable
+                      output.
+
         """
         if not method:
             method = "xml"
@@ -1144,6 +1147,12 @@ def tostring(element, encoding=None, method=None, pretty=False, indent='  ', *,
     *element* is an Element instance, *encoding* is an optional output
     encoding defaulting to US-ASCII, *method* is an optional output which can
     be one of "xml" (default), "html", "text" or "c14n".
+
+    *pretty* enables human-readable indentation, *indent* allows to choose
+    indent width.
+
+    *short_empty_elements* (default) collapses pair tags with no text to the
+    single self-closed tag.
 
     Returns an (optionally) encoded string containing the XML data.
 
