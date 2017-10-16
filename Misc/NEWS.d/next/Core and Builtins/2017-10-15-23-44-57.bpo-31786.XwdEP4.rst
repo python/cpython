@@ -1,4 +1,4 @@
 Fix an issue that affects select.poll.poll and related functions in the
 select module. Now the affected functions will block for an infinite amount
 of time if any negative timeout it provided. This was not happening before
-for some values due to rounding issues.
+for some values due to rounding issues. Patch by Pablo Galindo.
