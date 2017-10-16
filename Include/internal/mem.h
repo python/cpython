@@ -167,6 +167,8 @@ struct _gc_runtime_state {
     /* linked lists of container objects */
     struct gc_generation generations[NUM_GENERATIONS];
     PyGC_Head *generation0;
+    /* a permanent generation which won't be collected */
+    struct gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
     /* true if we are currently running the collector */
     int collecting;
