@@ -736,19 +736,21 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             return -1;
         }
 
-        /* Sanity check: make sure that ticks * timebase.numer cannot overflow
-           in _PyTime_MulDiv(), with ticks < timebase.denom.
+        /* Check that timebase.numer and timebase.denom can be casted to
+           _PyTime_t.
+
+           Make also sure that (ticks * timebase.numer) cannot overflow in
+           _PyTime_MulDiv(), with ticks < timebase.denom.
 
            Known time bases:
 
            * always (1, 1) on Intel
            * (1000000000, 33333335) or (1000000000, 25000000) on PowerPC
 
-           None of these time bases can overflow with 64-bit _PyTime_t.
-
-           Check also that timebase.numer and timebase.denom can be casted to
-           _PyTime_t. */
+           None of these time bases can overflow with 64-bit _PyTime_t, but
+           check for overflow, just in case. */
         if (timebase.denom > _PyTime_MAX
+            || timebase.numer > _PyTime_MAX
             || timebase.numer > _PyTime_MAX / timebase.denom) {
             PyErr_SetString(PyExc_OverflowError,
                             "mach_timebase_info is too large");
