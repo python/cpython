@@ -317,6 +317,16 @@ class StrptimeTests(unittest.TestCase):
         # Test julian directives
         self.helper('j', 7)
 
+    def test_offset(self):
+        (*_, offset), _ = _strptime._strptime("+0100", "%z")
+        self.assertEqual(offset, 60 * 60)
+        (*_, offset), _ = _strptime._strptime("-0100", "%z")
+        self.assertEqual(offset, -60 * 60)
+        (*_, offset), _ = _strptime._strptime("+01:00", "%z")
+        self.assertEqual(offset, 60 * 60)
+        (*_, offset), _ = _strptime._strptime("-01:00", "%z")
+        self.assertEqual(offset, -60 * 60)
+
     def test_timezone(self):
         # Test timezone directives.
         # When gmtime() is used with %Z, entire result of strftime() is empty.
