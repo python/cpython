@@ -42,6 +42,27 @@ _PyTime_overflow(void)
                     "timestamp too large to convert to C _PyTime_t");
 }
 
+
+#if defined(MS_WINDOWS) || defined(__APPLE__)
+Py_LOCAL_INLINE(_PyTime_t)
+_PyTime_MulDiv(_PyTime_t ticks, _PyTime_t mul, _PyTime_t div)
+{
+    _PyTime_t intpart, remaining;
+    /* Compute (ticks * mul / div) in two parts to prevent integer overflow:
+       compute integer part, and then the remaining part.
+
+       (ticks * mul) / div == (ticks / div) * mul + (ticks % div) * mul / div
+
+       The caller must ensure that "(div - 1) * mul" cannot overflow. */
+    intpart = ticks / div;
+    ticks %= div;
+    remaining = ticks * mul;
+    remaining /= div;
+    return intpart * mul + remaining;
+}
+#endif   /* defined(MS_WINDOWS) || defined(__APPLE__) */
+
+
 time_t
 _PyLong_AsTime_t(PyObject *obj)
 {
@@ -700,28 +721,61 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
 #elif defined(__APPLE__)
     static mach_timebase_info_data_t timebase;
-    uint64_t time;
+    static uint64_t t0 = 0;
+    uint64_t ticks;
 
     if (timebase.denom == 0) {
         /* According to the Technical Q&A QA1398, mach_timebase_info() cannot
            fail: https://developer.apple.com/library/mac/#qa/qa1398/ */
         (void)mach_timebase_info(&timebase);
+
+        /* Sanity check: should never occur in practice */
+        if (timebase.numer < 1 || timebase.denom < 1) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "invalid mach_timebase_info");
+            return -1;
+        }
+
+        /* Check that timebase.numer and timebase.denom can be casted to
+           _PyTime_t. In pratice, timebase uses uint32_t, so casting cannot
+           overflow. At the end, only make sure that the type is uint32_t
+           (_PyTime_t is 64-bit long). */
+        assert(sizeof(timebase.numer) < sizeof(_PyTime_t));
+        assert(sizeof(timebase.denom) < sizeof(_PyTime_t));
+
+        /* Make sure that (ticks * timebase.numer) cannot overflow in
+           _PyTime_MulDiv(), with ticks < timebase.denom.
+
+           Known time bases:
+
+           * always (1, 1) on Intel
+           * (1000000000, 33333335) or (1000000000, 25000000) on PowerPC
+
+           None of these time bases can overflow with 64-bit _PyTime_t, but
+           check for overflow, just in case. */
+        if ((_PyTime_t)timebase.numer > _PyTime_MAX / (_PyTime_t)timebase.denom) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "mach_timebase_info is too large");
+            return -1;
+        }
+
+        t0 = mach_absolute_time();
     }
-
-    time = mach_absolute_time();
-
-    /* apply timebase factor */
-    time *= timebase.numer;
-    time /= timebase.denom;
-
-    *tp = time;
 
     if (info) {
         info->implementation = "mach_absolute_time()";
-        info->resolution = (double)timebase.numer / timebase.denom * 1e-9;
+        info->resolution = (double)timebase.numer / (double)timebase.denom * 1e-9;
         info->monotonic = 1;
         info->adjustable = 0;
     }
+
+    ticks = mach_absolute_time();
+    /* Use a "time zero" to reduce precision loss when converting time
+       to floatting point number, as in time.monotonic(). */
+    ticks -= t0;
+    *tp = _PyTime_MulDiv(ticks,
+                         (_PyTime_t)timebase.numer,
+                         (_PyTime_t)timebase.denom);
 
 #elif defined(__hpux)
     hrtime_t time;
@@ -802,60 +856,93 @@ _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 
 #ifdef MS_WINDOWS
 static int
-win_perf_counter(double *tp, _Py_clock_info_t *info)
+win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
 {
-    static LONGLONG cpu_frequency = 0;
-    static LONGLONG ctrStart;
+    static LONGLONG frequency = 0;
+    static LONGLONG t0 = 0;
     LARGE_INTEGER now;
-    double diff;
+    LONGLONG ticksll;
+    _PyTime_t ticks;
 
-    if (cpu_frequency == 0) {
+    if (frequency == 0) {
         LARGE_INTEGER freq;
-        QueryPerformanceCounter(&now);
-        ctrStart = now.QuadPart;
-        if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
+        if (!QueryPerformanceFrequency(&freq)) {
             PyErr_SetFromWindowsErr(0);
             return -1;
         }
-        cpu_frequency = freq.QuadPart;
+        frequency = freq.QuadPart;
+
+        /* Sanity check: should never occur in practice */
+        if (frequency < 1) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "invalid QueryPerformanceFrequency");
+            return -1;
+        }
+
+        /* Check that frequency can be casted to _PyTime_t.
+
+           Make also sure that (ticks * SEC_TO_NS) cannot overflow in
+           _PyTime_MulDiv(), with ticks < frequency.
+
+           Known QueryPerformanceFrequency() values:
+
+           * 10,000,000 (10 MHz): 100 ns resolution
+           * 3,579,545 Hz (3.6 MHz): 279 ns resolution
+
+           None of these frequencies can overflow with 64-bit _PyTime_t, but
+           check for overflow, just in case. */
+        if (frequency > _PyTime_MAX
+            || frequency > (LONGLONG)_PyTime_MAX / (LONGLONG)SEC_TO_NS) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "QueryPerformanceFrequency is too large");
+            return -1;
+        }
+
+        QueryPerformanceCounter(&now);
+        t0 = now.QuadPart;
     }
-    QueryPerformanceCounter(&now);
-    diff = (double)(now.QuadPart - ctrStart);
+
     if (info) {
         info->implementation = "QueryPerformanceCounter()";
-        info->resolution = 1.0 / (double)cpu_frequency;
+        info->resolution = 1.0 / (double)frequency;
         info->monotonic = 1;
         info->adjustable = 0;
     }
 
-    diff = diff / (double)cpu_frequency;
-    *tp = diff;
+    QueryPerformanceCounter(&now);
+    ticksll = now.QuadPart;
+
+    /* Use a "time zero" to reduce precision loss when converting time
+       to floatting point number, as in time.perf_counter(). */
+    ticksll -= t0;
+
+    /* Make sure that casting LONGLONG to _PyTime_t cannot overflow,
+       both types are signed */
+    Py_BUILD_ASSERT(sizeof(ticksll) <= sizeof(ticks));
+    ticks = (_PyTime_t)ticksll;
+
+    *tp = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)frequency);
     return 0;
 }
 #endif
 
 
 int
-_PyTime_GetPerfCounterDoubleWithInfo(double *d, _Py_clock_info_t *info)
+_PyTime_GetPerfCounterWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 {
 #ifdef MS_WINDOWS
-    return win_perf_counter(d, info);
+    return win_perf_counter(t, info);
 #else
-    _PyTime_t t;
-    if (_PyTime_GetMonotonicClockWithInfo(&t, info) < 0) {
-        return -1;
-    }
-    *d = _PyTime_AsSecondsDouble(t);
-    return 0;
+    return _PyTime_GetMonotonicClockWithInfo(t, info);
 #endif
 }
 
 
-double
-_PyTime_GetPerfCounterDouble(void)
+_PyTime_t
+_PyTime_GetPerfCounter(void)
 {
-    double t;
-    if (_PyTime_GetPerfCounterDoubleWithInfo(&t, NULL)) {
+    _PyTime_t t;
+    if (_PyTime_GetPerfCounterWithInfo(&t, NULL)) {
         Py_UNREACHABLE();
     }
     return t;
@@ -869,14 +956,13 @@ _PyTime_Init(void)
        are working properly to not have to check for exceptions at runtime. If
        a clock works once, it cannot fail in next calls. */
     _PyTime_t t;
-    double d;
     if (_PyTime_GetSystemClockWithInfo(&t, NULL) < 0) {
         return -1;
     }
     if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) < 0) {
         return -1;
     }
-    if (_PyTime_GetPerfCounterDoubleWithInfo(&d, NULL) < 0) {
+    if (_PyTime_GetPerfCounterWithInfo(&t, NULL) < 0) {
         return -1;
     }
     return 0;
