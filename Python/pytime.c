@@ -862,7 +862,7 @@ win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
     static LONGLONG t0 = 0;
     LARGE_INTEGER now;
     LONGLONG ticksll;
-    _PyTime_t ticks, sec, nsec;
+    _PyTime_t ticks;
 
     if (frequency == 0) {
         LARGE_INTEGER freq;
