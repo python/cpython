@@ -1048,7 +1048,11 @@ find and load modules.
 
 .. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
 
-   A specification for a module's import-system-related state.
+   A specification for a module's import-system-related state.  This is
+   typically exposed as the module's ``__spec__`` attribute.  In the
+   descriptions below, the parenthetical "dunder" version names the equivalent
+   attribute available directly on the module object.
+   E.g. ``module.__spec__.name == module.__name__``.
 
    .. versionadded:: 3.4
 
