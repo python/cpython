@@ -887,7 +887,7 @@ win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
            * 10,000,000 (10 MHz): 100 ns resolution
            * 3,579,545 Hz (3.6 MHz): 279 ns resolution
 
-           None of these time bases can overflow with 64-bit _PyTime_t, but
+           None of these frequencies can overflow with 64-bit _PyTime_t, but
            check for overflow, just in case. */
         if (frequency > _PyTime_MAX
             || frequency > (LONGLONG)_PyTime_MAX / (LONGLONG)SEC_TO_NS) {
