@@ -227,9 +227,6 @@ class PollTests(unittest.TestCase):
             os.close(w)
 
 
-
-
-
 def test_main():
     run_unittest(PollTests)
 

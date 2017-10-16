@@ -104,7 +104,7 @@ _PyTime_Round(double x, _PyTime_round_t round)
     }
     else {
         assert(round == _PyTime_ROUND_UP);
-        d = (d < 0.0) ? floor(d) : ceil(d);
+        d = (d >= 0.0) ? ceil(d) : floor(d);
     }
     return d;
 }
@@ -410,9 +410,18 @@ _PyTime_Divide(const _PyTime_t t, const _PyTime_t k,
             return t / k;
         }
     }
-    else {
+    else if (round == _PyTime_ROUND_FLOOR){
         if (t >= 0) {
             return t / k;
+        }
+        else {
+            return (t - (k - 1)) / k;
+        }
+    }
+    else {
+        assert(round == _PyTime_ROUND_UP);
+        if (t >= 0) {
+            return (t + k - 1) / k;
         }
         else {
             return (t - (k - 1)) / k;
