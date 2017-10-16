@@ -197,7 +197,7 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
 
    The function cannot fail. _PyTime_Init() ensures that the system clock
    works. */
-PyAPI_FUNC(double) _PyTime_GetPerfCounterDouble(void);
+PyAPI_FUNC(_PyTime_t) _PyTime_GetPerfCounter(void);
 
 /* Get the performance counter: clock with the highest available resolution to
    measure a short duration.
@@ -205,8 +205,8 @@ PyAPI_FUNC(double) _PyTime_GetPerfCounterDouble(void);
    Fill info (if set) with information of the function used to get the time.
 
    Return 0 on success, raise an exception and return -1 on error. */
-PyAPI_FUNC(int) _PyTime_GetPerfCounterDoubleWithInfo(
-    double *t,
+PyAPI_FUNC(int) _PyTime_GetPerfCounterWithInfo(
+    _PyTime_t *t,
     _Py_clock_info_t *info);
 
 #ifdef __cplusplus
