@@ -53,6 +53,31 @@ class MiscTests(unittest.TestCase):
             del element.attrib
         self.assertEqual(element.attrib, {'A': 'B', 'C': 'D'})
 
+    def test_bpo_31728(self):
+        # A crash shouldn't happen in case garbage collection triggers a call
+        # to clear() or a reading of text or tail, while a setter or clear()
+        # is already running.
+        elem = cET.Element('elem')
+        class X:
+            def __del__(self):
+                elem.text
+                elem.tail
+                elem.clear()
+
+        elem.text = X()
+        elem.clear()  # shouldn't crash
+
+        elem.tail = X()
+        elem.clear()  # shouldn't crash
+
+        elem.text = X()
+        elem.text = X()  # shouldn't crash
+        elem.clear()
+
+        elem.tail = X()
+        elem.tail = X()  # shouldn't crash
+        elem.clear()
+
 
 def test_main():
     from test import test_xml_etree, test_xml_etree_c

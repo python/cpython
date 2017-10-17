@@ -2566,6 +2566,22 @@ py_w_stopcode(PyObject *self, PyObject *args)
 #endif
 
 
+/* Read memory from NULL (address 0) to raise a SIGSEGV or SIGBUS signal
+   depending on the platform. This function is used by
+   test.support._crash_python() to "crash" Python. */
+static PyObject *
+read_null(PyObject *self, PyObject *args)
+{
+    volatile int *x;
+    volatile int y;
+
+    x = NULL;
+    y = *x;
+    return PyLong_FromLong(y);
+
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -2685,6 +2701,7 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
+    {"_read_null", (PyCFunction)read_null, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -670,3 +670,10 @@ if Python was configured with the ``--with-pydebug`` build option.
    dump allocations counts into stderr on shutdown.
 
    .. versionadded:: 2.7.15
+
+.. envvar:: PYTHONSHOWREFCOUNT
+
+   If set, Python will print the total reference count when the program
+   finishes or after each statement in the interactive interpreter.
+
+   .. versionadded:: 2.7.15
