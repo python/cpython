@@ -304,6 +304,11 @@ The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`. (Contributed by
 Serhiy Storchaka in :issue:`20804`.)
 
+New function :const:`~unittest.mock.seal` will disable the creation of mock
+children by preventing to get or set any new attribute on the sealed mock.
+The sealing process is performed recursively. (Contributed by Mario Corchero
+in :issue:`30541`.)
+
 xmlrpc.server
 -------------
 
