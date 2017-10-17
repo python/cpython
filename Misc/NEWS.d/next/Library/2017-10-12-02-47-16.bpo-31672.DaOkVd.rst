@@ -1,2 +1,0 @@
-``idpattern`` in ``string.Template`` matched some non-ASCII characters. Now
-it uses ``-i`` regular expression local flag to avoid non-ASCII characters.

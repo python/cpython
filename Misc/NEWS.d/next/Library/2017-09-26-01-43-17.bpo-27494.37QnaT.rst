@@ -1,2 +1,0 @@
-Make 2to3 accept a trailing comma in generator expressions. For example, ``set(x
-for x in [],)`` is now allowed.
