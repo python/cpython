@@ -2882,13 +2882,10 @@ class StringModuleTest(unittest.TestCase):
         self.assertEqual(formatter, expected_formatter)
 
         for result, expected in zip(formatter, expected_formatter):
-            self.assertEqual(
-                    (result.literal_text,
-                     result.field_name,
-                     result.format_spec,
-                     result.conversion)
-                    ,expected)
-
+            self.assertEqual(result.literal_text, expected[0])
+            self.assertEqual(result.field_name, expected[1])
+            self.assertEqual(result.format_spec, expected[2])
+            self.assertEqual(result.conversion, expected[3])
 
         formatter = parse("prefix {} suffix")
         self.assertEqual(formatter, [

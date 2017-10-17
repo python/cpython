@@ -1007,6 +1007,7 @@ static PyStructSequence_Desc formatter_iter_result_desc = {
     4
 };
 
+
 static PyObject *
 formatteriter_next(formatteriterobject *it)
 {
@@ -1035,11 +1036,11 @@ formatteriter_next(formatteriterobject *it)
 
         literal_str = SubString_new_object(&literal);
         if (literal_str == NULL)
-            goto done;
+            goto error;
 
         field_name_str = SubString_new_object(&field_name);
         if (field_name_str == NULL)
-            goto done;
+            goto error;
 
         /* if field_name is non-zero length, return a string for
            format_spec (even if zero length), else return None */
@@ -1047,7 +1048,7 @@ formatteriter_next(formatteriterobject *it)
                            SubString_new_object_or_empty :
                            SubString_new_object)(&format_spec);
         if (format_spec_str == NULL)
-            goto done;
+            goto error;
 
         /* if the conversion is not specified, return a None,
            otherwise create a one length string with the conversion
@@ -1060,20 +1061,26 @@ formatteriter_next(formatteriterobject *it)
             conversion_str = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
                                                        &conversion, 1);
         if (conversion_str == NULL)
-            goto done;
+            goto error;
 
         PyStructSequence_InitType(&FormatterIterResultType, &formatter_iter_result_desc);
         Py_INCREF((PyObject *) &FormatterIterResultType);
         res = PyStructSequence_New(&FormatterIterResultType);
+
+        if (res == NULL)
+            goto error;
 
         PyStructSequence_SET_ITEM(res, 0, literal_str); 
         PyStructSequence_SET_ITEM(res, 1, field_name_str);
         PyStructSequence_SET_ITEM(res, 2, format_spec_str); 
         PyStructSequence_SET_ITEM(res, 3, conversion_str); 
 
-
-    done:
-
+        return res;
+    error:
+        Py_XDECREF(literal_str);
+        Py_XDECREF(field_name_str);
+        Py_XDECREF(format_spec_str);
+        Py_XDECREF(conversion_str);
         return res;
     }
 }
