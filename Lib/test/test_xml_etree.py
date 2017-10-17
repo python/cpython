@@ -1071,6 +1071,24 @@ class ElementTreeTest(unittest.TestCase):
             '    </elem1>\n'
             '</child2>\n')
 
+    def test_pretty_print_html(self):
+        htmlfile = findfile("test.xml", subdir='xmltestdata')
+        htmlfile_pretty = findfile('test.xml.pretty', subdir='xmltestdata')
+        try:
+            htmlfile.encode("utf-8")
+            htmlfile_pretty.encode("utf-8")
+        except UnicodeEncodeError:
+            raise unittest.SkipTest("filename is not encodable to utf8")
+
+        with open(htmlfile_pretty, 'r') as f:
+            htmlfile_pretty_content = f.read()
+
+            tree = ET.parse(htmlfile)
+            root = tree.getroot()
+
+            self.assertEqual(serialize(root, method='html', indent='  '),
+                    htmlfile_pretty_content)
+
 
 class XMLPullParserTest(unittest.TestCase):
 
