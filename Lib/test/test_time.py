@@ -65,12 +65,10 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(info.adjustable)
 
     def test_clock(self):
-        with support.check_warnings(('time.clock has been deprecated',
-                                     DeprecationWarning)):
+        with self.assertWarns(DeprecationWarning):
             time.clock()
 
-        with support.check_warnings(('time.clock has been deprecated',
-                                     DeprecationWarning)):
+        with self.assertWarns(DeprecationWarning):
             info = time.get_clock_info('clock')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
@@ -511,9 +509,8 @@ class TimeTestCase(unittest.TestCase):
 
         for name in clocks:
             if name == 'clock':
-                with support.check_warnings(('time.clock has been deprecated',
-                                             DeprecationWarning)):
-                    info = time.get_clock_info(name)
+                with self.assertWarns(DeprecationWarning):
+                    info = time.get_clock_info('clock')
             else:
                 info = time.get_clock_info(name)
 
