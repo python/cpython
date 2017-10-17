@@ -52,9 +52,9 @@
     </Target>
     
     <Target Name="_Upload" Condition="!$(DryRun)">
-        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)" />
+        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)" IgnoreExitCode="true" />
         <Exec Command="&quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)" />
-        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/*; chmod g-w,o+r %(File.CopyTo)/*" />
+        <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) chgrp downloads %(File.CopyTo)/*; chmod g-w,o+r %(File.CopyTo)/*" IgnoreExitCode="true" />
     </Target>
     
     <Target Name="_PrintNames" Condition="$(DryRun)">
