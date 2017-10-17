@@ -9,6 +9,7 @@ import sysconfig
 import time
 import threading
 import unittest
+import warnings
 try:
     import _testcapi
 except ImportError:
@@ -64,9 +65,11 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(info.adjustable)
 
     def test_clock(self):
-        time.clock()
+        with self.assertWarns(DeprecationWarning):
+            time.clock()
 
-        info = time.get_clock_info('clock')
+        with self.assertWarns(DeprecationWarning):
+            info = time.get_clock_info('clock')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
@@ -427,8 +430,6 @@ class TimeTestCase(unittest.TestCase):
             pass
         self.assertEqual(time.strftime('%Z', tt), tzname)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
     def test_monotonic(self):
         # monotonic() should not go backward
         times = [time.monotonic() for n in range(100)]
@@ -467,8 +468,6 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
                          'need time.clock_settime')
     def test_monotonic_settime(self):
@@ -506,12 +505,15 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
-        clocks = ['clock', 'perf_counter', 'process_time', 'time']
-        if hasattr(time, 'monotonic'):
-            clocks.append('monotonic')
+        clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
 
         for name in clocks:
-            info = time.get_clock_info(name)
+            if name == 'clock':
+                with self.assertWarns(DeprecationWarning):
+                    info = time.get_clock_info('clock')
+            else:
+                info = time.get_clock_info(name)
+
             #self.assertIsInstance(info, dict)
             self.assertIsInstance(info.implementation, str)
             self.assertNotEqual(info.implementation, '')
