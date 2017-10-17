@@ -69,7 +69,9 @@ class PindentTests(unittest.TestCase):
 
             rc, out, err = assert_python_ok(self.script, '-d', data_path)
             self.assertEqual(out, b'')
-            self.assertEqual(err, b'')
+            # If COUNT_ALLOCS is defined, don't check stderr
+            if not hasattr(sys, 'getcounts'):
+                self.assertEqual(err, b'')
             backup = data_path + '~'
             self.assertTrue(os.path.exists(backup))
             with open(backup) as f:
@@ -82,7 +84,8 @@ class PindentTests(unittest.TestCase):
 
             rc, out, err = assert_python_ok(self.script, '-c', data_path)
             self.assertEqual(out, b'')
-            self.assertEqual(err, b'')
+            if not hasattr(sys, 'getcounts'):
+                self.assertEqual(err, b'')
             with open(backup) as f:
                 self.assertEqual(f.read(), clean)
             with open(data_path) as f:
@@ -93,7 +96,8 @@ class PindentTests(unittest.TestCase):
                 f.write(broken)
             rc, out, err = assert_python_ok(self.script, '-r', data_path)
             self.assertEqual(out, b'')
-            self.assertEqual(err, b'')
+            if not hasattr(sys, 'getcounts'):
+                self.assertEqual(err, b'')
             with open(backup) as f:
                 self.assertEqual(f.read(), broken)
             with open(data_path) as f:

@@ -158,7 +158,7 @@ class HashRandomizationTests(unittest.TestCase):
             env.pop('PYTHONHASHSEED', None)
         cmd_line = [sys.executable, '-c', self.get_hash_command(repr_)]
         p = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                              env=env)
         out, err = p.communicate()
         out = test_support.strip_python_stderr(out)

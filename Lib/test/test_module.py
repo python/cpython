@@ -1,6 +1,6 @@
 # Test the module type
 import unittest
-from test.test_support import run_unittest, gc_collect
+from test.support import run_unittest, gc_collect, requires_type_collecting
 
 import sys
 ModuleType = type(sys)
@@ -65,6 +65,7 @@ class ModuleTests(unittest.TestCase):
         gc_collect()
         self.assertEqual(f().__dict__["bar"], 4)
 
+    @requires_type_collecting
     def test_clear_dict_in_ref_cycle(self):
         destroyed = []
         m = ModuleType("foo")

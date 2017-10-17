@@ -46,6 +46,12 @@ else:
     SETBINARY = ''
 
 
+
+# bpo-31692: If COUNT_ALLOCS is defined, stderr is flooded with allocation
+# statistics and so cannot be checked in a reliable way
+skip_unless_usable_stderr = test_support.requires_type_collecting
+
+
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         # Try to minimize the number of children we have so this test
@@ -272,6 +278,7 @@ class ProcessTestCase(BaseTestCase):
         tf.seek(0)
         self.assertEqual(tf.read(), "orange")
 
+    @skip_unless_usable_stderr
     def test_stderr_pipe(self):
         # stderr redirection
         p = subprocess.Popen([sys.executable, "-c",
@@ -280,6 +287,7 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stderr.close)
         self.assertStderrEqual(p.stderr.read(), "strawberry")
 
+    @skip_unless_usable_stderr
     def test_stderr_filedes(self):
         # stderr is set to open file descriptor
         tf = tempfile.TemporaryFile()
@@ -291,6 +299,7 @@ class ProcessTestCase(BaseTestCase):
         os.lseek(d, 0, 0)
         self.assertStderrEqual(os.read(d, 1024), "strawberry")
 
+    @skip_unless_usable_stderr
     def test_stderr_fileobj(self):
         # stderr is set to open file object
         tf = tempfile.TemporaryFile()
@@ -301,6 +310,7 @@ class ProcessTestCase(BaseTestCase):
         tf.seek(0)
         self.assertStderrEqual(tf.read(), "strawberry")
 
+    @skip_unless_usable_stderr
     def test_stderr_redirect_with_no_stdout_redirect(self):
         # test stderr=STDOUT while stdout=None (not set)
 
@@ -322,6 +332,7 @@ class ProcessTestCase(BaseTestCase):
         self.assertStderrEqual(stderr, b'') # should be empty
         self.assertEqual(p.returncode, 0)
 
+    @skip_unless_usable_stderr
     def test_stdout_stderr_pipe(self):
         # capture stdout and stderr to the same pipe
         p = subprocess.Popen([sys.executable, "-c",
@@ -334,6 +345,7 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdout.close)
         self.assertStderrEqual(p.stdout.read(), "appleorange")
 
+    @skip_unless_usable_stderr
     def test_stdout_stderr_file(self):
         # capture stdout and stderr to the same open file
         tf = tempfile.TemporaryFile()
@@ -451,6 +463,7 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, "pineapple")
         self.assertEqual(stderr, None)
 
+    @skip_unless_usable_stderr
     def test_communicate_stderr(self):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys; sys.stderr.write("pineapple")'],
@@ -459,6 +472,7 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, None)
         self.assertStderrEqual(stderr, "pineapple")
 
+    @skip_unless_usable_stderr
     def test_communicate(self):
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys,os;'
@@ -525,6 +539,7 @@ class ProcessTestCase(BaseTestCase):
         (stdout, stderr) = p.communicate(string_to_write)
         self.assertEqual(stdout, string_to_write)
 
+    @skip_unless_usable_stderr
     def test_writes_before_communicate(self):
         # stdin.write before communicate()
         p = subprocess.Popen([sys.executable, "-c",
@@ -1071,6 +1086,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # Terminating a dead process
         self._kill_dead_process('terminate')
 
+    @skip_unless_usable_stderr
     def check_close_std_fds(self, fds):
         # Issue #9905: test that subprocess pipes still work properly with
         # some standard fds closed
@@ -1173,6 +1189,7 @@ class POSIXProcessTestCase(BaseTestCase):
     # When duping fds, if there arises a situation where one of the fds is
     # either 0, 1 or 2, it is possible that it is overwritten (#12607).
     # This tests all combinations of this.
+    @skip_unless_usable_stderr
     def test_swap_fds(self):
         self.check_swap_fds(0, 1, 2)
         self.check_swap_fds(0, 2, 1)
