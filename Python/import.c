@@ -105,6 +105,7 @@ _PyImportZip_Init(void)
 
     zimpimport = PyImport_ImportModule("zipimport");
     if (zimpimport == NULL) {
+        PyErr_WriteUnraisable(path_hooks);
         PyErr_Clear(); /* No zip import module -- okay */
         if (Py_VerboseFlag)
             PySys_WriteStderr("# can't import zipimport\n");

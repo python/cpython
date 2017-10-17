@@ -663,9 +663,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
         zipimport.zipimporter(filename)
         zipimport.zipimporter(os.fsencode(filename))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             zipimport.zipimporter(bytearray(os.fsencode(filename)))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             zipimport.zipimporter(memoryview(os.fsencode(filename)))
 
 
