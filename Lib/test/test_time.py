@@ -33,6 +33,8 @@ class _PyTime(enum.IntEnum):
     ROUND_CEILING = 1
     # Round to nearest with ties going to nearest even integer
     ROUND_HALF_EVEN = 2
+    # Round away from zero
+    ROUND_UP = 3
 
 # Rounding modes supported by PyTime
 ROUNDING_MODES = (
@@ -40,6 +42,7 @@ ROUNDING_MODES = (
     (_PyTime.ROUND_FLOOR, decimal.ROUND_FLOOR),
     (_PyTime.ROUND_CEILING, decimal.ROUND_CEILING),
     (_PyTime.ROUND_HALF_EVEN, decimal.ROUND_HALF_EVEN),
+    (_PyTime.ROUND_UP, decimal.ROUND_UP),
 )
 
 
