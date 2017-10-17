@@ -3,6 +3,45 @@ Released on 2018-06-18?
 ========================
 
 
+bpo-28603: Fix a TypeError that caused a shell restart when printing
+a traceback that includes an exception that is unhashable.
+Patch by Zane Bitter.
+
+bpo-13802: Use non-Latin characters in the Font settings sample.
+Even if one selects a font that defines a limited subset of the unicode
+Basic Multilingual Plane, tcl/tk will use other fonts that define a
+character.  The expanded example give users of non-Latin characters
+a better idea of what they might see in the shell and editors.
+
+To make room for the expanded sample, frames on the Font tab are
+re-arranged.  The Font/Tabs help explains a bit about the additions.
+Patch by Terry Jan Reedy
+
+bpo-31460: Simplify the API of IDLE's Module Browser.
+Passing a widget instead of an flist with a root widget opens the
+option of creating a browser frame that is only part of a window.
+Passing a full file name instead of pieces assumed to come from a
+.py file opens the possibility of browsing python files that do not
+end in .py.
+
+bpo-31649: Make _htest and _utest parameters keyword-only.
+These are used to adjust code for human and unit tests.
+
+bpo-31459: Rename module browser from Class Browser to Module Browser.
+The original module-level class and method browser became a module
+browser, with the addition of module-level functions, years ago.
+Nested classes and functions were added yesterday.  For back-
+compatibility, the virtual event <<open-class-browser>>, which
+appears on the Keys tab of the Settings dialog, is not changed.
+Patch by Cheryl Sabella.
+
+bpo-1612262: Module browser now shows nested classes and functions.
+Original patches for code and tests by Guilherme Polo and
+Cheryl Sabella, respectively.  Revisions by Terry Jan Reedy.
+
+bpo-31500: Tk's default fonts now are scaled on HiDPI displays.
+This affects all dialogs.  Patch by Serhiy Storchaka.
+
 bpo-31493: Fix code context update and font update timers.
 Canceling timers prevents a warning message when test_idle completes.
 
