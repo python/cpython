@@ -297,6 +297,16 @@ string
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 
+time
+----
+
+The ``time.clock()`` function has been removed, it was deprecated since Python
+3.3.  The function was not portable: on Windows it mesured wall-clock, whereas
+it measured CPU time on Unix. Python provides better defined clocks with better
+resolution since Python 3.3: use :func:`time.perf_counter` or
+:func:`time.process_time` instead. (Contributed by Victor Stinner in
+:issue:`31803`.)
+
 unittest.mock
 -------------
 
@@ -539,6 +549,10 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
+
+* The ``time.clock()`` function has been removed: use :func:`time.perf_counter` or
+  :func:`time.process_time` instead. (Contributed by Victor Stinner in
+  :issue:`31803`.)
 
 * :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
   Previously an empty list was returned. (Contributed by Sanyam Khurana in

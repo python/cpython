@@ -137,27 +137,6 @@ Functions
       trailing newline.
 
 
-.. function:: clock()
-
-   .. index::
-      single: CPU time
-      single: processor time
-      single: benchmarking
-
-   On Unix, return the current processor time as a floating point number expressed
-   in seconds.  The precision, and in fact the very definition of the meaning of
-   "processor time", depends on that of the C function of the same name.
-
-   On Windows, this function returns wall-clock seconds elapsed since the first
-   call to this function, as a floating point number, based on the Win32 function
-   :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
-   microsecond.
-
-   .. deprecated:: 3.3
-      The behaviour of this function depends on the platform: use
-      :func:`perf_counter` or :func:`process_time` instead, depending on your
-      requirements, to have a well defined behaviour.
-
 .. function:: pthread_getcpuclockid(thread_id)
 
    Return the *clk_id* of the thread-specific CPU-time clock for the specified *thread_id*.
@@ -219,7 +198,6 @@ Functions
    Supported clock names and the corresponding functions to read their value
    are:
 
-   * ``'clock'``: :func:`time.clock`
    * ``'monotonic'``: :func:`time.monotonic`
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
@@ -236,6 +214,8 @@ Functions
    - *resolution*: The resolution of the clock in seconds (:class:`float`)
 
    .. versionadded:: 3.3
+   .. versionchanged:: 3.7
+      ``'clock'`` is no more accepted since ``time.clock()`` was removed.
 
 
 .. function:: gmtime([secs])
@@ -289,6 +269,9 @@ Functions
 
 .. function:: perf_counter()
 
+   .. index::
+      single: benchmarking
+
    Return the value (in fractional seconds) of a performance counter, i.e. a
    clock with the highest available resolution to measure a short duration.  It
    does include time elapsed during sleep and is system-wide.  The reference
@@ -299,6 +282,11 @@ Functions
 
 
 .. function:: process_time()
+
+   .. index::
+      single: CPU time
+      single: processor time
+      single: benchmarking
 
    Return the value (in fractional seconds) of the sum of the system and user
    CPU time of the current process.  It does not include time elapsed during

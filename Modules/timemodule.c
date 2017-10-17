@@ -99,32 +99,6 @@ perf_counter(_Py_clock_info_t *info)
     return PyFloat_FromDouble(d);
 }
 
-#if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
-#define PYCLOCK
-static PyObject*
-pyclock(_Py_clock_info_t *info)
-{
-#ifdef MS_WINDOWS
-    return perf_counter(info);
-#else
-    return floatclock(info);
-#endif
-}
-
-static PyObject *
-time_clock(PyObject *self, PyObject *unused)
-{
-    return pyclock(NULL);
-}
-
-PyDoc_STRVAR(clock_doc,
-"clock() -> floating point number\n\
-\n\
-Return the CPU time or real time since the start of the process or since\n\
-the first call to clock().  This has as much precision as the system\n\
-records.");
-#endif
-
 #ifdef HAVE_CLOCK_GETTIME
 static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
@@ -1102,10 +1076,6 @@ time_get_clock_info(PyObject *self, PyObject *args)
 
     if (strcmp(name, "time") == 0)
         obj = floattime(&info);
-#ifdef PYCLOCK
-    else if (strcmp(name, "clock") == 0)
-        obj = pyclock(&info);
-#endif
     else if (strcmp(name, "monotonic") == 0)
         obj = pymonotonic(&info);
     else if (strcmp(name, "perf_counter") == 0)
@@ -1277,9 +1247,6 @@ PyInit_timezone(PyObject *m) {
 
 static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
-#ifdef PYCLOCK
-    {"clock",           time_clock, METH_NOARGS, clock_doc},
-#endif
 #ifdef HAVE_CLOCK_GETTIME
     {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
 #endif

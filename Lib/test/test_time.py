@@ -60,13 +60,6 @@ class TimeTestCase(unittest.TestCase):
         self.assertFalse(info.monotonic)
         self.assertTrue(info.adjustable)
 
-    def test_clock(self):
-        time.clock()
-
-        info = time.get_clock_info('clock')
-        self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjustable)
-
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     def test_clock_realtime(self):
@@ -503,7 +496,7 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
-        clocks = ['clock', 'perf_counter', 'process_time', 'time']
+        clocks = ['perf_counter', 'process_time', 'time']
         if hasattr(time, 'monotonic'):
             clocks.append('monotonic')
 
