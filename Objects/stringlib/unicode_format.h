@@ -1031,7 +1031,7 @@ formatteriter_next(formatteriterobject *it)
         PyObject *field_name_str = NULL;
         PyObject *format_spec_str = NULL;
         PyObject *conversion_str = NULL;
-        PyObject* res = NULL;
+        PyObject *res = NULL;
 
         literal_str = SubString_new_object(&literal);
         if (literal_str == NULL)

@@ -1,2 +1,2 @@
-Use namedtuple (structseq ovbject) in string.Formatter.parse iterator
+Use namedtuple (structseq object) in string.Formatter.parse iterator
 response.
