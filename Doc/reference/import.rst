@@ -519,8 +519,9 @@ and the loader that executes it.  Most importantly, it allows the
 import machinery to perform the boilerplate operations of loading,
 whereas without a module spec the loader had that responsibility.
 
-See :class:`~importlib.machinery.ModuleSpec` for more specifics on what
-information a module's spec may hold.
+The module's spec is exposed as the ``__spec__`` attribute on a module object.
+See :class:`~importlib.machinery.ModuleSpec` for details on the contents of
+the module spec.
 
 .. versionadded:: 3.4
 
