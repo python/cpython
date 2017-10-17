@@ -84,12 +84,19 @@ _PyTime_Round(double x, _PyTime_round_t round)
     volatile double d;
 
     d = x;
-    if (round == _PyTime_ROUND_HALF_EVEN)
+    if (round == _PyTime_ROUND_HALF_EVEN){
         d = _PyTime_RoundHalfEven(d);
-    else if (round == _PyTime_ROUND_CEILING)
+    }
+    else if (round == _PyTime_ROUND_CEILING){
         d = ceil(d);
-    else
+    }
+    else if (round == _PyTime_ROUND_FLOOR) {
         d = floor(d);
+    }
+    else {
+        assert(round == _PyTime_ROUND_UP);
+        d = (d >= 0.0) ? ceil(d) : floor(d);
+    }
     return d;
 }
 
@@ -395,16 +402,29 @@ _PyTime_Divide(const _PyTime_t t, const _PyTime_t k,
         return x;
     }
     else if (round == _PyTime_ROUND_CEILING) {
-        if (t >= 0)
+        if (t >= 0){
             return (t + k - 1) / k;
-        else
+        }
+        else{
             return t / k;
+        }
+    }
+    else if (round == _PyTime_ROUND_FLOOR){
+        if (t >= 0) {
+            return t / k;
+        }
+        else{
+            return (t - (k - 1)) / k;
+        }
     }
     else {
-        if (t >= 0)
-            return t / k;
-        else
+        assert(round == _PyTime_ROUND_UP);
+        if (t >= 0) {
+            return (t + k - 1) / k;
+        }
+        else {
             return (t - (k - 1)) / k;
+        }
     }
 }
 

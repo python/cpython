@@ -213,7 +213,7 @@ select_select(PyObject *self, PyObject *args)
         tvp = (struct timeval *)NULL;
     else {
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
-                                      _PyTime_ROUND_CEILING) < 0) {
+                                      _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be a float or None");
@@ -221,7 +221,7 @@ select_select(PyObject *self, PyObject *args)
             return NULL;
         }
 
-        if (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_CEILING) == -1)
+        if (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_TIMEOUT) == -1)
             return NULL;
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
@@ -543,7 +543,7 @@ poll_poll(pollObject *self, PyObject *args)
     }
     else {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
-                                           _PyTime_ROUND_CEILING) < 0) {
+                                           _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be an integer or None");
@@ -551,7 +551,7 @@ poll_poll(pollObject *self, PyObject *args)
             return NULL;
         }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
         if (ms < INT_MIN || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
@@ -899,7 +899,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
     }
     else {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
-                                           _PyTime_ROUND_CEILING) < 0) {
+                                           _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be an integer or None");
@@ -907,7 +907,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
             return NULL;
         }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
         if (ms < -1 || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
@@ -1514,7 +1514,7 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
         /* epoll_wait() has a resolution of 1 millisecond, round towards
            infinity to wait at least timeout seconds. */
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
-                                      _PyTime_ROUND_CEILING) < 0) {
+                                      _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be an integer or None");
@@ -2129,7 +2129,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     }
     else {
         if (_PyTime_FromSecondsObject(&timeout,
-                                      otimeout, _PyTime_ROUND_CEILING) < 0) {
+                                      otimeout, _PyTime_ROUND_TIMEOUT) < 0) {
             PyErr_Format(PyExc_TypeError,
                 "timeout argument must be a number "
                 "or None, got %.200s",
