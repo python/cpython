@@ -519,7 +519,7 @@ class FontPage(Frame):
         sample = (
             '<ASCII/Latin1>\n'
             'AaBbCcDdEeFfGgHhIiJj\n1234567890#:+=(){}[]\n'
-            '\u00a1\u00a2\u00a3\u00a5\u00a7\u00a9\u00ab\u00ae\u00b6\u00bd'
+            '\u00a2\u00a3\u00a5\u00a7\u00a9\u00ab\u00ae\u00b6\u00bd\u011e'
             '\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5\u00c7\u00d0\u00d8\u00df\n'
             '\n<IPA,Greek,Cyrillic>\n'
             '\u0250\u0255\u0258\u025e\u025f\u0264\u026b\u026e\u0270\u0277'
