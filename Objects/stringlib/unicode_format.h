@@ -1063,7 +1063,6 @@ formatteriter_next(formatteriterobject *it)
         if (conversion_str == NULL)
             goto error;
 
-        PyStructSequence_InitType(&FormatterIterResultType, &formatter_iter_result_desc);
         Py_INCREF((PyObject *) &FormatterIterResultType);
         res = PyStructSequence_New(&FormatterIterResultType);
 
