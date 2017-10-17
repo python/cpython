@@ -104,6 +104,13 @@ perf_counter(_Py_clock_info_t *info)
 static PyObject*
 pyclock(_Py_clock_info_t *info)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                      "time.clock has been deprecated in Python 3.3 and will "
+                      "be removed from Python 3.8: "
+                      "use time.perf_counter or time.process_time "
+                      "instead", 1) < 0) {
+        return NULL;
+    }
 #ifdef MS_WINDOWS
     return perf_counter(info);
 #else

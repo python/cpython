@@ -289,6 +289,9 @@ Functions
 
 .. function:: perf_counter()
 
+   .. index::
+      single: benchmarking
+
    Return the value (in fractional seconds) of a performance counter, i.e. a
    clock with the highest available resolution to measure a short duration.  It
    does include time elapsed during sleep and is system-wide.  The reference
@@ -299,6 +302,11 @@ Functions
 
 
 .. function:: process_time()
+
+   .. index::
+      single: CPU time
+      single: processor time
+      single: benchmarking
 
    Return the value (in fractional seconds) of the sum of the system and user
    CPU time of the current process.  It does not include time elapsed during
