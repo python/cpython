@@ -1,0 +1,2 @@
+Fix a TypeError that caused a shell restart when printing a traceback that
+includes an exception that is unhashable. Patch by Zane Bitter.
