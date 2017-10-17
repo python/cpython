@@ -127,7 +127,7 @@ class PollTests(unittest.TestCase):
         p = proc.stdout
         pollster = select.poll()
         pollster.register( p, select.POLLIN )
-        for tout in (0, 500, 1000, 2000, 4000, 8000, 16000, None, -1000) + (-1,)*8:
+        for tout in (0, 1000, 2000, 4000, 8000, 16000) + (-1,)*10:
             fdlist = pollster.poll(tout)
             if (fdlist == []):
                 continue
@@ -207,7 +207,7 @@ class PollTests(unittest.TestCase):
     @unittest.skipUnless(threading, 'Threading required for this test.')
     @reap_threads
     def test_poll_blocks_with_negative_ms(self):
-        for timeout_ms in [None, -1, -1.0, -0.1, -1e-100]:
+        for timeout_ms in [None, -1000, -1, -1.0, -0.1, -1e-100]:
             # Create two file descriptors. This will be used to unlock
             # the blocking call to poll.poll inside the thread
             r, w = os.pipe()
