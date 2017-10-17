@@ -432,8 +432,6 @@ class TimeTestCase(unittest.TestCase):
             pass
         self.assertEqual(time.strftime('%Z', tt), tzname)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
     def test_monotonic(self):
         # monotonic() should not go backward
         times = [time.monotonic() for n in range(100)]
@@ -472,8 +470,6 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
                          'need time.clock_settime')
     def test_monotonic_settime(self):
@@ -511,13 +507,14 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
-        clocks = ['clock', 'perf_counter', 'process_time', 'time']
-        if hasattr(time, 'monotonic'):
-            clocks.append('monotonic')
+        clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
 
         for name in clocks:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", "", DeprecationWarning)
+            if name == 'clock':
+                with support.check_warnings(('time.clock has been deprecated',
+                                             DeprecationWarning)):
+                    info = time.get_clock_info(name)
+            else:
                 info = time.get_clock_info(name)
 
             #self.assertIsInstance(info, dict)
