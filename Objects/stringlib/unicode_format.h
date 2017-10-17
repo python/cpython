@@ -1062,11 +1062,6 @@ formatteriter_next(formatteriterobject *it)
         if (conversion_str == NULL)
             goto done;
 
-        Py_XINCREF(literal_str);
-        Py_XINCREF(field_name_str);
-        Py_XINCREF(format_spec_str);
-        Py_XINCREF(conversion_str);
-
         PyStructSequence_InitType(&FormatterIterResultType, &formatter_iter_result_desc);
         Py_INCREF((PyObject *) &FormatterIterResultType);
         res = PyStructSequence_New(&FormatterIterResultType);
@@ -1078,10 +1073,6 @@ formatteriter_next(formatteriterobject *it)
 
 
     done:
-        Py_XDECREF(literal_str);
-        Py_XDECREF(field_name_str);
-        Py_XDECREF(format_spec_str);
-        Py_XDECREF(conversion_str);
 
         return res;
     }
