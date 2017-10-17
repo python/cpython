@@ -2547,9 +2547,9 @@ In debug mode, the ``[xxx refs]`` statistic is not written by default, the
 :envvar:`PYTHONSHOWREFCOUNT` environment variable now must also be set.
 (Contributed by Victor Stinner; :issue:`31733`.)
 
-When Python is compiled with ``COUNT_ALLOC`` defined, allocations counts are no
-more dumped by default anymore: the :envvar:`PYTHONSHOWALLOCCOUNT` environment
-variable now must also be set. Moreover, allocations counts are now dumped into
+When Python is compiled with ``COUNT_ALLOC`` defined, allocation counts are no
+longer dumped by default anymore: the :envvar:`PYTHONSHOWALLOCCOUNT` environment
+variable must now also be set. Moreover, allocation counts are now dumped into
 stderr, rather than stdout. (Contributed by Victor Stinner; :issue:`31692`.)
 
 .. versionadded:: 2.7.15
