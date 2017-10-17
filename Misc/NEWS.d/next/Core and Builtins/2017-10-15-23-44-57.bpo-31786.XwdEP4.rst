@@ -1,4 +1,3 @@
-Fix an issue that affects select.poll.poll and related functions in the
-select module. Now the affected functions will block for an infinite amount
-of time if any negative timeout it provided. This was not happening before
-for some values due to rounding issues. Patch by Pablo Galindo.
+Fix timeout rounding in the select module to round correctly negative timeouts between -1.0 and 0.0.
+The functions now block waiting for events as expected. Previously, the call was incorrectly non-blocking.
+Patch by Pablo Galindo.
