@@ -664,6 +664,13 @@ if Python was configured with the ``--with-pydebug`` build option.
    If set, Python will print memory allocation statistics every time a new
    object arena is created, and on shutdown.
 
+.. envvar:: PYTHONSHOWALLOCCOUNT
+
+   If set and Python was compiled with ``COUNT_ALLOCS`` defined, Python will
+   dump allocations counts into stderr on shutdown.
+
+   .. versionadded:: 2.7.15
+
 .. envvar:: PYTHONSHOWREFCOUNT
 
    If set, Python will print the total reference count when the program

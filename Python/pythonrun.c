@@ -488,7 +488,9 @@ Py_Finalize(void)
 
     /* Debugging stuff */
 #ifdef COUNT_ALLOCS
-    dump_counts(stdout);
+    if (Py_GETENV("PYTHONSHOWALLOCCOUNT")) {
+        dump_counts(stderr);
+    }
 #endif
 
     _PyDebug_PrintTotalRefs();

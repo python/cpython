@@ -601,6 +601,7 @@ class ReferencesTestCase(TestBase):
         del c1, c2, C, D
         gc.collect()
 
+    @test_support.requires_type_collecting
     def test_callback_in_cycle_resurrection(self):
         import gc
 
