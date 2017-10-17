@@ -22,9 +22,7 @@
 #include <sys/wait.h>           /* For W_STOPCODE */
 #endif
 
-#ifdef WITH_THREAD
 #include "pythread.h"
-#endif /* WITH_THREAD */
 static PyObject *TestError;     /* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -2229,8 +2227,6 @@ test_datetime_capi(PyObject *self, PyObject *args) {
 }
 
 
-#ifdef WITH_THREAD
-
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
  * thread finishes, because the thread uses a PyObject (the callable) that
@@ -2348,7 +2344,6 @@ PyObject *pending_threadfunc(PyObject *self, PyObject *arg)
     }
     Py_RETURN_TRUE;
 }
-#endif
 
 /* Some tests of PyUnicode_FromFormat().  This needs more tests. */
 static PyObject *
@@ -3017,7 +3012,8 @@ check_time_rounding(int round)
 {
     if (round != _PyTime_ROUND_FLOOR
         && round != _PyTime_ROUND_CEILING
-        && round != _PyTime_ROUND_HALF_EVEN) {
+        && round != _PyTime_ROUND_HALF_EVEN
+        && round != _PyTime_ROUND_UP) {
         PyErr_SetString(PyExc_ValueError, "invalid rounding");
         return -1;
     }
@@ -3617,7 +3613,6 @@ PyDoc_STRVAR(docstring_with_signature_with_defaults,
 "and the parameters take defaults of varying types."
 );
 
-#ifdef WITH_THREAD
 typedef struct {
     PyThread_type_lock start_event;
     PyThread_type_lock exit_event;
@@ -3704,7 +3699,6 @@ exit:
         PyThread_free_lock(test_c_thread.exit_event);
     return res;
 }
-#endif   /* WITH_THREAD */
 
 static PyObject*
 test_raise_signal(PyObject* self, PyObject *args)
@@ -4313,6 +4307,80 @@ py_w_stopcode(PyObject *self, PyObject *args)
 #endif
 
 
+static PyObject *
+get_mapping_keys(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Keys(obj);
+}
+
+static PyObject *
+get_mapping_values(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Values(obj);
+}
+
+static PyObject *
+get_mapping_items(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Items(obj);
+}
+
+
+static PyObject *
+test_pythread_tss_key_state(PyObject *self, PyObject *args)
+{
+    Py_tss_t tss_key = Py_tss_NEEDS_INIT;
+    if (PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "TSS key not in an uninitialized state at "
+                              "creation time");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_create failed");
+        return NULL;
+    }
+    if (!PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create succeeded, "
+                              "but with TSS key in an uninitialized state");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create unsuccessful with "
+                              "an already initialized key");
+    }
+#define CHECK_TSS_API(expr) \
+        (void)(expr); \
+        if (!PyThread_tss_is_created(&tss_key)) { \
+            return raiseTestError("test_pythread_tss_key_state", \
+                                  "TSS key initialization state was not " \
+                                  "preserved after calling " #expr); }
+    CHECK_TSS_API(PyThread_tss_set(&tss_key, NULL));
+    CHECK_TSS_API(PyThread_tss_get(&tss_key));
+#undef CHECK_TSS_API
+    PyThread_tss_delete(&tss_key);
+    if (PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_delete called, but did not "
+                              "set the key state to uninitialized");
+    }
+
+    Py_tss_t *ptr_key = PyThread_tss_alloc();
+    if (ptr_key == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_alloc failed");
+        return NULL;
+    }
+    if (PyThread_tss_is_created(ptr_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "TSS key not in an uninitialized state at "
+                              "allocation time");
+    }
+    PyThread_tss_free(ptr_key);
+    ptr_key = NULL;
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4420,10 +4488,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
-#ifdef WITH_THREAD
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
-#endif
 #ifdef HAVE_GETTIMEOFDAY
     {"profile_int",             profile_int,                     METH_NOARGS},
 #endif
@@ -4483,10 +4549,8 @@ static PyMethodDef TestMethods[] = {
         docstring_with_signature_with_defaults},
     {"raise_signal",
      (PyCFunction)test_raise_signal, METH_VARARGS},
-#ifdef WITH_THREAD
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
      PyDoc_STR("set_error_class(error_class) -> None")},
-#endif
     {"pymarshal_write_long_to_file",
         pymarshal_write_long_to_file, METH_VARARGS},
     {"pymarshal_write_object_to_file",
@@ -4529,6 +4593,10 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
+    {"get_mapping_keys", get_mapping_keys, METH_O},
+    {"get_mapping_values", get_mapping_values, METH_O},
+    {"get_mapping_items", get_mapping_items, METH_O},
+    {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

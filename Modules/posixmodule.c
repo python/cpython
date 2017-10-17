@@ -56,6 +56,11 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/uio.h>
 #endif
 
+#ifdef HAVE_SYS_SYSMACROS_H
+/* GNU C Library: major(), minor(), makedev() */
+#include <sys/sysmacros.h>
+#endif
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
@@ -354,7 +359,7 @@ static int win32_can_symlink = 0;
 
 /* Don't use the "_r" form if we don't need it (also, won't have a
    prototype for it, at least on Solaris -- maybe others as well?). */
-#if defined(HAVE_CTERMID_R) && defined(WITH_THREAD)
+#if defined(HAVE_CTERMID_R)
 #define USE_CTERMID_R
 #endif
 
@@ -449,14 +454,9 @@ PyOS_AfterFork_Parent(void)
 void
 PyOS_AfterFork_Child(void)
 {
-#ifdef WITH_THREAD
-    /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
-     * can be called safely. */
-    PyThread_ReInitTLS();
     _PyGILState_Reinit();
     PyEval_ReInitThreads();
     _PyImport_ReInitLock();
-#endif
     _PySignal_AfterFork();
 
     run_at_forkers(PyThreadState_Get()->interp->after_forkers_child, 0);
@@ -3964,7 +3964,7 @@ os_nice_impl(PyObject *module, int increment)
 
     /* There are two flavours of 'nice': one that returns the new
        priority (as required by almost all standards out there) and the
-       Linux/FreeBSD/BSDI one, which returns '0' on success and advices
+       Linux/FreeBSD one, which returns '0' on success and advices
        the use of getpriority() to get the new priority.
 
        If we are of the nice family that returns the new priority, we
@@ -10556,6 +10556,10 @@ check_ShellExecute()
     /* only recheck */
     if (-1 == has_ShellExecute) {
         Py_BEGIN_ALLOW_THREADS
+        /* Security note: this call is not vulnerable to "DLL hijacking".
+           SHELL32 is part of "KnownDLLs" and so Windows always load
+           the system SHELL32.DLL, even if there is another SHELL32.DLL
+           in the DLL search path. */
         hShell32 = LoadLibraryW(L"SHELL32");
         Py_END_ALLOW_THREADS
         if (hShell32) {

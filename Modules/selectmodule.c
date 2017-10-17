@@ -213,7 +213,7 @@ select_select(PyObject *self, PyObject *args)
         tvp = (struct timeval *)NULL;
     else {
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
-                                      _PyTime_ROUND_CEILING) < 0) {
+                                      _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be a float or None");
@@ -221,7 +221,7 @@ select_select(PyObject *self, PyObject *args)
             return NULL;
         }
 
-        if (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_CEILING) == -1)
+        if (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_TIMEOUT) == -1)
             return NULL;
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
@@ -534,7 +534,7 @@ poll_poll(pollObject *self, PyObject *args)
 
     if (timeout_obj != NULL && timeout_obj != Py_None) {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
-                                           _PyTime_ROUND_CEILING) < 0) {
+                                           _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be an integer or None");
@@ -542,7 +542,7 @@ poll_poll(pollObject *self, PyObject *args)
             return NULL;
         }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
         if (ms < INT_MIN || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
@@ -903,7 +903,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
     }
     else {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
-                                           _PyTime_ROUND_CEILING) < 0) {
+                                           _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be an integer or None");
@@ -911,7 +911,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
             return NULL;
         }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
         if (ms < -1 || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
@@ -1520,7 +1520,7 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
         /* epoll_wait() has a resolution of 1 millisecond, round towards
            infinity to wait at least timeout seconds. */
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
-                                      _PyTime_ROUND_CEILING) < 0) {
+                                      _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be an integer or None");
@@ -2109,7 +2109,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     int i = 0;
     PyObject *otimeout = NULL;
     PyObject *ch = NULL;
-    PyObject *it = NULL, *ei = NULL;
+    PyObject *seq = NULL, *ei = NULL;
     PyObject *result = NULL;
     struct kevent *evl = NULL;
     struct kevent *chl = NULL;
@@ -2135,7 +2135,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     }
     else {
         if (_PyTime_FromSecondsObject(&timeout,
-                                      otimeout, _PyTime_ROUND_CEILING) < 0) {
+                                      otimeout, _PyTime_ROUND_TIMEOUT) < 0) {
             PyErr_Format(PyExc_TypeError,
                 "timeout argument must be a number "
                 "or None, got %.200s",
@@ -2155,37 +2155,34 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     }
 
     if (ch != NULL && ch != Py_None) {
-        it = PyObject_GetIter(ch);
-        if (it == NULL) {
-            PyErr_SetString(PyExc_TypeError,
-                            "changelist is not iterable");
+        seq = PySequence_Fast(ch, "changelist is not iterable");
+        if (seq == NULL) {
             return NULL;
         }
-        nchanges = PyObject_Size(ch);
-        if (nchanges < 0) {
+        if (PySequence_Fast_GET_SIZE(seq) > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "changelist is too long");
             goto error;
         }
+        nchanges = (int)PySequence_Fast_GET_SIZE(seq);
 
         chl = PyMem_New(struct kevent, nchanges);
         if (chl == NULL) {
             PyErr_NoMemory();
             goto error;
         }
-        i = 0;
-        while ((ei = PyIter_Next(it)) != NULL) {
+        for (i = 0; i < nchanges; ++i) {
+            ei = PySequence_Fast_GET_ITEM(seq, i);
             if (!kqueue_event_Check(ei)) {
-                Py_DECREF(ei);
                 PyErr_SetString(PyExc_TypeError,
                     "changelist must be an iterable of "
                     "select.kevent objects");
                 goto error;
-            } else {
-                chl[i++] = ((kqueue_event_Object *)ei)->e;
             }
-            Py_DECREF(ei);
+            chl[i] = ((kqueue_event_Object *)ei)->e;
         }
+        Py_CLEAR(seq);
     }
-    Py_CLEAR(it);
 
     /* event list */
     if (nevents) {
@@ -2253,7 +2250,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     PyMem_Free(chl);
     PyMem_Free(evl);
     Py_XDECREF(result);
-    Py_XDECREF(it);
+    Py_XDECREF(seq);
     return NULL;
 }
 
@@ -2261,7 +2258,7 @@ PyDoc_STRVAR(kqueue_queue_control_doc,
 "control(changelist, max_events[, timeout=None]) -> eventlist\n\
 \n\
 Calls the kernel kevent function.\n\
-- changelist must be a list of kevent objects describing the changes\n\
+- changelist must be an iterable of kevent objects describing the changes\n\
   to be made to the kernel's watch list or None.\n\
 - max_events lets you specify the maximum number of events that the\n\
   kernel will return.\n\

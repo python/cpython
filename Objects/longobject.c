@@ -1806,8 +1806,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
         bits = 1;
         break;
     default:
-        assert(0); /* shouldn't ever get here */
-        bits = 0; /* to silence gcc warning */
+        Py_UNREACHABLE();
     }
 
     /* Compute exact length 'sz' of output string. */
@@ -2058,15 +2057,15 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     }
 
     *str = p;
-    /* n <- # of Python digits needed, = ceiling(n/PyLong_SHIFT). */
-    n = digits * bits_per_char + PyLong_SHIFT - 1;
-    if (n / bits_per_char < p - start) {
+    /* n <- the number of Python digits needed,
+            = ceiling((digits * bits_per_char) / PyLong_SHIFT). */
+    if (digits > (PY_SSIZE_T_MAX - (PyLong_SHIFT - 1)) / bits_per_char) {
         PyErr_SetString(PyExc_ValueError,
                         "int string too large to convert");
         *res = NULL;
         return 0;
     }
-    n = n / PyLong_SHIFT;
+    n = (digits * bits_per_char + PyLong_SHIFT - 1) / PyLong_SHIFT;
     z = _PyLong_New(n);
     if (z == NULL) {
         *res = NULL;
@@ -2169,8 +2168,8 @@ PyLong_FromString(const char *str, char **pend, int base)
         }
     }
     if (str[0] == '_') {
-	    /* May not start with underscores. */
-	    goto onError;
+        /* May not start with underscores. */
+        goto onError;
     }
 
     start = str;

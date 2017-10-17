@@ -32,11 +32,11 @@ invalid_comma_type(Py_UCS4 presentation_type)
 {
     if (presentation_type > 32 && presentation_type < 128)
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' or '_' with '%c'.",
+                     "Cannot specify ',' with '%c'.",
                      (char)presentation_type);
     else
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify ',' or '_' with '\\x%x'.",
+                     "Cannot specify ',' with '\\x%x'.",
                      (unsigned int)presentation_type);
 }
 
@@ -351,8 +351,7 @@ calc_padding(Py_ssize_t nchars, Py_ssize_t width, Py_UCS4 align,
         *n_lpadding = 0;
     else {
         /* We should never have an unspecified alignment. */
-        *n_lpadding = 0;
-        assert(0);
+        Py_UNREACHABLE();
     }
 
     *n_rpadding = *n_total - nchars - *n_lpadding;
@@ -569,9 +568,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
             break;
         default:
             /* Shouldn't get here, but treat it as '>' */
-            spec->n_lpadding = n_padding;
-            assert(0);
-            break;
+            Py_UNREACHABLE();
         }
     }
 

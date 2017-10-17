@@ -23,6 +23,8 @@ setlocal
 if "%PCBUILD%"=="" (set PCBUILD=%~dp0)
 if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%PCBUILD%\..\externals)
 
+set OUT=
+set SRC=
 set ORG_SETTING=
 
 :CheckOpts
@@ -30,12 +32,19 @@ if "%~1"=="-h" shift & goto Usage
 if "%~1"=="--certificate" (set SigningCertificate=%~2) && shift && shift & goto CheckOpts
 if "%~1"=="-c" (set SigningCertificate=%~2) && shift && shift & goto CheckOpts
 if "%~1"=="--organization" (set ORG_SETTING=--organization "%~2") && shift && shift && goto CheckOpts
+if "%~1"=="-i" (SET SRC=$~2) && shift && shift && goto CheckOpts
+if "%~1"=="--in" (SET SRC=$~2) && shift && shift && goto CheckOpts
+if "%~1"=="-o" (set OUT=$~2) && shift && shift && goto CheckOpts
+if "%~1"=="--out" (set OUT=$~2) && shift && shift && goto CheckOpts
 
 if "%~1"=="" goto Build
 echo Unrecognized option: %1
 goto Usage
 
 :Build
+if not defined SRC (echo --in directory is required & exit /b 1)
+if not defined OUT (echo --out directory is required & exit /b 1)
+
 call "%PCBUILD%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
@@ -51,3 +60,4 @@ if "%PERL%" == "" (echo Cannot locate perl.exe on PATH or as PERL variable & exi
 if errorlevel 1 exit /b
 %MSBUILD% "%PCBUILD%openssl.vcxproj" /p:Configuration=Release /p:Platform=x64
 if errorlevel 1 exit /b
+
