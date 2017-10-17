@@ -1,2 +1,0 @@
-Make `PyMapping_Keys()`, `PyMapping_Values()` and `PyMapping_Items()` always
-return a `list` (rather than a `list` or a `tuple`). Patch by Oren Milman.

@@ -1,1 +1,0 @@
-Improved the error message logic for object.__new__ and object.__init__.

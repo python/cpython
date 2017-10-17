@@ -1,6 +1,0 @@
-Simplify the API of IDLE's Module Browser.
-
-Passing a widget instead of an flist with a root widget opens the option of
-creating a browser frame that is only part of a window.  Passing a full file
-name instead of pieces assumed to come from a .py file opens the possibility
-of browsing python files that do not end in .py.

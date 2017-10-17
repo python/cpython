@@ -1,3 +1,0 @@
-Fix an assertion failure in `warnings.warn_explicit`, when the return value
-of the received loader's get_source() has a bad splitlines() method. Patch
-by Oren Milman.

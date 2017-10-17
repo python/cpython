@@ -1,2 +1,0 @@
-Prevent crashes in `_elementtree` due to unsafe cleanup of `Element.text`
-and `Element.tail`. Patch by Oren Milman.

@@ -1,1 +1,0 @@
-Drop support of asynchronous __aiter__.
