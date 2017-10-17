@@ -9,6 +9,7 @@ import sysconfig
 import time
 import threading
 import unittest
+import warnings
 try:
     import _testcapi
 except ImportError:
@@ -64,9 +65,13 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(info.adjustable)
 
     def test_clock(self):
-        time.clock()
+        with support.check_warnings(('time.clock has been deprecated',
+                                     DeprecationWarning)):
+            time.clock()
 
-        info = time.get_clock_info('clock')
+        with support.check_warnings(('time.clock has been deprecated',
+                                     DeprecationWarning)):
+            info = time.get_clock_info('clock')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
@@ -511,7 +516,10 @@ class TimeTestCase(unittest.TestCase):
             clocks.append('monotonic')
 
         for name in clocks:
-            info = time.get_clock_info(name)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", "", DeprecationWarning)
+                info = time.get_clock_info(name)
+
             #self.assertIsInstance(info, dict)
             self.assertIsInstance(info.implementation, str)
             self.assertNotEqual(info.implementation, '')
