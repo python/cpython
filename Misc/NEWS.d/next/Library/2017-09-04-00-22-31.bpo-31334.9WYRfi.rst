@@ -1,0 +1,3 @@
+Fix ``poll.poll([timeout])`` in the ``select`` module for arbitrary negative
+timeouts on all OSes where it can only be a non-negative integer or -1.
+Patch by Riccardo Coccioli.

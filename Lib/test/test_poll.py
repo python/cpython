@@ -208,7 +208,7 @@ class PollTests(unittest.TestCase):
     @unittest.skipUnless(threading, 'Threading required for this test.')
     @reap_threads
     def test_poll_blocks_with_negative_ms(self):
-        for timeout_ms in [None, -1, -1.0]:
+        for timeout_ms in [None, -1000, -1, -1.0]:
             # Create two file descriptors. This will be used to unlock
             # the blocking call to poll.poll inside the thread
             r, w = os.pipe()

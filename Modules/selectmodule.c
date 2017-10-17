@@ -530,6 +530,17 @@ poll_poll(pollObject *self, PyObject *args)
             return NULL;
     }
 
+    /* On some OSes, typically BSD-based ones, the timeout parameter of the
+       poll() syscall, when negative, must be exactly INFTIM, where defined,
+       or -1. See issue 31334. */
+    if (timeout < 0) {
+#ifdef INFTIM
+        timeout = INFTIM;
+#else
+        timeout = -1;
+#endif
+    }
+
     /* Avoid concurrent poll() invocation, issue 8865 */
     if (self->poll_running) {
         PyErr_SetString(PyExc_RuntimeError,
