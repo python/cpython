@@ -1,0 +1,4 @@
+Fix timeout rounding in time_sleep, lock_acquire_parse_args and
+socket_parse_timeout to round correctly negative timeouts between -1.0 and
+0.0. The functions now block waiting for events as expected. Previously, the
+call was incorrectly non-blocking. Patch by Pablo Galindo.
