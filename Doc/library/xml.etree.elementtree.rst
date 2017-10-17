@@ -587,8 +587,8 @@ Functions
    arguments.  Returns an element instance.
 
 
-.. function:: tostring(element, encoding="us-ascii", method="xml", *, \
-                       short_empty_elements=True)
+.. function:: tostring(element, encoding="us-ascii", method="xml", pretty=False, *, \
+                       indent='  ', short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
@@ -596,13 +596,19 @@ Functions
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
    *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
+   *pretty* enables pretty printing with default indent. Keyword-only *indent*
+   allows to set custom indent.
    Returns an (optionally) encoded string containing the XML data.
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
 
+   .. versionadded:: 3.7
+      The *pretty* and *indent* parameters.
 
-.. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
+
+.. function:: tostringlist(element, encoding="us-ascii", method="xml", \
+                           pretty=False, *, indent='  ', \
                            short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -611,6 +617,8 @@ Functions
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
    *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
+   *pretty* enables pretty printing with default indent. Keyword-only *indent*
+   allows to set custom indent.
    Returns a list of (optionally) encoded strings containing the XML data.
    It does not guarantee any specific sequence, except that
    ``b"".join(tostringlist(element)) == tostring(element)``.
@@ -619,6 +627,9 @@ Functions
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
+
+   .. versionadded:: 3.7
+      The *pretty* and *indent* parameters.
 
 
 .. function:: XML(text, parser=None)
@@ -921,7 +932,7 @@ ElementTree Objects
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
                      default_namespace=None, method="xml", *, \
-                     short_empty_elements=True)
+                     short_empty_elements=True, indent='')
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       :term:`file object` opened for writing.  *encoding* [1]_ is the output
@@ -935,7 +946,8 @@ ElementTree Objects
       The keyword-only *short_empty_elements* parameter controls the formatting
       of elements that contain no content.  If ``True`` (the default), they are
       emitted as a single self-closed tag, otherwise they are emitted as a pair
-      of start/end tags.
+      of start/end tags. *indent* enables and set indentation level for the
+      human readable output.
 
       The output is either a string (:class:`str`) or binary (:class:`bytes`).
       This is controlled by the *encoding* argument.  If *encoding* is
@@ -946,6 +958,9 @@ ElementTree Objects
 
       .. versionadded:: 3.4
          The *short_empty_elements* parameter.
+
+      .. versionadded:: 3.7
+         The *indent* parameter.
 
 
 This is the XML file that is going to be manipulated::
