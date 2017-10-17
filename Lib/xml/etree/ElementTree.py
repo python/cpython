@@ -1153,7 +1153,7 @@ def _escape_attrib_html(text):
 
 # --------------------------------------------------------------------
 
-def tostring(element, encoding=None, method=None, pretty=False, indent='  ', *,
+def tostring(element, encoding=None, method=None, pretty=False, *, indent='  ',
              short_empty_elements=True):
     """Generate string representation of XML element.
 
@@ -1199,8 +1199,8 @@ class _ListDataStream(io.BufferedIOBase):
     def tell(self):
         return len(self.lst)
 
-def tostringlist(element, encoding=None, method=None, pretty=False, indent='  ',
-                 *, short_empty_elements=True):
+def tostringlist(element, encoding=None, method=None, pretty=False, *,
+                 indent='  ', short_empty_elements=True):
     lst = []
     stream = _ListDataStream(lst)
     if not pretty:
