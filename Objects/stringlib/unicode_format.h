@@ -1001,7 +1001,7 @@ static PyStructSequence_Field formatter_iter_result_fields[] = {
 static PyTypeObject FormatterIterResultType;
 
 static PyStructSequence_Desc formatter_iter_result_desc = {
-    "FormatterItem",
+    "string.FormatterItem",
     NULL,
     formatter_iter_result_fields,
     4
