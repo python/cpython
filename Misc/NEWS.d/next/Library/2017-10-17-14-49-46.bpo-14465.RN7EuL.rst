@@ -1,0 +1,2 @@
+xml.etree.ElementTree module now supports pretty printing in ``tostring``,
+``tostringlist`` functions and ElementTree ``write`` method.
