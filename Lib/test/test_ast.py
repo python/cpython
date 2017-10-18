@@ -551,9 +551,32 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('{1, 2, 3}'), {1, 2, 3})
         self.assertEqual(ast.literal_eval('b"hi"'), b"hi")
         self.assertRaises(ValueError, ast.literal_eval, 'foo()')
+        self.assertEqual(ast.literal_eval('6'), 6)
+        self.assertEqual(ast.literal_eval('+6'), 6)
         self.assertEqual(ast.literal_eval('-6'), -6)
-        self.assertEqual(ast.literal_eval('-6j+3'), 3-6j)
         self.assertEqual(ast.literal_eval('3.25'), 3.25)
+        self.assertEqual(ast.literal_eval('+3.25'), 3.25)
+        self.assertEqual(ast.literal_eval('-3.25'), -3.25)
+        self.assertEqual(ast.literal_eval('6j'), 6j)
+        self.assertEqual(ast.literal_eval('-6j'), -6j)
+        self.assertEqual(ast.literal_eval('6.75j'), 6.75j)
+        self.assertEqual(ast.literal_eval('-6.75j'), -6.75j)
+        self.assertEqual(repr(ast.literal_eval('-0.0')), '-0.0')
+        self.assertEqual(ast.literal_eval('3+6j'), 3+6j)
+        self.assertEqual(ast.literal_eval('-3+6j'), -3+6j)
+        self.assertEqual(ast.literal_eval('3-6j'), 3-6j)
+        self.assertEqual(ast.literal_eval('-3-6j'), -3-6j)
+        self.assertEqual(ast.literal_eval('3.25+6.75j'), 3.25+6.75j)
+        self.assertEqual(ast.literal_eval('-3.25+6.75j'), -3.25+6.75j)
+        self.assertEqual(ast.literal_eval('3.25-6.75j'), 3.25-6.75j)
+        self.assertEqual(ast.literal_eval('-3.25-6.75j'), -3.25-6.75j)
+        self.assertEqual(ast.literal_eval('(3+6j)'), 3+6j)
+        self.assertRaises(ValueError, ast.literal_eval, '++6')
+        self.assertRaises(ValueError, ast.literal_eval, '+True')
+        self.assertRaises(ValueError, ast.literal_eval, '2+3')
+        self.assertRaises(ValueError, ast.literal_eval, '-6j+3')
+        self.assertRaises(ValueError, ast.literal_eval, '3+-6j')
+        self.assertRaises(ValueError, ast.literal_eval, '-(3+6j)')
 
     def test_literal_eval_issue4907(self):
         self.assertEqual(ast.literal_eval('2j'), 2j)
@@ -1077,11 +1100,11 @@ class ConstantTests(unittest.TestCase):
         ast.copy_location(new_left, binop.left)
         binop.left = new_left
 
-        new_right = ast.Constant(value=20)
+        new_right = ast.Constant(value=20j)
         ast.copy_location(new_right, binop.right)
         binop.right = new_right
 
-        self.assertEqual(ast.literal_eval(binop), 30)
+        self.assertEqual(ast.literal_eval(binop), 10+20j)
 
 
 def main():
