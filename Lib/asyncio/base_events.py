@@ -215,7 +215,7 @@ class Server(events.AbstractServer):
 
     def _wakeup(self):
         waiters = self._waiters
-        self._waiters = None
+        self._waiters = []
         for waiter in waiters:
             if not waiter.done():
                 waiter.set_result(waiter)
