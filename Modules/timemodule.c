@@ -245,7 +245,7 @@ static PyObject *
 time_sleep(PyObject *self, PyObject *obj)
 {
     _PyTime_t secs;
-    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_CEILING))
+    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
     if (secs < 0) {
         PyErr_SetString(PyExc_ValueError,
