@@ -111,7 +111,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     if (timeout_obj
         && _PyTime_FromSecondsObject(timeout,
-                                     timeout_obj, _PyTime_ROUND_CEILING) < 0)
+                                     timeout_obj, _PyTime_ROUND_TIMEOUT) < 0)
         return -1;
 
     if (!blocking && *timeout != unset_timeout ) {
@@ -129,7 +129,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     else if (*timeout != unset_timeout) {
         _PyTime_t microseconds;
 
-        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_CEILING);
+        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_TIMEOUT);
         if (microseconds >= PY_TIMEOUT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "timeout value is too large");
