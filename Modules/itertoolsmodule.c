@@ -8,6 +8,8 @@
 */
 
 
+#define CHECKSIG(sigcount) (((sigcount) & 0xffff) == 0)
+
 /* groupby object ************************************************************/
 
 typedef struct {
@@ -953,7 +955,7 @@ cycle_next(cycleobject *lz)
     }
     if (PyList_GET_SIZE(lz->saved) == 0)
         return NULL;
-    if ((lz->index & 0xfff) == 0 && PyErr_CheckSignals()) {
+    if (CHECKSIG(lz->index) && PyErr_CheckSignals()) {
         return NULL;
     }
     item = PyList_GET_ITEM(lz->saved, lz->index);
@@ -2161,7 +2163,7 @@ product_next(productobject *lz)
     if (lz->stopped)
         return NULL;
 
-    if ((lz->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+    if (CHECKSIG(lz->sigcount++) && PyErr_CheckSignals()) {
         return NULL;
     }
     if (result == NULL) {
@@ -2494,7 +2496,7 @@ combinations_next(combinationsobject *co)
     if (co->stopped)
         return NULL;
 
-    if ((co->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+    if (CHECKSIG(co->sigcount++) && PyErr_CheckSignals()) {
         return NULL;
     }
     if (result == NULL) {
@@ -2838,7 +2840,7 @@ cwr_next(cwrobject *co)
     if (co->stopped)
         return NULL;
 
-    if ((co->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+    if (CHECKSIG(co->sigcount++) && PyErr_CheckSignals()) {
         return NULL;
     }
     if (result == NULL) {
@@ -3191,7 +3193,7 @@ permutations_next(permutationsobject *po)
     if (po->stopped)
         return NULL;
 
-    if ((po->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+    if (CHECKSIG(po->sigcount++) && PyErr_CheckSignals()) {
         return NULL;
     }
     if (result == NULL) {
@@ -4092,7 +4094,7 @@ count_next(countobject *lz)
     if (lz->cnt == PY_SSIZE_T_MAX) {
         return count_nextlong(lz);
     }
-    if ((lz->cnt & 0xfff) == 0) {
+    if (CHECKSIG(lz->cnt)) {
         if (PyErr_CheckSignals()) {
             return NULL;
         }
@@ -4253,7 +4255,7 @@ repeat_traverse(repeatobject *ro, visitproc visit, void *arg)
 static PyObject *
 repeat_next(repeatobject *ro)
 {
-    if ((ro->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+    if (CHECKSIG(ro->sigcount++) && PyErr_CheckSignals()) {
         return NULL;
     }
     if (ro->cnt == 0)
