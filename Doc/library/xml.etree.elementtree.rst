@@ -597,7 +597,7 @@ Functions
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
    *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
    *pretty* enables pretty printing with default indent. Keyword-only *indent*
-   allows to set custom indent.
+   allows setting custom indent.
    Returns an (optionally) encoded string containing the XML data.
 
    .. versionadded:: 3.4
@@ -946,8 +946,8 @@ ElementTree Objects
       The keyword-only *short_empty_elements* parameter controls the formatting
       of elements that contain no content.  If ``True`` (the default), they are
       emitted as a single self-closed tag, otherwise they are emitted as a pair
-      of start/end tags. *indent* enables and set indentation level for the
-      human readable output.
+      of start/end tags. *indent* enables and sets indentation level for the
+      human-readable output.
 
       The output is either a string (:class:`str`) or binary (:class:`bytes`).
       This is controlled by the *encoding* argument.  If *encoding* is
