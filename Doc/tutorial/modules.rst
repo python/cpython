@@ -112,6 +112,17 @@ Note that in general the practice of importing ``*`` from a module or package is
 frowned upon, since it often causes poorly readable code. However, it is okay to
 use it to save typing in interactive sessions.
 
+If as a user of the module you would like to import a module and make it available
+under a different name within the current namespace you can use ``import as``.
+
+   >>> import fibo as fib
+   >>> fib.fib(500)
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+This is effectively importing the module in the same way that ``import fibo``
+will do, with the only difference of it being available under a different name.
+
+
 .. note::
 
    For efficiency reasons, each module is only imported once per interpreter
