@@ -1,0 +1,1 @@
+Iterating itertools iterators now can be interrupted with Ctrl-C.

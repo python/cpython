@@ -628,11 +628,16 @@ tee_next(teeobject *to)
     PyObject *value, *link;
 
     if (to->index >= LINKCELLS) {
-        link = teedataobject_jumplink(to->dataobj);
-        if (link == NULL)
+        if (PyErr_CheckSignals()) {
             return NULL;
-        Py_SETREF(to->dataobj, (teedataobject *)link);
-        to->index = 0;
+        }
+        if (to->index >= LINKCELLS) {
+            link = teedataobject_jumplink(to->dataobj);
+            if (link == NULL)
+                return NULL;
+            Py_SETREF(to->dataobj, (teedataobject *)link);
+            to->index = 0;
+        }
     }
     value = teedataobject_getitem(to->dataobj, to->index);
     if (value == NULL)
@@ -948,6 +953,9 @@ cycle_next(cycleobject *lz)
     }
     if (PyList_GET_SIZE(lz->saved) == 0)
         return NULL;
+    if ((lz->index & 0xfff) == 0 && PyErr_CheckSignals()) {
+        return NULL;
+    }
     item = PyList_GET_ITEM(lz->saved, lz->index);
     lz->index++;
     if (lz->index >= PyList_GET_SIZE(lz->saved))
@@ -2020,6 +2028,7 @@ typedef struct {
     Py_ssize_t *indices;    /* one index per pool */
     PyObject *result;       /* most recently returned result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
+    unsigned int sigcount;
 } productobject;
 
 static PyTypeObject product_type;
@@ -2152,6 +2161,9 @@ product_next(productobject *lz)
     if (lz->stopped)
         return NULL;
 
+    if ((lz->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+        return NULL;
+    }
     if (result == NULL) {
         /* On the first pass, return an initial tuple filled with the
            first element from each pool. */
@@ -2379,6 +2391,7 @@ typedef struct {
     PyObject *result;       /* most recently returned result tuple */
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
+    unsigned int sigcount;
 } combinationsobject;
 
 static PyTypeObject combinations_type;
@@ -2481,6 +2494,9 @@ combinations_next(combinationsobject *co)
     if (co->stopped)
         return NULL;
 
+    if ((co->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+        return NULL;
+    }
     if (result == NULL) {
         /* On the first pass, initialize result tuple using the indices */
         result = PyTuple_New(r);
@@ -2718,6 +2734,7 @@ typedef struct {
     PyObject *result;       /* most recently returned result tuple */
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the cwr iterator is exhausted */
+    unsigned int sigcount;
 } cwrobject;
 
 static PyTypeObject cwr_type;
@@ -2821,6 +2838,9 @@ cwr_next(cwrobject *co)
     if (co->stopped)
         return NULL;
 
+    if ((co->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+        return NULL;
+    }
     if (result == NULL) {
         /* On the first pass, initialize result tuple with pool[0] */
         result = PyTuple_New(r);
@@ -3047,6 +3067,7 @@ typedef struct {
     PyObject *result;       /* most recently returned result tuple */
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
+    unsigned int sigcount;
 } permutationsobject;
 
 static PyTypeObject permutations_type;
@@ -3170,6 +3191,9 @@ permutations_next(permutationsobject *po)
     if (po->stopped)
         return NULL;
 
+    if ((po->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+        return NULL;
+    }
     if (result == NULL) {
         /* On the first pass, initialize result tuple using the indices */
         result = PyTuple_New(r);
@@ -4043,6 +4067,9 @@ count_nextlong(countobject *lz)
     PyObject *long_cnt;
     PyObject *stepped_up;
 
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
     long_cnt = lz->long_cnt;
     if (long_cnt == NULL) {
         /* Switch to slow_mode */
@@ -4062,8 +4089,17 @@ count_nextlong(countobject *lz)
 static PyObject *
 count_next(countobject *lz)
 {
-    if (lz->cnt == PY_SSIZE_T_MAX)
+    if (lz->cnt == PY_SSIZE_T_MAX) {
         return count_nextlong(lz);
+    }
+    if ((lz->cnt & 0xfff) == 0) {
+        if (PyErr_CheckSignals()) {
+            return NULL;
+        }
+        if (lz->cnt == PY_SSIZE_T_MAX) {
+            return count_nextlong(lz);
+        }
+    }
     return PyLong_FromSsize_t(lz->cnt++);
 }
 
@@ -4167,6 +4203,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *element;
     Py_ssize_t cnt;
+    unsigned int sigcount;
 } repeatobject;
 
 static PyTypeObject repeat_type;
@@ -4216,6 +4253,9 @@ repeat_traverse(repeatobject *ro, visitproc visit, void *arg)
 static PyObject *
 repeat_next(repeatobject *ro)
 {
+    if ((ro->sigcount++ & 0xfff) == 0 && PyErr_CheckSignals()) {
+        return NULL;
+    }
     if (ro->cnt == 0)
         return NULL;
     if (ro->cnt > 0)
