@@ -993,8 +993,10 @@ formatteriter_dealloc(formatteriterobject *it)
 static PyStructSequence_Field formatter_iter_result_fields[] = {
     {"literal_text", "Span of literal text."},
     {"field_name", "Specifies the object whose value is to be formatted."},
-    {"format_spec", "Contains a specification of how the value should be presented."},
-    {"conversion", "The conversion to be used. One of: ‘s’ (str), ‘r’ (repr) and ‘a’ (ascii)."},
+    {"format_spec", "Contains a specification of how the value \
+    should be presented."},
+    {"conversion", "The conversion to be used. One of: ‘s’ (str),\
+    ‘r’ (repr) and ‘a’ (ascii)."},
     {NULL}
 };
 
@@ -1032,7 +1034,7 @@ formatteriter_next(formatteriterobject *it)
         PyObject *field_name_str = NULL;
         PyObject *format_spec_str = NULL;
         PyObject *conversion_str = NULL;
-        PyObject *res = NULL;
+        PyObject *res;
 
         literal_str = SubString_new_object(&literal);
         if (literal_str == NULL)
@@ -1075,12 +1077,13 @@ formatteriter_next(formatteriterobject *it)
         PyStructSequence_SET_ITEM(res, 3, conversion_str); 
 
         return res;
+
     error:
         Py_XDECREF(literal_str);
         Py_XDECREF(field_name_str);
         Py_XDECREF(format_spec_str);
         Py_XDECREF(conversion_str);
-        return res;
+        return NULL;
     }
 }
 
