@@ -92,6 +92,10 @@ script:
   # `-r -w` implicitly provided through `make buildbottest`.
   - make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
+script:
+  # Run `make smelly` to check if Python leaks any symbols
+  - make smelly
+
 notifications:
   email: false
   irc:
