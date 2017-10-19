@@ -121,6 +121,14 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         ssl_proto.connection_lost(None)
         self.assertIsNone(ssl_proto._get_extra_info('socket'))
 
+    def test_set_new_app_protocol(self):
+        waiter = asyncio.Future(loop=self.loop)
+        ssl_proto = self.ssl_protocol(waiter)
+        new_app_proto = asyncio.Protocol()
+        ssl_proto._app_transport.set_protocol(new_app_proto)
+        self.assertIs(ssl_proto._app_transport.get_protocol(), new_app_proto)
+        self.assertIs(ssl_proto._app_protocol, new_app_proto)
+
 
 if __name__ == '__main__':
     unittest.main()
