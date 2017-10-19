@@ -1,0 +1,2 @@
+Allow ``asyncio.Transport.pause_reading()`` from
+``asyncio.Protocol.connection_made()``.
