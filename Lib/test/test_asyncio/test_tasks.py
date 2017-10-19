@@ -2298,10 +2298,9 @@ class GatherTestsBase:
         cb.assert_called_once_with(fut)
         self.assertIs(fut.exception(), exc)
         # Does nothing
-        c.set_result(3)
-        d.cancel()
-        e.set_exception(RuntimeError())
-        e.exception()
+        self.assertTrue(c.cancelled())
+        self.assertTrue(d.cancelled())
+        self.assertTrue(e.cancelled())
 
     def test_return_exceptions(self):
         a, b, c, d = [asyncio.Future(loop=self.one_loop) for i in range(4)]
@@ -2529,7 +2528,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         test_utils.run_briefly(self.one_loop)
         a.set_result(None)
         test_utils.run_briefly(self.one_loop)
-        b.set_result(None)
+        self.assertTrue(b.cancelled())
         test_utils.run_briefly(self.one_loop)
         self.assertIsInstance(f.exception(), RuntimeError)
 
