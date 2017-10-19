@@ -210,7 +210,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d:?[0-5]\d)",
+            'z': r"(?P<z>[+-]\d\d:?[0-5]\d|Z)",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -455,13 +455,16 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             iso_week = int(found_dict['V'])
         elif group_key == 'z':
             z = found_dict['z']
-            if z[3] == ':':
-                minute_start = 4
+            if z == 'Z':
+                tzoffset = 0
             else:
-                minute_start = 3
-            tzoffset = int(z[1:3]) * 60 + int(z[minute_start:minute_start+2])
-            if z.startswith("-"):
-                tzoffset = -tzoffset
+                if z[3] == ':':
+                    minute_start = 4
+                else:
+                    minute_start = 3
+                tzoffset = int(z[1:3]) * 60 + int(z[minute_start:minute_start+2])
+                if z.startswith("-"):
+                    tzoffset = -tzoffset
         elif group_key == 'Z':
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.

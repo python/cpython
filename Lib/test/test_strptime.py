@@ -318,14 +318,18 @@ class StrptimeTests(unittest.TestCase):
         self.helper('j', 7)
 
     def test_offset(self):
-        (*_, offset), _ = _strptime._strptime("+0100", "%z")
-        self.assertEqual(offset, 60 * 60)
+        one_hour = 60 * 60
+        half_hour = 30 * 60
+        (*_, offset), _ = _strptime._strptime("+0130", "%z")
+        self.assertEqual(offset, one_hour + half_hour)
         (*_, offset), _ = _strptime._strptime("-0100", "%z")
-        self.assertEqual(offset, -60 * 60)
+        self.assertEqual(offset, -one_hour)
         (*_, offset), _ = _strptime._strptime("+01:00", "%z")
-        self.assertEqual(offset, 60 * 60)
-        (*_, offset), _ = _strptime._strptime("-01:00", "%z")
-        self.assertEqual(offset, -60 * 60)
+        self.assertEqual(offset, one_hour)
+        (*_, offset), _ = _strptime._strptime("-01:30", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour))
+        (*_, offset), _ = _strptime._strptime("Z", "%z")
+        self.assertEqual(offset, 0)
 
     def test_timezone(self):
         # Test timezone directives.
