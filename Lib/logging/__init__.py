@@ -1715,7 +1715,7 @@ class LoggerAdapter(object):
         return self.logger.manager
 
     @manager.setter
-    def set_manager(self, value):
+    def manager(self, value):
         self.logger.manager = value
 
     def __repr__(self):
