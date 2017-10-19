@@ -155,6 +155,10 @@ class Lock(_ContextManagerMixin):
             extra = '{},waiters:{}'.format(extra, len(self._waiters))
         return '<{} [{}]>'.format(res[1:-1], extra)
 
+    def pending(self):
+        """Return the num of waiters pending to be woken up"""
+        return len(self._waiters)
+
     def locked(self):
         """Return True if lock is acquired."""
         return self._locked
@@ -231,6 +235,10 @@ class Event:
         if self._waiters:
             extra = '{},waiters:{}'.format(extra, len(self._waiters))
         return '<{} [{}]>'.format(res[1:-1], extra)
+
+    def pending(self):
+        """Return the num of waiters pending to be woken up"""
+        return len(self._waiters)
 
     def is_set(self):
         """Return True if and only if the internal flag is true."""
@@ -309,6 +317,10 @@ class Condition(_ContextManagerMixin):
         if self._waiters:
             extra = '{},waiters:{}'.format(extra, len(self._waiters))
         return '<{} [{}]>'.format(res[1:-1], extra)
+
+    def pending(self):
+        """Return the num of waiters pending to be woken up"""
+        return len(self._waiters)
 
     @coroutine
     def wait(self):
@@ -430,6 +442,10 @@ class Semaphore(_ContextManagerMixin):
             if not waiter.done():
                 waiter.set_result(None)
                 return
+
+    def pending(self):
+        """Return the num of waiters pending to be woken up"""
+        return len(self._waiters)
 
     def locked(self):
         """Returns True if semaphore can not be acquired immediately."""
