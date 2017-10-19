@@ -439,6 +439,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     def sock_recv(self, sock, n):
         return self._proactor.recv(sock, n)
 
+    def sock_recv_into(self, sock, buf):
+        return self._proactor.recv_into(sock, buf)
+
     def sock_sendall(self, sock, data):
         return self._proactor.send(sock, data)
 

@@ -386,6 +386,41 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(data)
 
+    def sock_recv_into(self, sock, buf):
+        """Receive data from the socket.
+
+        The received data is written into *buf* (a writable buffer).
+        The return value is the number of bytes written.
+
+        This method is a coroutine.
+        """
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
+        fut = self.create_future()
+        self._sock_recv_into(fut, False, sock, buf)
+        return fut
+
+    def _sock_recv_into(self, fut, registered, sock, buf):
+        # _sock_recv_into() can add itself as an I/O callback if the operation
+        # can't be done immediately. Don't use it directly, call sock_recv_into().
+        fd = sock.fileno()
+        if registered:
+            # Remove the callback early.  It should be rare that the
+            # selector says the fd is ready but the call still returns
+            # EAGAIN, and I am willing to take a hit in that case in
+            # order to simplify the common case.
+            self.remove_reader(fd)
+        if fut.cancelled():
+            return
+        try:
+            nbytes = sock.recv_into(buf)
+        except (BlockingIOError, InterruptedError):
+            self.add_reader(fd, self._sock_recv_into, fut, True, sock, buf)
+        except Exception as exc:
+            fut.set_exception(exc)
+        else:
+            fut.set_result(nbytes)
+
     def sock_sendall(self, sock, data):
         """Send data to the socket.
 

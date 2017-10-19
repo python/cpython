@@ -427,6 +427,9 @@ class EventLoopTestsMixin:
                     self.loop.sock_recv(sock, 1024))
             with self.assertRaises(ValueError):
                 self.loop.run_until_complete(
+                    self.loop.sock_recv_into(sock, bytearray()))
+            with self.assertRaises(ValueError):
+                self.loop.run_until_complete(
                     self.loop.sock_accept(sock))
 
         # test in non-blocking mode
@@ -443,16 +446,37 @@ class EventLoopTestsMixin:
         sock.close()
         self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
 
+    def _basetest_sock_recv_into(self, httpd, sock):
+        # same as _basetest_sock_client_ops, but using sock_recv_into
+        sock.setblocking(False)
+        self.loop.run_until_complete(
+            self.loop.sock_connect(sock, httpd.address))
+        self.loop.run_until_complete(
+            self.loop.sock_sendall(sock, b'GET / HTTP/1.0\r\n\r\n'))
+        data = bytearray(1024)
+        with memoryview(data) as buf:
+            nbytes = self.loop.run_until_complete(
+                self.loop.sock_recv_into(sock, buf[:1024]))
+            # consume data
+            self.loop.run_until_complete(
+                self.loop.sock_recv_into(sock, buf[nbytes:]))
+        sock.close()
+        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+
     def test_sock_client_ops(self):
         with test_utils.run_test_server() as httpd:
             sock = socket.socket()
             self._basetest_sock_client_ops(httpd, sock)
+            sock = socket.socket()
+            self._basetest_sock_recv_into(httpd, sock)
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_unix_sock_client_ops(self):
         with test_utils.run_test_unix_server() as httpd:
             sock = socket.socket(socket.AF_UNIX)
             self._basetest_sock_client_ops(httpd, sock)
+            sock = socket.socket(socket.AF_UNIX)
+            self._basetest_sock_recv_into(httpd, sock)
 
     def test_sock_client_fail(self):
         # Make sure that we will get an unused port
@@ -2612,6 +2636,8 @@ class AbstractEventLoopTests(unittest.TestCase):
             NotImplementedError, loop.remove_writer, 1)
         self.assertRaises(
             NotImplementedError, loop.sock_recv, f, 10)
+        self.assertRaises(
+            NotImplementedError, loop.sock_recv_into, f, 10)
         self.assertRaises(
             NotImplementedError, loop.sock_sendall, f, 10)
         self.assertRaises(

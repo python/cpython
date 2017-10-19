@@ -448,6 +448,28 @@ class IocpProactor:
 
         return self._register(ov, conn, finish_recv)
 
+    def recv_into(self, conn, buf, flags=0):
+        self._register_with_iocp(conn)
+        ov = _overlapped.Overlapped(NULL)
+        try:
+            if isinstance(conn, socket.socket):
+                ov.WSARecvInto(conn.fileno(), buf, flags)
+            else:
+                ov.ReadFileInto(conn.fileno(), buf)
+        except BrokenPipeError:
+            return self._result(b'')
+
+        def finish_recv(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+
+        return self._register(ov, conn, finish_recv)
+
     def send(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
         ov = _overlapped.Overlapped(NULL)

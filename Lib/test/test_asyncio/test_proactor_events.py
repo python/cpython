@@ -489,6 +489,11 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.loop.sock_recv(self.sock, 1024)
         self.proactor.recv.assert_called_with(self.sock, 1024)
 
+    def test_sock_recv_into(self):
+        buf = bytearray(10)
+        self.loop.sock_recv_into(self.sock, buf)
+        self.proactor.recv_into.assert_called_with(self.sock, buf)
+
     def test_sock_sendall(self):
         self.loop.sock_sendall(self.sock, b'data')
         self.proactor.send.assert_called_with(self.sock, b'data')
