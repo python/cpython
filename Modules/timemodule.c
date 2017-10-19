@@ -263,6 +263,26 @@ PyDoc_STRVAR(sleep_doc,
 Delay execution for a given number of seconds.  The argument may be\n\
 a floating point number for subsecond precision.");
 
+#ifdef MS_WINDOWS
+// Function to get time zone name with Windows API
+static void
+get_windows_zone(wchar_t *out)
+{
+    TIME_ZONE_INFORMATION tzi;
+    DWORD tzid = GetTimeZoneInformation(&tzi);
+
+    if (tzid == TIME_ZONE_ID_INVALID) {
+        PyErr_SetFromWindowsErr(0);
+    }
+    else if (tzid == TIME_ZONE_ID_DAYLIGHT) {
+        wcscpy(out, tzi.DaylightName);
+    }
+    else {
+        wcscpy(out, tzi.StandardName);
+    }
+}
+#endif   // MS_WINDOWS
+
 static PyStructSequence_Field struct_time_type_fields[] = {
     {"tm_year", "year, for example, 1993"},
     {"tm_mon", "month of year, range [1, 12]"},
@@ -298,7 +318,12 @@ static PyTypeObject StructTimeType;
 static PyObject *
 tmtotuple(struct tm *p
 #ifndef HAVE_STRUCT_TM_TM_ZONE
-        , const char *zone, time_t gmtoff
+#ifdef MS_WINDOWS
+    , const wchar_t *zone
+#else
+    , const char *zone
+#endif
+    , time_t gmtoff
 #endif
 )
 {
@@ -322,8 +347,13 @@ tmtotuple(struct tm *p
         PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
     SET(10, p->tm_gmtoff);
 #else
+#ifdef MS_WINDOWS
+    PyStructSequence_SET_ITEM(v, 9,
+        PyUnicode_FromWideChar(zone, -1));
+#else
     PyStructSequence_SET_ITEM(v, 9,
         PyUnicode_DecodeLocale(zone, "surrogateescape"));
+#endif
     PyStructSequence_SET_ITEM(v, 10, _PyLong_FromTime_t(gmtoff));
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
 #undef SET
@@ -373,7 +403,11 @@ time_gmtime(PyObject *self, PyObject *args)
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     return tmtotuple(&buf);
 #else
+#ifdef MS_WINDOWS
+    return tmtotuple(&buf, L"UTC", 0);
+#else
     return tmtotuple(&buf, "UTC", 0);
+#endif
 #endif
 }
 
@@ -415,9 +449,19 @@ time_localtime(PyObject *self, PyObject *args)
 #else
     {
         struct tm local = buf;
+#ifdef MS_WINDOWS
+        wchar_t zone[128];
+#else
         char zone[100];
+#endif
         time_t gmtoff;
+        /*bpo-16322, bpo-27426: For Windows use GetTimeZoneInformation() to avoid
+        wrong encoding of time zone names.*/
+#ifdef MS_WINDOWS
+        get_windows_zone(zone);
+#else
         strftime(zone, sizeof(zone), "%Z", &buf);
+#endif
         gmtoff = timegm(&buf) - when;
         return tmtotuple(&local, zone, gmtoff);
     }
@@ -540,10 +584,6 @@ checktm(struct tm* buf)
     return 1;
 }
 
-#ifdef MS_WINDOWS
-   /* wcsftime() doesn't format correctly time zones, see issue #10653 */
-#  undef HAVE_WCSFTIME
-#endif
 #define STRFTIME_FORMAT_CODES \
 "Commonly used format codes:\n\
 \n\
@@ -642,38 +682,77 @@ time_strftime(PyObject *self, PyObject *args)
     fmt = PyBytes_AS_STRING(format);
 #endif
 
-#if defined(MS_WINDOWS) && !defined(HAVE_WCSFTIME)
+#if (defined(_AIX) || defined(sun) || defined(MS_WINDOWS)) && \
+    defined(HAVE_WCSFTIME)
+#ifdef MS_WINDOWS
+    // Create an array of %Z occurences for subsequent replacement
+    size_t count = 0;
+    size_t n = wcslen(format) / 2;
+    size_t *points = (size_t *)PyMem_Malloc(n * sizeof(size_t));
+#endif
     /* check that the format string contains only valid directives */
-    for (outbuf = strchr(fmt, '%');
+    for (outbuf = wcschr(fmt, L'%');
         outbuf != NULL;
-        outbuf = strchr(outbuf+2, '%'))
+        outbuf = wcschr(outbuf + 2, L'%'))
     {
-        if (outbuf[1] == '#')
+        if (outbuf[1] == L'#')
             ++outbuf; /* not documented by python, */
-        if (outbuf[1] == '\0')
-            break;
-        if ((outbuf[1] == 'y') && buf.tm_year < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                        "format %y requires year >= 1900 on Windows");
-            Py_DECREF(format);
-            return NULL;
-        }
-    }
-#elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
-    for (outbuf = wcschr(fmt, '%');
-        outbuf != NULL;
-        outbuf = wcschr(outbuf+2, '%'))
-    {
         if (outbuf[1] == L'\0')
             break;
         /* Issue #19634: On AIX, wcsftime("y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
-           returns "0/" instead of "99" */
-        if (outbuf[1] == L'y' && buf.tm_year < 0) {
+        returns "0/" instead of "99" */
+        if ((outbuf[1] == L'y') && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "format %y requires year >= 1900 on AIX");
+                        "format %y requires year >= 1900 on Windows and AIX");
+            PyMem_Free(format);
             return NULL;
         }
+#ifdef MS_WINDOWS
+        // Count the number of %Z occurences and fill the array
+        if (outbuf[1] == L'Z') {
+            *(points + count)= outbuf - fmt;
+            ++count;
+        }
+#endif
     }
+#endif
+
+#ifdef MS_WINDOWS
+    /*For Windows firstly replace %Z with time zone name from Windows API
+    to not use format string containing %Z with wcsftime().*/
+    wchar_t *result, *tmp;
+
+    //Replace %Z with time zone name
+    if (count) {
+        wchar_t zone[128];
+        size_t len_zone;
+
+        get_windows_zone(zone);
+        if (PyErr_Occurred()) {
+            PyMem_Free(format);
+            return NULL;
+        }
+        len_zone = wcslen(zone);
+
+        if (len_zone - 2 > (PY_SSIZE_T_MAX / sizeof(time_char) - 1 - wcslen(fmt)) / count) {
+            PyMem_Free(format);
+            return PyErr_NoMemory();
+        }
+        size_t l = wcslen(fmt) + (len_zone - 2) * count + 1;
+        tmp = result = (time_char *)PyMem_Malloc(l * sizeof(time_char));
+
+        for (size_t i = 0, k = points[0]; i < count; ++i) {
+            if (i > 0) {
+                k = *(points + i) - *(points + i - 1) - 2;
+            }
+            tmp = wcsncpy(tmp, fmt, k) + k;
+            tmp = wcscpy(tmp, zone) + len_zone;
+            fmt += k + 2;
+        }
+        wcscpy(tmp, fmt);
+        fmt = result;
+    }
+    PyMem_Free(points);
 #endif
 
     fmtlen = time_strlen(fmt);
@@ -720,6 +799,11 @@ time_strftime(PyObject *self, PyObject *args)
     }
 #ifdef HAVE_WCSFTIME
     PyMem_Free(format);
+#ifdef MS_WINDOWS
+    if (count > 0) {
+        PyMem_Free(result);
+    }
+#endif
 #else
     Py_DECREF(format);
 #endif
@@ -1230,8 +1314,19 @@ PyInit_timezone(PyObject *m) {
     PyModule_AddIntConstant(m, "altzone", timezone-3600);
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
+    /*bpo-16322, bpo-27426: For Windows use GetTimeZoneInformation() to avoid
+    wrong encoding of time zone names.*/
+#ifdef MS_WINDOWS
+    TIME_ZONE_INFORMATION tzi;
+    if (GetTimeZoneInformation(&tzi) == TIME_ZONE_ID_INVALID) {
+        PyErr_SetFromWindowsErr(0);
+    }
+    otz0 = PyUnicode_FromWideChar(tzi.StandardName, -1);
+    otz1 = PyUnicode_FromWideChar(tzi.DaylightName, -1);
+#else
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
     otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
+#endif
     PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
     {
