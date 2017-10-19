@@ -3904,7 +3904,6 @@ class BasicConfigTest(unittest.TestCase):
 
 
 class LoggerAdapterTest(unittest.TestCase):
-
     def setUp(self):
         super(LoggerAdapterTest, self).setUp()
         old_handler_list = logging._handlerList[:]
@@ -3979,27 +3978,36 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertFalse(self.adapter.hasHandlers())
 
     def test_nested(self):
+        class Adapter(logging.LoggerAdapter):
+            prefix = 'Adapter'
+
+            def process(self, msg, kwargs):
+                return f"{self.prefix} {msg}", kwargs
+
         msg = 'Adapters can be nested, yo.'
-        adapter_adapter = logging.LoggerAdapter(logger=self.adapter, extra=None)
+        adapter = Adapter(logger=self.logger, extra=None)
+        adapter_adapter = Adapter(logger=adapter, extra=None)
+        adapter_adapter.prefix = 'AdapterAdapter'
+        self.assertEqual(repr(adapter), repr(adapter_adapter))
         adapter_adapter.log(logging.CRITICAL, msg, self.recording)
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
         self.assertEqual(record.levelno, logging.CRITICAL)
-        self.assertEqual(record.msg, msg)
+        self.assertEqual(record.msg, f"Adapter AdapterAdapter {msg}")
         self.assertEqual(record.args, (self.recording,))
         orig_manager = adapter_adapter.manager
-        self.assertIs(self.adapter.manager, orig_manager)
+        self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
         temp_manager = object()
         try:
             adapter_adapter.manager = temp_manager
             self.assertIs(adapter_adapter.manager, temp_manager)
-            self.assertIs(self.adapter.manager, temp_manager)
+            self.assertIs(adapter.manager, temp_manager)
             self.assertIs(self.logger.manager, temp_manager)
         finally:
             adapter_adapter.manager = orig_manager
         self.assertIs(adapter_adapter.manager, orig_manager)
-        self.assertIs(self.adapter.manager, orig_manager)
+        self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
 
 
