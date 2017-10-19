@@ -1,0 +1,2 @@
+If nested log adapters are used, the inner ``process()`` methods are no
+longer omitted.
