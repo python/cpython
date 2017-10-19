@@ -683,14 +683,16 @@ class _SelectorSocketTransport(_SelectorTransport):
         # decreases the latency (in some cases significantly.)
         _set_nodelay(self._sock)
 
-        self._loop.call_soon(self._protocol.connection_made, self)
-        # only start reading when connection_made() has been called
-        self._loop.call_soon(self._loop._add_reader,
-                             self._sock_fd, self._read_ready)
-        if waiter is not None:
+        def _call_connection_made():
+            self._protocol.connection_made(self)
+            # only start reading when connection_made() has been called
+            if not self._paused:
+                self._loop._add_reader(self._sock_fd, self._read_ready)
             # only wake up the waiter when connection_made() has been called
-            self._loop.call_soon(futures._set_result_unless_cancelled,
-                                 waiter, None)
+            if waiter is not None:
+                futures._set_result_unless_cancelled(waiter, None)
+
+        self._loop.call_soon(_call_connection_made)
 
     def pause_reading(self):
         if self._closing:

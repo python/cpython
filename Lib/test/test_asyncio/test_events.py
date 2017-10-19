@@ -1846,6 +1846,35 @@ class EventLoopTestsMixin:
         with self.assertRaises(RuntimeError):
             self.loop.add_signal_handler(signal.SIGTERM, func)
 
+    def test_pause_reading_in_connection_made(self):
+        class PausingProto(MyBaseProto):
+
+            def connection_made(self, transport):
+                super().connection_made(transport)
+                transport.pause_reading()
+
+        proto = PausingProto(self.loop)
+        f = self.loop.create_server(lambda: proto, '127.0.0.1', 0)
+        server = self.loop.run_until_complete(f)
+        self.assertEqual(len(server.sockets), 1)
+        host, port = server.sockets[0].getsockname()
+        client = socket.socket()
+        client.connect(('127.0.0.1', port))
+        client.sendall(b'xxx')
+
+        self.loop.run_until_complete(proto.connected)
+        self.loop.run_until_complete(asyncio.sleep(0.1, loop=self.loop))
+        self.assertEqual(0, proto.nbytes)
+
+        proto.transport.resume_reading()
+
+        test_utils.run_until(self.loop, lambda: proto.nbytes > 0)
+        self.assertEqual(3, proto.nbytes)
+
+        proto.transport.close()
+        client.close()
+        server.close()
+
 
 class SubprocessTestsMixin:
 
