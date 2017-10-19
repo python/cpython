@@ -3982,12 +3982,25 @@ class LoggerAdapterTest(unittest.TestCase):
         msg = 'Adapters can be nested, yo.'
         adapter_adapter = logging.LoggerAdapter(logger=self.adapter, extra=None)
         adapter_adapter.log(logging.CRITICAL, msg, self.recording)
-
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
         self.assertEqual(record.levelno, logging.CRITICAL)
         self.assertEqual(record.msg, msg)
         self.assertEqual(record.args, (self.recording,))
+        orig_manager = adapter_adapter.manager
+        self.assertIs(self.adapter.manager, orig_manager)
+        self.assertIs(self.logger.manager, orig_manager)
+        temp_manager = object()
+        try:
+            adapter_adapter.manager = temp_manager
+            self.assertIs(adapter_adapter.manager, temp_manager)
+            self.assertIs(self.adapter.manager, temp_manager)
+            self.assertIs(self.logger.manager, temp_manager)
+        finally:
+            adapter_adapter.manager = orig_manager
+        self.assertIs(adapter_adapter.manager, orig_manager)
+        self.assertIs(self.adapter.manager, orig_manager)
+        self.assertIs(self.logger.manager, orig_manager)
 
 
 class LoggerTest(BaseTest):
