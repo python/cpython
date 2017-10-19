@@ -513,7 +513,7 @@ def getstatusoutput(cmd):
     (-15, '')
     """
     try:
-        data = check_output(cmd, shell=True, universal_newlines=True, stderr=STDOUT)
+        data = check_output(cmd, shell=True, text=True, stderr=STDOUT)
         exitcode = 0
     except CalledProcessError as ex:
         data = ex.output
@@ -565,8 +565,10 @@ class Popen(object):
 
       env: Defines the environment variables for the new process.
 
-      universal_newlines: If true, use universal line endings for file
-          objects stdin, stdout and stderr.
+      text: If true, decode stdin, stdout and stderr using the given encoding
+          (if set) or the system default otherwise.
+
+      universal_newlines: Alias of text, provided for backwards compatibility.
 
       startupinfo and creationflags (Windows only)
 
@@ -590,7 +592,7 @@ class Popen(object):
                  shell=False, cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
-                 pass_fds=(), *, encoding=None, errors=None):
+                 pass_fds=(), *, encoding=None, errors=None, text=False):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -642,7 +644,6 @@ class Popen(object):
         self.stderr = None
         self.pid = None
         self.returncode = None
-        self.universal_newlines = universal_newlines
         self.encoding = encoding
         self.errors = errors
 
@@ -677,25 +678,25 @@ class Popen(object):
             if errread != -1:
                 errread = msvcrt.open_osfhandle(errread.Detach(), 0)
 
-        text_mode = encoding or errors or universal_newlines
+        self.text_mode = encoding or errors or text or universal_newlines
 
         self._closed_child_pipe_fds = False
 
         try:
             if p2cwrite != -1:
                 self.stdin = io.open(p2cwrite, 'wb', bufsize)
-                if text_mode:
+                if self.text_mode:
                     self.stdin = io.TextIOWrapper(self.stdin, write_through=True,
                             line_buffering=(bufsize == 1),
                             encoding=encoding, errors=errors)
             if c2pread != -1:
                 self.stdout = io.open(c2pread, 'rb', bufsize)
-                if text_mode:
+                if self.text_mode:
                     self.stdout = io.TextIOWrapper(self.stdout,
                             encoding=encoding, errors=errors)
             if errread != -1:
                 self.stderr = io.open(errread, 'rb', bufsize)
-                if text_mode:
+                if self.text_mode:
                     self.stderr = io.TextIOWrapper(self.stderr,
                             encoding=encoding, errors=errors)
 
@@ -810,7 +811,7 @@ class Popen(object):
         None, if no data should be sent to the child.
 
         communicate() returns a tuple (stdout, stderr).  These will be
-        bytes or, if self.universal_newlines was True, a string.
+        bytes or, if self.universal_newlines/self.text was True, a string.
         """
 
         if self._communication_started and input:
@@ -1533,7 +1534,7 @@ class Popen(object):
 
             # Translate newlines, if requested.
             # This also turns bytes into strings.
-            if self.encoding or self.errors or self.universal_newlines:
+            if self.text_mode:
                 if stdout is not None:
                     stdout = self._translate_newlines(stdout,
                                                       self.stdout.encoding,
@@ -1553,8 +1554,7 @@ class Popen(object):
             if self.stdin and self._input is None:
                 self._input_offset = 0
                 self._input = input
-                if input is not None and (
-                    self.encoding or self.errors or self.universal_newlines):
+                if input is not None and self.text_mode:
                     self._input = self._input.encode(self.stdin.encoding,
                                                      self.stdin.errors)
 
