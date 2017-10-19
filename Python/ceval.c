@@ -4416,10 +4416,6 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         *instr_lb = bounds.ap_lower;
         *instr_ub = bounds.ap_upper;
     }
-    /* Always emit an opcode event if we're tracing all opcodes. */
-    if (frame->f_trace_opcodes) {
-        result = call_trace(func, obj, tstate, frame, PyTrace_OPCODE, Py_None);
-    }
     /* If the last instruction falls at the start of a line or if it
        represents a jump backwards, update the frame's line number and
        then call the trace function if we're tracing source lines.
@@ -4429,6 +4425,10 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         if (frame->f_trace_lines) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
+    }
+    /* Always emit an opcode event if we're tracing all opcodes. */
+    if (frame->f_trace_opcodes) {
+        result = call_trace(func, obj, tstate, frame, PyTrace_OPCODE, Py_None);
     }
     *instr_prev = frame->f_lasti;
     return result;
