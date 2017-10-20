@@ -26,24 +26,35 @@ def get_exported_symbols():
 
 def get_smelly_symbols(stdout):
     symbols = []
+    ignored_symtypes = set()
     for line in stdout.splitlines():
         # Split line '0000000000001b80 D PyTextIOWrapper_Type'
         if not line:
             continue
+
         parts = line.split(maxsplit=2)
         if len(parts) < 3:
             continue
+
         symtype = parts[1].strip()
-        # "T": The symbol is in the text (code) section.
-        # "D": The symbol is in the initialized data section.
-        # "B": The symbol is in the uninitialized data section (known as BSS).
-        # if uppercase, the symbol is global (external)
-        if symtype not in 'TDB':
+        # Ignore private symbols.
+        #
+        # If lowercase, the symbol is usually local; if uppercase, the symbol
+        # is global (external).  There are however a few lowercase symbols that
+        # are shown for special global symbols ("u", "v" and "w").
+        if symtype.islower() and symtype not in ("u", "v" "w"):
+            ignored_symtypes.add(symtype)
             continue
+
         symbol = parts[-1]
         if symbol.startswith(('Py', '_Py')):
             continue
+        symbol = '%s (type: %s)' % (symbol, symtype)
         symbols.append(symbol)
+
+    if ignored_symtypes:
+        print("Ignored symbol types: %s" % ', '.join(sorted(ignored_symtypes)))
+        print()
     return symbols
 
 
