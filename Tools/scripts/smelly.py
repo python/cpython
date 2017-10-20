@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Script checking if all symbols exported by libpython start with "Py" or "_Py"
+# Script checking that all symbols exported by libpython start with Py or _Py
 
 import subprocess
 import sys
@@ -42,7 +42,7 @@ def get_smelly_symbols(stdout):
         # If lowercase, the symbol is usually local; if uppercase, the symbol
         # is global (external).  There are however a few lowercase symbols that
         # are shown for special global symbols ("u", "v" and "w").
-        if symtype.islower() and symtype not in ("u", "v" "w"):
+        if symtype.islower() and symtype not in "uvw":
             ignored_symtypes.add(symtype)
             continue
 
@@ -59,8 +59,8 @@ def get_smelly_symbols(stdout):
 
 
 def main():
-    stdout = get_exported_symbols()
-    symbols = get_smelly_symbols(stdout)
+    nm_output = get_exported_symbols()
+    symbols = get_smelly_symbols(nm_output)
 
     if not symbols:
         print("OK: no smelly symbol found")

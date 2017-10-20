@@ -1659,7 +1659,7 @@ distclean: clobber
 				     -o -name '*.bak' ')' \
 				     -exec rm -f {} ';'
 
-# Check if all symbols exported by libpython start with "Py" or "_Py"
+# Check that all symbols exported by libpython start with "Py" or "_Py"
 smelly: @DEF_MAKE_RULE@
 	$(RUNSHARED) ./$(BUILDPYTHON) Tools/scripts/smelly.py
 
