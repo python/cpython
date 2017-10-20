@@ -367,7 +367,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
                 pickle.dumps(LZMADecompressor(), proto)
 
     @support.refcount_test
-    def test_refleaks_in___init__(self):
+    def test_refleaks_in_decompressor___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
         lzd = LZMADecompressor()
         refs_before = gettotalrefcount()
