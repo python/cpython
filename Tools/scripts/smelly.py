@@ -34,6 +34,10 @@ def get_smelly_symbols(stdout):
         if len(parts) < 3:
             continue
         symtype = parts[1].strip()
+        # "T": The symbol is in the text (code) section.
+        # "D": The symbol is in the initialized data section.
+        # "B": The symbol is in the uninitialized data section (known as BSS).
+        # if uppercase, the symbol is global (external)
         if symtype not in 'TDB':
             continue
         symbol = parts[-1]
