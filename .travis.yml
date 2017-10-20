@@ -91,8 +91,6 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./python Tools/scripts/patchcheck.py --travis $TRAVIS_PULL_REQUEST; fi
   # `-r -w` implicitly provided through `make buildbottest`.
   - make buildbottest TESTOPTS="-j4 -uall,-cpu"
-
-script:
   # Run `make smelly` to check if Python leaks any symbols
   - make smelly
 
