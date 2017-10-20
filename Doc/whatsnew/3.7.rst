@@ -283,6 +283,10 @@ New function :func:`os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+The ``os.stat_float_times()`` function has been removed. It was introduced in
+Python 2.3 for backward compatibility with Python 2.2, and was deprecated since
+Python 3.1.
+
 pdb
 ---
 
