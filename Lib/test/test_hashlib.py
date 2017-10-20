@@ -167,7 +167,7 @@ class HashLibTestCase(unittest.TestCase):
         sha1_hash = c_hashlib.new('sha1')
         refs_before = gettotalrefcount()
         for i in range(100):
-            sha1_hash.__init__(name='sha1')
+            sha1_hash.__init__('sha1')
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     def test_hash_array(self):
