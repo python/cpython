@@ -99,39 +99,6 @@ perf_counter(_Py_clock_info_t *info)
     return PyFloat_FromDouble(d);
 }
 
-#if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
-#define PYCLOCK
-static PyObject*
-pyclock(_Py_clock_info_t *info)
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                      "time.clock has been deprecated in Python 3.3 and will "
-                      "be removed from Python 3.8: "
-                      "use time.perf_counter or time.process_time "
-                      "instead", 1) < 0) {
-        return NULL;
-    }
-#ifdef MS_WINDOWS
-    return perf_counter(info);
-#else
-    return floatclock(info);
-#endif
-}
-
-static PyObject *
-time_clock(PyObject *self, PyObject *unused)
-{
-    return pyclock(NULL);
-}
-
-PyDoc_STRVAR(clock_doc,
-"clock() -> floating point number\n\
-\n\
-Return the CPU time or real time since the start of the process or since\n\
-the first call to clock().  This has as much precision as the system\n\
-records.");
-#endif
-
 #ifdef HAVE_CLOCK_GETTIME
 static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
@@ -1109,13 +1076,9 @@ time_get_clock_info(PyObject *self, PyObject *args)
 
     if (strcmp(name, "time") == 0)
         obj = floattime(&info);
-#ifdef PYCLOCK
-    else if (strcmp(name, "clock") == 0)
-        obj = pyclock(&info);
-#endif
     else if (strcmp(name, "monotonic") == 0)
         obj = pymonotonic(&info);
-    else if (strcmp(name, "perf_counter") == 0)
+    else if (strcmp(name, "perf_counter") == 0 || strcmp(name, "clock") == 0)
         obj = perf_counter(&info);
     else if (strcmp(name, "process_time") == 0)
         obj = py_process_time(&info);
@@ -1284,9 +1247,6 @@ PyInit_timezone(PyObject *m) {
 
 static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
-#ifdef PYCLOCK
-    {"clock",           time_clock, METH_NOARGS, clock_doc},
-#endif
 #ifdef HAVE_CLOCK_GETTIME
     {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
 #endif
@@ -1363,10 +1323,22 @@ static struct PyModuleDef timemodule = {
 PyMODINIT_FUNC
 PyInit_time(void)
 {
-    PyObject *m;
+    PyObject *m, *obj;
+
     m = PyModule_Create(&timemodule);
     if (m == NULL)
         return NULL;
+
+    obj = PyObject_GetAttrString(m, "perf_counter");
+    if (obj == NULL) {
+        return NULL;
+    }
+
+    if (PyObject_SetAttrString(m, "clock", obj) < 0) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    Py_DECREF(obj);
 
     /* Set, or reset, module variables like time.timezone */
     PyInit_timezone(m);

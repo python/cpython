@@ -1,2 +1,0 @@
-time.clock() and time.get_clock_info('clock') now emit a DeprecationWarning
-warning.
