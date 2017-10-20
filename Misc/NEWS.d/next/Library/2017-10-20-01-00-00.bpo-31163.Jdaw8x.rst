@@ -1,0 +1,3 @@
+pathlib.PurePath.rename and pathlib.PurePath.replace now have return values
+Return value is either Path (input object) or string, based on input's type.
+Patch by Janko Krstic.
