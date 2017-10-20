@@ -2209,6 +2209,9 @@ class CTask_CFuture_Tests(BaseTaskTests, test_utils.TestCase):
                 task.__init__(coro(), loop=self.loop)
             self.assertAlmostEqual(gettotalrefcount() - refs_before, 0,
                                    delta=10)
+        # Prevent destroying the task while it is pending.
+        self.loop.call_soon(task._step)
+        self.loop.run_until_complete(task)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
