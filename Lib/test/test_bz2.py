@@ -820,7 +820,7 @@ class BZ2DecompressorTest(BaseTest):
     @support.refcount_test
     def test_refleaks_in___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        bzd = BZ2Decompressor.__new__(BZ2Decompressor)
+        bzd = BZ2Decompressor()
         refs_before = gettotalrefcount()
         for i in range(100):
             bzd.__init__()

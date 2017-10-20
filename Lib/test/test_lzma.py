@@ -369,7 +369,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     @support.refcount_test
     def test_refleaks_in___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        lzd = LZMADecompressor.__new__(LZMADecompressor)
+        lzd = LZMADecompressor()
         refs_before = gettotalrefcount()
         for i in range(100):
             lzd.__init__()
