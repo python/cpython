@@ -163,8 +163,6 @@ class HashLibTestCase(unittest.TestCase):
 
     @support.refcount_test
     def test_refleaks_in_hash___init__(self):
-        # This test is relevant only in case of compiling with
-        # HASH_OBJ_CONSTRUCTOR.
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
         sha1_hash = c_hashlib.new('sha1')
         refs_before = gettotalrefcount()
