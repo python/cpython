@@ -240,9 +240,10 @@ class Regrtest:
                 print("Couldn't find starting test (%s), using all tests"
                       % self.ns.start, file=sys.stderr)
 
+        if self.ns.random_seed is None:
+            self.ns.random_seed = random.randrange(2 ** 32)
+
         if self.ns.randomize:
-            if self.ns.random_seed is None:
-                self.ns.random_seed = random.randrange(10000000)
             random.seed(self.ns.random_seed)
             random.shuffle(self.selected)
 
@@ -439,8 +440,8 @@ class Regrtest:
                    or self.tests or self.ns.args)):
             self.display_header()
 
-        if self.ns.randomize:
-            print("Using random seed", self.ns.random_seed)
+        if self.ns.random_seed is not None:
+            print("Random seed: {}".format(self.ns.random_seed))
 
         if self.ns.forever:
             self.tests = self._test_forever(list(self.selected))

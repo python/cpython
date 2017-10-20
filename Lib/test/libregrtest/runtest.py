@@ -2,6 +2,7 @@ import faulthandler
 import importlib
 import io
 import os
+import random
 import sys
 import time
 import traceback
@@ -161,6 +162,7 @@ def runtest_inner(ns, test, display_failure=True):
         with saved_test_environment(test, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
             start_time = time.time()
             the_module = importlib.import_module(abstest)
+
             # If the test has a test_main, that will run the appropriate
             # tests.  If not, use normal unittest test loading.
             test_runner = getattr(the_module, "test_main", None)
@@ -173,9 +175,17 @@ def runtest_inner(ns, test, display_failure=True):
                     if loader.errors:
                         raise Exception("errors while loading tests")
                     support.run_unittest(tests)
-            test_runner()
+
+            def final_test():
+                if ns.random_seed is not None:
+                    # bpo-31174: Reseed the RNG before each test file
+                    # to get reproductible results
+                    random.seed(ns.random_seed)
+                test_runner()
+
+            final_test()
             if ns.huntrleaks:
-                refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
+                refleak = dash_R(the_module, test, final_test, ns.huntrleaks)
             test_time = time.time() - start_time
         post_test_cleanup()
     except support.ResourceDenied as msg:

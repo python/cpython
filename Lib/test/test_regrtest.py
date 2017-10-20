@@ -458,9 +458,9 @@ class BaseTestCase(unittest.TestCase):
         self.check_line(output, 'Tests result: %s' % result)
 
     def parse_random_seed(self, output):
-        match = self.regex_search(r'Using random seed ([0-9]+)', output)
+        match = self.regex_search(r'Random seed: ([0-9]+)', output)
         randseed = int(match.group(1))
-        self.assertTrue(0 <= randseed <= 10000000, randseed)
+        self.assertTrue(0 <= randseed < 2 ** 32, randseed)
         return randseed
 
     def run_command(self, args, input=None, exitcode=0, **kw):
@@ -945,6 +945,41 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("--fail-env-changed", testname, exitcode=3)
         self.check_executed_tests(output, [testname], env_changed=testname,
                                   fail_env_changed=True)
+
+    def check_random_reseed(self, parallel):
+        # bpo-31174: Each test file should be run with the same random seed
+        code = textwrap.dedent("""
+            import random
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_random(self):
+                    print("Rand1000: %s" % random.randint(0, 1000))
+        """)
+        testname = self.create_test(code=code)
+
+        tests = [testname] * 3
+        if parallel:
+            output = self.run_tests("-j3", *tests)
+        else:
+            output = self.run_tests(*tests)
+        self.check_executed_tests(output, tests)
+
+        # Get random numbers
+        numbers = (line for line in output.splitlines()
+                   if line.startswith("Rand1000:"))
+        numbers = (line[9:].strip() for line in numbers)
+        numbers = map(int, numbers)
+
+        # All "random" numbers must be the same
+        numbers = set(numbers)
+        self.assertEqual(len(numbers), 1, numbers)
+
+    def test_random_reseed_sequential(self):
+        self.check_random_reseed(False)
+
+    def test_random_reseed_parallel(self):
+        self.check_random_reseed(True)
 
 
 if __name__ == '__main__':
