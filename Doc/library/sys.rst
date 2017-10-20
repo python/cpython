@@ -1060,6 +1060,49 @@ always available.
    so it does not make sense to use this in the presence of multiple threads. Also,
    its return value is not used, so it can simply return ``None``.
 
+   Profile functions should have three arguments: *frame*, *event*, and
+   *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
+   ``'line'``, ``'return'``, ``'exception'``, ``'c_call'``, ``'c_return'``, or
+   ``'c_exception'``, ``'opcode'``. *arg* depends on the event type.
+
+   The events have the following meaning:
+
+   ``'call'``
+      A function is called (or some other code block entered).  The
+      global trace function is called; *arg* is ``None``; the return value
+      specifies the local trace function.
+
+   ``'return'``
+      A function (or other code block) is about to return.  The local trace
+      function is called; *arg* is the value that will be returned, or ``None``
+      if the event is caused by an exception being raised.  The trace function's
+      return value is ignored.
+
+   ``'exception'``
+      An exception has occurred.  The local trace function is called; *arg* is a
+      tuple ``(exception, value, traceback)``; the return value specifies the
+      new local trace function.
+
+   ``'c_call'``
+      A C function is about to be called.  This may be an extension function or
+      a built-in.  *arg* is the C function object.
+
+   ``'c_return'``
+      A C function has returned. *arg* is the C function object.
+
+   ``'c_exception'``
+      A C function has raised an exception.  *arg* is the C function object.
+
+   ``'opcode'``
+      The interpreter is about to execute a new opcode (see :mod:`dis` for
+      opcode details).  The local trace function is called; *arg* is
+      ``None``; the return value specifies the new local trace function.
+      Per-opcode events are not emitted by default: they must be explicitly
+      requested by setting :attr:`f_trace_opcodes` to :const:`True` on the
+      frame.
+
+   Note that as an exception is propagated down the chain of callers, an
+   ``'exception'`` event is generated at each level.
 
 .. function:: setrecursionlimit(limit)
 
@@ -1106,8 +1149,8 @@ always available.
 
    Trace functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
-   ``'line'``, ``'return'``, ``'exception'``, ``'c_call'``, ``'c_return'``, or
-   ``'c_exception'``, ``'opcode'``. *arg* depends on the event type.
+   ``'line'``, ``'return'``, ``'exception'`` or ``'opcode'``.  *arg* depends on
+   the event type.
 
    The trace function is invoked (with *event* set to ``'call'``) whenever a new
    local scope is entered; it should return a reference to a local trace
@@ -1143,16 +1186,6 @@ always available.
       An exception has occurred.  The local trace function is called; *arg* is a
       tuple ``(exception, value, traceback)``; the return value specifies the
       new local trace function.
-
-   ``'c_call'``
-      A C function is about to be called.  This may be an extension function or
-      a built-in.  *arg* is the C function object.
-
-   ``'c_return'``
-      A C function has returned. *arg* is the C function object.
-
-   ``'c_exception'``
-      A C function has raised an exception.  *arg* is the C function object.
 
    ``'opcode'``
       The interpreter is about to execute a new opcode (see :mod:`dis` for
