@@ -2202,6 +2202,8 @@ class CTask_CFuture_Tests(BaseTaskTests, test_utils.TestCase):
         @asyncio.coroutine
         def coro():
             pass
+        # Overwrite call_soon() to prevent increasing refcounts that are
+        # irrelevant to the test.
         with support.swap_attr(self.loop, 'call_soon', lambda _step: None):
             task = self.new_task(self.loop, coro())
             refs_before = gettotalrefcount()
