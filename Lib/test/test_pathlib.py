@@ -1645,12 +1645,14 @@ class _BasePathTest(object):
         size = p.stat().st_size
         # Renaming to another path
         q = P / 'dirA' / 'fileAA'
-        p.rename(q)
+        res = p.rename(q)
+        self.assertEqual(res, q)
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Renaming to a str of a relative path
         r = rel_join('fileAAA')
-        q.rename(r)
+        res = q.rename(r)
+        self.assertEqual(res, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 
@@ -1660,12 +1662,14 @@ class _BasePathTest(object):
         size = p.stat().st_size
         # Replacing a non-existing path
         q = P / 'dirA' / 'fileAA'
-        p.replace(q)
+        res = p.replace(q)
+        self.assertEqual(res, q)
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Replacing another (existing) path
         r = rel_join('dirB', 'fileB')
-        q.replace(r)
+        res = q.replace(r)
+        self.assertEqual(res, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 

@@ -922,6 +922,9 @@ call fails (for example because the path doesn't exist):
    *target* exists and is a file, it will be replaced silently if the user
    has permission.  *target* can be either a string or another path object::
 
+   If the provided *target* is a path object, it is the method's return value.
+   Otherwise (if it is a string), new path object is created from it and returned.
+
       >>> p = Path('foo')
       >>> p.open('w').write('some text')
       9
@@ -936,6 +939,8 @@ call fails (for example because the path doesn't exist):
    Rename this file or directory to the given *target*.  If *target* points
    to an existing file or directory, it will be unconditionally replaced.
 
+   If the provided *target* is a path object, it is the method's return value.
+   Otherwise (if it is a string), new path object is created from it and returned.
 
 .. method:: Path.resolve(strict=False)
 

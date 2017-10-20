@@ -1265,19 +1265,33 @@ class Path(PurePath):
     def rename(self, target):
         """
         Rename this path to the given path.
+
+        If target is an instance of Path returns it, otherwise creates
+        new instance from target (string) and returns it.
         """
         if self._closed:
             self._raise_closed()
         self._accessor.rename(self, target)
+        if isinstance(target, str):
+            target = self.__class__(target)
+
+        return target
 
     def replace(self, target):
         """
         Rename this path to the given path, clobbering the existing
         destination if it exists.
+
+        If target is an instance of Path returns it, otherwise creates
+        new instance from target (string) and returns it.
         """
         if self._closed:
             self._raise_closed()
         self._accessor.replace(self, target)
+        if isinstance(target, str):
+            target = self.__class__(target)
+
+        return target
 
     def symlink_to(self, target, target_is_directory=False):
         """
