@@ -322,6 +322,12 @@ get_module_info(ZipImporter *self, PyObject *fullname)
     PyObject *path, *fullpath, *item;
     struct st_zip_searchorder *zso;
 
+    if (self->prefix == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "zipimporter.__init__() wasn't called");
+        return MI_ERROR;
+    }
+
     subname = get_subname(fullname);
     if (subname == NULL)
         return MI_ERROR;
@@ -651,6 +657,12 @@ zipimport_zipimporter_get_data_impl(ZipImporter *self, PyObject *path)
     PyObject *key;
     PyObject *toc_entry;
     Py_ssize_t path_start, path_len, len;
+
+    if (self->archive == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "zipimporter.__init__() wasn't called");
+        return NULL;
+    }
 
 #ifdef ALTSEP
     path = _PyObject_CallMethodId((PyObject *)&PyUnicode_Type, &PyId_replace,
@@ -1475,6 +1487,12 @@ get_module_code(ZipImporter *self, PyObject *fullname,
     PyObject *code = NULL, *toc_entry, *subname;
     PyObject *path, *fullpath = NULL;
     struct st_zip_searchorder *zso;
+
+    if (self->prefix == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "zipimporter.__init__() wasn't called");
+        return NULL;
+    }
 
     subname = get_subname(fullname);
     if (subname == NULL)
