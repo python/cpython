@@ -127,7 +127,7 @@ struct _Py_tss_t {
 #undef NATIVE_TSS_KEY_T
 
 /* When static allocation, you must initialize with Py_tss_NEEDS_INIT. */
-#define Py_tss_NEEDS_INIT   {0}
+#define Py_tss_NEEDS_INIT   ((Py_tss_t) {0})
 #endif  /* !Py_LIMITED_API */
 
 PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
