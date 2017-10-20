@@ -390,7 +390,9 @@ class RegressionTests(unittest.TestCase):
         ref = weakref.ref(cur, callback)
         cur.__init__(con)
         del cur
-        support.gc_collect()  # shouldn't crash
+        # The interpreter shouldn't crash when ref is collected.
+        del ref
+        support.gc_collect()
 
 
 def suite():
