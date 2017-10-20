@@ -1203,6 +1203,8 @@ class EscapeDecodeTest(unittest.TestCase):
             check(br"\8", b"\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", b"\\9")
+        with self.assertWarns(DeprecationWarning):
+            check(b"\\\xfa", b"\\\xfa")
 
     def test_errors(self):
         decode = codecs.escape_decode
@@ -2474,6 +2476,8 @@ class UnicodeEscapeTest(unittest.TestCase):
             check(br"\8", "\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", "\\9")
+        with self.assertWarns(DeprecationWarning):
+            check(b"\\\xfa", "\\\xfa")
 
     def test_decode_errors(self):
         decode = codecs.unicode_escape_decode
