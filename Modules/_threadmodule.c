@@ -3,18 +3,11 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h" /* offsetof */
-
-#ifndef WITH_THREAD
-#error "Error!  The rest of Python is not compiled with thread support."
-#error "Rerun configure, adding a --with-threads option."
-#error "Then run `make clean' followed by `make'."
-#endif
-
 #include "pythread.h"
 
 static PyObject *ThreadError;
-static long nb_threads = 0;
 static PyObject *str_dict;
 
 _Py_IDENTIFIER(stderr);
@@ -111,7 +104,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     if (timeout_obj
         && _PyTime_FromSecondsObject(timeout,
-                                     timeout_obj, _PyTime_ROUND_CEILING) < 0)
+                                     timeout_obj, _PyTime_ROUND_TIMEOUT) < 0)
         return -1;
 
     if (!blocking && *timeout != unset_timeout ) {
@@ -129,7 +122,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     else if (*timeout != unset_timeout) {
         _PyTime_t microseconds;
 
-        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_CEILING);
+        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_TIMEOUT);
         if (microseconds >= PY_TIMEOUT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "timeout value is too large");
@@ -993,7 +986,7 @@ t_bootstrap(void *boot_raw)
     tstate->thread_id = PyThread_get_thread_ident();
     _PyThreadState_Init(tstate);
     PyEval_AcquireThread(tstate);
-    nb_threads++;
+    tstate->interp->num_threads++;
     res = PyObject_Call(boot->func, boot->args, boot->keyw);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
@@ -1020,7 +1013,7 @@ t_bootstrap(void *boot_raw)
     Py_DECREF(boot->args);
     Py_XDECREF(boot->keyw);
     PyMem_DEL(boot_raw);
-    nb_threads--;
+    tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
     PyThreadState_DeleteCurrent();
     PyThread_exit_thread();
@@ -1159,7 +1152,8 @@ A thread's identity may be reused for another thread after it exits.");
 static PyObject *
 thread__count(PyObject *self)
 {
-    return PyLong_FromLong(nb_threads);
+    PyThreadState *tstate = PyThreadState_Get();
+    return PyLong_FromLong(tstate->interp->num_threads);
 }
 
 PyDoc_STRVAR(_count_doc,
@@ -1352,6 +1346,7 @@ PyInit__thread(void)
     PyObject *m, *d, *v;
     double time_max;
     double timeout_max;
+    PyThreadState *tstate = PyThreadState_Get();
 
     /* Initialize types: */
     if (PyType_Ready(&localdummytype) < 0)
@@ -1396,7 +1391,7 @@ PyInit__thread(void)
     if (PyModule_AddObject(m, "_local", (PyObject *)&localtype) < 0)
         return NULL;
 
-    nb_threads = 0;
+    tstate->interp->num_threads = 0;
 
     str_dict = PyUnicode_InternFromString("__dict__");
     if (str_dict == NULL)

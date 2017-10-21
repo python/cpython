@@ -10,17 +10,12 @@
 #include "zlib.h"
 
 
-#ifdef WITH_THREAD
-    #include "pythread.h"
-    #define ENTER_ZLIB(obj) \
-        Py_BEGIN_ALLOW_THREADS; \
-        PyThread_acquire_lock((obj)->lock, 1); \
-        Py_END_ALLOW_THREADS;
-    #define LEAVE_ZLIB(obj) PyThread_release_lock((obj)->lock);
-#else
-    #define ENTER_ZLIB(obj)
-    #define LEAVE_ZLIB(obj)
-#endif
+#include "pythread.h"
+#define ENTER_ZLIB(obj) \
+    Py_BEGIN_ALLOW_THREADS; \
+    PyThread_acquire_lock((obj)->lock, 1); \
+    Py_END_ALLOW_THREADS;
+#define LEAVE_ZLIB(obj) PyThread_release_lock((obj)->lock);
 
 #if defined(ZLIB_VERNUM) && ZLIB_VERNUM >= 0x1221
 #  define AT_LEAST_ZLIB_1_2_2_1
@@ -51,9 +46,7 @@ typedef struct
     char eof;
     int is_initialised;
     PyObject *zdict;
-    #ifdef WITH_THREAD
-        PyThread_type_lock lock;
-    #endif
+    PyThread_type_lock lock;
 } compobject;
 
 static void
@@ -112,14 +105,12 @@ newcompobject(PyTypeObject *type)
         Py_DECREF(self);
         return NULL;
     }
-#ifdef WITH_THREAD
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
         Py_DECREF(self);
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return NULL;
     }
-#endif
     return self;
 }
 
@@ -142,7 +133,7 @@ PyZlib_Free(voidpf ctx, void *ptr)
 static void
 arrange_input_buffer(z_stream *zst, Py_ssize_t *remains)
 {
-    zst->avail_in = Py_MIN((size_t)*remains, UINT_MAX);
+    zst->avail_in = (uInt)Py_MIN((size_t)*remains, UINT_MAX);
     *remains -= zst->avail_in;
 }
 
@@ -177,7 +168,7 @@ arrange_output_buffer_with_maximum(z_stream *zst, PyObject **buffer,
         }
     }
 
-    zst->avail_out = Py_MIN((size_t)(length - occupied), UINT_MAX);
+    zst->avail_out = (uInt)Py_MIN((size_t)(length - occupied), UINT_MAX);
     zst->next_out = (Byte *)PyBytes_AS_STRING(*buffer) + occupied;
 
     return length;
@@ -615,9 +606,7 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
 static void
 Dealloc(compobject *self)
 {
-#ifdef WITH_THREAD
     PyThread_free_lock(self->lock);
-#endif
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     Py_XDECREF(self->zdict);

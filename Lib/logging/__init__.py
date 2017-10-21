@@ -1,4 +1,4 @@
-# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2017 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -37,10 +37,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
            'lastResort', 'raiseExceptions']
 
-try:
-    import threading
-except ImportError: #pragma: no cover
-    threading = None
+import threading
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
@@ -210,11 +207,7 @@ def _checkLevel(level):
 #the lock would already have been acquired - so we need an RLock.
 #The same argument applies to Loggers and Manager.loggerDict.
 #
-if threading:
-    _lock = threading.RLock()
-else: #pragma: no cover
-    _lock = None
-
+_lock = threading.RLock()
 
 def _acquireLock():
     """
@@ -295,7 +288,7 @@ class LogRecord(object):
         self.created = ct
         self.msecs = (ct - int(ct)) * 1000
         self.relativeCreated = (self.created - _startTime) * 1000
-        if logThreads and threading:
+        if logThreads:
             self.thread = threading.get_ident()
             self.threadName = threading.current_thread().name
         else: # pragma: no cover
@@ -799,10 +792,7 @@ class Handler(Filterer):
         """
         Acquire a thread lock for serializing access to the underlying I/O.
         """
-        if threading:
-            self.lock = threading.RLock()
-        else: #pragma: no cover
-            self.lock = None
+        self.lock = threading.RLock()
 
     def acquire(self):
         """
@@ -996,6 +986,26 @@ class StreamHandler(Handler):
             self.flush()
         except Exception:
             self.handleError(record)
+
+    def setStream(self, stream):
+        """
+        Sets the StreamHandler's stream to the specified value,
+        if it is different.
+
+        Returns the old stream, if the stream was changed, or None
+        if it wasn't.
+        """
+        if stream is self.stream:
+            result = None
+        else:
+            result = self.stream
+            self.acquire()
+            try:
+                self.flush()
+                self.stream = stream
+            finally:
+                self.release()
+        return result
 
     def __repr__(self):
         level = getLevelName(self.level)
@@ -1244,6 +1254,19 @@ class Manager(object):
                 alogger.parent = c.parent
                 c.parent = alogger
 
+    def _clear_cache(self):
+        """
+        Clear the cache for all loggers in loggerDict
+        Called when level changes are made
+        """
+
+        _acquireLock()
+        for logger in self.loggerDict.values():
+            if isinstance(logger, Logger):
+                logger._cache.clear()
+        self.root._cache.clear()
+        _releaseLock()
+
 #---------------------------------------------------------------------------
 #   Logger classes and functions
 #---------------------------------------------------------------------------
@@ -1274,12 +1297,14 @@ class Logger(Filterer):
         self.propagate = True
         self.handlers = []
         self.disabled = False
+        self._cache = {}
 
     def setLevel(self, level):
         """
         Set the logging level of this logger.  level must be an int or a str.
         """
         self.level = _checkLevel(level)
+        self.manager._clear_cache()
 
     def debug(self, msg, *args, **kwargs):
         """
@@ -1543,9 +1568,17 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
-        if self.manager.disable >= level:
-            return False
-        return level >= self.getEffectiveLevel()
+        try:
+            return self._cache[level]
+        except KeyError:
+            _acquireLock()
+            if self.manager.disable >= level:
+                is_enabled = self._cache[level] = False
+            else:
+                is_enabled = self._cache[level] = level >= self.getEffectiveLevel()
+            _releaseLock()
+
+            return is_enabled
 
     def getChild(self, suffix):
         """
@@ -1570,6 +1603,14 @@ class Logger(Filterer):
         level = getLevelName(self.getEffectiveLevel())
         return '<%s %s (%s)>' % (self.__class__.__name__, self.name, level)
 
+    def __reduce__(self):
+        # In general, only the root logger will not be accessible via its name.
+        # However, the root logger's class has its own __reduce__ method.
+        if getLogger(self.name) is not self:
+            import pickle
+            raise pickle.PicklingError('logger cannot be pickled')
+        return getLogger, (self.name,)
+
 
 class RootLogger(Logger):
     """
@@ -1582,6 +1623,9 @@ class RootLogger(Logger):
         Initialize the logger with the name "root".
         """
         Logger.__init__(self, "root", level)
+
+    def __reduce__(self):
+        return getLogger, ()
 
 _loggerClass = Logger
 
@@ -1669,15 +1713,13 @@ class LoggerAdapter(object):
         """
         if self.isEnabledFor(level):
             msg, kwargs = self.process(msg, kwargs)
-            self.logger._log(level, msg, args, **kwargs)
+            self.logger.log(level, msg, *args, **kwargs)
 
     def isEnabledFor(self, level):
         """
         Is this logger enabled for level 'level'?
         """
-        if self.logger.manager.disable >= level:
-            return False
-        return level >= self.getEffectiveLevel()
+        return self.logger.isEnabledFor(level)
 
     def setLevel(self, level):
         """
@@ -1696,6 +1738,31 @@ class LoggerAdapter(object):
         See if the underlying logger has any handlers.
         """
         return self.logger.hasHandlers()
+
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+        """
+        Low-level log implementation, proxied to allow nested logger adapters.
+        """
+        return self.logger._log(
+            level,
+            msg,
+            args,
+            exc_info=exc_info,
+            extra=extra,
+            stack_info=stack_info,
+        )
+
+    @property
+    def manager(self):
+        return self.logger.manager
+
+    @manager.setter
+    def manager(self, value):
+        self.logger.manager = value
+
+    @property
+    def name(self):
+        return self.logger.name
 
     def __repr__(self):
         logger = self.logger
@@ -1899,6 +1966,7 @@ def disable(level=CRITICAL):
     Disable all logging calls of severity 'level' and below.
     """
     root.manager.disable = level
+    root.manager._clear_cache()
 
 def shutdown(handlerList=_handlerList):
     """

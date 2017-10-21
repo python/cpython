@@ -427,7 +427,7 @@ class CmdLineTest(unittest.TestCase):
         tests = (
             ('builtins', br'No code object available'),
             ('builtins.x', br'Error while finding module specification.*'
-                br'AttributeError'),
+                br'ModuleNotFoundError'),
             ('builtins.x.y', br'Error while finding module specification.*'
                 br'ModuleNotFoundError.*No module named.*not a package'),
             ('os.path', br'loader.*cannot handle'),

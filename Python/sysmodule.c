@@ -15,6 +15,7 @@ Data members:
 */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "code.h"
 #include "frameobject.h"
 #include "pythread.h"
@@ -35,12 +36,14 @@ extern const char *PyWin_DLLVersionString;
 
 _Py_IDENTIFIER(_);
 _Py_IDENTIFIER(__sizeof__);
+_Py_IDENTIFIER(_xoptions);
 _Py_IDENTIFIER(buffer);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(encoding);
 _Py_IDENTIFIER(path);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(warnoptions);
 _Py_IDENTIFIER(write);
 
 PyObject *
@@ -92,6 +95,81 @@ PySys_SetObject(const char *name, PyObject *v)
     else
         return PyDict_SetItemString(sd, name, v);
 }
+
+static PyObject *
+sys_breakpointhook(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *keywords)
+{
+    assert(!PyErr_Occurred());
+    char *envar = Py_GETENV("PYTHONBREAKPOINT");
+
+    if (envar == NULL || strlen(envar) == 0) {
+        envar = "pdb.set_trace";
+    }
+    else if (!strcmp(envar, "0")) {
+        /* The breakpoint is explicitly no-op'd. */
+        Py_RETURN_NONE;
+    }
+    char *last_dot = strrchr(envar, '.');
+    char *attrname = NULL;
+    PyObject *modulepath = NULL;
+
+    if (last_dot == NULL) {
+        /* The breakpoint is a built-in, e.g. PYTHONBREAKPOINT=int */
+        modulepath = PyUnicode_FromString("builtins");
+        attrname = envar;
+    }
+    else {
+        /* Split on the last dot; */
+        modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
+        attrname = last_dot + 1;
+    }
+    if (modulepath == NULL) {
+        return NULL;
+    }
+
+    PyObject *fromlist = Py_BuildValue("(s)", attrname);
+    if (fromlist == NULL) {
+        Py_DECREF(modulepath);
+        return NULL;
+    }
+    PyObject *module = PyImport_ImportModuleLevelObject(
+        modulepath, NULL, NULL, fromlist, 0);
+    Py_DECREF(modulepath);
+    Py_DECREF(fromlist);
+
+    if (module == NULL) {
+        goto error;
+    }
+
+    PyObject *hook = PyObject_GetAttrString(module, attrname);
+    Py_DECREF(module);
+
+    if (hook == NULL) {
+        goto error;
+    }
+    PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
+    Py_DECREF(hook);
+    return retval;
+
+  error:
+    /* If any of the imports went wrong, then warn and ignore. */
+    PyErr_Clear();
+    int status = PyErr_WarnFormat(
+        PyExc_RuntimeWarning, 0,
+        "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
+    if (status < 0) {
+        /* Printing the warning raised an exception. */
+        return NULL;
+    }
+    /* The warning was (probably) issued. */
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(breakpointhook_doc,
+"breakpointhook(*args, **kws)\n"
+"\n"
+"This hook function is called by built-in breakpoint().\n"
+);
 
 /* Write repr(o) to sys.stdout using sys.stdout.encoding and 'backslashreplace'
    error handler. If sys.stdout has a buffer attribute, use
@@ -159,17 +237,16 @@ static PyObject *
 sys_displayhook(PyObject *self, PyObject *o)
 {
     PyObject *outf;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
-    PyObject *modules = interp->modules;
     PyObject *builtins;
     static PyObject *newline = NULL;
     int err;
 
-    builtins = _PyDict_GetItemId(modules, &PyId_builtins);
+    builtins = _PyImport_GetModuleId(&PyId_builtins);
     if (builtins == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
         return NULL;
     }
+    Py_DECREF(builtins);
 
     /* Print value except if None */
     /* After printing, also assign to '_' */
@@ -351,18 +428,19 @@ same value.");
  * Cached interned string objects used for calling the profile and
  * trace functions.  Initialized by trace_init().
  */
-static PyObject *whatstrings[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+static PyObject *whatstrings[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 static int
 trace_init(void)
 {
-    static const char * const whatnames[7] = {
+    static const char * const whatnames[8] = {
         "call", "exception", "line", "return",
-        "c_call", "c_exception", "c_return"
+        "c_call", "c_exception", "c_return",
+        "opcode"
     };
     PyObject *name;
     int i;
-    for (i = 0; i < 7; ++i) {
+    for (i = 0; i < 8; ++i) {
         if (whatstrings[i] == NULL) {
             name = PyUnicode_InternFromString(whatnames[i]);
             if (name == NULL)
@@ -521,8 +599,6 @@ Return the profiling function set with sys.setprofile.\n\
 See the profiler chapter in the library manual."
 );
 
-static int _check_interval = 100;
-
 static PyObject *
 sys_setcheckinterval(PyObject *self, PyObject *args)
 {
@@ -531,7 +607,8 @@ sys_setcheckinterval(PyObject *self, PyObject *args)
                      "are deprecated.  Use sys.setswitchinterval() "
                      "instead.", 1) < 0)
         return NULL;
-    if (!PyArg_ParseTuple(args, "i:setcheckinterval", &_check_interval))
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    if (!PyArg_ParseTuple(args, "i:setcheckinterval", &interp->check_interval))
         return NULL;
     Py_RETURN_NONE;
 }
@@ -551,14 +628,14 @@ sys_getcheckinterval(PyObject *self, PyObject *args)
                      "are deprecated.  Use sys.getswitchinterval() "
                      "instead.", 1) < 0)
         return NULL;
-    return PyLong_FromLong(_check_interval);
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    return PyLong_FromLong(interp->check_interval);
 }
 
 PyDoc_STRVAR(getcheckinterval_doc,
 "getcheckinterval() -> current check interval; see setcheckinterval()."
 );
 
-#ifdef WITH_THREAD
 static PyObject *
 sys_setswitchinterval(PyObject *self, PyObject *args)
 {
@@ -595,8 +672,6 @@ sys_getswitchinterval(PyObject *self, PyObject *args)
 PyDoc_STRVAR(getswitchinterval_doc,
 "getswitchinterval() -> current thread switch interval; see setswitchinterval()."
 );
-
-#endif /* WITH_THREAD */
 
 static PyObject *
 sys_setrecursionlimit(PyObject *self, PyObject *args)
@@ -973,10 +1048,10 @@ sys_getwindowsversion(PyObject *self)
         }
         PyMem_RawFree(verblock);
     }
-    PyStructSequence_SET_ITEM(version, pos++, PyTuple_Pack(3,
-        PyLong_FromLong(realMajor),
-        PyLong_FromLong(realMinor),
-        PyLong_FromLong(realBuild)
+    PyStructSequence_SET_ITEM(version, pos++, Py_BuildValue("(kkk)",
+        realMajor,
+        realMinor,
+        realBuild
     ));
 
     if (PyErr_Occurred()) {
@@ -1341,7 +1416,7 @@ Clear the internal type lookup cache.");
 static PyObject *
 sys_is_finalizing(PyObject* self, PyObject* args)
 {
-    return PyBool_FromLong(_Py_Finalizing != NULL);
+    return PyBool_FromLong(_Py_IsFinalizing());
 }
 
 PyDoc_STRVAR(is_finalizing_doc,
@@ -1365,6 +1440,8 @@ sys_getandroidapilevel(PyObject *self)
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
+    {"breakpointhook",  (PyCFunction)sys_breakpointhook,
+     METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     {"callstats", (PyCFunction)sys_callstats, METH_NOARGS,
      callstats_doc},
     {"_clear_type_cache",       sys_clear_type_cache,     METH_NOARGS,
@@ -1420,12 +1497,10 @@ static PyMethodDef sys_methods[] = {
      setcheckinterval_doc},
     {"getcheckinterval",        sys_getcheckinterval, METH_NOARGS,
      getcheckinterval_doc},
-#ifdef WITH_THREAD
     {"setswitchinterval",       sys_setswitchinterval, METH_VARARGS,
      setswitchinterval_doc},
     {"getswitchinterval",       sys_getswitchinterval, METH_NOARGS,
      getswitchinterval_doc},
-#endif
 #ifdef HAVE_DLOPEN
     {"setdlopenflags", sys_setdlopenflags, METH_VARARGS,
      setdlopenflags_doc},
@@ -1481,11 +1556,28 @@ list_builtin_module_names(void)
     return list;
 }
 
-static PyObject *warnoptions = NULL;
+static PyObject *
+get_warnoptions(void)
+{
+    PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
+    if (warnoptions == NULL || !PyList_Check(warnoptions)) {
+        Py_XDECREF(warnoptions);
+        warnoptions = PyList_New(0);
+        if (warnoptions == NULL)
+            return NULL;
+        if (_PySys_SetObjectId(&PyId_warnoptions, warnoptions)) {
+            Py_DECREF(warnoptions);
+            return NULL;
+        }
+        Py_DECREF(warnoptions);
+    }
+    return warnoptions;
+}
 
 void
 PySys_ResetWarnOptions(void)
 {
+    PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
     if (warnoptions == NULL || !PyList_Check(warnoptions))
         return;
     PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
@@ -1494,12 +1586,9 @@ PySys_ResetWarnOptions(void)
 void
 PySys_AddWarnOptionUnicode(PyObject *unicode)
 {
-    if (warnoptions == NULL || !PyList_Check(warnoptions)) {
-        Py_XDECREF(warnoptions);
-        warnoptions = PyList_New(0);
-        if (warnoptions == NULL)
-            return;
-    }
+    PyObject *warnoptions = get_warnoptions();
+    if (warnoptions == NULL)
+        return;
     PyList_Append(warnoptions, unicode);
 }
 
@@ -1517,17 +1606,24 @@ PySys_AddWarnOption(const wchar_t *s)
 int
 PySys_HasWarnOptions(void)
 {
+    PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
     return (warnoptions != NULL && (PyList_Size(warnoptions) > 0)) ? 1 : 0;
 }
-
-static PyObject *xoptions = NULL;
 
 static PyObject *
 get_xoptions(void)
 {
+    PyObject *xoptions = _PySys_GetObjectId(&PyId__xoptions);
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
         Py_XDECREF(xoptions);
         xoptions = PyDict_New();
+        if (xoptions == NULL)
+            return NULL;
+        if (_PySys_SetObjectId(&PyId__xoptions, xoptions)) {
+            Py_DECREF(xoptions);
+            return NULL;
+        }
+        Py_DECREF(xoptions);
     }
     return xoptions;
 }
@@ -1929,7 +2025,7 @@ _PySys_BeginInit(void)
     PyObject *m, *sysdict, *version_info;
     int res;
 
-    m = PyModule_Create(&sysmodule);
+    m = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
     if (m == NULL)
         return NULL;
     sysdict = PyModule_GetDict(m);
@@ -1958,6 +2054,9 @@ _PySys_BeginInit(void)
                                PyDict_GetItemString(sysdict, "displayhook"));
     SET_SYS_FROM_STRING_BORROW("__excepthook__",
                                PyDict_GetItemString(sysdict, "excepthook"));
+    SET_SYS_FROM_STRING_BORROW(
+        "__breakpointhook__",
+        PyDict_GetItemString(sysdict, "breakpointhook"));
     SET_SYS_FROM_STRING("version",
                          PyUnicode_FromString(Py_GetVersion()));
     SET_SYS_FROM_STRING("hexversion",
@@ -1965,6 +2064,7 @@ _PySys_BeginInit(void)
     SET_SYS_FROM_STRING("_git",
                         Py_BuildValue("(szz)", "CPython", _Py_gitidentifier(),
                                       _Py_gitversion()));
+    SET_SYS_FROM_STRING("_framework", PyUnicode_FromString(_PYTHONFRAMEWORK));
     SET_SYS_FROM_STRING("api_version",
                         PyLong_FromLong(PYTHON_API_VERSION));
     SET_SYS_FROM_STRING("copyright",
@@ -2056,9 +2156,7 @@ _PySys_BeginInit(void)
                         PyUnicode_FromString("legacy"));
 #endif
 
-#ifdef WITH_THREAD
     SET_SYS_FROM_STRING("thread_info", PyThread_GetInfo());
-#endif
 
     /* initialize asyncgen_hooks */
     if (AsyncGenHooksType.tp_name == NULL) {
@@ -2077,16 +2175,6 @@ _PySys_BeginInit(void)
 #undef SET_SYS_FROM_STRING_BORROW
 
 /* Updating the sys namespace, returning integer error codes */
-#define SET_SYS_FROM_STRING_BORROW_INT_RESULT(key, value)  \
-    do {                                                   \
-        PyObject *v = (value);                             \
-        if (v == NULL)                                     \
-            return -1;                                     \
-        res = PyDict_SetItemString(sysdict, key, v);       \
-        if (res < 0) {                                     \
-            return res;                                    \
-        }                                                  \
-    } while (0)
 #define SET_SYS_FROM_STRING_INT_RESULT(key, value)         \
     do {                                                   \
         PyObject *v = (value);                             \
@@ -2131,17 +2219,11 @@ _PySys_EndInit(PyObject *sysdict)
     SET_SYS_FROM_STRING_INT_RESULT("base_exec_prefix",
                         PyUnicode_FromWideChar(Py_GetExecPrefix(), -1));
 
-    if (warnoptions == NULL) {
-        warnoptions = PyList_New(0);
-        if (warnoptions == NULL)
-            return -1;
-    }
-    else {
-        Py_INCREF(warnoptions);
-    }
-    SET_SYS_FROM_STRING_BORROW_INT_RESULT("warnoptions", warnoptions);
+    if (get_warnoptions() == NULL)
+        return -1;
 
-    SET_SYS_FROM_STRING_BORROW_INT_RESULT("_xoptions", get_xoptions());
+    if (get_xoptions() == NULL)
+        return -1;
 
     if (PyErr_Occurred())
         return -1;
@@ -2149,7 +2231,6 @@ _PySys_EndInit(PyObject *sysdict)
 }
 
 #undef SET_SYS_FROM_STRING_INT_RESULT
-#undef SET_SYS_FROM_STRING_BORROW_INT_RESULT
 
 static PyObject *
 makepathobject(const wchar_t *path, wchar_t delim)
