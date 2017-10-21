@@ -2175,9 +2175,10 @@ Notes:
       The UTC offset is not restricted to a whole number of minutes.
 
    .. versionchanged:: 3.7
-      When ``%z`` directive is provided to the :meth:`strptime` method, offsets
-      with colons will be parsed as well. For example, offsets like ``'+01:00'``
-      will be parsed as an offset of one hour.
+      When ``%z`` directive is provided to the :meth:`strptime` method, any valid
+      RFC-822/ISO 8601 standard utftime-offset can be parsed. For example, strings
+      like ``'+01:00'`` will be parsed as an offset of one hour and or ``'Z'`` will
+      be transofmred to a 0 utc offset.
 
    ``%Z``
       If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty

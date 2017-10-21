@@ -1,1 +1,1 @@
-Add support for parsing utc offsets with colon when using %z in strptime
+Add support for parsing RFC-822/ISO 8601 utf offsets
