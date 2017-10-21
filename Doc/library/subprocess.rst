@@ -98,7 +98,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    .. versionchanged:: 3.7
 
-      Added *text* parameter, as alias of *universal_newlines*
+      Added the *text* parameter, as a more understandable alias of *universal_newlines*
 
 .. class:: CompletedProcess
 

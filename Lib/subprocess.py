@@ -320,8 +320,11 @@ def check_output(*popenargs, timeout=None, **kwargs):
     ...              input=b"when in the course of fooman events\n")
     b'when in the course of barman events\n'
 
-    If universal_newlines=True is passed, the "input" argument must be a
-    string and the return value will be a string rather than bytes.
+    By default, all communication is in bytes, and therefore any "input"
+    should be bytes, and the return value wil be bytes.  If in text mode,
+    any "input" should be a string, and the return value will be a string
+    decoded according to locale encoding, or by "encoding" if set. Text mode
+    is triggered by setting any of text, encoding, errors or universal_newlines.
     """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
@@ -384,15 +387,17 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
     exception will be raised.
 
     There is an optional argument "input", allowing you to
-    pass a string to the subprocess's stdin.  If you use this argument
+    pass bytes or a string to the subprocess's stdin.  If you use this argument
     you may not also use the Popen constructor's "stdin" argument, as
     it will be used internally.
 
-    The other arguments are the same as for the Popen constructor.
+    By default, all communication is in bytes, and therefore any "input" should
+    be bytes, and the stdout and stderr will be bytes. If in text mode, any
+    "input" should be a string, and stdout and stderr will be strings decoded
+    according to locale encoding, or by "encoding" if set. Text mode is
+    triggered by setting any of text, encoding, errors or universal_newlines.
 
-    If universal_newlines=True is passed, the "input" argument must be a
-    string and stdout/stderr in the returned object will be strings rather than
-    bytes.
+    The other arguments are the same as for the Popen constructor.
     """
     if input is not None:
         if 'stdin' in kwargs:
@@ -589,10 +594,10 @@ class Popen(object):
     def __init__(self, args, bufsize=-1, executable=None,
                  stdin=None, stdout=None, stderr=None,
                  preexec_fn=None, close_fds=_PLATFORM_DEFAULT_CLOSE_FDS,
-                 shell=False, cwd=None, env=None, universal_newlines=False,
+                 shell=False, cwd=None, env=None, universal_newlines=None,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
-                 pass_fds=(), *, encoding=None, errors=None, text=False):
+                 pass_fds=(), *, encoding=None, errors=None, text=None):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -646,6 +651,13 @@ class Popen(object):
         self.returncode = None
         self.encoding = encoding
         self.errors = errors
+
+        # Validate the combinations of text and universal_newlines
+        if (text is not None and universal_newlines is not None
+            and bool(universal_newlines) != bool(text)):
+            raise SubprocessError('Cannot disambiguate when both text '
+                                  'and universal_newlines are supplied but '
+                                  'different. Pass one or the other.')
 
         # Input and output objects. The general principle is like
         # this:
@@ -736,6 +748,16 @@ class Popen(object):
 
             raise
 
+    @property
+    def universal_newlines(self):
+        # universal_newlines as retained as an alias of text_mode for API
+        # compatability. bpo-31756
+        return self.text_mode
+
+    @universal_newlines.setter
+    def universal_newlines(self, universal_newlines):
+        self.text_mode = bool(universal_newlines)
+
     def _translate_newlines(self, data, encoding, errors):
         data = data.decode(encoding, errors)
         return data.replace("\r\n", "\n").replace("\r", "\n")
@@ -806,12 +828,16 @@ class Popen(object):
         reached.  Wait for process to terminate.
 
         The optional "input" argument should be data to be sent to the
-        child process (if self.universal_newlines is True, this should
-        be a string; if it is False, "input" should be bytes), or
-        None, if no data should be sent to the child.
+        child process, or None, if no data should be sent to the child.
+        communicate() returns a tuple (stdout, stderr).
 
-        communicate() returns a tuple (stdout, stderr).  These will be
-        bytes or, if self.universal_newlines/self.text was True, a string.
+        By default, all communication is in bytes, and therefore any
+        "input" should be bytes, and the (stdout, stderr) will be bytes.
+        If in text mode (indicated by self.text_mode), any "input" should
+        be a string, and (stdout, stderr) will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode
+        is triggered by setting any of text, encoding, errors or
+        universal_newlines.
         """
 
         if self._communication_started and input:
