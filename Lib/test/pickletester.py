@@ -1771,6 +1771,21 @@ class AbstractPickleModuleTests(unittest.TestCase):
         with support.check_warnings(('', RuntimeWarning)):
             self.assertIs(roundtrip(C), C)
 
+    def test_end_of_text_file(self):
+        try:
+            with open(TESTFN, "w") as f:
+                with support.check_py3k_warnings():
+                    self.module.dump(u'a\x1ab', f)
+            with open(TESTFN) as f:
+                self.assertEqual(self.module.load(f), u'a\x1ab')
+
+            with open(TESTFN, "wb") as f:
+                self.module.dump(u'a\x1ab', f)
+            with open(TESTFN) as f:
+                self.assertEqual(self.module.load(f), u'a\x1ab')
+        finally:
+            support.unlink(TESTFN)
+
     def test_incomplete_input(self):
         s = StringIO.StringIO("X''.")
         self.assertRaises(EOFError, self.module.load, s)
