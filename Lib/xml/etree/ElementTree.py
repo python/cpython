@@ -1092,7 +1092,7 @@ def _raise_serialization_error(text):
         "cannot serialize %r (type %s)" % (text, type(text).__name__)
         )
 
-def _escape_cdata(text, pretty=False):
+def _escape_cdata(text, pretty_print=False):
     # escape character data
     try:
         # it's worth avoiding do-nothing calls for strings that are
@@ -1104,7 +1104,7 @@ def _escape_cdata(text, pretty=False):
             text = text.replace("<", "&lt;")
         if ">" in text:
             text = text.replace(">", "&gt;")
-        if pretty:  # ignore whitespace when pretty-printing
+        if pretty_print:  # ignore whitespace when pretty-printing
             text = text.strip()
         return text
     except (TypeError, AttributeError):
@@ -1153,8 +1153,8 @@ def _escape_attrib_html(text):
 
 # --------------------------------------------------------------------
 
-def tostring(element, encoding=None, method=None, pretty=False, *, indent='  ',
-             short_empty_elements=True):
+def tostring(element, encoding=None, method=None, pretty_print=False, *,
+             indent='  ', short_empty_elements=True):
     """Generate string representation of XML element.
 
     All subelements are included.  If encoding is "unicode", a string
@@ -1164,7 +1164,7 @@ def tostring(element, encoding=None, method=None, pretty=False, *, indent='  ',
     encoding defaulting to US-ASCII, *method* is an optional output which can
     be one of "xml" (default), "html", "text" or "c14n".
 
-    *pretty* enables human-readable indentation, *indent* allows to choose
+    *pretty_print* enables human-readable indentation, *indent* allows to choose
     indent width.
 
     *short_empty_elements* (default) collapses pair tags with no text to the
@@ -1174,7 +1174,7 @@ def tostring(element, encoding=None, method=None, pretty=False, *, indent='  ',
 
     """
     stream = io.StringIO() if encoding == 'unicode' else io.BytesIO()
-    if not pretty:
+    if not pretty_print:
         indent = ''
 
     ElementTree(element).write(stream, encoding, method=method,
@@ -1199,11 +1199,11 @@ class _ListDataStream(io.BufferedIOBase):
     def tell(self):
         return len(self.lst)
 
-def tostringlist(element, encoding=None, method=None, pretty=False, *,
+def tostringlist(element, encoding=None, method=None, pretty_print=False, *,
                  indent='  ', short_empty_elements=True):
     lst = []
     stream = _ListDataStream(lst)
-    if not pretty:
+    if not pretty_print:
         indent = ''
 
     ElementTree(element).write(stream, encoding, method=method,
