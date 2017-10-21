@@ -972,33 +972,28 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_multicast and
                 self.broadcast_address.is_multicast)
 
-    def _containment_check(self, check, other):
-        # always false if one is v4 and the other is v6.
-        if self._version != other._version:
-            raise TypeError("%s and %s are not of the same version" % (
-                            self, other))
-        # dealing with another network.
-        if (hasattr(other, 'network_address') and
-                hasattr(other, 'broadcast_address')):
-            if check == 'subnet':
-                return (other.network_address <= self.network_address and
-                        other.broadcast_address >= self.broadcast_address)
-            elif check == 'supernet':
-                return (other.network_address >= self.network_address and
-                        other.broadcast_address <= self.broadcast_address)
-            else:
-                raise ValueError('%r is an unsupported check. Must be either '
-                                 '"supernet" or "subnet"' % check)
-        # dealing with another address
+    @staticmethod
+    def _is_subnet_of(a, b):
+        # Always false if one is v4 and the other is v6.
+        if a._version != b._version:
+            raise TypeError("{} and {} are not of the same version"
+                            .format(a, b))
+        # Dealing with another network.
+        if hasattr(b, 'network_address') and hasattr(b, 'broadcast_address'):
+            return (b.network_address <= a.network_address and
+                    b.broadcast_address >= a.broadcast_address)
+        # Dealing with another address.
         else:
             raise TypeError('Unable to test subnet containment with element '
-                            'of type %s' % type(other))
+                            'of type {}'.format(b))
 
     def subnet_of(self, other):
-        return self._containment_check('subnet', other)
+        """Return True if this network is a subnet of other."""
+        return self._is_subnet_of(self, other)
 
     def supernet_of(self, other):
-        return self._containment_check('supernet', other)
+        """Return True if this network is a supernet of other."""
+        return self._is_subnet_of(other, self)
 
     @property
     def is_reserved(self):
