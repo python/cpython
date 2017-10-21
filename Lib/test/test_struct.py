@@ -614,9 +614,9 @@ class StructTest(unittest.TestCase):
         # the Struct object was decrefed twice and the reference to
         # deallocated object was left in a cache.
         with self.assertRaises(TypeError):
-            struct.unpack(b'b', 0)
+            struct.unpack('b', 0)
         # Shouldn't crash.
-        self.assertEqual(struct.unpack(b'b', b'a'), (b'a'[0],))
+        self.assertEqual(struct.unpack('b', b'a'), (b'a'[0],))
 
     def test_format_attr(self):
         s = struct.Struct('=i2H')
