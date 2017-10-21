@@ -11,6 +11,13 @@ code = support.import_module('code')
 
 class TestInteractiveConsole(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        if hasattr(sys, 'ps1'):  # If run after test_idle: see #31836.
+            del sys.ps1
+        if hasattr(sys, 'ps2'):  # Just in case.
+            del sys.ps2
+
     def setUp(self):
         self.console = code.InteractiveConsole()
         self.mock_sys()
@@ -33,11 +40,17 @@ class TestInteractiveConsole(unittest.TestCase):
         self.infunc.side_effect = EOFError('Finished')
         self.console.interact()
         self.assertEqual(self.sysmod.ps1, '>>> ')
+        self.sysmod.ps1 = 'custom1> '
+        self.console.interact()
+        self.assertEqual(self.sysmod.ps1, 'custom1> ')
 
     def test_ps2(self):
         self.infunc.side_effect = EOFError('Finished')
         self.console.interact()
         self.assertEqual(self.sysmod.ps2, '... ')
+        self.sysmod.ps1 = 'custom2> '
+        self.console.interact()
+        self.assertEqual(self.sysmod.ps1, 'custom2> ')
 
     def test_console_stderr(self):
         self.infunc.side_effect = ["'antioch'", "", EOFError('Finished')]
