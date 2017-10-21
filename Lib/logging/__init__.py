@@ -225,6 +225,11 @@ def _releaseLock():
     if _lock:
         _lock.release()
 
+# Prevent a held logging lock from blocking a child from logging.
+os.register_at_fork(before=_acquireLock,
+                    after_in_child=_releaseLock,
+                    after_in_parent=_releaseLock)
+
 #---------------------------------------------------------------------------
 #   The logging record
 #---------------------------------------------------------------------------
@@ -795,6 +800,9 @@ class Handler(Filterer):
         Acquire a thread lock for serializing access to the underlying I/O.
         """
         self.lock = threading.RLock()
+        os.register_at_fork(before=self.acquire,
+                            after_in_child=self.release,
+                            after_in_parent=self.release)
 
     def acquire(self):
         """
