@@ -94,9 +94,10 @@ latex_engine = 'xelatex'
 
 # Get LaTeX to handle Unicode correctly
 latex_elements = {
+    'fontenc': r'\usepackage[T2A,TS1,T1]{fontenc}',
 }
 
-# Additional stuff for the LaTeX preamble.
+# Additional stuff for the LaTeX preamble (inc. handling of stray Unicode chars)
 latex_elements['preamble'] = r'''
 \authoraddress{
   \sphinxstrong{Python Software Foundation}\\
@@ -104,6 +105,15 @@ latex_elements['preamble'] = r'''
 }
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
+\ifx\XeTeXinterchartoks\undefined % not for xelatex
+\ifx\directlua\undefined          % not for lualatex
+\ifx\kanjiskip\undefined          % not for platex
+\usepackage{newunicodechar}
+\newunicodechar{ſ}{{\fontencoding{TS1}\fontfamily{lmr}\selectfont s}}
+\newunicodechar{K}{\ensuremath{\mathrm K}}
+\newunicodechar{−}{\textminus}
+\newunicodechar{Є}{{\fontencoding{T2A}\fontfamily{cmr}\selectfont\IeC{\CYRIE}}}
+\fi\fi\fi
 '''
 
 # The paper size ('letter' or 'a4').
