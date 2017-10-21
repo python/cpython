@@ -154,7 +154,9 @@ an unpickler, then you call the unpickler's :meth:`load` method.  The
 
    Be sure to always open pickle files created with protocols >= 1 in binary mode.
    For the old ASCII-based pickle protocol 0 you can use either text mode or binary
-   mode as long as you stay consistent.
+   mode as long as you stay consistent.  It is preferred to always use binary
+   mode, because a pickle file written in text mode on Windows not always can
+   be correctly unpickled on Unix or in Python 3.
 
    A pickle file written with protocol 0 in binary mode will contain lone linefeeds
    as line terminators and therefore will look "funny" when viewed in Notepad or
@@ -176,31 +178,34 @@ process more convenient:
    .. versionchanged:: 2.3
       Introduced the *protocol* parameter.
 
-   *file* must have a :meth:`write` method that accepts a single string argument.
-   It can thus be a file object opened for writing, a :mod:`StringIO` object, or
-   any other custom object that meets this interface.
+   *file* must have a :meth:`write` method that accepts a single byte string
+   argument.  It can thus be an on-disk file opened for binary writing,
+   a :class:`io.BytesIO` or :class:`StringIO.StringIO` object, or any other
+   custom object that meets this interface.
 
 
 .. function:: load(file)
 
-   Read a string from the open file object *file* and interpret it as a pickle data
+   Read a a pickled object representation from the open file object *file* and
+   interpret it as a pickle data
    stream, reconstructing and returning the original object hierarchy.  This is
    equivalent to ``Unpickler(file).load()``.
 
    *file* must have two methods, a :meth:`read` method that takes an integer
    argument, and a :meth:`readline` method that requires no arguments.  Both
-   methods should return a string.  Thus *file* can be a file object opened for
-   reading, a :mod:`StringIO` object, or any other custom object that meets this
-   interface.
+   methods should return a byte string.  Thus *file* can be an on-disk file
+   opened for binary reading, a :class:`io.BytesIO` or
+   :class:`StringIO.StringIO` object, or any other custom object that meets
+   this interface.
 
-   This function automatically determines whether the data stream was written in
-   binary mode or not.
+   The protocol version of the pickle is detected automatically, so no
+   protocol argument is needed.
 
 
 .. function:: dumps(obj[, protocol])
 
-   Return the pickled representation of the object as a string, instead of writing
-   it to a file.
+   Return the pickled representation of the object as a byte string, instead
+   of writing it to a file.
 
    If the *protocol* parameter is omitted, protocol 0 is used. If *protocol* is
    specified as a negative value or :const:`HIGHEST_PROTOCOL`, the highest protocol
@@ -210,10 +215,10 @@ process more convenient:
       The *protocol* parameter was added.
 
 
-.. function:: loads(string)
+.. function:: loads(data)
 
-   Read a pickled object hierarchy from a string.  Characters in the string past
-   the pickled object's representation are ignored.
+   Read a pickled object hierarchy from a byte string.  Bytes past the pickled
+   object's representation are ignored.
 
 The :mod:`pickle` module also defines three exceptions:
 
@@ -252,8 +257,9 @@ The :mod:`pickle` module also exports two callables [#]_, :class:`Pickler` and
    .. versionchanged:: 2.3
       Introduced the *protocol* parameter.
 
-   *file* must have a :meth:`write` method that accepts a single string argument.
-   It can thus be an open file object, a :mod:`StringIO` object, or any other
+   *file* must have a :meth:`write` method that accepts a single byte string
+   argument.  It can thus be an on-disk file opened for binary writing,
+   a :class:`io.BytesIO` or :class:`StringIO.StringIO` object, or any other
    custom object that meets this interface.
 
    :class:`Pickler` objects define one (or two) public methods:
@@ -297,15 +303,15 @@ instance.  If the same object is pickled by multiple :meth:`dump` calls, the
 .. class:: Unpickler(file)
 
    This takes a file-like object from which it will read a pickle data stream.
-   This class automatically determines whether the data stream was written in
-   binary mode or not, so it does not need a flag as in the :class:`Pickler`
-   factory.
+   This class automatically determines the protocol version of the pickle, so
+   it does not need a protocol argument as in the :class:`Pickler` factory.
 
    *file* must have two methods, a :meth:`read` method that takes an integer
    argument, and a :meth:`readline` method that requires no arguments.  Both
-   methods should return a string.  Thus *file* can be a file object opened for
-   reading, a :mod:`StringIO` object, or any other custom object that meets this
-   interface.
+   methods should return a byte string.  Thus *file* can be an on-disk file
+   opened for binary reading, a :class:`io.BytesIO` or
+   :class:`StringIO.StringIO` object, or any other custom object that meets
+   this interface.
 
    :class:`Unpickler` objects have one (or two) public methods:
 
@@ -316,8 +322,7 @@ instance.  If the same object is pickled by multiple :meth:`dump` calls, the
       the constructor, and return the reconstituted object hierarchy specified
       therein.
 
-      This method automatically determines whether the data stream was written
-      in binary mode or not.
+      The protocol version of the pickle is detected automatically.
 
 
    .. method:: noload()
@@ -688,7 +693,7 @@ performing any necessary imports, and it may raise an error to prevent
 instances of the class from being unpickled.
 
 The moral of the story is that you should be really careful about the source of
-the strings your application unpickles.
+the data your application unpickles.
 
 
 .. _pickle-example:

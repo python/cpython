@@ -2,6 +2,7 @@
 import unittest
 import pickle
 import cPickle
+import os
 import StringIO
 import cStringIO
 import pickletools
@@ -1697,22 +1698,20 @@ class BadGetattr:
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
-        import os
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.module.dump, 123, f)
         finally:
-            os.remove(TESTFN)
+            support.unlink(TESTFN)
 
     def test_load_closed_file(self):
-        import os
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.module.dump, 123, f)
         finally:
-            os.remove(TESTFN)
+            support.unlink(TESTFN)
 
     def test_load_from_and_dump_to_file(self):
         stream = cStringIO.StringIO()
@@ -1735,6 +1734,42 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.module.dumps(123, protocol=-1)
         self.module.Pickler(f, -1)
         self.module.Pickler(f, protocol=-1)
+
+    def test_dump_text_file(self):
+        f = open(TESTFN, "w")
+        try:
+            with support.check_py3k_warnings():
+                self.module.dump(123, f)
+            if os.linesep != '\n':
+                self.assertRaises(ValueError, self.module.dump, 123, f, 1)
+                self.assertRaises(ValueError, self.module.dump, 123, f, 2)
+            else:
+                with support.check_warnings(('', DeprecationWarning)):
+                    self.module.dump(123, f, 1)
+                with support.check_warnings(('', DeprecationWarning)):
+                    self.module.dump(123, f, 2)
+        finally:
+            f.close()
+            support.unlink(TESTFN)
+
+    def test_load_text_file(self):
+        def roundtrip(value):
+            pickled = self.module.dumps(value)
+            pickled = pickled.replace('\n', '\r\n')
+            return self.module.loads(pickled)
+
+        self.assertEqual(roundtrip(123), 123)
+        self.assertIs(type(roundtrip(123)), int)
+        self.assertEqual(roundtrip(12345678910111213141516178920L),
+                         12345678910111213141516178920L)
+        self.assertEqual(roundtrip(123.5), 123.5)
+        self.assertIs(roundtrip(True), True)
+        with support.check_warnings(('', RuntimeWarning), quiet=True):
+            self.assertEqual(roundtrip('a\rb\nc'), 'a\rb\nc')
+        with support.check_warnings(('', RuntimeWarning)):
+            self.assertIsInstance(roundtrip(C()), C)
+        with support.check_warnings(('', RuntimeWarning)):
+            self.assertIs(roundtrip(C), C)
 
     def test_incomplete_input(self):
         s = StringIO.StringIO("X''.")

@@ -30,6 +30,7 @@ from types import *
 from copy_reg import dispatch_table
 from copy_reg import _extension_registry, _inverted_registry, _extension_cache
 import marshal
+import os
 import sys
 import struct
 import re
@@ -502,7 +503,10 @@ class Pickler:
             self.write(BINUNICODE + pack("<i", n) + encoding)
         else:
             obj = obj.replace("\\", "\\u005c")
+            obj = obj.replace("\0", "\\u0000")
             obj = obj.replace("\n", "\\u000a")
+            obj = obj.replace("\r", "\\u000d")
+            obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
             self.write(UNICODE + obj.encode('raw-unicode-escape') + '\n')
         self.memoize(obj)
     dispatch[UnicodeType] = save_unicode
@@ -916,9 +920,9 @@ class Unpickler:
 
     def load_int(self):
         data = self.readline()
-        if data == FALSE[1:]:
+        if data == '00\n' or data == '00\r\n':
             val = False
-        elif data == TRUE[1:]:
+        elif data == '01\n' or data == '01\r\n':
             val = True
         else:
             try:
@@ -967,11 +971,15 @@ class Unpickler:
     def load_string(self):
         rep = self.readline()[:-1]
         for q in "\"'": # double or single quote
-            if rep.startswith(q):
-                if len(rep) < 2 or not rep.endswith(q):
-                    raise ValueError, "insecure string pickle"
-                rep = rep[len(q):-len(q)]
-                break
+            if len(rep) >= 2 and rep[0] == q:
+                if rep[-1] == q:
+                    rep = rep[1:-1]
+                    break
+                elif len(rep) >= 3 and rep[-1] == '\r' and rep[-2] == q:
+                    import warnings
+                    warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+                    rep = rep[1:-2]
+                    break
         else:
             raise ValueError, "insecure string pickle"
         self.append(rep.decode("string-escape"))
@@ -983,7 +991,11 @@ class Unpickler:
     dispatch[BINSTRING] = load_binstring
 
     def load_unicode(self):
-        self.append(unicode(self.readline()[:-1],'raw-unicode-escape'))
+        rep = self.readline()[:-1]
+        # Correct pickles saved in Python < 2.7.15 can contain \r.  It is
+        # impossible to distinguish the correct pickle from the broken one and
+        # restore the correct value.
+        self.append(unicode(rep, 'raw-unicode-escape'))
     dispatch[UNICODE] = load_unicode
 
     def load_binunicode(self):
@@ -1072,6 +1084,11 @@ class Unpickler:
     def load_inst(self):
         module = self.readline()[:-1]
         name = self.readline()[:-1]
+        if module[-1:] == '\r' and name[-1:] == '\r':
+            import warnings
+            warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            module = module[:-1]
+            name = name[:-1]
         klass = self.find_class(module, name)
         self._instantiate(klass, self.marker())
     dispatch[INST] = load_inst
@@ -1093,6 +1110,11 @@ class Unpickler:
     def load_global(self):
         module = self.readline()[:-1]
         name = self.readline()[:-1]
+        if module[-1:] == '\r' and name[-1:] == '\r':
+            import warnings
+            warnings.warn('Pickle was saved in text mode', RuntimeWarning)
+            module = module[:-1]
+            name = name[:-1]
         klass = self.find_class(module, name)
         self.append(klass)
     dispatch[GLOBAL] = load_global
@@ -1373,6 +1395,13 @@ except ImportError:
     from StringIO import StringIO
 
 def dump(obj, file, protocol=None):
+    if type(file) is FileType and 'b' not in file.mode:
+        if protocol and os.linesep != '\n':
+            raise ValueError('File must be open in binary mode')
+        if protocol or sys.py3kwarning:
+            import warnings
+            warnings.warn('File must be open in binary mode',
+                          DeprecationWarning, stacklevel=2)
     Pickler(file, protocol).dump(obj)
 
 def dumps(obj, protocol=None):

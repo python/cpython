@@ -1390,7 +1390,9 @@ modified_EncodeRawUnicodeEscape(const Py_UNICODE *s, Py_ssize_t size)
         }
 #endif
         /* Map 16-bit characters to '\uxxxx' */
-        if (ch >= 256 || ch == '\\' || ch == '\n') {
+        if (ch >= 256 ||
+            ch == '\\'  || ch == 0 || ch == '\n' || ch == '\r' || ch == 0x1a)
+        {
             *p++ = '\\';
             *p++ = 'u';
             *p++ = hexdigit[(ch >> 12) & 0xf];
@@ -3378,6 +3380,42 @@ find_class(PyObject *py_module_name, PyObject *py_global_name, PyObject *fc)
     return global;
 }
 
+static PyObject *
+find_class_text(PyObject *module_name, PyObject *global_name, PyObject *fc)
+{
+    PyObject *result;
+    Py_ssize_t module_len = PyString_GET_SIZE(module_name);
+    Py_ssize_t global_len = PyString_GET_SIZE(global_name);
+    if (module_len && global_len &&
+        PyString_AS_STRING(module_name)[module_len-1] == '\r' &&
+        PyString_AS_STRING(global_name)[global_len-1] == '\r')
+    {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                         "Pickle was saved in text mode", 1) < 0)
+        {
+            return NULL;
+        }
+        module_name = PyString_FromStringAndSize(
+                PyString_AS_STRING(module_name), module_len - 1);
+        if (!module_name) {
+            return NULL;
+        }
+        global_name = PyString_FromStringAndSize(
+                PyString_AS_STRING(global_name), global_len - 1);
+        if (!global_name) {
+            Py_DECREF(module_name);
+            return NULL;
+        }
+        result = find_class(module_name, global_name, fc);
+        Py_DECREF(module_name);
+        Py_DECREF(global_name);
+        return result;
+    }
+    else {
+        return find_class(module_name, global_name, fc);
+    }
+}
+
 static Py_ssize_t
 marker(Unpicklerobject *self)
 {
@@ -3420,7 +3458,10 @@ load_int(Unpicklerobject *self)
     errno = 0;
     l = strtol(s, &endptr, 0);
 
-    if (errno || (*endptr != '\n') || (endptr[1] != '\0')) {
+    if (errno ||
+        (!(endptr[0] == '\n' && endptr[1] == '\0') &&
+         !(endptr[0] == '\r' && endptr[1] == '\n' && endptr[2] == '\0')))
+    {
         /* Hm, maybe we've got something long.  Let's try reading
            it as a Python long object. */
         errno = 0;
@@ -3432,7 +3473,7 @@ load_int(Unpicklerobject *self)
         }
     }
     else {
-        if (len == 3 && (l == 0 || l == 1)) {
+        if ((len == 3 + (endptr[0] == '\r')) && (l == 0 || l == 1)) {
             if (!( py_int = PyBool_FromLong(l)))  goto finally;
         }
         else {
@@ -3619,7 +3660,10 @@ load_float(Unpicklerobject *self)
 
     if (d == -1.0 && PyErr_Occurred()) {
         goto finally;
-    } else if ((endptr[0] != '\n') || (endptr[1] != '\0')) {
+    }
+    else if (!(endptr[0] == '\n' && endptr[1] == '\0') &&
+             !(endptr[0] == '\r' && endptr[1] == '\n' && endptr[2] == '\0'))
+    {
         PyErr_SetString(PyExc_ValueError,
                         "could not convert string to float");
         goto finally;
@@ -3955,7 +3999,7 @@ load_inst(Unpicklerobject *self)
             return bad_readline();
         }
         if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
-            class = find_class(module_name, class_name,
+            class = find_class_text(module_name, class_name,
                                self->find_class);
             Py_DECREF(class_name);
         }
@@ -4042,7 +4086,7 @@ load_global(Unpicklerobject *self)
             return bad_readline();
         }
         if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
-            class = find_class(module_name, class_name,
+            class = find_class_text(module_name, class_name,
                                self->find_class);
             Py_DECREF(class_name);
         }
@@ -5696,6 +5740,22 @@ cpm_dump(PyObject *self, PyObject *args, PyObject *kwds)
     if (!( PyArg_ParseTupleAndKeywords(args, kwds, "OO|i", kwlist,
                &ob, &file, &proto)))
         goto finally;
+
+    if (Py_TYPE(file) == &PyFile_Type && !((PyFileObject *)file)->f_binary) {
+#ifdef MS_WINDOWS
+        if (proto) {  /* binary protocol */
+            PyErr_SetString(PyExc_ValueError, "File must be open in binary mode");
+            goto finally;
+        }
+#endif
+        if (proto || Py_Py3kWarningFlag) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             "File must be open in binary mode", 1) < 0)
+            {
+                goto finally;
+            }
+        }
+    }
 
     if (!( pickler = newPicklerobject(file, proto)))
         goto finally;

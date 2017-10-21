@@ -1,0 +1,15 @@
+Resolved some portability issues with pickle.
+
+* Documented that files should be open in binary mode even for protocol 0 for
+  portability.
+* ValueError now is raised when pickle with binary protocol to a file opened
+  in text mode on Windows.
+* Deprecation warning is emitted when pickle with binary protocol to a file
+  opened in text mode on Unix.
+* Deprecation warning is emitted in Py3k mode when pickle with protocol 0 to
+  a file opened in text mode.
+* Fixed unpickling on Unix or in binary mode files writen in text mode on
+  Windows.  RuntimeWarning now is emitted in cases that was not unpickleable
+  before.  Files containing Unicode strings will be unpickled incorrectly.
+* ``\r``, ``\0`` and ``\x1a`` (end-of-file on Windows) now are escaped in
+  Unicode strings in protocol 0.
