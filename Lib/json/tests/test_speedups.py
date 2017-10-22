@@ -3,7 +3,7 @@ from json.tests import CTest
 
 class BadBool:
     def __nonzero__(self):
-        1/0
+        1/0.0
 
 
 class TestSpeedups(CTest):
