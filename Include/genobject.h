@@ -25,7 +25,7 @@ struct _frame; /* Avoid including frameobject.h */
     /* Name of the generator. */                                            \
     PyObject *prefix##_name;                                                \
     /* Qualified name of the generator. */                                  \
-    PyObject *prefix##_qualname;                                         \
+    PyObject *prefix##_qualname;                                            \
     _PyErr_StackItem prefix##_exc_state;
 
 typedef struct {
