@@ -4035,7 +4035,7 @@ do_raise(PyObject *exc, PyObject *cause)
     if (exc == NULL) {
         /* Reraise */
         PyThreadState *tstate = PyThreadState_GET();
-        _PyErr_StackItem *exc_info = tstate->exc_info;
+        _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
         PyObject *tb;
         type = exc_info->exc_type;
         value = exc_info->exc_value;

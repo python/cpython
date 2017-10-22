@@ -1138,6 +1138,22 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(next(gen), 1)
         self.assertEqual(next(gen), 2)
 
+    def test_raise_in_generator(self):
+        #Issue 25612#msg304117
+        def g():
+            yield 1
+            raise
+            yield 2
+
+        with self.assertRaises(ZeroDivisionError):
+            i = g()
+            try:
+                1/0
+            except:
+                next(i)
+                next(i)
+
+
 class ImportErrorTests(unittest.TestCase):
 
     def test_attributes(self):
