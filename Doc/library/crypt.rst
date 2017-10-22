@@ -48,7 +48,7 @@ are available on all platforms):
    Another Modular Crypt Format method with 16 character salt and 43
    character hash based on the SHA-256 hash function.
 
-.. data:: METHOD_BLF
+.. data:: METHOD_BLOWFISH
 
    Another Modular Crypt Format method with 22 character salt and 31
    character hash based on the Blowfish cipher.
@@ -126,7 +126,7 @@ The :mod:`crypt` module defines the following functions:
    to :func:`crypt`.
 
    *log_rounds* specifies the binary logarithm of the number of rounds
-   for ``crypt.METHOD_BLF``, and is ignored otherwise.  ``8`` specifies
+   for ``crypt.METHOD_BLOWFISH``, and is ignored otherwise.  ``8`` specifies
    ``256`` rounds.
 
    .. versionadded:: 3.3

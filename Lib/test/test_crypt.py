@@ -35,28 +35,28 @@ class CryptTestCase(unittest.TestCase):
     def test_methods(self):
         self.assertTrue(len(crypt.methods) >= 1)
         if sys.platform.startswith('openbsd'):
-            self.assertEqual(crypt.methods, [crypt.METHOD_BLF])
+            self.assertEqual(crypt.methods, [crypt.METHOD_BLOWFISH])
         else:
             self.assertEqual(crypt.methods[-1], crypt.METHOD_CRYPT)
 
-    @unittest.skipUnless(crypt.METHOD_BLF in crypt.methods,
+    @unittest.skipUnless(crypt.METHOD_BLOWFISH in crypt.methods,
                         'requires support of Blowfish')
     def test_log_rounds(self):
         self.assertEqual(len(crypt._saltchars), 64)
         for log_rounds in range(4, 11):
-            salt = crypt.mksalt(crypt.METHOD_BLF, log_rounds=log_rounds)
+            salt = crypt.mksalt(crypt.METHOD_BLOWFISH, log_rounds=log_rounds)
             self.assertIn('$%02d$' % log_rounds, salt)
-            self.assertIn(len(salt) - crypt.METHOD_BLF.salt_chars, {6, 7})
+            self.assertIn(len(salt) - crypt.METHOD_BLOWFISH.salt_chars, {6, 7})
             cr = crypt.crypt('mypassword', salt)
             self.assertTrue(cr)
             cr2 = crypt.crypt('mypassword', cr)
             self.assertEqual(cr2, cr)
 
-    @unittest.skipUnless(crypt.METHOD_BLF in crypt.methods,
+    @unittest.skipUnless(crypt.METHOD_BLOWFISH in crypt.methods,
                         'requires support of Blowfish')
     def test_invalid_log_rounds(self):
         for log_rounds in (1, -1, 999):
-            salt = crypt.mksalt(crypt.METHOD_BLF, log_rounds=log_rounds)
+            salt = crypt.mksalt(crypt.METHOD_BLOWFISH, log_rounds=log_rounds)
             self.assertIsNone(crypt.crypt('mypassword', salt))
 
 
