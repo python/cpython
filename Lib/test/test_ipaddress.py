@@ -512,7 +512,7 @@ class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
             self.factory('10.0.0.0/24').supernet_of(
                 self.factory('10.0.0.0/30')))
 
-    def test_mixed_types(self):
+    def test_subnet_of_mixed_types(self):
         with self.assertRaises(TypeError):
             ipaddress.IPv4Network('10.0.0.0/30').supernet_of(
                 ipaddress.IPv6Network('::1/128'))
@@ -624,7 +624,6 @@ class NetworkTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
         self.assertTrue(
             self.factory('2000:aaa::/48').supernet_of(
                 self.factory('2000:aaa::/56')))
-
 
 
 class FactoryFunctionErrors(BaseTestCase):

@@ -974,23 +974,15 @@ class _BaseNetwork(_IPAddressBase):
 
     @staticmethod
     def _is_subnet_of(a, b):
-
-        def _is_valid_network_type(net):
-            return (hasattr(net, 'network_address') and
-                    hasattr(net, 'broadcast_address'))
-
-        # Always false if one is v4 and the other is v6.
-        if a._version != b._version:
-            raise TypeError("{} and {} are not of the same version"
-                            .format(a, b))
-        # Dealing with another network.
-        if _is_valid_network_type(a) and _is_valid_network_type(b):
+        try:
+            # Always false if one is v4 and the other is v6.
+            if a._version != b._version:
+                raise TypeError(f"{a} and {b} are not of the same version")
             return (b.network_address <= a.network_address and
                     b.broadcast_address >= a.broadcast_address)
-        # Dealing with another address.
-        else:
-            raise TypeError('Unable to test subnet containment with element '
-                            'of type {}'.format(b))
+        except AttributeError:
+            raise TypeError(f"Unable to test subnet containment "
+                            f"between {a} and {b}")
 
     def subnet_of(self, other):
         """Return True if this network is a subnet of other."""
