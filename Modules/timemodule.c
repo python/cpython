@@ -88,19 +88,31 @@ floatclock(_Py_clock_info_t *info)
 }
 #endif /* HAVE_CLOCK */
 
+static PyObject*
+perf_counter(_Py_clock_info_t *info)
+{
+    _PyTime_t t;
+    if (_PyTime_GetPerfCounterWithInfo(&t, info) < 0) {
+        return NULL;
+    }
+    double d = _PyTime_AsSecondsDouble(t);
+    return PyFloat_FromDouble(d);
+}
+
 #if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
 #define PYCLOCK
 static PyObject*
 pyclock(_Py_clock_info_t *info)
 {
-#ifdef MS_WINDOWS
-    /* Win32 has better clock replacement; we have our own version, due to Mark
-       Hammond and Tim Peters */
-    _PyTime_t t;
-    if (_PyTime_GetWinPerfCounterWithInfo(&t, info) < 0) {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                      "time.clock has been deprecated in Python 3.3 and will "
+                      "be removed from Python 3.8: "
+                      "use time.perf_counter or time.process_time "
+                      "instead", 1) < 0) {
         return NULL;
     }
-    return _PyFloat_FromPyTime(t);
+#ifdef MS_WINDOWS
+    return perf_counter(info);
 #else
     return floatclock(info);
 #endif
@@ -233,7 +245,7 @@ static PyObject *
 time_sleep(PyObject *self, PyObject *obj)
 {
     _PyTime_t secs;
-    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_CEILING))
+    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
     if (secs < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -936,16 +948,6 @@ PyDoc_STRVAR(monotonic_doc,
 \n\
 Monotonic clock, cannot go backward.");
 
-static PyObject*
-perf_counter(_Py_clock_info_t *info)
-{
-    _PyTime_t t;
-    if (_PyTime_GetPerfCounterWithInfo(&t, info) < 0) {
-        return NULL;
-    }
-    return _PyFloat_FromPyTime(t);
-}
-
 static PyObject *
 time_perf_counter(PyObject *self, PyObject *unused)
 {
@@ -1342,28 +1344,7 @@ The tuple items are:\n\
   DST (Daylight Savings Time) flag (-1, 0 or 1)\n\
 If the DST flag is 0, the time is given in the regular time zone;\n\
 if it is 1, the time is given in the DST time zone;\n\
-if it is -1, mktime() should guess based on the date and time.\n\
-\n\
-Variables:\n\
-\n\
-timezone -- difference in seconds between UTC and local standard time\n\
-altzone -- difference in  seconds between UTC and local DST time\n\
-daylight -- whether local time should reflect DST\n\
-tzname -- tuple of (standard time zone name, DST time zone name)\n\
-\n\
-Functions:\n\
-\n\
-time() -- return current time in seconds since the Epoch as a float\n\
-clock() -- return CPU time since process start as a float\n\
-sleep() -- delay for a number of seconds given as a float\n\
-gmtime() -- convert seconds since Epoch to UTC tuple\n\
-localtime() -- convert seconds since Epoch to local time tuple\n\
-asctime() -- convert time tuple to string\n\
-ctime() -- convert time in seconds to string\n\
-mktime() -- convert local time tuple to seconds since Epoch\n\
-strftime() -- convert time tuple to string according to format specification\n\
-strptime() -- parse string to time tuple according to format specification\n\
-tzset() -- change the local timezone");
+if it is -1, mktime() should guess based on the date and time.\n");
 
 
 

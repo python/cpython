@@ -1,1 +1,0 @@
-Stop using ranlib on static libraries. Instead, we assume ar supports the 's' flag.

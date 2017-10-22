@@ -1,2 +1,0 @@
-Speed up class creation by 10-20% by reducing the overhead in the
-necessary special method lookups.  Patch by Stefan Behnel.
