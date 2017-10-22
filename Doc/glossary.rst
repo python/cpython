@@ -21,8 +21,6 @@ Glossary
 
       * A object of the :class:`Ellipsis` class.
 
-      * A representation of recursive items in self-referencing containers.
-
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
