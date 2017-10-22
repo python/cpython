@@ -810,7 +810,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #define UNWIND_EXCEPT_HANDLER(b) \
     do { \
         PyObject *type, *value, *traceback; \
-        PyExcState *exc_info; \
+        _PyErr_StackItem *exc_info; \
         assert(STACK_LEVEL() >= (b)->b_level + 3); \
         while (STACK_LEVEL() > (b)->b_level + 3) { \
             value = POP(); \
@@ -3436,7 +3436,7 @@ fast_block_end:
                 || b->b_type == SETUP_FINALLY)) {
                 PyObject *exc, *val, *tb;
                 int handler = b->b_handler;
-                PyExcState *exc_info = tstate->exc_info;
+                _PyErr_StackItem *exc_info = tstate->exc_info;
                 /* Beware, this invalidates all b->b_* fields */
                 PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1, STACK_LEVEL());
                 PUSH(exc_info->exc_traceback);
@@ -4035,7 +4035,7 @@ do_raise(PyObject *exc, PyObject *cause)
     if (exc == NULL) {
         /* Reraise */
         PyThreadState *tstate = PyThreadState_GET();
-        PyExcState *exc_info = tstate->exc_info;
+        _PyErr_StackItem *exc_info = tstate->exc_info;
         PyObject *tb;
         type = exc_info->exc_type;
         value = exc_info->exc_value;

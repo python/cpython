@@ -26,7 +26,7 @@ struct _frame; /* Avoid including frameobject.h */
     PyObject *prefix##_name;                                                \
     /* Qualified name of the generator. */                                  \
     PyObject *prefix##_qualname;                                         \
-    PyExcState prefix##_exc_state;
+    _PyErr_StackItem prefix##_exc_state;
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */

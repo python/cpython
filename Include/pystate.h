@@ -124,17 +124,18 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 typedef struct _ts PyThreadState;
 #else
 
-typedef struct _excstate {
-    /* In a generator, we need to be able to swap between the exception
-       state inside the generator and the exception state of the calling
-       frame (which shouldn't be impacted when the generator "yields"
-       from an except handler).
-       These three fields exist exactly for that. */
+typedef struct _exc_stackitem {
+    /* This struct represents an entry on the exception stack, which is a 
+     * per-coroutine state. (Coroutine in the computer science sense, 
+     * including the thread and generators).
+     * This ensures that the exception state is not impacted by "yields"
+     * from an except handler.
+     */
     PyObject *exc_type, *exc_value, *exc_traceback;
 
-    struct _excstate *exc_previous;
+    struct _exc_stackitem *exc_previous;
 
-} PyExcState;
+} _PyErr_StackItem;
 
 
 typedef struct _ts {
@@ -169,11 +170,11 @@ typedef struct _ts {
     /* The exception currently being handled, if no coroutines/generators
      * are present. Always last element on the stack referred to be exc_info.
      */
-    PyExcState exc_state;
+    _PyErr_StackItem exc_state;
 
     /* Pointer to the top of the stack of the exceptions currently
      * being handled */
-    PyExcState *exc_info;
+    _PyErr_StackItem *exc_info;
 
     PyObject *dict;  /* Stores per-thread state */
 

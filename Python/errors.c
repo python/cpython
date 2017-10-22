@@ -53,10 +53,12 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
     Py_XDECREF(oldtraceback);
 }
 
-PyExcState *_PyErr_GetExcInfo(PyThreadState *tstate) {
-    PyExcState *exc_info = tstate->exc_info;
+_PyErr_StackItem *_PyErr_GetTopmostException(PyThreadState *tstate)
+{
+    _PyErr_StackItem *exc_info = tstate->exc_info;
     while ((exc_info->exc_type == NULL || exc_info->exc_type == Py_None) &&
-           exc_info->exc_previous != NULL) {
+           exc_info->exc_previous != NULL)
+    {
         exc_info = exc_info->exc_previous;
     }
     return exc_info;
@@ -92,7 +94,7 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     }
 
     Py_XINCREF(value);
-    exc_value = _PyErr_GetExcInfo(tstate)->exc_value;
+    exc_value = _PyErr_GetTopmostException(tstate)->exc_value;
     if (exc_value != NULL && exc_value != Py_None) {
         /* Implicit exception chaining */
         Py_INCREF(exc_value);
@@ -344,7 +346,7 @@ PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
     PyThreadState *tstate = PyThreadState_GET();
 
-    PyExcState *exc_info = _PyErr_GetExcInfo(tstate);
+    _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
     *p_type = exc_info->exc_type;
     *p_value = exc_info->exc_value;
     *p_traceback = exc_info->exc_traceback;

@@ -311,13 +311,13 @@ PyDoc_STRVAR(excepthook_doc,
 static PyObject *
 sys_exc_info(PyObject *self, PyObject *noargs)
 {
-    PyExcState *exc_info = _PyErr_GetExcInfo(PyThreadState_GET());
+    _PyErr_StackItem *err_info = _PyErr_GetTopmostException(PyThreadState_GET());
     return Py_BuildValue(
         "(OOO)",
-        exc_info->exc_type != NULL ? exc_info->exc_type : Py_None,
-        exc_info->exc_value != NULL ? exc_info->exc_value : Py_None,
-        exc_info->exc_traceback != NULL ?
-            exc_info->exc_traceback : Py_None);
+        err_info->exc_type != NULL ? err_info->exc_type : Py_None,
+        err_info->exc_value != NULL ? err_info->exc_value : Py_None,
+        err_info->exc_traceback != NULL ?
+            err_info->exc_traceback : Py_None);
 }
 
 PyDoc_STRVAR(exc_info_doc,
