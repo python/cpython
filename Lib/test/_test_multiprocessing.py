@@ -501,8 +501,13 @@ class _TestProcess(BaseTestCase):
         for p in procs:
             join_process(p)
         if os.name != 'nt':
+            exitcodes = [-signal.SIGTERM]
+            if sys.platform == 'darwin':
+                # bpo-31510: On macOS, killing a freshly started process with
+                # SIGTERM sometimes kills the process with SIGKILL.
+                exitcodes.append(-signal.SIGKILL)
             for p in procs:
-                self.assertEqual(p.exitcode, -signal.SIGTERM)
+                self.assertIn(p.exitcode, exitcodes)
 
     def test_lose_target_ref(self):
         c = DummyCallable()
@@ -576,6 +581,27 @@ class _TestProcess(BaseTestCase):
         proc.start()
         proc.join()
         self.assertTrue(evt.is_set())
+
+    @classmethod
+    def _test_error_on_stdio_flush(self, evt):
+        evt.set()
+
+    def test_error_on_stdio_flush(self):
+        streams = [io.StringIO(), None]
+        streams[0].close()
+        for stream_name in ('stdout', 'stderr'):
+            for stream in streams:
+                old_stream = getattr(sys, stream_name)
+                setattr(sys, stream_name, stream)
+                try:
+                    evt = self.Event()
+                    proc = self.Process(target=self._test_error_on_stdio_flush,
+                                        args=(evt,))
+                    proc.start()
+                    proc.join()
+                    self.assertTrue(evt.is_set())
+                finally:
+                    setattr(sys, stream_name, old_stream)
 
 
 #

@@ -312,7 +312,7 @@ Record Objects
 Errors
 ------
 
-All wrappers around MSI functions raise :exc:`MsiError`; the string inside the
+All wrappers around MSI functions raise :exc:`MSIError`; the string inside the
 exception will contain more detail.
 
 
