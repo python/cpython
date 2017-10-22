@@ -96,7 +96,8 @@ _PyGen_Finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-static inline void exc_state_clear(_PyErr_StackItem *exc_state)
+static inline void
+exc_state_clear(_PyErr_StackItem *exc_state)
 {
     PyObject *t, *v, *tb;
     t = exc_state->exc_type;
@@ -211,11 +212,11 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     f->f_back = tstate->frame;
 
     gen->gi_running = 1;
-    gen->gi_exc_state.exc_previous = tstate->exc_info;
+    gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
     result = PyEval_EvalFrameEx(f, exc);
-    tstate->exc_info = gen->gi_exc_state.exc_previous;
-    gen->gi_exc_state.exc_previous = NULL;
+    tstate->exc_info = gen->gi_exc_state.previous_item;
+    gen->gi_exc_state.previous_item = NULL;
     gen->gi_running = 0;
 
     /* Don't keep the reference to f_back any longer than necessary.  It
@@ -832,7 +833,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     gen->gi_exc_state.exc_type = NULL;
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.exc_traceback = NULL;
-    gen->gi_exc_state.exc_previous = NULL;
+    gen->gi_exc_state.previous_item = NULL;
     if (name != NULL)
         gen->gi_name = name;
     else

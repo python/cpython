@@ -53,13 +53,14 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
     Py_XDECREF(oldtraceback);
 }
 
-_PyErr_StackItem *_PyErr_GetTopmostException(PyThreadState *tstate)
+_PyErr_StackItem *
+_PyErr_GetTopmostException(PyThreadState *tstate)
 {
     _PyErr_StackItem *exc_info = tstate->exc_info;
     while ((exc_info->exc_type == NULL || exc_info->exc_type == Py_None) &&
-           exc_info->exc_previous != NULL)
+           exc_info->previous_item != NULL)
     {
-        exc_info = exc_info->exc_previous;
+        exc_info = exc_info->previous_item;
     }
     return exc_info;
 }

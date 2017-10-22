@@ -124,7 +124,7 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 typedef struct _ts PyThreadState;
 #else
 
-typedef struct _exc_stackitem {
+typedef struct _err_stackitem {
     /* This struct represents an entry on the exception stack, which is a 
      * per-coroutine state. (Coroutine in the computer science sense, 
      * including the thread and generators).
@@ -133,7 +133,7 @@ typedef struct _exc_stackitem {
      */
     PyObject *exc_type, *exc_value, *exc_traceback;
 
-    struct _exc_stackitem *exc_previous;
+    struct _err_stackitem *previous_item;
 
 } _PyErr_StackItem;
 
