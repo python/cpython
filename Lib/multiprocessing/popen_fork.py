@@ -14,8 +14,14 @@ class Popen(object):
     method = 'fork'
 
     def __init__(self, process_obj):
-        sys.stdout.flush()
-        sys.stderr.flush()
+        try:
+            sys.stdout.flush()
+        except (AttributeError, ValueError):
+            pass
+        try:
+            sys.stderr.flush()
+        except (AttributeError, ValueError):
+            pass
         self.returncode = None
         self.finalizer = None
         self._launch(process_obj)
