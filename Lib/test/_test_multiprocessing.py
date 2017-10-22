@@ -582,6 +582,27 @@ class _TestProcess(BaseTestCase):
         proc.join()
         self.assertTrue(evt.is_set())
 
+    @classmethod
+    def _test_error_on_stdio_flush(self, evt):
+        evt.set()
+
+    def test_error_on_stdio_flush(self):
+        streams = [io.StringIO(), None]
+        streams[0].close()
+        for stream_name in ('stdout', 'stderr'):
+            for stream in streams:
+                old_stream = getattr(sys, stream_name)
+                setattr(sys, stream_name, stream)
+                try:
+                    evt = self.Event()
+                    proc = self.Process(target=self._test_error_on_stdio_flush,
+                                        args=(evt,))
+                    proc.start()
+                    proc.join()
+                    self.assertTrue(evt.is_set())
+                finally:
+                    setattr(sys, stream_name, old_stream)
+
 
 #
 #
