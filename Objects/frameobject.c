@@ -379,8 +379,7 @@ static PyGetSetDef frame_getsetlist[] = {
 
      * ob_type, ob_size, f_code, f_valuestack;
 
-     * f_locals, f_trace,
-       f_exc_type, f_exc_value, f_exc_traceback are NULL;
+     * f_locals, f_trace are NULL;
 
      * f_localsplus does not require re-allocation and
        the local variables in f_localsplus are NULL.
@@ -438,9 +437,6 @@ frame_dealloc(PyFrameObject *f)
     Py_DECREF(f->f_globals);
     Py_CLEAR(f->f_locals);
     Py_CLEAR(f->f_trace);
-    Py_CLEAR(f->f_exc_type);
-    Py_CLEAR(f->f_exc_value);
-    Py_CLEAR(f->f_exc_traceback);
 
     co = f->f_code;
     if (co->co_zombieframe == NULL)
@@ -469,9 +465,6 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_globals);
     Py_VISIT(f->f_locals);
     Py_VISIT(f->f_trace);
-    Py_VISIT(f->f_exc_type);
-    Py_VISIT(f->f_exc_value);
-    Py_VISIT(f->f_exc_traceback);
 
     /* locals */
     slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
@@ -502,9 +495,6 @@ frame_tp_clear(PyFrameObject *f)
     f->f_stacktop = NULL;
     f->f_executing = 0;
 
-    Py_CLEAR(f->f_exc_type);
-    Py_CLEAR(f->f_exc_value);
-    Py_CLEAR(f->f_exc_traceback);
     Py_CLEAR(f->f_trace);
 
     /* locals */
@@ -698,7 +688,6 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
             f->f_localsplus[i] = NULL;
         f->f_locals = NULL;
         f->f_trace = NULL;
-        f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;
     }
     f->f_stacktop = f->f_valuestack;
     f->f_builtins = builtins;

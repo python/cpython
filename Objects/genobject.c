@@ -16,6 +16,15 @@ static char *NON_INIT_CORO_MSG = "can't send non-None value to a "
 static char *ASYNC_GEN_IGNORED_EXIT_MSG =
                                  "async generator ignored GeneratorExit";
 
+static inline int
+exc_state_traverse(_PyErr_StackItem *exc_state, visitproc visit, void *arg)
+{
+    Py_VISIT(exc_state->exc_type);
+    Py_VISIT(exc_state->exc_value);
+    Py_VISIT(exc_state->exc_traceback);
+    return 0;
+}
+
 static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
 {
@@ -23,7 +32,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
-    return 0;
+    return exc_state_traverse(&gen->gi_exc_state, visit, arg);
 }
 
 void
@@ -87,6 +96,21 @@ _PyGen_Finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+static inline void
+exc_state_clear(_PyErr_StackItem *exc_state)
+{
+    PyObject *t, *v, *tb;
+    t = exc_state->exc_type;
+    v = exc_state->exc_value;
+    tb = exc_state->exc_traceback;
+    exc_state->exc_type = NULL;
+    exc_state->exc_value = NULL;
+    exc_state->exc_traceback = NULL;
+    Py_XDECREF(t);
+    Py_XDECREF(v);
+    Py_XDECREF(tb);
+}
+
 static void
 gen_dealloc(PyGenObject *gen)
 {
@@ -116,6 +140,7 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
+    exc_state_clear(&gen->gi_exc_state);
     PyObject_GC_Del(gen);
 }
 
@@ -187,7 +212,11 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     f->f_back = tstate->frame;
 
     gen->gi_running = 1;
+    gen->gi_exc_state.previous_item = tstate->exc_info;
+    tstate->exc_info = &gen->gi_exc_state;
     result = PyEval_EvalFrameEx(f, exc);
+    tstate->exc_info = gen->gi_exc_state.previous_item;
+    gen->gi_exc_state.previous_item = NULL;
     gen->gi_running = 0;
 
     /* Don't keep the reference to f_back any longer than necessary.  It
@@ -281,16 +310,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     if (!result || f->f_stacktop == NULL) {
         /* generator can't be rerun, so release the frame */
         /* first clean reference cycle through stored exception traceback */
-        PyObject *t, *v, *tb;
-        t = f->f_exc_type;
-        v = f->f_exc_value;
-        tb = f->f_exc_traceback;
-        f->f_exc_type = NULL;
-        f->f_exc_value = NULL;
-        f->f_exc_traceback = NULL;
-        Py_XDECREF(t);
-        Py_XDECREF(v);
-        Py_XDECREF(tb);
+        exc_state_clear(&gen->gi_exc_state);
         gen->gi_frame->f_gen = NULL;
         gen->gi_frame = NULL;
         Py_DECREF(f);
@@ -810,6 +830,10 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     gen->gi_code = (PyObject *)(f->f_code);
     gen->gi_running = 0;
     gen->gi_weakreflist = NULL;
+    gen->gi_exc_state.exc_type = NULL;
+    gen->gi_exc_state.exc_value = NULL;
+    gen->gi_exc_state.exc_traceback = NULL;
+    gen->gi_exc_state.previous_item = NULL;
     if (name != NULL)
         gen->gi_name = name;
     else

@@ -257,9 +257,11 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->curexc_value = NULL;
         tstate->curexc_traceback = NULL;
 
-        tstate->exc_type = NULL;
-        tstate->exc_value = NULL;
-        tstate->exc_traceback = NULL;
+        tstate->exc_state.exc_type = NULL;
+        tstate->exc_state.exc_value = NULL;
+        tstate->exc_state.exc_traceback = NULL;
+        tstate->exc_state.previous_item = NULL;
+        tstate->exc_info = &tstate->exc_state;
 
         tstate->c_profilefunc = NULL;
         tstate->c_tracefunc = NULL;
@@ -444,9 +446,16 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->curexc_value);
     Py_CLEAR(tstate->curexc_traceback);
 
-    Py_CLEAR(tstate->exc_type);
-    Py_CLEAR(tstate->exc_value);
-    Py_CLEAR(tstate->exc_traceback);
+    Py_CLEAR(tstate->exc_state.exc_type);
+    Py_CLEAR(tstate->exc_state.exc_value);
+    Py_CLEAR(tstate->exc_state.exc_traceback);
+    
+    /* The stack of exception states should contain just this thread. */
+    assert(tstate->exc_info->previous_item == NULL);
+    if (Py_VerboseFlag && tstate->exc_info != &tstate->exc_state) {
+        fprintf(stderr,
+          "PyThreadState_Clear: warning: thread still has a generator\n");
+    }
 
     tstate->c_profilefunc = NULL;
     tstate->c_tracefunc = NULL;

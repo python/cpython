@@ -511,9 +511,6 @@ enum why_code {
         WHY_SILENCED =  0x0080  /* Exception silenced by 'with' */
 };
 
-static void save_exc_state(PyThreadState *, PyFrameObject *);
-static void swap_exc_state(PyThreadState *, PyFrameObject *);
-static void restore_and_clear_exc_state(PyThreadState *, PyFrameObject *);
 static int do_raise(PyObject *, PyObject *);
 static int unpack_iterable(PyObject *, int, int, PyObject **);
 
@@ -813,17 +810,19 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #define UNWIND_EXCEPT_HANDLER(b) \
     do { \
         PyObject *type, *value, *traceback; \
+        _PyErr_StackItem *exc_info; \
         assert(STACK_LEVEL() >= (b)->b_level + 3); \
         while (STACK_LEVEL() > (b)->b_level + 3) { \
             value = POP(); \
             Py_XDECREF(value); \
         } \
-        type = tstate->exc_type; \
-        value = tstate->exc_value; \
-        traceback = tstate->exc_traceback; \
-        tstate->exc_type = POP(); \
-        tstate->exc_value = POP(); \
-        tstate->exc_traceback = POP(); \
+        exc_info = tstate->exc_info; \
+        type = exc_info->exc_type; \
+        value = exc_info->exc_value; \
+        traceback = exc_info->exc_traceback; \
+        exc_info->exc_type = POP(); \
+        exc_info->exc_value = POP(); \
+        exc_info->exc_traceback = POP(); \
         Py_XDECREF(type); \
         Py_XDECREF(value); \
         Py_XDECREF(traceback); \
@@ -910,16 +909,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
     f->f_executing = 1;
 
-    if (co->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        if (!throwflag && f->f_exc_type != NULL && f->f_exc_type != Py_None) {
-            /* We were in an except handler when we left,
-               restore the exception state which was put aside
-               (see YIELD_VALUE). */
-            swap_exc_state(tstate, f);
-        }
-        else
-            save_exc_state(tstate, f);
-    }
 
 #ifdef LLTRACE
     lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
@@ -3447,12 +3436,13 @@ fast_block_end:
                 || b->b_type == SETUP_FINALLY)) {
                 PyObject *exc, *val, *tb;
                 int handler = b->b_handler;
+                _PyErr_StackItem *exc_info = tstate->exc_info;
                 /* Beware, this invalidates all b->b_* fields */
                 PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1, STACK_LEVEL());
-                PUSH(tstate->exc_traceback);
-                PUSH(tstate->exc_value);
-                if (tstate->exc_type != NULL) {
-                    PUSH(tstate->exc_type);
+                PUSH(exc_info->exc_traceback);
+                PUSH(exc_info->exc_value);
+                if (exc_info->exc_type != NULL) {
+                    PUSH(exc_info->exc_type);
                 }
                 else {
                     Py_INCREF(Py_None);
@@ -3470,10 +3460,10 @@ fast_block_end:
                 else
                     PyException_SetTraceback(val, Py_None);
                 Py_INCREF(exc);
-                tstate->exc_type = exc;
+                exc_info->exc_type = exc;
                 Py_INCREF(val);
-                tstate->exc_value = val;
-                tstate->exc_traceback = tb;
+                exc_info->exc_value = val;
+                exc_info->exc_traceback = tb;
                 if (tb == NULL)
                     tb = Py_None;
                 Py_INCREF(tb);
@@ -3516,28 +3506,6 @@ fast_block_end:
     assert((retval != NULL) ^ (PyErr_Occurred() != NULL));
 
 fast_yield:
-    if (co->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-
-        /* The purpose of this block is to put aside the generator's exception
-           state and restore that of the calling frame. If the current
-           exception state is from the caller, we clear the exception values
-           on the generator frame, so they are not swapped back in latter. The
-           origin of the current exception state is determined by checking for
-           except handler blocks, which we must be in iff a new exception
-           state came into existence in this frame. (An uncaught exception
-           would have why == WHY_EXCEPTION, and we wouldn't be here). */
-        int i;
-        for (i = 0; i < f->f_iblock; i++) {
-            if (f->f_blockstack[i].b_type == EXCEPT_HANDLER) {
-                break;
-            }
-        }
-        if (i == f->f_iblock)
-            /* We did not create this exception. */
-            restore_and_clear_exc_state(tstate, f);
-        else
-            swap_exc_state(tstate, f);
-    }
 
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
@@ -4057,60 +4025,6 @@ special_lookup(PyObject *o, _Py_Identifier *id)
 }
 
 
-/* These 3 functions deal with the exception state of generators. */
-
-static void
-save_exc_state(PyThreadState *tstate, PyFrameObject *f)
-{
-    PyObject *type, *value, *traceback;
-    Py_XINCREF(tstate->exc_type);
-    Py_XINCREF(tstate->exc_value);
-    Py_XINCREF(tstate->exc_traceback);
-    type = f->f_exc_type;
-    value = f->f_exc_value;
-    traceback = f->f_exc_traceback;
-    f->f_exc_type = tstate->exc_type;
-    f->f_exc_value = tstate->exc_value;
-    f->f_exc_traceback = tstate->exc_traceback;
-    Py_XDECREF(type);
-    Py_XDECREF(value);
-    Py_XDECREF(traceback);
-}
-
-static void
-swap_exc_state(PyThreadState *tstate, PyFrameObject *f)
-{
-    PyObject *tmp;
-    tmp = tstate->exc_type;
-    tstate->exc_type = f->f_exc_type;
-    f->f_exc_type = tmp;
-    tmp = tstate->exc_value;
-    tstate->exc_value = f->f_exc_value;
-    f->f_exc_value = tmp;
-    tmp = tstate->exc_traceback;
-    tstate->exc_traceback = f->f_exc_traceback;
-    f->f_exc_traceback = tmp;
-}
-
-static void
-restore_and_clear_exc_state(PyThreadState *tstate, PyFrameObject *f)
-{
-    PyObject *type, *value, *tb;
-    type = tstate->exc_type;
-    value = tstate->exc_value;
-    tb = tstate->exc_traceback;
-    tstate->exc_type = f->f_exc_type;
-    tstate->exc_value = f->f_exc_value;
-    tstate->exc_traceback = f->f_exc_traceback;
-    f->f_exc_type = NULL;
-    f->f_exc_value = NULL;
-    f->f_exc_traceback = NULL;
-    Py_XDECREF(type);
-    Py_XDECREF(value);
-    Py_XDECREF(tb);
-}
-
-
 /* Logic for the raise statement (too complicated for inlining).
    This *consumes* a reference count to each of its arguments. */
 static int
@@ -4121,10 +4035,11 @@ do_raise(PyObject *exc, PyObject *cause)
     if (exc == NULL) {
         /* Reraise */
         PyThreadState *tstate = PyThreadState_GET();
+        _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
         PyObject *tb;
-        type = tstate->exc_type;
-        value = tstate->exc_value;
-        tb = tstate->exc_traceback;
+        type = exc_info->exc_type;
+        value = exc_info->exc_value;
+        tb = exc_info->exc_traceback;
         if (type == Py_None || type == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "No active exception to reraise");
