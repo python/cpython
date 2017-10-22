@@ -4241,19 +4241,23 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast = 0;
     self->fast_nesting = 0;
     self->fast_memo = NULL;
-    self->pers_func = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_id)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_id);
-        if (self->pers_func == NULL)
+
+    self->pers_func = _PyObject_GetAttrId((PyObject *)self,
+                                          &PyId_persistent_id);
+    if (self->pers_func == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             return -1;
+        }
+        PyErr_Clear();
     }
-    self->dispatch_table = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_dispatch_table)) {
-        self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
-                                                   &PyId_dispatch_table);
-        if (self->dispatch_table == NULL)
+
+    self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
+                                               &PyId_dispatch_table);
+    if (self->dispatch_table == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             return -1;
+        }
+        PyErr_Clear();
     }
 
     return 0;
@@ -5208,22 +5212,24 @@ load_frozenset(UnpicklerObject *self)
 static PyObject *
 instantiate(PyObject *cls, PyObject *args)
 {
-    PyObject *result = NULL;
-    _Py_IDENTIFIER(__getinitargs__);
     /* Caller must assure args are a tuple.  Normally, args come from
        Pdata_poptuple which packs objects from the top of the stack
        into a newly created tuple. */
     assert(PyTuple_Check(args));
-    if (PyTuple_GET_SIZE(args) > 0 || !PyType_Check(cls) ||
-        _PyObject_HasAttrId(cls, &PyId___getinitargs__)) {
-        result = PyObject_CallObject(cls, args);
-    }
-    else {
+    if (!PyTuple_GET_SIZE(args) && PyType_Check(cls)) {
+        _Py_IDENTIFIER(__getinitargs__);
         _Py_IDENTIFIER(__new__);
-
-        result = _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+        PyObject *func = _PyObject_GetAttrId(cls, &PyId___getinitargs__);
+        if (func == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                return NULL;
+            }
+            PyErr_Clear();
+            return _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+        }
+        Py_DECREF(func);
     }
-    return result;
+    return PyObject_CallObject(cls, args);
 }
 
 static int
@@ -6679,17 +6685,14 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
         return -1;
 
     self->fix_imports = fix_imports;
-    if (self->fix_imports == -1)
-        return -1;
 
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_load)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_load);
-        if (self->pers_func == NULL)
-            return 1;
-    }
-    else {
-        self->pers_func = NULL;
+    self->pers_func = _PyObject_GetAttrId((PyObject *)self,
+                                          &PyId_persistent_load);
+    if (self->pers_func == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
     }
 
     self->stack = (Pdata *)Pdata_New();
