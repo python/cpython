@@ -313,10 +313,10 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         # long/int subclass argument.
         class BadInt(int):
             def __abs__(self):
-                1/0
+                1/0.0
         class BadLong(long):
             def __abs__(self):
-                1/0
+                1/0.0
         self.gen.seed(42)
         expected_value = self.gen.random()
         for seed_arg in [42L, BadInt(42), BadLong(42)]:
