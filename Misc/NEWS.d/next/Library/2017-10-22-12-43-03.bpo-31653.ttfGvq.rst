@@ -1,0 +1,2 @@
+Don't release the GIL if we can acquire a multiprocessing semaphore
+immediately.
