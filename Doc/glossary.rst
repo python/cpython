@@ -19,7 +19,7 @@ Glossary
         an indented code block or within a pair of matching left and right
         delimiters (parentheses, square brackets or curly braces).
 
-      * A object of the :class:`Ellipsis` class.
+      * The :const:`Ellipsis` built-in constant.
 
 
    2to3
