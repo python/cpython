@@ -331,6 +331,26 @@ class TestGzip(unittest.TestCase):
             with gzip.GzipFile(fileobj=f, mode="w") as g:
                 self.assertEqual(g.name, "")
 
+    def test_fileobj_mode(self):
+        gzip.GzipFile(self.filename, "wb").close()
+        with open(self.filename, "r+b") as f:
+            with gzip.GzipFile(fileobj=f, mode='r') as g:
+                self.assertEqual(g.mode, gzip.READ)
+            with gzip.GzipFile(fileobj=f, mode='w') as g:
+                self.assertEqual(g.mode, gzip.WRITE)
+            with gzip.GzipFile(fileobj=f, mode='a') as g:
+                self.assertEqual(g.mode, gzip.WRITE)
+            with self.assertRaises(IOError):
+                gzip.GzipFile(fileobj=f, mode='z')
+        for mode in "rb", "r+b":
+            with open(self.filename, mode) as f:
+                with gzip.GzipFile(fileobj=f) as g:
+                    self.assertEqual(g.mode, gzip.READ)
+        for mode in "wb", "ab":
+            with open(self.filename, mode) as f:
+                with gzip.GzipFile(fileobj=f) as g:
+                    self.assertEqual(g.mode, gzip.WRITE)
+
     def test_read_with_extra(self):
         # Gzip data with an extra field
         gzdata = (b'\x1f\x8b\x08\x04\xb2\x17cQ\x02\xff'
