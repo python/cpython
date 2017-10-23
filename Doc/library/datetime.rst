@@ -2178,7 +2178,7 @@ Notes:
       When ``%z`` directive is provided to the :meth:`strptime` method, any valid
       RFC-822/ISO 8601 standard utftime-offset can be parsed. For example, strings
       like ``'+01:00'`` will be parsed as an offset of one hour and or ``'Z'`` will
-      be transofmred to a 0 utc offset.
+      be transofmred to a 0 UTC offset.
 
    ``%Z``
       If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty
