@@ -1007,6 +1007,13 @@ class UserDict(MutableMapping):
 
     # Now, add the methods in dicts but not in MutableMapping
     def __repr__(self): return repr(self.data)
+    def __copy__(self):
+        inst = self.__class__.__new__(self.__class__)
+        inst.__dict__.update(self.__dict__)
+        # Create a copy and avoid triggering descriptors
+        inst.__dict__["data"] = self.__dict__["data"].copy()
+        return inst
+
     def copy(self):
         if self.__class__ is UserDict:
             return UserDict(self.data.copy())
@@ -1083,6 +1090,12 @@ class UserList(MutableSequence):
     def __imul__(self, n):
         self.data *= n
         return self
+    def __copy__(self):
+        inst = self.__class__.__new__(self.__class__)
+        inst.__dict__.update(self.__dict__)
+        # Create a copy and avoid triggering descriptors
+        inst.__dict__["data"] = self.__dict__["data"][:]
+        return inst
     def append(self, item): self.data.append(item)
     def insert(self, i, item): self.data.insert(i, item)
     def pop(self, i=-1): return self.data.pop(i)
