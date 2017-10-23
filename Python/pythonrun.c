@@ -630,9 +630,15 @@ PyErr_PrintEx(int set_sys_last_vars)
         return;
     /* Now we know v != NULL too */
     if (set_sys_last_vars) {
-        _PySys_SetObjectId(&PyId_last_type, exception);
-        _PySys_SetObjectId(&PyId_last_value, v);
-        _PySys_SetObjectId(&PyId_last_traceback, tb);
+        if (_PySys_SetObjectId(&PyId_last_type, exception) < 0) {
+            PyErr_Clear();
+        }
+        if (_PySys_SetObjectId(&PyId_last_value, v) < 0) {
+            PyErr_Clear();
+        }
+        if (_PySys_SetObjectId(&PyId_last_traceback, tb) < 0) {
+            PyErr_Clear();
+        }
     }
     hook = _PySys_GetObjectId(&PyId_excepthook);
     if (hook) {
