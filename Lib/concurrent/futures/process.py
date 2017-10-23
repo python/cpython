@@ -53,6 +53,8 @@ from queue import Full
 import multiprocessing as mp
 from multiprocessing.connection import wait
 from multiprocessing.queues import Queue
+from multiprocessing import context
+
 import threading
 import weakref
 from functools import partial
@@ -100,11 +102,19 @@ def _python_exit():
     for t, _ in items:
         t.join()
 
+
 # Controls how many more calls than processes will be queued in the call queue.
 # A smaller number will mean that processes spend more time idle waiting for
 # work while a larger number will make Future.cancel() succeed less frequently
 # (Futures in the call queue cannot be cancelled).
 EXTRA_QUEUED_CALLS = 1
+
+#####
+_ForkingPickler = context.reduction.ForkingPickler
+PICKLE_NONE = _ForkingPickler.dumps(None)
+WORK_ID_SIZE = 8
+WORK_ID_ENC = "little"
+SENTINEL_MSG = b'\x00'
 
 
 # Hack to embed stringification of remote traceback in local traceback
@@ -149,25 +159,6 @@ class _CallItem(object):
         self.kwargs = kwargs
 
 
-class _SafeQueue(Queue):
-    """Safe Queue set exception to the future object linked to a job"""
-    def __init__(self, max_size=0, *, ctx, pending_work_items):
-        self.pending_work_items = pending_work_items
-        super().__init__(max_size, ctx=ctx)
-
-    def _on_queue_feeder_error(self, e, obj):
-        if isinstance(obj, _CallItem):
-            tb = traceback.format_exception(type(e), e, e.__traceback__)
-            e.__cause__ = _RemoteTraceback('\n"""\n{}"""'.format(''.join(tb)))
-            work_item = self.pending_work_items.pop(obj.work_id, None)
-            # work_item can be None if another process terminated. In this case,
-            # the queue_manager_thread fails all work_items with BrokenProcessPool
-            if work_item is not None:
-                work_item.future.set_exception(e)
-        else:
-            super()._on_queue_feeder_error(e, obj)
-
-
 def _get_chunks(*iterables, chunksize):
     """ Iterates over zip()ed iterables in chunks. """
     it = zip(*iterables)
@@ -192,11 +183,14 @@ def _process_chunk(fn, chunk):
 def _sendback_result(result_queue, work_id, result=None, exception=None):
     """Safely send back the given result or exception"""
     try:
-        result_queue.put(_ResultItem(work_id, result=result,
-                                     exception=exception))
+        serialize_res = _ForkingPickler.dumps(
+            _ResultItem(work_id, result=result, exception=exception))
     except BaseException as e:
-        exc = _ExceptionWithTraceback(e, e.__traceback__)
-        result_queue.put(_ResultItem(work_id, exception=exc))
+        serialize_res = _ForkingPickler.dumps(_ResultItem(
+            work_id, exception=_ExceptionWithTraceback(e, e.__traceback__)
+        ))
+    result_queue._put_bytes(work_id.to_bytes(WORK_ID_SIZE, WORK_ID_ENC) +
+                            serialize_res)
 
 
 def _process_worker(call_queue, result_queue, initializer, initargs):
@@ -221,18 +215,21 @@ def _process_worker(call_queue, result_queue, initializer, initargs):
             # mark the pool broken
             return
     while True:
-        call_item = call_queue.get(block=True)
-        if call_item is None:
+        serialized_item = call_queue._get_bytes(block=True)
+        if serialized_item == SENTINEL_MSG:
             # Wake up queue management thread
-            result_queue.put(os.getpid())
+            result_queue._put_bytes(
+                os.getpid().to_bytes(WORK_ID_SIZE, WORK_ID_ENC))
             return
+        work_id = int.from_bytes(serialized_item[:WORK_ID_SIZE], WORK_ID_ENC)
+        call_item = None
         try:
+            call_item = _ForkingPickler.loads(serialized_item[WORK_ID_SIZE:])
             r = call_item.fn(*call_item.args, **call_item.kwargs)
+            _sendback_result(result_queue, work_id, result=r)
         except BaseException as e:
             exc = _ExceptionWithTraceback(e, e.__traceback__)
-            _sendback_result(result_queue, call_item.work_id, exception=exc)
-        else:
-            _sendback_result(result_queue, call_item.work_id, result=r)
+            _sendback_result(result_queue, work_id, exception=exc)
 
         # Liberate the resource as soon as possible, to avoid holding onto
         # open files or shared memory that is not needed anymore
@@ -267,14 +264,27 @@ def _add_call_item_to_queue(pending_work_items,
             work_item = pending_work_items[work_id]
 
             if work_item.future.set_running_or_notify_cancel():
-                call_queue.put(_CallItem(work_id,
-                                         work_item.fn,
-                                         work_item.args,
-                                         work_item.kwargs),
-                               block=True)
-            else:
-                del pending_work_items[work_id]
-                continue
+                call_item = _CallItem(work_id, work_item.fn, work_item.args,
+                                      work_item.kwargs)
+                try:
+                    msg = _ForkingPickler.dumps(call_item)
+                except BaseException as e:
+                    tb = traceback.format_exception(
+                        type(e), e, e.__traceback__)
+                    e.__cause__ = _RemoteTraceback(
+                        '\n"""\n{}"""'.format(''.join(tb)))
+                    # work_item can be None if a process terminated and the
+                    # executor is broken
+                    if work_item is not None:
+                        work_item.future.set_exception(e)
+                        del work_item
+
+                    del pending_work_items[work_id]
+                    continue
+                call_queue._put_bytes(
+                    work_id.to_bytes(WORK_ID_SIZE, WORK_ID_ENC) + msg,
+                    block=True)
+
 
 
 def _queue_management_worker(executor_reference,
@@ -321,7 +331,7 @@ def _queue_management_worker(executor_reference,
         while n_sentinels_sent < n_children_to_stop and n_children_alive > 0:
             for i in range(n_children_to_stop - n_sentinels_sent):
                 try:
-                    call_queue.put_nowait(None)
+                    call_queue._put_bytes(SENTINEL_MSG, block=False)
                     n_sentinels_sent += 1
                 except Full:
                     break
@@ -352,19 +362,22 @@ def _queue_management_worker(executor_reference,
         ready = wait(readers + worker_sentinels)
 
         cause = None
-        is_broken = True
+        thread_wakeup.clear()
         if result_reader in ready:
             try:
-                result_item = result_reader.recv()
-                is_broken = False
+                serialize_res = result_reader.recv_bytes()
+                work_id = int.from_bytes(serialize_res[:WORK_ID_SIZE],
+                                         WORK_ID_ENC)
+                result_item = work_id
+                if len(serialize_res) > WORK_ID_SIZE:
+                    result_item = _ForkingPickler.loads(
+                        serialize_res[WORK_ID_SIZE:])
             except BaseException as e:
-                cause = traceback.format_exception(type(e), e, e.__traceback__)
-
+                result_item = _ResultItem(work_id, exception=e)
         elif wakeup_reader in ready:
             is_broken = False
             result_item = None
-        thread_wakeup.clear()
-        if is_broken:
+        else:
             # Mark the process pool broken so that submits fail right now.
             executor = executor_reference()
             if executor is not None:
@@ -531,9 +544,7 @@ class ProcessPoolExecutor(_base.Executor):
         # prevent the worker processes from idling. But don't make it too big
         # because futures in the call queue cannot be cancelled.
         queue_size = self._max_workers + EXTRA_QUEUED_CALLS
-        self._call_queue = _SafeQueue(
-            max_size=queue_size, ctx=self._mp_context,
-            pending_work_items=self._pending_work_items)
+        self._call_queue = Queue(queue_size, ctx=self._mp_context)
         # Killed worker processes can produce spurious "broken pipe"
         # tracebacks in the queue's own worker thread. But we detect killed
         # processes anyway, so silence the tracebacks.

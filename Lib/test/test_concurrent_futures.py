@@ -18,7 +18,7 @@ import threading
 import time
 import unittest
 import weakref
-from pickle import PicklingError
+from pickle import PicklingError, UnpicklingError
 
 from concurrent import futures
 from concurrent.futures._base import (
@@ -888,11 +888,12 @@ class ExecutorDeadlockTest:
         crash_cases = [
             # Check problem occuring while pickling a task in
             # the task_handler thread
-            (id, (ErrorAtPickle(),), PicklingError, "error at task pickle"),
+            (id, (ErrorAtPickle(),), PicklingError,
+             "error at task pickle"),
             # Check problem occuring while unpickling a task on workers
-            (id, (ExitAtUnpickle(),), BrokenProcessPool,
+            (id, (ExitAtUnpickle(),), SystemExit,
              "exit at task unpickle"),
-            (id, (ErrorAtUnpickle(),), BrokenProcessPool,
+            (id, (ErrorAtUnpickle(),), UnpicklingError,
              "error at task unpickle"),
             (id, (CrashAtUnpickle(),), BrokenProcessPool,
              "crash at task unpickle"),
@@ -913,9 +914,9 @@ class ExecutorDeadlockTest:
              "error during result pickle on worker"),
             # Check problem occuring while unpickling a task in
             # the result_handler thread
-            (_return_instance, (ErrorAtUnpickle,), BrokenProcessPool,
+            (_return_instance, (ErrorAtUnpickle,), UnpicklingError,
              "error during result unpickle in result_handler"),
-            (_return_instance, (ExitAtUnpickle,), BrokenProcessPool,
+            (_return_instance, (ExitAtUnpickle,), SystemExit,
              "exit during result unpickle in result_handler")
         ]
         for func, args, error, name in crash_cases:
