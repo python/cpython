@@ -61,7 +61,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    The *input* argument is passed to :meth:`Popen.communicate` and thus to the
    subprocess's stdin.  If used it must be a byte sequence, or a string if
-   *encoding* or *errors* is specified or *universal_newlines* is true.  When
+   *encoding* or *errors* is specified or *text* is true.  When
    used, the internal :class:`Popen` object is automatically created with
    ``stdin=PIPE``, and the *stdin* argument may not be used as well.
 
@@ -70,10 +70,11 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    exception hold the arguments, the exit code, and stdout and stderr if they
    were captured.
 
-   If *encoding* or *errors* are specified, or *universal_newlines* is true,
+   If *encoding* or *errors* are specified, or *text* is true,
    file objects for stdin, stdout and stderr are opened in text mode using the
    specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
-   Otherwise, file objects are opened in binary mode.
+   The *universal_newlines* argument is equivalent  to *text* and is provided
+   for backwards compatibility. By default, file objects are opened in binary mode.
 
    Examples::
 
@@ -95,6 +96,10 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
       Added *encoding* and *errors* parameters
 
+   .. versionchanged:: 3.7
+
+      Added the *text* parameter, as a more understandable alias of *universal_newlines*
+
 .. class:: CompletedProcess
 
    The return value from :func:`run`, representing a process that has finished.
@@ -114,8 +119,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    .. attribute:: stdout
 
       Captured stdout from the child process. A bytes sequence, or a string if
-      :func:`run` was called with an encoding or errors. ``None`` if stdout was not
-      captured.
+      :func:`run` was called with an encoding, errors, or text=True.
+      ``None`` if stdout was not captured.
 
       If you ran the process with ``stderr=subprocess.STDOUT``, stdout and
       stderr will be combined in this attribute, and :attr:`stderr` will be
@@ -124,8 +129,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    .. attribute:: stderr
 
       Captured stderr from the child process. A bytes sequence, or a string if
-      :func:`run` was called with an encoding or errors. ``None`` if stderr was not
-      captured.
+      :func:`run` was called with an encoding, errors, or text=True.
+      ``None`` if stderr was not captured.
 
    .. method:: check_returncode()
 
