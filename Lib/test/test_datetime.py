@@ -492,6 +492,46 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(str(t3), str(t4))
         self.assertEqual(t4.as_hours(), -1)
 
+    def test_issue31752(self):
+        # The interpreter shouldn't crash because divmod() returns negative
+        # remainder.
+        class BadInt(int):
+            def __mul__(self, other):
+                return Prod()
+
+        class BadLong(long):
+            def __mul__(self, other):
+                return Prod()
+
+        class Prod:
+            def __radd__(self, other):
+                return Sum()
+
+        class Sum(int):
+            def __divmod__(self, other):
+                # negative remainder
+                return (0, -1)
+
+        timedelta(microseconds=BadInt(1))
+        timedelta(hours=BadInt(1))
+        timedelta(weeks=BadInt(1))
+        timedelta(microseconds=BadLong(1))
+        timedelta(hours=BadLong(1))
+        timedelta(weeks=BadLong(1))
+
+        class Sum(long):
+            def __divmod__(self, other):
+                # negative remainder
+                return (0, -1)
+
+        timedelta(microseconds=BadInt(1))
+        timedelta(hours=BadInt(1))
+        timedelta(weeks=BadInt(1))
+        timedelta(microseconds=BadLong(1))
+        timedelta(hours=BadLong(1))
+        timedelta(weeks=BadLong(1))
+
+
 #############################################################################
 # date tests
 
