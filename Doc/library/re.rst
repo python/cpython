@@ -264,7 +264,7 @@ The special characters are:
    (default).  In byte pattern ``(?L:...)`` switches to locale depending
    matching, and ``(?a:...)`` switches to ASCII-only matching (default).
    This override is only in effect for the narrow inline group, and the
-   original matchin mode is restored outside of the group.
+   original matching mode is restored outside of the group.
 
    .. versionadded:: 3.6
 
