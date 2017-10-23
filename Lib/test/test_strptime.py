@@ -320,14 +320,19 @@ class StrptimeTests(unittest.TestCase):
     def test_offset(self):
         one_hour = 60 * 60
         half_hour = 30 * 60
+        half_minute = 30
         (*_, offset), _ = _strptime._strptime("+0130", "%z")
         self.assertEqual(offset, one_hour + half_hour)
         (*_, offset), _ = _strptime._strptime("-0100", "%z")
         self.assertEqual(offset, -one_hour)
+        (*_, offset), _ = _strptime._strptime("-013030", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
         (*_, offset), _ = _strptime._strptime("+01:00", "%z")
         self.assertEqual(offset, one_hour)
         (*_, offset), _ = _strptime._strptime("-01:30", "%z")
         self.assertEqual(offset, -(one_hour + half_hour))
+        (*_, offset), _ = _strptime._strptime("-01:30:30", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
         (*_, offset), _ = _strptime._strptime("Z", "%z")
         self.assertEqual(offset, 0)
 
