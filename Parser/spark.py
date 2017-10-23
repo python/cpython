@@ -313,15 +313,13 @@ class GenericParser:
             self.states = { 0: self.makeState0() }
             self.makeState(0, self._BOF)
 
-        i = 0
-        while i < len(tokens):
+        for i, token in enumerate(tokens):
             sets.append([])
 
             if sets[i] == []:
                 break
 
-            self.makeSet(tokens[i], sets, i)
-            i += 1
+            self.makeSet(token, sets, i)
         else:
             sets.append([])
             self.makeSet(None, sets, len(tokens))
@@ -330,8 +328,8 @@ class GenericParser:
 
         finalitem = (self.finalState(tokens), 0)
         if finalitem not in sets[-2]:
-            if len(tokens) > 0:
-                self.error(tokens[i-1])
+            if tokens:
+                self.error(tokens[i - 1])
             else:
                 self.error(None)
 
@@ -423,9 +421,7 @@ class GenericParser:
         #  need to know the entire set of predicted nonterminals
         #  to do this without accidentally duplicating states.
         #
-        core = list(predicted.keys())
-        core.sort()
-        tcore = tuple(core)
+        tcore = tuple(sorted(predicted))
         if tcore in self.cores:
             self.edges[(k, None)] = self.cores[tcore]
             return k
@@ -665,7 +661,7 @@ class GenericParser:
             sortlist.append((len(rhs), name))
             name2index[name] = i
         sortlist.sort()
-        mapped = list(map(lambda ab: ab[1], sortlist))
+        mapped = [b for a, b in sortlist]
         return rules[name2index[self.resolve(mapped)]]
 
     def resolve(self, list):
