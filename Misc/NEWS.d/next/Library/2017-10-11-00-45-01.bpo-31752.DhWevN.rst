@@ -1,0 +1,1 @@
+Fix possible crash in timedelta constructor called with custom integers.
