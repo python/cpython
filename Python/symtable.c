@@ -9,6 +9,12 @@
 #include "structmember.h"
 
 /* error strings used for warnings */
+#define GLOBAL_PARAM \
+"name '%U' is parameter and global"
+
+#define NONLOCAL_PARAM \
+"name '%U' is parameter and nonlocal"
+
 #define GLOBAL_AFTER_ASSIGN \
 "name '%U' is assigned to before global declaration"
 
@@ -467,8 +473,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
     if (flags & DEF_GLOBAL) {
         if (flags & DEF_PARAM) {
             PyErr_Format(PyExc_SyntaxError,
-                        "name '%U' is parameter and global",
-                        name);
+                         GLOBAL_PARAM, name);
             return error_at_directive(ste, name);
         }
         if (flags & DEF_NONLOCAL) {
@@ -487,8 +492,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
     if (flags & DEF_NONLOCAL) {
         if (flags & DEF_PARAM) {
             PyErr_Format(PyExc_SyntaxError,
-                         "name '%U' is parameter and nonlocal",
-                         name);
+                         NONLOCAL_PARAM, name);
             return error_at_directive(ste, name);
         }
         if (!bound) {
@@ -1284,9 +1288,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             long cur = symtable_lookup(st, name);
             if (cur < 0)
                 VISIT_QUIT(st, 0);
-            if (cur & (DEF_LOCAL | USE | DEF_ANNOT)) {
+            if (cur & (DEF_PARAM | DEF_LOCAL | USE | DEF_ANNOT)) {
                 char* msg;
-                if (cur & USE) {
+                if (cur & DEF_PARAM) {
+                    msg = GLOBAL_PARAM;
+                } else if (cur & USE) {
                     msg = GLOBAL_AFTER_USE;
                 } else if (cur & DEF_ANNOT) {
                     msg = GLOBAL_ANNOT;
@@ -1315,9 +1321,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             long cur = symtable_lookup(st, name);
             if (cur < 0)
                 VISIT_QUIT(st, 0);
-            if (cur & (DEF_LOCAL | USE | DEF_ANNOT)) {
+            if (cur & (DEF_PARAM | DEF_LOCAL | USE | DEF_ANNOT)) {
                 char* msg;
-                if (cur & USE) {
+                if (cur & DEF_PARAM) {
+                    msg = NONLOCAL_PARAM;
+                } else if (cur & USE) {
                     msg = NONLOCAL_AFTER_USE;
                 } else if (cur & DEF_ANNOT) {
                     msg = NONLOCAL_ANNOT;

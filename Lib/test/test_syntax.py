@@ -440,22 +440,21 @@ From SF bug #1705365
      ...
    SyntaxError: nonlocal declaration not allowed at module level
 
-TODO(jhylton): Figure out how to test SyntaxWarning with doctest.
+Non-local declaration after use is now a syntax error
+   >>> def f(x):
+   ...     def f():
+   ...         print(x)
+   ...         nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is used prior to nonlocal declaration
 
-##   >>> def f(x):
-##   ...     def f():
-##   ...         print(x)
-##   ...         nonlocal x
-##   Traceback (most recent call last):
-##     ...
-##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
-
-##   >>> def f():
-##   ...     x = 1
-##   ...     nonlocal x
-##   Traceback (most recent call last):
-##     ...
-##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
+   >>> def f():
+   ...     x = 1
+   ...     nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is assigned to before nonlocal declaration
 
  From https://bugs.python.org/issue25973
    >>> class A:
@@ -568,7 +567,6 @@ Corner-cases that used to crash:
 
 import re
 import unittest
-import warnings
 
 from test import support
 
@@ -604,19 +602,25 @@ class SyntaxTestCase(unittest.TestCase):
     def test_assign_del(self):
         self._check_error("del f()", "delete")
 
-    def test_global_err_then_warn(self):
-        # Bug #763201:  The SyntaxError raised for one global statement
-        # shouldn't be clobbered by a SyntaxWarning issued for a later one.
+    def test_global_err_first(self):
         source = """if 1:
             def error(a):
                 global a  # SyntaxError
-            def warning():
+            def error2():
                 b = 1
-                global b  # SyntaxWarning
+                global b
             """
-        warnings.filterwarnings(action='ignore', category=SyntaxWarning)
-        self._check_error(source, "global")
-        warnings.filters.pop(0)
+        self._check_error(source, "parameter and global", lineno=3)
+
+    def test_nonlocal_err_first(self):
+        source = """if 1:
+            def error(a):
+                nonlocal a  # SyntaxError
+            def error2():
+                b = 1
+                global b
+            """
+        self._check_error(source, "parameter and nonlocal", lineno=3)
 
     def test_break_outside_loop(self):
         self._check_error("break", "outside loop")
