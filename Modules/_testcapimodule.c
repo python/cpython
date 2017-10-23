@@ -18,9 +18,11 @@
 #  include <winsock2.h>         /* struct timeval */
 #endif
 
-#ifdef WITH_THREAD
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>           /* For W_STOPCODE */
+#endif
+
 #include "pythread.h"
-#endif /* WITH_THREAD */
 static PyObject *TestError;     /* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -860,8 +862,9 @@ test_L_code(PyObject *self)
     PyTuple_SET_ITEM(tuple, 0, num);
 
     value = -1;
-    if (PyArg_ParseTuple(tuple, "L:test_L_code", &value) < 0)
+    if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
         return NULL;
+    }
     if (value != 42)
         return raiseTestError("test_L_code",
             "L code returned wrong value for long 42");
@@ -874,8 +877,9 @@ test_L_code(PyObject *self)
     PyTuple_SET_ITEM(tuple, 0, num);
 
     value = -1;
-    if (PyArg_ParseTuple(tuple, "L:test_L_code", &value) < 0)
+    if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
         return NULL;
+    }
     if (value != 42)
         return raiseTestError("test_L_code",
             "L code returned wrong value for int 42");
@@ -1191,8 +1195,9 @@ test_k_code(PyObject *self)
     PyTuple_SET_ITEM(tuple, 0, num);
 
     value = 0;
-    if (PyArg_ParseTuple(tuple, "k:test_k_code", &value) < 0)
+    if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
         return NULL;
+    }
     if (value != ULONG_MAX)
         return raiseTestError("test_k_code",
             "k code returned wrong value for long 0xFFF...FFF");
@@ -1211,8 +1216,9 @@ test_k_code(PyObject *self)
     PyTuple_SET_ITEM(tuple, 0, num);
 
     value = 0;
-    if (PyArg_ParseTuple(tuple, "k:test_k_code", &value) < 0)
+    if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
         return NULL;
+    }
     if (value != (unsigned long)-0x42)
         return raiseTestError("test_k_code",
             "k code returned wrong value for long -0xFFF..000042");
@@ -1545,11 +1551,13 @@ test_s_code(PyObject *self)
     /* These two blocks used to raise a TypeError:
      * "argument must be string without null bytes, not str"
      */
-    if (PyArg_ParseTuple(tuple, "s:test_s_code1", &value) < 0)
-    return NULL;
+    if (!PyArg_ParseTuple(tuple, "s:test_s_code1", &value)) {
+        return NULL;
+    }
 
-    if (PyArg_ParseTuple(tuple, "z:test_s_code2", &value) < 0)
-    return NULL;
+    if (!PyArg_ParseTuple(tuple, "z:test_s_code2", &value)) {
+        return NULL;
+    }
 
     Py_DECREF(tuple);
     Py_RETURN_NONE;
@@ -1651,14 +1659,16 @@ test_u_code(PyObject *self)
     PyTuple_SET_ITEM(tuple, 0, obj);
 
     value = 0;
-    if (PyArg_ParseTuple(tuple, "u:test_u_code", &value) < 0)
+    if (!PyArg_ParseTuple(tuple, "u:test_u_code", &value)) {
         return NULL;
+    }
     if (value != PyUnicode_AS_UNICODE(obj))
         return raiseTestError("test_u_code",
             "u code returned wrong value for u'test'");
     value = 0;
-    if (PyArg_ParseTuple(tuple, "u#:test_u_code", &value, &len) < 0)
+    if (!PyArg_ParseTuple(tuple, "u#:test_u_code", &value, &len)) {
         return NULL;
+    }
     if (value != PyUnicode_AS_UNICODE(obj) ||
         len != PyUnicode_GET_SIZE(obj))
         return raiseTestError("test_u_code",
@@ -1690,8 +1700,9 @@ test_Z_code(PyObject *self)
     value2 = PyUnicode_AS_UNICODE(obj);
 
     /* Test Z for both values */
-    if (PyArg_ParseTuple(tuple, "ZZ:test_Z_code", &value1, &value2) < 0)
+    if (!PyArg_ParseTuple(tuple, "ZZ:test_Z_code", &value1, &value2)) {
         return NULL;
+    }
     if (value1 != PyUnicode_AS_UNICODE(obj))
         return raiseTestError("test_Z_code",
             "Z code returned wrong value for 'test'");
@@ -1705,9 +1716,11 @@ test_Z_code(PyObject *self)
     len2 = -1;
 
     /* Test Z# for both values */
-    if (PyArg_ParseTuple(tuple, "Z#Z#:test_Z_code", &value1, &len1,
-                         &value2, &len2) < 0)
+    if (!PyArg_ParseTuple(tuple, "Z#Z#:test_Z_code", &value1, &len1,
+                          &value2, &len2))
+    {
         return NULL;
+    }
     if (value1 != PyUnicode_AS_UNICODE(obj) ||
         len1 != PyUnicode_GET_SIZE(obj))
         return raiseTestError("test_Z_code",
@@ -2029,8 +2042,9 @@ test_empty_argparse(PyObject *self)
     tuple = PyTuple_New(0);
     if (!tuple)
         return NULL;
-    if ((result = PyArg_ParseTuple(tuple, "|:test_empty_argparse")) < 0)
+    if (!(result = PyArg_ParseTuple(tuple, "|:test_empty_argparse"))) {
         goto done;
+    }
     dict = PyDict_New();
     if (!dict)
         goto done;
@@ -2038,8 +2052,9 @@ test_empty_argparse(PyObject *self)
   done:
     Py_DECREF(tuple);
     Py_XDECREF(dict);
-    if (result < 0)
+    if (!result) {
         return NULL;
+    }
     else {
         Py_RETURN_NONE;
     }
@@ -2212,8 +2227,6 @@ test_datetime_capi(PyObject *self, PyObject *args) {
 }
 
 
-#ifdef WITH_THREAD
-
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
  * thread finishes, because the thread uses a PyObject (the callable) that
@@ -2331,7 +2344,6 @@ PyObject *pending_threadfunc(PyObject *self, PyObject *arg)
     }
     Py_RETURN_TRUE;
 }
-#endif
 
 /* Some tests of PyUnicode_FromFormat().  This needs more tests. */
 static PyObject *
@@ -3000,7 +3012,8 @@ check_time_rounding(int round)
 {
     if (round != _PyTime_ROUND_FLOOR
         && round != _PyTime_ROUND_CEILING
-        && round != _PyTime_ROUND_HALF_EVEN) {
+        && round != _PyTime_ROUND_HALF_EVEN
+        && round != _PyTime_ROUND_UP) {
         PyErr_SetString(PyExc_ValueError, "invalid rounding");
         return -1;
     }
@@ -3600,7 +3613,6 @@ PyDoc_STRVAR(docstring_with_signature_with_defaults,
 "and the parameters take defaults of varying types."
 );
 
-#ifdef WITH_THREAD
 typedef struct {
     PyThread_type_lock start_event;
     PyThread_type_lock exit_event;
@@ -3687,15 +3699,15 @@ exit:
         PyThread_free_lock(test_c_thread.exit_event);
     return res;
 }
-#endif   /* WITH_THREAD */
 
 static PyObject*
 test_raise_signal(PyObject* self, PyObject *args)
 {
     int signum, err;
 
-    if (PyArg_ParseTuple(args, "i:raise_signal", &signum) < 0)
+    if (!PyArg_ParseTuple(args, "i:raise_signal", &signum)) {
         return NULL;
+    }
 
     err = raise(signum);
     if (err)
@@ -4273,6 +4285,102 @@ test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
 }
 
 
+static PyObject*
+stack_pointer(PyObject *self, PyObject *args)
+{
+    int v = 5;
+    return PyLong_FromVoidPtr(&v);
+}
+
+
+#ifdef W_STOPCODE
+static PyObject*
+py_w_stopcode(PyObject *self, PyObject *args)
+{
+    int sig, status;
+    if (!PyArg_ParseTuple(args, "i", &sig)) {
+        return NULL;
+    }
+    status = W_STOPCODE(sig);
+    return PyLong_FromLong(status);
+}
+#endif
+
+
+static PyObject *
+get_mapping_keys(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Keys(obj);
+}
+
+static PyObject *
+get_mapping_values(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Values(obj);
+}
+
+static PyObject *
+get_mapping_items(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Items(obj);
+}
+
+
+static PyObject *
+test_pythread_tss_key_state(PyObject *self, PyObject *args)
+{
+    Py_tss_t tss_key = Py_tss_NEEDS_INIT;
+    if (PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "TSS key not in an uninitialized state at "
+                              "creation time");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_create failed");
+        return NULL;
+    }
+    if (!PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create succeeded, "
+                              "but with TSS key in an uninitialized state");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create unsuccessful with "
+                              "an already initialized key");
+    }
+#define CHECK_TSS_API(expr) \
+        (void)(expr); \
+        if (!PyThread_tss_is_created(&tss_key)) { \
+            return raiseTestError("test_pythread_tss_key_state", \
+                                  "TSS key initialization state was not " \
+                                  "preserved after calling " #expr); }
+    CHECK_TSS_API(PyThread_tss_set(&tss_key, NULL));
+    CHECK_TSS_API(PyThread_tss_get(&tss_key));
+#undef CHECK_TSS_API
+    PyThread_tss_delete(&tss_key);
+    if (PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_delete called, but did not "
+                              "set the key state to uninitialized");
+    }
+
+    Py_tss_t *ptr_key = PyThread_tss_alloc();
+    if (ptr_key == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_alloc failed");
+        return NULL;
+    }
+    if (PyThread_tss_is_created(ptr_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "TSS key not in an uninitialized state at "
+                              "allocation time");
+    }
+    PyThread_tss_free(ptr_key);
+    ptr_key = NULL;
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4380,10 +4488,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
-#ifdef WITH_THREAD
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
-#endif
 #ifdef HAVE_GETTIMEOFDAY
     {"profile_int",             profile_int,                     METH_NOARGS},
 #endif
@@ -4443,10 +4549,8 @@ static PyMethodDef TestMethods[] = {
         docstring_with_signature_with_defaults},
     {"raise_signal",
      (PyCFunction)test_raise_signal, METH_VARARGS},
-#ifdef WITH_THREAD
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
      PyDoc_STR("set_error_class(error_class) -> None")},
-#endif
     {"pymarshal_write_long_to_file",
         pymarshal_write_long_to_file, METH_VARARGS},
     {"pymarshal_write_object_to_file",
@@ -4485,6 +4589,14 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_fastcallkeywords", test_pyobject_fastcallkeywords, METH_VARARGS},
+    {"stack_pointer", stack_pointer, METH_NOARGS},
+#ifdef W_STOPCODE
+    {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
+#endif
+    {"get_mapping_keys", get_mapping_keys, METH_O},
+    {"get_mapping_values", get_mapping_values, METH_O},
+    {"get_mapping_items", get_mapping_items, METH_O},
+    {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -27,9 +27,6 @@ Lib/test/test_email/data/*.txt -text
 Lib/test/xmltestdata/* -text
 Lib/test/coding20731.py -text
 
-# Special files in third party code
-Modules/zlib/zlib.map -text
-
 # CRLF files
 *.bat text eol=crlf
 *.ps1 text eol=crlf

@@ -12,7 +12,7 @@ PyDoc_STRVAR(_hashlib_scrypt__doc__,
 "scrypt password-based key derivation function.");
 
 #define _HASHLIB_SCRYPT_METHODDEF    \
-    {"scrypt", (PyCFunction)_hashlib_scrypt, METH_FASTCALL, _hashlib_scrypt__doc__},
+    {"scrypt", (PyCFunction)_hashlib_scrypt, METH_FASTCALL|METH_KEYWORDS, _hashlib_scrypt__doc__},
 
 static PyObject *
 _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
@@ -57,4 +57,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=71f1e033efe4ac9a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eda2a998d5b29030 input=a9049054013a1b77]*/

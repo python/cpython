@@ -3,6 +3,8 @@
 Event loops
 ===========
 
+**Source code:** :source:`Lib/asyncio/events.py`
+
 Event loop functions
 --------------------
 
