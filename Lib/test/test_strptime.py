@@ -327,14 +327,30 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual(offset, -one_hour)
         (*_, offset), _ = _strptime._strptime("-013030", "%z")
         self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        (*_, offset), _ = _strptime._strptime("-013030.000001", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute + 0.000001))
         (*_, offset), _ = _strptime._strptime("+01:00", "%z")
         self.assertEqual(offset, one_hour)
         (*_, offset), _ = _strptime._strptime("-01:30", "%z")
         self.assertEqual(offset, -(one_hour + half_hour))
         (*_, offset), _ = _strptime._strptime("-01:30:30", "%z")
         self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        (*_, offset), _ = _strptime._strptime("-01:30:30.000001", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute + 0.000001))
         (*_, offset), _ = _strptime._strptime("Z", "%z")
         self.assertEqual(offset, 0)
+
+    def test_bad_offset(self):
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:30:30.", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-0130:30", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:30:30.1234567", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:30:30:123456", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:3030", "%z")
 
     def test_timezone(self):
         # Test timezone directives.

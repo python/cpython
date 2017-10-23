@@ -210,7 +210,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d)?|Z)",
+            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|Z)",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -467,7 +467,9 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 hours = int(z[1:3])
                 minutes = int(z[3:5])
                 seconds = int(z[5:7] or 0)
+                microseconds = int(z[8:] or 0)
                 gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
+                gmtoff = gmtoff + (microseconds / (10**6))
                 if z.startswith("-"):
                     gmtoff = -gmtoff
         elif group_key == 'Z':
