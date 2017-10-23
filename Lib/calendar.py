@@ -178,6 +178,18 @@ class Calendar(object):
         for y, m, d in self.itermonthdays3(year, month):
             yield datetime.date(y, m, d)
 
+    def itermonthdays(self, year, month):
+        """
+        Like itermonthdates(), but will yield day numbers. For days outside
+        the specified month the day number is 0.
+        """
+        day1, ndays = monthrange(year, month)
+        days_before = (day1 - self.firstweekday) % 7
+        yield from repeat(0, days_before)
+        yield from range(1, ndays + 1)
+        days_after = (self.firstweekday - day1 - ndays) % 7
+        yield from repeat(0, days_after)
+
     def itermonthdays2(self, year, month):
         """
         Like itermonthdates(), but will yield (day number, weekday number)
@@ -211,18 +223,6 @@ class Calendar(object):
         """
         for i, (y, m, d) in enumerate(self.itermonthdays3(year, month)):
             yield y, m, d, (self.firstweekday + i) % 7
-
-    def itermonthdays(self, year, month):
-        """
-        Like itermonthdates(), but will yield day numbers. For days outside
-        the specified month the day number is 0.
-        """
-        day1, ndays = monthrange(year, month)
-        days_before = (day1 - self.firstweekday) % 7
-        yield from repeat(0, days_before)
-        yield from range(1, ndays + 1)
-        days_after = (self.firstweekday - day1 - ndays) % 7
-        yield from repeat(0, days_after)
 
     def monthdatescalendar(self, year, month):
         """
