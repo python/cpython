@@ -1,0 +1,2 @@
+Ensure that lexically first syntax error involving ``global`` or
+``nonlocal`` is detected first at a given scope.
