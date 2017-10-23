@@ -415,6 +415,15 @@ Misuse of the nonlocal and global statement can lead to a few unique syntax erro
      ...
    SyntaxError: name 'x' is used prior to nonlocal declaration
 
+   >>> def f():
+   ...     x = 1
+   ...     def g():
+   ...         x = 2
+   ...         nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is assigned to before nonlocal declaration
+
    >>> def f(x):
    ...     nonlocal x
    Traceback (most recent call last):
@@ -440,23 +449,7 @@ From SF bug #1705365
      ...
    SyntaxError: nonlocal declaration not allowed at module level
 
-Non-local declaration after use is now a syntax error
-   >>> def f(x):
-   ...     def f():
-   ...         print(x)
-   ...         nonlocal x
-   Traceback (most recent call last):
-     ...
-   SyntaxError: name 'x' is used prior to nonlocal declaration
-
-   >>> def f():
-   ...     x = 1
-   ...     nonlocal x
-   Traceback (most recent call last):
-     ...
-   SyntaxError: name 'x' is assigned to before nonlocal declaration
-
- From https://bugs.python.org/issue25973
+From https://bugs.python.org/issue25973
    >>> class A:
    ...     def f(self):
    ...         nonlocal __x
