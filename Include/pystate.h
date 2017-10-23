@@ -123,6 +123,21 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
 #else
+
+typedef struct _err_stackitem {
+    /* This struct represents an entry on the exception stack, which is a 
+     * per-coroutine state. (Coroutine in the computer science sense, 
+     * including the thread and generators).
+     * This ensures that the exception state is not impacted by "yields"
+     * from an except handler.
+     */
+    PyObject *exc_type, *exc_value, *exc_traceback;
+
+    struct _err_stackitem *previous_item;
+
+} _PyErr_StackItem;
+
+
 typedef struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -147,13 +162,19 @@ typedef struct _ts {
     PyObject *c_profileobj;
     PyObject *c_traceobj;
 
+    /* The exception currently being raised */
     PyObject *curexc_type;
     PyObject *curexc_value;
     PyObject *curexc_traceback;
 
-    PyObject *exc_type;
-    PyObject *exc_value;
-    PyObject *exc_traceback;
+    /* The exception currently being handled, if no coroutines/generators
+     * are present. Always last element on the stack referred to be exc_info.
+     */
+    _PyErr_StackItem exc_state;
+
+    /* Pointer to the top of the stack of the exceptions currently
+     * being handled */
+    _PyErr_StackItem *exc_info;
 
     PyObject *dict;  /* Stores per-thread state */
 

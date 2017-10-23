@@ -1,2 +1,2 @@
-`PyErr_PrintEx()` does not ignore now when an exception is set after calling
-`_PySys_SetObjectId()`.
+`PyErr_PrintEx()` clears now the ignored exception that may be raised by
+`_PySys_SetObjectId()`, for example when no memory.
