@@ -18,6 +18,7 @@ import socket
 import random
 import logging
 import struct
+import pickle
 import operator
 import weakref
 import test.support
@@ -1066,6 +1067,24 @@ class _TestQueue(BaseTestCase):
         # Assert that the serialization and the hook have been called correctly
         self.assertTrue(not_serializable_obj.reduce_was_called)
         self.assertTrue(not_serializable_obj.on_queue_feeder_error_was_called)
+
+    def test_queue_serialization(self):
+        # bpo-30006: verify feeder handles exceptions using the
+        # _on_queue_feeder_error hook.
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        q = self.Queue()
+
+        # Custom serialization
+        def serialization(x):
+            return pickle.dumps(x * 2)
+        q._put_bytes(21, serialization=serialization)
+        self.assertEqual(q.get(), 42)
+
+        # Custom bytes channels
+        q._put_bytes(bytes(42), serialization=None)
+        self.assertEqual(q._get_bytes(), bytes(42))
 #
 #
 #

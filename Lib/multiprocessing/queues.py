@@ -28,6 +28,22 @@ _ForkingPickler = context.reduction.ForkingPickler
 from .util import debug, info, Finalize, register_after_fork, is_exiting
 
 #
+#  Sendable Object, with a serialization protocol
+#
+
+
+class _SendableObject(object):
+    def __init__(self, obj, serialization=None):
+        self.obj = obj
+        self.serialization = serialization
+
+    def serialize(self):
+        if self.serialization:
+            return self.serialization(self.obj)
+        return self.obj
+
+
+#
 # Queue type using a pipe, buffer and thread
 #
 
@@ -78,6 +94,10 @@ class Queue(object):
         self._poll = self._reader.poll
 
     def put(self, obj, block=True, timeout=None):
+        self._put_bytes(obj, block=block, timeout=timeout,
+                        serialization=_ForkingPickler.dumps)
+
+    def _put_bytes(self, obj, block=True, timeout=None, serialization=None):
         assert not self._closed, "Queue {0!r} has been closed".format(self)
         if not self._sem.acquire(block, timeout):
             raise Full
@@ -85,10 +105,15 @@ class Queue(object):
         with self._notempty:
             if self._thread is None:
                 self._start_thread()
-            self._buffer.append(obj)
+            self._buffer.append(_SendableObject(
+                obj, serialization=serialization))
             self._notempty.notify()
 
     def get(self, block=True, timeout=None):
+        return self._get_bytes(block=block, timeout=timeout,
+                               deserialization=_ForkingPickler.loads)
+
+    def _get_bytes(self, block=True, timeout=None, deserialization=None):
         if block and timeout is None:
             with self._rlock:
                 res = self._recv_bytes()
@@ -109,8 +134,10 @@ class Queue(object):
                 self._sem.release()
             finally:
                 self._rlock.release()
-        # unserialize the data after having released the lock
-        return _ForkingPickler.loads(res)
+        # un-serialize the data after having released the lock
+        if deserialization:
+            return deserialization(res)
+        return res
 
     def qsize(self):
         # Raises NotImplementedError on Mac OSX because of broken sem_getvalue()
@@ -233,7 +260,7 @@ class Queue(object):
                             return
 
                         # serialize the data before acquiring the lock
-                        obj = _ForkingPickler.dumps(obj)
+                        obj = obj.serialize()
                         if wacquire is None:
                             send_bytes(obj)
                         else:
@@ -255,7 +282,7 @@ class Queue(object):
                     info('error in queue thread: %s', e)
                     return
                 else:
-                    onerror(e, obj)
+                    onerror(e, obj.obj)
 
     @staticmethod
     def _on_queue_feeder_error(e, obj):
@@ -299,7 +326,8 @@ class JoinableQueue(Queue):
         with self._notempty, self._cond:
             if self._thread is None:
                 self._start_thread()
-            self._buffer.append(obj)
+            self._buffer.append(_SendableObject(
+                obj, serialization=_ForkingPickler.dumps))
             self._unfinished_tasks.release()
             self._notempty.notify()
 
@@ -342,14 +370,25 @@ class SimpleQueue(object):
         self._poll = self._reader.poll
 
     def get(self):
+        # Get the object and deserialize it with the _ForkingPickler
+        return self._get_bytes(deserialization=_ForkingPickler.loads)
+
+    def _get_bytes(self, deserialization=None):
         with self._rlock:
             res = self._reader.recv_bytes()
         # unserialize the data after having released the lock
-        return _ForkingPickler.loads(res)
+        if deserialization:
+            return deserialization(res)
+        return res
 
     def put(self, obj):
+        # Get the object and deserialize it with the _ForkingPickler
+        self._put_bytes(obj, serialization=_ForkingPickler.dumps)
+
+    def _put_bytes(self, obj, serialization=None):
         # serialize the data before acquiring the lock
-        obj = _ForkingPickler.dumps(obj)
+        if serialization:
+            obj = serialization(obj)
         if self._wlock is None:
             # writes to a message oriented win32 pipe are atomic
             self._writer.send_bytes(obj)
