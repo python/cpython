@@ -349,8 +349,9 @@ class StrptimeTests(unittest.TestCase):
             _strptime._strptime("-01:30:30.1234567", "%z")
         with self.assertRaises(ValueError):
             _strptime._strptime("-01:30:30:123456", "%z")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%z")
+        self.assertEqual("Unconsistent use of : in -01:3030", str(err.exception))
 
     def test_timezone(self):
         # Test timezone directives.
