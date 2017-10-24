@@ -283,12 +283,13 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
         milliseconds = microseconds / 1000;
         if (microseconds % 1000 > 0)
             ++milliseconds;
-        if ((DWORD) milliseconds != milliseconds)
-            Py_FatalError("Timeout too large for a DWORD, "
-                           "please check PY_TIMEOUT_MAX");
+        if (milliseconds > PY_DWORD_MAX) {
+            Py_FatalError("Timeout larger than PY_TIMEOUT_MAX");
+        }
     }
-    else
+    else {
         milliseconds = INFINITE;
+    }
 
     dprintf(("%lu: PyThread_acquire_lock_timed(%p, %lld) called\n",
              PyThread_get_thread_ident(), aLock, microseconds));

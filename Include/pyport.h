@@ -787,6 +787,9 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #include <android/api-level.h>
 #endif
 
+/* Maximum value of the Windows DWORD type */
+#define PY_DWORD_MAX 4294967295U
+
 /* This macro used to tell whether Python was built with multithreading
  * enabled.  Now multithreading is always enabled, but keep the macro
  * for compatibility.
