@@ -507,6 +507,10 @@ Removed
 API and Feature Removals
 ------------------------
 
+* The ``os.stat_float_times()`` function has been removed. It was introduced in
+  Python 2.3 for backward compatibility with Python 2.2, and was deprecated
+  since Python 3.1.
+
 * Unknown escapes consisting of ``'\'`` and an ASCII letter in replacement
   templates for :func:`re.sub` were deprecated in Python 3.5, and will now
   cause an error.
