@@ -1456,7 +1456,8 @@ finally:
 static PyObject *
 pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* kwds)
 {
-    char* filename;
+    PyObject* target = NULL;
+    const char* filename;
     int pages = -1;
     PyObject* progress = Py_None;
     char* name = "main";
@@ -1466,10 +1467,16 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     int sleep = 250;
     sqlite3 *bckconn;
     sqlite3_backup *bckhandle;
-    static char *keywords[] = {"filename", "pages", "progress", "name", "sleep", NULL};
+    static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|$iOsi:backup", keywords,
-                                     &filename, &pages, &progress, &name, &sleep)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$iOsi:backup", keywords,
+                                     &target, &pages, &progress, &name, &sleep)) {
+        goto finally;
+    }
+
+    if (!PyUnicode_Check(target) && !PyObject_TypeCheck(target, &pysqlite_ConnectionType)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "target argument must be either a string or a Connection instance");
         goto finally;
     }
 
@@ -1482,12 +1489,27 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
         pages = -1;
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_open(filename, &bckconn);
-    Py_END_ALLOW_THREADS
+    if (PyUnicode_Check(target)) {
+        filename = PyUnicode_AsUTF8(target);
+        if (filename == NULL) {
+            goto finally;
+        }
 
-    if (rc != SQLITE_OK) {
-        goto finally;
+        Py_BEGIN_ALLOW_THREADS
+        rc = sqlite3_open(filename, &bckconn);
+        Py_END_ALLOW_THREADS
+
+        if (rc != SQLITE_OK) {
+            goto finally;
+        }
+    }
+    else {
+        if ((pysqlite_Connection*)target == self) {
+            PyErr_SetString(PyExc_ValueError, "target cannot be the same connection instance");
+            goto finally;
+        }
+        filename = NULL;
+        bckconn = ((pysqlite_Connection*)target)->db;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -1538,16 +1560,18 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
         }
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    sqlite3_close(bckconn);
-    Py_END_ALLOW_THREADS
+    if (filename != NULL) {
+        Py_BEGIN_ALLOW_THREADS
+        sqlite3_close(bckconn);
+        Py_END_ALLOW_THREADS
+    }
 
     if (cberr == 0 && rc == SQLITE_OK) {
         Py_INCREF(Py_None);
         retval = Py_None;
     } else {
         /* Remove the probably incomplete/invalid backup */
-        if (unlink(filename) < 0) {
+        if (filename != NULL && unlink(filename) < 0) {
             /* FIXME: this should probably be chained to the outstanding
                exception */
             return PyErr_SetFromErrno(PyExc_OSError);

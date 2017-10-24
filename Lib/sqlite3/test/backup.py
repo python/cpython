@@ -20,6 +20,10 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(result[0][0], 3)
         self.assertEqual(result[1][0], 4)
 
+    def CheckBadTarget(self):
+        with self.assertRaises(TypeError):
+            self.cx.backup(None)
+
     def CheckKeywordOnlyArgs(self):
         with self.assertRaises(TypeError):
             self.cx.backup('foo', 1)
@@ -123,6 +127,13 @@ class BackupTests(unittest.TestCase):
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
             self.cx.backup(bckfn.name, name='attached_db')
             self.testBackup(bckfn.name)
+
+    def CheckBackupToOtherConnection(self):
+        dx = sqlite.connect(':memory:')
+        self.cx.backup(dx)
+        result = dx.execute("SELECT key FROM foo ORDER BY key").fetchall()
+        self.assertEqual(result[0][0], 3)
+        self.assertEqual(result[1][0], 4)
 
 def suite():
     return unittest.TestSuite(unittest.makeSuite(BackupTests, "Check"))

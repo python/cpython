@@ -521,11 +521,12 @@ Connection Objects
                  f.write('%s\n' % line)
 
 
-   .. method:: backup(filename, *, pages=0, progress=None, name="main", sleep=250)
+   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=250)
 
       This method makes a backup of a SQLite database into the mandatory argument
-      *filename*, even while it's being accessed by other clients, or concurrently by
-      the same connection.
+      *target*, even while it's being accessed by other clients, or concurrently by
+      the same connection. The *target* can be either a string, the path to the file
+      where the backup will be written, or another :class:`Connection` instance.
 
       By default, or when *pages* is either ``0`` or a negative integer, the entire
       database is copied in a single step; otherwise the method performs a loop
@@ -544,9 +545,8 @@ Connection Objects
       The *sleep* argument specifies the number of milliseconds to sleep by between
       successive attempts to backup remaining pages.
 
-      Example::
+      Example 1, copy an existing database into another file::
 
-         # Copy an existing database into another file
          import sqlite3
 
          def progress(status, remaining, total):
@@ -554,6 +554,14 @@ Connection Objects
 
          con = sqlite3.connect('existing_db.db')
          con.backup('copy_of_existing_db.db', 1, progress)
+
+      Example 2, copy an existing database into a transient copy::
+
+         import sqlite3
+
+         source = sqlite3.connect('existing_db.db')
+         dest = sqlite3.connect(':memory')
+         source.backup(dest)
 
       .. note:: This is available only when the underlying SQLite library is at
                 version 3.6.11 or higher.
