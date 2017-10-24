@@ -324,13 +324,16 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
+    if (microseconds > PY_TIMEOUT_MAX) {
+        Py_FatalError("Timeout larger than PY_TIMEOUT_MAX");
+    }
+
     if (microseconds > 0) {
         MICROSECONDS_TO_TIMESPEC(microseconds, ts);
 
         if (!intr_flag) {
-            /* the caller must ensures that microseconds <= PY_TIMEOUT_MAX
-               and so microseconds * 1000 cannot overflow. PY_TIMEOUT_MAX
-               is defined to prevent this specific overflow. */
+            /* cannot overflow thanks to (microseconds > PY_TIMEOUT_MAX)
+               check done above */
             _PyTime_t timeout = _PyTime_FromNanoseconds(microseconds * 1000);
             deadline = _PyTime_GetMonotonicClock() + timeout;
         }
@@ -363,8 +366,9 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             else if (dt > 0) {
                 _PyTime_t realtime_deadline = _PyTime_GetSystemClock() + dt;
                 if (_PyTime_AsTimespec(realtime_deadline, &ts) < 0) {
-                    success = PY_LOCK_FAILURE;
-                    goto exit;
+                    /* Cannot occur thanks to (microseconds > PY_TIMEOUT_MAX)
+                       check done above */
+                    Py_UNREACHABLE();
                 }
                 /* no need to update microseconds value, the code only care
                    if (microseconds > 0 or (microseconds == 0). */
