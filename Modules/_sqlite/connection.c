@@ -1463,12 +1463,13 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     PyObject* retval = NULL;
     int rc;
     int cberr = 0;
+    int sleep = 250;
     sqlite3 *bckconn;
     sqlite3_backup *bckhandle;
-    static char *keywords[] = {"filename", "pages", "progress", "name", NULL};
+    static char *keywords[] = {"filename", "pages", "progress", "name", "sleep", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|$iOs:backup", keywords,
-                                     &filename, &pages, &progress, &name)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|$iOsi:backup", keywords,
+                                     &filename, &pages, &progress, &name, &sleep)) {
         goto finally;
     }
 
@@ -1510,11 +1511,11 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
                 }
             }
 
-            /* Sleep for 250ms if there are still further pages to copy and
+            /* Sleep for a while if there are still further pages to copy and
                the engine could not make any progress */
             if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
                 Py_BEGIN_ALLOW_THREADS
-                sqlite3_sleep(250);
+                sqlite3_sleep(sleep);
                 Py_END_ALLOW_THREADS
             }
         } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
