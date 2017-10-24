@@ -328,6 +328,9 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         MICROSECONDS_TO_TIMESPEC(microseconds, ts);
 
         if (!intr_flag) {
+            /* the caller must ensures that microseconds <= PY_TIMEOUT_MAX
+               and so microseconds * 1000 cannot overflow. PY_TIMEOUT_MAX
+               is defined to prevent this specific overflow. */
             _PyTime_t timeout = _PyTime_FromNanoseconds(microseconds * 1000);
             deadline = _PyTime_GetMonotonicClock() + timeout;
         }
