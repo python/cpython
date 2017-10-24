@@ -1508,6 +1508,14 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
             PyErr_SetString(PyExc_ValueError, "target cannot be the same connection instance");
             goto finally;
         }
+#if SQLITE_VERSION_NUMBER < 3008007
+        /* Since 3.8.7 this is already done, per commit
+           https://www.sqlite.org/src/info/169b5505498c0a7e */
+        if (!sqlite3_get_autocommit(((pysqlite_Connection*)target)->db)) {
+            PyErr_SetString(pysqlite_OperationalError, "target is in transaction");
+            goto finally;
+        }
+#endif
         filename = NULL;
         bckconn = ((pysqlite_Connection*)target)->db;
     }

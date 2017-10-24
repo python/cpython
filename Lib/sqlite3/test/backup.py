@@ -135,6 +135,16 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(result[0][0], 3)
         self.assertEqual(result[1][0], 4)
 
+    def CheckBackupToOtherConnectionInTransaction(self):
+        dx = sqlite.connect(':memory:')
+        dx.execute('CREATE TABLE bar (key INTEGER)')
+        dx.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
+        try:
+            with self.assertRaises(sqlite.OperationalError):
+                self.cx.backup(dx)
+        finally:
+            dx.rollback()
+
 def suite():
     return unittest.TestSuite(unittest.makeSuite(BackupTests, "Check"))
 
