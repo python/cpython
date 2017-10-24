@@ -39,12 +39,26 @@ class CryptTestCase(unittest.TestCase):
         else:
             self.assertEqual(crypt.methods[-1], crypt.METHOD_CRYPT)
 
+    @unittest.skipUnless(crypt.METHOD_SHA256 in crypt.methods or
+                         crypt.METHOD_SHA512 in crypt.methods,
+                        'requires support of SHA-2')
+    def test_sha2_rounds(self):
+        for method in (crypt.METHOD_SHA256, crypt.METHOD_SHA512):
+            for rounds in 1000, 10000, 100000:
+                salt = crypt.mksalt(method, rounds=rounds)
+                self.assertIn('$rounds=%d$' % rounds, salt)
+                self.assertEqual(len(salt) - method.salt_chars,
+                                 11 + len(str(rounds)))
+                cr = crypt.crypt('mypassword', salt)
+                self.assertTrue(cr)
+                cr2 = crypt.crypt('mypassword', cr)
+                self.assertEqual(cr2, cr)
+
     @unittest.skipUnless(crypt.METHOD_BLOWFISH in crypt.methods,
                         'requires support of Blowfish')
-    def test_log_rounds(self):
-        self.assertEqual(len(crypt._saltchars), 64)
+    def test_blowfish_rounds(self):
         for log_rounds in range(4, 11):
-            salt = crypt.mksalt(crypt.METHOD_BLOWFISH, log_rounds=log_rounds)
+            salt = crypt.mksalt(crypt.METHOD_BLOWFISH, rounds=1<<log_rounds)
             self.assertIn('$%02d$' % log_rounds, salt)
             self.assertIn(len(salt) - crypt.METHOD_BLOWFISH.salt_chars, {6, 7})
             cr = crypt.crypt('mypassword', salt)
@@ -54,9 +68,9 @@ class CryptTestCase(unittest.TestCase):
 
     @unittest.skipUnless(crypt.METHOD_BLOWFISH in crypt.methods,
                         'requires support of Blowfish')
-    def test_invalid_log_rounds(self):
-        for log_rounds in (1, -1, 999):
-            salt = crypt.mksalt(crypt.METHOD_BLOWFISH, log_rounds=log_rounds)
+    def test_invalid_rounds(self):
+        for log_rounds in (0, 1, 1<<999):
+            salt = crypt.mksalt(crypt.METHOD_BLOWFISH, rounds=rounds)
             self.assertIsNone(crypt.crypt('mypassword', salt))
 
 

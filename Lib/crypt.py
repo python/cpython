@@ -19,7 +19,7 @@ class _Method(_namedtuple('_Method', 'name ident salt_chars total_size')):
         return '<crypt.METHOD_{}>'.format(self.name)
 
 
-def mksalt(method=None, *, log_rounds=12):
+def mksalt(method=None, *, rounds=None):
     """Generate a salt for the specified method.
 
     If not specified, the strongest available method will be used.
@@ -30,7 +30,13 @@ def mksalt(method=None, *, log_rounds=12):
     if not method.ident:
         s = ''
     elif method.ident[0] == '2':
+        if rounds is None:
+            log_rounds = 12
+        else:
+            log_rounds = (rounds-1).bit_length()
         s = f'${method.ident}${log_rounds:02d}$'
+    elif method.ident in ('5', '6') and rounds is not None:
+        s = f'${method.ident}$rounds={rounds}$'
     else:
         s = f'${method.ident}$'
     s += ''.join(_sr.choice(_saltchars) for char in range(method.salt_chars))
@@ -55,10 +61,10 @@ def crypt(word, salt=None):
 #  available salting/crypto methods
 methods = []
 
-def _add_method(name, *args):
+def _add_method(name, *args, rounds=None):
     method = _Method(name, *args)
     globals()['METHOD_' + name] = method
-    salt = mksalt(method, log_rounds=4)
+    salt = mksalt(method, rounds=rounds)
     result = crypt('', salt)
     if result and len(result) == method.total_size:
         methods.append(method)
@@ -74,7 +80,7 @@ _add_method('SHA256', '5', 16, 63)
 # 'y' is the same as 'b', for compatibility
 # with openwall crypt_blowfish.
 for _v in 'b', 'y', 'a', '':
-    if _add_method('BLOWFISH', '2' + _v, 22, 59 + len(_v)):
+    if _add_method('BLOWFISH', '2' + _v, 22, 59 + len(_v), rounds=16):
         break
 
 _add_method('MD5', '1', 8, 34)
