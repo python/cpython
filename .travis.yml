@@ -91,6 +91,8 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./python Tools/scripts/patchcheck.py --travis $TRAVIS_PULL_REQUEST; fi
   # `-r -w` implicitly provided through `make buildbottest`.
   - make buildbottest TESTOPTS="-j4 -uall,-cpu"
+  # Check that all symbols exported by libpython start with "Py" or "_Py"
+  - make smelly
 
 notifications:
   email: false
