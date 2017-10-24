@@ -65,8 +65,8 @@ FLAGS = {
     "u": SRE_FLAG_UNICODE,
 }
 
-GLOBAL_FLAGS = (SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE |
-                SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE)
+TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
+GLOBAL_FLAGS = SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE
 
 class Verbose(Exception):
     pass
@@ -822,7 +822,19 @@ def _parse_flags(source, state, char):
     del_flags = 0
     if char != "-":
         while True:
-            add_flags |= FLAGS[char]
+            flag = FLAGS[char]
+            if source.istext:
+                if char == 'L':
+                    msg = "bad inline flags: cannot use 'L' flag with a str pattern"
+                    raise source.error(msg)
+            else:
+                if char == 'u':
+                    msg = "bad inline flags: cannot use 'u' flag with a bytes pattern"
+                    raise source.error(msg)
+            add_flags |= flag
+            if (flag & TYPE_FLAGS) and (add_flags & TYPE_FLAGS) != flag:
+                msg = "bad inline flags: flags 'a', 'u' and 'L' are incompatible"
+                raise source.error(msg)
             char = sourceget()
             if char is None:
                 raise source.error("missing -, : or )")
@@ -844,7 +856,11 @@ def _parse_flags(source, state, char):
             msg = "unknown flag" if char.isalpha() else "missing flag"
             raise source.error(msg, len(char))
         while True:
-            del_flags |= FLAGS[char]
+            flag = FLAGS[char]
+            if flag & TYPE_FLAGS:
+                msg = "bad inline flags: cannot turn off flags 'a', 'u' and 'L'"
+                raise source.error(msg)
+            del_flags |= flag
             char = sourceget()
             if char is None:
                 raise source.error("missing :")
