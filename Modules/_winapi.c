@@ -186,7 +186,7 @@ class DWORD_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = Py_BuildValue("k", _return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=94819e72d2c6d558]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4527052fe06e5823]*/
 
 #include "clinic/_winapi.c.h"
 
