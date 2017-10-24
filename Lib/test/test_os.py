@@ -81,12 +81,6 @@ else:
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
 
 
-@contextlib.contextmanager
-def ignore_deprecation_warnings(msg_regex, quiet=False):
-    with support.check_warnings((msg_regex, DeprecationWarning), quiet=quiet):
-        yield
-
-
 def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
 
@@ -487,17 +481,6 @@ class UtimeTests(unittest.TestCase):
         self.addCleanup(support.rmtree, self.dirname)
         os.mkdir(self.dirname)
         create_file(self.fname)
-
-        def restore_float_times(state):
-            with ignore_deprecation_warnings('stat_float_times'):
-                os.stat_float_times(state)
-
-        # ensure that st_atime and st_mtime are float
-        with ignore_deprecation_warnings('stat_float_times'):
-            old_float_times = os.stat_float_times(-1)
-            self.addCleanup(restore_float_times, old_float_times)
-
-            os.stat_float_times(True)
 
     def support_subsecond(self, filename):
         # Heuristic to check if the filesystem supports timestamp with

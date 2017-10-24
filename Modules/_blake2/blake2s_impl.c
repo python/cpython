@@ -26,7 +26,9 @@
 #include "impl/blake2.h"
 #include "impl/blake2-impl.h" /* for secure_zero_memory() and store48() */
 
-#ifdef BLAKE2_USE_SSE
+/* pure SSE2 implementation is very slow, so only use the more optimized SSSE3+
+ * https://bugs.python.org/issue31834 */
+#if defined(__SSSE3__) || defined(__SSE4_1__) || defined(__AVX__) || defined(__XOP__)
 #include "impl/blake2s.c"
 #else
 #include "impl/blake2s-ref.c"
