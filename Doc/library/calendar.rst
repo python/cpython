@@ -53,17 +53,40 @@ it's the base calendar for all computations.
       month that are required to get a complete week.
 
 
-   .. method:: itermonthdays2(year, month)
-
-      Return an iterator for the month *month* in the year *year* similar to
-      :meth:`itermonthdates`. Days returned will be tuples consisting of a day
-      number and a week day number.
-
-
    .. method:: itermonthdays(year, month)
 
       Return an iterator for the month *month* in the year *year* similar to
-      :meth:`itermonthdates`. Days returned will simply be day numbers.
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will simply be day of the month numbers.  For the
+      days outside of the specified month, the day number is ``0``.
+
+
+   .. method:: itermonthdays2(year, month)
+
+      Return an iterator for the month *month* in the year *year* similar to
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will be tuples consisting of a day of the month
+      number and a week day number.
+
+
+   .. method:: itermonthdays3(year, month)
+
+      Return an iterator for the month *month* in the year *year* similar to
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will be tuples consisting of a year, a month and a day
+      of the month numbers.
+
+      .. versionadded:: 3.7
+
+
+   .. method:: itermonthdays4(year, month)
+
+      Return an iterator for the month *month* in the year *year* similar to
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will be tuples consisting of a year, a month, a day
+      of the month, and a day of the week numbers.
+
+      .. versionadded:: 3.7
 
 
    .. method:: monthdatescalendar(year, month)

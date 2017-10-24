@@ -502,10 +502,15 @@ class CalendarTestCase(unittest.TestCase):
         new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         self.assertEqual(old_october, new_october)
 
-    def test_itermonthdates(self):
-        # ensure itermonthdates doesn't overflow after datetime.MAXYEAR
-        # see #15421
-        list(calendar.Calendar().itermonthdates(datetime.MAXYEAR, 12))
+    def test_itermonthdays3(self):
+        # ensure itermonthdays3 doesn't overflow after datetime.MAXYEAR
+        list(calendar.Calendar().itermonthdays3(datetime.MAXYEAR, 12))
+
+    def test_itermonthdays4(self):
+        cal = calendar.Calendar(firstweekday=3)
+        days = list(cal.itermonthdays4(2001, 2))
+        self.assertEqual(days[0], (2001, 2, 1, 3))
+        self.assertEqual(days[-1], (2001, 2, 28, 2))
 
     def test_itermonthdays(self):
         for firstweekday in range(7):
@@ -846,7 +851,8 @@ class MiscTestCase(unittest.TestCase):
         blacklist = {'mdays', 'January', 'February', 'EPOCH',
                      'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY',
                      'SATURDAY', 'SUNDAY', 'different_locale', 'c',
-                     'prweek', 'week', 'format', 'formatstring', 'main'}
+                     'prweek', 'week', 'format', 'formatstring', 'main',
+                     'monthlen', 'prevmonth', 'nextmonth'}
         support.check__all__(self, calendar, blacklist=blacklist)
 
 
