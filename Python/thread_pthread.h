@@ -402,7 +402,6 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         success = PY_LOCK_FAILURE;
     }
 
-exit:
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) -> %d\n",
              lock, microseconds, intr_flag, success));
     return success;
