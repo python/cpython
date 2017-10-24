@@ -362,25 +362,26 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onerror):
     try:
-        if os.path.islink(path):
-            # symlinks to directories are forbidden, see bug #1669
-            raise OSError("Cannot call rmtree on a symbolic link")
+        with os.scandir(path) as scandir_it:
+            entries = list(scandir_it)
     except OSError:
-        onerror(os.path.islink, path, sys.exc_info())
-        # can't continue even if onerror hook returns
-        return
-    names = []
-    try:
-        names = os.listdir(path)
-    except OSError:
-        onerror(os.listdir, path, sys.exc_info())
-    for name in names:
-        fullname = os.path.join(path, name)
+        onerror(os.scandir, path, sys.exc_info())
+        entries = []
+    for entry in entries:
+        fullname = entry.path
         try:
-            mode = os.lstat(fullname).st_mode
+            is_dir = entry.is_dir(follow_symlinks=False)
         except OSError:
-            mode = 0
-        if stat.S_ISDIR(mode):
+            is_dir = False
+        if is_dir:
+            try:
+                if entry.is_symlink():
+                    # This can only happen if someone replaces
+                    # a directory with a symlink after the call to
+                    # os.scandir above.
+                    raise OSError("Cannot call rmtree on a symbolic link")
+            except OSError:
+                onerror(os.path.islink, fullname, sys.exc_info())
             _rmtree_unsafe(fullname, onerror)
         else:
             try:
@@ -494,6 +495,14 @@ def rmtree(path, ignore_errors=False, onerror=None):
         finally:
             os.close(fd)
     else:
+        try:
+            if os.path.islink(path):
+                # symlinks to directories are forbidden, see bug #1669
+                raise OSError("Cannot call rmtree on a symbolic link")
+        except OSError:
+            onerror(os.path.islink, path, sys.exc_info())
+            # can't continue even if onerror hook returns
+            return
         return _rmtree_unsafe(path, onerror)
 
 # Allow introspection of whether or not the hardening against symlink

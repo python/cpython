@@ -378,7 +378,7 @@ Optimizations
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
-* The :func:`shutil.rmtree` function has been sped up to 20% on Unix.
+* The :func:`shutil.rmtree` function has been sped up to 20--40%.
   This was done using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`28564`.)
 
