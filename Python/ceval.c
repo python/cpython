@@ -469,16 +469,16 @@ int
 _Py_CheckRecursiveCall(const char *where)
 {
     PyThreadState *tstate = PyThreadState_GET();
-    int recursion_limit = _PyRuntime.ceval.recursion_limit;
+    int recursion_limit = _Py_CheckRecursionLimit;
 
 #ifdef USE_STACKCHECK
+    tstate->stackcheck_counter = 0;
     if (PyOS_CheckStack()) {
         --tstate->recursion_depth;
         PyErr_SetString(PyExc_MemoryError, "Stack overflow");
         return -1;
     }
 #endif
-    _Py_CheckRecursionLimit = recursion_limit;
     if (tstate->recursion_critical)
         /* Somebody asked that we don't check for recursion. */
         return 0;
