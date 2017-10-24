@@ -662,8 +662,9 @@ def getfile(object):
         object = object.f_code
     if iscode(object):
         return object.co_filename
-    raise TypeError('{!r} is not a module, class, method, '
-                    'function, traceback, frame, or code object'.format(object))
+    raise TypeError('module, class, method, function, traceback, frame, or '
+                    'code object was expected, got {}'.format(
+                    type(object).__name__))
 
 def getmodulename(path):
     """Return the module name for a given file, or None."""
