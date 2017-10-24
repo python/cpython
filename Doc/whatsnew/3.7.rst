@@ -296,6 +296,13 @@ pdb
 argument.  If given, this is printed to the console just before debugging
 begins.
 
+re
+--
+
+The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
+can be set within the scope of a group.
+(Contributed by Serhiy Storchaka in :issue:`31690`.)
+
 string
 ------
 

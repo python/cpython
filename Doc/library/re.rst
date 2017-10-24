@@ -245,15 +245,31 @@ The special characters are:
    *cannot* be retrieved after performing a match or referenced later in the
    pattern.
 
-``(?imsx-imsx:...)``
-   (Zero or more letters from the set ``'i'``, ``'m'``, ``'s'``, ``'x'``,
-   optionally followed by ``'-'`` followed by one or more letters from the
-   same set.)  The letters set or removes the corresponding flags:
-   :const:`re.I` (ignore case), :const:`re.M` (multi-line), :const:`re.S`
-   (dot matches all), and :const:`re.X` (verbose), for the part of the
-   expression.  (The flags are described in :ref:`contents-of-module-re`.)
+``(?aiLmsux-imsx:...)``
+   (Zero or more letters from the set ``'a'``, ``'i'``, ``'L'``, ``'m'``,
+   ``'s'``, ``'u'``, ``'x'``, optionally followed by ``'-'`` followed by
+   one or more letters from the ``'i'``, ``'m'``, ``'s'``, ``'x'``.)
+   The letters set or remove the corresponding flags:
+   :const:`re.A` (ASCII-only matching), :const:`re.I` (ignore case),
+   :const:`re.L` (locale dependent), :const:`re.M` (multi-line),
+   :const:`re.S` (dot matches all), :const:`re.U` (Unicode matching),
+   and :const:`re.X` (verbose), for the part of the expression.
+   (The flags are described in :ref:`contents-of-module-re`.)
+
+   The letters ``'a'``, ``'L'`` and ``'u'`` are mutually exclusive when used
+   as inline flags, so they can't be combined or follow ``'-'``.  Instead,
+   when one of them appears in an inline group, it overrides the matching mode
+   in the enclosing group.  In Unicode patterns ``(?a:...)`` switches to
+   ASCII-only matching, and ``(?u:...)`` switches to Unicode matching
+   (default).  In byte pattern ``(?L:...)`` switches to locale depending
+   matching, and ``(?a:...)`` switches to ASCII-only matching (default).
+   This override is only in effect for the narrow inline group, and the
+   original matching mode is restored outside of the group.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.7
+      The letters ``'a'``, ``'L'`` and ``'u'`` also can be used in a group.
 
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
@@ -384,9 +400,7 @@ character ``'$'``.
       Matches any Unicode decimal digit (that is, any character in
       Unicode character category [Nd]).  This includes ``[0-9]``, and
       also many other digit characters.  If the :const:`ASCII` flag is
-      used only ``[0-9]`` is matched (but the flag affects the entire
-      regular expression, so in such cases using an explicit ``[0-9]``
-      may be a better choice).
+      used only ``[0-9]`` is matched.
 
    For 8-bit (bytes) patterns:
       Matches any decimal digit; this is equivalent to ``[0-9]``.
@@ -394,9 +408,7 @@ character ``'$'``.
 ``\D``
    Matches any character which is not a decimal digit. This is
    the opposite of ``\d``. If the :const:`ASCII` flag is used this
-   becomes the equivalent of ``[^0-9]`` (but the flag affects the entire
-   regular expression, so in such cases using an explicit ``[^0-9]`` may
-   be a better choice).
+   becomes the equivalent of ``[^0-9]``.
 
 ``\s``
    For Unicode (str) patterns:
@@ -404,9 +416,7 @@ character ``'$'``.
       ``[ \t\n\r\f\v]``, and also many other characters, for example the
       non-breaking spaces mandated by typography rules in many
       languages). If the :const:`ASCII` flag is used, only
-      ``[ \t\n\r\f\v]`` is matched (but the flag affects the entire
-      regular expression, so in such cases using an explicit
-      ``[ \t\n\r\f\v]`` may be a better choice).
+      ``[ \t\n\r\f\v]`` is matched.
 
    For 8-bit (bytes) patterns:
       Matches characters considered whitespace in the ASCII character set;
@@ -415,18 +425,14 @@ character ``'$'``.
 ``\S``
    Matches any character which is not a whitespace character. This is
    the opposite of ``\s``. If the :const:`ASCII` flag is used this
-   becomes the equivalent of ``[^ \t\n\r\f\v]`` (but the flag affects the entire
-   regular expression, so in such cases using an explicit ``[^ \t\n\r\f\v]`` may
-   be a better choice).
+   becomes the equivalent of ``[^ \t\n\r\f\v]``.
 
 ``\w``
    For Unicode (str) patterns:
       Matches Unicode word characters; this includes most characters
       that can be part of a word in any language, as well as numbers and
       the underscore. If the :const:`ASCII` flag is used, only
-      ``[a-zA-Z0-9_]`` is matched (but the flag affects the entire
-      regular expression, so in such cases using an explicit
-      ``[a-zA-Z0-9_]`` may be a better choice).
+      ``[a-zA-Z0-9_]`` is matched.
 
    For 8-bit (bytes) patterns:
       Matches characters considered alphanumeric in the ASCII character set;
@@ -437,9 +443,7 @@ character ``'$'``.
 ``\W``
    Matches any character which is not a word character. This is
    the opposite of ``\w``. If the :const:`ASCII` flag is used this
-   becomes the equivalent of ``[^a-zA-Z0-9_]`` (but the flag affects the
-   entire regular expression, so in such cases using an explicit
-   ``[^a-zA-Z0-9_]`` may be a better choice).  If the :const:`LOCALE` flag is
+   becomes the equivalent of ``[^a-zA-Z0-9_]``.  If the :const:`LOCALE` flag is
    used, matches characters considered alphanumeric in the current locale
    and the underscore.
 
@@ -563,9 +567,7 @@ form.
    letter I with dot above), 'ı' (U+0131, Latin small letter dotless i),
    'ſ' (U+017F, Latin small letter long s) and 'K' (U+212A, Kelvin sign).
    If the :const:`ASCII` flag is used, only letters 'a' to 'z'
-   and 'A' to 'Z' are matched (but the flag affects the entire regular
-   expression, so in such cases using an explicit ``(?-i:[a-zA-Z])`` may be
-   a better choice).
+   and 'A' to 'Z' are matched.
 
 .. data:: L
           LOCALE
