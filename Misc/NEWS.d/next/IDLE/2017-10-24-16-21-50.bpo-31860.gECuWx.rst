@@ -1,0 +1,1 @@
+The font sample in the IDLE font configuration dialog is now editable.

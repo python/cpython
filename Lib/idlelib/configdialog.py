@@ -544,8 +544,8 @@ class FontPage(Frame):
             '\uac00\ub0d0\ub354\ub824\ubaa8\ubd64\uc218\uc720\uc988\uce58\n'
             '\u3042\u3044\u3046\u3048\u304a\u30a2\u30a4\u30a6\u30a8\u30aa\n'
             )
-        temp_font = tkFont.Font(self, ('courier', 10, 'normal'))
-        self.font_sample = Label(frame_sample, text=sample, font=temp_font)
+        self.font_sample = Text(frame_sample, width=20, height=10)
+        self.font_sample.insert(END, sample)
         # frame_indent.
         indent_title = Label(
                 frame_indent, justify=LEFT,
