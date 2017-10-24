@@ -366,6 +366,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     hour = minute = second = fraction = 0
     tz = -1
     gmtoff = None
+    gmtoff_fraction = 0
     # Default to -1 to signify that values not known; not critical to have,
     # though
     iso_week = week_of_year = None
@@ -468,11 +469,11 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 hours = int(z[1:3])
                 minutes = int(z[3:5])
                 seconds = int(z[5:7] or 0)
-                microseconds = int(z[8:] or 0)
                 gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
-                gmtoff = gmtoff + (microseconds / (10**6))
+                gmtoff_fraction = int(z[8:] or 0)
                 if z.startswith("-"):
                     gmtoff = -gmtoff
+                    gmtoff_fraction = -gmtoff_fraction
         elif group_key == 'Z':
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.
@@ -559,7 +560,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
 
     return (year, month, day,
             hour, minute, second,
-            weekday, julian, tz, tzname, gmtoff), fraction
+            weekday, julian, tz, tzname, gmtoff), fraction, gmtoff_fraction
 
 def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the
@@ -570,11 +571,11 @@ def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
 def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a class cls instance based on the input string and the
     format string."""
-    tt, fraction = _strptime(data_string, format)
+    tt, fraction, gmtoff_fraction = _strptime(data_string, format)
     tzname, gmtoff = tt[-2:]
     args = tt[:6] + (fraction,)
     if gmtoff is not None:
-        tzdelta = datetime_timedelta(seconds=gmtoff)
+        tzdelta = datetime_timedelta(seconds=gmtoff, microseconds=gmtoff_fraction)
         if tzname:
             tz = datetime_timezone(tzdelta, tzname)
         else:
