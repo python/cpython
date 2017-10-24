@@ -378,10 +378,11 @@ def _rmtree_unsafe(path, onerror):
                 if entry.is_symlink():
                     # This can only happen if someone replaces
                     # a directory with a symlink after the call to
-                    # os.scandir above.
+                    # os.scandir or entry.is_dir above.
                     raise OSError("Cannot call rmtree on a symbolic link")
             except OSError:
                 onerror(os.path.islink, fullname, sys.exc_info())
+                continue
             _rmtree_unsafe(fullname, onerror)
         else:
             try:
@@ -428,7 +429,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
                         try:
                             # This can only happen if someone replaces
                             # a directory with a symlink after the call to
-                            # stat.S_ISDIR above.
+                            # os.scandir or stat.S_ISDIR above.
                             raise OSError("Cannot call rmtree on a symbolic "
                                           "link")
                         except OSError:
