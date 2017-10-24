@@ -463,6 +463,14 @@ class TestRetrievingSourceCode(GetSourceBase):
         with self.assertRaises(TypeError):
             inspect.getfile(C)
 
+    def test_getfile_broken_repr(self):
+        class ErrorRepr:
+            def __repr__(self):
+                raise Exception('xyz')
+        er = ErrorRepr()
+        with self.assertRaises(TypeError):
+            inspect.getfile(er)
+
     def test_getmodule_recursion(self):
         from types import ModuleType
         name = '__inspect_dummy'
