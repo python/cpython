@@ -50,7 +50,7 @@ static PyObject *_grouper_create(groupbyobject *, PyObject *);
 
 /*[clinic input]
 @classmethod
-itertools.groupby.__new__ as groupby_new
+itertools.groupby.__new__
 
     iterable: object
         Elements to divide into groups according to the key function.
@@ -77,8 +77,8 @@ key=1 group=[1]
 [clinic start generated code]*/
 
 static PyObject *
-groupby_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *key)
-/*[clinic end generated code: output=7d57fc22bba4949d input=6ad51fd161164a10]*/
+itertools_groupby_impl(PyTypeObject *type, PyObject *iterable, PyObject *key)
+/*[clinic end generated code: output=83016d6c995ed8a5 input=6dbf07f491bd73ec]*/
 {
     groupbyobject *gbo;
 
@@ -186,7 +186,7 @@ groupby_next(groupbyobject *gbo)
 }
 
 /*[clinic input]
-itertools.groupby.__reduce__ as groupby_reduce
+itertools.groupby.__reduce__
 
     lz: self(type="groupbyobject *")
 
@@ -194,8 +194,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-groupby_reduce_impl(groupbyobject *lz)
-/*[clinic end generated code: output=81ccca5e1cd6ef82 input=c9328f12aa213161]*/
+itertools_groupby___reduce___impl(groupbyobject *lz)
+/*[clinic end generated code: output=1117576d1ed9a02f input=890ace8ac7135075]*/
 {
     /* reduce as a 'new' call with an optional 'setstate' if groupby
      * has started
@@ -212,7 +212,7 @@ groupby_reduce_impl(groupbyobject *lz)
 }
 
 /*[clinic input]
-itertools.groupby.__setstate__ as groupby_setstate
+itertools.groupby.__setstate__
 
     lz: self(type="groupbyobject *")
     state: object
@@ -222,8 +222,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-groupby_setstate(groupbyobject *lz, PyObject *state)
-/*[clinic end generated code: output=d668c44985ed8d2c input=1c009772af2ae55f]*/
+itertools_groupby___setstate__(groupbyobject *lz, PyObject *state)
+/*[clinic end generated code: output=fb0fe7e1442cb9ef input=922ce677bd8128bb]*/
 {
     PyObject *currkey, *currvalue, *tgtkey;
     if (!PyTuple_Check(state)) {
@@ -255,7 +255,7 @@ static PyTypeObject _grouper_type;
 
 /*[clinic input]
 @classmethod
-itertools._grouper.__new__ as _grouper_new
+itertools._grouper.__new__
 
     parent: object(subclass_of='&groupby_type')
     tgtkey: object
@@ -263,8 +263,9 @@ itertools._grouper.__new__ as _grouper_new
 [clinic start generated code]*/
 
 static PyObject *
-_grouper_new_impl(PyTypeObject *type, PyObject *parent, PyObject *tgtkey)
-/*[clinic end generated code: output=c2b3fdd3561b1103 input=280c2659160f7890]*/
+itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
+                        PyObject *tgtkey)
+/*[clinic end generated code: output=462efb1cdebb5914 input=dc180d7771fc8c59]*/
 {
     return _grouper_create((groupbyobject*) parent, tgtkey);
 }
@@ -332,7 +333,7 @@ _grouper_next(_grouperobject *igo)
 }
 
 /*[clinic input]
-itertools._grouper.__reduce__ as _grouper_reduce
+itertools._grouper.__reduce__
 
     lz: self(type="_grouperobject *")
 
@@ -340,8 +341,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-_grouper_reduce_impl(_grouperobject *lz)
-/*[clinic end generated code: output=5d852dbd29c55aaf input=89204ccad93c8271]*/
+itertools__grouper___reduce___impl(_grouperobject *lz)
+/*[clinic end generated code: output=0c943dcf1416a652 input=f7827a30541d4a7d]*/
 {
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
         return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
@@ -475,7 +476,7 @@ teedataobject_dealloc(teedataobject *tdo)
 }
 
 /*[clinic input]
-itertools.teedataobject.__reduce__ as teedataobject_reduce
+itertools.teedataobject.__reduce__
 
     tdo: self(type="teedataobject *")
 
@@ -483,8 +484,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-teedataobject_reduce_impl(teedataobject *tdo)
-/*[clinic end generated code: output=2dd0ee192b561019 input=5067dad6127ce165]*/
+itertools_teedataobject___reduce___impl(teedataobject *tdo)
+/*[clinic end generated code: output=f2a99b50ec4e486a input=60741bb5793ba221]*/
 {
     int i;
     /* create a temporary list of already iterated values */
@@ -505,7 +506,7 @@ static PyTypeObject teedataobject_type;
 
 /*[clinic input]
 @classmethod
-itertools.teedataobject.__new__ as teedataobject_new
+itertools.teedataobject.__new__
 
     iterable: object
     values: object(subclass_of='&PyList_Type')
@@ -516,9 +517,9 @@ Data container common to multiple tee objects.
 [clinic start generated code]*/
 
 static PyObject *
-teedataobject_new_impl(PyTypeObject *type, PyObject *iterable,
-                       PyObject *values, PyObject *next)
-/*[clinic end generated code: output=9bc76065decb56f6 input=cb41f9058761382a]*/
+itertools_teedataobject_impl(PyTypeObject *type, PyObject *iterable,
+                             PyObject *values, PyObject *next)
+/*[clinic end generated code: output=aa1f47b741113fe8 input=7adacfbe72522b7d]*/
 {
     teedataobject *tdo;
     Py_ssize_t i, len;
@@ -589,7 +590,7 @@ tee_traverse(teeobject *to, visitproc visit, void *arg)
 }
 
 /*[clinic input]
-itertools._tee.__copy__ as tee_copy
+itertools._tee.__copy__
 
     to: self(type="teeobject *")
 
@@ -597,8 +598,8 @@ Returns an independent iterator.
 [clinic start generated code]*/
 
 static PyObject *
-tee_copy_impl(teeobject *to)
-/*[clinic end generated code: output=45629a9ebc19de67 input=da64ef9fac60a134]*/
+itertools__tee___copy___impl(teeobject *to)
+/*[clinic end generated code: output=4f8d4b5446ebf739 input=406d53de6a8bcd06]*/
 {
     teeobject *newto;
 
@@ -623,7 +624,7 @@ tee_fromiterable(PyObject *iterable)
     if (it == NULL)
         return NULL;
     if (PyObject_TypeCheck(it, &tee_type)) {
-        to = (teeobject *)tee_copy_impl((teeobject *)it);
+        to = (teeobject *)itertools__tee___copy___impl((teeobject *)it);
         goto done;
     }
 
@@ -647,7 +648,7 @@ done:
 
 /*[clinic input]
 @classmethod
-itertools._tee.__new__ as tee_new
+itertools._tee.__new__
 
     iterable: object
     /
@@ -658,8 +659,8 @@ An iterator wrapped to make it copyable.
 [clinic start generated code]*/
 
 static PyObject *
-tee_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=35aa9c64122b5871 input=827b5f7b19c54dfa]*/
+itertools__tee_impl(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=b02d3fd26c810c3f input=18df2ae1219e84ee]*/
 {
     return tee_fromiterable(iterable);
 }
@@ -682,7 +683,7 @@ tee_dealloc(teeobject *to)
 }
 
 /*[clinic input]
-itertools._tee.__reduce__ as tee_reduce
+itertools._tee.__reduce__
 
     to: self(type="teeobject *")
 
@@ -690,14 +691,14 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-tee_reduce_impl(teeobject *to)
-/*[clinic end generated code: output=46a6d7b07fec2a40 input=63c43d1a548a83c8]*/
+itertools__tee___reduce___impl(teeobject *to)
+/*[clinic end generated code: output=027e48b2c631ca10 input=b2bc0d599a4d7fc7]*/
 {
     return Py_BuildValue("O(())(Oi)", Py_TYPE(to), to->dataobj, to->index);
 }
 
 /*[clinic input]
-itertools._tee.__setstate__ as tee_setstate
+itertools._tee.__setstate__
 
     to: self(type="teeobject *")
     state: object
@@ -707,8 +708,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-tee_setstate(teeobject *to, PyObject *state)
-/*[clinic end generated code: output=3ff5ca72492e2610 input=1ed8907a9f02d536]*/
+itertools__tee___setstate__(teeobject *to, PyObject *state)
+/*[clinic end generated code: output=12add73314efd99b input=ea90c39c24d0f3a0]*/
 {
     teedataobject *tdo;
     int index;
@@ -730,7 +731,7 @@ tee_setstate(teeobject *to, PyObject *state)
 }
 
 /*[clinic input]
-itertools.tee as tee
+itertools.tee
 
     iterable: object
     n: Py_ssize_t = 2
@@ -745,8 +746,8 @@ in the returned tuple) being informed.
 [clinic start generated code]*/
 
 static PyObject *
-tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
-/*[clinic end generated code: output=5159f48b66c422b4 input=a72b8ce4e9aa7cc9]*/
+itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
+/*[clinic end generated code: output=1c64519cd859c2f0 input=228c65fd7d3317b6]*/
 {
     Py_ssize_t i;
     PyObject *it, *copyable, *result;
@@ -803,7 +804,7 @@ static PyTypeObject cycle_type;
 
 /*[clinic input]
 @classmethod
-itertools.cycle.__new__ as cycle_new
+itertools.cycle.__new__
 
     iterable: object
     /
@@ -815,8 +816,8 @@ Then it will repeat the sequence indefinitely.
 [clinic start generated code]*/
 
 static PyObject *
-cycle_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=9c3c6a645f54603e input=fdd6c11dca6b1efe]*/
+itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=f60e5ec17a45b35c input=3678f0717ebd9fdc]*/
 {
     PyObject *it;
     PyObject *saved;
@@ -898,7 +899,7 @@ cycle_next(cycleobject *lz)
 }
 
 /*[clinic input]
-itertools.cycle.__reduce__ as cycle_reduce
+itertools.cycle.__reduce__
 
     lz: self(type="cycleobject *")
 
@@ -906,8 +907,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-cycle_reduce_impl(cycleobject *lz)
-/*[clinic end generated code: output=f2b1f8bfd1d6423a input=248c55bc398cd5fa]*/
+itertools_cycle___reduce___impl(cycleobject *lz)
+/*[clinic end generated code: output=04c68393689d7c99 input=27b04ed6b5b88508]*/
 {
     /* Create a new cycle with the iterator tuple, then set the saved state */
     if (lz->it == NULL) {
@@ -931,7 +932,7 @@ cycle_reduce_impl(cycleobject *lz)
 }
 
 /*[clinic input]
-itertools.cycle.__setstate__ as cycle_setstate
+itertools.cycle.__setstate__
 
     lz: self(type="cycleobject *")
     state: object
@@ -941,8 +942,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-cycle_setstate(cycleobject *lz, PyObject *state)
-/*[clinic end generated code: output=9c82d80fdebf7705 input=840f2f296fe555a9]*/
+itertools_cycle___setstate__(cycleobject *lz, PyObject *state)
+/*[clinic end generated code: output=cdc9986595a547c1 input=ad1db343aa10d21c]*/
 {
     PyObject *saved=NULL;
     int firstpass;
@@ -974,7 +975,7 @@ static PyTypeObject dropwhile_type;
 
 /*[clinic input]
 @classmethod
-itertools.dropwhile.__new__ as dropwhile_new
+itertools.dropwhile.__new__
 
     predicate: object
     iterable: object
@@ -987,9 +988,9 @@ Afterwards, returns every element until the iterable is exhausted.
 [clinic start generated code]*/
 
 static PyObject *
-dropwhile_new_impl(PyTypeObject *type, PyObject *predicate,
-                   PyObject *iterable)
-/*[clinic end generated code: output=68ccecb645b70e7c input=b4d0e3c961817403]*/
+itertools_dropwhile_impl(PyTypeObject *type, PyObject *predicate,
+                         PyObject *iterable)
+/*[clinic end generated code: output=7145293afdc3a8b0 input=73b05fd17a9e6304]*/
 {
     PyObject *it;
     dropwhileobject *lz;
@@ -1064,7 +1065,7 @@ dropwhile_next(dropwhileobject *lz)
 }
 
 /*[clinic input]
-itertools.dropwhile.__reduce__ as dropwhile_reduce
+itertools.dropwhile.__reduce__
 
     lz: self(type="dropwhileobject *")
 
@@ -1072,14 +1073,14 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-dropwhile_reduce_impl(dropwhileobject *lz)
-/*[clinic end generated code: output=df490b72b8892732 input=6abc87d157f1ff18]*/
+itertools_dropwhile___reduce___impl(dropwhileobject *lz)
+/*[clinic end generated code: output=caa51cb35e50a4ab input=b09fc961c8fe6244]*/
 {
     return Py_BuildValue("O(OO)l", Py_TYPE(lz), lz->func, lz->it, lz->start);
 }
 
 /*[clinic input]
-itertools.dropwhile.__setstate__ as dropwhile_setstate
+itertools.dropwhile.__setstate__
 
     lz: self(type="dropwhileobject *")
     state: object
@@ -1089,8 +1090,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-dropwhile_setstate(dropwhileobject *lz, PyObject *state)
-/*[clinic end generated code: output=fd28c2f3fc19f7a1 input=397b3ecd83cbe6a4]*/
+itertools_dropwhile___setstate__(dropwhileobject *lz, PyObject *state)
+/*[clinic end generated code: output=8c7958a3e6d50e6e input=82816bca774cd179]*/
 {
     int start = PyObject_IsTrue(state);
     if (start < 0)
@@ -1113,7 +1114,7 @@ static PyTypeObject takewhile_type;
 
 /*[clinic input]
 @classmethod
-itertools.takewhile.__new__ as takewhile_new
+itertools.takewhile.__new__
 
     predicate: object
     iterable: object
@@ -1126,9 +1127,9 @@ predicate evaluates to true for each entry.
 [clinic start generated code]*/
 
 static PyObject *
-takewhile_new_impl(PyTypeObject *type, PyObject *predicate,
-                   PyObject *iterable)
-/*[clinic end generated code: output=ec1277335df81046 input=984bd1d6e5854510]*/
+itertools_takewhile_impl(PyTypeObject *type, PyObject *predicate,
+                         PyObject *iterable)
+/*[clinic end generated code: output=5bc9c62001c2078a input=398cac32350430a3]*/
 {
     PyObject *it;
     takewhileobject *lz;
@@ -1199,7 +1200,7 @@ takewhile_next(takewhileobject *lz)
 }
 
 /*[clinic input]
-itertools.takewhile.__reduce__ as takewhile_reduce
+itertools.takewhile.__reduce__
 
     lz: self(type="takewhileobject *")
 
@@ -1207,14 +1208,14 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-takewhile_reduce_impl(takewhileobject *lz)
-/*[clinic end generated code: output=f7b9e63cb66dc9e7 input=20da021310e98c13]*/
+itertools_takewhile___reduce___impl(takewhileobject *lz)
+/*[clinic end generated code: output=11993dd71a14554a input=424104832bfafebf]*/
 {
     return Py_BuildValue("O(OO)l", Py_TYPE(lz), lz->func, lz->it, lz->stop);
 }
 
 /*[clinic input]
-itertools.takewhile.__setstate__ as takewhile_setstate
+itertools.takewhile.__setstate__
 
     lz: self(type="takewhileobject *")
     state: object
@@ -1224,8 +1225,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-takewhile_setstate(takewhileobject *lz, PyObject *state)
-/*[clinic end generated code: output=66165bddfa716106 input=84532fc48b901e96]*/
+itertools_takewhile___setstate__(takewhileobject *lz, PyObject *state)
+/*[clinic end generated code: output=b69837a8ab1ec04c input=7c246e534b9f3772]*/
 {
     int stop = PyObject_IsTrue(state);
 
@@ -1388,7 +1389,7 @@ empty:
 }
 
 /*[clinic input]
-itertools.islice.__reduce__ as islice_reduce
+itertools.islice.__reduce__
 
     lz: self(type="isliceobject *")
 
@@ -1396,8 +1397,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-islice_reduce_impl(isliceobject *lz)
-/*[clinic end generated code: output=17608d57ce05ea0f input=2f71fe7c46f200f2]*/
+itertools_islice___reduce___impl(isliceobject *lz)
+/*[clinic end generated code: output=61b4f96ec6efa99b input=dc27abdca2f519f0]*/
 {
     /* When unpickled, generate a new object with the same bounds,
      * then 'setstate' with the next and count
@@ -1430,7 +1431,7 @@ islice_reduce_impl(isliceobject *lz)
 }
 
 /*[clinic input]
-itertools.islice.__setstate__ as islice_setstate
+itertools.islice.__setstate__
 
     lz: self(type="isliceobject *")
     state: object
@@ -1440,8 +1441,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-islice_setstate(isliceobject *lz, PyObject *state)
-/*[clinic end generated code: output=9d7a4479159c852e input=1e1a67c001a84c75]*/
+itertools_islice___setstate__(isliceobject *lz, PyObject *state)
+/*[clinic end generated code: output=f1c8bd2785eb4533 input=f29f69486ecbed09]*/
 {
     Py_ssize_t cnt = PyLong_AsSsize_t(state);
 
@@ -1475,10 +1476,11 @@ static PyTypeObject starmap_type;
 
 /*[clinic input]
 @classmethod
-itertools.starmap.__new__ as starmap_new
+itertools.starmap.__new__
 
     function: object
     iterable: object
+    /
 
 Create a starmap object.
 
@@ -1487,8 +1489,9 @@ with a argument tuple taken from the given iterable.
 [clinic start generated code]*/
 
 static PyObject *
-starmap_new_impl(PyTypeObject *type, PyObject *function, PyObject *iterable)
-/*[clinic end generated code: output=18acf452cb6c526c input=579f9b3e0229a194]*/
+itertools_starmap_impl(PyTypeObject *type, PyObject *function,
+                       PyObject *iterable)
+/*[clinic end generated code: output=d190ae80479a0717 input=19c167576f25a714]*/
 {
     PyObject *it;
     starmapobject *lz;
@@ -1551,7 +1554,7 @@ starmap_next(starmapobject *lz)
 }
 
 /*[clinic input]
-itertools.starmap.__reduce__ as starmap_reduce
+itertools.starmap.__reduce__
 
     lz: self(type="starmapobject *")
 
@@ -1559,8 +1562,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-starmap_reduce_impl(starmapobject *lz)
-/*[clinic end generated code: output=f37e06d630220ddd input=8101a8f2910ff54d]*/
+itertools_starmap___reduce___impl(starmapobject *lz)
+/*[clinic end generated code: output=e950b174e0f21a26 input=55118eeb5a994ad9]*/
 {
     /* Just pickle the iterator */
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
@@ -1616,7 +1619,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 /*[clinic input]
 @classmethod
-itertools.chain.from_iterable as chain_new_from_iterable
+itertools.chain.from_iterable
 
     iterable: object
     /
@@ -1628,8 +1631,8 @@ that evaluates lazily.
 [clinic start generated code]*/
 
 static PyObject *
-chain_new_from_iterable(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=2d5fc751e73b5a67 input=1f1c99200abefc48]*/
+itertools_chain_from_iterable(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=39373d88650cc4fd input=d39acc2717d725a0]*/
 {
     PyObject *source;
 
@@ -1696,7 +1699,7 @@ chain_next(chainobject *lz)
 }
 
 /*[clinic input]
-itertools.chain.__reduce__ as chain_reduce
+itertools.chain.__reduce__
 
     lz: self(type="chainobject *")
 
@@ -1704,8 +1707,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-chain_reduce_impl(chainobject *lz)
-/*[clinic end generated code: output=b9cfb60a29f977bc input=3c84dbccd41cefd6]*/
+itertools_chain___reduce___impl(chainobject *lz)
+/*[clinic end generated code: output=6594f396824c2de6 input=40f1f72154df0600]*/
 {
     if (lz->source) {
         /* we can't pickle function objects (itertools.from_iterable) so
@@ -1724,7 +1727,7 @@ chain_reduce_impl(chainobject *lz)
 }
 
 /*[clinic input]
-itertools.chain.__setstate__ as chain_setstate
+itertools.chain.__setstate__
 
     lz: self(type="chainobject *")
     state: object
@@ -1734,8 +1737,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-chain_setstate(chainobject *lz, PyObject *state)
-/*[clinic end generated code: output=5985fde1d79cb81f input=e376ccaff1fb8e28]*/
+itertools_chain___setstate__(chainobject *lz, PyObject *state)
+/*[clinic end generated code: output=7559b01351fd0e8d input=282b90d35a6bb316]*/
 {
     PyObject *source, *active=NULL;
 
@@ -1873,7 +1876,7 @@ product_dealloc(productobject *lz)
 }
 
 /*[clinic input]
-itertools.product.__sizeof__ as product_sizeof
+itertools.product.__sizeof__
 
     lz: self(type="productobject *")
 
@@ -1881,8 +1884,8 @@ Returns size in memory, in bytes.
 [clinic start generated code]*/
 
 static PyObject *
-product_sizeof_impl(productobject *lz)
-/*[clinic end generated code: output=a943d0f6487dbee1 input=13df894cf42c4ae2]*/
+itertools_product___sizeof___impl(productobject *lz)
+/*[clinic end generated code: output=ce319a3d05d744f5 input=c6403571079153d2]*/
 {
     Py_ssize_t res;
 
@@ -1987,7 +1990,7 @@ empty:
 }
 
 /*[clinic input]
-itertools.product.__reduce__ as product_reduce
+itertools.product.__reduce__
 
     lz: self(type="productobject *")
 
@@ -1995,8 +1998,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-product_reduce_impl(productobject *lz)
-/*[clinic end generated code: output=780ff23bb8dd0557 input=d20b4bf62464277a]*/
+itertools_product___reduce___impl(productobject *lz)
+/*[clinic end generated code: output=c9b1bd63abda2a19 input=5e414e4498eef6ad]*/
 {
     if (lz->stopped) {
         return Py_BuildValue("O(())", Py_TYPE(lz));
@@ -2026,7 +2029,7 @@ product_reduce_impl(productobject *lz)
 }
 
 /*[clinic input]
-itertools.product.__setstate__ as product_setstate
+itertools.product.__setstate__
 
     lz: self(type="productobject *")
     state: object
@@ -2036,8 +2039,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-product_setstate(productobject *lz, PyObject *state)
-/*[clinic end generated code: output=e28c92b80c88e261 input=6e813de246d596e0]*/
+itertools_product___setstate__(productobject *lz, PyObject *state)
+/*[clinic end generated code: output=1093cdaf9d74fbb1 input=fb082dff31228560]*/
 {
     PyObject *result;
     Py_ssize_t n, i;
@@ -2112,7 +2115,7 @@ static PyTypeObject combinations_type;
 
 /*[clinic input]
 @classmethod
-itertools.combinations.__new__ as combinations_new
+itertools.combinations.__new__
 
     iterable: object
     r: Py_ssize_t
@@ -2126,8 +2129,9 @@ combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)
 [clinic start generated code]*/
 
 static PyObject *
-combinations_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t r)
-/*[clinic end generated code: output=dcd9df4d7c03311f input=95fa7897cc2fc49c]*/
+itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
+                            Py_ssize_t r)
+/*[clinic end generated code: output=87a689b39c40039c input=981959b2658374e7]*/
 {
     combinationsobject *co;
     Py_ssize_t n;
@@ -2185,7 +2189,7 @@ combinations_dealloc(combinationsobject *co)
 }
 
 /*[clinic input]
-itertools.combinations.__sizeof__ as combinations_sizeof
+itertools.combinations.__sizeof__
 
     co: self(type="combinationsobject *")
 
@@ -2193,8 +2197,8 @@ Returns size in memory, in bytes.
 [clinic start generated code]*/
 
 static PyObject *
-combinations_sizeof_impl(combinationsobject *co)
-/*[clinic end generated code: output=b5bf6fa9dc59e413 input=aca277f15aec905e]*/
+itertools_combinations___sizeof___impl(combinationsobject *co)
+/*[clinic end generated code: output=54a7cda813b82b34 input=34eef409ac1a2fde]*/
 {
     Py_ssize_t res;
 
@@ -2298,7 +2302,7 @@ empty:
 }
 
 /*[clinic input]
-itertools.combinations.__reduce__ as combinations_reduce
+itertools.combinations.__reduce__
 
     lz: self(type="combinationsobject *")
 
@@ -2306,8 +2310,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-combinations_reduce_impl(combinationsobject *lz)
-/*[clinic end generated code: output=2dbd90d424ca2a58 input=85cd3171e4f80093]*/
+itertools_combinations___reduce___impl(combinationsobject *lz)
+/*[clinic end generated code: output=257385f3109fc253 input=c617afc1831ea57d]*/
 {
     if (lz->result == NULL) {
         return Py_BuildValue("O(On)", Py_TYPE(lz), lz->pool, lz->r);
@@ -2336,7 +2340,7 @@ combinations_reduce_impl(combinationsobject *lz)
 }
 
 /*[clinic input]
-itertools.combinations.__setstate__ as combinations_setstate
+itertools.combinations.__setstate__
 
     lz: self(type="combinationsobject *")
     state: object
@@ -2346,8 +2350,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-combinations_setstate(combinationsobject *lz, PyObject *state)
-/*[clinic end generated code: output=07388313134a205e input=0e3f5c7702c3f205]*/
+itertools_combinations___setstate__(combinationsobject *lz, PyObject *state)
+/*[clinic end generated code: output=7a063028237bba6f input=69a478ddf0a05659]*/
 {
     PyObject *result;
     Py_ssize_t i;
@@ -2429,7 +2433,7 @@ static PyTypeObject cwr_type;
 
 /*[clinic input]
 @classmethod
-itertools.combinations_with_replacement.__new__ as cwr_new
+itertools.combinations_with_replacement.__new__
 
     iterable: object
     r: Py_ssize_t
@@ -2444,8 +2448,10 @@ combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC
 [clinic start generated code]*/
 
 static PyObject *
-cwr_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t r)
-/*[clinic end generated code: output=14e1057a23897a3f input=9f05a18553d8ae6b]*/
+itertools_combinations_with_replacement_impl(PyTypeObject *type,
+                                             PyObject *iterable,
+                                             Py_ssize_t r)
+/*[clinic end generated code: output=48b26856d4e659ca input=4c5c1a4806321373]*/
 {
     cwrobject *co;
     Py_ssize_t n;
@@ -2504,7 +2510,7 @@ cwr_dealloc(cwrobject *co)
 }
 
 /*[clinic input]
-itertools.combinations_with_replacement.__sizeof__ as cwr_sizeof
+itertools.combinations_with_replacement.__sizeof__
 
     co: self(type="cwrobject *")
 
@@ -2512,8 +2518,8 @@ Returns size in memory, in bytes.
 [clinic start generated code]*/
 
 static PyObject *
-cwr_sizeof_impl(cwrobject *co)
-/*[clinic end generated code: output=fa9aa8e2438d6659 input=140461199e63fd20]*/
+itertools_combinations_with_replacement___sizeof___impl(cwrobject *co)
+/*[clinic end generated code: output=cd85ff1bd7165cbd input=561122f1c93feeb6]*/
 {
     Py_ssize_t res;
 
@@ -2611,7 +2617,7 @@ empty:
 }
 
 /*[clinic input]
-itertools.combinations_with_replacement.__reduce__ as cwr_reduce
+itertools.combinations_with_replacement.__reduce__
 
     lz: self(type="cwrobject *")
 
@@ -2619,8 +2625,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-cwr_reduce_impl(cwrobject *lz)
-/*[clinic end generated code: output=f20771ee5c58bf7b input=699bd8614edb3264]*/
+itertools_combinations_with_replacement___reduce___impl(cwrobject *lz)
+/*[clinic end generated code: output=d7a2bd1efb0717ab input=115806b814307304]*/
 {
     if (lz->result == NULL) {
         return Py_BuildValue("O(On)", Py_TYPE(lz), lz->pool, lz->r);
@@ -2648,7 +2654,7 @@ cwr_reduce_impl(cwrobject *lz)
 }
 
 /*[clinic input]
-itertools.combinations_with_replacement.__setstate__ as cwr_setstate
+itertools.combinations_with_replacement.__setstate__
 
     lz: self(type="cwrobject *")
     state: object
@@ -2658,8 +2664,9 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-cwr_setstate(cwrobject *lz, PyObject *state)
-/*[clinic end generated code: output=6b99738e81d51f65 input=f95a94fba268902e]*/
+itertools_combinations_with_replacement___setstate__(cwrobject *lz,
+                                                     PyObject *state)
+/*[clinic end generated code: output=f31bf60e9a0fdb64 input=90156ecfad115fff]*/
 {
     PyObject *result;
     Py_ssize_t n, i;
@@ -2736,7 +2743,7 @@ static PyTypeObject permutations_type;
 
 /*[clinic input]
 @classmethod
-itertools.permutations.__new__ as permutations_new
+itertools.permutations.__new__
 
     iterable: object
     r as robj: object = None
@@ -2750,8 +2757,9 @@ permutations(range(3), 2) --> (0,1), (0,2), (1,0), (1,2), (2,0), (2,1)
 [clinic start generated code]*/
 
 static PyObject *
-permutations_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *robj)
-/*[clinic end generated code: output=582d59fa75ce954a input=13f00959831dc55e]*/
+itertools_permutations_impl(PyTypeObject *type, PyObject *iterable,
+                            PyObject *robj)
+/*[clinic end generated code: output=296a72fa76d620ea input=9c610a744a96feca]*/
 {
     permutationsobject *po;
     Py_ssize_t n;
@@ -2828,7 +2836,7 @@ permutations_dealloc(permutationsobject *po)
 }
 
 /*[clinic input]
-itertools.permutations.__sizeof__ as permutations_sizeof
+itertools.permutations.__sizeof__
 
     po: self(type="permutationsobject *")
 
@@ -2836,8 +2844,8 @@ Returns size in memory, in bytes.
 [clinic start generated code]*/
 
 static PyObject *
-permutations_sizeof_impl(permutationsobject *po)
-/*[clinic end generated code: output=b7e8c75b02b8e2c2 input=6cc92f69030f504d]*/
+itertools_permutations___sizeof___impl(permutationsobject *po)
+/*[clinic end generated code: output=ca6c540cd826805e input=a48cd95b50ebe54d]*/
 {
     Py_ssize_t res;
 
@@ -2947,7 +2955,7 @@ empty:
 }
 
 /*[clinic input]
-itertools.permutations.__reduce__ as permutations_reduce
+itertools.permutations.__reduce__
 
     po: self(type="permutationsobject *")
 
@@ -2955,8 +2963,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-permutations_reduce_impl(permutationsobject *po)
-/*[clinic end generated code: output=02671f3b618ce7da input=bd7744eca6b1b799]*/
+itertools_permutations___reduce___impl(permutationsobject *po)
+/*[clinic end generated code: output=05078054eb73c547 input=7d0d86cadf904e1f]*/
 {
     if (po->result == NULL) {
         return Py_BuildValue("O(On)", Py_TYPE(po), po->pool, po->r);
@@ -2998,7 +3006,7 @@ permutations_reduce_impl(permutationsobject *po)
 }
 
 /*[clinic input]
-itertools.permutations.__setstate__ as permutations_setstate
+itertools.permutations.__setstate__
 
     po: self(type="permutationsobject *")
     state: object
@@ -3008,8 +3016,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-permutations_setstate(permutationsobject *po, PyObject *state)
-/*[clinic end generated code: output=86e8f8575c33f13a input=ecd8953efad338b0]*/
+itertools_permutations___setstate__(permutationsobject *po, PyObject *state)
+/*[clinic end generated code: output=2e1ba087dd904e90 input=fc4822358c5a73e6]*/
 {
     PyObject *indices, *cycles, *result;
     Py_ssize_t n, i;
@@ -3080,7 +3088,7 @@ static PyTypeObject accumulate_type;
 
 /*[clinic input]
 @classmethod
-itertools.accumulate.__new__ as accumulate_new
+itertools.accumulate.__new__
 
     iterable: object
     func: object = None
@@ -3091,8 +3099,9 @@ Return series of accumulated sums (or other binary function results).
 [clinic start generated code]*/
 
 static PyObject *
-accumulate_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *func)
-/*[clinic end generated code: output=784ef75e8d15e887 input=12f7c760779995b6]*/
+itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
+                          PyObject *func)
+/*[clinic end generated code: output=d516df8990181c36 input=5165c2dacdea3ac2]*/
 {
     PyObject *it;
     accumulateobject *lz;
@@ -3166,7 +3175,7 @@ accumulate_next(accumulateobject *lz)
 }
 
 /*[clinic input]
-itertools.accumulate.__reduce__ as accumulate_reduce
+itertools.accumulate.__reduce__
 
     lz: self(type="accumulateobject *")
 
@@ -3174,8 +3183,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-accumulate_reduce_impl(accumulateobject *lz)
-/*[clinic end generated code: output=2283d4373f698981 input=f247f0e80b550470]*/
+itertools_accumulate___reduce___impl(accumulateobject *lz)
+/*[clinic end generated code: output=b3dec81e417f3321 input=26f8ff5e3fbe4f24]*/
 {
     if (lz->total == Py_None) {
         PyObject *it;
@@ -3200,7 +3209,7 @@ accumulate_reduce_impl(accumulateobject *lz)
 }
 
 /*[clinic input]
-itertools.accumulate.__setstate__ as accumulate_setstate
+itertools.accumulate.__setstate__
 
     lz: self(type="accumulateobject *")
     state: object
@@ -3210,8 +3219,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-accumulate_setstate(accumulateobject *lz, PyObject *state)
-/*[clinic end generated code: output=f29ac8c980f53fb5 input=7dfef829558611fc]*/
+itertools_accumulate___setstate__(accumulateobject *lz, PyObject *state)
+/*[clinic end generated code: output=870a945d5dfd9a5f input=2387d0130fc610ad]*/
 {
     Py_INCREF(state);
     Py_XSETREF(lz->total, state);
@@ -3238,7 +3247,7 @@ static PyTypeObject compress_type;
 
 /*[clinic input]
 @classmethod
-itertools.compress.__new__ as compress_new
+itertools.compress.__new__
 
     data: object
     selectors: object
@@ -3251,8 +3260,9 @@ selectors to choose the data elements.
 [clinic start generated code]*/
 
 static PyObject *
-compress_new_impl(PyTypeObject *type, PyObject *data, PyObject *selectors)
-/*[clinic end generated code: output=e3726e87f1cf6ba4 input=2d99935f390029a2]*/
+itertools_compress_impl(PyTypeObject *type, PyObject *data,
+                        PyObject *selectors)
+/*[clinic end generated code: output=3d1b4774062aac69 input=551cf0d42e9c7cde]*/
 {
     PyObject *data_iter=NULL, *selectors_iter=NULL;
     compressobject *lz;
@@ -3332,7 +3342,7 @@ compress_next(compressobject *lz)
 }
 
 /*[clinic input]
-itertools.compress.__reduce__ as compress_reduce
+itertools.compress.__reduce__
 
     lz: self(type="compressobject *")
 
@@ -3340,8 +3350,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-compress_reduce_impl(compressobject *lz)
-/*[clinic end generated code: output=bfc478e270a28115 input=3e864458db0eccf9]*/
+itertools_compress___reduce___impl(compressobject *lz)
+/*[clinic end generated code: output=cdac22171e08d543 input=eb333a57f9d7cd3b]*/
 {
     return Py_BuildValue("O(OO)", Py_TYPE(lz),
         lz->data, lz->selectors);
@@ -3360,7 +3370,7 @@ static PyTypeObject filterfalse_type;
 
 /*[clinic input]
 @classmethod
-itertools.filterfalse.__new__ as filterfalse_new
+itertools.filterfalse.__new__
 
     function: object
     iterable: object
@@ -3373,9 +3383,9 @@ If function is None, return the items that are false.
 [clinic start generated code]*/
 
 static PyObject *
-filterfalse_new_impl(PyTypeObject *type, PyObject *function,
-                     PyObject *iterable)
-/*[clinic end generated code: output=d8a4c0a668fcea69 input=3ea201239931baaa]*/
+itertools_filterfalse_impl(PyTypeObject *type, PyObject *function,
+                           PyObject *iterable)
+/*[clinic end generated code: output=d5a2f454b8a9abb1 input=b22461be1e15822e]*/
 {
     PyObject *it;
     filterfalseobject *lz;
@@ -3450,7 +3460,7 @@ filterfalse_next(filterfalseobject *lz)
 }
 
 /*[clinic input]
-itertools.filterfalse.__reduce__ as filterfalse_reduce
+itertools.filterfalse.__reduce__
 
     lz: self(type="filterfalseobject *")
 
@@ -3458,8 +3468,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-filterfalse_reduce_impl(filterfalseobject *lz)
-/*[clinic end generated code: output=ac8620bdd55ddf72 input=2b3852a10df5d06c]*/
+itertools_filterfalse___reduce___impl(filterfalseobject *lz)
+/*[clinic end generated code: output=695bb9e7d9c7c8dd input=4251cf332a099624]*/
 {
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
@@ -3495,10 +3505,10 @@ static PyTypeObject count_type;
 
 /*[clinic input]
 @classmethod
-itertools.count.__new__ as count_new
+itertools.count.__new__
 
-    start: object = NULL
-    step: object = NULL
+    start as long_cnt: object(c_default="NULL") = 0
+    step as long_step: object(c_default="NULL") = 1
 
 Create a count object.
 
@@ -3513,28 +3523,29 @@ Equivalent to:
 [clinic start generated code]*/
 
 static PyObject *
-count_new_impl(PyTypeObject *type, PyObject *start, PyObject *step)
-/*[clinic end generated code: output=1df9fad69d29f4ec input=2576781c3efb35bf]*/
+itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
+                     PyObject *long_step)
+/*[clinic end generated code: output=09a9250aebd00b1c input=20f1ce2f2484a91c]*/
 {
     countobject *lz;
     int fast_mode;
     Py_ssize_t cnt = 0;
-    long step_long;
+    long step;
 
-    if ((start != NULL && !PyNumber_Check(start)) ||
-        (step != NULL && !PyNumber_Check(step))) {
+    if ((long_cnt != NULL && !PyNumber_Check(long_cnt)) ||
+        (long_step != NULL && !PyNumber_Check(long_step))) {
                     PyErr_SetString(PyExc_TypeError, "a number is required");
                     return NULL;
     }
 
-    fast_mode = (start == NULL || PyLong_Check(start)) &&
-                (step == NULL || PyLong_Check(step));
+    fast_mode = (long_cnt == NULL || PyLong_Check(long_cnt)) &&
+                (long_step == NULL || PyLong_Check(long_step));
 
     /* If not specified, start defaults to 0 */
-    if (start != NULL) {
+    if (long_cnt != NULL) {
         if (fast_mode) {
-            assert(PyLong_Check(start));
-            cnt = PyLong_AsSsize_t(start);
+            assert(PyLong_Check(long_cnt));
+            cnt = PyLong_AsSsize_t(long_cnt);
             if (cnt == -1 && PyErr_Occurred()) {
                 PyErr_Clear();
                 fast_mode = 0;
@@ -3542,47 +3553,47 @@ count_new_impl(PyTypeObject *type, PyObject *start, PyObject *step)
         }
     } else {
         cnt = 0;
-        start = _PyLong_Zero;
+        long_cnt = _PyLong_Zero;
     }
-    Py_INCREF(start);
+    Py_INCREF(long_cnt);
 
     /* If not specified, step defaults to 1 */
-    if (step == NULL)
-        step = _PyLong_One;
-    Py_INCREF(step);
+    if (long_step == NULL)
+        long_step = _PyLong_One;
+    Py_INCREF(long_step);
 
-    assert(start != NULL && step != NULL);
+    assert(long_cnt != NULL && long_step != NULL);
 
     /* Fast mode only works when the step is 1 */
     if (fast_mode) {
-        assert(PyLong_Check(step));
-        step_long = PyLong_AsLong(step);
-        if (step_long != 1) {
+        assert(PyLong_Check(long_step));
+        step = PyLong_AsLong(long_step);
+        if (step != 1) {
             fast_mode = 0;
-            if (step_long == -1 && PyErr_Occurred())
+            if (step == -1 && PyErr_Occurred())
                 PyErr_Clear();
         }
     }
 
     if (fast_mode)
-        Py_CLEAR(start);
+        Py_CLEAR(long_cnt);
     else
         cnt = PY_SSIZE_T_MAX;
 
-    assert((cnt != PY_SSIZE_T_MAX && start == NULL && fast_mode) ||
-           (cnt == PY_SSIZE_T_MAX && start != NULL && !fast_mode));
+    assert((cnt != PY_SSIZE_T_MAX && long_cnt == NULL && fast_mode) ||
+           (cnt == PY_SSIZE_T_MAX && long_cnt != NULL && !fast_mode));
     assert(!fast_mode ||
-           (PyLong_Check(step) && PyLong_AS_LONG(step) == 1));
+           (PyLong_Check(long_step) && PyLong_AS_LONG(long_step) == 1));
 
     /* create countobject structure */
     lz = (countobject *)type->tp_alloc(type, 0);
     if (lz == NULL) {
-        Py_XDECREF(start);
+        Py_XDECREF(long_cnt);
         return NULL;
     }
     lz->cnt = cnt;
-    lz->long_cnt = start;
-    lz->long_step = step;
+    lz->long_cnt = long_cnt;
+    lz->long_step = long_step;
 
     return (PyObject *)lz;
 }
@@ -3659,7 +3670,7 @@ count_repr(countobject *lz)
 }
 
 /*[clinic input]
-itertools.count.__reduce__ as count_reduce
+itertools.count.__reduce__
 
     lz: self(type="countobject *")
 
@@ -3667,8 +3678,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-count_reduce_impl(countobject *lz)
-/*[clinic end generated code: output=64fec5d0ca5aa2cd input=8a68e97535b37707]*/
+itertools_count___reduce___impl(countobject *lz)
+/*[clinic end generated code: output=7b9930e2bafa91bc input=d2f794fb73706bbb]*/
 {
     if (lz->cnt == PY_SSIZE_T_MAX)
         return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->long_cnt, lz->long_step);
@@ -3752,7 +3763,7 @@ repeat_repr(repeatobject *ro)
 }
 
 /*[clinic input]
-itertools.repeat.__length_hint__ as repeat_len
+itertools.repeat.__length_hint__
 
     ro: self(type="repeatobject *")
 
@@ -3760,8 +3771,8 @@ Private method returning an estimate of len(list(it)).
 [clinic start generated code]*/
 
 static PyObject *
-repeat_len_impl(repeatobject *ro)
-/*[clinic end generated code: output=f910fff81aefe178 input=59a6f9f93682bcaf]*/
+itertools_repeat___length_hint___impl(repeatobject *ro)
+/*[clinic end generated code: output=2338c14b3a3b1fc7 input=1e3f9bda2d073686]*/
 {
     if (ro->cnt == -1) {
         PyErr_SetString(PyExc_TypeError, "len() of unsized object");
@@ -3771,7 +3782,7 @@ repeat_len_impl(repeatobject *ro)
 }
 
 /*[clinic input]
-itertools.repeat.__reduce__ as repeat_reduce
+itertools.repeat.__reduce__
 
     ro: self(type="repeatobject *")
 
@@ -3779,8 +3790,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-repeat_reduce_impl(repeatobject *ro)
-/*[clinic end generated code: output=8f15345d61cd588e input=4eab78b8fd9130d4]*/
+itertools_repeat___reduce___impl(repeatobject *ro)
+/*[clinic end generated code: output=f52f9e3a480349d5 input=d6aa5ae9a068c386]*/
 {
     /* unpickle this so that a new repeat iterator is constructed with an
      * object, then call __setstate__ on it to set cnt
@@ -3969,7 +3980,7 @@ zip_longest_next(ziplongestobject *lz)
 }
 
 /*[clinic input]
-itertools.zip_longest.__reduce__ as zip_longest_reduce
+itertools.zip_longest.__reduce__
 
     lz: self(type="ziplongestobject *")
 
@@ -3977,8 +3988,8 @@ Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
-zip_longest_reduce_impl(ziplongestobject *lz)
-/*[clinic end generated code: output=561995d1e971a31d input=25269cf781351ff5]*/
+itertools_zip_longest___reduce___impl(ziplongestobject *lz)
+/*[clinic end generated code: output=a893152414808221 input=ad9ccb9841a40b4c]*/
 {
 
     /* Create a new tuple with empty sequences where appropriate to pickle.
@@ -4005,7 +4016,7 @@ zip_longest_reduce_impl(ziplongestobject *lz)
 }
 
 /*[clinic input]
-itertools.zip_longest.__setstate__ as zip_longest_setstate
+itertools.zip_longest.__setstate__
 
     lz: self(type="ziplongestobject *")
     state: object
@@ -4015,8 +4026,8 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-zip_longest_setstate(ziplongestobject *lz, PyObject *state)
-/*[clinic end generated code: output=55d1c40777c57700 input=0f40aa1fb87dd8c4]*/
+itertools_zip_longest___setstate__(ziplongestobject *lz, PyObject *state)
+/*[clinic end generated code: output=14f31f6a347ee50a input=7af98e8fd8ae9107]*/
 {
     Py_INCREF(state);
     Py_XSETREF(lz->fillvalue, state);
@@ -4044,8 +4055,8 @@ defaults to None or can be specified by a keyword argument.\n\
 
 
 static PyMethodDef groupby_methods[] = {
-    GROUPBY_REDUCE_METHODDEF
-    GROUPBY_SETSTATE_METHODDEF
+    ITERTOOLS_GROUPBY___REDUCE___METHODDEF
+    ITERTOOLS_GROUPBY___SETSTATE___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -4072,7 +4083,7 @@ static PyTypeObject groupby_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    groupby_new__doc__,                 /* tp_doc */
+    itertools_groupby__doc__,           /* tp_doc */
     (traverseproc)groupby_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4089,13 +4100,13 @@ static PyTypeObject groupby_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    groupby_new,                        /* tp_new */
+    itertools_groupby,                  /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef _grouper_methods[] = {
-    _GROUPER_REDUCE_METHODDEF
+    ITERTOOLS__GROUPER___REDUCE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4139,13 +4150,13 @@ static PyTypeObject _grouper_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    _grouper_new,                       /* tp_new */
+    itertools__grouper,                 /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef teedataobject_methods[] = {
-    TEEDATAOBJECT_REDUCE_METHODDEF
+    ITERTOOLS_TEEDATAOBJECT___REDUCE___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -4171,7 +4182,7 @@ static PyTypeObject teedataobject_type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    teedataobject_new__doc__,                   /* tp_doc */
+    itertools_teedataobject__doc__,             /* tp_doc */
     (traverseproc)teedataobject_traverse,       /* tp_traverse */
     (inquiry)teedataobject_clear,               /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4188,15 +4199,15 @@ static PyTypeObject teedataobject_type = {
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
-    teedataobject_new,                          /* tp_new */
+    itertools_teedataobject,                    /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
 
 
 static PyMethodDef tee_methods[] = {
-    TEE_COPY_METHODDEF
-    TEE_REDUCE_METHODDEF
-    TEE_SETSTATE_METHODDEF
+    ITERTOOLS__TEE___COPY___METHODDEF
+    ITERTOOLS__TEE___REDUCE___METHODDEF
+    ITERTOOLS__TEE___SETSTATE___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -4222,7 +4233,7 @@ static PyTypeObject tee_type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
-    tee_new__doc__,                     /* tp_doc */
+    itertools__tee__doc__,              /* tp_doc */
     (traverseproc)tee_traverse,         /* tp_traverse */
     (inquiry)tee_clear,                 /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4239,14 +4250,14 @@ static PyTypeObject tee_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    tee_new,                            /* tp_new */
+    itertools__tee,                     /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef cycle_methods[] = {
-    CYCLE_REDUCE_METHODDEF
-    CYCLE_SETSTATE_METHODDEF
+    ITERTOOLS_CYCLE___REDUCE___METHODDEF
+    ITERTOOLS_CYCLE___SETSTATE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4274,7 +4285,7 @@ static PyTypeObject cycle_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    cycle_new__doc__,                   /* tp_doc */
+    itertools_cycle__doc__,             /* tp_doc */
     (traverseproc)cycle_traverse,       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4291,14 +4302,14 @@ static PyTypeObject cycle_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    cycle_new,                          /* tp_new */
+    itertools_cycle,                    /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef dropwhile_methods[] = {
-    DROPWHILE_REDUCE_METHODDEF
-    DROPWHILE_SETSTATE_METHODDEF
+    ITERTOOLS_DROPWHILE___REDUCE___METHODDEF
+    ITERTOOLS_DROPWHILE___SETSTATE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4325,7 +4336,7 @@ static PyTypeObject dropwhile_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    dropwhile_new__doc__,               /* tp_doc */
+    itertools_dropwhile__doc__,         /* tp_doc */
     (traverseproc)dropwhile_traverse,   /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4342,14 +4353,14 @@ static PyTypeObject dropwhile_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    dropwhile_new,                      /* tp_new */
+    itertools_dropwhile,                /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef takewhile_reduce_methods[] = {
-    TAKEWHILE_REDUCE_METHODDEF
-    TAKEWHILE_SETSTATE_METHODDEF
+    ITERTOOLS_TAKEWHILE___REDUCE___METHODDEF
+    ITERTOOLS_TAKEWHILE___SETSTATE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4376,7 +4387,7 @@ static PyTypeObject takewhile_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    takewhile_new__doc__,               /* tp_doc */
+    itertools_takewhile__doc__,         /* tp_doc */
     (traverseproc)takewhile_traverse,   /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4393,14 +4404,14 @@ static PyTypeObject takewhile_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    takewhile_new,                      /* tp_new */
+    itertools_takewhile,                /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef islice_methods[] = {
-    ISLICE_REDUCE_METHODDEF
-    ISLICE_SETSTATE_METHODDEF
+    ITERTOOLS_ISLICE___REDUCE___METHODDEF
+    ITERTOOLS_ISLICE___SETSTATE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4450,7 +4461,7 @@ static PyTypeObject islice_type = {
 
 
 static PyMethodDef starmap_methods[] = {
-    STARMAP_REDUCE_METHODDEF
+    ITERTOOLS_STARMAP___REDUCE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4477,7 +4488,7 @@ static PyTypeObject starmap_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    starmap_new__doc__,                 /* tp_doc */
+    itertools_starmap__doc__,           /* tp_doc */
     (traverseproc)starmap_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4494,15 +4505,15 @@ static PyTypeObject starmap_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    starmap_new,                        /* tp_new */
+    itertools_starmap,                  /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef chain_methods[] = {
-    CHAIN_NEW_FROM_ITERABLE_METHODDEF
-    CHAIN_REDUCE_METHODDEF
-    CHAIN_SETSTATE_METHODDEF
+    ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF
+    ITERTOOLS_CHAIN___REDUCE___METHODDEF
+    ITERTOOLS_CHAIN___SETSTATE___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -4552,9 +4563,9 @@ static PyTypeObject chain_type = {
 
 
 static PyMethodDef product_methods[] = {
-    PRODUCT_REDUCE_METHODDEF
-    PRODUCT_SETSTATE_METHODDEF
-    PRODUCT_SIZEOF_METHODDEF
+    ITERTOOLS_PRODUCT___REDUCE___METHODDEF
+    ITERTOOLS_PRODUCT___SETSTATE___METHODDEF
+    ITERTOOLS_PRODUCT___SIZEOF___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4598,15 +4609,15 @@ static PyTypeObject product_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    product_new,                        /* tp_new */
+    product_new,                          /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef combinations_methods[] = {
-    COMBINATIONS_REDUCE_METHODDEF
-    COMBINATIONS_SETSTATE_METHODDEF
-    COMBINATIONS_SIZEOF_METHODDEF
+    ITERTOOLS_COMBINATIONS___REDUCE___METHODDEF
+    ITERTOOLS_COMBINATIONS___SETSTATE___METHODDEF
+    ITERTOOLS_COMBINATIONS___SIZEOF___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4633,7 +4644,7 @@ static PyTypeObject combinations_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    combinations_new__doc__,            /* tp_doc */
+    itertools_combinations__doc__,      /* tp_doc */
     (traverseproc)combinations_traverse,/* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4650,15 +4661,15 @@ static PyTypeObject combinations_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    combinations_new,                   /* tp_new */
+    itertools_combinations,             /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef cwr_methods[] = {
-    CWR_REDUCE_METHODDEF
-    CWR_SETSTATE_METHODDEF
-    CWR_SIZEOF_METHODDEF
+    ITERTOOLS_COMBINATIONS_WITH_REPLACEMENT___REDUCE___METHODDEF
+    ITERTOOLS_COMBINATIONS_WITH_REPLACEMENT___SETSTATE___METHODDEF
+    ITERTOOLS_COMBINATIONS_WITH_REPLACEMENT___SIZEOF___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4685,7 +4696,7 @@ static PyTypeObject cwr_type = {
     0,                                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                            /* tp_flags */
-    cwr_new__doc__,                                     /* tp_doc */
+    itertools_combinations_with_replacement__doc__,     /* tp_doc */
     (traverseproc)cwr_traverse,                         /* tp_traverse */
     0,                                                  /* tp_clear */
     0,                                                  /* tp_richcompare */
@@ -4702,15 +4713,15 @@ static PyTypeObject cwr_type = {
     0,                                                  /* tp_dictoffset */
     0,                                                  /* tp_init */
     0,                                                  /* tp_alloc */
-    cwr_new,                                            /* tp_new */
+    itertools_combinations_with_replacement,            /* tp_new */
     PyObject_GC_Del,                                    /* tp_free */
 };
 
 
 static PyMethodDef permuations_methods[] = {
-    PERMUTATIONS_REDUCE_METHODDEF
-    PERMUTATIONS_SETSTATE_METHODDEF
-    PERMUTATIONS_SIZEOF_METHODDEF
+    ITERTOOLS_PERMUTATIONS___REDUCE___METHODDEF
+    ITERTOOLS_PERMUTATIONS___SETSTATE___METHODDEF
+    ITERTOOLS_PERMUTATIONS___SIZEOF___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4737,7 +4748,7 @@ static PyTypeObject permutations_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    permutations_new__doc__,            /* tp_doc */
+    itertools_permutations__doc__,      /* tp_doc */
     (traverseproc)permutations_traverse,/* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4754,14 +4765,14 @@ static PyTypeObject permutations_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    permutations_new,                   /* tp_new */
+    itertools_permutations,             /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef accumulate_methods[] = {
-    ACCUMULATE_REDUCE_METHODDEF
-    ACCUMULATE_SETSTATE_METHODDEF
+    ITERTOOLS_ACCUMULATE___REDUCE___METHODDEF
+    ITERTOOLS_ACCUMULATE___SETSTATE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4788,7 +4799,7 @@ static PyTypeObject accumulate_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    accumulate_new__doc__,              /* tp_doc */
+    itertools_accumulate__doc__,        /* tp_doc */
     (traverseproc)accumulate_traverse,  /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4805,13 +4816,13 @@ static PyTypeObject accumulate_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    accumulate_new,                     /* tp_new */
+    itertools_accumulate,               /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef compress_methods[] = {
-    COMPRESS_REDUCE_METHODDEF
+    ITERTOOLS_COMPRESS___REDUCE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4838,7 +4849,7 @@ static PyTypeObject compress_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    compress_new__doc__,                /* tp_doc */
+    itertools_compress__doc__,          /* tp_doc */
     (traverseproc)compress_traverse,    /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4855,13 +4866,13 @@ static PyTypeObject compress_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    compress_new,                       /* tp_new */
+    itertools_compress,                 /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef filterfalse_methods[] = {
-    FILTERFALSE_REDUCE_METHODDEF
+    ITERTOOLS_FILTERFALSE___REDUCE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4888,7 +4899,7 @@ static PyTypeObject filterfalse_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    filterfalse_new__doc__,             /* tp_doc */
+    itertools_filterfalse__doc__,       /* tp_doc */
     (traverseproc)filterfalse_traverse, /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4905,13 +4916,13 @@ static PyTypeObject filterfalse_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    filterfalse_new,                    /* tp_new */
+    itertools_filterfalse,              /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef count_methods[] = {
-    COUNT_REDUCE_METHODDEF
+    ITERTOOLS_COUNT___REDUCE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -4938,7 +4949,7 @@ static PyTypeObject count_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    count_new__doc__,                   /* tp_doc */
+    itertools_count__doc__,             /* tp_doc */
     (traverseproc)count_traverse,       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4955,14 +4966,14 @@ static PyTypeObject count_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    count_new,                          /* tp_new */
+    itertools_count,                    /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
 
 static PyMethodDef repeat_methods[] = {
-    REPEAT_LEN_METHODDEF
-    REPEAT_REDUCE_METHODDEF
+    ITERTOOLS_REPEAT___LENGTH_HINT___METHODDEF
+    ITERTOOLS_REPEAT___REDUCE___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -5012,8 +5023,8 @@ static PyTypeObject repeat_type = {
 
 
 static PyMethodDef zip_longest_methods[] = {
-    ZIP_LONGEST_REDUCE_METHODDEF
-    ZIP_LONGEST_SETSTATE_METHODDEF
+    ITERTOOLS_ZIP_LONGEST___REDUCE___METHODDEF
+    ITERTOOLS_ZIP_LONGEST___SETSTATE___METHODDEF
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -5096,7 +5107,7 @@ combinations_with_replacement(p, r)\n\
 
 
 static PyMethodDef module_methods[] = {
-    TEE_METHODDEF
+    ITERTOOLS_TEE_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

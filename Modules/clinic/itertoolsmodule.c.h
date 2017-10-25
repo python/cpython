@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(groupby_new__doc__,
+PyDoc_STRVAR(itertools_groupby__doc__,
 "groupby(iterable, key=None)\n"
 "--\n"
 "\n"
@@ -30,10 +30,10 @@ PyDoc_STRVAR(groupby_new__doc__,
 "key=1 group=[1]");
 
 static PyObject *
-groupby_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *key);
+itertools_groupby_impl(PyTypeObject *type, PyObject *iterable, PyObject *key);
 
 static PyObject *
-groupby_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "key", NULL};
@@ -45,44 +45,45 @@ groupby_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &iterable, &key)) {
         goto exit;
     }
-    return_value = groupby_new_impl(type, iterable, key);
+    return_value = itertools_groupby_impl(type, iterable, key);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(groupby_reduce__doc__,
+PyDoc_STRVAR(itertools_groupby___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define GROUPBY_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)groupby_reduce, METH_NOARGS, groupby_reduce__doc__},
+#define ITERTOOLS_GROUPBY___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_groupby___reduce__, METH_NOARGS, itertools_groupby___reduce____doc__},
 
 static PyObject *
-groupby_reduce_impl(groupbyobject *lz);
+itertools_groupby___reduce___impl(groupbyobject *lz);
 
 static PyObject *
-groupby_reduce(groupbyobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_groupby___reduce__(groupbyobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return groupby_reduce_impl(lz);
+    return itertools_groupby___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(groupby_setstate__doc__,
+PyDoc_STRVAR(itertools_groupby___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define GROUPBY_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)groupby_setstate, METH_O, groupby_setstate__doc__},
+#define ITERTOOLS_GROUPBY___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_groupby___setstate__, METH_O, itertools_groupby___setstate____doc__},
 
 static PyObject *
-_grouper_new_impl(PyTypeObject *type, PyObject *parent, PyObject *tgtkey);
+itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
+                        PyObject *tgtkey);
 
 static PyObject *
-_grouper_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyObject *parent;
@@ -96,60 +97,60 @@ _grouper_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &groupby_type, &parent, &tgtkey)) {
         goto exit;
     }
-    return_value = _grouper_new_impl(type, parent, tgtkey);
+    return_value = itertools__grouper_impl(type, parent, tgtkey);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_grouper_reduce__doc__,
+PyDoc_STRVAR(itertools__grouper___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define _GROUPER_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)_grouper_reduce, METH_NOARGS, _grouper_reduce__doc__},
+#define ITERTOOLS__GROUPER___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools__grouper___reduce__, METH_NOARGS, itertools__grouper___reduce____doc__},
 
 static PyObject *
-_grouper_reduce_impl(_grouperobject *lz);
+itertools__grouper___reduce___impl(_grouperobject *lz);
 
 static PyObject *
-_grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
+itertools__grouper___reduce__(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return _grouper_reduce_impl(lz);
+    return itertools__grouper___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(teedataobject_reduce__doc__,
+PyDoc_STRVAR(itertools_teedataobject___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define TEEDATAOBJECT_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)teedataobject_reduce, METH_NOARGS, teedataobject_reduce__doc__},
+#define ITERTOOLS_TEEDATAOBJECT___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_teedataobject___reduce__, METH_NOARGS, itertools_teedataobject___reduce____doc__},
 
 static PyObject *
-teedataobject_reduce_impl(teedataobject *tdo);
+itertools_teedataobject___reduce___impl(teedataobject *tdo);
 
 static PyObject *
-teedataobject_reduce(teedataobject *tdo, PyObject *Py_UNUSED(ignored))
+itertools_teedataobject___reduce__(teedataobject *tdo, PyObject *Py_UNUSED(ignored))
 {
-    return teedataobject_reduce_impl(tdo);
+    return itertools_teedataobject___reduce___impl(tdo);
 }
 
-PyDoc_STRVAR(teedataobject_new__doc__,
+PyDoc_STRVAR(itertools_teedataobject__doc__,
 "teedataobject(iterable, values, next, /)\n"
 "--\n"
 "\n"
 "Data container common to multiple tee objects.");
 
 static PyObject *
-teedataobject_new_impl(PyTypeObject *type, PyObject *iterable,
-                       PyObject *values, PyObject *next);
+itertools_teedataobject_impl(PyTypeObject *type, PyObject *iterable,
+                             PyObject *values, PyObject *next);
 
 static PyObject *
-teedataobject_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -164,31 +165,31 @@ teedataobject_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &iterable, &PyList_Type, &values, &next)) {
         goto exit;
     }
-    return_value = teedataobject_new_impl(type, iterable, values, next);
+    return_value = itertools_teedataobject_impl(type, iterable, values, next);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(tee_copy__doc__,
+PyDoc_STRVAR(itertools__tee___copy____doc__,
 "__copy__($self, /)\n"
 "--\n"
 "\n"
 "Returns an independent iterator.");
 
-#define TEE_COPY_METHODDEF    \
-    {"__copy__", (PyCFunction)tee_copy, METH_NOARGS, tee_copy__doc__},
+#define ITERTOOLS__TEE___COPY___METHODDEF    \
+    {"__copy__", (PyCFunction)itertools__tee___copy__, METH_NOARGS, itertools__tee___copy____doc__},
 
 static PyObject *
-tee_copy_impl(teeobject *to);
+itertools__tee___copy___impl(teeobject *to);
 
 static PyObject *
-tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
+itertools__tee___copy__(teeobject *to, PyObject *Py_UNUSED(ignored))
 {
-    return tee_copy_impl(to);
+    return itertools__tee___copy___impl(to);
 }
 
-PyDoc_STRVAR(tee_new__doc__,
+PyDoc_STRVAR(itertools__tee__doc__,
 "_tee(iterable, /)\n"
 "--\n"
 "\n"
@@ -197,10 +198,10 @@ PyDoc_STRVAR(tee_new__doc__,
 "An iterator wrapped to make it copyable.");
 
 static PyObject *
-tee_new_impl(PyTypeObject *type, PyObject *iterable);
+itertools__tee_impl(PyTypeObject *type, PyObject *iterable);
 
 static PyObject *
-tee_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools__tee(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -214,40 +215,40 @@ tee_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &iterable)) {
         goto exit;
     }
-    return_value = tee_new_impl(type, iterable);
+    return_value = itertools__tee_impl(type, iterable);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(tee_reduce__doc__,
+PyDoc_STRVAR(itertools__tee___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define TEE_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)tee_reduce, METH_NOARGS, tee_reduce__doc__},
+#define ITERTOOLS__TEE___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools__tee___reduce__, METH_NOARGS, itertools__tee___reduce____doc__},
 
 static PyObject *
-tee_reduce_impl(teeobject *to);
+itertools__tee___reduce___impl(teeobject *to);
 
 static PyObject *
-tee_reduce(teeobject *to, PyObject *Py_UNUSED(ignored))
+itertools__tee___reduce__(teeobject *to, PyObject *Py_UNUSED(ignored))
 {
-    return tee_reduce_impl(to);
+    return itertools__tee___reduce___impl(to);
 }
 
-PyDoc_STRVAR(tee_setstate__doc__,
+PyDoc_STRVAR(itertools__tee___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define TEE_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)tee_setstate, METH_O, tee_setstate__doc__},
+#define ITERTOOLS__TEE___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools__tee___setstate__, METH_O, itertools__tee___setstate____doc__},
 
-PyDoc_STRVAR(tee__doc__,
+PyDoc_STRVAR(itertools_tee__doc__,
 "tee($module, iterable, n=2, /)\n"
 "--\n"
 "\n"
@@ -260,14 +261,14 @@ PyDoc_STRVAR(tee__doc__,
 "else; otherwise, the iterable could get advanced without the tee objects (those\n"
 "in the returned tuple) being informed.");
 
-#define TEE_METHODDEF    \
-    {"tee", (PyCFunction)tee, METH_FASTCALL, tee__doc__},
+#define ITERTOOLS_TEE_METHODDEF    \
+    {"tee", (PyCFunction)itertools_tee, METH_FASTCALL, itertools_tee__doc__},
 
 static PyObject *
-tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n);
+itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n);
 
 static PyObject *
-tee(PyObject *module, PyObject **args, Py_ssize_t nargs)
+itertools_tee(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -277,13 +278,13 @@ tee(PyObject *module, PyObject **args, Py_ssize_t nargs)
         &iterable, &n)) {
         goto exit;
     }
-    return_value = tee_impl(module, iterable, n);
+    return_value = itertools_tee_impl(module, iterable, n);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(cycle_new__doc__,
+PyDoc_STRVAR(itertools_cycle__doc__,
 "cycle(iterable, /)\n"
 "--\n"
 "\n"
@@ -293,10 +294,10 @@ PyDoc_STRVAR(cycle_new__doc__,
 "Then it will repeat the sequence indefinitely.");
 
 static PyObject *
-cycle_new_impl(PyTypeObject *type, PyObject *iterable);
+itertools_cycle_impl(PyTypeObject *type, PyObject *iterable);
 
 static PyObject *
-cycle_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -310,40 +311,40 @@ cycle_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &iterable)) {
         goto exit;
     }
-    return_value = cycle_new_impl(type, iterable);
+    return_value = itertools_cycle_impl(type, iterable);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(cycle_reduce__doc__,
+PyDoc_STRVAR(itertools_cycle___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define CYCLE_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)cycle_reduce, METH_NOARGS, cycle_reduce__doc__},
+#define ITERTOOLS_CYCLE___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_cycle___reduce__, METH_NOARGS, itertools_cycle___reduce____doc__},
 
 static PyObject *
-cycle_reduce_impl(cycleobject *lz);
+itertools_cycle___reduce___impl(cycleobject *lz);
 
 static PyObject *
-cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_cycle___reduce__(cycleobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return cycle_reduce_impl(lz);
+    return itertools_cycle___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(cycle_setstate__doc__,
+PyDoc_STRVAR(itertools_cycle___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define CYCLE_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)cycle_setstate, METH_O, cycle_setstate__doc__},
+#define ITERTOOLS_CYCLE___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_cycle___setstate__, METH_O, itertools_cycle___setstate____doc__},
 
-PyDoc_STRVAR(dropwhile_new__doc__,
+PyDoc_STRVAR(itertools_dropwhile__doc__,
 "dropwhile(predicate, iterable, /)\n"
 "--\n"
 "\n"
@@ -353,11 +354,11 @@ PyDoc_STRVAR(dropwhile_new__doc__,
 "Afterwards, returns every element until the iterable is exhausted.");
 
 static PyObject *
-dropwhile_new_impl(PyTypeObject *type, PyObject *predicate,
-                   PyObject *iterable);
+itertools_dropwhile_impl(PyTypeObject *type, PyObject *predicate,
+                         PyObject *iterable);
 
 static PyObject *
-dropwhile_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyObject *predicate;
@@ -372,40 +373,40 @@ dropwhile_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &predicate, &iterable)) {
         goto exit;
     }
-    return_value = dropwhile_new_impl(type, predicate, iterable);
+    return_value = itertools_dropwhile_impl(type, predicate, iterable);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(dropwhile_reduce__doc__,
+PyDoc_STRVAR(itertools_dropwhile___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define DROPWHILE_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)dropwhile_reduce, METH_NOARGS, dropwhile_reduce__doc__},
+#define ITERTOOLS_DROPWHILE___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_dropwhile___reduce__, METH_NOARGS, itertools_dropwhile___reduce____doc__},
 
 static PyObject *
-dropwhile_reduce_impl(dropwhileobject *lz);
+itertools_dropwhile___reduce___impl(dropwhileobject *lz);
 
 static PyObject *
-dropwhile_reduce(dropwhileobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_dropwhile___reduce__(dropwhileobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return dropwhile_reduce_impl(lz);
+    return itertools_dropwhile___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(dropwhile_setstate__doc__,
+PyDoc_STRVAR(itertools_dropwhile___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define DROPWHILE_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)dropwhile_setstate, METH_O, dropwhile_setstate__doc__},
+#define ITERTOOLS_DROPWHILE___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_dropwhile___setstate__, METH_O, itertools_dropwhile___setstate____doc__},
 
-PyDoc_STRVAR(takewhile_new__doc__,
+PyDoc_STRVAR(itertools_takewhile__doc__,
 "takewhile(predicate, iterable, /)\n"
 "--\n"
 "\n"
@@ -415,11 +416,11 @@ PyDoc_STRVAR(takewhile_new__doc__,
 "predicate evaluates to true for each entry.");
 
 static PyObject *
-takewhile_new_impl(PyTypeObject *type, PyObject *predicate,
-                   PyObject *iterable);
+itertools_takewhile_impl(PyTypeObject *type, PyObject *predicate,
+                         PyObject *iterable);
 
 static PyObject *
-takewhile_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyObject *predicate;
@@ -434,68 +435,68 @@ takewhile_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &predicate, &iterable)) {
         goto exit;
     }
-    return_value = takewhile_new_impl(type, predicate, iterable);
+    return_value = itertools_takewhile_impl(type, predicate, iterable);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(takewhile_reduce__doc__,
+PyDoc_STRVAR(itertools_takewhile___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define TAKEWHILE_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)takewhile_reduce, METH_NOARGS, takewhile_reduce__doc__},
+#define ITERTOOLS_TAKEWHILE___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_takewhile___reduce__, METH_NOARGS, itertools_takewhile___reduce____doc__},
 
 static PyObject *
-takewhile_reduce_impl(takewhileobject *lz);
+itertools_takewhile___reduce___impl(takewhileobject *lz);
 
 static PyObject *
-takewhile_reduce(takewhileobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_takewhile___reduce__(takewhileobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return takewhile_reduce_impl(lz);
+    return itertools_takewhile___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(takewhile_setstate__doc__,
+PyDoc_STRVAR(itertools_takewhile___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define TAKEWHILE_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)takewhile_setstate, METH_O, takewhile_setstate__doc__},
+#define ITERTOOLS_TAKEWHILE___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_takewhile___setstate__, METH_O, itertools_takewhile___setstate____doc__},
 
-PyDoc_STRVAR(islice_reduce__doc__,
+PyDoc_STRVAR(itertools_islice___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define ISLICE_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)islice_reduce, METH_NOARGS, islice_reduce__doc__},
+#define ITERTOOLS_ISLICE___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_islice___reduce__, METH_NOARGS, itertools_islice___reduce____doc__},
 
 static PyObject *
-islice_reduce_impl(isliceobject *lz);
+itertools_islice___reduce___impl(isliceobject *lz);
 
 static PyObject *
-islice_reduce(isliceobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_islice___reduce__(isliceobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return islice_reduce_impl(lz);
+    return itertools_islice___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(islice_setstate__doc__,
+PyDoc_STRVAR(itertools_islice___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define ISLICE_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)islice_setstate, METH_O, islice_setstate__doc__},
+#define ITERTOOLS_ISLICE___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_islice___setstate__, METH_O, itertools_islice___setstate____doc__},
 
-PyDoc_STRVAR(starmap_new__doc__,
-"starmap(function, iterable)\n"
+PyDoc_STRVAR(itertools_starmap__doc__,
+"starmap(function, iterable, /)\n"
 "--\n"
 "\n"
 "Create a starmap object.\n"
@@ -504,46 +505,50 @@ PyDoc_STRVAR(starmap_new__doc__,
 "with a argument tuple taken from the given iterable.");
 
 static PyObject *
-starmap_new_impl(PyTypeObject *type, PyObject *function, PyObject *iterable);
+itertools_starmap_impl(PyTypeObject *type, PyObject *function,
+                       PyObject *iterable);
 
 static PyObject *
-starmap_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"function", "iterable", NULL};
-    static _PyArg_Parser _parser = {"OO:starmap", _keywords, 0};
     PyObject *function;
     PyObject *iterable;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if ((type == &starmap_type) &&
+        !_PyArg_NoKeywords("starmap", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_UnpackTuple(args, "starmap",
+        2, 2,
         &function, &iterable)) {
         goto exit;
     }
-    return_value = starmap_new_impl(type, function, iterable);
+    return_value = itertools_starmap_impl(type, function, iterable);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(starmap_reduce__doc__,
+PyDoc_STRVAR(itertools_starmap___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define STARMAP_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)starmap_reduce, METH_NOARGS, starmap_reduce__doc__},
+#define ITERTOOLS_STARMAP___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_starmap___reduce__, METH_NOARGS, itertools_starmap___reduce____doc__},
 
 static PyObject *
-starmap_reduce_impl(starmapobject *lz);
+itertools_starmap___reduce___impl(starmapobject *lz);
 
 static PyObject *
-starmap_reduce(starmapobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_starmap___reduce__(starmapobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return starmap_reduce_impl(lz);
+    return itertools_starmap___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(chain_new_from_iterable__doc__,
+PyDoc_STRVAR(itertools_chain_from_iterable__doc__,
 "from_iterable($type, iterable, /)\n"
 "--\n"
 "\n"
@@ -552,82 +557,82 @@ PyDoc_STRVAR(chain_new_from_iterable__doc__,
 "Alternate chain() contructor taking a single iterable argument\n"
 "that evaluates lazily.");
 
-#define CHAIN_NEW_FROM_ITERABLE_METHODDEF    \
-    {"from_iterable", (PyCFunction)chain_new_from_iterable, METH_O|METH_CLASS, chain_new_from_iterable__doc__},
+#define ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF    \
+    {"from_iterable", (PyCFunction)itertools_chain_from_iterable, METH_O|METH_CLASS, itertools_chain_from_iterable__doc__},
 
-PyDoc_STRVAR(chain_reduce__doc__,
+PyDoc_STRVAR(itertools_chain___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define CHAIN_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)chain_reduce, METH_NOARGS, chain_reduce__doc__},
+#define ITERTOOLS_CHAIN___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_chain___reduce__, METH_NOARGS, itertools_chain___reduce____doc__},
 
 static PyObject *
-chain_reduce_impl(chainobject *lz);
+itertools_chain___reduce___impl(chainobject *lz);
 
 static PyObject *
-chain_reduce(chainobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_chain___reduce__(chainobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return chain_reduce_impl(lz);
+    return itertools_chain___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(chain_setstate__doc__,
+PyDoc_STRVAR(itertools_chain___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define CHAIN_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)chain_setstate, METH_O, chain_setstate__doc__},
+#define ITERTOOLS_CHAIN___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_chain___setstate__, METH_O, itertools_chain___setstate____doc__},
 
-PyDoc_STRVAR(product_sizeof__doc__,
+PyDoc_STRVAR(itertools_product___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
 "\n"
 "Returns size in memory, in bytes.");
 
-#define PRODUCT_SIZEOF_METHODDEF    \
-    {"__sizeof__", (PyCFunction)product_sizeof, METH_NOARGS, product_sizeof__doc__},
+#define ITERTOOLS_PRODUCT___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)itertools_product___sizeof__, METH_NOARGS, itertools_product___sizeof____doc__},
 
 static PyObject *
-product_sizeof_impl(productobject *lz);
+itertools_product___sizeof___impl(productobject *lz);
 
 static PyObject *
-product_sizeof(productobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_product___sizeof__(productobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return product_sizeof_impl(lz);
+    return itertools_product___sizeof___impl(lz);
 }
 
-PyDoc_STRVAR(product_reduce__doc__,
+PyDoc_STRVAR(itertools_product___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define PRODUCT_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)product_reduce, METH_NOARGS, product_reduce__doc__},
+#define ITERTOOLS_PRODUCT___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_product___reduce__, METH_NOARGS, itertools_product___reduce____doc__},
 
 static PyObject *
-product_reduce_impl(productobject *lz);
+itertools_product___reduce___impl(productobject *lz);
 
 static PyObject *
-product_reduce(productobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_product___reduce__(productobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return product_reduce_impl(lz);
+    return itertools_product___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(product_setstate__doc__,
+PyDoc_STRVAR(itertools_product___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define PRODUCT_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)product_setstate, METH_O, product_setstate__doc__},
+#define ITERTOOLS_PRODUCT___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_product___setstate__, METH_O, itertools_product___setstate____doc__},
 
-PyDoc_STRVAR(combinations_new__doc__,
+PyDoc_STRVAR(itertools_combinations__doc__,
 "combinations(iterable, r)\n"
 "--\n"
 "\n"
@@ -639,10 +644,11 @@ PyDoc_STRVAR(combinations_new__doc__,
 "combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)");
 
 static PyObject *
-combinations_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t r);
+itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
+                            Py_ssize_t r);
 
 static PyObject *
-combinations_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "r", NULL};
@@ -654,58 +660,58 @@ combinations_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &iterable, &r)) {
         goto exit;
     }
-    return_value = combinations_new_impl(type, iterable, r);
+    return_value = itertools_combinations_impl(type, iterable, r);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(combinations_sizeof__doc__,
+PyDoc_STRVAR(itertools_combinations___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
 "\n"
 "Returns size in memory, in bytes.");
 
-#define COMBINATIONS_SIZEOF_METHODDEF    \
-    {"__sizeof__", (PyCFunction)combinations_sizeof, METH_NOARGS, combinations_sizeof__doc__},
+#define ITERTOOLS_COMBINATIONS___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)itertools_combinations___sizeof__, METH_NOARGS, itertools_combinations___sizeof____doc__},
 
 static PyObject *
-combinations_sizeof_impl(combinationsobject *co);
+itertools_combinations___sizeof___impl(combinationsobject *co);
 
 static PyObject *
-combinations_sizeof(combinationsobject *co, PyObject *Py_UNUSED(ignored))
+itertools_combinations___sizeof__(combinationsobject *co, PyObject *Py_UNUSED(ignored))
 {
-    return combinations_sizeof_impl(co);
+    return itertools_combinations___sizeof___impl(co);
 }
 
-PyDoc_STRVAR(combinations_reduce__doc__,
+PyDoc_STRVAR(itertools_combinations___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define COMBINATIONS_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)combinations_reduce, METH_NOARGS, combinations_reduce__doc__},
+#define ITERTOOLS_COMBINATIONS___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_combinations___reduce__, METH_NOARGS, itertools_combinations___reduce____doc__},
 
 static PyObject *
-combinations_reduce_impl(combinationsobject *lz);
+itertools_combinations___reduce___impl(combinationsobject *lz);
 
 static PyObject *
-combinations_reduce(combinationsobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_combinations___reduce__(combinationsobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return combinations_reduce_impl(lz);
+    return itertools_combinations___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(combinations_setstate__doc__,
+PyDoc_STRVAR(itertools_combinations___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define COMBINATIONS_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)combinations_setstate, METH_O, combinations_setstate__doc__},
+#define ITERTOOLS_COMBINATIONS___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_combinations___setstate__, METH_O, itertools_combinations___setstate____doc__},
 
-PyDoc_STRVAR(cwr_new__doc__,
+PyDoc_STRVAR(itertools_combinations_with_replacement__doc__,
 "combinations_with_replacement(iterable, r)\n"
 "--\n"
 "\n"
@@ -718,10 +724,12 @@ PyDoc_STRVAR(cwr_new__doc__,
 "combinations_with_replacement(\'ABC\', 2) --> AA AB AC BB BC CC");
 
 static PyObject *
-cwr_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t r);
+itertools_combinations_with_replacement_impl(PyTypeObject *type,
+                                             PyObject *iterable,
+                                             Py_ssize_t r);
 
 static PyObject *
-cwr_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "r", NULL};
@@ -733,58 +741,58 @@ cwr_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &iterable, &r)) {
         goto exit;
     }
-    return_value = cwr_new_impl(type, iterable, r);
+    return_value = itertools_combinations_with_replacement_impl(type, iterable, r);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(cwr_sizeof__doc__,
+PyDoc_STRVAR(itertools_combinations_with_replacement___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
 "\n"
 "Returns size in memory, in bytes.");
 
-#define CWR_SIZEOF_METHODDEF    \
-    {"__sizeof__", (PyCFunction)cwr_sizeof, METH_NOARGS, cwr_sizeof__doc__},
+#define ITERTOOLS_COMBINATIONS_WITH_REPLACEMENT___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)itertools_combinations_with_replacement___sizeof__, METH_NOARGS, itertools_combinations_with_replacement___sizeof____doc__},
 
 static PyObject *
-cwr_sizeof_impl(cwrobject *co);
+itertools_combinations_with_replacement___sizeof___impl(cwrobject *co);
 
 static PyObject *
-cwr_sizeof(cwrobject *co, PyObject *Py_UNUSED(ignored))
+itertools_combinations_with_replacement___sizeof__(cwrobject *co, PyObject *Py_UNUSED(ignored))
 {
-    return cwr_sizeof_impl(co);
+    return itertools_combinations_with_replacement___sizeof___impl(co);
 }
 
-PyDoc_STRVAR(cwr_reduce__doc__,
+PyDoc_STRVAR(itertools_combinations_with_replacement___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define CWR_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)cwr_reduce, METH_NOARGS, cwr_reduce__doc__},
+#define ITERTOOLS_COMBINATIONS_WITH_REPLACEMENT___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_combinations_with_replacement___reduce__, METH_NOARGS, itertools_combinations_with_replacement___reduce____doc__},
 
 static PyObject *
-cwr_reduce_impl(cwrobject *lz);
+itertools_combinations_with_replacement___reduce___impl(cwrobject *lz);
 
 static PyObject *
-cwr_reduce(cwrobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_combinations_with_replacement___reduce__(cwrobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return cwr_reduce_impl(lz);
+    return itertools_combinations_with_replacement___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(cwr_setstate__doc__,
+PyDoc_STRVAR(itertools_combinations_with_replacement___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define CWR_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)cwr_setstate, METH_O, cwr_setstate__doc__},
+#define ITERTOOLS_COMBINATIONS_WITH_REPLACEMENT___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_combinations_with_replacement___setstate__, METH_O, itertools_combinations_with_replacement___setstate____doc__},
 
-PyDoc_STRVAR(permutations_new__doc__,
+PyDoc_STRVAR(itertools_permutations__doc__,
 "permutations(iterable, r=None)\n"
 "--\n"
 "\n"
@@ -796,10 +804,11 @@ PyDoc_STRVAR(permutations_new__doc__,
 "permutations(range(3), 2) --> (0,1), (0,2), (1,0), (1,2), (2,0), (2,1)");
 
 static PyObject *
-permutations_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *robj);
+itertools_permutations_impl(PyTypeObject *type, PyObject *iterable,
+                            PyObject *robj);
 
 static PyObject *
-permutations_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "r", NULL};
@@ -811,58 +820,58 @@ permutations_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &iterable, &robj)) {
         goto exit;
     }
-    return_value = permutations_new_impl(type, iterable, robj);
+    return_value = itertools_permutations_impl(type, iterable, robj);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(permutations_sizeof__doc__,
+PyDoc_STRVAR(itertools_permutations___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
 "\n"
 "Returns size in memory, in bytes.");
 
-#define PERMUTATIONS_SIZEOF_METHODDEF    \
-    {"__sizeof__", (PyCFunction)permutations_sizeof, METH_NOARGS, permutations_sizeof__doc__},
+#define ITERTOOLS_PERMUTATIONS___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)itertools_permutations___sizeof__, METH_NOARGS, itertools_permutations___sizeof____doc__},
 
 static PyObject *
-permutations_sizeof_impl(permutationsobject *po);
+itertools_permutations___sizeof___impl(permutationsobject *po);
 
 static PyObject *
-permutations_sizeof(permutationsobject *po, PyObject *Py_UNUSED(ignored))
+itertools_permutations___sizeof__(permutationsobject *po, PyObject *Py_UNUSED(ignored))
 {
-    return permutations_sizeof_impl(po);
+    return itertools_permutations___sizeof___impl(po);
 }
 
-PyDoc_STRVAR(permutations_reduce__doc__,
+PyDoc_STRVAR(itertools_permutations___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define PERMUTATIONS_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)permutations_reduce, METH_NOARGS, permutations_reduce__doc__},
+#define ITERTOOLS_PERMUTATIONS___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_permutations___reduce__, METH_NOARGS, itertools_permutations___reduce____doc__},
 
 static PyObject *
-permutations_reduce_impl(permutationsobject *po);
+itertools_permutations___reduce___impl(permutationsobject *po);
 
 static PyObject *
-permutations_reduce(permutationsobject *po, PyObject *Py_UNUSED(ignored))
+itertools_permutations___reduce__(permutationsobject *po, PyObject *Py_UNUSED(ignored))
 {
-    return permutations_reduce_impl(po);
+    return itertools_permutations___reduce___impl(po);
 }
 
-PyDoc_STRVAR(permutations_setstate__doc__,
+PyDoc_STRVAR(itertools_permutations___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define PERMUTATIONS_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)permutations_setstate, METH_O, permutations_setstate__doc__},
+#define ITERTOOLS_PERMUTATIONS___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_permutations___setstate__, METH_O, itertools_permutations___setstate____doc__},
 
-PyDoc_STRVAR(accumulate_new__doc__,
+PyDoc_STRVAR(itertools_accumulate__doc__,
 "accumulate(iterable, func=None)\n"
 "--\n"
 "\n"
@@ -871,10 +880,11 @@ PyDoc_STRVAR(accumulate_new__doc__,
 "Return series of accumulated sums (or other binary function results).");
 
 static PyObject *
-accumulate_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *func);
+itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
+                          PyObject *func);
 
 static PyObject *
-accumulate_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "func", NULL};
@@ -886,40 +896,40 @@ accumulate_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &iterable, &func)) {
         goto exit;
     }
-    return_value = accumulate_new_impl(type, iterable, func);
+    return_value = itertools_accumulate_impl(type, iterable, func);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(accumulate_reduce__doc__,
+PyDoc_STRVAR(itertools_accumulate___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define ACCUMULATE_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)accumulate_reduce, METH_NOARGS, accumulate_reduce__doc__},
+#define ITERTOOLS_ACCUMULATE___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_accumulate___reduce__, METH_NOARGS, itertools_accumulate___reduce____doc__},
 
 static PyObject *
-accumulate_reduce_impl(accumulateobject *lz);
+itertools_accumulate___reduce___impl(accumulateobject *lz);
 
 static PyObject *
-accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_accumulate___reduce__(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return accumulate_reduce_impl(lz);
+    return itertools_accumulate___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(accumulate_setstate__doc__,
+PyDoc_STRVAR(itertools_accumulate___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define ACCUMULATE_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)accumulate_setstate, METH_O, accumulate_setstate__doc__},
+#define ITERTOOLS_ACCUMULATE___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_accumulate___setstate__, METH_O, itertools_accumulate___setstate____doc__},
 
-PyDoc_STRVAR(compress_new__doc__,
+PyDoc_STRVAR(itertools_compress__doc__,
 "compress(data, selectors)\n"
 "--\n"
 "\n"
@@ -930,10 +940,11 @@ PyDoc_STRVAR(compress_new__doc__,
 "selectors to choose the data elements.");
 
 static PyObject *
-compress_new_impl(PyTypeObject *type, PyObject *data, PyObject *selectors);
+itertools_compress_impl(PyTypeObject *type, PyObject *data,
+                        PyObject *selectors);
 
 static PyObject *
-compress_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "selectors", NULL};
@@ -945,31 +956,31 @@ compress_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &data, &selectors)) {
         goto exit;
     }
-    return_value = compress_new_impl(type, data, selectors);
+    return_value = itertools_compress_impl(type, data, selectors);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(compress_reduce__doc__,
+PyDoc_STRVAR(itertools_compress___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define COMPRESS_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)compress_reduce, METH_NOARGS, compress_reduce__doc__},
+#define ITERTOOLS_COMPRESS___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_compress___reduce__, METH_NOARGS, itertools_compress___reduce____doc__},
 
 static PyObject *
-compress_reduce_impl(compressobject *lz);
+itertools_compress___reduce___impl(compressobject *lz);
 
 static PyObject *
-compress_reduce(compressobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_compress___reduce__(compressobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return compress_reduce_impl(lz);
+    return itertools_compress___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(filterfalse_new__doc__,
+PyDoc_STRVAR(itertools_filterfalse__doc__,
 "filterfalse(function, iterable, /)\n"
 "--\n"
 "\n"
@@ -979,11 +990,11 @@ PyDoc_STRVAR(filterfalse_new__doc__,
 "If function is None, return the items that are false.");
 
 static PyObject *
-filterfalse_new_impl(PyTypeObject *type, PyObject *function,
-                     PyObject *iterable);
+itertools_filterfalse_impl(PyTypeObject *type, PyObject *function,
+                           PyObject *iterable);
 
 static PyObject *
-filterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyObject *function;
@@ -998,32 +1009,32 @@ filterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &function, &iterable)) {
         goto exit;
     }
-    return_value = filterfalse_new_impl(type, function, iterable);
+    return_value = itertools_filterfalse_impl(type, function, iterable);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(filterfalse_reduce__doc__,
+PyDoc_STRVAR(itertools_filterfalse___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define FILTERFALSE_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)filterfalse_reduce, METH_NOARGS, filterfalse_reduce__doc__},
+#define ITERTOOLS_FILTERFALSE___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_filterfalse___reduce__, METH_NOARGS, itertools_filterfalse___reduce____doc__},
 
 static PyObject *
-filterfalse_reduce_impl(filterfalseobject *lz);
+itertools_filterfalse___reduce___impl(filterfalseobject *lz);
 
 static PyObject *
-filterfalse_reduce(filterfalseobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_filterfalse___reduce__(filterfalseobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return filterfalse_reduce_impl(lz);
+    return itertools_filterfalse___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(count_new__doc__,
-"count(start=None, step=None)\n"
+PyDoc_STRVAR(itertools_count__doc__,
+"count(start=0, step=1)\n"
 "--\n"
 "\n"
 "Create a count object.\n"
@@ -1038,105 +1049,106 @@ PyDoc_STRVAR(count_new__doc__,
 "            x += step");
 
 static PyObject *
-count_new_impl(PyTypeObject *type, PyObject *start, PyObject *step);
+itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
+                     PyObject *long_step);
 
 static PyObject *
-count_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"start", "step", NULL};
     static _PyArg_Parser _parser = {"|OO:count", _keywords, 0};
-    PyObject *start = NULL;
-    PyObject *step = NULL;
+    PyObject *long_cnt = NULL;
+    PyObject *long_step = NULL;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &start, &step)) {
+        &long_cnt, &long_step)) {
         goto exit;
     }
-    return_value = count_new_impl(type, start, step);
+    return_value = itertools_count_impl(type, long_cnt, long_step);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(count_reduce__doc__,
+PyDoc_STRVAR(itertools_count___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define COUNT_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)count_reduce, METH_NOARGS, count_reduce__doc__},
+#define ITERTOOLS_COUNT___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_count___reduce__, METH_NOARGS, itertools_count___reduce____doc__},
 
 static PyObject *
-count_reduce_impl(countobject *lz);
+itertools_count___reduce___impl(countobject *lz);
 
 static PyObject *
-count_reduce(countobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_count___reduce__(countobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return count_reduce_impl(lz);
+    return itertools_count___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(repeat_len__doc__,
+PyDoc_STRVAR(itertools_repeat___length_hint____doc__,
 "__length_hint__($self, /)\n"
 "--\n"
 "\n"
 "Private method returning an estimate of len(list(it)).");
 
-#define REPEAT_LEN_METHODDEF    \
-    {"__length_hint__", (PyCFunction)repeat_len, METH_NOARGS, repeat_len__doc__},
+#define ITERTOOLS_REPEAT___LENGTH_HINT___METHODDEF    \
+    {"__length_hint__", (PyCFunction)itertools_repeat___length_hint__, METH_NOARGS, itertools_repeat___length_hint____doc__},
 
 static PyObject *
-repeat_len_impl(repeatobject *ro);
+itertools_repeat___length_hint___impl(repeatobject *ro);
 
 static PyObject *
-repeat_len(repeatobject *ro, PyObject *Py_UNUSED(ignored))
+itertools_repeat___length_hint__(repeatobject *ro, PyObject *Py_UNUSED(ignored))
 {
-    return repeat_len_impl(ro);
+    return itertools_repeat___length_hint___impl(ro);
 }
 
-PyDoc_STRVAR(repeat_reduce__doc__,
+PyDoc_STRVAR(itertools_repeat___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define REPEAT_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)repeat_reduce, METH_NOARGS, repeat_reduce__doc__},
+#define ITERTOOLS_REPEAT___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_repeat___reduce__, METH_NOARGS, itertools_repeat___reduce____doc__},
 
 static PyObject *
-repeat_reduce_impl(repeatobject *ro);
+itertools_repeat___reduce___impl(repeatobject *ro);
 
 static PyObject *
-repeat_reduce(repeatobject *ro, PyObject *Py_UNUSED(ignored))
+itertools_repeat___reduce__(repeatobject *ro, PyObject *Py_UNUSED(ignored))
 {
-    return repeat_reduce_impl(ro);
+    return itertools_repeat___reduce___impl(ro);
 }
 
-PyDoc_STRVAR(zip_longest_reduce__doc__,
+PyDoc_STRVAR(itertools_zip_longest___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define ZIP_LONGEST_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)zip_longest_reduce, METH_NOARGS, zip_longest_reduce__doc__},
+#define ITERTOOLS_ZIP_LONGEST___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)itertools_zip_longest___reduce__, METH_NOARGS, itertools_zip_longest___reduce____doc__},
 
 static PyObject *
-zip_longest_reduce_impl(ziplongestobject *lz);
+itertools_zip_longest___reduce___impl(ziplongestobject *lz);
 
 static PyObject *
-zip_longest_reduce(ziplongestobject *lz, PyObject *Py_UNUSED(ignored))
+itertools_zip_longest___reduce__(ziplongestobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    return zip_longest_reduce_impl(lz);
+    return itertools_zip_longest___reduce___impl(lz);
 }
 
-PyDoc_STRVAR(zip_longest_setstate__doc__,
+PyDoc_STRVAR(itertools_zip_longest___setstate____doc__,
 "__setstate__($self, state, /)\n"
 "--\n"
 "\n"
 "Set state information for unpickling.");
 
-#define ZIP_LONGEST_SETSTATE_METHODDEF    \
-    {"__setstate__", (PyCFunction)zip_longest_setstate, METH_O, zip_longest_setstate__doc__},
-/*[clinic end generated code: output=a35685ba24a0567d input=a9049054013a1b77]*/
+#define ITERTOOLS_ZIP_LONGEST___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)itertools_zip_longest___setstate__, METH_O, itertools_zip_longest___setstate____doc__},
+/*[clinic end generated code: output=76fca89a64f5cd41 input=a9049054013a1b77]*/
