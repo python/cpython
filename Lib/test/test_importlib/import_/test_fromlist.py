@@ -122,6 +122,17 @@ class HandlingFromlist:
                 self.assertEqual(module.module1.__name__, 'pkg.module1')
                 self.assertEqual(module.module2.__name__, 'pkg.module2')
 
+    def test_invalid_type(self):
+        with util.mock_modules('pkg.__init__') as mock:
+            with util.import_state(meta_path=[mock]):
+                with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
+                    self.__import__('pkg', fromlist=[b'attr'])
+                with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
+                    self.__import__('pkg', fromlist=iter([b'attr']))
+                mock['pkg'].__all__ = [b'attr']
+                with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
+                    self.__import__('pkg', fromlist=['*'])
+
 
 (Frozen_FromList,
  Source_FromList

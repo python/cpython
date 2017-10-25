@@ -1,12 +1,9 @@
 from .. import util
 
 from importlib import machinery
-import encodings
 import sys
 import types
-import warnings
 import unittest
-from test.support import swap_attr
 
 PKG_NAME = 'fine'
 SUBMOD_NAME = 'fine.bogus'
@@ -98,17 +95,6 @@ class APITest:
                     self.__import__(PKG_NAME,
                                     fromlist=[SUBMOD_NAME.rpartition('.')[-1]])
                 self.assertEqual(cm.exception.name, SUBMOD_NAME)
-
-    def test_fromlist_invalid_type(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', BytesWarning)
-            with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
-                self.__import__('encodings', fromlist=[b'aliases'])
-            with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
-                self.__import__('encodings', fromlist=iter([b'aliases']))
-            with swap_attr(encodings, '__all__', [b'aliases']):
-                with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
-                    self.__import__('encodings', fromlist=['*'])
 
 
 class OldAPITests(APITest):
