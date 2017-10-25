@@ -217,15 +217,18 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
 
 */
 
-static int
-add_flag(int flag, const char *envs)
+static void
+set_flag(int *flag, const char *envs)
 {
+    /* Helper to set flag variables from environment variables:
+    *   - uses the higher of the two values if they're both set
+    *   - otherwise sets the flag to 1
+    */
     int env = atoi(envs);
-    if (flag < env)
-        flag = env;
-    if (flag < 1)
-        flag = 1;
-    return flag;
+    if (*flag < env)
+        *flag = env;
+    if (*flag < 1)
+        *flag = 1;
 }
 
 static char*
@@ -612,22 +615,28 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
 #endif
 
     if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
-        Py_DebugFlag = add_flag(Py_DebugFlag, p);
+        set_flag(&Py_DebugFlag, p);
     if ((p = Py_GETENV("PYTHONVERBOSE")) && *p != '\0')
-        Py_VerboseFlag = add_flag(Py_VerboseFlag, p);
+        set_flag(&Py_VerboseFlag, p);
     if ((p = Py_GETENV("PYTHONOPTIMIZE")) && *p != '\0')
-        Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
+        set_flag(&Py_OptimizeFlag, p);
+    if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
+        set_flag(&Py_InspectFlag, p);
     if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
-        Py_DontWriteBytecodeFlag = add_flag(Py_DontWriteBytecodeFlag, p);
+        set_flag(&Py_DontWriteBytecodeFlag, p);
+    if ((p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
+        set_flag(&Py_NoUserSiteDirectory, p);
+    if ((p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0')
+        set_flag(&Py_UnbufferedStdioFlag, p);
     /* The variable is only tested for existence here;
        _Py_HashRandomization_Init will check its value further. */
     if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
-        Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
+        set_flag(&Py_HashRandomizationFlag, p);
 #ifdef MS_WINDOWS
     if ((p = Py_GETENV("PYTHONLEGACYWINDOWSFSENCODING")) && *p != '\0')
-        Py_LegacyWindowsFSEncodingFlag = add_flag(Py_LegacyWindowsFSEncodingFlag, p);
+        set_flag(&Py_LegacyWindowsFSEncodingFlag, p);
     if ((p = Py_GETENV("PYTHONLEGACYWINDOWSSTDIO")) && *p != '\0')
-        Py_LegacyWindowsStdioFlag = add_flag(Py_LegacyWindowsStdioFlag, p);
+        set_flag(&Py_LegacyWindowsStdioFlag, p);
 #endif
 
     _Py_HashRandomization_Init(&core_config);
