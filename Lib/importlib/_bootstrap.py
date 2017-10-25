@@ -1005,17 +1005,18 @@ def _handle_fromlist(module, fromlist, import_):
     # The hell that is fromlist ...
     # If a package was imported, try to import stuff from fromlist.
     if hasattr(module, '__path__'):
-        if '*' in fromlist:
-            fromlist = list(fromlist)
-            fromlist.remove('*')
-            if hasattr(module, '__all__'):
-                fromlist.extend(module.__all__)
         for i, x in enumerate(fromlist):
             if not isinstance(x, str):
                 raise TypeError(
                     f"Sequence item {i} in 'from list' must be str, "
                     f"not {type(x).__name__!r}"
                 )
+        if '*' in fromlist:
+            fromlist = list(fromlist)
+            fromlist.remove('*')
+            if hasattr(module, '__all__'):
+                fromlist.extend(module.__all__)
+        for x in fromlist:
             if not hasattr(module, x):
                 from_name = '{}.{}'.format(module.__name__, x)
                 try:
