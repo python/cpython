@@ -74,6 +74,13 @@ class HandlingFromlist:
                 self.assertTrue(hasattr(module, 'module'))
                 self.assertEqual(module.module.__name__, 'pkg.module')
 
+    def test_nonexistent_from_package(self):
+        with util.mock_modules('pkg.__init__') as importer:
+            with util.import_state(meta_path=[importer]):
+                module = self.__import__('pkg', fromlist=['non_existent'])
+                self.assertEqual(module.__name__, 'pkg')
+                self.assertFalse(hasattr(module, 'non_existent'))
+
     def test_module_from_package_triggers_ModuleNotFoundError(self):
         # If a submodule causes an ModuleNotFoundError because it tries
         # to import a module which doesn't exist, that should let the
@@ -123,17 +130,39 @@ class HandlingFromlist:
                 self.assertEqual(module.module1.__name__, 'pkg.module1')
                 self.assertEqual(module.module2.__name__, 'pkg.module2')
 
+    def test_nonexistent_in_all(self):
+        with util.mock_modules('pkg.__init__') as importer:
+            with util.import_state(meta_path=[importer]):
+                importer['pkg'].__all__ = ['non_existent']
+                module = self.__import__('pkg', fromlist=['*'])
+                self.assertEqual(module.__name__, 'pkg')
+                self.assertFalse(hasattr(module, 'non_existent'))
+
+    def test_star_in_all(self):
+        with util.mock_modules('pkg.__init__') as importer:
+            with util.import_state(meta_path=[importer]):
+                importer['pkg'].__all__ = ['*']
+                module = self.__import__('pkg', fromlist=['*'])
+                self.assertEqual(module.__name__, 'pkg')
+                self.assertFalse(hasattr(module, '*'))
+
     def test_invalid_type(self):
-        with util.mock_modules('pkg.__init__') as mock:
-            with util.import_state(meta_path=[mock]), \
+        with util.mock_modules('pkg.__init__') as importer:
+            with util.import_state(meta_path=[importer]), \
                  warnings.catch_warnings():
                 warnings.simplefilter('error', BytesWarning)
                 with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
                     self.__import__('pkg', fromlist=[b'attr'])
                 with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
                     self.__import__('pkg', fromlist=iter([b'attr']))
-                mock['pkg'].__all__ = [b'attr']
-                with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
+
+    def test_invalid_type_in_all(self):
+        with util.mock_modules('pkg.__init__') as importer:
+            with util.import_state(meta_path=[importer]), \
+                 warnings.catch_warnings():
+                warnings.simplefilter('error', BytesWarning)
+                importer['pkg'].__all__ = [b'attr']
+                with self.assertRaisesRegex(TypeError, r'\bpkg\.__all__\b'):
                     self.__import__('pkg', fromlist=['*'])
 
 

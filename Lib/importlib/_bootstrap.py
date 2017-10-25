@@ -1007,7 +1007,11 @@ def _handle_fromlist(module, fromlist, import_, recursive=False):
     if hasattr(module, '__path__'):
         for x in fromlist:
             if not isinstance(x, str):
-                raise TypeError(f"Item in ``from list'' must be str, "
+                if recursive:
+                    where = module.__name__ + '.__all__'
+                else:
+                    where = "``from list''"
+                raise TypeError(f"Item in {where} must be str, "
                                 f"not {type(x).__name__}")
             if x == '*':
                 if not recursive and hasattr(module, '__all__'):
