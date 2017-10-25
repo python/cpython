@@ -315,7 +315,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     if (co->co_kwonlyargcount == 0 &&
         (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         /* Fast paths */
         if (argdefs == NULL && co->co_argcount == nargs) {
@@ -402,7 +402,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
        be unique */
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         if (argdefs == NULL && co->co_argcount == nargs) {
             return function_code_fastcall(co, stack, nargs, globals);
