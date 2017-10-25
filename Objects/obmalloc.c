@@ -1459,37 +1459,77 @@ _PyMem_DebugRawFree(void *ctx, void *p)
 static void *
 _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 {
+#ifdef __OpenBSD__
+    /* bpo-31626: On OpenBSD, it's illegal to erase old bytes in the old
+       memory block on realloc() success: the program is killed by a fatal
+       trap signal. So erase bytes before, but keep a copy to restore erased
+       bytes if realloc() fails. */
+#   define REALLOC_WRITE_BEFORE
+#endif
+
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
-    uint8_t *q = (uint8_t *)p, *oldq;
+    uint8_t *q = (uint8_t *)p;
     uint8_t *tail;
     size_t total;       /* nbytes + 4*SST */
     size_t original_nbytes;
     int i;
+#ifdef REALLOC_WRITE_BEFORE
+    uint8_t *copy = NULL;
+    Py_ssize_t erased;
+#else
+    uint8_t *oldq;
+#endif
 
-    if (p == NULL)
+    if (p == NULL) {
         return _PyMem_DebugRawAlloc(0, ctx, nbytes);
+    }
 
     _PyMem_DebugCheckAddress(api->api_id, p);
     bumpserialno();
     original_nbytes = read_size_t(q - 2*SST);
     total = nbytes + 4*SST;
-    if (nbytes > PY_SSIZE_T_MAX - 4*SST)
+    if (nbytes > PY_SSIZE_T_MAX - 4*SST) {
         /* overflow:  can't represent total as a Py_ssize_t */
         return NULL;
+    }
+
+#ifdef REALLOC_WRITE_BEFORE
+    if (nbytes < original_nbytes) {
+        /* shrinking:  mark old extra memory dead */
+        erased = original_nbytes - nbytes;
+
+        /* keep a copy of erased bytes, if realloc() fails */
+        copy = PyMem_RawMalloc(erased);
+        if (copy == NULL) {
+            return NULL;
+        }
+        memcpy(copy, q + nbytes, erased);
+
+        memset(q + nbytes, DEADBYTE, erased);
+    }
+#else
+    oldq = q;
+#endif
 
     /* Resize and add decorations. We may get a new pointer here, in which
      * case we didn't get the chance to mark the old memory with DEADBYTE,
      * but we live with that.
      */
-    oldq = q;
     q = (uint8_t *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
-    if (q == NULL)
+#ifdef REALLOC_WRITE_BEFORE
+    if (q == NULL) {
+        /* realloc() failed: restore erased bytes */
+        memcpy(q + nbytes, copy, erased);
+        PyMem_RawFree(copy);
         return NULL;
-
+    }
+    PyMem_RawFree(copy);
+#else
     if (q == oldq && nbytes < original_nbytes) {
         /* shrinking:  mark old extra memory dead */
         memset(q + nbytes, DEADBYTE, original_nbytes - nbytes);
     }
+#endif
 
     write_size_t(q, nbytes);
     assert(q[SST] == (uint8_t)api->api_id);
@@ -1508,6 +1548,8 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
 
     return q;
+
+#undef REALLOC_WRITE_BEFORE
 }
 
 static void
