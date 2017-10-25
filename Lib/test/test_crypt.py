@@ -57,7 +57,13 @@ class CryptTestCase(unittest.TestCase):
     def test_invalid_log_rounds(self):
         for log_rounds in (1, -1, 999):
             salt = crypt.mksalt(crypt.METHOD_BLOWFISH, log_rounds=log_rounds)
-            self.assertIsNone(crypt.crypt('mypassword', salt))
+            cr = crypt.crypt('mypassword', salt)
+            if cr is not None:
+                # On failure the openwall implementation returns a magic
+                # string that is shorter than 13 characters and is guaranteed
+                # to differ from a salt.
+                self.assertNotEqual(cr, salt)
+                self.assertLess(len(cr), 13)
 
 
 if __name__ == "__main__":
