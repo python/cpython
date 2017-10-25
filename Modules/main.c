@@ -522,39 +522,33 @@ read_command_line(int argc, wchar_t **argv, _Py_CommandLineDetails *cmdline)
     return 0;
 }
 
+static void
+maybe_set_flag(int *flag, int value)
+{
+    /* Helper to set flag variables from command line options
+    *   - uses the higher of the two values if they're both set
+    *   - otherwise leaves the flag unset
+    */
+    if (*flag < value) {
+        *flag = value;
+    }
+}
+
 static int
 apply_command_line_and_environment(_Py_CommandLineDetails *cmdline)
 {
-    char *p;
-    Py_BytesWarningFlag = cmdline->bytes_warning;
-    Py_DebugFlag = cmdline->debug;
-    Py_InspectFlag = cmdline->inspect;
-    Py_InteractiveFlag = cmdline->interactive;
-    Py_IsolatedFlag = cmdline->isolated;
-    Py_OptimizeFlag = cmdline->optimization_level;
-    Py_DontWriteBytecodeFlag = cmdline->dont_write_bytecode;
-    Py_NoUserSiteDirectory = cmdline->no_user_site_directory;
-    Py_NoSiteFlag = cmdline->no_site_import;
-    Py_UnbufferedStdioFlag = cmdline->use_unbuffered_io;
-    Py_VerboseFlag = cmdline->verbosity;
-    Py_QuietFlag = cmdline->quiet_flag;
-
-    if (!Py_InspectFlag &&
-        (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0') {
-        Py_InspectFlag = 1;
-        cmdline->inspect = 1;
-    }
-    if (!cmdline->use_unbuffered_io &&
-        (p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0') {
-        Py_UnbufferedStdioFlag = 1;
-        cmdline->use_unbuffered_io = 1;
-    }
-
-    if (!Py_NoUserSiteDirectory &&
-        (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0') {
-        Py_NoUserSiteDirectory = 1;
-        cmdline->no_user_site_directory = 1;
-    }
+    maybe_set_flag(&Py_BytesWarningFlag, cmdline->bytes_warning);
+    maybe_set_flag(&Py_DebugFlag, cmdline->debug);
+    maybe_set_flag(&Py_InspectFlag, cmdline->inspect);
+    maybe_set_flag(&Py_InteractiveFlag, cmdline->interactive);
+    maybe_set_flag(&Py_IsolatedFlag, cmdline->isolated);
+    maybe_set_flag(&Py_OptimizeFlag, cmdline->optimization_level);
+    maybe_set_flag(&Py_DontWriteBytecodeFlag, cmdline->dont_write_bytecode);
+    maybe_set_flag(&Py_NoUserSiteDirectory, cmdline->no_user_site_directory);
+    maybe_set_flag(&Py_NoSiteFlag, cmdline->no_site_import);
+    maybe_set_flag(&Py_UnbufferedStdioFlag, cmdline->use_unbuffered_io);
+    maybe_set_flag(&Py_VerboseFlag, cmdline->verbosity);
+    maybe_set_flag(&Py_QuietFlag, cmdline->quiet_flag);
 
     /* TODO: Apply PYTHONWARNINGS & -W options to sys module here */
     /* TODO: Apply -X options to sys module here */
