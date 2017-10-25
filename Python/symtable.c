@@ -471,11 +471,6 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
              PyObject *global)
 {
     if (flags & DEF_GLOBAL) {
-        if (flags & DEF_PARAM) {
-            PyErr_Format(PyExc_SyntaxError,
-                         GLOBAL_PARAM, name);
-            return error_at_directive(ste, name);
-        }
         if (flags & DEF_NONLOCAL) {
             PyErr_Format(PyExc_SyntaxError,
                          "name '%U' is nonlocal and global",
@@ -490,11 +485,6 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
         return 1;
     }
     if (flags & DEF_NONLOCAL) {
-        if (flags & DEF_PARAM) {
-            PyErr_Format(PyExc_SyntaxError,
-                         NONLOCAL_PARAM, name);
-            return error_at_directive(ste, name);
-        }
         if (!bound) {
             PyErr_Format(PyExc_SyntaxError,
                          "nonlocal declaration not allowed at module level");
@@ -1289,7 +1279,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             if (cur < 0)
                 VISIT_QUIT(st, 0);
             if (cur & (DEF_PARAM | DEF_LOCAL | USE | DEF_ANNOT)) {
-                char* msg;
+                const char* msg;
                 if (cur & DEF_PARAM) {
                     msg = GLOBAL_PARAM;
                 } else if (cur & USE) {
@@ -1322,7 +1312,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             if (cur < 0)
                 VISIT_QUIT(st, 0);
             if (cur & (DEF_PARAM | DEF_LOCAL | USE | DEF_ANNOT)) {
-                char* msg;
+                const char* msg;
                 if (cur & DEF_PARAM) {
                     msg = NONLOCAL_PARAM;
                 } else if (cur & USE) {
