@@ -1,5 +1,6 @@
 """Test that the semantics relating to the 'fromlist' argument are correct."""
 from .. import util
+import warnings
 import unittest
 
 
@@ -124,7 +125,9 @@ class HandlingFromlist:
 
     def test_invalid_type(self):
         with util.mock_modules('pkg.__init__') as mock:
-            with util.import_state(meta_path=[mock]):
+            with util.import_state(meta_path=[mock]), \
+                 warnings.catch_warnings():
+                warnings.simplefilter('error', BytesWarning)
                 with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
                     self.__import__('pkg', fromlist=[b'attr'])
                 with self.assertRaisesRegex(TypeError, r'\bfrom\b'):
