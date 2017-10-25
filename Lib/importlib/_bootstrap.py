@@ -1010,7 +1010,12 @@ def _handle_fromlist(module, fromlist, import_):
             fromlist.remove('*')
             if hasattr(module, '__all__'):
                 fromlist.extend(module.__all__)
-        for x in fromlist:
+        for i, x in enumerate(fromlist):
+            if not isinstance(x, str):
+                raise TypeError(
+                    f"Sequence item {i} in 'from list' must be str, "
+                    f"not {type(x).__name__!r}"
+                )
             if not hasattr(module, x):
                 from_name = '{}.{}'.format(module.__name__, x)
                 try:

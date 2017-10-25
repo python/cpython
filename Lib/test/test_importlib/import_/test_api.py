@@ -96,6 +96,20 @@ class APITest:
                                     fromlist=[SUBMOD_NAME.rpartition('.')[-1]])
                 self.assertEqual(cm.exception.name, SUBMOD_NAME)
 
+    def test_fromlist_invalid_type(self):
+        with self.assertRaises(TypeError) as cm:
+            self.__import__('encodings', fromlist=[b'aliases'])
+        self.assertEqual(
+            str(cm.exception),
+            "Sequence item 0 in 'from list' must be str, not 'bytes'"
+        )
+        with self.assertRaises(TypeError) as cm:
+            self.__import__('encodings', fromlist=['aliases', b'codecs'])
+        self.assertEqual(
+            str(cm.exception),
+            "Sequence item 1 in 'from list' must be str, not 'bytes'"
+        )
+
 
 class OldAPITests(APITest):
     bad_finder_loader = BadLoaderFinder
