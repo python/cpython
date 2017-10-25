@@ -994,7 +994,7 @@ def _gcd_import(name, package=None, level=0):
     return _find_and_load(name, _gcd_import)
 
 
-def _handle_fromlist(module, fromlist, import_, recursive=False):
+def _handle_fromlist(module, fromlist, import_, *, recursive=False):
     """Figure out what __import__ should return.
 
     The import_ parameter is a callable which takes the name of module to
@@ -1013,10 +1013,10 @@ def _handle_fromlist(module, fromlist, import_, recursive=False):
                     where = "``from list''"
                 raise TypeError(f"Item in {where} must be str, "
                                 f"not {type(x).__name__}")
-            if x == '*':
+            elif x == '*':
                 if not recursive and hasattr(module, '__all__'):
-                    _handle_fromlist(module, module.__all__, import_, True)
-
+                    _handle_fromlist(module, module.__all__, import_,
+                                     recursive=True)
             elif not hasattr(module, x):
                 from_name = '{}.{}'.format(module.__name__, x)
                 try:
