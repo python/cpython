@@ -1,4 +1,3 @@
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"
@@ -29,8 +28,9 @@ class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.repeat "repeatobject *" "&repeat_type"
 class itertools.zip_longest "ziplongestobject *" "&ziplongest_type"
+
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=95c340f2eacd0350]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=12d01329782068a4]*/
 
 
 /* groupby object ************************************************************/
@@ -242,56 +242,6 @@ groupby_setstate(groupbyobject *lz, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef groupby_methods[] = {
-    GROUPBY_REDUCE_METHODDEF
-    GROUPBY_SETSTATE_METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
-static PyTypeObject groupby_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.groupby",                /* tp_name */
-    sizeof(groupbyobject),              /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)groupby_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    groupby_new__doc__,                 /* tp_doc */
-    (traverseproc)groupby_traverse,     /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)groupby_next,         /* tp_iternext */
-    groupby_methods,                    /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    groupby_new,                        /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
-
 
 /* _grouper object (internal) ************************************************/
 
@@ -398,55 +348,6 @@ _grouper_reduce_impl(_grouperobject *lz)
     }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
-
-static PyMethodDef _grouper_methods[] = {
-    _GROUPER_REDUCE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-
-static PyTypeObject _grouper_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools._grouper",               /* tp_name */
-    sizeof(_grouperobject),             /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)_grouper_dealloc,       /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
-    0,                                  /* tp_doc */
-    (traverseproc)_grouper_traverse,    /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)_grouper_next,        /* tp_iternext */
-    _grouper_methods,                   /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    _grouper_new,                       /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 
 /* tee object and with supporting function and objects ***********************/
@@ -658,54 +559,6 @@ err:
     return NULL;
 }
 
-static PyMethodDef teedataobject_methods[] = {
-    TEEDATAOBJECT_REDUCE_METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
-static PyTypeObject teedataobject_type = {
-    PyVarObject_HEAD_INIT(0, 0)                 /* Must fill in type value later */
-    "itertools._tee_dataobject",                /* tp_name */
-    sizeof(teedataobject),                      /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)teedataobject_dealloc,          /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    teedataobject_new__doc__,                   /* tp_doc */
-    (traverseproc)teedataobject_traverse,       /* tp_traverse */
-    (inquiry)teedataobject_clear,               /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    teedataobject_methods,                      /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    teedataobject_new,                          /* tp_new */
-    PyObject_GC_Del,                            /* tp_free */
-};
-
 
 static PyTypeObject tee_type;
 
@@ -875,56 +728,6 @@ tee_setstate(teeobject *to, PyObject *state)
     to->index = index;
     Py_RETURN_NONE;
 }
-
-static PyMethodDef tee_methods[] = {
-    TEE_COPY_METHODDEF
-    TEE_REDUCE_METHODDEF
-    TEE_SETSTATE_METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
-static PyTypeObject tee_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools._tee",                   /* tp_name */
-    sizeof(teeobject),                  /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)tee_dealloc,            /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    0,                                  /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
-    tee_new__doc__,                     /* tp_doc */
-    (traverseproc)tee_traverse,         /* tp_traverse */
-    (inquiry)tee_clear,                 /* tp_clear */
-    0,                                  /* tp_richcompare */
-    offsetof(teeobject, weakreflist),   /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)tee_next,             /* tp_iternext */
-    tee_methods,                        /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    tee_new,                            /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 /*[clinic input]
 itertools.tee as tee
@@ -1157,57 +960,6 @@ cycle_setstate(cycleobject *lz, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef cycle_methods[] = {
-    CYCLE_REDUCE_METHODDEF
-    CYCLE_SETSTATE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-
-static PyTypeObject cycle_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.cycle",                  /* tp_name */
-    sizeof(cycleobject),                /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)cycle_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    cycle_new__doc__,                   /* tp_doc */
-    (traverseproc)cycle_traverse,       /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)cycle_next,           /* tp_iternext */
-    cycle_methods,                      /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    cycle_new,                          /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
-
 
 /* dropwhile object **********************************************************/
 
@@ -1347,56 +1099,6 @@ dropwhile_setstate(dropwhileobject *lz, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef dropwhile_methods[] = {
-    DROPWHILE_REDUCE_METHODDEF
-    DROPWHILE_SETSTATE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-static PyTypeObject dropwhile_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.dropwhile",              /* tp_name */
-    sizeof(dropwhileobject),            /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)dropwhile_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    dropwhile_new__doc__,               /* tp_doc */
-    (traverseproc)dropwhile_traverse,   /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)dropwhile_next,       /* tp_iternext */
-    dropwhile_methods,                  /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    dropwhile_new,                      /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
-
 
 /* takewhile object **********************************************************/
 
@@ -1532,56 +1234,6 @@ takewhile_setstate(takewhileobject *lz, PyObject *state)
     lz->stop = stop;
     Py_RETURN_NONE;
 }
-
-static PyMethodDef takewhile_reduce_methods[] = {
-    TAKEWHILE_REDUCE_METHODDEF
-    TAKEWHILE_SETSTATE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-static PyTypeObject takewhile_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.takewhile",              /* tp_name */
-    sizeof(takewhileobject),            /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)takewhile_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    takewhile_new__doc__,               /* tp_doc */
-    (traverseproc)takewhile_traverse,   /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)takewhile_next,       /* tp_iternext */
-    takewhile_reduce_methods,           /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    takewhile_new,                      /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 
 /* islice object *************************************************************/
@@ -1799,12 +1451,6 @@ islice_setstate(isliceobject *lz, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef islice_methods[] = {
-    ISLICE_REDUCE_METHODDEF
-    ISLICE_SETSTATE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
 PyDoc_STRVAR(islice_doc,
 "islice(iterable, stop) --> islice object\n\
 islice(iterable, start, stop[, step]) --> islice object\n\
@@ -1815,50 +1461,6 @@ otherwise, start defaults to zero.  Step defaults to one.  If\n\
 specified as another value, step determines how many values are \n\
 skipped between successive calls.  Works like a slice() on a list\n\
 but returns an iterator.");
-
-static PyTypeObject islice_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.islice",                 /* tp_name */
-    sizeof(isliceobject),               /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)islice_dealloc,         /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    islice_doc,                         /* tp_doc */
-    (traverseproc)islice_traverse,      /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)islice_next,          /* tp_iternext */
-    islice_methods,                     /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    islice_new,                         /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 
 /* starmap object ************************************************************/
@@ -1964,60 +1566,11 @@ starmap_reduce_impl(starmapobject *lz)
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
 
-static PyMethodDef starmap_methods[] = {
-    STARMAP_REDUCE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
 PyDoc_STRVAR(starmap_doc,
 "starmap(function, sequence) --> starmap object\n\
 \n\
 Return an iterator whose values are returned from the function evaluated\n\
 with an argument tuple taken from the given sequence.");
-
-static PyTypeObject starmap_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.starmap",                /* tp_name */
-    sizeof(starmapobject),              /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)starmap_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    starmap_new__doc__,                 /* tp_doc */
-    (traverseproc)starmap_traverse,     /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)starmap_next,         /* tp_iternext */
-    starmap_methods,                    /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    starmap_new,                        /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 
 /* chain object **************************************************************/
@@ -2211,57 +1764,6 @@ PyDoc_STRVAR(chain_doc,
 Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
-
-static PyMethodDef chain_methods[] = {
-    CHAIN_NEW_FROM_ITERABLE_METHODDEF
-    CHAIN_REDUCE_METHODDEF
-    CHAIN_SETSTATE_METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
-static PyTypeObject chain_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.chain",                  /* tp_name */
-    sizeof(chainobject),                /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)chain_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    chain_doc,                          /* tp_doc */
-    (traverseproc)chain_traverse,       /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)chain_next,           /* tp_iternext */
-    chain_methods,                      /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    chain_new,                          /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 
 /* product object ************************************************************/
@@ -2580,13 +2082,6 @@ product_setstate(productobject *lz, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef product_methods[] = {
-    PRODUCT_REDUCE_METHODDEF
-    PRODUCT_SETSTATE_METHODDEF
-    PRODUCT_SIZEOF_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
 PyDoc_STRVAR(product_doc,
 "product(*iterables, repeat=1) --> product object\n\
 \n\
@@ -2600,50 +2095,6 @@ of repetitions with the optional repeat keyword argument. For example,\n\
 product(A, repeat=4) means the same as product(A, A, A, A).\n\n\
 product('ab', range(3)) --> ('a',0) ('a',1) ('a',2) ('b',0) ('b',1) ('b',2)\n\
 product((0,1), (0,1), (0,1)) --> (0,0,0) (0,0,1) (0,1,0) (0,1,1) (1,0,0) ...");
-
-static PyTypeObject product_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.product",                /* tp_name */
-    sizeof(productobject),              /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)product_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    product_doc,                        /* tp_doc */
-    (traverseproc)product_traverse,     /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)product_next,         /* tp_iternext */
-    product_methods,                    /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    product_new,                        /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 
 /* combinations object *******************************************************/
@@ -2935,57 +2386,6 @@ combinations_setstate(combinationsobject *lz, PyObject *state)
     Py_XSETREF(lz->result, result);
     Py_RETURN_NONE;
 }
-
-static PyMethodDef combinations_methods[] = {
-    COMBINATIONS_REDUCE_METHODDEF
-    COMBINATIONS_SETSTATE_METHODDEF
-    COMBINATIONS_SIZEOF_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-static PyTypeObject combinations_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.combinations",           /* tp_name */
-    sizeof(combinationsobject),         /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)combinations_dealloc,   /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    combinations_new__doc__,            /* tp_doc */
-    (traverseproc)combinations_traverse,/* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)combinations_next,    /* tp_iternext */
-    combinations_methods,               /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    combinations_new,                   /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 
 /* combinations with replacement object **************************************/
@@ -3295,57 +2695,6 @@ cwr_setstate(cwrobject *lz, PyObject *state)
     Py_XSETREF(lz->result, result);
     Py_RETURN_NONE;
 }
-
-static PyMethodDef cwr_methods[] = {
-    CWR_REDUCE_METHODDEF
-    CWR_SETSTATE_METHODDEF
-    CWR_SIZEOF_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-static PyTypeObject cwr_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.combinations_with_replacement",          /* tp_name */
-    sizeof(cwrobject),                                  /* tp_basicsize */
-    0,                                                  /* tp_itemsize */
-    /* methods */
-    (destructor)cwr_dealloc,                            /* tp_dealloc */
-    0,                                                  /* tp_print */
-    0,                                                  /* tp_getattr */
-    0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
-    0,                                                  /* tp_repr */
-    0,                                                  /* tp_as_number */
-    0,                                                  /* tp_as_sequence */
-    0,                                                  /* tp_as_mapping */
-    0,                                                  /* tp_hash */
-    0,                                                  /* tp_call */
-    0,                                                  /* tp_str */
-    PyObject_GenericGetAttr,                            /* tp_getattro */
-    0,                                                  /* tp_setattro */
-    0,                                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,                            /* tp_flags */
-    cwr_new__doc__,                                     /* tp_doc */
-    (traverseproc)cwr_traverse,                         /* tp_traverse */
-    0,                                                  /* tp_clear */
-    0,                                                  /* tp_richcompare */
-    0,                                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                                  /* tp_iter */
-    (iternextfunc)cwr_next,                             /* tp_iternext */
-    cwr_methods,                                        /* tp_methods */
-    0,                                                  /* tp_members */
-    0,                                                  /* tp_getset */
-    0,                                                  /* tp_base */
-    0,                                                  /* tp_dict */
-    0,                                                  /* tp_descr_get */
-    0,                                                  /* tp_descr_set */
-    0,                                                  /* tp_dictoffset */
-    0,                                                  /* tp_init */
-    0,                                                  /* tp_alloc */
-    cwr_new,                                            /* tp_new */
-    PyObject_GC_Del,                                    /* tp_free */
-};
 
 
 /* permutations object ********************************************************
@@ -3717,56 +3066,6 @@ permutations_setstate(permutationsobject *po, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef permuations_methods[] = {
-    PERMUTATIONS_REDUCE_METHODDEF
-    PERMUTATIONS_SETSTATE_METHODDEF
-    PERMUTATIONS_SIZEOF_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-static PyTypeObject permutations_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.permutations",           /* tp_name */
-    sizeof(permutationsobject),         /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)permutations_dealloc,   /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    permutations_new__doc__,            /* tp_doc */
-    (traverseproc)permutations_traverse,/* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)permutations_next,    /* tp_iternext */
-    permuations_methods,                /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    permutations_new,                   /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 /* accumulate object ********************************************************/
 
@@ -3919,56 +3218,6 @@ accumulate_setstate(accumulateobject *lz, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef accumulate_methods[] = {
-    ACCUMULATE_REDUCE_METHODDEF
-    ACCUMULATE_SETSTATE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-static PyTypeObject accumulate_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.accumulate",             /* tp_name */
-    sizeof(accumulateobject),           /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)accumulate_dealloc,     /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    accumulate_new__doc__,              /* tp_doc */
-    (traverseproc)accumulate_traverse,  /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)accumulate_next,      /* tp_iternext */
-    accumulate_methods,                 /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    accumulate_new,                     /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
-
 
 /* compress object ************************************************************/
 
@@ -4098,55 +3347,6 @@ compress_reduce_impl(compressobject *lz)
         lz->data, lz->selectors);
 }
 
-static PyMethodDef compress_methods[] = {
-    COMPRESS_REDUCE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-static PyTypeObject compress_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.compress",               /* tp_name */
-    sizeof(compressobject),             /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)compress_dealloc,       /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    compress_new__doc__,                /* tp_doc */
-    (traverseproc)compress_traverse,    /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)compress_next,        /* tp_iternext */
-    compress_methods,                   /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    compress_new,                       /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
-
 
 /* filterfalse object ************************************************************/
 
@@ -4263,55 +3463,6 @@ filterfalse_reduce_impl(filterfalseobject *lz)
 {
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
-
-static PyMethodDef filterfalse_methods[] = {
-    FILTERFALSE_REDUCE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-static PyTypeObject filterfalse_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.filterfalse",            /* tp_name */
-    sizeof(filterfalseobject),          /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)filterfalse_dealloc,    /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    filterfalse_new__doc__,             /* tp_doc */
-    (traverseproc)filterfalse_traverse, /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)filterfalse_next,     /* tp_iternext */
-    filterfalse_methods,                /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    filterfalse_new,                    /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 
 /* count object ************************************************************/
@@ -4524,55 +3675,6 @@ count_reduce_impl(countobject *lz)
     return Py_BuildValue("O(n)", Py_TYPE(lz), lz->cnt);
 }
 
-static PyMethodDef count_methods[] = {
-    COUNT_REDUCE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
-static PyTypeObject count_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.count",                  /* tp_name */
-    sizeof(countobject),                /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)count_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    (reprfunc)count_repr,               /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    count_new__doc__,                   /* tp_doc */
-    (traverseproc)count_traverse,       /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)count_next,           /* tp_iternext */
-    count_methods,                      /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    count_new,                          /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
-
 
 /* repeat object ************************************************************/
 
@@ -4689,60 +3791,10 @@ repeat_reduce_impl(repeatobject *ro)
         return Py_BuildValue("O(O)", Py_TYPE(ro), ro->element);
 }
 
-static PyMethodDef repeat_methods[] = {
-    REPEAT_LEN_METHODDEF
-    REPEAT_REDUCE_METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
 PyDoc_STRVAR(repeat_doc,
 "repeat(object [,times]) -> create an iterator which returns the object\n\
 for the specified number of times.  If not specified, returns the object\n\
 endlessly.");
-
-static PyTypeObject repeat_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.repeat",                 /* tp_name */
-    sizeof(repeatobject),               /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)repeat_dealloc,         /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    (reprfunc)repeat_repr,              /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    repeat_doc,                         /* tp_doc */
-    (traverseproc)repeat_traverse,      /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)repeat_next,          /* tp_iternext */
-    repeat_methods,                     /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    repeat_new,                         /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
-};
 
 /* ziplongest object *********************************************************/
 
@@ -4971,12 +4023,6 @@ zip_longest_setstate(ziplongestobject *lz, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyMethodDef zip_longest_methods[] = {
-    ZIP_LONGEST_REDUCE_METHODDEF
-    ZIP_LONGEST_SETSTATE_METHODDEF
-    {NULL,              NULL}   /* sentinel */
-};
-
 PyDoc_STRVAR(zip_longest_doc,
 "zip_longest(iter1 [,iter2 [...]], [fillvalue=None]) --> zip_longest object\n\
 \n\
@@ -4987,6 +4033,990 @@ is exhausted and then it raises StopIteration.  When the shorter iterables\n\
 are exhausted, the fillvalue is substituted in their place.  The fillvalue\n\
 defaults to None or can be specified by a keyword argument.\n\
 ");
+
+
+/* including clinic output must come after typdefs and PyObject type
+   declarations, but before method arrays and type definitions */
+#include "clinic/itertoolsmodule.c.h"
+
+
+/* class methods and type definitions ****************************************/
+
+
+static PyMethodDef groupby_methods[] = {
+    GROUPBY_REDUCE_METHODDEF
+    GROUPBY_SETSTATE_METHODDEF
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyTypeObject groupby_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.groupby",                /* tp_name */
+    sizeof(groupbyobject),              /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)groupby_dealloc,        /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    groupby_new__doc__,                 /* tp_doc */
+    (traverseproc)groupby_traverse,     /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)groupby_next,         /* tp_iternext */
+    groupby_methods,                    /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    groupby_new,                        /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef _grouper_methods[] = {
+    _GROUPER_REDUCE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+
+static PyTypeObject _grouper_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools._grouper",               /* tp_name */
+    sizeof(_grouperobject),             /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)_grouper_dealloc,       /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
+    0,                                  /* tp_doc */
+    (traverseproc)_grouper_traverse,    /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)_grouper_next,        /* tp_iternext */
+    _grouper_methods,                   /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    _grouper_new,                       /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef teedataobject_methods[] = {
+    TEEDATAOBJECT_REDUCE_METHODDEF
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyTypeObject teedataobject_type = {
+    PyVarObject_HEAD_INIT(0, 0)                 /* Must fill in type value later */
+    "itertools._tee_dataobject",                /* tp_name */
+    sizeof(teedataobject),                      /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)teedataobject_dealloc,          /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    teedataobject_new__doc__,                   /* tp_doc */
+    (traverseproc)teedataobject_traverse,       /* tp_traverse */
+    (inquiry)teedataobject_clear,               /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    teedataobject_methods,                      /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    teedataobject_new,                          /* tp_new */
+    PyObject_GC_Del,                            /* tp_free */
+};
+
+
+static PyMethodDef tee_methods[] = {
+    TEE_COPY_METHODDEF
+    TEE_REDUCE_METHODDEF
+    TEE_SETSTATE_METHODDEF
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyTypeObject tee_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools._tee",                   /* tp_name */
+    sizeof(teeobject),                  /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)tee_dealloc,            /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    0,                                  /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
+    tee_new__doc__,                     /* tp_doc */
+    (traverseproc)tee_traverse,         /* tp_traverse */
+    (inquiry)tee_clear,                 /* tp_clear */
+    0,                                  /* tp_richcompare */
+    offsetof(teeobject, weakreflist),   /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)tee_next,             /* tp_iternext */
+    tee_methods,                        /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    tee_new,                            /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef cycle_methods[] = {
+    CYCLE_REDUCE_METHODDEF
+    CYCLE_SETSTATE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+
+static PyTypeObject cycle_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.cycle",                  /* tp_name */
+    sizeof(cycleobject),                /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)cycle_dealloc,          /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    cycle_new__doc__,                   /* tp_doc */
+    (traverseproc)cycle_traverse,       /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)cycle_next,           /* tp_iternext */
+    cycle_methods,                      /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    cycle_new,                          /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef dropwhile_methods[] = {
+    DROPWHILE_REDUCE_METHODDEF
+    DROPWHILE_SETSTATE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject dropwhile_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.dropwhile",              /* tp_name */
+    sizeof(dropwhileobject),            /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)dropwhile_dealloc,      /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    dropwhile_new__doc__,               /* tp_doc */
+    (traverseproc)dropwhile_traverse,   /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)dropwhile_next,       /* tp_iternext */
+    dropwhile_methods,                  /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    dropwhile_new,                      /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef takewhile_reduce_methods[] = {
+    TAKEWHILE_REDUCE_METHODDEF
+    TAKEWHILE_SETSTATE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject takewhile_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.takewhile",              /* tp_name */
+    sizeof(takewhileobject),            /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)takewhile_dealloc,      /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    takewhile_new__doc__,               /* tp_doc */
+    (traverseproc)takewhile_traverse,   /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)takewhile_next,       /* tp_iternext */
+    takewhile_reduce_methods,           /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    takewhile_new,                      /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef islice_methods[] = {
+    ISLICE_REDUCE_METHODDEF
+    ISLICE_SETSTATE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject islice_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.islice",                 /* tp_name */
+    sizeof(isliceobject),               /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)islice_dealloc,         /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    islice_doc,                         /* tp_doc */
+    (traverseproc)islice_traverse,      /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)islice_next,          /* tp_iternext */
+    islice_methods,                     /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    islice_new,                         /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef starmap_methods[] = {
+    STARMAP_REDUCE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject starmap_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.starmap",                /* tp_name */
+    sizeof(starmapobject),              /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)starmap_dealloc,        /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    starmap_new__doc__,                 /* tp_doc */
+    (traverseproc)starmap_traverse,     /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)starmap_next,         /* tp_iternext */
+    starmap_methods,                    /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    starmap_new,                        /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef chain_methods[] = {
+    CHAIN_NEW_FROM_ITERABLE_METHODDEF
+    CHAIN_REDUCE_METHODDEF
+    CHAIN_SETSTATE_METHODDEF
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyTypeObject chain_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.chain",                  /* tp_name */
+    sizeof(chainobject),                /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)chain_dealloc,          /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    chain_doc,                          /* tp_doc */
+    (traverseproc)chain_traverse,       /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)chain_next,           /* tp_iternext */
+    chain_methods,                      /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    chain_new,                          /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef product_methods[] = {
+    PRODUCT_REDUCE_METHODDEF
+    PRODUCT_SETSTATE_METHODDEF
+    PRODUCT_SIZEOF_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject product_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.product",                /* tp_name */
+    sizeof(productobject),              /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)product_dealloc,        /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    product_doc,                        /* tp_doc */
+    (traverseproc)product_traverse,     /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)product_next,         /* tp_iternext */
+    product_methods,                    /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    product_new,                        /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef combinations_methods[] = {
+    COMBINATIONS_REDUCE_METHODDEF
+    COMBINATIONS_SETSTATE_METHODDEF
+    COMBINATIONS_SIZEOF_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject combinations_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.combinations",           /* tp_name */
+    sizeof(combinationsobject),         /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)combinations_dealloc,   /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    combinations_new__doc__,            /* tp_doc */
+    (traverseproc)combinations_traverse,/* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)combinations_next,    /* tp_iternext */
+    combinations_methods,               /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    combinations_new,                   /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef cwr_methods[] = {
+    CWR_REDUCE_METHODDEF
+    CWR_SETSTATE_METHODDEF
+    CWR_SIZEOF_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject cwr_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.combinations_with_replacement",          /* tp_name */
+    sizeof(cwrobject),                                  /* tp_basicsize */
+    0,                                                  /* tp_itemsize */
+    /* methods */
+    (destructor)cwr_dealloc,                            /* tp_dealloc */
+    0,                                                  /* tp_print */
+    0,                                                  /* tp_getattr */
+    0,                                                  /* tp_setattr */
+    0,                                                  /* tp_reserved */
+    0,                                                  /* tp_repr */
+    0,                                                  /* tp_as_number */
+    0,                                                  /* tp_as_sequence */
+    0,                                                  /* tp_as_mapping */
+    0,                                                  /* tp_hash */
+    0,                                                  /* tp_call */
+    0,                                                  /* tp_str */
+    PyObject_GenericGetAttr,                            /* tp_getattro */
+    0,                                                  /* tp_setattro */
+    0,                                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,                            /* tp_flags */
+    cwr_new__doc__,                                     /* tp_doc */
+    (traverseproc)cwr_traverse,                         /* tp_traverse */
+    0,                                                  /* tp_clear */
+    0,                                                  /* tp_richcompare */
+    0,                                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                                  /* tp_iter */
+    (iternextfunc)cwr_next,                             /* tp_iternext */
+    cwr_methods,                                        /* tp_methods */
+    0,                                                  /* tp_members */
+    0,                                                  /* tp_getset */
+    0,                                                  /* tp_base */
+    0,                                                  /* tp_dict */
+    0,                                                  /* tp_descr_get */
+    0,                                                  /* tp_descr_set */
+    0,                                                  /* tp_dictoffset */
+    0,                                                  /* tp_init */
+    0,                                                  /* tp_alloc */
+    cwr_new,                                            /* tp_new */
+    PyObject_GC_Del,                                    /* tp_free */
+};
+
+
+static PyMethodDef permuations_methods[] = {
+    PERMUTATIONS_REDUCE_METHODDEF
+    PERMUTATIONS_SETSTATE_METHODDEF
+    PERMUTATIONS_SIZEOF_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject permutations_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.permutations",           /* tp_name */
+    sizeof(permutationsobject),         /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)permutations_dealloc,   /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    permutations_new__doc__,            /* tp_doc */
+    (traverseproc)permutations_traverse,/* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)permutations_next,    /* tp_iternext */
+    permuations_methods,                /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    permutations_new,                   /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef accumulate_methods[] = {
+    ACCUMULATE_REDUCE_METHODDEF
+    ACCUMULATE_SETSTATE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject accumulate_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.accumulate",             /* tp_name */
+    sizeof(accumulateobject),           /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)accumulate_dealloc,     /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    accumulate_new__doc__,              /* tp_doc */
+    (traverseproc)accumulate_traverse,  /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)accumulate_next,      /* tp_iternext */
+    accumulate_methods,                 /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    accumulate_new,                     /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef compress_methods[] = {
+    COMPRESS_REDUCE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject compress_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.compress",               /* tp_name */
+    sizeof(compressobject),             /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)compress_dealloc,       /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    compress_new__doc__,                /* tp_doc */
+    (traverseproc)compress_traverse,    /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)compress_next,        /* tp_iternext */
+    compress_methods,                   /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    compress_new,                       /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef filterfalse_methods[] = {
+    FILTERFALSE_REDUCE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject filterfalse_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.filterfalse",            /* tp_name */
+    sizeof(filterfalseobject),          /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)filterfalse_dealloc,    /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    filterfalse_new__doc__,             /* tp_doc */
+    (traverseproc)filterfalse_traverse, /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)filterfalse_next,     /* tp_iternext */
+    filterfalse_methods,                /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    filterfalse_new,                    /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef count_methods[] = {
+    COUNT_REDUCE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
+static PyTypeObject count_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.count",                  /* tp_name */
+    sizeof(countobject),                /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)count_dealloc,          /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    (reprfunc)count_repr,               /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    count_new__doc__,                   /* tp_doc */
+    (traverseproc)count_traverse,       /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)count_next,           /* tp_iternext */
+    count_methods,                      /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    count_new,                          /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef repeat_methods[] = {
+    REPEAT_LEN_METHODDEF
+    REPEAT_REDUCE_METHODDEF
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyTypeObject repeat_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "itertools.repeat",                 /* tp_name */
+    sizeof(repeatobject),               /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)repeat_dealloc,         /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    (reprfunc)repeat_repr,              /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    repeat_doc,                         /* tp_doc */
+    (traverseproc)repeat_traverse,      /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)repeat_next,          /* tp_iternext */
+    repeat_methods,                     /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    repeat_new,                         /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
+
+
+static PyMethodDef zip_longest_methods[] = {
+    ZIP_LONGEST_REDUCE_METHODDEF
+    ZIP_LONGEST_SETSTATE_METHODDEF
+    {NULL,              NULL}   /* sentinel */
+};
+
 
 static PyTypeObject ziplongest_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
