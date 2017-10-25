@@ -420,6 +420,9 @@ Connection Objects
 
       If you want to clear any previously installed progress handler, call the
       method with :const:`None` for *handler*.
+      
+      Returning ``1`` from the handler function will terminate the currently executing
+      query and cause it to raise a ``sqlite3.OperationalError`` exception.
 
 
    .. method:: set_trace_callback(trace_callback)
