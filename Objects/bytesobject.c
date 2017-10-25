@@ -1439,7 +1439,7 @@ bytes_concat(PyObject *a, PyObject *b)
     vb.len = -1;
     if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
         PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
-        PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
+        PyErr_Format(PyExc_TypeError, "can't concat %.100s and %.100s",
                      Py_TYPE(b)->tp_name, Py_TYPE(a)->tp_name);
         goto done;
     }
@@ -2897,7 +2897,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
 
         wb.len = -1;
         if (PyObject_GetBuffer(w, &wb, PyBUF_SIMPLE) != 0) {
-            PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
+            PyErr_Format(PyExc_TypeError, "can't concat %.100s and %.100s",
                          Py_TYPE(w)->tp_name, Py_TYPE(*pv)->tp_name);
             Py_CLEAR(*pv);
             return;

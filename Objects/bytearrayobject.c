@@ -255,7 +255,7 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
     vb.len = -1;
     if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
         PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
-            PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
+            PyErr_Format(PyExc_TypeError, "can't concat %.100s and %.100s",
                          Py_TYPE(b)->tp_name, Py_TYPE(a)->tp_name);
             goto done;
     }
@@ -295,7 +295,7 @@ bytearray_iconcat(PyByteArrayObject *self, PyObject *other)
     Py_buffer vo;
 
     if (PyObject_GetBuffer(other, &vo, PyBUF_SIMPLE) != 0) {
-        PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
+        PyErr_Format(PyExc_TypeError, "can't concat %.100s and %.100s",
                      Py_TYPE(other)->tp_name, Py_TYPE(self)->tp_name);
         return NULL;
     }
