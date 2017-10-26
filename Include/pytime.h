@@ -30,14 +30,14 @@ typedef enum {
     /* Round to nearest with ties going to nearest even integer.
        For example, used to round from a Python float. */
     _PyTime_ROUND_HALF_EVEN=2,
-    /* Round away from zero 
+    /* Round away from zero
        For example, used for timeout. _PyTime_ROUND_CEILING rounds
        -1e-9 to 0 milliseconds which causes bpo-31786 issue.
        _PyTime_ROUND_UP rounds -1e-9 to -1 millisecond which keeps
        the timeout sign as expected. select.poll(timeout) must block
        for negative values." */
     _PyTime_ROUND_UP=3,
-    /* _PyTime_ROUND_TIMEOUT (an alias for _PyTime_ROUND_UP) should be 
+    /* _PyTime_ROUND_TIMEOUT (an alias for _PyTime_ROUND_UP) should be
        used for timeouts. */
     _PyTime_ROUND_TIMEOUT = _PyTime_ROUND_UP
 } _PyTime_round_t;
