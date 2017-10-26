@@ -305,7 +305,7 @@ class StrptimeTests(unittest.TestCase):
         # Test microseconds
         import datetime
         d = datetime.datetime(2012, 12, 20, 12, 34, 56, 78987)
-        tup, frac = _strptime._strptime(str(d), format="%Y-%m-%d %H:%M:%S.%f")
+        tup, frac, _ = _strptime._strptime(str(d), format="%Y-%m-%d %H:%M:%S.%f")
         self.assertEqual(frac, d.microsecond)
 
     def test_weekday(self):
@@ -316,6 +316,51 @@ class StrptimeTests(unittest.TestCase):
     def test_julian(self):
         # Test julian directives
         self.helper('j', 7)
+
+    def test_offset(self):
+        one_hour = 60 * 60
+        half_hour = 30 * 60
+        half_minute = 30
+        (*_, offset), _, offset_fraction = _strptime._strptime("+0130", "%z")
+        self.assertEqual(offset, one_hour + half_hour)
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-0100", "%z")
+        self.assertEqual(offset, -one_hour)
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-013030", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-013030.000001", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        self.assertEqual(offset_fraction, -1)
+        (*_, offset), _, offset_fraction = _strptime._strptime("+01:00", "%z")
+        self.assertEqual(offset, one_hour)
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour))
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30.000001", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        self.assertEqual(offset_fraction, -1)
+        (*_, offset), _, offset_fraction = _strptime._strptime("Z", "%z")
+        self.assertEqual(offset, 0)
+        self.assertEqual(offset_fraction, 0)
+
+    def test_bad_offset(self):
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:30:30.", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-0130:30", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:30:30.1234567", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:30:30:123456", "%z")
+        with self.assertRaises(ValueError) as err:
+            _strptime._strptime("-01:3030", "%z")
+        self.assertEqual("Unconsistent use of : in -01:3030", str(err.exception))
 
     def test_timezone(self):
         # Test timezone directives.
