@@ -1,0 +1,2 @@
+Improve exception message of ``__import__()`` when the type of *fromlist*
+parameter is not :class:`str`.
