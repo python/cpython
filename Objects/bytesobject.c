@@ -3,6 +3,8 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 
 #include "bytes_methods.h"
 #include "pystrhex.h"
@@ -866,7 +868,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     switch(c)
                     {
                         default:
-                            assert(0 && "'type' not in [diuoxX]");
+                            Py_UNREACHABLE();
                         case 'd':
                         case 'i':
                         case 'u':
@@ -1255,7 +1257,7 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     if (first_invalid_escape != NULL) {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                              "invalid escape sequence '\\%c'",
-                             *first_invalid_escape) < 0) {
+                             (unsigned char)*first_invalid_escape) < 0) {
             Py_DECREF(result);
             return NULL;
         }

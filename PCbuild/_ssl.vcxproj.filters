@@ -9,5 +9,11 @@
     <ClCompile Include="..\Modules\_ssl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="$(opensslIncludeDir)\applink.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
 </Project>

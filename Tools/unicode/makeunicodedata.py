@@ -42,7 +42,7 @@ VERSION = "3.2"
 #   * Doc/library/stdtypes.rst, and
 #   * Doc/library/unicodedata.rst
 #   * Doc/reference/lexical_analysis.rst (two occurrences)
-UNIDATA_VERSION = "9.0.0"
+UNIDATA_VERSION = "10.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -99,11 +99,12 @@ EXTENDED_CASE_MASK = 0x4000
 # these ranges need to match unicodedata.c:is_unified_ideograph
 cjk_ranges = [
     ('3400', '4DB5'),
-    ('4E00', '9FD5'),
+    ('4E00', '9FEA'),
     ('20000', '2A6D6'),
     ('2A700', '2B734'),
     ('2B740', '2B81D'),
     ('2B820', '2CEA1'),
+    ('2CEB0', '2EBE0'),
 ]
 
 def maketables(trace=0):
@@ -1262,12 +1263,12 @@ class Array:
             for item in self.data:
                 i = str(item) + ", "
                 if len(s) + len(i) > 78:
-                    file.write(s + "\n")
+                    file.write(s.rstrip() + "\n")
                     s = "    " + i
                 else:
                     s = s + i
             if s.strip():
-                file.write(s + "\n")
+                file.write(s.rstrip() + "\n")
         file.write("};\n\n")
 
 def getsize(data):

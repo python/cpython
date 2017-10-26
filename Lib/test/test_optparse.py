@@ -24,8 +24,6 @@ from optparse import make_option, Option, \
 from optparse import _match_abbrev
 from optparse import _parse_num
 
-retype = type(re.compile(''))
-
 class InterceptedError(Exception):
     def __init__(self,
                  error_message=None,
@@ -107,7 +105,7 @@ Args were %(args)s.""" % locals ())
             func(*args, **kwargs)
         except expected_exception as err:
             actual_message = str(err)
-            if isinstance(expected_message, retype):
+            if isinstance(expected_message, re.Pattern):
                 self.assertTrue(expected_message.search(actual_message),
                              """\
 expected exception message pattern:

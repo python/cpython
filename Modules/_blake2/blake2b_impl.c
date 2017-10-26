@@ -15,9 +15,7 @@
 
 #include "Python.h"
 #include "pystrhex.h"
-#ifdef WITH_THREAD
 #include "pythread.h"
-#endif
 
 #include "../hashlib.h"
 #include "blake2ns.h"
@@ -28,7 +26,9 @@
 #include "impl/blake2.h"
 #include "impl/blake2-impl.h" /* for secure_zero_memory() and store48() */
 
-#ifdef BLAKE2_USE_SSE
+/* pure SSE2 implementation is very slow, so only use the more optimized SSSE3+
+ * https://bugs.python.org/issue31834 */
+#if defined(__SSSE3__) || defined(__SSE4_1__) || defined(__AVX__) || defined(__XOP__)
 #include "impl/blake2b.c"
 #else
 #include "impl/blake2b-ref.c"
@@ -41,9 +41,7 @@ typedef struct {
     PyObject_HEAD
     blake2b_param    param;
     blake2b_state    state;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } BLAKE2bObject;
 
 #include "clinic/blake2b_impl.c.h"
@@ -60,11 +58,9 @@ new_BLAKE2bObject(PyTypeObject *type)
 {
     BLAKE2bObject *self;
     self = (BLAKE2bObject *)type->tp_alloc(type, 0);
-#ifdef WITH_THREAD
     if (self != NULL) {
         self->lock = NULL;
     }
-#endif
     return self;
 }
 
@@ -292,7 +288,6 @@ _blake2b_blake2b_update(BLAKE2bObject *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-#ifdef WITH_THREAD
     if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE)
         self->lock = PyThread_allocate_lock();
 
@@ -305,9 +300,6 @@ _blake2b_blake2b_update(BLAKE2bObject *self, PyObject *obj)
     } else {
         blake2b_update(&self->state, buf.buf, buf.len);
     }
-#else
-    blake2b_update(&self->state, buf.buf, buf.len);
-#endif /* !WITH_THREAD */
     PyBuffer_Release(&buf);
 
     Py_RETURN_NONE;
@@ -407,12 +399,10 @@ py_blake2b_dealloc(PyObject *self)
     /* Try not to leave state in memory. */
     secure_zero_memory(&obj->param, sizeof(obj->param));
     secure_zero_memory(&obj->state, sizeof(obj->state));
-#ifdef WITH_THREAD
     if (obj->lock) {
         PyThread_free_lock(obj->lock);
         obj->lock = NULL;
     }
-#endif
     PyObject_Del(self);
 }
 

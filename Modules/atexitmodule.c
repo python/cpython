@@ -97,7 +97,7 @@ atexit_callfuncs(void)
                 Py_XDECREF(exc_tb);
             }
             PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
-            if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+            if (!PyErr_GivenExceptionMatches(exc_type, PyExc_SystemExit)) {
                 PySys_WriteStderr("Error in atexit._run_exitfuncs:\n");
                 PyErr_NormalizeException(&exc_type, &exc_value, &exc_tb);
                 PyErr_Display(exc_type, exc_value, exc_tb);

@@ -71,9 +71,8 @@ static const char usage_2[] = "\
 -S     : don't imply 'import site' on initialization\n\
 ";
 static const char usage_3[] = "\
--u     : unbuffered binary stdout and stderr, stdin always buffered;\n\
-         also PYTHONUNBUFFERED=x\n\
-         see man page for details on internal buffering relating to '-u'\n\
+-u     : force the stdout and stderr streams to be unbuffered;\n\
+         this option has no effect on stdin; also PYTHONUNBUFFERED=x\n\
 -v     : verbose (trace import statements); also PYTHONVERBOSE=x\n\
          can be supplied multiple times to increase verbosity\n\
 -V     : print the Python version number and exit (also --version)\n\
@@ -105,7 +104,10 @@ static const char usage_6[] =
 "   predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
-"   hooks.\n";
+"   hooks.\n"
+"PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
+"   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
+"   locale coercion and locale compatibility warnings on stderr.\n";
 
 static int
 usage(int exitcode, const wchar_t* program)
@@ -520,39 +522,33 @@ read_command_line(int argc, wchar_t **argv, _Py_CommandLineDetails *cmdline)
     return 0;
 }
 
+static void
+maybe_set_flag(int *flag, int value)
+{
+    /* Helper to set flag variables from command line options
+    *   - uses the higher of the two values if they're both set
+    *   - otherwise leaves the flag unset
+    */
+    if (*flag < value) {
+        *flag = value;
+    }
+}
+
 static int
 apply_command_line_and_environment(_Py_CommandLineDetails *cmdline)
 {
-    char *p;
-    Py_BytesWarningFlag = cmdline->bytes_warning;
-    Py_DebugFlag = cmdline->debug;
-    Py_InspectFlag = cmdline->inspect;
-    Py_InteractiveFlag = cmdline->interactive;
-    Py_IsolatedFlag = cmdline->isolated;
-    Py_OptimizeFlag = cmdline->optimization_level;
-    Py_DontWriteBytecodeFlag = cmdline->dont_write_bytecode;
-    Py_NoUserSiteDirectory = cmdline->no_user_site_directory;
-    Py_NoSiteFlag = cmdline->no_site_import;
-    Py_UnbufferedStdioFlag = cmdline->use_unbuffered_io;
-    Py_VerboseFlag = cmdline->verbosity;
-    Py_QuietFlag = cmdline->quiet_flag;
-
-    if (!Py_InspectFlag &&
-        (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0') {
-        Py_InspectFlag = 1;
-        cmdline->inspect = 1;
-    }
-    if (!cmdline->use_unbuffered_io &&
-        (p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0') {
-        Py_UnbufferedStdioFlag = 1;
-        cmdline->use_unbuffered_io = 1;
-    }
-
-    if (!Py_NoUserSiteDirectory &&
-        (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0') {
-        Py_NoUserSiteDirectory = 1;
-        cmdline->no_user_site_directory = 1;
-    }
+    maybe_set_flag(&Py_BytesWarningFlag, cmdline->bytes_warning);
+    maybe_set_flag(&Py_DebugFlag, cmdline->debug);
+    maybe_set_flag(&Py_InspectFlag, cmdline->inspect);
+    maybe_set_flag(&Py_InteractiveFlag, cmdline->interactive);
+    maybe_set_flag(&Py_IsolatedFlag, cmdline->isolated);
+    maybe_set_flag(&Py_OptimizeFlag, cmdline->optimization_level);
+    maybe_set_flag(&Py_DontWriteBytecodeFlag, cmdline->dont_write_bytecode);
+    maybe_set_flag(&Py_NoUserSiteDirectory, cmdline->no_user_site_directory);
+    maybe_set_flag(&Py_NoSiteFlag, cmdline->no_site_import);
+    maybe_set_flag(&Py_UnbufferedStdioFlag, cmdline->use_unbuffered_io);
+    maybe_set_flag(&Py_VerboseFlag, cmdline->verbosity);
+    maybe_set_flag(&Py_QuietFlag, cmdline->quiet_flag);
 
     /* TODO: Apply PYTHONWARNINGS & -W options to sys module here */
     /* TODO: Apply -X options to sys module here */
@@ -595,16 +591,10 @@ Py_Main(int argc, wchar_t **argv)
         }
     }
 
-    char *pymalloc = Py_GETENV("PYTHONMALLOC");
-    if (_PyMem_SetupAllocators(pymalloc) < 0) {
-        fprintf(stderr,
-            "Error in PYTHONMALLOC: unknown allocator \"%s\"!\n", pymalloc);
-        exit(1);
-    }
-
     /* Initialize the core language runtime */
     Py_IgnoreEnvironmentFlag = core_config.ignore_environment;
     core_config._disable_importlib = 0;
+    core_config.allocator = Py_GETENV("PYTHONMALLOC");
     _Py_InitializeCore(&core_config);
 
     /* Reprocess the command line with the language runtime available */
