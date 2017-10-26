@@ -210,7 +210,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d[0-5]\d)",
+            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|Z)",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -365,7 +365,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     month = day = 1
     hour = minute = second = fraction = 0
     tz = -1
-    tzoffset = None
+    gmtoff = None
+    gmtoff_fraction = 0
     # Default to -1 to signify that values not known; not critical to have,
     # though
     iso_week = week_of_year = None
@@ -455,9 +456,24 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             iso_week = int(found_dict['V'])
         elif group_key == 'z':
             z = found_dict['z']
-            tzoffset = int(z[1:3]) * 60 + int(z[3:5])
-            if z.startswith("-"):
-                tzoffset = -tzoffset
+            if z == 'Z':
+                gmtoff = 0
+            else:
+                if z[3] == ':':
+                    z = z[:3] + z[4:]
+                    if len(z) > 5:
+                        if z[5] != ':':
+                            msg = f"Unconsistent use of : in {found_dict['z']}"
+                            raise ValueError(msg)
+                        z = z[:5] + z[6:]
+                hours = int(z[1:3])
+                minutes = int(z[3:5])
+                seconds = int(z[5:7] or 0)
+                gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
+                gmtoff_fraction = int(z[8:] or 0)
+                if z.startswith("-"):
+                    gmtoff = -gmtoff
+                    gmtoff_fraction = -gmtoff_fraction
         elif group_key == 'Z':
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.
@@ -535,10 +551,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         weekday = datetime_date(year, month, day).weekday()
     # Add timezone info
     tzname = found_dict.get("Z")
-    if tzoffset is not None:
-        gmtoff = tzoffset * 60
-    else:
-        gmtoff = None
 
     if leap_year_fix:
         # the caller didn't supply a year but asked for Feb 29th. We couldn't
@@ -548,7 +560,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
 
     return (year, month, day,
             hour, minute, second,
-            weekday, julian, tz, tzname, gmtoff), fraction
+            weekday, julian, tz, tzname, gmtoff), fraction, gmtoff_fraction
 
 def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the
@@ -559,11 +571,11 @@ def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
 def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a class cls instance based on the input string and the
     format string."""
-    tt, fraction = _strptime(data_string, format)
+    tt, fraction, gmtoff_fraction = _strptime(data_string, format)
     tzname, gmtoff = tt[-2:]
     args = tt[:6] + (fraction,)
     if gmtoff is not None:
-        tzdelta = datetime_timedelta(seconds=gmtoff)
+        tzdelta = datetime_timedelta(seconds=gmtoff, microseconds=gmtoff_fraction)
         if tzname:
             tz = datetime_timezone(tzdelta, tzname)
         else:
