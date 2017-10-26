@@ -288,7 +288,10 @@ msiobj_dealloc(msiobj* msidb)
 static PyObject*
 msiobj_close(msiobj* msidb, PyObject *args)
 {
-    MsiCloseHandle(msidb->h);
+    int status;
+    if ((status = MsiCloseHandle(msidb->h)) != ERROR_SUCCESS) {
+        return msierror(status);
+    }
     msidb->h = 0;
     Py_RETURN_NONE;
 }
@@ -900,6 +903,8 @@ static PyMethodDef db_methods[] = {
         PyDoc_STR("Commit() -> None\nWraps MsiDatabaseCommit")},
     { "GetSummaryInformation", (PyCFunction)msidb_getsummaryinformation, METH_VARARGS,
         PyDoc_STR("GetSummaryInformation(updateCount) -> viewobj\nWraps MsiGetSummaryInformation")},
+    { "Close", (PyCFunction)msiobj_close, METH_NOARGS,
+        PyDoc_STR("Close() -> None\nWraps MsiCloseHandle")},
     { NULL, NULL }
 };
 
