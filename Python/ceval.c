@@ -469,13 +469,15 @@ _Py_CheckRecursiveCall(const char *where)
     int recursion_limit = _PyRuntime.ceval.recursion_limit;
 
 #ifdef USE_STACKCHECK
+    tstate->stackcheck_counter = 0;
     if (PyOS_CheckStack()) {
         --tstate->recursion_depth;
         PyErr_SetString(PyExc_MemoryError, "Stack overflow");
         return -1;
     }
-#endif
+    /* Needed for ABI backwards-compatibility (see bpo-31857) */
     _Py_CheckRecursionLimit = recursion_limit;
+#endif
     if (tstate->recursion_critical)
         /* Somebody asked that we don't check for recursion. */
         return 0;
