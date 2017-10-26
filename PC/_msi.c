@@ -286,17 +286,6 @@ msiobj_dealloc(msiobj* msidb)
 }
 
 static PyObject*
-msiobj_close(msiobj* msidb, PyObject *args)
-{
-    int status;
-    if ((status = MsiCloseHandle(msidb->h)) != ERROR_SUCCESS) {
-        return msierror(status);
-    }
-    msidb->h = 0;
-    Py_RETURN_NONE;
-}
-
-static PyObject*
 msierror(int status)
 {
     int code;
@@ -342,6 +331,17 @@ msierror(int status)
     if (res != buf)
         free(res);
     return NULL;
+}
+
+static PyObject*
+msiobj_close(msiobj* msidb, PyObject *args)
+{
+    int status;
+    if ((status = MsiCloseHandle(msidb->h)) != ERROR_SUCCESS) {
+        return msierror(status);
+    }
+    msidb->h = 0;
+    Py_RETURN_NONE;
 }
 
 /*************************** Record objects **********************/
