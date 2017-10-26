@@ -1852,6 +1852,11 @@ Build and C API Changes
 * The :c:func:`PyUnicode_FSConverter` and :c:func:`PyUnicode_FSDecoder`
   functions will now accept :term:`path-like objects <path-like object>`.
 
+* The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+  has been removed as its members being never cleared may cause a segfault
+  during finalization of the interpreter. Contributed by Xavier de Gaye in
+  :issue:`22898` and :issue:`30697`.
+
 
 Other Improvements
 ==================
