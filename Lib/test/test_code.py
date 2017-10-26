@@ -231,7 +231,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
     SetExtra.restype = ctypes.c_int
 
     GetExtra = py._PyCode_GetExtra
-    GetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t, 
+    GetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t,
                          ctypes.POINTER(ctypes.c_voidp))
     GetExtra.restype = ctypes.c_int
 

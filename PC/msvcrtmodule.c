@@ -353,7 +353,7 @@ msvcrt_ungetch_impl(PyObject *module, char char_value)
 /*[clinic end generated code: output=c6942a0efa119000 input=22f07ee9001bbf0f]*/
 {
     int res;
-    
+
     _Py_BEGIN_SUPPRESS_IPH
     res = _ungetch(char_value);
     _Py_END_SUPPRESS_IPH
