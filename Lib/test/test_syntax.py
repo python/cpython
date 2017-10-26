@@ -608,23 +608,23 @@ class SyntaxTestCase(unittest.TestCase):
     def test_assign_del(self):
         self._check_error("del f()", "delete")
 
-    def test_global_err_first(self):
+    def test_global_param_err_first(self):
         source = """if 1:
             def error(a):
                 global a  # SyntaxError
             def error2():
                 b = 1
-                global b
+                global b  # SyntaxError
             """
         self._check_error(source, "parameter and global", lineno=3)
 
-    def test_nonlocal_err_first(self):
+    def test_nonlocal_param_err_first(self):
         source = """if 1:
             def error(a):
                 nonlocal a  # SyntaxError
             def error2():
                 b = 1
-                global b
+                global b  # SyntaxError
             """
         self._check_error(source, "parameter and nonlocal", lineno=3)
 
