@@ -125,4 +125,4 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 ``http.client.OK``).
 
 .. versionchanged:: 3.7
-   Added ``421`` ``MISDIRECTED_REQUEST`` status code.
+   Added ``421 MISDIRECTED_REQUEST`` status code.
