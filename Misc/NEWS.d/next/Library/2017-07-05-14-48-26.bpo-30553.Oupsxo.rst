@@ -1,0 +1,2 @@
+Add HTTP/2 status code 421 (Misdirected Request) to
+:class:`http.HTTPStatus`. Patch by Vitor Pereira.
