@@ -1850,7 +1850,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     /* Line continuation */
     if (c == '\\') {
         c = tok_nextc(tok);
-        if ( tok->async_def == 2){
+        if (tok->async_def == 2) {
             tok->done = E_SYNTAX;
             return ERRORTOKEN;
         }
