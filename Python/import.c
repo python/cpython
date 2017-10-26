@@ -1667,37 +1667,45 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        static int ximporttime = 0;
+        /* 1 -- true, 0 -- false, -1 -- not initialized */
+        static int ximporttime = -1;
         static int import_level;
         static _PyTime_t accumulated;
         _Py_IDENTIFIER(importtime);
 
         _PyTime_t t1 = 0, accumulated_copy = accumulated;
 
-        Py_XDECREF(mod);
-
         /* XOptions is initialized after first some imports.
          * So we can't have negative cache.
          * Anyway, importlib.__find_and_load is much slower than
          * _PyDict_GetItemId()
          */
-        if (ximporttime == 0) {
+        if (ximporttime < 0) {
             PyObject *xoptions = PySys_GetXOptions();
-            if (xoptions) {
-                PyObject *value = _PyDict_GetItemId(xoptions, &PyId_importtime);
-                ximporttime = (value == Py_True);
+            PyObject *value;
+            if (xoptions == NULL) {
+                goto error;
             }
-            if (ximporttime) {
-                fputs("import time: self [us] | cumulative | imported package\n",
-                      stderr);
+            value = _PyDict_GetItemIdWithError(xoptions, &PyId_importtime);
+            if (value == NULL && PyErr_Occurred()) {
+                goto error;
+            }
+            if (ximporttime < 0 && (value == Py_True || Py_IsInitialized())) {
+                ximporttime = (value == Py_True);
+                if (ximporttime) {
+                    fputs("import time: self [us] | cumulative | imported package\n",
+                          stderr);
+                }
             }
         }
 
-        if (ximporttime) {
+        if (ximporttime > 0) {
             import_level++;
             t1 = _PyTime_GetPerfCounter();
             accumulated = 0;
         }
+
+        Py_XDECREF(mod);
 
         if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
             PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
@@ -1710,7 +1718,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
             PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
                                            mod != NULL);
 
-        if (ximporttime) {
+        if (ximporttime > 0) {
             _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
 
             import_level--;
