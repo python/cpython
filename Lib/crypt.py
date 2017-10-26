@@ -27,15 +27,22 @@ def mksalt(method=None, *, rounds=None):
     """
     if method is None:
         method = methods[0]
-    if not method.ident:
+    if not method.ident:  # traditional
         s = ''
-    elif method.ident[0] == '2':
+    elif method.ident[0] == '2':  # Blowfish variants
         if rounds is None:
             log_rounds = 12
         else:
-            log_rounds = (rounds-1).bit_length()
+            log_rounds = int.bit_length(rounds-1)
+            if rounds != 1 << log_rounds:
+                raise ValueError('rounds must be a power of 2')
+            if not 4 <= log_rounds <= 31:
+                raise ValueError('rounds out of the range 2**4 to 2**31')
         s = f'${method.ident}${log_rounds:02d}$'
-    elif method.ident in ('5', '6') and rounds is not None:
+    elif method.ident in ('5', '6') and rounds is not None:  # SHA-2
+        range(rounds)  # raise a TypeError for non-integers
+        if not 1000 <= rounds <= 999_999_999:
+            raise ValueError('rounds out of the range 1000 to 999_999_999')
         s = f'${method.ident}$rounds={rounds}$'
     else:
         s = f'${method.ident}$'
@@ -80,7 +87,7 @@ _add_method('SHA256', '5', 16, 63)
 # 'y' is the same as 'b', for compatibility
 # with openwall crypt_blowfish.
 for _v in 'b', 'y', 'a', '':
-    if _add_method('BLOWFISH', '2' + _v, 22, 59 + len(_v), rounds=16):
+    if _add_method('BLOWFISH', '2' + _v, 22, 59 + len(_v), rounds=1<<4):
         break
 
 _add_method('MD5', '1', 8, 34)

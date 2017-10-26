@@ -128,10 +128,10 @@ The :mod:`crypt` module defines the following functions:
    *rounds* specifies the number of rounds for ``METHOD_SHA256``,
    ``METHOD_SHA512`` and ``METHOD_BLOWFISH``, and is ignored otherwise.
    For ``METHOD_SHA256`` and ``METHOD_SHA512`` it must be an integer between
-   ``1000`` and ``999999999``.  For ``METHOD_BLOWFISH`` it must be a power of
-   two between ``16`` and ``2147483648`` (2\ :sup:`32`), the default is
-   ``4096``.  If it isn't a power of two, it will be rounded up to the next
-   power of two.
+   ``1000`` and ``999_999_999``, the default is ``5000``.  For
+   ``METHOD_BLOWFISH`` it must be a power of two between ``16`` (2\ :sup:`4`)
+   and ``2_147_483_648`` (2\ :sup:`32`), the default is ``4096``
+   (2\ :sup:`12`).
 
    .. versionadded:: 3.3
 
