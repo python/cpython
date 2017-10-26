@@ -420,7 +420,7 @@ Connection Objects
 
       If you want to clear any previously installed progress handler, call the
       method with :const:`None` for *handler*.
-      
+
       Returning a non-zero value from the handler function will terminate the
       currently executing query and cause it to raise a
       ``sqlite3.OperationalError`` exception.
