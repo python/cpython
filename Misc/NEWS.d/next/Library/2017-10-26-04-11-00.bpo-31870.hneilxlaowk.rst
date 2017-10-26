@@ -1,0 +1,1 @@
+Added timeout support for func get_server_certificate in ssl module.
