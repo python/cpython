@@ -440,6 +440,11 @@ Build and C API Changes
   download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
   Ware in :issue:`30450`.)
 
+* The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+  has been removed as its members being never cleared may cause a segfault
+  during finalization of the interpreter. Contributed by Xavier de Gaye in
+  :issue:`22898` and :issue:`30697`.
+
 * Support for building ``--without-threads`` is removed.
   (Contributed by Antoine Pitrou in :issue:`31370`.).
 
