@@ -2147,6 +2147,10 @@ class TestDateTime(TestDate):
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
+        self.assertEqual(
+            strptime("-00:02:01.000003", "%z").utcoffset(),
+            -timedelta(minutes=2, seconds=1, microseconds=3)
+        )
         # Only local timezone and UTC are supported
         for tzseconds, tzname in ((0, 'UTC'), (0, 'GMT'),
                                  (-_time.timezone, _time.tzname[0])):
