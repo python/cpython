@@ -10,8 +10,8 @@ import errno
 
 from test.support import (TESTFN, captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
-                          no_tracing, unlink, import_module, script_helper)
-
+                          no_tracing, unlink, import_module, script_helper,
+                          SuppressCrashReport)
 class NaiveException(Exception):
     def __init__(self, x):
         self.x = x
@@ -936,6 +936,105 @@ class ExceptionTests(unittest.TestCase):
         self.assertIsInstance(v, RecursionError, type(v))
         self.assertIn("maximum recursion depth exceeded", str(v))
 
+    @cpython_only
+    def test_recursion_normalizing_exception(self):
+        # Issue #22898.
+        # Test that a RecursionError is raised when tstate->recursion_depth is
+        # equal to recursion_limit in PyErr_NormalizeException() and check
+        # that a ResourceWarning is printed.
+        # Prior to #22898, the recursivity of PyErr_NormalizeException() was
+        # controled by tstate->recursion_depth and a PyExc_RecursionErrorInst
+        # singleton was being used in that case, that held traceback data and
+        # locals indefinitely and would cause a segfault in _PyExc_Fini() upon
+        # finalization of these locals.
+        code = """if 1:
+            import sys
+            from _testcapi import get_recursion_depth
+
+            class MyException(Exception): pass
+
+            def setrecursionlimit(depth):
+                while 1:
+                    try:
+                        sys.setrecursionlimit(depth)
+                        return depth
+                    except RecursionError:
+                        # sys.setrecursionlimit() raises a RecursionError if
+                        # the new recursion limit is too low (issue #25274).
+                        depth += 1
+
+            def recurse(cnt):
+                cnt -= 1
+                if cnt:
+                    recurse(cnt)
+                else:
+                    generator.throw(MyException)
+
+            def gen():
+                f = open(%a, mode='rb', buffering=0)
+                yield
+
+            generator = gen()
+            next(generator)
+            recursionlimit = sys.getrecursionlimit()
+            depth = get_recursion_depth()
+            try:
+                # Upon the last recursive invocation of recurse(),
+                # tstate->recursion_depth is equal to (recursion_limit - 1)
+                # and is equal to recursion_limit when _gen_throw() calls
+                # PyErr_NormalizeException().
+                recurse(setrecursionlimit(depth + 2) - depth - 1)
+            finally:
+                sys.setrecursionlimit(recursionlimit)
+                print('Done.')
+        """ % __file__
+        rc, out, err = script_helper.assert_python_failure("-Wd", "-c", code)
+        # Check that the program does not fail with SIGABRT.
+        self.assertEqual(rc, 1)
+        self.assertIn(b'RecursionError', err)
+        self.assertIn(b'ResourceWarning', err)
+        self.assertIn(b'Done.', out)
+
+    @cpython_only
+    def test_recursion_normalizing_infinite_exception(self):
+        # Issue #30697. Test that a RecursionError is raised when
+        # PyErr_NormalizeException() maximum recursion depth has been
+        # exceeded.
+        code = """if 1:
+            import _testcapi
+            try:
+                raise _testcapi.RecursingInfinitelyError
+            finally:
+                print('Done.')
+        """
+        rc, out, err = script_helper.assert_python_failure("-c", code)
+        self.assertEqual(rc, 1)
+        self.assertIn(b'RecursionError: maximum recursion depth exceeded '
+                      b'while normalizing an exception', err)
+        self.assertIn(b'Done.', out)
+
+    @cpython_only
+    def test_recursion_normalizing_with_no_memory(self):
+        # Issue #30697. Test that in the abort that occurs when there is no
+        # memory left and the size of the Python frames stack is greater than
+        # the size of the list of preallocated MemoryError instances, the
+        # Fatal Python error message mentions MemoryError.
+        code = """if 1:
+            import _testcapi
+            class C(): pass
+            def recurse(cnt):
+                cnt -= 1
+                if cnt:
+                    recurse(cnt)
+                else:
+                    _testcapi.set_nomemory(0)
+                    C()
+            recurse(16)
+        """
+        with SuppressCrashReport():
+            rc, out, err = script_helper.assert_python_failure("-c", code)
+            self.assertIn(b'Fatal Python error: Cannot recover from '
+                          b'MemoryErrors while normalizing exceptions.', err)
 
     @cpython_only
     def test_MemoryError(self):

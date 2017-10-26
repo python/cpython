@@ -4940,6 +4940,61 @@ static PyTypeObject awaitType = {
 };
 
 
+static int recurse_infinitely_error_init(PyObject *, PyObject *, PyObject *);
+
+static PyTypeObject PyRecursingInfinitelyError_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "RecursingInfinitelyError",   /* tp_name */
+    sizeof(PyBaseExceptionObject), /* tp_basicsize */
+    0,                          /* tp_itemsize */
+    0,                          /* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_reserved */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    "Instantiating this exception starts infinite recursion.", /* tp_doc */
+    0,                          /* tp_traverse */
+    0,                          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+    0,                          /* tp_iter */
+    0,                          /* tp_iternext */
+    0,                          /* tp_methods */
+    0,                          /* tp_members */
+    0,                          /* tp_getset */
+    0,                          /* tp_base */
+    0,                          /* tp_dict */
+    0,                          /* tp_descr_get */
+    0,                          /* tp_descr_set */
+    0,                          /* tp_dictoffset */
+    (initproc)recurse_infinitely_error_init, /* tp_init */
+    0,                          /* tp_alloc */
+    0,                          /* tp_new */
+};
+
+static int
+recurse_infinitely_error_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *type = (PyObject *)&PyRecursingInfinitelyError_Type;
+
+    /* Instantiating this exception starts infinite recursion. */
+    Py_INCREF(type);
+    PyErr_SetObject(type, NULL);
+    return -1;
+}
+
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testcapi",
@@ -4980,6 +5035,14 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+
+    PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
+    if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&PyRecursingInfinitelyError_Type);
+    PyModule_AddObject(m, "RecursingInfinitelyError",
+                       (PyObject *)&PyRecursingInfinitelyError_Type);
 
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));
