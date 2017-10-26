@@ -12,7 +12,6 @@ from test.support import (TESTFN, captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
                           no_tracing, unlink, import_module, script_helper,
                           SuppressCrashReport)
-
 class NaiveException(Exception):
     def __init__(self, x):
         self.x = x
@@ -1196,6 +1195,23 @@ class ExceptionTests(unittest.TestCase):
                 else:
                     self.assertIn("test message", report)
                 self.assertTrue(report.endswith("\n"))
+
+    @cpython_only
+    def test_memory_error_in_PyErr_PrintEx(self):
+        code = """if 1:
+            import _testcapi
+            class C(): pass
+            _testcapi.set_nomemory(0, %d)
+            C()
+        """
+
+        # Issue #30817: Abort in PyErr_PrintEx() when no memory.
+        # Span a large range of tests as the CPython code always evolves with
+        # changes that add or remove memory allocations.
+        for i in range(1, 20):
+            rc, out, err = script_helper.assert_python_failure("-c", code % i)
+            self.assertIn(rc, (1, 120))
+            self.assertIn(b'MemoryError', err)
 
     def test_yield_in_nested_try_excepts(self):
         #Issue #25612
