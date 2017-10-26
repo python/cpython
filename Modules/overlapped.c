@@ -804,7 +804,7 @@ do_WSARecv(OverlappedObject *self, HANDLE handle,
     WSABUF wsabuf;
     int ret;
     DWORD err;
-    
+
     wsabuf.buf = bufstart;
     wsabuf.len = buflen;
 

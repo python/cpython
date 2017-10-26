@@ -125,8 +125,8 @@ typedef struct _ts PyThreadState;
 #else
 
 typedef struct _err_stackitem {
-    /* This struct represents an entry on the exception stack, which is a 
-     * per-coroutine state. (Coroutine in the computer science sense, 
+    /* This struct represents an entry on the exception stack, which is a
+     * per-coroutine state. (Coroutine in the computer science sense,
      * including the thread and generators).
      * This ensures that the exception state is not impacted by "yields"
      * from an except handler.
