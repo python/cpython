@@ -2,6 +2,7 @@
 /* Error handling */
 
 #include "Python.h"
+#include "internal/pystate.h"
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS
@@ -52,6 +53,18 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
     Py_XDECREF(oldtraceback);
 }
 
+_PyErr_StackItem *
+_PyErr_GetTopmostException(PyThreadState *tstate)
+{
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    while ((exc_info->exc_type == NULL || exc_info->exc_type == Py_None) &&
+           exc_info->previous_item != NULL)
+    {
+        exc_info = exc_info->previous_item;
+    }
+    return exc_info;
+}
+
 static PyObject*
 _PyErr_CreateException(PyObject *exception, PyObject *value)
 {
@@ -82,7 +95,7 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     }
 
     Py_XINCREF(value);
-    exc_value = tstate->exc_value;
+    exc_value = _PyErr_GetTopmostException(tstate)->exc_value;
     if (exc_value != NULL && exc_value != Py_None) {
         /* Implicit exception chaining */
         Py_INCREF(exc_value);
@@ -191,19 +204,7 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
         err = PyExceptionInstance_Class(err);
 
     if (PyExceptionClass_Check(err) && PyExceptionClass_Check(exc)) {
-        int res = 0;
-        PyObject *exception, *value, *tb;
-        PyErr_Fetch(&exception, &value, &tb);
-        /* PyObject_IsSubclass() can recurse and therefore is
-           not safe (see test_bad_getattr in test.pickletester). */
-        res = PyType_IsSubtype((PyTypeObject *)err, (PyTypeObject *)exc);
-        /* This function must not fail, so print the error here */
-        if (res == -1) {
-            PyErr_WriteUnraisable(err);
-            res = 0;
-        }
-        PyErr_Restore(exception, value, tb);
-        return res;
+        return PyType_IsSubtype((PyTypeObject *)err, (PyTypeObject *)exc);
     }
 
     return err == exc;
@@ -360,9 +361,11 @@ PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
     PyThreadState *tstate = PyThreadState_GET();
 
-    *p_type = tstate->exc_type;
-    *p_value = tstate->exc_value;
-    *p_traceback = tstate->exc_traceback;
+    _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
+    *p_type = exc_info->exc_type;
+    *p_value = exc_info->exc_value;
+    *p_traceback = exc_info->exc_traceback;
+
 
     Py_XINCREF(*p_type);
     Py_XINCREF(*p_value);
@@ -375,13 +378,13 @@ PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
     PyObject *oldtype, *oldvalue, *oldtraceback;
     PyThreadState *tstate = PyThreadState_GET();
 
-    oldtype = tstate->exc_type;
-    oldvalue = tstate->exc_value;
-    oldtraceback = tstate->exc_traceback;
+    oldtype = tstate->exc_info->exc_type;
+    oldvalue = tstate->exc_info->exc_value;
+    oldtraceback = tstate->exc_info->exc_traceback;
 
-    tstate->exc_type = p_type;
-    tstate->exc_value = p_value;
-    tstate->exc_traceback = p_traceback;
+    tstate->exc_info->exc_type = p_type;
+    tstate->exc_info->exc_value = p_value;
+    tstate->exc_info->exc_traceback = p_traceback;
 
     Py_XDECREF(oldtype);
     Py_XDECREF(oldvalue);
@@ -986,7 +989,7 @@ PyErr_WriteUnraisable(PyObject *obj)
     }
 
     moduleName = _PyObject_GetAttrId(t, &PyId___module__);
-    if (moduleName == NULL) {
+    if (moduleName == NULL || !PyUnicode_Check(moduleName)) {
         PyErr_Clear();
         if (PyFile_WriteString("<unknown>", f) < 0)
             goto done;

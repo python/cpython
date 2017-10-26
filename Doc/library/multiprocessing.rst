@@ -598,6 +598,12 @@ The :mod:`multiprocessing` package mostly replicates the API of the
          acquired a lock or semaphore etc. then terminating it is liable to
          cause other processes to deadlock.
 
+   .. method:: kill()
+
+      Same as :meth:`terminate()` but using the ``SIGKILL`` signal on Unix.
+
+      .. versionadded:: 3.7
+
    .. method:: close()
 
       Close the :class:`Process` object, releasing all resources associated
@@ -1034,7 +1040,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
    .. method:: recv()
 
       Return an object sent from the other end of the connection using
-      :meth:`send`.  Blocks until there its something to receive.  Raises
+      :meth:`send`.  Blocks until there is something to receive.  Raises
       :exc:`EOFError` if there is nothing left to receive
       and the other end was closed.
 

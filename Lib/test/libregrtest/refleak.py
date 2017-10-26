@@ -7,36 +7,6 @@ from inspect import isabstract
 from test import support
 
 
-try:
-    MAXFD = os.sysconf("SC_OPEN_MAX")
-except Exception:
-    MAXFD = 256
-
-
-def fd_count():
-    """Count the number of open file descriptors"""
-    if sys.platform.startswith(('linux', 'freebsd')):
-        try:
-            names = os.listdir("/proc/self/fd")
-            return len(names)
-        except FileNotFoundError:
-            pass
-
-    count = 0
-    for fd in range(MAXFD):
-        try:
-            # Prefer dup() over fstat(). fstat() can require input/output
-            # whereas dup() doesn't.
-            fd2 = os.dup(fd)
-        except OSError as e:
-            if e.errno != errno.EBADF:
-                raise
-        else:
-            os.close(fd2)
-            count += 1
-    return count
-
-
 def dash_R(the_module, test, indirect_test, huntrleaks):
     """Run a test multiple times, looking for reference leaks.
 
@@ -68,6 +38,14 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = obj._abc_registry.copy()
 
+    # bpo-31217: Integer pool to get a single integer object for the same
+    # value. The pool is used to prevent false alarm when checking for memory
+    # block leaks. Fill the pool with values in -1000..1000 which are the most
+    # common (reference, memory block, file descriptor) differences.
+    int_pool = {value: value for value in range(-1000, 1000)}
+    def get_pooled_int(value):
+        return int_pool.setdefault(value, value)
+
     nwarmup, ntracked, fname = huntrleaks
     fname = os.path.join(support.SAVEDCWD, fname)
     repcount = nwarmup + ntracked
@@ -86,9 +64,9 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
                                                          abcs)
         print('.', end='', file=sys.stderr, flush=True)
         if i >= nwarmup:
-            rc_deltas[i] = rc_after - rc_before
-            alloc_deltas[i] = alloc_after - alloc_before
-            fd_deltas[i] = fd_after - fd_before
+            rc_deltas[i] = get_pooled_int(rc_after - rc_before)
+            alloc_deltas[i] = get_pooled_int(alloc_after - alloc_before)
+            fd_deltas[i] = get_pooled_int(fd_after - fd_before)
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
@@ -174,7 +152,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     func1 = sys.getallocatedblocks
     func2 = sys.gettotalrefcount
     gc.collect()
-    return func1(), func2(), fd_count()
+    return func1(), func2(), support.fd_count()
 
 
 def clear_caches():

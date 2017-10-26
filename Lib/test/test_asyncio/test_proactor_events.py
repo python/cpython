@@ -489,6 +489,11 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.loop.sock_recv(self.sock, 1024)
         self.proactor.recv.assert_called_with(self.sock, 1024)
 
+    def test_sock_recv_into(self):
+        buf = bytearray(10)
+        self.loop.sock_recv_into(self.sock, buf)
+        self.proactor.recv_into.assert_called_with(self.sock, buf)
+
     def test_sock_sendall(self):
         self.loop.sock_sendall(self.sock, b'data')
         self.proactor.send.assert_called_with(self.sock, b'data')
@@ -529,7 +534,6 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
             self.loop._loop_self_reading)
 
     def test_loop_self_reading_exception(self):
-        self.loop.close = mock.Mock()
         self.loop.call_exception_handler = mock.Mock()
         self.proactor.recv.side_effect = OSError()
         self.loop._loop_self_reading()

@@ -519,8 +519,9 @@ and the loader that executes it.  Most importantly, it allows the
 import machinery to perform the boilerplate operations of loading,
 whereas without a module spec the loader had that responsibility.
 
-See :class:`~importlib.machinery.ModuleSpec` for more specifics on what
-information a module's spec may hold.
+The module's spec is exposed as the ``__spec__`` attribute on a module object.
+See :class:`~importlib.machinery.ModuleSpec` for details on the contents of
+the module spec.
 
 .. versionadded:: 3.4
 
@@ -965,7 +966,7 @@ References
 
 The import machinery has evolved considerably since Python's early days.  The
 original `specification for packages
-<http://legacy.python.org/doc/essays/packages.html>`_ is still available to read,
+<https://www.python.org/doc/essays/packages/>`_ is still available to read,
 although some details have changed since the writing of that document.
 
 The original specification for :data:`sys.meta_path` was :pep:`302`, with

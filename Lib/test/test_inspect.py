@@ -2018,7 +2018,7 @@ class TestSignatureObject(unittest.TestCase):
                          ((('args', ..., ..., 'var_positional'),), ...))
         self.assertEqual(self.signature(A.f3),
                          ((('args', ..., ..., 'var_positional'),), ...))
-        self.assertEqual(self.signature(A.f4), 
+        self.assertEqual(self.signature(A.f4),
                          ((('args', ..., ..., 'var_positional'),
                             ('kwargs', ..., ..., 'var_keyword')), ...))
     @cpython_only
@@ -3523,7 +3523,8 @@ class TestSignatureDefinitions(unittest.TestCase):
         needs_semantic_update = {"round"}
         no_signature |= needs_semantic_update
         # These need *args support in Argument Clinic
-        needs_varargs = {"min", "max", "print", "__build_class__"}
+        needs_varargs = {"breakpoint", "min", "max", "print",
+                         "__build_class__"}
         no_signature |= needs_varargs
         # These simply weren't covered in the initial AC conversion
         # for builtin callables

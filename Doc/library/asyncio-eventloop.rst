@@ -5,6 +5,8 @@
 Base Event Loop
 ===============
 
+**Source code:** :source:`Lib/asyncio/events.py`
+
 The event loop is the central execution device provided by :mod:`asyncio`.
 It provides multiple facilities, including:
 
@@ -551,6 +553,21 @@ Low-level socket operations
    non-blocking.
 
    This method is a :ref:`coroutine <coroutine>`.
+
+.. coroutinemethod:: AbstractEventLoop.sock_recv_into(sock, buf)
+
+   Receive data from the socket.  Modeled after blocking
+   :meth:`socket.socket.recv_into` method.
+
+   The received data is written into *buf* (a writable buffer).
+   The return value is the number of bytes written.
+
+   With :class:`SelectorEventLoop` event loop, the socket *sock* must be
+   non-blocking.
+
+   This method is a :ref:`coroutine <coroutine>`.
+
+   .. versionadded:: 3.7
 
 .. coroutinemethod:: AbstractEventLoop.sock_sendall(sock, data)
 

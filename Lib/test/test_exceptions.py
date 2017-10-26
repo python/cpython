@@ -157,6 +157,34 @@ class ExceptionTests(unittest.TestCase):
         ckmsg(s, "'continue' not properly in loop")
         ckmsg("continue\n", "'continue' not properly in loop")
 
+    def testSyntaxErrorMissingParens(self):
+        def ckmsg(src, msg, exception=SyntaxError):
+            try:
+                compile(src, '<fragment>', 'exec')
+            except exception as e:
+                if e.msg != msg:
+                    self.fail("expected %s, got %s" % (msg, e.msg))
+            else:
+                self.fail("failed to get expected SyntaxError")
+
+        s = '''print "old style"'''
+        ckmsg(s, "Missing parentheses in call to 'print'. "
+                 "Did you mean print(\"old style\")?")
+
+        s = '''print "old style",'''
+        ckmsg(s, "Missing parentheses in call to 'print'. "
+                 "Did you mean print(\"old style\", end=\" \")?")
+
+        s = '''exec "old style"'''
+        ckmsg(s, "Missing parentheses in call to 'exec'")
+
+        # should not apply to subclasses, see issue #31161
+        s = '''if True:\nprint "No indent"'''
+        ckmsg(s, "expected an indented block", IndentationError)
+
+        s = '''if True:\n        print()\n\texec "mixed tabs and spaces"'''
+        ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
+
     def testSyntaxErrorOffset(self):
         def check(src, lineno, offset):
             with self.assertRaises(SyntaxError) as cm:
@@ -1168,6 +1196,62 @@ class ExceptionTests(unittest.TestCase):
                 else:
                     self.assertIn("test message", report)
                 self.assertTrue(report.endswith("\n"))
+
+    def test_yield_in_nested_try_excepts(self):
+        #Issue #25612
+        class MainError(Exception):
+            pass
+
+        class SubError(Exception):
+            pass
+
+        def main():
+            try:
+                raise MainError()
+            except MainError:
+                try:
+                    yield
+                except SubError:
+                    pass
+                raise
+
+        coro = main()
+        coro.send(None)
+        with self.assertRaises(MainError):
+            coro.throw(SubError())
+
+    def test_generator_doesnt_retain_old_exc2(self):
+        #Issue 28884#msg282532
+        def g():
+            try:
+                raise ValueError
+            except ValueError:
+                yield 1
+            self.assertEqual(sys.exc_info(), (None, None, None))
+            yield 2
+
+        gen = g()
+
+        try:
+            raise IndexError
+        except IndexError:
+            self.assertEqual(next(gen), 1)
+        self.assertEqual(next(gen), 2)
+
+    def test_raise_in_generator(self):
+        #Issue 25612#msg304117
+        def g():
+            yield 1
+            raise
+            yield 2
+
+        with self.assertRaises(ZeroDivisionError):
+            i = g()
+            try:
+                1/0
+            except:
+                next(i)
+                next(i)
 
 
 class ImportErrorTests(unittest.TestCase):

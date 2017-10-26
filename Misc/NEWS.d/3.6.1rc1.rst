@@ -1,0 +1,308 @@
+.. bpo: 28932
+.. date: 9529
+.. nonce: QnLx8A
+.. release date: XXXX-XX-XX
+.. section: Core and Builtins
+
+Do not include <sys/random.h> if it does not exist.
+
+..
+
+.. bpo: 25677
+.. date: 9528
+.. nonce: RWhZrb
+.. section: Core and Builtins
+
+Correct the positioning of the syntax error caret for indented blocks.
+Based on patch by Michael Layzell.
+
+..
+
+.. bpo: 29000
+.. date: 9527
+.. nonce: K6wQ-3
+.. section: Core and Builtins
+
+Fixed bytes formatting of octals with zero padding in alternate form.
+
+..
+
+.. bpo: 26919
+.. date: 9526
+.. nonce: Cm7MSa
+.. section: Core and Builtins
+
+On Android, operating system data is now always encoded/decoded to/from
+UTF-8, instead of the locale encoding to avoid inconsistencies with
+os.fsencode() and os.fsdecode() which are already using UTF-8.
+
+..
+
+.. bpo: 28991
+.. date: 9525
+.. nonce: lGA0FK
+.. section: Core and Builtins
+
+functools.lru_cache() was susceptible to an obscure reentrancy bug
+triggerable by a monkey-patched len() function.
+
+..
+
+.. bpo: 28739
+.. date: 9524
+.. nonce: w1fvhk
+.. section: Core and Builtins
+
+f-string expressions are no longer accepted as docstrings and by
+ast.literal_eval() even if they do not include expressions.
+
+..
+
+.. bpo: 28512
+.. date: 9523
+.. nonce: i-pv6d
+.. section: Core and Builtins
+
+Fixed setting the offset attribute of SyntaxError by
+PyErr_SyntaxLocationEx() and PyErr_SyntaxLocationObject().
+
+..
+
+.. bpo: 28918
+.. date: 9522
+.. nonce: SFVuPz
+.. section: Core and Builtins
+
+Fix the cross compilation of xxlimited when Python has been built with
+Py_DEBUG defined.
+
+..
+
+.. bpo: 28731
+.. date: 9521
+.. nonce: oNF59u
+.. section: Core and Builtins
+
+Optimize _PyDict_NewPresized() to create correct size dict. Improve speed of
+dict literal with constant keys up to 30%.
+
+..
+
+.. bpo: 29085
+.. date: 9520
+.. nonce: bm3gkx
+.. section: Library
+
+Allow random.Random.seed() to use high quality OS randomness rather than the
+pid and time.
+
+..
+
+.. bpo: 28923
+.. date: 9519
+.. nonce: naVULD
+.. section: Library
+
+Remove editor artifacts from Tix.py.
+
+..
+
+.. bpo: 29055
+.. date: 9518
+.. nonce: -r_9jc
+.. section: Library
+
+Neaten-up empty population error on random.choice() by suppressing the
+upstream exception.
+
+..
+
+.. bpo: 28871
+.. date: 9517
+.. nonce: cPMXCJ
+.. section: Library
+
+Fixed a crash when deallocate deep ElementTree.
+
+..
+
+.. bpo: 19542
+.. date: 9516
+.. nonce: 5tCkaK
+.. section: Library
+
+Fix bugs in WeakValueDictionary.setdefault() and WeakValueDictionary.pop()
+when a GC collection happens in another thread.
+
+..
+
+.. bpo: 20191
+.. date: 9515
+.. nonce: Q7uZCS
+.. section: Library
+
+Fixed a crash in resource.prlimit() when passing a sequence that doesn't own
+its elements as limits.
+
+..
+
+.. bpo: 28779
+.. date: 9514
+.. nonce: t-mjED
+.. section: Library
+
+multiprocessing.set_forkserver_preload() would crash the forkserver process
+if a preloaded module instantiated some multiprocessing objects such as
+locks.
+
+..
+
+.. bpo: 28847
+.. date: 9513
+.. nonce: J7d3nG
+.. section: Library
+
+dbm.dumb now supports reading read-only files and no longer writes the index
+file when it is not changed.
+
+..
+
+.. bpo: 26937
+.. date: 9512
+.. nonce: c9kgiA
+.. section: Library
+
+The chown() method of the tarfile.TarFile class does not fail now when the
+grp module cannot be imported, as for example on Android platforms.
+
+..
+
+.. bpo: 29326
+.. date: 9511
+.. nonce: 4qDQzs
+.. section: Windows
+
+Ignores blank lines in ._pth files (Patch by Alexey Izbyshev)
+
+..
+
+.. bpo: 28164
+.. date: 9510
+.. nonce: h4CFX8
+.. section: Windows
+
+Correctly handle special console filenames (patch by Eryk Sun)
+
+..
+
+.. bpo: 29409
+.. date: 9509
+.. nonce: bhvrJ2
+.. section: Windows
+
+Implement PEP 529 for io.FileIO (Patch by Eryk Sun)
+
+..
+
+.. bpo: 29392
+.. date: 9508
+.. nonce: OtqS5t
+.. section: Windows
+
+Prevent crash when passing invalid arguments into msvcrt module.
+
+..
+
+.. bpo: 25778
+.. date: 9507
+.. nonce: 8uKJ82
+.. section: Windows
+
+winreg does not truncate string correctly (Patch by Eryk Sun)
+
+..
+
+.. bpo: 28896
+.. date: 9506
+.. nonce: VMi9w0
+.. section: Windows
+
+Deprecate WindowsRegistryFinder and disable it by default.
+
+..
+
+.. bpo: 29349
+.. date: 9505
+.. nonce: PjSo-t
+.. section: Documentation
+
+Fix Python 2 syntax in code for building the documentation.
+
+..
+
+.. bpo: 28950
+.. date: 9504
+.. nonce: 1W8Glo
+.. section: Tests
+
+Disallow -j0 to be combined with -T/-l in regrtest command line arguments.
+
+..
+
+.. bpo: 28683
+.. date: 9503
+.. nonce: Fp-Hdq
+.. section: Tests
+
+Fix the tests that bind() a unix socket and raise PermissionError on Android
+for a non-root user.
+
+..
+
+.. bpo: 26939
+.. date: 9502
+.. nonce: 7j_W5R
+.. section: Tests
+
+Add the support.setswitchinterval() function to fix test_functools hanging
+on the Android armv7 qemu emulator.
+
+..
+
+.. bpo: 28762
+.. date: 9501
+.. nonce: Ru0YN_
+.. section: Build
+
+lockf() is available on Android API level 24, but the F_LOCK macro is not
+defined in android-ndk-r13.
+
+..
+
+.. bpo: 28538
+.. date: 9500
+.. nonce: FqtN7v
+.. section: Build
+
+Fix the compilation error that occurs because if_nameindex() is available on
+Android API level 24, but the if_nameindex structure is not defined.
+
+..
+
+.. bpo: 20211
+.. date: 9499
+.. nonce: gpNptI
+.. section: Build
+
+Do not add the directory for installing C header files and the directory for
+installing object code libraries to the cross compilation search paths.
+Original patch by Thomas Petazzoni.
+
+..
+
+.. bpo: 28849
+.. date: 9498
+.. nonce: AzRRF5
+.. section: Build
+
+Do not define sys.implementation._multiarch on Android.
