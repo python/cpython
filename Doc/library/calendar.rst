@@ -19,11 +19,13 @@ the week to Sunday (6) or to any other weekday.  Parameters that specify dates
 are given as integers. For related
 functionality, see also the :mod:`datetime` and :mod:`time` modules.
 
-Most of these functions and classes rely on the :mod:`datetime` module which
-uses an idealized calendar, the current Gregorian calendar extended
+The functions and classes defined in this module
+use an idealized calendar, the current Gregorian calendar extended indefinitely
 in both directions.  This matches the definition of the "proleptic Gregorian"
 calendar in Dershowitz and Reingold's book "Calendrical Calculations", where
-it's the base calendar for all computations.
+it's the base calendar for all computations.  Zero and negative years are
+interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
+2 BC, and so on.
 
 
 .. class:: Calendar(firstweekday=0)
