@@ -123,3 +123,6 @@ In order to preserve backwards compatibility, enum values are also present
 in the :mod:`http.client` module in the form of constants. The enum name is
 equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 ``http.client.OK``).
+
+.. versionchanged:: 3.7
+   Added ``421`` ``MISDIRECTED_REQUEST`` status code.
