@@ -81,12 +81,6 @@ else:
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
 
 
-@contextlib.contextmanager
-def ignore_deprecation_warnings(msg_regex, quiet=False):
-    with support.check_warnings((msg_regex, DeprecationWarning), quiet=quiet):
-        yield
-
-
 def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
 
@@ -488,17 +482,6 @@ class UtimeTests(unittest.TestCase):
         os.mkdir(self.dirname)
         create_file(self.fname)
 
-        def restore_float_times(state):
-            with ignore_deprecation_warnings('stat_float_times'):
-                os.stat_float_times(state)
-
-        # ensure that st_atime and st_mtime are float
-        with ignore_deprecation_warnings('stat_float_times'):
-            old_float_times = os.stat_float_times(-1)
-            self.addCleanup(restore_float_times, old_float_times)
-
-            os.stat_float_times(True)
-
     def support_subsecond(self, filename):
         # Heuristic to check if the filesystem supports timestamp with
         # subsecond resolution: check if float and int timestamps are different
@@ -619,14 +602,13 @@ class UtimeTests(unittest.TestCase):
 
         if not self.support_subsecond(self.fname):
             delta = 1.0
-        elif os.name == 'nt':
+        else:
             # On Windows, the usual resolution of time.time() is 15.6 ms.
             # bpo-30649: Tolerate 50 ms for slow Windows buildbots.
+            #
+            # x86 Gentoo Refleaks 3.x once failed with dt=20.2 ms. So use
+            # also 50 ms on other platforms.
             delta = 0.050
-        else:
-            # bpo-30649: PPC64 Fedora 3.x buildbot requires
-            # at least a delta of 14 ms
-            delta = 0.020
         st = os.stat(self.fname)
         msg = ("st_time=%r, current=%r, dt=%r"
                % (st.st_mtime, current, st.st_mtime - current))

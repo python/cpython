@@ -1,7 +1,7 @@
 
 /* Core extension modules are built-in on some platforms (e.g. Windows). */
 #ifdef Py_BUILD_CORE
-#define Py_BUILD_CORE_MODULE
+#define Py_BUILD_CORE_BUILTIN
 #undef Py_BUILD_CORE
 #endif
 
@@ -750,8 +750,7 @@ _PyMemoTable_Lookup(PyMemoTable *self, PyObject *key)
         if (entry->me_key == NULL || entry->me_key == key)
             return entry;
     }
-    assert(0);  /* Never reached */
-    return NULL;
+    Py_UNREACHABLE();
 }
 
 /* Returns -1 on failure, 0 on success. */
@@ -1650,13 +1649,40 @@ getattribute(PyObject *obj, PyObject *name, int allow_qualname)
     return attr;
 }
 
+static int
+_checkmodule(PyObject *module_name, PyObject *module,
+             PyObject *global, PyObject *dotted_path)
+{
+    if (module == Py_None) {
+        return -1;
+    }
+    if (PyUnicode_Check(module_name) &&
+            _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
+        return -1;
+    }
+
+    PyObject *candidate = get_deep_attribute(module, dotted_path, NULL);
+    if (candidate == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
+        return -1;
+    }
+    if (candidate != global) {
+        Py_DECREF(candidate);
+        return -1;
+    }
+    Py_DECREF(candidate);
+    return 0;
+}
+
 static PyObject *
 whichmodule(PyObject *global, PyObject *dotted_path)
 {
     PyObject *module_name;
-    PyObject *modules_dict;
-    PyObject *module;
+    PyObject *module = NULL;
     Py_ssize_t i;
+    PyObject *modules;
     _Py_IDENTIFIER(__module__);
     _Py_IDENTIFIER(modules);
     _Py_IDENTIFIER(__main__);
@@ -1679,35 +1705,48 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     assert(module_name == NULL);
 
     /* Fallback on walking sys.modules */
-    modules_dict = _PySys_GetObjectId(&PyId_modules);
-    if (modules_dict == NULL) {
+    modules = _PySys_GetObjectId(&PyId_modules);
+    if (modules == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
     }
-
-    i = 0;
-    while (PyDict_Next(modules_dict, &i, &module_name, &module)) {
-        PyObject *candidate;
-        if (PyUnicode_Check(module_name) &&
-            _PyUnicode_EqualToASCIIString(module_name, "__main__"))
-            continue;
-        if (module == Py_None)
-            continue;
-
-        candidate = get_deep_attribute(module, dotted_path, NULL);
-        if (candidate == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+    if (PyDict_CheckExact(modules)) {
+        i = 0;
+        while (PyDict_Next(modules, &i, &module_name, &module)) {
+            if (_checkmodule(module_name, module, global, dotted_path) == 0) {
+                Py_INCREF(module_name);
+                return module_name;
+            }
+            if (PyErr_Occurred()) {
                 return NULL;
-            PyErr_Clear();
-            continue;
+            }
         }
-
-        if (candidate == global) {
-            Py_INCREF(module_name);
-            Py_DECREF(candidate);
-            return module_name;
+    }
+    else {
+        PyObject *iterator = PyObject_GetIter(modules);
+        if (iterator == NULL) {
+            return NULL;
         }
-        Py_DECREF(candidate);
+        while ((module_name = PyIter_Next(iterator))) {
+            module = PyObject_GetItem(modules, module_name);
+            if (module == NULL) {
+                Py_DECREF(module_name);
+                Py_DECREF(iterator);
+                return NULL;
+            }
+            if (_checkmodule(module_name, module, global, dotted_path) == 0) {
+                Py_DECREF(module);
+                Py_DECREF(iterator);
+                return module_name;
+            }
+            Py_DECREF(module);
+            Py_DECREF(module_name);
+            if (PyErr_Occurred()) {
+                Py_DECREF(iterator);
+                return NULL;
+            }
+        }
+        Py_DECREF(iterator);
     }
 
     /* If no module is found, use __main__. */
@@ -4202,19 +4241,23 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast = 0;
     self->fast_nesting = 0;
     self->fast_memo = NULL;
-    self->pers_func = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_id)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_id);
-        if (self->pers_func == NULL)
+
+    self->pers_func = _PyObject_GetAttrId((PyObject *)self,
+                                          &PyId_persistent_id);
+    if (self->pers_func == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             return -1;
+        }
+        PyErr_Clear();
     }
-    self->dispatch_table = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_dispatch_table)) {
-        self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
-                                                   &PyId_dispatch_table);
-        if (self->dispatch_table == NULL)
+
+    self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
+                                               &PyId_dispatch_table);
+    if (self->dispatch_table == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
             return -1;
+        }
+        PyErr_Clear();
     }
 
     return 0;
@@ -5169,22 +5212,24 @@ load_frozenset(UnpicklerObject *self)
 static PyObject *
 instantiate(PyObject *cls, PyObject *args)
 {
-    PyObject *result = NULL;
-    _Py_IDENTIFIER(__getinitargs__);
     /* Caller must assure args are a tuple.  Normally, args come from
        Pdata_poptuple which packs objects from the top of the stack
        into a newly created tuple. */
     assert(PyTuple_Check(args));
-    if (PyTuple_GET_SIZE(args) > 0 || !PyType_Check(cls) ||
-        _PyObject_HasAttrId(cls, &PyId___getinitargs__)) {
-        result = PyObject_CallObject(cls, args);
-    }
-    else {
+    if (!PyTuple_GET_SIZE(args) && PyType_Check(cls)) {
+        _Py_IDENTIFIER(__getinitargs__);
         _Py_IDENTIFIER(__new__);
-
-        result = _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+        PyObject *func = _PyObject_GetAttrId(cls, &PyId___getinitargs__);
+        if (func == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                return NULL;
+            }
+            PyErr_Clear();
+            return _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+        }
+        Py_DECREF(func);
     }
-    return result;
+    return PyObject_CallObject(cls, args);
 }
 
 static int
@@ -6489,11 +6534,8 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
         module = PyImport_Import(module_name);
         if (module == NULL)
             return NULL;
-        global = getattribute(module, global_name, self->proto >= 4);
     }
-    else {
-        global = getattribute(module, global_name, self->proto >= 4);
-    }
+    global = getattribute(module, global_name, self->proto >= 4);
     Py_DECREF(module);
     return global;
 }
@@ -6643,17 +6685,14 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
         return -1;
 
     self->fix_imports = fix_imports;
-    if (self->fix_imports == -1)
-        return -1;
 
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_load)) {
-        self->pers_func = _PyObject_GetAttrId((PyObject *)self,
-                                              &PyId_persistent_load);
-        if (self->pers_func == NULL)
-            return 1;
-    }
-    else {
-        self->pers_func = NULL;
+    self->pers_func = _PyObject_GetAttrId((PyObject *)self,
+                                          &PyId_persistent_load);
+    if (self->pers_func == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
     }
 
     self->stack = (Pdata *)Pdata_New();

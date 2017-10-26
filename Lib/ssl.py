@@ -91,7 +91,6 @@ ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 """
 
 import ipaddress
-import textwrap
 import re
 import sys
 import os
@@ -104,7 +103,7 @@ from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
 from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
-    SSLSyscallError, SSLEOFError,
+    SSLSyscallError, SSLEOFError, SSLCertVerificationError
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes, RAND_pseudo_bytes
@@ -383,9 +382,10 @@ class Purpose(_ASN1Object, _Enum):
 class SSLContext(_SSLContext):
     """An SSLContext holds various SSL-related configuration options and
     data, such as certificates and possibly a private key."""
-
-    __slots__ = ('protocol', '__weakref__')
     _windows_cert_stores = ("CA", "ROOT")
+
+    sslsocket_class = None  # SSLSocket is assigned later.
+    sslobject_class = None  # SSLObject is assigned later.
 
     def __new__(cls, protocol=PROTOCOL_TLS, *args, **kwargs):
         self = _SSLContext.__new__(cls, protocol)
@@ -400,17 +400,21 @@ class SSLContext(_SSLContext):
                     do_handshake_on_connect=True,
                     suppress_ragged_eofs=True,
                     server_hostname=None, session=None):
-        return SSLSocket(sock=sock, server_side=server_side,
-                         do_handshake_on_connect=do_handshake_on_connect,
-                         suppress_ragged_eofs=suppress_ragged_eofs,
-                         server_hostname=server_hostname,
-                         _context=self, _session=session)
+        return self.sslsocket_class(
+            sock=sock,
+            server_side=server_side,
+            do_handshake_on_connect=do_handshake_on_connect,
+            suppress_ragged_eofs=suppress_ragged_eofs,
+            server_hostname=server_hostname,
+            _context=self,
+            _session=session
+        )
 
     def wrap_bio(self, incoming, outgoing, server_side=False,
                  server_hostname=None, session=None):
         sslobj = self._wrap_bio(incoming, outgoing, server_side=server_side,
                                 server_hostname=server_hostname)
-        return SSLObject(sslobj, session=session)
+        return self.sslobject_class(sslobj, session=session)
 
     def set_npn_protocols(self, npn_protocols):
         protos = bytearray()
@@ -517,7 +521,7 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         context.load_default_certs(purpose)
     return context
 
-def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=None,
+def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=CERT_NONE,
                            check_hostname=False, purpose=Purpose.SERVER_AUTH,
                            certfile=None, keyfile=None,
                            cafile=None, capath=None, cadata=None):
@@ -536,9 +540,12 @@ def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=None,
     # by default.
     context = SSLContext(protocol)
 
+    if not check_hostname:
+        context.check_hostname = False
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
-    context.check_hostname = check_hostname
+    if check_hostname:
+        context.check_hostname = True
 
     if keyfile and not certfile:
         raise ValueError("certfile must be specified")
@@ -1135,6 +1142,11 @@ class SSLSocket(socket):
         return self._sslobj.version()
 
 
+# Python does not support forward declaration of types.
+SSLContext.sslsocket_class = SSLSocket
+SSLContext.sslobject_class = SSLObject
+
+
 def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,
                 ssl_version=PROTOCOL_TLS, ca_certs=None,
@@ -1188,9 +1200,10 @@ def DER_cert_to_PEM_cert(der_cert_bytes):
     PEM version of it as a string."""
 
     f = str(base64.standard_b64encode(der_cert_bytes), 'ASCII', 'strict')
-    return (PEM_HEADER + '\n' +
-            textwrap.fill(f, 64) + '\n' +
-            PEM_FOOTER + '\n')
+    ss = [PEM_HEADER]
+    ss += [f[i:i+64] for i in range(0, len(f), 64)]
+    ss.append(PEM_FOOTER + '\n')
+    return '\n'.join(ss)
 
 def PEM_cert_to_DER_cert(pem_cert_string):
     """Takes a certificate in ASCII PEM format and returns the

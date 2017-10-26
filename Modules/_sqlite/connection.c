@@ -97,15 +97,15 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
 
     self->begin_statement = NULL;
 
-    self->statement_cache = NULL;
-    self->statements = NULL;
-    self->cursors = NULL;
+    Py_CLEAR(self->statement_cache);
+    Py_CLEAR(self->statements);
+    Py_CLEAR(self->cursors);
 
     Py_INCREF(Py_None);
-    self->row_factory = Py_None;
+    Py_XSETREF(self->row_factory, Py_None);
 
     Py_INCREF(&PyUnicode_Type);
-    self->text_factory = (PyObject*)&PyUnicode_Type;
+    Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
 
 #ifdef SQLITE_OPEN_URI
     Py_BEGIN_ALLOW_THREADS
@@ -137,7 +137,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     } else {
         Py_INCREF(isolation_level);
     }
-    self->isolation_level = NULL;
+    Py_CLEAR(self->isolation_level);
     if (pysqlite_connection_set_isolation_level(self, isolation_level) < 0) {
         Py_DECREF(isolation_level);
         return -1;
@@ -177,12 +177,12 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
     self->check_same_thread = check_same_thread;
 
-    self->function_pinboard = PyDict_New();
+    Py_XSETREF(self->function_pinboard, PyDict_New());
     if (!self->function_pinboard) {
         return -1;
     }
 
-    self->collations = PyDict_New();
+    Py_XSETREF(self->collations, PyDict_New());
     if (!self->collations) {
         return -1;
     }
@@ -375,7 +375,7 @@ PyObject* _pysqlite_connection_begin(pysqlite_Connection* self)
     sqlite3_stmt* statement;
 
     Py_BEGIN_ALLOW_THREADS
-    rc = SQLITE3_PREPARE(self->db, self->begin_statement, -1, &statement, &tail);
+    rc = sqlite3_prepare_v2(self->db, self->begin_statement, -1, &statement, &tail);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
@@ -417,7 +417,7 @@ PyObject* pysqlite_connection_commit(pysqlite_Connection* self, PyObject* args)
     if (!sqlite3_get_autocommit(self->db)) {
 
         Py_BEGIN_ALLOW_THREADS
-        rc = SQLITE3_PREPARE(self->db, "COMMIT", -1, &statement, &tail);
+        rc = sqlite3_prepare_v2(self->db, "COMMIT", -1, &statement, &tail);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->db, NULL);
@@ -460,7 +460,7 @@ PyObject* pysqlite_connection_rollback(pysqlite_Connection* self, PyObject* args
         pysqlite_do_all_statements(self, ACTION_RESET, 1);
 
         Py_BEGIN_ALLOW_THREADS
-        rc = SQLITE3_PREPARE(self->db, "ROLLBACK", -1, &statement, &tail);
+        rc = sqlite3_prepare_v2(self->db, "ROLLBACK", -1, &statement, &tail);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->db, NULL);

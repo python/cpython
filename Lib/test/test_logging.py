@@ -791,13 +791,10 @@ class TestSMTPServer(smtpd.SMTPServer):
                         to terminate.
         """
         self.close()
-        self._thread.join(timeout)
+        support.join_thread(self._thread, timeout)
+        self._thread = None
         asyncore.close_all(map=self._map, ignore_all=True)
 
-        alive = self._thread.is_alive()
-        self._thread = None
-        if alive:
-            self.fail("join() timed out")
 
 class ControlMixin(object):
     """
@@ -847,11 +844,8 @@ class ControlMixin(object):
         """
         self.shutdown()
         if self._thread is not None:
-            self._thread.join(timeout)
-            alive = self._thread.is_alive()
+            support.join_thread(self._thread, timeout)
             self._thread = None
-            if alive:
-                self.fail("join() timed out")
         self.server_close()
         self.ready.clear()
 
@@ -1465,7 +1459,6 @@ class ConfigFileTest(BaseTest):
         self.assertFalse(logger.disabled)
 
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 class SocketHandlerTest(BaseTest):
 
     """Test for SocketHandler objects."""
@@ -1502,11 +1495,11 @@ class SocketHandlerTest(BaseTest):
     def tearDown(self):
         """Shutdown the TCP server."""
         try:
-            if self.server:
-                self.server.stop(2.0)
             if self.sock_hdlr:
                 self.root_logger.removeHandler(self.sock_hdlr)
                 self.sock_hdlr.close()
+            if self.server:
+                self.server.stop(2.0)
         finally:
             BaseTest.tearDown(self)
 
@@ -1563,7 +1556,6 @@ def _get_temp_domain_socket():
     os.remove(fn)
     return fn
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSocketHandlerTest(SocketHandlerTest):
 
@@ -1581,7 +1573,6 @@ class UnixSocketHandlerTest(SocketHandlerTest):
         SocketHandlerTest.tearDown(self)
         support.unlink(self.address)
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 class DatagramHandlerTest(BaseTest):
 
     """Test for DatagramHandler."""
@@ -1646,7 +1637,6 @@ class DatagramHandlerTest(BaseTest):
         self.handled.wait()
         self.assertEqual(self.log_output, "spam\neggs\n")
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixDatagramHandlerTest(DatagramHandlerTest):
 
@@ -1731,7 +1721,6 @@ class SysLogHandlerTest(BaseTest):
         self.handled.wait()
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSysLogHandlerTest(SysLogHandlerTest):
 
@@ -1749,7 +1738,6 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         SysLogHandlerTest.tearDown(self)
         support.unlink(self.address)
 
-@unittest.skipIf(True, "FIXME: bpo-30830")
 @unittest.skipUnless(support.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 class IPv6SysLogHandlerTest(SysLogHandlerTest):
@@ -1804,7 +1792,7 @@ class HTTPHandlerTest(BaseTest):
                 else:
                     here = os.path.dirname(__file__)
                     localhost_cert = os.path.join(here, "keycert.pem")
-                    sslctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                    sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
                     sslctx.load_cert_chain(localhost_cert)
 
                     context = ssl.create_default_context(cafile=localhost_cert)
@@ -2872,9 +2860,6 @@ class ConfigDictTest(BaseTest):
             logging.warning('Exclamation')
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
 
-    # listen() uses ConfigSocketReceiver which is based
-    # on socketserver.ThreadingTCPServer
-    @unittest.skipIf(True, "FIXME: bpo-30830")
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
         # Ask for a randomly assigned port (by using port 0)
@@ -2901,9 +2886,7 @@ class ConfigDictTest(BaseTest):
         finally:
             t.ready.wait(2.0)
             logging.config.stopListening()
-            t.join(2.0)
-            if t.is_alive():
-                self.fail("join() timed out")
+            support.join_thread(t, 2.0)
 
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
@@ -3921,7 +3904,6 @@ class BasicConfigTest(unittest.TestCase):
 
 
 class LoggerAdapterTest(unittest.TestCase):
-
     def setUp(self):
         super(LoggerAdapterTest, self).setUp()
         old_handler_list = logging._handlerList[:]
@@ -3994,6 +3976,39 @@ class LoggerAdapterTest(unittest.TestCase):
 
         self.assertFalse(self.logger.hasHandlers())
         self.assertFalse(self.adapter.hasHandlers())
+
+    def test_nested(self):
+        class Adapter(logging.LoggerAdapter):
+            prefix = 'Adapter'
+
+            def process(self, msg, kwargs):
+                return f"{self.prefix} {msg}", kwargs
+
+        msg = 'Adapters can be nested, yo.'
+        adapter = Adapter(logger=self.logger, extra=None)
+        adapter_adapter = Adapter(logger=adapter, extra=None)
+        adapter_adapter.prefix = 'AdapterAdapter'
+        self.assertEqual(repr(adapter), repr(adapter_adapter))
+        adapter_adapter.log(logging.CRITICAL, msg, self.recording)
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertEqual(record.levelno, logging.CRITICAL)
+        self.assertEqual(record.msg, f"Adapter AdapterAdapter {msg}")
+        self.assertEqual(record.args, (self.recording,))
+        orig_manager = adapter_adapter.manager
+        self.assertIs(adapter.manager, orig_manager)
+        self.assertIs(self.logger.manager, orig_manager)
+        temp_manager = object()
+        try:
+            adapter_adapter.manager = temp_manager
+            self.assertIs(adapter_adapter.manager, temp_manager)
+            self.assertIs(adapter.manager, temp_manager)
+            self.assertIs(self.logger.manager, temp_manager)
+        finally:
+            adapter_adapter.manager = orig_manager
+        self.assertIs(adapter_adapter.manager, orig_manager)
+        self.assertIs(adapter.manager, orig_manager)
+        self.assertIs(self.logger.manager, orig_manager)
 
 
 class LoggerTest(BaseTest):

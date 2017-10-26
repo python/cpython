@@ -303,12 +303,13 @@ Miscellaneous options
 
 .. cmdoption:: -u
 
-   Force the binary layer of the stdout and stderr streams (which is
-   available as their ``buffer`` attribute) to be unbuffered. The text I/O
-   layer will still be line-buffered if writing to the console, or
-   block-buffered if redirected to a non-interactive file.
+   Force the stdout and stderr streams to be unbuffered.  This option has no
+   effect on the stdin stream.
 
    See also :envvar:`PYTHONUNBUFFERED`.
+
+   .. versionchanged:: 3.7
+      The text layer of the stdout and stderr streams now is unbuffered.
 
 
 .. cmdoption:: -v
@@ -407,6 +408,10 @@ Miscellaneous options
    * ``-X showalloccount`` to output the total count of allocated objects for
      each type when the program finishes. This only works when Python was built with
      ``COUNT_ALLOCS`` defined.
+   * ``-X importtime`` to show how long each import takes. It shows module name,
+     cumulative time (including nested imports) and self time (exluding nested
+     imports).  Note that its output may be broken in multi threaded application.
+     Typical usage is ``python3 -X importtime -c 'import asyncio'``.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -422,6 +427,9 @@ Miscellaneous options
 
    .. versionadded:: 3.6
       The ``-X showalloccount`` option.
+
+   .. versionadded:: 3.7
+      The ``-X importtime`` option.
 
 
 Options you shouldn't use
@@ -494,6 +502,18 @@ conflict.
    :option:`-O` option.  If set to an integer, it is equivalent to specifying
    :option:`-O` multiple times.
 
+
+.. envvar:: PYTHONBREAKPOINT
+
+   If this is set, it names a callable using dotted-path notation.  The module
+   containing the callable will be imported and then the callable will be run
+   by the default implementation of :func:`sys.breakpointhook` which itself is
+   called by built-in :func:`breakpoint`.  If not set, or set to the empty
+   string, it is equivalent to the value "pdb.set_trace".  Setting this to the
+   string "0" causes the default implementation of :func:`sys.breakpointhook`
+   to do nothing but return immediately.
+
+   .. versionadded:: 3.7
 
 .. envvar:: PYTHONDEBUG
 

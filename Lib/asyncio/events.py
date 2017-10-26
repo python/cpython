@@ -461,6 +461,9 @@ class AbstractEventLoop:
     def sock_recv(self, sock, nbytes):
         raise NotImplementedError
 
+    def sock_recv_into(self, sock, buf):
+        raise NotImplementedError
+
     def sock_sendall(self, sock, data):
         raise NotImplementedError
 

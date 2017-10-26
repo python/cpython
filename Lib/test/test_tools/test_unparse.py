@@ -263,12 +263,14 @@ class UnparseTestCase(ASTTestCase):
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
+    NAMES = None
 
     # test directories, relative to the root of the distribution
     test_directories = 'Lib', os.path.join('Lib', 'test')
 
-    def test_files(self):
-        # get names of files to test
+    def get_names(self):
+        if DirectoryTestCase.NAMES is not None:
+            return DirectoryTestCase.NAMES
 
         names = []
         for d in self.test_directories:
@@ -280,6 +282,15 @@ class DirectoryTestCase(ASTTestCase):
         # Test limited subset of files unless the 'cpu' resource is specified.
         if not test.support.is_resource_enabled("cpu"):
             names = random.sample(names, 10)
+            # bpo-31174: Store the names sample to always test the same files.
+            # It prevents false alarms when hunting reference leaks.
+            DirectoryTestCase.NAMES = names
+
+        return names
+
+    def test_files(self):
+        # get names of files to test
+        names = self.get_names()
 
         for filename in names:
             if test.support.verbose:

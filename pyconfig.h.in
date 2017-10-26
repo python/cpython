@@ -601,9 +601,6 @@
 /* Define to 1 if you have the `mbrtowc' function. */
 #undef HAVE_MBRTOWC
 
-/* Define to 1 if you have the `memmove' function. */
-#undef HAVE_MEMMOVE
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -691,11 +688,11 @@
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
 
-/* Define to 1 if you have the `pthread_atfork' function. */
-#undef HAVE_PTHREAD_ATFORK
-
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
+
+/* Define to 1 if you have the `pthread_getcpuclockid' function. */
+#undef HAVE_PTHREAD_GETCPUCLOCKID
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
@@ -1241,6 +1238,9 @@
 /* Define if POSIX semaphores aren't enabled on your system */
 #undef POSIX_SEMAPHORES_NOT_ENABLED
 
+/* Define if pthread_key_t is compatible with int. */
+#undef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+
 /* Defined if PTHREAD_SCOPE_SYSTEM supported. */
 #undef PTHREAD_SYSTEM_SCHED_SUPPORTED
 
@@ -1301,6 +1301,9 @@
 
 /* The size of `pid_t', as computed by sizeof. */
 #undef SIZEOF_PID_T
+
+/* The size of `pthread_key_t', as computed by sizeof. */
+#undef SIZEOF_PTHREAD_KEY_T
 
 /* The size of `pthread_t', as computed by sizeof. */
 #undef SIZEOF_PTHREAD_T

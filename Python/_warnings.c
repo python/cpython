@@ -57,11 +57,9 @@ get_warnings_attr(const char *attr, int try_import)
         }
     }
     else {
-        warnings_module = _PyImport_GetModule(warnings_str);
+        warnings_module = PyImport_GetModule(warnings_str);
         if (warnings_module == NULL)
             return NULL;
-
-        Py_INCREF(warnings_module);
     }
 
     if (!PyObject_HasAttrString(warnings_module, attr)) {
@@ -86,6 +84,12 @@ get_once_registry(void)
             return NULL;
         return _PyRuntime.warnings.once_registry;
     }
+    if (!PyDict_Check(registry)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "warnings.onceregistry must be a dict");
+        Py_DECREF(registry);
+        return NULL;
+    }
     Py_DECREF(_PyRuntime.warnings.once_registry);
     _PyRuntime.warnings.once_registry = registry;
     return registry;
@@ -104,7 +108,14 @@ get_default_action(void)
         }
         return _PyRuntime.warnings.default_action;
     }
-
+    if (!PyUnicode_Check(default_action)) {
+        PyErr_Format(PyExc_TypeError,
+                     MODULE_NAME ".defaultaction must be a string, "
+                     "not '%.200s'",
+                     Py_TYPE(default_action)->tp_name);
+        Py_DECREF(default_action);
+        return NULL;
+    }
     Py_DECREF(_PyRuntime.warnings.default_action);
     _PyRuntime.warnings.default_action = default_action;
     return default_action;
@@ -158,6 +169,14 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         mod = PyTuple_GET_ITEM(tmp_item, 3);
         ln_obj = PyTuple_GET_ITEM(tmp_item, 4);
 
+        if (!PyUnicode_Check(action)) {
+            PyErr_Format(PyExc_TypeError,
+                         "action must be a string, not '%.200s'",
+                         Py_TYPE(action)->tp_name);
+            Py_DECREF(tmp_item);
+            return NULL;
+        }
+
         good_msg = check_matched(msg, text);
         if (good_msg == -1) {
             Py_DECREF(tmp_item);
@@ -197,8 +216,6 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         return action;
     }
 
-    PyErr_SetString(PyExc_ValueError,
-                    MODULE_NAME ".defaultaction not found");
     return NULL;
 }
 
@@ -437,7 +454,7 @@ warn_explicit(PyObject *category, PyObject *message,
         Py_RETURN_NONE;
 
     if (registry && !PyDict_Check(registry) && (registry != Py_None)) {
-        PyErr_SetString(PyExc_TypeError, "'registry' must be a dict");
+        PyErr_SetString(PyExc_TypeError, "'registry' must be a dict or None");
         return NULL;
     }
 
@@ -667,13 +684,14 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     /* Setup module. */
     *module = PyDict_GetItemString(globals, "__name__");
-    if (*module == NULL) {
+    if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
+        Py_INCREF(*module);
+    }
+    else {
         *module = PyUnicode_FromString("<string>");
         if (*module == NULL)
             goto handle_error;
     }
-    else
-        Py_INCREF(*module);
 
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
@@ -841,7 +859,6 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 
     if (module_globals) {
         _Py_IDENTIFIER(get_source);
-        _Py_IDENTIFIER(splitlines);
         PyObject *tmp;
         PyObject *loader;
         PyObject *module_name;
@@ -851,8 +868,6 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject *returned;
 
         if ((tmp = _PyUnicode_FromId(&PyId_get_source)) == NULL)
-            return NULL;
-        if ((tmp = _PyUnicode_FromId(&PyId_splitlines)) == NULL)
             return NULL;
 
         /* Check/get the requisite pieces needed for the loader. */
@@ -876,9 +891,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Split the source into lines. */
-        source_list = PyObject_CallMethodObjArgs(source,
-                                                 PyId_splitlines.object,
-                                                 NULL);
+        source_list = PyUnicode_Splitlines(source, 0);
         Py_DECREF(source);
         if (!source_list)
             return NULL;

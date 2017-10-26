@@ -1037,5 +1037,37 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         t.cancel()
         self.loop.run_until_complete(asyncio.sleep(0.1, loop=self.loop))
 
+    def test_async_gen_expression_01(self):
+        async def arange(n):
+            for i in range(n):
+                await asyncio.sleep(0.01, loop=self.loop)
+                yield i
+
+        def make_arange(n):
+            # This syntax is legal starting with Python 3.7
+            return (i * 2 async for i in arange(n))
+
+        async def run():
+            return [i async for i in make_arange(10)]
+
+        res = self.loop.run_until_complete(run())
+        self.assertEqual(res, [i * 2 for i in range(10)])
+
+    def test_async_gen_expression_02(self):
+        async def wrap(n):
+            await asyncio.sleep(0.01, loop=self.loop)
+            return n
+
+        def make_arange(n):
+            # This syntax is legal starting with Python 3.7
+            return (i * 2 for i in range(n) if await wrap(i))
+
+        async def run():
+            return [i async for i in make_arange(10)]
+
+        res = self.loop.run_until_complete(run())
+        self.assertEqual(res, [i * 2 for i in range(1, 10)])
+
+
 if __name__ == "__main__":
     unittest.main()

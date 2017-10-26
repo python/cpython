@@ -1713,7 +1713,7 @@ class LoggerAdapter(object):
         """
         if self.isEnabledFor(level):
             msg, kwargs = self.process(msg, kwargs)
-            self.logger._log(level, msg, args, **kwargs)
+            self.logger.log(level, msg, *args, **kwargs)
 
     def isEnabledFor(self, level):
         """
@@ -1738,6 +1738,31 @@ class LoggerAdapter(object):
         See if the underlying logger has any handlers.
         """
         return self.logger.hasHandlers()
+
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+        """
+        Low-level log implementation, proxied to allow nested logger adapters.
+        """
+        return self.logger._log(
+            level,
+            msg,
+            args,
+            exc_info=exc_info,
+            extra=extra,
+            stack_info=stack_info,
+        )
+
+    @property
+    def manager(self):
+        return self.logger.manager
+
+    @manager.setter
+    def manager(self, value):
+        self.logger.manager = value
+
+    @property
+    def name(self):
+        return self.logger.name
 
     def __repr__(self):
         logger = self.logger

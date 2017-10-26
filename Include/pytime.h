@@ -29,8 +29,19 @@ typedef enum {
     _PyTime_ROUND_CEILING=1,
     /* Round to nearest with ties going to nearest even integer.
        For example, used to round from a Python float. */
-    _PyTime_ROUND_HALF_EVEN
+    _PyTime_ROUND_HALF_EVEN=2,
+    /* Round away from zero 
+       For example, used for timeout. _PyTime_ROUND_CEILING rounds
+       -1e-9 to 0 milliseconds which causes bpo-31786 issue.
+       _PyTime_ROUND_UP rounds -1e-9 to -1 millisecond which keeps
+       the timeout sign as expected. select.poll(timeout) must block
+       for negative values." */
+    _PyTime_ROUND_UP=3,
+    /* _PyTime_ROUND_TIMEOUT (an alias for _PyTime_ROUND_UP) should be 
+       used for timeouts. */
+    _PyTime_ROUND_TIMEOUT = _PyTime_ROUND_UP
 } _PyTime_round_t;
+
 
 /* Convert a time_t to a PyLong. */
 PyAPI_FUNC(PyObject *) _PyLong_FromTime_t(
@@ -191,6 +202,23 @@ PyAPI_FUNC(int) _PyTime_localtime(time_t t, struct tm *tm);
 /* Converts a timestamp to the Gregorian time, assuming UTC.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
+
+/* Get the performance counter: clock with the highest available resolution to
+   measure a short duration.
+
+   The function cannot fail. _PyTime_Init() ensures that the system clock
+   works. */
+PyAPI_FUNC(_PyTime_t) _PyTime_GetPerfCounter(void);
+
+/* Get the performance counter: clock with the highest available resolution to
+   measure a short duration.
+
+   Fill info (if set) with information of the function used to get the time.
+
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int) _PyTime_GetPerfCounterWithInfo(
+    _PyTime_t *t,
+    _Py_clock_info_t *info);
 
 #ifdef __cplusplus
 }

@@ -10,7 +10,7 @@ import errno
 
 from test.support import (TESTFN, captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
-                          no_tracing, unlink, import_module)
+                          no_tracing, unlink, import_module, script_helper)
 
 class NaiveException(Exception):
     def __init__(self, x):
@@ -1096,6 +1096,79 @@ class ExceptionTests(unittest.TestCase):
                 else:
                     self.assertIn("test message", report)
                 self.assertTrue(report.endswith("\n"))
+
+    @cpython_only
+    def test_memory_error_in_PyErr_PrintEx(self):
+        code = """if 1:
+            import _testcapi
+            class C(): pass
+            _testcapi.set_nomemory(0, %d)
+            C()
+        """
+
+        # Issue #30817: Abort in PyErr_PrintEx() when no memory.
+        # Span a large range of tests as the CPython code always evolves with
+        # changes that add or remove memory allocations.
+        for i in range(1, 20):
+            rc, out, err = script_helper.assert_python_failure("-c", code % i)
+            self.assertIn(rc, (1, 120))
+            self.assertIn(b'MemoryError', err)
+
+    def test_yield_in_nested_try_excepts(self):
+        #Issue #25612
+        class MainError(Exception):
+            pass
+
+        class SubError(Exception):
+            pass
+
+        def main():
+            try:
+                raise MainError()
+            except MainError:
+                try:
+                    yield
+                except SubError:
+                    pass
+                raise
+
+        coro = main()
+        coro.send(None)
+        with self.assertRaises(MainError):
+            coro.throw(SubError())
+
+    def test_generator_doesnt_retain_old_exc2(self):
+        #Issue 28884#msg282532
+        def g():
+            try:
+                raise ValueError
+            except ValueError:
+                yield 1
+            self.assertEqual(sys.exc_info(), (None, None, None))
+            yield 2
+
+        gen = g()
+
+        try:
+            raise IndexError
+        except IndexError:
+            self.assertEqual(next(gen), 1)
+        self.assertEqual(next(gen), 2)
+
+    def test_raise_in_generator(self):
+        #Issue 25612#msg304117
+        def g():
+            yield 1
+            raise
+            yield 2
+
+        with self.assertRaises(ZeroDivisionError):
+            i = g()
+            try:
+                1/0
+            except:
+                next(i)
+                next(i)
 
 
 class ImportErrorTests(unittest.TestCase):

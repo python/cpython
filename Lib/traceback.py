@@ -458,11 +458,11 @@ class TracebackException:
         # Handle loops in __cause__ or __context__.
         if _seen is None:
             _seen = set()
-        _seen.add(exc_value)
+        _seen.add(id(exc_value))
         # Gracefully handle (the way Python 2.4 and earlier did) the case of
         # being called with no type or value (None, None, None).
         if (exc_value and exc_value.__cause__ is not None
-            and exc_value.__cause__ not in _seen):
+            and id(exc_value.__cause__) not in _seen):
             cause = TracebackException(
                 type(exc_value.__cause__),
                 exc_value.__cause__,
@@ -474,7 +474,7 @@ class TracebackException:
         else:
             cause = None
         if (exc_value and exc_value.__context__ is not None
-            and exc_value.__context__ not in _seen):
+            and id(exc_value.__context__) not in _seen):
             context = TracebackException(
                 type(exc_value.__context__),
                 exc_value.__context__,

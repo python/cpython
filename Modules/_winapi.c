@@ -61,8 +61,6 @@
 
 #define T_HANDLE T_POINTER
 
-#define DWORD_MAX 4294967295U
-
 /* Grab CancelIoEx dynamically from kernel32 */
 static int has_CancelIoEx = -1;
 static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED);
@@ -184,11 +182,11 @@ class DWORD_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == DWORD_MAX", data)
+        self.err_occurred_if("_return_value == PY_DWORD_MAX", data)
         data.return_conversion.append(
             'return_value = Py_BuildValue("k", _return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=94819e72d2c6d558]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4527052fe06e5823]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -723,9 +721,13 @@ getenvironment(PyObject* environment)
     }
 
     keys = PyMapping_Keys(environment);
+    if (!keys) {
+        return NULL;
+    }
     values = PyMapping_Values(environment);
-    if (!keys || !values)
+    if (!values) {
         goto error;
+    }
 
     envsize = PySequence_Fast_GET_SIZE(keys);
     if (PySequence_Fast_GET_SIZE(values) != envsize) {
@@ -1005,7 +1007,7 @@ _winapi_GetExitCodeProcess_impl(PyObject *module, HANDLE process)
 
     if (! result) {
         PyErr_SetFromWindowsErr(GetLastError());
-        exit_code = DWORD_MAX;
+        exit_code = PY_DWORD_MAX;
     }
 
     return exit_code;
@@ -1462,7 +1464,7 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    len = (DWORD)Py_MIN(buf->len, DWORD_MAX);
+    len = (DWORD)Py_MIN(buf->len, PY_DWORD_MAX);
     ret = WriteFile(handle, buf->buf, len, &written,
                     overlapped ? &overlapped->overlapped : NULL);
     Py_END_ALLOW_THREADS
