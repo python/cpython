@@ -45,7 +45,7 @@ build_script:
         PCbuild\amd64\python.exe -m test.pythoninfo
     } elseif ($env:PLATFORM -eq "Cygwin64") {
         Cygwin cygcheck -s
-        Cygwin curl rawgit.com/transcode-open/apt-cyg/master/apt-cyg
+        Cygwin curl -s https://raw.githubusercontent.com/transcode-open/apt-cyg/master/apt-cyg
         Cygwin chmod +x apt-cyg
         Cygwin ./apt-cyg install libcrypt-devel libffi-devel
         Cygwin ./configure
