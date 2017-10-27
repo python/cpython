@@ -97,6 +97,12 @@ def bind_af_aware(sock, addr):
         sock.bind(addr)
 
 
+def setsock_no_peercred(sock):
+    if sys.platform == 'cygwin' and sock.family == socket.AF_UNIX:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, None, 0)
+
+
+
 class HelperFunctionTests(unittest.TestCase):
     def test_readwriteexc(self):
         # Check exception handling behavior of read, write and _exception
@@ -469,6 +475,7 @@ class BaseServer(asyncore.dispatcher):
     def __init__(self, family, addr, handler=BaseTestHandler):
         asyncore.dispatcher.__init__(self)
         self.create_socket(family)
+        setsock_no_peercred(self.socket)
         self.set_reuse_addr()
         bind_af_aware(self.socket, addr)
         self.listen(5)
@@ -490,6 +497,7 @@ class BaseClient(BaseTestHandler):
     def __init__(self, family, address):
         BaseTestHandler.__init__(self)
         self.create_socket(family)
+        setsock_no_peercred(self.socket)
         self.connect(address)
 
     def handle_connect(self):
@@ -550,6 +558,7 @@ class BaseTestAPI:
             def __init__(self, family, addr):
                 BaseTestHandler.__init__(self)
                 self.create_socket(family)
+                setsock_no_peercred(self.socket)
                 bind_af_aware(self.socket, addr)
                 self.listen(5)
                 self.address = self.socket.getsockname()
