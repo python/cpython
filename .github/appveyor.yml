@@ -31,9 +31,14 @@ before_build:
 build_script:
 - ps: |
     function Cygwin {
+        $cygbin = "C:\\cygwin64\\bin"
+        $project_path = & "$cygbin\\cygpath" -u -a $env:APPVEYOR_BUILD_FOLDER
         $cmd = ("C:\\cygwin64\\bin\\bash.exe -lc " +`
-            "'cd $env:APPVEYOR_BUILD_FOLDER; $($args -join " ")'")
+            "'cd $project_path; $($args -join " ")'")
         Invoke-Expression $cmd
+        if ($LastExitCode -ne 0) {
+            $host.SetShouldExit($LastExitCode)
+        }
     }
     if ($env:PLATFORM -eq "Win32") {
         PCbuild\build.bat -e -p x64
