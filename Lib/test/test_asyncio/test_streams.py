@@ -636,6 +636,7 @@ class StreamReaderTests(test_utils.TestCase):
         self.assertEqual(msg, b"hello world!\n")
 
     @support.skip_unless_bind_unix_socket
+    @unittest.skipIf(sys.platform == 'cygwin', 'cygwin has known bug')
     def test_start_unix_server(self):
 
         class MyServer:
