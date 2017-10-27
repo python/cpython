@@ -44,7 +44,8 @@ build_script:
         PCbuild\build.bat -e -p x64
         PCbuild\amd64\python.exe -m test.pythoninfo
     } elseif ($env:PLATFORM -eq "Cygwin64") {
-        Cygwin ./configure "&&" make -s -j4
+        Cygwin ./configure
+        Cygwin make -j4
         Cygwin ./python.exe -m test.pythoninfo
     }
 test_script:
