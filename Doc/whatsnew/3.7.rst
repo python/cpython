@@ -593,6 +593,11 @@ Changes in the Python API
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
+* Because :func:`shutil.rmtree` is now implemented using the :func:`os.scandir`
+  function, the user specified handler *onerror* is now called with the first
+  argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
+  is failed.
+
 
 Changes in the C API
 --------------------
