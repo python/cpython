@@ -5,6 +5,7 @@ branches:
     - master
     - /\d\.\d/
     - buildbot-custom
+    - appveyor-cygwin
 cache:
   - externals -> PCbuild
 before_build:
@@ -36,3 +37,10 @@ environment:
   HOST_PYTHON: C:\Python36\python.exe
 image:
   - Visual Studio 2017
+platform:
+    - Win32
+    - Cygwin64
+matrix:
+    fast_finish: true
+    allow_failures:
+        - platform: Cygwin64
