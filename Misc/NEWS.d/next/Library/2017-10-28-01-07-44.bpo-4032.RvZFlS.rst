@@ -1,0 +1,2 @@
+Add .dll.a to UnixCCompiler to allow the UnixCCompiler.find_library_file to
+correctly find DLL import libs on Cygwin. Patch by Masayuki Yamamoto.
