@@ -133,6 +133,12 @@ PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 #endif /* !Py_LIMITED_API */
 
+/* Legacy locale support */
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _Py_CoerceLegacyLocale(void);
+PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
