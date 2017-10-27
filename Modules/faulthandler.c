@@ -607,30 +607,33 @@ cancel_dump_traceback_later(void)
     }
 }
 
+#define SEC_TO_US (1000 * 1000)
+
 static char*
-format_timeout(double timeout)
+format_timeout(_PyTime_t us)
 {
-    unsigned long us, sec, min, hour;
-    double intpart, fracpart;
+    unsigned long sec, min, hour;
     char buffer[100];
 
-    fracpart = modf(timeout, &intpart);
-    sec = (unsigned long)intpart;
-    us = (unsigned long)(fracpart * 1e6);
+    /* the downcast is safe: the caller check that 0 < us <= LONG_MAX */
+    sec = (unsigned long)(us / SEC_TO_US);
+    us %= SEC_TO_US;
+
     min = sec / 60;
     sec %= 60;
     hour = min / 60;
     min %= 60;
 
-    if (us != 0)
+    if (us != 0) {
         PyOS_snprintf(buffer, sizeof(buffer),
-                      "Timeout (%lu:%02lu:%02lu.%06lu)!\n",
-                      hour, min, sec, us);
-    else
+                      "Timeout (%lu:%02lu:%02lu.%06u)!\n",
+                      hour, min, sec, (unsigned int)us);
+    }
+    else {
         PyOS_snprintf(buffer, sizeof(buffer),
                       "Timeout (%lu:%02lu:%02lu)!\n",
                       hour, min, sec);
-
+    }
     return _PyMem_Strdup(buffer);
 }
 
@@ -639,8 +642,8 @@ faulthandler_dump_traceback_later(PyObject *self,
                                    PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"timeout", "repeat", "file", "exit", NULL};
-    double timeout;
-    PY_TIMEOUT_T timeout_us;
+    PyObject *timeout_obj;
+    _PyTime_t timeout, timeout_us;
     int repeat = 0;
     PyObject *file = NULL;
     int fd;
@@ -650,16 +653,23 @@ faulthandler_dump_traceback_later(PyObject *self,
     size_t header_len;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "d|iOi:dump_traceback_later", kwlist,
-        &timeout, &repeat, &file, &exit))
+        "O|iOi:dump_traceback_later", kwlist,
+        &timeout_obj, &repeat, &file, &exit))
         return NULL;
-    if ((timeout * 1e6) >= (double) PY_TIMEOUT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,  "timeout value is too large");
+
+    if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
+                                  _PyTime_ROUND_TIMEOUT) < 0) {
         return NULL;
     }
-    timeout_us = (PY_TIMEOUT_T)(timeout * 1e6);
+    timeout_us = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_TIMEOUT);
     if (timeout_us <= 0) {
         PyErr_SetString(PyExc_ValueError, "timeout must be greater than 0");
+        return NULL;
+    }
+    /* Limit to LONG_MAX seconds for format_timeout() */
+    if (timeout_us >= PY_TIMEOUT_MAX || timeout_us / SEC_TO_US >= LONG_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "timeout value is too large");
         return NULL;
     }
 
@@ -672,7 +682,7 @@ faulthandler_dump_traceback_later(PyObject *self,
         return NULL;
 
     /* format the timeout */
-    header = format_timeout(timeout);
+    header = format_timeout(timeout_us);
     if (header == NULL)
         return PyErr_NoMemory();
     header_len = strlen(header);
@@ -683,7 +693,8 @@ faulthandler_dump_traceback_later(PyObject *self,
     Py_XINCREF(file);
     Py_XSETREF(thread.file, file);
     thread.fd = fd;
-    thread.timeout_us = timeout_us;
+    /* the downcast is safe: we check that 0 < timeout_us < PY_TIMEOUT_MAX */
+    thread.timeout_us = (PY_TIMEOUT_T)timeout_us;
     thread.repeat = repeat;
     thread.interp = tstate->interp;
     thread.exit = exit;
