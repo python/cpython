@@ -30,12 +30,17 @@ before_build:
 
 build_script:
 - ps: |
+    function Cygwin {
+        $cmd = "C:\\cygwin64\\bin\\bash.exe -lc `
+            'cd $env:APPVEYOR_BUILD_FOLDER; $($args -join " ")'"
+        Invoke-Expression $cmd
+    }
     if ($env:PLATFORM -eq "Win32") {
         PCbuild\build.bat -e -p x64
         PCbuild\amd64\python.exe -m test.pythoninfo
     } elseif ($env:PLATFORM -eq "Cygwin64") {
-        C:\Cygwin64\bin\bash.exe -l -c './configure && make -s -j4'
-        C:\Cygwin64\bin\bash.exe -l -c './python.exe -m test.pythoninfo'
+        Cygwin ./configure "&&" make -s -j4
+        Cygwin ./python.exe -m test.pythoninfo
     }
 test_script:
 - ps: |
