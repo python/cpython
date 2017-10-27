@@ -77,8 +77,9 @@ class UnixCCompiler(CCompiler):
     shared_lib_extension = ".so"
     dylib_lib_extension = ".dylib"
     xcode_stub_lib_extension = ".tbd"
+    implib_lib_extension = ".dll.a"
     static_lib_format = shared_lib_format = dylib_lib_format = "lib%s%s"
-    xcode_stub_lib_format = dylib_lib_format
+    implib_lib_format = xcode_stub_lib_format = dylib_lib_format
     if sys.platform == "cygwin":
         exe_extension = ".exe"
 
@@ -266,6 +267,7 @@ class UnixCCompiler(CCompiler):
         shared_f = self.library_filename(lib, lib_type='shared')
         dylib_f = self.library_filename(lib, lib_type='dylib')
         xcode_stub_f = self.library_filename(lib, lib_type='xcode_stub')
+        implib_f = self.library_filename(lib, lib_type='implib')
         static_f = self.library_filename(lib, lib_type='static')
 
         if sys.platform == 'darwin':
@@ -301,6 +303,7 @@ class UnixCCompiler(CCompiler):
             dylib = os.path.join(dir, dylib_f)
             static = os.path.join(dir, static_f)
             xcode_stub = os.path.join(dir, xcode_stub_f)
+            implib = os.path.join(dir, implib_f)
 
             if sys.platform == 'darwin' and (
                 dir.startswith('/System/') or (
@@ -310,6 +313,7 @@ class UnixCCompiler(CCompiler):
                 dylib = os.path.join(sysroot, dir[1:], dylib_f)
                 static = os.path.join(sysroot, dir[1:], static_f)
                 xcode_stub = os.path.join(sysroot, dir[1:], xcode_stub_f)
+                implib = os.path.join(sysroot, dir[1:], implib_f)
 
             # We're second-guessing the linker here, with not much hard
             # data to go on: GCC seems to prefer the shared library, so I'm
@@ -319,6 +323,8 @@ class UnixCCompiler(CCompiler):
                 return dylib
             elif os.path.exists(xcode_stub):
                 return xcode_stub
+            elif os.path.exists(implib):
+                return implib
             elif os.path.exists(shared):
                 return shared
             elif os.path.exists(static):

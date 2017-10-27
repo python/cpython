@@ -875,9 +875,10 @@ main (int argc, char **argv) {
     def library_filename(self, libname, lib_type='static',     # or 'shared'
                          strip_dir=0, output_dir=''):
         assert output_dir is not None
-        if lib_type not in ("static", "shared", "dylib", "xcode_stub"):
-            raise ValueError(
-                  "'lib_type' must be \"static\", \"shared\", \"dylib\", or \"xcode_stub\"")
+        if lib_type not in ("static", "shared", "dylib", "xcode_stub",
+                            "implib"):
+            raise ValueError("'lib_type' must be \"static\", \"shared\", "
+                             "\"dylib\", \"xcode_stub\", or \"implib\"")
         fmt = getattr(self, lib_type + "_lib_format")
         ext = getattr(self, lib_type + "_lib_extension")
 
