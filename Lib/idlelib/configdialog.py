@@ -551,7 +551,7 @@ class FontPage(Frame):
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
         # frame_sample.
-        self.font_sample = Text(frame_sample, width=20, height=10)
+        self.font_sample = Text(frame_sample, width=20, height=20)
         self.font_sample.insert(END, font_sample_text)
         # frame_indent.
         indent_title = Label(
