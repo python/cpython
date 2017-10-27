@@ -245,6 +245,7 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->recursion_depth = 0;
         tstate->overflowed = 0;
         tstate->recursion_critical = 0;
+        tstate->stackcheck_counter = 0;
         tstate->tracing = 0;
         tstate->use_tracing = 0;
         tstate->gilstate_counter = 0;
@@ -449,7 +450,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->exc_state.exc_type);
     Py_CLEAR(tstate->exc_state.exc_value);
     Py_CLEAR(tstate->exc_state.exc_traceback);
-    
+
     /* The stack of exception states should contain just this thread. */
     assert(tstate->exc_info->previous_item == NULL);
     if (Py_VerboseFlag && tstate->exc_info != &tstate->exc_state) {

@@ -125,8 +125,8 @@ typedef struct _ts PyThreadState;
 #else
 
 typedef struct _err_stackitem {
-    /* This struct represents an entry on the exception stack, which is a 
-     * per-coroutine state. (Coroutine in the computer science sense, 
+    /* This struct represents an entry on the exception stack, which is a
+     * per-coroutine state. (Coroutine in the computer science sense,
      * including the thread and generators).
      * This ensures that the exception state is not impacted by "yields"
      * from an except handler.
@@ -151,6 +151,8 @@ typedef struct _ts {
                         to handle the runtime error. */
     char recursion_critical; /* The current calls must not cause
                                 a stack overflow. */
+    int stackcheck_counter;
+
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
