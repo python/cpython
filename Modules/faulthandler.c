@@ -607,6 +607,8 @@ cancel_dump_traceback_later(void)
     }
 }
 
+#define SEC_TO_US (1000 * 1000)
+
 static char*
 format_timeout(_PyTime_t us)
 {
@@ -614,8 +616,8 @@ format_timeout(_PyTime_t us)
     char buffer[100];
 
     /* the downcast is safe: the caller check that 0 < us <= LONG_MAX */
-    sec = (unsigned long)(us / (1000 * 1000));
-    us %= (1000 * 1000);
+    sec = (unsigned long)(us / SEC_TO_US);
+    us %= SEC_TO_US;
 
     min = sec / 60;
     sec %= 60;
@@ -664,8 +666,8 @@ faulthandler_dump_traceback_later(PyObject *self,
         PyErr_SetString(PyExc_ValueError, "timeout must be greater than 0");
         return NULL;
     }
-    /* Limit to LONG_MAX for format_timeout() */
-    if (timeout_us >= PY_TIMEOUT_MAX || timeout_us >= LONG_MAX) {
+    /* Limit to LONG_MAX seconds for format_timeout() */
+    if (timeout_us >= PY_TIMEOUT_MAX || timeout_us / SEC_TO_US >= LONG_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "timeout value is too large");
         return NULL;
