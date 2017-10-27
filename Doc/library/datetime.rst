@@ -365,13 +365,13 @@ Example usage:
     True
     >>> ten_years = 10 * year
     >>> ten_years, ten_years.days // 365
-    (datetime.timedelta(3650), 10)
+    (datetime.timedelta(days=3650), 10)
     >>> nine_years = ten_years - year
     >>> nine_years, nine_years.days // 365
-    (datetime.timedelta(3285), 9)
+    (datetime.timedelta(days=3285), 9)
     >>> three_years = nine_years // 3
     >>> three_years, three_years.days // 365
-    (datetime.timedelta(1095), 3)
+    (datetime.timedelta(days=1095), 3)
     >>> abs(three_years - ten_years) == 2 * three_years + year
     True
 
@@ -1354,12 +1354,12 @@ Using datetime with tzinfo:
     >>> dt1.dst()
     datetime.timedelta(0)
     >>> dt1.utcoffset()
-    datetime.timedelta(0, 3600)
+    datetime.timedelta(seconds=3600)
     >>> dt2 = datetime(2006, 6, 14, 13, 0, tzinfo=gmt1)
     >>> dt2.dst()
-    datetime.timedelta(0, 3600)
+    datetime.timedelta(seconds=3600)
     >>> dt2.utcoffset()
-    datetime.timedelta(0, 7200)
+    datetime.timedelta(seconds=7200)
     >>> # Convert datetime to another time zone
     >>> dt3 = dt2.astimezone(GMT2())
     >>> dt3     # doctest: +ELLIPSIS
