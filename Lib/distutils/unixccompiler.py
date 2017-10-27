@@ -296,8 +296,6 @@ class UnixCCompiler(CCompiler):
             else:
                 sysroot = m.group(1)
 
-
-
         for dir in dirs:
             shared = os.path.join(dir, shared_f)
             dylib = os.path.join(dir, dylib_f)
