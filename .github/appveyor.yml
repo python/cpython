@@ -33,7 +33,7 @@ build_script:
     if ($env:PLATFORM -eq "Win32") {
         PCbuild\build.bat -e -p x64
         PCbuild\amd64\python.exe -m test.pythoninfo
-    } else if ($env:PLATFORM -eq "Cygwin64") {
+    } elseif ($env:PLATFORM -eq "Cygwin64") {
         C:\Cygwin64\bash.exe -l -c './configure && make -s -j4'
         C:\Cygwin64\bash.exe -l -c './python.exe -m test.pythoninfo'
     }
