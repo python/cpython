@@ -31,8 +31,8 @@ before_build:
 build_script:
 - ps: |
     function Cygwin {
-        $cmd = "C:\\cygwin64\\bin\\bash.exe -lc `
-            'cd $env:APPVEYOR_BUILD_FOLDER; $($args -join " ")'"
+        $cmd = ("C:\\cygwin64\\bin\\bash.exe -lc " +`
+            "'cd $env:APPVEYOR_BUILD_FOLDER; $($args -join " ")'")
         Invoke-Expression $cmd
     }
     if ($env:PLATFORM -eq "Win32") {
