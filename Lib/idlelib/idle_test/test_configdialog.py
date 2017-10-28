@@ -44,10 +44,9 @@ def tearDownModule():
     tracers.detach()
     tracers.clear()
     changes.clear()
-    del dialog
     root.update_idletasks()
     root.destroy()
-    del root
+    root = dialog = None
 
 
 class FontPageTest(unittest.TestCase):
@@ -192,6 +191,7 @@ class FontPageTest(unittest.TestCase):
     def test_set_samples(self):
         d = self.page
         del d.set_samples  # Unmask method for test
+        orig_samples = d.font_sample, d.highlight_sample
         d.font_sample, d.highlight_sample = {}, {}
         d.font_name.set('test')
         d.font_size.set('5')
@@ -202,7 +202,7 @@ class FontPageTest(unittest.TestCase):
         d.set_samples()
         self.assertTrue(d.font_sample == d.highlight_sample == expected)
 
-        del d.font_sample, d.highlight_sample
+        d.font_sample, d.highlight_sample = orig_samples
         d.set_samples = Func()  # Re-mask for other tests.
 
 
