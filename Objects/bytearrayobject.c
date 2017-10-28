@@ -1408,15 +1408,15 @@ Partition the bytearray into three parts using the given separator.
 
 This will search for the separator sep in the bytearray. If the separator is
 found, returns a 3-tuple containing the part before the separator, the
-separator itself, and the part after it.
+separator itself, and the part after it as new bytearray objects.
 
-If the separator is not found, returns a 3-tuple containing the original
-bytearray object and two empty bytearray objects.
+If the separator is not found, returns a 3-tuple containing the copy of the
+original bytearray object and two empty bytearray objects.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_partition(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=45d2525ddd35f957 input=86f89223892b70b5]*/
+/*[clinic end generated code: output=45d2525ddd35f957 input=8f644749ee4fc83a]*/
 {
     PyObject *bytesep, *result;
 
@@ -1441,19 +1441,20 @@ bytearray.rpartition
     sep: object
     /
 
-Partition the bytes into three parts using the given separator.
+Partition the bytearray into three parts using the given separator.
 
-This will search for the separator sep in the bytearray, starting and the end.
+This will search for the separator sep in the bytearray, starting at the end.
 If the separator is found, returns a 3-tuple containing the part before the
-separator, the separator itself, and the part after it.
+separator, the separator itself, and the part after it as new bytearray
+objects.
 
 If the separator is not found, returns a 3-tuple containing two empty bytearray
-objects and the original bytearray object.
+objects and the copy of the original bytearray object.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_rpartition(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=440de3c9426115e8 input=5f4094f2de87c8f3]*/
+/*[clinic end generated code: output=440de3c9426115e8 input=7e3df3e6cb8fa0ac]*/
 {
     PyObject *bytesep, *result;
 
