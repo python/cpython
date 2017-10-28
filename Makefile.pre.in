@@ -449,7 +449,11 @@ DTRACE_DEPS = \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed python-config
+ifeq ($(PY_ENABLE_SHARED),1)
+build_all:      $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed python-config
+else
+build_all:      $(BUILDPYTHON) gdbhooks Programs/_testembed python-config
+endif
 
 # Compile a binary with profile guided optimization.
 profile-opt:
