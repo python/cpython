@@ -1,0 +1,7 @@
+Fix memory debug hooks on OpenBSD: fix _PyMem_DebugRawRealloc(). Previously,
+the old resized memory block was modified after realloc() success to fill now
+unused bytes with the DEADBYTE pattern. On OpenBSD, modifying the old memory
+block causes a fatal error. On OpenBSD, the function now erases the bytes
+*before* calling realloc(), but keep a copy of erased bytes to restore them if
+realloc() fails.  The behaviour on other platforms is unchanged: erased bytes
+*after* realloc() success. Patch co-written with Serhiy Storchaka.
