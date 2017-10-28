@@ -9,7 +9,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from test.support import import_module, unlink, temp_dir, TESTFN, verbose
+from textwrap import dedent
+from test.support import (import_module, unlink, temp_dir, TESTFN, verbose,
+                          SuppressCrashReport)
 from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
@@ -271,11 +273,36 @@ readline.write_history_file(history_file)
             self.assertEqual(lines[-1].strip(), b"last input")
 
 
+# Tests for the interactive interpreter.
+class TestInteractiveInterpreter(unittest.TestCase):
+
+    def test_interactive_no_memory(self):
+        # Issue #30696: Fix the interactive interpreter looping endlessly when
+        # no memory. Check also that the fix does not break the interactive
+        # loop when an exception is raised.
+        user_input = """
+            import sys, _testcapi
+            1/0
+            _testcapi.set_nomemory(0)
+            sys.exit(0)
+        """
+        user_input = dedent(user_input)
+        user_input = b'\r'.join(x.encode() for x in user_input.split('\n'))
+        user_input += b'\r'
+        with SuppressCrashReport():
+            output = run_pty(None, input=user_input)
+        self.assertIn(b"Fatal Python error: Cannot recover from MemoryErrors",
+                      output)
+
+
 def run_pty(script, input=b"dummy input\r", env=None):
     pty = import_module('pty')
     output = bytearray()
     [master, slave] = pty.openpty()
-    args = (sys.executable, '-c', script)
+    if script is None:
+        args = (sys.executable, '-q')
+    else:
+        args = (sys.executable, '-c', script)
     proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave, env=env)
     os.close(slave)
     with ExitStack() as cleanup:

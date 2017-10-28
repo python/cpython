@@ -86,9 +86,10 @@ PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
 int
 PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *flags)
 {
-    PyObject *filename, *v;
-    int ret, err;
+    PyObject *filename, *v, *curexc;
     PyCompilerFlags local_flags;
+    int ret = -1;
+    static int nomem_count = 0;
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
     if (filename == NULL) {
@@ -110,24 +111,34 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
         _PySys_SetObjectId(&PyId_ps2, v = PyUnicode_FromString("... "));
         Py_XDECREF(v);
     }
-    err = -1;
-    for (;;) {
+    while (ret != E_EOF) {
         ret = PyRun_InteractiveOneObject(fp, filename, flags);
+        /* Save the current exception that may be cleared by
+         * _PyDebug_XOptionShowRefCount(). */
+        curexc = ret == -1 ? PyErr_Occurred() : NULL;
 #ifdef Py_REF_DEBUG
         if (_PyDebug_XOptionShowRefCount() == Py_True)
             _PyDebug_PrintTotalRefs();
 #endif
-        if (ret == E_EOF) {
-            err = 0;
-            break;
+        if (curexc) {
+            /* Prevent an endless loop after multiple consecutive MemoryErrors
+             * while still allowing an interactive command to fail with a
+             * MemoryError. */
+            if (PyErr_GivenExceptionMatches(curexc, PyExc_MemoryError)) {
+                if (++nomem_count > 16) {
+                    Py_FatalError("Cannot recover from MemoryErrors.");
+                }
+                PyErr_Print();
+                flush_io();
+                continue;
+            }
+            PyErr_Print();
+            flush_io();
         }
-        /*
-        if (ret == E_NOMEM)
-            break;
-        */
+        nomem_count = 0;
     }
     Py_DECREF(filename);
-    return err;
+    return 0;
 }
 
 /* compute parser flags based on compiler flags */
@@ -167,7 +178,6 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
 
     mod_name = _PyUnicode_FromId(&PyId___main__); /* borrowed */
     if (mod_name == NULL) {
-        PyErr_Print();
         return -1;
     }
 
@@ -227,7 +237,6 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
             PyErr_Clear();
             return E_EOF;
         }
-        PyErr_Print();
         return -1;
     }
     m = PyImport_AddModuleObject(mod_name);
@@ -239,8 +248,6 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
     v = run_mod(mod, filename, d, d, flags, arena);
     PyArena_Free(arena);
     if (v == NULL) {
-        PyErr_Print();
-        flush_io();
         return -1;
     }
     Py_DECREF(v);

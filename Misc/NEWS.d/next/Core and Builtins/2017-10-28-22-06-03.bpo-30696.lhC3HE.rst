@@ -1,0 +1,3 @@
+Fix the interactive interpreter looping endlessly when no memory. This also
+fixes partly ``PyRun_InteractiveOneFlags()`` that was returning -1 with no
+exception set.
