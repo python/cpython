@@ -1019,11 +1019,7 @@ def _serialize_html(write, elem, qnames, namespaces, indent='', addindent='',
             ltag = tag.lower()
             if text:
                 if ltag == "script" or ltag == "style":
-                    write(newline)
-                    if pretty:
-                        text = text.lstrip("\n\r").rstrip()
                     write(text)
-                    write(newline + indent)
                 else:
                     write(_escape_cdata(text, pretty))
             for e in elem:
