@@ -15,20 +15,6 @@ wmain(int argc, wchar_t **argv)
 }
 #else
 
-/* Access private pylifecycle helper API to better handle the legacy C locale
- *
- * The legacy C locale assumes ASCII as the default text encoding, which
- * causes problems not only for the CPython runtime, but also other
- * components like GNU readline.
- *
- * Accordingly, when the CLI detects it, it attempts to coerce it to a
- * more capable UTF-8 based alternative.
- *
- * See the documentation of the PYTHONCOERCECLOCALE setting for more details.
- *
- */
-extern int _Py_LegacyLocaleDetected(void);
-extern void _Py_CoerceLegacyLocale(void);
 
 int
 main(int argc, char **argv)
@@ -78,6 +64,16 @@ main(int argc, char **argv)
     setlocale(LC_ALL, "");
 #endif
 
+    /* The legacy C locale assumes ASCII as the default text encoding, which
+     * causes problems not only for the CPython runtime, but also other
+     * components like GNU readline.
+     *
+     * Accordingly, when the CLI detects it, it attempts to coerce it to a
+     * more capable UTF-8 based alternative.
+     *
+     * See the documentation of the PYTHONCOERCECLOCALE setting for more
+     * details.
+     */
     if (_Py_LegacyLocaleDetected()) {
         _Py_CoerceLegacyLocale();
     }
