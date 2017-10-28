@@ -21,8 +21,8 @@ modules, classes partake of the dynamic nature of Python: they are created at
 runtime, and can be modified further after creation.
 
 In C++ terminology, normally class members (including the data members) are
-*public* (except see below :ref:`tut-private`), and all member functions are
-*virtual*.  As in Modula-3, there are no shorthands for referencing the object's
+*private* (see below :ref:`tut-private`), and all member functions are not
+*virtual* [#]_ .  As in Modula-3, there are no shorthands for referencing the object's
 members from its methods: the method function is declared with an explicit first
 argument representing the object, which is provided implicitly by the call.  As
 in Smalltalk, classes themselves are objects.  This provides semantics for
@@ -906,6 +906,8 @@ Examples::
 
 
 .. rubric:: Footnotes
+
+.. [#] source : http://www.stroustrup.com/bs_faq2.html#virtual
 
 .. [#] Except for one thing.  Module objects have a secret read-only attribute called
    :attr:`~object.__dict__` which returns the dictionary used to implement the module's
