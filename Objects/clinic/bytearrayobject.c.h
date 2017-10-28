@@ -214,10 +214,10 @@ PyDoc_STRVAR(bytearray_partition__doc__,
 "\n"
 "This will search for the separator sep in the bytearray. If the separator is\n"
 "found, returns a 3-tuple containing the part before the separator, the\n"
-"separator itself, and the part after it.\n"
+"separator itself, and the part after it as new bytearray objects.\n"
 "\n"
-"If the separator is not found, returns a 3-tuple containing the original\n"
-"bytearray object and two empty bytearray objects.");
+"If the separator is not found, returns a 3-tuple containing the copy of the\n"
+"original bytearray object and two empty bytearray objects.");
 
 #define BYTEARRAY_PARTITION_METHODDEF    \
     {"partition", (PyCFunction)bytearray_partition, METH_O, bytearray_partition__doc__},
@@ -226,14 +226,15 @@ PyDoc_STRVAR(bytearray_rpartition__doc__,
 "rpartition($self, sep, /)\n"
 "--\n"
 "\n"
-"Partition the bytes into three parts using the given separator.\n"
+"Partition the bytearray into three parts using the given separator.\n"
 "\n"
-"This will search for the separator sep in the bytearray, starting and the end.\n"
+"This will search for the separator sep in the bytearray, starting at the end.\n"
 "If the separator is found, returns a 3-tuple containing the part before the\n"
-"separator, the separator itself, and the part after it.\n"
+"separator, the separator itself, and the part after it as new bytearray\n"
+"objects.\n"
 "\n"
 "If the separator is not found, returns a 3-tuple containing two empty bytearray\n"
-"objects and the original bytearray object.");
+"objects and the copy of the original bytearray object.");
 
 #define BYTEARRAY_RPARTITION_METHODDEF    \
     {"rpartition", (PyCFunction)bytearray_rpartition, METH_O, bytearray_rpartition__doc__},
@@ -711,4 +712,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=e53f10084457a46b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2804d009182328c input=a9049054013a1b77]*/

@@ -682,7 +682,7 @@ PyDoc_STRVAR(unicode_rpartition__doc__,
 "\n"
 "Partition the string into three parts using the given separator.\n"
 "\n"
-"This will search for the separator in the string, starting and the end. If\n"
+"This will search for the separator in the string, starting at the end. If\n"
 "the separator is found, returns a 3-tuple containing the part before the\n"
 "separator, the separator itself, and the part after it.\n"
 "\n"
@@ -930,4 +930,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=8fd799fd7f2cc724 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=816292e81a8a732e input=a9049054013a1b77]*/
