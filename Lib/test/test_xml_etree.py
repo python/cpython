@@ -1072,22 +1072,41 @@ class ElementTreeTest(unittest.TestCase):
             '</child2>\n')
 
     def test_pretty_print_html(self):
-        htmlfile = findfile("test.xml", subdir='xmltestdata')
-        htmlfile_pretty = findfile('test.xml.pretty', subdir='xmltestdata')
-        try:
-            htmlfile.encode("utf-8")
-            htmlfile_pretty.encode("utf-8")
-        except UnicodeEncodeError:
-            raise unittest.SkipTest("filename is not encodable to utf8")
+        html = ET.Element('html')
 
-        with open(htmlfile_pretty, 'r') as f:
-            htmlfile_pretty_content = f.read()
+        head = ET.SubElement(html, 'head')
+        body = ET.SubElement(html, 'body')
 
-            tree = ET.parse(htmlfile)
-            root = tree.getroot()
+        style = ET.SubElement(head, 'style')
+        style.text = '''
+        body {background-color: white;}
+        h1   {color: blue;}
+        p    {color: red;}
+        '''
 
-            self.assertEqual(serialize(root, method='html', indent='  '),
-                    htmlfile_pretty_content)
+        p = ET.SubElement(body, 'p')
+        p.text = 'etree is awesome'
+
+        ET.SubElement(body, 'br')
+
+        script = ET.SubElement(body, 'script')
+        script.text = '   document.getElementById("some").innerHTML = "Hello JavaScript!";'
+
+        self.assertEqual(serialize(html, method='html', indent='  '),
+            '<html>\n'
+            '  <head>\n'
+            '    <style>\n'
+            '        body {background-color: white;}\n'
+            '        h1   {color: blue;}\n'
+            '        p    {color: red;}\n'
+            '        </style>\n'
+            '  </head>\n'
+            '  <body>\n'
+            '    <p>etree is awesome</p>\n'
+            '    <br>\n'
+            '    <script>   document.getElementById("some").innerHTML = "Hello JavaScript!";</script>\n'
+            '  </body>\n'
+            '</html>')
 
 
 class XMLPullParserTest(unittest.TestCase):
