@@ -1,0 +1,2 @@
+Raise a ``TypeError`` instead of crashing, in specific cases where a
+``collections.deque`` subclass returns a non-deque. Patch by Oren Milman.

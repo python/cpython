@@ -538,14 +538,12 @@ deque_copy(PyObject *deque)
         Py_DECREF(new_deque);
         return NULL;
     }
-    if (old_deque->maxlen < 0) {
+    if (old_deque->maxlen < 0)
         result = PyObject_CallFunctionObjArgs((PyObject *)(Py_TYPE(deque)),
                                               deque, NULL);
-    }
-    else {
+    else
         result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
                                        deque, old_deque->maxlen, NULL);
-    }
     if (result != NULL && !PyObject_TypeCheck(result, &deque_type)) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s() must return a deque, not %.200s",
