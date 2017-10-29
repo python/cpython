@@ -91,11 +91,12 @@ floatclock(_Py_clock_info_t *info)
 static PyObject*
 perf_counter(_Py_clock_info_t *info)
 {
-    double t;
-    if (_PyTime_GetPerfCounterDoubleWithInfo(&t, info) < 0) {
+    _PyTime_t t;
+    if (_PyTime_GetPerfCounterWithInfo(&t, info) < 0) {
         return NULL;
     }
-    return PyFloat_FromDouble(t);
+    double d = _PyTime_AsSecondsDouble(t);
+    return PyFloat_FromDouble(d);
 }
 
 #if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
@@ -103,6 +104,13 @@ perf_counter(_Py_clock_info_t *info)
 static PyObject*
 pyclock(_Py_clock_info_t *info)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                      "time.clock has been deprecated in Python 3.3 and will "
+                      "be removed from Python 3.8: "
+                      "use time.perf_counter or time.process_time "
+                      "instead", 1) < 0) {
+        return NULL;
+    }
 #ifdef MS_WINDOWS
     return perf_counter(info);
 #else
@@ -237,7 +245,7 @@ static PyObject *
 time_sleep(PyObject *self, PyObject *obj)
 {
     _PyTime_t secs;
-    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_CEILING))
+    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
     if (secs < 0) {
         PyErr_SetString(PyExc_ValueError,

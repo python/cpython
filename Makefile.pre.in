@@ -1659,10 +1659,9 @@ distclean: clobber
 				     -o -name '*.bak' ')' \
 				     -exec rm -f {} ';'
 
-# Check for smelly exported symbols (not starting with Py/_Py)
+# Check that all symbols exported by libpython start with "Py" or "_Py"
 smelly: @DEF_MAKE_RULE@
-	nm -p $(LIBRARY) | \
-		sed -n "/ [TDB] /s/.* //p" | grep -v "^_*Py" | sort -u; \
+	$(RUNSHARED) ./$(BUILDPYTHON) Tools/scripts/smelly.py
 
 # Find files with funny names
 funny:

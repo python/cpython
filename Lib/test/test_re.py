@@ -1470,11 +1470,11 @@ class ReTests(unittest.TestCase):
             self.assertIsNone(pat.match(b'\xe0'))
         # Incompatibilities
         self.assertRaises(ValueError, re.compile, br'\w', re.UNICODE)
-        self.assertRaises(ValueError, re.compile, br'(?u)\w')
+        self.assertRaises(re.error, re.compile, br'(?u)\w')
         self.assertRaises(ValueError, re.compile, r'\w', re.UNICODE | re.ASCII)
         self.assertRaises(ValueError, re.compile, r'(?u)\w', re.ASCII)
         self.assertRaises(ValueError, re.compile, r'(?a)\w', re.UNICODE)
-        self.assertRaises(ValueError, re.compile, r'(?au)\w')
+        self.assertRaises(re.error, re.compile, r'(?au)\w')
 
     def test_locale_flag(self):
         import locale
@@ -1516,11 +1516,11 @@ class ReTests(unittest.TestCase):
             self.assertIsNone(pat.match(bletter))
         # Incompatibilities
         self.assertRaises(ValueError, re.compile, '', re.LOCALE)
-        self.assertRaises(ValueError, re.compile, '(?L)')
+        self.assertRaises(re.error, re.compile, '(?L)')
         self.assertRaises(ValueError, re.compile, b'', re.LOCALE | re.ASCII)
         self.assertRaises(ValueError, re.compile, b'(?L)', re.ASCII)
         self.assertRaises(ValueError, re.compile, b'(?a)', re.LOCALE)
-        self.assertRaises(ValueError, re.compile, b'(?aL)')
+        self.assertRaises(re.error, re.compile, b'(?aL)')
 
     def test_scoped_flags(self):
         self.assertTrue(re.match(r'(?i:a)b', 'Ab'))
@@ -1535,12 +1535,18 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r'(?-x: a) b', ' ab', re.VERBOSE))
         self.assertIsNone(re.match(r'(?-x: a) b', 'ab', re.VERBOSE))
 
-        self.checkPatternError(r'(?a:\w)',
-                               'bad inline flags: cannot turn on global flag', 3)
+        self.assertTrue(re.match(r'\w(?a:\W)\w', '\xe0\xe0\xe0'))
+        self.assertTrue(re.match(r'(?a:\W(?u:\w)\W)', '\xe0\xe0\xe0'))
+        self.assertTrue(re.match(r'\W(?u:\w)\W', '\xe0\xe0\xe0', re.ASCII))
+
         self.checkPatternError(r'(?a)(?-a:\w)',
-                               'bad inline flags: cannot turn off global flag', 8)
+                "bad inline flags: cannot turn off flags 'a', 'u' and 'L'", 8)
         self.checkPatternError(r'(?i-i:a)',
-                               'bad inline flags: flag turned on and off', 5)
+                'bad inline flags: flag turned on and off', 5)
+        self.checkPatternError(r'(?au:a)',
+                "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
+        self.checkPatternError(br'(?aL:a)',
+                "bad inline flags: flags 'a', 'u' and 'L' are incompatible", 4)
 
         self.checkPatternError(r'(?-', 'missing flag', 3)
         self.checkPatternError(r'(?-+', 'missing flag', 3)
