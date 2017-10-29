@@ -137,7 +137,7 @@ def _copy(master_fd, master_read=_read, stdin_read=_read):
         if master_fd in rfds:
             data = master_read(master_fd)
             if not data:  # Reached EOF.
-                fds.remove(master_fd)
+                return
             else:
                 os.write(STDOUT_FILENO, data)
         if STDIN_FILENO in rfds:
@@ -153,7 +153,15 @@ def spawn(argv, master_read=_read, stdin_read=_read):
         argv = (argv,)
     pid, master_fd = fork()
     if pid == CHILD:
-        os.execlp(argv[0], *argv)
+        try:
+            os.execlp(argv[0], *argv)
+        except:
+            # If we wanted to be really clever, we would use
+            # the same method as subprocess() to pass the error
+            # back to the parent.  For now just dump stack trace.
+            traceback.print_exc()
+        finally:
+            os._exit(1)
     try:
         mode = tty.tcgetattr(STDIN_FILENO)
         tty.setraw(STDIN_FILENO)
@@ -163,6 +171,10 @@ def spawn(argv, master_read=_read, stdin_read=_read):
     try:
         _copy(master_fd, master_read, stdin_read)
     except OSError:
+        # Some OSes never return an EOF on pty, just raise
+        # an error instead.
+        pass
+    finally:
         if restore:
             tty.tcsetattr(STDIN_FILENO, tty.TCSAFLUSH, mode)
 

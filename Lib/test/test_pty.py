@@ -293,7 +293,7 @@ class SmallPtyTests(unittest.TestCase):
         socketpair[1].close()
         os.close(write_to_stdin_fd)
 
-        # Expect two select calls, the last one will cause IndexError
+        # Expect two select calls, then a normal return on master EOF
         pty.select = self._mock_select
         self.select_rfds_lengths.append(2)
         self.select_rfds_results.append([mock_stdin_fd, masters[0]])
@@ -301,8 +301,7 @@ class SmallPtyTests(unittest.TestCase):
         # both encountered an EOF before the second select call.
         self.select_rfds_lengths.append(0)
 
-        with self.assertRaises(IndexError):
-            pty._copy(masters[0])
+        pty._copy(masters[0])
 
 
 def tearDownModule():
