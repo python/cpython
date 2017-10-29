@@ -8,6 +8,7 @@
 
 from select import select
 import os
+import sys
 import tty
 
 __all__ = ["openpty","fork","spawn"]
@@ -164,7 +165,7 @@ def spawn(argv, master_read=_read, stdin_read=_read):
             # If we wanted to be really clever, we would use
             # the same method as subprocess() to pass the error
             # back to the parent.  For now just dump stack trace.
-            traceback.print_exc()
+            sys.excepthook(*sys.exc_info())
         finally:
             os._exit(1)
     try:
