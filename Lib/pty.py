@@ -1,7 +1,7 @@
 """Pseudo terminal utilities."""
 
 # Bugs: No signal handling.  Doesn't set slave termios and window size.
-#       Only tested on Linux.
+#       Only tested on Linux, FreeBSD, and OS X.
 # See:  W. Richard Stevens. 1992.  Advanced Programming in the
 #       UNIX Environment.  Chapter 19.
 # Author: Steen Lumholt -- with additions by Guido.
@@ -133,6 +133,11 @@ def _copy(master_fd, master_read=_read, stdin_read=_read):
             standard input -> pty master    (stdin_read)"""
     fds = [master_fd, STDIN_FILENO]
     while True:
+        # The expected path to leave this infinite loop is that the
+        # child exits and its slave_fd is destroyed. In this case,
+        # master_fd will become ready in select() and reading from
+        # master_fd either raises an OSError (Input/output error) on
+        # Linux or returns EOF on BSD.
         rfds, wfds, xfds = select(fds, [], [])
         if master_fd in rfds:
             data = master_read(master_fd)

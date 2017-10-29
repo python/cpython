@@ -2,8 +2,8 @@
 ========================================
 
 .. module:: pty
-   :platform: Linux
-   :synopsis: Pseudo-Terminal Handling for Linux.
+   :platform: Unix
+   :synopsis: Pseudo-Terminal Handling for Unix.
 
 .. moduleauthor:: Steen Lumholt
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
@@ -16,9 +16,9 @@ The :mod:`pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
-Because pseudo-terminal handling is highly platform dependent, there is code to
-do it only for Linux. (The Linux code is supposed to work on other platforms,
-but hasn't been tested yet.)
+Pseudo-terminal handling is highly platform dependent. This code is mainly
+tested on Linux, FreeBSD, and OS X (it is supposed to work on other POSIX
+platforms).
 
 The :mod:`pty` module defines the following functions:
 
@@ -41,9 +41,13 @@ The :mod:`pty` module defines the following functions:
 
 .. function:: spawn(argv[, master_read[, stdin_read]])
 
-   Spawn a process, and connect its controlling terminal with the current
-   process's standard io. This is often used to baffle programs which insist on
-   reading from the controlling terminal.
+   Spawn a child process, and connect its controlling terminal with the
+   current process's standard io. This is often used to baffle programs which
+   insist on reading from the controlling terminal.
+
+   A loop copies STDIN of the current process to the child and data received
+   from the child to STDOUT of the current process. It is not signaled to the
+   child if STDIN of the current process closes down.
 
    The functions *master_read* and *stdin_read* should be functions which read from
    a file descriptor. The defaults try to read 1024 bytes each time they are
