@@ -900,10 +900,12 @@ class TestSubclass(unittest.TestCase):
             pass
         d = X()
         def bad___new__(cls, *args, **kwargs):
-            return 42
+            return [42]
         X.__new__ = bad___new__
         with self.assertRaises(TypeError):
             d * 42  # shouldn't crash
+        with self.assertRaises(TypeError):
+            d + deque([1, 2, 3])  # shouldn't crash
 
 
 class SubclassWithKwargs(deque):
