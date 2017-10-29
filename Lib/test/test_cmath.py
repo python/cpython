@@ -334,18 +334,6 @@ class CMathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def test_specific_values(self):
-        # Some tests need to be skipped on ancient OS X versions.
-        # See issue #27953.
-        SKIP_ON_TIGER = {'tan0064'}
-
-        osx_version = None
-        if sys.platform == 'darwin':
-            version_txt = platform.mac_ver()[0]
-            try:
-                osx_version = tuple(map(int, version_txt.split('.')))
-            except ValueError:
-                pass
-
         def rect_complex(z):
             """Wrapped version of rect that accepts a complex number instead of
             two float arguments."""
@@ -360,10 +348,8 @@ class CMathTests(unittest.TestCase):
             arg = complex(ar, ai)
             expected = complex(er, ei)
 
-            # Skip certain tests on OS X 10.4.
-            if osx_version is not None and osx_version < (10, 5):
-                if id in SKIP_ON_TIGER:
-                    continue
+            if id == 'tan0064' and test_math.has_inaccurate_tan():
+                continue
 
             if fn == 'rect':
                 function = rect_complex

@@ -236,6 +236,23 @@ def result_check(expected, got, ulp_tol=5, abs_tol=0.0):
     else:
         return None
 
+
+# tan() has poor accuracy near pi/2 on OpenBSD, NetBSD and
+# ancient OS X versions.  See issues #27953 and #31630.
+def has_inaccurate_tan():
+    if sys.platform == 'darwin':
+        version_txt = platform.mac_ver()[0]
+        try:
+            osx_version = tuple(map(int, version_txt.split('.')))
+            if osx_version < (10, 5):
+                return True
+        except ValueError:
+            pass
+    elif sys.platform.startswith(('openbsd', 'netbsd')):
+        return True
+    return False
+
+
 # Class providing an __index__ method.
 class MyIndexable(object):
     def __init__(self, value):
@@ -1293,18 +1310,6 @@ class MathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def test_testfile(self):
-        # Some tests need to be skipped on ancient OS X versions.
-        # See issue #27953.
-        SKIP_ON_TIGER = {'tan0064'}
-
-        osx_version = None
-        if sys.platform == 'darwin':
-            version_txt = platform.mac_ver()[0]
-            try:
-                osx_version = tuple(map(int, version_txt.split('.')))
-            except ValueError:
-                pass
-
         fail_fmt = "{}: {}({!r}): {}"
 
         failures = []
@@ -1315,10 +1320,9 @@ class MathTests(unittest.TestCase):
             if fn in ['rect', 'polar']:
                 # no real versions of rect, polar
                 continue
-            # Skip certain tests on OS X 10.4.
-            if osx_version is not None and osx_version < (10, 5):
-                if id in SKIP_ON_TIGER:
-                    continue
+
+            if id == 'tan0064' and has_inaccurate_tan():
+                continue
 
             func = getattr(math, fn)
 
