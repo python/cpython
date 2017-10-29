@@ -1257,7 +1257,7 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     if (first_invalid_escape != NULL) {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                              "invalid escape sequence '\\%c'",
-                             *first_invalid_escape) < 0) {
+                             (unsigned char)*first_invalid_escape) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1834,7 +1834,7 @@ bytes.rpartition
 
 Partition the bytes into three parts using the given separator.
 
-This will search for the separator sep in the bytes, starting and the end. If
+This will search for the separator sep in the bytes, starting at the end. If
 the separator is found, returns a 3-tuple containing the part before the
 separator, the separator itself, and the part after it.
 
@@ -1844,7 +1844,7 @@ objects and the original bytes object.
 
 static PyObject *
 bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep)
-/*[clinic end generated code: output=191b114cbb028e50 input=67f689e63a62d478]*/
+/*[clinic end generated code: output=191b114cbb028e50 input=d78db010c8cfdbe1]*/
 {
     return stringlib_rpartition(
         (PyObject*) self,

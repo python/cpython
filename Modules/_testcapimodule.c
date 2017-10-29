@@ -3012,7 +3012,8 @@ check_time_rounding(int round)
 {
     if (round != _PyTime_ROUND_FLOOR
         && round != _PyTime_ROUND_CEILING
-        && round != _PyTime_ROUND_HALF_EVEN) {
+        && round != _PyTime_ROUND_HALF_EVEN
+        && round != _PyTime_ROUND_UP) {
         PyErr_SetString(PyExc_ValueError, "invalid rounding");
         return -1;
     }
@@ -4306,6 +4307,80 @@ py_w_stopcode(PyObject *self, PyObject *args)
 #endif
 
 
+static PyObject *
+get_mapping_keys(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Keys(obj);
+}
+
+static PyObject *
+get_mapping_values(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Values(obj);
+}
+
+static PyObject *
+get_mapping_items(PyObject* self, PyObject *obj)
+{
+    return PyMapping_Items(obj);
+}
+
+
+static PyObject *
+test_pythread_tss_key_state(PyObject *self, PyObject *args)
+{
+    Py_tss_t tss_key = Py_tss_NEEDS_INIT;
+    if (PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "TSS key not in an uninitialized state at "
+                              "creation time");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_create failed");
+        return NULL;
+    }
+    if (!PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create succeeded, "
+                              "but with TSS key in an uninitialized state");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create unsuccessful with "
+                              "an already initialized key");
+    }
+#define CHECK_TSS_API(expr) \
+        (void)(expr); \
+        if (!PyThread_tss_is_created(&tss_key)) { \
+            return raiseTestError("test_pythread_tss_key_state", \
+                                  "TSS key initialization state was not " \
+                                  "preserved after calling " #expr); }
+    CHECK_TSS_API(PyThread_tss_set(&tss_key, NULL));
+    CHECK_TSS_API(PyThread_tss_get(&tss_key));
+#undef CHECK_TSS_API
+    PyThread_tss_delete(&tss_key);
+    if (PyThread_tss_is_created(&tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_delete called, but did not "
+                              "set the key state to uninitialized");
+    }
+
+    Py_tss_t *ptr_key = PyThread_tss_alloc();
+    if (ptr_key == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_alloc failed");
+        return NULL;
+    }
+    if (PyThread_tss_is_created(ptr_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "TSS key not in an uninitialized state at "
+                              "allocation time");
+    }
+    PyThread_tss_free(ptr_key);
+    ptr_key = NULL;
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4518,6 +4593,10 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
+    {"get_mapping_keys", get_mapping_keys, METH_O},
+    {"get_mapping_values", get_mapping_values, METH_O},
+    {"get_mapping_items", get_mapping_items, METH_O},
+    {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -4861,6 +4940,61 @@ static PyTypeObject awaitType = {
 };
 
 
+static int recurse_infinitely_error_init(PyObject *, PyObject *, PyObject *);
+
+static PyTypeObject PyRecursingInfinitelyError_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "RecursingInfinitelyError",   /* tp_name */
+    sizeof(PyBaseExceptionObject), /* tp_basicsize */
+    0,                          /* tp_itemsize */
+    0,                          /* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_reserved */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    "Instantiating this exception starts infinite recursion.", /* tp_doc */
+    0,                          /* tp_traverse */
+    0,                          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+    0,                          /* tp_iter */
+    0,                          /* tp_iternext */
+    0,                          /* tp_methods */
+    0,                          /* tp_members */
+    0,                          /* tp_getset */
+    0,                          /* tp_base */
+    0,                          /* tp_dict */
+    0,                          /* tp_descr_get */
+    0,                          /* tp_descr_set */
+    0,                          /* tp_dictoffset */
+    (initproc)recurse_infinitely_error_init, /* tp_init */
+    0,                          /* tp_alloc */
+    0,                          /* tp_new */
+};
+
+static int
+recurse_infinitely_error_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *type = (PyObject *)&PyRecursingInfinitelyError_Type;
+
+    /* Instantiating this exception starts infinite recursion. */
+    Py_INCREF(type);
+    PyErr_SetObject(type, NULL);
+    return -1;
+}
+
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testcapi",
@@ -4901,6 +5035,14 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+
+    PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
+    if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&PyRecursingInfinitelyError_Type);
+    PyModule_AddObject(m, "RecursingInfinitelyError",
+                       (PyObject *)&PyRecursingInfinitelyError_Type);
 
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));

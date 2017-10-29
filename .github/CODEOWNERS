@@ -49,3 +49,5 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*heapq*                    @rhettinger
 **/*functools*                @ncoghlan @rhettinger
 **/*decimal*                  @rhettinger @skrah
+
+**/*idlelib*                  @terryjreedy

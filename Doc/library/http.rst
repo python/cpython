@@ -98,6 +98,7 @@ Code    Enum Name                           Details
 ``415`` ``UNSUPPORTED_MEDIA_TYPE``          HTTP/1.1 :rfc:`7231`, Section 6.5.13
 ``416`` ``REQUEST_RANGE_NOT_SATISFIABLE``   HTTP/1.1 Range Requests :rfc:`7233`, Section 4.4
 ``417`` ``EXPECTATION_FAILED``              HTTP/1.1 :rfc:`7231`, Section 6.5.14
+``421`` ``MISDIRECTED_REQUEST``             HTTP/2 :rfc:`7540`, Section 9.1.2
 ``422`` ``UNPROCESSABLE_ENTITY``            WebDAV :rfc:`4918`, Section 11.2
 ``423`` ``LOCKED``                          WebDAV :rfc:`4918`, Section 11.3
 ``424`` ``FAILED_DEPENDENCY``               WebDAV :rfc:`4918`, Section 11.4
@@ -122,3 +123,6 @@ In order to preserve backwards compatibility, enum values are also present
 in the :mod:`http.client` module in the form of constants. The enum name is
 equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 ``http.client.OK``).
+
+.. versionchanged:: 3.7
+   Added ``421 MISDIRECTED_REQUEST`` status code.

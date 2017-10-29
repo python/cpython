@@ -80,27 +80,27 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_tkinter_tkapp_adderrinfo__doc__,
-"adderrinfo($self, msg, /)\n"
+PyDoc_STRVAR(_tkinter_tkapp_adderrorinfo__doc__,
+"adderrorinfo($self, msg, /)\n"
 "--\n"
 "\n");
 
-#define _TKINTER_TKAPP_ADDERRINFO_METHODDEF    \
-    {"adderrinfo", (PyCFunction)_tkinter_tkapp_adderrinfo, METH_O, _tkinter_tkapp_adderrinfo__doc__},
+#define _TKINTER_TKAPP_ADDERRORINFO_METHODDEF    \
+    {"adderrorinfo", (PyCFunction)_tkinter_tkapp_adderrorinfo, METH_O, _tkinter_tkapp_adderrorinfo__doc__},
 
 static PyObject *
-_tkinter_tkapp_adderrinfo_impl(TkappObject *self, const char *msg);
+_tkinter_tkapp_adderrorinfo_impl(TkappObject *self, const char *msg);
 
 static PyObject *
-_tkinter_tkapp_adderrinfo(TkappObject *self, PyObject *arg)
+_tkinter_tkapp_adderrorinfo(TkappObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *msg;
 
-    if (!PyArg_Parse(arg, "s:adderrinfo", &msg)) {
+    if (!PyArg_Parse(arg, "s:adderrorinfo", &msg)) {
         goto exit;
     }
-    return_value = _tkinter_tkapp_adderrinfo_impl(self, msg);
+    return_value = _tkinter_tkapp_adderrorinfo_impl(self, msg);
 
 exit:
     return return_value;
@@ -638,4 +638,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=3b9241f7c703ae4f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca36236c57713ba0 input=a9049054013a1b77]*/

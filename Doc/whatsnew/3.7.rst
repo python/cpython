@@ -107,6 +107,57 @@ locale remains active when the core interpreter is initialized.
     :pep:`538` -- Coercing the legacy C locale to a UTF-8 based locale
        PEP written and implemented by Nick Coghlan.
 
+.. _whatsnew37-pep553:
+
+PEP 553: Built-in breakpoint()
+------------------------------
+
+:pep:`553` describes a new built-in called ``breakpoint()`` which makes it
+easy and consistent to enter the Python debugger.  Built-in ``breakpoint()``
+calls ``sys.breakpointhook()``.  By default, this latter imports ``pdb`` and
+then calls ``pdb.set_trace()``, but by binding ``sys.breakpointhook()`` to the
+function of your choosing, ``breakpoint()`` can enter any debugger.  Or, the
+environment variable :envvar:`PYTHONBREAKPOINT` can be set to the callable of
+your debugger of choice.  Set ``PYTHONBREAKPOINT=0`` to completely disable
+built-in ``breakpoint()``.
+
+.. seealso::
+
+    :pep:`553` -- Built-in breakpoint()
+      PEP written and implemented by Barry Warsaw
+
+
+.. _whatsnew37-pep539:
+
+PEP 539: A New C-API for Thread-Local Storage in CPython
+--------------------------------------------------------
+
+While Python provides a C API for thread-local storage support; the existing
+:ref:`Thread Local Storage (TLS) API <thread-local-storage-api>` has used
+:c:type:`int` to represent TLS keys across all platforms.  This has not
+generally been a problem for officially-support platforms, but that is neither
+POSIX-compliant, nor portable in any practical sense.
+
+:pep:`539` changes this by providing a new :ref:`Thread Specific Storage (TSS)
+API <thread-specific-storage-api>` to CPython which supersedes use of the
+existing TLS API within the CPython interpreter, while deprecating the existing
+API.  The TSS API uses a new type :c:type:`Py_tss_t` instead of :c:type:`int`
+to represent TSS keys--an opaque type the definition of which may depend on
+the underlying TLS implementation.  Therefore, this will allow to build CPython
+on platforms where the native TLS key is defined in a way that cannot be safely
+cast to :c:type:`int`.
+
+Note that on platforms where the native TLS key is defined in a way that cannot
+be safely cast to :c:type:`int`, all functions of the existing TLS API will be
+no-op and immediately return failure. This indicates clearly that the old API
+is not supported on platforms where it cannot be used reliably, and that no
+effort will be made to add such support.
+
+.. seealso::
+
+    :pep:`539` -- A New C-API for Thread-Local Storage in CPython
+       PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
+
 
 Other Language Changes
 ======================
@@ -178,6 +229,12 @@ contextlib
 :func:`contextlib.asynccontextmanager` has been added. (Contributed by
 Jelle Zijlstra in :issue:`29679`.)
 
+crypt
+-----
+
+Added support for the Blowfish method.
+(Contributed by Serhiy Storchaka in :issue:`31664`.)
+
 dis
 ---
 
@@ -239,6 +296,13 @@ pdb
 argument.  If given, this is printed to the console just before debugging
 begins.
 
+re
+--
+
+The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
+can be set within the scope of a group.
+(Contributed by Serhiy Storchaka in :issue:`31690`.)
+
 string
 ------
 
@@ -252,6 +316,11 @@ unittest.mock
 The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`. (Contributed by
 Serhiy Storchaka in :issue:`20804`.)
+
+New function :const:`~unittest.mock.seal` will disable the creation of mock
+children by preventing to get or set any new attribute on the sealed mock.
+The sealing process is performed recursively. (Contributed by Mario Corchero
+in :issue:`30541`.)
 
 xmlrpc.server
 -------------
@@ -326,6 +395,11 @@ Optimizations
   expressions <re>`.  Searching some patterns can now be up to 20 times faster.
   (Contributed by Serhiy Storchaka in :issue:`30285`.)
 
+* :func:`re.compile` now converts ``flags`` parameter to int object if
+  it is ``RegexFlag``.  It is now as fast as Python 3.5, and faster than
+  Python 3.6 about 10% depending on the pattern.
+  (Contributed by INADA Naoki in :issue:`31671`.)
+
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
   and :meth:`selectors.DevpollSelector.modify` may be around 10% faster under
   heavy loads. (Contributed by Giampaolo Rodola' in :issue:`30014`)
@@ -348,6 +422,10 @@ Build and C API Changes
   is now of type ``const char *`` rather of ``char *``. (Contributed by Serhiy
   Storchaka in :issue:`28769`.)
 
+* The result of :c:func:`PyMapping_Keys`, :c:func:`PyMapping_Values` and
+  :c:func:`PyMapping_Items` is now always a list, rather than a list or a
+  tuple. (Contributed by Oren Milman in :issue:`28280`.)
+
 * Added functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`.
   (Contributed by Serhiy Storchaka in :issue:`27867`.)
 
@@ -361,6 +439,11 @@ Build and C API Changes
   If Python 3.6 is not found on the system (via ``py -3.6``), NuGet is used to
   download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
   Ware in :issue:`30450`.)
+
+* The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+  has been removed as its members being never cleared may cause a segfault
+  during finalization of the interpreter. Contributed by Xavier de Gaye in
+  :issue:`22898` and :issue:`30697`.
 
 * Support for building ``--without-threads`` is removed.
   (Contributed by Antoine Pitrou in :issue:`31370`.).
@@ -442,6 +525,10 @@ Removed
 API and Feature Removals
 ------------------------
 
+* The ``os.stat_float_times()`` function has been removed. It was introduced in
+  Python 2.3 for backward compatibility with Python 2.2, and was deprecated
+  since Python 3.1.
+
 * Unknown escapes consisting of ``'\'`` and an ASCII letter in replacement
   templates for :func:`re.sub` were deprecated in Python 3.5, and will now
   cause an error.
@@ -521,8 +608,42 @@ Changes in the Python API
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
 
+Changes in the C API
+--------------------
+
+* The function :c:func:`PySlice_GetIndicesEx` is considered not safe for
+  resizable sequences.  If the slice indices are not instances of :class:`int`,
+  but objects that implement the :meth:`!__index__` method, the sequence can be
+  resized after passing its length to :c:func:`!PySlice_GetIndicesEx`.  This
+  can lead to returning indices out of the length of the sequence.  For
+  avoiding possible problems use new functions :c:func:`PySlice_Unpack` and
+  :c:func:`PySlice_AdjustIndices`.
+  (Contributed by Serhiy Storchaka in :issue:`27867`.)
+
+
 CPython bytecode changes
 ------------------------
 
 * Added two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD`.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
+
+
+Documentation
+=============
+
+.. _whatsnew37-pep545:
+
+PEP 545: Python Documentation Translations
+------------------------------------------
+
+:pep:`545` describes the process to translate Python documentation,
+and two translations have been added:
+
+- Japanese: https://docs.python.org/ja/ and associated github
+  repository: https://github.com/python/python-docs-ja
+
+- French: https://docs.python.org/fr/ and associated github
+  repository: https://github.com/python/python-docs-fr
+
+(Contributed by Julien Palard, Inada Naoki, and Victor Stinner in
+:issue:`issue26546`.)
