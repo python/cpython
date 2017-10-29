@@ -6,7 +6,7 @@ PyDoc_STRVAR(itertools_groupby__doc__,
 "groupby(iterable, key=None)\n"
 "--\n"
 "\n"
-"Create a groupby object.\n"
+"Return an iterator of groups of items as (key, group) pairs.\n"
 "\n"
 "  iterable\n"
 "    Elements to divide into groups according to the key function.\n"
@@ -14,20 +14,11 @@ PyDoc_STRVAR(itertools_groupby__doc__,
 "    Function computing a key value for each element.\n"
 "    If None, the elements themselves are used for grouping.\n"
 "\n"
-"This makes an iterator of (key, sub-iterator) pairs. In each such pair, the\n"
-"sub-iterator is a group of consecutive elements from the input iterable which\n"
-"all have the same key. The common key for the group is the first item in the\n"
-"pair.\n"
+"This groups together consecutive items from the given iterator.  Each group\n"
+"contains items for which the key gives the same result.\n"
 "\n"
-"Example:\n"
-">>> # group numbers by their absolute value\n"
-">>> elements = [1, -1, 2, 1]\n"
-">>> for (key, group) in itertools.groupby(elements, key=abs):\n"
-"...     print(\'key={} group={}\'.format(key, list(group)))\n"
-"...\n"
-"key=1 group=[1, -1]\n"
-"key=2 group=[2]\n"
-"key=1 group=[1]");
+"For each group, a (key, group) 2-tuple is yielded, where \"key\" is the common\n"
+"key value for the group and \"group\" is an iterator of the items in the group.");
 
 static PyObject *
 itertools_groupby_impl(PyTypeObject *type, PyObject *iterable, PyObject *key);
@@ -502,7 +493,7 @@ PyDoc_STRVAR(itertools_starmap__doc__,
 "Create a starmap object.\n"
 "\n"
 "Return an iterator whose values are returned from the function evaluated\n"
-"with a argument tuple taken from the given iterable.");
+"with argument tuples taken from the given iterable.");
 
 static PyObject *
 itertools_starmap_impl(PyTypeObject *type, PyObject *function,
@@ -554,7 +545,7 @@ PyDoc_STRVAR(itertools_chain_from_iterable__doc__,
 "\n"
 "Create a chain object.\n"
 "\n"
-"Alternate chain() contructor taking a single iterable argument\n"
+"Alternative chain() constructor taking a single iterable argument\n"
 "that evaluates lazily.");
 
 #define ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF    \
@@ -1037,9 +1028,8 @@ PyDoc_STRVAR(itertools_count__doc__,
 "count(start=0, step=1)\n"
 "--\n"
 "\n"
-"Create a count object.\n"
+"Return an iterator which returns consecutive values.\n"
 "\n"
-"Return a count object whose .__next__() method returns consecutive values.\n"
 "Equivalent to:\n"
 "\n"
 "    def count(firstval=0, step=1):\n"
@@ -1093,7 +1083,7 @@ PyDoc_STRVAR(itertools_repeat___length_hint____doc__,
 "__length_hint__($self, /)\n"
 "--\n"
 "\n"
-"Private method returning an estimate of len(list(it)).");
+"Private method returning an estimate of len(list(self)).");
 
 #define ITERTOOLS_REPEAT___LENGTH_HINT___METHODDEF    \
     {"__length_hint__", (PyCFunction)itertools_repeat___length_hint__, METH_NOARGS, itertools_repeat___length_hint____doc__},
@@ -1151,4 +1141,4 @@ PyDoc_STRVAR(itertools_zip_longest___setstate____doc__,
 
 #define ITERTOOLS_ZIP_LONGEST___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)itertools_zip_longest___setstate__, METH_O, itertools_zip_longest___setstate____doc__},
-/*[clinic end generated code: output=76fca89a64f5cd41 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5bfdde0d01522db input=a9049054013a1b77]*/

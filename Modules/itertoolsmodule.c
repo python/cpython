@@ -69,7 +69,7 @@ key value for the group and "group" is an iterator of the items in the group.
 
 static PyObject *
 itertools_groupby_impl(PyTypeObject *type, PyObject *iterable, PyObject *key)
-/*[clinic end generated code: output=83016d6c995ed8a5 input=6dbf07f491bd73ec]*/
+/*[clinic end generated code: output=83016d6c995ed8a5 input=8fc3935e146a29ac]*/
 {
     groupbyobject *gbo;
 
@@ -1482,7 +1482,7 @@ with argument tuples taken from the given iterable.
 static PyObject *
 itertools_starmap_impl(PyTypeObject *type, PyObject *function,
                        PyObject *iterable)
-/*[clinic end generated code: output=d190ae80479a0717 input=19c167576f25a714]*/
+/*[clinic end generated code: output=d190ae80479a0717 input=9c386834b6944945]*/
 {
     PyObject *it;
     starmapobject *lz;
@@ -1617,7 +1617,7 @@ that evaluates lazily.
 
 static PyObject *
 itertools_chain_from_iterable(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=39373d88650cc4fd input=d39acc2717d725a0]*/
+/*[clinic end generated code: output=39373d88650cc4fd input=1936d24c4142741a]*/
 {
     PyObject *source;
 
@@ -3509,7 +3509,7 @@ Equivalent to:
 static PyObject *
 itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
                      PyObject *long_step)
-/*[clinic end generated code: output=09a9250aebd00b1c input=20f1ce2f2484a91c]*/
+/*[clinic end generated code: output=09a9250aebd00b1c input=6bb1062328f66e44]*/
 {
     countobject *lz;
     int fast_mode;
@@ -3756,7 +3756,7 @@ Private method returning an estimate of len(list(self)).
 
 static PyObject *
 itertools_repeat___length_hint___impl(repeatobject *ro)
-/*[clinic end generated code: output=2338c14b3a3b1fc7 input=1e3f9bda2d073686]*/
+/*[clinic end generated code: output=2338c14b3a3b1fc7 input=2f485b33f08e8209]*/
 {
     if (ro->cnt == -1) {
         PyErr_SetString(PyExc_TypeError, "len() of unsized object");
