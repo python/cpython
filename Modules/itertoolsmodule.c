@@ -58,22 +58,13 @@ itertools.groupby.__new__
         Function computing a key value for each element.
         If None, the elements themselves are used for grouping.
 
-Create a groupby object.
+Return an iterator of groups of items as (key, group) pairs.
 
-This makes an iterator of (key, sub-iterator) pairs. In each such pair, the
-sub-iterator is a group of consecutive elements from the input iterable which
-all have the same key. The common key for the group is the first item in the
-pair.
+This groups together consecutive items from the given iterator.  Each group
+contains items for which the key gives the same result.
 
-Example:
->>> # group numbers by their absolute value
->>> elements = [1, -1, 2, 1]
->>> for (key, group) in itertools.groupby(elements, key=abs):
-...     print('key={} group={}'.format(key, list(group)))
-...
-key=1 group=[1, -1]
-key=2 group=[2]
-key=1 group=[1]
+For each group, a (key, group) 2-tuple is yielded, where "key" is the common
+key value for the group and "group" is an iterator of the items in the group.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1485,7 +1476,7 @@ itertools.starmap.__new__
 Create a starmap object.
 
 Return an iterator whose values are returned from the function evaluated
-with a argument tuple taken from the given iterable.
+with argument tuples taken from the given iterable.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1569,12 +1560,6 @@ itertools_starmap___reduce___impl(starmapobject *lz)
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
 
-PyDoc_STRVAR(starmap_doc,
-"starmap(function, sequence) --> starmap object\n\
-\n\
-Return an iterator whose values are returned from the function evaluated\n\
-with an argument tuple taken from the given sequence.");
-
 
 /* chain object **************************************************************/
 
@@ -1626,7 +1611,7 @@ itertools.chain.from_iterable
 
 Create a chain object.
 
-Alternate chain() contructor taking a single iterable argument
+Alternative chain() constructor taking a single iterable argument
 that evaluates lazily.
 [clinic start generated code]*/
 
@@ -2413,7 +2398,7 @@ itertools_combinations___setstate__(combinationsobject *lz, PyObject *state)
                 yield tuple(pool[i] for i in indices)
 
         def combinations_with_replacement2(iterable, r):
-            'Alternate version that filters from product()'
+            'Alternative version that filters from product()'
             pool = tuple(iterable)
             n = len(pool)
             for indices in product(range(n), repeat=r):
@@ -3510,9 +3495,8 @@ itertools.count.__new__
     start as long_cnt: object(c_default="NULL") = 0
     step as long_step: object(c_default="NULL") = 1
 
-Create a count object.
+Return an iterator which returns consecutive values.
 
-Return a count object whose .__next__() method returns consecutive values.
 Equivalent to:
 
     def count(firstval=0, step=1):
@@ -3767,7 +3751,7 @@ itertools.repeat.__length_hint__
 
     ro: self(type="repeatobject *")
 
-Private method returning an estimate of len(list(it)).
+Private method returning an estimate of len(list(self)).
 [clinic start generated code]*/
 
 static PyObject *
@@ -4046,7 +4030,7 @@ defaults to None or can be specified by a keyword argument.\n\
 ");
 
 
-/* including clinic output must come after typdefs and PyObject type
+/* including clinic output must come after typedefs and PyObject type
    declarations, but before method arrays and type definitions */
 #include "clinic/itertoolsmodule.c.h"
 
