@@ -48,10 +48,6 @@
 #include <ncurses.h>
 #else
 #include <curses.h>
-#ifdef HAVE_TERM_H
-/* for tigetstr, which is not declared in SysV curses */
-#include <term.h>
-#endif
 #endif
 
 #ifdef HAVE_NCURSES_H
