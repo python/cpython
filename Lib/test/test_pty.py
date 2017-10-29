@@ -211,8 +211,15 @@ class PtyTest(unittest.TestCase):
         # pty.fork() passed.
 
 
+class _MockSelectEternalWait(Exception):
+    """Used both as exception and placeholder value.  Models that no
+    more select activity is expected and that a test can be
+    terminated."""
+    pass
+
 class SmallPtyTests(unittest.TestCase):
-    """These tests don't spawn children or hang."""
+    """Whitebox mocking tests which don't spawn children or hang.  Test
+    the _copy loop to transfer data between parent and child."""
 
     def setUp(self):
         self.orig_stdin_fileno = pty.STDIN_FILENO
@@ -222,6 +229,10 @@ class SmallPtyTests(unittest.TestCase):
         self.files = []
         self.select_rfds_lengths = []
         self.select_rfds_results = []
+
+        # monkey-patch and replace with mock
+        pty.select = self._mock_select
+        self._mock_stdin_stdout()
 
     def tearDown(self):
         pty.STDIN_FILENO = self.orig_stdin_fileno
@@ -243,65 +254,163 @@ class SmallPtyTests(unittest.TestCase):
         self.fds.extend(pipe_fds)
         return pipe_fds
 
+    def _mock_stdin_stdout(self):
+        """Mock STDIN and STDOUT with two fresh pipes.  Replaces
+        pty.STDIN_FILENO/pty.STDOUT_FILENO by one end of the pipe.
+        Makes the other end of the pipe available via self."""
+        self.read_from_stdout_fd, pty.STDOUT_FILENO = self._pipe()
+        pty.STDIN_FILENO, self.write_to_stdin_fd = self._pipe()
+
+    def _mock_select(self, rfds, wfds, xfds):
+        """Simulates the behavior of select.select.  Only implemented
+        for reader waiting list (first parameter)."""
+        assert wfds == [] and xfds == []
+        # This will raise IndexError when no more expected calls exist.
+        self.assertEqual(self.select_rfds_lengths.pop(0), len(rfds))
+        if len(rfds) == 0:
+            # called with three empty lists as file descriptors to wait
+            # on.  Behavior of real select is platform-dependent and
+            # likely infinite blocking on Linux.
+            raise self.fail("mock select on no waitables")
+        rfds_result = self.select_rfds_results.pop(0)
+
+        if rfds_result is _MockSelectEternalWait:
+            raise _MockSelectEternalWait
+        return rfds_result, [], []
+
+    def test__mock_stdin_stdout(self):
+        self.assertGreater(pty.STDIN_FILENO, 2, "replaced by our mock")
+
+    def test__mock_select(self):
+        # Test the select proxy of this test class. Meta testing.
+        self.select_rfds_lengths.append(0)
+        with self.assertRaises(AssertionError):
+            self._mock_select([], [], [])
+
+        # Prepare two select calls. Second one will block forever.
+        self.select_rfds_lengths.append(3)
+        self.select_rfds_results.append("foo")
+        self.select_rfds_lengths.append(3)
+        self.select_rfds_results.append(_MockSelectEternalWait)
+
+        # Call one
+        self.assertEqual(self._mock_select([1, 2, 3], [], []),
+                         ("foo", [], []))
+
+        # Call two
+        with self.assertRaises(_MockSelectEternalWait):
+            self._mock_select([1, 2, 3], [], [])
+
+        # lists are cleaned
+        self.assertEqual(self.select_rfds_lengths, [])
+        self.assertEqual(self.select_rfds_results, [])
+
     def _socketpair(self):
         socketpair = socket.socketpair()
         self.files.extend(socketpair)
         return socketpair
 
-    def _mock_select(self, rfds, wfds, xfds):
-        # This will raise IndexError when no more expected calls exist.
-        self.assertEqual(self.select_rfds_lengths.pop(0), len(rfds))
-        return self.select_rfds_results.pop(0), [], []
-
     def test__copy_to_each(self):
-        """Test the normal data case on both master_fd and stdin."""
-        read_from_stdout_fd, mock_stdout_fd = self._pipe()
-        pty.STDOUT_FILENO = mock_stdout_fd
-        mock_stdin_fd, write_to_stdin_fd = self._pipe()
-        pty.STDIN_FILENO = mock_stdin_fd
-        socketpair = self._socketpair()
-        masters = [s.fileno() for s in socketpair]
+        # Test the normal data case on both master_fd and stdin.
+        masters = [s.fileno() for s in self._socketpair()]
 
         # Feed data.  Smaller than PIPEBUF.  These writes will not block.
         os.write(masters[1], b'from master')
-        os.write(write_to_stdin_fd, b'from stdin')
+        os.write(self.write_to_stdin_fd, b'from stdin')
 
-        # Expect two select calls, the last one will cause IndexError
-        pty.select = self._mock_select
+        # Expect two select calls, the last one will simulate eternal waiting
         self.select_rfds_lengths.append(2)
-        self.select_rfds_results.append([mock_stdin_fd, masters[0]])
+        self.select_rfds_results.append([pty.STDIN_FILENO, masters[0]])
         self.select_rfds_lengths.append(2)
+        self.select_rfds_results.append(_MockSelectEternalWait)
 
-        with self.assertRaises(IndexError):
+        with self.assertRaises(_MockSelectEternalWait):
             pty._copy(masters[0])
 
         # Test that the right data went to the right places.
-        rfds = select.select([read_from_stdout_fd, masters[1]], [], [], 0)[0]
-        self.assertEqual([read_from_stdout_fd, masters[1]], rfds)
-        self.assertEqual(os.read(read_from_stdout_fd, 20), b'from master')
+        rfds = select.select([self.read_from_stdout_fd, masters[1]], [], [], 0)[0]
+        self.assertEqual([self.read_from_stdout_fd, masters[1]], rfds)
+        self.assertEqual(os.read(self.read_from_stdout_fd, 20), b'from master')
         self.assertEqual(os.read(masters[1], 20), b'from stdin')
 
-    def test__copy_eof_on_all(self):
-        """Test the empty read EOF case on both master_fd and stdin."""
-        read_from_stdout_fd, mock_stdout_fd = self._pipe()
-        pty.STDOUT_FILENO = mock_stdout_fd
-        mock_stdin_fd, write_to_stdin_fd = self._pipe()
-        pty.STDIN_FILENO = mock_stdin_fd
+    def _copy_eof_close_slave_helper(self, close_stdin):
+        """Helper to test the empty read EOF case on master_fd and/or
+        stdin."""
         socketpair = self._socketpair()
         masters = [s.fileno() for s in socketpair]
 
+        # This side of the channel would usually be the slave_fd of the
+        # child.  We simulate that the child has exited and its side of
+        # the channel is destroyed.
         socketpair[1].close()
-        os.close(write_to_stdin_fd)
+        self.files.remove(socketpair[1])
 
-        # Expect two select calls, then a normal return on master EOF
-        pty.select = self._mock_select
+        # Optionally close fd or fill with dummy data in order to
+        # prevent blocking on one read call
+        if close_stdin:
+            os.close(self.write_to_stdin_fd)
+            self.fds.remove(self.write_to_stdin_fd)
+        else:
+            os.write(self.write_to_stdin_fd, b'from stdin')
+
+        # Expect exactly one select() call.  This call returns master_fd
+        # and STDIN.  Since the slave side of masters is closed, we
+        # expect the _copy loop to exit immediately.
         self.select_rfds_lengths.append(2)
-        self.select_rfds_results.append([mock_stdin_fd, masters[0]])
-        # We expect that both fds were removed from the fds list as they
-        # both encountered an EOF before the second select call.
-        self.select_rfds_lengths.append(0)
+        self.select_rfds_results.append([pty.STDIN_FILENO, masters[0]])
 
-        pty._copy(masters[0])
+        # Run the _copy test, which returns nothing and cleanly exits
+        self.assertIsNone(pty._copy(masters[0]))
+
+        # We expect that everything is consumed
+        self.assertEqual(self.select_rfds_results, [])
+        self.assertEqual(self.select_rfds_lengths, [])
+
+        # Test that STDIN was not touched.  This test simulated the
+        # scenario where the child process immediately closed its end of
+        # the pipe.  This means, nothing should be copied.
+        rfds = select.select([self.read_from_stdout_fd, pty.STDIN_FILENO], [], [], 0)[0]
+        # data or EOF is still sitting unconsumed in STDIN
+        self.assertEqual(rfds, [pty.STDIN_FILENO])
+        unconsumed = os.read(pty.STDIN_FILENO, 20)
+        if close_stdin:
+            self.assertFalse(unconsumed) #EOF
+        else:
+            self.assertEqual(unconsumed, b'from stdin')
+
+    def test__copy_eof_on_all(self):
+        # Test the empty read EOF case on both master_fd and stdin.
+        self._copy_eof_close_slave_helper(close_stdin=True)
+
+    def test__copy_eof_on_master(self):
+        # Test the empty read EOF case on only master_fd.
+        self._copy_eof_close_slave_helper(close_stdin=False)
+
+    def test__copy_eof_on_stdin(self):
+        # Test the empty read EOF case on stdin.
+        masters = [s.fileno() for s in self._socketpair()]
+
+        # Fill with dummy data
+        os.write(masters[1], b'from master')
+
+        os.close(self.write_to_stdin_fd)
+        self.fds.remove(self.write_to_stdin_fd)
+
+        # Expect two select() calls.  The first call returns master_fd
+        # and STDIN.
+        self.select_rfds_lengths.append(2)
+        self.select_rfds_results.append([pty.STDIN_FILENO, masters[0]])
+        # The second call causes _MockSelectEternalWait.  We expect that
+        # STDIN is removed from the waiters as it reached EOF.
+        self.select_rfds_lengths.append(1)
+        self.select_rfds_results.append(_MockSelectEternalWait)
+
+        with self.assertRaises(_MockSelectEternalWait):
+            pty._copy(masters[0])
+
+        # We expect that everything is consumed
+        self.assertEqual(self.select_rfds_results, [])
+        self.assertEqual(self.select_rfds_lengths, [])
 
 
 def tearDownModule():
