@@ -1084,9 +1084,10 @@ PyCursesWindow_EchoChar(PyCursesWindowObject *self, PyObject *args)
         return NULL;
 
 #ifdef py_is_pad
-    if (py_is_pad(self->win))
+    if (py_is_pad(self->win)) {
         return PyCursesCheckERR(pechochar(self->win, ch | attr),
                                 "echochar");
+    }
     else
 #endif
         return PyCursesCheckERR(wechochar(self->win, ch | attr),
@@ -1851,8 +1852,9 @@ PyCursesWindow_SubWin(PyCursesWindowObject *self, PyObject *args)
 
     /* printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x); */
 #ifdef py_is_pad
-    if (py_is_pad(self->win))
+    if (py_is_pad(self->win)) {
         win = subpad(self->win, nlines, ncols, begin_y, begin_x);
+    }
     else
 #endif
         win = subwin(self->win, nlines, ncols, begin_y, begin_x);
