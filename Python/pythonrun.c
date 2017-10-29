@@ -87,7 +87,7 @@ PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
 int
 PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *flags)
 {
-    PyObject *filename, *v, *curexc;
+    PyObject *filename, *v;
     PyCompilerFlags local_flags;
     int ret = -1;
     static int nomem_count = 0;
@@ -114,29 +114,26 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     }
     while (ret != E_EOF) {
         ret = PyRun_InteractiveOneObjectEx(fp, filename, flags);
-        /* Save the current exception that may be cleared by
-         * _PyDebug_XOptionShowRefCount(). */
-        curexc = ret == -1 ? PyErr_Occurred() : NULL;
+        if (ret == -1 && PyErr_Occurred()) {
+            /* Prevent an endless loop after multiple consecutive MemoryErrors
+             * while still allowing an interactive command to fail with a
+             * MemoryError. */
+            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                if (++nomem_count > 16) {
+                    Py_FatalError("Cannot recover from MemoryErrors.");
+                }
+            } else {
+                nomem_count = 0;
+            }
+            PyErr_Print();
+            flush_io();
+        } else {
+            nomem_count = 0;
+        }
 #ifdef Py_REF_DEBUG
         if (_PyDebug_XOptionShowRefCount() == Py_True)
             _PyDebug_PrintTotalRefs();
 #endif
-        if (curexc) {
-            /* Prevent an endless loop after multiple consecutive MemoryErrors
-             * while still allowing an interactive command to fail with a
-             * MemoryError. */
-            if (PyErr_GivenExceptionMatches(curexc, PyExc_MemoryError)) {
-                if (++nomem_count > 16) {
-                    Py_FatalError("Cannot recover from MemoryErrors.");
-                }
-                PyErr_Print();
-                flush_io();
-                continue;
-            }
-            PyErr_Print();
-            flush_io();
-        }
-        nomem_count = 0;
     }
     Py_DECREF(filename);
     return 0;
