@@ -938,6 +938,12 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 }
 #endif
 
+#if defined(HAVE_CURSES_IS_PAD)
+#define py_is_pad(win)      is_pad(win)
+#elif defined(WINDOW_HAS_FLAGS)
+#define py_is_pad(win)      ((win) ? ((win)->_flags & _ISPAD) != 0 : FALSE)
+#endif
+
 /* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
 
 static PyObject *
@@ -1077,8 +1083,8 @@ PyCursesWindow_EchoChar(PyCursesWindowObject *self, PyObject *args)
     if (!PyCurses_ConvertToChtype(self, temp, &ch))
         return NULL;
 
-#ifdef WINDOW_HAS_FLAGS
-    if (self->win->_flags & _ISPAD)
+#ifdef py_is_pad
+    if (py_is_pad(self->win))
         return PyCursesCheckERR(pechochar(self->win, ch | attr),
                                 "echochar");
     else
@@ -1612,10 +1618,10 @@ PyCursesWindow_NoOutRefresh(PyCursesWindowObject *self, PyObject *args)
     int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
     int rtn;
 
-#ifndef WINDOW_HAS_FLAGS
+#ifndef py_is_pad
     if (0)
 #else
-        if (self->win->_flags & _ISPAD)
+        if (py_is_pad(self->win))
 #endif
         {
             switch(PyTuple_Size(args)) {
@@ -1775,10 +1781,10 @@ PyCursesWindow_Refresh(PyCursesWindowObject *self, PyObject *args)
     int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
     int rtn;
 
-#ifndef WINDOW_HAS_FLAGS
+#ifndef py_is_pad
     if (0)
 #else
-        if (self->win->_flags & _ISPAD)
+        if (py_is_pad(self->win))
 #endif
         {
             switch(PyTuple_Size(args)) {
@@ -1844,8 +1850,8 @@ PyCursesWindow_SubWin(PyCursesWindowObject *self, PyObject *args)
     }
 
     /* printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x); */
-#ifdef WINDOW_HAS_FLAGS
-    if (self->win->_flags & _ISPAD)
+#ifdef py_is_pad
+    if (py_is_pad(self->win))
         win = subpad(self->win, nlines, ncols, begin_y, begin_x);
     else
 #endif

@@ -4955,9 +4955,16 @@ then
   [Define if mvwdelch in curses.h is an expression.])
 fi
 
+# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+# structs since version 5.7.  If the macro is defined as zero before including
+# [n]curses.h, ncurses will expose fields of the structs regardless of the
+# configuration.
 AC_MSG_CHECKING(whether WINDOW has _flags)
 AC_CACHE_VAL(ac_cv_window_has_flags,
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+  #define NCURSES_OPAQUE 0
+  #include <curses.h>
+]], [[
   WINDOW *w;
   w->_flags = 0;
 ]])],
@@ -4970,6 +4977,23 @@ if test "$ac_cv_window_has_flags" = yes
 then
   AC_DEFINE(WINDOW_HAS_FLAGS, 1,
   [Define if WINDOW in curses.h offers a field _flags.])
+fi
+
+AC_MSG_CHECKING(for is_pad)
+AC_CACHE_VAL(ac_cv_curses_is_pad,
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+  bool b;
+  WINDOW *w;
+  b = is_pad(w);
+]])],
+[ac_cv_curses_is_pad=yes],
+[ac_cv_curses_is_pad=no]))
+AC_MSG_RESULT($ac_cv_curses_is_pad)
+
+if test "$ac_cv_curses_is_pad" = yes
+then
+  AC_DEFINE(HAVE_CURSES_IS_PAD, 1,
+  [Define if you have the 'is_pad' function or macro.])
 fi
 
 AC_MSG_CHECKING(for is_term_resized)

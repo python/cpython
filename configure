@@ -15699,6 +15699,10 @@ $as_echo "#define MVWDELCH_IS_EXPRESSION 1" >>confdefs.h
 
 fi
 
+# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+# structs since version 5.7.  If the macro is defined as zero before including
+# [n]curses.h, ncurses will expose fields of the structs regardless of the
+# configuration.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether WINDOW has _flags" >&5
 $as_echo_n "checking whether WINDOW has _flags... " >&6; }
 if ${ac_cv_window_has_flags+:} false; then :
@@ -15706,7 +15710,10 @@ if ${ac_cv_window_has_flags+:} false; then :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+  #define NCURSES_OPAQUE 0
+  #include <curses.h>
+
 int
 main ()
 {
@@ -15734,6 +15741,44 @@ if test "$ac_cv_window_has_flags" = yes
 then
 
 $as_echo "#define WINDOW_HAS_FLAGS 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for is_pad" >&5
+$as_echo_n "checking for is_pad... " >&6; }
+if ${ac_cv_curses_is_pad+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <curses.h>
+int
+main ()
+{
+
+  bool b;
+  WINDOW *w;
+  b = is_pad(w);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_curses_is_pad=yes
+else
+  ac_cv_curses_is_pad=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_curses_is_pad" >&5
+$as_echo "$ac_cv_curses_is_pad" >&6; }
+
+if test "$ac_cv_curses_is_pad" = yes
+then
+
+$as_echo "#define HAVE_CURSES_IS_PAD 1" >>confdefs.h
 
 fi
 
