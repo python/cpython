@@ -30,20 +30,11 @@ before_build:
 
 build_script:
 - ps: |
-    function Cygwin {
-        $cygbin = "C:\\cygwin64\\bin"
-        $project_path = & "$cygbin\\cygpath" -u -a $env:APPVEYOR_BUILD_FOLDER
-        $cmd = ("C:\\cygwin64\\bin\\bash.exe -lc " +`
-            "'cd $project_path; $($args -join " ")'")
-        Invoke-Expression $cmd
-        if ($LastExitCode -ne 0) {
-            $host.SetShouldExit($LastExitCode)
-        }
-    }
     if ($env:PLATFORM -eq "Win32") {
         PCbuild\build.bat -e -p x64
         PCbuild\amd64\python.exe -m test.pythoninfo
     } elseif ($env:PLATFORM -eq "Cygwin64") {
+        . .github\cygwin.ps1
         Cygwin cygcheck -s
         Cygwin curl -s --output apt-cyg https://raw.githubusercontent.com/transcode-open/apt-cyg/master/apt-cyg
         Cygwin chmod +x apt-cyg
