@@ -86,8 +86,10 @@ dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and
 dnl can cause trouble.
 
-dnl Last slash shouldn't be stripped if prefix=/
-if test "$prefix" != "/"; then
+dnl Issue #31114, replace prefix=/ with '/.'.
+if test "$prefix" = "/"; then
+    prefix="/."
+else
     prefix=`echo "$prefix" | sed -e 's/\/$//g'`
 fi
 

@@ -1,0 +1,1 @@
+Fix the build when the configure ``prefix`` is ``/`` and DESTDIR is used.
