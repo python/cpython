@@ -38,7 +38,7 @@ build_script:
         Cygwin cygcheck -s
         Cygwin curl -s --output apt-cyg https://raw.githubusercontent.com/transcode-open/apt-cyg/master/apt-cyg
         Cygwin chmod +x apt-cyg
-        Cygwin ./apt-cyg install libcrypt-devel libffi-devel
+        Cygwin ./apt-cyg install libcrypt-devel libffi-devel "2>&1"
         Cygwin ./configure
         Cygwin make -j4
         Cygwin ./python.exe -m test.pythoninfo
