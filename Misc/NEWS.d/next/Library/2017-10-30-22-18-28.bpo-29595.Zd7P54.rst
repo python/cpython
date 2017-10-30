@@ -1,0 +1,4 @@
+The ThreadPoolExecutor constructor accepts a `max_queue_size` keyword to
+limit the underlying queue size. This helps keeping the memory consumption
+in acceptable bounds when work items are submitted faster than they can be
+processed.
