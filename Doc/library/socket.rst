@@ -1633,12 +1633,13 @@ sends traffic to the first one connected successfully. ::
        print('could not open socket')
        sys.exit(1)
    conn, addr = s.accept()
-   with conn:
-       print('Connected by', addr)
-       while True:
-           data = conn.recv(1024)
-           if not data: break
-           conn.send(data)
+   with s:
+        with conn:
+           print('Connected by', addr)
+           while True:
+               data = conn.recv(1024)
+               if not data: break
+               conn.send(data)
 
 ::
 
@@ -1678,24 +1679,25 @@ the interface::
 
    import socket
 
-   # the public network interface
-   HOST = socket.gethostbyname(socket.gethostname())
 
-   # create a raw socket and bind it to the public interface
-   s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
-   s.bind((HOST, 0))
+    # the public network interface
+    HOST = socket.gethostbyname(socket.gethostname())
 
-   # Include IP headers
-   s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+    # create a raw socket and bind it to the public interface
+    with socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP) as s:
+        s.bind((HOST, 0))
 
-   # receive all packages
-   s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
+        # Include IP headers
+        s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 
-   # receive a package
-   print(s.recvfrom(65565))
+        # receive all packages
+        s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
 
-   # disabled promiscuous mode
-   s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
+        # receive a package
+        print(s.recvfrom(65565))
+
+        # disabled promiscuous mode
+        s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
 
 The next example shows how to use the socket interface to communicate to a CAN
 network using the raw socket protocol. To use CAN with the broadcast
@@ -1729,23 +1731,22 @@ This last example might require special privileges::
 
 
    # create a raw socket and bind it to the 'vcan0' interface
-   s = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
-   s.bind(('vcan0',))
+   with socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
+      s.bind(('vcan0',))
+      while True:
+        cf, addr = s.recvfrom(can_frame_size)
 
-   while True:
-       cf, addr = s.recvfrom(can_frame_size)
+        print('Received: can_id=%x, can_dlc=%x, data=%s' % dissect_can_frame(cf))
 
-       print('Received: can_id=%x, can_dlc=%x, data=%s' % dissect_can_frame(cf))
+        try:
+            s.send(cf)
+        except OSError:
+              print('Error sending CAN frame')
 
-       try:
-           s.send(cf)
-       except OSError:
-           print('Error sending CAN frame')
-
-       try:
-           s.send(build_can_frame(0x01, b'\x01\x02\x03'))
-       except OSError:
-           print('Error sending CAN frame')
+        try:
+            s.send(build_can_frame(0x01, b'\x01\x02\x03'))
+        except OSError:
+            print('Error sending CAN frame')
 
 Running an example several times with too small delay between executions, could
 lead to this error::
