@@ -341,9 +341,10 @@ Creating connections
 
 .. coroutinemethod:: AbstractEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0, reuse_address=None, reuse_port=None, allow_broadcast=None, sock=None)
 
-   Create datagram connection: socket family :py:data:`~socket.AF_INET` or
-   :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
-   socket type :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
+   Create datagram connection: socket family :py:data:`~socket.AF_INET`,
+   :py:data:`~socket.AF_INET6` or :py:data:`~socket.AF_UNIX` depending on
+   *host* (or *family* if specified), socket type
+   :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
    This method is a :ref:`coroutine <coroutine>` which will try to

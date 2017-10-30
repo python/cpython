@@ -1528,6 +1528,17 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
 
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    def test_create_datagram_endpoint_sock_unix(self):
+        fut = self.loop.create_datagram_endpoint(
+            lambda: MyDatagramProto(create_future=True, loop=self.loop),
+            family=socket.AF_UNIX)
+        transport, protocol = self.loop.run_until_complete(fut)
+        assert transport._sock.family == socket.AF_UNIX
+        transport.close()
+        self.loop.run_until_complete(protocol.done)
+        self.assertEqual('CLOSED', protocol.state)
+
     def test_create_datagram_endpoint_sock_sockopts(self):
         class FakeSock:
             type = socket.SOCK_DGRAM
