@@ -39,7 +39,7 @@ Reading and writing compressed files
    object`.
 
    The *filename* argument can be either an actual file name (given as a
-   :class:`str`, :class:`bytes` or :term:`path-like object` object), in
+   :class:`str`, :class:`bytes` or :term:`path-like <path-like object>` object), in
    which case the named file is opened, or it can be an existing file object
    to read from or write to.
 
@@ -76,7 +76,7 @@ Reading and writing compressed files
    An :class:`LZMAFile` can wrap an already-open :term:`file object`, or operate
    directly on a named file. The *filename* argument specifies either the file
    object to wrap, or the name of the file to open (as a :class:`str`,
-   :class:`bytes` or :term:`path-like object` object). When wrapping an
+   :class:`bytes` or :term:`path-like <path-like object>` object). When wrapping an
    existing file object, the wrapped file will not be closed when the
    :class:`LZMAFile` is closed.
 

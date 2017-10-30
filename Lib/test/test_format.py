@@ -70,12 +70,34 @@ def testcommon(formatstr, args, output=None, limit=None, overflowok=False):
     testformat(b_format, b_args, b_output, limit, overflowok)
     testformat(ba_format, b_args, ba_output, limit, overflowok)
 
+def test_exc(formatstr, args, exception, excmsg):
+    try:
+        testformat(formatstr, args)
+    except exception as exc:
+        if str(exc) == excmsg:
+            if verbose:
+                print("yes")
+        else:
+            if verbose: print('no')
+            print('Unexpected ', exception, ':', repr(str(exc)))
+    except:
+        if verbose: print('no')
+        print('Unexpected exception')
+        raise
+    else:
+        raise TestFailed('did not get expected exception: %s' % excmsg)
+
+def test_exc_common(formatstr, args, exception, excmsg):
+    # test str and bytes
+    test_exc(formatstr, args, exception, excmsg)
+    test_exc(formatstr.encode('ascii'), args, exception, excmsg)
 
 class FormatTest(unittest.TestCase):
 
     def test_common_format(self):
         # test the format identifiers that work the same across
         # str, bytes, and bytearrays (integer, float, oct, hex)
+        testcommon("%%", (), "%")
         testcommon("%.1d", (1,), "1")
         testcommon("%.*d", (sys.maxsize,1), overflowok=True)  # expect overflow
         testcommon("%.100d", (1,), '00000000000000000000000000000000000000'
@@ -246,6 +268,20 @@ class FormatTest(unittest.TestCase):
         testcommon('%g', 1.1, '1.1')
         testcommon('%#g', 1.1, '1.10000')
 
+        if verbose:
+            print('Testing exceptions')
+        test_exc_common('%', (), ValueError, "incomplete format")
+        test_exc_common('% %s', 1, ValueError,
+                        "unsupported format character '%' (0x25) at index 2")
+        test_exc_common('%d', '1', TypeError,
+                        "%d format: a number is required, not str")
+        test_exc_common('%d', b'1', TypeError,
+                        "%d format: a number is required, not bytes")
+        test_exc_common('%x', '1', TypeError,
+                        "%x format: an integer is required, not str")
+        test_exc_common('%x', 3.14, TypeError,
+                        "%x format: an integer is required, not float")
+
     def test_str_format(self):
         testformat("%r", "\u0378", "'\\u0378'")  # non printable
         testformat("%a", "\u0378", "'\\u0378'")  # non printable
@@ -255,29 +291,10 @@ class FormatTest(unittest.TestCase):
         # Test exception for unknown format characters, etc.
         if verbose:
             print('Testing exceptions')
-        def test_exc(formatstr, args, exception, excmsg):
-            try:
-                testformat(formatstr, args)
-            except exception as exc:
-                if str(exc) == excmsg:
-                    if verbose:
-                        print("yes")
-                else:
-                    if verbose: print('no')
-                    print('Unexpected ', exception, ':', repr(str(exc)))
-            except:
-                if verbose: print('no')
-                print('Unexpected exception')
-                raise
-            else:
-                raise TestFailed('did not get expected exception: %s' % excmsg)
         test_exc('abc %b', 1, ValueError,
                  "unsupported format character 'b' (0x62) at index 5")
         #test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
         #         "unsupported format character '?' (0x3000) at index 5")
-        test_exc('%d', '1', TypeError, "%d format: a number is required, not str")
-        test_exc('%x', '1', TypeError, "%x format: an integer is required, not str")
-        test_exc('%x', 3.14, TypeError, "%x format: an integer is required, not float")
         test_exc('%g', '1', TypeError, "must be real number, not str")
         test_exc('no format', '1', TypeError,
                  "not all arguments converted during string formatting")
@@ -315,10 +332,12 @@ class FormatTest(unittest.TestCase):
         testcommon(b"%b", b"abc", b"abc")
         testcommon(b"%b", bytearray(b"def"), b"def")
         testcommon(b"%b", fb, b"123")
+        testcommon(b"%b", memoryview(b"abc"), b"abc")
         # # %s is an alias for %b -- should only be used for Py2/3 code
         testcommon(b"%s", b"abc", b"abc")
         testcommon(b"%s", bytearray(b"def"), b"def")
         testcommon(b"%s", fb, b"123")
+        testcommon(b"%s", memoryview(b"abc"), b"abc")
         # %a will give the equivalent of
         # repr(some_obj).encode('ascii', 'backslashreplace')
         testcommon(b"%a", 3.14, b"3.14")
@@ -334,28 +353,6 @@ class FormatTest(unittest.TestCase):
         # Test exception for unknown format characters, etc.
         if verbose:
             print('Testing exceptions')
-        def test_exc(formatstr, args, exception, excmsg):
-            try:
-                testformat(formatstr, args)
-            except exception as exc:
-                if str(exc) == excmsg:
-                    if verbose:
-                        print("yes")
-                else:
-                    if verbose: print('no')
-                    print('Unexpected ', exception, ':', repr(str(exc)))
-            except:
-                if verbose: print('no')
-                print('Unexpected exception')
-                raise
-            else:
-                raise TestFailed('did not get expected exception: %s' % excmsg)
-        test_exc(b'%d', '1', TypeError,
-                "%d format: a number is required, not str")
-        test_exc(b'%d', b'1', TypeError,
-                "%d format: a number is required, not bytes")
-        test_exc(b'%x', 3.14, TypeError,
-                "%x format: an integer is required, not float")
         test_exc(b'%g', '1', TypeError, "float argument required, not str")
         test_exc(b'%g', b'1', TypeError, "float argument required, not bytes")
         test_exc(b'no format', 7, TypeError,
@@ -377,9 +374,11 @@ class FormatTest(unittest.TestCase):
         test_exc(b"%c", 3.14, TypeError,
                 "%c requires an integer in range(256) or a single byte")
         test_exc(b"%b", "Xc", TypeError,
-                "%b requires bytes, or an object that implements __bytes__, not 'str'")
+                "%b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not 'str'")
         test_exc(b"%s", "Wd", TypeError,
-                "%b requires bytes, or an object that implements __bytes__, not 'str'")
+                "%b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not 'str'")
 
         if maxsize == 2**31-1:
             # crashes 2.2.1 and earlier:

@@ -18,7 +18,6 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
-from . import compat
 from . import constants
 from . import events
 from . import futures
@@ -387,6 +386,41 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(data)
 
+    def sock_recv_into(self, sock, buf):
+        """Receive data from the socket.
+
+        The received data is written into *buf* (a writable buffer).
+        The return value is the number of bytes written.
+
+        This method is a coroutine.
+        """
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
+        fut = self.create_future()
+        self._sock_recv_into(fut, False, sock, buf)
+        return fut
+
+    def _sock_recv_into(self, fut, registered, sock, buf):
+        # _sock_recv_into() can add itself as an I/O callback if the operation
+        # can't be done immediately. Don't use it directly, call sock_recv_into().
+        fd = sock.fileno()
+        if registered:
+            # Remove the callback early.  It should be rare that the
+            # selector says the fd is ready but the call still returns
+            # EAGAIN, and I am willing to take a hit in that case in
+            # order to simplify the common case.
+            self.remove_reader(fd)
+        if fut.cancelled():
+            return
+        try:
+            nbytes = sock.recv_into(buf)
+        except (BlockingIOError, InterruptedError):
+            self.add_reader(fd, self._sock_recv_into, fut, True, sock, buf)
+        except Exception as exc:
+            fut.set_exception(exc)
+        else:
+            fut.set_result(nbytes)
+
     def sock_sendall(self, sock, data):
         """Send data to the socket.
 
@@ -621,15 +655,11 @@ class _SelectorTransport(transports._FlowControlMixin,
             self._loop._remove_writer(self._sock_fd)
             self._loop.call_soon(self._call_connection_lost, None)
 
-    # On Python 3.3 and older, objects with a destructor part of a reference
-    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
-    # to the PEP 442.
-    if compat.PY34:
-        def __del__(self):
-            if self._sock is not None:
-                warnings.warn("unclosed transport %r" % self, ResourceWarning,
-                              source=self)
-                self._sock.close()
+    def __del__(self):
+        if self._sock is not None:
+            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+                          source=self)
+            self._sock.close()
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.

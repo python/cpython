@@ -61,8 +61,6 @@
 
 #define T_HANDLE T_POINTER
 
-#define DWORD_MAX 4294967295U
-
 /* Grab CancelIoEx dynamically from kernel32 */
 static int has_CancelIoEx = -1;
 static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED);
@@ -114,7 +112,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_Finalizing == NULL)
+        else if (_Py_IsFinalizing())
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
@@ -184,11 +182,11 @@ class DWORD_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == DWORD_MAX", data)
+        self.err_occurred_if("_return_value == PY_DWORD_MAX", data)
         data.return_conversion.append(
             'return_value = Py_BuildValue("k", _return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=94819e72d2c6d558]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4527052fe06e5823]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -224,7 +222,7 @@ _winapi_Overlapped_GetOverlappedResult_impl(OverlappedObject *self, int wait)
             break;
         default:
             self->pending = 0;
-            return PyErr_SetExcFromWindowsErr(PyExc_IOError, err);
+            return PyErr_SetExcFromWindowsErr(PyExc_OSError, err);
     }
     if (self->completed && self->read_buffer != NULL) {
         assert(PyBytes_CheckExact(self->read_buffer));
@@ -276,7 +274,7 @@ _winapi_Overlapped_cancel_impl(OverlappedObject *self)
 
     /* CancelIoEx returns ERROR_NOT_FOUND if the I/O completed in-between */
     if (!res && GetLastError() != ERROR_NOT_FOUND)
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
     self->pending = 0;
     Py_RETURN_NONE;
 }
@@ -387,13 +385,13 @@ _winapi_CloseHandle_impl(PyObject *module, HANDLE handle)
 _winapi.ConnectNamedPipe
 
     handle: HANDLE
-    overlapped as use_overlapped: int(c_default='0') = False
+    overlapped as use_overlapped: bool(accept={int}) = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
                               int use_overlapped)
-/*[clinic end generated code: output=335a0e7086800671 input=edc83da007ebf3be]*/
+/*[clinic end generated code: output=335a0e7086800671 input=34f937c1c86e5e68]*/
 {
     BOOL success;
     OverlappedObject *overlapped = NULL;
@@ -722,21 +720,44 @@ getenvironment(PyObject* environment)
         return NULL;
     }
 
-    envsize = PyMapping_Length(environment);
-
     keys = PyMapping_Keys(environment);
+    if (!keys) {
+        return NULL;
+    }
     values = PyMapping_Values(environment);
-    if (!keys || !values)
+    if (!values) {
         goto error;
+    }
+
+    envsize = PySequence_Fast_GET_SIZE(keys);
+    if (PySequence_Fast_GET_SIZE(values) != envsize) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "environment changed size during iteration");
+        goto error;
+    }
 
     totalsize = 1; /* trailing null character */
     for (i = 0; i < envsize; i++) {
-        PyObject* key = PyList_GET_ITEM(keys, i);
-        PyObject* value = PyList_GET_ITEM(values, i);
+        PyObject* key = PySequence_Fast_GET_ITEM(keys, i);
+        PyObject* value = PySequence_Fast_GET_ITEM(values, i);
 
         if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
             PyErr_SetString(PyExc_TypeError,
                 "environment can only contain strings");
+            goto error;
+        }
+        if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
+            PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto error;
+        }
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (PyUnicode_GET_LENGTH(key) == 0 ||
+            PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
             goto error;
         }
         if (totalsize > PY_SSIZE_T_MAX - PyUnicode_GET_LENGTH(key) - 1) {
@@ -760,8 +781,8 @@ getenvironment(PyObject* environment)
     end = buffer + totalsize;
 
     for (i = 0; i < envsize; i++) {
-        PyObject* key = PyList_GET_ITEM(keys, i);
-        PyObject* value = PyList_GET_ITEM(values, i);
+        PyObject* key = PySequence_Fast_GET_ITEM(keys, i);
+        PyObject* value = PySequence_Fast_GET_ITEM(values, i);
         if (!PyUnicode_AsUCS4(key, p, end - p, 0))
             goto error;
         p += PyUnicode_GET_LENGTH(key);
@@ -841,12 +862,13 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
 
     if (env_mapping != Py_None) {
         environment = getenvironment(env_mapping);
-        if (! environment)
+        if (environment == NULL) {
             return NULL;
+        }
+        /* contains embedded null characters */
         wenvironment = PyUnicode_AsUnicode(environment);
-        if (wenvironment == NULL)
-        {
-            Py_XDECREF(environment);
+        if (wenvironment == NULL) {
+            Py_DECREF(environment);
             return NULL;
         }
     }
@@ -985,7 +1007,7 @@ _winapi_GetExitCodeProcess_impl(PyObject *module, HANDLE process)
 
     if (! result) {
         PyErr_SetFromWindowsErr(GetLastError());
-        exit_code = DWORD_MAX;
+        exit_code = PY_DWORD_MAX;
     }
 
     return exit_code;
@@ -1139,7 +1161,7 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
         Py_END_ALLOW_THREADS
         if (!ret) {
             Py_DECREF(buf);
-            return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+            return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
         }
         if (_PyBytes_Resize(&buf, nread))
             return NULL;
@@ -1150,7 +1172,7 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
         ret = PeekNamedPipe(handle, NULL, 0, NULL, &navail, &nleft);
         Py_END_ALLOW_THREADS
         if (!ret) {
-            return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+            return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
         }
         return Py_BuildValue("ii", navail, nleft);
     }
@@ -1161,13 +1183,13 @@ _winapi.ReadFile
 
     handle: HANDLE
     size: int
-    overlapped as use_overlapped: int(c_default='0') = False
+    overlapped as use_overlapped: bool(accept={int}) = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                       int use_overlapped)
-/*[clinic end generated code: output=492029ca98161d84 input=8dd810194e86ac7d]*/
+/*[clinic end generated code: output=492029ca98161d84 input=3f0fde92f74de59a]*/
 {
     DWORD nread;
     PyObject *buf;
@@ -1201,7 +1223,7 @@ _winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                 overlapped->pending = 1;
             else if (err != ERROR_MORE_DATA) {
                 Py_DECREF(overlapped);
-                return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+                return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
             }
         }
         return Py_BuildValue("NI", (PyObject *) overlapped, err);
@@ -1209,7 +1231,7 @@ _winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
 
     if (!ret && err != ERROR_MORE_DATA) {
         Py_DECREF(buf);
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
     }
     if (_PyBytes_Resize(&buf, nread))
         return NULL;
@@ -1366,10 +1388,10 @@ _winapi_WaitForMultipleObjects_impl(PyObject *module, PyObject *handle_seq,
     Py_END_ALLOW_THREADS
 
     if (result == WAIT_FAILED)
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
     else if (sigint_event != NULL && result == WAIT_OBJECT_0 + nhandles - 1) {
         errno = EINTR;
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     }
 
     return PyLong_FromLong((int) result);
@@ -1413,13 +1435,13 @@ _winapi.WriteFile
 
     handle: HANDLE
     buffer: object
-    overlapped as use_overlapped: int(c_default='0') = False
+    overlapped as use_overlapped: bool(accept={int}) = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                        int use_overlapped)
-/*[clinic end generated code: output=2ca80f6bf3fa92e3 input=51846a5af52053fd]*/
+/*[clinic end generated code: output=2ca80f6bf3fa92e3 input=11eae2a03aa32731]*/
 {
     Py_buffer _buf, *buf;
     DWORD len, written;
@@ -1442,7 +1464,7 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    len = (DWORD)Py_MIN(buf->len, DWORD_MAX);
+    len = (DWORD)Py_MIN(buf->len, PY_DWORD_MAX);
     ret = WriteFile(handle, buf->buf, len, &written,
                     overlapped ? &overlapped->overlapped : NULL);
     Py_END_ALLOW_THREADS
@@ -1455,7 +1477,7 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                 overlapped->pending = 1;
             else {
                 Py_DECREF(overlapped);
-                return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+                return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
             }
         }
         return Py_BuildValue("NI", (PyObject *) overlapped, err);
@@ -1463,7 +1485,7 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
 
     PyBuffer_Release(buf);
     if (!ret)
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
     return Py_BuildValue("II", written, err);
 }
 

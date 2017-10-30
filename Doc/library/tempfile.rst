@@ -245,12 +245,12 @@ The module uses a global variable to store the name of the directory
 used for temporary files returned by :func:`gettempdir`.  It can be
 set directly to override the selection process, but this is discouraged.
 All functions in this module take a *dir* argument which can be used
-to specify the directory and this is the recommend approach.
+to specify the directory and this is the recommended approach.
 
 .. data:: tempdir
 
    When set to a value other than ``None``, this variable defines the
-   default value for the *dir* argument to all the functions defined in this
+   default value for the *dir* argument to the functions defined in this
    module.
 
    If ``tempdir`` is unset or ``None`` at any call to any of the above

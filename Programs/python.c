@@ -15,6 +15,7 @@ wmain(int argc, wchar_t **argv)
 }
 #else
 
+
 int
 main(int argc, char **argv)
 {
@@ -25,7 +26,11 @@ main(int argc, char **argv)
     char *oldloc;
 
     /* Force malloc() allocator to bootstrap Python */
+#ifdef Py_DEBUG
+    (void)_PyMem_SetupAllocators("malloc_debug");
+#  else
     (void)_PyMem_SetupAllocators("malloc");
+#  endif
 
     argv_copy = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     argv_copy2 = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
@@ -49,7 +54,31 @@ main(int argc, char **argv)
         return 1;
     }
 
+#ifdef __ANDROID__
+    /* Passing "" to setlocale() on Android requests the C locale rather
+     * than checking environment variables, so request C.UTF-8 explicitly
+     */
+    setlocale(LC_ALL, "C.UTF-8");
+#else
+    /* Reconfigure the locale to the default for this process */
     setlocale(LC_ALL, "");
+#endif
+
+    /* The legacy C locale assumes ASCII as the default text encoding, which
+     * causes problems not only for the CPython runtime, but also other
+     * components like GNU readline.
+     *
+     * Accordingly, when the CLI detects it, it attempts to coerce it to a
+     * more capable UTF-8 based alternative.
+     *
+     * See the documentation of the PYTHONCOERCECLOCALE setting for more
+     * details.
+     */
+    if (_Py_LegacyLocaleDetected()) {
+        _Py_CoerceLegacyLocale();
+    }
+
+    /* Convert from char to wchar_t based on the locale settings */
     for (i = 0; i < argc; i++) {
         argv_copy[i] = Py_DecodeLocale(argv[i], NULL);
         if (!argv_copy[i]) {
@@ -70,7 +99,11 @@ main(int argc, char **argv)
 
     /* Force again malloc() allocator to release memory blocks allocated
        before Py_Main() */
+#ifdef Py_DEBUG
+    (void)_PyMem_SetupAllocators("malloc_debug");
+#  else
     (void)_PyMem_SetupAllocators("malloc");
+#  endif
 
     for (i = 0; i < argc; i++) {
         PyMem_RawFree(argv_copy2[i]);

@@ -10,7 +10,6 @@ import socket
 import warnings
 
 from . import base_events
-from . import compat
 from . import constants
 from . import futures
 from . import sslproto
@@ -86,15 +85,11 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._read_fut.cancel()
             self._read_fut = None
 
-    # On Python 3.3 and older, objects with a destructor part of a reference
-    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
-    # to the PEP 442.
-    if compat.PY34:
-        def __del__(self):
-            if self._sock is not None:
-                warnings.warn("unclosed transport %r" % self, ResourceWarning,
-                              source=self)
-                self.close()
+    def __del__(self):
+        if self._sock is not None:
+            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+                          source=self)
+            self.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
@@ -232,8 +227,9 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be byte-ish (%r)',
-                            type(data))
+            msg = ("data argument must be a bytes-like object, not '%s'" %
+                   type(data).__name__)
+            raise TypeError(msg)
         if self._eof_written:
             raise RuntimeError('write_eof() already called')
 
@@ -442,6 +438,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def sock_recv(self, sock, n):
         return self._proactor.recv(sock, n)
+
+    def sock_recv_into(self, sock, buf):
+        return self._proactor.recv_into(sock, buf)
 
     def sock_sendall(self, sock, data):
         return self._proactor.send(sock, data)

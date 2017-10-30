@@ -391,7 +391,7 @@ with a fixed size of 256 KB. It falls back to :c:func:`PyMem_RawMalloc` and
 :c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
 
 *pymalloc* is the default allocator of the :c:data:`PYMEM_DOMAIN_MEM` (ex:
-:c:func:`PyObject_Malloc`) and :c:data:`PYMEM_DOMAIN_OBJ` (ex:
+:c:func:`PyMem_Malloc`) and :c:data:`PYMEM_DOMAIN_OBJ` (ex:
 :c:func:`PyObject_Malloc`) domains.
 
 The arena allocator uses the following functions:
@@ -427,6 +427,28 @@ Customize pymalloc Arena Allocator
 .. c:function:: PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 
    Set the arena allocator.
+
+
+tracemalloc C API
+=================
+
+.. versionadded:: 3.7
+
+.. c:function: int PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr, size_t size)
+
+   Track an allocated memory block in the :mod:`tracemalloc` module.
+
+   Return 0 on success, return ``-1`` on error (failed to allocate memory to
+   store the trace). Return ``-2`` if tracemalloc is disabled.
+
+   If memory block is already tracked, update the existing trace.
+
+.. c:function: int PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
+
+   Untrack an allocated memory block in the :mod:`tracemalloc` module.
+   Do nothing if the block was not tracked.
+
+   Return ``-2`` if tracemalloc is disabled, otherwise return ``0``.
 
 
 .. _memoryexamples:

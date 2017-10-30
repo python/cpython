@@ -1,5 +1,22 @@
 #include "Python.h"
+#include "internal/pystate.h"
 #include "frameobject.h"
+
+
+int
+_PyObject_HasFastCall(PyObject *callable)
+{
+    if (PyFunction_Check(callable)) {
+        return 1;
+    }
+    else if (PyCFunction_Check(callable)) {
+        return !(PyCFunction_GET_FLAGS(callable) & METH_VARARGS);
+    }
+    else {
+        assert (PyCallable_Check(callable));
+        return 0;
+    }
+}
 
 
 static PyObject *
@@ -298,18 +315,19 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     if (co->co_kwonlyargcount == 0 &&
         (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         /* Fast paths */
         if (argdefs == NULL && co->co_argcount == nargs) {
             return function_code_fastcall(co, args, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == Py_SIZE(argdefs)) {
+                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             args = &PyTuple_GET_ITEM(argdefs, 0);
-            return function_code_fastcall(co, args, Py_SIZE(argdefs), globals);
+            return function_code_fastcall(co, args, PyTuple_GET_SIZE(argdefs),
+                                          globals);
         }
     }
 
@@ -317,8 +335,8 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     if (nk != 0) {
         Py_ssize_t pos, i;
 
-        /* Issue #29318: Caller and callee functions must not share the
-           dictionary: kwargs must be copied. */
+        /* bpo-29318, bpo-27840: Caller and callee functions must not share
+           the dictionary: kwargs must be copied. */
         kwtuple = PyTuple_New(2 * nk);
         if (kwtuple == NULL) {
             return NULL;
@@ -348,7 +366,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     if (argdefs != NULL) {
         d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = Py_SIZE(argdefs);
+        nd = PyTuple_GET_SIZE(argdefs);
     }
     else {
         d = NULL;
@@ -357,7 +375,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                       args, nargs,
-                                      k, k + 1, nk, 2,
+                                      k, k != NULL ? k + 1 : NULL, nk, 2,
                                       d, nd, kwdefs,
                                       closure, name, qualname);
     Py_XDECREF(kwtuple);
@@ -384,17 +402,18 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
        be unique */
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         if (argdefs == NULL && co->co_argcount == nargs) {
             return function_code_fastcall(co, stack, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == Py_SIZE(argdefs)) {
+                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             stack = &PyTuple_GET_ITEM(argdefs, 0);
-            return function_code_fastcall(co, stack, Py_SIZE(argdefs), globals);
+            return function_code_fastcall(co, stack, PyTuple_GET_SIZE(argdefs),
+                                          globals);
         }
     }
 
@@ -405,7 +424,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
 
     if (argdefs != NULL) {
         d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = Py_SIZE(argdefs);
+        nd = PyTuple_GET_SIZE(argdefs);
     }
     else {
         d = NULL;
@@ -448,6 +467,10 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
     switch (flags)
     {
     case METH_NOARGS:
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+            goto no_keyword_error;
+        }
+
         if (nargs != 0) {
             PyErr_Format(PyExc_TypeError,
                 "%.200s() takes no arguments (%zd given)",
@@ -455,14 +478,14 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
             goto exit;
         }
 
-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            goto no_keyword_error;
-        }
-
         result = (*meth) (self, NULL);
         break;
 
     case METH_O:
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+            goto no_keyword_error;
+        }
+
         if (nargs != 1) {
             PyErr_Format(PyExc_TypeError,
                 "%.200s() takes exactly one argument (%zd given)",
@@ -470,19 +493,14 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
             goto exit;
         }
 
-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            goto no_keyword_error;
-        }
-
         result = (*meth) (self, args[0]);
         break;
 
     case METH_VARARGS:
-        if (!(flags & METH_KEYWORDS)
-                && kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
             goto no_keyword_error;
         }
-        /* fall through next case */
+        /* fall through */
 
     case METH_VARARGS | METH_KEYWORDS:
     {
@@ -504,9 +522,19 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
 
     case METH_FASTCALL:
     {
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+            goto no_keyword_error;
+        }
+
+        result = (*(_PyCFunctionFast)meth) (self, args, nargs);
+        break;
+    }
+
+    case METH_FASTCALL | METH_KEYWORDS:
+    {
         PyObject **stack;
         PyObject *kwnames;
-        _PyCFunctionFast fastmeth = (_PyCFunctionFast)meth;
+        _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)meth;
 
         if (_PyStack_UnpackDict(args, nargs, kwargs, &stack, &kwnames) < 0) {
             goto exit;
@@ -532,7 +560,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
 no_keyword_error:
     PyErr_Format(PyExc_TypeError,
                  "%.200s() takes no keyword arguments",
-                 method->ml_name, nargs);
+                 method->ml_name);
 
 exit:
     Py_LeaveRecursiveCall();
@@ -574,7 +602,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
 
     PyCFunction meth = method->ml_meth;
     int flags = method->ml_flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-    Py_ssize_t nkwargs = kwnames == NULL ? 0 : PyTuple_Size(kwnames);
+    Py_ssize_t nkwargs = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
     PyObject *result = NULL;
 
     if (Py_EnterRecursiveCall(" while calling a Python object")) {
@@ -584,6 +612,10 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
     switch (flags)
     {
     case METH_NOARGS:
+        if (nkwargs) {
+            goto no_keyword_error;
+        }
+
         if (nargs != 0) {
             PyErr_Format(PyExc_TypeError,
                 "%.200s() takes no arguments (%zd given)",
@@ -591,14 +623,14 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
             goto exit;
         }
 
-        if (nkwargs) {
-            goto no_keyword_error;
-        }
-
         result = (*meth) (self, NULL);
         break;
 
     case METH_O:
+        if (nkwargs) {
+            goto no_keyword_error;
+        }
+
         if (nargs != 1) {
             PyErr_Format(PyExc_TypeError,
                 "%.200s() takes exactly one argument (%zd given)",
@@ -606,28 +638,32 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject *
             goto exit;
         }
 
-        if (nkwargs) {
-            goto no_keyword_error;
-        }
-
         result = (*meth) (self, args[0]);
         break;
 
     case METH_FASTCALL:
+        if (nkwargs) {
+            goto no_keyword_error;
+        }
+        result = ((_PyCFunctionFast)meth) (self, args, nargs);
+        break;
+
+    case METH_FASTCALL | METH_KEYWORDS:
         /* Fast-path: avoid temporary dict to pass keyword arguments */
-        result = ((_PyCFunctionFast)meth) (self, args, nargs, kwnames);
+        result = ((_PyCFunctionFastWithKeywords)meth) (self, args, nargs, kwnames);
         break;
 
     case METH_VARARGS:
+        if (nkwargs) {
+            goto no_keyword_error;
+        }
+        /* fall through */
+
     case METH_VARARGS | METH_KEYWORDS:
     {
         /* Slow-path: create a temporary tuple for positional arguments
            and a temporary dict for keyword arguments */
         PyObject *argtuple;
-
-        if (!(flags & METH_KEYWORDS) && nkwargs) {
-            goto no_keyword_error;
-        }
 
         argtuple = _PyStack_AsTuple(args, nargs);
         if (argtuple == NULL) {
@@ -699,6 +735,7 @@ static PyObject *
 cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
 {
     assert(!PyErr_Occurred());
+    assert(kwargs == NULL || PyDict_Check(kwargs));
 
     PyCFunction meth = PyCFunction_GET_FUNCTION(func);
     PyObject *self = PyCFunction_GET_SELF(func);
@@ -714,7 +751,7 @@ cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
         Py_LeaveRecursiveCall();
     }
     else {
-        if (kwargs != NULL && PyDict_Size(kwargs) != 0) {
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
             PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
                          ((PyCFunctionObject*)func)->m_ml->ml_name);
             return NULL;
@@ -766,11 +803,7 @@ PyEval_CallObjectWithKeywords(PyObject *callable,
     assert(!PyErr_Occurred());
 #endif
 
-    if (args == NULL) {
-        return _PyObject_FastCallDict(callable, NULL, 0, kwargs);
-    }
-
-    if (!PyTuple_Check(args)) {
+    if (args != NULL && !PyTuple_Check(args)) {
         PyErr_SetString(PyExc_TypeError,
                         "argument list must be a tuple");
         return NULL;
@@ -782,7 +815,12 @@ PyEval_CallObjectWithKeywords(PyObject *callable,
         return NULL;
     }
 
-    return PyObject_Call(callable, args, kwargs);
+    if (args == NULL) {
+        return _PyObject_FastCallDict(callable, NULL, 0, kwargs);
+    }
+    else {
+        return PyObject_Call(callable, args, kwargs);
+    }
 }
 
 
@@ -817,9 +855,9 @@ _PyObject_FastCall_Prepend(PyObject *callable,
 
     /* use borrowed references */
     args2[0] = obj;
-    memcpy(&args2[1],
-           args,
-           (nargs - 1)* sizeof(PyObject *));
+    if (nargs > 1) {
+        memcpy(&args2[1], args, (nargs - 1) * sizeof(PyObject *));
+    }
 
     result = _PyObject_FastCall(callable, args2, nargs);
     if (args2 != small_stack) {
@@ -939,25 +977,20 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
 }
 
 
+/* PyEval_CallFunction is exact copy of PyObject_CallFunction.
+ * This function is kept for backward compatibility.
+ */
 PyObject *
 PyEval_CallFunction(PyObject *callable, const char *format, ...)
 {
-    va_list vargs;
-    PyObject *args;
-    PyObject *res;
+    va_list va;
+    PyObject *result;
 
-    va_start(vargs, format);
+    va_start(va, format);
+    result = _PyObject_CallFunctionVa(callable, format, va, 0);
+    va_end(va);
 
-    args = Py_VaBuildValue(format, vargs);
-    va_end(vargs);
-
-    if (args == NULL)
-        return NULL;
-
-    res = PyEval_CallObject(callable, args);
-    Py_DECREF(args);
-
-    return res;
+    return result;
 }
 
 
@@ -1014,33 +1047,29 @@ PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 }
 
 
+/* PyEval_CallMethod is exact copy of PyObject_CallMethod.
+ * This function is kept for backward compatibility.
+ */
 PyObject *
 PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 {
-    va_list vargs;
-    PyObject *meth;
-    PyObject *args;
-    PyObject *res;
+    va_list va;
+    PyObject *callable, *retval;
 
-    meth = PyObject_GetAttrString(obj, name);
-    if (meth == NULL)
-        return NULL;
-
-    va_start(vargs, format);
-
-    args = Py_VaBuildValue(format, vargs);
-    va_end(vargs);
-
-    if (args == NULL) {
-        Py_DECREF(meth);
-        return NULL;
+    if (obj == NULL || name == NULL) {
+        return null_error();
     }
 
-    res = PyEval_CallObject(meth, args);
-    Py_DECREF(meth);
-    Py_DECREF(args);
+    callable = PyObject_GetAttrString(obj, name);
+    if (callable == NULL)
+        return NULL;
 
-    return res;
+    va_start(va, format);
+    retval = callmethod(callable, format, va, 0);
+    va_end(va);
+
+    Py_DECREF(callable);
+    return retval;
 }
 
 

@@ -33,11 +33,11 @@ having a MIME type such as :mimetype:`multipart/\*` or
 The conceptual model provided by a :class:`Message` object is that of an
 ordered dictionary of headers with additional methods for accessing both
 specialized information from the headers, for accessing the payload, for
-generating a serialized version of the mssage, and for recursively walking over
-the object tree.  Note that duplicate headers are supported but special methods
-must be used to access them.
+generating a serialized version of the message, and for recursively walking
+over the object tree.  Note that duplicate headers are supported but special
+methods must be used to access them.
 
-The :class:`Message` psuedo-dictionary is indexed by the header names, which
+The :class:`Message` pseudo-dictionary is indexed by the header names, which
 must be ASCII values.  The values of the dictionary are strings that are
 supposed to contain only ASCII characters; there is some special handling for
 non-ASCII input, but it doesn't always produce the correct results.  Headers
@@ -67,7 +67,7 @@ Here are the methods of the :class:`Message` class:
 
       Return the entire message flattened as a string.  When optional *unixfrom*
       is true, the envelope header is included in the returned string.
-      *unixfrom* defaults to ``False``.  For backward compabitility reasons,
+      *unixfrom* defaults to ``False``.  For backward compatibility reasons,
       *maxheaderlen* defaults to ``0``, so if you want a different value you
       must override it explicitly (the value specified for *max_line_length* in
       the policy will be ignored by this method).  The *policy* argument may be
@@ -181,7 +181,7 @@ Here are the methods of the :class:`Message` class:
       This is a legacy method.  On the
       :class:`~email.emailmessage.EmailMessage` class its functionality is
       replaced by :meth:`~email.message.EmailMessage.set_content` and the
-      realted ``make`` and ``add`` methods.
+      related ``make`` and ``add`` methods.
 
 
    .. method:: get_payload(i=None, decode=False)
@@ -660,10 +660,14 @@ Here are the methods of the :class:`Message` class:
 
       .. testsetup::
 
-         >>> from email import message_from_binary_file
-         >>> with open('Lib/test/test_email/data/msg_16.txt', 'rb') as f:
-         ...     msg = message_from_binary_file(f)
-         >>> from email.iterators import _structure
+         import email
+         from email import message_from_binary_file
+         from os.path import join, dirname
+         lib_dir = dirname(dirname(email.__file__))
+         file_path = join(lib_dir, 'test/test_email/data/msg_16.txt')
+         with open(file_path, 'rb') as f:
+             msg = message_from_binary_file(f)
+         from email.iterators import _structure
 
       .. doctest::
 
@@ -686,7 +690,7 @@ Here are the methods of the :class:`Message` class:
       .. doctest::
 
          >>> for part in msg.walk():
-         ...     print(part.get_content_maintype() == 'multipart'),
+         ...     print(part.get_content_maintype() == 'multipart',
          ...           part.is_multipart())
          True True
          False False
@@ -698,11 +702,11 @@ Here are the methods of the :class:`Message` class:
          >>> _structure(msg)
          multipart/report
              text/plain
-         message/delivery-status
-             text/plain
-             text/plain
-         message/rfc822
-             text/plain
+             message/delivery-status
+                 text/plain
+                 text/plain
+             message/rfc822
+                 text/plain
 
       Here the ``message`` parts are not ``multiparts``, but they do contain
       subparts. ``is_multipart()`` returns ``True`` and ``walk`` descends

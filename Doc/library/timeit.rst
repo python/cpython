@@ -134,20 +134,20 @@ The module defines three convenience functions and a public class:
             timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-    .. method:: Timer.autorange(callback=None)
+   .. method:: Timer.autorange(callback=None)
 
-       Automatically determine how many times to call :meth:`.timeit`.
+      Automatically determine how many times to call :meth:`.timeit`.
 
-       This is a convenience function that calls :meth:`.timeit` repeatedly
-       so that the total time >= 0.2 second, returning the eventual
-       (number of loops, time taken for that number of loops). It calls
-       :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
-       10, 20, 50, ... until the time taken is at least 0.2 second.
+      This is a convenience function that calls :meth:`.timeit` repeatedly
+      so that the total time >= 0.2 second, returning the eventual
+      (number of loops, time taken for that number of loops). It calls
+      :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
+      10, 20, 50, ... until the time taken is at least 0.2 second.
 
-        If *callback* is given and is not ``None``, it will be called after
-        each trial with two arguments: ``callback(number, time_taken)``.
+      If *callback* is given and is not ``None``, it will be called after
+      each trial with two arguments: ``callback(number, time_taken)``.
 
-        .. versionadded:: 3.6
+      .. versionadded:: 3.6
 
 
    .. method:: Timer.repeat(repeat=3, number=1000000)

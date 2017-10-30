@@ -341,9 +341,11 @@ static int
 PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
                          PyObject **bytes, wchar_t **wstr)
 {
+    char *str;
     if (PyUnicode_Check(obj)) {
 #ifdef HAVE_NCURSESW
         assert (wstr != NULL);
+
         *wstr = PyUnicode_AsWideCharString(obj, NULL);
         if (*wstr == NULL)
             return 0;
@@ -353,12 +355,20 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
         *bytes = PyUnicode_AsEncodedString(obj, win->encoding, NULL);
         if (*bytes == NULL)
             return 0;
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            return 0;
+        }
         return 1;
 #endif
     }
     else if (PyBytes_Check(obj)) {
         Py_INCREF(obj);
         *bytes = obj;
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            return 0;
+        }
         return 1;
     }
 
@@ -1720,22 +1730,14 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
 {
     /* We have to simulate this by writing to a temporary FILE*,
        then reading back, then writing to the argument stream. */
-    char fn[100];
-    int fd = -1;
-    FILE *fp = NULL;
+    FILE *fp;
     PyObject *res = NULL;
 
-    strcpy(fn, "/tmp/py.curses.putwin.XXXXXX");
-    fd = mkstemp(fn);
-    if (fd < 0)
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-    if (_Py_set_inheritable(fd, 0, NULL) < 0)
+    fp = tmpfile();
+    if (fp == NULL)
+        return PyErr_SetFromErrno(PyExc_OSError);
+    if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto exit;
-    fp = fdopen(fd, "wb+");
-    if (fp == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-        goto exit;
-    }
     res = PyCursesCheckERR(putwin(self->win, fp), "putwin");
     if (res == NULL)
         goto exit;
@@ -1754,11 +1756,7 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
     }
 
 exit:
-    if (fp != NULL)
-        fclose(fp);
-    else if (fd != -1)
-        close(fd);
-    remove(fn);
+    fclose(fp);
     return res;
 }
 
@@ -2278,9 +2276,7 @@ PyCurses_UngetMouse(PyObject *self, PyObject *args)
 static PyObject *
 PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 {
-    char fn[100];
-    int fd = -1;
-    FILE *fp = NULL;
+    FILE *fp;
     PyObject *data;
     size_t datalen;
     WINDOW *win;
@@ -2289,17 +2285,13 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 
     PyCursesInitialised;
 
-    strcpy(fn, "/tmp/py.curses.getwin.XXXXXX");
-    fd = mkstemp(fn);
-    if (fd < 0)
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-    if (_Py_set_inheritable(fd, 0, NULL) < 0)
+    fp = tmpfile();
+    if (fp == NULL)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto error;
-    fp = fdopen(fd, "wb+");
-    if (fp == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-        goto error;
-    }
+
 
     data = _PyObject_CallMethodId(stream, &PyId_read, NULL);
     if (data == NULL)
@@ -2314,7 +2306,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     datalen = PyBytes_GET_SIZE(data);
     if (fwrite(PyBytes_AS_STRING(data), 1, datalen, fp) != datalen) {
         Py_DECREF(data);
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        PyErr_SetFromErrno(PyExc_OSError);
         goto error;
     }
     Py_DECREF(data);
@@ -2328,11 +2320,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     res = PyCursesWindow_New(win, NULL);
 
 error:
-    if (fp != NULL)
-        fclose(fp);
-    else if (fd != -1)
-        close(fd);
-    remove(fn);
+    fclose(fp);
     return res;
 }
 
@@ -3009,7 +2997,7 @@ PyCurses_tigetstr(PyObject *self, PyObject *args)
         return NULL;
 
     capname = tigetstr( capname );
-    if (capname == 0 || capname == (char*) -1) {
+    if (capname == NULL || capname == (char*) -1) {
         Py_RETURN_NONE;
     }
     return PyBytes_FromString( capname );
@@ -3383,6 +3371,11 @@ PyInit__curses(void)
 #endif
 #ifdef A_VERTICAL
     SetDictInt("A_VERTICAL",        A_VERTICAL);
+#endif
+
+    /* ncurses extension */
+#ifdef A_ITALIC
+    SetDictInt("A_ITALIC",          A_ITALIC);
 #endif
 
     SetDictInt("COLOR_BLACK",       COLOR_BLACK);

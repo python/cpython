@@ -85,11 +85,11 @@ next line: ``Ordered by: standard name``, indicates that the text string in the
 far right column was used to sort the output. The column headings include:
 
 ncalls
-   for the number of calls,
+   for the number of calls.
 
 tottime
-    for the total time spent in the given function (and excluding time made in
-    calls to sub-functions)
+   for the total time spent in the given function (and excluding time made in
+   calls to sub-functions)
 
 percall
    is the quotient of ``tottime`` divided by ``ncalls``
@@ -215,11 +215,11 @@ functions:
 
    and gathers profiling statistics from the execution. If no file name is
    present, then this function automatically creates a :class:`~pstats.Stats`
-   instance and prints a simple profiling report. If the sort value is specified
+   instance and prints a simple profiling report. If the sort value is specified,
    it is passed to this :class:`~pstats.Stats` instance to control how the
    results are sorted.
 
-.. function:: runctx(command, globals, locals, filename=None)
+.. function:: runctx(command, globals, locals, filename=None, sort=-1)
 
    This function is similar to :func:`run`, with added arguments to supply the
    globals and locals dictionaries for the *command* string. This routine
@@ -444,9 +444,10 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       significant entries.  Initially, the list is taken to be the complete set
       of profiled functions.  Each restriction is either an integer (to select a
       count of lines), or a decimal fraction between 0.0 and 1.0 inclusive (to
-      select a percentage of lines), or a regular expression (to pattern match
-      the standard name that is printed.  If several restrictions are provided,
-      then they are applied sequentially.  For example::
+      select a percentage of lines), or a string that will interpreted as a
+      regular expression (to pattern match the standard name that is printed).
+      If several restrictions are provided, then they are applied sequentially.
+      For example::
 
          print_stats(.1, 'foo:')
 
@@ -574,7 +575,7 @@ procedure can be used to obtain a better constant for a given platform (see
 The method executes the number of Python calls given by the argument, directly
 and again under the profiler, measuring the time for both. It then computes the
 hidden overhead per profiler event, and returns that as a float.  For example,
-on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.clock() as
+on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.process_time() as
 the timer, the magical number is about 4.04e-6.
 
 The object of this exercise is to get a fairly consistent result. If your

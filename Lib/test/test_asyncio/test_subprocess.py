@@ -166,25 +166,32 @@ class SubprocessMixin:
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
     def test_send_signal(self):
-        code = 'import time; print("sleeping", flush=True); time.sleep(3600)'
-        args = [sys.executable, '-c', code]
-        create = asyncio.create_subprocess_exec(*args,
-                                                stdout=subprocess.PIPE,
-                                                loop=self.loop)
-        proc = self.loop.run_until_complete(create)
+        # bpo-31034: Make sure that we get the default signal handler (killing
+        # the process). The parent process may have decided to ignore SIGHUP,
+        # and signal handlers are inherited.
+        old_handler = signal.signal(signal.SIGHUP, signal.SIG_DFL)
+        try:
+            code = 'import time; print("sleeping", flush=True); time.sleep(3600)'
+            args = [sys.executable, '-c', code]
+            create = asyncio.create_subprocess_exec(*args,
+                                                    stdout=subprocess.PIPE,
+                                                    loop=self.loop)
+            proc = self.loop.run_until_complete(create)
 
-        @asyncio.coroutine
-        def send_signal(proc):
-            # basic synchronization to wait until the program is sleeping
-            line = yield from proc.stdout.readline()
-            self.assertEqual(line, b'sleeping\n')
+            @asyncio.coroutine
+            def send_signal(proc):
+                # basic synchronization to wait until the program is sleeping
+                line = yield from proc.stdout.readline()
+                self.assertEqual(line, b'sleeping\n')
 
-            proc.send_signal(signal.SIGHUP)
-            returncode = (yield from proc.wait())
-            return returncode
+                proc.send_signal(signal.SIGHUP)
+                returncode = (yield from proc.wait())
+                return returncode
 
-        returncode = self.loop.run_until_complete(send_signal(proc))
-        self.assertEqual(-signal.SIGHUP, returncode)
+            returncode = self.loop.run_until_complete(send_signal(proc))
+            self.assertEqual(-signal.SIGHUP, returncode)
+        finally:
+            signal.signal(signal.SIGHUP, old_handler)
 
     def prepare_broken_pipe_test(self):
         # buffer large enough to feed the whole pipe buffer
@@ -458,6 +465,30 @@ class SubprocessMixin:
                 with self.assertRaises(exc):
                     self.loop.run_until_complete(create)
                 self.assertEqual(warns, [])
+
+    def test_read_stdout_after_process_exit(self):
+        @asyncio.coroutine
+        def execute():
+            code = '\n'.join(['import sys',
+                              'for _ in range(64):',
+                              '    sys.stdout.write("x" * 4096)',
+                              'sys.stdout.flush()',
+                              'sys.exit(1)'])
+
+            fut = asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdout=asyncio.subprocess.PIPE,
+                loop=self.loop)
+
+            process = yield from fut
+            while True:
+                data = yield from process.stdout.read(65536)
+                if data:
+                    yield from asyncio.sleep(0.3, loop=self.loop)
+                else:
+                    break
+
+        self.loop.run_until_complete(execute())
 
 
 if sys.platform != 'win32':

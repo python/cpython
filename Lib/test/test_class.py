@@ -568,5 +568,32 @@ class ClassTests(unittest.TestCase):
         a = A(hash(A.f)^(-1))
         hash(a.f)
 
+    def testSetattrWrapperNameIntern(self):
+        # Issue #25794: __setattr__ should intern the attribute name
+        class A:
+            pass
+
+        def add(self, other):
+            return 'summa'
+
+        name = str(b'__add__', 'ascii')  # shouldn't be optimized
+        self.assertIsNot(name, '__add__')  # not interned
+        type.__setattr__(A, name, add)
+        self.assertEqual(A() + 1, 'summa')
+
+        name2 = str(b'__add__', 'ascii')
+        self.assertIsNot(name2, '__add__')
+        self.assertIsNot(name2, name)
+        type.__delattr__(A, name2)
+        with self.assertRaises(TypeError):
+            A() + 1
+
+    def testSetattrNonStringName(self):
+        class A:
+            pass
+
+        with self.assertRaises(TypeError):
+            type.__setattr__(A, b'x', None)
+
 if __name__ == '__main__':
     unittest.main()

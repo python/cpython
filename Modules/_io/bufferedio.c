@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "pythread.h"
 #include "_iomodule.h"
@@ -23,13 +24,6 @@ class _io.BufferedRWPair "rwpair *" "&PyBufferedRWPair_Type"
 class _io.BufferedRandom "buffered *" "&PyBufferedRandom_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=59460b9c5639984d]*/
-
-/*[python input]
-class io_ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = '_PyIO_ConvertSsize_t'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
 
 _Py_IDENTIFIER(close);
 _Py_IDENTIFIER(_dealloc_warn);
@@ -83,7 +77,7 @@ _bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readint
         return NULL;
     }
 
-    len = Py_SIZE(data);
+    len = PyBytes_GET_SIZE(data);
     if (len > buffer->len) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
@@ -203,7 +197,7 @@ bufferediobase_write(PyObject *self, PyObject *args)
 }
 
 
-typedef struct {
+typedef struct _buffered {
     PyObject_HEAD
 
     PyObject *raw;
@@ -237,17 +231,25 @@ typedef struct {
        isn't ready for writing. */
     Py_off_t write_end;
 
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-    volatile long owner;
-#endif
+    volatile unsigned long owner;
 
     Py_ssize_t buffer_size;
     Py_ssize_t buffer_mask;
 
     PyObject *dict;
     PyObject *weakreflist;
+
+    /* a doubly-linked chained list of "buffered" objects that need to
+       be flushed when the process exits */
+    struct _buffered *next, *prev;
 } buffered;
+
+/* the actual list of buffered objects */
+static buffered buffer_list_end = {
+    .next = &buffer_list_end,
+    .prev = &buffer_list_end
+};
 
 /*
     Implementation notes:
@@ -274,8 +276,6 @@ typedef struct {
 
 /* These macros protect the buffered object against concurrent operations. */
 
-#ifdef WITH_THREAD
-
 static int
 _enter_buffered_busy(buffered *self)
 {
@@ -286,7 +286,7 @@ _enter_buffered_busy(buffered *self)
                      "reentrant call inside %R", self);
         return 0;
     }
-    relax_locking = (_Py_Finalizing != NULL);
+    relax_locking = _Py_IsFinalizing();
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking)
         st = PyThread_acquire_lock(self->lock, 1);
@@ -321,11 +321,6 @@ _enter_buffered_busy(buffered *self)
         self->owner = 0; \
         PyThread_release_lock(self->lock); \
     } while(0);
-
-#else
-#define ENTER_BUFFERED(self) 1
-#define LEAVE_BUFFERED(self)
-#endif
 
 #define CHECK_INITIALIZED(self) \
     if (self->ok <= 0) { \
@@ -394,9 +389,20 @@ _enter_buffered_busy(buffered *self)
 
 
 static void
+remove_from_linked_list(buffered *self)
+{
+    self->next->prev = self->prev;
+    self->prev->next = self->next;
+    self->prev = NULL;
+    self->next = NULL;
+}
+
+static void
 buffered_dealloc(buffered *self)
 {
     self->finalizing = 1;
+    if (self->next != NULL)
+        remove_from_linked_list(self);
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
@@ -408,12 +414,10 @@ buffered_dealloc(buffered *self)
         PyMem_Free(self->buffer);
         self->buffer = NULL;
     }
-#ifdef WITH_THREAD
     if (self->lock) {
         PyThread_free_lock(self->lock);
         self->lock = NULL;
     }
-#endif
     Py_CLEAR(self->dict);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -702,7 +706,7 @@ _buffered_raw_tell(buffered *self)
     Py_DECREF(res);
     if (n < 0) {
         if (!PyErr_Occurred())
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "Raw stream returned invalid position %" PY_PRIdOFF,
                          (PY_OFF_T_COMPAT)n);
         return -1;
@@ -735,7 +739,7 @@ _buffered_raw_seek(buffered *self, Py_off_t target, int whence)
     Py_DECREF(res);
     if (n < 0) {
         if (!PyErr_Occurred())
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "Raw stream returned invalid position %" PY_PRIdOFF,
                          (PY_OFF_T_COMPAT)n);
         return -1;
@@ -760,7 +764,6 @@ _buffered_init(buffered *self)
         PyErr_NoMemory();
         return -1;
     }
-#ifdef WITH_THREAD
     if (self->lock)
         PyThread_free_lock(self->lock);
     self->lock = PyThread_allocate_lock();
@@ -769,7 +772,6 @@ _buffered_init(buffered *self)
         return -1;
     }
     self->owner = 0;
-#endif
     /* Find out whether buffer_size is a power of 2 */
     /* XXX is this optimization useful? */
     for (n = self->buffer_size - 1; n & 1; n >>= 1)
@@ -783,7 +785,7 @@ _buffered_init(buffered *self)
     return 0;
 }
 
-/* Return 1 if an EnvironmentError with errno == EINTR is set (and then
+/* Return 1 if an OSError with errno == EINTR is set (and then
    clears the error indicator), 0 otherwise.
    Should only be called when PyErr_Occurred() is true.
 */
@@ -792,17 +794,17 @@ _PyIO_trap_eintr(void)
 {
     static PyObject *eintr_int = NULL;
     PyObject *typ, *val, *tb;
-    PyEnvironmentErrorObject *env_err;
+    PyOSErrorObject *env_err;
 
     if (eintr_int == NULL) {
         eintr_int = PyLong_FromLong(EINTR);
         assert(eintr_int != NULL);
     }
-    if (!PyErr_ExceptionMatches(PyExc_EnvironmentError))
+    if (!PyErr_ExceptionMatches(PyExc_OSError))
         return 0;
     PyErr_Fetch(&typ, &val, &tb);
     PyErr_NormalizeException(&typ, &val, &tb);
-    env_err = (PyEnvironmentErrorObject *) val;
+    env_err = (PyOSErrorObject *) val;
     assert(env_err != NULL);
     if (env_err->myerrno != NULL &&
         PyObject_RichCompareBool(env_err->myerrno, eintr_int, Py_EQ) > 0) {
@@ -892,13 +894,13 @@ end:
 
 /*[clinic input]
 _io._Buffered.read
-    size as n: io_ssize_t = -1
+    size as n: Py_ssize_t(accept={int, NoneType}) = -1
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_read_impl(buffered *self, Py_ssize_t n)
-/*[clinic end generated code: output=f41c78bb15b9bbe9 input=c0939ec7f9e9354f]*/
+/*[clinic end generated code: output=f41c78bb15b9bbe9 input=7df81e82e08a68a2]*/
 {
     PyObject *res;
 
@@ -1206,13 +1208,13 @@ end_unlocked:
 
 /*[clinic input]
 _io._Buffered.readline
-    size: io_ssize_t = -1
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
-/*[clinic end generated code: output=24dd2aa6e33be83c input=ff1e0df821cb4e5c]*/
+/*[clinic end generated code: output=24dd2aa6e33be83c input=673b6240e315ef8a]*/
 {
     CHECK_INITIALIZED(self)
     return _buffered_readline(self, size);
@@ -1381,7 +1383,7 @@ buffered_iternext(buffered *self)
         line = PyObject_CallMethodObjArgs((PyObject *)self,
                                            _PyIO_str_readline, NULL);
         if (line && !PyBytes_Check(line)) {
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "readline() should have returned a bytes object, "
                          "not '%.200s'", Py_TYPE(line)->tp_name);
             Py_DECREF(line);
@@ -1415,8 +1417,18 @@ buffered_repr(buffered *self)
         res = PyUnicode_FromFormat("<%s>", Py_TYPE(self)->tp_name);
     }
     else {
-        res = PyUnicode_FromFormat("<%s name=%R>",
-                                   Py_TYPE(self)->tp_name, nameobj);
+        int status = Py_ReprEnter((PyObject *)self);
+        res = NULL;
+        if (status == 0) {
+            res = PyUnicode_FromFormat("<%s name=%R>",
+                                       Py_TYPE(self)->tp_name, nameobj);
+            Py_ReprLeave((PyObject *)self);
+        }
+        else if (status > 0) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "reentrant call inside %s.__repr__",
+                         Py_TYPE(self)->tp_name);
+        }
         Py_DECREF(nameobj);
     }
     return res;
@@ -1498,7 +1510,7 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
     if (n < 0 || n > len) {
-        PyErr_Format(PyExc_IOError,
+        PyErr_Format(PyExc_OSError,
                      "raw readinto() returned invalid length %zd "
                      "(should have been between 0 and %zd)", n, len);
         return -1;
@@ -1814,8 +1826,36 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->fast_closed_checks = (Py_TYPE(self) == &PyBufferedWriter_Type &&
                                 Py_TYPE(raw) == &PyFileIO_Type);
 
+    if (self->next == NULL) {
+        self->prev = &buffer_list_end;
+        self->next = buffer_list_end.next;
+        buffer_list_end.next->prev = self;
+        buffer_list_end.next = self;
+    }
+
     self->ok = 1;
     return 0;
+}
+
+/*
+* Ensure all buffered writers are flushed before proceeding with
+* normal shutdown.  Otherwise, if the underlying file objects get
+* finalized before the buffered writer wrapping it then any buffered
+* data will be lost.
+*/
+void _PyIO_atexit_flush(void)
+{
+    while (buffer_list_end.next != &buffer_list_end) {
+        buffered *buf = buffer_list_end.next;
+        remove_from_linked_list(buf);
+        if (buf->ok && !buf->finalizing) {
+            /* good state and not finalizing */
+            Py_INCREF(buf);
+            buffered_flush(buf, NULL);
+            Py_DECREF(buf);
+            PyErr_Clear();
+        }
+    }
 }
 
 static Py_ssize_t
@@ -1855,7 +1895,7 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
     if (n < 0 || n > len) {
-        PyErr_Format(PyExc_IOError,
+        PyErr_Format(PyExc_OSError,
                      "raw write() returned invalid length %zd "
                      "(should have been between 0 and %zd)", n, len);
         return -1;

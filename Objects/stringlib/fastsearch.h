@@ -32,6 +32,12 @@
 #define STRINGLIB_BLOOM(mask, ch)     \
     ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_WIDTH -1)))))
 
+#if STRINGLIB_SIZEOF_CHAR == 1
+#  define MEMCHR_CUT_OFF 15
+#else
+#  define MEMCHR_CUT_OFF 40
+#endif
+
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 {
@@ -39,7 +45,7 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 
     p = s;
     e = s + n;
-    if (n > 10) {
+    if (n > MEMCHR_CUT_OFF) {
 #if STRINGLIB_SIZEOF_CHAR == 1
         p = memchr(s, ch, n);
         if (p != NULL)
@@ -48,24 +54,36 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 #else
         /* use memchr if we can choose a needle without two many likely
            false positives */
+        const STRINGLIB_CHAR *s1, *e1;
         unsigned char needle = ch & 0xff;
         /* If looking for a multiple of 256, we'd have too
            many false positives looking for the '\0' byte in UCS2
            and UCS4 representations. */
         if (needle != 0) {
-            while (p < e) {
+            do {
                 void *candidate = memchr(p, needle,
                                          (e - p) * sizeof(STRINGLIB_CHAR));
                 if (candidate == NULL)
                     return -1;
+                s1 = p;
                 p = (const STRINGLIB_CHAR *)
                         _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR));
                 if (*p == ch)
                     return (p - s);
                 /* False positive */
                 p++;
+                if (p - s1 > MEMCHR_CUT_OFF)
+                    continue;
+                if (e - p <= MEMCHR_CUT_OFF)
+                    break;
+                e1 = p + MEMCHR_CUT_OFF;
+                while (p != e1) {
+                    if (*p == ch)
+                        return (p - s);
+                    p++;
+                }
             }
-            return -1;
+            while (e - p > MEMCHR_CUT_OFF);
         }
 #endif
     }
@@ -86,7 +104,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
        it doesn't seem as optimized as memchr(), but is still quite
        faster than our hand-written loop below */
 
-    if (n > 10) {
+    if (n > MEMCHR_CUT_OFF) {
 #if STRINGLIB_SIZEOF_CHAR == 1
         p = memrchr(s, ch, n);
         if (p != NULL)
@@ -95,24 +113,38 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 #else
         /* use memrchr if we can choose a needle without two many likely
            false positives */
+        const STRINGLIB_CHAR *s1;
+        Py_ssize_t n1;
         unsigned char needle = ch & 0xff;
         /* If looking for a multiple of 256, we'd have too
            many false positives looking for the '\0' byte in UCS2
            and UCS4 representations. */
         if (needle != 0) {
-            while (n > 0) {
+            do {
                 void *candidate = memrchr(s, needle,
                                           n * sizeof(STRINGLIB_CHAR));
                 if (candidate == NULL)
                     return -1;
+                n1 = n;
                 p = (const STRINGLIB_CHAR *)
                         _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR));
                 n = p - s;
                 if (*p == ch)
                     return n;
                 /* False positive */
+                if (n1 - n > MEMCHR_CUT_OFF)
+                    continue;
+                if (n <= MEMCHR_CUT_OFF)
+                    break;
+                s1 = p - MEMCHR_CUT_OFF;
+                while (p > s1) {
+                    p--;
+                    if (*p == ch)
+                        return (p - s);
+                }
+                n = p - s;
             }
-            return -1;
+            while (n > MEMCHR_CUT_OFF);
         }
 #endif
     }
@@ -125,6 +157,8 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
     }
     return -1;
 }
+
+#undef MEMCHR_CUT_OFF
 
 Py_LOCAL_INLINE(Py_ssize_t)
 FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,

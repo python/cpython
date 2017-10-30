@@ -34,7 +34,7 @@ unmarshalling.  Version 2 uses a binary format for floating point numbers.
 
 .. c:function:: PyObject* PyMarshal_WriteObjectToString(PyObject *value, int version)
 
-   Return a string object containing the marshalled representation of *value*.
+   Return a bytes object containing the marshalled representation of *value*.
    *version* indicates the file format.
 
 
@@ -88,10 +88,10 @@ written using these routines?
    :exc:`TypeError`) and returns *NULL*.
 
 
-.. c:function:: PyObject* PyMarshal_ReadObjectFromString(const char *string, Py_ssize_t len)
+.. c:function:: PyObject* PyMarshal_ReadObjectFromString(const char *data, Py_ssize_t len)
 
-   Return a Python object from the data stream in a character buffer
-   containing *len* bytes pointed to by *string*.
+   Return a Python object from the data stream in a byte buffer
+   containing *len* bytes pointed to by *data*.
 
    On error, sets the appropriate exception (:exc:`EOFError` or
    :exc:`TypeError`) and returns *NULL*.

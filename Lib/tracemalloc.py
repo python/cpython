@@ -1,4 +1,4 @@
-from collections import Sequence, Iterable
+from collections.abc import Sequence, Iterable
 from functools import total_ordering
 import fnmatch
 import linecache

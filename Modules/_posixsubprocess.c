@@ -111,13 +111,17 @@ _is_fdescfs_mounted_on_dev_fd(void)
 static int
 _sanity_check_python_fd_sequence(PyObject *fd_sequence)
 {
-    Py_ssize_t seq_idx, seq_len = PySequence_Length(fd_sequence);
+    Py_ssize_t seq_idx;
     long prev_fd = -1;
-    for (seq_idx = 0; seq_idx < seq_len; ++seq_idx) {
-        PyObject* py_fd = PySequence_Fast_GET_ITEM(fd_sequence, seq_idx);
-        long iter_fd = PyLong_AsLong(py_fd);
+    for (seq_idx = 0; seq_idx < PyTuple_GET_SIZE(fd_sequence); ++seq_idx) {
+        PyObject* py_fd = PyTuple_GET_ITEM(fd_sequence, seq_idx);
+        long iter_fd;
+        if (!PyLong_Check(py_fd)) {
+            return 1;
+        }
+        iter_fd = PyLong_AsLong(py_fd);
         if (iter_fd < 0 || iter_fd <= prev_fd || iter_fd > INT_MAX) {
-            /* Negative, overflow, not a Long, unsorted, too big for a fd. */
+            /* Negative, overflow, unsorted, too big for a fd. */
             return 1;
         }
         prev_fd = iter_fd;
@@ -132,13 +136,12 @@ _is_fd_in_sorted_fd_sequence(int fd, PyObject *fd_sequence)
 {
     /* Binary search. */
     Py_ssize_t search_min = 0;
-    Py_ssize_t search_max = PySequence_Length(fd_sequence) - 1;
+    Py_ssize_t search_max = PyTuple_GET_SIZE(fd_sequence) - 1;
     if (search_max < 0)
         return 0;
     do {
         long middle = (search_min + search_max) / 2;
-        long middle_fd = PyLong_AsLong(
-                PySequence_Fast_GET_ITEM(fd_sequence, middle));
+        long middle_fd = PyLong_AsLong(PyTuple_GET_ITEM(fd_sequence, middle));
         if (fd == middle_fd)
             return 1;
         if (fd > middle_fd)
@@ -154,9 +157,9 @@ make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
 {
     Py_ssize_t i, len;
 
-    len = PySequence_Length(py_fds_to_keep);
+    len = PyTuple_GET_SIZE(py_fds_to_keep);
     for (i = 0; i < len; ++i) {
-        PyObject* fdobj = PySequence_Fast_GET_ITEM(py_fds_to_keep, i);
+        PyObject* fdobj = PyTuple_GET_ITEM(py_fds_to_keep, i);
         long fd = PyLong_AsLong(fdobj);
         assert(!PyErr_Occurred());
         assert(0 <= fd && fd <= INT_MAX);
@@ -213,14 +216,13 @@ static void
 _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
 {
     long end_fd = safe_get_max_fd();
-    Py_ssize_t num_fds_to_keep = PySequence_Length(py_fds_to_keep);
+    Py_ssize_t num_fds_to_keep = PyTuple_GET_SIZE(py_fds_to_keep);
     Py_ssize_t keep_seq_idx;
     int fd_num;
     /* As py_fds_to_keep is sorted we can loop through the list closing
      * fds inbetween any in the keep list falling within our range. */
     for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
-        PyObject* py_keep_fd = PySequence_Fast_GET_ITEM(py_fds_to_keep,
-                                                        keep_seq_idx);
+        PyObject* py_keep_fd = PyTuple_GET_ITEM(py_fds_to_keep, keep_seq_idx);
         int keep_fd = PyLong_AsLong(py_keep_fd);
         if (keep_fd < start_fd)
             continue;
@@ -306,7 +308,7 @@ _close_open_fds_safe(int start_fd, PyObject* py_fds_to_keep)
 
 
 /* Close all open file descriptors from start_fd and higher.
- * Do not close any in the sorted py_fds_to_keep list.
+ * Do not close any in the sorted py_fds_to_keep tuple.
  *
  * This function violates the strict use of async signal safe functions. :(
  * It calls opendir(), readdir() and closedir().  Of these, the one most
@@ -557,13 +559,12 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
     Py_ssize_t arg_num;
-#ifdef WITH_THREAD
-    int import_lock_held = 0;
-#endif
+    int need_after_fork = 0;
 
     if (!PyArg_ParseTuple(
-            args, "OOpOOOiiiiiiiiiiO:fork_exec",
-            &process_args, &executable_list, &close_fds, &py_fds_to_keep,
+            args, "OOpO!OOiiiiiiiiiiO:fork_exec",
+            &process_args, &executable_list,
+            &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
@@ -572,10 +573,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
 
     if (close_fds && errpipe_write < 3) {  /* precondition */
         PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
-        return NULL;
-    }
-    if (PySequence_Length(py_fds_to_keep) < 0) {
-        PyErr_SetString(PyExc_ValueError, "cannot get length of fds_to_keep");
         return NULL;
     }
     if (_sanity_check_python_fd_sequence(py_fds_to_keep)) {
@@ -631,6 +628,10 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             goto cleanup;
         for (arg_num = 0; arg_num < num_args; ++arg_num) {
             PyObject *borrowed_arg, *converted_arg;
+            if (PySequence_Fast_GET_SIZE(fast_args) != num_args) {
+                PyErr_SetString(PyExc_RuntimeError, "args changed during iteration");
+                goto cleanup;
+            }
             borrowed_arg = PySequence_Fast_GET_ITEM(fast_args, arg_num);
             if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0)
                 goto cleanup;
@@ -650,16 +651,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             goto cleanup;
     }
 
-    if (preexec_fn != Py_None) {
-        preexec_fn_args_tuple = PyTuple_New(0);
-        if (!preexec_fn_args_tuple)
-            goto cleanup;
-#ifdef WITH_THREAD
-        _PyImport_AcquireLock();
-        import_lock_held = 1;
-#endif
-    }
-
     if (cwd_obj != Py_None) {
         if (PyUnicode_FSConverter(cwd_obj, &cwd_obj2) == 0)
             goto cleanup;
@@ -667,6 +658,17 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     } else {
         cwd = NULL;
         cwd_obj2 = NULL;
+    }
+
+    /* This must be the last thing done before fork() because we do not
+     * want to call PyOS_BeforeFork() if there is any chance of another
+     * error leading to the cleanup: code without calling fork(). */
+    if (preexec_fn != Py_None) {
+        preexec_fn_args_tuple = PyTuple_New(0);
+        if (!preexec_fn_args_tuple)
+            goto cleanup;
+        PyOS_BeforeFork();
+        need_after_fork = 1;
     }
 
     pid = fork();
@@ -683,7 +685,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
              * This call may not be async-signal-safe but neither is calling
              * back into Python.  The user asked us to use hope as a strategy
              * to avoid deadlock... */
-            PyOS_AfterFork();
+            PyOS_AfterFork_Child();
         }
 
         child_exec(exec_array, argv, envp, cwd,
@@ -700,17 +702,10 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         /* Capture the errno exception before errno can be clobbered. */
         PyErr_SetFromErrno(PyExc_OSError);
     }
-#ifdef WITH_THREAD
-    if (preexec_fn != Py_None
-        && _PyImport_ReleaseLock() < 0 && !PyErr_Occurred()) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        pid = -1;
-    }
-    import_lock_held = 0;
-#endif
 
     /* Parent process */
+    if (need_after_fork)
+        PyOS_AfterFork_Parent();
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)
@@ -730,10 +725,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     return PyLong_FromPid(pid);
 
 cleanup:
-#ifdef WITH_THREAD
-    if (import_lock_held)
-        _PyImport_ReleaseLock();
-#endif
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)

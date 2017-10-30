@@ -26,13 +26,13 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
-from . import compat
 from . import events
 from . import futures
 from . import selectors
 from . import tasks
 from .coroutines import coroutine
 from .log import logger
+from test import support
 
 
 if sys.platform == 'win32':  # pragma: no cover
@@ -45,7 +45,7 @@ def dummy_ssl_context():
     if ssl is None:
         return None
     else:
-        return ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        return ssl.SSLContext(ssl.PROTOCOL_TLS)
 
 
 def run_briefly(loop):
@@ -437,24 +437,35 @@ def get_function_source(func):
 
 
 class TestCase(unittest.TestCase):
+    @staticmethod
+    def close_loop(loop):
+        executor = loop._default_executor
+        if executor is not None:
+            executor.shutdown(wait=True)
+        loop.close()
+
     def set_event_loop(self, loop, *, cleanup=True):
         assert loop is not None
         # ensure that the event loop is passed explicitly in asyncio
         events.set_event_loop(None)
         if cleanup:
-            self.addCleanup(loop.close)
+            self.addCleanup(self.close_loop, loop)
 
     def new_test_loop(self, gen=None):
         loop = TestLoop(gen)
         self.set_event_loop(loop)
         return loop
 
+    def unpatch_get_running_loop(self):
+        events._get_running_loop = self._get_running_loop
+
     def setUp(self):
         self._get_running_loop = events._get_running_loop
         events._get_running_loop = lambda: None
+        self._thread_cleanup = support.threading_setup()
 
     def tearDown(self):
-        events._get_running_loop = self._get_running_loop
+        self.unpatch_get_running_loop()
 
         events.set_event_loop(None)
 
@@ -462,15 +473,9 @@ class TestCase(unittest.TestCase):
         # in an except block of a generator
         self.assertEqual(sys.exc_info(), (None, None, None))
 
-    if not compat.PY34:
-        # Python 3.3 compatibility
-        def subTest(self, *args, **kwargs):
-            class EmptyCM:
-                def __enter__(self):
-                    pass
-                def __exit__(self, *exc):
-                    pass
-            return EmptyCM()
+        self.doCleanups()
+        support.threading_cleanup(*self._thread_cleanup)
+        support.reap_children()
 
 
 @contextlib.contextmanager

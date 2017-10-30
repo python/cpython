@@ -10,7 +10,6 @@ import codecs
 import itertools
 import operator
 import struct
-import string
 import sys
 import unittest
 import warnings
@@ -1279,6 +1278,13 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(ValueError, '{}'.format_map, 'a')
         self.assertRaises(ValueError, '{a} {}'.format_map, {"a" : 2, "b" : 1})
 
+        class BadMapping:
+            def __getitem__(self, key):
+                return 1/0
+        self.assertRaises(KeyError, '{a}'.format_map, {})
+        self.assertRaises(TypeError, '{a}'.format_map, [])
+        self.assertRaises(ZeroDivisionError, '{a}'.format_map, BadMapping())
+
     def test_format_huge_precision(self):
         format_string = ".{}f".format(sys.maxsize + 1)
         with self.assertRaises(ValueError):
@@ -1447,6 +1453,15 @@ class UnicodeTest(string_tests.CommonTest,
         format_string = "%.{}f".format(sys.maxsize + 1)
         with self.assertRaises(ValueError):
             result = format_string % 2.34
+
+    def test_issue28598_strsubclass_rhs(self):
+        # A subclass of str with an __rmod__ method should be able to hook
+        # into the % operator
+        class SubclassedStr(str):
+            def __rmod__(self, other):
+                return 'Success, self.__rmod__({!r}) was called'.format(other)
+        self.assertEqual('lhs %% %r' % SubclassedStr('rhs'),
+                         "Success, self.__rmod__('lhs %% %r') was called")
 
     @support.cpython_only
     def test_formatting_huge_precision_c_limits(self):

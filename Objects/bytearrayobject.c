@@ -2,6 +2,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "bytes_methods.h"
 #include "bytesobject.h"
@@ -100,6 +102,26 @@ PyByteArray_FromObject(PyObject *input)
 {
     return PyObject_CallFunctionObjArgs((PyObject *)&PyByteArray_Type,
                                         input, NULL);
+}
+
+static PyObject *
+_PyByteArray_FromBufferObject(PyObject *obj)
+{
+    PyObject *result;
+    Py_buffer view;
+
+    if (PyObject_GetBuffer(obj, &view, PyBUF_FULL_RO) < 0) {
+        return NULL;
+    }
+    result = PyByteArray_FromStringAndSize(NULL, view.len);
+    if (result != NULL &&
+        PyBuffer_ToContiguous(PyByteArray_AS_STRING(result),
+                              &view, view.len, 'C') < 0)
+    {
+        Py_CLEAR(result);
+    }
+    PyBuffer_Release(&view);
+    return result;
 }
 
 PyObject *
@@ -224,7 +246,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
             return -1;
         }
         memcpy(sval, PyByteArray_AS_STRING(self),
-               Py_MIN(requested_size, Py_SIZE(self)));
+               Py_MIN((size_t)requested_size, (size_t)Py_SIZE(self)));
         PyObject_Free(obj->ob_bytes);
     }
     else {
@@ -254,7 +276,7 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
     if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
         PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
-                         Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+                         Py_TYPE(b)->tp_name, Py_TYPE(a)->tp_name);
             goto done;
     }
 
@@ -400,11 +422,11 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
     }
     else if (PySlice_Check(index)) {
         Py_ssize_t start, stop, step, slicelength, cur, i;
-        if (PySlice_GetIndicesEx(index,
-                                 PyByteArray_GET_SIZE(self),
-                                 &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(index, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyByteArray_GET_SIZE(self),
+                                            &start, &stop, step);
 
         if (slicelength <= 0)
             return PyByteArray_FromStringAndSize("", 0);
@@ -534,7 +556,8 @@ bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
     if (values == (PyObject *)self) {
         /* Make a copy and call this function recursively */
         int err;
-        values = PyByteArray_FromObject(values);
+        values = PyByteArray_FromStringAndSize(PyByteArray_AS_STRING(values),
+                                               PyByteArray_GET_SIZE(values));
         if (values == NULL)
             return -1;
         err = bytearray_setslice(self, lo, hi, values);
@@ -630,11 +653,11 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         }
     }
     else if (PySlice_Check(index)) {
-        if (PySlice_GetIndicesEx(index,
-                                 PyByteArray_GET_SIZE(self),
-                                 &start, &stop, &step, &slicelen) < 0) {
+        if (PySlice_Unpack(index, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelen = PySlice_AdjustIndices(PyByteArray_GET_SIZE(self), &start,
+                                         &stop, step);
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -889,11 +912,12 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 bytearray_repr(PyByteArrayObject *self)
 {
-    const char *quote_prefix = "bytearray(b";
+    const char *className = _PyType_Name(Py_TYPE(self));
+    const char *quote_prefix = "(b";
     const char *quote_postfix = ")";
     Py_ssize_t length = Py_SIZE(self);
-    /* 15 == strlen(quote_prefix) + 2 + strlen(quote_postfix) + 1 */
-    size_t newsize;
+    /* 6 == strlen(quote_prefix) + 2 + strlen(quote_postfix) + 1 */
+    Py_ssize_t newsize;
     PyObject *v;
     Py_ssize_t i;
     char *bytes;
@@ -903,13 +927,14 @@ bytearray_repr(PyByteArrayObject *self)
     char *test, *start;
     char *buffer;
 
-    if (length > (PY_SSIZE_T_MAX - 15) / 4) {
+    newsize = strlen(className);
+    if (length > (PY_SSIZE_T_MAX - 6 - newsize) / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "bytearray object is too large to make repr");
         return NULL;
     }
 
-    newsize = 15 + length * 4;
+    newsize += 6 + length * 4;
     buffer = PyObject_Malloc(newsize);
     if (buffer == NULL) {
         PyErr_NoMemory();
@@ -929,6 +954,8 @@ bytearray_repr(PyByteArrayObject *self)
     }
 
     p = buffer;
+    while (*className)
+        *p++ = *className++;
     while (*quote_prefix)
         *p++ = *quote_prefix++;
     *p++ = quote;
@@ -964,7 +991,7 @@ bytearray_repr(PyByteArrayObject *self)
        *p++ = *quote_postfix++;
     }
 
-    v = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
+    v = PyUnicode_FromStringAndSize(buffer, p - buffer);
     PyObject_Free(buffer);
     return v;
 }
@@ -1381,19 +1408,19 @@ Partition the bytearray into three parts using the given separator.
 
 This will search for the separator sep in the bytearray. If the separator is
 found, returns a 3-tuple containing the part before the separator, the
-separator itself, and the part after it.
+separator itself, and the part after it as new bytearray objects.
 
-If the separator is not found, returns a 3-tuple containing the original
-bytearray object and two empty bytearray objects.
+If the separator is not found, returns a 3-tuple containing the copy of the
+original bytearray object and two empty bytearray objects.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_partition(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=45d2525ddd35f957 input=86f89223892b70b5]*/
+/*[clinic end generated code: output=45d2525ddd35f957 input=8f644749ee4fc83a]*/
 {
     PyObject *bytesep, *result;
 
-    bytesep = PyByteArray_FromObject(sep);
+    bytesep = _PyByteArray_FromBufferObject(sep);
     if (! bytesep)
         return NULL;
 
@@ -1414,23 +1441,24 @@ bytearray.rpartition
     sep: object
     /
 
-Partition the bytes into three parts using the given separator.
+Partition the bytearray into three parts using the given separator.
 
-This will search for the separator sep in the bytearray, starting and the end.
+This will search for the separator sep in the bytearray, starting at the end.
 If the separator is found, returns a 3-tuple containing the part before the
-separator, the separator itself, and the part after it.
+separator, the separator itself, and the part after it as new bytearray
+objects.
 
 If the separator is not found, returns a 3-tuple containing two empty bytearray
-objects and the original bytearray object.
+objects and the copy of the original bytearray object.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_rpartition(PyByteArrayObject *self, PyObject *sep)
-/*[clinic end generated code: output=440de3c9426115e8 input=5f4094f2de87c8f3]*/
+/*[clinic end generated code: output=440de3c9426115e8 input=7e3df3e6cb8fa0ac]*/
 {
     PyObject *bytesep, *result;
 
-    bytesep = PyByteArray_FromObject(sep);
+    bytesep = _PyByteArray_FromBufferObject(sep);
     if (! bytesep)
         return NULL;
 
@@ -1952,7 +1980,7 @@ bytearray_join(PyByteArrayObject *self, PyObject *iterable_of_bytes)
 /*[clinic input]
 bytearray.splitlines
 
-    keepends: int(c_default="0") = False
+    keepends: bool(accept={int}) = False
 
 Return a list of the lines in the bytearray, breaking at line boundaries.
 
@@ -1962,7 +1990,7 @@ true.
 
 static PyObject *
 bytearray_splitlines_impl(PyByteArrayObject *self, int keepends)
-/*[clinic end generated code: output=4223c94b895f6ad9 input=8ccade941e5ea0bd]*/
+/*[clinic end generated code: output=4223c94b895f6ad9 input=99a27ad959b9cf6b]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyByteArray_AS_STRING(self),

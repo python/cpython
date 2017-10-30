@@ -8,6 +8,7 @@
 
 import sys, os, time
 sys.path.append(os.path.abspath('tools/extensions'))
+sys.path.append(os.path.abspath('includes'))
 
 # General configuration
 # ---------------------
@@ -37,7 +38,8 @@ highlight_language = 'python3'
 needs_sphinx = '1.2'
 
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*', 'README.rst']
+venvdir = os.getenv('VENVDIR', 'venv')
+exclude_patterns = [venvdir+'/*', 'README.rst']
 
 
 # Options for HTML output
@@ -89,13 +91,17 @@ html_split_index = True
 # ------------------------
 
 # Get LaTeX to handle Unicode correctly
-latex_elements = {'inputenc': r'\usepackage[utf8x]{inputenc}', 'utf8extra': ''}
+latex_elements = {
+    'inputenc': r'\usepackage[utf8x]{inputenc}',
+    'utf8extra': '',
+    'fontenc': r'\usepackage[T1,T2A]{fontenc}',
+}
 
 # Additional stuff for the LaTeX preamble.
 latex_elements['preamble'] = r'''
 \authoraddress{
-  \strong{Python Software Foundation}\\
-  Email: \email{docs@python.org}
+  \sphinxstrong{Python Software Foundation}\\
+  Email: \sphinxemail{docs@python.org}
 }
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
@@ -105,7 +111,7 @@ latex_elements['preamble'] = r'''
 latex_elements['papersize'] = 'a4'
 
 # The font size ('10pt', '11pt' or '12pt').
-latex_elements['font_size'] = '10pt'
+latex_elements['pointsize'] = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).

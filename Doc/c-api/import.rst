@@ -204,6 +204,13 @@ Importing Modules
    Return the dictionary used for the module administration (a.k.a.
    ``sys.modules``).  Note that this is a per-interpreter variable.
 
+.. c:function:: PyObject* PyImport_GetModule(PyObject *name)
+
+   Return the already imported module with the given name.  If the
+   module has not been imported yet then returns NULL but does not set
+   an error.  Returns NULL and sets an error if the lookup failed.
+
+   .. versionadded:: 3.7
 
 .. c:function:: PyObject* PyImport_GetImporter(PyObject *path)
 
@@ -229,11 +236,6 @@ Importing Modules
 .. c:function:: void _PyImport_Fini()
 
    Finalize the import mechanism.  For internal use only.
-
-
-.. c:function:: PyObject* _PyImport_FindExtension(char *, char *)
-
-   For internal use only.
 
 
 .. c:function:: int PyImport_ImportFrozenModuleObject(PyObject *name)
@@ -266,8 +268,8 @@ Importing Modules
    is::
 
       struct _frozen {
-          char *name;
-          unsigned char *code;
+          const char *name;
+          const unsigned char *code;
           int size;
       };
 
@@ -300,7 +302,7 @@ Importing Modules
    The structure is defined in :file:`Include/import.h` as::
 
       struct _inittab {
-          char *name;                 /* ASCII encoded string */
+          const char *name;           /* ASCII encoded string */
           PyObject* (*initfunc)(void);
       };
 

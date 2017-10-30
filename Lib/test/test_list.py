@@ -16,6 +16,8 @@ class ListTest(list_tests.CommonTest):
         self.assertEqual(list((0, 1, 2, 3)), [0, 1, 2, 3])
         self.assertEqual(list(''), [])
         self.assertEqual(list('spam'), ['s', 'p', 'a', 'm'])
+        self.assertEqual(list(x for x in range(10) if x % 2),
+                         [1, 3, 5, 7, 9])
 
         if sys.maxsize == 0x7fffffff:
             # This test can currently only work on 32-bit machines.
@@ -38,6 +40,10 @@ class ListTest(list_tests.CommonTest):
         x = []
         x.extend(-y for y in x)
         self.assertEqual(x, [])
+
+    def test_keyword_args(self):
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            list(sequence=[])
 
     def test_truth(self):
         super().test_truth()

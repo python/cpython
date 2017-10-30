@@ -1,6 +1,7 @@
 """Tests to cover the Tools/i18n package"""
 
 import os
+import sys
 import unittest
 
 from test.support.script_helper import assert_python_ok
@@ -53,7 +54,8 @@ class Test_pygettext(unittest.TestCase):
 
             #"Plural-Forms" is optional
 
-
+    @unittest.skipIf(sys.platform.startswith('aix'),
+                     'bpo-29972: broken test on AIX')
     def test_POT_Creation_Date(self):
         """ Match the date format from xgettext for POT-Creation-Date """
         from datetime import datetime

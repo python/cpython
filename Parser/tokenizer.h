@@ -65,13 +65,6 @@ struct tok_state {
     const char* enc;        /* Encoding for the current str. */
     const char* str;
     const char* input; /* Tokenizer's newline translated copy of the string. */
-
-    /* async/await related fields; can be removed in 3.7 when async and await
-       become normal keywords. */
-    int async_def;        /* =1 if tokens are inside an 'async def' body. */
-    int async_def_indent; /* Indentation level of the outermost 'async def'. */
-    int async_def_nl;     /* =1 if the outermost 'async def' had at least one
-                             NEWLINE token after it. */
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);
@@ -80,8 +73,6 @@ extern struct tok_state *PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void PyTokenizer_Free(struct tok_state *);
 extern int PyTokenizer_Get(struct tok_state *, char **, char **);
-extern char * PyTokenizer_RestoreEncoding(struct tok_state* tok,
-                                          int len, int *offset);
 
 #ifdef __cplusplus
 }

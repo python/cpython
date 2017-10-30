@@ -172,7 +172,7 @@ The :mod:`csv` module defines the following classes:
    A short usage example::
 
        >>> import csv
-       >>> with open('names.csv') as csvfile:
+       >>> with open('names.csv', newline='') as csvfile:
        ...     reader = csv.DictReader(csvfile)
        ...     for row in reader:
        ...         print(row['first_name'], row['last_name'])
@@ -211,7 +211,7 @@ The :mod:`csv` module defines the following classes:
 
        import csv
 
-       with open('names.csv', 'w') as csvfile:
+       with open('names.csv', 'w', newline='') as csvfile:
            fieldnames = ['first_name', 'last_name']
            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -270,7 +270,7 @@ The :mod:`csv` module defines the following classes:
 
 An example for :class:`Sniffer` use::
 
-   with open('example.csv') as csvfile:
+   with open('example.csv', newline='') as csvfile:
        dialect = csv.Sniffer().sniff(csvfile.read(1024))
        csvfile.seek(0)
        reader = csv.reader(csvfile, dialect)
@@ -401,8 +401,10 @@ Reader objects (:class:`DictReader` instances and objects returned by the
 
 .. method:: csvreader.__next__()
 
-   Return the next row of the reader's iterable object as a list, parsed according
-   to the current dialect.  Usually you should call this as ``next(reader)``.
+   Return the next row of the reader's iterable object as a list (if the object
+   was returned from :func:`reader`) or a dict (if it is a :class:`DictReader`
+   instance), parsed according to the current dialect.  Usually you should call
+   this as ``next(reader)``.
 
 
 Reader objects have the following public attributes:

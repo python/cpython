@@ -7,10 +7,7 @@ from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
-try:
-    import threading
-except ImportError:
-    threading = None
+
 try:
     import _testcapi
 except ImportError:
@@ -865,6 +862,7 @@ class TestCommandLine(unittest.TestCase):
                                   b'number of frames',
                                   stderr)
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
     def test_pymem_alloc0(self):
         # Issue #21639: Check that PyMem_Malloc(0) with tracemalloc enabled
         # does not crash.

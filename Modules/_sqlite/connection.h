@@ -61,7 +61,7 @@ typedef struct
     int initialized;
 
     /* thread identification of the thread the connection was created in */
-    long thread_ident;
+    unsigned long thread_ident;
 
     pysqlite_Cache* statement_cache;
 

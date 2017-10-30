@@ -541,7 +541,8 @@ def encodebytes(s):
 def encodestring(s):
     """Legacy alias of encodebytes()."""
     import warnings
-    warnings.warn("encodestring() is a deprecated alias, use encodebytes()",
+    warnings.warn("encodestring() is a deprecated alias since 3.1, "
+                  "use encodebytes()",
                   DeprecationWarning, 2)
     return encodebytes(s)
 
@@ -554,7 +555,8 @@ def decodebytes(s):
 def decodestring(s):
     """Legacy alias of decodebytes()."""
     import warnings
-    warnings.warn("decodestring() is a deprecated alias, use decodebytes()",
+    warnings.warn("decodestring() is a deprecated alias since Python 3.1, "
+                  "use decodebytes()",
                   DeprecationWarning, 2)
     return decodebytes(s)
 

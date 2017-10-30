@@ -49,7 +49,7 @@ For format *version* lower than 3, recursive lists, sets and dictionaries cannot
 be written (see below).
 
 There are functions that read/write files as well as functions operating on
-strings.
+bytes-like objects.
 
 The module defines these functions:
 
@@ -57,9 +57,7 @@ The module defines these functions:
 .. function:: dump(value, file[, version])
 
    Write the value on the open file.  The value must be a supported type.  The
-   file must be an open file object such as ``sys.stdout`` or returned by
-   :func:`open` or :func:`os.popen`.  It must be opened in binary mode (``'wb'``
-   or ``'w+b'``).
+   file must be a writeable :term:`binary file`.
 
    If the value has (or contains an object that has) an unsupported type, a
    :exc:`ValueError` exception is raised --- but garbage data will also be written
@@ -74,8 +72,7 @@ The module defines these functions:
    Read one value from the open file and return it.  If no valid value is read
    (e.g. because the data has a different Python version's incompatible marshal
    format), raise :exc:`EOFError`, :exc:`ValueError` or :exc:`TypeError`.  The
-   file must be an open file object opened in binary mode (``'rb'`` or
-   ``'r+b'``).
+   file must be a readable :term:`binary file`.
 
    .. note::
 
@@ -85,7 +82,7 @@ The module defines these functions:
 
 .. function:: dumps(value[, version])
 
-   Return the string that would be written to a file by ``dump(value, file)``.  The
+   Return the bytes object that would be written to a file by ``dump(value, file)``.  The
    value must be a supported type.  Raise a :exc:`ValueError` exception if value
    has (or contains an object that has) an unsupported type.
 
@@ -93,11 +90,11 @@ The module defines these functions:
    (see below).
 
 
-.. function:: loads(string)
+.. function:: loads(bytes)
 
-   Convert the string to a value.  If no valid value is found, raise
-   :exc:`EOFError`, :exc:`ValueError` or :exc:`TypeError`.  Extra characters in the
-   string are ignored.
+   Convert the :term:`bytes-like object` to a value.  If no valid value is found, raise
+   :exc:`EOFError`, :exc:`ValueError` or :exc:`TypeError`.  Extra bytes in the
+   input are ignored.
 
 
 In addition, the following constants are defined:

@@ -15,7 +15,6 @@ import zipfile, os, unittest
 import time
 import sys
 
-from io import StringIO
 from tempfile import TemporaryFile
 
 from test.support import TESTFN, requires_zlib

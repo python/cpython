@@ -246,9 +246,11 @@ class IntTestCases(unittest.TestCase):
 
     def test_keyword_args(self):
         # Test invoking int() using keyword arguments.
-        self.assertEqual(int(x=1.2), 1)
         self.assertEqual(int('100', base=2), 4)
-        self.assertEqual(int(x='100', base=2), 4)
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            int(x=1.2)
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            int(x='100', base=2)
         self.assertRaises(TypeError, int, base=10)
         self.assertRaises(TypeError, int, base=0)
 
@@ -505,6 +507,14 @@ class IntTestCases(unittest.TestCase):
         # lone surrogate in Unicode string
         check('123\ud800')
         check('123\ud800', 10)
+
+    def test_issue31619(self):
+        self.assertEqual(int('1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1', 2),
+                         0b1010101010101010101010101010101)
+        self.assertEqual(int('1_2_3_4_5_6_7_0_1_2_3', 8), 0o12345670123)
+        self.assertEqual(int('1_2_3_4_5_6_7_8_9', 16), 0x123456789)
+        self.assertEqual(int('1_2_3_4_5_6_7', 32), 1144132807)
+
 
 if __name__ == "__main__":
     unittest.main()
