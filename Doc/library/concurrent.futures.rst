@@ -128,7 +128,9 @@ And::
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously. If all worker threads are busy it
-   buffers new work items using a queue of maximum size *max_queue_size*.
+   buffers new work items using a queue of maximum size *max_queue_size*. When
+   this maximum size is reached, map() and submit() will block until more work
+   items have been processed.
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -448,4 +450,3 @@ Exception classes
    in a non-clean fashion (for example, if it was killed from the outside).
 
    .. versionadded:: 3.3
-
