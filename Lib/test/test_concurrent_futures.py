@@ -239,18 +239,27 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
             t.join()
 
     def test_default_max_queue_size(self):
-        executor = futures.ThreadPoolExecutor()
-        self.assertEqual(executor._work_queue.maxsize, 0)
+        with futures.ThreadPoolExecutor() as executor:
+            self.assertEqual(executor._work_queue.maxsize, 0)
 
     def test_custom_max_queue_size(self):
-        # test custom valid and invalid values
-        for i in range(-10, 10):
-            executor = futures.ThreadPoolExecutor(max_queue_size=i)
-            self.assertEqual(executor._work_queue.maxsize, i)
-        # provided value is forwarded without checking it
-        for bad_value in [None, "5", False, True, 3.14]:
-            executor = futures.ThreadPoolExecutor(max_queue_size=bad_value)
-            self.assertEqual(executor._work_queue.maxsize, bad_value)
+        qsize = 1
+        with futures.ThreadPoolExecutor(max_queue_size=qsize) as executor:
+            # test custom queue size was passed down
+            self.assertEqual(executor._work_queue.maxsize, qsize)
+
+            # test executor works with custom size
+            n = 10
+
+            def process_item(item):
+                return item + 1
+
+            fs = [executor.submit(process_item, i) for i in range(n)]
+            expected_results = [process_item(i) for i in range(n)]
+
+            for f in futures.as_completed(fs, timeout=10):
+                result = f.result()
+                self.assertTrue(result in expected_results, result)
 
 
 class ProcessPoolShutdownTest(ExecutorShutdownTest):
