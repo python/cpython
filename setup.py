@@ -630,6 +630,7 @@ class PyBuildExt(build_ext):
                 if item.startswith('-L'):
                     lib_dirs.append(item[2:])
 
+
         math_libs = self.detect_math_libs()
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
@@ -857,7 +858,7 @@ class PyBuildExt(build_ext):
 
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
-                               depends = ['socketmodule.h']) )
+                               depends = ['socketmodule.h'] ) )
         # Detect SSL support for the socket module (via _ssl)
         search_for_ssl_incs_in = [
                               '/usr/local/ssl/include',
@@ -1521,8 +1522,8 @@ class PyBuildExt(build_ext):
             libraries = ['z']
             extra_link_args = zlib_extra_link_args
         else:
-            extra_compile_args = []
             libraries = []
+            extra_compile_args = []
             extra_link_args = []
         exts.append( Extension('binascii', ['binascii.c'],
                                extra_compile_args = extra_compile_args,
@@ -1574,7 +1575,6 @@ class PyBuildExt(build_ext):
                 # call XML_SetHashSalt(), expat entropy sources are not needed
                 ('XML_POOR_ENTROPY', '1'),
             ]
-            extra_compile_args = []
             expat_lib = []
             expat_sources = ['expat/xmlparse.c',
                              'expat/xmlrole.c',
@@ -1625,10 +1625,12 @@ class PyBuildExt(build_ext):
 
         # Hye-Shik Chang's CJKCodecs modules.
         exts.append(Extension('_multibytecodec',
-                              ['cjkcodecs/multibytecodec.c']))
+                              ['cjkcodecs/multibytecodec.c'],
+                              ))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
             exts.append(Extension('_codecs_%s' % loc,
-                                  ['cjkcodecs/_codecs_%s.c' % loc]))
+                                  ['cjkcodecs/_codecs_%s.c' % loc],
+                                  ))
 
         # Stefan Krah's _decimal module
         exts.append(self._decimal_ext())
@@ -1746,7 +1748,6 @@ class PyBuildExt(build_ext):
         extra_link_args = tcltk_libs.split()
         ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                         define_macros=[('WITH_APPINIT', 1)],
-                        extra_compile_args = extra_compile_args,
                         extra_link_args = extra_link_args,
                         )
         self.extensions.append(ext)
@@ -1949,7 +1950,7 @@ class PyBuildExt(build_ext):
                         define_macros=[('WITH_APPINIT', 1)] + defs,
                         include_dirs = include_dirs,
                         libraries = libs,
-                        library_dirs = added_lib_dirs,
+                        library_dirs = added_lib_dirs
                         )
         self.extensions.append(ext)
 
@@ -2033,14 +2034,15 @@ class PyBuildExt(build_ext):
 
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,
-                        extra_compile_args=extra_compile_args,
-                        extra_link_args=extra_link_args,
+                        extra_compile_args = extra_compile_args,
                         libraries=[],
                         sources=sources,
                         depends=depends)
         # function my_sqrt() needs math library for sqrt()
         ext_test = Extension('_ctypes_test',
                      sources=['_ctypes/_ctypes_test.c'],
+                     extra_link_args=extra_link_args,
+                     extra_compile_args = extra_compile_args,
                      libraries=math_libs)
         self.extensions.extend([ext, ext_test])
 
