@@ -15,6 +15,10 @@
 #include <stropts.h>
 #endif
 
+#ifdef __VXWORKS__
+#include <ioLib.h>   /* ioctl() */
+#endif
+
 /*[clinic input]
 module fcntl
 [clinic start generated code]*/

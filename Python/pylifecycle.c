@@ -1426,6 +1426,10 @@ initfsencoding(PyInterpreterState *interp)
         Py_FileSystemDefaultEncoding = "utf-8";
         Py_FileSystemDefaultEncodeErrors = "surrogatepass";
     }
+#elif defined(__VXWORKS__)
+    {
+    Py_FileSystemDefaultEncoding = "ascii";
+    }
 #else
     if (Py_FileSystemDefaultEncoding == NULL)
     {

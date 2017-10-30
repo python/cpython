@@ -3257,6 +3257,9 @@ then
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
+	*-*-vxworks*)
+		ac_sys_system=VxWorks
+		;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -3301,6 +3304,9 @@ if test "$cross_compiling" = yes; then
 	*-*-cygwin*)
 		_host_cpu=
 		;;
+	*-*-vxworks*)
+		_host_cpu=
+		;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -3319,6 +3325,10 @@ fi
 # wildcard, and that the wildcard does not include future systems
 # (which may remove their limitations).
 case $ac_sys_system/$ac_sys_release in
+  # On VxWorks if _XOPEN_SOURCE is defined the socket.h header 
+  # has undefined types.
+  VxWorks* )
+    define_xopen_source=no;;
   # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
   # even though select is a POSIX function. Reported by J. Ribbens.
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
@@ -13250,7 +13260,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_char_unsigned" >&5
 $as_echo "$ac_cv_c_char_unsigned" >&6; }
-if test $ac_cv_c_char_unsigned = yes && test "$GCC" != yes; then
+if test $ac_cv_c_char_unsigned = yes && test "$GCC" != yes && test "$ac_sys_system" != "VxWorks"  ; then
   $as_echo "#define __CHAR_UNSIGNED__ 1" >>confdefs.h
 
 fi

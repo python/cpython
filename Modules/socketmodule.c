@@ -97,6 +97,7 @@ Local naming conventions:
 # pragma weak inet_aton
 #endif
 
+
 #include "Python.h"
 #include "structmember.h"
 
@@ -159,7 +160,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # undef HAVE_GETHOSTBYNAME_R_6_ARG
 #endif
 
-#if defined(__OpenBSD__)
+#if defined(__OpenBSD__) || defined(__VXWORKS__)
 # include <sys/uio.h>
 #endif
 
@@ -179,6 +180,12 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # else
 #  undef HAVE_GETHOSTBYNAME_R
 # endif
+#endif
+
+#ifdef __VXWORKS__
+# include <ipcom_sock2.h>
+# define gethostbyaddr_r( a1, a2, a3, a4, a5, a6, a7 )  ipcom_gethostbyaddr_r( a1, a2, a3, a4, a5, a6, a7 )
+# include <hostLib.h>
 #endif
 
 #if !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
@@ -525,7 +532,7 @@ set_error(void)
     return PyErr_SetFromErrno(PyExc_OSError);
 }
 
-
+#ifndef __VXWORKS__
 static PyObject *
 set_herror(int h_error)
 {
@@ -543,7 +550,7 @@ set_herror(int h_error)
 
     return NULL;
 }
-
+#endif
 
 static PyObject *
 set_gaierror(int error)
@@ -896,7 +903,7 @@ init_sockobject(PySocketSockObject *s,
     return 0;
 }
 
-
+#ifdef HAVE_SOCKETPAIR
 /* Create a new socket object.
    This just creates the object and initializes it.
    If the creation fails, return NULL and set an exception (implicit
@@ -916,7 +923,7 @@ new_sockobject(SOCKET_T fd, int family, int type, int proto)
     }
     return s;
 }
-
+#endif
 
 /* Lock to allow python interpreter to continue, but only allow one
    thread to be in gethostbyname or getaddrinfo */
@@ -2307,17 +2314,17 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
     #endif
     if (msg->msg_controllen < 0)
         return 0;
+    if (space < cmsg_len_end)
+        space = cmsg_len_end;
+    cmsg_offset = (char *)cmsgh - (char *)msg->msg_control;
+    return (cmsg_offset <= (size_t)-1 - space &&
+            cmsg_offset + space <= msg->msg_controllen);
     #if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
     #pragma GCC diagnostic pop
     #endif
     #ifdef __clang__
     #pragma clang diagnostic pop
     #endif
-    if (space < cmsg_len_end)
-        space = cmsg_len_end;
-    cmsg_offset = (char *)cmsgh - (char *)msg->msg_control;
-    return (cmsg_offset <= (size_t)-1 - space &&
-            cmsg_offset + space <= msg->msg_controllen);
 }
 
 /* If pointer CMSG_DATA(cmsgh) is in buffer msg->msg_control, set
@@ -5072,7 +5079,9 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 
     if (h == NULL) {
         /* Let's get real error message to return */
+#ifndef __VXWORKS__	
         set_herror(h_errno);
+#endif        
         return NULL;
     }
 
@@ -5419,6 +5428,7 @@ Return the service name from a port number and protocol name.\n\
 The optional protocol name, if given, should be 'tcp' or 'udp',\n\
 otherwise any protocol will match.");
 
+#ifndef __VXWORKS__
 /* Python interface to getprotobyname(name).
    This only returns the protocol number, since the other info is
    already known or not useful (like the list of aliases). */
@@ -5445,7 +5455,7 @@ PyDoc_STRVAR(getprotobyname_doc,
 "getprotobyname(name) -> integer\n\
 \n\
 Return the protocol number for the named protocol.  (Rarely used.)");
-
+#endif
 
 #ifndef NO_DUP
 /* dup() function for socket fds */
@@ -6385,8 +6395,10 @@ static PyMethodDef socket_methods[] = {
      METH_VARARGS, getservbyname_doc},
     {"getservbyport",           socket_getservbyport,
      METH_VARARGS, getservbyport_doc},
+#ifndef __VXWORKS__     
     {"getprotobyname",          socket_getprotobyname,
      METH_VARARGS, getprotobyname_doc},
+#endif     
 #ifndef NO_DUP
     {"dup",                     socket_dup,
      METH_O, dup_doc},

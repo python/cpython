@@ -13,7 +13,9 @@
 #ifdef HAVE_SYS_RESOURCE_H
 #  include <sys/resource.h>
 #endif
-
+#ifdef __VXWORKS__
+#  include <ioLib.h>
+#endif
 /* Allocate at maximum 100 MB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100*1024*1024)
 

@@ -377,6 +377,9 @@ then
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
+	*-*-vxworks*)
+	        ac_sys_system=VxWorks
+	        ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -418,9 +421,12 @@ if test "$cross_compiling" = yes; then
 			_host_cpu=$host_cpu
 		esac
 		;;
-	*-*-cygwin*)
-		_host_cpu=
-		;;
+        *-*-cygwin*)
+                _host_cpu=
+                ;;
+        *-*-vxworks*)
+                _host_cpu=$host_cpu
+                ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -507,6 +513,11 @@ case $ac_sys_system/$ac_sys_release in
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
   QNX/6.3.2)
+    define_xopen_source=no
+    ;;
+  # On VxWorks, defining _XOPEN_SOURCE causes compile failures
+  # in network headers still using system V types.
+  VxWorks/*)
     define_xopen_source=no
     ;;
 
@@ -3999,7 +4010,10 @@ fi
 
 # checks for compiler characteristics
 
-AC_C_CHAR_UNSIGNED
+# test results in duplicate def of __CHAR_UNSIGNED__ on VxWorks
+if test "$ac_sys_system" != "VxWorks" ; then
+ AC_C_CHAR_UNSIGNED
+fi
 AC_C_CONST
 
 works=no
