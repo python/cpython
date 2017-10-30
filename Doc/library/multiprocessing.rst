@@ -2181,7 +2181,7 @@ with the :class:`Pool` class.
 
       .. versionadded:: 3.3
 
-   .. method:: starmap_async(func, iterable[, chunksize[, callback[, error_back]]])
+   .. method:: starmap_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
       A combination of :meth:`starmap` and :meth:`map_async` that iterates over
       *iterable* of iterables and calls *func* with the iterables unpacked.
