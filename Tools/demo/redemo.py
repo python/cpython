@@ -166,7 +166,7 @@ class ReDemo:
 def main():
     root = Tk()
     demo = ReDemo(root)
-    root.protocol('WM_DELETE_WINDOW', root.quit)
+    root.protocol('WM_DELETE_WINDOW', root.destroy)
     root.mainloop()
 
 if __name__ == '__main__':
