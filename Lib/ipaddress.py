@@ -668,6 +668,8 @@ class _BaseNetwork(_IPAddressBase):
         return hash(int(self.network_address) ^ int(self.netmask))
 
     def __contains__(self, other):
+        if not other:
+            return False
         # always false if one is v4 and the other is v6.
         if self._version != other._version:
             return False
