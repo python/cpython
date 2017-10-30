@@ -1,0 +1,2 @@
+Fix the col_offset attribute for ast nodes ast.AsyncFor, ast.AsyncFunctionDef,
+ast.AsyncWith. Previously, col_offset points to the keyword after "async".
