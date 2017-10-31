@@ -1840,12 +1840,12 @@ static PyTypeObject kqueue_queue_Type;
 #   define FFLAGS_FMT_UNIT  "I"
 #endif
 
-#ifdef __FreeBSD__
-#   define DATA_TYPE        T_INTPTRT
-#   define DATA_FMT_UNIT    INTPTR_FMT_UNIT
-#else
+#if defined(__NetBSD__) || defined(__OpenBSD__)
 #   define DATA_TYPE        T_INT64
 #   define DATA_FMT_UNIT    INT64_FMT_UNIT
+#else
+#   define DATA_TYPE        T_INTPTRT
+#   define DATA_FMT_UNIT    INTPTRT_FMT_UNIT
 #endif
 
 /* Unfortunately, we can't store python objects in udata, because
