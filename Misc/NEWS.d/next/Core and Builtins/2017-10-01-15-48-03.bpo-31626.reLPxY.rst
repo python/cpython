@@ -1,0 +1,2 @@
+Fixed a bug in debug memory allocator.  There was a write to freed memory
+after shrinking a memory block.
