@@ -9,9 +9,9 @@ PyDoc_STRVAR(select_select__doc__,
 "Wait until one or more file descriptors are ready for some kind of I/O.\n"
 "\n"
 "The first three arguments are sequences of file descriptors to be waited for:\n"
-"  rlist -- wait until ready for reading\n"
-"  wlist -- wait until ready for writing\n"
-"  xlist -- wait for an ``exceptional condition\'\'\n"
+"rlist -- wait until ready for reading\n"
+"wlist -- wait until ready for writing\n"
+"xlist -- wait for an ``exceptional condition\'\'\n"
 "If only one kind of condition is required, pass [] for the other lists.\n"
 "A file descriptor is either a socket or file object, or a small integer\n"
 "gotten from a fileno() method call on one of those.\n"
@@ -25,18 +25,18 @@ PyDoc_STRVAR(select_select__doc__,
 "that are ready.\n"
 "\n"
 "*** IMPORTANT NOTICE ***\n"
-"On Windows only sockets are supported; on Unix, all file descriptors\n"
-"can be used.");
+"On Windows, only sockets are supported; on Unix, all file\n"
+"descriptors can be used.");
 
 #define SELECT_SELECT_METHODDEF    \
-    {"select", (PyCFunction)select_select, METH_VARARGS, select_select__doc__},
+    {"select", (PyCFunction)select_select, METH_FASTCALL, select_select__doc__},
 
 static PyObject *
-select_select_impl(PyModuleDef *module, PyObject *rlist, PyObject *wlist,
+select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj);
 
 static PyObject *
-select_select(PyModuleDef *module, PyObject *args)
+select_select(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *rlist;
@@ -44,10 +44,11 @@ select_select(PyModuleDef *module, PyObject *args)
     PyObject *xlist;
     PyObject *timeout_obj = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "select",
+    if (!_PyArg_UnpackStack(args, nargs, "select",
         3, 4,
-        &rlist, &wlist, &xlist, &timeout_obj))
+        &rlist, &wlist, &xlist, &timeout_obj)) {
         goto exit;
+    }
     return_value = select_select_impl(module, rlist, wlist, xlist, timeout_obj);
 
 exit:
@@ -64,28 +65,28 @@ PyDoc_STRVAR(select_poll_register__doc__,
 "Register a file descriptor with the polling object.\n"
 "\n"
 "  fd\n"
-"    either an integer, or an object with a fileno() method returning\n"
-"    an int\n"
+"    either an integer, or an object with a fileno() method returning an int\n"
 "  eventmask\n"
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_POLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)select_poll_register, METH_VARARGS, select_poll_register__doc__},
+    {"register", (PyCFunction)select_poll_register, METH_FASTCALL, select_poll_register__doc__},
 
 static PyObject *
 select_poll_register_impl(pollObject *self, PyObject *fd,
                           unsigned short eventmask);
 
 static PyObject *
-select_poll_register(pollObject *self, PyObject *args)
+select_poll_register(pollObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!PyArg_ParseTuple(args, "O|O&:register",
-        &fd, ushort_converter, &eventmask))
+    if (!_PyArg_ParseStack(args, nargs, "O|O&:register",
+        &fd, ushort_converter, &eventmask)) {
         goto exit;
+    }
     return_value = select_poll_register_impl(self, fd, eventmask);
 
 exit:
@@ -109,22 +110,23 @@ PyDoc_STRVAR(select_poll_modify__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_POLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)select_poll_modify, METH_VARARGS, select_poll_modify__doc__},
+    {"modify", (PyCFunction)select_poll_modify, METH_FASTCALL, select_poll_modify__doc__},
 
 static PyObject *
 select_poll_modify_impl(pollObject *self, PyObject *fd,
                         unsigned short eventmask);
 
 static PyObject *
-select_poll_modify(pollObject *self, PyObject *args)
+select_poll_modify(pollObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *fd;
     unsigned short eventmask;
 
-    if (!PyArg_ParseTuple(args, "OO&:modify",
-        &fd, ushort_converter, &eventmask))
+    if (!_PyArg_ParseStack(args, nargs, "OO&:modify",
+        &fd, ushort_converter, &eventmask)) {
         goto exit;
+    }
     return_value = select_poll_modify_impl(self, fd, eventmask);
 
 exit:
@@ -154,25 +156,26 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "\n"
 "Polls the set of registered file descriptors.\n"
 "\n"
-"Return value is a list containing any descriptors that have events\n"
-"or errors to report, in the form of tuples (fd, event).");
+"Returns a list containing any descriptors that have events or errors to report,\n"
+"as a list of (fd, event) 2-tuples.");
 
 #define SELECT_POLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)select_poll_poll, METH_VARARGS, select_poll_poll__doc__},
+    {"poll", (PyCFunction)select_poll_poll, METH_FASTCALL, select_poll_poll__doc__},
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj);
 
 static PyObject *
-select_poll_poll(pollObject *self, PyObject *args)
+select_poll_poll(pollObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "poll",
+    if (!_PyArg_UnpackStack(args, nargs, "poll",
         0, 1,
-        &timeout_obj))
+        &timeout_obj)) {
         goto exit;
+    }
     return_value = select_poll_poll_impl(self, timeout_obj);
 
 exit:
@@ -189,17 +192,17 @@ PyDoc_STRVAR(select_poll__doc__,
 "\n"
 "Returns a polling object.\n"
 "\n"
-"The object supports registering and unregistering file descriptors,\n"
-"and then polling them for I/O events.");
+"This object supports registering and unregistering file descriptors, and then\n"
+"polling them for I/O events.");
 
 #define SELECT_POLL_METHODDEF    \
     {"poll", (PyCFunction)select_poll, METH_NOARGS, select_poll__doc__},
 
 static PyObject *
-select_poll_impl(PyModuleDef *module);
+select_poll_impl(PyObject *module);
 
 static PyObject *
-select_poll(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+select_poll(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return select_poll_impl(module);
 }
@@ -212,19 +215,19 @@ PyDoc_STRVAR(select_devpoll__doc__,
 "devpoll($module, /)\n"
 "--\n"
 "\n"
-"Returns a polling object using /dev/poll.\n"
+"Returns a polling object.\n"
 "\n"
-"The object supports registering and unregistering file descriptors,\n"
-"and then polling them for I/O events.");
+"This object supports registering and unregistering file descriptors, and then\n"
+"polling them for I/O events.");
 
 #define SELECT_DEVPOLL_METHODDEF    \
     {"devpoll", (PyCFunction)select_devpoll, METH_NOARGS, select_devpoll__doc__},
 
 static PyObject *
-select_devpoll_impl(PyModuleDef *module);
+select_devpoll_impl(PyObject *module);
 
 static PyObject *
-select_devpoll(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+select_devpoll(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return select_devpoll_impl(module);
 }
@@ -239,9 +242,10 @@ PyDoc_STRVAR(pyepoll_new__doc__,
 "\n"
 "Returns an epolling object.\n"
 "\n"
-"sizehint must be a positive integer or -1 for the default size. The\n"
-"sizehint is used to optimize internal data structures. It doesn\'t limit\n"
-"the maximum number of monitored events.");
+"  sizehint\n"
+"    sizehint must be a positive integer or -1 for the default size. The\n"
+"    sizehint is used to optimize internal data structures. It doesn\'t limit\n"
+"    the maximum number of monitored events.");
 
 static PyObject *
 pyepoll_new_impl(PyTypeObject *type, int sizehint, int flags);
@@ -250,13 +254,15 @@ static PyObject *
 pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"sizehint", "flags", NULL};
+    static const char * const _keywords[] = {"sizehint", "flags", NULL};
+    static _PyArg_Parser _parser = {"|ii:epoll", _keywords, 0};
     int sizehint = FD_SETSIZE - 1;
     int flags = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ii:epoll", _keywords,
-        &sizehint, &flags))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &sizehint, &flags)) {
         goto exit;
+    }
     return_value = pyepoll_new_impl(type, sizehint, flags);
 
 exit:
@@ -331,8 +337,9 @@ pyepoll_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:fromfd", &fd))
+    if (!PyArg_Parse(arg, "i:fromfd", &fd)) {
         goto exit;
+    }
     return_value = pyepoll_fromfd_impl(type, fd);
 
 exit:
@@ -344,36 +351,38 @@ exit:
 #if defined(HAVE_EPOLL)
 
 PyDoc_STRVAR(pyepoll_register__doc__,
-"register($self, /, fd,\n"
-"         eventmask=select.EPOLLIN | select.EPOLLOUT | select.EPOLLPRI)\n"
+"register($self, /, fd, eventmask=EPOLLIN | EPOLLOUT | EPOLLPRI)\n"
 "--\n"
 "\n"
 "Registers a new fd or raises an OSError if the fd is already registered.\n"
 "\n"
-"fd is the target file descriptor of the operation.\n"
-"events is a bit set composed of the various EPOLL constants; the default\n"
-"is EPOLLIN | EPOLLOUT | EPOLLPRI.\n"
+"  fd\n"
+"    the target file descriptor of the operation\n"
+"  eventmask\n"
+"    a bit set composed of the various EPOLL constants\n"
 "\n"
 "The epoll interface supports all file descriptors that support poll.");
 
 #define PYEPOLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)pyepoll_register, METH_VARARGS|METH_KEYWORDS, pyepoll_register__doc__},
+    {"register", (PyCFunction)pyepoll_register, METH_FASTCALL|METH_KEYWORDS, pyepoll_register__doc__},
 
 static PyObject *
 pyepoll_register_impl(pyEpoll_Object *self, PyObject *fd,
                       unsigned int eventmask);
 
 static PyObject *
-pyepoll_register(pyEpoll_Object *self, PyObject *args, PyObject *kwargs)
+pyepoll_register(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", "eventmask", NULL};
+    static const char * const _keywords[] = {"fd", "eventmask", NULL};
+    static _PyArg_Parser _parser = {"O|I:register", _keywords, 0};
     PyObject *fd;
     unsigned int eventmask = EPOLLIN | EPOLLOUT | EPOLLPRI;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|I:register", _keywords,
-        &fd, &eventmask))
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &fd, &eventmask)) {
         goto exit;
+    }
     return_value = pyepoll_register_impl(self, fd, eventmask);
 
 exit:
@@ -390,27 +399,31 @@ PyDoc_STRVAR(pyepoll_modify__doc__,
 "\n"
 "Modify event mask for a registered file descriptor.\n"
 "\n"
-"fd is the target file descriptor of the operation, and\n"
-"events is a bit set composed of the various EPOLL constants.");
+"  fd\n"
+"    the target file descriptor of the operation\n"
+"  eventmask\n"
+"    a bit set composed of the various EPOLL constants");
 
 #define PYEPOLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)pyepoll_modify, METH_VARARGS|METH_KEYWORDS, pyepoll_modify__doc__},
+    {"modify", (PyCFunction)pyepoll_modify, METH_FASTCALL|METH_KEYWORDS, pyepoll_modify__doc__},
 
 static PyObject *
 pyepoll_modify_impl(pyEpoll_Object *self, PyObject *fd,
                     unsigned int eventmask);
 
 static PyObject *
-pyepoll_modify(pyEpoll_Object *self, PyObject *args, PyObject *kwargs)
+pyepoll_modify(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", "eventmask", NULL};
+    static const char * const _keywords[] = {"fd", "eventmask", NULL};
+    static _PyArg_Parser _parser = {"OI:modify", _keywords, 0};
     PyObject *fd;
     unsigned int eventmask;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OI:modify", _keywords,
-        &fd, &eventmask))
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &fd, &eventmask)) {
         goto exit;
+    }
     return_value = pyepoll_modify_impl(self, fd, eventmask);
 
 exit:
@@ -427,24 +440,27 @@ PyDoc_STRVAR(pyepoll_unregister__doc__,
 "\n"
 "Remove a registered file descriptor from the epoll object.\n"
 "\n"
-"fd is the target file descriptor of the operation.");
+"  fd\n"
+"    the target file descriptor of the operation");
 
 #define PYEPOLL_UNREGISTER_METHODDEF    \
-    {"unregister", (PyCFunction)pyepoll_unregister, METH_VARARGS|METH_KEYWORDS, pyepoll_unregister__doc__},
+    {"unregister", (PyCFunction)pyepoll_unregister, METH_FASTCALL|METH_KEYWORDS, pyepoll_unregister__doc__},
 
 static PyObject *
 pyepoll_unregister_impl(pyEpoll_Object *self, PyObject *fd);
 
 static PyObject *
-pyepoll_unregister(pyEpoll_Object *self, PyObject *args, PyObject *kwargs)
+pyepoll_unregister(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {"O:unregister", _keywords, 0};
     PyObject *fd;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:unregister", _keywords,
-        &fd))
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &fd)) {
         goto exit;
+    }
     return_value = pyepoll_unregister_impl(self, fd);
 
 exit:
@@ -468,22 +484,24 @@ PyDoc_STRVAR(pyepoll_poll__doc__,
 "The return value is a list of tuples of the form (fd, events).");
 
 #define PYEPOLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)pyepoll_poll, METH_VARARGS|METH_KEYWORDS, pyepoll_poll__doc__},
+    {"poll", (PyCFunction)pyepoll_poll, METH_FASTCALL|METH_KEYWORDS, pyepoll_poll__doc__},
 
 static PyObject *
 pyepoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj, int maxevents);
 
 static PyObject *
-pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwargs)
+pyepoll_poll(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"timeout", "maxevents", NULL};
+    static const char * const _keywords[] = {"timeout", "maxevents", NULL};
+    static _PyArg_Parser _parser = {"|Oi:poll", _keywords, 0};
     PyObject *timeout_obj = Py_None;
     int maxevents = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Oi:poll", _keywords,
-        &timeout_obj, &maxevents))
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &timeout_obj, &maxevents)) {
         goto exit;
+    }
     return_value = pyepoll_poll_impl(self, timeout_obj, maxevents);
 
 exit:
@@ -521,24 +539,25 @@ PyDoc_STRVAR(pyepoll_exit__doc__,
 "\n");
 
 #define PYEPOLL_EXIT_METHODDEF    \
-    {"__exit__", (PyCFunction)pyepoll_exit, METH_VARARGS, pyepoll_exit__doc__},
+    {"__exit__", (PyCFunction)pyepoll_exit, METH_FASTCALL, pyepoll_exit__doc__},
 
 static PyObject *
 pyepoll_exit_impl(pyEpoll_Object *self, PyObject *exc_type,
                   PyObject *exc_value, PyObject *exc_tb);
 
 static PyObject *
-pyepoll_exit(pyEpoll_Object *self, PyObject *args)
+pyepoll_exit(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *exc_type = Py_None;
     PyObject *exc_value = Py_None;
     PyObject *exc_tb = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "__exit__",
+    if (!_PyArg_UnpackStack(args, nargs, "__exit__",
         0, 3,
-        &exc_type, &exc_value, &exc_tb))
+        &exc_type, &exc_value, &exc_tb)) {
         goto exit;
+    }
     return_value = pyepoll_exit_impl(self, exc_type, exc_value, exc_tb);
 
 exit:
@@ -546,6 +565,171 @@ exit:
 }
 
 #endif /* defined(HAVE_EPOLL) */
+
+#if defined(HAVE_KQUEUE)
+
+PyDoc_STRVAR(select_kqueue__doc__,
+"kqueue()\n"
+"--\n"
+"\n"
+"Kqueue syscall wrapper.\n"
+"\n"
+"For example, to start watching a socket for input:\n"
+">>> kq = kqueue()\n"
+">>> sock = socket()\n"
+">>> sock.connect((host, port))\n"
+">>> kq.control([kevent(sock, KQ_FILTER_WRITE, KQ_EV_ADD)], 0)\n"
+"\n"
+"To wait one second for it to become writeable:\n"
+">>> kq.control(None, 1, 1000)\n"
+"\n"
+"To stop listening:\n"
+">>> kq.control([kevent(sock, KQ_FILTER_WRITE, KQ_EV_DELETE)], 0)");
+
+static PyObject *
+select_kqueue_impl(PyTypeObject *type);
+
+static PyObject *
+select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+
+    if ((type == &kqueue_queue_Type) &&
+        !_PyArg_NoPositional("kqueue", args)) {
+        goto exit;
+    }
+    if ((type == &kqueue_queue_Type) &&
+        !_PyArg_NoKeywords("kqueue", kwargs)) {
+        goto exit;
+    }
+    return_value = select_kqueue_impl(type);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_KQUEUE) */
+
+#if defined(HAVE_KQUEUE)
+
+PyDoc_STRVAR(select_kqueue_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n"
+"Close the kqueue control file descriptor.\n"
+"\n"
+"Further operations on the kqueue object will raise an exception.");
+
+#define SELECT_KQUEUE_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)select_kqueue_close, METH_NOARGS, select_kqueue_close__doc__},
+
+static PyObject *
+select_kqueue_close_impl(kqueue_queue_Object *self);
+
+static PyObject *
+select_kqueue_close(kqueue_queue_Object *self, PyObject *Py_UNUSED(ignored))
+{
+    return select_kqueue_close_impl(self);
+}
+
+#endif /* defined(HAVE_KQUEUE) */
+
+#if defined(HAVE_KQUEUE)
+
+PyDoc_STRVAR(select_kqueue_fileno__doc__,
+"fileno($self, /)\n"
+"--\n"
+"\n"
+"Return the kqueue control file descriptor.");
+
+#define SELECT_KQUEUE_FILENO_METHODDEF    \
+    {"fileno", (PyCFunction)select_kqueue_fileno, METH_NOARGS, select_kqueue_fileno__doc__},
+
+static PyObject *
+select_kqueue_fileno_impl(kqueue_queue_Object *self);
+
+static PyObject *
+select_kqueue_fileno(kqueue_queue_Object *self, PyObject *Py_UNUSED(ignored))
+{
+    return select_kqueue_fileno_impl(self);
+}
+
+#endif /* defined(HAVE_KQUEUE) */
+
+#if defined(HAVE_KQUEUE)
+
+PyDoc_STRVAR(select_kqueue_fromfd__doc__,
+"fromfd($type, fd, /)\n"
+"--\n"
+"\n"
+"Create a kqueue object from a given control fd.");
+
+#define SELECT_KQUEUE_FROMFD_METHODDEF    \
+    {"fromfd", (PyCFunction)select_kqueue_fromfd, METH_O|METH_CLASS, select_kqueue_fromfd__doc__},
+
+static PyObject *
+select_kqueue_fromfd_impl(PyTypeObject *type, int fd);
+
+static PyObject *
+select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!PyArg_Parse(arg, "i:fromfd", &fd)) {
+        goto exit;
+    }
+    return_value = select_kqueue_fromfd_impl(type, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_KQUEUE) */
+
+#if defined(HAVE_KQUEUE)
+
+PyDoc_STRVAR(select_kqueue_control__doc__,
+"control($self, changelist, maxevents, timeout=None, /)\n"
+"--\n"
+"\n"
+"Calls the kernel kevent function.\n"
+"\n"
+"  changelist\n"
+"    Must be an iterable of kevent objects describing the changes to be made\n"
+"    to the kernel\'s watch list or None.\n"
+"  maxevents\n"
+"    The maximum number of events that the kernel will return.\n"
+"  timeout\n"
+"    The maximum time to wait in seconds, or else None to wait forever.\n"
+"    This accepts floats for smaller timeouts, too.");
+
+#define SELECT_KQUEUE_CONTROL_METHODDEF    \
+    {"control", (PyCFunction)select_kqueue_control, METH_FASTCALL, select_kqueue_control__doc__},
+
+static PyObject *
+select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
+                           int maxevents, PyObject *otimeout);
+
+static PyObject *
+select_kqueue_control(kqueue_queue_Object *self, PyObject **args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *changelist;
+    int maxevents;
+    PyObject *otimeout = Py_None;
+
+    if (!_PyArg_ParseStack(args, nargs, "Oi|O:control",
+        &changelist, &maxevents, &otimeout)) {
+        goto exit;
+    }
+    return_value = select_kqueue_control_impl(self, changelist, maxevents, otimeout);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_KQUEUE) */
 
 #ifndef SELECT_POLL_REGISTER_METHODDEF
     #define SELECT_POLL_REGISTER_METHODDEF
@@ -586,4 +770,8 @@ exit:
 #ifndef PYEPOLL_EXIT_METHODDEF
     #define PYEPOLL_EXIT_METHODDEF
 #endif /* !defined(PYEPOLL_EXIT_METHODDEF) */
-/*[clinic end generated code: output=8c67fe108dc8d539 input=a9049054013a1b77]*/
+
+#ifndef SELECT_KQUEUE_CONTROL_METHODDEF
+    #define SELECT_KQUEUE_CONTROL_METHODDEF
+#endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
+/*[clinic end generated code: output=9b828bf16401e09e input=a9049054013a1b77]*/
