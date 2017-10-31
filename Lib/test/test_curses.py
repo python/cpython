@@ -15,7 +15,9 @@ import sys
 import tempfile
 import unittest
 
-from test.test_support import requires, import_module, verbose, run_unittest
+from test.support import (requires, import_module, verbose, run_unittest,
+                          SaveSignals)
+
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
@@ -62,6 +64,8 @@ class TestCurses(unittest.TestCase):
             del cls.tmp
 
     def setUp(self):
+        self.save_signals = SaveSignals()
+        self.save_signals.save()
         if verbose:
             # just to make the test output a little more readable
             print('')
@@ -71,6 +75,7 @@ class TestCurses(unittest.TestCase):
     def tearDown(self):
         curses.resetty()
         curses.endwin()
+        self.save_signals.restore()
 
     def test_window_funcs(self):
         "Test the methods of windows"
