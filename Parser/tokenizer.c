@@ -1563,6 +1563,9 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 /* The current token is 'async'.
                    Look ahead one token.*/
 
+                int async_def_prev = tok->async_def;
+                tok->async_def = 2;
+
                 struct tok_state ahead_tok;
                 char *ahead_tok_start = NULL, *ahead_tok_end = NULL;
                 int ahead_tok_kind;
@@ -1580,6 +1583,9 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     tok->async_def_indent = tok->indent;
                     tok->async_def = 1;
                     return ASYNC;
+                }
+                else{
+                    tok->async_def = async_def_prev;
                 }
             }
         }
@@ -1844,6 +1850,10 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     /* Line continuation */
     if (c == '\\') {
         c = tok_nextc(tok);
+        if (tok->async_def == 2) {
+            tok->done = E_SYNTAX;
+            return ERRORTOKEN;
+        }
         if (c != '\n') {
             tok->done = E_LINECONT;
             tok->cur = tok->inp;
