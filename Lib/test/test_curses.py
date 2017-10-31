@@ -25,9 +25,12 @@ requires('curses')
 
 # If either of these don't exist, skip the tests.
 curses = import_module('curses')
-import_module('curses.panel')
 import_module('curses.ascii')
 import_module('curses.textpad')
+try:
+    import curses.panel
+except ImportError:
+    pass
 
 def requires_curses_func(name):
     return unittest.skipUnless(hasattr(curses, name),
@@ -138,7 +141,8 @@ class TestCurses(unittest.TestCase):
 
         stdscr.idcok(1)
         stdscr.idlok(1)
-        stdscr.immedok(1)
+        if hasattr(stdscr, 'immedok'):
+            stdscr.immedok(1)
         stdscr.insch('c')
         stdscr.insdelln(1)
         stdscr.insnstr('abc', 3)
@@ -172,7 +176,8 @@ class TestCurses(unittest.TestCase):
         stdscr.setscrreg(10,15)
         win3 = stdscr.subwin(10,10)
         win3 = stdscr.subwin(10,10, 5,5)
-        stdscr.syncok(1)
+        if hasattr(stdscr, 'syncok'):
+            stdscr.syncok(1)
         stdscr.timeout(5)
         stdscr.touchline(5,5)
         stdscr.touchline(5,5,0)
@@ -211,15 +216,19 @@ class TestCurses(unittest.TestCase):
         "Test module-level functions"
         for func in [curses.baudrate, curses.beep, curses.can_change_color,
                      curses.cbreak, curses.def_prog_mode, curses.doupdate,
-                     curses.filter, curses.flash, curses.flushinp,
+                     curses.flash, curses.flushinp,
                      curses.has_colors, curses.has_ic, curses.has_il,
                      curses.isendwin, curses.killchar, curses.longname,
                      curses.nocbreak, curses.noecho, curses.nonl,
                      curses.noqiflush, curses.noraw,
                      curses.reset_prog_mode, curses.termattrs,
-                     curses.termname, curses.erasechar, curses.getsyx]:
+                     curses.termname, curses.erasechar]:
             with self.subTest(func=func.__qualname__):
                 func()
+        if hasattr(curses, 'filter'):
+            curses.filter()
+        if hasattr(curses, 'getsyx'):
+            curses.getsyx()
 
         # Functions that actually need arguments
         if curses.tigetstr("cnorm"):
@@ -243,15 +252,18 @@ class TestCurses(unittest.TestCase):
         curses.putp(b'abc')
         curses.qiflush()
         curses.raw() ; curses.raw(1)
-        curses.setsyx(5,5)
+        if hasattr(curses, 'setsyx'):
+            curses.setsyx(5,5)
         curses.tigetflag('hc')
         curses.tigetnum('co')
         curses.tigetstr('cr')
         curses.tparm(b'cr')
-        curses.typeahead(sys.__stdin__.fileno())
+        if hasattr(curses, 'typeahead'):
+            curses.typeahead(sys.__stdin__.fileno())
         curses.unctrl('a')
         curses.ungetch('a')
-        curses.use_env(1)
+        if hasattr(curses, 'use_env'):
+            curses.use_env(1)
 
     # Functions only available on a few platforms
     def test_colors_funcs(self):
@@ -285,6 +297,7 @@ class TestCurses(unittest.TestCase):
         curses.ungetmouse(0, 0, 0, 0, curses.BUTTON1_PRESSED)
         m = curses.getmouse()
 
+    @requires_curses_func('panel')
     def test_userptr_without_set(self):
         w = curses.newwin(10, 10)
         p = curses.panel.new_panel(w)
@@ -293,6 +306,7 @@ class TestCurses(unittest.TestCase):
                                msg='userptr should fail since not set'):
             p.userptr()
 
+    @requires_curses_func('panel')
     def test_userptr_memory_leak(self):
         w = curses.newwin(10, 10)
         p = curses.panel.new_panel(w)
@@ -305,6 +319,7 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(sys.getrefcount(obj), nrefs,
                          "set_userptr leaked references")
 
+    @requires_curses_func('panel')
     def test_userptr_segfault(self):
         panel = curses.panel.new_panel(self.stdscr)
         class A:
@@ -313,6 +328,7 @@ class TestCurses(unittest.TestCase):
         panel.set_userptr(A())
         panel.set_userptr(None)
 
+    @requires_curses_func('panel')
     def test_new_curses_panel(self):
         panel = curses.panel.new_panel(self.stdscr)
         self.assertRaises(TypeError, type(panel))
