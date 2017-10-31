@@ -4980,21 +4980,15 @@ then
 fi
 
 AC_MSG_CHECKING(for is_pad)
-AC_CACHE_VAL(ac_cv_curses_is_pad,
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
-  bool b;
-  WINDOW *w;
-  b = is_pad(w);
+#ifndef is_pad
+void *x=is_pad
+#endif
 ]])],
-[ac_cv_curses_is_pad=yes],
-[ac_cv_curses_is_pad=no]))
-AC_MSG_RESULT($ac_cv_curses_is_pad)
-
-if test "$ac_cv_curses_is_pad" = yes
-then
-  AC_DEFINE(HAVE_CURSES_IS_PAD, 1,
-  [Define if you have the 'is_pad' function or macro.])
-fi
+  [AC_DEFINE(HAVE_CURSES_IS_PAD, 1, Define if you have the 'is_pad' function or macro.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
 
 AC_MSG_CHECKING(for is_term_resized)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=is_term_resized]])],
