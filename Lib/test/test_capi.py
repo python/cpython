@@ -751,11 +751,16 @@ class TestThreadState(unittest.TestCase):
 
 class Test_testcapi(unittest.TestCase):
     def test__testcapi(self):
+        if support.verbose:
+            print()
         for name in dir(_testcapi):
-            if name.startswith('test_'):
-                with self.subTest("internal", name=name):
-                    test = getattr(_testcapi, name)
-                    test()
+            if not name.startswith('test_'):
+                continue
+            with self.subTest("internal", name=name):
+                if support.verbose:
+                    print(f"  {name}", flush=True)
+                test = getattr(_testcapi, name)
+                test()
 
 
 class PyMemDebugTests(unittest.TestCase):
