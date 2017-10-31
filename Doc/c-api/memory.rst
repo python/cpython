@@ -155,6 +155,88 @@ versions and is therefore deprecated in extension modules.
 :c:func:`PyMem_NEW`, :c:func:`PyMem_RESIZE`, :c:func:`PyMem_DEL`.
 
 
+Object allocators
+=================
+
+The following function sets, modeled after the ANSI C standard, but specifying
+behavior when requesting zero bytes, are available for allocating and releasing
+memory from the Python heap.
+
+By default, these functions use :ref:`pymalloc memory allocator <pymalloc>`.
+
+.. warning::
+
+   The :term:`GIL <global interpreter lock>` must be held when using these
+   functions.
+
+.. c:function:: void* PyObject_Malloc(size_t n)
+
+   Allocates *n* bytes and returns a pointer of type :c:type:`void\*` to the
+   allocated memory, or *NULL* if the request fails.
+
+   Requesting zero bytes returns a distinct non-*NULL* pointer if possible, as
+   if ``PyObject_Malloc(1)`` had been called instead. The memory will not have
+   been initialized in any way.
+
+
+.. c:function:: void* PyObject_Realloc(void *p, size_t n)
+
+   Resizes the memory block pointed to by *p* to *n* bytes. The contents will be
+   unchanged to the minimum of the old and the new sizes.
+
+   If *p* is *NULL*, the call is equivalent to ``PyObject_Malloc(n)``; else if *n*
+   is equal to zero, the memory block is resized but is not freed, and the
+   returned pointer is non-*NULL*.
+
+   Unless *p* is *NULL*, it must have been returned by a previous call to
+   :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc` or :c:func:`PyObject_Calloc`.
+
+   If the request fails, :c:func:`PyObject_Realloc` returns *NULL* and *p* remains
+   a valid pointer to the previous memory area.
+
+
+.. c:function:: void PyObject_Free(void *p)
+
+   Frees the memory block pointed to by *p*, which must have been returned by a
+   previous call to :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc` or
+   :c:func:`PyObject_Calloc`.  Otherwise, or if ``PyObject_Free(p)`` has been called
+   before, undefined behavior occurs.
+
+   If *p* is *NULL*, no operation is performed.
+
+
+In addition, the following macro sets are provided:
+
+* :c:func:`PyObject_MALLOC`: alias to :c:func:`PyObject_Malloc`
+* :c:func:`PyObject_REALLOC`: alias to :c:func:`PyObject_Realloc`
+* :c:func:`PyObject_FREE`: alias to :c:func:`PyObject_Free`
+* :c:func:`PyObject_Del`: alias to :c:func:`PyObject_Free`
+* :c:func:`PyObject_DEL`: alias to :c:func:`PyObject_FREE` (so finally an alias
+  to :c:func:`PyObject_Free`)
+
+
+.. _pymalloc:
+
+The pymalloc allocator
+======================
+
+Python has a *pymalloc* allocator optimized for small objects (smaller or equal
+to 512 bytes) with a short lifetime. It uses memory mappings called "arenas"
+with a fixed size of 256 KiB. It falls back to :c:func:`malloc` and
+:c:func:`realloc` for allocations larger than 512 bytes.
+
+*pymalloc* is the default allocator of :c:func:`PyObject_Malloc`.
+
+The arena allocator uses the following functions:
+
+* :c:func:`mmap` and :c:func:`munmap` if available,
+* :c:func:`malloc` and :c:func:`free` otherwise.
+
+.. versionchanged:: 2.7.7
+   The threshold changed from 256 to 512 bytes. The arena allocator now
+   uses :c:func:`mmap` if available.
+
+
 .. _memoryexamples:
 
 Examples
