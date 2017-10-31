@@ -484,7 +484,7 @@ Window_NoArgNoReturnVoidFunction(wclrtobot)
 Window_NoArgNoReturnVoidFunction(wclear)
 
 Window_OneArgNoReturnVoidFunction(idcok, int, "i;True(1) or False(0)")
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_IMMEDOK
 Window_OneArgNoReturnVoidFunction(immedok, int, "i;True(1) or False(0)")
 #endif
 Window_OneArgNoReturnVoidFunction(wtimeout, int, "i;delay")
@@ -502,7 +502,7 @@ Window_OneArgNoReturnFunction(nodelay, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(notimeout, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(scrollok, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(winsdelln, int, "i;nlines")
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_SYNCOK
 Window_OneArgNoReturnFunction(syncok, int, "i;True(1) or False(0)")
 #endif
 
@@ -2008,7 +2008,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
     {"hline",           (PyCFunction)PyCursesWindow_Hline, METH_VARARGS},
     {"idcok",           (PyCFunction)PyCursesWindow_idcok, METH_VARARGS},
     {"idlok",           (PyCFunction)PyCursesWindow_idlok, METH_VARARGS},
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_IMMEDOK
     {"immedok",         (PyCFunction)PyCursesWindow_immedok, METH_VARARGS},
 #endif
     {"inch",            (PyCFunction)PyCursesWindow_InCh, METH_VARARGS},
@@ -2046,7 +2046,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
     {"subpad",          (PyCFunction)PyCursesWindow_SubWin, METH_VARARGS},
     {"subwin",          (PyCFunction)PyCursesWindow_SubWin, METH_VARARGS},
     {"syncdown",        (PyCFunction)PyCursesWindow_wsyncdown, METH_NOARGS},
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_SYNCOK
     {"syncok",          (PyCFunction)PyCursesWindow_syncok, METH_VARARGS},
 #endif
     {"syncup",          (PyCFunction)PyCursesWindow_wsyncup, METH_NOARGS},
@@ -2140,7 +2140,7 @@ NoArgTrueFalseFunction(isendwin)
 NoArgNoReturnVoidFunction(flushinp)
 NoArgNoReturnVoidFunction(noqiflush)
 
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_FILTER
 static PyObject *
 PyCurses_filter(PyObject *self)
 {
@@ -2335,10 +2335,9 @@ PyCurses_HalfDelay(PyObject *self, PyObject *args)
     return PyCursesCheckERR(halfdelay(tenths), "halfdelay");
 }
 
-#ifndef STRICT_SYSV_CURSES
-#ifndef __NetBSD__
-/* No has_key! */
-static PyObject * PyCurses_has_key(PyObject *self, PyObject *args)
+#ifdef HAVE_CURSES_HAS_KEY
+static PyObject *
+PyCurses_has_key(PyObject *self, PyObject *args)
 {
     int ch;
 
@@ -2352,7 +2351,6 @@ static PyObject * PyCurses_has_key(PyObject *self, PyObject *args)
     Py_RETURN_TRUE;
 }
 #endif
-#endif /* STRICT_SYSV_CURSES */
 
 static PyObject *
 PyCurses_Init_Color(PyObject *self, PyObject *args)
@@ -3028,7 +3026,7 @@ PyCurses_tparm(PyObject *self, PyObject *args)
     return PyBytes_FromString(result);
 }
 
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_TYPEAHEAD
 static PyObject *
 PyCurses_TypeAhead(PyObject *self, PyObject *args)
 {
@@ -3140,7 +3138,7 @@ PyCurses_Unget_Wch(PyObject *self, PyObject *args)
 }
 #endif
 
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_TYPEAHEAD
 static PyObject *
 PyCurses_Use_Env(PyObject *self, PyObject *args)
 {
@@ -3196,7 +3194,7 @@ static PyMethodDef PyCurses_methods[] = {
     {"echo",                (PyCFunction)PyCurses_echo, METH_VARARGS},
     {"endwin",              (PyCFunction)PyCurses_endwin, METH_NOARGS},
     {"erasechar",           (PyCFunction)PyCurses_EraseChar, METH_NOARGS},
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_FILTER
     {"filter",              (PyCFunction)PyCurses_filter, METH_NOARGS},
 #endif
     {"flash",               (PyCFunction)PyCurses_flash, METH_NOARGS},
@@ -3212,10 +3210,8 @@ static PyMethodDef PyCurses_methods[] = {
     {"has_colors",          (PyCFunction)PyCurses_has_colors, METH_NOARGS},
     {"has_ic",              (PyCFunction)PyCurses_has_ic, METH_NOARGS},
     {"has_il",              (PyCFunction)PyCurses_has_il, METH_NOARGS},
-#ifndef STRICT_SYSV_CURSES
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_HAS_KEY
     {"has_key",             (PyCFunction)PyCurses_has_key, METH_VARARGS},
-#endif
 #endif
     {"halfdelay",           (PyCFunction)PyCurses_HalfDelay, METH_VARARGS},
     {"init_color",          (PyCFunction)PyCurses_Init_Color, METH_VARARGS},
@@ -3270,7 +3266,7 @@ static PyMethodDef PyCurses_methods[] = {
     {"tigetnum",            (PyCFunction)PyCurses_tigetnum, METH_VARARGS},
     {"tigetstr",            (PyCFunction)PyCurses_tigetstr, METH_VARARGS},
     {"tparm",               (PyCFunction)PyCurses_tparm, METH_VARARGS},
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_TYPEAHEAD
     {"typeahead",           (PyCFunction)PyCurses_TypeAhead, METH_VARARGS},
 #endif
     {"unctrl",              (PyCFunction)PyCurses_UnCtrl, METH_VARARGS},
@@ -3281,7 +3277,7 @@ static PyMethodDef PyCurses_methods[] = {
 #ifdef HAVE_NCURSESW
     {"unget_wch",           (PyCFunction)PyCurses_Unget_Wch, METH_VARARGS},
 #endif
-#ifndef __NetBSD__
+#ifdef HAVE_CURSES_USE_ENV
     {"use_env",             (PyCFunction)PyCurses_Use_Env, METH_VARARGS},
 #endif
 #ifndef STRICT_SYSV_CURSES
