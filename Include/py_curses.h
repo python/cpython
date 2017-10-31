@@ -7,7 +7,7 @@
 ** On Mac OS X 10.2 [n]curses.h and stdlib.h use different guards
 ** against multiple definition of wchar_t.
 */
-#ifdef  _BSD_WCHAR_T_DEFINED_
+#ifdef _BSD_WCHAR_T_DEFINED_
 #define _WCHAR_T
 #endif
 #endif /* __APPLE__ */
@@ -17,7 +17,7 @@
 ** On FreeBSD, [n]curses.h and stdlib.h/wchar.h use different guards
 ** against multiple definition of wchar_t and wint_t.
 */
-#ifdef  _XOPEN_SOURCE_EXTENDED
+#ifdef _XOPEN_SOURCE_EXTENDED
 #ifndef __FreeBSD_version
 #include <osreldate.h>
 #endif
@@ -50,10 +50,6 @@
 #include <ncurses.h>
 #else
 #include <curses.h>
-#ifdef HAVE_TERM_H
-/* for tigetstr, which is not declared in SysV curses */
-#include <term.h>
-#endif
 #endif
 
 #ifdef HAVE_NCURSES_H

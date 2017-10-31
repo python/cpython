@@ -3273,34 +3273,39 @@ typedef struct {
     void *realloc_ptr;
     size_t realloc_new_size;
     void *free_ptr;
+    void *ctx;
 } alloc_hook_t;
 
-static void* hook_malloc (void* ctx, size_t size)
+static void* hook_malloc(void* ctx, size_t size)
 {
     alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
     hook->malloc_size = size;
     return hook->alloc.malloc(hook->alloc.ctx, size);
 }
 
-static void* hook_calloc (void* ctx, size_t nelem, size_t elsize)
+static void* hook_calloc(void* ctx, size_t nelem, size_t elsize)
 {
     alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
     hook->calloc_nelem = nelem;
     hook->calloc_elsize = elsize;
     return hook->alloc.calloc(hook->alloc.ctx, nelem, elsize);
 }
 
-static void* hook_realloc (void* ctx, void* ptr, size_t new_size)
+static void* hook_realloc(void* ctx, void* ptr, size_t new_size)
 {
     alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
     hook->realloc_ptr = ptr;
     hook->realloc_new_size = new_size;
     return hook->alloc.realloc(hook->alloc.ctx, ptr, new_size);
 }
 
-static void hook_free (void *ctx, void *ptr)
+static void hook_free(void *ctx, void *ptr)
 {
     alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
     hook->free_ptr = ptr;
     hook->alloc.free(hook->alloc.ctx, ptr);
 }
@@ -3325,7 +3330,9 @@ test_setallocators(PyMemAllocatorDomain domain)
     PyMem_GetAllocator(domain, &hook.alloc);
     PyMem_SetAllocator(domain, &alloc);
 
+    /* malloc, realloc, free */
     size = 42;
+    hook.ctx = NULL;
     switch(domain)
     {
     case PYMEM_DOMAIN_RAW: ptr = PyMem_RawMalloc(size); break;
@@ -3334,11 +3341,18 @@ test_setallocators(PyMemAllocatorDomain domain)
     default: ptr = NULL; break;
     }
 
+#define CHECK_CTX(FUNC) \
+    if (hook.ctx != &hook) { \
+        error_msg = FUNC " wrong context"; \
+        goto fail; \
+    } \
+    hook.ctx = NULL;  /* reset for next check */
+
     if (ptr == NULL) {
         error_msg = "malloc failed";
         goto fail;
     }
-
+    CHECK_CTX("malloc");
     if (hook.malloc_size != size) {
         error_msg = "malloc invalid size";
         goto fail;
@@ -3357,7 +3371,7 @@ test_setallocators(PyMemAllocatorDomain domain)
         error_msg = "realloc failed";
         goto fail;
     }
-
+    CHECK_CTX("realloc");
     if (hook.realloc_ptr != ptr
         || hook.realloc_new_size != size2) {
         error_msg = "realloc invalid parameters";
@@ -3371,11 +3385,13 @@ test_setallocators(PyMemAllocatorDomain domain)
     case PYMEM_DOMAIN_OBJ: PyObject_Free(ptr2); break;
     }
 
+    CHECK_CTX("free");
     if (hook.free_ptr != ptr2) {
         error_msg = "free invalid pointer";
         goto fail;
     }
 
+    /* calloc, free */
     nelem = 2;
     elsize = 5;
     switch(domain)
@@ -3390,17 +3406,24 @@ test_setallocators(PyMemAllocatorDomain domain)
         error_msg = "calloc failed";
         goto fail;
     }
-
+    CHECK_CTX("calloc");
     if (hook.calloc_nelem != nelem || hook.calloc_elsize != elsize) {
         error_msg = "calloc invalid nelem or elsize";
         goto fail;
     }
 
+    hook.free_ptr = NULL;
     switch(domain)
     {
     case PYMEM_DOMAIN_RAW: PyMem_RawFree(ptr); break;
     case PYMEM_DOMAIN_MEM: PyMem_Free(ptr); break;
     case PYMEM_DOMAIN_OBJ: PyObject_Free(ptr); break;
+    }
+
+    CHECK_CTX("calloc free");
+    if (hook.free_ptr != ptr) {
+        error_msg = "calloc free invalid pointer";
+        goto fail;
     }
 
     Py_INCREF(Py_None);
@@ -3413,6 +3436,8 @@ fail:
 finally:
     PyMem_SetAllocator(domain, &hook.alloc);
     return res;
+
+#undef CHECK_CTX
 }
 
 static PyObject *
