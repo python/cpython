@@ -16407,6 +16407,7 @@ $as_echo "$have_getrandom_syscall" >&6; }
 if test "$have_getrandom_syscall" = yes; then
 
 $as_echo "#define HAVE_GETRANDOM_SYSCALL 1" >>confdefs.h
+$as_echo "#define HAVE_SYSCALL_GETRANDOM 1" >>confdefs.h
 
 fi
 
