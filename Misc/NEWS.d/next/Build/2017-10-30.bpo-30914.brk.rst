@@ -1,0 +1,1 @@
+Allow cross-build of VxWorks if --host=*-wrs-vxworks is passed to configure
