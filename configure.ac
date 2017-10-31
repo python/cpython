@@ -5427,6 +5427,8 @@ AC_MSG_RESULT($have_getrandom_syscall)
 if test "$have_getrandom_syscall" = yes; then
     AC_DEFINE(HAVE_GETRANDOM_SYSCALL, 1,
               [Define to 1 if the Linux getrandom() syscall is available])
+    AC_DEFINE(HAVE_SYSCALL_GETRANDOM, 1,
+              [Define to 1 if the Linux getrandom() syscall is available (libexpat)])
 fi
 
 # check if the getrandom() function is available
