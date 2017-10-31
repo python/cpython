@@ -214,7 +214,7 @@ static int running_on_valgrind = -1;
  * Arenas are allocated with mmap() on systems supporting anonymous memory
  * mappings to reduce heap fragmentation.
  */
-#define ARENA_SIZE              (256 << 10)     /* 256KB */
+#define ARENA_SIZE              (256 << 10)     /* 256KiB */
 
 #ifdef WITH_MEMORY_LIMITS
 #define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
