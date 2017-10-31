@@ -1842,7 +1842,7 @@ static PyTypeObject kqueue_queue_Type;
 
 #ifdef __FreeBSD__
 #   define DATA_TYPE        T_INTPTRT
-#   define DATA_FMT_UNIT    INTPTR_FMT_UNIT
+#   define DATA_FMT_UNIT    INTPTRT_FMT_UNIT
 #else
 #   define DATA_TYPE        T_INT64
 #   define DATA_FMT_UNIT    INT64_FMT_UNIT
