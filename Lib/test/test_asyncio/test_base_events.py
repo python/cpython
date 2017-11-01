@@ -536,7 +536,8 @@ class BaseEventLoopTests(test_utils.TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            with mock.patch('asyncio.base_events.BaseEventLoop.run_forever', side_effect=Exception):
+            with mock.patch('asyncio.base_events.BaseEventLoop.run_forever', 
+                            side_effect=Exception):
                 loop.run_until_complete(foo())
         except:
             pass
