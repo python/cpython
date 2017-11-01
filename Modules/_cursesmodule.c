@@ -1163,8 +1163,16 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
         if (!PyErr_Occurred())
             PyErr_SetString(PyCursesError, "no input");
         return NULL;
-    } else if (rtn<=255) {
-        return Py_BuildValue("C", rtn);
+    } else if (rtn <= 255) {
+#ifdef NCURSES_VERSION_MAJOR
+#if NCURSES_VERSION_MAJOR*100+NCURSES_VERSION_MINOR <= 507
+        /* Work around a bug in ncurses 5.7 and earlier */
+        if (rtn < 0) {
+            rtn += 256;
+        }
+#endif
+#endif
+        return PyUnicode_FromOrdinal(rtn);
     } else {
         const char *knp = keyname(rtn);
         return PyUnicode_FromString((knp == NULL) ? "" : knp);
