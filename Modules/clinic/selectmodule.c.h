@@ -58,8 +58,7 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_register__doc__,
-"register($self, fd,\n"
-"         eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
+"register($self, fd, eventmask=POLLIN | POLLOUT | POLLPRI, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -80,7 +79,7 @@ select_poll_register(pollObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
+    unsigned short eventmask = POLLIN | POLLOUT | POLLPRI;
 
     if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
         fildes_converter, &fd, ushort_converter, &eventmask)) {
@@ -106,7 +105,7 @@ PyDoc_STRVAR(select_poll_modify__doc__,
 "    either an integer, or an object with a fileno() method returning\n"
 "    an int\n"
 "  eventmask\n"
-"    an optional bitmask describing the type of events to check for");
+"    a bitmask describing the type of events to check for");
 
 #define SELECT_POLL_MODIFY_METHODDEF    \
     {"modify", (PyCFunction)select_poll_modify, METH_FASTCALL, select_poll_modify__doc__},
@@ -172,8 +171,8 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "\n"
 "Polls the set of registered file descriptors.\n"
 "\n"
-"Returns a list containing any descriptors that have events or errors to report,\n"
-"as a list of (fd, event) 2-tuples.");
+"Returns a list containing any descriptors that have events or errors to\n"
+"report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_POLL_POLL_METHODDEF    \
     {"poll", (PyCFunction)select_poll_poll, METH_FASTCALL, select_poll_poll__doc__},
@@ -228,8 +227,8 @@ select_devpoll_register(devpollObject *self, PyObject **args, Py_ssize_t nargs)
     int fd;
     unsigned short eventmask = POLLIN | POLLOUT | POLLPRI;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|H:register",
-        fildes_converter, &fd, &eventmask)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
+        fildes_converter, &fd, ushort_converter, &eventmask)) {
         goto exit;
     }
     return_value = select_devpoll_register_impl(self, fd, eventmask);
@@ -268,8 +267,8 @@ select_devpoll_modify(devpollObject *self, PyObject **args, Py_ssize_t nargs)
     int fd;
     unsigned short eventmask = POLLIN | POLLOUT | POLLPRI;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|H:modify",
-        fildes_converter, &fd, &eventmask)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&|O&:modify",
+        fildes_converter, &fd, ushort_converter, &eventmask)) {
         goto exit;
     }
     return_value = select_devpoll_modify_impl(self, fd, eventmask);
@@ -955,10 +954,6 @@ exit:
     #define SELECT_POLL_POLL_METHODDEF
 #endif /* !defined(SELECT_POLL_POLL_METHODDEF) */
 
-#ifndef SELECT_POLL_METHODDEF
-    #define SELECT_POLL_METHODDEF
-#endif /* !defined(SELECT_POLL_METHODDEF) */
-
 #ifndef SELECT_DEVPOLL_CLOSE_METHODDEF
     #define SELECT_DEVPOLL_CLOSE_METHODDEF
 #endif /* !defined(SELECT_DEVPOLL_CLOSE_METHODDEF) */
@@ -986,4 +981,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=d7ac485af4c76371 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fd52937a289a6697 input=a9049054013a1b77]*/

@@ -452,7 +452,7 @@ select.poll.register
 
     fd: fildes
       either an integer, or an object with a fileno() method returning an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = select.POLLIN | select.POLLPRI | select.POLLOUT
+    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLOUT | POLLPRI") = POLLIN | POLLOUT | POLLPRI
       an optional bitmask describing the type of events to check for
     /
 
@@ -461,7 +461,7 @@ Register a file descriptor with the polling object.
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=0dc7173c800a4a65 input=be9d277653b257c3]*/
+/*[clinic end generated code: output=0dc7173c800a4a65 input=e20f283a8250fb5e]*/
 {
     PyObject *key, *value;
     int err;
@@ -495,7 +495,7 @@ select.poll.modify
       either an integer, or an object with a fileno() method returning
       an int
     eventmask: object(converter="ushort_converter", type="unsigned short")
-      an optional bitmask describing the type of events to check for
+      a bitmask describing the type of events to check for
     /
 
 Modify an already registered file descriptor.
@@ -503,7 +503,7 @@ Modify an already registered file descriptor.
 
 static PyObject *
 select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=1a7b88bf079eff17 input=ceabe904d3828b6b]*/
+/*[clinic end generated code: output=1a7b88bf079eff17 input=b8e0e04a1264b78f]*/
 {
     PyObject *key, *value;
     int err;
@@ -576,13 +576,13 @@ select.poll.poll
 
 Polls the set of registered file descriptors.
 
-Returns a list containing any descriptors that have events or errors to report,
-as a list of (fd, event) 2-tuples.
+Returns a list containing any descriptors that have events or errors to
+report, as a list of (fd, event) 2-tuples.
 [clinic start generated code]*/
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=876e837d193ed7e4 input=65e7913e6a7d2754]*/
+/*[clinic end generated code: output=876e837d193ed7e4 input=7a446ed45189e894]*/
 {
     PyObject *result_list = NULL;
     int poll_result, i, j;
@@ -831,7 +831,7 @@ select.devpoll.register
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: unsigned_short(c_default="POLLIN | POLLOUT | POLLPRI", bitwise=True) = POLLIN | POLLOUT | POLLPRI
+    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLOUT | POLLPRI") = POLLIN | POLLOUT | POLLPRI
         an optional bitmask describing the type of events to check for
     /
 
@@ -841,7 +841,7 @@ Register a file descriptor with the polling object.
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
                              unsigned short eventmask)
-/*[clinic end generated code: output=6e07fe8b74abba0c input=e05806bf7dbe3d40]*/
+/*[clinic end generated code: output=6e07fe8b74abba0c input=c6bed777bd69a7bc]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 0);
 }
@@ -852,7 +852,7 @@ select.devpoll.modify
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: unsigned_short(c_default="POLLIN | POLLOUT | POLLPRI", bitwise=True) = POLLIN | POLLOUT | POLLPRI
+    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLOUT | POLLPRI") = POLLIN | POLLOUT | POLLPRI
         an optional bitmask describing the type of events to check for
     /
 
@@ -862,7 +862,7 @@ Modify a possible already registered file descriptor.
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask)
-/*[clinic end generated code: output=bc2e6d23aaff98b4 input=bfa967d0abd1c48c]*/
+/*[clinic end generated code: output=bc2e6d23aaff98b4 input=2d8e3ddaa722656c]*/
 static PyObject *
 devpoll_modify(devpollObject *self, PyObject *args)
 {
