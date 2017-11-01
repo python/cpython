@@ -303,6 +303,7 @@ class CoverageResults:
 
     def write_results_file(self, path, lines, lnotab, lines_hit, encoding=None):
         """Return a coverage results file in path."""
+        # ``lnotab`` is a dict of executable lines, or a line number "table"
 
         try:
             outfile = open(path, "w", encoding=encoding)
@@ -322,8 +323,7 @@ class CoverageResults:
                     n_hits += 1
                     n_lines += 1
                 elif lineno in lnotab and not PRAGMA_NOCOVER in line:
-                    # lines preceded by no marks weren't hit
-                    # Highlight them if so indicated, unless the line contains
+                    # Highlight never-executed lines, unless the line contains
                     # #pragma: NO COVER
                     outfile.write(">>>>>> ")
                     n_lines += 1
