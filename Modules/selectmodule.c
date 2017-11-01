@@ -1352,9 +1352,12 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
     if (PyInt_Check(pfd)) {
         self->e.ident = PyInt_AsUnsignedLongMask(pfd);
     }
-    else {
-    if (PyInt_Check(pfd) || PyLong_Check(pfd)) {
-        self->e.ident = PyLong_AsSize_t(pfd);
+    else if (PyLong_Check(pfd)) {
+#if defined(HAVE_LONG_LONG) && (SIZEOF_UINTPTR_T == SIZEOF_LONG_LONG)
+        self->e.ident = PyLong_AsUnsignedLongLongMask(pfd);
+#else
+        self->e.ident = PyLong_AsUnsignedLongMask(pfd);
+#endif
     }
     else {
         self->e.ident = PyObject_AsFileDescriptor(pfd);
