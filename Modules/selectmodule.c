@@ -1286,7 +1286,7 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
 
 /*[clinic input]
 @classmethod
-select.epoll.__new__ as pyepoll_new
+select.epoll.__new__
 
     sizehint: int(c_default="FD_SETSIZE - 1") = -1
       sizehint must be a positive integer or -1 for the default size. The
@@ -1298,8 +1298,8 @@ Returns an epolling object.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_new_impl(PyTypeObject *type, int sizehint, int flags)
-/*[clinic end generated code: output=fcb34fe462324b94 input=37a75964694b6816]*/
+select_epoll_impl(PyTypeObject *type, int sizehint, int flags)
+/*[clinic end generated code: output=c87404e705013bb5 input=15bd182fdfa3557c]*/
 {
     if (sizehint < 0) {
         PyErr_SetString(PyExc_ValueError, "negative sizehint");
@@ -1322,7 +1322,7 @@ pyepoll_dealloc(pyEpoll_Object *self)
 }
 
 /*[clinic input]
-select.epoll.close as pyepoll_close
+select.epoll.close
 
 Close the epoll control file descriptor.
 
@@ -1330,8 +1330,8 @@ Further operations on the epoll object will raise an exception.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_close_impl(pyEpoll_Object *self)
-/*[clinic end generated code: output=8a45f35c8a91003f input=8eb5514f13b41be7]*/
+select_epoll_close_impl(pyEpoll_Object *self)
+/*[clinic end generated code: output=ee2144c446a1a435 input=ca6c66ba5a736bfd]*/
 {
     errno = pyepoll_internal_close(self);
     if (errno < 0) {
@@ -1352,14 +1352,14 @@ pyepoll_get_closed(pyEpoll_Object *self)
 }
 
 /*[clinic input]
-select.epoll.fileno as pyepoll_fileno
+select.epoll.fileno
 
 Return the epoll control file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_fileno_impl(pyEpoll_Object *self)
-/*[clinic end generated code: output=fe410e728fb9d923 input=f57a7ce98e39b879]*/
+select_epoll_fileno_impl(pyEpoll_Object *self)
+/*[clinic end generated code: output=e171375fdc619ba3 input=c11091a6aee60b5c]*/
 {
     if (self->epfd < 0)
         return pyepoll_err_closed();
@@ -1369,7 +1369,7 @@ pyepoll_fileno_impl(pyEpoll_Object *self)
 
 /*[clinic input]
 @classmethod
-select.epoll.fromfd as pyepoll_fromfd
+select.epoll.fromfd
 
     fd: int
     /
@@ -1378,8 +1378,8 @@ Create an epoll object from a given control fd.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_fromfd_impl(PyTypeObject *type, int fd)
-/*[clinic end generated code: output=d1efabee2ab54d69 input=018090223b95d685]*/
+select_epoll_fromfd_impl(PyTypeObject *type, int fd)
+/*[clinic end generated code: output=c15de2a083524e8e input=faecefdb55e3046e]*/
 {
     SOCKET s_fd = (SOCKET)fd;
     return newPyEpoll_Object(type, FD_SETSIZE - 1, 0, s_fd);
@@ -1431,7 +1431,7 @@ pyepoll_internal_ctl(int epfd, int op, int fd, unsigned int events)
 }
 
 /*[clinic input]
-select.epoll.register as pyepoll_register
+select.epoll.register
 
     fd: fildes
       the target file descriptor of the operation
@@ -1444,14 +1444,15 @@ The epoll interface supports all file descriptors that support poll.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_register_impl(pyEpoll_Object *self, int fd, unsigned int eventmask)
-/*[clinic end generated code: output=3244c166875dda1f input=a2dcd94e3b1692d6]*/
+select_epoll_register_impl(pyEpoll_Object *self, int fd,
+                           unsigned int eventmask)
+/*[clinic end generated code: output=318e5e6386520599 input=aee776f8e8d6d25f]*/
 {
     return pyepoll_internal_ctl(self->epfd, EPOLL_CTL_ADD, fd, eventmask);
 }
 
 /*[clinic input]
-select.epoll.modify as pyepoll_modify
+select.epoll.modify
 
     fd: fildes
       the target file descriptor of the operation
@@ -1462,14 +1463,15 @@ Modify event mask for a registered file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_modify_impl(pyEpoll_Object *self, int fd, unsigned int eventmask)
-/*[clinic end generated code: output=5d5093932bbf9234 input=17ba4cf5230fe7e1]*/
+select_epoll_modify_impl(pyEpoll_Object *self, int fd,
+                         unsigned int eventmask)
+/*[clinic end generated code: output=7e3447307cff6f65 input=88a83dac53a8c3da]*/
 {
     return pyepoll_internal_ctl(self->epfd, EPOLL_CTL_MOD, fd, eventmask);
 }
 
 /*[clinic input]
-select.epoll.unregister as pyepoll_unregister
+select.epoll.unregister
 
     fd: fildes
       the target file descriptor of the operation
@@ -1478,30 +1480,28 @@ Remove a registered file descriptor from the epoll object.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_unregister_impl(pyEpoll_Object *self, int fd)
-/*[clinic end generated code: output=539abcb9ec95f6b8 input=35b3cebfae5cbc12]*/
+select_epoll_unregister_impl(pyEpoll_Object *self, int fd)
+/*[clinic end generated code: output=07c5dbd612a512d4 input=3093f68d3644743d]*/
 {
     return pyepoll_internal_ctl(self->epfd, EPOLL_CTL_DEL, fd, 0);
 }
 
 /*[clinic input]
-select.epoll.poll as pyepoll_poll
+select.epoll.poll
 
     timeout as timeout_obj: object(c_default="Py_None") = -1.0
+      the maximum time to wait in seconds (as float);
+      a timeout of -1 makes poll wait indefinitely
     maxevents: int = -1
+      the maximum number of events returned
 
 Wait for events on the epoll file descriptor.
-
-timeout gives the maximum time to wait in seconds (as float).
-A timeout of -1 makes poll wait indefinitely.
-Up to maxevents are returned to the caller.
-
-The return value is a list of tuples of the form (fd, events).
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj, int maxevents)
-/*[clinic end generated code: output=f2d43090f6f8c981 input=6896abf8945c94e6]*/
+select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
+                       int maxevents)
+/*[clinic end generated code: output=e02d121a20246c6c input=205c0207f1971f5f]*/
 {
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
@@ -1603,13 +1603,13 @@ pyepoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj, int maxevents)
 
 
 /*[clinic input]
-select.epoll.__enter__ as pyepoll_enter
+select.epoll.__enter__
 
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_enter_impl(pyEpoll_Object *self)
-/*[clinic end generated code: output=b83429abc001fbad input=10e21534771c340a]*/
+select_epoll___enter___impl(pyEpoll_Object *self)
+/*[clinic end generated code: output=ab45d433504db2a0 input=3c22568587efeadb]*/
 {
     if (self->epfd < 0)
         return pyepoll_err_closed();
@@ -1619,7 +1619,7 @@ pyepoll_enter_impl(pyEpoll_Object *self)
 }
 
 /*[clinic input]
-select.epoll.__exit__ as pyepoll_exit
+select.epoll.__exit__
 
     exc_type:  object = None
     exc_value: object = None
@@ -1629,9 +1629,9 @@ select.epoll.__exit__ as pyepoll_exit
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_exit_impl(pyEpoll_Object *self, PyObject *exc_type,
-                  PyObject *exc_value, PyObject *exc_tb)
-/*[clinic end generated code: output=2a9663282b522719 input=b9e36359f35eadb4]*/
+select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
+                           PyObject *exc_value, PyObject *exc_tb)
+/*[clinic end generated code: output=c480f38ce361748e input=7ae81a5a4c1a98d8]*/
 {
     _Py_IDENTIFIER(close);
 

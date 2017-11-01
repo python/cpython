@@ -445,7 +445,7 @@ select_devpoll(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_new__doc__,
+PyDoc_STRVAR(select_epoll__doc__,
 "epoll(sizehint=-1, flags=0)\n"
 "--\n"
 "\n"
@@ -457,10 +457,10 @@ PyDoc_STRVAR(pyepoll_new__doc__,
 "    the maximum number of monitored events.");
 
 static PyObject *
-pyepoll_new_impl(PyTypeObject *type, int sizehint, int flags);
+select_epoll_impl(PyTypeObject *type, int sizehint, int flags);
 
 static PyObject *
-pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sizehint", "flags", NULL};
@@ -472,7 +472,7 @@ pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &sizehint, &flags)) {
         goto exit;
     }
-    return_value = pyepoll_new_impl(type, sizehint, flags);
+    return_value = select_epoll_impl(type, sizehint, flags);
 
 exit:
     return return_value;
@@ -482,7 +482,7 @@ exit:
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_close__doc__,
+PyDoc_STRVAR(select_epoll_close__doc__,
 "close($self, /)\n"
 "--\n"
 "\n"
@@ -490,58 +490,58 @@ PyDoc_STRVAR(pyepoll_close__doc__,
 "\n"
 "Further operations on the epoll object will raise an exception.");
 
-#define PYEPOLL_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)pyepoll_close, METH_NOARGS, pyepoll_close__doc__},
+#define SELECT_EPOLL_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)select_epoll_close, METH_NOARGS, select_epoll_close__doc__},
 
 static PyObject *
-pyepoll_close_impl(pyEpoll_Object *self);
+select_epoll_close_impl(pyEpoll_Object *self);
 
 static PyObject *
-pyepoll_close(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
+select_epoll_close(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
 {
-    return pyepoll_close_impl(self);
+    return select_epoll_close_impl(self);
 }
 
 #endif /* defined(HAVE_EPOLL) */
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_fileno__doc__,
+PyDoc_STRVAR(select_epoll_fileno__doc__,
 "fileno($self, /)\n"
 "--\n"
 "\n"
 "Return the epoll control file descriptor.");
 
-#define PYEPOLL_FILENO_METHODDEF    \
-    {"fileno", (PyCFunction)pyepoll_fileno, METH_NOARGS, pyepoll_fileno__doc__},
+#define SELECT_EPOLL_FILENO_METHODDEF    \
+    {"fileno", (PyCFunction)select_epoll_fileno, METH_NOARGS, select_epoll_fileno__doc__},
 
 static PyObject *
-pyepoll_fileno_impl(pyEpoll_Object *self);
+select_epoll_fileno_impl(pyEpoll_Object *self);
 
 static PyObject *
-pyepoll_fileno(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
+select_epoll_fileno(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
 {
-    return pyepoll_fileno_impl(self);
+    return select_epoll_fileno_impl(self);
 }
 
 #endif /* defined(HAVE_EPOLL) */
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_fromfd__doc__,
+PyDoc_STRVAR(select_epoll_fromfd__doc__,
 "fromfd($type, fd, /)\n"
 "--\n"
 "\n"
 "Create an epoll object from a given control fd.");
 
-#define PYEPOLL_FROMFD_METHODDEF    \
-    {"fromfd", (PyCFunction)pyepoll_fromfd, METH_O|METH_CLASS, pyepoll_fromfd__doc__},
+#define SELECT_EPOLL_FROMFD_METHODDEF    \
+    {"fromfd", (PyCFunction)select_epoll_fromfd, METH_O|METH_CLASS, select_epoll_fromfd__doc__},
 
 static PyObject *
-pyepoll_fromfd_impl(PyTypeObject *type, int fd);
+select_epoll_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-pyepoll_fromfd(PyTypeObject *type, PyObject *arg)
+select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -549,7 +549,7 @@ pyepoll_fromfd(PyTypeObject *type, PyObject *arg)
     if (!PyArg_Parse(arg, "i:fromfd", &fd)) {
         goto exit;
     }
-    return_value = pyepoll_fromfd_impl(type, fd);
+    return_value = select_epoll_fromfd_impl(type, fd);
 
 exit:
     return return_value;
@@ -559,7 +559,7 @@ exit:
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_register__doc__,
+PyDoc_STRVAR(select_epoll_register__doc__,
 "register($self, /, fd, eventmask=EPOLLIN | EPOLLOUT | EPOLLPRI)\n"
 "--\n"
 "\n"
@@ -572,14 +572,15 @@ PyDoc_STRVAR(pyepoll_register__doc__,
 "\n"
 "The epoll interface supports all file descriptors that support poll.");
 
-#define PYEPOLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)pyepoll_register, METH_FASTCALL|METH_KEYWORDS, pyepoll_register__doc__},
+#define SELECT_EPOLL_REGISTER_METHODDEF    \
+    {"register", (PyCFunction)select_epoll_register, METH_FASTCALL|METH_KEYWORDS, select_epoll_register__doc__},
 
 static PyObject *
-pyepoll_register_impl(pyEpoll_Object *self, int fd, unsigned int eventmask);
+select_epoll_register_impl(pyEpoll_Object *self, int fd,
+                           unsigned int eventmask);
 
 static PyObject *
-pyepoll_register(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_register(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
@@ -591,7 +592,7 @@ pyepoll_register(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObje
         fildes_converter, &fd, &eventmask)) {
         goto exit;
     }
-    return_value = pyepoll_register_impl(self, fd, eventmask);
+    return_value = select_epoll_register_impl(self, fd, eventmask);
 
 exit:
     return return_value;
@@ -601,7 +602,7 @@ exit:
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_modify__doc__,
+PyDoc_STRVAR(select_epoll_modify__doc__,
 "modify($self, /, fd, eventmask)\n"
 "--\n"
 "\n"
@@ -612,14 +613,15 @@ PyDoc_STRVAR(pyepoll_modify__doc__,
 "  eventmask\n"
 "    a bit set composed of the various EPOLL constants");
 
-#define PYEPOLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)pyepoll_modify, METH_FASTCALL|METH_KEYWORDS, pyepoll_modify__doc__},
+#define SELECT_EPOLL_MODIFY_METHODDEF    \
+    {"modify", (PyCFunction)select_epoll_modify, METH_FASTCALL|METH_KEYWORDS, select_epoll_modify__doc__},
 
 static PyObject *
-pyepoll_modify_impl(pyEpoll_Object *self, int fd, unsigned int eventmask);
+select_epoll_modify_impl(pyEpoll_Object *self, int fd,
+                         unsigned int eventmask);
 
 static PyObject *
-pyepoll_modify(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_modify(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
@@ -631,7 +633,7 @@ pyepoll_modify(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject
         fildes_converter, &fd, &eventmask)) {
         goto exit;
     }
-    return_value = pyepoll_modify_impl(self, fd, eventmask);
+    return_value = select_epoll_modify_impl(self, fd, eventmask);
 
 exit:
     return return_value;
@@ -641,7 +643,7 @@ exit:
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_unregister__doc__,
+PyDoc_STRVAR(select_epoll_unregister__doc__,
 "unregister($self, /, fd)\n"
 "--\n"
 "\n"
@@ -650,14 +652,14 @@ PyDoc_STRVAR(pyepoll_unregister__doc__,
 "  fd\n"
 "    the target file descriptor of the operation");
 
-#define PYEPOLL_UNREGISTER_METHODDEF    \
-    {"unregister", (PyCFunction)pyepoll_unregister, METH_FASTCALL|METH_KEYWORDS, pyepoll_unregister__doc__},
+#define SELECT_EPOLL_UNREGISTER_METHODDEF    \
+    {"unregister", (PyCFunction)select_epoll_unregister, METH_FASTCALL|METH_KEYWORDS, select_epoll_unregister__doc__},
 
 static PyObject *
-pyepoll_unregister_impl(pyEpoll_Object *self, int fd);
+select_epoll_unregister_impl(pyEpoll_Object *self, int fd);
 
 static PyObject *
-pyepoll_unregister(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_unregister(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
@@ -668,7 +670,7 @@ pyepoll_unregister(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyOb
         fildes_converter, &fd)) {
         goto exit;
     }
-    return_value = pyepoll_unregister_impl(self, fd);
+    return_value = select_epoll_unregister_impl(self, fd);
 
 exit:
     return return_value;
@@ -678,26 +680,27 @@ exit:
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_poll__doc__,
+PyDoc_STRVAR(select_epoll_poll__doc__,
 "poll($self, /, timeout=-1.0, maxevents=-1)\n"
 "--\n"
 "\n"
 "Wait for events on the epoll file descriptor.\n"
 "\n"
-"timeout gives the maximum time to wait in seconds (as float).\n"
-"A timeout of -1 makes poll wait indefinitely.\n"
-"Up to maxevents are returned to the caller.\n"
-"\n"
-"The return value is a list of tuples of the form (fd, events).");
+"  timeout\n"
+"    the maximum time to wait in seconds (as float);\n"
+"    a timeout of -1 makes poll wait indefinitely\n"
+"  maxevents\n"
+"    the maximum number of events returned");
 
-#define PYEPOLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)pyepoll_poll, METH_FASTCALL|METH_KEYWORDS, pyepoll_poll__doc__},
-
-static PyObject *
-pyepoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj, int maxevents);
+#define SELECT_EPOLL_POLL_METHODDEF    \
+    {"poll", (PyCFunction)select_epoll_poll, METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
 
 static PyObject *
-pyepoll_poll(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
+                       int maxevents);
+
+static PyObject *
+select_epoll_poll(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"timeout", "maxevents", NULL};
@@ -709,7 +712,7 @@ pyepoll_poll(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *
         &timeout_obj, &maxevents)) {
         goto exit;
     }
-    return_value = pyepoll_poll_impl(self, timeout_obj, maxevents);
+    return_value = select_epoll_poll_impl(self, timeout_obj, maxevents);
 
 exit:
     return return_value;
@@ -719,41 +722,41 @@ exit:
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_enter__doc__,
+PyDoc_STRVAR(select_epoll___enter____doc__,
 "__enter__($self, /)\n"
 "--\n"
 "\n");
 
-#define PYEPOLL_ENTER_METHODDEF    \
-    {"__enter__", (PyCFunction)pyepoll_enter, METH_NOARGS, pyepoll_enter__doc__},
+#define SELECT_EPOLL___ENTER___METHODDEF    \
+    {"__enter__", (PyCFunction)select_epoll___enter__, METH_NOARGS, select_epoll___enter____doc__},
 
 static PyObject *
-pyepoll_enter_impl(pyEpoll_Object *self);
+select_epoll___enter___impl(pyEpoll_Object *self);
 
 static PyObject *
-pyepoll_enter(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
+select_epoll___enter__(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
 {
-    return pyepoll_enter_impl(self);
+    return select_epoll___enter___impl(self);
 }
 
 #endif /* defined(HAVE_EPOLL) */
 
 #if defined(HAVE_EPOLL)
 
-PyDoc_STRVAR(pyepoll_exit__doc__,
+PyDoc_STRVAR(select_epoll___exit____doc__,
 "__exit__($self, exc_type=None, exc_value=None, exc_tb=None, /)\n"
 "--\n"
 "\n");
 
-#define PYEPOLL_EXIT_METHODDEF    \
-    {"__exit__", (PyCFunction)pyepoll_exit, METH_FASTCALL, pyepoll_exit__doc__},
+#define SELECT_EPOLL___EXIT___METHODDEF    \
+    {"__exit__", (PyCFunction)select_epoll___exit__, METH_FASTCALL, select_epoll___exit____doc__},
 
 static PyObject *
-pyepoll_exit_impl(pyEpoll_Object *self, PyObject *exc_type,
-                  PyObject *exc_value, PyObject *exc_tb);
+select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
+                           PyObject *exc_value, PyObject *exc_tb);
 
 static PyObject *
-pyepoll_exit(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs)
+select_epoll___exit__(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *exc_type = Py_None;
@@ -765,7 +768,7 @@ pyepoll_exit(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs)
         &exc_type, &exc_value, &exc_tb)) {
         goto exit;
     }
-    return_value = pyepoll_exit_impl(self, exc_type, exc_value, exc_tb);
+    return_value = select_epoll___exit___impl(self, exc_type, exc_value, exc_tb);
 
 exit:
     return return_value;
@@ -966,19 +969,19 @@ exit:
     #define SELECT_DEVPOLL_METHODDEF
 #endif /* !defined(SELECT_DEVPOLL_METHODDEF) */
 
-#ifndef PYEPOLL_FROMFD_METHODDEF
-    #define PYEPOLL_FROMFD_METHODDEF
-#endif /* !defined(PYEPOLL_FROMFD_METHODDEF) */
+#ifndef SELECT_EPOLL_FROMFD_METHODDEF
+    #define SELECT_EPOLL_FROMFD_METHODDEF
+#endif /* !defined(SELECT_EPOLL_FROMFD_METHODDEF) */
 
-#ifndef PYEPOLL_ENTER_METHODDEF
-    #define PYEPOLL_ENTER_METHODDEF
-#endif /* !defined(PYEPOLL_ENTER_METHODDEF) */
+#ifndef SELECT_EPOLL___ENTER___METHODDEF
+    #define SELECT_EPOLL___ENTER___METHODDEF
+#endif /* !defined(SELECT_EPOLL___ENTER___METHODDEF) */
 
-#ifndef PYEPOLL_EXIT_METHODDEF
-    #define PYEPOLL_EXIT_METHODDEF
-#endif /* !defined(PYEPOLL_EXIT_METHODDEF) */
+#ifndef SELECT_EPOLL___EXIT___METHODDEF
+    #define SELECT_EPOLL___EXIT___METHODDEF
+#endif /* !defined(SELECT_EPOLL___EXIT___METHODDEF) */
 
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=fd52937a289a6697 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31cb97633e7c6f24 input=a9049054013a1b77]*/
