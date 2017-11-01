@@ -532,6 +532,7 @@ class BaseEventLoopTests(test_utils.TestCase):
     def test_run_until_complete_loop_orphan_future_close_loop(self):
         async def foo(sec=0):
             await asyncio.sleep(sec)
+
         self.loop.close()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
