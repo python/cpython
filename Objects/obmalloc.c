@@ -1517,11 +1517,12 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
     uint8_t *q;           /* base address of malloc'epad d block */
-    uint8_t *data;        /* p + 2*SST == pointer to data bytes */
+    uint8_t *r;
     uint8_t *tail;        /* data + nbytes == pointer to tail pad bytes */
     size_t total;         /* 2 * SST + nbytes + 2 * SST */
     size_t original_nbytes;
-    int i;
+#define ERASED_SIZE 8
+    uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
 
     _PyMem_DebugCheckAddress(api->api_id, p);
 
@@ -1533,31 +1534,60 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
     total = nbytes + 4*SST;
 
+    tail = q + original_nbytes;
+    /* Mark the header, the trailer, ERASED_SIZE bytes at the begin and
+       ERASED_SIZE bytes at the end as dead and save the copy of erased bytes.
+     */
+    if (original_nbytes <= 2*ERASED_SIZE) {
+        memcpy(save, q, original_nbytes);
+        memset(q - 2*SST, DEADBYTE, original_nbytes + 4*SST);
+    }
+    else {
+        memcpy(save, q, ERASED_SIZE);
+        memset(q - 2*SST, DEADBYTE, ERASED_SIZE + 2*SST);
+        memcpy(&save[ERASED_SIZE], tail - ERASED_SIZE, ERASED_SIZE);
+        memset(tail - ERASED_SIZE, DEADBYTE, ERASED_SIZE + 2*SST);
+    }
+
     /* Resize and add decorations. */
-    q = (uint8_t *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
-    if (q == NULL) {
-        return NULL;
+    r = (uint8_t *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
+    if (r != NULL) {
+        q = r;
     }
 
     bumpserialno();
     write_size_t(q, nbytes);
-    assert(q[SST] == (uint8_t)api->api_id);
-    for (i = 1; i < SST; ++i) {
-        assert(q[SST + i] == FORBIDDENBYTE);
-    }
-    data = q + 2*SST;
+    q[SST] = (uint8_t)api->api_id;
+    memset(q + SST + 1, FORBIDDENBYTE, SST-1);
+    q += 2*SST;
 
-    tail = data + nbytes;
+    tail = q + nbytes;
     memset(tail, FORBIDDENBYTE, SST);
     write_size_t(tail + SST, _PyRuntime.mem.serialno);
 
-    if (nbytes > original_nbytes) {
-        /* growing:  mark new extra memory clean */
-        memset(data + original_nbytes, CLEANBYTE,
-               nbytes - original_nbytes);
+    /* Restore saved bytes. */
+    if (original_nbytes <= 2*ERASED_SIZE) {
+        memcpy(q, save, Py_MIN(nbytes, original_nbytes));
+    }
+    else {
+        size_t i = original_nbytes - ERASED_SIZE;
+        if (nbytes > i) {
+            memcpy(q + i, &save[ERASED_SIZE], Py_MIN(nbytes - i, ERASED_SIZE));
+        }
+        memcpy(q, save, Py_MIN(nbytes, ERASED_SIZE));
+    }
+    _PyMem_DebugCheckAddress(api->api_id, q);
+
+    if (r == NULL) {
+        return NULL;
     }
 
-    return data;
+    if (nbytes > original_nbytes) {
+        /* growing:  mark new extra memory clean */
+        memset(q + original_nbytes, CLEANBYTE, nbytes - original_nbytes);
+    }
+
+    return q;
 }
 
 static void
