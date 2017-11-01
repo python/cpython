@@ -1,0 +1,1 @@
+Added a workaround for getkey() in curses for ncurses 5.7 and earlier.

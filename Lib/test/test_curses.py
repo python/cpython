@@ -359,6 +359,9 @@ class TestCurses(unittest.TestCase):
         self.stdscr.getkey()
 
     @requires_curses_func('unget_wch')
+    # XXX Remove the decorator when ncurses on OpenBSD be updated
+    @unittest.skipIf(sys.platform.startswith("openbsd"),
+                     "OpenBSD's curses (v.5.7) has bugs")
     def test_unget_wch(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
