@@ -10,11 +10,6 @@
 #ifdef _BSD_WCHAR_T_DEFINED_
 #define _WCHAR_T
 #endif
-
-/* the following define is necessary for OS X 10.6; without it, the
-   Apple-supplied ncurses.h sets NCURSES_OPAQUE to 1, and then Python
-   can't get at the WINDOW flags field. */
-#define NCURSES_OPAQUE 0
 #endif /* __APPLE__ */
 
 #ifdef __FreeBSD__
@@ -44,6 +39,13 @@
 #endif
 #endif
 
+#if !defined(HAVE_CURSES_IS_PAD) && defined(WINDOW_HAS_FLAGS)
+/* The following definition is necessary for ncurses 5.7; without it,
+   some of [n]curses.h set NCURSES_OPAQUE to 1, and then Python
+   can't get at the WINDOW flags field. */
+#define NCURSES_OPAQUE 0
+#endif
+
 #ifdef HAVE_NCURSES_H
 #include <ncurses.h>
 #else
@@ -52,9 +54,12 @@
 
 #ifdef HAVE_NCURSES_H
 /* configure was checking <curses.h>, but we will
-   use <ncurses.h>, which has all these features. */
-#ifndef WINDOW_HAS_FLAGS
+   use <ncurses.h>, which has some or all these features. */
+#if !defined(WINDOW_HAS_FLAGS) && !(NCURSES_OPAQUE+0)
 #define WINDOW_HAS_FLAGS 1
+#endif
+#if !defined(HAVE_CURSES_IS_PAD) && NCURSES_VERSION_PATCH+0 >= 20090906
+#define HAVE_CURSES_IS_PAD 1
 #endif
 #ifndef MVWDELCH_IS_EXPRESSION
 #define MVWDELCH_IS_EXPRESSION 1
