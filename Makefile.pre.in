@@ -443,6 +443,9 @@ all:		@DEF_MAKE_ALL_RULE@
 build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed python-config
 
 # Compile with profile generation
+#
+# Run "make clean" and remove stamp file to force re-build of the profile
+# generation binary.
 profile-gen-stamp:
 	@if [ $(LLVM_PROF_ERR) = yes ]; then \
 		echo "Error: Cannot perform PGO build because llvm-profdata was not found in PATH" ;\
@@ -455,6 +458,9 @@ profile-gen-stamp:
 	touch $@
 
 # Run task to generate profile information
+#
+# Run "make clean" and remove stamp file to force re-running of profile
+# generation task.
 profile-run-stamp: profile-gen-stamp
 	@echo "Running code to generate profile data (this can take a while):"
 	$(MAKE) profile-removal
