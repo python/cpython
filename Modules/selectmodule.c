@@ -66,6 +66,24 @@ class select.kqueue "kqueue_queue_Object *" "&kqueue_queue_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec163a60f69bbb6e]*/
 
+static int
+fildes_converter(PyObject *o, void *p)
+{
+    int fd;
+    int *pointer = (int *)p;
+    fd = PyObject_AsFileDescriptor(o);
+    if (fd == -1)
+        return 0;
+    *pointer = fd;
+    return 1;
+}
+
+/*[python input]
+class fildes_converter(CConverter):
+    type = 'int'
+    converter = 'fildes_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ca54eb5aa476e20a]*/
 
 /* list of Python objects and their file descriptor */
 typedef struct {
@@ -431,7 +449,7 @@ ushort_converter(PyObject *obj, void *ptr)
 /*[clinic input]
 select.poll.register
 
-    fd: object
+    fd: fildes
       either an integer, or an object with a fileno() method returning an int
     eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = select.POLLIN | select.POLLPRI | select.POLLOUT
       an optional bitmask describing the type of events to check for
@@ -441,21 +459,15 @@ Register a file descriptor with the polling object.
 [clinic start generated code]*/
 
 static PyObject *
-select_poll_register_impl(pollObject *self, PyObject *fd,
-                          unsigned short eventmask)
-/*[clinic end generated code: output=9d124fac4c62aa77 input=1eb1ecb69aab929b]*/
+select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
+/*[clinic end generated code: output=0dc7173c800a4a65 input=be9d277653b257c3]*/
 {
     PyObject *key, *value;
-    int real_fd;
     int err;
-
-    real_fd = PyObject_AsFileDescriptor(fd);
-    if (real_fd == -1)
-        return NULL;
 
     /* Add entry to the internal dictionary: the key is the
        file descriptor, and the value is the event mask. */
-    key = PyLong_FromLong(real_fd);
+    key = PyLong_FromLong(fd);
     if (key == NULL)
         return NULL;
     value = PyLong_FromLong(eventmask);
@@ -478,7 +490,7 @@ select_poll_register_impl(pollObject *self, PyObject *fd,
 /*[clinic input]
 select.poll.modify
 
-    fd: object
+    fd: fildes
       either an integer, or an object with a fileno() method returning
       an int
     eventmask: object(converter="ushort_converter", type="unsigned short")
@@ -489,19 +501,14 @@ Modify an already registered file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
-select_poll_modify_impl(pollObject *self, PyObject *fd,
-                        unsigned short eventmask)
-/*[clinic end generated code: output=427cf336fe49a058 input=981788186a5846ee]*/
+select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
+/*[clinic end generated code: output=1a7b88bf079eff17 input=ceabe904d3828b6b]*/
 {
     PyObject *key, *value;
-    int real_fd;
     int err;
 
-    real_fd = PyObject_AsFileDescriptor(fd);
-    if (real_fd == -1) return NULL;
-
     /* Modify registered fd */
-    key = PyLong_FromLong(real_fd);
+    key = PyLong_FromLong(fd);
     if (key == NULL)
         return NULL;
     if (PyDict_GetItem(self->dict, key) == NULL) {
@@ -530,25 +537,20 @@ select_poll_modify_impl(pollObject *self, PyObject *fd,
 /*[clinic input]
 select.poll.unregister
 
-    fd: object
+    fd: fildes
     /
 
 Remove a file descriptor being tracked by the polling object.
 [clinic start generated code]*/
 
 static PyObject *
-select_poll_unregister(pollObject *self, PyObject *fd)
-/*[clinic end generated code: output=63e6c416dfc6885c input=69b20d179f588435]*/
+select_poll_unregister_impl(pollObject *self, int fd)
+/*[clinic end generated code: output=8c9f42e75e7d291b input=4b4fccc1040e79cb]*/
 {
     PyObject *key;
-    int real_fd;
-
-    real_fd = PyObject_AsFileDescriptor(fd);
-    if (real_fd == -1)
-        return NULL;
 
     /* Check whether the fd is already in the array */
-    key = PyLong_FromLong(real_fd);
+    key = PyLong_FromLong(fd);
     if (key == NULL)
         return NULL;
 
@@ -1364,7 +1366,7 @@ pyepoll_fromfd_impl(PyTypeObject *type, int fd)
 
 
 static PyObject *
-pyepoll_internal_ctl(int epfd, int op, PyObject *pfd, unsigned int events)
+pyepoll_internal_ctl(int epfd, int op, int fd, unsigned int events)
 {
     struct epoll_event ev;
     int result;
@@ -1372,11 +1374,6 @@ pyepoll_internal_ctl(int epfd, int op, PyObject *pfd, unsigned int events)
 
     if (epfd < 0)
         return pyepoll_err_closed();
-
-    fd = PyObject_AsFileDescriptor(pfd);
-    if (fd == -1) {
-        return NULL;
-    }
 
     switch (op) {
     case EPOLL_CTL_ADD:
@@ -1415,7 +1412,7 @@ pyepoll_internal_ctl(int epfd, int op, PyObject *pfd, unsigned int events)
 /*[clinic input]
 select.epoll.register as pyepoll_register
 
-    fd: object
+    fd: fildes
       the target file descriptor of the operation
     eventmask: unsigned_int(c_default="EPOLLIN | EPOLLOUT | EPOLLPRI", bitwise=True) = EPOLLIN | EPOLLOUT | EPOLLPRI
       a bit set composed of the various EPOLL constants
@@ -1426,9 +1423,8 @@ The epoll interface supports all file descriptors that support poll.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_register_impl(pyEpoll_Object *self, PyObject *fd,
-                      unsigned int eventmask)
-/*[clinic end generated code: output=7c03082c701b4386 input=7598971f10e2b318]*/
+pyepoll_register_impl(pyEpoll_Object *self, int fd, unsigned int eventmask)
+/*[clinic end generated code: output=3244c166875dda1f input=a2dcd94e3b1692d6]*/
 {
     return pyepoll_internal_ctl(self->epfd, EPOLL_CTL_ADD, fd, eventmask);
 }
@@ -1436,7 +1432,7 @@ pyepoll_register_impl(pyEpoll_Object *self, PyObject *fd,
 /*[clinic input]
 select.epoll.modify as pyepoll_modify
 
-    fd: object
+    fd: fildes
       the target file descriptor of the operation
     eventmask: unsigned_int(bitwise=True)
       a bit set composed of the various EPOLL constants
@@ -1445,9 +1441,8 @@ Modify event mask for a registered file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_modify_impl(pyEpoll_Object *self, PyObject *fd,
-                    unsigned int eventmask)
-/*[clinic end generated code: output=3d18cbb713866267 input=107c7ca76f0af422]*/
+pyepoll_modify_impl(pyEpoll_Object *self, int fd, unsigned int eventmask)
+/*[clinic end generated code: output=5d5093932bbf9234 input=17ba4cf5230fe7e1]*/
 {
     return pyepoll_internal_ctl(self->epfd, EPOLL_CTL_MOD, fd, eventmask);
 }
@@ -1455,15 +1450,15 @@ pyepoll_modify_impl(pyEpoll_Object *self, PyObject *fd,
 /*[clinic input]
 select.epoll.unregister as pyepoll_unregister
 
-    fd: object
+    fd: fildes
       the target file descriptor of the operation
 
 Remove a registered file descriptor from the epoll object.
 [clinic start generated code]*/
 
 static PyObject *
-pyepoll_unregister_impl(pyEpoll_Object *self, PyObject *fd)
-/*[clinic end generated code: output=83dac1817f807c2d input=39795651cc232dec]*/
+pyepoll_unregister_impl(pyEpoll_Object *self, int fd)
+/*[clinic end generated code: output=539abcb9ec95f6b8 input=35b3cebfae5cbc12]*/
 {
     return pyepoll_internal_ctl(self->epfd, EPOLL_CTL_DEL, fd, 0);
 }

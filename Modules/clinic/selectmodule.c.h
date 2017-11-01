@@ -73,18 +73,17 @@ PyDoc_STRVAR(select_poll_register__doc__,
     {"register", (PyCFunction)select_poll_register, METH_FASTCALL, select_poll_register__doc__},
 
 static PyObject *
-select_poll_register_impl(pollObject *self, PyObject *fd,
-                          unsigned short eventmask);
+select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask);
 
 static PyObject *
 select_poll_register(pollObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *fd;
+    int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|O&:register",
-        &fd, ushort_converter, &eventmask)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
+        fildes_converter, &fd, ushort_converter, &eventmask)) {
         goto exit;
     }
     return_value = select_poll_register_impl(self, fd, eventmask);
@@ -113,18 +112,17 @@ PyDoc_STRVAR(select_poll_modify__doc__,
     {"modify", (PyCFunction)select_poll_modify, METH_FASTCALL, select_poll_modify__doc__},
 
 static PyObject *
-select_poll_modify_impl(pollObject *self, PyObject *fd,
-                        unsigned short eventmask);
+select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask);
 
 static PyObject *
 select_poll_modify(pollObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *fd;
+    int fd;
     unsigned short eventmask;
 
-    if (!_PyArg_ParseStack(args, nargs, "OO&:modify",
-        &fd, ushort_converter, &eventmask)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&O&:modify",
+        fildes_converter, &fd, ushort_converter, &eventmask)) {
         goto exit;
     }
     return_value = select_poll_modify_impl(self, fd, eventmask);
@@ -145,6 +143,24 @@ PyDoc_STRVAR(select_poll_unregister__doc__,
 
 #define SELECT_POLL_UNREGISTER_METHODDEF    \
     {"unregister", (PyCFunction)select_poll_unregister, METH_O, select_poll_unregister__doc__},
+
+static PyObject *
+select_poll_unregister_impl(pollObject *self, int fd);
+
+static PyObject *
+select_poll_unregister(pollObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!PyArg_Parse(arg, "O&:unregister", fildes_converter, &fd)) {
+        goto exit;
+    }
+    return_value = select_poll_unregister_impl(self, fd);
+
+exit:
+    return return_value;
+}
 
 #endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
 
@@ -367,20 +383,19 @@ PyDoc_STRVAR(pyepoll_register__doc__,
     {"register", (PyCFunction)pyepoll_register, METH_FASTCALL|METH_KEYWORDS, pyepoll_register__doc__},
 
 static PyObject *
-pyepoll_register_impl(pyEpoll_Object *self, PyObject *fd,
-                      unsigned int eventmask);
+pyepoll_register_impl(pyEpoll_Object *self, int fd, unsigned int eventmask);
 
 static PyObject *
 pyepoll_register(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {"O|I:register", _keywords, 0};
-    PyObject *fd;
+    static _PyArg_Parser _parser = {"O&|I:register", _keywords, 0};
+    int fd;
     unsigned int eventmask = EPOLLIN | EPOLLOUT | EPOLLPRI;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fd, &eventmask)) {
+        fildes_converter, &fd, &eventmask)) {
         goto exit;
     }
     return_value = pyepoll_register_impl(self, fd, eventmask);
@@ -408,20 +423,19 @@ PyDoc_STRVAR(pyepoll_modify__doc__,
     {"modify", (PyCFunction)pyepoll_modify, METH_FASTCALL|METH_KEYWORDS, pyepoll_modify__doc__},
 
 static PyObject *
-pyepoll_modify_impl(pyEpoll_Object *self, PyObject *fd,
-                    unsigned int eventmask);
+pyepoll_modify_impl(pyEpoll_Object *self, int fd, unsigned int eventmask);
 
 static PyObject *
 pyepoll_modify(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {"OI:modify", _keywords, 0};
-    PyObject *fd;
+    static _PyArg_Parser _parser = {"O&I:modify", _keywords, 0};
+    int fd;
     unsigned int eventmask;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fd, &eventmask)) {
+        fildes_converter, &fd, &eventmask)) {
         goto exit;
     }
     return_value = pyepoll_modify_impl(self, fd, eventmask);
@@ -447,18 +461,18 @@ PyDoc_STRVAR(pyepoll_unregister__doc__,
     {"unregister", (PyCFunction)pyepoll_unregister, METH_FASTCALL|METH_KEYWORDS, pyepoll_unregister__doc__},
 
 static PyObject *
-pyepoll_unregister_impl(pyEpoll_Object *self, PyObject *fd);
+pyepoll_unregister_impl(pyEpoll_Object *self, int fd);
 
 static PyObject *
 pyepoll_unregister(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {"O:unregister", _keywords, 0};
-    PyObject *fd;
+    static _PyArg_Parser _parser = {"O&:unregister", _keywords, 0};
+    int fd;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fd)) {
+        fildes_converter, &fd)) {
         goto exit;
     }
     return_value = pyepoll_unregister_impl(self, fd);
@@ -747,6 +761,10 @@ exit:
     #define SELECT_POLL_POLL_METHODDEF
 #endif /* !defined(SELECT_POLL_POLL_METHODDEF) */
 
+#ifndef SELECT_POLL_METHODDEF
+    #define SELECT_POLL_METHODDEF
+#endif /* !defined(SELECT_POLL_METHODDEF) */
+
 #ifndef SELECT_DEVPOLL_METHODDEF
     #define SELECT_DEVPOLL_METHODDEF
 #endif /* !defined(SELECT_DEVPOLL_METHODDEF) */
@@ -774,4 +792,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=9b828bf16401e09e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ce40e8895b08aa75 input=a9049054013a1b77]*/
