@@ -330,8 +330,6 @@ class CoverageResults:
                     # #pragma: NO COVER
                     outfile.write(">>>>>> ")
                     n_lines += 1
-                elif rx_blank.match(line):
-                    outfile.write("       ")
                 else:
                     outfile.write("       ")
                 outfile.write(line.expandtabs(8))
