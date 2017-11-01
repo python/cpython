@@ -9,10 +9,7 @@ import errno
 import stat
 import sys
 # Import _thread instead of threading to reduce startup cost
-try:
-    from _thread import allocate_lock as Lock
-except ImportError:
-    from _dummy_thread import allocate_lock as Lock
+from _thread import allocate_lock as Lock
 if sys.platform in {'win32', 'cygwin'}:
     from msvcrt import setmode as _setmode
 else:
@@ -504,8 +501,13 @@ class IOBase(metaclass=abc.ABCMeta):
                 return 1
         if size is None:
             size = -1
-        elif not isinstance(size, int):
-            raise TypeError("size must be an integer")
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
         res = bytearray()
         while size < 0 or len(res) < size:
             b = self.read(nreadahead())
@@ -868,6 +870,13 @@ class BytesIO(BufferedIOBase):
             raise ValueError("read from closed file")
         if size is None:
             size = -1
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
         if size < 0:
             size = len(self._buffer)
         if len(self._buffer) <= self._pos:
@@ -905,9 +914,11 @@ class BytesIO(BufferedIOBase):
         if self.closed:
             raise ValueError("seek on closed file")
         try:
-            pos.__index__
-        except AttributeError as err:
-            raise TypeError("an integer is required") from err
+            pos_index = pos.__index__
+        except AttributeError:
+            raise TypeError(f"{pos!r} is not an integer")
+        else:
+            pos = pos_index()
         if whence == 0:
             if pos < 0:
                 raise ValueError("negative seek position %r" % (pos,))
@@ -932,9 +943,11 @@ class BytesIO(BufferedIOBase):
             pos = self._pos
         else:
             try:
-                pos.__index__
-            except AttributeError as err:
-                raise TypeError("an integer is required") from err
+                pos_index = pos.__index__
+            except AttributeError:
+                raise TypeError(f"{pos!r} is not an integer")
+            else:
+                pos = pos_index()
             if pos < 0:
                 raise ValueError("negative truncate position %r" % (pos,))
         del self._buffer[pos:]
@@ -1169,6 +1182,7 @@ class BufferedWriter(_BufferedIOMixin):
         self.buffer_size = buffer_size
         self._write_buf = bytearray()
         self._write_lock = Lock()
+        _register_writer(self)
 
     def writable(self):
         return self.raw.writable()
@@ -1943,7 +1957,6 @@ class TextIOWrapper(TextIOBase):
                 raise ValueError("invalid errors: %r" % errors)
 
         self._buffer = buffer
-        self._line_buffering = line_buffering
         self._encoding = encoding
         self._errors = errors
         self._readuniversal = not newline
@@ -1968,6 +1981,12 @@ class TextIOWrapper(TextIOBase):
                 except LookupError:
                     # Sometimes the encoder doesn't exist
                     pass
+
+        self._configure(line_buffering, write_through)
+
+    def _configure(self, line_buffering=False, write_through=False):
+        self._line_buffering = line_buffering
+        self._write_through = write_through
 
     # self._snapshot is either None, or a tuple (dec_flags, next_input)
     # where dec_flags is the second (integer) item of the decoder state
@@ -2008,8 +2027,24 @@ class TextIOWrapper(TextIOBase):
         return self._line_buffering
 
     @property
+    def write_through(self):
+        return self._write_through
+
+    @property
     def buffer(self):
         return self._buffer
+
+    def reconfigure(self, *, line_buffering=None, write_through=None):
+        """Reconfigure the text stream with new parameters.
+
+        This also flushes the stream.
+        """
+        if line_buffering is None:
+            line_buffering = self.line_buffering
+        if write_through is None:
+            write_through = self.write_through
+        self.flush()
+        self._configure(line_buffering, write_through)
 
     def seekable(self):
         if self.closed:
@@ -2357,11 +2392,14 @@ class TextIOWrapper(TextIOBase):
         self._checkReadable()
         if size is None:
             size = -1
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
         decoder = self._decoder or self._get_decoder()
-        try:
-            size.__index__
-        except AttributeError as err:
-            raise TypeError("an integer is required") from err
         if size < 0:
             # Read everything.
             result = (self._get_decoded_chars() +
@@ -2392,8 +2430,13 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("read from closed file")
         if size is None:
             size = -1
-        elif not isinstance(size, int):
-            raise TypeError("size must be an integer")
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
 
         # Grab all the decoded text (we will rewind any extra bits later).
         line = self._get_decoded_chars()
@@ -2529,3 +2572,26 @@ class StringIO(TextIOWrapper):
     def detach(self):
         # This doesn't make sense on StringIO.
         self._unsupported("detach")
+
+
+# ____________________________________________________________
+
+import atexit, weakref
+
+_all_writers = weakref.WeakSet()
+
+def _register_writer(w):
+    # keep weak-ref to buffered writer
+    _all_writers.add(w)
+
+def _flush_all_writers():
+    # Ensure all buffered writers are flushed before proceeding with
+    # normal shutdown.  Otherwise, if the underlying file objects get
+    # finalized before the buffered writer wrapping it then any buffered
+    # data will be lost.
+    for w in _all_writers:
+        try:
+            w.flush()
+        except:
+            pass
+atexit.register(_flush_all_writers)

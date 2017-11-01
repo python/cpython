@@ -215,11 +215,11 @@ functions:
 
    and gathers profiling statistics from the execution. If no file name is
    present, then this function automatically creates a :class:`~pstats.Stats`
-   instance and prints a simple profiling report. If the sort value is specified
+   instance and prints a simple profiling report. If the sort value is specified,
    it is passed to this :class:`~pstats.Stats` instance to control how the
    results are sorted.
 
-.. function:: runctx(command, globals, locals, filename=None)
+.. function:: runctx(command, globals, locals, filename=None, sort=-1)
 
    This function is similar to :func:`run`, with added arguments to supply the
    globals and locals dictionaries for the *command* string. This routine
@@ -575,7 +575,7 @@ procedure can be used to obtain a better constant for a given platform (see
 The method executes the number of Python calls given by the argument, directly
 and again under the profiler, measuring the time for both. It then computes the
 hidden overhead per profiler event, and returns that as a float.  For example,
-on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.clock() as
+on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.process_time() as
 the timer, the magical number is about 4.04e-6.
 
 The object of this exercise is to get a fairly consistent result. If your

@@ -1,10 +1,18 @@
 
-/* Python interpreter top-level routines, including init/exit */
+/* Top level execution of Python code (including in __main__) */
+
+/* To help control the interfaces between the startup, execution and
+ * shutdown code, the phases are split across separate modules (boostrap,
+ * pythonrun, shutdown)
+ */
+
+/* TODO: Cull includes following phase split */
 
 #include "Python.h"
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/pystate.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -59,7 +67,6 @@ static void err_input(perrdetail *);
 static void err_free(perrdetail *);
 
 /* Parse input from a file and execute it */
-
 int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
@@ -106,7 +113,10 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     err = -1;
     for (;;) {
         ret = PyRun_InteractiveOneObject(fp, filename, flags);
-        _PY_DEBUG_PRINT_TOTAL_REFS();
+#ifdef Py_REF_DEBUG
+        if (_PyDebug_XOptionShowRefCount() == Py_True)
+            _PyDebug_PrintTotalRefs();
+#endif
         if (ret == E_EOF) {
             err = 0;
             break;
@@ -620,9 +630,15 @@ PyErr_PrintEx(int set_sys_last_vars)
         return;
     /* Now we know v != NULL too */
     if (set_sys_last_vars) {
-        _PySys_SetObjectId(&PyId_last_type, exception);
-        _PySys_SetObjectId(&PyId_last_value, v);
-        _PySys_SetObjectId(&PyId_last_traceback, tb);
+        if (_PySys_SetObjectId(&PyId_last_type, exception) < 0) {
+            PyErr_Clear();
+        }
+        if (_PySys_SetObjectId(&PyId_last_value, v) < 0) {
+            PyErr_Clear();
+        }
+        if (_PySys_SetObjectId(&PyId_last_traceback, tb) < 0) {
+            PyErr_Clear();
+        }
     }
     hook = _PySys_GetObjectId(&PyId_excepthook);
     if (hook) {
@@ -807,13 +823,21 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
 
     if (seen != NULL) {
         /* Exception chaining */
-        if (PySet_Add(seen, value) == -1)
+        PyObject *value_id = PyLong_FromVoidPtr(value);
+        if (value_id == NULL || PySet_Add(seen, value_id) == -1)
             PyErr_Clear();
         else if (PyExceptionInstance_Check(value)) {
+            PyObject *check_id = NULL;
             cause = PyException_GetCause(value);
             context = PyException_GetContext(value);
             if (cause) {
-                res = PySet_Contains(seen, cause);
+                check_id = PyLong_FromVoidPtr(cause);
+                if (check_id == NULL) {
+                    res = -1;
+                } else {
+                    res = PySet_Contains(seen, check_id);
+                    Py_DECREF(check_id);
+                }
                 if (res == -1)
                     PyErr_Clear();
                 if (res == 0) {
@@ -825,7 +849,13 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
             }
             else if (context &&
                 !((PyBaseExceptionObject *)value)->suppress_context) {
-                res = PySet_Contains(seen, context);
+                check_id = PyLong_FromVoidPtr(context);
+                if (check_id == NULL) {
+                    res = -1;
+                } else {
+                    res = PySet_Contains(seen, check_id);
+                    Py_DECREF(check_id);
+                }
                 if (res == -1)
                     PyErr_Clear();
                 if (res == 0) {
@@ -838,6 +868,7 @@ print_exception_recursive(PyObject *f, PyObject *value, PyObject *seen)
             Py_XDECREF(context);
             Py_XDECREF(cause);
         }
+        Py_XDECREF(value_id);
     }
     print_exception(f, value);
     if (err != 0)

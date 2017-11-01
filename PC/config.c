@@ -1,14 +1,12 @@
 /* Module configuration */
 
 /* This file contains the table of built-in modules.
-   See create_builtin() in import.c. */
+    See create_builtin() in import.c. */
 
 #include "Python.h"
 
 extern PyObject* PyInit_array(void);
-#ifndef MS_WINI64
 extern PyObject* PyInit_audioop(void);
-#endif
 extern PyObject* PyInit_binascii(void);
 extern PyObject* PyInit_cmath(void);
 extern PyObject* PyInit_errno(void);
@@ -50,7 +48,9 @@ extern PyObject* PyInit__struct(void);
 extern PyObject* PyInit__datetime(void);
 extern PyObject* PyInit__functools(void);
 extern PyObject* PyInit__json(void);
+#ifdef _Py_HAVE_ZLIB
 extern PyObject* PyInit_zlib(void);
+#endif
 
 extern PyObject* PyInit__multibytecodec(void);
 extern PyObject* PyInit__codecs_cn(void);
@@ -69,6 +69,7 @@ extern PyObject* _PyWarnings_Init(void);
 extern PyObject* PyInit__string(void);
 extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
+extern PyObject* PyInit__findvs(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -80,11 +81,7 @@ struct _inittab _PyImport_Inittab[] = {
 
     {"array", PyInit_array},
     {"_ast", PyInit__ast},
-#ifdef MS_WINDOWS
-#ifndef MS_WINI64
     {"audioop", PyInit_audioop},
-#endif
-#endif
     {"binascii", PyInit_binascii},
     {"cmath", PyInit_cmath},
     {"errno", PyInit_errno},
@@ -101,9 +98,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_sha3", PyInit__sha3},
     {"_blake2", PyInit__blake2},
     {"time", PyInit_time},
-#ifdef WITH_THREAD
     {"_thread", PyInit__thread},
-#endif
 #ifdef WIN32
     {"msvcrt", PyInit_msvcrt},
     {"_locale", PyInit__locale},
@@ -133,7 +128,9 @@ struct _inittab _PyImport_Inittab[] = {
 
     {"xxsubtype", PyInit_xxsubtype},
     {"zipimport", PyInit_zipimport},
+#ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},
+#endif
 
     /* CJK codecs */
     {"_multibytecodec", PyInit__multibytecodec},
@@ -164,6 +161,8 @@ struct _inittab _PyImport_Inittab[] = {
     {"atexit", PyInit_atexit},
     {"_stat", PyInit__stat},
     {"_opcode", PyInit__opcode},
+
+    {"_findvs", PyInit__findvs},
 
     /* Sentinel */
     {0, 0}

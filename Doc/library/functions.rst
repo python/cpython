@@ -7,24 +7,24 @@ Built-in Functions
 The Python interpreter has a number of functions and types built into it that
 are always available.  They are listed here in alphabetical order.
 
-===================  =================  ==================  ================  ====================
-..                   ..                 Built-in Functions  ..                ..
-===================  =================  ==================  ================  ====================
-:func:`abs`          |func-dict|_       :func:`help`        :func:`min`       :func:`setattr`
-:func:`all`          :func:`dir`        :func:`hex`         :func:`next`      :func:`slice`
-:func:`any`          :func:`divmod`     :func:`id`          :func:`object`    :func:`sorted`
-:func:`ascii`        :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
-:func:`bin`          :func:`eval`       :func:`int`         :func:`open`      |func-str|_
-:func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
-|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
-|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
-:func:`callable`     :func:`format`     :func:`len`         :func:`property`  :func:`type`
-:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_     :func:`vars`
-:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
-:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`  :func:`__import__`
+===================  =================  ==================  ==================  ====================
+..                   ..                 Built-in Functions  ..                  ..
+===================  =================  ==================  ==================  ====================
+:func:`abs`          :func:`delattr`    :func:`hash`        |func-memoryview|_  |func-set|_
+:func:`all`          |func-dict|_       :func:`help`        :func:`min`         :func:`setattr`
+:func:`any`          :func:`dir`        :func:`hex`         :func:`next`        :func:`slice`
+:func:`ascii`        :func:`divmod`     :func:`id`          :func:`object`      :func:`sorted`
+:func:`bin`          :func:`enumerate`  :func:`input`       :func:`oct`         :func:`staticmethod`
+:func:`bool`         :func:`eval`       :func:`int`         :func:`open`        |func-str|_
+:func:`breakpoint`   :func:`exec`       :func:`isinstance`  :func:`ord`         :func:`sum`
+|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`         :func:`super`
+|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`       |func-tuple|_
+:func:`callable`     :func:`format`     :func:`len`         :func:`property`    :func:`type`
+:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_       :func:`vars`
+:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`        :func:`zip`
+:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`    :func:`__import__`
 :func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
-:func:`delattr`      :func:`hash`       |func-memoryview|_  |func-set|_
-===================  =================  ==================  ================  ====================
+===================  =================  ==================  ==================  ====================
 
 .. using :func:`dict` would create a link to another page, so local targets are
    used, with replacement texts to make the output in the table consistent
@@ -81,9 +81,24 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: bin(x)
 
-   Convert an integer number to a binary string. The result is a valid Python
-   expression.  If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer.
+   Convert an integer number to a binary string prefixed with "0b". The result
+   is a valid Python expression. If *x* is not a Python :class:`int` object, it
+   has to define an :meth:`__index__` method that returns an integer. Some
+   examples:
+
+      >>> bin(3)
+      '0b11'
+      >>> bin(-10)
+      '-0b1010'
+
+   If prefix "0b" is desired or not, you can use either of the following ways.
+
+      >>> format(14, '#b'), format(14, 'b')
+      ('0b1110', '1110')
+      >>> f'{14:#b}', f'{14:b}'
+      ('0b1110', '1110')
+
+  See also :func:`format` for more information.
 
 
 .. class:: bool([x])
@@ -97,6 +112,20 @@ are always available.  They are listed here in alphabetical order.
 
    .. index:: pair: Boolean; type
 
+
+.. function:: breakpoint(*args, **kws)
+
+   This function drops you into the debugger at the call site.  Specifically,
+   it calls :func:`sys.breakpointhook`, passing ``args`` and ``kws`` straight
+   through.  By default, ``sys.breakpointhook()`` calls
+   :func:`pdb.set_trace()` expecting no arguments.  In this case, it is
+   purely a convenience function so you don't have to explicitly import
+   :mod:`pdb` or type as much code to enter the debugger.  However,
+   :func:`sys.breakpointhook` can be set to some other function and
+   :func:`breakpoint` will automatically call that, allowing you to drop into
+   the debugger of choice.
+
+   .. versionadded:: 3.7
 
 .. _func-bytearray:
 .. class:: bytearray([source[, encoding[, errors]]])
@@ -167,9 +196,9 @@ are always available.  They are listed here in alphabetical order.
    base 16).  :exc:`ValueError` will be raised if *i* is outside that range.
 
 
-.. function:: classmethod(function)
+.. decorator:: classmethod
 
-   Return a class method for *function*.
+   Transform a method into a class method.
 
    A class method receives the class as implicit first argument, just like an
    instance method receives the instance. To declare a class method, use this
@@ -635,16 +664,26 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: hex(x)
 
-   Convert an integer number to a lowercase hexadecimal string
-   prefixed with "0x", for example:
+   Convert an integer number to a lowercase hexadecimal string prefixed with
+   "0x". If x is not a Python :class:`int` object, it has to define an
+   __index__() method that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
       >>> hex(-42)
       '-0x2a'
 
-   If x is not a Python :class:`int` object, it has to define an __index__()
-   method that returns an integer.
+   If you want to convert an integer number to an uppercase or lower hexadecimal
+   string with prefix or not, you can use either of the following ways:
+
+     >>> '%#x' % 255, '%x' % 255, '%X' % 255
+     ('0xff', 'ff', 'FF')
+     >>> format(255, '#x'), format(255, 'x'), format(255, 'X')
+     ('0xff', 'ff', 'FF')
+     >>> f'{255:#x}', f'{255:x}', f'{255:X}'
+     ('0xff', 'ff', 'FF')
+
+   See also :func:`format` for more information.
 
    See also :func:`int` for converting a hexadecimal string to an
    integer using a base of 16.
@@ -878,10 +917,27 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: oct(x)
 
-   Convert an integer number to an octal string.  The result is a valid Python
-   expression.  If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer.
+  Convert an integer number to an octal string prefixed with "0o".  The result
+  is a valid Python expression. If *x* is not a Python :class:`int` object, it
+  has to define an :meth:`__index__` method that returns an integer. For
+  example:
 
+      >>> oct(8)
+      '0o10'
+      >>> oct(-56)
+      '-0o70'
+
+  If you want to convert an integer number to octal string either with prefix
+  "0o" or not, you can use either of the following ways.
+
+      >>> '%#o' % 10, '%o' % 10
+      ('0o12', '12')
+      >>> format(10, '#o'), format(10, 'o')
+      ('0o12', '12')
+      >>> f'{10:#o}', f'{10:o}'
+      ('0o12', '12')
+
+  See also :func:`format` for more information.
 
    .. index::
       single: file object; open() built-in function
@@ -1319,7 +1375,7 @@ are always available.  They are listed here in alphabetical order.
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
 
-.. function:: sorted(iterable[, key][, reverse])
+.. function:: sorted(iterable, *, key=None, reverse=False)
 
    Return a new sorted list from the items in *iterable*.
 
@@ -1342,9 +1398,9 @@ are always available.  They are listed here in alphabetical order.
 
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
-.. function:: staticmethod(function)
+.. decorator:: staticmethod
 
-   Return a static method for *function*.
+   Transform a method into a static method.
 
    A static method does not receive an implicit first argument. To declare a static
    method, use this idiom::
@@ -1363,12 +1419,21 @@ are always available.  They are listed here in alphabetical order.
    :func:`classmethod` for a variant that is useful for creating alternate class
    constructors.
 
+   Like all decorators, it is also possible to call ``staticmethod`` as
+   a regular function and do something with its result.  This is needed
+   in some cases where you need a reference to a function from a class
+   body and you want to avoid the automatic transformation to instance
+   method.  For these cases, use this idiom:
+
+      class C:
+          builtin_open = staticmethod(open)
+
    For more information on static methods, consult the documentation on the
    standard type hierarchy in :ref:`types`.
 
-   .. index::
-      single: string; str() (built-in function)
 
+.. index::
+   single: string; str() (built-in function)
 
 .. _func-str:
 .. class:: str(object='')

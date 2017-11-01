@@ -81,7 +81,7 @@ PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)_lzma_LZMADecompressor_decompress, METH_FASTCALL, _lzma_LZMADecompressor_decompress__doc__},
+    {"decompress", (PyCFunction)_lzma_LZMADecompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _lzma_LZMADecompressor_decompress__doc__},
 
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
@@ -236,7 +236,7 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
                                      Py_buffer *encoded_props);
 
 static PyObject *
-_lzma__decode_filter_properties(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_lzma__decode_filter_properties(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     lzma_vli filter_id;
@@ -244,10 +244,6 @@ _lzma__decode_filter_properties(PyObject *module, PyObject **args, Py_ssize_t na
 
     if (!_PyArg_ParseStack(args, nargs, "O&y*:_decode_filter_properties",
         lzma_vli_converter, &filter_id, &encoded_props)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("_decode_filter_properties", kwnames)) {
         goto exit;
     }
     return_value = _lzma__decode_filter_properties_impl(module, filter_id, &encoded_props);
@@ -260,4 +256,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=5f7a915fb7e41453 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4e3802d0dea9af3 input=a9049054013a1b77]*/

@@ -458,7 +458,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 # local task.
                 future.exception()
             raise
-        future.remove_done_callback(_run_until_complete_cb)
+        finally:
+            future.remove_done_callback(_run_until_complete_cb)
         if not future.done():
             raise RuntimeError('Event loop stopped before Future completed.')
 
@@ -858,6 +859,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                 if family == 0:
                     raise ValueError('unexpected address family')
                 addr_pairs_info = (((family, proto), (None, None)),)
+            elif hasattr(socket, 'AF_UNIX') and family == socket.AF_UNIX:
+                for addr in (local_addr, remote_addr):
+                    if addr is not None and not isistance(addr, str):
+                        raise TypeError('string is expected')
+                addr_pairs_info = (((family, proto),
+                                    (local_addr, remote_addr)), )
             else:
                 # join address by (family, protocol)
                 addr_infos = collections.OrderedDict()

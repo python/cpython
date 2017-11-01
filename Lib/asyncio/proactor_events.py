@@ -227,8 +227,9 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be byte-ish (%r)',
-                            type(data))
+            msg = ("data argument must be a bytes-like object, not '%s'" %
+                   type(data).__name__)
+            raise TypeError(msg)
         if self._eof_written:
             raise RuntimeError('write_eof() already called')
 
@@ -437,6 +438,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def sock_recv(self, sock, n):
         return self._proactor.recv(sock, n)
+
+    def sock_recv_into(self, sock, buf):
+        return self._proactor.recv_into(sock, buf)
 
     def sock_sendall(self, sock, data):
         return self._proactor.send(sock, data)

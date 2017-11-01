@@ -1,0 +1,2 @@
+Add new function to seal a mock and prevent the automatically creation of
+child mocks. Patch by Mario Corchero.

@@ -105,9 +105,16 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         source = saxutils.prepare_input_source(source)
 
         self._source = source
-        self.reset()
-        self._cont_handler.setDocumentLocator(ExpatLocator(self))
-        xmlreader.IncrementalParser.parse(self, source)
+        try:
+            self.reset()
+            self._cont_handler.setDocumentLocator(ExpatLocator(self))
+            xmlreader.IncrementalParser.parse(self, source)
+        except:
+            # bpo-30264: Close the source on error to not leak resources:
+            # xml.sax.parse() doesn't give access to the underlying parser
+            # to the caller
+            self._close_source()
+            raise
 
     def prepareParser(self, source):
         if source.getSystemId() is not None:
@@ -213,6 +220,17 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             # FIXME: when to invoke error()?
             self._err_handler.fatalError(exc)
 
+    def _close_source(self):
+        source = self._source
+        try:
+            file = source.getCharacterStream()
+            if file is not None:
+                file.close()
+        finally:
+            file = source.getByteStream()
+            if file is not None:
+                file.close()
+
     def close(self):
         if (self._entity_stack or self._parser is None or
             isinstance(self._parser, _ClosedParser)):
@@ -232,14 +250,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                 parser.ErrorColumnNumber = self._parser.ErrorColumnNumber
                 parser.ErrorLineNumber = self._parser.ErrorLineNumber
                 self._parser = parser
-            try:
-                file = self._source.getCharacterStream()
-                if file is not None:
-                    file.close()
-            finally:
-                file = self._source.getByteStream()
-                if file is not None:
-                    file.close()
+            self._close_source()
 
     def _reset_cont_handler(self):
         self._parser.ProcessingInstructionHandler = \

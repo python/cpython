@@ -197,7 +197,7 @@ def coroutine(func):
     """
     if _inspect_iscoroutinefunction(func):
         # In Python 3.5 that's all we need to do for coroutines
-        # defiend with "async def".
+        # defined with "async def".
         # Wrapping in CoroWrapper will happen via
         # 'sys.set_coroutine_wrapper' function.
         return func
