@@ -55,7 +55,8 @@ Revision history:
 #include <syslog.h>
 
 #ifndef LOG_UPTO
-#define	LOG_UPTO(pri)	((1 << ((pri)+1)) - 1)	/* all priorities through pri */
+/* all priorities through pri */
+#define LOG_UPTO(pri) ((1 << ((pri)+1)) - 1)
 #endif
 
 /*  only one instance, only one syslog, so globals should be ok  */

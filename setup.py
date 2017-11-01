@@ -275,8 +275,8 @@ class PyBuildExt(build_ext):
         if compiler is not None:
             (ccshared,cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
-            
-            #VxWorks uses '@filepath' extension to add include paths without overflowing windows cmd line buffer  
+
+            #VxWorks uses '@filepath' extension to add include paths without overflowing windows cmd line buffer
             if host_platform == 'vxworks':
                 cppflags = sysconfig.get_config_var('CPPFLAGS').split()
                 for item in cppflags:
@@ -579,7 +579,7 @@ class PyBuildExt(build_ext):
         if host_platform == 'vxworks':
             cppflags = sysconfig.get_config_var('CPPFLAGS').split()
             for item in cppflags:
-                self.announce('ITEM: "%s"' % item )
+                self.announce('ITEM: "%s"' % item)
                 if item.startswith('-D'):
                     self.compiler.define_macro(item[2:])
 

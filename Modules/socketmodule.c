@@ -5085,9 +5085,9 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 
     if (h == NULL) {
         /* Let's get real error message to return */
-#ifndef __VXWORKS__	
+#ifndef __VXWORKS__
         set_herror(h_errno);
-#endif        
+#endif
         return NULL;
     }
 
@@ -6401,10 +6401,10 @@ static PyMethodDef socket_methods[] = {
      METH_VARARGS, getservbyname_doc},
     {"getservbyport",           socket_getservbyport,
      METH_VARARGS, getservbyport_doc},
-#ifndef __VXWORKS__     
+#ifndef __VXWORKS__
     {"getprotobyname",          socket_getprotobyname,
      METH_VARARGS, getprotobyname_doc},
-#endif     
+#endif
 #ifndef NO_DUP
     {"dup",                     socket_dup,
      METH_O, dup_doc},
