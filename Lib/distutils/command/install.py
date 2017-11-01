@@ -321,7 +321,7 @@ class install(Command):
 
         if DEBUG:
             from pprint import pprint
-            print("config vars: ")
+            print("config vars:")
             pprint(self.config_vars)
 
         # Expand "~" and configuration variables in the installation
