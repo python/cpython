@@ -140,6 +140,18 @@ reduce(wchar_t *dir)
     dir[i] = '\0';
 }
 
+/* This variant of reduce() does not chop off the "/" when the result of
+ * reducing dir is the root directory. */
+static void
+rootdir_reduce(wchar_t *dir)
+{
+    size_t i = wcslen(dir);
+    while (i > 0 && dir[i] != SEP)
+        --i;
+    i = (i == 0 && dir[0] == SEP) ? 1 : i;
+    dir[i] = '\0';
+}
+
 static int
 isfile(wchar_t *filename)          /* Is file, not directory */
 {
@@ -358,7 +370,10 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix,
         if (ismodule(prefix))
             return 1;
         prefix[n] = L'\0';
-        reduce(prefix);
+        if (n == 1 && prefix[0] == SEP) {
+            break;
+        }
+        rootdir_reduce(prefix);
     } while (prefix[0]);
 
     /* Look at configure's PREFIX */
@@ -440,7 +455,10 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
         if (isdir(exec_prefix))
             return 1;
         exec_prefix[n] = L'\0';
-        reduce(exec_prefix);
+        if (n == 1 && exec_prefix[0] == SEP) {
+            break;
+        }
+        rootdir_reduce(exec_prefix);
     } while (exec_prefix[0]);
 
     /* Look at configure's EXEC_PREFIX */
@@ -795,11 +813,7 @@ calculate_path(void)
      */
     if (pfound > 0) {
         reduce(prefix);
-        reduce(prefix);
-        /* The prefix is the root directory, but reduce() chopped
-         * off the "/". */
-        if (!prefix[0])
-                wcscpy(prefix, separator);
+        rootdir_reduce(prefix);
     }
     else
         wcsncpy(prefix, _prefix, MAXPATHLEN);
@@ -807,9 +821,7 @@ calculate_path(void)
     if (efound > 0) {
         reduce(exec_prefix);
         reduce(exec_prefix);
-        reduce(exec_prefix);
-        if (!exec_prefix[0])
-                wcscpy(exec_prefix, separator);
+        rootdir_reduce(exec_prefix);
     }
     else
         wcsncpy(exec_prefix, _exec_prefix, MAXPATHLEN);
