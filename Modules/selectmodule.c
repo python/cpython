@@ -61,10 +61,11 @@ extern void bzero(void *, int);
 /*[clinic input]
 module select
 class select.poll "pollObject *" "&poll_Type"
+class select.devpoll "devpollObject *" "&devpoll_Type"
 class select.epoll "pyEpoll_Object *" "&pyEpoll_Type"
 class select.kqueue "kqueue_queue_Object *" "&kqueue_queue_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec163a60f69bbb6e]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ded80abdad2b7552]*/
 
 static int
 fildes_converter(PyObject *o, void *p)
@@ -797,20 +798,11 @@ static int devpoll_flush(devpollObject *self)
 }
 
 static PyObject *
-internal_devpoll_register(devpollObject *self, PyObject *args, int remove)
+internal_devpoll_register(devpollObject *self, int fd,
+                          unsigned short events, int remove)
 {
-    PyObject *o;
-    int fd;
-    unsigned short events = POLLIN | POLLPRI | POLLOUT;
-
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
-
-    if (!PyArg_ParseTuple(args, "O|O&:register", &o, ushort_converter, &events))
-        return NULL;
-
-    fd = PyObject_AsFileDescriptor(o);
-    if (fd == -1) return NULL;
 
     if (remove) {
         self->fds[self->n_fds].fd = fd;
@@ -833,48 +825,65 @@ internal_devpoll_register(devpollObject *self, PyObject *args, int remove)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(devpoll_register_doc,
-"register(fd [, eventmask] ) -> None\n\n\
-Register a file descriptor with the polling object.\n\
-fd -- either an integer, or an object with a fileno() method returning an\n\
-      int.\n\
-events -- an optional bitmask describing the type of events to check for");
+/*[clinic input]
+select.devpoll.register
+
+    fd: fildes
+        either an integer, or an object with a fileno() method returning
+        an int
+    eventmask: unsigned_short(c_default="POLLIN | POLLOUT | POLLPRI", bitwise=True) = POLLIN | POLLOUT | POLLPRI
+        an optional bitmask describing the type of events to check for
+    /
+
+Register a file descriptor with the polling object.
+[clinic start generated code]*/
 
 static PyObject *
-devpoll_register(devpollObject *self, PyObject *args)
+select_devpoll_register_impl(devpollObject *self, int fd,
+                             unsigned short eventmask)
+/*[clinic end generated code: output=6e07fe8b74abba0c input=e05806bf7dbe3d40]*/
 {
-    return internal_devpoll_register(self, args, 0);
+    return internal_devpoll_register(self, fd, eventmask, 0);
 }
 
-PyDoc_STRVAR(devpoll_modify_doc,
-"modify(fd[, eventmask]) -> None\n\n\
-Modify a possible already registered file descriptor.\n\
-fd -- either an integer, or an object with a fileno() method returning an\n\
-      int.\n\
-events -- an optional bitmask describing the type of events to check for");
+/*[clinic input]
+select.devpoll.modify
 
+    fd: fildes
+        either an integer, or an object with a fileno() method returning
+        an int
+    eventmask: unsigned_short(c_default="POLLIN | POLLOUT | POLLPRI", bitwise=True) = POLLIN | POLLOUT | POLLPRI
+        an optional bitmask describing the type of events to check for
+    /
+
+Modify a possible already registered file descriptor.
+[clinic start generated code]*/
+
+static PyObject *
+select_devpoll_modify_impl(devpollObject *self, int fd,
+                           unsigned short eventmask)
+/*[clinic end generated code: output=bc2e6d23aaff98b4 input=bfa967d0abd1c48c]*/
 static PyObject *
 devpoll_modify(devpollObject *self, PyObject *args)
 {
-    return internal_devpoll_register(self, args, 1);
+    return internal_devpoll_register(self, fd, eventmask, 1);
 }
 
+/*[clinic input]
+select.devpoll.unregister
 
-PyDoc_STRVAR(devpoll_unregister_doc,
-"unregister(fd) -> None\n\n\
-Remove a file descriptor being tracked by the polling object.");
+    fd: fildes
+    /
+
+Remove a file descriptor being tracked by the polling object.
+[clinic start generated code]*/
 
 static PyObject *
-devpoll_unregister(devpollObject *self, PyObject *o)
+select_devpoll_unregister_impl(devpollObject *self, int fd)
+/*[clinic end generated code: output=95519ffa0c7d43fe input=b4ea42a4442fd467]*/
 {
-    int fd;
-
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
-
-    fd = PyObject_AsFileDescriptor( o );
-    if (fd == -1)
-        return NULL;
 
     self->fds[self->n_fds].fd = fd;
     self->fds[self->n_fds].events = POLLREMOVE;
@@ -887,13 +896,20 @@ devpoll_unregister(devpollObject *self, PyObject *o)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(devpoll_poll_doc,
-"poll( [timeout] ) -> list of (fd, event) 2-tuples\n\n\
-Polls the set of registered file descriptors, returning a list containing \n\
-any descriptors that have events or errors to report.");
+/*[clinic input]
+select.devpoll.poll
+
+    timeout as timeout_obj: object = None
+
+Polls the set of registered file descriptors.
+
+Returns a list containing any descriptors that have events or errors to
+report.
+[clinic start generated code]*/
 
 static PyObject *
-devpoll_poll(devpollObject *self, PyObject *args)
+select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
+/*[clinic end generated code: output=2654e5457cca0b3c input=fecb272f2f670025]*/
 {
     struct dvpoll dvp;
     PyObject *result_list = NULL, *timeout_obj = NULL;
@@ -1013,8 +1029,17 @@ devpoll_internal_close(devpollObject *self)
     return save_errno;
 }
 
-static PyObject*
-devpoll_close(devpollObject *self)
+/*[clinic input]
+select.devpoll.close
+
+Close the devpoll file descriptor.
+
+Further operations on the devpoll object will raise an exception.
+[clinic start generated code]*/
+
+static PyObject *
+select_devpoll_close_impl(devpollObject *self)
+/*[clinic end generated code: output=26b355bd6429f21b input=6273c30f5560a99b]*/
 {
     errno = devpoll_internal_close(self);
     if (errno < 0) {
@@ -1023,12 +1048,6 @@ devpoll_close(devpollObject *self)
     }
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(devpoll_close_doc,
-"close() -> None\n\
-\n\
-Close the devpoll file descriptor. Further operations on the devpoll\n\
-object will raise an exception.");
 
 static PyObject*
 devpoll_get_closed(devpollObject *self)
@@ -1039,18 +1058,20 @@ devpoll_get_closed(devpollObject *self)
         Py_RETURN_FALSE;
 }
 
-static PyObject*
-devpoll_fileno(devpollObject *self)
+/*[clinic input]
+select.devpoll.fileno
+
+Return the file descriptor.
+[clinic start generated code]*/
+
+static PyObject *
+select_devpoll_fileno_impl(devpollObject *self)
+/*[clinic end generated code: output=26920929f8d292f4 input=ef15331ebde6c368]*/
 {
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
     return PyLong_FromLong(self->fd_devpoll);
 }
-
-PyDoc_STRVAR(devpoll_fileno_doc,
-"fileno() -> int\n\
-\n\
-Return the file descriptor.");
 
 static PyGetSetDef devpoll_getsetlist[] = {
     {"closed", (getter)devpoll_get_closed, NULL,
@@ -2227,18 +2248,12 @@ static PyTypeObject poll_Type = {
 #ifdef HAVE_SYS_DEVPOLL_H
 
 static PyMethodDef devpoll_methods[] = {
-    {"register",        (PyCFunction)devpoll_register,
-     METH_VARARGS,  devpoll_register_doc},
-    {"modify",          (PyCFunction)devpoll_modify,
-     METH_VARARGS,  devpoll_modify_doc},
-    {"unregister",      (PyCFunction)devpoll_unregister,
-     METH_O,        devpoll_unregister_doc},
-    {"poll",            (PyCFunction)devpoll_poll,
-     METH_VARARGS,  devpoll_poll_doc},
-    {"close",           (PyCFunction)devpoll_close,    METH_NOARGS,
-     devpoll_close_doc},
-    {"fileno",          (PyCFunction)devpoll_fileno,    METH_NOARGS,
-     devpoll_fileno_doc},
+    SELECT_DEVPOLL_REGISTER_METHODDEF
+    SELECT_DEVPOLL_MODIFY_METHODDEF
+    SELECT_DEVPOLL_UNREGISTER_METHODDEF
+    SELECT_DEVPOLL_POLL_METHODDEF
+    SELECT_DEVPOLL_CLOSE_METHODDEF
+    SELECT_DEVPOLL_FILENO_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

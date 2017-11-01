@@ -200,6 +200,200 @@ exit:
 
 #endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
 
+#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+
+PyDoc_STRVAR(select_devpoll_register__doc__,
+"register($self, fd, eventmask=POLLIN | POLLOUT | POLLPRI, /)\n"
+"--\n"
+"\n"
+"Register a file descriptor with the polling object.\n"
+"\n"
+"  fd\n"
+"    either an integer, or an object with a fileno() method returning\n"
+"    an int\n"
+"  eventmask\n"
+"    an optional bitmask describing the type of events to check for");
+
+#define SELECT_DEVPOLL_REGISTER_METHODDEF    \
+    {"register", (PyCFunction)select_devpoll_register, METH_FASTCALL, select_devpoll_register__doc__},
+
+static PyObject *
+select_devpoll_register_impl(devpollObject *self, int fd,
+                             unsigned short eventmask);
+
+static PyObject *
+select_devpoll_register(devpollObject *self, PyObject **args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    unsigned short eventmask = POLLIN | POLLOUT | POLLPRI;
+
+    if (!_PyArg_ParseStack(args, nargs, "O&|H:register",
+        fildes_converter, &fd, &eventmask)) {
+        goto exit;
+    }
+    return_value = select_devpoll_register_impl(self, fd, eventmask);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+
+#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+
+PyDoc_STRVAR(select_devpoll_modify__doc__,
+"modify($self, fd, eventmask=POLLIN | POLLOUT | POLLPRI, /)\n"
+"--\n"
+"\n"
+"Modify a possible already registered file descriptor.\n"
+"\n"
+"  fd\n"
+"    either an integer, or an object with a fileno() method returning\n"
+"    an int\n"
+"  eventmask\n"
+"    an optional bitmask describing the type of events to check for");
+
+#define SELECT_DEVPOLL_MODIFY_METHODDEF    \
+    {"modify", (PyCFunction)select_devpoll_modify, METH_FASTCALL, select_devpoll_modify__doc__},
+
+static PyObject *
+select_devpoll_modify_impl(devpollObject *self, int fd,
+                           unsigned short eventmask);
+
+static PyObject *
+select_devpoll_modify(devpollObject *self, PyObject **args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    unsigned short eventmask = POLLIN | POLLOUT | POLLPRI;
+
+    if (!_PyArg_ParseStack(args, nargs, "O&|H:modify",
+        fildes_converter, &fd, &eventmask)) {
+        goto exit;
+    }
+    return_value = select_devpoll_modify_impl(self, fd, eventmask);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+
+#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+
+PyDoc_STRVAR(select_devpoll_unregister__doc__,
+"unregister($self, fd, /)\n"
+"--\n"
+"\n"
+"Remove a file descriptor being tracked by the polling object.");
+
+#define SELECT_DEVPOLL_UNREGISTER_METHODDEF    \
+    {"unregister", (PyCFunction)select_devpoll_unregister, METH_O, select_devpoll_unregister__doc__},
+
+static PyObject *
+select_devpoll_unregister_impl(devpollObject *self, int fd);
+
+static PyObject *
+select_devpoll_unregister(devpollObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!PyArg_Parse(arg, "O&:unregister", fildes_converter, &fd)) {
+        goto exit;
+    }
+    return_value = select_devpoll_unregister_impl(self, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+
+#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+
+PyDoc_STRVAR(select_devpoll_poll__doc__,
+"poll($self, /, timeout=None)\n"
+"--\n"
+"\n"
+"Polls the set of registered file descriptors.\n"
+"\n"
+"Returns a list containing any descriptors that have events or errors to\n"
+"report.");
+
+#define SELECT_DEVPOLL_POLL_METHODDEF    \
+    {"poll", (PyCFunction)select_devpoll_poll, METH_FASTCALL|METH_KEYWORDS, select_devpoll_poll__doc__},
+
+static PyObject *
+select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj);
+
+static PyObject *
+select_devpoll_poll(devpollObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"timeout", NULL};
+    static _PyArg_Parser _parser = {"|O:poll", _keywords, 0};
+    PyObject *timeout_obj = Py_None;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &timeout_obj)) {
+        goto exit;
+    }
+    return_value = select_devpoll_poll_impl(self, timeout_obj);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+
+#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+
+PyDoc_STRVAR(select_devpoll_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n"
+"Close the devpoll file descriptor.\n"
+"\n"
+"Further operations on the devpoll object will raise an exception.");
+
+#define SELECT_DEVPOLL_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)select_devpoll_close, METH_NOARGS, select_devpoll_close__doc__},
+
+static PyObject *
+select_devpoll_close_impl(devpollObject *self);
+
+static PyObject *
+select_devpoll_close(devpollObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return select_devpoll_close_impl(self);
+}
+
+#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+
+#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+
+PyDoc_STRVAR(select_devpoll_fileno__doc__,
+"fileno($self, /)\n"
+"--\n"
+"\n"
+"Return the file descriptor.");
+
+#define SELECT_DEVPOLL_FILENO_METHODDEF    \
+    {"fileno", (PyCFunction)select_devpoll_fileno, METH_NOARGS, select_devpoll_fileno__doc__},
+
+static PyObject *
+select_devpoll_fileno_impl(devpollObject *self);
+
+static PyObject *
+select_devpoll_fileno(devpollObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return select_devpoll_fileno_impl(self);
+}
+
+#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll__doc__,
@@ -765,17 +959,17 @@ exit:
     #define SELECT_POLL_METHODDEF
 #endif /* !defined(SELECT_POLL_METHODDEF) */
 
+#ifndef SELECT_DEVPOLL_CLOSE_METHODDEF
+    #define SELECT_DEVPOLL_CLOSE_METHODDEF
+#endif /* !defined(SELECT_DEVPOLL_CLOSE_METHODDEF) */
+
+#ifndef SELECT_DEVPOLL_FILENO_METHODDEF
+    #define SELECT_DEVPOLL_FILENO_METHODDEF
+#endif /* !defined(SELECT_DEVPOLL_FILENO_METHODDEF) */
+
 #ifndef SELECT_DEVPOLL_METHODDEF
     #define SELECT_DEVPOLL_METHODDEF
 #endif /* !defined(SELECT_DEVPOLL_METHODDEF) */
-
-#ifndef PYEPOLL_CLOSE_METHODDEF
-    #define PYEPOLL_CLOSE_METHODDEF
-#endif /* !defined(PYEPOLL_CLOSE_METHODDEF) */
-
-#ifndef PYEPOLL_FILENO_METHODDEF
-    #define PYEPOLL_FILENO_METHODDEF
-#endif /* !defined(PYEPOLL_FILENO_METHODDEF) */
 
 #ifndef PYEPOLL_FROMFD_METHODDEF
     #define PYEPOLL_FROMFD_METHODDEF
@@ -792,4 +986,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=ce40e8895b08aa75 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7ac485af4c76371 input=a9049054013a1b77]*/
