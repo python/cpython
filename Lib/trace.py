@@ -324,14 +324,14 @@ class CoverageResults:
                     outfile.write("%5d: " % lines_hit[lineno])
                     n_hits += 1
                     n_lines += 1
-                elif rx_blank.match(line):
-                    outfile.write("       ")
                 elif lineno in lnotab and not PRAGMA_NOCOVER in line:
                     # lines preceded by no marks weren't hit
                     # Highlight them if so indicated, unless the line contains
                     # #pragma: NO COVER
                     outfile.write(">>>>>> ")
                     n_lines += 1
+                elif rx_blank.match(line):
+                    outfile.write("       ")
                 else:
                     outfile.write("       ")
                 outfile.write(line.expandtabs(8))
