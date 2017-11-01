@@ -100,6 +100,8 @@ PyAPI_FUNC(void *) PyObject_Calloc(size_t nelem, size_t elsize);
 #endif
 PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyObject_Free(void *ptr);
+PyAPI_FUNC(void*) PyObject_AlignedAlloc(size_t alignment, size_t size);
+PyAPI_FUNC(void) PyObject_AlignedFree(void *ptr);
 
 #ifndef Py_LIMITED_API
 /* This function returns the number of allocated memory blocks, regardless of size */
