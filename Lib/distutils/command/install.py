@@ -69,6 +69,11 @@ if HAS_USER_SITE:
 # and to SCHEME_KEYS here.
 SCHEME_KEYS = ('purelib', 'platlib', 'headers', 'scripts', 'data')
 
+def sanitize_base(dir):
+    if os.name == 'posix' and dir == '/':
+        dir = '/.'
+    return dir
+
 
 class install(Command):
 
@@ -310,12 +315,13 @@ class install(Command):
 
         # Now define config vars for the base directories so we can expand
         # everything else.
-        self.config_vars['base'] = self.install_base
-        self.config_vars['platbase'] = self.install_platbase
+        # Replace '/' with '/.', '//' is an undefined directory in posix.
+        self.config_vars['base'] = sanitize_base(self.install_base)
+        self.config_vars['platbase'] = sanitize_base(self.install_platbase)
 
         if DEBUG:
             from pprint import pprint
-            print("config vars:")
+            print("config vars: ")
             pprint(self.config_vars)
 
         # Expand "~" and configuration variables in the installation
