@@ -5033,6 +5033,17 @@ void *x=syncok
   [AC_MSG_RESULT(no)]
 )
 
+AC_MSG_CHECKING(for wchgat)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef wchgat
+void *x=wchgat
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_WCHGAT, 1, Define if you have the 'wchgat' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
 AC_MSG_CHECKING(for filter)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
 #ifndef filter

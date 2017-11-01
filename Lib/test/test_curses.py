@@ -143,6 +143,7 @@ class TestCurses(unittest.TestCase):
         stdscr.idlok(1)
         if hasattr(stdscr, 'immedok'):
             stdscr.immedok(1)
+            stdscr.immedok(0)
         stdscr.insch('c')
         stdscr.insdelln(1)
         stdscr.insnstr('abc', 3)
@@ -176,26 +177,27 @@ class TestCurses(unittest.TestCase):
         stdscr.setscrreg(10,15)
         win3 = stdscr.subwin(10,10)
         win3 = stdscr.subwin(10,10, 5,5)
-        if hasattr(stdscr, 'syncok'):
+        if hasattr(stdscr, 'syncok') and not sys.platform.startswith("sunos"):
             stdscr.syncok(1)
         stdscr.timeout(5)
         stdscr.touchline(5,5)
         stdscr.touchline(5,5,0)
         stdscr.vline('a', 3)
         stdscr.vline('a', 3, curses.A_STANDOUT)
-        stdscr.chgat(5, 2, 3, curses.A_BLINK)
-        stdscr.chgat(3, curses.A_BOLD)
-        stdscr.chgat(5, 8, curses.A_UNDERLINE)
-        stdscr.chgat(curses.A_BLINK)
+        if hasattr(stdscr, 'chgat'):
+            stdscr.chgat(5, 2, 3, curses.A_BLINK)
+            stdscr.chgat(3, curses.A_BOLD)
+            stdscr.chgat(5, 8, curses.A_UNDERLINE)
+            stdscr.chgat(curses.A_BLINK)
         stdscr.refresh()
 
         stdscr.vline(1,1, 'a', 3)
         stdscr.vline(1,1, 'a', 3, curses.A_STANDOUT)
 
-        if hasattr(curses, 'resize'):
-            stdscr.resize()
-        if hasattr(curses, 'enclose'):
-            stdscr.enclose()
+        if hasattr(stdscr, 'resize'):
+            stdscr.resize(25, 80)
+        if hasattr(stdscr, 'enclose'):
+            stdscr.enclose(10, 10)
 
         self.assertRaises(ValueError, stdscr.getstr, -400)
         self.assertRaises(ValueError, stdscr.getstr, 2, 3, -400)
@@ -423,6 +425,8 @@ class TestCurses(unittest.TestCase):
 
     def test_issue13051(self):
         stdscr = self.stdscr
+        if not hasattr(stdscr, 'resize'):
+            raise unittest.SkipTest('requires curses.window.resize')
         box = curses.textpad.Textbox(stdscr, insert_mode=True)
         lines, cols = stdscr.getmaxyx()
         stdscr.resize(lines-2, cols-2)

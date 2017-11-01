@@ -941,7 +941,7 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 #endif
 
 /* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
-
+#ifdef HAVE_CURSES_WCHGAT
 static PyObject *
 PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
 {
@@ -994,7 +994,7 @@ PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
     }
     return PyCursesCheckERR(rtn, "chgat");
 }
-
+#endif
 
 static PyObject *
 PyCursesWindow_DelCh(PyCursesWindowObject *self, PyObject *args)
@@ -1985,7 +1985,9 @@ static PyMethodDef PyCursesWindow_Methods[] = {
     {"attron",          (PyCFunction)PyCursesWindow_AttrOn, METH_VARARGS},
     {"attrset",         (PyCFunction)PyCursesWindow_AttrSet, METH_VARARGS},
     {"bkgd",            (PyCFunction)PyCursesWindow_Bkgd, METH_VARARGS},
+#ifdef HAVE_CURSES_WCHGAT
     {"chgat",           (PyCFunction)PyCursesWindow_ChgAt, METH_VARARGS},
+#endif
     {"bkgdset",         (PyCFunction)PyCursesWindow_BkgdSet, METH_VARARGS},
     {"border",          (PyCFunction)PyCursesWindow_Border, METH_VARARGS},
     {"box",             (PyCFunction)PyCursesWindow_Box, METH_VARARGS},

@@ -179,6 +179,9 @@
 /* Define if you have the 'use_env' function. */
 #undef HAVE_CURSES_USE_ENV
 
+/* Define if you have the 'wchgat' function. */
+#undef HAVE_CURSES_WCHGAT
+
 /* Define to 1 if you have the declaration of `isfinite', and to 0 if you
    don't. */
 #undef HAVE_DECL_ISFINITE
