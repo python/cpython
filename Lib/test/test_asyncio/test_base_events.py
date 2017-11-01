@@ -529,6 +529,22 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertRaises(ValueError,
             other_loop.run_until_complete, task)
 
+    def test_run_until_complete_loop_orphan_future_close_loop(self):
+        async def foo(sec=0):
+            await asyncio.sleep(sec)
+
+        self.loop.close()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            with mock.patch('asyncio.base_events.BaseEventLoop.run_forever', 
+                            side_effect=Exception):
+                loop.run_until_complete(foo())
+        except:
+            pass
+        loop.run_until_complete(foo(0.1))
+        loop.close()
+
     def test_subprocess_exec_invalid_args(self):
         args = [sys.executable, '-c', 'pass']
 
