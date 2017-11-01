@@ -444,6 +444,22 @@ class MiscTests(unittest.TestCase):
         # can be called.
         curses.update_lines_cols()
 
+    @requires_curses_func('ncurses_version')
+    def test_ncurses_version(self):
+        v = curses.ncurses_version
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertTrue(v > (0, 0, 0))
+
 
 class TestAscii(unittest.TestCase):
 

@@ -3187,6 +3187,53 @@ PyCurses_Use_Default_Colors(PyObject *self)
 }
 #endif /* STRICT_SYSV_CURSES */
 
+PyDoc_STRVAR(ncurses_version__doc__,
+"curses.ncurses_version\n\
+\n\
+Ncurses version information as a named tuple.");
+
+static PyTypeObject NcursesVersionType;
+
+static PyStructSequence_Field ncurses_version_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc ncurses_version_desc = {
+    "curses.ncurses_version",  /* name */
+    ncurses_version__doc__,    /* doc */
+    ncurses_version_fields,    /* fields */
+    3
+};
+
+static PyObject *
+make_ncurses_version(void)
+{
+    PyObject *ncurses_version;
+    int pos = 0;
+
+    ncurses_version = PyStructSequence_New(&NcursesVersionType);
+    if (ncurses_version == NULL) {
+        return NULL;
+    }
+
+#define SetIntItem(flag) \
+    PyStructSequence_SET_ITEM(ncurses_version, pos++, PyLong_FromLong(flag)); \
+    if (PyErr_Occurred()) { \
+        Py_CLEAR(ncurses_version); \
+        return NULL; \
+    }
+
+    SetIntItem(NCURSES_VERSION_MAJOR)
+    SetIntItem(NCURSES_VERSION_MINOR)
+    SetIntItem(NCURSES_VERSION_PATCH)
+#undef SetIntItem
+
+    return ncurses_version;
+}
+
 /* List of functions defined in the module */
 
 static PyMethodDef PyCurses_methods[] = {
@@ -3352,6 +3399,28 @@ PyInit__curses(void)
     PyDict_SetItemString(d, "version", v);
     PyDict_SetItemString(d, "__version__", v);
     Py_DECREF(v);
+
+    /* ncurses_version */
+    if (NcursesVersionType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&NcursesVersionType,
+                                       &ncurses_version_desc) < 0)
+            return NULL;
+    }
+    v = make_ncurses_version();
+    if (v == NULL) {
+        return NULL;
+    }
+    PyDict_SetItemString(d, "ncurses_version", v);
+    Py_DECREF(v);
+
+    /* prevent user from creating new instances */
+    NcursesVersionType.tp_init = NULL;
+    NcursesVersionType.tp_new = NULL;
+    if (PyDict_DelItemString(NcursesVersionType.tp_dict, "__new__") < 0 &&
+        PyErr_ExceptionMatches(PyExc_KeyError))
+    {
+        PyErr_Clear();
+    }
 
     SetDictInt("ERR", ERR);
     SetDictInt("OK", OK);
