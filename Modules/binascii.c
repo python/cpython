@@ -61,8 +61,10 @@
 #include "zlib.h"
 #endif
 
-static PyObject *Error;
-static PyObject *Incomplete;
+typedef struct binascii_state {
+    PyObject *Error;
+    PyObject *Incomplete;
+} binascii_state;
 
 /*
 ** hqx lookup table, ascii->binary.
@@ -263,6 +265,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
     unsigned int leftchar = 0;
     PyObject *rv;
     Py_ssize_t ascii_len, bin_len;
+    binascii_state *state;
 
     ascii_data = data->buf;
     ascii_len = data->len;
@@ -294,7 +297,11 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
             ** '`' as zero instead of space.
             */
             if ( this_ch < ' ' || this_ch > (' ' + 64)) {
-                PyErr_SetString(Error, "Illegal char");
+                state = PyModule_GetState(module);
+                if (state == NULL) {
+                    return NULL;
+                }
+                PyErr_SetString(state->Error, "Illegal char");
                 Py_DECREF(rv);
                 return NULL;
             }
@@ -322,7 +329,11 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
         /* Extra '`' may be written as padding in some cases */
         if ( this_ch != ' ' && this_ch != ' '+64 &&
              this_ch != '\n' && this_ch != '\r' ) {
-            PyErr_SetString(Error, "Trailing garbage");
+            state = PyModule_GetState(module);
+            if (state == NULL) {
+                return NULL;
+            }
+            PyErr_SetString(state->Error, "Trailing garbage");
             Py_DECREF(rv);
             return NULL;
         }
@@ -350,6 +361,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
+    binascii_state *state;
     Py_ssize_t bin_len, out_len;
     _PyBytesWriter writer;
 
@@ -358,7 +370,11 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     bin_len = data->len;
     if ( bin_len > 45 ) {
         /* The 45 is a limit that appears in all uuencode's */
-        PyErr_SetString(Error, "At most 45 bytes at once");
+        state = PyModule_GetState(module);
+        if (state == NULL) {
+            return NULL;
+        }
+        PyErr_SetString(state->Error, "At most 45 bytes at once");
         return NULL;
     }
 
@@ -444,6 +460,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     Py_ssize_t ascii_len, bin_len;
     int quad_pos = 0;
     _PyBytesWriter writer;
+    binascii_state *state;
 
     ascii_data = data->buf;
     ascii_len = data->len;
@@ -510,7 +527,11 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     }
 
     if (leftbits != 0) {
-        PyErr_SetString(Error, "Incorrect padding");
+        state = PyModule_GetState(module);
+        if (state == NULL) {
+            return NULL;
+        }
+        PyErr_SetString(state->Error, "Incorrect padding");
         _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
@@ -541,6 +562,7 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
     unsigned int leftchar = 0;
     Py_ssize_t bin_len, out_len;
     _PyBytesWriter writer;
+    binascii_state *state;
 
     bin_data = data->buf;
     bin_len = data->len;
@@ -549,7 +571,11 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
     assert(bin_len >= 0);
 
     if ( bin_len > BASE64_MAXBIN ) {
-        PyErr_SetString(Error, "Too much data for base64 line");
+        state = PyModule_GetState(module);
+        if (state == NULL) {
+            return NULL;
+        }
+        PyErr_SetString(state->Error, "Too much data for base64 line");
         return NULL;
     }
 
@@ -611,6 +637,7 @@ binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
     Py_ssize_t len;
     int done = 0;
     _PyBytesWriter writer;
+    binascii_state *state;
 
     ascii_data = data->buf;
     len = data->len;
@@ -634,7 +661,11 @@ binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
         if ( this_ch == SKIP )
             continue;
         if ( this_ch == FAIL ) {
-            PyErr_SetString(Error, "Illegal char");
+            state = PyModule_GetState(module);
+            if (state == NULL) {
+                return NULL;
+            }
+            PyErr_SetString(state->Error, "Illegal char");
             _PyBytesWriter_Dealloc(&writer);
             return NULL;
         }
@@ -655,7 +686,11 @@ binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
     }
 
     if ( leftbits && !done ) {
-        PyErr_SetString(Incomplete,
+        state = PyModule_GetState(module);
+        if (state == NULL) {
+            return NULL;
+        }
+        PyErr_SetString(state->Incomplete,
                         "String has incomplete number of bytes");
         _PyBytesWriter_Dealloc(&writer);
         return NULL;
@@ -807,6 +842,7 @@ binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
     in_data = data->buf;
     in_len = data->len;
     _PyBytesWriter_Init(&writer);
+    binascii_state *state;
 
     assert(in_len >= 0);
 
@@ -831,7 +867,11 @@ binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
 #define INBYTE(b)                                                       \
     do {                                                                \
          if ( --in_len < 0 ) {                                          \
-           PyErr_SetString(Incomplete, "");                             \
+           state = PyModule_GetState(module);           \
+           if (state == NULL) {                                         \
+               return NULL;                                             \
+           }                                                            \
+           PyErr_SetString(state->Incomplete, "");                      \
            goto error;                                                  \
          }                                                              \
          b = *in_data++;                                                \
@@ -853,7 +893,11 @@ binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
             /* Note Error, not Incomplete (which is at the end
             ** of the string only). This is a programmer error.
             */
-            PyErr_SetString(Error, "Orphaned RLE code at start");
+            state = PyModule_GetState(module);
+            if (state == NULL) {
+                return NULL;
+            }
+            PyErr_SetString(state->Error, "Orphaned RLE code at start");
             goto error;
         }
         *out_data++ = RUNCHAR;
@@ -1151,6 +1195,7 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
     PyObject *retval;
     char* retbuf;
     Py_ssize_t i, j;
+    binascii_state *state;
 
     argbuf = hexstr->buf;
     arglen = hexstr->len;
@@ -1162,7 +1207,11 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
      * raise an exception.
      */
     if (arglen % 2) {
-        PyErr_SetString(Error, "Odd-length string");
+        state = PyModule_GetState(module);
+        if (state == NULL) {
+            return NULL;
+        }
+        PyErr_SetString(state->Error, "Odd-length string");
         return NULL;
     }
 
@@ -1175,7 +1224,11 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
         unsigned int top = _PyLong_DigitValue[Py_CHARMASK(argbuf[i])];
         unsigned int bot = _PyLong_DigitValue[Py_CHARMASK(argbuf[i+1])];
         if (top >= 16 || bot >= 16) {
-            PyErr_SetString(Error,
+            state = PyModule_GetState(module);
+            if (state == NULL) {
+                return NULL;
+            }
+            PyErr_SetString(state->Error,
                             "Non-hexadecimal digit found");
             goto finally;
         }
@@ -1530,14 +1583,39 @@ static struct PyMethodDef binascii_module_methods[] = {
 /* Initialization function for the module (*must* be called PyInit_binascii) */
 PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
+static int
+binascii_exec(PyObject *m) {
+    PyObject *d;
+    binascii_state *state = PyModule_GetState(m);
+    if (state == NULL) {
+        return -1;
+    }
+
+    /* Create the module and add the functions */
+    d = PyModule_GetDict(m);
+
+    state->Error = PyErr_NewException("binascii.Error", PyExc_ValueError, NULL);
+    PyDict_SetItemString(d, "Error", state->Error);
+    state->Incomplete = PyErr_NewException("binascii.Incomplete", NULL, NULL);
+    PyDict_SetItemString(d, "Incomplete", state->Incomplete);
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot binascii_slots[] = {
+    {Py_mod_exec, binascii_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef binasciimodule = {
     PyModuleDef_HEAD_INIT,
     "binascii",
     doc_binascii,
-    -1,
+    sizeof(binascii_state),
     binascii_module_methods,
-    NULL,
+    binascii_slots,
     NULL,
     NULL,
     NULL
@@ -1546,22 +1624,5 @@ static struct PyModuleDef binasciimodule = {
 PyMODINIT_FUNC
 PyInit_binascii(void)
 {
-    PyObject *m, *d;
-
-    /* Create the module and add the functions */
-    m = PyModule_Create(&binasciimodule);
-    if (m == NULL)
-        return NULL;
-
-    d = PyModule_GetDict(m);
-
-    Error = PyErr_NewException("binascii.Error", PyExc_ValueError, NULL);
-    PyDict_SetItemString(d, "Error", Error);
-    Incomplete = PyErr_NewException("binascii.Incomplete", NULL, NULL);
-    PyDict_SetItemString(d, "Incomplete", Incomplete);
-    if (PyErr_Occurred()) {
-        Py_DECREF(m);
-        m = NULL;
-    }
-    return m;
+    return PyModuleDef_Init(&binasciimodule);
 }
