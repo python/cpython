@@ -1547,7 +1547,7 @@ static struct PyMethodDef disabled_object_methods[] = {
 };
 
 static PyObject *
-new_thing(PyTypeObject *type, PyObject *args, PyObject *kwdict){
+new_disabled_obj(PyTypeObject *type, PyObject *args, PyObject *kwdict){
     disabled_object *self;
     self = (disabled_object *)type->tp_alloc(type, 0);
     return (PyObject *) self;
@@ -1592,7 +1592,7 @@ static PyTypeObject gc_disabled_type = {
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    new_thing,                                  /* tp_new */
+    new_disabled_obj,                           /* tp_new */
     PyObject_Del,                               /* tp_free */
 };
 
