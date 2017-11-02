@@ -422,8 +422,8 @@ Connection Objects
       method with :const:`None` for *handler*.
 
       Returning a non-zero value from the handler function will terminate the
-      currently executing query and cause it to raise a
-      ``sqlite3.OperationalError`` exception.
+      currently executing query and cause it to raise an :exc:`OperationalError`
+      exception.
 
 
    .. method:: set_trace_callback(trace_callback)
