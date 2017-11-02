@@ -36,8 +36,7 @@ The :mod:`gc` module provides the following functions:
 .. class:: Disabled()
 
    Return a context manager object that disables the garbage collector and reenables the previous
-   state upon completion of the block.  
-   This is basically equivalent to::
+   state upon completion of the block. This is basically equivalent to::
 
      from gc import enable, disable, isenabled
 
@@ -58,7 +57,7 @@ The :mod:`gc` module provides the following functions:
          # do_something_that_has_real_time_guarantees
          # such as a pair trade, robotic braking, etc
 
-   without needing to explicitly enable and disable the garbage collector yourself. 
+   without needing to explicitly enable and disable the garbage collector yourself.
    This context manager is implemented in C to assure atomicity, thread safety and speed.
 
 
