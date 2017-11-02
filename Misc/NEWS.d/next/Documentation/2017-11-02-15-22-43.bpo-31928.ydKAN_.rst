@@ -1,0 +1,1 @@
+Update sys.version_info results to reflect named tuple format.
