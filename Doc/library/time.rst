@@ -139,24 +139,19 @@ Functions
 
 .. function:: clock()
 
-   .. index::
-      single: CPU time
-      single: processor time
-      single: benchmarking
-
-   On Unix, return the current processor time as a floating point number expressed
-   in seconds.  The precision, and in fact the very definition of the meaning of
-   "processor time", depends on that of the C function of the same name.
-
-   On Windows, this function returns wall-clock seconds elapsed since the first
-   call to this function, as a floating point number, based on the Win32 function
-   :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
-   microsecond.
+   Alias to :func:`perf_counter`.
 
    .. deprecated:: 3.3
-      The behaviour of this function depends on the platform: use
-      :func:`perf_counter` or :func:`process_time` instead, depending on your
-      requirements, to have a well defined behaviour.
+      On Python 3.6 and older, the behaviour of this function depends on the
+      platform: include time elapsed during sleep on Windows, don't include it
+      on other platforms.
+
+      Use :func:`perf_counter` or :func:`process_time` instead, depending on
+      your requirements.
+
+   .. versionchanged:: 3.7
+      :func:`time.clock` became an alias to :func:`time.perf_counter` in Python
+      3.7.
 
 .. function:: pthread_getcpuclockid(thread_id)
 
@@ -236,6 +231,8 @@ Functions
    - *resolution*: The resolution of the clock in seconds (:class:`float`)
 
    .. versionadded:: 3.3
+   .. versionchanged:: 3.7
+      ``'clock'`` is now an alias to ``'perf_counter'``.
 
 
 .. function:: gmtime([secs])

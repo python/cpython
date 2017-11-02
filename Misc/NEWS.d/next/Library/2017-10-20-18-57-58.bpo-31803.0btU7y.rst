@@ -1,0 +1,3 @@
+time.clock() is now an alias to time.perf_counter(). On Windows, it has no
+effect. On other platforms, it means that time.perf_counter() now includes
+time elapsed during sleep.
