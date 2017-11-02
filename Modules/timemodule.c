@@ -1389,6 +1389,15 @@ PyInit_time(void)
 #ifdef CLOCK_THREAD_CPUTIME_ID
     PyModule_AddIntMacro(m, CLOCK_THREAD_CPUTIME_ID);
 #endif
+#ifdef CLOCK_PROF
+    PyModule_AddIntMacro(m, CLOCK_PROF);
+#endif
+#ifdef CLOCK_BOOTTIME
+    PyModule_AddIntMacro(m, CLOCK_BOOTTIME);
+#endif
+#ifdef CLOCK_UPTIME
+    PyModule_AddIntMacro(m, CLOCK_UPTIME);
+#endif
 
     if (!initialized) {
         if (PyStructSequence_InitType2(&StructTimeType,
