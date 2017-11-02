@@ -442,25 +442,37 @@ DTRACE_DEPS = \
 all:		@DEF_MAKE_ALL_RULE@
 build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed python-config
 
-# Compile a binary with profile guided optimization.
-profile-opt:
+# Profile generation build must start from a clean tree.
+profile-clean-stamp:
+	$(MAKE) clean profile-removal
+	touch $@
+
+# Compile with profile generation enabled.
+profile-gen-stamp: profile-clean-stamp
 	@if [ $(LLVM_PROF_ERR) = yes ]; then \
 		echo "Error: Cannot perform PGO build because llvm-profdata was not found in PATH" ;\
 		echo "Please add it to PATH and run ./configure again" ;\
 		exit 1;\
 	fi
 	@echo "Building with support for profile generation:"
-	$(MAKE) clean
-	$(MAKE) profile-removal
 	$(MAKE) build_all_generate_profile
-	$(MAKE) profile-removal
+	touch $@
+
+# Run task with profile generation build to create profile information.
+profile-run-stamp:
 	@echo "Running code to generate profile data (this can take a while):"
+	# First, we need to create a clean build with profile generation
+	# enabled.
+	$(MAKE) profile-gen-stamp
+	# Next, run the profile task to generate the profile information.
 	$(MAKE) run_profile_task
 	$(MAKE) build_all_merge_profile
-	@echo "Rebuilding with profile guided optimizations:"
+	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean
-	$(MAKE) build_all_use_profile
-	$(MAKE) profile-removal
+	# This is an expensive target to build and it does not have proper
+	# makefile dependancy information.  So, we create a "stamp" file
+	# to record its completion and avoid re-running it.
+	touch $@
 
 build_all_generate_profile:
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_GEN_FLAG)" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
@@ -472,7 +484,11 @@ run_profile_task:
 build_all_merge_profile:
 	$(LLVM_PROF_MERGER)
 
-build_all_use_profile:
+# Compile Python binary with profile guided optimization.
+# To force re-running of the profile task, remove the profile-run-stamp file.
+profile-opt: profile-run-stamp
+	@echo "Rebuilding with profile guided optimizations:"
+	-rm -f profile-clean-stamp
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_USE_FLAG)" LDFLAGS="$(LDFLAGS)"
 
 # Compile and run with gcov
@@ -1621,6 +1637,7 @@ clean: pycremoval
 	-rm -f Programs/_testembed Programs/_freeze_importlib
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
+	-rm -f profile-gen-stamp
 
 profile-removal:
 	find . -name '*.gc??' -exec rm -f {} ';'
@@ -1628,6 +1645,7 @@ profile-removal:
 	find . -name '*.dyn' -exec rm -f {} ';'
 	rm -f $(COVERAGE_INFO)
 	rm -rf $(COVERAGE_REPORT)
+	rm -f profile-run-stamp
 
 clobber: clean profile-removal
 	-rm -f $(BUILDPYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
@@ -1636,6 +1654,7 @@ clobber: clean profile-removal
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -f python-config.py python-config
+	-rm -f profile-gen-stamp profile-clean-stamp
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
