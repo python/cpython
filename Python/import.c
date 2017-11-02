@@ -1682,10 +1682,17 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
          * _PyDict_GetItemId()
          */
         if (ximporttime == 0) {
-            PyObject *xoptions = PySys_GetXOptions();
-            if (xoptions) {
-                PyObject *value = _PyDict_GetItemId(xoptions, &PyId_importtime);
-                ximporttime = (value == Py_True);
+            char *envoption = Py_GETENV("PYTHONPROFILEIMPORTTIME");
+            if (envoption != NULL && strlen(envoption) > 0) {
+                ximporttime = 1;
+            }
+            else {
+                PyObject *xoptions = PySys_GetXOptions();
+                if (xoptions) {
+                    PyObject *value = _PyDict_GetItemId(
+                        xoptions, &PyId_importtime);
+                    ximporttime = (value == Py_True);
+                }
             }
             if (ximporttime) {
                 fputs("import time: self [us] | cumulative | imported package\n",
