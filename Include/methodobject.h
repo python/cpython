@@ -91,7 +91,7 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 #define METH_FASTCALL  0x0080
 #endif
 
-/* This bit is preserved for Stackless Python, next after this is 0x0200 */
+/* This bit is preserved for Stackless Python */
 #ifdef STACKLESS
 #define METH_STACKLESS 0x0100
 #else
