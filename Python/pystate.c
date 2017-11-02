@@ -431,6 +431,9 @@ _PyState_ClearModules(void)
     }
 }
 
+/* This must match the prototype in frameobject.h */
+void _PyFrame_Leave(PyThreadState *tstate, struct _frame *f);
+
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
@@ -438,7 +441,9 @@ PyThreadState_Clear(PyThreadState *tstate)
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a frame\n");
 
-    Py_CLEAR(tstate->frame);
+    while (tstate->frame) {
+        _PyFrame_Leave(tstate, tstate->frame);
+    }
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);

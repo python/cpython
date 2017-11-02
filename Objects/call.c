@@ -264,12 +264,8 @@ function_code_fastcall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
     PyObject *result;
 
     assert(globals != NULL);
-    /* XXX Perhaps we should create a specialized
-       _PyFrame_New_NoTrack() that doesn't take locals, but does
-       take builtins without sanity checking them.
-       */
     assert(tstate != NULL);
-    f = _PyFrame_New_NoTrack(tstate, co, globals, NULL);
+    f = _PyFrame_Enter_New(tstate, co, globals, NULL);
     if (f == NULL) {
         return NULL;
     }
@@ -281,16 +277,7 @@ function_code_fastcall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
         fastlocals[i] = *args++;
     }
     result = PyEval_EvalFrameEx(f,0);
-
-    if (Py_REFCNT(f) > 1) {
-        Py_DECREF(f);
-        _PyObject_GC_TRACK(f);
-    }
-    else {
-        ++tstate->recursion_depth;
-        Py_DECREF(f);
-        --tstate->recursion_depth;
-    }
+    _PyFrame_Leave(tstate, f);
     return result;
 }
 

@@ -601,9 +601,12 @@ int _PyFrame_Init()
 }
 
 PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
-                     PyObject *globals, PyObject *locals)
+_PyFrame_Enter_New(PyThreadState *tstate, PyCodeObject *code,
+                   PyObject *globals, PyObject *locals)
 {
+    /* _PyFrame_Enter_new should always be paired with _PyFrame_Leave.
+       This function returns a borrowed reference that is invalidated by
+       _PyFrame_Leave. */
     PyFrameObject *back = tstate->frame;
     PyFrameObject *f;
     PyObject *builtins;
@@ -723,16 +726,59 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     f->f_trace_opcodes = 0;
     f->f_trace_lines = 1;
 
+    tstate->frame = f;
     return f;
 }
+
+void
+_PyFrame_Enter(PyThreadState *tstate, PyFrameObject *f)
+{
+    /* _PyFrame_Enter should always be paired with _PyFrame_Leave */
+    assert(f->f_back == NULL);
+    Py_XINCREF(tstate->frame);
+    f->f_back = tstate->frame;
+    Py_INCREF(f);
+    tstate->frame = f;
+}
+
+void
+_PyFrame_Leave(PyThreadState *tstate, PyFrameObject *f)
+{
+    assert(tstate->frame == f);
+    tstate->frame = f->f_back;
+
+    /* f_back should be NULL while generators/coroutines are paused. */
+    if (f->f_code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        Py_CLEAR(f->f_back);
+    }
+
+    /* decref'ing the frame can cause __del__ methods to get invoked,
+       which can call back into Python.  While we're done with the
+       current Python frame (f), the associated C stack is still in use,
+       so recursion_depth must be boosted for the duration.
+    */
+    if (Py_REFCNT(f) > 1) {
+        Py_DECREF(f);
+        if (!_PyObject_GC_IS_TRACKED(f))
+            _PyObject_GC_TRACK(f);
+    }
+    else {
+        ++tstate->recursion_depth;
+        Py_DECREF(f);
+        --tstate->recursion_depth;
+    }
+}
+
 
 PyFrameObject*
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
             PyObject *globals, PyObject *locals)
 {
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, code, globals, locals);
-    if (f)
-        _PyObject_GC_TRACK(f);
+    PyFrameObject *f = _PyFrame_Enter_New(tstate, code, globals, locals);
+    if (f) {
+        Py_INCREF(f);
+        _PyFrame_Leave(tstate, f);
+    }
     return f;
 }
 
