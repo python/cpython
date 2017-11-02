@@ -663,6 +663,21 @@ Clock ID Constants
 These constants are used as parameters for :func:`clock_getres` and
 :func:`clock_gettime`.
 
+.. data:: CLOCK_BOOTTIME
+
+   Identical to :data:`CLOCK_MONOTONIC`, except it also includes any time that
+   the system is suspended.
+
+   This allows applications to get a suspend-aware monotonic  clock  without
+   having to deal with the complications of :data:`CLOCK_REALTIME`, which may
+   have  discontinuities if the time is changed using ``settimeofday()`` or
+   similar.
+
+   Availability: Linux 2.6.39 or later.
+
+   .. versionadded:: 3.7
+
+
 .. data:: CLOCK_HIGHRES
 
    The Solaris OS has a ``CLOCK_HIGHRES`` timer that attempts to use an optimal
@@ -703,6 +718,15 @@ These constants are used as parameters for :func:`clock_getres` and
    .. versionadded:: 3.3
 
 
+.. data:: CLOCK_PROF
+
+   High-resolution per-process timer from the CPU.
+
+   Availability: FreeBSD 3 or later, NetBSD 7 or later, OpenBSD.
+
+   .. versionadded:: 3.7
+
+
 .. data:: CLOCK_THREAD_CPUTIME_ID
 
    Thread-specific CPU-time clock.
@@ -710,6 +734,17 @@ These constants are used as parameters for :func:`clock_getres` and
    Availability: Unix.
 
    .. versionadded:: 3.3
+
+
+.. data:: CLOCK_UPTIME
+
+   Time whose absolute value is the time the system has been running and not
+   suspended, providing accurate uptime measurement, both absolute and
+   interval.
+
+   Availability: FreeBSD 7 or later, OpenBSD 5.5 or later.
+
+   .. versionadded:: 3.7
 
 
 The following constant is the only parameter that can be sent to

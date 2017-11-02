@@ -310,6 +310,20 @@ string
 expression pattern for braced placeholders and non-braced placeholders
 separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 
+time
+----
+
+Add new clock identifiers:
+
+* :data:`time.CLOCK_BOOTTIME` (Linux): Identical to
+  :data:`time.CLOCK_MONOTONIC`, except it also includes any time that the
+  system is suspended.
+* :data:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
+  per-process timer from the CPU.
+* :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
+  the time the system has been running and not suspended, providing accurate
+  uptime measurement, both absolute and interval.
+
 unittest.mock
 -------------
 
