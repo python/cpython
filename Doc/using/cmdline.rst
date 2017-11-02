@@ -653,7 +653,7 @@ conflict.
 
 .. envvar:: PYTHONPROFILEIMPORTTIME
 
-   If thjis environment variable is set to a non-empty string, Python will
+   If this environment variable is set to a non-empty string, Python will
    show how long each import takes.  This is exactly equivalent to setting
    ``-X importtime`` on the command line.
 
