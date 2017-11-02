@@ -159,6 +159,32 @@ effort will be made to add such support.
        PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
 
 
+PEP 564: Add new time functions with nanosecond resolution
+----------------------------------------------------------
+
+Add six new "nanosecond" variants of existing functions to the :mod:`time`
+module:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
+
+While similar to the existing functions without the ``_ns`` suffix, they
+provide nanosecond resolution: they return a number of nanoseconds as a Python
+``int``.
+
+The ``time.time_ns()`` resolution is 3 times better than the ``time.time()``
+resolution on Linux and Windows.
+
+.. seealso::
+
+    :pep:`564` -- Add new time functions with nanosecond resolution
+       PEP written and implemented by Victor Stinner
+
+
 Other Language Changes
 ======================
 
@@ -312,6 +338,15 @@ separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 
 time
 ----
+
+The :pep:`564` added six new functions with nanosecond resolution:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
 
 Add new clock identifiers:
 

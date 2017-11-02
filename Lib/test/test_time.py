@@ -64,6 +64,27 @@ class TimeTestCase(unittest.TestCase):
         self.assertFalse(info.monotonic)
         self.assertTrue(info.adjustable)
 
+    def test_time_ns_type(self):
+        def check_ns(sec, ns):
+            self.assertIsInstance(ns, int)
+
+            sec_ns = int(sec * 1e9)
+            # tolerate a difference of 50 ms
+            self.assertLess((sec_ns - ns), 50 ** 6, (sec, ns))
+
+        check_ns(time.time(),
+                 time.time_ns())
+        check_ns(time.monotonic(),
+                 time.monotonic_ns())
+        check_ns(time.perf_counter(),
+                 time.perf_counter_ns())
+        check_ns(time.process_time(),
+                 time.process_time_ns())
+
+        if hasattr(time, 'clock_gettime'):
+            check_ns(time.clock_gettime(time.CLOCK_REALTIME),
+                     time.clock_gettime_ns(time.CLOCK_REALTIME))
+
     def test_clock(self):
         with self.assertWarns(DeprecationWarning):
             time.clock()
@@ -76,7 +97,8 @@ class TimeTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     def test_clock_realtime(self):
-        time.clock_gettime(time.CLOCK_REALTIME)
+        t = time.clock_gettime(time.CLOCK_REALTIME)
+        self.assertIsInstance(t, float)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')

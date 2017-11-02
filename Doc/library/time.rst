@@ -185,7 +185,7 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: clock_gettime(clk_id)
+.. function:: clock_gettime(clk_id) -> float
 
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
@@ -195,7 +195,16 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: clock_settime(clk_id, time)
+.. function:: clock_gettime_ns(clk_id) -> int
+
+   Similar to :func:`clock_gettime` but return time as nanoseconds.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
+
+
+.. function:: clock_settime(clk_id, time: float)
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
@@ -203,6 +212,15 @@ Functions
    Availability: Unix.
 
    .. versionadded:: 3.3
+
+
+.. function:: clock_settime_ns(clk_id, time: int)
+
+   Similar to :func:`clock_settime` but set time with nanoseconds.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
 
 
 .. function:: ctime([secs])
@@ -267,7 +285,7 @@ Functions
    The earliest date for which it can generate a time is platform-dependent.
 
 
-.. function:: monotonic()
+.. function:: monotonic() -> float
 
    Return the value (in fractional seconds) of a monotonic clock, i.e. a clock
    that cannot go backwards.  The clock is not affected by system clock updates.
@@ -287,7 +305,13 @@ Functions
       The function is now always available.
 
 
-.. function:: perf_counter()
+.. function:: monotonic_ns() -> int
+
+   Similar to :func:`monotonic`, but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+.. function:: perf_counter() -> float
 
    .. index::
       single: benchmarking
@@ -300,8 +324,14 @@ Functions
 
    .. versionadded:: 3.3
 
+.. function:: perf_counter_ns() -> int
 
-.. function:: process_time()
+   Similar to :func:`perf_counter`, but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+
+.. function:: process_time() -> float
 
    .. index::
       single: CPU time
@@ -315,6 +345,12 @@ Functions
    of consecutive calls is valid.
 
    .. versionadded:: 3.3
+
+.. function:: process_time_ns() -> int
+
+   Similar to :func:`process_time` but return time as nanoseconds.
+
+   .. versionadded:: 3.7
 
 .. function:: sleep(secs)
 
@@ -541,7 +577,7 @@ Functions
    :class:`struct_time`, or having elements of the wrong type, a
    :exc:`TypeError` is raised.
 
-.. function:: time()
+.. function:: time() -> float
 
    Return the time in seconds since the epoch_ as a floating point
    number. The specific date of the epoch and the handling of
@@ -566,6 +602,13 @@ Functions
    :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
 
+
+.. function:: time_ns() -> int
+
+   Similar to :func:`time` but returns time as an integer number of nanoseconds
+   since the epoch_.
+
+   .. versionadded:: 3.7
 
 .. function:: tzset()
 

@@ -3946,13 +3946,16 @@ test_pytime_fromsecondsobject(PyObject *self, PyObject *args)
 static PyObject *
 test_pytime_assecondsdouble(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     _PyTime_t ts;
     double d;
 
-    if (!PyArg_ParseTuple(args, "L", &ns))
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
-    ts = _PyTime_FromNanoseconds(ns);
+    }
+    if (_PyTime_FromNanosecondsObject(&ts, obj) < 0) {
+        return NULL;
+    }
     d = _PyTime_AsSecondsDouble(ts);
     return PyFloat_FromDouble(d);
 }
@@ -3960,23 +3963,28 @@ test_pytime_assecondsdouble(PyObject *self, PyObject *args)
 static PyObject *
 test_PyTime_AsTimeval(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     int round;
     _PyTime_t t;
     struct timeval tv;
     PyObject *seconds;
 
-    if (!PyArg_ParseTuple(args, "Li", &ns, &round))
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &round))
         return NULL;
-    if (check_time_rounding(round) < 0)
+    if (check_time_rounding(round) < 0) {
         return NULL;
-    t = _PyTime_FromNanoseconds(ns);
-    if (_PyTime_AsTimeval(t, &tv, round) < 0)
+    }
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
         return NULL;
+    }
+    if (_PyTime_AsTimeval(t, &tv, round) < 0) {
+        return NULL;
+    }
 
     seconds = PyLong_FromLongLong(tv.tv_sec);
-    if (seconds == NULL)
+    if (seconds == NULL) {
         return NULL;
+    }
     return Py_BuildValue("Nl", seconds, tv.tv_usec);
 }
 
@@ -3984,15 +3992,19 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
 static PyObject *
 test_PyTime_AsTimespec(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     _PyTime_t t;
     struct timespec ts;
 
-    if (!PyArg_ParseTuple(args, "L", &ns))
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
-    t = _PyTime_FromNanoseconds(ns);
-    if (_PyTime_AsTimespec(t, &ts) == -1)
+    }
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
         return NULL;
+    }
+    if (_PyTime_AsTimespec(t, &ts) == -1) {
+        return NULL;
+    }
     return Py_BuildValue("Nl", _PyLong_FromTime_t(ts.tv_sec), ts.tv_nsec);
 }
 #endif
@@ -4000,15 +4012,19 @@ test_PyTime_AsTimespec(PyObject *self, PyObject *args)
 static PyObject *
 test_PyTime_AsMilliseconds(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     int round;
     _PyTime_t t, ms;
 
-    if (!PyArg_ParseTuple(args, "Li", &ns, &round))
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
         return NULL;
-    if (check_time_rounding(round) < 0)
+    }
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
         return NULL;
-    t = _PyTime_FromNanoseconds(ns);
+    }
+    if (check_time_rounding(round) < 0) {
+        return NULL;
+    }
     ms = _PyTime_AsMilliseconds(t, round);
     /* This conversion rely on the fact that _PyTime_t is a number of
        nanoseconds */
@@ -4018,15 +4034,18 @@ test_PyTime_AsMilliseconds(PyObject *self, PyObject *args)
 static PyObject *
 test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     int round;
     _PyTime_t t, ms;
 
-    if (!PyArg_ParseTuple(args, "Li", &ns, &round))
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &round))
         return NULL;
-    if (check_time_rounding(round) < 0)
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
         return NULL;
-    t = _PyTime_FromNanoseconds(ns);
+    }
+    if (check_time_rounding(round) < 0) {
+        return NULL;
+    }
     ms = _PyTime_AsMicroseconds(t, round);
     /* This conversion rely on the fact that _PyTime_t is a number of
        nanoseconds */

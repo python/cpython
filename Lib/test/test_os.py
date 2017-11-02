@@ -3549,6 +3549,23 @@ class TestPEP519(unittest.TestCase):
         self.assertRaises(ZeroDivisionError, self.fspath,
                           _PathLike(ZeroDivisionError()))
 
+
+class TimesTests(unittest.TestCase):
+    def test_times(self):
+        times = os.times()
+        self.assertIsInstance(times, os.times_result)
+
+        for field in ('user', 'system', 'children_user', 'children_system',
+                      'elapsed'):
+            value = getattr(times, field)
+            self.assertIsInstance(value, float)
+
+        if os.name == 'nt':
+            self.assertEqual(times.children_user, 0)
+            self.assertEqual(times.children_system, 0)
+            self.assertEqual(times.elapsed, 0)
+
+
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.
 if hasattr(os, "_fspath"):
