@@ -3195,6 +3195,9 @@ PyCurses_Use_Default_Colors(PyObject *self)
 }
 #endif /* STRICT_SYSV_CURSES */
 
+
+#ifdef NCURSES_VERSION
+
 PyDoc_STRVAR(ncurses_version__doc__,
 "curses.ncurses_version\n\
 \n\
@@ -3241,6 +3244,9 @@ make_ncurses_version(void)
 
     return ncurses_version;
 }
+
+#endif /* NCURSES_VERSION */
+
 
 /* List of functions defined in the module */
 
@@ -3408,6 +3414,7 @@ PyInit__curses(void)
     PyDict_SetItemString(d, "__version__", v);
     Py_DECREF(v);
 
+#ifdef NCURSES_VERSION
     /* ncurses_version */
     if (NcursesVersionType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&NcursesVersionType,
@@ -3429,6 +3436,7 @@ PyInit__curses(void)
     {
         PyErr_Clear();
     }
+#endif /* NCURSES_VERSION */
 
     SetDictInt("ERR", ERR);
     SetDictInt("OK", OK);

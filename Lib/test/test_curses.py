@@ -460,8 +460,9 @@ class MiscTests(unittest.TestCase):
         self.assertEqual(v[0], v.major)
         self.assertEqual(v[1], v.minor)
         self.assertEqual(v[2], v.patch)
-        self.assertTrue(v > (0, 0, 0))
-
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
 
 class TestAscii(unittest.TestCase):
 
