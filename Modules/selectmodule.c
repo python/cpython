@@ -1929,27 +1929,7 @@ kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
            : 0;
 #undef CMP
 
-    switch (op) {
-    case Py_EQ:
-        result = (result == 0);
-        break;
-    case Py_NE:
-        result = (result != 0);
-        break;
-    case Py_LE:
-        result = (result <= 0);
-        break;
-    case Py_GE:
-        result = (result >= 0);
-        break;
-    case Py_LT:
-        result = (result < 0);
-        break;
-    case Py_GT:
-        result = (result > 0);
-        break;
-    }
-    return PyBool_FromLong((long)result);
+    Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 static PyTypeObject kqueue_event_Type = {

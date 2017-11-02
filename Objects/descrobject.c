@@ -1035,22 +1035,16 @@ wrapper_dealloc(wrapperobject *wp)
     Py_TRASHCAN_SAFE_END(wp)
 }
 
-#define TEST_COND(cond) ((cond) ? Py_True : Py_False)
-
 static PyObject *
 wrapper_richcompare(PyObject *a, PyObject *b, int op)
 {
-    intptr_t result;
-    PyObject *v;
     PyWrapperDescrObject *a_descr, *b_descr;
 
     assert(a != NULL && b != NULL);
 
     /* both arguments should be wrapperobjects */
     if (!Wrapper_Check(a) || !Wrapper_Check(b)) {
-        v = Py_NotImplemented;
-        Py_INCREF(v);
-        return v;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     /* compare by descriptor address; if the descriptors are the same,
@@ -1063,32 +1057,7 @@ wrapper_richcompare(PyObject *a, PyObject *b, int op)
         return PyObject_RichCompare(a, b, op);
     }
 
-    result = a_descr - b_descr;
-    switch (op) {
-    case Py_EQ:
-        v = TEST_COND(result == 0);
-        break;
-    case Py_NE:
-        v = TEST_COND(result != 0);
-        break;
-    case Py_LE:
-        v = TEST_COND(result <= 0);
-        break;
-    case Py_GE:
-        v = TEST_COND(result >= 0);
-        break;
-    case Py_LT:
-        v = TEST_COND(result < 0);
-        break;
-    case Py_GT:
-        v = TEST_COND(result > 0);
-        break;
-    default:
-        PyErr_BadArgument();
-        return NULL;
-    }
-    Py_INCREF(v);
-    return v;
+    Py_RETURN_RICHCOMPARE(a_descr, b_descr, op);
 }
 
 static Py_hash_t

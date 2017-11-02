@@ -647,23 +647,7 @@ tuplerichcompare(PyObject *v, PyObject *w, int op)
 
     if (i >= vlen || i >= wlen) {
         /* No more items to compare -- compare sizes */
-        int cmp;
-        PyObject *res;
-        switch (op) {
-        case Py_LT: cmp = vlen <  wlen; break;
-        case Py_LE: cmp = vlen <= wlen; break;
-        case Py_EQ: cmp = vlen == wlen; break;
-        case Py_NE: cmp = vlen != wlen; break;
-        case Py_GT: cmp = vlen >  wlen; break;
-        case Py_GE: cmp = vlen >= wlen; break;
-        default: return NULL; /* cannot happen */
-        }
-        if (cmp)
-            res = Py_True;
-        else
-            res = Py_False;
-        Py_INCREF(res);
-        return res;
+        Py_RETURN_RICHCOMPARE(vlen, wlen, op);
     }
 
     /* We have an item that differs -- shortcuts for EQ/NE */

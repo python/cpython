@@ -1012,8 +1012,6 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t self_size, other_size;
     Py_buffer self_bytes, other_bytes;
-    PyObject *res;
-    Py_ssize_t minsize;
     int cmp, rc;
 
     /* Bytes can be compared to anything that supports the (binary)
@@ -1049,38 +1047,25 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
 
     if (self_size != other_size && (op == Py_EQ || op == Py_NE)) {
         /* Shortcut: if the lengths differ, the objects differ */
-        cmp = (op == Py_NE);
+        PyBuffer_Release(&self_bytes);
+        PyBuffer_Release(&other_bytes);
+        return PyBool_FromLong((op == Py_NE));
     }
     else {
-        minsize = self_size;
-        if (other_size < minsize)
-            minsize = other_size;
-
-        cmp = memcmp(self_bytes.buf, other_bytes.buf, minsize);
+        cmp = memcmp(self_bytes.buf, other_bytes.buf,
+                     Py_MIN(self_size, other_size));
         /* In ISO C, memcmp() guarantees to use unsigned bytes! */
 
-        if (cmp == 0) {
-            if (self_size < other_size)
-                cmp = -1;
-            else if (self_size > other_size)
-                cmp = 1;
+        PyBuffer_Release(&self_bytes);
+        PyBuffer_Release(&other_bytes);
+
+        if (cmp != 0) {
+            Py_RETURN_RICHCOMPARE(cmp, 0, op);
         }
 
-        switch (op) {
-        case Py_LT: cmp = cmp <  0; break;
-        case Py_LE: cmp = cmp <= 0; break;
-        case Py_EQ: cmp = cmp == 0; break;
-        case Py_NE: cmp = cmp != 0; break;
-        case Py_GT: cmp = cmp >  0; break;
-        case Py_GE: cmp = cmp >= 0; break;
-        }
+        Py_RETURN_RICHCOMPARE(self_size, other_size, op);
     }
 
-    res = cmp ? Py_True : Py_False;
-    PyBuffer_Release(&self_bytes);
-    PyBuffer_Release(&other_bytes);
-    Py_INCREF(res);
-    return res;
 }
 
 static void

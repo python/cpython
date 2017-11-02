@@ -1566,7 +1566,6 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
     int c;
     Py_ssize_t len_a, len_b;
     Py_ssize_t min_len;
-    PyObject *result;
     int rc;
 
     /* Make sure both arguments are strings. */
@@ -1599,7 +1598,7 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
                 }
             }
         }
-        result = Py_NotImplemented;
+        Py_RETURN_NOTIMPLEMENTED;
     }
     else if (a == b) {
         switch (op) {
@@ -1607,12 +1606,12 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
         case Py_LE:
         case Py_GE:
             /* a string is equal to itself */
-            result = Py_True;
+            Py_RETURN_TRUE;
             break;
         case Py_NE:
         case Py_LT:
         case Py_GT:
-            result = Py_False;
+            Py_RETURN_FALSE;
             break;
         default:
             PyErr_BadArgument();
@@ -1622,7 +1621,7 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
     else if (op == Py_EQ || op == Py_NE) {
         int eq = bytes_compare_eq(a, b);
         eq ^= (op == Py_NE);
-        result = eq ? Py_True : Py_False;
+        return PyBool_FromLong(eq);
     }
     else {
         len_a = Py_SIZE(a);
@@ -1635,22 +1634,10 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
         }
         else
             c = 0;
-        if (c == 0)
-            c = (len_a < len_b) ? -1 : (len_a > len_b) ? 1 : 0;
-        switch (op) {
-        case Py_LT: c = c <  0; break;
-        case Py_LE: c = c <= 0; break;
-        case Py_GT: c = c >  0; break;
-        case Py_GE: c = c >= 0; break;
-        default:
-            PyErr_BadArgument();
-            return NULL;
-        }
-        result = c ? Py_True : Py_False;
+        if (c != 0)
+            Py_RETURN_RICHCOMPARE(c, 0, op);
+        Py_RETURN_RICHCOMPARE(len_a, len_b, op);
     }
-
-    Py_INCREF(result);
-    return result;
 }
 
 static Py_hash_t
