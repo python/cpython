@@ -1681,14 +1681,21 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
          * _PyDict_GetItemId()
          */
         if (ximporttime < 0) {
-            PyObject *xoptions = PySys_GetXOptions();
-            PyObject *value;
-            if (xoptions == NULL) {
-                goto error;
+            char *envoption = Py_GETENV("PYTHONPROFILEIMPORTTIME");
+            if (envoption != NULL && strlen(envoption) > 0) {
+                ximporttime = 1;
             }
-            value = _PyDict_GetItemIdWithError(xoptions, &PyId_importtime);
-            if (value == NULL && PyErr_Occurred()) {
-                goto error;
+            else {
+                PyObject *xoptions = PySys_GetXOptions();
+                PyObject *value;
+                if (xoptions == NULL) {
+                    goto error;
+                }
+                value = _PyDict_GetItemIdWithError(
+                        xoptions, &PyId_importtime);
+                if (value == NULL && PyErr_Occurred()) {
+                    goto error;
+                }
             }
             if (ximporttime < 0 && (value == Py_True || Py_IsInitialized())) {
                 ximporttime = (value == Py_True);

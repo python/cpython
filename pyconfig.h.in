@@ -146,8 +146,20 @@
 /* Define if you have the 'ctermid_r' function. */
 #undef HAVE_CTERMID_R
 
+/* Define if you have the 'filter' function. */
+#undef HAVE_CURSES_FILTER
+
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
+
+/* Define if you have the 'has_key' function. */
+#undef HAVE_CURSES_HAS_KEY
+
+/* Define if you have the 'immedok' function. */
+#undef HAVE_CURSES_IMMEDOK
+
+/* Define if you have the 'is_pad' function or macro. */
+#undef HAVE_CURSES_IS_PAD
 
 /* Define if you have the 'is_term_resized' function. */
 #undef HAVE_CURSES_IS_TERM_RESIZED
@@ -157,6 +169,18 @@
 
 /* Define if you have the 'resize_term' function. */
 #undef HAVE_CURSES_RESIZE_TERM
+
+/* Define if you have the 'syncok' function. */
+#undef HAVE_CURSES_SYNCOK
+
+/* Define if you have the 'typeahead' function. */
+#undef HAVE_CURSES_TYPEAHEAD
+
+/* Define if you have the 'use_env' function. */
+#undef HAVE_CURSES_USE_ENV
+
+/* Define if you have the 'wchgat' function. */
+#undef HAVE_CURSES_WCHGAT
 
 /* Define to 1 if you have the declaration of `isfinite', and to 0 if you
    don't. */

@@ -189,6 +189,11 @@ class ConfigDialog(Toplevel):
         """
         self.destroy()
 
+    def destroy(self):
+        global font_sample_text
+        font_sample_text = self.fontpage.font_sample.get('1.0', 'end')
+        super().destroy()
+
     def help(self):
         """Create textview for config dialog help.
 
@@ -429,6 +434,35 @@ class ConfigDialog(Toplevel):
 #     def other_methods():
 #         # Define tab-specific behavior.
 
+font_sample_text = (
+    '<ASCII/Latin1>\n'
+    'AaBbCcDdEeFfGgHhIiJj\n1234567890#:+=(){}[]\n'
+    '\u00a2\u00a3\u00a5\u00a7\u00a9\u00ab\u00ae\u00b6\u00bd\u011e'
+    '\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5\u00c7\u00d0\u00d8\u00df\n'
+    '\n<IPA,Greek,Cyrillic>\n'
+    '\u0250\u0255\u0258\u025e\u025f\u0264\u026b\u026e\u0270\u0277'
+    '\u027b\u0281\u0283\u0286\u028e\u029e\u02a2\u02ab\u02ad\u02af\n'
+    '\u0391\u03b1\u0392\u03b2\u0393\u03b3\u0394\u03b4\u0395\u03b5'
+    '\u0396\u03b6\u0397\u03b7\u0398\u03b8\u0399\u03b9\u039a\u03ba\n'
+    '\u0411\u0431\u0414\u0434\u0416\u0436\u041f\u043f\u0424\u0444'
+    '\u0427\u0447\u042a\u044a\u042d\u044d\u0460\u0464\u046c\u04dc\n'
+    '\n<Hebrew, Arabic>\n'
+    '\u05d0\u05d1\u05d2\u05d3\u05d4\u05d5\u05d6\u05d7\u05d8\u05d9'
+    '\u05da\u05db\u05dc\u05dd\u05de\u05df\u05e0\u05e1\u05e2\u05e3\n'
+    '\u0627\u0628\u062c\u062f\u0647\u0648\u0632\u062d\u0637\u064a'
+    '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669\n'
+    '\n<Devanagari, Tamil>\n'
+    '\u0966\u0967\u0968\u0969\u096a\u096b\u096c\u096d\u096e\u096f'
+    '\u0905\u0906\u0907\u0908\u0909\u090a\u090f\u0910\u0913\u0914\n'
+    '\u0be6\u0be7\u0be8\u0be9\u0bea\u0beb\u0bec\u0bed\u0bee\u0bef'
+    '\u0b85\u0b87\u0b89\u0b8e\n'
+    '\n<East Asian>\n'
+    '\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\n'
+    '\u6c49\u5b57\u6f22\u5b57\u4eba\u6728\u706b\u571f\u91d1\u6c34\n'
+    '\uac00\ub0d0\ub354\ub824\ubaa8\ubd64\uc218\uc720\uc988\uce58\n'
+    '\u3042\u3044\u3046\u3048\u304a\u30a2\u30a4\u30a6\u30a8\u30aa\n'
+    )
+
 
 class FontPage(Frame):
 
@@ -494,7 +528,8 @@ class FontPage(Frame):
         frame_font = LabelFrame(
                 self, borderwidth=2, relief=GROOVE, text=' Shell/Editor Font ')
         frame_sample = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Font Sample ')
+                self, borderwidth=2, relief=GROOVE,
+                text=' Font Sample (Editable) ')
         frame_indent = LabelFrame(
                 self, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
         # frame_font.
@@ -516,36 +551,8 @@ class FontPage(Frame):
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
         # frame_sample.
-        sample = (
-            '<ASCII/Latin1>\n'
-            'AaBbCcDdEeFfGgHhIiJj\n1234567890#:+=(){}[]\n'
-            '\u00a2\u00a3\u00a5\u00a7\u00a9\u00ab\u00ae\u00b6\u00bd\u011e'
-            '\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5\u00c7\u00d0\u00d8\u00df\n'
-            '\n<IPA,Greek,Cyrillic>\n'
-            '\u0250\u0255\u0258\u025e\u025f\u0264\u026b\u026e\u0270\u0277'
-            '\u027b\u0281\u0283\u0286\u028e\u029e\u02a2\u02ab\u02ad\u02af\n'
-            '\u0391\u03b1\u0392\u03b2\u0393\u03b3\u0394\u03b4\u0395\u03b5'
-            '\u0396\u03b6\u0397\u03b7\u0398\u03b8\u0399\u03b9\u039a\u03ba\n'
-            '\u0411\u0431\u0414\u0434\u0416\u0436\u041f\u043f\u0424\u0444'
-            '\u0427\u0447\u042a\u044a\u042d\u044d\u0460\u0464\u046c\u04dc\n'
-            '\n<Hebrew, Arabic>\n'
-            '\u05d0\u05d1\u05d2\u05d3\u05d4\u05d5\u05d6\u05d7\u05d8\u05d9'
-            '\u05da\u05db\u05dc\u05dd\u05de\u05df\u05e0\u05e1\u05e2\u05e3\n'
-            '\u0627\u0628\u062c\u062f\u0647\u0648\u0632\u062d\u0637\u064a'
-            '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669\n'
-            '\n<Devanagari, Tamil>\n'
-            '\u0966\u0967\u0968\u0969\u096a\u096b\u096c\u096d\u096e\u096f'
-            '\u0905\u0906\u0907\u0908\u0909\u090a\u090f\u0910\u0913\u0914\n'
-            '\u0be6\u0be7\u0be8\u0be9\u0bea\u0beb\u0bec\u0bed\u0bee\u0bef'
-            '\u0b85\u0b87\u0b89\u0b8e\n'
-            '\n<East Asian>\n'
-            '\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\n'
-            '\u6c49\u5b57\u6f22\u5b57\u4eba\u6728\u706b\u571f\u91d1\u6c34\n'
-            '\uac00\ub0d0\ub354\ub824\ubaa8\ubd64\uc218\uc720\uc988\uce58\n'
-            '\u3042\u3044\u3046\u3048\u304a\u30a2\u30a4\u30a6\u30a8\u30aa\n'
-            )
-        temp_font = tkFont.Font(self, ('courier', 10, 'normal'))
-        self.font_sample = Label(frame_sample, text=sample, font=temp_font)
+        self.font_sample = Text(frame_sample, width=20, height=20)
+        self.font_sample.insert(END, font_sample_text)
         # frame_indent.
         indent_title = Label(
                 frame_indent, justify=LEFT,
@@ -2153,6 +2160,8 @@ alef, \u05d0 and \u0627.  Arabic digits display left to right.  The
 Devanagari and Tamil lines start with digits.  The East Asian lines
 are Chinese digits, Chinese Hanzi, Korean Hangul, and Japanese
 Hiragana and Katakana.
+
+You can edit the font sample. Changes remain until IDLE is closed.
 ''',
     'Highlights': '''
 Highlighting:
