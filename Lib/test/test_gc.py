@@ -1,7 +1,7 @@
 import unittest
 from test.support import (verbose, refcount_test, run_unittest,
                           strip_python_stderr, cpython_only, start_threads,
-                          temp_dir, requires_type_collecting)
+                          temp_dir, requires_type_collecting,reap_threads)
 from test.support.script_helper import assert_python_ok, make_script
 
 import sys
@@ -1006,6 +1006,56 @@ class GCTogglingTests(unittest.TestCase):
             # If __del__ resurrected c2, the instance would be damaged, with an
             # empty __dict__.
             self.assertEqual(x, None)
+
+    def test_Disabled(self):
+        original_status = gc.isenabled()
+
+        with gc.Disabled():
+            inside_status = gc.isenabled()
+
+        after_status = gc.isenabled()
+        self.assertEqual(original_status,True)
+        self.assertEqual(inside_status,False)
+        self.assertEqual(after_status,True)
+
+    @reap_threads
+    def test_Disabled_thread(self):
+
+        thread_original_status = None
+        thread_inside_status = None
+        thread_after_status = None
+
+        def disabling_thread():
+            nonlocal thread_original_status
+            nonlocal thread_inside_status
+            nonlocal thread_after_status
+            thread_original_status = gc.isenabled()
+
+            with gc.Disabled():
+                thread_inside_status = gc.isenabled()
+
+            thread_after_status = gc.isenabled()
+            print(thread_after_status)
+
+        original_status = gc.isenabled()
+
+        with gc.Disabled():
+            inside_status_before_thread = gc.isenabled()
+            thread = threading.Thread(target=disabling_thread)
+            thread.start()
+            thread.join()
+            inside_status_after_thread = gc.isenabled()
+
+        after_status = gc.isenabled()
+
+        self.assertEqual(original_status,True)
+        self.assertEqual(inside_status_before_thread,False)
+        self.assertEqual(thread_original_status,False)
+        self.assertEqual(thread_inside_status,False)
+        self.assertEqual(thread_after_status,False)
+        self.assertEqual(inside_status_after_thread,False)
+        self.assertEqual(after_status,True)
+
 
 def test_main():
     enabled = gc.isenabled()

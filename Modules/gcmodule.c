@@ -1506,6 +1506,97 @@ static PyMethodDef GcMethods[] = {
     {NULL,      NULL}           /* Sentinel */
 };
 
+typedef struct {
+    PyObject_HEAD
+    int previous_gc_state;
+    PyGILState_STATE gstate;
+} disabled_object;
+
+
+static void
+disabled_object_dealloc(disabled_object *m_obj)
+{
+    Py_TYPE(m_obj)->tp_free((PyObject*)m_obj);
+}
+
+
+
+static PyObject *
+disabled__enter__method(disabled_object *self, PyObject *args)
+{
+    self->gstate = PyGILState_Ensure();
+    self->previous_gc_state = _PyRuntime.gc.enabled;
+    _PyRuntime.gc.enabled = 0;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+disabled__exit__method(disabled_object *self, PyObject *args)
+{
+    _PyRuntime.gc.enabled = self->previous_gc_state;
+    PyGILState_Release(self->gstate);
+    Py_RETURN_NONE;
+}
+
+
+
+static struct PyMethodDef disabled_object_methods[] = {
+    {"__enter__",       (PyCFunction) disabled__enter__method,      METH_NOARGS},
+    {"__exit__",        (PyCFunction) disabled__exit__method,       METH_VARARGS},
+    {NULL,         NULL}       /* sentinel */
+};
+
+static PyObject *
+new_thing(PyTypeObject *type, PyObject *args, PyObject *kwdict){
+    disabled_object *self;
+    self = (disabled_object *)type->tp_alloc(type, 0);
+    return (PyObject *) self;
+};
+
+static PyTypeObject gc_disabled_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "gc.disabled",                              /* tp_name */
+    sizeof(disabled_object),                    /* tp_size */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor) disabled_object_dealloc,       /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /*tp_as_sequence*/
+    0,                                          /*tp_as_mapping*/
+    0,                                          /*tp_hash*/
+    0,                                          /*tp_call*/
+    0,                                          /*tp_str*/
+    PyObject_GenericGetAttr,                    /*tp_getattro*/
+    0,                                          /*tp_setattro*/
+    0,                                          /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /*tp_flags*/
+    0,                                          /*tp_doc*/
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    disabled_object_methods,                    /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    PyType_GenericAlloc,                        /* tp_alloc */
+    new_thing,                                  /* tp_new */
+    PyObject_Del,                               /* tp_free */
+};
+
+
 static struct PyModuleDef gcmodule = {
     PyModuleDef_HEAD_INIT,
     "gc",              /* m_name */
@@ -1545,6 +1636,12 @@ PyInit_gc(void)
     Py_INCREF(_PyRuntime.gc.callbacks);
     if (PyModule_AddObject(m, "callbacks", _PyRuntime.gc.callbacks) < 0)
         return NULL;
+
+    if (PyType_Ready(&gc_disabled_type) < 0)
+        return NULL;
+    if (PyModule_AddObject(m, "Disabled", (PyObject*) &gc_disabled_type) < 0)
+        return NULL;
+
 
 #define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) return NULL
     ADD_INT(DEBUG_STATS);
