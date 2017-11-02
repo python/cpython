@@ -318,7 +318,6 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         self.executor.submit(mul, 21, 2)
         self.executor.submit(mul, 6, 7)
         self.executor.submit(mul, 3, 14)
-        self.assertEqual(len(self.executor._threads), 3)
         self.executor.shutdown()
         for t in self.executor._threads:
             t.join()
@@ -951,6 +950,177 @@ create_executor_tests(ExecutorDeadlockTest,
                       executor_mixins=(ProcessPoolForkMixin,
                                        ProcessPoolForkserverMixin,
                                        ProcessPoolSpawnMixin))
+
+
+def _init_worker(_event):
+    # Declare a global Event object for the executor's worker.
+    global event
+    event = _event
+
+
+def event_wait():
+    assert "event" in globals()
+    t0 = time.time()
+    event.wait(timeout=30)
+    # We have to check that the event did not timeout because of Event.wait
+    # return False when set and clear are called one after the other.
+    # (See issue31991)
+    dt = time.time() - t0
+    return dt < 30
+
+
+def event_wait_param(a):
+    return event_wait()
+
+
+class IntrospectionTests:
+    initial_patience = 2
+
+    def setUp(self):
+        if hasattr(self, 'ctx'):
+            if sys.platform == "win32" and "fork" in self.ctx:
+                self.skipTest("require unix system")
+            context = get_context(self.ctx)
+        else:
+            context = threading
+        self.event = context.Event()
+        self.executor_kwargs = dict(initializer=_init_worker,
+                                    initargs=(self.event,))
+        super().setUp()
+
+    def tearDown(self):
+        self.event.set()
+        super().tearDown()
+
+    def _wait_for_active(self, expected_count, timeout):
+        # Because CI can be slow, add a patience mechanism for the task to be
+        # activated.
+        deadline = time.time() + timeout
+        active_task_count = self.executor.active_task_count()
+        while active_task_count < expected_count and time.time() < deadline:
+            time.sleep(.1)
+            active_task_count = self.executor.active_task_count()
+
+    def test_worker_count(self):
+        self.assertEqual(self.executor.worker_count(), self.worker_count)
+        out = self.executor.submit(event_wait)
+
+        self._wait_for_active(1, self.initial_patience)
+        self.assertEqual(self.executor.active_worker_count(), 1)
+        self.assertEqual(self.executor.idle_worker_count(),
+                         self.worker_count - 1)
+        self.event.set()
+
+        # Make sure the test does not pass because of error in workers
+        self.assertTrue(out.result())
+
+    def test_worker_count_full(self):
+        fs = [self.executor.submit(event_wait)
+              for _ in range(self.worker_count + 2)]
+
+        self._wait_for_active(self.worker_count, self.initial_patience)
+        self.assertEqual(self.executor.active_worker_count(),
+                         self.worker_count)
+        self.assertEqual(self.executor.idle_worker_count(), 0)
+        self.event.set()
+
+        # Make sure the test does not pass because of error in workers
+        self.assertTrue(all([f.result() for f in fs]))
+
+    def test_task_count(self):
+        self.assertEqual(self.executor.task_count(), 0)
+        out = self.executor.submit(event_wait)
+
+        self._wait_for_active(1, self.initial_patience)
+        self.assertEqual(self.executor.task_count(), 1)
+        self.assertEqual(self.executor.active_task_count(), 1)
+        self.assertEqual(self.executor.waiting_task_count(), 0)
+        self.event.set()
+
+        # Make sure the test does not pass because of error in workers
+        self.assertTrue(out.result())
+
+    def test_task_count_full(self):
+        fs = [self.executor.submit(event_wait)
+              for _ in range(self.worker_count + 2)]
+
+        self._wait_for_active(self.worker_count, self.initial_patience)
+        self.assertEqual(self.executor.task_count(), self.worker_count + 2)
+        self.assertEqual(self.executor.active_task_count(), self.worker_count)
+        self.assertEqual(self.executor.waiting_task_count(), 2)
+        self.event.set()
+        self.event.clear()
+
+        # Collect the first `worker_count` results to ensure the active task
+        # finished and the new active task are started.
+        self.assertTrue(all([f.result() for f in fs[:self.worker_count]]))
+
+        # Waiting tasks should become active.
+        self._wait_for_active(2, self.initial_patience)
+        self.assertEqual(self.executor.active_task_count(), 2)
+        self.event.set()
+
+        # Make sure the test does not pass because of error in workers
+        self.assertTrue(all([f.result() for f in fs]))
+
+    def test_task_content(self):
+        param = 1
+        out = self.executor.submit(event_wait_param, param)
+
+        self._wait_for_active(1, self.initial_patience)
+        tasks = self.executor.active_tasks()
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual(tasks.pop().args, (param,))
+        self.assertEqual(len(self.executor.waiting_tasks()), 0)
+        self.event.set()
+
+        # Make sure the test does not pass because of error in workers
+        self.assertTrue(out.result())
+
+    def test_task_contents_full(self):
+        fs = [self.executor.submit(event_wait_param, i)
+              for i in range(self.worker_count + 2)]
+
+        self._wait_for_active(self.worker_count, self.initial_patience)
+        active_tasks = self.executor.active_tasks()
+        waiting_tasks = self.executor.waiting_tasks()
+        active_args = {item.args for item in active_tasks}
+        waiting_args = [item.args for item in waiting_tasks]
+
+        # Check lengths.
+        self.assertEqual(len(active_tasks), self.worker_count)
+        self.assertEqual(len(waiting_tasks), 2)
+
+        # Make sure right args are there for active tasks
+        expected_args = {(i,) for i in range(self.worker_count)}
+        self.assertEqual(active_args, expected_args)
+
+        # Make sure right args in right order for waiting tasks.
+        expected_args = [(i,) for i in range(self.worker_count,
+                                             self.worker_count + 2)]
+        self.assertEqual(waiting_args, expected_args)
+        self.event.set()
+        self.event.clear()
+
+        # Collect the first `worker_count` results to ensure the active task
+        # finished and the new active task are started.
+        self.assertTrue(all([f.result() for f in fs[:self.worker_count]]))
+
+        self._wait_for_active(2, self.initial_patience)
+        # Waiting tasks should become active.
+        expected_args = set(expected_args)
+        active_tasks = self.executor.active_tasks()
+        waiting_tasks = self.executor.waiting_tasks()
+        active_args = {item.args for item in active_tasks}
+        self.assertEqual(active_args, expected_args)
+        self.assertEqual(waiting_tasks, [])
+        self.event.set()
+
+        # Make sure the test does not pass because of error in workers
+        self.assertTrue(all([f.result() for f in fs]))
+
+
+create_executor_tests(IntrospectionTests)
 
 
 class FutureTests(BaseTestCase):

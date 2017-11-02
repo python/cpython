@@ -128,12 +128,6 @@ def _rebuild_exc(exc, tb):
     exc.__cause__ = _RemoteTraceback(tb)
     return exc
 
-class _WorkItem(object):
-    def __init__(self, future, fn, args, kwargs):
-        self.future = future
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
 
 class _ResultItem(object):
     def __init__(self, work_id, exception=None, result=None):
@@ -166,6 +160,11 @@ class _SafeQueue(Queue):
                 work_item.future.set_exception(e)
         else:
             super()._on_queue_feeder_error(e, obj)
+
+
+class _WorkId(object):
+    def __init__(self, work_id):
+        self.work_id = work_id
 
 
 def _get_chunks(*iterables, chunksize):
@@ -226,6 +225,9 @@ def _process_worker(call_queue, result_queue, initializer, initargs):
             # Wake up queue management thread
             result_queue.put(os.getpid())
             return
+
+        # Notify the executor that the job work_id is being processed
+        result_queue.put(_WorkId(call_item.work_id))
         try:
             r = call_item.fn(*call_item.args, **call_item.kwargs)
         except BaseException as e:
@@ -280,6 +282,7 @@ def _add_call_item_to_queue(pending_work_items,
 def _queue_management_worker(executor_reference,
                              processes,
                              pending_work_items,
+                             active_work_items,
                              work_ids_queue,
                              call_queue,
                              result_queue,
@@ -295,6 +298,8 @@ def _queue_management_worker(executor_reference,
         process: A list of the ctx.Process instances used as
             workers.
         pending_work_items: A dict mapping work ids to _WorkItems e.g.
+            {5: <_WorkItem...>, 6: <_WorkItem...>, ...}
+        active_work_items: A dict mapping work ids to _WorkItems being run e.g.
             {5: <_WorkItem...>, 6: <_WorkItem...>, ...}
         work_ids_queue: A queue.Queue of work ids e.g. Queue([5, 6, ...]).
         call_queue: A ctx.Queue that will be filled with _CallItems
@@ -400,6 +405,8 @@ def _queue_management_worker(executor_reference,
             if not processes:
                 shutdown_worker()
                 return
+        elif isinstance(result_item, _WorkId):
+            active_work_items.add(result_item.work_id)
         elif result_item is not None:
             work_item = pending_work_items.pop(result_item.work_id, None)
             # work_item can be None if another process terminated (see above)
@@ -410,6 +417,8 @@ def _queue_management_worker(executor_reference,
                     work_item.future.set_result(result_item.result)
                 # Delete references to object. See issue16284
                 del work_item
+            
+            active_work_items.remove(result_item.work_id)
             # Delete reference to result_item
             del result_item
 
@@ -525,6 +534,7 @@ class ProcessPoolExecutor(_base.Executor):
         self._broken = False
         self._queue_count = 0
         self._pending_work_items = {}
+        self._active_work_items = set()
 
         # Create communication channels for the executor
         # Make the call queue slightly larger than the number of processes to
@@ -566,6 +576,7 @@ class ProcessPoolExecutor(_base.Executor):
                 args=(weakref.ref(self, weakref_cb),
                       self._processes,
                       self._pending_work_items,
+                      self._active_work_items,
                       self._work_ids,
                       self._call_queue,
                       self._result_queue,
@@ -595,7 +606,7 @@ class ProcessPoolExecutor(_base.Executor):
                 raise RuntimeError('cannot schedule new futures after shutdown')
 
             f = _base.Future()
-            w = _WorkItem(f, fn, args, kwargs)
+            w = _base._WorkItem(f, fn, args, kwargs)
 
             self._pending_work_items[self._queue_count] = w
             self._work_ids.put(self._queue_count)
@@ -655,5 +666,32 @@ class ProcessPoolExecutor(_base.Executor):
         self._result_queue = None
         self._processes = None
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
+
+    def worker_count(self):
+        return len(self._processes)
+
+    def active_worker_count(self):
+        return self.active_task_count()
+
+    def idle_worker_count(self):
+        return self.worker_count() - self.active_worker_count()
+
+    def task_count(self):
+        return len(self._pending_work_items)
+
+    def active_task_count(self):
+        return len(self._active_work_items)
+
+    def waiting_task_count(self):
+        return self.task_count() - self.active_task_count()
+
+    def active_tasks(self):
+        return {self._pending_work_items[t] for t in self._active_work_items}
+
+    def waiting_tasks(self):
+        tasks = [v for k, v in self._pending_work_items.items()
+                 if k not in self._active_work_items]
+        return tasks
+
 
 atexit.register(_python_exit)

@@ -94,6 +94,73 @@ Executor Objects
               e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
               e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
 
+   The following :class:`Executor` methods are meant for use to introspect the
+   state of the :class:`Executor` and the tasks processed by it.
+
+    .. method:: worker_count()
+
+       Return the actual number of workers in the executor.
+
+       .. versionchanged:: 3.7
+          Added the *worker_count* method.
+
+    .. method:: active_worker_count()
+
+       Return the number of workers currently running a task in the executor.
+
+       .. versionchanged:: 3.7
+          Added the *active_worker_count* method.
+
+    .. method:: idle_worker_count()
+
+       Return the number of workers currently waiting for a new task to be
+       submitted to the executor.
+
+       .. versionchanged:: 3.7
+          Added the *idle_worker_count* method.
+
+    .. method:: task_count()
+
+       Return the number of task pending for the executor.
+
+       .. versionchanged:: 3.7
+          Added the *task_count* method.
+
+    .. method:: active_task_count()
+
+       Return the number of task which are currently being processed by the
+       executor.
+
+       .. versionchanged:: 3.7
+          Added the *active_task_count* method.
+
+    .. method:: waiting_task_count()
+
+       Return the number of task waiting to be processed by the executor.
+
+       .. versionchanged:: 3.7
+          Added the *waiting_task_count* method.
+
+    .. method:: active_tasks()
+
+       Return a dictionary with WorkItems representing the tasks which are
+       currently being processed by the executor. The WorkItem object is a
+       container holding the function *fn*, its arguments *args* and *kwargs*
+       and the associated :class:`Future` in *future*.
+
+       .. versionchanged:: 3.7
+          Added the *active_tasks* method.
+
+    .. method:: waiting_tasks()
+
+       Return a dictionary with WorkItems representing the tasks waiting to be
+       processed by the executor. The WorkItem object is a container holding
+       the function *fn*, its arguments *args* and *kwargs* and the associated
+       :class:`Future` in *future*.
+
+       .. versionchanged:: 3.7
+          Added the *waiting_tasks* method.
+
 
 ThreadPoolExecutor
 ------------------

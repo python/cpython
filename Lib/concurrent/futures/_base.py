@@ -306,6 +306,22 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
     done.update(waiter.finished_futures)
     return DoneAndNotDoneFutures(done, set(fs) - done)
 
+
+class _WorkItem(object):
+    def __init__(self, future, fn, args, kwargs):
+        self.future = future
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        return "<WorkItem: {} args: {} kwargs: {}>".format(self.fn, self.args,
+                                                           self.kwargs)
+
+
 class Future(object):
     """Represents the result of an asynchronous computation."""
 
@@ -603,6 +619,30 @@ class Executor(object):
                 executor have been reclaimed.
         """
         pass
+
+    def worker_count(self):
+        raise NotImplementedError()
+
+    def active_worker_count(self):
+        raise NotImplementedError()
+
+    def idle_worker_count(self):
+        raise NotImplementedError()
+
+    def task_count(self):
+        raise NotImplementedError()
+
+    def active_task_count(self):
+        raise NotImplementedError()
+
+    def waiting_task_count(self):
+        raise NotImplementedError()
+
+    def active_tasks(self):
+        raise NotImplementedError()
+
+    def waiting_tasks(self):
+        raise NotImplementedError()
 
     def __enter__(self):
         return self
