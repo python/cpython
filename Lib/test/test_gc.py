@@ -1014,9 +1014,22 @@ class GCTogglingTests(unittest.TestCase):
             inside_status = gc.isenabled()
 
         after_status = gc.isenabled()
-        self.assertEqual(original_status,True)
-        self.assertEqual(inside_status,False)
-        self.assertEqual(after_status,True)
+        self.assertEqual(original_status, True)
+        self.assertEqual(inside_status, False)
+        self.assertEqual(after_status, True)
+
+    def test_Disabled_with_gc_disabled(self):
+        gc.disable()
+
+        original_status = gc.isenabled()
+
+        with gc.Disabled():
+            inside_status = gc.isenabled()
+
+        after_status = gc.isenabled()
+        self.assertEqual(original_status, False)
+        self.assertEqual(inside_status, False)
+        self.assertEqual(after_status, False)
 
     @reap_threads
     def test_Disabled_thread(self):
@@ -1048,13 +1061,13 @@ class GCTogglingTests(unittest.TestCase):
 
         after_status = gc.isenabled()
 
-        self.assertEqual(original_status,True)
-        self.assertEqual(inside_status_before_thread,False)
-        self.assertEqual(thread_original_status,False)
-        self.assertEqual(thread_inside_status,False)
-        self.assertEqual(thread_after_status,False)
-        self.assertEqual(inside_status_after_thread,False)
-        self.assertEqual(after_status,True)
+        self.assertEqual(original_status, True)
+        self.assertEqual(inside_status_before_thread, False)
+        self.assertEqual(thread_original_status, False)
+        self.assertEqual(thread_inside_status, False)
+        self.assertEqual(thread_after_status, False)
+        self.assertEqual(inside_status_after_thread, False)
+        self.assertEqual(after_status, True)
 
 
 def test_main():
