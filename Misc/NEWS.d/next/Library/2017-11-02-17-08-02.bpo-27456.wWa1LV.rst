@@ -1,0 +1,1 @@
+Fix asyncio: Set also the TCP_NODELAY flag on non-blocking sockets.
