@@ -1692,17 +1692,17 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                     goto error;
                 }
                 value = _PyDict_GetItemIdWithError(
-                        xoptions, &PyId_importtime);
+                    xoptions, &PyId_importtime);
                 if (value == NULL && PyErr_Occurred()) {
                     goto error;
                 }
-            }
-            if (ximporttime < 0 && (value == Py_True || Py_IsInitialized())) {
-                ximporttime = (value == Py_True);
-                if (ximporttime) {
-                    fputs("import time: self [us] | cumulative | imported package\n",
-                          stderr);
+                if (value == Py_True || Py_IsInitialized()) {
+                    ximporttime = 1;
                 }
+            }
+            if (ximporttime > 0) {
+                fputs("import time: self [us] | cumulative | imported package\n",
+                    stderr);
             }
         }
 
