@@ -1,0 +1,2 @@
+Allow use of bytes objects for arguments to
+:meth:`configparser.ConfigParser.read`. Patch by Vincent Michel.
