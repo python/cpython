@@ -97,8 +97,7 @@ def _worker(executor_reference, work_queue, initializer, initargs):
 
 class BrokenThreadPool(_base.BrokenExecutor):
     """
-    Raised when a process in a ProcessPoolExecutor terminated abruptly
-    while a future was in the running state.
+    Raised when a worker thread in a ThreadPoolExecutor failed initializing.
     """
 
 
