@@ -3273,34 +3273,39 @@ typedef struct {
     void *realloc_ptr;
     size_t realloc_new_size;
     void *free_ptr;
+    void *ctx;
 } alloc_hook_t;
 
-static void* hook_malloc (void* ctx, size_t size)
+static void* hook_malloc(void* ctx, size_t size)
 {
     alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
     hook->malloc_size = size;
     return hook->alloc.malloc(hook->alloc.ctx, size);
 }
 
-static void* hook_calloc (void* ctx, size_t nelem, size_t elsize)
+static void* hook_calloc(void* ctx, size_t nelem, size_t elsize)
 {
     alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
     hook->calloc_nelem = nelem;
     hook->calloc_elsize = elsize;
     return hook->alloc.calloc(hook->alloc.ctx, nelem, elsize);
 }
 
-static void* hook_realloc (void* ctx, void* ptr, size_t new_size)
+static void* hook_realloc(void* ctx, void* ptr, size_t new_size)
 {
     alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
     hook->realloc_ptr = ptr;
     hook->realloc_new_size = new_size;
     return hook->alloc.realloc(hook->alloc.ctx, ptr, new_size);
 }
 
-static void hook_free (void *ctx, void *ptr)
+static void hook_free(void *ctx, void *ptr)
 {
     alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->ctx = ctx;
     hook->free_ptr = ptr;
     hook->alloc.free(hook->alloc.ctx, ptr);
 }
@@ -3325,7 +3330,9 @@ test_setallocators(PyMemAllocatorDomain domain)
     PyMem_GetAllocator(domain, &hook.alloc);
     PyMem_SetAllocator(domain, &alloc);
 
+    /* malloc, realloc, free */
     size = 42;
+    hook.ctx = NULL;
     switch(domain)
     {
     case PYMEM_DOMAIN_RAW: ptr = PyMem_RawMalloc(size); break;
@@ -3334,11 +3341,18 @@ test_setallocators(PyMemAllocatorDomain domain)
     default: ptr = NULL; break;
     }
 
+#define CHECK_CTX(FUNC) \
+    if (hook.ctx != &hook) { \
+        error_msg = FUNC " wrong context"; \
+        goto fail; \
+    } \
+    hook.ctx = NULL;  /* reset for next check */
+
     if (ptr == NULL) {
         error_msg = "malloc failed";
         goto fail;
     }
-
+    CHECK_CTX("malloc");
     if (hook.malloc_size != size) {
         error_msg = "malloc invalid size";
         goto fail;
@@ -3357,7 +3371,7 @@ test_setallocators(PyMemAllocatorDomain domain)
         error_msg = "realloc failed";
         goto fail;
     }
-
+    CHECK_CTX("realloc");
     if (hook.realloc_ptr != ptr
         || hook.realloc_new_size != size2) {
         error_msg = "realloc invalid parameters";
@@ -3371,11 +3385,13 @@ test_setallocators(PyMemAllocatorDomain domain)
     case PYMEM_DOMAIN_OBJ: PyObject_Free(ptr2); break;
     }
 
+    CHECK_CTX("free");
     if (hook.free_ptr != ptr2) {
         error_msg = "free invalid pointer";
         goto fail;
     }
 
+    /* calloc, free */
     nelem = 2;
     elsize = 5;
     switch(domain)
@@ -3390,17 +3406,24 @@ test_setallocators(PyMemAllocatorDomain domain)
         error_msg = "calloc failed";
         goto fail;
     }
-
+    CHECK_CTX("calloc");
     if (hook.calloc_nelem != nelem || hook.calloc_elsize != elsize) {
         error_msg = "calloc invalid nelem or elsize";
         goto fail;
     }
 
+    hook.free_ptr = NULL;
     switch(domain)
     {
     case PYMEM_DOMAIN_RAW: PyMem_RawFree(ptr); break;
     case PYMEM_DOMAIN_MEM: PyMem_Free(ptr); break;
     case PYMEM_DOMAIN_OBJ: PyObject_Free(ptr); break;
+    }
+
+    CHECK_CTX("calloc free");
+    if (hook.free_ptr != ptr) {
+        error_msg = "calloc free invalid pointer";
+        goto fail;
     }
 
     Py_INCREF(Py_None);
@@ -3413,6 +3436,8 @@ fail:
 finally:
     PyMem_SetAllocator(domain, &hook.alloc);
     return res;
+
+#undef CHECK_CTX
 }
 
 static PyObject *
@@ -3921,13 +3946,16 @@ test_pytime_fromsecondsobject(PyObject *self, PyObject *args)
 static PyObject *
 test_pytime_assecondsdouble(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     _PyTime_t ts;
     double d;
 
-    if (!PyArg_ParseTuple(args, "L", &ns))
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
-    ts = _PyTime_FromNanoseconds(ns);
+    }
+    if (_PyTime_FromNanosecondsObject(&ts, obj) < 0) {
+        return NULL;
+    }
     d = _PyTime_AsSecondsDouble(ts);
     return PyFloat_FromDouble(d);
 }
@@ -3935,23 +3963,28 @@ test_pytime_assecondsdouble(PyObject *self, PyObject *args)
 static PyObject *
 test_PyTime_AsTimeval(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     int round;
     _PyTime_t t;
     struct timeval tv;
     PyObject *seconds;
 
-    if (!PyArg_ParseTuple(args, "Li", &ns, &round))
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &round))
         return NULL;
-    if (check_time_rounding(round) < 0)
+    if (check_time_rounding(round) < 0) {
         return NULL;
-    t = _PyTime_FromNanoseconds(ns);
-    if (_PyTime_AsTimeval(t, &tv, round) < 0)
+    }
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
         return NULL;
+    }
+    if (_PyTime_AsTimeval(t, &tv, round) < 0) {
+        return NULL;
+    }
 
     seconds = PyLong_FromLongLong(tv.tv_sec);
-    if (seconds == NULL)
+    if (seconds == NULL) {
         return NULL;
+    }
     return Py_BuildValue("Nl", seconds, tv.tv_usec);
 }
 
@@ -3959,15 +3992,19 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
 static PyObject *
 test_PyTime_AsTimespec(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     _PyTime_t t;
     struct timespec ts;
 
-    if (!PyArg_ParseTuple(args, "L", &ns))
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
-    t = _PyTime_FromNanoseconds(ns);
-    if (_PyTime_AsTimespec(t, &ts) == -1)
+    }
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
         return NULL;
+    }
+    if (_PyTime_AsTimespec(t, &ts) == -1) {
+        return NULL;
+    }
     return Py_BuildValue("Nl", _PyLong_FromTime_t(ts.tv_sec), ts.tv_nsec);
 }
 #endif
@@ -3975,15 +4012,19 @@ test_PyTime_AsTimespec(PyObject *self, PyObject *args)
 static PyObject *
 test_PyTime_AsMilliseconds(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     int round;
     _PyTime_t t, ms;
 
-    if (!PyArg_ParseTuple(args, "Li", &ns, &round))
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
         return NULL;
-    if (check_time_rounding(round) < 0)
+    }
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
         return NULL;
-    t = _PyTime_FromNanoseconds(ns);
+    }
+    if (check_time_rounding(round) < 0) {
+        return NULL;
+    }
     ms = _PyTime_AsMilliseconds(t, round);
     /* This conversion rely on the fact that _PyTime_t is a number of
        nanoseconds */
@@ -3993,15 +4034,18 @@ test_PyTime_AsMilliseconds(PyObject *self, PyObject *args)
 static PyObject *
 test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
 {
-    long long ns;
+    PyObject *obj;
     int round;
     _PyTime_t t, ms;
 
-    if (!PyArg_ParseTuple(args, "Li", &ns, &round))
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &round))
         return NULL;
-    if (check_time_rounding(round) < 0)
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
         return NULL;
-    t = _PyTime_FromNanoseconds(ns);
+    }
+    if (check_time_rounding(round) < 0) {
+        return NULL;
+    }
     ms = _PyTime_AsMicroseconds(t, round);
     /* This conversion rely on the fact that _PyTime_t is a number of
        nanoseconds */
@@ -4940,6 +4984,61 @@ static PyTypeObject awaitType = {
 };
 
 
+static int recurse_infinitely_error_init(PyObject *, PyObject *, PyObject *);
+
+static PyTypeObject PyRecursingInfinitelyError_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "RecursingInfinitelyError",   /* tp_name */
+    sizeof(PyBaseExceptionObject), /* tp_basicsize */
+    0,                          /* tp_itemsize */
+    0,                          /* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_reserved */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    "Instantiating this exception starts infinite recursion.", /* tp_doc */
+    0,                          /* tp_traverse */
+    0,                          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+    0,                          /* tp_iter */
+    0,                          /* tp_iternext */
+    0,                          /* tp_methods */
+    0,                          /* tp_members */
+    0,                          /* tp_getset */
+    0,                          /* tp_base */
+    0,                          /* tp_dict */
+    0,                          /* tp_descr_get */
+    0,                          /* tp_descr_set */
+    0,                          /* tp_dictoffset */
+    (initproc)recurse_infinitely_error_init, /* tp_init */
+    0,                          /* tp_alloc */
+    0,                          /* tp_new */
+};
+
+static int
+recurse_infinitely_error_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *type = (PyObject *)&PyRecursingInfinitelyError_Type;
+
+    /* Instantiating this exception starts infinite recursion. */
+    Py_INCREF(type);
+    PyErr_SetObject(type, NULL);
+    return -1;
+}
+
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testcapi",
@@ -4980,6 +5079,14 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+
+    PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
+    if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&PyRecursingInfinitelyError_Type);
+    PyModule_AddObject(m, "RecursingInfinitelyError",
+                       (PyObject *)&PyRecursingInfinitelyError_Type);
 
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));

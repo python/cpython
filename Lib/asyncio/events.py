@@ -378,8 +378,8 @@ class AbstractEventLoop:
 
         protocol_factory must be a callable returning a protocol instance.
 
-        socket family AF_INET or socket.AF_INET6 depending on host (or
-        family if specified), socket type SOCK_DGRAM.
+        socket family AF_INET, socket.AF_INET6 or socket.AF_UNIX depending on
+        host (or family if specified), socket type SOCK_DGRAM.
 
         reuse_address tells the kernel to reuse a local socket in
         TIME_WAIT state, without waiting for its natural timeout to
