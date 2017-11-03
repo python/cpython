@@ -317,12 +317,15 @@ signal_signal(PyObject *self, PyObject *args)
     }
     else
         func = signal_handler;
+    /* Check for pending signals before changing signal handler */
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
     if (PyOS_setsig(sig_num, func) == SIG_ERR) {
         PyErr_SetFromErrno(PyExc_RuntimeError);
         return NULL;
     }
     old_handler = Handlers[sig_num].func;
-    Handlers[sig_num].tripped = 0;
     Py_INCREF(obj);
     Handlers[sig_num].func = obj;
     if (old_handler != NULL)
