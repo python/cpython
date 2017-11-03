@@ -1,0 +1,2 @@
+Make multiprocessing's forkserver process immune to Ctrl-C and other user interruptions.
+If it crashes, restart it when necessary.
