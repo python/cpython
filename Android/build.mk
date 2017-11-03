@@ -137,6 +137,8 @@ python_dist: $(python)
 	$(MAKE) DESTDIR=$(PY_DESTDIR) -C $(py_host_dir) install
 	cp --no-dereference $(PY_EXTDIR)/$(SYS_EXEC_PREFIX)/lib/*.so* $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib
 	chmod u+w $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)/lib/*.so*
+	tdir=$(SYS_EXEC_PREFIX)/share/terminfo/l; mkdir -p $(PY_DESTDIR)/$$tdir && \
+	    cp $(PY_EXTDIR)/$$tdir/linux $(PY_DESTDIR)/$$tdir
 ifdef DEVICE_PREFIXES
 	# This won't be needed anymore when issue 31046 is fixed.
 	rm -rf $(PY_DESTDIR)/usr
