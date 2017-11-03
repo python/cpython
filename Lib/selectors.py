@@ -1,7 +1,7 @@
 """Selectors module.
 
-This module allows high-level and efficient I/O multiplexing, built upon the
-`select` module primitives.
+This module allows high-level and efficient I/O multiplexing, built upon
+the `select` module primitives.
 """
 
 
@@ -52,9 +52,14 @@ SelectorKey.__doc__ = """SelectorKey(fileobj, fd, events, data)
 """
 SelectorKey.fileobj.__doc__ = 'File object registered.'
 SelectorKey.fd.__doc__ = 'Underlying file descriptor.'
-SelectorKey.events.__doc__ = 'Events that must be waited for on this file object.'
-SelectorKey.data.__doc__ = ('''Optional opaque data associated to this file object.
-For example, this could be used to store a per-client session ID.''')
+SelectorKey.events.__doc__ = (
+    'Events that must be waited for on this file object.'
+)
+SelectorKey.data.__doc__ = (
+    """Optional opaque data associated to this file object.
+
+    For example, this could be used to store a per-client session ID.
+""")
 
 class _SelectorMapping(Mapping):
     """Mapping of file objects to selector keys."""
@@ -79,16 +84,17 @@ class _SelectorMapping(Mapping):
 class BaseSelector(metaclass=ABCMeta):
     """Selector abstract base class.
 
-    A selector supports registering file objects to be monitored for specific
-    I/O events.
+    A selector supports registering file objects to be monitored for
+    specific I/O events.
 
-    A file object is a file descriptor or any object with a `fileno()` method.
-    An arbitrary object can be attached to the file object, which can be used
-    for example to store context information, a callback, etc.
+    A file object is a file descriptor or any object with a `fileno()`
+    method. An arbitrary object can be attached to the file object,
+    which can be used for example to store context information, a
+    callback, etc.
 
-    A selector can use various implementations (select(), poll(), epoll()...)
-    depending on the platform. The default `Selector` class uses the most
-    efficient implementation on the current platform.
+    A selector can use various implementations (select(), poll(),
+    epoll()...) depending on the platform. The default `Selector` class
+    uses the most efficient implementation on the current platform.
     """
 
     @abstractmethod
@@ -97,7 +103,8 @@ class BaseSelector(metaclass=ABCMeta):
 
         Parameters:
         fileobj -- file object or file descriptor
-        events  -- events to monitor (bitwise mask of EVENT_READ|EVENT_WRITE)
+        events  -- events to monitor
+                   (bitwise mask of EVENT_READ|EVENT_WRITE)
         data    -- attached data
 
         Returns:
@@ -134,11 +141,13 @@ class BaseSelector(metaclass=ABCMeta):
         raise NotImplementedError
 
     def modify(self, fileobj, events, data=None):
-        """Change a registered file object monitored events or attached data.
+        """Change a registered file object monitored events or attached
+        data.
 
         Parameters:
         fileobj -- file object or file descriptor
-        events  -- events to monitor (bitwise mask of EVENT_READ|EVENT_WRITE)
+        events  -- events to monitor
+                   (bitwise mask of EVENT_READ|EVENT_WRITE)
         data    -- attached data
 
         Returns:
@@ -152,16 +161,16 @@ class BaseSelector(metaclass=ABCMeta):
 
     @abstractmethod
     def select(self, timeout=None):
-        """Perform the actual selection, until some monitored file objects are
-        ready or a timeout expires.
+        """Perform the actual selection, until some monitored file
+        objects are ready or a timeout expires.
 
         Parameters:
-        timeout -- if timeout > 0, this specifies the maximum wait time, in
-                   seconds
-                   if timeout <= 0, the select() call won't block, and will
-                   report the currently ready file objects
-                   if timeout is None, select() will block until a monitored
-                   file object becomes ready
+        timeout -- if timeout > 0, this specifies the maximum wait time,
+                   in seconds
+                   if timeout <= 0, the select() call won't block, and
+                   will report the currently ready file objects
+                   if timeout is None, select() will block until a
+                   monitored file object becomes ready
 
         Returns:
         list of (key, events) for ready file objects
@@ -172,7 +181,8 @@ class BaseSelector(metaclass=ABCMeta):
     def close(self):
         """Close the selector.
 
-        This must be called to make sure that any underlying resource is freed.
+        This must be called to make sure that any underlying resource is
+        freed.
         """
         pass
 
