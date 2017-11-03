@@ -957,8 +957,8 @@ class CLanguage(Language):
             cpp_if = "#if " + conditional
             cpp_endif = "#endif /* " + conditional + " */"
 
-            if methoddef_define and f.name not in clinic.ifndef_symbols:
-                clinic.ifndef_symbols.add(f.name)
+            if methoddef_define and f.full_name not in clinic.ifndef_symbols:
+                clinic.ifndef_symbols.add(f.full_name)
                 methoddef_ifndef = normalize_snippet("""
                     #ifndef {methoddef_name}
                         #define {methoddef_name}
