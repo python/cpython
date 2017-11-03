@@ -744,9 +744,11 @@ always available.
    version of the Python *language* to which the currently running
    interpreter conforms, which ``sys.version_info`` represents.  For
    example, for PyPy 1.8 ``sys.implementation.version`` might be
-   ``sys.version_info(1, 8, 0, 'final', 0)``, whereas ``sys.version_info``
-   would be ``sys.version_info(2, 7, 2, 'final', 0)``.  For CPython they
-   are the same value, since it is the reference implementation.
+   ``sys.version_info(major=1, minor=8, micro=0, releaselevel='final', serial=0)``,
+   whereas ``sys.version_info`` would be
+   ``sys.version_info(major=2, minor=7, micro=2, releaselevel='final', serial=0)``.
+   For CPython they are the same value, since it is the reference
+   implementation.
 
    *hexversion* is the implementation version in hexadecimal format, like
    :data:`sys.hexversion`.
@@ -1367,13 +1369,14 @@ always available.
 
 .. data:: version_info
 
-   A tuple containing the five components of the version number: *major*, *minor*,
-   *micro*, *releaselevel*, and *serial*.  All values except *releaselevel* are
-   integers; the release level is ``'alpha'``, ``'beta'``, ``'candidate'``, or
-   ``'final'``.  The ``version_info`` value corresponding to the Python version 2.0
-   is ``(2, 0, 0, 'final', 0)``.  The components can also be accessed by name,
-   so ``sys.version_info[0]`` is equivalent to ``sys.version_info.major``
-   and so on.
+   A :class:`~collections.namedtuple` containing the five components of the
+   version number: *major*, *minor*, *micro*, *releaselevel*, and *serial*.
+   All values except *releaselevel* are integers; the release level is
+   ``'alpha'``, ``'beta'``, ``'candidate'``, or ``'final'``.  The
+   ``version_info`` value corresponding to the Python version 3.6.3 is
+   ``(major=3, minor=6, micro=3, releaselevel='final', serial=0)``.  The
+   components can be accessed by name or index, so ``sys.version_info[0]``
+   is equivalent to ``sys.version_info.major`` and so on.
 
    .. versionchanged:: 3.1
       Added named component attributes.
