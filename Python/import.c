@@ -1676,33 +1676,32 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         _PyTime_t t1 = 0, accumulated_copy = accumulated;
 
         /* XOptions is initialized after first some imports.
-         * So we can't have negative cache.
-         * Anyway, importlib.__find_and_load is much slower than
-         * _PyDict_GetItemId()
+         * So we can't have negative cache before completed initialization.
+         * Anyway, importlib._find_and_load is much slower than
+         * _PyDict_GetItemIdWithError().
          */
         if (ximporttime < 0) {
-            char *envoption = Py_GETENV("PYTHONPROFILEIMPORTTIME");
-            if (envoption != NULL && strlen(envoption) > 0) {
+            const char *envoption = Py_GETENV("PYTHONPROFILEIMPORTTIME");
+            if (envoption != NULL && *envoption != '\0') {
                 ximporttime = 1;
             }
             else {
                 PyObject *xoptions = PySys_GetXOptions();
-                PyObject *value;
-                if (xoptions == NULL) {
-                    goto error;
+                PyObject *value = NULL;
+                if (xoptions) {
+                    value = _PyDict_GetItemIdWithError(
+                        xoptions, &PyId_importtime);
                 }
-                value = _PyDict_GetItemIdWithError(
-                    xoptions, &PyId_importtime);
                 if (value == NULL && PyErr_Occurred()) {
                     goto error;
                 }
-                if (value == Py_True || Py_IsInitialized()) {
+                if (value != NULL || Py_IsInitialized()) {
                     ximporttime = (value == Py_True);
                 }
             }
             if (ximporttime > 0) {
                 fputs("import time: self [us] | cumulative | imported package\n",
-                    stderr);
+                      stderr);
             }
         }
 
