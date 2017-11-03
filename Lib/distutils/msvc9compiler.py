@@ -239,6 +239,10 @@ def find_vcvarsall(version):
             productdir = None
             log.debug("Unable to find productdir in registry")
 
+    # Trying MS python 2.7 tools in user home
+    if not productdir:
+        productdir = os.path.expanduser("~\AppData\Local\Programs\Common\Microsoft\Visual C++ for Python\9.0")
+
     if not productdir or not os.path.isdir(productdir):
         toolskey = "VS%0.f0COMNTOOLS" % version
         toolsdir = os.environ.get(toolskey, None)
