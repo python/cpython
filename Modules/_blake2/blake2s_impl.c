@@ -162,7 +162,8 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
             goto error;
         }
     }
-    self->param.leaf_length = (unsigned int)leaf_size;
+    // NB: Simple assignment here would be incorrect on big endian platforms.
+    store32(&(self->param.leaf_length), leaf_size);
 
     if (node_offset_obj != NULL) {
         node_offset = PyLong_AsUnsignedLongLong(node_offset_obj);
@@ -178,7 +179,8 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
      }
     store48(&(self->param.node_offset), node_offset);
 #else
-    self->param.node_offset = node_offset;
+    // NB: Simple assignment here would be incorrect on big endian platforms.
+    store64(&(self->param.node_offset), node_offset);
 #endif
 
     if (node_depth < 0 || node_depth > 255) {
