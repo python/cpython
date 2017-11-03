@@ -6,8 +6,8 @@ Boolean Objects
 ---------------
 
 Booleans in Python are implemented as a subclass of integers.  There are only
-two booleans, :const:`Py_False` and :const:`Py_True`.  As such, the normal
-creation and deletion functions don't apply to booleans.  The following macros
+two Booleans, :const:`Py_False` and :const:`Py_True`.  As such, the normal
+creation and deletion functions don't apply to Booleans.  The following macros
 are available, however.
 
 
