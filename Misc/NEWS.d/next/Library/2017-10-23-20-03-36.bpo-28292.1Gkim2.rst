@@ -1,0 +1,5 @@
+Calendar.itermonthdates() will now consistently raise an exception when a
+date falls outside of the 0001-01-01 through 9999-12-31 range.  To support
+applications that cannot tolerate such exceptions, the new methods
+itermonthdays3() and itermonthdays4() are added.  The new methods return
+tuples and are not restricted by the range supported by datetime.date.

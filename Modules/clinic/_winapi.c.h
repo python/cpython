@@ -460,7 +460,7 @@ _winapi_GetExitCodeProcess(PyObject *module, PyObject *arg)
         goto exit;
     }
     _return_value = _winapi_GetExitCodeProcess_impl(module, process);
-    if ((_return_value == DWORD_MAX) && PyErr_Occurred()) {
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = Py_BuildValue("k", _return_value);
@@ -487,7 +487,7 @@ _winapi_GetLastError(PyObject *module, PyObject *Py_UNUSED(ignored))
     DWORD _return_value;
 
     _return_value = _winapi_GetLastError_impl(module);
-    if ((_return_value == DWORD_MAX) && PyErr_Occurred()) {
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = Py_BuildValue("k", _return_value);
@@ -889,4 +889,4 @@ _winapi_WriteFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=afa6bd61eb0f18d2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fba2ad7bf1a87e4a input=a9049054013a1b77]*/
