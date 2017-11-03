@@ -461,12 +461,15 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     }
     else
         func = signal_handler;
+    /* Check for pending signals before changing signal handler */
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
     if (PyOS_setsig(signalnum, func) == SIG_ERR) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     old_handler = Handlers[signalnum].func;
-    _Py_atomic_store_relaxed(&Handlers[signalnum].tripped, 0);
     Py_INCREF(handler);
     Handlers[signalnum].func = handler;
     if (old_handler != NULL)
