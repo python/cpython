@@ -1,1 +1,1 @@
-selectors: add exceptional conditions event
+selectors: add urgent data to read event

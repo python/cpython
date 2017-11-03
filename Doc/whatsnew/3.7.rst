@@ -306,8 +306,8 @@ can be set within the scope of a group.
 selectors
 ---------
 
-Added :const:`~selectors.EVENT_EXCEPT` module constant for exceptional
-conditions event support. (Contributed by Pim Klanke in :issue:`30844`.)
+Added :const:`~selectors.EVENT_URGENT` module constant for urgent data to
+read event support. (Contributed by Pim Klanke in :issue:`30844`.)
 
 string
 ------
