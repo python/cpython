@@ -2,7 +2,7 @@
 setlocal
 
 set D=%~dp0
-set PCBUILD=%~dp0..\..\PCBuild\
+set PCBUILD=%~dp0..\..\PCbuild\
 
 
 echo Building Lib\distutils\command\wininst-xx.0.exe

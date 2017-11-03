@@ -119,7 +119,7 @@ PyAPI_FUNC(void) _PyType_Fini(void);
 PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
 PyAPI_FUNC(void) PyAsyncGen_Fini(void);
 
-PyAPI_DATA(PyThreadState *) _Py_Finalizing;
+PyAPI_FUNC(int) _Py_IsFinalizing(void);
 #endif
 
 /* Signals */
@@ -132,6 +132,12 @@ PyAPI_FUNC(PyOS_sighandler_t) PyOS_setsig(int, PyOS_sighandler_t);
 PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 #endif /* !Py_LIMITED_API */
+
+/* Legacy locale support */
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _Py_CoerceLegacyLocale(void);
+PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
+#endif
 
 #ifdef __cplusplus
 }

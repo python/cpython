@@ -2,6 +2,7 @@
 /* Error handling */
 
 #include "Python.h"
+#include "internal/pystate.h"
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS
@@ -52,6 +53,18 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
     Py_XDECREF(oldtraceback);
 }
 
+_PyErr_StackItem *
+_PyErr_GetTopmostException(PyThreadState *tstate)
+{
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    while ((exc_info->exc_type == NULL || exc_info->exc_type == Py_None) &&
+           exc_info->previous_item != NULL)
+    {
+        exc_info = exc_info->previous_item;
+    }
+    return exc_info;
+}
+
 static PyObject*
 _PyErr_CreateException(PyObject *exception, PyObject *value)
 {
@@ -82,7 +95,7 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     }
 
     Py_XINCREF(value);
-    exc_value = tstate->exc_value;
+    exc_value = _PyErr_GetTopmostException(tstate)->exc_value;
     if (exc_value != NULL && exc_value != Py_None) {
         /* Implicit exception chaining */
         Py_INCREF(exc_value);
@@ -205,20 +218,24 @@ PyErr_ExceptionMatches(PyObject *exc)
 }
 
 
+#ifndef Py_NORMALIZE_RECURSION_LIMIT
+#define Py_NORMALIZE_RECURSION_LIMIT 32
+#endif
+
 /* Used in many places to normalize a raised exception, including in
    eval_code2(), do_raise(), and PyErr_Print()
 
    XXX: should PyErr_NormalizeException() also call
             PyException_SetTraceback() with the resulting value and tb?
 */
-void
-PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
+static void
+PyErr_NormalizeExceptionEx(PyObject **exc, PyObject **val,
+                           PyObject **tb, int recursion_depth)
 {
     PyObject *type = *exc;
     PyObject *value = *val;
     PyObject *inclass = NULL;
     PyObject *initial_tb = NULL;
-    PyThreadState *tstate = NULL;
 
     if (type == NULL) {
         /* There was no exception, so nothing to do. */
@@ -280,6 +297,10 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 finally:
     Py_DECREF(type);
     Py_DECREF(value);
+    if (recursion_depth + 1 == Py_NORMALIZE_RECURSION_LIMIT) {
+        PyErr_SetString(PyExc_RecursionError, "maximum recursion depth "
+                        "exceeded while normalizing an exception");
+    }
     /* If the new exception doesn't set a traceback and the old
        exception had a traceback, use the old traceback for the
        new exception.  It's better than nothing.
@@ -292,20 +313,26 @@ finally:
         else
             Py_DECREF(initial_tb);
     }
-    /* normalize recursively */
-    tstate = PyThreadState_GET();
-    if (++tstate->recursion_depth > Py_GetRecursionLimit()) {
-        --tstate->recursion_depth;
-        /* throw away the old exception and use the recursion error instead */
-        Py_INCREF(PyExc_RecursionError);
-        Py_SETREF(*exc, PyExc_RecursionError);
-        Py_INCREF(PyExc_RecursionErrorInst);
-        Py_SETREF(*val, PyExc_RecursionErrorInst);
-        /* just keeping the old traceback */
-        return;
+    /* Normalize recursively.
+     * Abort when Py_NORMALIZE_RECURSION_LIMIT has been exceeded and the
+     * corresponding RecursionError could not be normalized.*/
+    if (++recursion_depth > Py_NORMALIZE_RECURSION_LIMIT) {
+        if (PyErr_GivenExceptionMatches(*exc, PyExc_MemoryError)) {
+            Py_FatalError("Cannot recover from MemoryErrors "
+                          "while normalizing exceptions.");
+        }
+        else {
+            Py_FatalError("Cannot recover from the recursive normalization "
+                          "of an exception.");
+        }
     }
-    PyErr_NormalizeException(exc, val, tb);
-    --tstate->recursion_depth;
+    PyErr_NormalizeExceptionEx(exc, val, tb, recursion_depth);
+}
+
+void
+PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
+{
+    PyErr_NormalizeExceptionEx(exc, val, tb, 0);
 }
 
 
@@ -334,9 +361,11 @@ PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
     PyThreadState *tstate = PyThreadState_GET();
 
-    *p_type = tstate->exc_type;
-    *p_value = tstate->exc_value;
-    *p_traceback = tstate->exc_traceback;
+    _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
+    *p_type = exc_info->exc_type;
+    *p_value = exc_info->exc_value;
+    *p_traceback = exc_info->exc_traceback;
+
 
     Py_XINCREF(*p_type);
     Py_XINCREF(*p_value);
@@ -349,13 +378,13 @@ PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
     PyObject *oldtype, *oldvalue, *oldtraceback;
     PyThreadState *tstate = PyThreadState_GET();
 
-    oldtype = tstate->exc_type;
-    oldvalue = tstate->exc_value;
-    oldtraceback = tstate->exc_traceback;
+    oldtype = tstate->exc_info->exc_type;
+    oldvalue = tstate->exc_info->exc_value;
+    oldtraceback = tstate->exc_info->exc_traceback;
 
-    tstate->exc_type = p_type;
-    tstate->exc_value = p_value;
-    tstate->exc_traceback = p_traceback;
+    tstate->exc_info->exc_type = p_type;
+    tstate->exc_info->exc_value = p_value;
+    tstate->exc_info->exc_traceback = p_traceback;
 
     Py_XDECREF(oldtype);
     Py_XDECREF(oldvalue);
@@ -960,7 +989,7 @@ PyErr_WriteUnraisable(PyObject *obj)
     }
 
     moduleName = _PyObject_GetAttrId(t, &PyId___module__);
-    if (moduleName == NULL) {
+    if (moduleName == NULL || !PyUnicode_Check(moduleName)) {
         PyErr_Clear();
         if (PyFile_WriteString("<unknown>", f) < 0)
             goto done;

@@ -994,7 +994,7 @@ def _gcd_import(name, package=None, level=0):
     return _find_and_load(name, _gcd_import)
 
 
-def _handle_fromlist(module, fromlist, import_):
+def _handle_fromlist(module, fromlist, import_, *, recursive=False):
     """Figure out what __import__ should return.
 
     The import_ parameter is a callable which takes the name of module to
@@ -1005,13 +1005,19 @@ def _handle_fromlist(module, fromlist, import_):
     # The hell that is fromlist ...
     # If a package was imported, try to import stuff from fromlist.
     if hasattr(module, '__path__'):
-        if '*' in fromlist:
-            fromlist = list(fromlist)
-            fromlist.remove('*')
-            if hasattr(module, '__all__'):
-                fromlist.extend(module.__all__)
         for x in fromlist:
-            if not hasattr(module, x):
+            if not isinstance(x, str):
+                if recursive:
+                    where = module.__name__ + '.__all__'
+                else:
+                    where = "``from list''"
+                raise TypeError(f"Item in {where} must be str, "
+                                f"not {type(x).__name__}")
+            elif x == '*':
+                if not recursive and hasattr(module, '__all__'):
+                    _handle_fromlist(module, module.__all__, import_,
+                                     recursive=True)
+            elif not hasattr(module, x):
                 from_name = '{}.{}'.format(module.__name__, x)
                 try:
                     _call_with_frames_removed(import_, from_name)
@@ -1019,7 +1025,8 @@ def _handle_fromlist(module, fromlist, import_):
                     # Backwards-compatibility dictates we ignore failed
                     # imports triggered by fromlist for modules that don't
                     # exist.
-                    if exc.name == from_name:
+                    if (exc.name == from_name and
+                        sys.modules.get(from_name, _NEEDS_LOADING) is not None):
                         continue
                     raise
     return module
@@ -1121,24 +1128,12 @@ def _setup(sys_module, _imp_module):
 
     # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]
-    for builtin_name in ('_warnings',):
+    for builtin_name in ('_thread', '_warnings', '_weakref'):
         if builtin_name not in sys.modules:
             builtin_module = _builtin_from_name(builtin_name)
         else:
             builtin_module = sys.modules[builtin_name]
         setattr(self_module, builtin_name, builtin_module)
-
-    # Directly load the _thread module (needed during bootstrap).
-    try:
-        thread_module = _builtin_from_name('_thread')
-    except ImportError:
-        # Python was built without threads
-        thread_module = None
-    setattr(self_module, '_thread', thread_module)
-
-    # Directly load the _weakref module (needed during bootstrap).
-    weakref_module = _builtin_from_name('_weakref')
-    setattr(self_module, '_weakref', weakref_module)
 
 
 def _install(sys_module, _imp_module):

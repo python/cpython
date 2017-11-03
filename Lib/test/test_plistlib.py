@@ -353,11 +353,13 @@ class TestPlistlib(unittest.TestCase):
             testString = "string containing %s" % c
             if i >= 32 or c in "\r\n\t":
                 # \r, \n and \t are the only legal control chars in XML
-                plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+                data = plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+                if c != "\r":
+                    self.assertEqual(plistlib.loads(data), testString)
             else:
-                self.assertRaises(ValueError,
-                                  plistlib.dumps,
-                                  testString)
+                with self.assertRaises(ValueError):
+                    plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+            plistlib.dumps(testString, fmt=plistlib.FMT_BINARY)
 
     def test_non_bmp_characters(self):
         pl = {'python': '\U0001f40d'}
@@ -365,6 +367,14 @@ class TestPlistlib(unittest.TestCase):
             with self.subTest(fmt=fmt):
                 data = plistlib.dumps(pl, fmt=fmt)
                 self.assertEqual(plistlib.loads(data), pl)
+
+    def test_lone_surrogates(self):
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                with self.assertRaises(UnicodeEncodeError):
+                    plistlib.dumps('\ud8ff', fmt=fmt)
+                with self.assertRaises(UnicodeEncodeError):
+                    plistlib.dumps('\udcff', fmt=fmt)
 
     def test_nondictroot(self):
         for fmt in ALL_FORMATS:
@@ -441,6 +451,56 @@ class TestPlistlib(unittest.TestCase):
                      datetime.timedelta(seconds=ts))
                 data = plistlib.dumps(d, fmt=plistlib.FMT_BINARY)
                 self.assertEqual(plistlib.loads(data), d)
+
+    def test_invalid_binary(self):
+        for data in [
+                # too short data
+                b'',
+                # too large offset_table_offset and nonstandard offset_size
+                b'\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x03\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x2a',
+                # integer overflow in offset_table_offset
+                b'\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x01\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\xff\xff\xff\xff\xff\xff\xff\xff',
+                # offset_size = 0
+                b'\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x09',
+                # ref_size = 0
+                b'\xa1\x01\x00\x08\x0a'
+                b'\x00\x00\x00\x00\x00\x00\x01\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x02'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x0b',
+                # integer overflow in offset
+                b'\x00\xff\xff\xff\xff\xff\xff\xff\xff'
+                b'\x00\x00\x00\x00\x00\x00\x08\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x09',
+                # invalid ASCII
+                b'\x51\xff\x08'
+                b'\x00\x00\x00\x00\x00\x00\x01\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x0a',
+                # invalid UTF-16
+                b'\x61\xd8\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x01\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x0b',
+                ]:
+            with self.assertRaises(plistlib.InvalidFileException):
+                plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
 
 
 class TestPlistlibDeprecated(unittest.TestCase):
