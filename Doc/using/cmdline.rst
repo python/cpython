@@ -412,7 +412,7 @@ Miscellaneous options
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
-     asyncio'``.
+     asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -430,7 +430,7 @@ Miscellaneous options
       The ``-X showalloccount`` option.
 
    .. versionadded:: 3.7
-      The ``-X importtime`` option.
+      The ``-X importtime`` and :envvar:`PYTHONPROFILEIMPORTTIME` options.
 
 
 Options you shouldn't use
@@ -649,6 +649,15 @@ conflict.
    frame. See the :func:`tracemalloc.start` for more information.
 
    .. versionadded:: 3.4
+
+
+.. envvar:: PYTHONPROFILEIMPORTTIME
+
+   If this environment variable is set to a non-empty string, Python will
+   show how long each import takes.  This is exactly equivalent to setting
+   ``-X importtime`` on the command line.
+
+   .. versionadded:: 3.7
 
 
 .. envvar:: PYTHONASYNCIODEBUG
