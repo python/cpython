@@ -1697,7 +1697,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                     goto error;
                 }
                 if (value == Py_True || Py_IsInitialized()) {
-                    ximporttime = 1;
+                    ximporttime = (value == Py_True);
                 }
             }
             if (ximporttime > 0) {
