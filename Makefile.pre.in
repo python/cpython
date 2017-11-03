@@ -439,8 +439,15 @@ DTRACE_DEPS = \
 # Rules
 
 # Default target
-all:		@DEF_MAKE_ALL_RULE@
+all:		check-clean-src @DEF_MAKE_ALL_RULE@
 build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed python-config
+
+# Check that the source is clean when building out of source.
+check-clean-src:
+	@if test -n "$(VPATH)" -a -f "$(srcdir)/Programs/python.o"; then \
+		echo "Error: The source directory is not clean" ;\
+		exit 1; \
+	fi
 
 # Profile generation build must start from a clean tree.
 profile-clean-stamp:
