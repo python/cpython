@@ -445,7 +445,7 @@ build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed 
 # Check that the source is clean when building out of source.
 check-clean-src:
 	@if test -n "$(VPATH)" -a -f "$(srcdir)/Programs/python.o"; then \
-		echo "Error: The source directory is not clean" ;\
+		echo "Error: The source directory is not clean" ; \
 		exit 1; \
 	fi
 
