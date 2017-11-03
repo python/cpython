@@ -1382,7 +1382,7 @@ select_epoll_fromfd_impl(PyTypeObject *type, int fd)
 /*[clinic end generated code: output=c15de2a083524e8e input=faecefdb55e3046e]*/
 {
     SOCKET s_fd = (SOCKET)fd;
-    return newPyEpoll_Object(type, FD_SETSIZE - 1, 0, s_fd);
+    return newPyEpoll_Object(type, FD_SETSIZE - 1, s_fd);
 }
 
 
@@ -1391,7 +1391,6 @@ pyepoll_internal_ctl(int epfd, int op, int fd, unsigned int events)
 {
     struct epoll_event ev;
     int result;
-    int fd;
 
     if (epfd < 0)
         return pyepoll_err_closed();
