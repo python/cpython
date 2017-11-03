@@ -319,7 +319,8 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('panel')
     def test_userptr_segfault(self):
-        panel = curses.panel.new_panel(self.stdscr)
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
         class A:
             def __del__(self):
                 panel.set_userptr(None)
@@ -328,7 +329,8 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('panel')
     def test_new_curses_panel(self):
-        panel = curses.panel.new_panel(self.stdscr)
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
         self.assertRaises(TypeError, type(panel))
 
     @requires_curses_func('is_term_resized')
