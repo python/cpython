@@ -1,4 +1,0 @@
-rgument Clinic failing to generate some ``#ifndef ... #define`` blocks for
-``..._METHODDEF`` ``#define``-s, leading to compilation errors in some
-cases. This would happen when there was more than one function and/or method
-in a .c file with the same name.
