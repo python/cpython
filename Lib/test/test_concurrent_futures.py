@@ -988,22 +988,10 @@ class ExecutorDeadlockTest:
             executor.shutdown(wait=True)
 
 
-class ProcessPoolForkExecutorDeadlockTest(ProcessPoolForkMixin,
-                                          ExecutorDeadlockTest,
-                                          unittest.TestCase):
-    pass
-
-
-class ProcessPoolForkserverExecutorDeadlockTest(ProcessPoolForkserverMixin,
-                                                ExecutorDeadlockTest,
-                                                unittest.TestCase):
-    pass
-
-
-class ProcessPoolSpawnExecutorDeadlockTest(ProcessPoolSpawnMixin,
-                                           ExecutorDeadlockTest,
-                                           unittest.TestCase):
-    pass
+create_executor_tests(ExecutorDeadlockTest,
+                      executor_mixins=(ProcessPoolForkMixin,
+                                       ProcessPoolForkserverMixin,
+                                       ProcessPoolSpawnMixin))
 
 
 class FutureTests(BaseTestCase):
