@@ -603,6 +603,54 @@ class _TestProcess(BaseTestCase):
                 finally:
                     setattr(sys, stream_name, old_stream)
 
+    @classmethod
+    def _sleep_and_set_event(self, evt, delay=0.0):
+        time.sleep(delay)
+        evt.set()
+
+    def check_forkserver_death(self, signum):
+        # bpo-31308: if the forkserver process has died, we should still
+        # be able to create and run new Process instances (the forkserver
+        # is implicitly restarted).
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        sm = multiprocessing.get_start_method()
+        if sm != 'forkserver':
+            # The fork method by design inherits all fds from the parent,
+            # trying to go against it is a lost battle
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        from multiprocessing.forkserver import _forkserver
+        _forkserver.ensure_running()
+
+        evt = self.Event()
+        proc = self.Process(target=self._sleep_and_set_event, args=(evt, 1.0))
+        proc.start()
+
+        pid = _forkserver._forkserver_pid
+        os.kill(pid, signum)
+        time.sleep(1.0)  # give it time to die
+
+        evt2 = self.Event()
+        proc2 = self.Process(target=self._sleep_and_set_event, args=(evt2,))
+        proc2.start()
+        proc2.join()
+        self.assertTrue(evt2.is_set())
+        self.assertEqual(proc2.exitcode, 0)
+
+        proc.join()
+        self.assertTrue(evt.is_set())
+        self.assertIn(proc.exitcode, (0, 255))
+
+    def test_forkserver_sigint(self):
+        # Catchable signal
+        self.check_forkserver_death(signal.SIGINT)
+
+    def test_forkserver_sigkill(self):
+        # Uncatchable signal
+        if os.name != 'nt':
+            self.check_forkserver_death(signal.SIGKILL)
+
 
 #
 #
