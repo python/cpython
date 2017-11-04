@@ -1521,7 +1521,8 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     uint8_t *tail;        /* data + nbytes == pointer to tail pad bytes */
     size_t total;         /* 2 * SST + nbytes + 2 * SST */
     size_t original_nbytes;
-#define ERASED_SIZE 8
+    size_t serialno;
+#define ERASED_SIZE 16
     uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
 
     _PyMem_DebugCheckAddress(api->api_id, p);
@@ -1535,10 +1536,11 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     total = nbytes + 4*SST;
 
     tail = q + original_nbytes;
+    serialno = read_size_t(tail + SST);
     /* Mark the header, the trailer, ERASED_SIZE bytes at the begin and
        ERASED_SIZE bytes at the end as dead and save the copy of erased bytes.
      */
-    if (original_nbytes <= 2*ERASED_SIZE) {
+    if (original_nbytes <= sizeof(save)) {
         memcpy(save, q, original_nbytes);
         memset(q - 2*SST, DEADBYTE, original_nbytes + 4*SST);
     }
@@ -1551,11 +1553,15 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 
     /* Resize and add decorations. */
     r = (uint8_t *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
-    if (r != NULL) {
+    if (r == NULL) {
+        nbytes = original_nbytes;
+    }
+    else {
         q = r;
+        bumpserialno();
+        serialno = _PyRuntime.mem.serialno;
     }
 
-    bumpserialno();
     write_size_t(q, nbytes);
     q[SST] = (uint8_t)api->api_id;
     memset(q + SST + 1, FORBIDDENBYTE, SST-1);
@@ -1563,10 +1569,10 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 
     tail = q + nbytes;
     memset(tail, FORBIDDENBYTE, SST);
-    write_size_t(tail + SST, _PyRuntime.mem.serialno);
+    write_size_t(tail + SST, serialno);
 
     /* Restore saved bytes. */
-    if (original_nbytes <= 2*ERASED_SIZE) {
+    if (original_nbytes <= sizeof(save)) {
         memcpy(q, save, Py_MIN(nbytes, original_nbytes));
     }
     else {
