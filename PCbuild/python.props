@@ -73,8 +73,8 @@
     possible version). Since we limit WINVER to Windows 7 anyway, it doesn't really
     matter which WinSDK version we use.
     -->
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) >= '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) >= '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
