@@ -234,7 +234,7 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
     int recursion_depth = 0;
     PyObject *type, *value, *initial_tb;
 
-restart:
+  restart:
     type = *exc;
     if (type == NULL) {
         /* There was no exception, so nothing to do. */
@@ -254,55 +254,48 @@ restart:
        value will be an instance.
     */
     if (PyExceptionClass_Check(type)) {
-        PyObject *inclass;
-        int is_subclass;
+        PyObject *inclass = NULL;
+        int is_subclass = 0;
 
-        if (PyExceptionInstance_Check(value))
+        if (PyExceptionInstance_Check(value)) {
             inclass = PyExceptionInstance_Class(value);
-        else
-            inclass = NULL;
-
-        if (inclass) {
             is_subclass = PyObject_IsSubclass(inclass, type);
-            if (is_subclass < 0)
-                goto finally;
+            if (is_subclass < 0) {
+                goto error;
+            }
         }
-        else
-            is_subclass = 0;
 
-        /* if the value was not an instance, or is not an instance
+        /* If the value was not an instance, or is not an instance
            whose class is (or is derived from) type, then use the
            value as an argument to instantiation of the type
            class.
         */
         if (!is_subclass) {
-            PyObject *fixed_value;
-
-            fixed_value = _PyErr_CreateException(type, value);
+            PyObject *fixed_value = _PyErr_CreateException(type, value);
             if (fixed_value == NULL) {
-                goto finally;
+                goto error;
             }
-
             Py_DECREF(value);
             value = fixed_value;
         }
-        /* if the class of the instance doesn't exactly match the
-           class of the type, believe the instance
+        /* If the class of the instance doesn't exactly match the
+           class of the type, believe the instance.
         */
         else if (inclass != type) {
+            Py_INCREF(inclass);
             Py_DECREF(type);
             type = inclass;
-            Py_INCREF(type);
         }
     }
     *exc = type;
     *val = value;
     return;
 
-finally:
+  error:
     Py_DECREF(type);
     Py_DECREF(value);
-    if (recursion_depth + 1 == Py_NORMALIZE_RECURSION_LIMIT) {
+    recursion_depth++;
+    if (recursion_depth == Py_NORMALIZE_RECURSION_LIMIT) {
         PyErr_SetString(PyExc_RecursionError, "maximum recursion depth "
                         "exceeded while normalizing an exception");
     }
@@ -319,10 +312,11 @@ finally:
         else
             Py_DECREF(initial_tb);
     }
-    /* Normalize recursively.
-     * Abort when Py_NORMALIZE_RECURSION_LIMIT has been exceeded and the
-     * corresponding RecursionError could not be normalized.*/
-    if (++recursion_depth > Py_NORMALIZE_RECURSION_LIMIT) {
+    /* Abort when Py_NORMALIZE_RECURSION_LIMIT has been exceeded, and the
+       corresponding RecursionError could not be normalized, and the
+       MemoryError raised when normalize this RecursionError could not be
+       normalized. */
+    if (recursion_depth >= Py_NORMALIZE_RECURSION_LIMIT + 2) {
         if (PyErr_GivenExceptionMatches(*exc, PyExc_MemoryError)) {
             Py_FatalError("Cannot recover from MemoryErrors "
                           "while normalizing exceptions.");
@@ -332,7 +326,6 @@ finally:
                           "of an exception.");
         }
     }
-    /* eliminate tail recursion */
     goto restart;
 }
 
