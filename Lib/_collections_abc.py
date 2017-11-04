@@ -899,6 +899,10 @@ class Sequence(Reversible, Collection):
     def index(self, value, start=0, stop=None):
         '''S.index(value, [start, [stop]]) -> integer -- return first index of value.
            Raises ValueError if the value is not present.
+
+           It is however not required that all concrete implementations of
+           the Sequence class support start and stop attributes.
+
         '''
         if start is not None and start < 0:
             start = max(len(self) + start, 0)
