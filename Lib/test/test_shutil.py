@@ -41,6 +41,29 @@ try:
 except ImportError:
     UID_GID_SUPPORT = False
 
+
+def _has_functional_lchmod():
+    if not support.can_symlink() or not hasattr(os, 'lchmod'):
+        return False
+
+    fname = tempfile.mktemp()
+    os.symlink(os.devnull, fname)
+    try:
+        os.lchmod(fname, 0o777)
+    except OSError as e:
+        if e.errno in {errno.ENOTSUP, errno.EOPNOTSUPP}:
+            return False
+        else:
+            raise
+    else:
+        return True
+    finally:
+        os.remove(fname)
+
+
+HAS_FUNCTIONAL_LCHMOD = _has_functional_lchmod()
+
+
 def _fake_rename(*args, **kwargs):
     # Pretend the destination path is on a different filesystem.
     raise OSError(getattr(errno, 'EXDEV', 18), "Invalid cross-device link")
@@ -358,7 +381,7 @@ class TestShutil(unittest.TestCase):
             shutil.copymode(src_link, dst_link)
             self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
 
-    @unittest.skipUnless(hasattr(os, 'lchmod'), 'requires os.lchmod')
+    @unittest.skipUnless(HAS_FUNCTIONAL_LCHMOD, 'requires os.lchmod')
     @support.skip_unless_symlink
     def test_copymode_symlink_to_symlink(self):
         tmp_dir = self.mkdtemp()
@@ -388,7 +411,7 @@ class TestShutil(unittest.TestCase):
         shutil.copymode(src, dst_link, follow_symlinks=False)
         self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
 
-    @unittest.skipIf(hasattr(os, 'lchmod'), 'requires os.lchmod to be missing')
+    @unittest.skipIf(HAS_FUNCTIONAL_LCHMOD, 'requires os.lchmod to be missing')
     @support.skip_unless_symlink
     def test_copymode_symlink_to_symlink_wo_lchmod(self):
         tmp_dir = self.mkdtemp()
@@ -417,13 +440,13 @@ class TestShutil(unittest.TestCase):
         self.assertNotEqual(os.stat(src).st_mtime, os.stat(dst).st_mtime)
         os.symlink(src, src_link)
         os.symlink(dst, dst_link)
-        if hasattr(os, 'lchmod'):
+        if HAS_FUNCTIONAL_LCHMOD:
             os.lchmod(src_link, stat.S_IRWXO)
         if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
             os.lchflags(src_link, stat.UF_NODUMP)
         src_link_stat = os.lstat(src_link)
         # follow
-        if hasattr(os, 'lchmod'):
+        if HAS_FUNCTIONAL_LCHMOD:
             shutil.copystat(src_link, dst_link, follow_symlinks=True)
             self.assertNotEqual(src_link_stat.st_mode, os.stat(dst).st_mode)
         # don't follow
@@ -434,7 +457,7 @@ class TestShutil(unittest.TestCase):
                 # The modification times may be truncated in the new file.
                 self.assertLessEqual(getattr(src_link_stat, attr),
                                      getattr(dst_link_stat, attr) + 1)
-        if hasattr(os, 'lchmod'):
+        if HAS_FUNCTIONAL_LCHMOD:
             self.assertEqual(src_link_stat.st_mode, dst_link_stat.st_mode)
         if hasattr(os, 'lchflags') and hasattr(src_link_stat, 'st_flags'):
             self.assertEqual(src_link_stat.st_flags, dst_link_stat.st_flags)
@@ -561,7 +584,7 @@ class TestShutil(unittest.TestCase):
         src_link = os.path.join(tmp_dir, 'baz')
         write_file(src, 'foo')
         os.symlink(src, src_link)
-        if hasattr(os, 'lchmod'):
+        if HAS_FUNCTIONAL_LCHMOD:
             os.lchmod(src_link, stat.S_IRWXU | stat.S_IRWXO)
         # don't follow
         shutil.copy(src_link, dst, follow_symlinks=True)
@@ -572,7 +595,7 @@ class TestShutil(unittest.TestCase):
         shutil.copy(src_link, dst, follow_symlinks=False)
         self.assertTrue(os.path.islink(dst))
         self.assertEqual(os.readlink(dst), os.readlink(src_link))
-        if hasattr(os, 'lchmod'):
+        if HAS_FUNCTIONAL_LCHMOD:
             self.assertEqual(os.lstat(src_link).st_mode,
                              os.lstat(dst).st_mode)
 
@@ -584,7 +607,7 @@ class TestShutil(unittest.TestCase):
         src_link = os.path.join(tmp_dir, 'baz')
         write_file(src, 'foo')
         os.symlink(src, src_link)
-        if hasattr(os, 'lchmod'):
+        if HAS_FUNCTIONAL_LCHMOD:
             os.lchmod(src_link, stat.S_IRWXU | stat.S_IRWXO)
         if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
             os.lchflags(src_link, stat.UF_NODUMP)
@@ -605,7 +628,7 @@ class TestShutil(unittest.TestCase):
                 # The modification times may be truncated in the new file.
                 self.assertLessEqual(getattr(src_link_stat, attr),
                                      getattr(dst_stat, attr) + 1)
-        if hasattr(os, 'lchmod'):
+        if HAS_FUNCTIONAL_LCHMOD:
             self.assertEqual(src_link_stat.st_mode, dst_stat.st_mode)
             self.assertNotEqual(src_stat.st_mode, dst_stat.st_mode)
         if hasattr(os, 'lchflags') and hasattr(src_link_stat, 'st_flags'):
@@ -704,7 +727,7 @@ class TestShutil(unittest.TestCase):
         dst_link = os.path.join(dst_dir, 'sub/link')
         os.symlink(os.path.join(src_dir, 'file.txt'),
                    src_link)
-        if hasattr(os, 'lchmod'):
+        if HAS_FUNCTIONAL_LCHMOD:
             os.lchmod(src_link, stat.S_IRWXU | stat.S_IRWXO)
         if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
             os.lchflags(src_link, stat.UF_NODUMP)
@@ -714,7 +737,7 @@ class TestShutil(unittest.TestCase):
         self.assertEqual(os.readlink(os.path.join(dst_dir, 'sub', 'link')),
                          os.path.join(src_dir, 'file.txt'))
         dst_stat = os.lstat(dst_link)
-        if hasattr(os, 'lchmod'):
+        if HAS_FUNCTIONAL_LCHMOD:
             self.assertEqual(dst_stat.st_mode, src_stat.st_mode)
         if hasattr(os, 'lchflags'):
             self.assertEqual(dst_stat.st_flags, src_stat.st_flags)

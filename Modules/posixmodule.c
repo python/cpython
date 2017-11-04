@@ -2814,6 +2814,9 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 #ifdef HAVE_FCHMODAT
     int fchmodat_nofollow_unsupported = 0;
 #endif
+#ifdef HAVE_LCHMOD
+    int lchmod_unsupported = 0;
+#endif
 
 #if !(defined(HAVE_FCHMODAT) || defined(HAVE_LCHMOD))
     if (follow_symlinks_specified("chmod", follow_symlinks))
@@ -2845,8 +2848,16 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     else
 #endif
 #ifdef HAVE_LCHMOD
-    if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
+    if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD)) {
         result = lchmod(path->narrow, mode);
+        /*
+         * similar to the comment below about fchmodat(), some platforms
+         * (for instance musl libc) do not ship a functional lchmod().
+         */
+         lchmod_unsupported =
+            result &&
+            ((errno == ENOTSUP) || (errno == EOPNOTSUPP));
+    }
     else
 #endif
 #ifdef HAVE_FCHMODAT
@@ -2888,6 +2899,12 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
             return NULL;
         }
         else
+#endif
+#ifdef HAVE_LCHMOD
+        if (lchmod_unsupported) {
+            follow_symlinks_specified("chmod", follow_symlinks);
+            return NULL;
+        } else
 #endif
         return path_error(path);
     }

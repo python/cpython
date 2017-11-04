@@ -1,0 +1,2 @@
+Detect faulty ``lchmod`` implementation to fix ``shutil.copystat`` on musl
+libc.  Patch by Anthony Sottile.
