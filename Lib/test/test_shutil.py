@@ -183,7 +183,7 @@ class TestShutil(unittest.TestCase):
             errors.append(args)
         shutil.rmtree(filename, onerror=onerror)
         self.assertEqual(len(errors), 2)
-        self.assertIs(errors[0][0], os.listdir)
+        self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
         self.assertIsInstance(errors[0][2][1], NotADirectoryError)
         self.assertIn(errors[0][2][1].filename, possible_args)
