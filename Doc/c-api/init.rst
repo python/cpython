@@ -1246,7 +1246,7 @@ CPython interpreter.  This API uses a new type :c:type:`Py_tss_t` instead of
 
 .. c:macro:: Py_tss_NEEDS_INIT
 
-   This macro expands to the default value for :c:type:`Py_tss_t` variables.
+   This macro expands to the initializer for :c:type:`Py_tss_t` variables.
    Note that this macro won't be defined with :ref:`Py_LIMITED_API <stable>`.
 
 

@@ -3043,7 +3043,6 @@ if test "$posix_threads" = "yes"; then
             [Define if pthread_sigmask() does not work on your system.])
             ;;
         esac])
-      AC_CHECK_FUNCS(pthread_atfork)
       AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
 
@@ -4956,9 +4955,16 @@ then
   [Define if mvwdelch in curses.h is an expression.])
 fi
 
+# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+# structs since version 5.7.  If the macro is defined as zero before including
+# [n]curses.h, ncurses will expose fields of the structs regardless of the
+# configuration.
 AC_MSG_CHECKING(whether WINDOW has _flags)
 AC_CACHE_VAL(ac_cv_window_has_flags,
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+  #define NCURSES_OPAQUE 0
+  #include <curses.h>
+]], [[
   WINDOW *w;
   w->_flags = 0;
 ]])],
@@ -4972,6 +4978,17 @@ then
   AC_DEFINE(WINDOW_HAS_FLAGS, 1,
   [Define if WINDOW in curses.h offers a field _flags.])
 fi
+
+AC_MSG_CHECKING(for is_pad)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef is_pad
+void *x=is_pad
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_IS_PAD, 1, Define if you have the 'is_pad' function or macro.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
 
 AC_MSG_CHECKING(for is_term_resized)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=is_term_resized]])],
@@ -4990,6 +5007,83 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resize_ter
 AC_MSG_CHECKING(for resizeterm)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resizeterm]])],
   [AC_DEFINE(HAVE_CURSES_RESIZETERM, 1, Define if you have the 'resizeterm' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for immedok)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef immedok
+void *x=immedok
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_IMMEDOK, 1, Define if you have the 'immedok' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for syncok)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef syncok
+void *x=syncok
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_SYNCOK, 1, Define if you have the 'syncok' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for wchgat)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef wchgat
+void *x=wchgat
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_WCHGAT, 1, Define if you have the 'wchgat' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for filter)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef filter
+void *x=filter
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_FILTER, 1, Define if you have the 'filter' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for has_key)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef has_key
+void *x=has_key
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_HAS_KEY, 1, Define if you have the 'has_key' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for typeahead)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef typeahead
+void *x=typeahead
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_TYPEAHEAD, 1, Define if you have the 'typeahead' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+AC_MSG_CHECKING(for use_env)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+#ifndef use_env
+void *x=use_env
+#endif
+]])],
+  [AC_DEFINE(HAVE_CURSES_USE_ENV, 1, Define if you have the 'use_env' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)]
 )

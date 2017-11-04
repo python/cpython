@@ -304,19 +304,29 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
         deadline.tv_nsec %= 1000000000;
     }
 
+    /* Check whether we can acquire without releasing the GIL and blocking */
     do {
-        Py_BEGIN_ALLOW_THREADS
-        if (blocking && timeout_obj == Py_None)
-            res = sem_wait(self->handle);
-        else if (!blocking)
-            res = sem_trywait(self->handle);
-        else
-            res = sem_timedwait(self->handle, &deadline);
-        Py_END_ALLOW_THREADS
+        res = sem_trywait(self->handle);
         err = errno;
-        if (res == MP_EXCEPTION_HAS_BEEN_SET)
-            break;
     } while (res < 0 && errno == EINTR && !PyErr_CheckSignals());
+    errno = err;
+
+    if (res < 0 && errno == EAGAIN && blocking) {
+        /* Couldn't acquire immediately, need to block */
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            if (timeout_obj == Py_None) {
+                res = sem_wait(self->handle);
+            }
+            else {
+                res = sem_timedwait(self->handle, &deadline);
+            }
+            Py_END_ALLOW_THREADS
+            err = errno;
+            if (res == MP_EXCEPTION_HAS_BEEN_SET)
+                break;
+        } while (res < 0 && errno == EINTR && !PyErr_CheckSignals());
+    }
 
     if (res < 0) {
         errno = err;

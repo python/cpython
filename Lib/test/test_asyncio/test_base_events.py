@@ -529,6 +529,22 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertRaises(ValueError,
             other_loop.run_until_complete, task)
 
+    def test_run_until_complete_loop_orphan_future_close_loop(self):
+        async def foo(sec=0):
+            await asyncio.sleep(sec)
+
+        self.loop.close()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            with mock.patch('asyncio.base_events.BaseEventLoop.run_forever', 
+                            side_effect=Exception):
+                loop.run_until_complete(foo())
+        except:
+            pass
+        loop.run_until_complete(foo(0.1))
+        loop.close()
+
     def test_subprocess_exec_invalid_args(self):
         args = [sys.executable, '-c', 'pass']
 
@@ -1524,6 +1540,17 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             lambda: MyDatagramProto(create_future=True, loop=self.loop),
             sock=sock)
         transport, protocol = self.loop.run_until_complete(fut)
+        transport.close()
+        self.loop.run_until_complete(protocol.done)
+        self.assertEqual('CLOSED', protocol.state)
+
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    def test_create_datagram_endpoint_sock_unix(self):
+        fut = self.loop.create_datagram_endpoint(
+            lambda: MyDatagramProto(create_future=True, loop=self.loop),
+            family=socket.AF_UNIX)
+        transport, protocol = self.loop.run_until_complete(fut)
+        assert transport._sock.family == socket.AF_UNIX
         transport.close()
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)

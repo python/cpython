@@ -12,7 +12,6 @@ from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure
 )
 
-
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
 def _kill_python_and_exit_code(p):
     data = kill_python(p)
@@ -486,6 +485,26 @@ class CmdLineTest(unittest.TestCase):
                                           cwd=tmpdir)
             self.assertEqual(out.strip(), b"ok")
 
+    def test_sys_flags_set(self):
+        # Issue 31845: a startup refactoring broke reading flags from env vars
+        for value, expected in (("", 0), ("1", 1), ("text", 1), ("2", 2)):
+            env_vars = dict(
+                PYTHONDEBUG=value,
+                PYTHONOPTIMIZE=value,
+                PYTHONDONTWRITEBYTECODE=value,
+                PYTHONVERBOSE=value,
+            )
+            code = (
+                "import sys; "
+                "sys.stderr.write(str(sys.flags)); "
+                f"""sys.exit(not (
+                    sys.flags.debug == sys.flags.optimize ==
+                    sys.flags.dont_write_bytecode == sys.flags.verbose ==
+                    {expected}
+                ))"""
+            )
+            with self.subTest(envar_value=value):
+                assert_python_ok('-c', code, **env_vars)
 
 class IgnoreEnvironmentTest(unittest.TestCase):
 
@@ -505,6 +524,20 @@ class IgnoreEnvironmentTest(unittest.TestCase):
     def test_ignore_PYTHONHASHSEED(self):
         self.run_ignoring_vars("sys.flags.hash_randomization == 1",
                                PYTHONHASHSEED="0")
+
+    def test_sys_flags_not_set(self):
+        # Issue 31845: a startup refactoring broke reading flags from env vars
+        expected_outcome = """
+            (sys.flags.debug == sys.flags.optimize ==
+             sys.flags.dont_write_bytecode == sys.flags.verbose == 0)
+        """
+        self.run_ignoring_vars(
+            expected_outcome,
+            PYTHONDEBUG="1",
+            PYTHONOPTIMIZE="1",
+            PYTHONDONTWRITEBYTECODE="1",
+            PYTHONVERBOSE="1",
+        )
 
 
 def test_main():

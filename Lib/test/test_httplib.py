@@ -1354,6 +1354,7 @@ class OfflineTest(TestCase):
             'UNSUPPORTED_MEDIA_TYPE',
             'REQUESTED_RANGE_NOT_SATISFIABLE',
             'EXPECTATION_FAILED',
+            'MISDIRECTED_REQUEST',
             'UNPROCESSABLE_ENTITY',
             'LOCKED',
             'FAILED_DEPENDENCY',

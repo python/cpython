@@ -779,14 +779,14 @@ the options available to you.
 | lineno         | ``%(lineno)d``          | Source line number where the logging call was |
 |                |                         | issued (if available).                        |
 +----------------+-------------------------+-----------------------------------------------+
+| message        | ``%(message)s``         | The logged message, computed as ``msg %       |
+|                |                         | args``. This is set when                      |
+|                |                         | :meth:`Formatter.format` is invoked.          |
++----------------+-------------------------+-----------------------------------------------+
 | module         | ``%(module)s``          | Module (name portion of ``filename``).        |
 +----------------+-------------------------+-----------------------------------------------+
 | msecs          | ``%(msecs)d``           | Millisecond portion of the time when the      |
 |                |                         | :class:`LogRecord` was created.               |
-+----------------+-------------------------+-----------------------------------------------+
-| message        | ``%(message)s``         | The logged message, computed as ``msg %       |
-|                |                         | args``. This is set when                      |
-|                |                         | :meth:`Formatter.format` is invoked.          |
 +----------------+-------------------------+-----------------------------------------------+
 | msg            | You shouldn't need to   | The format string passed in the original      |
 |                | format this yourself.   | logging call. Merged with ``args`` to         |

@@ -4533,6 +4533,10 @@ class NetworkConnectionNoServer(unittest.TestCase):
         expected_errnos = [ errno.ECONNREFUSED, ]
         if hasattr(errno, 'ENETUNREACH'):
             expected_errnos.append(errno.ENETUNREACH)
+        if hasattr(errno, 'EADDRNOTAVAIL'):
+            # bpo-31910: socket.create_connection() fails randomly
+            # with EADDRNOTAVAIL on Travis CI
+            expected_errnos.append(errno.EADDRNOTAVAIL)
 
         self.assertIn(cm.exception.errno, expected_errnos)
 

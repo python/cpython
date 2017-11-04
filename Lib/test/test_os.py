@@ -81,12 +81,6 @@ else:
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
 
 
-@contextlib.contextmanager
-def ignore_deprecation_warnings(msg_regex, quiet=False):
-    with support.check_warnings((msg_regex, DeprecationWarning), quiet=quiet):
-        yield
-
-
 def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
 
@@ -347,12 +341,7 @@ class StatAttributeTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
-        try:
-            result = os.statvfs(self.fname)
-        except OSError as e:
-            # On AtheOS, glibc always returns ENOSYS
-            if e.errno == errno.ENOSYS:
-                self.skipTest('os.statvfs() failed with ENOSYS')
+        result = os.statvfs(self.fname)
 
         # Make sure direct access works
         self.assertEqual(result.f_bfree, result[3])
@@ -392,12 +381,7 @@ class StatAttributeTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'statvfs'),
                          "need os.statvfs()")
     def test_statvfs_result_pickle(self):
-        try:
-            result = os.statvfs(self.fname)
-        except OSError as e:
-            # On AtheOS, glibc always returns ENOSYS
-            if e.errno == errno.ENOSYS:
-                self.skipTest('os.statvfs() failed with ENOSYS')
+        result = os.statvfs(self.fname)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             p = pickle.dumps(result, proto)
@@ -487,17 +471,6 @@ class UtimeTests(unittest.TestCase):
         self.addCleanup(support.rmtree, self.dirname)
         os.mkdir(self.dirname)
         create_file(self.fname)
-
-        def restore_float_times(state):
-            with ignore_deprecation_warnings('stat_float_times'):
-                os.stat_float_times(state)
-
-        # ensure that st_atime and st_mtime are float
-        with ignore_deprecation_warnings('stat_float_times'):
-            old_float_times = os.stat_float_times(-1)
-            self.addCleanup(restore_float_times, old_float_times)
-
-            os.stat_float_times(True)
 
     def support_subsecond(self, filename):
         # Heuristic to check if the filesystem supports timestamp with
@@ -3575,6 +3548,23 @@ class TestPEP519(unittest.TestCase):
         # __fspath__ raises an exception.
         self.assertRaises(ZeroDivisionError, self.fspath,
                           _PathLike(ZeroDivisionError()))
+
+
+class TimesTests(unittest.TestCase):
+    def test_times(self):
+        times = os.times()
+        self.assertIsInstance(times, os.times_result)
+
+        for field in ('user', 'system', 'children_user', 'children_system',
+                      'elapsed'):
+            value = getattr(times, field)
+            self.assertIsInstance(value, float)
+
+        if os.name == 'nt':
+            self.assertEqual(times.children_user, 0)
+            self.assertEqual(times.children_system, 0)
+            self.assertEqual(times.elapsed, 0)
+
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.
