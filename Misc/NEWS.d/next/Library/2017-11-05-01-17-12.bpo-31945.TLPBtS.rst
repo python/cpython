@@ -1,0 +1,2 @@
+Add ``blocksize`` optional argument to ``HTTPConnection`` and
+``HTTPSConnection``.  Patch by Nir Soffer.
