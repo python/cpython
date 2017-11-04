@@ -3745,7 +3745,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
             /*
                XXX Is the following correct any longer?
                We must not pass a byref() to the array then but
-               the array instance itself. Then, we cannot retrive
+               the array instance itself. Then, we cannot retrieve
                the result from the PyCArgObject.
             */
             if (ob == NULL)

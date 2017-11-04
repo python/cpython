@@ -943,7 +943,7 @@ class ExceptionTests(unittest.TestCase):
         # equal to recursion_limit in PyErr_NormalizeException() and check
         # that a ResourceWarning is printed.
         # Prior to #22898, the recursivity of PyErr_NormalizeException() was
-        # controled by tstate->recursion_depth and a PyExc_RecursionErrorInst
+        # controlled by tstate->recursion_depth and a PyExc_RecursionErrorInst
         # singleton was being used in that case, that held traceback data and
         # locals indefinitely and would cause a segfault in _PyExc_Fini() upon
         # finalization of these locals.

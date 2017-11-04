@@ -4675,7 +4675,7 @@ class TCPTimeoutTest(SocketTCPTest):
                          'test needs signal.alarm()')
     def testInterruptedTimeout(self):
         # XXX I don't know how to do this test on MSWindows or any other
-        # plaform that doesn't support signal.alarm() or os.kill(), though
+        # platform that doesn't support signal.alarm() or os.kill(), though
         # the bug should have existed on all platforms.
         self.serv.settimeout(5.0)   # must be longer than alarm
         class Alarm(Exception):

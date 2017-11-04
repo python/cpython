@@ -212,7 +212,7 @@ PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
    - PyObject_Malloc(), PyObject_Realloc() and PyObject_Free()
 
    Newly allocated memory is filled with the byte 0xCB, freed memory is filled
-   with the byte 0xDB. Additionnal checks:
+   with the byte 0xDB. Additional checks:
 
    - detect API violations, ex: PyObject_Free() called on a buffer allocated
      by PyMem_Malloc()
