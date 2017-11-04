@@ -440,6 +440,10 @@ Optimizations
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+* The :func:`shutil.rmtree` function has been sped up to 20--40%.
+  This was done using the :func:`os.scandir` function.
+  (Contributed by Serhiy Storchaka in :issue:`28564`.)
+
 * Optimized case-insensitive matching and searching of :mod:`regular
   expressions <re>`.  Searching some patterns can now be up to 20 times faster.
   (Contributed by Serhiy Storchaka in :issue:`30285`.)
@@ -655,6 +659,11 @@ Changes in the Python API
 
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
+
+* Because :func:`shutil.rmtree` is now implemented using the :func:`os.scandir`
+  function, the user specified handler *onerror* is now called with the first
+  argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
+  is failed.
 
 
 Changes in the C API
