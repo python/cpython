@@ -4147,7 +4147,7 @@ decode_utf8(struct compiling *c, const char **sPtr, const char *end)
 
 static int
 warn_invalid_escape_sequence(struct compiling *c, const node *n,
-                             char first_invalid_escape_char)
+                             unsigned char first_invalid_escape_char)
 {
     PyObject *msg = PyUnicode_FromFormat("invalid escape sequence \\%c",
                                          first_invalid_escape_char);

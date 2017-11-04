@@ -213,7 +213,7 @@ select_select(PyObject *self, PyObject *args)
         tvp = (struct timeval *)NULL;
     else {
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
-                                      _PyTime_ROUND_CEILING) < 0) {
+                                      _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be a float or None");
@@ -221,7 +221,7 @@ select_select(PyObject *self, PyObject *args)
             return NULL;
         }
 
-        if (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_CEILING) == -1)
+        if (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_TIMEOUT) == -1)
             return NULL;
         if (tv.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
@@ -525,22 +525,16 @@ poll_poll(pollObject *self, PyObject *args)
     PyObject *result_list = NULL, *timeout_obj = NULL;
     int poll_result, i, j;
     PyObject *value = NULL, *num = NULL;
-    _PyTime_t timeout, ms, deadline;
+    _PyTime_t timeout = -1, ms = -1, deadline = 0;
     int async_err = 0;
 
     if (!PyArg_ParseTuple(args, "|O:poll", &timeout_obj)) {
         return NULL;
     }
 
-    /* Check values for timeout */
-    if (timeout_obj == NULL || timeout_obj == Py_None) {
-        timeout = -1;
-        ms = -1;
-        deadline = 0;   /* initialize to prevent gcc warning */
-    }
-    else {
+    if (timeout_obj != NULL && timeout_obj != Py_None) {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
-                                           _PyTime_ROUND_CEILING) < 0) {
+                                           _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be an integer or None");
@@ -548,13 +542,26 @@ poll_poll(pollObject *self, PyObject *args)
             return NULL;
         }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
         if (ms < INT_MIN || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
         }
 
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+        if (timeout >= 0) {
+            deadline = _PyTime_GetMonotonicClock() + timeout;
+        }
+    }
+
+    /* On some OSes, typically BSD-based ones, the timeout parameter of the
+       poll() syscall, when negative, must be exactly INFTIM, where defined,
+       or -1. See issue 31334. */
+    if (ms < 0) {
+#ifdef INFTIM
+        ms = INFTIM;
+#else
+        ms = -1;
+#endif
     }
 
     /* Avoid concurrent poll() invocation, issue 8865 */
@@ -896,7 +903,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
     }
     else {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
-                                           _PyTime_ROUND_CEILING) < 0) {
+                                           _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be an integer or None");
@@ -904,7 +911,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
             return NULL;
         }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
         if (ms < -1 || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
@@ -1513,7 +1520,7 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
         /* epoll_wait() has a resolution of 1 millisecond, round towards
            infinity to wait at least timeout seconds. */
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
-                                      _PyTime_ROUND_CEILING) < 0) {
+                                      _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "timeout must be an integer or None");
@@ -1772,40 +1779,73 @@ static PyTypeObject kqueue_queue_Type;
 #elif (SIZEOF_UINTPTR_T == SIZEOF_LONG_LONG)
 #   define T_UINTPTRT         T_ULONGLONG
 #   define T_INTPTRT          T_LONGLONG
-#   define PyLong_AsUintptr_t PyLong_AsUnsignedLongLong
 #   define UINTPTRT_FMT_UNIT  "K"
 #   define INTPTRT_FMT_UNIT   "L"
 #elif (SIZEOF_UINTPTR_T == SIZEOF_LONG)
 #   define T_UINTPTRT         T_ULONG
 #   define T_INTPTRT          T_LONG
-#   define PyLong_AsUintptr_t PyLong_AsUnsignedLong
 #   define UINTPTRT_FMT_UNIT  "k"
 #   define INTPTRT_FMT_UNIT   "l"
 #elif (SIZEOF_UINTPTR_T == SIZEOF_INT)
 #   define T_UINTPTRT         T_UINT
 #   define T_INTPTRT          T_INT
-#   define PyLong_AsUintptr_t PyLong_AsUnsignedLong
 #   define UINTPTRT_FMT_UNIT  "I"
 #   define INTPTRT_FMT_UNIT   "i"
 #else
 #   error uintptr_t does not match int, long, or long long!
 #endif
 
+#if SIZEOF_LONG_LONG == 8
+#   define T_INT64          T_LONGLONG
+#   define INT64_FMT_UNIT   "L"
+#elif SIZEOF_LONG == 8
+#   define T_INT64          T_LONG
+#   define INT64_FMT_UNIT   "l"
+#elif SIZEOF_INT == 8
+#   define T_INT64          T_INT
+#   define INT64_FMT_UNIT   "i"
+#else
+#   define INT64_FMT_UNIT   "_"
+#endif
+
+#if SIZEOF_LONG_LONG == 4
+#   define T_UINT32         T_ULONGLONG
+#   define UINT32_FMT_UNIT  "K"
+#elif SIZEOF_LONG == 4
+#   define T_UINT32         T_ULONG
+#   define UINT32_FMT_UNIT  "k"
+#elif SIZEOF_INT == 4
+#   define T_UINT32         T_UINT
+#   define UINT32_FMT_UNIT  "I"
+#else
+#   define UINT32_FMT_UNIT  "_"
+#endif
+
 /*
  * kevent is not standard and its members vary across BSDs.
  */
-#if !defined(__OpenBSD__)
-#   define IDENT_TYPE  T_UINTPTRT
-#   define IDENT_CAST  intptr_t
-#   define DATA_TYPE   T_INTPTRT
-#   define DATA_FMT_UNIT INTPTRT_FMT_UNIT
-#   define IDENT_AsType PyLong_AsUintptr_t
+#ifdef __NetBSD__
+#   define FILTER_TYPE      T_UINT32
+#   define FILTER_FMT_UNIT  UINT32_FMT_UNIT
+#   define FLAGS_TYPE       T_UINT32
+#   define FLAGS_FMT_UNIT   UINT32_FMT_UNIT
+#   define FFLAGS_TYPE      T_UINT32
+#   define FFLAGS_FMT_UNIT  UINT32_FMT_UNIT
 #else
-#   define IDENT_TYPE  T_UINT
-#   define IDENT_CAST  int
-#   define DATA_TYPE   T_INT
-#   define DATA_FMT_UNIT "i"
-#   define IDENT_AsType PyLong_AsUnsignedLong
+#   define FILTER_TYPE      T_SHORT
+#   define FILTER_FMT_UNIT  "h"
+#   define FLAGS_TYPE       T_USHORT
+#   define FLAGS_FMT_UNIT   "H"
+#   define FFLAGS_TYPE      T_UINT
+#   define FFLAGS_FMT_UNIT  "I"
+#endif
+
+#if defined(__NetBSD__) || defined(__OpenBSD__)
+#   define DATA_TYPE        T_INT64
+#   define DATA_FMT_UNIT    INT64_FMT_UNIT
+#else
+#   define DATA_TYPE        T_INTPTRT
+#   define DATA_FMT_UNIT    INTPTRT_FMT_UNIT
 #endif
 
 /* Unfortunately, we can't store python objects in udata, because
@@ -1815,9 +1855,9 @@ static PyTypeObject kqueue_queue_Type;
 
 #define KQ_OFF(x) offsetof(kqueue_event_Object, x)
 static struct PyMemberDef kqueue_event_members[] = {
-    {"ident",           IDENT_TYPE,     KQ_OFF(e.ident)},
-    {"filter",          T_SHORT,        KQ_OFF(e.filter)},
-    {"flags",           T_USHORT,       KQ_OFF(e.flags)},
+    {"ident",           T_UINTPTRT,     KQ_OFF(e.ident)},
+    {"filter",          FILTER_TYPE,    KQ_OFF(e.filter)},
+    {"flags",           FLAGS_TYPE,     KQ_OFF(e.flags)},
     {"fflags",          T_UINT,         KQ_OFF(e.fflags)},
     {"data",            DATA_TYPE,      KQ_OFF(e.data)},
     {"udata",           T_UINTPTRT,     KQ_OFF(e.udata)},
@@ -1833,9 +1873,9 @@ kqueue_event_repr(kqueue_event_Object *s)
     PyOS_snprintf(
         buf, sizeof(buf),
         "<select.kevent ident=%zu filter=%d flags=0x%x fflags=0x%x "
-        "data=0x%zd udata=%p>",
-        (size_t)(s->e.ident), s->e.filter, s->e.flags,
-        s->e.fflags, (Py_ssize_t)(s->e.data), s->e.udata);
+        "data=0x%llx udata=%p>",
+        (size_t)(s->e.ident), (int)s->e.filter, (unsigned int)s->e.flags,
+        (unsigned int)s->e.fflags, (long long)(s->e.data), (void *)s->e.udata);
     return PyUnicode_FromString(buf);
 }
 
@@ -1845,7 +1885,9 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
     PyObject *pfd;
     static char *kwlist[] = {"ident", "filter", "flags", "fflags",
                              "data", "udata", NULL};
-    static const char fmt[] = "O|hHI" DATA_FMT_UNIT UINTPTRT_FMT_UNIT ":kevent";
+    static const char fmt[] = "O|"
+                FILTER_FMT_UNIT FLAGS_FMT_UNIT FFLAGS_FMT_UNIT DATA_FMT_UNIT
+                UINTPTRT_FMT_UNIT ":kevent";
 
     EV_SET(&(self->e), 0, EVFILT_READ, EV_ADD, 0, 0, 0); /* defaults */
 
@@ -1855,12 +1897,8 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    if (PyLong_Check(pfd)
-#if IDENT_TYPE == T_UINT
-        && PyLong_AsUnsignedLong(pfd) <= UINT_MAX
-#endif
-    ) {
-        self->e.ident = IDENT_AsType(pfd);
+    if (PyLong_Check(pfd)) {
+        self->e.ident = PyLong_AsSize_t(pfd);
     }
     else {
         self->e.ident = PyObject_AsFileDescriptor(pfd);
@@ -1875,50 +1913,23 @@ static PyObject *
 kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
                          int op)
 {
-    intptr_t result = 0;
+    int result;
 
     if (!kqueue_event_Check(o)) {
-        if (op == Py_EQ || op == Py_NE) {
-            PyObject *res = op == Py_EQ ? Py_False : Py_True;
-            Py_INCREF(res);
-            return res;
-        }
-        PyErr_Format(PyExc_TypeError,
-            "can't compare %.200s to %.200s",
-            Py_TYPE(s)->tp_name, Py_TYPE(o)->tp_name);
-        return NULL;
-    }
-    if (((result = (IDENT_CAST)(s->e.ident - o->e.ident)) == 0) &&
-        ((result = s->e.filter - o->e.filter) == 0) &&
-        ((result = s->e.flags - o->e.flags) == 0) &&
-        ((result = (int)(s->e.fflags - o->e.fflags)) == 0) &&
-        ((result = s->e.data - o->e.data) == 0) &&
-        ((result = s->e.udata - o->e.udata) == 0)
-       ) {
-        result = 0;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
-    switch (op) {
-    case Py_EQ:
-        result = (result == 0);
-        break;
-    case Py_NE:
-        result = (result != 0);
-        break;
-    case Py_LE:
-        result = (result <= 0);
-        break;
-    case Py_GE:
-        result = (result >= 0);
-        break;
-    case Py_LT:
-        result = (result < 0);
-        break;
-    case Py_GT:
-        result = (result > 0);
-        break;
-    }
-    return PyBool_FromLong((long)result);
+#define CMP(a, b) ((a) != (b)) ? ((a) < (b) ? -1 : 1)
+    result = CMP(s->e.ident, o->e.ident)
+           : CMP(s->e.filter, o->e.filter)
+           : CMP(s->e.flags, o->e.flags)
+           : CMP(s->e.fflags, o->e.fflags)
+           : CMP(s->e.data, o->e.data)
+           : CMP((intptr_t)s->e.udata, (intptr_t)o->e.udata)
+           : 0;
+#undef CMP
+
+    Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 static PyTypeObject kqueue_event_Type = {
@@ -2128,7 +2139,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     }
     else {
         if (_PyTime_FromSecondsObject(&timeout,
-                                      otimeout, _PyTime_ROUND_CEILING) < 0) {
+                                      otimeout, _PyTime_ROUND_TIMEOUT) < 0) {
             PyErr_Format(PyExc_TypeError,
                 "timeout argument must be a number "
                 "or None, got %.200s",

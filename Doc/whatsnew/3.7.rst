@@ -159,6 +159,32 @@ effort will be made to add such support.
        PEP written by Erik M. Bray; implementation by Masayuki Yamamoto.
 
 
+PEP 564: Add new time functions with nanosecond resolution
+----------------------------------------------------------
+
+Add six new "nanosecond" variants of existing functions to the :mod:`time`
+module:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
+
+While similar to the existing functions without the ``_ns`` suffix, they
+provide nanosecond resolution: they return a number of nanoseconds as a Python
+``int``.
+
+The ``time.time_ns()`` resolution is 3 times better than the ``time.time()``
+resolution on Linux and Windows.
+
+.. seealso::
+
+    :pep:`564` -- Add new time functions with nanosecond resolution
+       PEP written and implemented by Victor Stinner
+
+
 Other Language Changes
 ======================
 
@@ -229,6 +255,12 @@ contextlib
 :func:`contextlib.asynccontextmanager` has been added. (Contributed by
 Jelle Zijlstra in :issue:`29679`.)
 
+crypt
+-----
+
+Added support for the Blowfish method.
+(Contributed by Serhiy Storchaka in :issue:`31664`.)
+
 dis
 ---
 
@@ -290,12 +322,12 @@ pdb
 argument.  If given, this is printed to the console just before debugging
 begins.
 
-string
-------
+re
+--
 
-:class:`string.Template` now lets you to optionally modify the regular
-expression pattern for braced placeholders and non-braced placeholders
-separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+The flags :const:`re.ASCII`, :const:`re.LOCALE` and :const:`re.UNICODE`
+can be set within the scope of a group.
+(Contributed by Serhiy Storchaka in :issue:`31690`.)
 
 ssl
 ---
@@ -307,12 +339,47 @@ expected hostname in A-label form (``"xn--pythn-mua.org"``), rather
 than the U-label form (``"pythön.org"``). (Contributed by
 Nathaniel J. Smith in :issue:`28414`.)
 
+string
+------
+
+:class:`string.Template` now lets you to optionally modify the regular
+expression pattern for braced placeholders and non-braced placeholders
+separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
+
+time
+----
+
+The :pep:`564` added six new functions with nanosecond resolution:
+
+* :func:`time.clock_gettime_ns`
+* :func:`time.clock_settime_ns`
+* :func:`time.monotonic_ns`
+* :func:`time.perf_counter_ns`
+* :func:`time.process_time_ns`
+* :func:`time.time_ns`
+
+Add new clock identifiers:
+
+* :data:`time.CLOCK_BOOTTIME` (Linux): Identical to
+  :data:`time.CLOCK_MONOTONIC`, except it also includes any time that the
+  system is suspended.
+* :data:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
+  per-process timer from the CPU.
+* :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
+  the time the system has been running and not suspended, providing accurate
+  uptime measurement, both absolute and interval.
+
 unittest.mock
 -------------
 
 The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`. (Contributed by
 Serhiy Storchaka in :issue:`20804`.)
+
+New function :const:`~unittest.mock.seal` will disable the creation of mock
+children by preventing to get or set any new attribute on the sealed mock.
+The sealing process is performed recursively. (Contributed by Mario Corchero
+in :issue:`30541`.)
 
 xmlrpc.server
 -------------
@@ -432,6 +499,11 @@ Build and C API Changes
   download a copy of 32-bit Python for this purpose.  (Contributed by Zachary
   Ware in :issue:`30450`.)
 
+* The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+  has been removed as its members being never cleared may cause a segfault
+  during finalization of the interpreter. Contributed by Xavier de Gaye in
+  :issue:`22898` and :issue:`30697`.
+
 * Support for building ``--without-threads`` is removed.
   (Contributed by Antoine Pitrou in :issue:`31370`.).
 
@@ -511,6 +583,10 @@ Removed
 
 API and Feature Removals
 ------------------------
+
+* The ``os.stat_float_times()`` function has been removed. It was introduced in
+  Python 2.3 for backward compatibility with Python 2.2, and was deprecated
+  since Python 3.1.
 
 * Unknown escapes consisting of ``'\'`` and an ASCII letter in replacement
   templates for :func:`re.sub` were deprecated in Python 3.5, and will now
@@ -609,3 +685,24 @@ CPython bytecode changes
 
 * Added two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD`.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
+
+
+Documentation
+=============
+
+.. _whatsnew37-pep545:
+
+PEP 545: Python Documentation Translations
+------------------------------------------
+
+:pep:`545` describes the process to translate Python documentation,
+and two translations have been added:
+
+- Japanese: https://docs.python.org/ja/ and associated github
+  repository: https://github.com/python/python-docs-ja
+
+- French: https://docs.python.org/fr/ and associated github
+  repository: https://github.com/python/python-docs-fr
+
+(Contributed by Julien Palard, Inada Naoki, and Victor Stinner in
+:issue:`issue26546`.)

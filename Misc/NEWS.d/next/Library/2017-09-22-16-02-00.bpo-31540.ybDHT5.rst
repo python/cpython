@@ -1,4 +1,0 @@
-Allow passing a context object in
-:class:`concurrent.futures.ProcessPoolExecutor` constructor.
-Also, free job ressources in :class:`concurrent.futures.ProcessPoolExecutor`
-earlier to improve memory usage when a worker waits for new jobs.
