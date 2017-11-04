@@ -1476,6 +1476,44 @@ class RunFuncTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
 
+    @unittest.skipIf(mswindows, "cannot use setpgid, killpg, etc. on windows")
+    @unittest.skipIf(threading is None, "threading required")
+    def test_run_interrupted(self):
+        # In the event of SIGINT, run() should allow the
+        # child time to cleanup (if cleanup_timeout was given).
+
+        # Change the current process group to avoid
+        # interrupting our parent process.
+        original_pgid = os.getpgrp()
+        os.setpgid(0, 0)
+
+        def interrupt_this_process_group():
+            # Send SIGINT to the current process group after a short delay
+            time.sleep(0.5)
+            os.killpg(os.getpgrp(), signal.SIGINT)
+
+        tf = tempfile.NamedTemporaryFile(delete=False)
+        tf.close()
+
+        try:
+            with self.assertRaises(KeyboardInterrupt) as ex:
+                threading.Thread(target=interrupt_this_process_group).start()
+                rc = subprocess.run([sys.executable, "-c",
+                                    "import time\n"
+                                    "try:\n"
+                                    "  time.sleep(3.0)\n"
+                                    "except KeyboardInterrupt:\n"
+                                    "  time.sleep(0.1)\n"
+                                   f"  open('{tf.name}', 'w').write('cleaned up')\n"],
+                                    timeout=None, cleanup_timeout=1.0,
+                                    check=True)
+
+            with open(tf.name, 'r') as tf:
+                self.assertEqual(tf.read(), 'cleaned up')
+        finally:
+            # Restore original process group
+            os.setpgid(0, original_pgid)
+            os.unlink(tf.name)
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
 class POSIXProcessTestCase(BaseTestCase):

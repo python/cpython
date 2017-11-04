@@ -255,15 +255,22 @@ def _args_from_interpreter_flags():
     return args
 
 
-def call(*popenargs, timeout=None, **kwargs):
+def call(*popenargs, timeout=None, cleanup_timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
     timeout, then return the returncode attribute.
 
-    The arguments are the same as for the Popen constructor.  Example:
+    This is equivalent to:
 
-    retcode = call(["ls", "-l"])
+        run(...).returncode
+
+    (except that the input and check parameters are not supported).
+
+    See run() for argument details.
+
+    Example:
+      retcode = call(["ls", "-l"])
     """
-    return run(*popenargs, timeout=timeout, **kwargs).returncode
+    return run(*popenargs, timeout=timeout, cleanup_timeout=None, **kwargs).returncode
 
 def check_call(*popenargs, **kwargs):
     """Run command with arguments.  Wait for command to complete.  If
@@ -364,7 +371,7 @@ class CompletedProcess(object):
                                      self.stderr)
 
 
-def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
+def run(*popenargs, input=None, timeout=None, check=False, cleanup_timeout=None, **kwargs):
     """Run command with arguments and return a CompletedProcess instance.
 
     The returned instance will have attributes args, returncode, stdout and
@@ -378,6 +385,14 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
 
     If timeout is given, and the process takes too long, a TimeoutExpired
     exception will be raised.
+
+    If the current process recevies a KeyboardInterrupt and
+    cleanup_timeout is non-zero, the child process is given some additional
+    time to finish before it is killed, to allow potential clean-up
+    operations in the child to complete. During this time, a second KeyboardInterrupt
+    will kill the child immediately. If cleanup_timeout is not specified,
+    then any remaining time from the original timeout is used, or 1.0 if no
+    original timeout was specified.
 
     There is an optional argument "input", allowing you to
     pass bytes or a string to the subprocess's stdin.  If you use this argument
@@ -397,6 +412,8 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
             raise ValueError('stdin and input arguments may not both be used.')
         kwargs['stdin'] = PIPE
 
+    start_time = _time()
+
     with Popen(*popenargs, **kwargs) as process:
         try:
             stdout, stderr = process.communicate(input, timeout=timeout)
@@ -405,6 +422,20 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
             stdout, stderr = process.communicate()
             raise TimeoutExpired(process.args, timeout, output=stdout,
                                  stderr=stderr)
+        except KeyboardInterrupt:
+            if cleanup_timeout is None:
+                cleanup_timeout = 1.0
+                if timeout:
+                    remaining_timeout = timeout - (_time() - start_time)
+                    cleanup_timeout = max(0.0, remaining_timeout)
+
+            if cleanup_timeout == 0.0:
+                raise
+            try:
+                process.wait(timeout=cleanup_timeout)
+                raise
+            except TimeoutExpired:
+                raise KeyboardInterrupt
         except:
             process.kill()
             process.wait()
