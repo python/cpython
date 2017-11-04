@@ -11130,7 +11130,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  futimens futimes gai_strerror getentropy \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- initgroups kill killpg lchmod lchown linkat lstat lutimes mmap \
+ initgroups kill killpg lchown linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
@@ -11836,6 +11836,60 @@ if test "$ac_cv_have_lchflags" = yes ; then
 $as_echo "#define HAVE_LCHFLAGS 1" >>confdefs.h
 
 fi
+
+
+# on alpine, lchmod raises errno EOPNOTSUPP on symlinks
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken lchmod" >&5
+$as_echo_n "checking for broken lchmod... " >&6; }
+if ${ac_cv_have_lchmod+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_have_lchmod=cross
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/stat.h>
+#include <unistd.h>
+int main(int argc, char*argv[])
+{
+  if (symlink(argv[0], "test"))
+    return 1;
+  if (lchmod("test", 0777))
+    return 1;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_have_lchmod=yes
+else
+  ac_cv_have_lchmod=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_lchmod" >&5
+$as_echo "$ac_cv_have_lchmod" >&6; }
+if test "$ac_cv_have_lchmod" = cross ; then
+  ac_fn_c_check_func "$LINENO" "lchmod" "ac_cv_func_lchmod"
+if test "x$ac_cv_func_lchmod" = xyes; then :
+  ac_cv_have_lchmod="yes"
+else
+  ac_cv_have_lchmod="no"
+fi
+
+fi
+if test "$ac_cv_have_lchmod" = yes ; then
+
+$as_echo "#define HAVE_LCHMOD 1" >>confdefs.h
+
+fi
+rm -f test
 
 case $ac_sys_system/$ac_sys_release in
 Darwin/*)

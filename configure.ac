@@ -3405,7 +3405,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  futimens futimes gai_strerror getentropy \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- initgroups kill killpg lchmod lchown linkat lstat lutimes mmap \
+ initgroups kill killpg lchown linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise pread \
@@ -3599,6 +3599,30 @@ fi
 if test "$ac_cv_have_lchflags" = yes ; then
   AC_DEFINE(HAVE_LCHFLAGS, 1, [Define to 1 if you have the 'lchflags' function.])
 fi
+
+
+# on alpine, lchmod raises errno EOPNOTSUPP on symlinks
+AC_CACHE_CHECK([for broken lchmod], [ac_cv_have_lchmod], [dnl
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <sys/stat.h>
+#include <unistd.h>
+int main(int argc, char*argv[])
+{
+  if (symlink(argv[0], "test"))
+    return 1;
+  if (lchmod("test", 0777))
+    return 1;
+  return 0;
+}
+]])],[ac_cv_have_lchmod=yes],[ac_cv_have_lchmod=no],[ac_cv_have_lchmod=cross])
+])
+if test "$ac_cv_have_lchmod" = cross ; then
+  AC_CHECK_FUNC([lchmod], [ac_cv_have_lchmod="yes"], [ac_cv_have_lchmod="no"])
+fi
+if test "$ac_cv_have_lchmod" = yes ; then
+  AC_DEFINE(HAVE_LCHMOD, 1, [Define to 1 if you have the `lchmod' function.])
+fi
+rm -f test
 
 dnl Check if system zlib has *Copy() functions
 dnl
