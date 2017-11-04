@@ -188,7 +188,7 @@ not be *NULL*, and the type is not checked:
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyDateTime_DELTA_GET_MICROSECOND(PyDateTime_Delta *o)
+.. c:function:: int PyDateTime_DELTA_GET_MICROSECONDS(PyDateTime_Delta *o)
 
    Return the number of microseconds, as an int from 0 through 999999.
 
