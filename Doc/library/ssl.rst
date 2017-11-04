@@ -456,14 +456,14 @@ Certificate handling
       previously. Return an integer (no fractions of a second in the
       input format)
 
-.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None)
+.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None, , timeout=_GLOBAL_DEFAULT_TIMEOUT)
 
    Given the address ``addr`` of an SSL-protected server, as a (*hostname*,
    *port-number*) pair, fetches the server's certificate, and returns it as a
    PEM-encoded string.  If ``ssl_version`` is specified, uses that version of
    the SSL protocol to attempt to connect to the server.  If ``ca_certs`` is
    specified, it should be a file containing a list of root certificates, the
-   same format as used for the same parameter in :func:`wrap_socket`.  The call
+   same format as used for the same parameter in :func:`wrap_socket`. If ``timeout`` is specified, use that timeout to receive certificate. The call
    will attempt to validate the server certificate against that set of root
    certificates, and will fail if the validation attempt fails.
 
