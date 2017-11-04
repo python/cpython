@@ -1,0 +1,1 @@
+Fixes Modify button in Apps and Features dialog.
