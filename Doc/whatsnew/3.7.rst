@@ -318,9 +318,9 @@ to be executed on a process fork.  (Contributed by Antoine Pitrou in
 pdb
 ---
 
-:func:`~pdb.set_trace` now takes an optional ``header`` keyword-only
+:func:`~pdb.set_trace` now takes an optional *header* keyword-only
 argument.  If given, this is printed to the console just before debugging
-begins.
+begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 
 re
 --
