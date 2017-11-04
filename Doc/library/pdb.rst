@@ -123,10 +123,10 @@ slightly different way:
    Enter the debugger at the calling stack frame.  This is useful to hard-code
    a breakpoint at a given point in a program, even if the code is not
    otherwise being debugged (e.g. when an assertion fails).  If given,
-   ``header`` is printed to the console just before debugging begins.
+   *header* is printed to the console just before debugging begins.
 
-   .. versionadded:: 3.7
-      The keyword-only argument ``header``.
+   .. versionchanged:: 3.7
+      The keyword-only argument *header*.
 
 
 .. function:: post_mortem(traceback=None)
